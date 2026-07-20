@@ -356,6 +356,15 @@
 - `resolveAnimationConfig` (function): function resolveAnimationConfig(animation: ModelAnimationConfig | "auto" | "none" | undefined, clips: readonly string[] | undefined, table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): ModelAnimationConfig | undefined — Collapse `ModelConfig.animation`'s widened union to a concrete playback config: explicit configs pass through, `"none"`/absent render the bind pose, and `"auto"` derives states and one-shots from the model's clip names via {@link defaultAnimationForClips}. The shell calls this with the loaded GLB's actual clip names, so `"auto"` works on any rigged model — catalog-resolved ids are stamped `"auto"` automatically.
 - `rolesFromClips` (function): function rolesFromClips(clips: readonly string[], table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE): Partial<Record<ClipRole, string[]>> — Group a GLB's clip names by role. Each role's variants are sorted simplest-first — fewest name tokens, then lexicographic — so the canonical variant (`Idle` over `2H_Melee_Idle`, KayKit `Walking_A` over `Walking_B`) is always first: stable output for the same clip set regardless of source order.
 
+## @jgengine/core/game/codex
+
+- `Codex` (interface): interface Codex<TMeta = unknown> — A codex/bestiary of defined entries with per-player discovery tracking.
+- `CodexEntryDef` (interface): interface CodexEntryDef<TMeta = unknown> — A codex/bestiary/lorebook entry the game defines. Discovery state is tracked separately.
+- `CodexEntryView` (interface): interface CodexEntryView<TMeta = unknown> extends CodexEntryDef<TMeta> — A definition plus its discovery state — what UI renders.
+- `CodexOptions` (interface): interface CodexOptions<TMeta = unknown> — Options for {@link createCodex}.
+- `CodexSnapshot` (interface): interface CodexSnapshot — Serializable discovery state — a save blob.
+- `createCodex` (function): function createCodex<TMeta = unknown>(options: CodexOptions<TMeta>): Codex<TMeta> — A codex / bestiary / lorebook: a fixed set of defined entries plus per-player discovery tracking, with categories, secret masking, completion, an `onDiscover` seam, and serializable `snapshot`/`restore`. The view `list()` keeps a stable identity between changes so React reads it through `useSyncExternalStore` without re-projecting each frame.
+
 ## @jgengine/core/game/connectedPlayers
 
 - `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`. Frozen by the registry (see {@link ConnectedPlayers.get}); fields are `readonly` so a caller can't edit its own copy and assume the change stuck.
@@ -984,6 +993,11 @@
 - `ChatRateLimit` (interface): interface ChatRateLimit — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
+- `Codex` (interface): interface Codex<TMeta = unknown> — A codex/bestiary of defined entries with per-player discovery tracking.
+- `CodexEntryDef` (interface): interface CodexEntryDef<TMeta = unknown> — A codex/bestiary/lorebook entry the game defines. Discovery state is tracked separately.
+- `CodexEntryView` (interface): interface CodexEntryView<TMeta = unknown> extends CodexEntryDef<TMeta> — A definition plus its discovery state — what UI renders.
+- `CodexOptions` (interface): interface CodexOptions<TMeta = unknown> — Options for {@link createCodex}.
+- `CodexSnapshot` (interface): interface CodexSnapshot — Serializable discovery state — a save blob.
 - `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
@@ -1316,6 +1330,7 @@
 - `createCardPile` (function): function createCardPile(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPile — ⚠ undocumented
 - `createCardPileState` (function): function createCardPileState(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPileState — ⚠ undocumented
 - `createChatRateLimiter` (function): function createChatRateLimiter(limit: ChatRateLimit): ChatRateLimiter — ⚠ undocumented
+- `createCodex` (function): function createCodex<TMeta = unknown>(options: CodexOptions<TMeta>): Codex<TMeta> — A codex / bestiary / lorebook: a fixed set of defined entries plus per-player discovery tracking, with categories, secret masking, completion, an `onDiscover` seam, and serializable `snapshot`/`restore`. The view `list()` keeps a stable identity between changes so React reads it through `useSyncExternalStore` without re-projecting each frame.
 - `createCommitController` (function): function createCommitController<TAction>(config: CommitControllerConfig): CommitController<TAction> — ⚠ undocumented
 - `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.

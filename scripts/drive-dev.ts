@@ -20,7 +20,7 @@
  * vite's ~60-90s boot and Chrome's cold launch. `--size half` halves both
  * dimensions (~1/4 the pixels) for cheap mid-loop judge shots.
  */
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import {
   CdpSession,
@@ -70,6 +70,8 @@ type Args = {
   spawn?: string;
   record?: string;
   recordWidth: number;
+  recordFps: number;
+  recordRealtime: boolean;
 };
 
 /** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
@@ -93,15 +95,20 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       Compose an editor aerial in one call, e.g.
                       --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
                       region) or '{"method":"camera_goto","x":40,"z":-20,"distance":80,"pitch":55}'
-  --record <name>     record the whole drive (every rendered frame, CDP screencast)
-                      to shots/<game>-<name>.gif — an animated GIF that plays
-                      inline in PR bodies and chat, auto-thinned under ~4.5MB
-                      (GitHub camo's limit) — plus shots/<game>-<name>.mp4, the
-                      full-fidelity real video: every frame, true timing, no size
-                      cap (GitHub links it for download; it cannot play inline).
-                      Pair both with pr-shots like any other capture
-  --record-width <px> screencast max width (default 640; smaller = more frames
-                      fit in the size budget)
+  --record <name>     record the drive to shots/<game>-<name>.mp4. Records in
+                      LOCKSTEP: the page's rAF/clocks are taken over and game time
+                      advances one fixed tick per captured frame, so the clip plays
+                      smoothly at --record-fps no matter how slowly headless GL
+                      renders — but every output frame costs ~1s of real render, so
+                      choreograph drives short (8-15s of game time), not minutes.
+                      Share via pr-shots / the /pr-video comment
+  --record-fps <n>    lockstep output frame rate (default 24; lower it to fit a
+                      longer drive in the same wall-clock budget)
+  --record-realtime   old behavior: capture only the frames the page really renders
+                      (CDP screencast, wall-clock timing — expect ~1fps on software
+                      GL; useful for honest performance evidence)
+  --record-width <px> screencast max width in realtime mode (default 640); lockstep
+                      captures at the page viewport size — use --size half
   --probe [name]      print the game's live capture.probe metrics (e.g. player
                       position) as JSON — pair one before and one after a --key
                       hold to prove a non-zero movement delta via RPC, which is
@@ -148,6 +155,8 @@ function parseArgs(argv: string[]): Args {
     softlockMs: 2000,
     epsilon: 1e-3,
     recordWidth: 640,
+    recordFps: 24,
+    recordRealtime: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
@@ -190,6 +199,8 @@ function parseArgs(argv: string[]): Args {
       }
       args.record = name;
     } else if (value === "--record-width") args.recordWidth = Number(argv[++index] ?? args.recordWidth);
+    else if (value === "--record-fps") args.recordFps = Number(argv[++index] ?? args.recordFps);
+    else if (value === "--record-realtime") args.recordRealtime = true;
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
@@ -349,6 +360,78 @@ async function readProbe(session: CdpSession): Promise<Record<string, number> | 
   return value ?? null;
 }
 
+/**
+ * Lockstep recorder: takes over the page's `requestAnimationFrame` and clocks
+ * (the timeweb/timecut technique) so game time only advances when we say so —
+ * exactly ONE rendered frame per `1000/fps` ms tick, captured after it draws.
+ * The sim sees ordinary frame deltas, so the assembled clip plays smoothly at
+ * the target fps no matter how slowly software GL actually renders. (CDP
+ * virtual time is the wrong tool here: it fires rAF at 60 virtual fps, costing
+ * six SwiftShader renders per captured frame.) The honest cost is wall-clock —
+ * one real render per output frame — so choreograph recorded drives in seconds
+ * of game time, not minutes.
+ */
+class LockstepRecorder {
+  readonly frames: TimedPng[] = [];
+  readonly frameMs: number;
+  private virtualNow = 0;
+
+  constructor(
+    private readonly session: CdpSession,
+    fps: number,
+  ) {
+    this.frameMs = Math.max(20, Math.round(1000 / fps));
+  }
+
+  /** Install the clock takeover. Call only after `data-jg-capture=ready` — a
+   * page still booting under a frozen rAF would never reach ready. */
+  async start(): Promise<void> {
+    await this.session.evaluate(`(() => {
+      if (globalThis.__jgVtStep !== undefined) return;
+      const epoch = Date.now();
+      const baseVirtual = performance.now();
+      let virtual = baseVirtual;
+      let nextId = 1;
+      const queue = new Map();
+      window.requestAnimationFrame = (cb) => { const id = nextId++; queue.set(id, cb); return id; };
+      window.cancelAnimationFrame = (id) => { queue.delete(id); };
+      performance.now = () => virtual;
+      Date.now = () => epoch + (virtual - baseVirtual);
+      globalThis.__jgVtStep = (dt) => {
+        virtual += dt;
+        const cbs = [...queue.values()];
+        queue.clear();
+        for (const cb of cbs) { try { cb(virtual); } catch (err) { console.error(err); } }
+      };
+    })()`);
+    await this.captureFrame();
+  }
+
+  /** Advance game time by `ms`, rendering + capturing one frame per tick. */
+  async advance(ms: number): Promise<void> {
+    for (let done = 0; done < ms; done += this.frameMs) {
+      const budget = Math.min(this.frameMs, ms - done);
+      await this.session.evaluate(`globalThis.__jgVtStep(${budget})`);
+      this.virtualNow += budget;
+      await this.captureFrame();
+    }
+  }
+
+  private async captureFrame(): Promise<void> {
+    // JPEG: the composite dominates the cost either way (~1s on SwiftShader),
+    // but JPEG cuts the CDP transfer ~10x. Lockstep output is mp4-only, which
+    // takes JPEG frames directly.
+    const shot = await this.session.send("Page.captureScreenshot", {
+      format: "jpeg",
+      quality: 85,
+      fromSurface: true,
+    });
+    const data = shot.data;
+    if (typeof data !== "string" || data.length === 0) return;
+    this.frames.push({ png: Buffer.from(data, "base64"), tMs: this.virtualNow });
+  }
+}
+
 async function screenshot(session: CdpSession, outPath: string): Promise<void> {
   const shot = await session.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const data = shot.data;
@@ -368,6 +451,13 @@ if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
 const dev = await ensureDevServer();
 
+const lockstep = args.record !== undefined && !args.recordRealtime && !args.playtest;
+const lockstepVirtualMs = args.steps.reduce(
+  (sum, step) => sum + (step.kind === "key" ? step.holdMs : step.kind === "wait" ? step.ms : 0),
+  0,
+);
+const lockstepProjected = Math.ceil(lockstepVirtualMs / Math.max(20, Math.round(1000 / args.recordFps)));
+
 const exitCode = await withBrowserSession(
   {
     keep: args.keep,
@@ -375,6 +465,8 @@ const exitCode = await withBrowserSession(
     timeoutMs: args.timeoutMs,
     server: dev.child,
     chromePrefix: "jg-drive-",
+    // One real render + capture per output frame — give the watchdog room.
+    ...(lockstep ? { hardDeadlineMs: args.timeoutMs + 120_000 + lockstepProjected * 3_000 } : {}),
   },
   async ({ debugPort }) => {
     let code = 0;
@@ -394,8 +486,24 @@ const exitCode = await withBrowserSession(
       await new Promise((r) => setTimeout(r, 500));
       await installFrameCounter(session);
 
+      let recorder: LockstepRecorder | null = null;
+      if (lockstep) {
+        if (lockstepProjected > 900) {
+          throw new Error(
+            `drive: --record would capture ~${lockstepProjected} frames (${Math.round(lockstepVirtualMs / 1000)}s at ${args.recordFps}fps) — every frame costs a real render on software GL. Choreograph a shorter drive or lower --record-fps.`,
+          );
+        }
+        if (lockstepProjected > 450) {
+          console.error(
+            `drive: --record will capture ~${lockstepProjected} frames — expect several minutes of wall clock; consider a shorter drive or lower --record-fps`,
+          );
+        }
+        recorder = new LockstepRecorder(session, args.recordFps);
+        await recorder.start();
+      }
+
       const recorded: TimedPng[] = [];
-      if (args.record !== undefined) {
+      if (args.record !== undefined && !lockstep) {
         session.on("Page.screencastFrame", (params) => {
           const data = params.data;
           const sessionId = params.sessionId;
@@ -432,17 +540,47 @@ const exitCode = await withBrowserSession(
         : Promise.resolve();
 
       for (const step of args.steps) {
-        if (step.kind === "click") await click(session, step.text);
-        else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
-        else if (step.kind === "wait") await new Promise((r) => setTimeout(r, step.ms));
-        else if (step.kind === "rpc") await rpc(session, step.json);
+        if (step.kind === "click") {
+          await click(session, step.text);
+          // Let the UI react on the virtual clock so the click's effect is in frame.
+          if (recorder !== null) await recorder.advance(300);
+        } else if (step.kind === "key") {
+          if (recorder !== null) {
+            // Lockstep hold: the virtual clock guarantees the sim steps under the
+            // held key, so no frame-starvation grace dance is needed.
+            const key = step.code.startsWith("Key") ? step.code.slice(3).toLowerCase() : step.code;
+            await focusSurface(session);
+            await session.send("Input.dispatchKeyEvent", { type: "keyDown", code: step.code, key });
+            await recorder.advance(step.holdMs);
+            await session.send("Input.dispatchKeyEvent", { type: "keyUp", code: step.code, key });
+          } else {
+            await holdKey(session, step.code, step.holdMs);
+          }
+        } else if (step.kind === "wait") {
+          if (recorder !== null) await recorder.advance(step.ms);
+          else await new Promise((r) => setTimeout(r, step.ms));
+        } else if (step.kind === "rpc") await rpc(session, step.json);
         else if (step.kind === "probe") {
           const metrics = await readProbe(session);
           console.log(JSON.stringify({ probe: step.name, metrics }));
         } else await screenshot(session, join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
       }
 
-      if (args.record !== undefined) {
+      if (recorder !== null) {
+        const mp4Path = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.mp4`);
+        if (recorder.frames.length === 0) {
+          console.error(`drive: --record captured no frames`);
+          code = 1;
+        } else {
+          const frames = recorder.frames.map((frame) => ({ png: frame.png, delayMs: recorder.frameMs }));
+          assembleMp4(frames, mp4Path);
+          console.log(mp4Path);
+          const bytes = statSync(mp4Path).size;
+          console.error(
+            `drive: recorded ${frames.length} frame(s) at ${args.recordFps}fps, ${(bytes / 1_000_000).toFixed(2)}MB mp4 (${(frames.length / args.recordFps).toFixed(1)}s of game time)`,
+          );
+        }
+      } else if (args.record !== undefined) {
         await session.send("Page.stopScreencast");
         // Let an in-flight frame land before assembling.
         await new Promise((r) => setTimeout(r, 300));
@@ -451,10 +589,9 @@ const exitCode = await withBrowserSession(
           console.error(`drive: --record captured no frames — the page never repainted during the drive`);
           code = 1;
         } else {
-          const fullFrames = frames;
           const mp4Path = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.mp4`);
           try {
-            assembleMp4(fullFrames, mp4Path);
+            assembleMp4(frames, mp4Path);
             console.log(mp4Path);
           } catch (error) {
             console.error(
@@ -475,12 +612,6 @@ const exitCode = await withBrowserSession(
             `drive: recorded ${frames.length} frame(s), ${(gif.length / 1_000_000).toFixed(2)}MB animated GIF` +
               (thinned > 0 ? ` (thinned x${thinned} to fit the ~4.5MB GitHub camo budget)` : ""),
           );
-          if (gif.length > RECORD_BUDGET_BYTES) {
-            console.error(
-              `drive: clip is still over the ~4.5MB camo budget — rerun with a smaller --record-width (e.g. ${Math.round(args.recordWidth * 0.6)}) or a shorter drive`,
-            );
-            code = 1;
-          }
         }
       }
 

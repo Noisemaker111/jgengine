@@ -46,6 +46,42 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Floating combat text / damage numbers.** `@jgengine/core/ui/floatingText`' `createFloatingTextField` is a
+  genre-agnostic, deterministic, allocation-aware field of world-anchored text pops (damage, crits, heals, XP/gold,
+  status, barks): `emit({ position, text, kind?, color?, size?, rise?, drift?, lifetime? })`, `update(dt)` (rise +
+  seeded drift + fade + swap-remove reaping), `active()` views, a capped pool that recycles the oldest, `clear`,
+  `subscribe`, and serializable `snapshot`/`restore`. `kind` is a free string the presentation styles — no combat
+  coupling. New `@jgengine/react`: `layoutFloatingText` (pure project/cull/depth-sort over the `EntityFrames`
+  projector seam) and `FloatingText` (per-`kind` skinnable overlay). New `@jgengine/shell/vfx/WorldFloatingText`
+  binds the live R3F camera and advances the field. New `floating-text` demo.
+- **Codex / bestiary.** `@jgengine/core/game/codex`' `createCodex` tracks discovery over a fixed set of
+  defined entries — `discover`, `isDiscovered`, category-filtered `list`, `categories`, `discoveredCount`/
+  `total`/`completion`, an `onDiscover` seam, secret masking, and serializable `snapshot`/`restore`; the view
+  list keeps a stable identity for React. New `@jgengine/react` `Codex` gallery: category tabs, discovered vs.
+  locked cards (secret entries masked until found), and a completion header. First adopter: the apps/dev
+  `codex` demo.
+- **Generated street elevation** (`@jgengine/core/world/streetGenerator`) — new optional `elevation` (0..1 relief dial, default 0 = flat, byte-identical output) and `maxGrade` (default 0.07) rules: a seeded smooth field emits per-point `Street.heights` (grade-capped, loop-continuous across a circuit's start/finish) and a shared `StreetNetwork.elevationAt(x,z)` so renderers drape roads, junction welds, sidewalks, and building bases off one consistent surface. Distinct from `context.heightAt` terrain (bridges/tunnels unchanged).
+- **Per-corner radius classes on circuits** (`@jgengine/core/world/streetGenerator`) — circuit corners now fillet from a seeded radius mix (hairpins near `minCurveRadius`, standard corners at 2-4x, 1-3 sweepers per lap at 5-8x, inversely correlated with turn magnitude) so track layouts show genuinely different corner radii instead of one pinched minimum.
+- **`compactness` circuit dial — space-filling kart-style tracks** (`@jgengine/core/world/streetGenerator`) — 0..1 (default 0 = the open flowing hull loop, byte-identical): rising compactness lays the lap as the wall-follower cycle around a seeded direction-biased spanning tree on a corridor grid — provably one self-avoiding loop that folds back through its own footprint with parallel corridors at a clearance-safe pitch, switchback mazes, leaf hairpins, and a ≥3-pitch main straight — then runs the same spline/curvature-floor pipeline. At 1 a default-seed lap triples in length with 19-37 corners and ~61-77% footprint usage.
+- **`blockFill` density dial** (`@jgengine/core/world/cityGenerator` / `buildingLots`) — 0..1 (default 0.45 = today's look, byte-identical): rising fill collapses along-street spacing and widens lots to a touching streetwall, and the content pass packs block interiors with back-row lots including interior-only `garage`/`depot` filler classes while reserving a seeded fraction of blocks as parks — Manhattan-dense cities at 1 (~1.8x the buildings, frontage gaps <10%), sparse suburbs near 0. `ResolvedCityLot` gains `interior`/`park` flags.
+- **`trimBandAtJunctions`** (`@jgengine/core/world/roads`) — clip a sidewalk/parallel band polyline out of every junction apron (arm-derived radius widened by the band's half-width + clearance), returning the surviving sub-paths — so sidewalks end at crossings instead of sailing through them. The playground consumes it for `Street.sidewalks`.
+- **Shared map drawings (multiplayer).** `@jgengine/core/world/sharedAnnotations`' `createSharedAnnotations`
+  makes a map annotation layer collaborative: local `addStroke`/`addShape`/`addNote`/`remove`/`clear` apply
+  then broadcast a serializable edit over the party feed (the same seam `createPingSystem` pings ride), and
+  `apply` mirrors inbound edits from other players while dropping our own echoes. Ids are globally unique per
+  client (`owner:n`) so two players' strokes never collide; transport-agnostic (`ANNOTATION_FEED_ACTION` +
+  any replicated feed). Pings were already shared via `createPingSystem`; this completes the pair. Verified by
+  a two-client sync test.
+- **Terrain surface shading + layered grass wind** (`@jgengine/shell/terrain`, #1373) — plain (untextured) ground now reads as terrain instead of a two-tone gradient: `buildGroundGeometry`-based grounds (`ProceduralGround`, field ground) gain slope-aware darkening/desaturation and seeded, deterministic hash mottling, tunable via the new optional `TerrainSurfaceColorOptions` (`FieldGroundOptions.surface`; defaults in `DEFAULT_TERRAIN_SURFACE_COLOR`, strengths `0` restore the old flat lerp). Grass wind gains a layered rolling gust field (`GrassWindOptions.layered`, default on — three phase-offset directional waves so visible fronts sweep the meadow; `false` restores the single sine) plus a warm lit-tip sheen, and the default grass distance fade widens from 35–95 m to 55–150 m so meadows read expansive at no extra instance cost. `createProceduralGroundGeometry` now delegates to the shared ground builder (behavior-identical geometry, minus the duplication).
+- **Debounced control commits: `useDebouncedCommit`** (`@jgengine/react/useDebouncedCommit`, #1372) — a live-mirrored, trailing-debounced commit binding for slider/number/color/text controls whose commit path is expensive (scene-document patches that regenerate streets, scatter, or grass). The control renders from the local mirror for instant thumb/readout feedback; the real commit fires once per pause (default 180 ms) and flushes on release/blur/unmount; external changes (undo, RPC echo) resync the mirror unless a drag is in flight. The editor's inspector fields (`SchemaInspector`, `SliderRow`/`NumberField`, vegetation and scatter-coverage density) and the shell settings sliders now commit through it, so one drag lands one patch instead of ~50.
+- **Stage / objective banner.** `@jgengine/core/ui/objectiveBanner`' `createObjectiveBanner` is a genre-agnostic,
+  serializable announcement queue: a game calls `announce({ title, subtitle?, kind?, holdMs?, inMs?, outMs? })` and the
+  controller flies the classic transient centered title stamp ("WAVE 3", "VICTORY", "OBJECTIVE COMPLETE") in, holds it,
+  and fades it out — one banner at a time — on an injected clock (`advance()`), exposing the current banner plus its
+  phase (`in`/`hold`/`out`) and `progress` `0..1` for a renderer to animate. `kind` is a free label the game styles; the
+  model never interprets it. Allocation-aware (the `current()` view is pooled) with `subscribe` + `snapshot`/`restore`.
+  `@jgengine/react`' `ObjectiveBannerHost` subscribes, drives the clock per frame, and maps phase + progress to
+  opacity/scale/translate, HudTheme-skinnable and colorable per `kind` via `kindThemes`. Demo: `objective-banner`.
 - **Talent / skill-tree widget.** `@jgengine/react`'s `TalentTree` is a drop-in widget over the existing
   talent model (`@jgengine/core/game/talents`): pass the node definitions plus a live `createTalentTree`
   instance and it lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite
@@ -248,6 +284,11 @@ At publish, rename this heading to the new version and mirror the entries into
   like `set_path`, and a colliding `id` re-ids in the document-global namespace.
 
 ### Changed
+
+- **Road ribbons no longer self-intersect at bends** (`@jgengine/core/world/roads`) — `buildRoadRibbon` now miter-joins the inner edge of a bend and welds any residual fold when the local turn radius drops under the half-width, so dense arc-sampled corners render as one clean surface instead of a doubled bowtie. Straight ribbons and terminal cross-sections stay byte-identical (junction welds unaffected).
+- **Junction surfaces stopped emitting sliver triangles** (`@jgengine/core/world/roads`) — `buildJunctionSurface` grouped approach corners globally by angle, which interleaved unequal-width approaches and produced shard/sliver fans; corners now stay grouped per approach with wrap-safe ordering and outward curb-return arcs, and the fan runs over an angle-monotonic simple boundary.
+- **Street corner arcs sample at ≤~9° per vertex** (`@jgengine/core/world/streetGenerator`) — corner fillets previously stepped up to `maxTurnAngle` (~28°) per vertex and read as hard polygons at road width; both net and circuit corners now sample finely, and sidewalk offsets became true parallel offsets (outside arcs, inside miter-clamp + weld) that never pinch into the road surface.
+- **Circuit centerlines are curve-first splines** (`@jgengine/core/world/streetGenerator`) — the folded layout polygon (hull + deep inward displacement, guaranteed hairpin/ess) now serves as control points for a periodic centripetal Catmull-Rom spline with a curvature floor at `minCurveRadius` (weighted Laplacian relaxation), so a lap is mostly flowing sweepers and continuous esses with 1-3 deliberate straights — not straight segments with corner caps. Fitted radii form a smooth continuum (~1.1-11x the floor); property tests pin curvature continuity, curved-share, and hairpin+sweeper coexistence.
 
 - **Chase camera yaw is smoothed by default** (`camera.chase.yawResponse`, `@jgengine/shell` chase rig, #1370) — the boom now eases toward the followed body's facing with `1-exp(-response*dt)` smoothing (default response 5) instead of rigidly equaling it every frame, so a strafe-flipped facing arcs the camera around the character rather than teleporting it to the far side. Set `yawResponse: Infinity` to restore the legacy rigid follow; drift-lag (`velocityYaw`) keeps its own response as before.
 - **Editor content-browser thumbnails no longer crash the editor when a GLB's textures fail** (`@jgengine/editor`, #1270) — `getGlbThumbnailState` (the `getSnapshot` behind `useGlbThumbnail`/`AssetThumbnail`) returned a fresh object literal on every call, violating the `useSyncExternalStore` stable-snapshot contract; React's post-commit consistency check then forced a re-render every commit ("Maximum update depth exceeded"), and the `GameUiErrorBoundary` blanked the whole editor chrome. It now reuses the prior snapshot object while a URL's observable state (idle/loading/ready/error) is unchanged, so a permanently-failing asset settles to a stable error/glyph fallback instead of looping. No API change; behavior only.

@@ -153,6 +153,9 @@ bun run gate → packages/assets src/cli/pull.test.ts failed once in the full te
 
 bun run gate fails on clean origin/main: scripts/exportManifest.test.ts — computed manifest has ./previewFixtures and ./harness subpaths missing from the committed manifest (likely #1336 landed without regenerating it); gate is red for every branch until regenerated
 
+2026-07-19T18:22:26.329Z — claude-opus — Claude
+
+capturing before/after terrain shots → 'bun run drive --shot' rejects an absolute path with a hard error (takes a bare name, output forced to shots/<game>-<name>.png), while 'bun run shoot --out' accepts a full path — the two capture entrypoints disagree on how you name the output file
 2026-07-19T18:26:23.894Z — claude-fable-5 — Claude
 
 running bun run gate for a touch-controls PR → gate is red on main itself: check-game-shape flags Games/vice-isle/src/editorKinds.ts(+test) from merged #1369 as off-shape, masking my own results; the offending PR landed without gate catching it
@@ -192,3 +195,10 @@ running bun run gate on a clean city-generation branch → check-game-shape fail
 2026-07-19T23:44:43.990Z — claude-fable-5 — Claude
 
 proving city-placement fixes → bun run shoot of the playground page yields a full-page hero shot where the city viewport is a tiny corner; had to hand-roll a canvas plan renderer (streets + plot/massing rects + violation highlighting) to get legible before/after evidence — a first-class plan/diagnostic view (or shoot target) for generateCity output would make this one command
+2026-07-19T22:40:53.030Z — claude-opus-4-8 — Claude
+
+bun run agent:bootstrap on a fresh worktree failed: shell build could not find @jgengine/core/vfx/screenEffects because core dist was stale/incomplete from a prior partial build; a plain rebuild of core then full build succeeded
+
+2026-07-19T22:40:53.111Z — claude-opus-4-8 — Claude
+
+bun run gate is red on origin/main (check-game-shape flags Games/vice-isle/src/editorKinds.ts + .test.ts as game-specific files that must live under src/game/) — unrelated to my change but the && chain short-circuits before check-types-all runs, masking the real verdict

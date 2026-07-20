@@ -20,19 +20,26 @@ import type { ApngFrame } from "./apng";
  * the honest capture timing survives; dimensions are snapped to even values as
  * yuv420p requires.
  */
+/** PNG or JPEG, by magic bytes — lockstep recording captures JPEG frames. */
+export function sniffImageExt(bytes: Buffer | Uint8Array): "png" | "jpg" {
+  return bytes[0] === 0xff && bytes[1] === 0xd8 ? "jpg" : "png";
+}
+
 export function assembleMp4(frames: ApngFrame[], outPath: string): void {
   if (frames.length === 0) throw new Error("mp4: no frames");
   const workDir = mkdtempSync(join(tmpdir(), "jg-record-mp4-"));
   try {
     const lines: string[] = [];
+    const nameOf = (index: number, bytes: Buffer | Uint8Array): string =>
+      `f${String(index).padStart(5, "0")}.${sniffImageExt(bytes)}`;
     frames.forEach((frame, index) => {
-      const name = `f${String(index).padStart(5, "0")}.png`;
+      const name = nameOf(index, frame.png);
       writeFileSync(join(workDir, name), frame.png);
       lines.push(`file '${name}'`, `duration ${(frame.delayMs / 1000).toFixed(3)}`);
     });
     // concat-demuxer quirk: the last duration is honored only when the final
     // file is listed once more.
-    lines.push(`file 'f${String(frames.length - 1).padStart(5, "0")}.png'`);
+    lines.push(`file '${nameOf(frames.length - 1, frames[frames.length - 1]!.png)}'`);
     writeFileSync(join(workDir, "list.txt"), `${lines.join("\n")}\n`);
     execFileSync(
       ffmpeg.path,

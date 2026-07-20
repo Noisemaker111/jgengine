@@ -1,3 +1,5 @@
+import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
+
 import { INPUT } from "./chromeStyles";
 
 export function NumberField({
@@ -11,6 +13,8 @@ export function NumberField({
   onCommit: (value: number) => void;
   step?: number;
 }) {
+  // Mirror locally + debounce the commit so a held spinner / paste doesn't storm scene regen (#1372).
+  const { value: local, onInput, flush } = useDebouncedCommit(value, onCommit);
   return (
     <label className="flex items-center justify-between gap-2">
       <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">{label}</span>
@@ -18,12 +22,13 @@ export function NumberField({
         type="number"
         step={step}
         className={`w-32 ${INPUT}`}
-        value={value}
+        value={local}
         onChange={(event) => {
           const next = Number(event.target.value);
           if (!Number.isFinite(next)) return;
-          onCommit(next);
+          onInput(next);
         }}
+        onBlur={flush}
       />
     </label>
   );
@@ -46,19 +51,24 @@ export function SliderRow({
   onChange: (value: number) => void;
   format?: (value: number) => string;
 }) {
+  // The readout + thumb track the live local value; onChange is debounced and flushed on release (#1372).
+  const { value: local, onInput, flush } = useDebouncedCommit(value, onChange);
   return (
     <label className="block space-y-1">
       <span className="flex items-center justify-between">
         <span className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">{label}</span>
-        <span className="text-cyan-200">{format ? format(value) : value.toFixed(2)}</span>
+        <span className="text-cyan-200">{format ? format(local) : local.toFixed(2)}</span>
       </span>
       <input
         type="range"
         min={min}
         max={max}
         step={step}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
+        value={local}
+        onChange={(event) => onInput(Number(event.target.value))}
+        onPointerUp={flush}
+        onKeyUp={flush}
+        onBlur={flush}
         className="w-full accent-amber-400"
       />
     </label>

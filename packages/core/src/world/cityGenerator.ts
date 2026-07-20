@@ -25,6 +25,7 @@ import {
   zoneBand,
   zoneMetric,
   CITY_LANDMARK_CLASSES,
+  type CityFillerClass,
   type CityLandmarkClass,
   type CityLotClass,
   type CityLotPiece,
@@ -32,6 +33,7 @@ import {
   type CityZoneProfile,
 } from "./cityContent";
 import { rectClearsPolyline, rectsSeparated, type OrientedRect, type Vec2 } from "./cityGeometry";
+import { isOnRoad } from "./roads";
 import { seededStreams } from "../random/rng";
 import type { WeightedParamEntry } from "../scene/sceneKinds";
 import {
@@ -102,6 +104,12 @@ export function generateCity(options: CityGeneratorOptions, hx: number, hz: numb
   const rules: StreetNetworkRules = { seed, ...CITY_STREET_DEFAULTS, ...streetOverrides };
   const network = generateStreets(rules, hx, hz, context ?? {});
   const { laneFrontage = false, ...lotRest } = lotOptions ?? {};
+  const contentEnabled = options.content !== undefined && options.content !== false;
+  const overrides = options.content === true || options.content === undefined || options.content === false ? {} : options.content;
+  // Frontage compaction dial: when the content pass is on its `blockFill` wins (it owns the full
+  // Manhattan look — compact frontage AND interior fill), else the bare-lot `lots.blockFill` applies.
+  // Left `undefined` (no dial anywhere) the frontage engine stays byte-identical to the classic path.
+  const blockFill = contentEnabled ? overrides.blockFill ?? lotRest.blockFill : lotRest.blockFill;
   const frontage = network.streets
     .filter((street) => laneFrontage || street.level !== "lane")
     .map((street) => ({ path: street.points, width: street.width }));
@@ -112,13 +120,13 @@ export function generateCity(options: CityGeneratorOptions, hx: number, hz: numb
     .map((street) => ({ path: street.points, width: street.width }));
   const lots = deriveBuildingLots({
     ...lotRest,
+    blockFill,
     roads: frontage,
     avoid,
     seed,
     area: lotRest.area ?? { center: [0, 0], halfExtents: [hx, hz] },
   });
-  if (options.content === undefined || options.content === false) return { network, lots };
-  const overrides = options.content === true ? {} : options.content;
+  if (!contentEnabled) return { network, lots };
   const lotContent = resolveCityLotContent(
     { network, lots },
     { seed, halfExtents: [hx, hz], laneFrontage, ...overrides },
@@ -211,6 +219,18 @@ export interface CityContentOverrides {
    * allow every class the zone table would pick.
    */
   landmarkClasses?: readonly CityLandmarkClass[];
+  /**
+   * Manhattan block-fill dial (0..1). Default {@link DEFAULT_BLOCK_FILL} (~0.45), which is a no-op:
+   * frontage stays as-authored and no interiors/parks are added (byte-identical to the classic
+   * content path). As it rises the pass fills the empty block interiors behind the frontage rows with
+   * back-row and interior lots — ordinary zone classes mixed with parking-garage and depot fillers
+   * ({@link CITY_FILLER_CLASSES}) — never overlapping roads, frontage, or each other, and reserves a
+   * small seeded fraction of blocks as breathing-room parks (empty interiors + thinned frontage).
+   * Interior lots per block are capped at {@link INTERIOR_LOTS_PER_BLOCK_CAP}. Frontage COMPACTION
+   * (spacing→0, lots widen to touch) is a sibling lever applied by {@link generateCity} when this dial
+   * is set — see {@link CityGeneratorOptions.lots.blockFill}. Determinism preserved via seeded streams.
+   */
+  blockFill?: number;
 }
 
 /** Full options for {@link resolveCityLotContent}: the city geometry frame plus content overrides. */
@@ -241,15 +261,28 @@ export interface ResolvedCityLot {
   zone: CityZoneBand;
   /**
    * Building class. For ordinary lots this is the {@link CityLotClass} the band mix rolled. For a
-   * landmark it is the {@link CityLandmarkClass} (the union is widened only to carry that value;
-   * ordinary lots never take a landmark class). Read {@link ResolvedCityLot.landmark} to discriminate.
+   * landmark it is the {@link CityLandmarkClass}. Interior-fill lots may additionally carry a
+   * {@link CityFillerClass} (garage/depot). Read {@link ResolvedCityLot.landmark} /
+   * {@link ResolvedCityLot.interior} to discriminate.
    */
-  class: CityLotClass | CityLandmarkClass;
+  class: CityLotClass | CityLandmarkClass | CityFillerClass;
   /**
    * Set only on landmark entries (block-scale cluster merges); equals {@link ResolvedCityLot.class}
    * there and is `undefined` for every ordinary per-lot building. Renderers branch on this.
    */
   landmark?: CityLandmarkClass;
+  /**
+   * Set only on lots synthesized by the block-interior fill pass (behind the street frontage at a
+   * high `blockFill`). `undefined` for street-frontage lots and landmarks. Filler classes
+   * ({@link CITY_FILLER_CLASSES}) only ever appear on entries where this is `true`.
+   */
+  interior?: boolean;
+  /**
+   * Set on the surviving street-frontage lots of a block reserved as a park at a high `blockFill`.
+   * Park blocks are thinned (most frontage dropped) and never interior-filled, so a full-fill city
+   * still breathes. `undefined` on ordinary and interior lots.
+   */
+  park?: boolean;
   /** Hierarchy level of the frontage road the lot faces (`street` when it can't be recovered). */
   streetLevel: StreetLevel;
   /** Building floor count after the district clamp. */
@@ -322,6 +355,28 @@ function massingFootprint(pieces: readonly CityLotPiece[]): MassingFootprint {
 
 /** Default landmark share dial — a couple of block-scale landmarks per default city. */
 export const DEFAULT_LANDMARK_SHARE = 0.04;
+/**
+ * Default `blockFill` — a deliberate no-op point. At this value frontage is untouched and the
+ * interior-fill/park passes are gated off, so the content path stays byte-identical to the classic
+ * one; callers opt into the Manhattan look by raising the dial toward 1.
+ */
+export const DEFAULT_BLOCK_FILL = 0.45;
+/** Interior fill and parks engage only above this dial value (keeps the default a strict no-op). */
+const BLOCK_FILL_GATE = 0.5;
+/** Max back-row/interior ranks placed behind a frontage lot at full fill. */
+const INTERIOR_MAX_ROWS = 7;
+/** Hard cap on interior lots synthesized per frontage block (road+side group). Bounds the pass. */
+export const INTERIOR_LOTS_PER_BLOCK_CAP = 24;
+/** Extra massing-width growth (per class) applied to frontage at full fill, for a tighter streetwall. */
+const FRONTAGE_MASSING_STRETCH = 0.25;
+/** Fraction of a park block's frontage kept (the rest is dropped so the block reads as open space). */
+const PARK_FRONTAGE_KEEP = 0.25;
+/** Floor on the park-block fraction at full fill, so even a wall-to-wall city keeps some green. */
+const PARK_MIN_FRACTION = 0.06;
+/** Share of the compaction gap converted to park reservation as fill drops from 1 toward the gate. */
+const PARK_FRACTION_SLOPE = 0.4;
+/** Probability an interior lot is a filler (garage/depot) rather than an ordinary zone class. */
+const INTERIOR_FILLER_PROB = 0.45;
 /** Hard cap on landmarks emitted regardless of dial/city size. */
 export const LANDMARK_HARD_CAP = 12;
 /** Divisor turning the share dial into a cluster budget (≈ lots × dial ÷ this). */
@@ -420,9 +475,16 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
 
   const streams = seededStreams(options.seed);
 
+  // Block-fill dial. At/below the reference (default) it's a strict no-op: no width stretch, no
+  // interior fill, no parks — so the classic content path stays byte-identical. Above the gate the
+  // pass packs block interiors and reserves parks.
+  const fill = options.blockFill ?? DEFAULT_BLOCK_FILL;
+  const fillActive = fill > BLOCK_FILL_GATE;
+  const widthStretch = 1 + (Math.max(0, fill - DEFAULT_BLOCK_FILL) / (1 - DEFAULT_BLOCK_FILL)) * FRONTAGE_MASSING_STRETCH;
+
   // Ordinary per-lot resolution — the 9-class massing system. Kept byte-identical to the
-  // pre-landmark path (same `lot:${i}` stream, same field shape) so the landmarks-off case is a
-  // strict backward-compat guard.
+  // pre-landmark path (same `lot:${i}` stream, same field shape) at the default dial, so the
+  // landmarks-off + default-fill case is a strict backward-compat guard.
   const resolveNormal = (lot: PlacedBuildingLot, i: number): ResolvedCityLot => {
     const streetLevel = frontage[lot.road]?.level ?? "street";
     const rng = streams(`lot:${i}`);
@@ -437,10 +499,11 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
       weight: entry.weight * classPlotFit(entry.item as CityLotClass, lot.footprint.w),
     }));
     const cls = pickClass(mix, classRoll);
-    const placement = rollClassPlacement(cls, rng, lotScale, floorsMin, floorsMax, setback, spacing);
+    const placement = rollClassPlacement(cls, rng, lotScale, floorsMin, floorsMax, setback, spacing, widthStretch);
     // The plot is the contract: the frontage engine spaced plots of exactly `lot.footprint`, so a
-    // class roll may come in SMALLER than the plot but never larger — a 20 m tower profile on a
-    // 12 m plot previously overlapped both neighbours and spilled onto the road.
+    // class roll (even stretched by the block-fill dial) may come in SMALLER than the plot but
+    // never larger — a 20 m tower profile on a 12 m plot previously overlapped both neighbours
+    // and spilled onto the road.
     const fitW = Math.min(placement.width, lot.footprint.w);
     const fitD = Math.min(placement.depth, lot.footprint.d);
     const pieces = fitPiecesToPlot(
@@ -461,30 +524,324 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
     };
   };
 
+  // Landmark pass (may be a no-op at dial 0).
   const dial = options.landmarks ?? DEFAULT_LANDMARK_SHARE;
-  if (dial <= 0) return city.lots.map(resolveNormal);
+  let landmarks: ResolvedCityLot[] = [];
+  let consumed = new Set<number>();
+  if (dial > 0) {
+    const allowed = new Set<CityLandmarkClass>(options.landmarkClasses ?? CITY_LANDMARK_CLASSES);
+    const pass = placeLandmarks(city, {
+      dial,
+      allowed,
+      frontage,
+      streams,
+      profile,
+      coreExtent,
+      midExtent,
+      hx,
+      hz,
+      floorHeight,
+    });
+    landmarks = pass.landmarks;
+    consumed = pass.consumed;
+  }
 
-  const allowed = new Set<CityLandmarkClass>(options.landmarkClasses ?? CITY_LANDMARK_CLASSES);
-  const { landmarks, consumed } = placeLandmarks(city, {
-    dial,
-    allowed,
-    frontage,
-    streams,
-    profile,
-    coreExtent,
-    midExtent,
-    hx,
-    hz,
-    floorHeight,
-  });
-  if (landmarks.length === 0) return city.lots.map(resolveNormal);
+  // Fast path: default fill and no landmarks ⇒ classic 1:1 resolution in lot order.
+  if (!fillActive && landmarks.length === 0) return city.lots.map(resolveNormal);
 
+  // Park blocks (only when fill is active): reserve a seeded fraction of frontage blocks as open
+  // space — thinned frontage, never interior-filled — so a full-fill city still breathes.
+  const parkPlan = fillActive ? planParkBlocks(city.lots, consumed, streams, fill) : null;
+
+  // Resolve surviving frontage lots in lot order; drop most of a park block's frontage.
   const result: ResolvedCityLot[] = [];
+  const fillFrontage: { key: string; index: number; entry: ResolvedCityLot }[] = [];
   city.lots.forEach((lot, i) => {
-    if (!consumed.has(i)) result.push(resolveNormal(lot, i));
+    if (consumed.has(i)) return;
+    const key = `${lot.road}:${lot.side}`;
+    if (parkPlan?.parkKeep.has(key)) {
+      if (!parkPlan.parkKeep.get(key)!.has(i)) return; // thinned-out park frontage
+      const entry = resolveNormal(lot, i);
+      entry.park = true;
+      result.push(entry);
+      return;
+    }
+    const entry = resolveNormal(lot, i);
+    result.push(entry);
+    if (fillActive) fillFrontage.push({ key, index: i, entry });
   });
   result.push(...landmarks);
+
+  // Interior fill: pack the empty block interiors behind the (non-park) frontage rows.
+  if (fillActive && fillFrontage.length > 0) {
+    const interior = fillBlockInteriors({
+      city,
+      fillFrontage,
+      existing: result,
+      streams,
+      fill,
+      widthStretch,
+      hx,
+      hz,
+      profile,
+      coreExtent,
+      midExtent,
+      mixes,
+      lotScale,
+      floorsMin,
+      floorsMax,
+      floorHeight,
+      setback,
+      spacing,
+    });
+    result.push(...interior);
+  }
   return result;
+}
+
+/** Outward frontage normal (points away from the road, into the block) from a lot's facing yaw. */
+function outwardNormalOf(rotationY: number): Vec2 {
+  return [-Math.sin(rotationY), -Math.cos(rotationY)];
+}
+
+/** Interior back-row ranks placed behind a frontage lot at a given fill (0 at/below the gate). */
+function interiorRows(fill: number): number {
+  return Math.max(0, Math.round(((fill - BLOCK_FILL_GATE) / (1 - BLOCK_FILL_GATE)) * INTERIOR_MAX_ROWS));
+}
+
+/**
+ * Seeded park-block reservation. Groups non-consumed lots by frontage (road+side), reserves a
+ * fraction of those blocks (~`(1-fill)` scaled, floored at {@link PARK_MIN_FRACTION} so full fill
+ * still keeps some, and forced to ≥1 at very high fill), and within each keeps only a small seeded
+ * subset of frontage lots. Deterministic; bounded (one pass + one sort over the block keys).
+ */
+function planParkBlocks(
+  lots: readonly PlacedBuildingLot[],
+  consumed: ReadonlySet<number>,
+  streams: (key: string) => () => number,
+  fill: number,
+): { parkKeep: Map<string, Set<number>> } {
+  const groups = new Map<string, number[]>();
+  lots.forEach((lot, i) => {
+    if (consumed.has(i)) return;
+    const key = `${lot.road}:${lot.side}`;
+    const arr = groups.get(key);
+    if (arr) arr.push(i);
+    else groups.set(key, [i]);
+  });
+  const keys = [...groups.keys()];
+  const fraction = Math.max(PARK_MIN_FRACTION, (1 - fill) * PARK_FRACTION_SLOPE);
+  const minParks = fill >= 0.9 && keys.length > 0 ? 1 : 0;
+  const count = Math.min(keys.length, Math.max(minParks, Math.round(keys.length * fraction)));
+  const scored = keys
+    .map((k) => ({ k, s: streams(`park:${k}`)() }))
+    .sort((a, b) => b.s - a.s || (a.k < b.k ? -1 : 1));
+  const parkKeep = new Map<string, Set<number>>();
+  for (const { k } of scored.slice(0, count)) {
+    const idxs = groups.get(k)!;
+    const keepCount = Math.max(1, Math.ceil(idxs.length * PARK_FRONTAGE_KEEP));
+    const keep = new Set<number>(
+      idxs
+        .map((i) => ({ i, s: streams(`park-keep:${k}:${i}`)() }))
+        .sort((a, b) => b.s - a.s || a.i - b.i)
+        .slice(0, keepCount)
+        .map((x) => x.i),
+    );
+    parkKeep.set(k, keep);
+  }
+  return { parkKeep };
+}
+
+/** Inputs for the interior-fill pass. */
+interface InteriorFillContext {
+  city: GeneratedCity;
+  fillFrontage: { key: string; index: number; entry: ResolvedCityLot }[];
+  existing: readonly ResolvedCityLot[];
+  streams: (key: string) => () => number;
+  fill: number;
+  widthStretch: number;
+  hx: number;
+  hz: number;
+  profile: CityZoneProfile;
+  coreExtent: number;
+  midExtent: number;
+  mixes: CityZoneMixes;
+  lotScale: number;
+  floorsMin: number;
+  floorsMax: number;
+  floorHeight: number;
+  setback: number;
+  spacing: number;
+}
+
+/** A placed footprint tracked for overlap rejection (center, orientation, half-extents, radius). */
+interface Occupant {
+  center: Vec2;
+  yaw: number;
+  hw: number;
+  hd: number;
+  radius: number;
+}
+
+/** Safety separation (world units) added to the near-parallel AABB test so yaw error never slivers. */
+const OVERLAP_MARGIN = 0.9;
+
+/** Bounded uniform spatial hash for overlap queries during interior fill. */
+class OccupancyGrid {
+  private readonly cells = new Map<string, Occupant[]>();
+  constructor(private readonly cell: number) {}
+  private key(x: number, z: number): string {
+    return `${Math.floor(x / this.cell)}:${Math.floor(z / this.cell)}`;
+  }
+  insert(occ: Occupant): void {
+    const k = this.key(occ.center[0], occ.center[1]);
+    const arr = this.cells.get(k);
+    if (arr) arr.push(occ);
+    else this.cells.set(k, [occ]);
+  }
+  /** True if `cand` overlaps any occupant: exact AABB when near-parallel, else conservative circle. */
+  overlaps(cand: Occupant): boolean {
+    const cx = Math.floor(cand.center[0] / this.cell);
+    const cz = Math.floor(cand.center[1] / this.cell);
+    for (let gx = cx - 1; gx <= cx + 1; gx += 1) {
+      for (let gz = cz - 1; gz <= cz + 1; gz += 1) {
+        const arr = this.cells.get(`${gx}:${gz}`);
+        if (!arr) continue;
+        for (const occ of arr) {
+          const dx = cand.center[0] - occ.center[0];
+          const dz = cand.center[1] - occ.center[1];
+          const dyaw = Math.abs(((cand.yaw - occ.yaw + Math.PI) % (2 * Math.PI)) - Math.PI);
+          if (dyaw < 0.05 || Math.abs(dyaw - Math.PI) < 0.05) {
+            // Near-parallel: AABB in the shared (block-local) frame, inflated by OVERLAP_MARGIN so a
+            // couple of degrees of yaw error (gently curved frontage) never leaves a sliver overlap.
+            const c = Math.cos(cand.yaw);
+            const s = Math.sin(cand.yaw);
+            const lx = Math.abs(dx * c - dz * s);
+            const lz = Math.abs(dx * s + dz * c);
+            if (lx < cand.hw + occ.hw + OVERLAP_MARGIN && lz < cand.hd + occ.hd + OVERLAP_MARGIN) return true;
+          } else if (dx * dx + dz * dz < (cand.radius + occ.radius) * (cand.radius + occ.radius) - 1e-6) {
+            // Cross-yaw: circumscribed-circle separation guarantees the rectangles cannot overlap.
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+}
+
+/**
+ * Pack the empty interiors of dense blocks with back-row and interior lots. For each non-park
+ * frontage block (road+side group) it lays a grid of lots behind the frontage wall, oriented to the
+ * block's frontage yaw, mixing ordinary zone classes with parking-garage/depot fillers. Every
+ * candidate is rejected if it sits on a road, leaves the district, or overlaps an existing lot
+ * (frontage, landmark, or another interior lot). Deterministic per seed; bounded — rows are capped
+ * and each block yields at most {@link INTERIOR_LOTS_PER_BLOCK_CAP} interior lots.
+ */
+function fillBlockInteriors(ctx: InteriorFillContext): ResolvedCityLot[] {
+  const {
+    city, fillFrontage, existing, streams, fill, widthStretch, hx, hz,
+    profile, coreExtent, midExtent, mixes, lotScale, floorsMin, floorsMax, floorHeight, setback, spacing,
+  } = ctx;
+  const rows = interiorRows(fill);
+  if (rows <= 0) return [];
+
+  // Interior packing cell — sized so any clamped interior footprint fits, keeping same-block cells
+  // non-overlapping by construction.
+  const CELL_W = 16;
+  const CELL_D = 15;
+  const ROW_GAP = 1.5;
+  const grid = new OccupancyGrid(64);
+
+  const radiusOf = (w: number, d: number): number => 0.5 * Math.hypot(w, d);
+  // Seed the grid with every already-placed lot so interiors never collide with frontage/landmarks.
+  for (const r of existing) {
+    const w = r.landmark ? r.footprint.w : r.lot.footprint.w;
+    const d = r.landmark ? r.footprint.d : r.lot.footprint.d;
+    grid.insert({ center: r.center, yaw: r.rotationY, hw: w / 2, hd: d / 2, radius: radiusOf(w, d) });
+  }
+
+  // Group the fill-eligible frontage lots by block.
+  const blocks = new Map<string, { index: number; entry: ResolvedCityLot }[]>();
+  for (const f of fillFrontage) {
+    const arr = blocks.get(f.key);
+    if (arr) arr.push({ index: f.index, entry: f.entry });
+    else blocks.set(f.key, [{ index: f.index, entry: f.entry }]);
+  }
+
+  const clearance = Math.min(CELL_W, CELL_D);
+  const interior: ResolvedCityLot[] = [];
+
+  for (const [key, members] of blocks) {
+    if (members.length < 2) continue; // need a real frontage run to define a block interior
+    // Anchor on the middle frontage lot; build the block-local frame from its yaw.
+    const anchorMember = members[Math.floor(members.length / 2)]!;
+    const anchor = anchorMember.entry.lot;
+    const anchorLevel = anchorMember.entry.streetLevel;
+    const yaw = anchor.rotationY;
+    const n = outwardNormalOf(yaw); // into the block
+    const t: Vec2 = [-n[1], n[0]]; // along the street
+
+    // Along-street span from the block's frontage centers (relative to the anchor).
+    let tMin = Infinity;
+    let tMax = -Infinity;
+    for (const m of members) {
+      const rel: Vec2 = [m.entry.lot.center[0] - anchor.center[0], m.entry.lot.center[1] - anchor.center[1]];
+      const along = rel[0] * t[0] + rel[1] * t[1];
+      tMin = Math.min(tMin, along);
+      tMax = Math.max(tMax, along);
+    }
+    const depthStart = anchor.footprint.d / 2 + ROW_GAP;
+    let placed = 0;
+    for (let row = 1; row <= rows && placed < INTERIOR_LOTS_PER_BLOCK_CAP; row += 1) {
+      const depth = depthStart + (row - 0.5) * (CELL_D + ROW_GAP);
+      let col = 0;
+      for (let along = tMin; along <= tMax + 1e-6 && placed < INTERIOR_LOTS_PER_BLOCK_CAP; along += CELL_W) {
+        col += 1;
+        const cx = anchor.center[0] + n[0] * depth + t[0] * along;
+        const cz = anchor.center[1] + n[1] * depth + t[1] * along;
+        if (Math.abs(cx) > hx || Math.abs(cz) > hz) continue;
+        if (city.network.streets.some((street) => isOnRoad(street.points, street.width + clearance, cx, cz))) continue;
+
+        const rng = streams(`interior:${key}:${row}:${col}`);
+        const zone = zoneBand(zoneMetric(cx, cz, hx, hz), profile, coreExtent, midExtent, rng());
+        let cls: CityLotClass | CityFillerClass;
+        if (rng() < INTERIOR_FILLER_PROB) cls = rng() < 0.6 ? "garage" : "depot";
+        else cls = pickClass(mixes[zone], rng());
+        const placement = rollClassPlacement(cls, rng, lotScale, floorsMin, floorsMax, setback, spacing, widthStretch);
+        // Clamp to the packing cell so same-block cells never overlap.
+        const w = Math.min(placement.width, CELL_W * 0.94);
+        const d = Math.min(placement.depth, CELL_D * 0.94);
+        const cand: Occupant = { center: [cx, cz], yaw, hw: w / 2, hd: d / 2, radius: radiusOf(w, d) };
+        if (grid.overlaps(cand)) continue;
+
+        const pieces = buildLotPieces(cls, w, d, placement.floors, floorHeight, rng);
+        const lot: PlacedBuildingLot = {
+          center: [cx, cz],
+          rotationY: yaw,
+          footprint: { w, d },
+          road: anchor.road,
+          side: anchor.side,
+          frontDistance: anchor.frontDistance,
+        };
+        interior.push({
+          lot,
+          zone,
+          class: cls,
+          interior: true,
+          streetLevel: anchorLevel,
+          floors: placement.floors,
+          pieces,
+          center: [cx, cz],
+          rotationY: yaw,
+          footprint: massingFootprint(pieces),
+        });
+        grid.insert(cand);
+        placed += 1;
+      }
+    }
+  }
+  return interior;
 }
 
 /** Internal inputs for the landmark pass (already-resolved dials from {@link resolveCityLotContent}). */

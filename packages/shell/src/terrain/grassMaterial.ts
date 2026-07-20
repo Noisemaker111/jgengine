@@ -6,6 +6,12 @@ export interface GrassWindOptions {
   speed?: number;
   gustScale?: number;
   flutter?: number;
+  /**
+   * Layered rolling gust field: three phase-offset directional waves (one carrying a cross-wind
+   * component) instead of a single sine, so visible wave fronts sweep the meadow. Default true.
+   * `false` restores the single-sine gust. Compile-time variation — folded into the program cache key.
+   */
+  layered?: boolean;
 }
 
 /** Camera-distance fade band: tufts thin out between `start` and `end` meters, so the instance budget spends where the camera lives. */
@@ -21,7 +27,7 @@ export interface GrassMaterialOptions {
   colorGround?: THREE.ColorRepresentation;
   colorVariation?: number;
   wind?: GrassWindOptions | false;
-  /** Distance thinning; `false` disables. Default fades between 35 m and 95 m. */
+  /** Distance thinning; `false` disables. Default fades between 55 m and 150 m so meadows read expansive. */
   distanceFade?: GrassDistanceFadeOptions | false;
   /** 0..1 blend of blade normals toward straight-up — lit like a soft carpet instead of dark individual planes. Default 0.6. */
   normalLift?: number;
@@ -54,12 +60,13 @@ export const DEFAULT_GRASS_WIND: Required<GrassWindOptions> = {
   speed: 1.6,
   gustScale: 0.16,
   flutter: 0.08,
+  layered: true,
 };
 
-/** Default camera-distance fade band: tufts start thinning at 35 m and are gone by 95 m. */
+/** Default camera-distance fade band: tufts start thinning at 55 m and are gone by 150 m so the meadow reads deep. */
 export const DEFAULT_GRASS_DISTANCE_FADE: Required<GrassDistanceFadeOptions> = {
-  start: 35,
-  end: 95,
+  start: 55,
+  end: 150,
 };
 
 function normalizeWindDirection(direction: readonly [number, number]): THREE.Vector2 {
@@ -76,6 +83,7 @@ export function resolveGrassWind(wind: GrassWindOptions | false | undefined): Re
     speed: wind?.speed ?? DEFAULT_GRASS_WIND.speed,
     gustScale: wind?.gustScale ?? DEFAULT_GRASS_WIND.gustScale,
     flutter: wind?.flutter ?? DEFAULT_GRASS_WIND.flutter,
+    layered: wind?.layered ?? DEFAULT_GRASS_WIND.layered,
   };
 }
 
@@ -178,7 +186,17 @@ void jgComputeGrassBlade() {
   float st = sin(instanceYaw);
   vec3 tuftOffset = vec3(bladeOffset.x * ct + bladeOffset.y * st, 0.0, -bladeOffset.x * st + bladeOffset.y * ct);
   float gustPhase = dot(instanceOffset.xz, uWindDirection) * uWindGustScale + uTime * uWindSpeed + instancePhase;
-  float gust = sin(gustPhase) * 0.7 + sin(gustPhase * 0.43 + 2.4) * 0.3;
+${
+  wind.layered
+    ? `  // Layered rolling gust field: three phase-offset directional waves, one carrying a cross-wind
+  // term, so coherent wave fronts sweep across the meadow instead of every tuft waving in place.
+  vec2 windPerp = vec2(-uWindDirection.y, uWindDirection.x);
+  float crossPhase = dot(instanceOffset.xz, windPerp) * uWindGustScale * 0.6;
+  float gust = sin(gustPhase) * 0.55
+    + sin(gustPhase * 0.53 + crossPhase + 2.1) * 0.32
+    + sin(gustPhase * 1.7 + crossPhase * 0.4 + 4.3) * 0.13;`
+    : `  float gust = sin(gustPhase) * 0.7 + sin(gustPhase * 0.43 + 2.4) * 0.3;`
+}
   float flutter = sin(uTime * 7.5 + instancePhase * 2.7 + bladeVary.w * 6.2832) * uWindFlutter;
   vec2 windOffset = uWindDirection * (gust * uWindStrength + flutter) * t * t * (0.4 + 0.6 * bladeVary.y);
   jgGrassPosition = instanceOffset + tuftOffset + yawedPosition + vec3(windOffset.x, 0.0, windOffset.y);
@@ -220,9 +238,21 @@ grassColor = mix(uColorGround, grassColor, smoothstep(0.0, 0.55, vGrassBladeT));
 grassColor = mix(grassColor, uColorGround * 1.04, vGrassFade * 0.6);
 diffuseColor.rgb = grassColor;
 `,
+      )
+      .replace(
+        "#include <lights_fragment_end>",
+        `
+#include <lights_fragment_end>
+// Warm tip sheen / backscatter: blade tips lift toward a warm glow, scaled by how strongly the
+// fragment is directly lit — a cheap stand-in for sun shining through the canopy, no extra lights.
+float jgTipMask = smoothstep(0.55, 1.0, vGrassBladeT);
+float jgLit = clamp(dot(reflectedLight.directDiffuse, vec3(0.3333)) * 1.6, 0.0, 1.0);
+reflectedLight.directDiffuse += vec3(0.34, 0.28, 0.12) * jgTipMask * jgLit * (1.0 - vGrassFade * 0.7);
+`,
       );
   };
 
-  material.customProgramCacheKey = () => `jgengine-grass-${wind.strength}-${wind.flutter}`;
+  // Only the layered-gust branch changes the compiled shader source, so it is the sole compile-time key.
+  material.customProgramCacheKey = () => `jgengine-grass-${wind.layered ? "layered" : "single"}`;
   return { material, uniforms };
 }

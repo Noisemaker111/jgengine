@@ -129,6 +129,51 @@ describe("deriveBuildingLots — frontage placement", () => {
   });
 });
 
+describe("deriveBuildingLots — blockFill frontage compaction", () => {
+  const longRoad: RoadFrontage = { path: line([-120, 0], [120, 0]), width: 9 };
+  const oneSide = (blockFill: number | undefined) =>
+    deriveBuildingLots({ roads: [longRoad], blockFill })
+      .filter((l) => l.side === 1)
+      .sort((a, b) => a.center[0] - b.center[0]);
+
+  test("the reference dial (0.45) is byte-identical to omitting it entirely", () => {
+    // The default look must be reproducible so callers can leave the dial unset.
+    expect(deriveBuildingLots({ roads: [longRoad], blockFill: 0.45 })).toEqual(
+      deriveBuildingLots({ roads: [longRoad] }),
+    );
+  });
+
+  test("full fill closes the along-road gap: consecutive lots touch (step ≈ width)", () => {
+    const lots = oneSide(1);
+    expect(lots.length).toBeGreaterThan(4);
+    const w = lots[0]!.footprint.w;
+    for (let i = 1; i < lots.length; i += 1) {
+      const step = lots[i]!.center[0] - lots[i - 1]!.center[0];
+      // Edge-to-edge: the gap between footprints is a hair ≤ 0, never a visible gap.
+      expect(step - w).toBeLessThanOrEqual(0.01);
+    }
+  });
+
+  test("a low dial reads sparser than the default (wider gaps, fewer lots)", () => {
+    const sparse = oneSide(0);
+    const dfl = oneSide(undefined);
+    expect(sparse.length).toBeLessThan(dfl.length);
+    const gap = (ls: typeof sparse) => (ls[1]!.center[0] - ls[0]!.center[0]) - ls[0]!.footprint.w;
+    expect(gap(sparse)).toBeGreaterThan(gap(dfl));
+  });
+
+  test("compaction is monotonic and deterministic", () => {
+    const gapAt = (f: number) => {
+      const ls = oneSide(f);
+      return (ls[1]!.center[0] - ls[0]!.center[0]) - ls[0]!.footprint.w;
+    };
+    expect(gapAt(0)).toBeGreaterThan(gapAt(0.45));
+    expect(gapAt(0.45)).toBeGreaterThan(gapAt(0.8));
+    expect(gapAt(0.8)).toBeGreaterThan(gapAt(1));
+    expect(oneSide(1)).toEqual(oneSide(1));
+  });
+});
+
 describe("resolveStructureBuildings — along mode", () => {
   test("along descriptor produces street-aligned, rotated buildings", () => {
     const descriptor = building({

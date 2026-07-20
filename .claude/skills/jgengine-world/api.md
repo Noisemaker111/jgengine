@@ -1505,6 +1505,7 @@
 
 ## @jgengine/core/world
 
+- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
 - `Aabb` (interface): interface Aabb — ⚠ undocumented
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
@@ -1517,6 +1518,8 @@
 - `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
 - `AircraftStep` (interface): interface AircraftStep — Pose and aerodynamic telemetry returned after one flight tick.
 - `AircraftTuning` (interface): interface AircraftTuning — Data-first physical tuning shared by all aircraft instances of one catalog type.
+- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
+- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
 - `AnnotationLayer` (interface): interface AnnotationLayer — Player-drawn map annotation layer — strokes, shapes, and notes over caller-owned map data.
 - `AnnotationLayerOptions` (interface): interface AnnotationLayerOptions — Options for {@link createAnnotationLayer}.
 - `AnnotationSnapshot` (interface): interface AnnotationSnapshot — Whole serializable state of an annotation layer — drop into a save blob.
@@ -1545,6 +1548,7 @@
 - `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented
 - `BallisticSweepHit` (interface): interface BallisticSweepHit — ⚠ undocumented
+- `BandTrimOptions` (interface): interface BandTrimOptions extends JunctionGeometryOptions — Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance.
 - `BehaviorControl` (interface): interface BehaviorControl — Per-entity control surface for the behavior runtime — pause/resume/disable/enable an instance, seek it to semantic progress, serialize/restore its state, and inspect it, all keyed by stable entity id without a full-world scan. Obtain it with {@link behaviorControl}.
 - `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior — ⚠ undocumented
 - `BehaviorInspection` (interface): interface BehaviorInspection — Inspection readout for editor/debug tooling, from {@link BehaviorControl.inspect}/{@link BehaviorControl.list}.
@@ -1564,6 +1568,7 @@
 - `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
 - `CITY_BUILDING_BUDGET` (const): const CITY_BUILDING_BUDGET: 2600 — Max buildings a single `city` district generates — the block/parcel pipeline's bounded lot cap.
 - `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a zoned mixed metropolis — towers downtown, slabs mid-ring, houses at the edge.
+- `CITY_FILLER_CLASSES` (const): const CITY_FILLER_CLASSES: readonly CityFillerClass[] — All filler classes, for validation and interior-pass allow-lists.
 - `CITY_KIND` (const): const CITY_KIND: "city" — The editor volume kind marking a box as a procedural city district.
 - `CITY_LANDMARK_CLASSES` (const): const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] — All landmark classes, for schema hints, validation, and default allow-lists.
 - `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
@@ -1583,6 +1588,7 @@
 - `CityContentOptions` (interface): interface CityContentOptions extends CityContentOverrides — Full options for {@link resolveCityLotContent}: the city geometry frame plus content overrides.
 - `CityContentOverrides` (interface): interface CityContentOverrides — Tunable overrides for {@link resolveCityLotContent} (seed/halfExtents/laneFrontage are supplied).
 - `CityDriveway` (interface): interface CityDriveway — One driveway ribbon from a street to a lot.
+- `CityFillerClass` (type): type CityFillerClass = "garage" | "depot" — Filler classes used ONLY by the block-interior fill pass (`resolveCityLotContent` at a high `blockFill`). They are deliberately kept OUT of {@link CITY_LOT_CLASSES} so a zone mix can never weight them onto street frontage — they exist to pack the backs of Manhattan-style blocks with parking structures and warehouses/depots, mixed in with ordinary zone classes.
 - `CityGeneratorOptions` (interface): interface CityGeneratorOptions — Options for {@link generateCity}: a seed, street-dial overrides, and lot pass-through options.
 - `CityHedge` (interface): interface CityHedge — One hedge run: a thin box strip (estate perimeter).
 - `CityIntersection` (interface): interface CityIntersection — One crossing of two through streets: patch center/radius plus crosswalk arm directions.
@@ -1621,6 +1627,7 @@
 - `ControlGroupOptions` (interface): interface ControlGroupOptions — Tuning for the control-group idiom: the double-tap focus window and the bookmark-key namespace.
 - `CueListener` (type): type CueListener<Payload = unknown> = (emitted: EmittedCue<Payload>) => void — A cue listener, called once per cue as it fires. Returns nothing.
 - `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
+- `DEFAULT_BLOCK_FILL` (const): const DEFAULT_BLOCK_FILL: 0.45 — Default `blockFill` — a deliberate no-op point. At this value frontage is untouched and the interior-fill/park passes are gated off, so the content path stays byte-identical to the classic one; callers opt into the Manhattan look by raising the dial toward 1.
 - `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
 - `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
 - `DEFAULT_FORWARD` (const): const DEFAULT_FORWARD: readonly [number, number, number] — The forward-axis convention: a generator or scene kind declares which way its "front" faces (a bookcase's open/book face, a building's entrance) once, as data, instead of leaving every placement to hand-tuned `rotationY` trial-and-error. `StudioStage`'s `faceCamera` (`@jgengine/shell/scene/ StudioStage`) reads the declared axis to auto-orient a product shot; a placement tool can read the same field to face a freshly dropped asset toward the camera/path by default. `DEFAULT_FORWARD` (+Z) is what a generator/scene-kind gets when it omits `forward` — build your front toward it.
@@ -1699,6 +1706,7 @@
 - `HeightSampler` (type): type HeightSampler = (x: number, z: number) => number — A height sampler over the ground: world elevation at any `x`/`z`.
 - `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
 - `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
+- `INTERIOR_LOTS_PER_BLOCK_CAP` (const): const INTERIOR_LOTS_PER_BLOCK_CAP: 24 — Hard cap on interior lots synthesized per frontage block (road+side group). Bounds the pass.
 - `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
 - `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
 - `InterestGateInput` (interface): interface InterestGateInput — Per-tick input the caller supplies to a gate.
@@ -1897,6 +1905,8 @@
 - `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
 - `SequenceSnapshot` (interface): interface SequenceSnapshot — Serializable snapshot — enough to resume a cutscene exactly where a save left it.
 - `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
+- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
+- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
 - `SimClock` (interface): interface SimClock — ⚠ undocumented
 - `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
 - `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
@@ -2108,6 +2118,7 @@
 - `createSelectionBookmarks` (function): function createSelectionBookmarks(snapshot?: SelectionBookmarkSnapshot): SelectionBookmarks — Create a keyed bookmark store, optionally restored from a {@link serialize} snapshot. Restoration re-dedupes and drops empty sets, so a hand-authored or migrated snapshot always normalizes to the same invariants a live store holds.
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `createSequenceDirector` (function): function createSequenceDirector<Payload = unknown>(options: SequenceDirectorOptions<Payload>): SequenceDirector<Payload> — A serializable cutscene / sequence director: an ordered timeline of typed cues (`{ atMs, kind, payload }`) advanced by one injected clock, firing each cue once and in order as its time passes — even across a large seek — with play/pause/ seek/skip/stop controls. The director only *schedules and emits* cues; it never interprets what a `kind` means, so the same primitive drives camera moves, dialogue lines, fades, or any game event. `snapshot`/`restore` round-trip the playhead and which cues have fired. Deterministic (no wall clock beyond the injected `now`) and allocation-free on the tick path.
+- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
 - `createTargetAcquirer` (function): function createTargetAcquirer(policy: AcquisitionPolicy): TargetAcquirer — Wrap an {@link AcquisitionPolicy} in a small object that remembers the held target between passes, so callers get retention hysteresis for free without threading the previous target by hand. The only state is the held id (a string) — trivially serializable; round-trip it with {@link TargetAcquirer.hold}.
@@ -2306,6 +2317,7 @@
 - `toEditorMarker` (function): function toEditorMarker(result: PlaceAssetResult): { id: string; kind: string; position: PlaceAssetVec3; rotationY: number; label: string; color: string; meta: Record<string, unknown>; } — Scene-document form: feed editor `addMarker` / `place_asset` path.
 - `toEngineUnits` (function): function toEngineUnits(sourceValue: number, space?: Pick<AssetSpace, "unitScale">): number — Convert a source-space length to engine meters through the asset's {@link AssetSpace.unitScale} — the data-owned replacement for per-game scale constants (a native ~4-unit kit tile down to a 1-unit grid).
 - `toStructureInput` (function): function toStructureInput(result: PlaceAssetResult): AddStructureInput — Game-state form: feed {@link createPlacedStructureStore}.add.
+- `trimBandAtJunctions` (function): function trimBandAtJunctions(bandPath: readonly RoadPoint[], bandWidth: number, junctions: readonly RoadJunctionInput[], options: BandTrimOptions = {}): RoadPoint[][] — Cut an offset band (a polyline running PARALLEL to a street — e.g. a sidewalk from `Street.sidewalks.{left,right}`) out of every junction's apron, so the band stops at the crossing instead of sailing straight through it. Unlike {@link trimPathAtJunctions} the band never passes through a node, so it is clipped by DISTANCE: each junction contributes a circular apron of radius `max arm half-width + curbReturnRadius + apronMargin + bandWidth/2 + clearance`, and any part of the band inside any apron circle is removed, splitting the band into the sub-paths that survive outside. Entry/exit points land exactly on the apron boundary. A band that never enters an apron passes through as a single untouched copy.
 - `trimPathAtJunctions` (function): function trimPathAtJunctions(path: readonly RoadPoint[], width: number, junctions: readonly RoadJunctionInput[], options: JunctionGeometryOptions = {}): TrimmedRoad[] — Cut a street centerline back from the junctions it passes through so its ribbon ENDS at the junction boundary instead of ploughing through the node. Junctions are matched to path vertices within `nodeEpsilon` (endpoints and interior vertices alike); a junction sitting on an interior vertex SPLITS the path into two independently-trimmed sub-paths. Each cut records the exact boundary point and the road's left/right edge corners there, so {@link buildJunctionSurface} can weld its polygon onto the identical vertices with no overlap.
 - `uniformGravity` (function): function uniformGravity(vector: GravityVector = [0, -9.81, 0]): GravityField — Constant vector gravity for ordinary worlds, space stations, and sideways-gravity levels.
 - `uniqueByStackKey` (function): function uniqueByStackKey<P>(magnitudeOf?: MagnitudeOf<P>): AreaStackPolicy<P> — Keep at most one membership per `stackKey`. With `magnitudeOf` the strongest per key wins (ties broken by `sourceId` for determinism); without it the first-seen per key wins. Use for unique-by-key buffs where reapplying the same aura should not stack.
@@ -2405,6 +2417,7 @@
 ## @jgengine/core/world/buildingLots
 
 - `BuildingLotOptions` (interface): interface BuildingLotOptions — Options for {@link deriveBuildingLots}.
+- `FRONTAGE_FILL_REFERENCE` (const): const FRONTAGE_FILL_REFERENCE: 0.45 — Frontage-fill reference point: at this dial value the compaction is a no-op (legacy spacing/width), so callers can leave `blockFill` unset for the classic look and this value reproduces it exactly.
 - `LotArea` (interface): interface LotArea — Rectangular clip region lots must fall within (world center + half-extents).
 - `PlacedBuildingLot` (interface): interface PlacedBuildingLot — One placed building lot: where a building stands and how it is turned to face its road.
 - `PlotVariant` (interface): interface PlotVariant extends WorldBounds — One weighted plot size a frontage can mix in: `w` along the road, `d` into the block.
@@ -2486,9 +2499,11 @@
 
 ## @jgengine/core/world/cityContent
 
+- `CITY_FILLER_CLASSES` (const): const CITY_FILLER_CLASSES: readonly CityFillerClass[] — All filler classes, for validation and interior-pass allow-lists.
 - `CITY_LANDMARK_CLASSES` (const): const CITY_LANDMARK_CLASSES: readonly CityLandmarkClass[] — All landmark classes, for schema hints, validation, and default allow-lists.
 - `CITY_LOT_CLASSES` (const): const CITY_LOT_CLASSES: readonly CityLotClass[] — All classes, for schema hints and validation.
 - `CITY_TREE_SPECIES` (const): const CITY_TREE_SPECIES: readonly CityTreeSpecies[] — All species, for schema hints and validation.
+- `CityFillerClass` (type): type CityFillerClass = "garage" | "depot" — Filler classes used ONLY by the block-interior fill pass (`resolveCityLotContent` at a high `blockFill`). They are deliberately kept OUT of {@link CITY_LOT_CLASSES} so a zone mix can never weight them onto street frontage — they exist to pack the backs of Manhattan-style blocks with parking structures and warehouses/depots, mixed in with ordinary zone classes.
 - `CityLandmarkClass` (type): type CityLandmarkClass = "hall" | "arena" | "market" | "campus" — A block-scale landmark class. Unlike {@link CityLotClass} these are never weighted into a zone mix — the landmark pass in `resolveCityLotContent` picks clusters of adjacent lots and stamps one of these over them. Each expresses with the same four piece shapes (box/gable/cylinder/dome) at a much larger footprint (~40–90 m).
 - `CityLotClass` (type): type CityLotClass = | "tower" | "slab" | "shop" | "rowhouse" | "house" | "mansion" | "farmhouse" | "barn" | "silo" — A building class a zone mix can weight — drives lot size, floors, setback, and massing.
 - `CityLotPiece` (interface): interface CityLotPiece — One massing piece in LOT-LOCAL space: x along frontage width, z into the block, y up from grade.
@@ -2505,10 +2520,12 @@
 - `CityGeneratorOptions` (interface): interface CityGeneratorOptions — Options for {@link generateCity}: a seed, street-dial overrides, and lot pass-through options.
 - `CityLevelClassBias` (type): type CityLevelClassBias = Record<StreetLevel, Partial<Record<CityLotClass, number>>> — Per-street-level class weight multipliers applied to the band mix before the class pick, so towers and slabs bias toward wide boulevard/avenue frontage while houses and farm classes bias toward lanes and quiet streets. A missing class ⇒ multiplier 1 (the band mix is unchanged for it). Pure data: modulating the existing weighted mixes, never a separate placement code path.
 - `CityZoneMixes` (interface): interface CityZoneMixes — Weighted building-class mix per zone band; the radial profile decides which band a lot falls in.
+- `DEFAULT_BLOCK_FILL` (const): const DEFAULT_BLOCK_FILL: 0.45 — Default `blockFill` — a deliberate no-op point. At this value frontage is untouched and the interior-fill/park passes are gated off, so the content path stays byte-identical to the classic one; callers opt into the Manhattan look by raising the dial toward 1.
 - `DEFAULT_CITY_LEVEL_BIAS` (const): const DEFAULT_CITY_LEVEL_BIAS: CityLevelClassBias — Default street-level bias — boulevards favor big massing, lanes favor small/rural massing.
 - `DEFAULT_CITY_ZONE_MIXES` (const): const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes — Default zoned-metropolis mixes: towers/slabs downtown, slabs+rowhouses mid, houses at the edge.
 - `DEFAULT_LANDMARK_SHARE` (const): const DEFAULT_LANDMARK_SHARE: 0.04 — Default landmark share dial — a couple of block-scale landmarks per default city.
 - `GeneratedCity` (interface): interface GeneratedCity — A generated city: the street network and the building lots lining its frontage.
+- `INTERIOR_LOTS_PER_BLOCK_CAP` (const): const INTERIOR_LOTS_PER_BLOCK_CAP: 24 — Hard cap on interior lots synthesized per frontage block (road+side group). Bounds the pass.
 - `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on landmarks emitted regardless of dial/city size.
 - `MassingFootprint` (interface): interface MassingFootprint — Axis-aligned massing extents (lot-local): full width along x and depth along z.
 - `ResolvedCityLot` (interface): interface ResolvedCityLot — One lot enriched with its zone/class/floors/massing — the renderer instances `pieces` at `center`.
@@ -2977,6 +2994,7 @@
 
 ## @jgengine/core/world/roads
 
+- `BandTrimOptions` (interface): interface BandTrimOptions extends JunctionGeometryOptions — Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance.
 - `DashExclusion` (interface): interface DashExclusion — A circular exclusion zone: dashes whose midpoint falls inside are dropped (e.g. junction patches).
 - `GROUND_DECAL_LAYERS` (const): const GROUND_DECAL_LAYERS: { readonly road: 0.06; readonly junction: 0.06; readonly marking: 0.11; readonly glow: 0.14; } — The single owning table of ground-decal Y offsets, in world units above the sampled terrain.
 - `IntersectionStreet` (interface): interface IntersectionStreet — One street to trim + mesh through {@link buildTrimmedIntersections}.
@@ -2998,6 +3016,7 @@
 - `isOnRoad` (function): function isOnRoad(path: readonly RoadPoint[], width: number, x: number, z: number): boolean — True when the query point lies within half the road `width` of the centerline.
 - `nearestOnPath` (function): function nearestOnPath(path: readonly RoadPoint[], x: number, z: number): RoadSample | null — Closest-point query against a road centerline — the seam traffic AI, spawn placement, and "am I on the road" checks share. Returns null for a degenerate path.
 - `pathLength` (function): function pathLength(path: readonly RoadPoint[]): number — Total arc length of a centerline in world units.
+- `trimBandAtJunctions` (function): function trimBandAtJunctions(bandPath: readonly RoadPoint[], bandWidth: number, junctions: readonly RoadJunctionInput[], options: BandTrimOptions = {}): RoadPoint[][] — Cut an offset band (a polyline running PARALLEL to a street — e.g. a sidewalk from `Street.sidewalks.{left,right}`) out of every junction's apron, so the band stops at the crossing instead of sailing straight through it. Unlike {@link trimPathAtJunctions} the band never passes through a node, so it is clipped by DISTANCE: each junction contributes a circular apron of radius `max arm half-width + curbReturnRadius + apronMargin + bandWidth/2 + clearance`, and any part of the band inside any apron circle is removed, splitting the band into the sub-paths that survive outside. Entry/exit points land exactly on the apron boundary. A band that never enters an apron passes through as a single untouched copy.
 - `trimPathAtJunctions` (function): function trimPathAtJunctions(path: readonly RoadPoint[], width: number, junctions: readonly RoadJunctionInput[], options: JunctionGeometryOptions = {}): TrimmedRoad[] — Cut a street centerline back from the junctions it passes through so its ribbon ENDS at the junction boundary instead of ploughing through the node. Junctions are matched to path vertices within `nodeEpsilon` (endpoints and interior vertices alike); a junction sitting on an interior vertex SPLITS the path into two independently-trimmed sub-paths. Each cut records the exact boundary point and the road's left/right edge corners there, so {@link buildJunctionSurface} can weld its polygon onto the identical vertices with no overlap.
 
 ## @jgengine/core/world/scatter
@@ -3071,6 +3090,15 @@
 - `ClosestOnSegment` (interface): interface ClosestOnSegment — Closest point on segment `a`→`b` to `p`, and the clamped parameter `t` in [0,1] where it lies.
 - `circleVsSegment` (function): function circleVsSegment(center: Vec2, radius: number, a: Vec2, b: Vec2, thickness = 0): CircleSegmentHit | null — Circle (center + `radius`) against a capsule segment `a`→`b` of half-thickness `thickness` (0 for a thin wall). Returns the contact — surface normal, penetration depth, contact point, and the separated center — or `null` when they do not overlap. Endpoints are rounded (the segment is a capsule), so a ball never catches on a corner. Reflect the velocity across `normal` for the bounce; the pure geometry every 2D ball game (pinball, breakout, air hockey) reimplemented per wall, bumper, and paddle.
 - `closestPointOnSegment` (function): function closestPointOnSegment(p: Vec2, a: Vec2, b: Vec2): ClosestOnSegment — Closest point on the segment `a`→`b` to point `p`, with the clamped parameter `t` (0 at `a`, 1 at `b`).
+
+## @jgengine/core/world/sharedAnnotations
+
+- `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
+- `AnnotationBroadcast` (type): type AnnotationBroadcast = | { op: "stroke"; from: string; id: string; points: readonly WorldXZ[]; tone?: MapLayerTone; width?: number } | { op: "shape"; from: string; id: string; shape: MapZoneShape; tone?: MapLayerTone; label?: string } | { op: "note"; from: string; id: string; position: WorldXZ; … — A serializable map-annotation edit broadcast to other players.
+- `AnnotationFeedSink` (interface): interface AnnotationFeedSink — The feed sink shared annotations push to — an alias of the ping/feed `push` seam.
+- `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
+- `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
+- `createSharedAnnotations` (function): function createSharedAnnotations(deps: SharedAnnotationsDeps): SharedAnnotations — Make a map annotation layer collaborative: local `addStroke`/`addShape`/ `addNote`/`remove`/`clear` apply then broadcast a serializable edit over the party feed (the same seam `createPingSystem` uses), and `apply` mirrors inbound edits from other players — dropping our own echoes. Ids are globally unique per client so two players' strokes never collide. Transport-agnostic: wire `feed` to any replicated feed and route received entries into `apply`.
 
 ## @jgengine/core/world/soilKind
 

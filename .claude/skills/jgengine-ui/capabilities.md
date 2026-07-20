@@ -85,6 +85,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCoachMarkSequence` (function) · `import { createCoachMarkSequence } from "@jgengine/core/ui"`
 
+## codex-gallery — codex/bestiary gallery with category tabs, discovered/locked cards, secret masking, and a completion header
+
+- `Codex` (function) · `import { Codex } from "@jgengine/react"`
+
 ## colorblind-filters — SVG feColorMatrix defs (protanopia/deuteranopia/tritanopia/grayscale) referenced by the accessibility colorblind filter
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
@@ -108,6 +112,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## day-night-sky — drop-in R3F presenter that drives the engine's existing sky dome and lights from a serializable day-night cycle for a moving, color-graded day-night look
 
 - `DayNightSky` (function) · `import { DayNightSky } from "@jgengine/shell/environment"`
+
+## debounced-commit — bind a slider/number/color control to an expensive commit path (scene-document patch, settings persist) — instant local mirror, one trailing commit per pause, flush on release/blur/unmount; no raw onChange→patch wiring
+
+- `useDebouncedCommit` (function) · `import { useDebouncedCommit } from "@jgengine/react"`
 
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
@@ -160,6 +168,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## fast-travel-menu — discovered-destinations picker grouped by region with distances, a discovery counter, and a travel callback
 
 - `FastTravelMenu` (function) · `import { FastTravelMenu } from "@jgengine/react"`
+
+## floating-text — overlay that renders on-screen floating combat text with per-kind color, alpha, and pop-in scale
+
+- `FloatingText` (function) · `import { FloatingText } from "@jgengine/react"`
+- `FloatingTextPlacement` (interface) · `import { FloatingTextPlacement } from "@jgengine/react"`
+- `WorldFloatingText` (function) · `import { WorldFloatingText } from "@jgengine/shell/vfx/WorldFloatingText"`
+- `createFloatingTextField` (function) · `import { createFloatingTextField } from "@jgengine/core/ui/floatingText"`
+- `layoutFloatingText` (function) · `import { layoutFloatingText } from "@jgengine/react"`
 
 ## fullscreen-map — fullscreen pan/zoom world-map overlay over WorldMapSurface — wheel-zoom, drag-pan, click-to-place, and a freehand draw tool (onStrokeComplete)
 
@@ -289,6 +305,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## notification-center-panel — scrollable notification log with kind markers, read tracking, relative time, and mark-all-read/clear
 
 - `NotificationCenter` (function) · `import { NotificationCenter } from "@jgengine/react"`
+
+## objective-banner — serializable, clock-driven stage/objective banner queue — flies a big transient centered title + optional subtitle in, holds, and fades out one at a time, with phase + progress for animation, free-string kinds the game styles, and snapshot/restore
+
+- `createObjectiveBanner` (function) · `import { createObjectiveBanner } from "@jgengine/core/ui"`
+
+## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
+
+- `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/react"`
 
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
@@ -465,6 +489,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
 
 - `useModalStack` (function) · `import { useModalStack } from "@jgengine/react"`
+
+## use-objective-banner — React hook binding an objective-banner controller — advances its clock per frame and returns the current banner view
+
+- `useObjectiveBanner` (function) · `import { useObjectiveBanner } from "@jgengine/react"`
 
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
