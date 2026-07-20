@@ -327,6 +327,18 @@
 - `normalizePointerToAxis` (function): function normalizePointerToAxis(clientX: number, clientY: number, rect: PointerSurfaceRect): PointerAxisState — Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `pointerAxisValue` (function): function pointerAxisValue(binding: PointerAxisBinding, state: PointerAxisState | null | undefined): number | null — Resolve a pointer binding against the current pointer state: `null` when no pointer is active (callers fall back to their digital target), otherwise the deadzone/curve-shaped value in `[-1, 1]`.
 
+## @jgengine/core/input/rebindSession
+
+- `RebindActionConfig` (interface): interface RebindActionConfig — One rebindable action as declared to {@link createRebindSession}. The `id` and `label` are FREE strings the session never interprets — the game owns their meaning and display text. `defaultCodes` is the authored binding the session resets back to.
+- `RebindConflict` (interface): interface RebindConflict — A group of actions bound to the same normalized code — the conflict this session detects.
+- `RebindRow` (interface): interface RebindRow — One controls-list row: an action, its effective binding, and any conflicts.
+- `RebindSession` (interface): interface RebindSession — A live, observable, conflict-aware key-remap editor over the action-binding model.
+- `RebindSessionActionsConfig` (interface): interface RebindSessionActionsConfig extends RebindSessionCommon — Declare actions explicitly, in list order.
+- `RebindSessionConfig` (type): type RebindSessionConfig = RebindSessionActionsConfig | RebindSessionMapConfig — Config for {@link createRebindSession}: an explicit action list, or an {@link ActionCodesMap} + labels.
+- `RebindSessionMapConfig` (interface): interface RebindSessionMapConfig extends RebindSessionCommon — Declare actions from an authored {@link ActionCodesMap}, labelled by `labels` (falling back to the id).
+- `RebindSessionSnapshot` (interface): interface RebindSessionSnapshot — Serializable session state for save/restore.
+- `createRebindSession` (function): function createRebindSession(config: RebindSessionConfig): RebindSession — A conflict-aware key-remap session over the action-binding model — the missing editor behind a controls-settings menu. It takes the game's authored actions ({@link RebindActionConfig}s, or an {@link ActionCodesMap} + labels) plus the player's saved {@link BindingOverrides}, and tracks the *effective* binding per action (default merged with the override via `applyBindingOverrides`). `rows()` exposes each action's label, current key glyph (via `bindingLabel`), whether it is still the default, and which other actions it collides with; `conflicts()` groups every action pair sharing a normalized code (the value-add a raw override map can't give you). `beginCapture`/`capture`/`cancelCapture` drive a "press a key" rebind (codes normalized via `normalizeKeyCode`), `reset`/ `resetAll` return to defaults, and `overrides()`/`apply()` hand the caller the `BindingOverrides` to persist. Nothing here is genre-specific: action ids and labels are free strings the session never interprets, and hold/toggle/repeat binding shapes survive a rebind. `snapshot`/`restore` round-trips the editor (including the in-flight capture) through a save.
+
 ## @jgengine/core/input/touchControlsMode
 
 - `activeTouchControlsMode` (function): function activeTouchControlsMode(ctx: GameContext): string | null — The active touch control mode, `null` when the base config applies.

@@ -46,6 +46,16 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Conflict-aware key-rebinding session.** `@jgengine/core/input/rebindSession` adds
+  `createRebindSession({ actions | input, overrides?, now? })` — an observable key-remap
+  editor over the existing action-binding model: it tracks the effective binding per action
+  (default merged with `applyBindingOverrides`), exposes `rows()` with key glyphs + per-row
+  conflict sets, groups every clash via `conflicts()`, drives click-to-capture rebinds
+  (`beginCapture`/`capture`/`cancelCapture`, codes normalized), resets to defaults, and hands
+  back `BindingOverrides` to persist, with `snapshot`/`restore`. React `KeybindingMenu` +
+  `useRebindSession` (`@jgengine/react`) are the drop-in controls-settings surface — one row
+  per action with key glyph, conflict badges, per-row and Reset-all, HudTheme-skinnable.
+  Demo: `key-rebinding`.
 - **Count-based combo / multiplier meter.** `@jgengine/core/combat/comboMeter` adds
   `createComboMeter({ windowMs, tiers?, dropStep?, multiplierPerTier? })` — an integer hit chain that
   climbs on `hit(kind?)`, resets a decay window each hit, and drops (to 0, or by `dropStep`) when the

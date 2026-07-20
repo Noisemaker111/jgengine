@@ -179,6 +179,7 @@
     "./input/lookChannel",
     "./input/pointer",
     "./input/pointerAxis",
+    "./input/rebindSession",
     "./input/touchControlsMode",
     "./input/touchGestures",
     "./input/touchScheme",
@@ -567,6 +568,7 @@
     "./index",
     "./inventoryGrid",
     "./keyHint",
+    "./keybindingMenu",
     "./liveBind",
     "./map",
     "./modals",
@@ -582,6 +584,7 @@
     "./radialMenu",
     "./rotateDevice",
     "./save",
+    "./scoreboard",
     "./selectSnapshot",
     "./selectionHud",
     "./settings",
@@ -594,7 +597,8 @@
     "./talentTree",
     "./timerReadout",
     "./useDebouncedCommit",
-    "./voice"
+    "./voice",
+    "./waypointMarkers"
   ],
   "@jgengine/convex": [
     ".",

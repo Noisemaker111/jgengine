@@ -353,6 +353,17 @@ export {
 export { createGestureSurfaceTracker } from "./input/gestureSurface";
 export { aimToPoint, type PointerHit, type PointerVec3 } from "./input/pointer";
 export { normalizePointerToAxis, type PointerAxisState } from "./input/pointerAxis";
+export {
+  createRebindSession,
+  type RebindActionConfig,
+  type RebindConflict,
+  type RebindRow,
+  type RebindSession,
+  type RebindSessionActionsConfig,
+  type RebindSessionConfig,
+  type RebindSessionMapConfig,
+  type RebindSessionSnapshot,
+} from "./input/rebindSession";
 export { activeTouchControlsMode, setTouchControlsMode } from "./input/touchControlsMode";
 export { createTouchGestureTracker } from "./input/touchGestures";
 export {
