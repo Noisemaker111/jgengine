@@ -306,9 +306,12 @@ export {
 } from "./game/systemSchedule";
 export {
   talentTreeView,
+  talentTreeViewFrom,
   type TalentEdgeView,
   type TalentNodeState,
+  type TalentNodeStatus,
   type TalentNodeView,
+  type TalentPointTotals,
   type TalentTreeView,
 } from "./game/talentTreeView";
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";

@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Talent/upgrade tree from any unlock rule.** `@jgengine/core/game/talentTreeView` adds
+  `talentTreeViewFrom(nodes, status, totals?)` — a general builder that places a node graph (branch/tier
+  layout, prerequisite edges, learned/available/locked/maxed state) from a caller-supplied per-node
+  `{ rank, allocatable }`, so unlocks can come from a currency threshold, a level, a quest flag, or
+  nothing — not only point-spend. `talentTreeView(nodes, tree)` is now the point-spend adapter over it.
+  The React `TalentTree` widget accepts a precomputed `view` (plus `showPoints`) alongside the existing
+  `nodes`+`tree`, so the same widget renders a buy-with-points talent tree *or* a money-gated upgrade tree
+  with no renderer change.
 - **Floating combat text / damage numbers.** `@jgengine/core/ui/floatingText`' `createFloatingTextField` is a
   genre-agnostic, deterministic, allocation-aware field of world-anchored text pops (damage, crits, heals, XP/gold,
   status, barks): `emit({ position, text, kind?, color?, size?, rise?, drift?, lifetime? })`, `update(dt)` (rise +

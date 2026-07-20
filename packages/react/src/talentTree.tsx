@@ -5,6 +5,7 @@ import {
   talentTreeView,
   type TalentNodeState,
   type TalentNodeView,
+  type TalentTreeView,
 } from "@jgengine/core/game/talentTreeView";
 
 import { GameIcon, iconForAction, iconForItemId, isGameIconName, type GameIconName } from "./gameIcons";
@@ -15,12 +16,20 @@ export type TalentIcon = GameIconName | ReactNode | null;
 
 /** Props for {@link TalentTree}. */
 export interface TalentTreeProps<TStat extends string = string> {
-  /** The tree's node definitions — the same array passed to `createTalentTree`. */
-  nodes: readonly TalentNodeDef<TStat>[];
-  /** The live talent-tree instance whose ranks/points drive node state. */
-  tree: TalentTreeModel<TStat>;
-  /** Fired with a node id when the player clicks a node a point can be spent on. Wire `tree.allocate` here. */
+  /**
+   * A precomputed render view (from `talentTreeView` or `talentTreeViewFrom`). Supply this to drive the
+   * widget from *any* unlock rule — a currency threshold, a level, a quest flag — not just point-spend.
+   * When given, `nodes`/`tree` are ignored. Otherwise pass `nodes` + `tree` for the point-spend path.
+   */
+  view?: TalentTreeView;
+  /** The tree's node definitions — the same array passed to `createTalentTree`. Used when `view` is omitted. */
+  nodes?: readonly TalentNodeDef<TStat>[];
+  /** The live talent-tree instance whose ranks/points drive node state. Used when `view` is omitted. */
+  tree?: TalentTreeModel<TStat>;
+  /** Fired with a node id when the player clicks a node that is currently allocatable. Wire it to your unlock/allocate effect (e.g. `tree.allocate`, or spend cash, or set a flag). */
   onLearn?: (nodeId: string) => void;
+  /** Show the points-remaining badge in the frame header. Default `true`; pass `false` for trees with no point currency. */
+  showPoints?: boolean;
   /** Resolve a node id to its icon. Default: keyword-match the id, else the node's initials. */
   icon?: (nodeId: string) => TalentIcon;
   /** Resolve a node id to a human label (tooltip title + accessible name). Default: the id. */
@@ -252,14 +261,20 @@ function TalentNode({
  * (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node
  * definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and
  * prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed,
- * shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node a point can be
- * spent on. All layout, edge-drawing, and eligibility come from the model/selector — the widget never
- * re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the
- * game supplies icons and labels for.
+ * shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is
+ * currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the
+ * widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque
+ * game data the game supplies icons and labels for.
  *
- * @capability talent-tree drop-in skill/talent-tree widget over the talents model — branch/tier node layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
+ * For the point-spend path pass `nodes` + a live `tree`. To drive the tree from *any* other unlock
+ * rule (a currency threshold, a level, a quest flag), build a view with `talentTreeViewFrom` and pass
+ * it as `view` — the same widget then renders a money-gated upgrade tree or a condition-unlocked
+ * ability web, no renderer change.
+ *
+ * @capability talent-tree drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
  */
 export function TalentTree<TStat extends string = string>({
+  view: viewProp,
   nodes,
   tree,
   onLearn,
@@ -271,10 +286,14 @@ export function TalentTree<TStat extends string = string>({
   nodeSize = 54,
   columnGap = 30,
   tierGap = 46,
+  showPoints = true,
   className,
   style,
 }: TalentTreeProps<TStat>): ReactNode {
-  const view = talentTreeView(nodes, tree);
+  if (viewProp === undefined && (nodes === undefined || tree === undefined)) {
+    throw new Error("TalentTree requires either a `view` prop or both `nodes` and `tree`.");
+  }
+  const view = viewProp ?? talentTreeView(nodes!, tree!);
   const layout = place(view, nodeSize, columnGap, tierGap);
 
   const resolveGlyph = (id: string): ReactNode => {
@@ -364,11 +383,11 @@ export function TalentTree<TStat extends string = string>({
     </div>
   );
 
-  const pointsBadge = (
+  const pointsBadge = showPoints ? (
     <span data-talent-points="" style={{ fontVariantNumeric: "tabular-nums" }}>
       {view.pointsAvailable} pt{view.pointsAvailable === 1 ? "" : "s"}
     </span>
-  );
+  ) : undefined;
 
   if (title === null) {
     return (
@@ -381,7 +400,7 @@ export function TalentTree<TStat extends string = string>({
     <HudFrame
       variation={variation}
       title={title}
-      aside={pointsBadge}
+      {...(pointsBadge === undefined ? {} : { aside: pointsBadge })}
       interactive
       padding={16}
       {...(className === undefined ? {} : { className })}
