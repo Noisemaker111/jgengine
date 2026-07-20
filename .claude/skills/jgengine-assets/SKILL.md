@@ -9,7 +9,7 @@ description: Source, license, catalog, and resolve game-ready media assets.
 
 This skill owns model, sprite, texture/material, and audio-file discovery; licensing; catalog metadata; pull/index workflows; and runtime asset references. Placement belongs to `jgengine-editor`, spatial audio behavior to `jgengine-world`, and rendering/UI composition to their respective domains.
 
-Search [capabilities.md](capabilities.md) before adding a resolver or catalog path. Use [api.md](api.md) for exact exports.
+Search [capabilities.md](capabilities.md) before adding a resolver or catalog path. Use [api.md](api.md) for exact exports. Turning a real item or scene into an asset via video capture and 3D reconstruction is a sourcing method under this skill — see [references/video-to-3d-capture.md](references/video-to-3d-capture.md) for the offline pipeline, hardware/cost notes, and import steps.
 
 ## Canonical workflow
 
