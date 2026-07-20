@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Save-slot / profile select menu.** `@jgengine/core/game/saveSlots` adds `createSaveSlots(config)` — a
+  serializable, observable index of per-slot *display* metadata (`{ id, name?, empty, savedAt?, meta }`
+  with free-string `meta` the game fills: level, playtime, chapter, thumbnail ref, …) that complements
+  `createSaveStore` (which owns the real payload). Ops: `write`/`clear`/`rename`/`get`/`list`/`mostRecent`
+  (powers Continue) plus `subscribe`/`snapshot`/`restore`. `@jgengine/react/saveSlots` ships the drop-in
+  `SaveSlotMenu` host (+ `useSaveSlots` hook) rendering the index as New / Continue / Load / Delete cards
+  with meta chips and relative save times, HudTheme-skinnable. Demo: `save-slots`.
 - **Event-log / kill-feed ticker.** `@jgengine/core/game/eventTicker` adds a thin, serializable,
   observable `createEventTicker({ now?, limit?, ttlMs? })` over the existing `appendFeed`/`pruneFeed`
   helpers: a single rolling, count-capped, time-fading list of free-string `{ kind, text, icon? }`

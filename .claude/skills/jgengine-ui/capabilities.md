@@ -431,6 +431,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
 
+## save-slot-menu — drop-in save-select / profile menu that renders a core save-slots index as New / Continue / Load / Delete cards with free-string meta chips and relative save times, theme-skinnable
+
+- `SaveSlotMenu` (function) · `import { SaveSlotMenu } from "@jgengine/react"`
+
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
@@ -542,6 +546,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
+
+## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
+
+- `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/react"`
 
 ## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
 
