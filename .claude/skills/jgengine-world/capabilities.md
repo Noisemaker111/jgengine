@@ -126,6 +126,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/world/buildingLots"`
 
+## camera-shake — seeded serializable trauma-based camera shake/impulse controller (hit/explosion/landing juice) with pooled per-frame translation+rotation offset and snapshot/restore
+
+- `createCameraShake` (function) · `import { createCameraShake } from "@jgengine/core/world"`
+
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
@@ -279,6 +283,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
 
+## interaction-prompt — observable nearest-interactable prompt registry over the proximity-prompt resolver — register/resolve/active with priority+range and change-notified snapshot/restore
+
+- `createPromptRegistry` (function) · `import { createPromptRegistry } from "@jgengine/core/world"`
+
 ## interest-census — running active/dormant gate tally folded into the caller's tick loop
 
 - `createInterestCensus` (function) · `import { createInterestCensus } from "@jgengine/core/world"`
@@ -294,6 +302,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## interest-stagger — deterministic per-id cadence phase that spreads sibling gate ticks across frames
 
 - `interestPhase` (function) · `import { interestPhase } from "@jgengine/core/world"`
+
+## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
+
+- `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/input/rebindSession"`
 
 ## limb-health — per-body-part/region health tracked separately
 
@@ -558,6 +570,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## volumetric-clouds — raymarched cloud layer sky option
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
+
+## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
+
+- `createWaveRunner` (function) · `import { createWaveRunner } from "@jgengine/core/world"`
 
 ## waypoint-store — serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
 

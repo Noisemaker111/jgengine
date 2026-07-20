@@ -48,6 +48,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
 
+## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
+
+- `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/react"`
+
 ## camera-transparent-decor — let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
 
 - `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
@@ -93,9 +97,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
 
+## combo-meter-hud — drop-in HUD for a core combo meter — big live count, free-string tier label, derived multiplier, and a draining decay-window bar, per-tier colored from a caller map and HudTheme-token skinnable
+
+- `ComboMeterHud` (function) · `import { ComboMeterHud } from "@jgengine/react"`
+
 ## confirm-dialog — generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
 
 - `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/react"`
+
+## controller-camera-shake — R3F consumer that applies a core camera-shake controller's pooled per-frame offset to the active camera (translation + pitch/yaw/roll) so the view visibly shakes
+
+- `ControllerCameraShake` (function) · `import { ControllerCameraShake } from "@jgengine/shell/camera"`
 
 ## controls-list — keybind-derived control legend that hides on touch
 
@@ -254,13 +266,25 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createI18n` (function) · `import { createI18n } from "@jgengine/core/ui"`
 
+## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
+
+- `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/react"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
 
+## keybinding-menu — drop-in controls-settings surface over a rebind session — click-to-capture rows with key glyphs, conflict badges, per-row and reset-all, HudTheme-skinnable
+
+- `KeybindingMenu` (function) · `import { KeybindingMenu } from "@jgengine/react"`
+
 ## keycap — styled keyboard/mouse key cap for control hints
 
 - `Keycap` (function) · `import { Keycap } from "@jgengine/react"`
+
+## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
+
+- `KillFeed` (function) · `import { KillFeed } from "@jgengine/react"`
 
 ## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
 
@@ -313,6 +337,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## objective-banner-host — full-screen overlay that renders a core objective-banner controller as a fly-in / hold / fade-out centered title + subtitle stamp, theme- and per-kind-skinnable
 
 - `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/react"`
+
+## offscreen-markers — serializable waypoint tracker + pure edge-clamp/bearing math for on-screen pins and off-screen directional arrows with distance
+
+- `createWaypointTracker` (function) · `import { createWaypointTracker } from "@jgengine/core/ui"`
+- `layoutScreenMarker` (function) · `import { layoutScreenMarker } from "@jgengine/core/ui"`
 
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
@@ -406,9 +435,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveGameLook` (function) · `import { resolveGameLook } from "@jgengine/core/ui"`
 
+## save-slot-menu — drop-in save-select / profile menu that renders a core save-slots index as New / Continue / Load / Delete cards with free-string meta chips and relative save times, theme-skinnable
+
+- `SaveSlotMenu` (function) · `import { SaveSlotMenu } from "@jgengine/react"`
+
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
+
+## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
+
+- `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/react"`
 
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
@@ -429,6 +466,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## selection-panel — optional selection-panel composition: summary + portrait strip / group chips
 
 - `SelectionPanel` (function) · `import { SelectionPanel } from "@jgengine/react"`
+
+## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
+
+- `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/react"`
 
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
@@ -470,9 +511,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
 
+## use-camera-shake — React hook binding a camera-shake controller — subscribes for live trauma/kind and can self-drive its decay on a frame loop
+
+- `useCameraShake` (function) · `import { useCameraShake } from "@jgengine/react"`
+
 ## use-coach-marks — React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes
 
 - `useCoachMarks` (function) · `import { useCoachMarks } from "@jgengine/react"`
+
+## use-combo-meter — React hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
+
+- `useComboMeter` (function) · `import { useComboMeter } from "@jgengine/react"`
 
 ## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
 
@@ -482,9 +531,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/react"`
 
+## use-event-ticker — React hook binding an event-ticker — re-renders per frame so entries fade and drop live, returning the current newest-first views
+
+- `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/react"`
+
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 
 - `useFastTravel` (function) · `import { useFastTravel } from "@jgengine/react"`
+
+## use-interaction-prompt — React hook binding a prompt registry to a moving player — resolves the nearest interactable prompt and returns the active one
+
+- `useInteractionPrompt` (function) · `import { useInteractionPrompt } from "@jgengine/react"`
 
 ## use-modal-stack — React hook binding a modal stack to a component — re-renders on push/pop/resolve
 
@@ -498,9 +555,21 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
 
+## use-rebind-session — React hook that re-renders a component whenever a rebind session changes
+
+- `useRebindSession` (function) · `import { useRebindSession } from "@jgengine/react"`
+
+## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
+
+- `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/react"`
+
 ## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
 
 - `useSequenceDirector` (function) · `import { useSequenceDirector } from "@jgengine/react"`
+
+## use-shop-stock — React hook binding a shop-stock model — re-renders on any stock change and returns the entry list
+
+- `useShopStock` (function) · `import { useShopStock } from "@jgengine/react"`
 
 ## use-timer — React hook binding one timer to a component with a per-frame re-read
 
@@ -510,13 +579,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useT` (function) · `import { useT } from "@jgengine/react"`
 
+## use-wave-runner — React hook that subscribes to a wave runner and returns its pooled current-wave view
+
+- `useWaveRunner` (function) · `import { useWaveRunner } from "@jgengine/react"`
+
+## use-waypoints — React binding that returns a waypoint tracker's live list (or a passthrough array)
+
+- `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/react"`
+
 ## vital-bar — compact current/max vital meter for an entity summary
 
 - `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
 
+## wave-hud — drop-in wave/spawn HUD over a wave runner — big WAVE N label, wave-progress bar, spawned/total + budget + alert readouts, theme-skinnable
+
+- `WaveHud` (function) · `import { WaveHud } from "@jgengine/react"`
+
 ## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
 
 - `WaypointArrow` (function) · `import { WaypointArrow } from "@jgengine/react"`
+
+## waypoint-markers — overlay rendering world waypoints as on-screen pins and off-screen edge-clamped directional arrows with distance, colored per game-owned kind
+
+- `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/react"`
 
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 

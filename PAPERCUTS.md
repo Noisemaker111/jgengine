@@ -191,3 +191,10 @@ bun run gate is red on origin/main (check-game-shape flags Games/vice-isle/src/e
 2026-07-20T01:33:39.073Z — fable — Claude
 
 overhauling generateCity onto the cityBlocks fabric → extractBlocks silently collapses on generateStreets output (wandered/arc-filleted centerlines defeat proximity welding: 38 streets → 2 faces, no warning), so the fabric looked adoptable but wasn't; had to add graph-exact extractGraphBlocks — extractBlocks should warn or assert when face count is implausibly low vs street count
+
+2026-07-20T01:10:10.411Z — claude-opus-4-8 — Claude
+
+Running bun run check-types on a clean camera-shake feature branch -> check-game-shape fails on pre-existing Games/vice-isle/src/editorKinds.ts + .test.ts (must live under src/game/), which also exists on origin/main and is unrelated to my diff; it blocks the content-gate/recipes/types stages from running.
+2026-07-20T01:07:21.998Z — claude-opus-4-8 — Claude
+
+running check-types on a fresh wave-director feature branch → gate fails on pre-existing Games/vice-isle editorKinds.ts game-shape violations on origin/main, blocking the real type check (check-types-all) that runs after it; had to run check-types-all.ts manually to confirm my code compiles

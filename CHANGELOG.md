@@ -55,6 +55,84 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Conflict-aware key-rebinding session.** `@jgengine/core/input/rebindSession` adds
+  `createRebindSession({ actions | input, overrides?, now? })` — an observable key-remap
+  editor over the existing action-binding model: it tracks the effective binding per action
+  (default merged with `applyBindingOverrides`), exposes `rows()` with key glyphs + per-row
+  conflict sets, groups every clash via `conflicts()`, drives click-to-capture rebinds
+  (`beginCapture`/`capture`/`cancelCapture`, codes normalized), resets to defaults, and hands
+  back `BindingOverrides` to persist, with `snapshot`/`restore`. React `KeybindingMenu` +
+  `useRebindSession` (`@jgengine/react`) are the drop-in controls-settings surface — one row
+  per action with key glyph, conflict badges, per-row and Reset-all, HudTheme-skinnable.
+  Demo: `key-rebinding`.
+- **Vendor / shop stock + grid.** `@jgengine/core/economy/shopStock` adds a serializable, observable
+  `createShopStock({ entries })` — entries carry a free-string `kind`, a `price` in a free-string
+  `currency`, a finite or unlimited (`qty: null`) count, and an optional `sellPrice`. `buy`/`sell`
+  operate over a **caller-owned** `WalletState` (reusing the existing `wallet` model — `charge`/`grant`/
+  `canAfford`), returning the debited/credited wallet for the caller to adopt; plus `restock`/`setPrice`/
+  `add`/`remove`/`list`/`get`/`canAfford`/`subscribe`/`snapshot`/`restore`. `@jgengine/react`'s `ShopGrid`
+  host + `useShopStock` hook render it as a token-themed grid of item cards (icon, price with currency
+  glyph, stock count or "∞", afford-aware Buy, optional Sell) with a wallet balance readout.
+
+- **Save-slot / profile select menu.** `@jgengine/core/game/saveSlots` adds `createSaveSlots(config)` — a
+  serializable, observable index of per-slot *display* metadata (`{ id, name?, empty, savedAt?, meta }`
+  with free-string `meta` the game fills: level, playtime, chapter, thumbnail ref, …) that complements
+  `createSaveStore` (which owns the real payload). Ops: `write`/`clear`/`rename`/`get`/`list`/`mostRecent`
+  (powers Continue) plus `subscribe`/`snapshot`/`restore`. `@jgengine/react/saveSlots` ships the drop-in
+  `SaveSlotMenu` host (+ `useSaveSlots` hook) rendering the index as New / Continue / Load / Delete cards
+  with meta chips and relative save times, HudTheme-skinnable. Demo: `save-slots`.
+- **Event-log / kill-feed ticker.** `@jgengine/core/game/eventTicker` adds a thin, serializable,
+  observable `createEventTicker({ now?, limit?, ttlMs? })` over the existing `appendFeed`/`pruneFeed`
+  helpers: a single rolling, count-capped, time-fading list of free-string `{ kind, text, icon? }`
+  entries (`push`/`recent`-with-`fade`/`entries`/`clear`/`subscribe`/`snapshot`/`restore`). `recent()`
+  prunes expired entries and returns them newest-first with a `fade` `0..1` (age / `ttlMs`). The React
+  `KillFeed` host + `useEventTicker` hook render it as a fading, newest-on-top stack of per-kind
+  iconned, accent-colored rows over HudTheme tokens; `kill-feed` demo included.
+- **Interaction prompt registry ("Press E to …").** `@jgengine/core/world` adds `createPromptRegistry()` — a thin
+  observable, serializable store over the existing `resolveActivePrompt` resolver that owns positioned proximity
+  prompts (`register`/`update`/`unregister`/`clear`/`all`), resolves the nearest in-range prompt as the player moves,
+  and notifies subscribers only when the active prompt *changes* (so a HUD does not thrash per frame), with
+  `snapshot`/`restore`. React `@jgengine/react` adds `InteractionPrompt` (a screen-anchored callout rendering the active
+  prompt — key cap + label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable) and
+  `useInteractionPrompt(registry, playerPosition)`. Demo: `interaction-prompt`.
+- **Seeded trauma-based camera shake.** `@jgengine/core/vfx/cameraShake` adds `createCameraShake(config?)` —
+  a serializable, deterministic camera-shake/impulse controller: `add(amount, kind?)` raises trauma `0..1`
+  on impacts (free-string `kind` the game styles), `update(dt)` decays it, and `offset()` returns a pooled
+  `{ x, y, z, pitch, yaw, roll }` kick (`trauma^exponent` × per-axis maxima × seeded value-noise) with
+  snapshot/restore. `@jgengine/react` ships `CameraShakeMeter`/`useCameraShake` (trauma meter + kind label)
+  and `@jgengine/shell` ships `ControllerCameraShake`, an R3F consumer that applies the offset to the active
+  camera each frame so the view visibly shakes. Demo: `camera-shake`.
+
+- **Observable wave/spawn runner + drop-in HUD.** `@jgengine/core/ai/waveRunner` adds
+  `createWaveRunner(config)` — a thin, stateful, observable wrapper over the seeded `spawnDirector`
+  that owns a `SpawnDirectorState`, ticks it from `update(dt, ctx?)`, forwards each `SpawnRequest` to an
+  optional `onSpawn` sink (so the model never instantiates entities), and exposes a pooled `view()`
+  readout (1-based `WAVE N`, wave progress `0..1`, budget/alert, spawned-this-wave/total, done) plus
+  `forceNextWave`/`raiseAlert`/`subscribe`/`snapshot`/`restore`. `@jgengine/react/waveHud` adds
+  `WaveHud`/`useWaveRunner` — a theme-skinnable panel with a big WAVE N label, wave-progress bar, and
+  spawn/budget/alert readouts. Spawn-entry kinds stay free strings the runner never interprets.
+- **Count-based combo / multiplier meter.** `@jgengine/core/combat/comboMeter` adds
+  `createComboMeter({ windowMs, tiers?, dropStep?, multiplierPerTier? })` — an integer hit chain that
+  climbs on `hit(kind?)`, resets a decay window each hit, and drops (to 0, or by `dropStep`) when the
+  window elapses, driven by an injected `now` and/or `update(dt)`. Free-string `tiers` derive the active
+  `tier()` and a score `multiplier()`, with `peak()`, a pooled `view()`, `subscribe`, and
+  `snapshot`/`restore`. React `@jgengine/react/comboMeter` ships `ComboMeterHud` (big live count, tier
+  label, draining window bar, multiplier — per-tier colored from a caller map) and a `useComboMeter` hook.
+- **Off-screen objective / waypoint markers.** `@jgengine/core/ui/screenMarkers` adds a serializable,
+  observable `createWaypointTracker()` (`set`/`remove`/`clear`/`all`/`subscribe`/`snapshot`/`restore`,
+  free-string `kind`s the game styles) plus a pure, allocation-aware `layoutScreenMarker(projection,
+  viewport, options?)` that passes an on-screen point through and clamps an off-screen or behind-camera
+  point to the viewport edge with a bearing `angle` — the edge-clamp/arrow half that `layoutEntityFrames`
+  culls. `@jgengine/react`'s `WaypointMarkers` renders on-screen pins and off-screen directional arrows
+  with distance labels over any caller-owned `project` (e.g. shell `useWorldProjection`), skinnable via
+  HudTheme tokens and a per-`kind` color map. Demo: `waypoint-markers`.
+
+- **Scoreboard / leaderboard ranking.** `@jgengine/core/game/leaderboardRank` adds `rankLeaderboard(rows, options)`
+  — a pure, allocation-bounded selector that turns raw leaderboard rows (accepts `LeaderboardRow[]` straight from
+  `createLeaderboard().snapshot()`) into a render-ready ranked table: stable value sort (`desc`/`asc`), correct tie
+  handling (`standard` → 1,2,2,4; `dense` → 1,2,2,3), `isTie`/`isLocal` flags via `highlightUserId`, and top-N `limit`
+  — plus `medalFor(rank)` returning free-string `gold`/`silver`/`bronze` podium tokens. `@jgengine/react`'s reskinnable
+  `Scoreboard` table renders it with medal-colored podium icons, a highlighted local row, and HudTheme `--jg-*` tokens.
 - **Talent/upgrade tree from any unlock rule.** `@jgengine/core/game/talentTreeView` adds
   `talentTreeViewFrom(nodes, status, totals?)` — a general builder that places a node graph (branch/tier
   layout, prerequisite edges, learned/available/locked/maxed state) from a caller-supplied per-node
