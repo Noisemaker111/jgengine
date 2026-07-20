@@ -12,6 +12,11 @@ export interface DefensiveWindowConfig {
 
 export type DefenseOutcome = "parry" | "block" | "iframe" | "hit";
 
+/**
+ * Result of resolving an incoming hit against a defensive window: `outcome` is the graded defense
+ * (`"parry"`/`"block"`/`"iframe"`/`"hit"`) and `perfect` is true when the input landed inside the
+ * tight just-frame at the window's start rather than its wider active span.
+ */
 export interface DefenseResolution {
   outcome: DefenseOutcome;
   perfect: boolean;
