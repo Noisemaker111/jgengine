@@ -262,6 +262,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Keycap` (function) · `import { Keycap } from "@jgengine/react"`
 
+## kill-feed — vertical event/kill-feed ticker rendering a core event-ticker as a fading, newest-on-top stack of per-kind iconned, accent-colored rows over HudTheme tokens
+
+- `KillFeed` (function) · `import { KillFeed } from "@jgengine/react"`
+
 ## live-markers — a self-ticking MarkerSet kept in sync from the live scene each HUD tick — pass a rebuild(markers, ctx) that clears+repopulates, no hand-rolled setInterval
 
 - `useLiveMarkers` (function) · `import { useLiveMarkers } from "@jgengine/react"`
@@ -490,6 +494,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-dialogue-run — React hook binding a branching dialogue run to a component — re-renders as the player advances the conversation
 
 - `useDialogueRun` (function) · `import { useDialogueRun } from "@jgengine/react"`
+
+## use-event-ticker — React hook binding an event-ticker — re-renders per frame so entries fade and drop live, returning the current newest-first views
+
+- `useEventTicker` (function) · `import { useEventTicker } from "@jgengine/react"`
 
 ## use-fast-travel — re-render a component when a fast-travel network's discovery state changes
 

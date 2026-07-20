@@ -120,6 +120,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGameFeed` (function) · `import { createGameFeed } from "@jgengine/core/gameplay"`
 
+## event-ticker — rolling capped, timed-fade event/kill-feed ticker of free-string entries over the feed helpers — push/recent-with-fade, snapshot/restore
+
+- `createEventTicker` (function) · `import { createEventTicker } from "@jgengine/core/gameplay"`
+
 ## game-save — save/load game state with a pluggable backend, autosave, slots, and migration
 
 - `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/gameplay"`

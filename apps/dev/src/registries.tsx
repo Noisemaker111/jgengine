@@ -137,6 +137,7 @@ export const gameRegistry: GameRegistry = {
   "floating-text": () => import("./demo/floatingTextDemo").then((module) => module.floatingTextDemoGame),
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
   "objective-banner": () => import("./demo/objectiveBannerDemo").then((module) => module.objectiveBannerDemoGame),
+  "kill-feed": () => import("./demo/killFeedDemo").then((module) => module.killFeedDemoGame),
   "waypoint-markers": () => import("./demo/waypointMarkersDemo").then((module) => module.waypointMarkersDemoGame),
   "scoreboard": () => import("./demo/scoreboardDemo").then((module) => module.scoreboardDemoGame),
   "talent-tree": () => import("./demo/talentTreeDemo").then((module) => module.talentTreeDemoGame),

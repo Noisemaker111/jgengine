@@ -20,6 +20,7 @@ export * from "./codex";
 export * from "./notifications";
 export * from "./coachMarks";
 export * from "./objectiveBanner";
+export * from "./killFeed";
 export * from "./waypointMarkers";
 export * from "./scoreboard";
 export * from "./timerReadout";

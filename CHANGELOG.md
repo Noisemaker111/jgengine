@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Event-log / kill-feed ticker.** `@jgengine/core/game/eventTicker` adds a thin, serializable,
+  observable `createEventTicker({ now?, limit?, ttlMs? })` over the existing `appendFeed`/`pruneFeed`
+  helpers: a single rolling, count-capped, time-fading list of free-string `{ kind, text, icon? }`
+  entries (`push`/`recent`-with-`fade`/`entries`/`clear`/`subscribe`/`snapshot`/`restore`). `recent()`
+  prunes expired entries and returns them newest-first with a `fade` `0..1` (age / `ttlMs`). The React
+  `KillFeed` host + `useEventTicker` hook render it as a fading, newest-on-top stack of per-kind
+  iconned, accent-colored rows over HudTheme tokens; `kill-feed` demo included.
 - **Off-screen objective / waypoint markers.** `@jgengine/core/ui/screenMarkers` adds a serializable,
   observable `createWaypointTracker()` (`set`/`remove`/`clear`/`all`/`subscribe`/`snapshot`/`restore`,
   free-string `kind`s the game styles) plus a pure, allocation-aware `layoutScreenMarker(projection,
