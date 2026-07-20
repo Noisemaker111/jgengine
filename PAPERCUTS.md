@@ -14,16 +14,11 @@ Log one:
     bun run papercut -m <model> "message"
 
 Every so often these get swept: read the list, make the easy fixes, clear them.
+Real bugs and feature gaps get promoted to tracked issues and removed from here;
+what remains below is sandbox / environment / workflow / harness friction that
+isn't a repository code fix.
 
 ---
-
-2026-07-18T16:51:34.018Z — claude-fable-5 — Claude
-
-capturing editor screenshots in the dev runner → 'assets pull' run from repo root provisions public/models at the repo root, but apps/dev serves apps/dev/public — the runtime error's suggested fix leaves the dev runner still 404ing until the pack is copied into apps/dev/public/models
-
-2026-07-18T16:54:13.275Z — claude-fable-5 — NoisemakerJon
-
-gate/test:all in the cloud container → 3 model-pack texture-URI tests fail identically on origin/main (previously alongside a Windows tar drive-letter issue, since fixed); needs a look at the pack tests
 
 2026-07-18T18:05:04.668Z — claude — Claude
 
@@ -45,25 +40,9 @@ cleaning up the temporary Vite visual-verification server -> the sandbox allowed
 
 following AGENTS.md's instruction to run ship:preflight immediately before shipping -> the preflight rejects any dirty implementation and also requires a committed branch diff, so the documented ordering actually requires commit first and cannot validate the exact uncommitted tree
 
-2026-07-18T21:10:28.446Z — gpt-5.6-sol — NoisemakerJon
-
-combining tarball consumer tests with barrel generators in one focused bun test run -> the unchanged core clean-consumer test exceeded its default 5s timeout under contention even though the same tarball suite passes alone; focused verification commands need isolation or explicit timeouts
-
-2026-07-18T21:15:03.831Z — gpt-5.6-sol — NoisemakerJon
-
-rerunning scripts/tarballInstall.test.ts after one timeout adjustment -> repeated npm pack filesystem work hung beyond the 120s command guard with no streamed test output; clean-consumer validation needs per-case filtering or shared pack artifacts on Windows
-
 2026-07-18T21:23:09.992Z — gpt-5.6-sol — NoisemakerJon
 
 staging the reviewed worktree diff -> git could not create the linked-worktree index.lock under the main checkout's .git directory without escalation, despite the worktree itself being the authorized writable root
-
-2026-07-18T21:58:37.034Z — gpt-5.6-sol — NoisemakerJon
-
-running the isolated packed-core stat-pool import smoke test -> Windows tar extraction was killed at the explicit 30s test budget after a dangling process warning; real-tarball tests need a Windows-safe extractor or a larger filesystem budget
-
-2026-07-18T22:13:40.362Z — gpt-5.6-sol — NoisemakerJon
-
-retrying the full gate after the isolated editor build passed -> 6337 tests passed, but five unchanged tarball-content cases and installPackagedSkills exceeded Bun's default 5s timeout under Windows filesystem contention, alongside the known six-subpath editor export-manifest drift
 
 2026-07-18T22:32:42.003Z — gpt-5.6-sol — NoisemakerJon
 
@@ -77,18 +56,6 @@ running ship preflight immediately after the verified runtime-state commit -> or
 
 opening the verified runtime-state PR from PowerShell -> gh pr create split multiline --body values even with a literal here-string, requiring --body-file stdin instead
 
-2026-07-18T23:54:36.309Z — claude-fable-5 — NoisemakerJon
-
-Consumer sim: WoW-like needed overhead enemy nameplates/healthbars; jgengine-ui has bars but no floating world-anchored entity-frame seam or recipe, so it drops off agent plans
-
-2026-07-18T23:54:36.309Z — claude-fable-5 — NoisemakerJon
-
-Consumer sim: standalone projects have no screenshot/verify tool — shoot/drive are monorepo scripts — so the AGENTS.md rule 'visual claims are screenshot-judged harshly by you' is unenforceable for exactly the outside users it targets; ship a jgengine shoot CLI verb
-
-2026-07-19T00:10:56.438Z — claude-fable-5 — NoisemakerJon
-
-Consumer sim: an 'all robots' game found zero robot/mech character models in the @jgengine/assets index (only fantasy adventurers/skeletons are rigged) — had to hand-pull Quaternius Animated Robot / Robot Enemy / Mech GLBs from poly.pizza into public/models as extras. Mirror a Quaternius robot pack into the asset index
-
 2026-07-18T23:04:31.014Z — gpt-5.6-sol — NoisemakerJon
 
 running independent recipe/surface/test/type checks for portable damage in parallel -> automatic permission review timed out after several minutes before commands ran, so verification had to be retried as one bounded sequence
@@ -97,42 +64,6 @@ running independent recipe/surface/test/type checks for portable damage in paral
 
 running ship preflight after the green portable damage commit -> origin/main advanced with the world API redesign during verification, requiring a final rebase and affected-check refresh
 
-2026-07-19T04:40:07.134Z — fable — Claude
-
-verifying vice-isle movement fix → bun run drive --playtest in the cloud container runs headless Chrome at ~2 fps software GL (1.2M tris), so held-key movement barely advances and every game reads as a false SOFTLOCK (wreckway: 2 probe frames in 8s); playtest rung is unusable here, had to fall back to deterministic headless stepPlayerMovement evidence
-
-2026-07-19T04:59:59.942Z — claude-fable-5 — Claude
-
-releasing 0.14.0 → bun test scripts fails on a clean main checkout: packages/core/src/world.ts barrel is out of sync with gen-barrels output (scatterCoverage symbol ordering from #1279); had to regenerate and fold the fix into the release PR
-
 2026-07-19T05:52:23.682Z — claude-fable-5 — Claude
 
 Fan-out research with background subagents → each agent's final report arrives truncated to ~2000 chars in the task-notification and asking the agent to Write its full report to the scratchpad silently fails (file never appears on disk, agent claims success); had to re-poke each agent to paste the full report inline as reply text, which does deliver in full.
-
-2026-07-19T07:09:44.388Z — claude-fable-5 — Claude
-
-gen:export-manifest reads built dist, so generating before a full package build silently omits new subpaths (bit #1300's useDisposable and nearly my ai/driver) — manifest check only fails later on a fully-built tree; generator should build or warn on stale dist
-
-2026-07-19T03:57:16.316Z — fable — Claude
-
-Adding an /agents.md server route to apps/web → Vite dev static middleware intercepts .md URLs and 404s before TanStack SSR sees them, while .txt/.xml server routes work; had to ship the brief as /llms-full.txt instead
-
-2026-07-19T04:20:12.828Z — claude-fable-5 — Claude
-
-Fixing production 404 for quaternius-modular-scifi models → content gate accepts 'provisioned' pack refs, but the Vercel /play build only ships committed packs, so games can merge referencing packs production can never serve (the-robots, tower-guard hit this); also kaykit-space-base was committed without a .gitignore whitelist entry
-
-2026-07-19T17:09:58.949Z — claude-fable-5 — Claude
-
-bun run gate → packages/assets src/cli/pull.test.ts failed once in the full test:all run (offline pull found empty /tmp dir) but passes in isolation; flaky network/tmpdir-dependent test forced a full gate re-run
-
-2026-07-19T21:06:59.865Z — claude-fable-5 — Claude
-
-recording a drive on the warm Chrome reused the profile's localStorage save — vice-isle restored the previous run's session and capture.probe read 0,0,0; fresh-profile drives (no --connect) were needed for honest recording runs
-
-2026-07-19T22:40:53.030Z — claude-opus-4-8 — Claude
-
-bun run agent:bootstrap on a fresh worktree failed: shell build could not find @jgengine/core/vfx/screenEffects because core dist was stale/incomplete from a prior partial build; a plain rebuild of core then full build succeeded
-
-2026-07-20T01:33:39.073Z — fable — Claude
-
-overhauling generateCity onto the cityBlocks fabric → extractBlocks silently collapses on generateStreets output (wandered/arc-filleted centerlines defeat proximity welding: 38 streets → 2 faces, no warning), so the fabric looked adoptable but wasn't; had to add graph-exact extractGraphBlocks — extractBlocks should warn or assert when face count is implausibly low vs street count
