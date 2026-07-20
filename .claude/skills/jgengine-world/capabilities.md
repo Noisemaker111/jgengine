@@ -301,6 +301,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `interestPhase` (function) · `import { interestPhase } from "@jgengine/core/world"`
 
+## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
+
+- `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/input/rebindSession"`
+
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`

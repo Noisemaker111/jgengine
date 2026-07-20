@@ -274,6 +274,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
 
+## keybinding-menu — drop-in controls-settings surface over a rebind session — click-to-capture rows with key glyphs, conflict badges, per-row and reset-all, HudTheme-skinnable
+
+- `KeybindingMenu` (function) · `import { KeybindingMenu } from "@jgengine/react"`
+
 ## keycap — styled keyboard/mouse key cap for control hints
 
 - `Keycap` (function) · `import { Keycap } from "@jgengine/react"`
@@ -550,6 +554,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-panels — headless toggleable-window manager with keybind + ESC handling over the core panel model
 
 - `usePanels` (function) · `import { usePanels } from "@jgengine/react"`
+
+## use-rebind-session — React hook that re-renders a component whenever a rebind session changes
+
+- `useRebindSession` (function) · `import { useRebindSession } from "@jgengine/react"`
 
 ## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
 

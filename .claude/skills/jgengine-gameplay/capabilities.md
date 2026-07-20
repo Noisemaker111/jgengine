@@ -181,6 +181,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createUseBehaviorRegistry` (function) · `import { createUseBehaviorRegistry } from "@jgengine/core/gameplay"`
 
+## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
+
+- `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/gameplay"`
+
 ## lap-splits — per-lap durations from a cumulative split book
 
 - `lapDurations` (function) · `import { lapDurations } from "@jgengine/core/gameplay"`
