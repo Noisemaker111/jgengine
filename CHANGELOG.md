@@ -428,6 +428,10 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Removed
 
+### Fixed
+
+- **A missing/mis-served GLB no longer white-screens the whole game — it degrades to one placeholder primitive** (`@jgengine/shell/render/modelLoad`, #1340). A Vite dev server returns its `index.html` fallback (HTTP 200) for a missing `/models/*.glb`; `GLTFLoader` then throws parsing HTML as a GLB, and that failure surfaced as a rejected `useLoader` Suspense promise which does **not** reliably re-throw into a per-model React error boundary inside the react-three-fiber reconciler — so it escaped to the app-level `GameUiErrorBoundary` and blanked the scene. `sharedGltfLoader` (`DiagnosticGLTFLoader`) now probes a failed URL and, for a diagnosed broken asset (missing / HTML fallback / corrupt / unsupported), **resolves to a `createFallbackModel` placeholder box instead of rejecting**, containing the failure at the load seam for every consumer with no reliance on boundary recovery; a genuine parse error over valid-looking bytes is still surfaced. Emits a dev console warning naming the broken path. No API change; `useLoader(sharedGltfLoader, url)` benefits with no call-site change.
+
 ## 0.14.0
 
 ### Migrate
