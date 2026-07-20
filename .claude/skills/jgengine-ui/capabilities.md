@@ -410,6 +410,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
 
+## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
+
+- `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/react"`
+
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
 - `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay"`
