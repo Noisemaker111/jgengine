@@ -46,6 +46,15 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Off-screen objective / waypoint markers.** `@jgengine/core/ui/screenMarkers` adds a serializable,
+  observable `createWaypointTracker()` (`set`/`remove`/`clear`/`all`/`subscribe`/`snapshot`/`restore`,
+  free-string `kind`s the game styles) plus a pure, allocation-aware `layoutScreenMarker(projection,
+  viewport, options?)` that passes an on-screen point through and clamps an off-screen or behind-camera
+  point to the viewport edge with a bearing `angle` — the edge-clamp/arrow half that `layoutEntityFrames`
+  culls. `@jgengine/react`'s `WaypointMarkers` renders on-screen pins and off-screen directional arrows
+  with distance labels over any caller-owned `project` (e.g. shell `useWorldProjection`), skinnable via
+  HudTheme tokens and a per-`kind` color map. Demo: `waypoint-markers`.
+
 - **Scoreboard / leaderboard ranking.** `@jgengine/core/game/leaderboardRank` adds `rankLeaderboard(rows, options)`
   — a pure, allocation-bounded selector that turns raw leaderboard rows (accepts `LeaderboardRow[]` straight from
   `createLeaderboard().snapshot()`) into a render-ready ranked table: stable value sort (`desc`/`asc`), correct tie

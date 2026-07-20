@@ -402,6 +402,7 @@
     "./ui/panelModel",
     "./ui/photoMode",
     "./ui/radialMenu",
+    "./ui/screenMarkers",
     "./ui/selectionModel",
     "./ui/swingTimer",
     "./ui/tooltipModel",
@@ -579,7 +580,6 @@
     "./radialMenu",
     "./rotateDevice",
     "./save",
-    "./scoreboard",
     "./selectSnapshot",
     "./selectionHud",
     "./settings",
@@ -592,7 +592,8 @@
     "./talentTree",
     "./timerReadout",
     "./useDebouncedCommit",
-    "./voice"
+    "./voice",
+    "./waypointMarkers"
   ],
   "@jgengine/convex": [
     ".",
