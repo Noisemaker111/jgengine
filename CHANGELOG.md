@@ -53,6 +53,10 @@ At publish, rename this heading to the new version and mirror the entries into
   straight line through an arc is a fake beam. The `projectile.settled` event and `ProjectileSettleReport`
   gain a required `ballistic: boolean`; code that emits or consumes them directly must set/handle the field.
 
+### Fixed
+
+- **`assets pull` / `assets add` default output dir now lands where the dev server serves models** (`@jgengine/assets` CLI, #1339) — inside the monorepo a bare `pull`/`add` previously wrote to a cwd-relative `public/`, so running it under `packages/assets` (or any subdir) dropped GLBs into a folder no game serves. It now defaults to the served root `apps/dev/public` when that exists (falling back to the historical cwd-relative `public` for out-of-monorepo consumers), so pulled bytes land in `apps/dev/public/models/<pack>` where the runner reads them. `--dir` still overrides.
+
 ### Added
 
 - **Result/option types of public barrel functions are now re-exported (#1319).** The
