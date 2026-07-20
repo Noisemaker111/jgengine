@@ -84,6 +84,7 @@
     "./devtools/overrides",
     "./devtools/rewriteTunables",
     "./devtools/saveEndpoint",
+    "./devtools/textureErrors",
     "./devtools/transformTunables",
     "./devtools/tunableSchema",
     "./devtools/types",

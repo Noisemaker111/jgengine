@@ -59,6 +59,15 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`debug_snapshot().probes.textureErrors` surfaces in-GLB texture-load failures (#1342).**
+  `@jgengine/core/devtools/textureErrors` adds an allocation-aware collector
+  (`armTextureErrors`/`reportTextureLoadError`/`resetTextureErrors`/`textureErrorsSnapshot`) that the
+  shell's shared GLB loading manager feeds on every texture/image `onError`. Previously only whole-model
+  catalog fallbacks (missing mapping/pack/scene) reached the `fallbacks` probe, so a model that resolved
+  but whose textures 404'd read as a clean scene to `debug_snapshot` — the exact signal `jgengine-verify`
+  tells agents to trust. The new `probes.textureErrors` list (`{ url, count }[]`) makes those failures
+  visible so a texture-404'd scene can be treated like a model fallback. Dev-only (armed with devtools);
+  a pure no-op in production.
 - **Result/option types of public barrel functions are now re-exported (#1319).** The
   `@jgengine/core/gameplay` barrel re-exports `ChargeResult`, `ChargeOptions`, and `Overdraft`
   alongside `charge`/`chargeAll`/`canAfford`, and `@jgengine/core/combat` re-exports
