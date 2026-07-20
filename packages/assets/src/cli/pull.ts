@@ -23,7 +23,13 @@ import {
 import { materialSources, sourceById, spriteSources } from "../sources";
 import { reindexSprites } from "../spriteIndexGen";
 import { verifyManifest } from "../verify";
-import { resolveGeneratedDir, resolveGeneratedSpritesDir, resolvePackageRoot, resolvePackageTreeRoot } from "./paths";
+import {
+  resolveDefaultOutputRoot,
+  resolveGeneratedDir,
+  resolveGeneratedSpritesDir,
+  resolvePackageRoot,
+  resolvePackageTreeRoot,
+} from "./paths";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const packageTreeRoot = resolvePackageTreeRoot(here);
@@ -162,7 +168,7 @@ export async function cmdPull(argv: string[]): Promise<void> {
   const source = sourceById.get(sourceId);
   if (source === undefined) fail(`unknown source: ${sourceId}`);
 
-  const outRoot = resolve(flag(argv, "dir") ?? "public");
+  const outRoot = flag(argv, "dir") !== undefined ? resolve(flag(argv, "dir")!) : resolveDefaultOutputRoot(here);
   const outDir = join(outRoot, packSubdir(source), sourceId);
   const offline = argv.includes("--offline");
   const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
@@ -335,7 +341,7 @@ async function performAdd(match: AssetMatch, argv: string[]): Promise<void> {
     return;
   }
 
-  const outRoot = resolve(flag(argv, "dir") ?? "public");
+  const outRoot = flag(argv, "dir") !== undefined ? resolve(flag(argv, "dir")!) : resolveDefaultOutputRoot(here);
   const mirrorBase = flag(argv, "mirror") ?? process.env.JGENGINE_ASSETS_MIRROR;
 
   if (match.kind === "material") {
