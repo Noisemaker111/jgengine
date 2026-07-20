@@ -134,6 +134,7 @@
     "./game/gamePhase",
     "./game/keyValueStore",
     "./game/leaderboard",
+    "./game/leaderboardRank",
     "./game/levelSequence",
     "./game/loadout",
     "./game/lootFilter",

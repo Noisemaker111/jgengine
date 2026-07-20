@@ -55,6 +55,12 @@ At publish, rename this heading to the new version and mirror the entries into
   with distance labels over any caller-owned `project` (e.g. shell `useWorldProjection`), skinnable via
   HudTheme tokens and a per-`kind` color map. Demo: `waypoint-markers`.
 
+- **Scoreboard / leaderboard ranking.** `@jgengine/core/game/leaderboardRank` adds `rankLeaderboard(rows, options)`
+  — a pure, allocation-bounded selector that turns raw leaderboard rows (accepts `LeaderboardRow[]` straight from
+  `createLeaderboard().snapshot()`) into a render-ready ranked table: stable value sort (`desc`/`asc`), correct tie
+  handling (`standard` → 1,2,2,4; `dense` → 1,2,2,3), `isTie`/`isLocal` flags via `highlightUserId`, and top-N `limit`
+  — plus `medalFor(rank)` returning free-string `gold`/`silver`/`bronze` podium tokens. `@jgengine/react`'s reskinnable
+  `Scoreboard` table renders it with medal-colored podium icons, a highlighted local row, and HudTheme `--jg-*` tokens.
 - **Talent/upgrade tree from any unlock rule.** `@jgengine/core/game/talentTreeView` adds
   `talentTreeViewFrom(nodes, status, totals?)` — a general builder that places a node graph (branch/tier
   layout, prerequisite edges, learned/available/locked/maxed state) from a caller-supplied per-node
