@@ -507,6 +507,9 @@
 - `BetterAuthSessionState` (interface): interface BetterAuthSessionState — ⚠ undocumented
 - `BetterAuthUserShape` (interface): interface BetterAuthUserShape — ⚠ undocumented
 - `BossBar` (function): function BossBar(props: AtomicBarProps & { name?: string }): React.JSX.Element — A wide encounter/boss health bar with the boss name at the start.
+- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, animate = false, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. A shell component applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
+- `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
+- `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
 - `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): React.JSX.Element — ⚠ undocumented
 - `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean; width?: number; height?: number; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
 - `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): React.JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
@@ -530,6 +533,9 @@
 - `CodexProps` (interface): interface CodexProps — Props for {@link Codex}.
 - `Coins` (function): function Coins({ currencyId, icon = "🪙", style, className, }: { currencyId: string; icon?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A currency counter — an icon (emoji/char, default a coin) plus the live amount for `currencyId`. *
 - `ColorblindFilters` (function): function ColorblindFilters(): ReactNode — Hidden SVG `<defs>` holding the `feColorMatrix` colorblind filters that `AccessibilityProvider` references by `filter: url(#jg-cb-<mode>)`. Rendered automatically inside the provider; export standalone for custom roots.
+- `ComboMeterHud` (function): function ComboMeterHud({ meter, tierColors, theme, animate = true, hideWhenEmpty = true, barWidth = 220, className, style, }: ComboMeterHudProps): ReactNode — A drop-in HUD for a core {@link ComboMeter}: the big live combo count ("×12"), the current free-string tier label, the derived score multiplier, and a draining window bar (reusing the shared atomic bar) that empties as the decay window runs out and re-fills on every hit. The active tier's color — supplied by the game via `tierColors`, keyed on the free-string tier id the model never interprets — drives the count glow, the label, and the bar fill, so a game reskins the escalation ("good" → "great" → "savage") without the engine hardcoding any tier meaning. Presentation only: all counting, timing, tiers, and the multiplier live in the core model.
+- `ComboMeterHudProps` (interface): interface ComboMeterHudProps — Props for {@link ComboMeterHud}.
+- `ComboMeterTheme` (interface): interface ComboMeterTheme — Reskin tokens for {@link ComboMeterHud}.
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
 - `CompassProps` (interface): interface CompassProps — ⚠ undocumented
 - `ConfirmDialog` (function): function ConfirmDialog({ title, body, confirmLabel = "Confirm", cancelLabel = "Cancel", onConfirm, onCancel, danger = false, width = 360, className, style, }: ConfirmDialogProps): ReactNode — A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over a `HudTheme`-token-driven {@link HudFrame}. Presentation-only: wire `onConfirm`/`onCancel` to a modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies the copy.
@@ -628,6 +634,10 @@
 - `IconTreatmentProps` (interface): interface IconTreatmentProps — Props for {@link IconTreatment}.
 - `IconsPreview` (function): function IconsPreview({ className }: { className?: string }): React.JSX.Element — Renders the school-gradient row and a treated-icon hotbar — the deterministic #1035 fixture.
 - `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
+- `InteractionPrompt` (function): function InteractionPrompt({ registry, playerPosition, theme, accentFor, keyFor, gaugeProgress, anchor = "bottom-center", zIndex = 40, className, style, }: InteractionPromptProps): ReactNode — A screen-anchored "Press E to …" interaction callout that renders the active prompt of a {@link PromptRegistry}. It subscribes to the registry and — when given `playerPosition` — re-resolves as the hero moves, showing the nearest in-range interactable and switching to a closer/higher-priority one as they cross radii. Each display kind renders as itself: a `keybind` shows a key cap plus its label ("Press [E] Open"), a `gauge` shows a hold bar filling with `gaugeProgress`, and a `label` shows plain text. Presentation only — the registry never branches on a prompt's meaning; the game colors each via `accentFor` and maps action ids to key glyphs via `keyFor`. HudTheme-skinnable through `--jg-accent` and {@link InteractionPromptTheme}.
+- `InteractionPromptAnchor` (type): type InteractionPromptAnchor = "bottom-center" | "top-center" | "center" — Where the callout sits over the scene.
+- `InteractionPromptProps` (interface): interface InteractionPromptProps — Props for {@link InteractionPrompt}.
+- `InteractionPromptTheme` (interface): interface InteractionPromptTheme — Reskin tokens for {@link InteractionPrompt}.
 - `InventoryGrid` (function): function InventoryGrid({ inventoryId, columns, size = 44, gap = 6, itemIcon, onActivate, className, style, }: InventoryGridProps): React.JSX.Element — A drop-in inventory grid with drag/swap/stack-merge/split and full keyboard control, bound to `inventoryId`.
 - `InventoryGridBinding` (interface): interface InventoryGridBinding — Live slots plus `move`/`split` actions bound to `inventoryId`, routed through the notifying `inventory.move`/`inventory.split` commands so React re-renders.
 - `InventoryGridProps` (interface): interface InventoryGridProps — Props for {@link InventoryGrid}.
@@ -636,6 +646,10 @@
 - `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
 - `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
+- `KillFeed` (function): function KillFeed({ ticker, kindStyles, theme, iconSize = 18, animate = true, zIndex = 40, className, style, }: KillFeedProps): ReactNode — A vertical event/kill-feed ticker: renders an {@link EventTicker}'s recent entries as a stack of rows, newest on top, each with its `fade` `0..1` mapped to opacity so entries dim and drop as they age out. Each row shows an optional per-kind (or per-entry) {@link GameIcon} and a per-kind accent color from `kindStyles`, styled with HudTheme tokens. Presentation only: all capping/timing lives in the core ticker, and the free-string `kind`/`text`/`icon` are never interpreted here — a game colors and icons each variant via `kindStyles`.
+- `KillFeedKindStyle` (interface): interface KillFeedKindStyle — Per-`kind` styling for a kill-feed row — accent color and an optional icon.
+- `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
+- `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
 - `LayoutRegionSpec` (type): type LayoutRegionSpec = Omit<LayoutRegion, "rect"> — A region descriptor without its measured rectangle — the caller supplies geometry through `useRegisterLayoutRegion`.
 - `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -775,6 +789,9 @@
 - `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `VoiceState` (interface): interface VoiceState — ⚠ undocumented
 - `WaveBanner` (function): function WaveBanner({ wave, label = "Wave", subtitle, style, className, }: { wave: number | string; label?: string; subtitle?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A wave / round banner — a bold centered pill for "WAVE 3" style callouts, with an optional subtitle (enemies remaining, timer). Pure display: pass the current `wave` and whatever subtitle you track.
+- `WaveHud` (function): function WaveHud({ runner, theme, variation = "plate", width = 260, className, style }: WaveHudProps): ReactNode — A drop-in wave/spawn HUD panel over a {@link WaveRunner}: a big "WAVE N" label, a wave-progress bar (the shared {@link ExperienceBar}), and the live spawned / total, budget, and alert readouts — the visible face of "the brain behind WAVE 3". It subscribes to the runner and re-renders on change; the game drives the runner's clock. Reskin with {@link WaveHudTheme} and the shared HudTheme bar tokens. When the final wave finishes it shows a "WAVES CLEARED" state. Presentation only: the schedule, budget, and RNG live in the core model, and spawn `kind`s are never read.
+- `WaveHudProps` (interface): interface WaveHudProps — Props for {@link WaveHud}.
+- `WaveHudTheme` (interface): interface WaveHudTheme — Reskin tokens for {@link WaveHud}. All optional; each falls back to a sensible default.
 - `WaypointArrow` (function): function WaypointArrow({ relative, distance, label, formatDistance = (value) => `${Math.round(value)}m`, size = 44, color = "#f59e0b", className, style, }: WaypointArrowProps): ReactNode — On-screen guide arrow to the tracked waypoint — a HUD compass needle rotated by the facing-relative bearing, with an optional label and distance readout. Pair with `WaypointStore.guidance(playerXZ, facingYaw)`.
 - `WaypointArrowProps` (interface): interface WaypointArrowProps — Props for {@link WaypointArrow}.
 - `WaypointMarkerTheme` (interface): interface WaypointMarkerTheme — Reskin tokens for {@link WaypointMarkers}. Per-`kind` color layers on top via `kindColors`.
@@ -829,9 +846,11 @@
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
 - `useAutoScroll` (function): function useAutoScroll<T extends HTMLElement>(dep: unknown): React.RefObject<T | null> — Pin a scrollable element to its bottom whenever `dep` changes (typically a length or the list itself). Attach the returned ref to the scroll container. Owns the log/chat/console scroll-to-bottom effect so panels don't hand-roll it.
 - `useAxisChannel` (function): function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult — Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`. The channel is recreated when `config` identity changes, so pass a stable config (useMemo/module constant at the call site) unless a rebind is intended.
+- `useCameraShake` (function): function useCameraShake(controller: CameraShakeController, animate = true): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). Optionally drives `update()` on an animation frame so the trauma meter bleeds down live even when no game loop ticks the controller. Returns the current trauma + kind for a HUD readout.
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useCoachMarks` (function): function useCoachMarks(sequence: CoachMarkSequence): CoachMarkView | null — Subscribe to a coach-mark sequence and re-render on every change, returning the current step view (or `null` when the tour is complete or waiting on a gate).
+- `useComboMeter` (function): function useComboMeter(meter: ComboMeter, animate = true): ComboMeterView — Subscribe to a combo meter and re-render it each animation frame so the decay window bar drains live, returning the pooled view to draw right now. Reading the view each frame advances the meter's clock and fires window expiry, so a combo that times out visibly drops even with no further hits. The returned object is the model's pooled view — read its fields immediately, do not retain it.
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
 - `useDamageDirection` (function): function useDamageDirection(tracker: DamageDirectionTracker): readonly DamageIndicator[] — Subscribe to a damage-direction tracker and animate. Because indicators fade continuously on a clock (not just on discrete events), this drives a `requestAnimationFrame` loop while any indicator is live and stops when the screen is clear, then wakes again on the next hit. Returns the tracker's current `active()` array (reused between frames — copy if you retain it).
 - `useDebouncedCommit` (function): function useDebouncedCommit<T>(value: T, commit: (value: T) => void, delayMs = 180): DebouncedCommit<T> — See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the binding identity stays stable except when `value` (the local mirror) changes.
@@ -841,6 +860,7 @@
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
 - `useEntityStat` (function): function useEntityStat(instanceId: string, statId: string): StatValue | null — ⚠ undocumented
 - `useEventMeter` (function): function useEventMeter(meter: EventMeter, options?: AbilitySlotBindingOptions): EventMeterView — Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline and streak/combo meters (`event-meter` capability) that lets a HUD gauge re-render on tick without the game hand-rolling a `useEffect`/`setInterval` heartbeat around `meter.value()`.
+- `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker and re-render it on an animation frame (unless the game already ticks it), returning the live entries newest-first with `fade` applied. Driving the frame loop is what makes entries visibly fade and drop as they age out.
 - `useFastTravel` (function): function useFastTravel<TMeta = unknown>(network: FastTravelNetwork<TMeta>): FastTravelNetwork<TMeta> — Subscribe a component to a fast-travel network's discovery changes. Returns the network unchanged; the hook only forces a re-render when a point is discovered or the network is restored, so callers can read `destinations`/`list` in render.
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
@@ -861,6 +881,7 @@
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 - `useI18n` (function): function useI18n(): I18n — Read the current {@link I18n} from context; throws when no {@link I18nProvider} is above.
+- `useInteractionPrompt` (function): function useInteractionPrompt(registry: PromptRegistry, playerPosition: PromptPoint): PositionedPrompt | null — Subscribe to a {@link PromptRegistry} and re-`resolve` it whenever the player moves, returning the prompt to draw right now — or `null` when the player is out of range of every interactable. The registry notifies only on active-prompt *changes*, so this re-renders on transitions rather than every frame the hero moves. Feed it the player's `{ x, z }` position each frame; identical positions do no work.
 - `useInventory` (function): function useInventory(inventoryId: string): readonly InventorySlot[] — ⚠ undocumented
 - `useInventoryGrid` (function): function useInventoryGrid(inventoryId: string): InventoryGridBinding — Binds a live inventory to a HUD grid: `slots` from {@link useInventory}, and `move`/`split` that run the built-in `inventory.move`/`inventory.split` commands (which notify, so the grid re-renders).
 - `useKeyedStore` (function): function useKeyedStore<T>(handle: KeyedStoreHandle<T>, id: string): T — Subscribe a component to one owner's slot of a typed keyed-family store defined with `defineKeyedStore`. Returns the current value for `id` (or the definition's initial before any write for that id), re-rendering only when that owner's slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(`prefix:${id}`) as T)`.
@@ -909,6 +930,7 @@
 - `useTimerRead` (function): function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null — Subscribe to a single timer and re-read it every animation frame while mounted, so a HUD readout stays live without the game hand-rolling interval math. Reuses one read object (allocation-aware). Returns `null` for an unknown id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
+- `useWaveRunner` (function): function useWaveRunner(runner: WaveRunner): WaveView — Subscribe to a {@link WaveRunner} and re-render whenever it notifies (wave, budget, spawns, alert change). Returns the runner's pooled {@link WaveView}. The runner is driven by the game/demo (call `runner.update(dt)`), not by this hook.
 - `useWaypoints` (function): function useWaypoints(source: WaypointTracker | readonly Waypoint[]): readonly Waypoint[] — Subscribe to a {@link WaypointTracker} and re-render on every change, returning its current waypoints. Pass a plain array instead and it is returned as-is (no subscription), so a game can drive the host from a tracker or from its own derived state.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
@@ -964,6 +986,13 @@
 ## @jgengine/react/barsPreview
 
 - `BarsPreview` (function): function BarsPreview({ className }: { className?: string }): React.JSX.Element — Renders the atomic bar matrix twice under different token blocks to prove global re-theming.
+
+## @jgengine/react/cameraShake
+
+- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, animate = false, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. A shell component applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
+- `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
+- `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
+- `useCameraShake` (function): function useCameraShake(controller: CameraShakeController, animate = true): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). Optionally drives `update()` on an animation frame so the trauma meter bleeds down live even when no game loop ticks the controller. Returns the current trauma + kind for a HUD readout.
 
 ## @jgengine/react/cards
 
@@ -1021,6 +1050,13 @@
 
 - `Codex` (function): function Codex({ entries, title = "Codex", columns = 3, maskSecrets = true, renderIcon, onSelect, emptyLabel = "Nothing discovered yet.", className, style, }: CodexProps): ReactNode — Codex / bestiary gallery — category tabs, a responsive grid of entry cards (discovered vs. locked, secret entries masked until found), and a header summarizing completion. Feed it `codex.list()`; wire `onSelect` to a detail pane.
 - `CodexProps` (interface): interface CodexProps — Props for {@link Codex}.
+
+## @jgengine/react/comboMeter
+
+- `ComboMeterHud` (function): function ComboMeterHud({ meter, tierColors, theme, animate = true, hideWhenEmpty = true, barWidth = 220, className, style, }: ComboMeterHudProps): ReactNode — A drop-in HUD for a core {@link ComboMeter}: the big live combo count ("×12"), the current free-string tier label, the derived score multiplier, and a draining window bar (reusing the shared atomic bar) that empties as the decay window runs out and re-fills on every hit. The active tier's color — supplied by the game via `tierColors`, keyed on the free-string tier id the model never interprets — drives the count glow, the label, and the bar fill, so a game reskins the escalation ("good" → "great" → "savage") without the engine hardcoding any tier meaning. Presentation only: all counting, timing, tiers, and the multiplier live in the core model.
+- `ComboMeterHudProps` (interface): interface ComboMeterHudProps — Props for {@link ComboMeterHud}.
+- `ComboMeterTheme` (interface): interface ComboMeterTheme — Reskin tokens for {@link ComboMeterHud}.
+- `useComboMeter` (function): function useComboMeter(meter: ComboMeter, animate = true): ComboMeterView — Subscribe to a combo meter and re-render it each animation frame so the decay window bar drains live, returning the pooled view to draw right now. Reading the view each frame advances the meter's clock and fires window expiry, so a combo that times out visibly drops even with no further hits. The returned object is the model's pooled view — read its fields immediately, do not retain it.
 
 ## @jgengine/react/components
 
@@ -1291,6 +1327,14 @@
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
 - `useSession` (function): function useSession(): IdentitySource — ⚠ undocumented
 
+## @jgengine/react/interactionPrompt
+
+- `InteractionPrompt` (function): function InteractionPrompt({ registry, playerPosition, theme, accentFor, keyFor, gaugeProgress, anchor = "bottom-center", zIndex = 40, className, style, }: InteractionPromptProps): ReactNode — A screen-anchored "Press E to …" interaction callout that renders the active prompt of a {@link PromptRegistry}. It subscribes to the registry and — when given `playerPosition` — re-resolves as the hero moves, showing the nearest in-range interactable and switching to a closer/higher-priority one as they cross radii. Each display kind renders as itself: a `keybind` shows a key cap plus its label ("Press [E] Open"), a `gauge` shows a hold bar filling with `gaugeProgress`, and a `label` shows plain text. Presentation only — the registry never branches on a prompt's meaning; the game colors each via `accentFor` and maps action ids to key glyphs via `keyFor`. HudTheme-skinnable through `--jg-accent` and {@link InteractionPromptTheme}.
+- `InteractionPromptAnchor` (type): type InteractionPromptAnchor = "bottom-center" | "top-center" | "center" — Where the callout sits over the scene.
+- `InteractionPromptProps` (interface): interface InteractionPromptProps — Props for {@link InteractionPrompt}.
+- `InteractionPromptTheme` (interface): interface InteractionPromptTheme — Reskin tokens for {@link InteractionPrompt}.
+- `useInteractionPrompt` (function): function useInteractionPrompt(registry: PromptRegistry, playerPosition: PromptPoint): PositionedPrompt | null — Subscribe to a {@link PromptRegistry} and re-`resolve` it whenever the player moves, returning the prompt to draw right now — or `null` when the player is out of range of every interactable. The registry notifies only on active-prompt *changes*, so this re-renders on transitions rather than every frame the hero moves. Feed it the player's `{ x, z }` position each frame; identical positions do no work.
+
 ## @jgengine/react/inventoryGrid
 
 - `InventoryGrid` (function): function InventoryGrid({ inventoryId, columns, size = 44, gap = 6, itemIcon, onActivate, className, style, }: InventoryGridProps): React.JSX.Element — A drop-in inventory grid with drag/swap/stack-merge/split and full keyboard control, bound to `inventoryId`.
@@ -1300,6 +1344,14 @@
 
 - `KeyHint` (function): function KeyHint({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element | null — Wraps a keyboard/mouse control hint (a cap plus what it does). Renders nothing on coarse-pointer devices — a touchscreen has no keyboard, so the hint is noise and only fights the on-screen controls for space. The `data-jg-kbd-hint` marker is also hidden by an engine stylesheet as a hydration-safe backstop, so a hint stays hidden on touch even before this component's effect runs. Put the touch equivalent (a `TouchControls` dock, a tappable button) on the coarse branch instead.
 - `Keycap` (function): function Keycap({ children, className, style, }: { children: ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A single keyboard/mouse key rendered as a cap. Tagged `data-jg-kbd` so tooling can find it; on its own it stays visible (hiding a lone cap would strand its label). Wrap keys + their meaning in `KeyHint` to make the whole hint vanish on touch.
+
+## @jgengine/react/killFeed
+
+- `KillFeed` (function): function KillFeed({ ticker, kindStyles, theme, iconSize = 18, animate = true, zIndex = 40, className, style, }: KillFeedProps): ReactNode — A vertical event/kill-feed ticker: renders an {@link EventTicker}'s recent entries as a stack of rows, newest on top, each with its `fade` `0..1` mapped to opacity so entries dim and drop as they age out. Each row shows an optional per-kind (or per-entry) {@link GameIcon} and a per-kind accent color from `kindStyles`, styled with HudTheme tokens. Presentation only: all capping/timing lives in the core ticker, and the free-string `kind`/`text`/`icon` are never interpreted here — a game colors and icons each variant via `kindStyles`.
+- `KillFeedKindStyle` (interface): interface KillFeedKindStyle — Per-`kind` styling for a kill-feed row — accent color and an optional icon.
+- `KillFeedProps` (interface): interface KillFeedProps — Props for {@link KillFeed}.
+- `KillFeedTheme` (interface): interface KillFeedTheme — Reskin tokens for {@link KillFeed}.
+- `useEventTicker` (function): function useEventTicker(ticker: EventTicker, animate = true): EventTickerView[] — Subscribe to an event ticker and re-render it on an animation frame (unless the game already ticks it), returning the live entries newest-first with `fade` applied. Driving the frame loop is what makes entries visibly fade and drop as they age out.
 
 ## @jgengine/react/liveBind
 
@@ -1554,6 +1606,13 @@
 - `VoiceState` (interface): interface VoiceState — ⚠ undocumented
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 
+## @jgengine/react/waveHud
+
+- `WaveHud` (function): function WaveHud({ runner, theme, variation = "plate", width = 260, className, style }: WaveHudProps): ReactNode — A drop-in wave/spawn HUD panel over a {@link WaveRunner}: a big "WAVE N" label, a wave-progress bar (the shared {@link ExperienceBar}), and the live spawned / total, budget, and alert readouts — the visible face of "the brain behind WAVE 3". It subscribes to the runner and re-renders on change; the game drives the runner's clock. Reskin with {@link WaveHudTheme} and the shared HudTheme bar tokens. When the final wave finishes it shows a "WAVES CLEARED" state. Presentation only: the schedule, budget, and RNG live in the core model, and spawn `kind`s are never read.
+- `WaveHudProps` (interface): interface WaveHudProps — Props for {@link WaveHud}.
+- `WaveHudTheme` (interface): interface WaveHudTheme — Reskin tokens for {@link WaveHud}. All optional; each falls back to a sensible default.
+- `useWaveRunner` (function): function useWaveRunner(runner: WaveRunner): WaveView — Subscribe to a {@link WaveRunner} and re-render whenever it notifies (wave, budget, spawns, alert change). Returns the runner's pooled {@link WaveView}. The runner is driven by the game/demo (call `runner.update(dt)`), not by this hook.
+
 ## @jgengine/react/waypointMarkers
 
 - `WaypointMarkerTheme` (interface): interface WaypointMarkerTheme — Reskin tokens for {@link WaypointMarkers}. Per-`kind` color layers on top via `kindColors`.
@@ -1627,6 +1686,8 @@
 - `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
+- `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
+- `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
@@ -1644,6 +1705,11 @@
 - `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
+
+## @jgengine/shell/camera/ControllerCameraShake
+
+- `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
+- `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
 
 ## @jgengine/shell/camera/GameCameraRig
 

@@ -118,6 +118,15 @@ export {
   type DialogueRunOptions,
 } from "./game/dialogueGraph";
 export {
+  createEventTicker,
+  type EventTicker,
+  type EventTickerEntry,
+  type EventTickerInput,
+  type EventTickerOptions,
+  type EventTickerSnapshot,
+  type EventTickerView,
+} from "./game/eventTicker";
+export {
   createGameEvents,
   type CombatTelegraphEvent,
   type CombatVfxEvent,

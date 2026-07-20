@@ -37,6 +37,13 @@ export {
 } from "./ai/targetAcquisition";
 export { createThreatTable, type ThreatTable } from "./ai/threat";
 export {
+  createWaveRunner,
+  type WaveRunner,
+  type WaveRunnerConfig,
+  type WaveSpawnSink,
+  type WaveView,
+} from "./ai/waveRunner";
+export {
   createAreaEffectField,
   type AreaEffectEvent,
   type AreaEffectField,
@@ -108,6 +115,12 @@ export {
   type LockStepResult,
   type LockTierSpec,
 } from "./interaction/lockpick";
+export {
+  createPromptRegistry,
+  type PositionedPromptPatch,
+  type PromptRegistry,
+  type PromptRegistrySnapshot,
+} from "./interaction/promptRegistry";
 export {
   command,
   gauge,
@@ -391,6 +404,13 @@ export {
   type TimerSnapshot,
   type TimerStartOptions,
 } from "./time/timerSet";
+export {
+  createCameraShake,
+  type CameraShakeConfig,
+  type CameraShakeController,
+  type CameraShakeOffset,
+  type CameraShakeSnapshot,
+} from "./vfx/cameraShake";
 export {
   createDamageDirectionTracker,
   type DamageDirectionOptions,

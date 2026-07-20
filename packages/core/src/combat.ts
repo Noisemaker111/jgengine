@@ -8,6 +8,14 @@ export { type AnimationClip, type FrameRange } from "./combat/animationState";
 export { attackMeta, counters, isBlockable, isDodgeable, isParryable } from "./combat/attackTags";
 export { createBuildupMeter, createStaggerMeter, type BuildupProc } from "./combat/breakMeters";
 export { createCastRunner } from "./combat/castRunner";
+export {
+  createComboMeter,
+  type ComboMeter,
+  type ComboMeterConfig,
+  type ComboMeterSnapshot,
+  type ComboMeterView,
+  type ComboTier,
+} from "./combat/comboMeter";
 export { createComboPoints } from "./combat/comboPoints";
 export { advanceCombo, createComboRunner, type ComboStep } from "./combat/comboString";
 export {
