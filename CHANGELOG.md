@@ -46,6 +46,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Count-based combo / multiplier meter.** `@jgengine/core/combat/comboMeter` adds
+  `createComboMeter({ windowMs, tiers?, dropStep?, multiplierPerTier? })` — an integer hit chain that
+  climbs on `hit(kind?)`, resets a decay window each hit, and drops (to 0, or by `dropStep`) when the
+  window elapses, driven by an injected `now` and/or `update(dt)`. Free-string `tiers` derive the active
+  `tier()` and a score `multiplier()`, with `peak()`, a pooled `view()`, `subscribe`, and
+  `snapshot`/`restore`. React `@jgengine/react/comboMeter` ships `ComboMeterHud` (big live count, tier
+  label, draining window bar, multiplier — per-tier colored from a caller map) and a `useComboMeter` hook.
 - **Talent/upgrade tree from any unlock rule.** `@jgengine/core/game/talentTreeView` adds
   `talentTreeViewFrom(nodes, status, totals?)` — a general builder that places a node graph (branch/tier
   layout, prerequisite edges, learned/available/locked/maxed state) from a caller-supplied per-node

@@ -93,6 +93,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
 
+## combo-meter-hud — drop-in HUD for a core combo meter — big live count, free-string tier label, derived multiplier, and a draining decay-window bar, per-tier colored from a caller map and HudTheme-token skinnable
+
+- `ComboMeterHud` (function) · `import { ComboMeterHud } from "@jgengine/react"`
+
 ## confirm-dialog — generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
 
 - `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/react"`
@@ -473,6 +477,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-coach-marks — React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes
 
 - `useCoachMarks` (function) · `import { useCoachMarks } from "@jgengine/react"`
+
+## use-combo-meter — React hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
+
+- `useComboMeter` (function) · `import { useComboMeter } from "@jgengine/react"`
 
 ## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
 
