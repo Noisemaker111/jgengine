@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { advanceSpawnDirector } from "@jgengine/core/ai/spawnDirector";
 import { advancePathFollow, createPathFollow } from "@jgengine/core/nav/pathFollow";
 
@@ -57,5 +58,8 @@ export function tickWaves(ctx: GameContext, dt: number): void {
     if (next.done) leakCreep(ctx, creep.instanceId, creep.catalogId);
   }
 
-  if (session.director.done && session.creeps.size === 0) session.victory = true;
+  if (session.director.done && session.creeps.size === 0 && !session.victory) {
+    session.victory = true;
+    setGamePhase(ctx, "ended");
+  }
 }

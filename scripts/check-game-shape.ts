@@ -110,6 +110,25 @@ for (const name of readdirSync(gamesDir)) {
     problems.push(`${rel(indexPath)}: must re-export { game } from "./game.config"`);
   }
 
+  // Every game must state its run-phase story so the shell never guesses. Two truthful ways:
+  //   • declare `lifecycle` in defineGame({...}) — a LifecycleConfig, or the "always-live" sentinel
+  //     for a game with no menu/pause/end screens, OR
+  //   • call setGamePhase(ctx, phase) somewhere in src/ to drive phases by hand.
+  // Silence used to default to "playing", painting the touch dock over title/results screens (#1337).
+  if (existsSync(configPath)) {
+    const declaresLifecycle = /\blifecycle\b/.test(readFileSync(configPath, "utf8"));
+    const callsSetGamePhase = sourceFilesUnder(srcDir).some((f) =>
+      /\bsetGamePhase\s*\(/.test(readFileSync(f, "utf8")),
+    );
+    if (!declaresLifecycle && !callsSetGamePhase) {
+      problems.push(
+        `${rel(configPath)}: no run-phase declaration — every game must state its run-phase story so the shell never guesses (silence defaults to "playing" and paints the touch dock over title/menu/results screens, #1337). ` +
+          `Either declare a lifecycle in defineGame({ lifecycle: … }) — use lifecycle: "always-live" if the game runs live from boot with no menu/pause/end screens, or a LifecycleConfig if it has run states — ` +
+          `or call setGamePhase(ctx, phase) at your menu→playing→ended transitions somewhere in src/.`,
+      );
+    }
+  }
+
   for (const entry of readdirSync(srcDir)) {
     const full = join(srcDir, entry);
     const isDir = statSync(full).isDirectory();

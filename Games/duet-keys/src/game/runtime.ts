@@ -1,4 +1,5 @@
 import { createLevelSequence, type LevelSequence } from "@jgengine/core/game/levelSequence";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { perContext } from "@jgengine/core/runtime/perContext";
 
@@ -81,6 +82,7 @@ export function loadCurrentRoom(ctx: GameContext): void {
 export function startRun(ctx: GameContext): void {
   levelSeq(ctx).start();
   loadCurrentRoom(ctx);
+  setGamePhase(ctx, "playing");
 }
 
 export function advanceRoom(ctx: GameContext): void {
@@ -90,6 +92,7 @@ export function advanceRoom(ctx: GameContext): void {
     loadCurrentRoom(ctx);
   } else {
     duetStore.update(ctx, (state) => ({ ...state, status: "complete", solveTimer: 0 }));
+    setGamePhase(ctx, "ended");
   }
 }
 

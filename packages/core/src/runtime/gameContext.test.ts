@@ -840,6 +840,22 @@ describe("lifecycle", () => {
     expect(ctx.game.commands.has("start")).toBe(false);
     expect(ctx.game.commands.has("restart")).toBe(false);
   });
+
+  test('the "always-live" sentinel resolves to no lifecycle — same runtime as omitting it', () => {
+    const definition = defineGameDefinition({
+      name: "AlwaysLiveGame",
+      multiplayer: "off",
+      lifecycle: "always-live",
+    });
+    // The sentinel is a declaration, not runtime state: it must resolve away so downstream
+    // consumers only ever see a real LifecycleConfig or nothing.
+    expect(definition.lifecycle).toBeUndefined();
+    const ctx = createGameContext({ definition, content: {}, player: { userId: "p1", isNew: true } });
+    expect(ctx.game.commands.has("start")).toBe(false);
+    expect(ctx.game.commands.has("restart")).toBe(false);
+    // Unset phase still reads as the live default.
+    expect(gamePhase(ctx)).toBe("playing");
+  });
 });
 
 describe("game.cards.pile", () => {

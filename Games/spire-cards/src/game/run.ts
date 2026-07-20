@@ -1,4 +1,5 @@
 import { pileRng, shuffleWithRng } from "@jgengine/core/cards/cardPile";
+import { setGamePhase, type GamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineStore } from "@jgengine/core/store/defineStore";
 
@@ -31,10 +32,19 @@ export interface RunStore {
   skipReward(ctx: GameContext): void;
 }
 
+/** The run boots straight into combat (no menu); victory/defeat are the terminal screens. */
+function enginePhaseFor(runPhase: RunPhase): GamePhase {
+  return runPhase === "victory" || runPhase === "defeat" ? "ended" : "playing";
+}
+
 export function createRunStore(combat: CombatStore): RunStore {
   const listeners = new Set<() => void>();
   let phase: RunPhase = "combat";
   let encounterIndex = 0;
+  // The last ctx to drive a run mutation; combat's async win/lose settle fires inside
+  // `combat.subscribe` without a ctx of its own, so we publish the engine phase from here.
+  let ctxRef: GameContext | null = null;
+  let lastEnginePhase: GamePhase | null = null;
   let rewardSeed = 0;
   let rewardOptions: CardData[] = [];
   let snapshot: RunSnapshot = {
@@ -59,6 +69,14 @@ export function createRunStore(combat: CombatStore): RunStore {
     return shuffled.slice(0, 3).map((type) => CARD_CATALOG[type]!);
   }
 
+  function syncEnginePhase(): void {
+    if (ctxRef === null) return;
+    const desired = enginePhaseFor(phase);
+    if (desired === lastEnginePhase) return;
+    lastEnginePhase = desired;
+    setGamePhase(ctxRef, desired);
+  }
+
   function sync(): void {
     snapshot = {
       phase,
@@ -67,10 +85,12 @@ export function createRunStore(combat: CombatStore): RunStore {
       rewardOptions,
       combat: combat.getSnapshot(),
     };
+    syncEnginePhase();
     notify();
   }
 
   function advance(ctx: GameContext): void {
+    ctxRef = ctx;
     encounterIndex += 1;
     phase = "combat";
     rewardOptions = [];
@@ -102,6 +122,7 @@ export function createRunStore(combat: CombatStore): RunStore {
       return snapshot;
     },
     start(ctx) {
+      ctxRef = ctx;
       encounterIndex = 0;
       phase = "combat";
       rewardOptions = [];
@@ -112,9 +133,11 @@ export function createRunStore(combat: CombatStore): RunStore {
       return combat.canPlay(cardId);
     },
     playCard(ctx, cardId) {
+      ctxRef = ctx;
       combat.playCard(ctx, cardId);
     },
     endTurn(ctx) {
+      ctxRef = ctx;
       combat.endTurn(ctx);
     },
     canChooseReward(cardType) {
