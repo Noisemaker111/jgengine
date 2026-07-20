@@ -106,6 +106,14 @@ const CLASS_PROFILES: Record<CityLotClass | CityFillerClass, ClassProfile> = {
   depot: { width: [20, 30], depth: [18, 26], setbackFactor: 0.4, spacingFactor: 0.5, floors: [1, 2], backRow: true },
 };
 
+/**
+ * Natural frontage-width range (meters) of a class's massing — what the plot-size class bias reads
+ * so towers land on wide plots and rowhouses on narrow ones. @internal
+ */
+export function classWidthRange(cls: string): readonly [number, number] | undefined {
+  return (CLASS_PROFILES as Partial<Record<string, ClassProfile>>)[cls]?.width;
+}
+
 /** Placement numbers a resolved lot carries out of the class profile. @internal */
 export interface ClassPlacement {
   width: number;

@@ -979,6 +979,8 @@ export interface TrimmedIntersections {
   trimmed: TrimmedRoad[];
   /** One welded surface per junction that had ≥1 incident approach. */
   junctions: RoadRibbon[];
+  /** Index into the input `junctions` for each surface, parallel to `junctions` above. */
+  junctionIndices: number[];
 }
 
 /**
@@ -1036,12 +1038,14 @@ export function buildTrimmedIntersections(
   }
 
   const junctionSurfaces: RoadRibbon[] = [];
+  const junctionIndices: number[] = [];
   const sortedIndices = [...approachesByJunction.keys()].sort((p, q) => p - q);
   for (let i = 0; i < sortedIndices.length; i += 1) {
     const ji = sortedIndices[i]!;
     const j = junctions[ji]!;
     junctionSurfaces.push(buildJunctionSurface(j, approachesByJunction.get(ji)!, sampleHeight, options));
+    junctionIndices.push(ji);
   }
 
-  return { ribbons, trimmed, junctions: junctionSurfaces };
+  return { ribbons, trimmed, junctions: junctionSurfaces, junctionIndices };
 }

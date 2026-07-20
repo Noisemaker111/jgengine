@@ -555,10 +555,23 @@ describe("sidewalks (#1368)", () => {
 
   test("straight paved streets carry parallel left/right bands offset by width/2 + sidewalkWidth", () => {
     const net = generateStreets(rules({ seed: "sw", winding: 0, gridness: 1, branching: 0.3, sidewalkWidth: 3 }), 240, 240);
-    const paved = net.streets.filter((s) => s.level !== "lane");
+    // Residential branch spurs curve even at winding 0 (their heading drifts), so the exact-offset
+    // check applies to the STRAIGHT paved streets; curved ones are covered by the band-clearance test.
+    const isStraight = (pts: readonly StreetVec2[]): boolean => {
+      for (let i = 0; i + 2 < pts.length; i += 1) {
+        const ux = pts[i + 1]![0] - pts[i]![0];
+        const uz = pts[i + 1]![1] - pts[i]![1];
+        const vx = pts[i + 2]![0] - pts[i + 1]![0];
+        const vz = pts[i + 2]![1] - pts[i + 1]![1];
+        if (Math.abs(ux * vz - uz * vx) > 1e-6 * Math.hypot(ux, uz) * Math.hypot(vx, vz)) return false;
+      }
+      return true;
+    };
+    const allPaved = net.streets.filter((s) => s.level !== "lane");
+    for (const s of allPaved) expect(s.sidewalks).toBeDefined();
+    const paved = allPaved.filter((s) => isStraight(s.points));
     expect(paved.length).toBeGreaterThan(0);
     for (const s of paved) {
-      expect(s.sidewalks).toBeDefined();
       // Sample a mid vertex: left and right sit ~width/2 + 3 off the centerline, on opposite sides.
       const want = s.width / 2 + 3;
       for (const band of [s.sidewalks!.left, s.sidewalks!.right]) {

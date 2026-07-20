@@ -1,24 +1,29 @@
 /**
- * The seed-driven procedural CITY GENERATOR — the composition seam over the two fabric engines:
- * {@link generateStreets} grows the street network, and {@link deriveBuildingLots} lines its
- * frontage with street-facing building lots. One call, one seed, one deterministic city: same rules
- * ⇒ identical streets and identical lots, with both engines' bounded-work caps intact. Local
- * (volume-centered) coords, same as the street generator; the caller translates into world space.
+ * The seed-driven procedural CITY GENERATOR — plot-first composition over the street and block
+ * engines. {@link generateStreets} grows the street network (with a seeded organic outline, so no
+ * two seeds share a silhouette), {@link extractBlocks} turns it into closed block polygons, and the
+ * plot pass subdivides every buildable block's street frontage into PLOTS of many sizes — narrow
+ * rowhouse slivers up to block-scale grand parcels. Everything that stands in the city stands on a
+ * plot, and every plot fronts a street by construction: there is no landmark special case (a
+ * landmark is just a grand plot) and no street-less interior fill. One call, one seed, one
+ * deterministic city. Local (volume-centered) coords; the caller translates into world space.
  *
- * Street dials default to a dense, gently-varied city net (high gridness/connectivity, light
- * winding); pass any subset of {@link StreetNetworkRules} to override, and lot options pass through
- * to the frontage engine untouched. Lanes are skipped as lot frontage by default — buildings line
- * boulevards, avenues, and streets — so alleys stay service alleys; opt lanes in via
- * `lots.laneFrontage`.
- *
- * @capability city-generator compose a deterministic city — street network plus street-facing building lots — from one seed
+ * @capability city-generator compose a deterministic city — street network, blocks, street-fronting plots of varied size — from one seed
  */
-import { deriveBuildingLots, type BuildingLotOptions, type PlacedBuildingLot } from "./buildingLots";
+import type { PlacedBuildingLot } from "./buildingLots";
+import {
+  extractGraphBlocks,
+  carveCorridors,
+  conformPolygonToRing,
+  cutParcel,
+  isSliverBlock,
+  RingWalker,
+} from "./cityBlocks";
 import {
   buildLandmarkPieces,
   buildLotPieces,
+  classWidthRange,
   landmarkFloors,
-  landmarkMinDepthFactor,
   pickClass,
   rollClassPlacement,
   zoneBand,
@@ -31,8 +36,8 @@ import {
   type CityZoneBand,
   type CityZoneProfile,
 } from "./cityContent";
-import type { Vec2 } from "./cityGeometry";
-import { isOnRoad } from "./roads";
+import { fitRectInPolygon, polygonArea, polygonsOverlap, rayDistanceToRing, type Vec2 } from "./cityGeometry";
+import { isOnRoad, nearestOnPath } from "./roads";
 import { seededStreams } from "../random/rng";
 import type { WeightedParamEntry } from "../scene/sceneKinds";
 import {
@@ -48,7 +53,7 @@ const CITY_STREET_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
   gridness: 0.85,
   loopiness: 0.35,
   connectivity: 0.6,
-  branching: 0.25,
+  branching: 0.4,
   deadEnds: 0.15,
   segmentLength: 90,
   aspect: 1.4,
@@ -58,85 +63,590 @@ const CITY_STREET_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
   maxTurnAngle: 110,
   width: 9,
   boulevards: 0.2,
+  // Seed-unique silhouette by default: cities grow lobes and bays instead of filling the square.
+  outline: 0.4,
+  // Suburb life: most spurs grow as winding cul-de-sac side streets lined with houses.
+  residentialBranches: 0.6,
 };
 
-/** Options for {@link generateCity}: a seed, street-dial overrides, and lot pass-through options. */
+/** Options for {@link generateCity}: a seed, street-dial overrides, and plot pass-through options. */
 export interface CityGeneratorOptions {
-  /** Drives both the street network and downstream lot/floor variation. */
+  /** Drives the street network and all downstream plot/class/massing variation. */
   seed: string;
-  /** Street-dial overrides; anything omitted takes the city defaults above. */
+  /** Street-dial overrides; anything omitted takes the city defaults above (including `outline`). */
   streets?: Partial<Omit<StreetNetworkRules, "seed">>;
-  /** Frontage-lot options, minus `roads` (the generated streets are the roads). */
-  lots?: Omit<BuildingLotOptions, "roads" | "seed"> & {
-    /** Also line `lane`-level streets (alleys) with lots. Default false. */
+  /** Plot-pass options (sizes scale off `footprint`, gaps off `spacing`, fronts off `setback`). */
+  lots?: {
+    /** Base plot-size hint: tier frontage/depth ranges scale by `w/12` and `d/10`. Default 12×10. */
+    footprint?: { w: number; d: number };
+    /** Base gap between neighbouring plots along a frontage, world units. Default 2. */
+    spacing?: number;
+    /** Sidewalk strip between the curb and the building front, world units. Default 3. */
+    setback?: number;
+    /** Manhattan streetwall dial (0..1): frontage coverage and plot depth grow with it. Default {@link DEFAULT_BLOCK_FILL}. */
+    blockFill?: number;
+    /** Also line `lane`-level streets (alleys) with plots. Default false. */
     laneFrontage?: boolean;
+    /** Hard cap on emitted plots so a big network stays bounded. Default 600. */
+    maxLots?: number;
   };
   /** Ground sampler + bridge/tunnel toggles forwarded to the street generator. */
   context?: StreetNetworkContext;
   /**
-   * Also resolve each bare lot into zone/class/floors/massing (the 9-class massing system). Pass
-   * `true` for city defaults, or an overrides object to tune bands/mixes/floors. Omit (default) to
-   * keep the cheap bare-lot path — `lotContent` stays absent and the returned shape is `{network,
-   * lots}` exactly. See {@link resolveCityLotContent}.
+   * Also resolve each plot into zone/class/floors/massing. Pass `true` for city defaults, or an
+   * overrides object to tune bands/mixes/floors. Omit (default) to keep the cheap geometry-only
+   * path — `lotContent` stays absent. See {@link resolveCityLotContent}.
    */
   content?: boolean | CityContentOverrides;
 }
 
-/** A generated city: the street network and the building lots lining its frontage. */
+/** Size tier a plot was cut at. `grand` is the block-scale tier that used to be a landmark pass. */
+export type CityPlotTier = "small" | "medium" | "large" | "grand";
+
+/** All plot tiers, for schema hints and validation. */
+export const CITY_PLOT_TIERS: readonly CityPlotTier[] = ["small", "medium", "large", "grand"];
+
+/** The street frontage a plot faces: which street, and the frontage chord along it. */
+export interface CityPlotFrontage {
+  /** Index into `network.streets`. */
+  street: number;
+  /** Frontage chord endpoints on the plot boundary. */
+  a: Vec2;
+  b: Vec2;
+}
+
+/** One polygonal plot cut from a block's street frontage. Every plot fronts a street. */
+export interface CityPlot {
+  /** Plot polygon (CCW) in local XZ. */
+  polygon: Vec2[];
+  /** Building-rect center inside the plot (matches the paired {@link PlacedBuildingLot}). */
+  center: Vec2;
+  /** Yaw turning the building front toward its street. */
+  rotationY: number;
+  /** Building-rect frontage width / depth fitted inside the plot polygon. */
+  width: number;
+  depth: number;
+  frontage: CityPlotFrontage;
+  /** Hierarchy level of the fronted street. */
+  streetLevel: StreetLevel;
+  /** Index of the block the plot was cut from; `-1` for plots lining a cul-de-sac/branch corridor. */
+  block: number;
+  tier: CityPlotTier;
+  /** True when the plot wraps a block corner (two frontages meet inside it). */
+  corner: boolean;
+}
+
+/** A generated city: streets, plots (with rect building lots as a compat view), and park blocks. */
 export interface GeneratedCity {
   network: StreetNetwork;
+  /** Rect building-lot view of `plots` (same order, same indices) — the renderer-compat seam. */
   lots: PlacedBuildingLot[];
+  /** The polygonal plots the city is made of. `plots[i]` pairs with `lots[i]`. */
+  plots: CityPlot[];
+  /** Land polygons of whole blocks reserved as parks/open space (no plots cut). */
+  parks: Vec2[][];
   /**
-   * Present only when {@link CityGeneratorOptions.content} was requested: every lot enriched with
-   * its zone band, rolled building class, floors, and lot-local massing pieces. Same order as
-   * `lots`.
+   * Present only when {@link CityGeneratorOptions.content} was requested: every plot enriched with
+   * its zone band, building class, floors, and lot-local massing pieces. Same order as `lots`.
    */
   lotContent?: readonly ResolvedCityLot[];
 }
 
 /**
- * Grow a street network inside the `hx`/`hz` half-extents and line its frontage with building lots.
- * Deterministic: identical options ⇒ identical city.
+ * Grow a street network inside the `hx`/`hz` half-extents, extract its blocks, and subdivide their
+ * frontage into plots. Deterministic: identical options ⇒ identical city.
  */
 export function generateCity(options: CityGeneratorOptions, hx: number, hz: number): GeneratedCity {
   const { seed, streets: streetOverrides, lots: lotOptions, context } = options;
   const rules: StreetNetworkRules = { seed, ...CITY_STREET_DEFAULTS, ...streetOverrides };
   const network = generateStreets(rules, hx, hz, context ?? {});
-  const { laneFrontage = false, ...lotRest } = lotOptions ?? {};
   const contentEnabled = options.content !== undefined && options.content !== false;
-  const overrides = options.content === true || options.content === undefined || options.content === false ? {} : options.content;
-  // Frontage compaction dial: when the content pass is on its `blockFill` wins (it owns the full
-  // Manhattan look — compact frontage AND interior fill), else the bare-lot `lots.blockFill` applies.
-  // Left `undefined` (no dial anywhere) the frontage engine stays byte-identical to the classic path.
-  const blockFill = contentEnabled ? overrides.blockFill ?? lotRest.blockFill : lotRest.blockFill;
-  const frontage = network.streets
-    .filter((street) => laneFrontage || street.level !== "lane")
-    .map((street) => ({ path: street.points, width: street.width }));
-  const candidates = deriveBuildingLots({
-    ...lotRest,
-    blockFill,
-    roads: frontage,
+  const overrides = typeof options.content === "object" ? options.content : {};
+  const footprint = lotOptions?.footprint ?? { w: 12, d: 10 };
+  const { plots, parks } = deriveCityPlots(network, {
     seed,
-    area: lotRest.area ?? { center: [0, 0], halfExtents: [hx, hz] },
+    halfExtents: [hx, hz],
+    laneFrontage: lotOptions?.laneFrontage ?? false,
+    setback: lotOptions?.setback,
+    spacing: lotOptions?.spacing,
+    blockFill: overrides.blockFill ?? lotOptions?.blockFill,
+    landmarks: overrides.landmarks,
+    plotScale: [footprint.w / 12, footprint.d / 10],
+    maxPlots: lotOptions?.maxLots,
+    profile: overrides.profile,
+    coreExtent: overrides.coreExtent,
+    midExtent: overrides.midExtent,
   });
-  // The frontage engine only avoids the roads it lines; streets excluded from frontage (lanes by
-  // default) are still pavement, so drop any lot whose footprint would straddle one.
-  const clearance = Math.min(lotRest.footprint?.w ?? 12, lotRest.footprint?.d ?? 10);
-  const lots = candidates.filter((lot) =>
-    network.streets.every(
-      (street) => !isOnRoad(street.points, street.width + clearance, lot.center[0], lot.center[1]),
-    ),
-  );
-  if (!contentEnabled) return { network, lots };
+  const lots = plots.map((plot) => toPlacedLot(plot, network));
+  if (!contentEnabled) return { network, lots, plots, parks };
   const lotContent = resolveCityLotContent(
-    { network, lots },
-    { seed, halfExtents: [hx, hz], laneFrontage, ...overrides },
+    { network, lots, plots, parks },
+    { seed, halfExtents: [hx, hz], laneFrontage: lotOptions?.laneFrontage ?? false, ...overrides },
   );
-  return { network, lots, lotContent };
+  return { network, lots, plots, parks, lotContent };
+}
+
+/** Rect-lot compat view of a plot: center/yaw/footprint plus street reference fields. */
+function toPlacedLot(plot: CityPlot, network: StreetNetwork): PlacedBuildingLot {
+  const street = network.streets[plot.frontage.street];
+  let side: 1 | -1 = 1;
+  let frontDistance = plot.depth / 2;
+  if (street !== undefined) {
+    const near = nearestOnPath(street.points, plot.center[0], plot.center[1]);
+    if (near !== null) {
+      const offX = plot.center[0] - near.point[0];
+      const offZ = plot.center[1] - near.point[1];
+      // Left normal of the tangent (CCW): (-tz, tx).
+      side = offX * -near.tangent[1] + offZ * near.tangent[0] >= 0 ? 1 : -1;
+      frontDistance = Math.max(0, near.distance - plot.depth / 2);
+    }
+  }
+  return {
+    center: [plot.center[0], plot.center[1]],
+    rotationY: plot.rotationY,
+    footprint: { w: plot.width, d: plot.depth },
+    road: plot.frontage.street,
+    side,
+    frontDistance,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// Lot content resolution — the composition seam over `cityContent`'s 9-class massing system.
+// Plot derivation — block frontage subdivision into size-tiered polygonal plots.
+// ---------------------------------------------------------------------------
+
+/** Default `blockFill`: gently gapped frontage — plots with breathing room, parks reserved. */
+export const DEFAULT_BLOCK_FILL = 0.45;
+/** Default grand-plot share dial — a handful of block-scale parcels per default city. */
+export const DEFAULT_LANDMARK_SHARE = 0.04;
+/** Hard cap on grand plots emitted regardless of dial/city size. */
+export const LANDMARK_HARD_CAP = 12;
+
+/** Frontage/depth ranges (meters, before `plotScale`) per tier. */
+const PLOT_TIER_SIZES: Record<CityPlotTier, { frontage: readonly [number, number]; depth: readonly [number, number] }> = {
+  small: { frontage: [6.5, 11], depth: [9, 16] },
+  medium: { frontage: [11, 18], depth: [12, 22] },
+  large: { frontage: [18, 30], depth: [16, 30] },
+  grand: { frontage: [34, 60], depth: [30, 58] },
+};
+
+/** Non-grand tier weights per zone band — many different plot sizes, denser splits downtown. */
+const PLOT_TIER_WEIGHTS: Record<CityZoneBand, Record<Exclude<CityPlotTier, "grand">, number>> = {
+  core: { small: 1, medium: 3, large: 2.6 },
+  mid: { small: 2.4, medium: 3, large: 1.2 },
+  edge: { small: 3.4, medium: 2, large: 0.5 },
+};
+
+/** Street-level multipliers on tier weights: boulevards pull big plots, lanes pull small ones. */
+const PLOT_LEVEL_TIER_BIAS: Record<StreetLevel, Partial<Record<Exclude<CityPlotTier, "grand">, number>>> = {
+  boulevard: { large: 1.7, medium: 1.1, small: 0.6 },
+  avenue: { large: 1.3, medium: 1.1 },
+  street: {},
+  lane: { small: 1.8, large: 0.35 },
+};
+
+/** Grand-share multiplier per zone band: civic-scale parcels concentrate toward the core. */
+const GRAND_ZONE_FACTOR: Record<CityZoneBand, number> = { core: 1.6, mid: 1, edge: 0.45 };
+
+/** Options for {@link deriveCityPlots}. */
+export interface CityPlotOptions {
+  seed: string;
+  /** Half-extents the city was grown in — zone tiers normalize to these. */
+  halfExtents: readonly [number, number];
+  /** Cut plots along `lane`-level frontage too. Default false. */
+  laneFrontage?: boolean;
+  /** Sidewalk strip between curb and building front, meters. Default 3. */
+  setback?: number;
+  /** Base gap between neighbouring plots, meters. Default 2. */
+  spacing?: number;
+  /** Streetwall dial (0..1): frontage coverage, plot depth, and park share ride on it. Default {@link DEFAULT_BLOCK_FILL}. */
+  blockFill?: number;
+  /** Grand-plot share dial (0..1): probability weight of the block-scale tier. Default {@link DEFAULT_LANDMARK_SHARE}; `0` disables grand plots. */
+  landmarks?: number;
+  /** Tier size multiplier `[wScale, dScale]`. Default `[1, 1]`. */
+  plotScale?: readonly [number, number];
+  /** Hard cap on emitted plots. Default 600. */
+  maxPlots?: number;
+  /** Zone profile the tier weights read. Defaults match {@link resolveCityLotContent}. */
+  profile?: CityZoneProfile;
+  coreExtent?: number;
+  midExtent?: number;
+}
+
+/** Output of {@link deriveCityPlots}: the plots plus whole-block park polygons. */
+export interface CityPlotResult {
+  plots: CityPlot[];
+  parks: Vec2[][];
+}
+
+/** Weighted tier pick from zone weights × street-level bias. */
+function pickTier(
+  zone: CityZoneBand,
+  level: StreetLevel,
+  roll: number,
+): Exclude<CityPlotTier, "grand"> {
+  const weights = PLOT_TIER_WEIGHTS[zone];
+  const bias = PLOT_LEVEL_TIER_BIAS[level];
+  const entries = (Object.keys(weights) as Exclude<CityPlotTier, "grand">[]).map((tier) => ({
+    tier,
+    weight: weights[tier] * (bias[tier] ?? 1),
+  }));
+  let total = 0;
+  for (const e of entries) total += e.weight;
+  let cursor = roll * total;
+  for (const e of entries) {
+    cursor -= e.weight;
+    if (cursor <= 0) return e.tier;
+  }
+  return "medium";
+}
+
+/**
+ * Subdivide every buildable block's street frontage into size-tiered polygonal plots. Blocks come
+ * from the street network's planar faces ({@link extractBlocks}), so every plot fronts a real
+ * street; block interiors stay open (courtyards) and a seeded fraction of whole blocks becomes
+ * parks. Grand plots — the old "landmarks" — are just the biggest tier of the same pass.
+ * Deterministic per seed, bounded by `maxPlots` and per-block caps.
+ *
+ * @capability city-generator subdivide street blocks into size-tiered street-fronting plots
+ */
+export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions): CityPlotResult {
+  const [hx, hz] = options.halfExtents;
+  const laneFrontage = options.laneFrontage ?? false;
+  const setback = Math.max(0, options.setback ?? 3);
+  const spacing = Math.max(0, options.spacing ?? 2);
+  const fill = Math.max(0, Math.min(1, options.blockFill ?? DEFAULT_BLOCK_FILL));
+  const grandShare = Math.max(0, Math.min(1, options.landmarks ?? DEFAULT_LANDMARK_SHARE));
+  const [wScale, dScale] = options.plotScale ?? [1, 1];
+  const maxPlots = Math.max(0, Math.floor(options.maxPlots ?? 600));
+  const profile = options.profile ?? "core-out";
+  const coreExtent = options.coreExtent ?? 0.35;
+  const midExtent = options.midExtent ?? 0.7;
+
+  const streets = network.streets;
+  const streams = seededStreams(`${options.seed}:plots`);
+  // Node-pair → owning street index, so pruned dead-end corridors keep their street identity and
+  // cul-de-sacs can be lined with plots that reference a real street.
+  const edgeStreet = new Map<string, number>();
+  streets.forEach((s, si) => {
+    for (let i = 0; i + 1 < s.nodes.length; i += 1) {
+      const a = s.nodes[i]!;
+      const b = s.nodes[i + 1]!;
+      edgeStreet.set(a < b ? `${a}:${b}` : `${b}:${a}`, si);
+    }
+  });
+  // Blocks from the network's EXACT graph (nodes/edges), not from re-welded polylines — wandered,
+  // arc-filleted centerlines defeat proximity welding, and the graph is already the truth.
+  const fabric = extractGraphBlocks(
+    network.nodes,
+    network.edges.map((e) => ({
+      a: e.a,
+      b: e.b,
+      points: e.points,
+      width: e.width,
+      level: e.level,
+      street: edgeStreet.get(e.a < e.b ? `${e.a}:${e.b}` : `${e.b}:${e.a}`),
+    })),
+    { sidewalkBase: 2, curbMargin: 0.35 },
+  );
+
+  // Coverage: how much of a frontage run becomes plots (vs left as gaps); rises with the dial.
+  const coverage = Math.min(1, 0.62 + fill * 0.42);
+  // Gap between neighbouring plots: collapses toward a streetwall as the dial rises.
+  const gap = Math.max(0.15, spacing * (1.55 - fill * 1.4));
+  // Whole-block park share: a dense city keeps a floor of green, a loose one breathes more.
+  const parkFraction = Math.min(0.25, 0.05 + (1 - fill) * 0.16);
+
+  const nearestStreet = (
+    x: number,
+    z: number,
+  ): { street: number; distance: number } | null => {
+    let bestStreet = -1;
+    let bestDistance = Infinity;
+    for (let s = 0; s < streets.length; s += 1) {
+      const near = nearestOnPath(streets[s]!.points, x, z);
+      if (near !== null && near.distance < bestDistance) {
+        bestDistance = near.distance;
+        bestStreet = s;
+      }
+    }
+    return bestStreet < 0 ? null : { street: bestStreet, distance: bestDistance };
+  };
+
+  const plots: CityPlot[] = [];
+  const parks: Vec2[][] = [];
+  let grandCount = 0;
+  // Park budget scales with how many blocks exist, so a small city never loses half its blocks.
+  let parkBudget = Math.max(1, Math.round(fabric.blocks.length * parkFraction));
+
+  for (let bi = 0; bi < fabric.blocks.length && plots.length < maxPlots; bi += 1) {
+    const land = fabric.blocks[bi]!.land;
+    if (land.length < 3) continue;
+    const rng = streams(`block:${bi}`);
+    const parkRoll = rng();
+    if (isSliverBlock(land, 130, 6.5)) {
+      // Too thin/small to build on — leftover green.
+      if (polygonArea(land) > 60) parks.push(land);
+      continue;
+    }
+    // Only modest blocks become whole-block parks — a giant central block stays buildable.
+    if (parkBudget > 0 && parkRoll < parkFraction * 1.6 && polygonArea(land) < 11000) {
+      parks.push(land);
+      parkBudget -= 1;
+      continue;
+    }
+
+    const walker = new RingWalker(land);
+    const blockPolys: Vec2[][] = [];
+    let blockHasGrand = false;
+    let cursor = rng() * 5;
+    const endStation = walker.total - 2;
+    let guard = 0;
+    while (cursor < endStation && plots.length < maxPlots && blockPolys.length < 48 && guard < 200) {
+      guard += 1;
+      const grandRoll = rng();
+      const tierRoll = rng();
+      const bandRoll = rng();
+      const sizeRoll = rng();
+      const depthRoll = rng();
+      const coverRoll = rng();
+      const mid0 = walker.at(cursor);
+      // Only true street frontage grows plots: probe just outside the ring toward the curb.
+      const probe = nearestStreet(mid0.p[0] - mid0.normal[0] * 2, mid0.p[1] - mid0.normal[1] * 2);
+      const fronted = probe !== null && probe.distance <= (streets[probe.street]?.width ?? 9) / 2 + 6.5;
+      const level: StreetLevel = fronted ? streets[probe.street]!.level : "street";
+      if (!fronted || (level === "lane" && !laneFrontage)) {
+        cursor += 6;
+        continue;
+      }
+      const zone = zoneBand(zoneMetric(mid0.p[0], mid0.p[1], hx, hz), profile, coreExtent, midExtent, bandRoll);
+
+      // Tier: grand first (dial-gated, capped, needs a deep block), else the zone/level mix.
+      const across = rayDistanceToRing(land, [mid0.p[0] + mid0.normal[0] * 0.2, mid0.p[1] + mid0.normal[1] * 0.2], mid0.normal);
+      const depthCap = Number.isFinite(across) ? Math.max(5, across * 0.5 - 0.4) : 14;
+      const wantGrand =
+        grandShare > 0 &&
+        !blockHasGrand &&
+        grandCount < LANDMARK_HARD_CAP &&
+        depthCap >= 24 * dScale &&
+        grandRoll < grandShare * 0.5 * GRAND_ZONE_FACTOR[zone];
+      const tier: CityPlotTier = wantGrand ? "grand" : pickTier(zone, level, tierRoll);
+      const sizes = PLOT_TIER_SIZES[tier];
+      const frontW = (sizes.frontage[0] + sizeRoll * (sizes.frontage[1] - sizes.frontage[0])) * wScale;
+      if (cursor + frontW + gap > walker.total - 0.5) break;
+
+      // Coverage gaps: skip a sub-plot-sized arc so low fill reads as loose frontage.
+      if (tier !== "grand" && coverRoll > coverage) {
+        cursor += Math.max(4, frontW * 0.5);
+        continue;
+      }
+
+      const depthWant = (sizes.depth[0] + depthRoll * (sizes.depth[1] - sizes.depth[0])) * dScale * (0.85 + fill * 0.4);
+      const depth =
+        tier === "grand"
+          ? Math.min(Number.isFinite(across) ? across - 4 : depthCap, Math.max(depthWant, frontW * 0.7))
+          : Math.min(depthCap, depthWant);
+      const s0 = cursor;
+      const s1 = cursor + frontW;
+      let poly = cutParcel(walker, land, { s0, s1, depth });
+      const midS = walker.at((s0 + s1) / 2);
+      if (poly !== null && fabric.deadEnds.length > 0) {
+        // Cul-de-sac lanes were pruned from the face graph; carve their corridors out of plots.
+        const keep: Vec2 = [midS.p[0] + midS.normal[0] * 1.5, midS.p[1] + midS.normal[1] * 1.5];
+        let carved = carveCorridors(poly, keep, fabric.deadEnds.map((d) => ({ pts: d.pts, width: d.width + 1 })), 0.8);
+        if (carved.length >= 3 && carved.length !== poly.length) carved = conformPolygonToRing(carved, land);
+        poly = carved.length >= 3 ? carved : null;
+      }
+      if (poly !== null) {
+        // Never overlap a neighbour plot (opposite frontage of a shallow block): retry shallower once.
+        let clash = blockPolys.some((other) => polygonsOverlap(poly!, other, 0.18));
+        if (clash) {
+          const shallow = cutParcel(walker, land, { s0, s1, depth: depth * 0.55 });
+          if (shallow !== null && !blockPolys.some((other) => polygonsOverlap(shallow, other, 0.18))) {
+            poly = shallow;
+            clash = false;
+          }
+        }
+        if (clash) poly = null;
+      }
+      if (poly === null) {
+        cursor += frontW * 0.6;
+        continue;
+      }
+
+      // Building rect inside the plot, set back from the frontage, facing the street.
+      const rotationY = Math.atan2(-midS.normal[0], -midS.normal[1]);
+      const maxW = Math.max(3, frontW - gap);
+      const maxD = Math.max(3, depth - setback - 1.2);
+      const cx0 = midS.p[0] + midS.normal[0] * (setback + maxD / 2);
+      const cz0 = midS.p[1] + midS.normal[1] * (setback + maxD / 2);
+      const fit = fitRectInPolygon(poly, cx0, cz0, maxW, maxD, rotationY, 0.4);
+      if (fit === null || fit.w < 3 || fit.d < 2.6) {
+        cursor += frontW * 0.6;
+        continue;
+      }
+      // Rendered streets are arc-filleted and junctions grow welded aprons past the ribbons, so
+      // both can cut inside a block's corner past the graph face the parcel was cut from — reject
+      // any building rect that would sit on pavement or inside a junction apron.
+      const rc = Math.cos(rotationY);
+      const rs = Math.sin(rotationY);
+      const onPavement = [
+        [0, 0],
+        [fit.w / 2, fit.d / 2],
+        [fit.w / 2, -fit.d / 2],
+        [-fit.w / 2, fit.d / 2],
+        [-fit.w / 2, -fit.d / 2],
+      ].some(([lx, lz]) => {
+        const px = fit.cx + lx! * rc + lz! * rs;
+        const pz = fit.cz - lx! * rs + lz! * rc;
+        return (
+          streets.some((s) => isOnRoad(s.points, s.width + 3.5, px, pz)) ||
+          network.junctions.some((j) => Math.hypot(j.x - px, j.z - pz) < j.radius + 4)
+        );
+      });
+      if (onPavement) {
+        cursor += frontW * 0.6;
+        continue;
+      }
+
+      // A grand arc squeezed by the block shape (fit rect came out ordinary-sized) is not a
+      // landmark parcel — demote it so class and massing match what actually fits.
+      const realizedTier: CityPlotTier = tier === "grand" && fit.w < 24 * wScale ? "large" : tier;
+
+      let corner = false;
+      for (const vi of walker.verticesBetween(s0, s1)) {
+        const angle = walker.interiorAngle(vi);
+        if (angle < 2.53 || angle > Math.PI * 2 - 2.53) {
+          corner = true;
+          break;
+        }
+      }
+
+      plots.push({
+        polygon: poly,
+        center: [fit.cx, fit.cz],
+        rotationY,
+        width: fit.w,
+        depth: fit.d,
+        frontage: { street: probe.street, a: walker.at(s0).p, b: walker.at(s1).p },
+        streetLevel: level,
+        block: bi,
+        tier: realizedTier,
+        corner,
+      });
+      blockPolys.push(poly);
+      if (realizedTier === "grand") {
+        grandCount += 1;
+        blockHasGrand = true;
+      }
+      cursor += frontW + gap;
+    }
+  }
+
+  // --- cul-de-sac / branch-street frontage --------------------------------------------------------
+  // Dead-end corridors are pruned from the face graph (they border no closed block), but a
+  // residential branch is exactly the street that wants a row of small house plots down both sides
+  // — the "one street off the main with just houses on it" look. Step small/medium plots along each
+  // non-lane corridor, both sides, rejecting anything on pavement, outside the volume, or
+  // overlapping an existing plot. Bounded per corridor and by `maxPlots`.
+  const rectPoly = (cx: number, cz: number, hw: number, hd: number, yaw: number): Vec2[] => {
+    const c = Math.cos(yaw);
+    const s = Math.sin(yaw);
+    return ([
+      [-hw, -hd],
+      [hw, -hd],
+      [hw, hd],
+      [-hw, hd],
+    ] as const).map(([lx, lz]) => [cx + lx * c + lz * s, cz - lx * s + lz * c] as Vec2);
+  };
+  for (let di = 0; di < fabric.deadEnds.length && plots.length < maxPlots; di += 1) {
+    const corridor = fabric.deadEnds[di]!;
+    if (corridor.level === "lane" && !laneFrontage) continue;
+    if (corridor.street === undefined) continue;
+    const pts = corridor.pts;
+    let total = 0;
+    for (let i = 0; i + 1 < pts.length; i += 1) total += Math.hypot(pts[i + 1]![0] - pts[i]![0], pts[i + 1]![1] - pts[i]![1]);
+    if (total < 18) continue;
+    const rng = streams(`culdesac:${di}`);
+    const stationAt = (s: number): { p: Vec2; tangent: Vec2 } => {
+      let acc = 0;
+      for (let i = 0; i + 1 < pts.length; i += 1) {
+        const a = pts[i]!;
+        const b = pts[i + 1]!;
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (len < 1e-9) continue;
+        if (acc + len >= s || i + 2 === pts.length) {
+          const t = Math.max(0, Math.min(1, (s - acc) / len));
+          return { p: [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t], tangent: [(b[0] - a[0]) / len, (b[1] - a[1]) / len] };
+        }
+        acc += len;
+      }
+      return { p: [pts[0]![0], pts[0]![1]], tangent: [1, 0] };
+    };
+    // Keep the corridor ends clear: the junction mouth at one end, the turning bulb at the other.
+    const endMargin = corridor.width * 1.4 + 3;
+    let placedHere = 0;
+    let s = endMargin + rng() * 4;
+    while (s < total - endMargin && placedHere < 14 && plots.length < maxPlots) {
+      const tier: CityPlotTier = rng() < 0.72 ? "small" : "medium";
+      const sizes = PLOT_TIER_SIZES[tier];
+      const frontW = (sizes.frontage[0] + rng() * (sizes.frontage[1] - sizes.frontage[0])) * wScale;
+      const depth = (sizes.depth[0] + rng() * (sizes.depth[1] - sizes.depth[0])) * dScale * 0.8;
+      const st = stationAt(s + frontW / 2);
+      for (const side of [1, -1] as const) {
+        if (plots.length >= maxPlots) break;
+        if (rng() > coverage) continue;
+        // Normal into the plot (away from the corridor centerline).
+        const nx = -st.tangent[1] * side;
+        const nz = st.tangent[0] * side;
+        const cx = st.p[0] + nx * (corridor.width / 2 + setback + depth / 2);
+        const cz = st.p[1] + nz * (corridor.width / 2 + setback + depth / 2);
+        if (Math.abs(cx) > hx || Math.abs(cz) > hz) continue;
+        const yaw = Math.atan2(-nx, -nz);
+        const w = Math.max(3, frontW - gap);
+        const corners: readonly (readonly [number, number])[] = [
+          [0, 0],
+          [w / 2, depth / 2],
+          [w / 2, -depth / 2],
+          [-w / 2, depth / 2],
+          [-w / 2, -depth / 2],
+        ];
+        const yc = Math.cos(yaw);
+        const ys = Math.sin(yaw);
+        const onPavement = corners.some(([lx, lz]) => {
+          const px = cx + lx * yc + lz * ys;
+          const pz = cz - lx * ys + lz * yc;
+          return (
+            streets.some((street) => isOnRoad(street.points, street.width + 3.5, px, pz)) ||
+            network.junctions.some((j) => Math.hypot(j.x - px, j.z - pz) < j.radius + 4)
+          );
+        });
+        if (onPavement) continue;
+        const poly = rectPoly(cx, cz, w / 2, depth / 2, yaw);
+        if (plots.some((other) => polygonsOverlap(poly, other.polygon, 0.18))) continue;
+        plots.push({
+          polygon: poly,
+          center: [cx, cz],
+          rotationY: yaw,
+          width: w,
+          depth,
+          frontage: { street: corridor.street, a: [st.p[0], st.p[1]], b: [st.p[0] + st.tangent[0] * frontW, st.p[1] + st.tangent[1] * frontW] },
+          streetLevel: corridor.level,
+          block: -1,
+          tier,
+          corner: false,
+        });
+        placedHere += 1;
+      }
+      s += frontW + gap;
+    }
+  }
+  return { plots, parks };
+}
+
+// ---------------------------------------------------------------------------
+// Content resolution — zone/class/floors/massing per plot. A grand plot rolls a landmark class;
+// everything else rolls the zone mix biased by street level AND plot size, so class follows plot.
 // ---------------------------------------------------------------------------
 
 /** Weighted building-class mix per zone band; the radial profile decides which band a lot falls in. */
@@ -166,9 +676,8 @@ export const DEFAULT_CITY_ZONE_MIXES: CityZoneMixes = {
 
 /**
  * Per-street-level class weight multipliers applied to the band mix before the class pick, so towers
- * and slabs bias toward wide boulevard/avenue frontage while houses and farm classes bias toward
- * lanes and quiet streets. A missing class ⇒ multiplier 1 (the band mix is unchanged for it). Pure
- * data: modulating the existing weighted mixes, never a separate placement code path.
+ * and slabs bias toward wide boulevard/avenue frontage while houses bias toward lanes and quiet
+ * streets. A missing class ⇒ multiplier 1. Pure data modulating the weighted mixes.
  */
 export type CityLevelClassBias = Record<StreetLevel, Partial<Record<CityLotClass, number>>>;
 
@@ -190,7 +699,7 @@ export interface CityContentOverrides {
   midExtent?: number;
   /** Weighted class mix per band; any omitted band takes {@link DEFAULT_CITY_ZONE_MIXES}. */
   mixes?: Partial<CityZoneMixes>;
-  /** Global lot footprint multiplier forwarded to the class placement roll. Default 1. */
+  /** Global massing-size multiplier forwarded to the class placement roll. Default 1. */
   lotScale?: number;
   /** Minimum building floors (district clamp over class ranges). Default 1. */
   floorsMin?: number;
@@ -203,33 +712,26 @@ export interface CityContentOverrides {
   /** Base side spacing in meters between neighbours. Default 1.4. */
   spacing?: number;
   /**
-   * Bias the band mix by the lot's frontage street level before the class pick. `true` (default)
+   * Bias the band mix by the plot's frontage street level before the class pick. `true` (default)
    * uses {@link DEFAULT_CITY_LEVEL_BIAS}; pass a table to customise; `false` disables the bias.
    */
   streetLevelBias?: boolean | CityLevelClassBias;
   /**
-   * Share dial (0..1) for the landmark pass: roughly `lots × landmarks ÷ clusterSize` clusters of
-   * adjacent frontage lots are merged into block-scale landmarks (civic hall, arena, market, campus)
-   * whose footprint is several times larger than a normal lot. Default {@link DEFAULT_LANDMARK_SHARE}
-   * (~0.04 ⇒ a couple per default city); `0` disables the pass and yields byte-identical per-lot
-   * resolution. Count is hard-capped at {@link LANDMARK_HARD_CAP}. See {@link resolveCityLotContent}.
+   * Grand-plot share dial (0..1): the probability weight of the block-scale plot tier at geometry
+   * time — a landmark is nothing but a grand plot. Default {@link DEFAULT_LANDMARK_SHARE}; `0`
+   * yields a city with no grand plots. Count is hard-capped at {@link LANDMARK_HARD_CAP}.
    */
   landmarks?: number;
   /**
-   * Restrict the landmark pass to these classes (a subset of {@link CITY_LANDMARK_CLASSES}). Omit to
+   * Restrict grand plots to these classes (a subset of {@link CITY_LANDMARK_CLASSES}). Omit to
    * allow every class the zone table would pick.
    */
   landmarkClasses?: readonly CityLandmarkClass[];
   /**
-   * Manhattan block-fill dial (0..1). Default {@link DEFAULT_BLOCK_FILL} (~0.45), which is a no-op:
-   * frontage stays as-authored and no interiors/parks are added (byte-identical to the classic
-   * content path). As it rises the pass fills the empty block interiors behind the frontage rows with
-   * back-row and interior lots — ordinary zone classes mixed with parking-garage and depot fillers
-   * ({@link CITY_FILLER_CLASSES}) — never overlapping roads, frontage, or each other, and reserves a
-   * small seeded fraction of blocks as breathing-room parks (empty interiors + thinned frontage).
-   * Interior lots per block are capped at {@link INTERIOR_LOTS_PER_BLOCK_CAP}. Frontage COMPACTION
-   * (spacing→0, lots widen to touch) is a sibling lever applied by {@link generateCity} when this dial
-   * is set — see {@link CityGeneratorOptions.lots.blockFill}. Determinism preserved via seeded streams.
+   * Streetwall dial (0..1). Default {@link DEFAULT_BLOCK_FILL}. As it rises frontage coverage
+   * approaches a contiguous wall, plots deepen toward the block spine, and fewer whole blocks are
+   * reserved as parks; falling it loosens the frontage and greens the city. Block interiors are
+   * never filled with street-less buildings — every plot fronts a street.
    */
   blockFill?: number;
 }
@@ -240,7 +742,7 @@ export interface CityContentOptions extends CityContentOverrides {
   seed: string;
   /** Half-extents the city was grown in — the radial zone metric normalizes to these. */
   halfExtents: readonly [number, number];
-  /** Whether lanes were lined with lots (mirror {@link CityGeneratorOptions.lots.laneFrontage}). Default false. */
+  /** Whether lanes were lined with plots (mirror the geometry option). Default false. */
   laneFrontage?: boolean;
 }
 
@@ -254,37 +756,23 @@ export interface MassingFootprint {
   bounds: { minX: number; maxX: number; minZ: number; maxZ: number };
 }
 
-/** One lot enriched with its zone/class/floors/massing — the renderer instances `pieces` at `center`. */
+/** One plot enriched with its zone/class/floors/massing — the renderer instances `pieces` at `center`. */
 export interface ResolvedCityLot {
-  /** The source frontage lot. For a landmark this is the cluster's dominant lot (carries road/side). */
+  /** The paired rect building lot (`city.lots[i]`). */
   lot: PlacedBuildingLot;
-  /** Zone band the lot's (or cluster's) center fell in under the profile. */
+  /** Zone band the plot center fell in under the profile. */
   zone: CityZoneBand;
   /**
-   * Building class. For ordinary lots this is the {@link CityLotClass} the band mix rolled. For a
-   * landmark it is the {@link CityLandmarkClass}. Interior-fill lots may additionally carry a
-   * {@link CityFillerClass} (garage/depot). Read {@link ResolvedCityLot.landmark} /
-   * {@link ResolvedCityLot.interior} to discriminate.
+   * Building class. Ordinary plots roll a {@link CityLotClass} from the band mix; grand plots roll
+   * a {@link CityLandmarkClass}. ({@link CityFillerClass} remains in the union for renderer compat.)
    */
   class: CityLotClass | CityLandmarkClass | CityFillerClass;
   /**
-   * Set only on landmark entries (block-scale cluster merges); equals {@link ResolvedCityLot.class}
-   * there and is `undefined` for every ordinary per-lot building. Renderers branch on this.
+   * Set only on grand plots; equals {@link ResolvedCityLot.class} there and is `undefined` for
+   * every ordinary building. Renderers branch on this.
    */
   landmark?: CityLandmarkClass;
-  /**
-   * Set only on lots synthesized by the block-interior fill pass (behind the street frontage at a
-   * high `blockFill`). `undefined` for street-frontage lots and landmarks. Filler classes
-   * ({@link CITY_FILLER_CLASSES}) only ever appear on entries where this is `true`.
-   */
-  interior?: boolean;
-  /**
-   * Set on the surviving street-frontage lots of a block reserved as a park at a high `blockFill`.
-   * Park blocks are thinned (most frontage dropped) and never interior-filled, so a full-fill city
-   * still breathes. `undefined` on ordinary and interior lots.
-   */
-  park?: boolean;
-  /** Hierarchy level of the frontage road the lot faces (`street` when it can't be recovered). */
+  /** Hierarchy level of the frontage street (`street` when it can't be recovered). */
   streetLevel: StreetLevel;
   /** Building floor count after the district clamp. */
   floors: number;
@@ -303,6 +791,22 @@ function biasMix(mix: readonly WeightedParamEntry[], levelBias: Partial<Record<C
   return mix.map((entry) => {
     const factor = levelBias[entry.item as CityLotClass];
     return factor === undefined ? entry : { item: entry.item, weight: entry.weight * factor };
+  });
+}
+
+/**
+ * Bias a class mix by how well each class's natural frontage width matches the plot width, so the
+ * class follows the plot: wide plots pull towers/slabs, narrow plots pull rowhouses/houses.
+ */
+function sizeBiasMix(mix: readonly WeightedParamEntry[], plotWidth: number): WeightedParamEntry[] {
+  return mix.map((entry) => {
+    const range = classWidthRange(entry.item);
+    if (range === undefined) return entry;
+    const mid = (range[0] + range[1]) / 2;
+    const spread = (range[1] - range[0]) / 2 + 5;
+    const t = (plotWidth - mid) / spread;
+    const factor = 1 / (1 + t * t);
+    return { item: entry.item, weight: entry.weight * factor };
   });
 }
 
@@ -326,37 +830,6 @@ function massingFootprint(pieces: readonly CityLotPiece[]): MassingFootprint {
   return { w: maxX - minX, d: maxZ - minZ, bounds: { minX, maxX, minZ, maxZ } };
 }
 
-/** Default landmark share dial — a couple of block-scale landmarks per default city. */
-export const DEFAULT_LANDMARK_SHARE = 0.04;
-/**
- * Default `blockFill` — a deliberate no-op point. At this value frontage is untouched and the
- * interior-fill/park passes are gated off, so the content path stays byte-identical to the classic
- * one; callers opt into the Manhattan look by raising the dial toward 1.
- */
-export const DEFAULT_BLOCK_FILL = 0.45;
-/** Interior fill and parks engage only above this dial value (keeps the default a strict no-op). */
-const BLOCK_FILL_GATE = 0.5;
-/** Max back-row/interior ranks placed behind a frontage lot at full fill. */
-const INTERIOR_MAX_ROWS = 7;
-/** Hard cap on interior lots synthesized per frontage block (road+side group). Bounds the pass. */
-export const INTERIOR_LOTS_PER_BLOCK_CAP = 24;
-/** Extra massing-width growth (per class) applied to frontage at full fill, for a tighter streetwall. */
-const FRONTAGE_MASSING_STRETCH = 0.25;
-/** Fraction of a park block's frontage kept (the rest is dropped so the block reads as open space). */
-const PARK_FRONTAGE_KEEP = 0.25;
-/** Floor on the park-block fraction at full fill, so even a wall-to-wall city keeps some green. */
-const PARK_MIN_FRACTION = 0.06;
-/** Share of the compaction gap converted to park reservation as fill drops from 1 toward the gate. */
-const PARK_FRACTION_SLOPE = 0.4;
-/** Probability an interior lot is a filler (garage/depot) rather than an ordinary zone class. */
-const INTERIOR_FILLER_PROB = 0.45;
-/** Hard cap on landmarks emitted regardless of dial/city size. */
-export const LANDMARK_HARD_CAP = 12;
-/** Divisor turning the share dial into a cluster budget (≈ lots × dial ÷ this). */
-const LANDMARK_CLUSTER_DIVISOR = 3;
-const LANDMARK_MIN_CLUSTER = 2;
-const LANDMARK_MAX_CLUSTER = 4;
-
 /** Which landmark classes each zone band favours (weighted). Data-only, mirrors the zone-mix pattern. */
 const LANDMARK_ZONE_MIX: Record<CityZoneBand, readonly { cls: CityLandmarkClass; weight: number }[]> = {
   core: [
@@ -374,20 +847,6 @@ const LANDMARK_ZONE_MIX: Record<CityZoneBand, readonly { cls: CityLandmarkClass;
     { cls: "arena", weight: 1 },
   ],
 };
-
-/** Rotate a lot-local XZ offset into world space by a lot yaw (inverse of {@link worldToLocal}). */
-function localToWorld(p: Vec2, angle: number): Vec2 {
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-  return [p[0] * c + p[1] * s, -p[0] * s + p[1] * c];
-}
-
-/** Rotate a world-space XZ offset into a lot's local frame. */
-function worldToLocal(p: Vec2, angle: number): Vec2 {
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-  return [p[0] * c - p[1] * s, p[0] * s + p[1] * c];
-}
 
 /** Weighted pick of a landmark class from a zone entry list, restricted to `allowed`. */
 function pickLandmarkClass(
@@ -412,16 +871,22 @@ function pickLandmarkClass(
 }
 
 /**
- * Enrich a generated city's bare frontage lots into the 9-class massing system: each lot gets its
- * zone band (radial position under a {@link CityZoneProfile}), a building class rolled from the
- * band's weighted mix (biased by the frontage street level), floors, and the deterministic massing
- * pieces the class composes — all reusing `cityContent`'s existing zone/mix/placement/massing
- * machinery, never a second copy of it. Deterministic per `seed` via {@link seededStreams}, bounded
- * (one pass over `city.lots`), and pure. Same seed + city ⇒ identical resolved lots.
+ * Enrich a generated city's plots into classed, massed buildings: each plot gets its zone band
+ * (radial position under a {@link CityZoneProfile}), a building class rolled from the band's
+ * weighted mix — biased by street level AND plot size, with grand plots rolling a landmark class —
+ * floors, and the deterministic massing pieces the class composes, sized to the plot's building
+ * rect. Deterministic per `seed` via {@link seededStreams}, bounded (one pass over `city.lots`),
+ * and pure. Same seed + city ⇒ identical resolved lots.
  *
- * @capability city-generator resolve bare city lots into zoned, classed, massed buildings
+ * A city without `plots` (a hand-built `{network, lots}` pair) still resolves: every lot is treated
+ * as an ordinary plot of its footprint size.
+ *
+ * @capability city-generator resolve city plots into zoned, classed, massed buildings
  */
-export function resolveCityLotContent(city: GeneratedCity, options: CityContentOptions): ResolvedCityLot[] {
+export function resolveCityLotContent(
+  city: Pick<GeneratedCity, "network" | "lots"> & Partial<Pick<GeneratedCity, "plots" | "parks">>,
+  options: CityContentOptions,
+): ResolvedCityLot[] {
   const [hx, hz] = options.halfExtents;
   const profile = options.profile ?? "core-out";
   const coreExtent = options.coreExtent ?? 0.35;
@@ -440,34 +905,45 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
   const biasSetting = options.streetLevelBias ?? true;
   const biasTable: CityLevelClassBias | null =
     biasSetting === false ? null : biasSetting === true ? DEFAULT_CITY_LEVEL_BIAS : biasSetting;
-
-  // Recover each lot's frontage street level: `lot.road` indexes the frontage list generateCity
-  // handed the placer — the streets that carry lots (lanes excluded unless `laneFrontage`).
-  const laneFrontage = options.laneFrontage ?? false;
-  const frontage = city.network.streets.filter((street) => laneFrontage || street.level !== "lane");
+  const allowed = new Set<CityLandmarkClass>(options.landmarkClasses ?? CITY_LANDMARK_CLASSES);
 
   const streams = seededStreams(options.seed);
 
-  // Block-fill dial. At/below the reference (default) it's a strict no-op: no width stretch, no
-  // interior fill, no parks — so the classic content path stays byte-identical. Above the gate the
-  // pass packs block interiors and reserves parks.
-  const fill = options.blockFill ?? DEFAULT_BLOCK_FILL;
-  const fillActive = fill > BLOCK_FILL_GATE;
-  const widthStretch = 1 + (Math.max(0, fill - DEFAULT_BLOCK_FILL) / (1 - DEFAULT_BLOCK_FILL)) * FRONTAGE_MASSING_STRETCH;
-
-  // Ordinary per-lot resolution — the 9-class massing system. Kept byte-identical to the
-  // pre-landmark path (same `lot:${i}` stream, same field shape) at the default dial, so the
-  // landmarks-off + default-fill case is a strict backward-compat guard.
-  const resolveNormal = (lot: PlacedBuildingLot, i: number): ResolvedCityLot => {
-    const streetLevel = frontage[lot.road]?.level ?? "street";
+  return city.lots.map((lot, i) => {
+    const plot = city.plots?.[i];
+    const streetLevel = plot?.streetLevel ?? city.network.streets[lot.road]?.level ?? "street";
     const rng = streams(`lot:${i}`);
     const bandRoll = rng();
     const classRoll = rng();
     const zone = zoneBand(zoneMetric(lot.center[0], lot.center[1], hx, hz), profile, coreExtent, midExtent, bandRoll);
-    const mix = biasTable === null ? mixes[zone] : biasMix(mixes[zone], biasTable[streetLevel]);
+
+    if (plot?.tier === "grand") {
+      const cls = pickLandmarkClass(LANDMARK_ZONE_MIX[zone], allowed, classRoll);
+      const floors = landmarkFloors(cls, rng);
+      const pieces = buildLandmarkPieces(cls, lot.footprint.w, lot.footprint.d, floors, floorHeight, rng);
+      return {
+        lot,
+        zone,
+        class: cls,
+        landmark: cls,
+        streetLevel,
+        floors,
+        pieces,
+        center: lot.center,
+        rotationY: lot.rotationY,
+        footprint: massingFootprint(pieces),
+      };
+    }
+
+    const leveled = biasTable === null ? mixes[zone] : biasMix(mixes[zone], biasTable[streetLevel]);
+    const mix = sizeBiasMix(leveled, lot.footprint.w);
     const cls = pickClass(mix, classRoll);
-    const placement = rollClassPlacement(cls, rng, lotScale, floorsMin, floorsMax, setback, spacing, widthStretch);
-    const pieces = buildLotPieces(cls, placement.width, placement.depth, placement.floors, floorHeight, rng);
+    const placement = rollClassPlacement(cls, rng, lotScale, floorsMin, floorsMax, setback, spacing);
+    // Massing follows the plot: fill its building rect, clamped so a small class on a big plot
+    // doesn't balloon far past its natural size.
+    const width = Math.min(lot.footprint.w, placement.width * 1.35);
+    const depth = Math.min(lot.footprint.d, placement.depth * 1.35);
+    const pieces = buildLotPieces(cls, width, depth, placement.floors, floorHeight, rng);
     return {
       lot,
       zone,
@@ -479,485 +955,5 @@ export function resolveCityLotContent(city: GeneratedCity, options: CityContentO
       rotationY: lot.rotationY,
       footprint: massingFootprint(pieces),
     };
-  };
-
-  // Landmark pass (may be a no-op at dial 0).
-  const dial = options.landmarks ?? DEFAULT_LANDMARK_SHARE;
-  let landmarks: ResolvedCityLot[] = [];
-  let consumed = new Set<number>();
-  if (dial > 0) {
-    const allowed = new Set<CityLandmarkClass>(options.landmarkClasses ?? CITY_LANDMARK_CLASSES);
-    const pass = placeLandmarks(city, {
-      dial,
-      allowed,
-      frontage,
-      streams,
-      profile,
-      coreExtent,
-      midExtent,
-      hx,
-      hz,
-      floorHeight,
-    });
-    landmarks = pass.landmarks;
-    consumed = pass.consumed;
-  }
-
-  // Fast path: default fill and no landmarks ⇒ classic 1:1 resolution in lot order.
-  if (!fillActive && landmarks.length === 0) return city.lots.map(resolveNormal);
-
-  // Park blocks (only when fill is active): reserve a seeded fraction of frontage blocks as open
-  // space — thinned frontage, never interior-filled — so a full-fill city still breathes.
-  const parkPlan = fillActive ? planParkBlocks(city.lots, consumed, streams, fill) : null;
-
-  // Resolve surviving frontage lots in lot order; drop most of a park block's frontage.
-  const result: ResolvedCityLot[] = [];
-  const fillFrontage: { key: string; index: number; entry: ResolvedCityLot }[] = [];
-  city.lots.forEach((lot, i) => {
-    if (consumed.has(i)) return;
-    const key = `${lot.road}:${lot.side}`;
-    if (parkPlan?.parkKeep.has(key)) {
-      if (!parkPlan.parkKeep.get(key)!.has(i)) return; // thinned-out park frontage
-      const entry = resolveNormal(lot, i);
-      entry.park = true;
-      result.push(entry);
-      return;
-    }
-    const entry = resolveNormal(lot, i);
-    result.push(entry);
-    if (fillActive) fillFrontage.push({ key, index: i, entry });
   });
-  result.push(...landmarks);
-
-  // Interior fill: pack the empty block interiors behind the (non-park) frontage rows.
-  if (fillActive && fillFrontage.length > 0) {
-    const interior = fillBlockInteriors({
-      city,
-      fillFrontage,
-      existing: result,
-      streams,
-      fill,
-      widthStretch,
-      hx,
-      hz,
-      profile,
-      coreExtent,
-      midExtent,
-      mixes,
-      lotScale,
-      floorsMin,
-      floorsMax,
-      floorHeight,
-      setback,
-      spacing,
-    });
-    result.push(...interior);
-  }
-  return result;
-}
-
-/** Outward frontage normal (points away from the road, into the block) from a lot's facing yaw. */
-function outwardNormalOf(rotationY: number): Vec2 {
-  return [-Math.sin(rotationY), -Math.cos(rotationY)];
-}
-
-/** Interior back-row ranks placed behind a frontage lot at a given fill (0 at/below the gate). */
-function interiorRows(fill: number): number {
-  return Math.max(0, Math.round(((fill - BLOCK_FILL_GATE) / (1 - BLOCK_FILL_GATE)) * INTERIOR_MAX_ROWS));
-}
-
-/**
- * Seeded park-block reservation. Groups non-consumed lots by frontage (road+side), reserves a
- * fraction of those blocks (~`(1-fill)` scaled, floored at {@link PARK_MIN_FRACTION} so full fill
- * still keeps some, and forced to ≥1 at very high fill), and within each keeps only a small seeded
- * subset of frontage lots. Deterministic; bounded (one pass + one sort over the block keys).
- */
-function planParkBlocks(
-  lots: readonly PlacedBuildingLot[],
-  consumed: ReadonlySet<number>,
-  streams: (key: string) => () => number,
-  fill: number,
-): { parkKeep: Map<string, Set<number>> } {
-  const groups = new Map<string, number[]>();
-  lots.forEach((lot, i) => {
-    if (consumed.has(i)) return;
-    const key = `${lot.road}:${lot.side}`;
-    const arr = groups.get(key);
-    if (arr) arr.push(i);
-    else groups.set(key, [i]);
-  });
-  const keys = [...groups.keys()];
-  const fraction = Math.max(PARK_MIN_FRACTION, (1 - fill) * PARK_FRACTION_SLOPE);
-  const minParks = fill >= 0.9 && keys.length > 0 ? 1 : 0;
-  const count = Math.min(keys.length, Math.max(minParks, Math.round(keys.length * fraction)));
-  const scored = keys
-    .map((k) => ({ k, s: streams(`park:${k}`)() }))
-    .sort((a, b) => b.s - a.s || (a.k < b.k ? -1 : 1));
-  const parkKeep = new Map<string, Set<number>>();
-  for (const { k } of scored.slice(0, count)) {
-    const idxs = groups.get(k)!;
-    const keepCount = Math.max(1, Math.ceil(idxs.length * PARK_FRONTAGE_KEEP));
-    const keep = new Set<number>(
-      idxs
-        .map((i) => ({ i, s: streams(`park-keep:${k}:${i}`)() }))
-        .sort((a, b) => b.s - a.s || a.i - b.i)
-        .slice(0, keepCount)
-        .map((x) => x.i),
-    );
-    parkKeep.set(k, keep);
-  }
-  return { parkKeep };
-}
-
-/** Inputs for the interior-fill pass. */
-interface InteriorFillContext {
-  city: GeneratedCity;
-  fillFrontage: { key: string; index: number; entry: ResolvedCityLot }[];
-  existing: readonly ResolvedCityLot[];
-  streams: (key: string) => () => number;
-  fill: number;
-  widthStretch: number;
-  hx: number;
-  hz: number;
-  profile: CityZoneProfile;
-  coreExtent: number;
-  midExtent: number;
-  mixes: CityZoneMixes;
-  lotScale: number;
-  floorsMin: number;
-  floorsMax: number;
-  floorHeight: number;
-  setback: number;
-  spacing: number;
-}
-
-/** A placed footprint tracked for overlap rejection (center, orientation, half-extents, radius). */
-interface Occupant {
-  center: Vec2;
-  yaw: number;
-  hw: number;
-  hd: number;
-  radius: number;
-}
-
-/** Safety separation (world units) added to the near-parallel AABB test so yaw error never slivers. */
-const OVERLAP_MARGIN = 0.9;
-
-/** Bounded uniform spatial hash for overlap queries during interior fill. */
-class OccupancyGrid {
-  private readonly cells = new Map<string, Occupant[]>();
-  constructor(private readonly cell: number) {}
-  private key(x: number, z: number): string {
-    return `${Math.floor(x / this.cell)}:${Math.floor(z / this.cell)}`;
-  }
-  insert(occ: Occupant): void {
-    const k = this.key(occ.center[0], occ.center[1]);
-    const arr = this.cells.get(k);
-    if (arr) arr.push(occ);
-    else this.cells.set(k, [occ]);
-  }
-  /** True if `cand` overlaps any occupant: exact AABB when near-parallel, else conservative circle. */
-  overlaps(cand: Occupant): boolean {
-    const cx = Math.floor(cand.center[0] / this.cell);
-    const cz = Math.floor(cand.center[1] / this.cell);
-    for (let gx = cx - 1; gx <= cx + 1; gx += 1) {
-      for (let gz = cz - 1; gz <= cz + 1; gz += 1) {
-        const arr = this.cells.get(`${gx}:${gz}`);
-        if (!arr) continue;
-        for (const occ of arr) {
-          const dx = cand.center[0] - occ.center[0];
-          const dz = cand.center[1] - occ.center[1];
-          const dyaw = Math.abs(((cand.yaw - occ.yaw + Math.PI) % (2 * Math.PI)) - Math.PI);
-          if (dyaw < 0.05 || Math.abs(dyaw - Math.PI) < 0.05) {
-            // Near-parallel: AABB in the shared (block-local) frame, inflated by OVERLAP_MARGIN so a
-            // couple of degrees of yaw error (gently curved frontage) never leaves a sliver overlap.
-            const c = Math.cos(cand.yaw);
-            const s = Math.sin(cand.yaw);
-            const lx = Math.abs(dx * c - dz * s);
-            const lz = Math.abs(dx * s + dz * c);
-            if (lx < cand.hw + occ.hw + OVERLAP_MARGIN && lz < cand.hd + occ.hd + OVERLAP_MARGIN) return true;
-          } else if (dx * dx + dz * dz < (cand.radius + occ.radius) * (cand.radius + occ.radius) - 1e-6) {
-            // Cross-yaw: circumscribed-circle separation guarantees the rectangles cannot overlap.
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-}
-
-/**
- * Pack the empty interiors of dense blocks with back-row and interior lots. For each non-park
- * frontage block (road+side group) it lays a grid of lots behind the frontage wall, oriented to the
- * block's frontage yaw, mixing ordinary zone classes with parking-garage/depot fillers. Every
- * candidate is rejected if it sits on a road, leaves the district, or overlaps an existing lot
- * (frontage, landmark, or another interior lot). Deterministic per seed; bounded — rows are capped
- * and each block yields at most {@link INTERIOR_LOTS_PER_BLOCK_CAP} interior lots.
- */
-function fillBlockInteriors(ctx: InteriorFillContext): ResolvedCityLot[] {
-  const {
-    city, fillFrontage, existing, streams, fill, widthStretch, hx, hz,
-    profile, coreExtent, midExtent, mixes, lotScale, floorsMin, floorsMax, floorHeight, setback, spacing,
-  } = ctx;
-  const rows = interiorRows(fill);
-  if (rows <= 0) return [];
-
-  // Interior packing cell — sized so any clamped interior footprint fits, keeping same-block cells
-  // non-overlapping by construction.
-  const CELL_W = 16;
-  const CELL_D = 15;
-  const ROW_GAP = 1.5;
-  const grid = new OccupancyGrid(64);
-
-  const radiusOf = (w: number, d: number): number => 0.5 * Math.hypot(w, d);
-  // Seed the grid with every already-placed lot so interiors never collide with frontage/landmarks.
-  for (const r of existing) {
-    const w = r.landmark ? r.footprint.w : r.lot.footprint.w;
-    const d = r.landmark ? r.footprint.d : r.lot.footprint.d;
-    grid.insert({ center: r.center, yaw: r.rotationY, hw: w / 2, hd: d / 2, radius: radiusOf(w, d) });
-  }
-
-  // Group the fill-eligible frontage lots by block.
-  const blocks = new Map<string, { index: number; entry: ResolvedCityLot }[]>();
-  for (const f of fillFrontage) {
-    const arr = blocks.get(f.key);
-    if (arr) arr.push({ index: f.index, entry: f.entry });
-    else blocks.set(f.key, [{ index: f.index, entry: f.entry }]);
-  }
-
-  const clearance = Math.min(CELL_W, CELL_D);
-  const interior: ResolvedCityLot[] = [];
-
-  for (const [key, members] of blocks) {
-    if (members.length < 2) continue; // need a real frontage run to define a block interior
-    // Anchor on the middle frontage lot; build the block-local frame from its yaw.
-    const anchorMember = members[Math.floor(members.length / 2)]!;
-    const anchor = anchorMember.entry.lot;
-    const anchorLevel = anchorMember.entry.streetLevel;
-    const yaw = anchor.rotationY;
-    const n = outwardNormalOf(yaw); // into the block
-    const t: Vec2 = [-n[1], n[0]]; // along the street
-
-    // Along-street span from the block's frontage centers (relative to the anchor).
-    let tMin = Infinity;
-    let tMax = -Infinity;
-    for (const m of members) {
-      const rel: Vec2 = [m.entry.lot.center[0] - anchor.center[0], m.entry.lot.center[1] - anchor.center[1]];
-      const along = rel[0] * t[0] + rel[1] * t[1];
-      tMin = Math.min(tMin, along);
-      tMax = Math.max(tMax, along);
-    }
-    const depthStart = anchor.footprint.d / 2 + ROW_GAP;
-    let placed = 0;
-    for (let row = 1; row <= rows && placed < INTERIOR_LOTS_PER_BLOCK_CAP; row += 1) {
-      const depth = depthStart + (row - 0.5) * (CELL_D + ROW_GAP);
-      let col = 0;
-      for (let along = tMin; along <= tMax + 1e-6 && placed < INTERIOR_LOTS_PER_BLOCK_CAP; along += CELL_W) {
-        col += 1;
-        const cx = anchor.center[0] + n[0] * depth + t[0] * along;
-        const cz = anchor.center[1] + n[1] * depth + t[1] * along;
-        if (Math.abs(cx) > hx || Math.abs(cz) > hz) continue;
-        if (city.network.streets.some((street) => isOnRoad(street.points, street.width + clearance, cx, cz))) continue;
-
-        const rng = streams(`interior:${key}:${row}:${col}`);
-        const zone = zoneBand(zoneMetric(cx, cz, hx, hz), profile, coreExtent, midExtent, rng());
-        let cls: CityLotClass | CityFillerClass;
-        if (rng() < INTERIOR_FILLER_PROB) cls = rng() < 0.6 ? "garage" : "depot";
-        else cls = pickClass(mixes[zone], rng());
-        const placement = rollClassPlacement(cls, rng, lotScale, floorsMin, floorsMax, setback, spacing, widthStretch);
-        // Clamp to the packing cell so same-block cells never overlap.
-        const w = Math.min(placement.width, CELL_W * 0.94);
-        const d = Math.min(placement.depth, CELL_D * 0.94);
-        const cand: Occupant = { center: [cx, cz], yaw, hw: w / 2, hd: d / 2, radius: radiusOf(w, d) };
-        if (grid.overlaps(cand)) continue;
-
-        const pieces = buildLotPieces(cls, w, d, placement.floors, floorHeight, rng);
-        const lot: PlacedBuildingLot = {
-          center: [cx, cz],
-          rotationY: yaw,
-          footprint: { w, d },
-          road: anchor.road,
-          side: anchor.side,
-          frontDistance: anchor.frontDistance,
-        };
-        interior.push({
-          lot,
-          zone,
-          class: cls,
-          interior: true,
-          streetLevel: anchorLevel,
-          floors: placement.floors,
-          pieces,
-          center: [cx, cz],
-          rotationY: yaw,
-          footprint: massingFootprint(pieces),
-        });
-        grid.insert(cand);
-        placed += 1;
-      }
-    }
-  }
-  return interior;
-}
-
-/** Internal inputs for the landmark pass (already-resolved dials from {@link resolveCityLotContent}). */
-interface LandmarkPassContext {
-  dial: number;
-  allowed: ReadonlySet<CityLandmarkClass>;
-  frontage: StreetNetwork["streets"];
-  streams: (key: string) => () => number;
-  profile: CityZoneProfile;
-  coreExtent: number;
-  midExtent: number;
-  hx: number;
-  hz: number;
-  floorHeight: number;
-}
-
-/**
- * Deterministic landmark pass. Groups lots by shared frontage (road + side, already in arc order),
- * partitions each group into non-overlapping candidate clusters of 2–4 adjacent lots, scores them
- * (bigger clusters + seeded jitter), and merges the top `cap` into oversized landmark parcels whose
- * footprint is the cluster AABB (in the dominant lot's local frame) grown into the block. Any
- * surviving ordinary lot whose center falls inside a landmark footprint is swallowed too, so no
- * landmark ever overlaps a normal building. Bounded: one grouping pass + one sort over ≤ n candidates.
- */
-function placeLandmarks(
-  city: GeneratedCity,
-  ctx: LandmarkPassContext,
-): { landmarks: ResolvedCityLot[]; consumed: Set<number> } {
-  const { dial, allowed, frontage, streams, profile, coreExtent, midExtent, hx, hz, floorHeight } = ctx;
-  const lots = city.lots;
-  const consumed = new Set<number>();
-  const landmarks: ResolvedCityLot[] = [];
-
-  const cap = Math.min(LANDMARK_HARD_CAP, Math.max(1, Math.floor((lots.length * dial) / LANDMARK_CLUSTER_DIVISOR)));
-
-  // Group by shared frontage; the placer emits a road's lots in arc order, so a group's indices are
-  // already spatially consecutive along that frontage.
-  const groups = new Map<string, number[]>();
-  lots.forEach((lot, i) => {
-    const key = `${lot.road}:${lot.side}`;
-    const arr = groups.get(key);
-    if (arr) arr.push(i);
-    else groups.set(key, [i]);
-  });
-
-  interface Candidate {
-    cluster: number[];
-    score: number;
-    zone: CityZoneBand;
-    cls: CityLandmarkClass;
-  }
-  const candidates: Candidate[] = [];
-  for (const [key, idxs] of groups) {
-    let start = 0;
-    while (start < idxs.length) {
-      const r = streams(`landmark:${key}:${start}`);
-      const size = LANDMARK_MIN_CLUSTER + Math.floor(r() * (LANDMARK_MAX_CLUSTER - LANDMARK_MIN_CLUSTER + 1));
-      const end = Math.min(idxs.length, start + size);
-      const cluster = idxs.slice(start, end);
-      start = end;
-      if (cluster.length < LANDMARK_MIN_CLUSTER) continue;
-      // Reject clusters spread too far to read as one building (a gap in the frontage).
-      let far = false;
-      for (let k = 1; k < cluster.length; k += 1) {
-        const a = lots[cluster[k - 1]!]!.center;
-        const b = lots[cluster[k]!]!.center;
-        const span = Math.hypot(a[0] - b[0], a[1] - b[1]);
-        const reach = (lots[cluster[k - 1]!]!.footprint.w + lots[cluster[k]!]!.footprint.w) * 0.5 + 8;
-        if (span > reach) {
-          far = true;
-          break;
-        }
-      }
-      if (far) continue;
-      let sx = 0;
-      let sz = 0;
-      for (const i of cluster) {
-        sx += lots[i]!.center[0];
-        sz += lots[i]!.center[1];
-      }
-      const cx = sx / cluster.length;
-      const cz = sz / cluster.length;
-      const zone = zoneBand(zoneMetric(cx, cz, hx, hz), profile, coreExtent, midExtent, r());
-      const cls = pickLandmarkClass(LANDMARK_ZONE_MIX[zone], allowed, r());
-      const score = cluster.length + r();
-      candidates.push({ cluster, score, zone, cls });
-    }
-  }
-
-  candidates.sort((a, b) => b.score - a.score);
-  const selected = candidates.slice(0, cap);
-
-  for (const cand of selected) {
-    const { cluster, zone, cls } = cand;
-    const domIdx = cluster[Math.floor(cluster.length / 2)]!;
-    const dom = lots[domIdx]!;
-
-    // Cluster AABB in the dominant lot's local frame (clustered lots share a frontage ⇒ near-parallel).
-    let minX = Infinity;
-    let maxX = -Infinity;
-    let minZ = Infinity;
-    let maxZ = -Infinity;
-    for (const i of cluster) {
-      const lot = lots[i]!;
-      const rel: Vec2 = [lot.center[0] - dom.center[0], lot.center[1] - dom.center[1]];
-      const loc = worldToLocal(rel, dom.rotationY);
-      const hw = lot.footprint.w / 2;
-      const hd = lot.footprint.d / 2;
-      minX = Math.min(minX, loc[0] - hw);
-      maxX = Math.max(maxX, loc[0] + hw);
-      minZ = Math.min(minZ, loc[1] - hd);
-      maxZ = Math.max(maxZ, loc[1] + hd);
-    }
-    const clusterWidth = maxX - minX;
-    const clusterDepth = maxZ - minZ;
-    // Grow depth into the block (away from the road at +z) so the parcel reads as block-scale.
-    const targetDepth = Math.max(clusterDepth, clusterWidth * landmarkMinDepthFactor(cls));
-    minZ -= targetDepth - clusterDepth;
-    const width = maxX - minX;
-    const depth = maxZ - minZ;
-    const localCenter: Vec2 = [(minX + maxX) / 2, (minZ + maxZ) / 2];
-    const worldOffset = localToWorld(localCenter, dom.rotationY);
-    const center: Vec2 = [dom.center[0] + worldOffset[0], dom.center[1] + worldOffset[1]];
-
-    const rng = streams(`landmark-build:${domIdx}`);
-    const floors = landmarkFloors(cls, rng);
-    const pieces = buildLandmarkPieces(cls, width, depth, floors, floorHeight, rng);
-    const footprint = massingFootprint(pieces);
-    for (const i of cluster) consumed.add(i);
-    landmarks.push({
-      lot: dom,
-      zone,
-      class: cls,
-      landmark: cls,
-      streetLevel: frontage[dom.road]?.level ?? "street",
-      floors,
-      pieces,
-      center,
-      rotationY: dom.rotationY,
-      footprint,
-    });
-  }
-
-  // Swallow any surviving ordinary lot whose center falls inside a landmark footprint, so a landmark
-  // never overlaps a normal building.
-  if (landmarks.length > 0) {
-    lots.forEach((lot, i) => {
-      if (consumed.has(i)) return;
-      for (const lm of landmarks) {
-        const rel: Vec2 = [lot.center[0] - lm.center[0], lot.center[1] - lm.center[1]];
-        const loc = worldToLocal(rel, lm.rotationY);
-        const b = lm.footprint.bounds;
-        if (loc[0] >= b.minX && loc[0] <= b.maxX && loc[1] >= b.minZ && loc[1] <= b.maxZ) {
-          consumed.add(i);
-          return;
-        }
-      }
-    });
-  }
-
-  return { landmarks, consumed };
 }

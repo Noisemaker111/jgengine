@@ -511,6 +511,163 @@ function remapReversedEdgeStreets(streetsPerEdge: readonly number[]): number[] {
   return out;
 }
 
+/** Minimal node/edge shapes {@link extractGraphBlocks} needs (matches `StreetNetwork.nodes`/`edges`). */
+export interface GraphBlockNode {
+  x: number;
+  z: number;
+}
+
+/** One street-graph edge {@link extractGraphBlocks} traces block faces through. */
+export interface GraphBlockEdge {
+  /** Endpoint node indices. `points[0]` sits exactly on node `a`, the last on node `b`. */
+  a: number;
+  b: number;
+  points: readonly (readonly [number, number])[];
+  width: number;
+  level: FabricStreet["level"];
+  /** Owning street index, carried through to pruned dead-end corridors so callers can line them. */
+  street?: number;
+}
+
+/** One block from {@link extractGraphBlocks}: the face polygon and its inset land ring. */
+export interface GraphBlockRings {
+  /** Face polygon on road CENTERLINES (as traced, interior faces CCW). */
+  face: Vec2[];
+  /** Land ring: face inset by each bordering edge's half width + curb margin + sidewalk band. */
+  land: Vec2[];
+}
+
+/**
+ * Extract closed blocks from an EXACT street graph — the `nodes`/`edges` a street network already
+ * carries — instead of re-deriving topology from welded polylines. Half-edges are ordered by true
+ * departure angle at each node, dangling chains are pruned first (returned as `deadEnds` for
+ * corridor carving), interior faces are traced through the rotation system, and each face is inset
+ * to its land ring by the bordering edges' half-widths (+ curb + sidewalk). Robust against wandered
+ * and arc-filleted centerlines, which defeat proximity welding. Pure bounded geometry.
+ *
+ * @capability city-district extract block polygons directly from a street network's exact graph
+ */
+export function extractGraphBlocks(
+  nodes: readonly GraphBlockNode[],
+  edges: readonly GraphBlockEdge[],
+  params: { sidewalkBase: number; curbMargin: number },
+): { blocks: GraphBlockRings[]; deadEnds: { pts: Vec2[]; width: number; level: FabricStreet["level"]; street?: number }[] } {
+  // --- prune dangling chains: an edge touching a degree-1 node can't border a closed face ---
+  const degree = new Array<number>(nodes.length).fill(0);
+  const alive = edges.map((e) => e.a !== e.b && e.points.length >= 2);
+  edges.forEach((e, i) => {
+    if (!alive[i]) return;
+    degree[e.a] += 1;
+    degree[e.b] += 1;
+  });
+  const deadEnds: { pts: Vec2[]; width: number; level: FabricStreet["level"]; street?: number }[] = [];
+  let pruned = true;
+  while (pruned) {
+    pruned = false;
+    for (let i = 0; i < edges.length; i += 1) {
+      if (!alive[i]) continue;
+      const e = edges[i]!;
+      if (degree[e.a] === 1 || degree[e.b] === 1) {
+        alive[i] = false;
+        deadEnds.push({ pts: e.points.map((p) => [p[0], p[1]] as Vec2), width: e.width, level: e.level, street: e.street });
+        degree[e.a] -= 1;
+        degree[e.b] -= 1;
+        pruned = true;
+      }
+    }
+  }
+
+  // --- half-edge rotation system on the surviving 2-core ---
+  interface Half {
+    to: number;
+    pts: Vec2[];
+    twin: number;
+    edge: number;
+    visited: boolean;
+  }
+  const halves: Half[] = [];
+  const out: number[][] = nodes.map(() => []);
+  const departAngle = (pts: readonly Vec2[]): number => {
+    // First non-degenerate segment sets the true departure direction.
+    for (let i = 1; i < pts.length; i += 1) {
+      const dx = pts[i]![0] - pts[0]![0];
+      const dz = pts[i]![1] - pts[0]![1];
+      if (dx * dx + dz * dz > 1e-12) return Math.atan2(dz, dx);
+    }
+    return 0;
+  };
+  const angles: number[] = [];
+  edges.forEach((e, ei) => {
+    if (!alive[ei]) return;
+    const fwd = e.points.map((p) => [p[0], p[1]] as Vec2);
+    const rev = [...fwd].reverse();
+    const h0 = halves.length;
+    halves.push({ to: e.b, pts: fwd, twin: h0 + 1, edge: ei, visited: false });
+    halves.push({ to: e.a, pts: rev, twin: h0, edge: ei, visited: false });
+    angles.push(departAngle(fwd), departAngle(rev));
+    out[e.a]!.push(h0);
+    out[e.b]!.push(h0 + 1);
+  });
+  for (const list of out) list.sort((a, b) => angles[a]! - angles[b]!);
+
+  // --- trace interior faces: at each destination, rotate clockwise from the twin ---
+  const blocks: GraphBlockRings[] = [];
+  for (let start = 0; start < halves.length && blocks.length < MAX_BLOCKS; start += 1) {
+    if (halves[start]!.visited) continue;
+    const polygon: Vec2[] = [];
+    const segEdge: number[] = [];
+    let current = start;
+    let guard = 0;
+    let closed = false;
+    while (guard < halves.length + 4) {
+      guard += 1;
+      const half = halves[current]!;
+      if (half.visited) break;
+      half.visited = true;
+      for (let i = 0; i + 1 < half.pts.length; i += 1) {
+        polygon.push(half.pts[i]!);
+        segEdge.push(half.edge);
+      }
+      const list = out[half.to]!;
+      const idx = list.indexOf(half.twin);
+      if (idx < 0) break;
+      current = list[(idx - 1 + list.length) % list.length]!;
+      if (current === start) {
+        closed = true;
+        break;
+      }
+    }
+    if (!closed || polygon.length < 3) continue;
+    if (polygonSignedArea(polygon) <= 1) continue; // outer face (CW) or degenerate sliver
+
+    // Dedupe near-coincident vertices while keeping each surviving segment's source edge.
+    const ring: Vec2[] = [];
+    const ringEdge: number[] = [];
+    for (let i = 0; i < polygon.length; i += 1) {
+      const p = polygon[i]!;
+      const prev = ring[ring.length - 1];
+      if (prev !== undefined && Math.hypot(prev[0] - p[0], prev[1] - p[1]) < 0.02) continue;
+      ring.push(p);
+      ringEdge.push(segEdge[i]!);
+    }
+    while (ring.length > 1 && Math.hypot(ring[0]![0] - ring[ring.length - 1]![0], ring[0]![1] - ring[ring.length - 1]![1]) < 0.02) {
+      ring.pop();
+      ringEdge.pop();
+    }
+    if (ring.length < 3) continue;
+
+    const dist = ring.map((_, i) => {
+      const e = edges[ringEdge[i]!]!;
+      const walk = e.level === "lane" ? 0 : sidewalkWidthFor(e.level, params.sidewalkBase);
+      return e.width / 2 + params.curbMargin + walk;
+    });
+    const land = insetRing(ring, dist);
+    blocks.push({ face: ring, land });
+  }
+  blocks.sort((a, b) => polygonArea(b.land) - polygonArea(a.land));
+  return { blocks, deadEnds };
+}
+
 /** Arc-length station lookup along a closed ring. */
 export class RingWalker {
   readonly ring: readonly Vec2[];
