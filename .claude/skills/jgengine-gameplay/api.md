@@ -266,7 +266,7 @@
 ## @jgengine/core/economy/wallet
 
 - `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
-- `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
+- `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
 - `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
 - `WalletState` (interface): interface WalletState — ⚠ undocumented
 - `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
@@ -1031,6 +1031,8 @@
 - `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
 - `CellGrid` (interface): interface CellGrid<T> — ⚠ undocumented
+- `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
+- `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `Chat` (interface): interface Chat — ⚠ undocumented
 - `ChatMessage` (interface): interface ChatMessage — ⚠ undocumented
@@ -1186,6 +1188,7 @@
 - `NumericBounds` (interface): interface NumericBounds — Optional inclusive `[min, max]` clamp applied after a write. Omit an edge for unbounded.
 - `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
+- `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
 - `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
 - `PairKeyCodec` (interface): interface PairKeyCodec — Canonicalizes a two-part relation identity into a single delimiter-safe record key.
 - `PairKeyOptions` (interface): interface PairKeyOptions — Direction and delimiter policy for {@link createPairKeyCodec}.

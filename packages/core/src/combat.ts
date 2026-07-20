@@ -48,7 +48,7 @@ export {
 export { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./combat/damageResolution";
 export { createDeathSystem, type OnDeathSpec } from "./combat/death";
 export { type DeathReason } from "./combat/deathReason";
-export { createDefensiveWindow, resolveDefense } from "./combat/defensiveWindow";
+export { createDefensiveWindow, resolveDefense, type DefenseResolution } from "./combat/defensiveWindow";
 export { createDotField } from "./combat/dotField";
 export { createDownedState } from "./combat/downed";
 export { createEffectSystem, type ReceiveMap } from "./combat/effects";
@@ -137,6 +137,7 @@ export {
   convergeShot,
   eyeHeightFromColliders,
   resolveShot,
+  type ResolvedShot,
   type ShotOriginPolicy,
 } from "./combat/shotOrigin";
 export {

@@ -17,5 +17,9 @@
   },
   "include": [
     "jgengine"
+  ],
+  "exclude": [
+    "jgengine/**/*.test.tsx",
+    "jgengine/**/*.test.ts"
   ]
 }

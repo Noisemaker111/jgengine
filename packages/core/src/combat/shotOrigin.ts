@@ -28,6 +28,11 @@ export type ShotOriginPolicy =
   | { kind: "camera"; origin: EntityPosition; direction?: EntityPosition }
   | { kind: "world"; origin: EntityPosition; direction?: EntityPosition };
 
+/**
+ * A shot's resolved firing geometry in world space: `origin` is the point the projectile/ray starts
+ * from and `direction` is its normalized aim vector, both computed by {@link resolveShot} from the
+ * shooter's position, facing, and the chosen origin policy.
+ */
 export interface ResolvedShot {
   origin: EntityPosition;
   direction: EntityPosition;

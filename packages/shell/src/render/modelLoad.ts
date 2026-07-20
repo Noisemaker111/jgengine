@@ -55,11 +55,82 @@ export async function probeModelUrl(
 }
 
 /**
- * A {@link GLTFLoader} whose success path is unchanged but whose failures are
- * enriched: when a load errors, it probes the URL and rejects with an
- * {@link AssetLoadDiagnosis}-derived message (missing / HTML fallback / corrupt /
- * unsupported) instead of the raw parse error. Drop-in for the shared loader, so
- * `useLoader(sharedGltfLoader, url)` benefits with no call-site change.
+ * Build a stand-in {@link GLTF} whose scene is a single magenta placeholder box,
+ * returned in place of a model that could not be loaded. Consumers clone and
+ * mount `gltf.scene` exactly as they would a real model, so one broken asset
+ * degrades to a visible primitive instead of taking down the scene. The optional
+ * `diagnosis` is stashed on `userData.jgengineDiagnosis` for debugging.
+ * @internal
+ */
+export function createFallbackModel(diagnosis?: AssetLoadDiagnosis): GLTF {
+  const scene = new THREE.Group();
+  scene.name = "jgengine-missing-model";
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(1, 1, 1),
+    new THREE.MeshStandardMaterial({ color: 0xd63384, roughness: 0.7, metalness: 0 }),
+  );
+  mesh.name = "jgengine-missing-model-box";
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+  const userData: Record<string, unknown> = { jgengineFallback: true };
+  if (diagnosis !== undefined) userData.jgengineDiagnosis = diagnosis;
+  return {
+    scene,
+    scenes: [scene],
+    animations: [],
+    cameras: [],
+    asset: { generator: "jgengine-fallback-model" },
+    // The fallback never runs a GLTF parser; consumers only read `scene`/`animations`.
+    parser: undefined as unknown as GLTF["parser"],
+    userData,
+  };
+}
+
+function warnMissingModel(message: string): void {
+  if (typeof console !== "undefined") {
+    console.warn(`[jgengine] ${message} Rendering a placeholder primitive in its place.`);
+  }
+}
+
+/**
+ * The failure seam for {@link DiagnosticGLTFLoader}: re-probe the URL a load just
+ * failed on and decide what the loader should hand back. A diagnosed broken asset
+ * (missing / HTML dev-server fallback / corrupt / unsupported) resolves via
+ * `onLoad` to a {@link createFallbackModel} primitive so the failure is contained
+ * at the load seam for **every** consumer — no reliance on a React error boundary
+ * catching a rejected Suspense promise, which does not fire reliably for async
+ * loader rejections inside the react-three-fiber reconciler. Only a genuine parse
+ * error over bytes that still look like a valid model (`diagnosis.ok`) is surfaced
+ * through `onError`. Split out from the loader so it is unit-testable without a GL
+ * context; `overrides` inject the probe and warning sink in tests.
+ * @internal
+ */
+export async function handleModelLoadFailure(
+  resolvedUrl: string,
+  originalEvent: unknown,
+  onLoad: (gltf: GLTF) => void,
+  onError: (event: unknown) => void,
+  overrides: { probe?: typeof probeModelUrl; warn?: (message: string) => void } = {},
+): Promise<void> {
+  const probe = overrides.probe ?? probeModelUrl;
+  const diagnosis = await probe(resolvedUrl);
+  if (diagnosis.ok) {
+    // The bytes look like a real model on re-fetch — surface the original parse error unchanged.
+    onError(originalEvent);
+    return;
+  }
+  (overrides.warn ?? warnMissingModel)(diagnosis.message);
+  onLoad(createFallbackModel(diagnosis));
+}
+
+/**
+ * A {@link GLTFLoader} whose success path is unchanged but whose failures degrade
+ * gracefully: when a load errors, it probes the URL and — for a diagnosed broken
+ * asset (missing / HTML fallback / corrupt / unsupported) — resolves to a
+ * {@link createFallbackModel} placeholder primitive instead of rejecting, so the
+ * one broken model never bubbles a throw past its mount. Drop-in for the shared
+ * loader, so `useLoader(sharedGltfLoader, url)` benefits with no call-site change.
  * @internal
  */
 export class DiagnosticGLTFLoader extends GLTFLoader {
@@ -76,19 +147,7 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
       (event: unknown) => {
         if (onError === undefined) return;
         // Probe the URL the loader actually fetched (base-resolved), not the raw input.
-        void probeModelUrl(this.manager.resolveURL(url))
-          .then((diagnosis) => {
-            if (diagnosis.ok) {
-              // The bytes look fine on re-fetch — surface the original parse error unchanged.
-              onError(event);
-              return;
-            }
-            const enriched = new Error(`[jgengine] ${diagnosis.message}`);
-            (enriched as Error & { diagnosis?: AssetLoadDiagnosis }).diagnosis = diagnosis;
-            (enriched as Error & { cause?: unknown }).cause = event;
-            onError(enriched);
-          })
-          .catch(() => onError(event));
+        void handleModelLoadFailure(this.manager.resolveURL(url), event, onLoad, onError).catch(() => onError(event));
       },
     );
   }

@@ -78,7 +78,18 @@ export {
   type ShopStockSnapshot,
 } from "./economy/shopStock";
 export { type TechNodeDef } from "./economy/techTree";
-export { balance, canAfford, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
+export {
+  balance,
+  canAfford,
+  charge,
+  chargeAll,
+  createEmptyWallet,
+  grant,
+  isOverdrawn,
+  type ChargeOptions,
+  type ChargeResult,
+  type Overdraft,
+} from "./economy/wallet";
 export {
   createAchievementTracker,
   type AchievementDef,

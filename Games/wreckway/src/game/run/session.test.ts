@@ -53,7 +53,7 @@ describe("wreckway run session", () => {
     expect(snapshot.ticker[0]?.text).toBe("BOLT IT ON, GO GO");
   });
 
-  test("baseline no-parts straight run through the mid lane reaches the exit before the compactor, under par", () => {
+  test("a straight run down the centerline grabs the route parts and smashes through every barricade to the exit", () => {
     const session = createRunSession();
     session.start();
     driveStraight(session, PAR_SECONDS);
@@ -63,6 +63,27 @@ describe("wreckway run session", () => {
     expect(snapshot.outcome?.kind).toBe("won");
     expect(snapshot.outcome!.time).toBeLessThan(PAR_SECONDS);
     expect(snapshot.pose.position[2]).toBeGreaterThanOrEqual(EXIT_Z);
+    // Reaching the exit is only possible because the run bolted on the plow and jump parts on the way —
+    // the corridor is walled by barricades that a bare chassis cannot pass.
+    expect(snapshot.tuning.hasPlow).toBe(true);
+    expect(snapshot.tuning.jumpPower).toBeGreaterThan(0);
+  });
+
+  test("a kart that skips the plow/jump drops is walled in at the first barricade and gets crushed", () => {
+    // Drive fast but steer hard to the corridor edge to dodge the centerline part drops. With no plow
+    // and no jump the first barricade is an impassable wall, so the compactor eats the kart short of the exit.
+    const session = createRunSession();
+    session.start();
+    let elapsed = 0;
+    while (elapsed < PAR_SECONDS && session.snapshot().phase === "running") {
+      session.tick(DT, { throttle: 1, brake: 0, steer: 1 }, { jumpPressed: false, plowBracing: false });
+      elapsed += DT;
+    }
+    const snapshot = session.snapshot();
+    expect(snapshot.tuning.hasPlow).toBe(false);
+    expect(snapshot.tuning.jumpPower).toBe(0);
+    expect(snapshot.phase).toBe("crushed");
+    expect(snapshot.pose.position[2]).toBeLessThan(EXIT_Z);
   });
 
   test("an idle kart is caught and crushed by the compactor", () => {

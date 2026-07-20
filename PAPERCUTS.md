@@ -198,3 +198,7 @@ Running bun run check-types on a clean camera-shake feature branch -> check-game
 2026-07-20T01:07:21.998Z — claude-opus-4-8 — Claude
 
 running check-types on a fresh wave-director feature branch → gate fails on pre-existing Games/vice-isle editorKinds.ts game-shape violations on origin/main, blocking the real type check (check-types-all) that runs after it; had to run check-types-all.ts manually to confirm my code compiles
+
+2026-07-20T03:20:47.338Z — claude-opus-4-8 — Claude
+
+running Games/wreckway tests in a fresh worktree → world.world.test.ts errors with 'Cannot find package fflate' from packages/assets/src/materials.ts; fflate is declared in packages/assets/package.json but not installed in any node_modules (also missing in shared checkout), so agent:bootstrap --check reports ok while an assets transitive dep stays unresolved
