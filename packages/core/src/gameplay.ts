@@ -141,6 +141,14 @@ export {
 export { gamePhase, setGamePhase, type GamePhase } from "./game/gamePhase";
 export { createKeyValueStore, type KeyValueStorage } from "./game/keyValueStore";
 export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from "./game/leaderboard";
+export {
+  medalFor,
+  rankLeaderboard,
+  type RankLeaderboardOptions,
+  type RankableRow,
+  type RankedEntry,
+  type TieMode,
+} from "./game/leaderboardRank";
 export { createLevelSequence, type LevelSequence } from "./game/levelSequence";
 export { createLoadouts, type LoadoutDef } from "./game/loadout";
 export { evaluateLootFilter, lootFilter, type LootFilterRule } from "./game/lootFilter";

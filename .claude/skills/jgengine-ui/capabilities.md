@@ -318,6 +318,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/react"`
 
+## offscreen-markers — serializable waypoint tracker + pure edge-clamp/bearing math for on-screen pins and off-screen directional arrows with distance
+
+- `createWaypointTracker` (function) · `import { createWaypointTracker } from "@jgengine/core/ui"`
+- `layoutScreenMarker` (function) · `import { layoutScreenMarker } from "@jgengine/core/ui"`
+
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
@@ -413,6 +418,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
+
+## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
+
+- `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/react"`
 
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
@@ -518,6 +527,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useT` (function) · `import { useT } from "@jgengine/react"`
 
+## use-waypoints — React binding that returns a waypoint tracker's live list (or a passthrough array)
+
+- `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/react"`
+
 ## vital-bar — compact current/max vital meter for an entity summary
 
 - `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
@@ -525,6 +538,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
 
 - `WaypointArrow` (function) · `import { WaypointArrow } from "@jgengine/react"`
+
+## waypoint-markers — overlay rendering world waypoints as on-screen pins and off-screen edge-clamped directional arrows with distance, colored per game-owned kind
+
+- `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/react"`
 
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 

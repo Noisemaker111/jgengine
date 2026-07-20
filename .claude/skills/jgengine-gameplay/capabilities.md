@@ -375,6 +375,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
 
+## scoreboard — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table
+
+- `rankLeaderboard` (function) · `import { rankLeaderboard } from "@jgengine/core/gameplay"`
+
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 
 - `seededRng` (function) · `import { seededRng } from "@jgengine/core/gameplay"`

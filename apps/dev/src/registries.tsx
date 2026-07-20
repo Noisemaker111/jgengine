@@ -138,6 +138,8 @@ export const gameRegistry: GameRegistry = {
   "coach-marks": () => import("./demo/coachMarksDemo").then((module) => module.coachMarksDemoGame),
   "objective-banner": () => import("./demo/objectiveBannerDemo").then((module) => module.objectiveBannerDemoGame),
   "combo-meter": () => import("./demo/comboMeterDemo").then((module) => module.comboMeterDemoGame),
+  "waypoint-markers": () => import("./demo/waypointMarkersDemo").then((module) => module.waypointMarkersDemoGame),
+  "scoreboard": () => import("./demo/scoreboardDemo").then((module) => module.scoreboardDemoGame),
   "talent-tree": () => import("./demo/talentTreeDemo").then((module) => module.talentTreeDemoGame),
   "countdown-timer": () => import("./demo/countdownTimerDemo").then((module) => module.countdownTimerDemoGame),
   "dialogue": () => import("./demo/dialogueDemo").then((module) => module.dialogueDemoGame),

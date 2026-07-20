@@ -21,6 +21,8 @@ export * from "./notifications";
 export * from "./coachMarks";
 export * from "./objectiveBanner";
 export * from "./comboMeter";
+export * from "./waypointMarkers";
+export * from "./scoreboard";
 export * from "./timerReadout";
 export * from "./dialogueView";
 export * from "./cutscene";
