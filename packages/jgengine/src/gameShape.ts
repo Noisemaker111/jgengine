@@ -27,8 +27,20 @@ export const GAME_SKELETON_OPTIONAL_FILES = [
   "editorLayers.test.ts",
   "editorCatalogs.ts",
   "editorCatalogs.test.ts",
+  "editorKinds.ts",
+  "editorKinds.test.ts",
   "editor.scene.json",
 ] as const;
+
+/**
+ * Editor-import-graph side-effect modules follow the `editor<Name>.ts` convention
+ * (`editorLayers`, `editorCatalogs`, `editorKinds`, …). They load with the editor via
+ * `editorLayers.ts` and are legitimate top-level `src/` extras. Matching the convention by
+ * pattern — not an exact-filename enumeration — keeps a new editor module (and its colocated
+ * `.test.ts`) from tripping the shape gate the moment it lands, which is what stalled main
+ * after #1369 added `editorKinds.ts`.
+ */
+const EDITOR_MODULE_RE = /^editor[A-Z][A-Za-z0-9]*(\.test)?\.tsx?$/;
 
 /** Top-level directories allowed under src/ (everything game-specific lives under these). */
 export const GAME_SKELETON_DIRS = ["game"] as const;
@@ -51,7 +63,8 @@ export function gameSkeletonAllowedDirs(): ReadonlySet<string> {
 
 /** True when a direct child of `src/` is either a skeleton file or an allowed dir. */
 export function isAllowedGameSrcEntry(name: string, isDirectory: boolean): boolean {
-  return isDirectory ? ALLOWED_DIRS.has(name) : ALLOWED_FILES.has(name);
+  if (isDirectory) return ALLOWED_DIRS.has(name);
+  return ALLOWED_FILES.has(name) || EDITOR_MODULE_RE.test(name);
 }
 
 /** Human-readable core skeleton list for doctor/check error copy. */
