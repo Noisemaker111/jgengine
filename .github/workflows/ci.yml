@@ -39,6 +39,10 @@ jobs:
       - run: bun run build
       - run: bun run check-skill-api
       - run: bun run check-orphan-ratchet
+      # Runs on PRs (not just the push-only `checks` job) so a new package subpath
+      # that lands without regenerating scripts/export-manifest.json fails the PR
+      # instead of only reddening main post-merge. Needs the `bun run build` above.
+      - run: bun run check-export-manifest
 
   checks:
     if: github.event_name == 'push'
