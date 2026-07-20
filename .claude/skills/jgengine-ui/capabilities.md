@@ -48,6 +48,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
 
+## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
+
+- `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/react"`
+
 ## camera-transparent-decor — let author decor pass through the orbit spring-arm; a child opts back in with jgCameraCollide
 
 - `isCameraOccluderTransparent` (function) · `import { isCameraOccluderTransparent } from "@jgengine/shell/camera"`
@@ -100,6 +104,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## confirm-dialog — generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
 
 - `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/react"`
+
+## controller-camera-shake — R3F consumer that applies a core camera-shake controller's pooled per-frame offset to the active camera (translation + pitch/yaw/roll) so the view visibly shakes
+
+- `ControllerCameraShake` (function) · `import { ControllerCameraShake } from "@jgengine/shell/camera"`
 
 ## controls-list — keybind-derived control legend that hides on touch
 
@@ -482,6 +490,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## transform-gizmo — in-game select/move/rotate/scale gizmo
 
 - `TransformGizmo` (const) · `import { TransformGizmo } from "@jgengine/shell/structures"`
+
+## use-camera-shake — React hook binding a camera-shake controller — subscribes for live trauma/kind and can self-drive its decay on a frame loop
+
+- `useCameraShake` (function) · `import { useCameraShake } from "@jgengine/react"`
 
 ## use-coach-marks — React hook binding a coach-mark sequence to a component — re-renders on advance/skip/gate changes
 

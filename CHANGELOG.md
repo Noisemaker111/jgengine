@@ -46,6 +46,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Seeded trauma-based camera shake.** `@jgengine/core/vfx/cameraShake` adds `createCameraShake(config?)` —
+  a serializable, deterministic camera-shake/impulse controller: `add(amount, kind?)` raises trauma `0..1`
+  on impacts (free-string `kind` the game styles), `update(dt)` decays it, and `offset()` returns a pooled
+  `{ x, y, z, pitch, yaw, roll }` kick (`trauma^exponent` × per-axis maxima × seeded value-noise) with
+  snapshot/restore. `@jgengine/react` ships `CameraShakeMeter`/`useCameraShake` (trauma meter + kind label)
+  and `@jgengine/shell` ships `ControllerCameraShake`, an R3F consumer that applies the offset to the active
+  camera each frame so the view visibly shakes. Demo: `camera-shake`.
+
 - **Observable wave/spawn runner + drop-in HUD.** `@jgengine/core/ai/waveRunner` adds
   `createWaveRunner(config)` — a thin, stateful, observable wrapper over the seeded `spawnDirector`
   that owns a `SpawnDirectorState`, ticks it from `update(dt, ctx?)`, forwards each `SpawnRequest` to an

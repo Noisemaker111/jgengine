@@ -22,6 +22,7 @@ export {
   useCameraShake,
   type CameraShakeChannel,
 } from "./shakeChannel";
+export { ControllerCameraShake, type ControllerCameraShakeProps } from "./ControllerCameraShake";
 export { rtsPanKeysConflict } from "./rigMath";
 export { GAME_SIM_FRAME_PRIORITY } from "./orbitCameraMath";
 export {

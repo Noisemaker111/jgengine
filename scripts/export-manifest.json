@@ -408,6 +408,7 @@
     "./ui/selectionModel",
     "./ui/swingTimer",
     "./ui/tooltipModel",
+    "./vfx/cameraShake",
     "./vfx/damageDirection",
     "./vfx/particles",
     "./vfx/screenEffects",
@@ -533,6 +534,7 @@
     "./actionHud",
     "./bars",
     "./barsPreview",
+    "./cameraShake",
     "./cards",
     "./characterSheet",
     "./chat",
@@ -594,8 +596,7 @@
     "./talentTree",
     "./timerReadout",
     "./useDebouncedCommit",
-    "./voice",
-    "./waveHud"
+    "./voice"
   ],
   "@jgengine/convex": [
     ".",
@@ -647,6 +648,7 @@
     "./behaviourDriver",
     "./boundActionDispatch",
     "./camera",
+    "./camera/ControllerCameraShake",
     "./camera/GameCameraRig",
     "./camera/GameFirstPersonCamera",
     "./camera/GameInspectionCamera",

@@ -507,6 +507,9 @@
 - `BetterAuthSessionState` (interface): interface BetterAuthSessionState — ⚠ undocumented
 - `BetterAuthUserShape` (interface): interface BetterAuthUserShape — ⚠ undocumented
 - `BossBar` (function): function BossBar(props: AtomicBarProps & { name?: string }): React.JSX.Element — A wide encounter/boss health bar with the boss name at the start.
+- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, animate = false, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. A shell component applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
+- `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
+- `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
 - `CaptureOdds` (function): function CaptureOdds({ chance, className, fillClassName, }: { chance: number; className?: string; fillClassName?: string; }): React.JSX.Element — ⚠ undocumented
 - `CardFace` (function): function CardFace({ rank, suit, faceDown = false, width = 64, height = 90, className, style, children, }: { rank: Rank; suit: Suit; faceDown?: boolean; width?: number; height?: number; className?: string; style?: CSSProperties; children?: ReactNode; }): React.JSX.Element — A single playing-card face: rank + suit pips, or a patterned back when `faceDown`.
 - `CardStack` (function): function CardStack({ pile, zone, cardOf, ...rest }: { pile: CardPileState; zone: string; cardOf: (id: string) => PlayingCard; } & Omit<Parameters<typeof StackedPile>[0], "cards">): React.JSX.Element — `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCard` via `cardOf`.
@@ -831,6 +834,7 @@
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
 - `useAutoScroll` (function): function useAutoScroll<T extends HTMLElement>(dep: unknown): React.RefObject<T | null> — Pin a scrollable element to its bottom whenever `dep` changes (typically a length or the list itself). Attach the returned ref to the scroll container. Owns the log/chat/console scroll-to-bottom effect so panels don't hand-roll it.
 - `useAxisChannel` (function): function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult — Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`. The channel is recreated when `config` identity changes, so pass a stable config (useMemo/module constant at the call site) unless a rebind is intended.
+- `useCameraShake` (function): function useCameraShake(controller: CameraShakeController, animate = true): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). Optionally drives `update()` on an animation frame so the trauma meter bleeds down live even when no game loop ticks the controller. Returns the current trauma + kind for a HUD readout.
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useCoachMarks` (function): function useCoachMarks(sequence: CoachMarkSequence): CoachMarkView | null — Subscribe to a coach-mark sequence and re-render on every change, returning the current step view (or `null` when the tour is complete or waiting on a gate).
@@ -967,6 +971,13 @@
 ## @jgengine/react/barsPreview
 
 - `BarsPreview` (function): function BarsPreview({ className }: { className?: string }): React.JSX.Element — Renders the atomic bar matrix twice under different token blocks to prove global re-theming.
+
+## @jgengine/react/cameraShake
+
+- `CameraShakeMeter` (function): function CameraShakeMeter({ controller, animate = false, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. A shell component applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
+- `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
+- `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
+- `useCameraShake` (function): function useCameraShake(controller: CameraShakeController, animate = true): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). Optionally drives `update()` on an animation frame so the trauma meter bleeds down live even when no game loop ticks the controller. Returns the current trauma + kind for a HUD readout.
 
 ## @jgengine/react/cards
 
@@ -1636,6 +1647,8 @@
 - `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
 - `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
+- `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
+- `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
@@ -1653,6 +1666,11 @@
 - `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
+
+## @jgengine/shell/camera/ControllerCameraShake
+
+- `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
+- `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
 
 ## @jgengine/shell/camera/GameCameraRig
 
