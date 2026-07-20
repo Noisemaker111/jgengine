@@ -38,6 +38,8 @@ export function BuildBar() {
             >
               <AbilitySlotButton
                 icon={<GameIcon name={def.icon} size={26} />}
+                label={def.label}
+                cost={`${def.cost}g`}
                 keybind={actionLabel(keybinds, `buildTower${index + 1}`) ?? undefined}
                 state={affordable ? "ready" : "noResource"}
                 size={50}

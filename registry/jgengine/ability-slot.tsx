@@ -40,6 +40,8 @@ function ChargePips({ charges, chargesMax }: { charges: number; chargesMax: numb
 
 export function AbilitySlotButton({
   icon,
+  label,
+  cost,
   keybind,
   size = 46,
   state = "ready",
@@ -52,6 +54,10 @@ export function AbilitySlotButton({
   className,
 }: {
   icon?: ReactNode;
+  /** Human-readable name of the ability/build/spell this slot triggers. Used as the button's accessible name. */
+  label?: string;
+  /** Optional cost shown alongside the label in the accessible name, already formatted (e.g. `"50g"`). */
+  cost?: string;
   keybind?: string;
   size?: number;
   state?: AbilitySlotState;
@@ -65,12 +71,16 @@ export function AbilitySlotButton({
 }) {
   const clamped = clampFraction(cooldownFraction);
   const showPips = chargesMax !== undefined && chargesMax > 1 && charges !== undefined;
+  const accessibleName =
+    label === undefined ? undefined : cost === undefined ? label : `${label} — ${cost}`;
   return (
     <button
       type="button"
       className={`relative overflow-hidden p-0 ${state === "ready" ? "cursor-pointer" : "cursor-default"} ${className ?? ""}`}
       data-jg="ability-slot"
       data-state={state}
+      aria-label={accessibleName}
+      title={accessibleName}
       onClick={onActivate}
       disabled={state === "locked"}
       style={{

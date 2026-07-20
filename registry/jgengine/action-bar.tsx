@@ -5,6 +5,8 @@ import { AbilitySlotButton, type AbilitySlotState } from "@/components/ui/abilit
 export interface ActionBarSlot {
   id: string;
   icon?: ReactNode;
+  label?: string;
+  cost?: string;
   keybind?: string;
   state?: AbilitySlotState;
   cooldownFraction?: number;
@@ -31,6 +33,8 @@ export function ActionBar({
         <AbilitySlotButton
           key={slot.id}
           icon={slot.icon}
+          label={slot.label}
+          cost={slot.cost}
           keybind={slot.keybind}
           size={slotSize}
           state={slot.state}
