@@ -97,6 +97,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ColorblindFilters` (function) · `import { ColorblindFilters } from "@jgengine/react"`
 
+## combo-meter-hud — drop-in HUD for a core combo meter — big live count, free-string tier label, derived multiplier, and a draining decay-window bar, per-tier colored from a caller map and HudTheme-token skinnable
+
+- `ComboMeterHud` (function) · `import { ComboMeterHud } from "@jgengine/react"`
+
 ## confirm-dialog — generic themeable confirm/cancel dialog — title, body, two buttons, danger styling
 
 - `ConfirmDialog` (function) · `import { ConfirmDialog } from "@jgengine/react"`
@@ -322,6 +326,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ObjectiveBannerHost` (function) · `import { ObjectiveBannerHost } from "@jgengine/react"`
 
+## offscreen-markers — serializable waypoint tracker + pure edge-clamp/bearing math for on-screen pins and off-screen directional arrows with distance
+
+- `createWaypointTracker` (function) · `import { createWaypointTracker } from "@jgengine/core/ui"`
+- `layoutScreenMarker` (function) · `import { layoutScreenMarker } from "@jgengine/core/ui"`
+
 ## ordinal-format — format a placement number as 1st/2nd/3rd for HUD ranks
 
 - `formatOrdinal` (function) · `import { formatOrdinal } from "@jgengine/core/ui"`
@@ -418,6 +427,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
 
+## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
+
+- `Scoreboard` (function) · `import { Scoreboard } from "@jgengine/react"`
+
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
 - `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay"`
@@ -486,6 +499,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useCoachMarks` (function) · `import { useCoachMarks } from "@jgengine/react"`
 
+## use-combo-meter — React hook binding a combo meter — re-renders per frame so the decay-window bar drains live and returns the current combo view
+
+- `useComboMeter` (function) · `import { useComboMeter } from "@jgengine/react"`
+
 ## use-damage-direction — React hook that animates a damage-direction tracker's fade with requestAnimationFrame and re-renders its live indicators
 
 - `useDamageDirection` (function) · `import { useDamageDirection } from "@jgengine/react"`
@@ -522,13 +539,29 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useT` (function) · `import { useT } from "@jgengine/react"`
 
+## use-wave-runner — React hook that subscribes to a wave runner and returns its pooled current-wave view
+
+- `useWaveRunner` (function) · `import { useWaveRunner } from "@jgengine/react"`
+
+## use-waypoints — React binding that returns a waypoint tracker's live list (or a passthrough array)
+
+- `useWaypoints` (function) · `import { useWaypoints } from "@jgengine/react"`
+
 ## vital-bar — compact current/max vital meter for an entity summary
 
 - `VitalBar` (function) · `import { VitalBar } from "@jgengine/react"`
 
+## wave-hud — drop-in wave/spawn HUD over a wave runner — big WAVE N label, wave-progress bar, spawned/total + budget + alert readouts, theme-skinnable
+
+- `WaveHud` (function) · `import { WaveHud } from "@jgengine/react"`
+
 ## waypoint-arrow — on-screen HUD guide arrow to a tracked waypoint, rotated by facing-relative bearing with a distance readout
 
 - `WaypointArrow` (function) · `import { WaypointArrow } from "@jgengine/react"`
+
+## waypoint-markers — overlay rendering world waypoints as on-screen pins and off-screen edge-clamped directional arrows with distance, colored per game-owned kind
+
+- `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/react"`
 
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 

@@ -561,6 +561,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
 
+## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
+
+- `createWaveRunner` (function) · `import { createWaveRunner } from "@jgengine/core/world"`
+
 ## waypoint-store — serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
 
 - `createWaypointStore` (function) · `import { createWaypointStore } from "@jgengine/core/world"`

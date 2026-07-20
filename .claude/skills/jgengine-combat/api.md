@@ -19,7 +19,12 @@
 - `CheckResult` (interface): interface CheckResult — ⚠ undocumented
 - `ClaimOutcome` (interface): interface ClaimOutcome — The outcome of a claim attempt — the updated pool and the grants owed (empty when the claim is refused).
 - `ClaimablePool` (interface): interface ClaimablePool — A serializable pool of results left open for later claiming — first-come contested drops or a `reservedFor` personal reward. Tracks `eligible` claimants, optional `expiresAtMs`, and the authoritative `claimedBy` winner so reconnect and duplicate-claim attempts resolve idempotently.
+- `ComboMeter` (interface): interface ComboMeter — A live, observable combo/multiplier meter — an integer hit chain with a decay window, free-string tier thresholds, a derived multiplier, and peak tracking.
+- `ComboMeterConfig` (interface): interface ComboMeterConfig — Options for {@link createComboMeter}.
+- `ComboMeterSnapshot` (interface): interface ComboMeterSnapshot — Serializable state for save/restore — clock-agnostic (stores time left, not an absolute deadline).
+- `ComboMeterView` (interface): interface ComboMeterView — A pooled, read-only snapshot of the live meter for a renderer to draw each frame. Reused across {@link ComboMeter.view} calls and overwritten on the next one — read it, do not retain it. For a save, use {@link ComboMeter.snapshot}.
 - `ComboStep` (interface): interface ComboStep — ⚠ undocumented
+- `ComboTier` (interface): interface ComboTier — One tier threshold in a {@link ComboMeter}. Tiers gate on the integer combo `count` (not a filled fraction), and `id` is a free string the game owns and styles ("good", "great", "savage", …) — the model never interprets it.
 - `CompletionPredicate` (type): type CompletionPredicate = ( params: Readonly<Record<string, unknown>>, ctx: PredicateContext, ) => boolean — A completion predicate: pure and deterministic, returns true when the node it gates is finished. Registered under a `kind` and reused across phases with different `params`.
 - `CrossingDirection` (type): type CrossingDirection = "falling" | "rising" — The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it.
 - `CrossingPolicy` (type): type CrossingPolicy = "once" | "repeat" — Whether a threshold may fire repeatedly (`repeat`) or at most once per direction (`once`).
@@ -139,6 +144,7 @@
 - `createAntiOneShotPolicy` (function): function createAntiOneShotPolicy(config: AntiOneShotConfig): AntiOneShotPolicy — Compose a reusable anti-one-shot / chip-guard clamp from caller data: while above `guardAboveFraction` a hit cannot drop the target below `leaveFraction`, and after such a save the target gets `recoverMs` of immunity. Below the guard fraction, lethal hits pass unchanged.
 - `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `createCastRunner` (function): function createCastRunner(): CastRunner — Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
+- `createComboMeter` (function): function createComboMeter(config: ComboMeterConfig): ComboMeter — A count-based combo / multiplier meter: an integer hit chain that climbs with every `hit()` and drops when a decay window elapses, crossing free-string tier thresholds ("good" → "great" → "savage") that derive a score multiplier, while tracking the peak reached. Time is injected (`now`, default `Date.now`) and/or driven by `update(dt)`; `view()` returns a pooled draw-state and `snapshot`/`restore` round-trips the chain through a save.
 - `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
 - `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
 - `createDamageClamp` (function): function createDamageClamp(config: DamageClampConfig): DamageInterceptor — A stateless interceptor that caps any single application at `maxPerHit`.
@@ -249,6 +255,15 @@
 - `CastInterruptReason` (type): type CastInterruptReason = "moved" | "cancelled" | "replaced" — ⚠ undocumented
 - `CastRunner` (interface): interface CastRunner — Per-entity cast-time state machine — begin, tick with game-time `dt` plus how far the caster moved, and act on the returned event. The runner owns timing and move-interruption only; the caller spends resources, starts cooldowns, and executes the ability when `completed` fires (compose with `abilityKit` — check readiness before `begin`, `cast` on completion).
 - `createCastRunner` (function): function createCastRunner(): CastRunner — Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
+
+## @jgengine/core/combat/comboMeter
+
+- `ComboMeter` (interface): interface ComboMeter — A live, observable combo/multiplier meter — an integer hit chain with a decay window, free-string tier thresholds, a derived multiplier, and peak tracking.
+- `ComboMeterConfig` (interface): interface ComboMeterConfig — Options for {@link createComboMeter}.
+- `ComboMeterSnapshot` (interface): interface ComboMeterSnapshot — Serializable state for save/restore — clock-agnostic (stores time left, not an absolute deadline).
+- `ComboMeterView` (interface): interface ComboMeterView — A pooled, read-only snapshot of the live meter for a renderer to draw each frame. Reused across {@link ComboMeter.view} calls and overwritten on the next one — read it, do not retain it. For a save, use {@link ComboMeter.snapshot}.
+- `ComboTier` (interface): interface ComboTier — One tier threshold in a {@link ComboMeter}. Tiers gate on the integer combo `count` (not a filled fraction), and `id` is a free string the game owns and styles ("good", "great", "savage", …) — the model never interprets it.
+- `createComboMeter` (function): function createComboMeter(config: ComboMeterConfig): ComboMeter — A count-based combo / multiplier meter: an integer hit chain that climbs with every `hit()` and drops when a decay window elapses, crossing free-string tier thresholds ("good" → "great" → "savage") that derive a score multiplier, while tracking the peak reached. Time is injected (`now`, default `Date.now`) and/or driven by `update(dt)`; `view()` returns a pooled draw-state and `snapshot`/`restore` round-trips the chain through a save.
 
 ## @jgengine/core/combat/comboPoints
 
