@@ -95,8 +95,12 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## render-fallback-diagnostics — Enable/disable the dev-only placeholder-fallback probe.
 
 - `armFallbackSeams` (function) · `import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams"`
+- `armTextureErrors` (function) · `import { armTextureErrors } from "@jgengine/core/devtools/textureErrors"`
 - `fallbackSeamsSnapshot` (function) · `import { fallbackSeamsSnapshot } from "@jgengine/core/devtools/fallbackSeams"`
 - `reportFallbackSeam` (function) · `import { reportFallbackSeam } from "@jgengine/core/devtools/fallbackSeams"`
+- `reportTextureLoadError` (function) · `import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors"`
+- `resetTextureErrors` (function) · `import { resetTextureErrors } from "@jgengine/core/devtools/textureErrors"`
+- `textureErrorsSnapshot` (function) · `import { textureErrorsSnapshot } from "@jgengine/core/devtools/textureErrors"`
 
 ## runtime-save — save/load the whole game world through a pluggable backend, autosave or save points
 

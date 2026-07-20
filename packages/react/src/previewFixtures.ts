@@ -2,6 +2,7 @@ import type { GamePreviewComponent } from "./preview";
 import { BarsPreview } from "./barsPreview";
 import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
+import { StreetGeometryPreview } from "./streetGeometryPreview";
 
 /**
  * One entry in the engine preview-fixture registry: a deterministic, engine-level
@@ -43,6 +44,11 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
     name: "IconsPreview",
     description: "IconTreatment school-gradient row plus a treated-icon hotbar with badges.",
     component: IconsPreview,
+  },
+  StreetGeometryPreview: {
+    name: "StreetGeometryPreview",
+    description: "Close-up welded road meshes for turns, unequal crossings, and five-way junctions.",
+    component: StreetGeometryPreview,
   },
 };
 

@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { BarsPreview } from "./barsPreview";
 import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
+import { StreetGeometryPreview } from "./streetGeometryPreview";
 import {
   PREVIEW_FIXTURES,
   previewFixtureNames,
@@ -16,6 +17,7 @@ describe("previewFixtures registry", () => {
     expect(names).toContain("HudThemePreview");
     expect(names).toContain("BarsPreview");
     expect(names).toContain("IconsPreview");
+    expect(names).toContain("StreetGeometryPreview");
   });
 
   test("each entry's name matches its registry key and carries a description", () => {
@@ -30,6 +32,7 @@ describe("previewFixtures registry", () => {
     expect(resolvePreviewFixture("HudThemePreview")?.component).toBe(HudThemePreview);
     expect(resolvePreviewFixture("BarsPreview")?.component).toBe(BarsPreview);
     expect(resolvePreviewFixture("IconsPreview")?.component).toBe(IconsPreview);
+    expect(resolvePreviewFixture("StreetGeometryPreview")?.component).toBe(StreetGeometryPreview);
   });
 
   test("resolvePreviewFixture returns undefined for an unknown name", () => {

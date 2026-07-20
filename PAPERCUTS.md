@@ -67,3 +67,27 @@ running ship preflight after the green portable damage commit -> origin/main adv
 2026-07-19T05:52:23.682Z — claude-fable-5 — Claude
 
 Fan-out research with background subagents → each agent's final report arrives truncated to ~2000 chars in the task-notification and asking the agent to Write its full report to the scratchpad silently fails (file never appears on disk, agent claims success); had to re-poke each agent to paste the full report inline as reply text, which does deliver in full.
+
+2026-07-20T05:01:02.822Z — openai/gpt-5.6-sol — NoisemakerJon
+
+starting the managed shoot daemon for close-up street geometry iteration on Windows -> shoot daemon start failed with Unknown: ChildProcess.kill from PowerShell instead of reporting whether the Chrome/Vite pair started
+
+2026-07-20T05:08:56.818Z — openai/gpt-5.6-sol — NoisemakerJon
+
+running the focused apps/web typecheck after a core geometry change -> it resolved stale @jgengine/core dist declarations and emitted dozens of false missing-export follow-ons instead of identifying that core needed rebuilding first
+
+2026-07-20T05:45:53.185Z — openai/gpt-5.6-sol — NoisemakerJon
+
+running the final repository gate after regenerating skill API docs -> gate stopped at a stale .claude/skills/jgengine/capabilities.md and required a separate bun run gen:capabilities pass even though this change did not add or remove a capability annotation
+
+2026-07-20T06:20:38.630Z — openai/gpt-5.6-sol — NoisemakerJon
+
+running the post-fixture full gate -> changing buildJunctionSurface JSDoc after an earlier generator pass left jgengine-world/api.md stale, so the full build completed before check-skill-api requested another generation
+
+2026-07-20T06:23:44.619Z — openai/gpt-5.6-sol — NoisemakerJon
+
+running the final gate after adding StreetGeometryPreview and regenerating export-manifest before build -> the final published export-manifest test still reported drift after all package builds, requiring regeneration against the built state
+
+2026-07-20T06:27:26.719Z — openai/gpt-5.6-sol — NoisemakerJon
+
+running ship:preflight immediately before commit as the workflow directs -> preflight rejects every uncommitted change as dirty and reports no net branch diff, so it can only run after the commit

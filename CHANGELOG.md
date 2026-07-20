@@ -55,6 +55,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Fixed
 
+- **Generated street bends and intersections now form compact, welded road geometry.** Hard degree-2
+  turns are emitted as owned two-arm joins with tangent-continuous inner and outer curbs instead of two
+  overlapping square caps; multi-arm curb returns bow into the crossing instead of ballooning outward;
+  unequal-width seams remain welded; and residential branches reject near-parallel departures that
+  inherently overlap their host road. The playground camera override now supports true close-up orbits
+  down to 8 world units, and `bun run shoot --fixture StreetGeometryPreview` provides deterministic
+  close-ups of turns and unequal multi-arm intersections.
 - **`assets pull` / `assets add` default output dir now lands where the dev server serves models** (`@jgengine/assets` CLI, #1339) — inside the monorepo a bare `pull`/`add` previously wrote to a cwd-relative `public/`, so running it under `packages/assets` (or any subdir) dropped GLBs into a folder no game serves. It now defaults to the served root `apps/dev/public` when that exists (falling back to the historical cwd-relative `public` for out-of-monorepo consumers), so pulled bytes land in `apps/dev/public/models/<pack>` where the runner reads them. `--dir` still overrides.
 
 ### Added

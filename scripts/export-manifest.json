@@ -606,6 +606,7 @@
     "./startScreen",
     "./statusEffectBar",
     "./store",
+    "./streetGeometryPreview",
     "./talentTree",
     "./timerReadout",
     "./useDebouncedCommit",
