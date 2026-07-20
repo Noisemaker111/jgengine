@@ -32,6 +32,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createComboRunner` (function) · `import { createComboRunner } from "@jgengine/core/combat"`
 
+## combo-meter — count-based combo/multiplier meter with a decay window, free-string tier thresholds, derived multiplier, peak tracking and snapshot/restore
+
+- `createComboMeter` (function) · `import { createComboMeter } from "@jgengine/core/combat"`
+
 ## combo-points — build up and spend finisher/combo points
 
 - `createComboPoints` (function) · `import { createComboPoints } from "@jgengine/core/combat"`
