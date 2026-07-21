@@ -152,6 +152,51 @@ describe("extractBlocks", () => {
     expect(headings.size).toBeGreaterThan(4);
   });
 
+  test("warns (dev-mode) when wandered centerlines collapse into implausibly few faces", () => {
+    // Ten arc-filleted streets that wander enough to defeat proximity welding — their intended
+    // crossings never register, so no closed blocks form (issue #1502: 38 streets → 2 faces).
+    const wandered: FabricStreet[] = [];
+    for (let k = 0; k < 10; k += 1) {
+      const base = -90 + k * 20;
+      const pts: [number, number][] = [];
+      for (let x = -100; x <= 100; x += 10) pts.push([x, base + 6 * Math.sin(x / 25 + k)]);
+      wandered.push(street(pts));
+    }
+    const original = console.warn;
+    let message = "";
+    console.warn = (...args: unknown[]) => {
+      message = String(args[0]);
+    };
+    try {
+      const { blocks } = extractBlocks(wandered, 120, 120, PARAMS);
+      // Symptom of the collapse: many streets, almost no blocks.
+      expect(blocks.length).toBeLessThan(wandered.length / 4);
+      expect(message).toContain("[jgengine:extractBlocks]");
+      expect(message).toContain("extractGraphBlocks");
+    } finally {
+      console.warn = original;
+    }
+  });
+
+  test("does not warn on a well-formed grid (no false positive)", () => {
+    const grid: FabricStreet[] = [];
+    for (const z of [-90, -30, 30, 90]) grid.push(street(straight([-120, z], [120, z])));
+    for (const x of [-90, -30, 30, 90]) grid.push(street(straight([x, -120], [x, 120])));
+    const original = console.warn;
+    let warned = false;
+    console.warn = () => {
+      warned = true;
+    };
+    try {
+      const { blocks } = extractBlocks(grid, 130, 130, PARAMS);
+      // A 4×4 grid (8 streets) yields a plausible face count — no collapse signal.
+      expect(blocks.length).toBeGreaterThanOrEqual(9);
+      expect(warned).toBe(false);
+    } finally {
+      console.warn = original;
+    }
+  });
+
   test("dead-end streets are pruned into corridors, not faces", () => {
     const streets: FabricStreet[] = [
       street(straight([-100, 0], [100, 0])),
