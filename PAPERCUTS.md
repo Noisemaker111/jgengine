@@ -158,3 +158,7 @@ managed playground capture after restoring deterministic query controls -> clien
 2026-07-21T01:31:58.900Z — openai/gpt-5.6-sol — NoisemakerJon
 
 focused cityGenerator test after fixing playground's invalid lot footprint -> current origin/main spec-city frontage assertion already exceeds its documented curb allowance (21.26 > 18.75)
+
+2026-07-21T12:41:10.192Z — claude-opus-4-8 — Claude
+
+Verifying #1506's drive --playtest fix on a heavy scene (wreckway) under software GL -> bun run drive's hard deadline (timeoutMs + 120s) blew during cold dev boot before producing evidence; had to warm a shoot daemon and raise --timeout to get a completed run. The same software-GL slowness #1506 addresses in the softlock verdict also needs headroom in drive's own outer deadline.
