@@ -22,6 +22,18 @@ export const RACE_ENTRY_FEE = 200;
 export const RACE_WIN_PAYOUT = 600;
 export const RACE_BEST_BONUS = 250;
 
+/** True for shoot/drive/capture boots that must land on the chase cam immediately (#1519). */
+export function shouldSkipIntroFlyover(): boolean {
+  if (typeof globalThis.location === "undefined") return false;
+  const search = globalThis.location.search ?? "";
+  if (/[?&](spawn|cam)=/.test(search)) return true;
+  if (typeof document !== "undefined") {
+    const capture = document.documentElement?.dataset?.jgCapture;
+    if (capture === "ready" || capture === "pending") return true;
+  }
+  return false;
+}
+
 /** Cred gate for a purchasable id, or null when the player clears it. */
 export function credGateBlocking(ctx: GameContext, id: string): number | null {
   const gate = CRED_GATES[id];
@@ -67,17 +79,24 @@ export function registerCommands(ctx: GameContext): void {
       setGamePhase(state, "playing");
       // Continuing a save drops straight back into play; the flyover is a first-run intro.
       if (continueStore.read(state) === true) return;
+      // Capture/drive tools (`?spawn=`, `?cam=`, jg-capture) need an instant chase cam — the old
+      // 6s god-cam path opened on empty lawn voids mid-flight and made playtests unreadable (#1519).
+      if (shouldSkipIntroFlyover()) {
+        state.camera.setCinematic(null);
+        state.camera.follow(state.player.userId);
+        return;
+      }
       const player = state.scene.entity.get(state.player.userId);
       const px = player?.position[0] ?? -176;
       const pz = player?.position[2] ?? 24;
       const py = player?.position[1] ?? 0;
-      // Director cinematics auto-clear when the keyframe path completes — no clear timer
-      // (a sim-clock timer drifts from the rig's real-time playback and can strand the camera).
+      // Short street-framed flyover that stays over the grid, then lands on the chase shoulder.
+      // Auto-clears when the path completes (no sim-clock clear timer).
       state.camera.setCinematic({
         keyframes: [
-          { position: { x: 60, y: 160, z: -180 }, lookAt: { x: 40, y: 10, z: -60 }, duration: 0.01 },
-          { position: { x: -40, y: 90, z: 60 }, lookAt: { x: -60, y: 4, z: 40 }, duration: 3, ease: "smooth" },
-          { position: { x: px + 6, y: py + 4, z: pz + 10 }, lookAt: { x: px, y: py + 1.5, z: pz }, duration: 3, ease: "smooth" },
+          { position: { x: px + 28, y: py + 22, z: pz + 36 }, lookAt: { x: px + 8, y: py + 2, z: pz + 8 }, duration: 0.01 },
+          { position: { x: px + 14, y: py + 10, z: pz + 18 }, lookAt: { x: px, y: py + 1.4, z: pz }, duration: 1.4, ease: "smooth" },
+          { position: { x: px + 5.5, y: py + 3.2, z: pz + 8 }, lookAt: { x: px, y: py + 1.2, z: pz }, duration: 1.2, ease: "smooth" },
         ],
       });
     },

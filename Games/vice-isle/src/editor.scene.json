@@ -230,11 +230,11 @@
       "id": "placed_car_suv_heights_6",
       "kind": "vehicle_spawn",
       "position": {
-        "x": 90,
+        "x": 60,
         "y": 0,
-        "z": -236
+        "z": -210
       },
-      "rotationY": 1.5708,
+      "rotationY": 0,
       "color": "#6b7d52",
       "label": "Vagabond",
       "meta": {
@@ -245,9 +245,9 @@
       "id": "placed_car_bus_docks_7",
       "kind": "vehicle_spawn",
       "position": {
-        "x": 176,
+        "x": 180,
         "y": 0,
-        "z": 180
+        "z": 150
       },
       "rotationY": 0,
       "color": "#e0a53c",
@@ -259,7 +259,7 @@
     {
       "id": "placed_car_muscle_neon_8",
       "kind": "vehicle_spawn",
-      "position": { "x": 48, "y": 0, "z": -72 },
+      "position": { "x": 60, "y": 0, "z": -60 },
       "rotationY": 0,
       "color": "#d64545",
       "label": "Bandolero",
@@ -268,7 +268,7 @@
     {
       "id": "placed_car_compact_ocean_9",
       "kind": "vehicle_spawn",
-      "position": { "x": -150, "y": 0, "z": -30 },
+      "position": { "x": -180, "y": 0, "z": -30 },
       "rotationY": 0,
       "color": "#f2c14e",
       "label": "Pico",
@@ -277,8 +277,8 @@
     {
       "id": "placed_car_suv_heights_10",
       "kind": "vehicle_spawn",
-      "position": { "x": 52, "y": 0, "z": -210 },
-      "rotationY": 1.5708,
+      "position": { "x": 60, "y": 0, "z": -180 },
+      "rotationY": 0,
       "color": "#3d5a45",
       "label": "Vagabond",
       "meta": { "assetId": "car_suv" }
@@ -286,7 +286,7 @@
     {
       "id": "placed_car_muscle_port_11",
       "kind": "vehicle_spawn",
-      "position": { "x": 150, "y": 0, "z": 150 },
+      "position": { "x": 180, "y": 0, "z": 120 },
       "rotationY": 0,
       "color": "#7a3b3b",
       "label": "Bandolero",
@@ -295,8 +295,8 @@
     {
       "id": "placed_car_compact_midtown_12",
       "kind": "vehicle_spawn",
-      "position": { "x": 72, "y": 0, "z": 66 },
-      "rotationY": 1.5708,
+      "position": { "x": 60, "y": 0, "z": 60 },
+      "rotationY": 0,
       "color": "#4e88c7",
       "label": "Pico",
       "meta": { "assetId": "car_compact" }
@@ -304,8 +304,8 @@
     {
       "id": "placed_car_sport_downtown_13",
       "kind": "vehicle_spawn",
-      "position": { "x": 30, "y": 0, "z": 10 },
-      "rotationY": 0,
+      "position": { "x": 0, "y": 0, "z": 0 },
+      "rotationY": 1.5708,
       "color": "#33c1b1",
       "label": "Cicada GT",
       "meta": { "assetId": "car_sport" }
@@ -313,7 +313,7 @@
     {
       "id": "placed_car_compact_beach_14",
       "kind": "vehicle_spawn",
-      "position": { "x": -150, "y": 0, "z": 180 },
+      "position": { "x": -180, "y": 0, "z": 120 },
       "rotationY": 0,
       "color": "#e0843c",
       "label": "Pico",
@@ -322,7 +322,7 @@
     {
       "id": "placed_car_muscle_villa_15",
       "kind": "vehicle_spawn",
-      "position": { "x": 86, "y": 0, "z": -250 },
+      "position": { "x": 60, "y": 0, "z": -240 },
       "rotationY": 3.14159,
       "color": "#333844",
       "label": "Bandolero",

@@ -249,7 +249,26 @@ export function createDriving(): Driving {
         const other = ctx.scene.entity.get(otherId);
         if (other === null) continue;
         if (!(other.name.startsWith("ped_") || other.name === "cop_patrol" || other.name === "cop_swat")) continue;
-        ctx.scene.entity.effect({ from: vehicleId, to: otherId, effect: "damage", via: { amount: Math.round(20 + 2 * speed) } });
+        // Knock them off the path with a short fling + stun instead of a silent sit-jank death pose (#1519).
+        behaviorControl(ctx).disable(otherId, "vehicle_hit");
+        const ox = other.position[0] - pos[0];
+        const oz = other.position[2] - pos[2];
+        const len = Math.hypot(ox, oz) || 1;
+        const push = Math.min(4.2, 1.2 + speed * 0.18);
+        const nextX = other.position[0] + (ox / len) * push;
+        const nextZ = other.position[2] + (oz / len) * push;
+        const groundY = ctx.world.groundHeightAt(nextX, nextZ);
+        ctx.scene.entity.setPose(otherId, {
+          position: [nextX, groundY + 0.05, nextZ],
+          rotationY: Math.atan2(ox, oz),
+        });
+        ctx.scene.entity.update(otherId, {
+          movement: { ...(other.movement ?? {}), frozen: true, walkSpeed: 0 },
+        });
+        const amount = Math.round(8 + 1.4 * speed);
+        ctx.scene.entity.effect({ from: vehicleId, to: otherId, effect: "damage", via: { amount } });
+        ctx.scene.entity.vfx({ kind: "spark", color: 0xffe0a0, from: other.position, radius: 0.9 });
+        ctx.scene.entity.floatText({ instanceId: otherId, text: speed > 14 ? "OOF" : "HEY!", kind: "warn" });
         ctx.game.audio.play("ped_thump", other.position);
         sim.scaleVelocity(0.99);
       }
