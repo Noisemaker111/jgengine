@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 
 import {
   buildablePolygon,
@@ -162,6 +162,94 @@ describe("extractBlocks", () => {
     const { blocks, deadEnds } = extractBlocks(streets, 100, 100, PARAMS);
     expect(deadEnds.length).toBeGreaterThan(0);
     expect(blocks.length).toBe(4);
+  });
+});
+
+describe("extractBlocks collapse detection", () => {
+  // A ring of streets that meet end-to-end at shared junctions, but each end is pulled `off` toward
+  // its segment midpoint (an arc-fillet). Past the weld radius the endpoints never merge, the ring
+  // never closes, and every chain prunes as a dead-end — the interior face silently vanishes.
+  function filletRing(off: number, n = 16, r = 80): FabricStreet[] {
+    const corners: Vec2[] = [];
+    for (let i = 0; i < n; i += 1) {
+      const a = (i / n) * Math.PI * 2;
+      corners.push([Math.cos(a) * r, Math.sin(a) * r]);
+    }
+    const out: FabricStreet[] = [];
+    for (let i = 0; i < n; i += 1) {
+      const a = corners[i]!;
+      const b = corners[(i + 1) % n]!;
+      const mx = (a[0] + b[0]) / 2;
+      const mz = (a[1] + b[1]) / 2;
+      const pull = (p: Vec2): [number, number] => {
+        const dx = mx - p[0];
+        const dz = mz - p[1];
+        const l = Math.hypot(dx, dz) || 1;
+        return [p[0] + (dx / l) * off, p[1] + (dz / l) * off];
+      };
+      out.push(street([pull(a), pull(b)]));
+    }
+    return out;
+  }
+
+  // A dense straight grid: every crossing welds, so a substantial street set yields many faces.
+  function grid(lines: number, span = 120): FabricStreet[] {
+    const out: FabricStreet[] = [];
+    for (let i = 0; i < lines; i += 1) {
+      const c = -span + (2 * span * i) / (lines - 1);
+      out.push(street(straight([-span - 20, c], [span + 20, c])));
+      out.push(street(straight([c, -span - 20], [c, span + 20])));
+    }
+    return out;
+  }
+
+  test("welding defeat warns and flags collapsed diagnostics", () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const { blocks, diagnostics } = extractBlocks(filletRing(3), 120, 120, PARAMS);
+      // 16 streets that should close a ring instead yield ~1 face.
+      expect(diagnostics.streetCount).toBe(16);
+      expect(blocks.length).toBeLessThanOrEqual(2);
+      expect(diagnostics.faceCount).toBe(blocks.length);
+      expect(diagnostics.collapsed).toBe(true);
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]![0]).toContain("extractGraphBlocks");
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("a healthy dense grid stays quiet even above the street-count gate", () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const streets = grid(7); // 14 streets forming a 6×6 interior
+      const { blocks, diagnostics } = extractBlocks(streets, 120, 120, PARAMS);
+      expect(streets.length).toBeGreaterThanOrEqual(12);
+      expect(diagnostics.streetCount).toBe(streets.length);
+      expect(blocks.length).toBeGreaterThan(diagnostics.streetCount);
+      expect(diagnostics.collapsed).toBe(false);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  test("a small sparse fabric below the gate never warns", () => {
+    const warn = spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      // 4 streets → a legitimately small block count must not trip the guard.
+      const streets: FabricStreet[] = [
+        street(straight([-100, -30], [100, -30])),
+        street(straight([-100, 30], [100, 30])),
+        street(straight([-30, -100], [-30, 100])),
+        street(straight([30, -100], [30, 100])),
+      ];
+      const { diagnostics } = extractBlocks(streets, 100, 100, PARAMS);
+      expect(diagnostics.collapsed).toBe(false);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

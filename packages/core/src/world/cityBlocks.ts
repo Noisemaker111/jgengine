@@ -83,6 +83,13 @@ const MAX_BLOCKS = 420;
 const WELD_RADIUS = 1.4;
 const RIM_SNAP = 6;
 
+/**
+ * Below this street count a legitimately sparse fabric (a couple of blocks) is plausible, so the
+ * collapse guard stays quiet. Above it, near-total collapse to a handful of faces is a symptom of
+ * proximity welding losing the graph, not a real one-block district.
+ */
+const COLLAPSE_MIN_STREETS = 12;
+
 interface GraphNode {
   x: number;
   z: number;
@@ -446,17 +453,39 @@ export interface BlockRings {
   land: Vec2[];
 }
 
+/** Face-count plausibility report for one {@link extractBlocks} call. */
+export interface FabricDiagnostics {
+  /** Streets fed into the extractor. */
+  streetCount: number;
+  /** Closed block faces the extractor recovered. */
+  faceCount: number;
+  /**
+   * True when a substantial street set collapsed to an implausibly small face set — the signature
+   * of proximity welding losing wandered / arc-filleted centerlines. When set, {@link extractBlocks}
+   * has already emitted a dev-mode `console.warn` pointing at {@link extractGraphBlocks}.
+   */
+  collapsed: boolean;
+}
+
 /**
  * Extract closed blocks from the street network: planar faces of the graph, each inset to its
  * curb ring (pavement edge) and land ring (behind the sidewalk band). Faces that collapse under
  * the inset come back with an empty `land` and are the caller's slivers/buffers.
+ *
+ * Proximity welding assumes near-collinear/aligned centerlines: it merges endpoints within a fixed
+ * radius into shared nodes. Wandered or arc-filleted centerlines pull a junction's arms apart past
+ * that radius, so they never weld — the chains dangle, get pruned, and the block faces silently
+ * vanish. To make that failure loud instead of returning an empty-looking fabric, the returned
+ * `diagnostics` flags an implausibly low face count and a dev-mode warning fires; callers whose
+ * street network carries an exact node/edge graph should use {@link extractGraphBlocks}, which is
+ * robust to those centerlines.
  */
 export function extractBlocks(
   streets: readonly FabricStreet[],
   hx: number,
   hz: number,
   params: FabricParams,
-): { blocks: BlockRings[]; deadEnds: { pts: Vec2[]; width: number }[] } {
+): { blocks: BlockRings[]; deadEnds: { pts: Vec2[]; width: number }[]; diagnostics: FabricDiagnostics } {
   const { nodes, halves, deadEnds } = buildGraph(streets, hx, hz);
   const faces = extractFaces(nodes, halves);
   faces.sort((a, b) => polygonArea(b.polygon) - polygonArea(a.polygon));
@@ -499,7 +528,29 @@ export function extractBlocks(
     const land = curb.length >= 3 ? insetRing(ccw, landDist) : [];
     blocks.push({ face: ccw, faceStreets: edgeStreets, curb, land });
   }
-  return { blocks, deadEnds };
+  const diagnostics = collapseDiagnostics(streets.length, blocks.length);
+  return { blocks, deadEnds, diagnostics };
+}
+
+/**
+ * Verdict on whether an extraction collapsed: a substantial street set that yields no more than a
+ * handful of faces is welding losing the graph, not a real one-block district. The floor grows with
+ * the street count (a 200-street network dropping to 5 faces is as broken as 16 dropping to 1), and
+ * a dev-mode warning fires so the silent collapse is loudly detectable. Calibrated below the sparsest
+ * healthy `generateStreets` output (≈7 faces from 71 streets on a small grid) to avoid false alarms.
+ */
+function collapseDiagnostics(streetCount: number, faceCount: number): FabricDiagnostics {
+  const plausibleFloor = Math.max(2, Math.floor(streetCount / 20));
+  const collapsed = streetCount >= COLLAPSE_MIN_STREETS && faceCount <= plausibleFloor;
+  if (collapsed && typeof console !== "undefined") {
+    console.warn(
+      `[jgengine:cityBlocks] extractBlocks collapsed: ${streetCount} streets produced only ${faceCount} block ` +
+        `face(s) (implausibly low). Wandered / arc-filleted centerlines defeat proximity welding — the ` +
+        `junction arms never weld, chains prune away, and the fabric looks empty. Feed the street network's ` +
+        `exact node/edge graph to extractGraphBlocks() instead, which traces faces from the true topology.`,
+    );
+  }
+  return { streetCount, faceCount, collapsed };
 }
 
 /** Reverse per-edge street labels when a ring got rewound to CCW. */
