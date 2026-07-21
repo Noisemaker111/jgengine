@@ -10,6 +10,7 @@ import { nitro } from "nitro/vite";
 import { defineConfig, type Connect, type Plugin } from "vite";
 
 import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache";
+import { shouldRouteMdRequestToSsr } from "./src/lib/mdSsrRoute";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
@@ -195,6 +196,46 @@ const gamesPlayerDevPlugin = (): Plugin => {
   };
 };
 
+/**
+ * Dev-only: let `.md` *server routes* reach SSR, matching `.txt`/`.xml`.
+ *
+ * Nitro's dev middleware (`nitro/dist/_build/vite.dev.mjs` → `nitroDevMiddlewarePre`)
+ * classifies any request whose extension matches its `ASSET_EXT_RE` — which includes
+ * `mdx?`, i.e. `.md` — as a static asset unless the request is an obvious document
+ * navigation (`Accept: text/html` or `sec-fetch-dest: document`). A `.md` request from
+ * curl, `fetch`, or a coding agent has neither, so nitro marks it handled and lets it
+ * fall through Vite's pipeline, which 404s because no file exists — the TanStack SSR
+ * route never runs. `.txt`/`.xml` are absent from that list, so they reach SSR.
+ *
+ * The classification exists so real `.md` files (a `/src/*.md` module import, a static
+ * markdown file) are served by Vite, not SSR — so this shim must not blanket-route every
+ * `.md` request. It only tags a `.md` request as a document navigation when nothing on
+ * disk backs it (no file under the project root or public dir): that is exactly the case
+ * of a virtual SSR route like `/agents.md`. Real `.md` files keep their existing Vite/
+ * nitro handling; an unmatched virtual `.md` path reaches SSR and gets a normal SSR 404,
+ * same as `.txt`. Registered ahead of nitro's middleware via the connect stack.
+ */
+const mdSsrRoutesDevPlugin = (): Plugin => ({
+  name: "jgengine-md-ssr-routes",
+  apply: "serve",
+  configureServer(server) {
+    const { root, publicDir } = server.config;
+    const fileExists = (rel: string): boolean =>
+      existsSync(join(root, rel)) ||
+      (typeof publicDir === "string" && publicDir !== "" && existsSync(join(publicDir, rel)));
+    server.middlewares.stack.unshift({
+      route: "",
+      handle: ((req, _res, next) => {
+        const pathname = req.url?.split(/[?#]/, 1)[0];
+        if (pathname !== undefined && shouldRouteMdRequestToSsr(pathname, fileExists)) {
+          req.headers["sec-fetch-dest"] = "document";
+        }
+        next();
+      }) as Connect.NextHandleFunction,
+    });
+  },
+});
+
 export default defineConfig({
   server: { port: 3000, fs: { allow: [repoRoot] } },
   resolve: {
@@ -224,5 +265,6 @@ export default defineConfig({
     gamesIndexPlugin(),
     gamesPlayerPlugin(),
     gamesPlayerDevPlugin(),
+    mdSsrRoutesDevPlugin(),
   ],
 });
