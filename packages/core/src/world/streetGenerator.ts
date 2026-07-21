@@ -215,6 +215,8 @@ export interface StreetNetworkRules {
   connectivity: number;
   /** Spur-lane density forking off the mains (and, in a circuit, the pit-lane trigger). */
   branching: number;
+  /** Share of branch streets that use residential side-street rules. */
+  residentialBranches?: number;
   /** Fraction of dangling ends kept as cul-de-sacs (vs reconnected). */
   deadEnds: number;
   /** Target node spacing / block size, world units. */
