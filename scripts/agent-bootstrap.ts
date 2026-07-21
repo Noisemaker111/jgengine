@@ -10,6 +10,7 @@
  */
 import { existsSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { type PackageStaleness, scanStalePackages } from "./distStaleness";
 
 const root = process.cwd();
 const checkOnly = process.argv.includes("--check");
@@ -27,6 +28,10 @@ function hasTsgo(): boolean {
 
 function hasCoreDist(): boolean {
   return existsSync(join(root, "packages", "core", "dist"));
+}
+
+function describeStale(list: PackageStaleness[]): string {
+  return list.map(({ pkg, staleness }) => `  - ${pkg}: ${staleness.kind} — ${staleness.detail}`).join("\n");
 }
 
 function run(label: string, cmd: string[], timeoutMs: number): void {
@@ -108,11 +113,23 @@ if (!existsSync(join(root, "package.json")) || !existsSync(join(root, "bun.lock"
   process.exit(1);
 }
 
-const ready = hasTsgo() && hasCoreDist();
+// A dist that merely *exists* is not enough: a partial/interrupted build leaves
+// core/dist present but missing subpaths (e.g. vfx/screenEffects), and a source
+// changed after the last build leaves dist older than src. Only a complete,
+// fresh dist for every buildable package counts as ready.
+const stale = hasTsgo() && hasCoreDist() ? scanStalePackages(root) : [];
+const ready = hasTsgo() && hasCoreDist() && stale.length === 0;
 if (checkOnly) {
   if (ready) {
-    console.log("agent-bootstrap: check ok (deps + core dist present)");
+    console.log("agent-bootstrap: check ok (deps present, every package dist complete and fresh)");
     process.exit(0);
+  }
+  if (hasTsgo() && hasCoreDist() && stale.length > 0) {
+    console.error(
+      `agent-bootstrap: not ready — ${stale.length} package(s) have stale/incomplete dist:\n${describeStale(stale)}\n` +
+        "  run `bun run agent:bootstrap` to rebuild them (do NOT `rm -rf packages/*/dist` by hand).",
+    );
+    process.exit(1);
   }
   if (lockAlive()) {
     const pid = readFileSync(lockPath, "utf8").trim();
@@ -150,11 +167,38 @@ if (!hasTsgo() || existsSync(installingPath)) {
   console.log("agent-bootstrap: node_modules present (tsgo found)");
 }
 
+// A prior interrupted build can leave a package's dist present but partial
+// (missing subpaths) or older than its src. Incremental in-place builds do not
+// re-emit those, so downstream check-types/manifest/barrels resolve stale output.
+// Remove any stale/incomplete dist first so the build re-emits it cleanly — this
+// self-heals a partial build the same way the .installing marker self-heals a
+// killed install.
+const preStale = scanStalePackages(root);
+for (const { pkg, dir, staleness } of preStale) {
+  const distDir = join(dir, "dist");
+  if (existsSync(distDir)) {
+    console.log(`agent-bootstrap: ${pkg} dist ${staleness.kind} (${staleness.detail}) — cleaning for a fresh build`);
+    rmSync(distDir, { recursive: true, force: true });
+  }
+}
+
 // Full workspace build writes dist for package typechecks and clean-consumer tests.
 run("bun run build", ["bun", "run", "build"], 900_000);
 
 if (!hasCoreDist()) {
   console.error("agent-bootstrap: packages/core/dist still missing after build");
+  process.exit(1);
+}
+
+// Postcondition: the build must have produced a complete, fresh dist for every
+// package. A non-empty result here means the build did not emit expected outputs
+// — surface it loudly instead of leaving downstream checks to trip on stale dist.
+const postStale = scanStalePackages(root);
+if (postStale.length > 0) {
+  console.error(
+    `agent-bootstrap: build finished but dist is still stale/incomplete for:\n${describeStale(postStale)}\n` +
+      "  the build did not emit expected outputs — investigate before proceeding.",
+  );
   process.exit(1);
 }
 
