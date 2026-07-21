@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { gamePhase } from "@jgengine/core/game/gamePhase";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { buildStartingDeck, cardTypeOf } from "./cards";
@@ -211,6 +212,33 @@ describe("spire-cards run progression", () => {
     expect(totalCards(combat)).toBe(13);
     expect(run.getSnapshot().encounterIndex).toBe(0);
     expect(run.getSnapshot().phase).toBe("combat");
+  });
+});
+
+describe("spire-cards engine run phase", () => {
+  test("boots live into playing and stays playing through a mid-run reward", () => {
+    const { ctx, run } = boot();
+    expect(gamePhase(ctx)).toBe("playing");
+    killEnemy(ctx); // non-final win → reward, still live
+    expect(run.getSnapshot().phase).toBe("reward");
+    expect(gamePhase(ctx)).toBe("playing");
+  });
+
+  test("clearing the spire ends the run — victory reads as ended (dock off)", () => {
+    const { ctx, run } = boot();
+    for (let i = 0; i < ENCOUNTERS.length; i += 1) {
+      killEnemy(ctx);
+      if (i < ENCOUNTERS.length - 1) run.skipReward(ctx);
+    }
+    expect(run.getSnapshot().phase).toBe("victory");
+    expect(gamePhase(ctx)).toBe("ended");
+  });
+
+  test("hero death ends the run — defeat reads as ended (dock off)", () => {
+    const { ctx, run } = boot();
+    ctx.scene.entity.effect({ from: ENEMY_ID, to: HERO, effect: "strike", via: { amount: 999 } });
+    expect(run.getSnapshot().phase).toBe("defeat");
+    expect(gamePhase(ctx)).toBe("ended");
   });
 });
 

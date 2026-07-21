@@ -1,4 +1,5 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import {
   advanceLedger,
   balanceOf,
@@ -82,6 +83,7 @@ export function economyDayTick(ctx: GameContext): void {
     session.bankruptDays += 1;
     if (session.bankruptDays >= BANKRUPT_LIMIT) {
       session.gameOver = true;
+      setGamePhase(ctx, "ended");
       pushToast("Bankrupt! The park has closed for good.", "bad", now);
     } else {
       pushToast(`In the red — ${BANKRUPT_LIMIT - session.bankruptDays} day(s) to recover`, "bad", now);

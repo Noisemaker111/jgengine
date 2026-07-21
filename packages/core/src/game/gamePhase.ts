@@ -25,7 +25,7 @@ export function setGamePhase(ctx: GameContext, phase: GamePhase): void {
   setPlayControlsActive(ctx, phase === "playing");
 }
 
-/** Current phase; defaults to `playing` when unset so always-live games need no wiring. */
+/** Current phase; defaults to `playing` when unset — a game that runs live from boot declares that intent explicitly with `defineGame({ lifecycle: "always-live" })` rather than relying on the silent default. */
 export function gamePhase(ctx: GameContext): GamePhase {
   const value = ctx.game.store.get(GAME_PHASE_STORE_KEY);
   return value === "menu" || value === "paused" || value === "ended" ? value : "playing";

@@ -1,4 +1,5 @@
 import type { GameLoop } from "@jgengine/core/game/defineGame";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { CLOSE_FRACTION, DAY_LENGTH, OPEN_FRACTION } from "./game/catalog";
@@ -22,6 +23,7 @@ function updateOpenState(ctx: GameContext): void {
 export const loop: GameLoop<GameContext> = {
   onInit(ctx) {
     setupWorld(ctx);
+    setGamePhase(ctx, "playing");
     ctx.time.every(DAY_LENGTH, () => economyDayTick(ctx));
   },
   onNewPlayer() {},

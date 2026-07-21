@@ -1,6 +1,7 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { editorLayers } from "../../editorLayers";
 import { BUILDINGS, combatantDef, DECOR, isNode, NODES } from "../catalog";
@@ -35,12 +36,14 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
     session.over = true;
     session.victory = true;
     hudStore.set({ phase: "won" });
+    setGamePhase(ctx, "ended");
     return;
   }
   if (def.id === "keep_player") {
     session.over = true;
     session.victory = false;
     hudStore.set({ phase: "lost" });
+    setGamePhase(ctx, "ended");
     return;
   }
   if (def.faction === "enemy" && def.kind === "unit") {
@@ -58,6 +61,7 @@ function onDied(ctx: GameContext, event: EntityDiedEvent): void {
 export function setupSkirmish(ctx: GameContext): void {
   resetSession();
   hudStore.reset();
+  setGamePhase(ctx, "playing");
   ctx.game.economy.grant(ctx.player.userId, GOLD, STARTING_GOLD);
   ctx.game.economy.grant(ctx.player.userId, LUMBER, STARTING_LUMBER);
 

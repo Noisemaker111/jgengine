@@ -28,6 +28,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+- **Every game must now declare its run-phase story — silence is a gate error (#1337).** The run-phase
+  contract used to be optional with a permissive default: a game that never published a phase read as
+  `"playing"`, so the shell painted the touch dock over title/menu/results screens (Vice Isle #1329).
+  `check-game-shape` now fails any game under `Games/*` that neither declares `lifecycle` in
+  `defineGame({...})` nor calls `setGamePhase(ctx, phase)` somewhere in `src/`. To satisfy it, a game
+  that runs live from boot with no menu/pause/end screens declares `defineGame({ lifecycle: "always-live" })`;
+  a game with run states declares a `LifecycleConfig` or calls `setGamePhase` at its
+  menu→playing→ended transitions. No runtime behavior changes for a game that already drove phases.
 - **`generateCity` output is plot-first and no longer square by default.** Same options in, but the
   layout changes: lots derive from block-frontage plots (varied sizes), the street net clips to a
   seeded organic outline (`streets: { outline: 0 }` restores the legacy rectangle-filling footprint),
@@ -71,6 +79,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`lifecycle: "always-live"` sentinel + `GameLifecycle` type (#1337).** `defineGame`'s `lifecycle`
+  now accepts the string sentinel `"always-live"` alongside a `LifecycleConfig`. It is an explicit,
+  truthful declaration that the game has no menu/pause/end screens and runs live from boot — runtime
+  behavior is identical to declaring no lifecycle at all (no phase sync, no start/restart commands),
+  but the intent is now *stated*, not implied by silence. `defineGameDefinition` resolves the sentinel
+  to `undefined`, so downstream consumers still only ever see a real `LifecycleConfig` or nothing.
+  `@jgengine/core/gameplay` exports the `GameLifecycle` union type. Pairs with the new
+  `check-game-shape` run-phase requirement (see Migrate).
 - **`debug_snapshot().probes.textureErrors` surfaces in-GLB texture-load failures (#1342).**
   `@jgengine/core/devtools/textureErrors` adds an allocation-aware collector
   (`armTextureErrors`/`reportTextureLoadError`/`resetTextureErrors`/`textureErrorsSnapshot`) that the
