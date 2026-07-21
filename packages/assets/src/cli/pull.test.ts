@@ -15,9 +15,19 @@ function zipWithGlb(content: string): Uint8Array {
   return zipSync({ "model.glb": new TextEncoder().encode(content) });
 }
 
+// Every case seeds its own unique tmp dir (mkdtemp) and passes it via --dir, so
+// the offline/populated checks never depend on ambient /tmp state — a full
+// test:all run and an isolated run see the same empty-then-seeded directory
+// (issue #1504).
 function makeTmpDir(): string {
-  return mkdtempSync(join(tmpdir(), "jgengine-assets-pull-"));
+  return mkdtempSync(join(tmpdir(), `jgengine-assets-pull-${process.pid}-`));
 }
+
+// The first case to touch cmdPull pays the cold module-resolution cost of the
+// whole assets CLI graph (generated index, registry, sources); under a full
+// test:all run that has exceeded Bun's default 5s timeout. Give the cmdPull
+// cases real headroom instead of racing the runner (issue #1504).
+const PULL_TIMEOUT_MS = 30_000;
 
 function neverFetch(): FetchLike {
   return (async () => {
@@ -54,7 +64,7 @@ describe("cmdPull --offline", () => {
       exitSpy.mockRestore();
       rmSync(dir, { recursive: true, force: true });
     }
-  });
+  }, PULL_TIMEOUT_MS);
 
   test("skips the network entirely when the target dir is already populated", async () => {
     const dir = makeTmpDir();
@@ -66,7 +76,7 @@ describe("cmdPull --offline", () => {
     await cmdPull(["quaternius-stylized-nature", "--dir", dir, "--offline"]);
 
     rmSync(dir, { recursive: true, force: true });
-  });
+  }, PULL_TIMEOUT_MS);
 });
 
 describe("cmdPull mirror resolution", () => {
@@ -87,7 +97,7 @@ describe("cmdPull mirror resolution", () => {
     expect(written).toBe("from-env-mirror");
 
     rmSync(dir, { recursive: true, force: true });
-  });
+  }, PULL_TIMEOUT_MS);
 
   test("--mirror flag takes precedence over JGENGINE_ASSETS_MIRROR", async () => {
     const dir = makeTmpDir();
@@ -105,7 +115,7 @@ describe("cmdPull mirror resolution", () => {
     expect(calls).toEqual([expectedUrl]);
 
     rmSync(dir, { recursive: true, force: true });
-  });
+  }, PULL_TIMEOUT_MS);
 
   test("falls through to the primary provider path when no mirror is configured", async () => {
     process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR = "1";
@@ -130,6 +140,6 @@ describe("cmdPull mirror resolution", () => {
     );
 
     rmSync(dir, { recursive: true, force: true });
-  });
+  }, PULL_TIMEOUT_MS);
 });
 
