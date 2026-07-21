@@ -811,6 +811,22 @@ export interface JunctionApproach {
   left: readonly [number, number, number];
   /** Right edge corner (draped `[x, y, z]`) — the ribbon's terminal right vertex. */
   right: readonly [number, number, number];
+  /** Unit direction from the node into this approach. Present on approaches emitted by {@link buildTrimmedIntersections}. */
+  direction?: readonly [number, number];
+  /** Unit tangent in the source street's authored path order. */
+  sourceTangent?: readonly [number, number];
+  /** Source street index, so consumers never have to infer identity from rendered vertices. */
+  streetIndex?: number;
+  /** Source trimmed-ribbon index, parallel to {@link TrimmedIntersections.trimmed}. */
+  trimmedIndex?: number;
+  /** Which end of the source trimmed path meets this junction. */
+  cutAt?: "start" | "end";
+  /** Full pavement width at this mouth. */
+  width?: number;
+  /** Sidewalk widths attached to the source path's left and right pavement edges. */
+  sidewalkWidths?: IntersectionSidewalkWidths;
+  /** Lane-paint declaration inherited from the source street. */
+  markings?: IntersectionMarkingIntent;
 }
 
 /**
@@ -827,10 +843,12 @@ export function buildJunctionConnector(
   if (approaches.length !== 2) return null;
   const a = approaches[0]!.center;
   const b = approaches[1]!.center;
-  let adx = a[0] - junction.x;
-  let adz = a[1] - junction.z;
-  let bdx = b[0] - junction.x;
-  let bdz = b[1] - junction.z;
+  const aRadius = Math.hypot(a[0] - junction.x, a[1] - junction.z);
+  const bRadius = Math.hypot(b[0] - junction.x, b[1] - junction.z);
+  let adx = approaches[0]!.direction?.[0] ?? a[0] - junction.x;
+  let adz = approaches[0]!.direction?.[1] ?? a[1] - junction.z;
+  let bdx = approaches[1]!.direction?.[0] ?? b[0] - junction.x;
+  let bdz = approaches[1]!.direction?.[1] ?? b[1] - junction.z;
   const al = Math.hypot(adx, adz);
   const bl = Math.hypot(bdx, bdz);
   if (al < 1e-6 || bl < 1e-6) return null;
@@ -839,12 +857,12 @@ export function buildJunctionConnector(
   bdx /= bl;
   bdz /= bl;
   const chord = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const handle = Math.min(al, bl, chord * 0.45);
+  const handle = Math.min(aRadius, bRadius, chord * 0.45);
   const c1x = a[0] - adx * handle;
   const c1z = a[1] - adz * handle;
   const c2x = b[0] - bdx * handle;
   const c2z = b[1] - bdz * handle;
-  const count = Math.max(2, Math.floor(segments));
+  const count = Math.max(2, Math.min(64, Math.floor(Number.isFinite(segments) ? segments : 8)));
   const path: RoadPoint[] = [];
   for (let i = 0; i <= count; i += 1) {
     const t = i / count;
@@ -915,7 +933,9 @@ export function buildJunctionSurface(
   const ordered: Ap[] = [];
   for (let i = 0; i < approaches.length; i += 1) {
     const ap = approaches[i]!;
-    const outAngle = Math.atan2(ap.center[1] - cz, ap.center[0] - cx);
+    const outAngle = ap.direction === undefined
+      ? Math.atan2(ap.center[1] - cz, ap.center[0] - cx)
+      : Math.atan2(ap.direction[1], ap.direction[0]);
     const leftC = { x: ap.left[0], y: ap.left[1], z: ap.left[2] };
     const rightC = { x: ap.right[0], y: ap.right[1], z: ap.right[2] };
     const leftOff = wrapAngle(Math.atan2(leftC.z - cz, leftC.x - cx) - outAngle);
@@ -1092,12 +1112,40 @@ export function buildJunctionSurface(
   return { positions, indices: Uint32Array.from(idx) };
 }
 
+/** Widths of renderer-neutral sidewalk bands on each authored side of a street. */
+export interface IntersectionSidewalkWidths {
+  /** Width beyond the left pavement edge. Omit or use zero for no band. */
+  left?: number;
+  /** Width beyond the right pavement edge. Omit or use zero for no band. */
+  right?: number;
+}
+
+/** One longitudinal lane-marking ribbon, offset left (+) or right (-) from the authored centerline. */
+export interface IntersectionMarkingLine {
+  /** Signed centerline offset in world units. Default 0. */
+  offset?: number;
+  /** Paint width. Default 0.15. */
+  width?: number;
+}
+
+/** Paint intent carried through trimming without renderer inference. */
+export interface IntersectionMarkingIntent {
+  /** Longitudinal marking ribbons. */
+  lines?: readonly IntersectionMarkingLine[];
+  /** Emit a transverse stop line at this street's multi-arm approaches. Default false. */
+  stopLine?: boolean;
+}
+
 /** One street to trim + mesh through {@link buildTrimmedIntersections}. */
 export interface IntersectionStreet {
   /** Street centerline; endpoints/vertices coincide with junction nodes. */
   path: readonly RoadPoint[];
   /** Full road width. */
   width: number;
+  /** Optional, independently-sized bands beyond the authored left/right pavement edges. */
+  sidewalks?: IntersectionSidewalkWidths;
+  /** Optional lane-paint declaration. Omission preserves the previous pavement-only output. */
+  markings?: IntersectionMarkingIntent;
 }
 
 /** Renderer-ready output of {@link buildTrimmedIntersections}: trimmed ribbons + welded junction surfaces. */
@@ -1112,6 +1160,179 @@ export interface TrimmedIntersections {
   junctionIndices: number[];
   /** Exact ribbon-mouth approaches for each surface, parallel to `junctions`; useful for dressing. */
   junctionApproaches: JunctionApproach[][];
+  /** Source street index for each entry in `trimmed`/`ribbons`. */
+  trimmedStreetIndices: number[];
+  /** Source pavement width for each entry in `trimmed`/`ribbons`. */
+  trimmedWidths: number[];
+  /** Source paint intent for each entry in `trimmed`/`ribbons`. */
+  trimmedMarkings: (IntersectionMarkingIntent | undefined)[];
+  /** Road-side sidewalk bands, excluding junction interiors. */
+  sidewalks: RoadRibbon[];
+  /** Sidewalk curb-return aprons around junction pavement; road-mouth edges and center fill are absent. */
+  sidewalkAprons: RoadRibbon[];
+  /** Input junction index for each entry in `sidewalkAprons`. */
+  sidewalkApronJunctionIndices: number[];
+}
+
+function offsetPath(path: readonly RoadPoint[], offset: number): RoadPoint[] {
+  const out = new Array<RoadPoint>(path.length);
+  for (let i = 0; i < path.length; i += 1) {
+    const [nx, nz] = normalAt(path, i);
+    out[i] = [path[i]![0] + nx * offset, path[i]![1] + nz * offset];
+  }
+  return out;
+}
+
+function buildRoadSidewalk(
+  road: RoadRibbon,
+  side: "left" | "right",
+  width: number,
+  sampleHeight: (x: number, z: number) => number,
+  elevation: number,
+): RoadRibbon {
+  const count = road.positions.length / 6;
+  if (count < 2 || width <= 0) return { positions: new Float32Array(0), indices: new Uint32Array(0) };
+  const positions = new Float32Array(count * 6);
+  for (let i = 0; i < count; i += 1) {
+    const leftX = road.positions[i * 6]!;
+    const leftZ = road.positions[i * 6 + 2]!;
+    const rightX = road.positions[i * 6 + 3]!;
+    const rightZ = road.positions[i * 6 + 5]!;
+    const innerX = side === "left" ? leftX : rightX;
+    const innerZ = side === "left" ? leftZ : rightZ;
+    const otherX = side === "left" ? rightX : leftX;
+    const otherZ = side === "left" ? rightZ : leftZ;
+    const dx = innerX - otherX;
+    const dz = innerZ - otherZ;
+    const length = Math.hypot(dx, dz) || 1;
+    const outerX = innerX + (dx / length) * width;
+    const outerZ = innerZ + (dz / length) * width;
+    positions[i * 6] = innerX;
+    positions[i * 6 + 1] = sampleHeight(innerX, innerZ) + elevation;
+    positions[i * 6 + 2] = innerZ;
+    positions[i * 6 + 3] = outerX;
+    positions[i * 6 + 4] = sampleHeight(outerX, outerZ) + elevation;
+    positions[i * 6 + 5] = outerZ;
+  }
+  const indices = new Uint32Array((count - 1) * 6);
+  const writeUpTriangle = (at: number, i0: number, i1: number, i2: number): void => {
+    const ax = positions[i1 * 3]! - positions[i0 * 3]!;
+    const az = positions[i1 * 3 + 2]! - positions[i0 * 3 + 2]!;
+    const bx = positions[i2 * 3]! - positions[i0 * 3]!;
+    const bz = positions[i2 * 3 + 2]! - positions[i0 * 3 + 2]!;
+    indices[at] = i0;
+    if (az * bx - ax * bz >= 0) {
+      indices[at + 1] = i1;
+      indices[at + 2] = i2;
+    } else {
+      indices[at + 1] = i2;
+      indices[at + 2] = i1;
+    }
+  };
+  for (let i = 0; i < count - 1; i += 1) {
+    const a = i * 2;
+    writeUpTriangle(i * 6, a, a + 1, a + 2);
+    writeUpTriangle(i * 6 + 3, a + 1, a + 3, a + 2);
+  }
+  return { positions, indices };
+}
+
+function buildSidewalkApron(
+  junction: { x: number; z: number },
+  surface: RoadRibbon,
+  approaches: readonly JunctionApproach[],
+  sampleHeight: (x: number, z: number) => number,
+  elevation: number,
+): RoadRibbon {
+  const ring: RoadPoint[] = [];
+  for (let v = 1; v * 3 + 2 < surface.positions.length; v += 1) {
+    ring.push([surface.positions[v * 3]!, surface.positions[v * 3 + 2]!]);
+  }
+  if (ring.length < 2) return { positions: new Float32Array(0), indices: new Uint32Array(0) };
+
+  interface Corner {
+    point: RoadPoint;
+    outer: RoadPoint;
+    approach: number;
+  }
+  const corners: Corner[] = [];
+  for (let i = 0; i < approaches.length; i += 1) {
+    const ap = approaches[i]!;
+    const dx = ap.direction?.[0] ?? ap.center[0];
+    const dz = ap.direction?.[1] ?? ap.center[1];
+    const length = Math.hypot(dx, dz) || 1;
+    const nx = -dz / length;
+    const nz = dx / length;
+    const leftWidth = Math.max(0, ap.sidewalkWidths?.left ?? 0);
+    const rightWidth = Math.max(0, ap.sidewalkWidths?.right ?? 0);
+    const sourceDot = (ap.sourceTangent?.[0] ?? dx) * dx + (ap.sourceTangent?.[1] ?? dz) * dz;
+    const left: RoadPoint = [ap.left[0], ap.left[2]];
+    const right: RoadPoint = [ap.right[0], ap.right[2]];
+    const sourceSign = sourceDot >= 0 ? 1 : -1;
+    corners.push({ point: left, outer: [left[0] + nx * leftWidth * sourceSign, left[1] + nz * leftWidth * sourceSign], approach: i });
+    corners.push({ point: right, outer: [right[0] - nx * rightWidth * sourceSign, right[1] - nz * rightWidth * sourceSign], approach: i });
+  }
+  const nearestCorner = (p: RoadPoint): { corner: Corner; distance: number } => {
+    let corner = corners[0]!;
+    let distance = Infinity;
+    for (let i = 0; i < corners.length; i += 1) {
+      const candidate = corners[i]!;
+      const d = Math.hypot(candidate.point[0] - p[0], candidate.point[1] - p[1]);
+      if (d < distance) {
+        corner = candidate;
+        distance = d;
+      }
+    }
+    return { corner, distance };
+  };
+  const outerAt = (p: RoadPoint): RoadPoint => {
+    const nearest = nearestCorner(p);
+    if (nearest.distance < 1e-3) return nearest.corner.outer;
+    const width = Math.hypot(nearest.corner.outer[0] - nearest.corner.point[0], nearest.corner.outer[1] - nearest.corner.point[1]);
+    const rx = p[0] - junction.x;
+    const rz = p[1] - junction.z;
+    const radius = Math.hypot(rx, rz) || 1;
+    return [p[0] + (rx / radius) * width, p[1] + (rz / radius) * width];
+  };
+
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const vertices = new Map<string, number>();
+  const vertex = (p: RoadPoint): number => {
+    const key = `${p[0]},${p[1]}`;
+    const found = vertices.get(key);
+    if (found !== undefined) return found;
+    const index = positions.length / 3;
+    positions.push(p[0], sampleHeight(p[0], p[1]) + elevation, p[1]);
+    vertices.set(key, index);
+    return index;
+  };
+  const pushUpTriangle = (i0: number, i1: number, i2: number): void => {
+    const ax = positions[i1 * 3]! - positions[i0 * 3]!;
+    const az = positions[i1 * 3 + 2]! - positions[i0 * 3 + 2]!;
+    const bx = positions[i2 * 3]! - positions[i0 * 3]!;
+    const bz = positions[i2 * 3 + 2]! - positions[i0 * 3 + 2]!;
+    if (az * bx - ax * bz >= 0) indices.push(i0, i1, i2);
+    else indices.push(i0, i2, i1);
+  };
+  for (let i = 0; i < ring.length; i += 1) {
+    const a = ring[i]!;
+    const b = ring[(i + 1) % ring.length]!;
+    const ca = nearestCorner(a);
+    const cb = nearestCorner(b);
+    // The paired corners of one approach are a road mouth, not sidewalk: leave it open.
+    if (ca.distance < 1e-3 && cb.distance < 1e-3 && ca.corner.approach === cb.corner.approach) continue;
+    const ao = outerAt(a);
+    const bo = outerAt(b);
+    if (Math.hypot(ao[0] - a[0], ao[1] - a[1]) < 1e-9 && Math.hypot(bo[0] - b[0], bo[1] - b[1]) < 1e-9) continue;
+    const ai = vertex(a);
+    const bi = vertex(b);
+    const aoi = vertex(ao);
+    const boi = vertex(bo);
+    pushUpTriangle(ai, bi, aoi);
+    pushUpTriangle(bi, boi, aoi);
+  }
+  return { positions: Float32Array.from(positions), indices: Uint32Array.from(indices) };
 }
 
 /**
@@ -1137,6 +1358,10 @@ export function buildTrimmedIntersections(
   const ribbonElevation = options.elevation ?? GROUND_DECAL_LAYERS.road;
   const ribbons: RoadRibbon[] = [];
   const trimmed: TrimmedRoad[] = [];
+  const trimmedStreetIndices: number[] = [];
+  const trimmedWidths: number[] = [];
+  const trimmedMarkings: (IntersectionMarkingIntent | undefined)[] = [];
+  const sidewalks: RoadRibbon[] = [];
   const approachesByJunction = new Map<number, JunctionApproach[]>();
 
   for (let s = 0; s < streets.length; s += 1) {
@@ -1151,6 +1376,18 @@ export function buildTrimmedIntersections(
       if (ribbon.positions.length < 12) continue; // degenerate — no terminal cross-section to weld
       ribbons.push(ribbon);
       trimmed.push(tr);
+      const trimmedIndex = trimmed.length - 1;
+      trimmedStreetIndices.push(s);
+      trimmedWidths.push(street.width);
+      trimmedMarkings.push(street.markings);
+      const leftSidewalk = Math.max(0, street.sidewalks?.left ?? 0);
+      const rightSidewalk = Math.max(0, street.sidewalks?.right ?? 0);
+      if (leftSidewalk > 0) {
+        sidewalks.push(buildRoadSidewalk(ribbon, "left", leftSidewalk, sampleHeight, ribbonElevation));
+      }
+      if (rightSidewalk > 0) {
+        sidewalks.push(buildRoadSidewalk(ribbon, "right", rightSidewalk, sampleHeight, ribbonElevation));
+      }
       const numPoints = ribbon.positions.length / 6;
       for (let c = 0; c < tr.cuts.length; c += 1) {
         const cut = tr.cuts[c]!;
@@ -1160,6 +1397,14 @@ export function buildTrimmedIntersections(
           center: cut.center,
           left: [ribbon.positions[leftVert * 3]!, ribbon.positions[leftVert * 3 + 1]!, ribbon.positions[leftVert * 3 + 2]!],
           right: [ribbon.positions[rightVert * 3]!, ribbon.positions[rightVert * 3 + 1]!, ribbon.positions[rightVert * 3 + 2]!],
+          direction: cut.direction,
+          sourceTangent: cut.at === "start" ? cut.direction : [-cut.direction[0], -cut.direction[1]],
+          streetIndex: s,
+          trimmedIndex,
+          cutAt: cut.at,
+          width: street.width,
+          sidewalkWidths: street.sidewalks,
+          markings: street.markings,
         };
         const list = approachesByJunction.get(cut.junctionIndex);
         if (list) list.push(approach);
@@ -1171,15 +1416,209 @@ export function buildTrimmedIntersections(
   const junctionSurfaces: RoadRibbon[] = [];
   const junctionIndices: number[] = [];
   const junctionApproaches: JunctionApproach[][] = [];
+  const sidewalkAprons: RoadRibbon[] = [];
+  const sidewalkApronJunctionIndices: number[] = [];
   const sortedIndices = [...approachesByJunction.keys()].sort((p, q) => p - q);
   for (let i = 0; i < sortedIndices.length; i += 1) {
     const ji = sortedIndices[i]!;
     const j = junctions[ji]!;
     const approaches = approachesByJunction.get(ji)!;
-    junctionSurfaces.push(buildJunctionSurface(j, approaches, sampleHeight, options));
+    const surface = buildJunctionSurface(j, approaches, sampleHeight, options);
+    junctionSurfaces.push(surface);
+    const apron = buildSidewalkApron(j, surface, approaches, sampleHeight, ribbonElevation);
+    if (apron.indices.length > 0) {
+      sidewalkAprons.push(apron);
+      sidewalkApronJunctionIndices.push(ji);
+    }
     junctionIndices.push(ji);
     junctionApproaches.push(approaches);
   }
 
-  return { ribbons, trimmed, junctions: junctionSurfaces, junctionIndices, junctionApproaches };
+  return {
+    ribbons,
+    trimmed,
+    junctions: junctionSurfaces,
+    junctionIndices,
+    junctionApproaches,
+    trimmedStreetIndices,
+    trimmedWidths,
+    trimmedMarkings,
+    sidewalks,
+    sidewalkAprons,
+    sidewalkApronJunctionIndices,
+  };
+}
+
+/** Tunables for {@link buildIntersectionMarkings}. */
+export interface IntersectionMarkingOptions {
+  /** Clearance between a multi-arm road mouth and longitudinal paint / stop lines. Default 1. */
+  mouthClearance?: number;
+  /** Default longitudinal paint width. Default 0.15. */
+  lineWidth?: number;
+  /** Transverse stop-line width along the approach. Default 0.35. */
+  stopLineWidth?: number;
+  /** Gap left between a stop line and each pavement edge. Default 0.5. */
+  stopLineEdgeClearance?: number;
+  /** Samples in a degree-2 marking connector. Default 8. */
+  connectorSegments?: number;
+  /** Painted dash length. Omit or use zero for a solid line. */
+  dashLength?: number;
+  /** Gap between painted dashes. Default 3 when `dashLength` is positive. */
+  dashGap?: number;
+  /** Marking lift above terrain. Default {@link GROUND_DECAL_LAYERS}.marking. */
+  elevation?: number;
+  /** Longest draping step. Default 4. */
+  maxSegmentLength?: number;
+}
+
+function markingPoint(ap: JunctionApproach, line: IntersectionMarkingLine): RoadPoint {
+  const tangent = ap.sourceTangent ?? ap.direction ?? [1, 0];
+  const offset = Number.isFinite(line.offset) ? line.offset! : 0;
+  return [ap.center[0] - tangent[1] * offset, ap.center[1] + tangent[0] * offset];
+}
+
+function buildOffsetConnector(
+  a: JunctionApproach,
+  b: JunctionApproach,
+  aLine: IntersectionMarkingLine,
+  bLine: IntersectionMarkingLine,
+  segments: number,
+): RoadPoint[] | null {
+  const start = markingPoint(a, aLine);
+  const end = markingPoint(b, bLine);
+  const ad = a.direction;
+  const bd = b.direction;
+  if (ad === undefined || bd === undefined) return null;
+  const chord = Math.hypot(end[0] - start[0], end[1] - start[1]);
+  const handle = chord * 0.45;
+  const c1: RoadPoint = [start[0] - ad[0] * handle, start[1] - ad[1] * handle];
+  const c2: RoadPoint = [end[0] - bd[0] * handle, end[1] - bd[1] * handle];
+  const count = Math.max(2, Math.min(64, Math.floor(Number.isFinite(segments) ? segments : 8)));
+  const path: RoadPoint[] = [];
+  for (let i = 0; i <= count; i += 1) {
+    const t = i / count;
+    const u = 1 - t;
+    path.push([
+      u * u * u * start[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * end[0],
+      u * u * u * start[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * end[1],
+    ]);
+  }
+  return path;
+}
+
+/**
+ * Mesh the paint declared on streets passed to {@link buildTrimmedIntersections}. Longitudinal
+ * ribbons follow the trimmed road paths. At degree-2 nodes corresponding lines are joined by a
+ * tangent-continuous cubic (signed offsets are preserved); at multi-arm nodes lines deliberately
+ * stop short of the mouth and optional transverse stop lines make that termination readable.
+ * @capability world-intersections connect sidewalks and lane guidance through generated intersections
+ */
+export function buildIntersectionMarkings(
+  intersections: TrimmedIntersections,
+  sampleHeight: (x: number, z: number) => number,
+  options: IntersectionMarkingOptions = {},
+): RoadRibbon[] {
+  const mouthClearance = Math.max(0, options.mouthClearance ?? 1);
+  const lineWidth = options.lineWidth ?? 0.15;
+  const stopLineWidth = options.stopLineWidth ?? 0.35;
+  const edgeClearance = Math.max(0, options.stopLineEdgeClearance ?? 0.5);
+  const elevation = options.elevation ?? GROUND_DECAL_LAYERS.marking;
+  const requestedStep = options.maxSegmentLength ?? 4;
+  const maxSegmentLength = Number.isFinite(requestedStep)
+    ? Math.max(0.25, Math.min(100, requestedStep))
+    : 4;
+  const ribbons: RoadRibbon[] = [];
+  const appendLongitudinal = (path: readonly RoadPoint[], width: number): void => {
+    const dashLength = options.dashLength ?? 0;
+    const pieces = dashLength > 0 ? dashSegments(path, dashLength, Math.max(0, options.dashGap ?? 3)) : [path];
+    for (const piece of pieces) {
+      const ribbon = buildRoadRibbon(piece, width, sampleHeight, { elevation, maxSegmentLength });
+      if (ribbon.indices.length > 0) ribbons.push(ribbon);
+    }
+  };
+  const approachByTrim = new Map<string, { approach: JunctionApproach; degree: number }>();
+  for (let j = 0; j < intersections.junctionApproaches.length; j += 1) {
+    const approaches = intersections.junctionApproaches[j]!;
+    for (const ap of approaches) {
+      if (ap.trimmedIndex !== undefined && ap.cutAt !== undefined) {
+        approachByTrim.set(`${ap.trimmedIndex}:${ap.cutAt}`, { approach: ap, degree: approaches.length });
+      }
+    }
+  }
+
+  for (let i = 0; i < intersections.trimmed.length; i += 1) {
+    const intent = intersections.trimmedMarkings[i];
+    if (intent === undefined) continue;
+    const trimmed = intersections.trimmed[i]!;
+    for (const line of intent.lines ?? []) {
+      let path = offsetPath(trimmed.path, line.offset ?? 0);
+      let startClearance = 0;
+      let endClearance = 0;
+      for (const cut of trimmed.cuts) {
+        const match = approachByTrim.get(`${i}:${cut.at}`);
+        if (match?.degree !== undefined && match.degree > 2) {
+          if (cut.at === "start") startClearance = mouthClearance;
+          else endClearance = mouthClearance;
+        }
+      }
+      const length = pathLength(path);
+      if (startClearance + endClearance >= length - 1e-6) continue;
+      if (startClearance > 0) {
+        const cut = pointAtArcLength(path, startClearance);
+        path = [cut.point, ...path.slice(cut.segment + 1)];
+      }
+      if (endClearance > 0) {
+        const cut = pointAtArcLength(path, pathLength(path) - endClearance);
+        path = [...path.slice(0, cut.segment + 1), cut.point];
+      }
+      appendLongitudinal(path, line.width ?? lineWidth);
+    }
+  }
+
+  for (let j = 0; j < intersections.junctionApproaches.length; j += 1) {
+    const approaches = intersections.junctionApproaches[j]!;
+    if (approaches.length === 2) {
+      const aLines = approaches[0]!.markings?.lines ?? [];
+      const bLines = approaches[1]!.markings?.lines ?? [];
+      const candidates: Array<{ a: number; b: number; distance: number }> = [];
+      for (let a = 0; a < Math.min(aLines.length, 16); a += 1) {
+        for (let b = 0; b < Math.min(bLines.length, 16); b += 1) {
+          const ap = markingPoint(approaches[0]!, aLines[a]!);
+          const bp = markingPoint(approaches[1]!, bLines[b]!);
+          candidates.push({ a, b, distance: Math.hypot(ap[0] - bp[0], ap[1] - bp[1]) });
+        }
+      }
+      candidates.sort((p, q) => p.distance - q.distance || p.a - q.a || p.b - q.b);
+      const usedA = new Set<number>();
+      const usedB = new Set<number>();
+      for (const pair of candidates) {
+        if (usedA.has(pair.a) || usedB.has(pair.b)) continue;
+        usedA.add(pair.a);
+        usedB.add(pair.b);
+        const aLine = aLines[pair.a]!;
+        const bLine = bLines[pair.b]!;
+        const path = buildOffsetConnector(approaches[0]!, approaches[1]!, aLine, bLine, options.connectorSegments ?? 8);
+        if (path !== null) {
+          const aWidth = Number.isFinite(aLine.width) ? aLine.width! : lineWidth;
+          const bWidth = Number.isFinite(bLine.width) ? bLine.width! : lineWidth;
+          const width = Math.max(0.01, Math.min(aWidth, bWidth));
+          appendLongitudinal(path, width);
+        }
+      }
+      continue;
+    }
+    if (approaches.length < 3) continue;
+    for (const ap of approaches) {
+      if (!ap.markings?.stopLine || ap.direction === undefined || ap.width === undefined) continue;
+      const half = Math.max(0, ap.width / 2 - edgeClearance);
+      if (half <= 0 || stopLineWidth <= 0) continue;
+      const cx = ap.center[0] + ap.direction[0] * mouthClearance;
+      const cz = ap.center[1] + ap.direction[1] * mouthClearance;
+      const nx = -ap.direction[1];
+      const nz = ap.direction[0];
+      const path: RoadPoint[] = [[cx - nx * half, cz - nz * half], [cx + nx * half, cz + nz * half]];
+      ribbons.push(buildRoadRibbon(path, stopLineWidth, sampleHeight, { elevation, maxSegmentLength }));
+    }
+  }
+  return ribbons;
 }

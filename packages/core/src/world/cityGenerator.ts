@@ -81,6 +81,8 @@ export interface CityGeneratorOptions {
     footprint?: { w: number; d: number };
     /** Base gap between neighbouring plots along a frontage, world units. Default 2. */
     spacing?: number;
+    /** Mix between uniform medium plots (0) and the full zone/street tier distribution (1). Default 1. */
+    variety?: number;
     /** Sidewalk strip between the curb and the building front, world units. Default 3. */
     setback?: number;
     /** Manhattan streetwall dial (0..1): frontage coverage and plot depth grow with it. Default {@link DEFAULT_BLOCK_FILL}. */
@@ -169,6 +171,7 @@ export function generateCity(options: CityGeneratorOptions, hx: number, hz: numb
     laneFrontage: lotOptions?.laneFrontage ?? false,
     setback: lotOptions?.setback,
     spacing: lotOptions?.spacing,
+    variety: lotOptions?.variety,
     blockFill: overrides.blockFill ?? lotOptions?.blockFill,
     landmarks: overrides.landmarks,
     plotScale: [footprint.w / 12, footprint.d / 10],
@@ -259,6 +262,8 @@ export interface CityPlotOptions {
   setback?: number;
   /** Base gap between neighbouring plots, meters. Default 2. */
   spacing?: number;
+  /** Mix between uniform medium plots (0) and the full zone/street tier distribution (1). Default 1. */
+  variety?: number;
   /** Streetwall dial (0..1): frontage coverage, plot depth, and park share ride on it. Default {@link DEFAULT_BLOCK_FILL}. */
   blockFill?: number;
   /** Grand-plot share dial (0..1): probability weight of the block-scale tier. Default {@link DEFAULT_LANDMARK_SHARE}; `0` disables grand plots. */
@@ -284,12 +289,13 @@ function pickTier(
   zone: CityZoneBand,
   level: StreetLevel,
   roll: number,
+  variety: number,
 ): Exclude<CityPlotTier, "grand"> {
   const weights = PLOT_TIER_WEIGHTS[zone];
   const bias = PLOT_LEVEL_TIER_BIAS[level];
   const entries = (Object.keys(weights) as Exclude<CityPlotTier, "grand">[]).map((tier) => ({
     tier,
-    weight: weights[tier] * (bias[tier] ?? 1),
+    weight: (weights[tier] * (bias[tier] ?? 1)) * variety + (tier === "medium" ? 1 - variety : 0),
   }));
   let total = 0;
   for (const e of entries) total += e.weight;
@@ -315,6 +321,7 @@ export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions
   const laneFrontage = options.laneFrontage ?? false;
   const setback = Math.max(0, options.setback ?? 3);
   const spacing = Math.max(0, options.spacing ?? 2);
+  const variety = Math.max(0, Math.min(1, options.variety ?? 1));
   const fill = Math.max(0, Math.min(1, options.blockFill ?? DEFAULT_BLOCK_FILL));
   const grandShare = Math.max(0, Math.min(1, options.landmarks ?? DEFAULT_LANDMARK_SHARE));
   const [wScale, dScale] = options.plotScale ?? [1, 1];
@@ -430,7 +437,7 @@ export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions
         grandCount < LANDMARK_HARD_CAP &&
         depthCap >= 24 * dScale &&
         grandRoll < grandShare * 0.5 * GRAND_ZONE_FACTOR[zone];
-      const tier: CityPlotTier = wantGrand ? "grand" : pickTier(zone, level, tierRoll);
+      const tier: CityPlotTier = wantGrand ? "grand" : pickTier(zone, level, tierRoll, variety);
       const sizes = PLOT_TIER_SIZES[tier];
       const frontW = (sizes.frontage[0] + sizeRoll * (sizes.frontage[1] - sizes.frontage[0])) * wScale;
       if (cursor + frontW + gap > walker.total - 0.5) break;
@@ -450,6 +457,32 @@ export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions
       const s1 = cursor + frontW;
       let poly = cutParcel(walker, land, { s0, s1, depth });
       const midS = walker.at((s0 + s1) / 2);
+      // A frontage window can cross a block corner after its first probe. Resolve ownership at the
+      // final parcel midpoint so the plot never retains the previous edge's street id.
+      const frontageProbe = nearestStreet(
+        midS.p[0] - midS.normal[0] * 2,
+        midS.p[1] - midS.normal[1] * 2,
+      );
+      const frontageLevel = frontageProbe === null ? undefined : streets[frontageProbe.street]?.level;
+      if (
+        frontageProbe === null ||
+        frontageProbe.distance > (streets[frontageProbe.street]?.width ?? 9) / 2 + 6.5 ||
+        (frontageLevel === "lane" && !laneFrontage)
+      ) {
+        cursor += frontW * 0.6;
+        continue;
+      }
+      const frontageStreet = streets[frontageProbe.street]!;
+      const frontageLimit = frontageStreet.width / 2 + 6.5;
+      const frontageA = walker.at(s0).p;
+      const frontageB = walker.at(s1).p;
+      if (
+        (nearestOnPath(frontageStreet.points, frontageA[0], frontageA[1])?.distance ?? Infinity) > frontageLimit ||
+        (nearestOnPath(frontageStreet.points, frontageB[0], frontageB[1])?.distance ?? Infinity) > frontageLimit
+      ) {
+        cursor += frontW * 0.6;
+        continue;
+      }
       if (poly !== null && fabric.deadEnds.length > 0) {
         // Cul-de-sac lanes were pruned from the face graph; carve their corridors out of plots.
         const keep: Vec2 = [midS.p[0] + midS.normal[0] * 1.5, midS.p[1] + midS.normal[1] * 1.5];
@@ -528,8 +561,8 @@ export function deriveCityPlots(network: StreetNetwork, options: CityPlotOptions
         rotationY,
         width: fit.w,
         depth: fit.d,
-        frontage: { street: probe.street, a: walker.at(s0).p, b: walker.at(s1).p },
-        streetLevel: level,
+        frontage: { street: frontageProbe.street, a: frontageA, b: frontageB },
+        streetLevel: frontageLevel ?? level,
         block: bi,
         tier: realizedTier,
         corner,

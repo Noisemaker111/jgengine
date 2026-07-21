@@ -43,6 +43,11 @@ describe("cityGenerator — plot-first city", () => {
       // Frontage chord sits just behind the sidewalk band: curb half-width + sidewalk + a corner
       // allowance (ring insets bow outward at block corners).
       expect(near!.distance).toBeLessThanOrEqual(street!.width / 2 + 12);
+      for (const endpoint of [plot.frontage.a, plot.frontage.b]) {
+        expect(nearestOnPath(street!.points, endpoint[0], endpoint[1])!.distance).toBeLessThanOrEqual(
+          street!.width / 2 + 6.5,
+        );
+      }
     }
   });
 
@@ -60,6 +65,24 @@ describe("cityGenerator — plot-first city", () => {
     expect(tiers.size).toBeGreaterThanOrEqual(3);
     const widths = city.plots.map((p) => p.width);
     expect(Math.max(...widths) / Math.min(...widths)).toBeGreaterThan(2);
+  });
+
+  test("plot variety is deterministic and zero removes large regular tiers", () => {
+    const options = {
+      seed: "plot-variety",
+      streets: { branching: 0 },
+      lots: { variety: 0 },
+      content: { landmarks: 0 },
+    } as const;
+    const uniform = generateCity(options, 300, 300);
+    expect(uniform.plots.length).toBeGreaterThan(10);
+    const uniformTiers = new Set(uniform.plots.map((plot) => plot.tier));
+    expect(uniformTiers.has("large")).toBe(false);
+    expect(uniformTiers.has("grand")).toBe(false);
+    expect(generateCity(options, 300, 300).plots).toEqual(uniform.plots);
+
+    const varied = generateCity({ ...options, lots: { variety: 1 } }, 300, 300);
+    expect(varied.plots.some((plot) => plot.tier === "large")).toBe(true);
   });
 
   test("lanes carry no frontage by default", () => {

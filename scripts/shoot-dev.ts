@@ -424,6 +424,7 @@ const daemon: ShootDaemonState | null =
   args.connect === undefined && args.url === undefined ? await attachDaemon() : null;
 
 let server: ChildProcess | null = null;
+let serverPid: number | undefined;
 let devBase = "";
 let attachedDaemon = false;
 if (daemon !== null) {
@@ -434,15 +435,18 @@ if (daemon !== null) {
 } else if (args.site !== undefined) {
   const web = await ensureWebServer();
   server = web.child;
+  serverPid = web.pid;
   devBase = web.base;
 } else if (args.url === undefined) {
   const dev = await ensureDevServer();
   server = dev.child;
+  serverPid = dev.pid;
   devBase = dev.base;
 } else if (!(await isUp(args.url))) {
   const dev = await ensureDevServer();
   if (args.url.startsWith(dev.base) || args.url.startsWith("http://127.0.0.1:")) {
     server = dev.child;
+    serverPid = dev.pid;
     devBase = dev.base;
   } else {
     throw new Error(
@@ -458,6 +462,7 @@ const exitCode = await withBrowserSession(
     connect: args.connect,
     timeoutMs: args.timeoutMs,
     server,
+    serverPid,
     debugPort: daemon !== null ? daemon.chromePort : undefined,
     attach: attachedDaemon,
     leaveWarm: args.keep || attachedDaemon,
@@ -480,7 +485,7 @@ const exitCode = await withBrowserSession(
         chromePid: chrome?.pid,
         startedAt: new Date().toISOString(),
       };
-      const target = { port: Number(new URL(devBase).port), base: devBase, pid: server?.pid };
+      const target = { port: Number(new URL(devBase).port), base: devBase, pid: serverPid ?? server?.pid };
       if (args.site === undefined) {
         state.devPort = target.port;
         state.devBase = target.base;

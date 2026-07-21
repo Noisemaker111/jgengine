@@ -2436,10 +2436,16 @@ export function generateStreets(
     streets.push(street);
   });
 
-  // --- junctions from degree≥3 nodes; arms from incident edge tangents ---
+  // --- junctions from branches and hard degree-2 bends split into separate streets ---
+  const chainEndsAt = new Uint16Array(rawNodes.length);
+  for (const chain of chains) {
+    if (chain.loop) continue;
+    chainEndsAt[chain.nodes[0]!] += 1;
+    chainEndsAt[chain.nodes[chain.nodes.length - 1]!] += 1;
+  }
   const junctions: StreetJunction[] = [];
   for (let n = 0; n < rawNodes.length; n += 1) {
-    if (degree[n] < 3) continue;
+    if (degree[n] < 3 && !(degree[n] === 2 && chainEndsAt[n]! >= 2)) continue;
     const arms: { angle: number; width: number }[] = [];
     let radius = 0;
     let level: StreetLevel = "lane";

@@ -134,6 +134,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
 - `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/world/cityBlocks"`
+- `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/cityGeometry"`
+- `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/cityGeometry"`
 - `resolveCityObject` (function) · `import { resolveCityObject } from "@jgengine/core/world"`
 
 ## city-generator — subdivide street blocks into size-tiered street-fronting plots
@@ -583,8 +585,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `environment` (function) · `import { environment } from "@jgengine/core/world"`
 
-## world-intersections — connect linear road dressing through two-arm bends
+## world-intersections — connect sidewalks and lane guidance through generated intersections
 
+- `buildIntersectionMarkings` (function) · `import { buildIntersectionMarkings } from "@jgengine/core/world/roads"`
 - `buildJunctionConnector` (function) · `import { buildJunctionConnector } from "@jgengine/core/world/roads"`
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
 - `trimBandAtJunctions` (function) · `import { trimBandAtJunctions } from "@jgengine/core/world"`

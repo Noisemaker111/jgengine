@@ -44,7 +44,7 @@ export interface PlaygroundWorldHandle {
       extent?: number;
       /** Deterministic camera override: orbit target XZ, distance, and pitch (degrees). When set it
        *  wins over the automatic framing on every rebuild — the close-up inspection seam. */
-      camera?: { x: number; z: number; radius: number; pitch: number };
+      camera?: { x: number; z: number; radius: number; pitch: number; yaw?: number };
       sidewalks?: boolean;
       sidewalkWidth?: number;
       laneMarkings?: boolean;
@@ -53,7 +53,7 @@ export interface PlaygroundWorldHandle {
       laneMarkingDash?: number;
       laneMarkingGap?: number;
     },
-  ): void;
+  ): Promise<void>;
   dispose(): void;
 }
 
@@ -62,6 +62,7 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
   let ground: THREE.Group | null = null;
   let modelElapsed = 0;
   let lastMode: string | undefined;
+  let resolveReady: (() => void) | null = null;
 
   const handle: LiveHandle = mountLive(container, {
     fov: 46,
@@ -70,6 +71,11 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
       modelElapsed += dt;
       controls.update();
       model?.update(dt, modelElapsed);
+      if (model?.settled() === true && resolveReady !== null) {
+        const resolve = resolveReady;
+        resolveReady = null;
+        resolve();
+      }
     },
     onDispose() {
       controls.dispose();
@@ -99,6 +105,8 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
 
   return {
     setCity(city, options) {
+      resolveReady?.();
+      resolveReady = null;
       model?.dispose();
       const mode = options.mode ?? "city";
       const circuit = mode === "circuit";
@@ -126,6 +134,7 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
         laneMarkingOffset: options.laneMarkingOffset,
         laneMarkingDash: options.laneMarkingDash,
         laneMarkingGap: options.laneMarkingGap,
+        centerlineGlow: false,
       });
       handle.scene.add(model.group);
       // Reframe on the first build AND whenever the mode flips (city ↔ circuit is a new kind of layout);
@@ -135,12 +144,13 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
       if (options.camera !== undefined) {
         const cam = options.camera;
         const pitch = (cam.pitch * Math.PI) / 180;
+        const yaw = ((cam.yaw ?? 45) * Math.PI) / 180;
         const groundY = sampleHeight(cam.x, cam.z);
         const horiz = cam.radius * Math.cos(pitch);
         handle.camera.position.set(
-          cam.x + horiz * Math.SQRT1_2,
+          cam.x + horiz * Math.cos(yaw),
           groundY + cam.radius * Math.sin(pitch),
-          cam.z + horiz * Math.SQRT1_2,
+          cam.z + horiz * Math.sin(yaw),
         );
         controls.target.set(cam.x, groundY, cam.z);
         controls.update();
@@ -181,9 +191,15 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
         handle.scene.add(ground);
       }
       modelElapsed = 0;
-      handle.invalidate();
+      return new Promise<void>((resolve) => {
+        resolveReady = resolve;
+        // Rendering this invalidation applies both the rebuilt model and any camera override. Animated
+        // builds resolve from the normal frame loop only after CityModel reports that growth settled.
+        handle.invalidate();
+      });
     },
     dispose() {
+      resolveReady?.();
       model?.dispose();
       handle.dispose();
     },

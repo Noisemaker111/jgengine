@@ -156,6 +156,7 @@ export function checkoutIdentity(cwd = process.cwd()): string {
     const top = spawnSync("git", ["rev-parse", "--show-toplevel"], {
       cwd,
       encoding: "utf8",
+      windowsHide: true,
     });
     if (top.status === 0 && top.stdout.trim().length > 0) return top.stdout.trim();
   } catch {
@@ -248,8 +249,33 @@ export async function isOurDevServer(port: number, identity: string): Promise<bo
 
 export interface EnsureDevServerResult {
   child: ChildProcess | null;
+  /** PID only when this invocation launched and therefore owns the server. */
+  pid?: number;
   port: number;
   base: string;
+}
+
+function launchPersistentCommand(
+  file: string,
+  args: readonly string[],
+  cwd: string,
+  env: Record<string, string>,
+): number {
+  const assignments = Object.entries(env)
+    .map(([key, value]) => `$env:${key}=${powershellQuote(value)}`)
+    .join(";");
+  const command = `${assignments};$p=Start-Process -FilePath ${powershellQuote(file)} -ArgumentList @(${powershellArgumentList(args)}) -WorkingDirectory ${powershellQuote(cwd)} -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
+  const encoded = Buffer.from(command, "utf16le").toString("base64");
+  const launched = spawnSync(
+    "powershell.exe",
+    ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
+    { encoding: "utf8", windowsHide: true, timeout: 10_000 },
+  );
+  const pid = Number(launched.stdout.trim());
+  if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
+    throw new Error(`Persistent process launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
+  }
+  return pid;
 }
 
 /**
@@ -280,29 +306,30 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
     }
   }
 
-  const child = spawn(
-    "bun",
-    ["--cwd=apps/dev", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"],
-    {
-      cwd,
-      stdio: "ignore",
-      detached: process.platform !== "win32",
-      env: { ...process.env, JG_DEV_PORT: String(port) },
-      windowsHide: true,
-    },
-  );
-  child.unref();
-  writeMarker(port, identity, child.pid);
+  const args = ["--cwd=apps/dev", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"];
+  const child = process.platform === "win32"
+    ? null
+    : spawn(process.execPath, args, {
+        cwd,
+        stdio: "ignore",
+        detached: true,
+        env: { ...process.env, JG_DEV_PORT: String(port) },
+        windowsHide: true,
+      });
+  const pid = child?.pid ?? launchPersistentCommand(process.execPath, args, cwd, { JG_DEV_PORT: String(port) });
+  child?.unref();
+  writeMarker(port, identity, pid);
 
   const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 60; attempt += 1) {
     await new Promise((r) => setTimeout(r, 500));
-    if (await isUp(finalBase)) return { child, port, base: finalBase };
-    if (child.exitCode !== null) {
+    if (await isUp(finalBase)) return { child, pid, port, base: finalBase };
+    if (child?.exitCode !== null && child?.exitCode !== undefined) {
       throw new Error(`Dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
     }
   }
-  child.kill();
+  if (child !== null) child.kill();
+  else killPid(pid, true);
   const viteInstalled =
     existsSync(join(cwd, "node_modules", ".bin", "vite")) ||
     existsSync(join(cwd, "node_modules", "vite"));
@@ -332,29 +359,33 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
     }
   }
 
-  const child = spawn(
-    "bun",
-    ["--cwd=apps/web", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"],
-    {
-      cwd,
-      stdio: "ignore",
-      detached: process.platform !== "win32",
-      env: { ...process.env, JG_WEB_PORT: String(port), JG_CAPTURE_SITE: "1" },
-      windowsHide: true,
-    },
-  );
-  child.unref();
-  writeMarker(port, identity, child.pid);
+  const args = ["--cwd=apps/web", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"];
+  const child = process.platform === "win32"
+    ? null
+    : spawn(process.execPath, args, {
+        cwd,
+        stdio: "ignore",
+        detached: true,
+        env: { ...process.env, JG_WEB_PORT: String(port), JG_CAPTURE_SITE: "1" },
+        windowsHide: true,
+      });
+  const pid = child?.pid ?? launchPersistentCommand(process.execPath, args, cwd, {
+    JG_WEB_PORT: String(port),
+    JG_CAPTURE_SITE: "1",
+  });
+  child?.unref();
+  writeMarker(port, identity, pid);
 
   const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 120; attempt += 1) {
     await new Promise((resolve) => setTimeout(resolve, 500));
-    if (await isUp(finalBase)) return { child, port, base: finalBase };
-    if (child.exitCode !== null) {
+    if (await isUp(finalBase)) return { child, pid, port, base: finalBase };
+    if (child?.exitCode !== null && child?.exitCode !== undefined) {
       throw new Error(`Website dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
     }
   }
-  killProcessTree(child);
+  if (child !== null) killProcessTree(child);
+  else killPid(pid, true);
   throw new Error(`Website dev server failed to start on :${port} for ${identity}`);
 }
 
@@ -366,7 +397,7 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
 export function killPid(pid: number | undefined, tree = false): void {
   if (pid === undefined || !Number.isFinite(pid) || pid <= 0) return;
   if (process.platform === "win32") {
-    spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" });
+    spawnSync("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
     return;
   }
   if (tree) {
@@ -571,7 +602,11 @@ export async function openPageSession(debugPort: number): Promise<CdpSession> {
   );
 }
 
-export function launchChrome(debugPort: number, prefix = "jg-drive-"): ChildProcess {
+export function launchChrome(
+  debugPort: number,
+  prefix = "jg-drive-",
+  options: { persistent?: boolean } = {},
+): ChildProcess {
   const chrome = findChromeExecutable();
   const userDataDir = mkdtempSync(join(tmpdir(), prefix));
   return spawn(
@@ -600,8 +635,82 @@ export function launchChrome(debugPort: number, prefix = "jg-drive-"): ChildProc
       "--disable-dev-shm-usage",
       "about:blank",
     ],
-    { stdio: "ignore", windowsHide: true },
+    {
+      stdio: "ignore",
+      windowsHide: true,
+      // A daemon Chrome must outlive the Bun command that starts it. Chrome is a GUI-subsystem
+      // executable on Windows, so detaching it does not create a console window.
+      detached: options.persistent === true || process.platform !== "win32",
+    },
   );
+}
+
+function powershellQuote(value: string): string {
+  return `'${value.replaceAll("'", "''")}'`;
+}
+
+function windowsCommandLineArg(value: string): string {
+  if (!/[\s"]/.test(value)) return value;
+  const escaped = value.replace(/(\\*)"/g, "$1$1\\\"").replace(/(\\+)$/g, "$1$1");
+  return `"${escaped}"`;
+}
+
+function powershellArgumentList(args: readonly string[]): string {
+  return args.map((arg) => powershellQuote(windowsCommandLineArg(arg))).join(",");
+}
+
+/** Hidden native Windows launcher used when Chrome must outlive the Bun process that starts it. */
+export function windowsPersistentChromeCommand(chrome: string, args: readonly string[]): string {
+  const argumentList = powershellArgumentList(args);
+  return `$p=Start-Process -FilePath ${powershellQuote(chrome)} -ArgumentList @(${argumentList}) -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
+}
+
+/** Launch persistent headless Chrome without retaining a Windows child-process handle in Bun. */
+export function launchPersistentChrome(
+  debugPort: number,
+  prefix = "jg-shoot-daemon-",
+): { pid: number; child: ChildProcess | null } {
+  if (process.platform !== "win32") {
+    const child = launchChrome(debugPort, prefix, { persistent: true });
+    child.unref();
+    if (child.pid === undefined) throw new Error("Persistent Chrome launcher returned no pid");
+    return { pid: child.pid, child };
+  }
+
+  const chrome = findChromeExecutable();
+  const userDataDir = mkdtempSync(join(tmpdir(), prefix));
+  const args = [
+    `--remote-debugging-port=${debugPort}`,
+    `--user-data-dir=${userDataDir}`,
+    "--headless=new",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-background-networking",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-renderer-backgrounding",
+    "--disable-component-update",
+    "--disable-sync",
+    "--disable-extensions",
+    "--disable-default-apps",
+    "--mute-audio",
+    "--hide-scrollbars",
+    ...chromeGraphicsArgs(),
+    "--no-sandbox",
+    "--disable-dev-shm-usage",
+    "about:blank",
+  ];
+  const encoded = Buffer.from(windowsPersistentChromeCommand(chrome, args), "utf16le").toString("base64");
+  const launched = spawnSync(
+    "powershell.exe",
+    ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
+    { encoding: "utf8", windowsHide: true, timeout: 10_000 },
+  );
+  const pid = Number(launched.stdout.trim());
+  if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
+    throw new Error(`Persistent Chrome launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
+  }
+  return { pid, child: null };
 }
 
 /**
@@ -771,6 +880,8 @@ export interface WithBrowserSessionOptions {
   timeoutMs: number;
   /** Dev server to tear down alongside Chrome when not left warm. */
   server?: ChildProcess | null;
+  /** Native persistent server pid when no ChildProcess handle is retained on Windows. */
+  serverPid?: number;
   /** Pre-resolved debug port (daemon attach) — overrides keep/connect derivation. */
   debugPort?: number;
   /** Attach without launching even without `--connect` (daemon). */
@@ -813,6 +924,7 @@ export async function withBrowserSession(
     // these are no-ops when attached — safe to run unconditionally.
     killProcessTree(chrome);
     killProcessTree(options.server ?? null);
+    killPid(options.serverPid, true);
     process.exit(124);
   }, hardDeadlineMs);
   watchdog.unref();
@@ -834,6 +946,7 @@ export async function withBrowserSession(
     if (!leaveWarm) {
       killProcessTree(chrome);
       killProcessTree(options.server ?? null);
+      killPid(options.serverPid, true);
     }
   }
   return exitCode;

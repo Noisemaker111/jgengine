@@ -3,6 +3,7 @@ import { environment, road } from "./features";
 import { summarizeEnvironment } from "./environmentSummary";
 import {
   GROUND_DECAL_LAYERS,
+  buildIntersectionMarkings,
   buildJunctionConnector,
   buildJunctionPatch,
   buildJunctionSurface,
@@ -537,6 +538,48 @@ function shoelaceArea(ring: readonly (readonly number[])[]): number {
   return area / 2;
 }
 
+function meshAreaXZ(mesh: { positions: Float32Array; indices: Uint32Array }): number {
+  let area = 0;
+  for (let i = 0; i < mesh.indices.length; i += 3) {
+    area += Math.abs(triNormalY(mesh.positions, mesh.indices[i]!, mesh.indices[i + 1]!, mesh.indices[i + 2]!)) / 2;
+  }
+  return area;
+}
+
+function ribbonCenters(pos: Float32Array): number[][] {
+  const centers: number[][] = [];
+  for (let i = 0; i < pos.length / 6; i += 1) {
+    centers.push([(pos[i * 6]! + pos[i * 6 + 3]!) / 2, (pos[i * 6 + 2]! + pos[i * 6 + 5]!) / 2]);
+  }
+  return centers;
+}
+
+function meshComponents(mesh: { positions: Float32Array; indices: Uint32Array }): number {
+  const adjacency = Array.from({ length: mesh.positions.length / 3 }, () => new Set<number>());
+  for (let i = 0; i < mesh.indices.length; i += 3) {
+    const tri = [mesh.indices[i]!, mesh.indices[i + 1]!, mesh.indices[i + 2]!];
+    for (let a = 0; a < 3; a += 1) for (let b = a + 1; b < 3; b += 1) {
+      adjacency[tri[a]!]!.add(tri[b]!);
+      adjacency[tri[b]!]!.add(tri[a]!);
+    }
+  }
+  const seen = new Set<number>();
+  let components = 0;
+  for (let start = 0; start < adjacency.length; start += 1) {
+    if (seen.has(start) || adjacency[start]!.size === 0) continue;
+    components += 1;
+    const queue = [start];
+    seen.add(start);
+    while (queue.length > 0) {
+      for (const next of adjacency[queue.pop()!]!) if (!seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return components;
+}
+
 /** Build one draped junction approach from an arm spec (mirrors buildRoadRibbon's corner convention). */
 function makeApproach(
   angle: number,
@@ -808,5 +851,220 @@ describe("trimBandAtJunctions (defect 3: sidewalk/parallel-band trimming)", () =
     const subs = trimBandAtJunctions(band, 3, []);
     expect(subs.length).toBe(1);
     expect(subs[0]!.length).toBe(3);
+  });
+});
+
+describe("shared intersection dressing geometry", () => {
+  const armPath = (angle: number, length = 40): readonly [readonly [number, number], readonly [number, number]] => [
+    [0, 0],
+    [Math.sin(angle) * length, Math.cos(angle) * length],
+  ];
+
+  test("omitted declarations preserve pavement-only behavior and emit no dressing", () => {
+    const result = buildTrimmedIntersections(
+      [{ path: armPath(0), width: 8 }, { path: armPath(Math.PI / 2), width: 8 }],
+      [{ x: 0, z: 0, arms: [{ angle: 0, width: 8 }, { angle: Math.PI / 2, width: 8 }] }],
+      flatH,
+    );
+    expect(result.ribbons.length).toBe(2);
+    expect(result.junctions.length).toBe(1);
+    expect(result.sidewalks).toEqual([]);
+    expect(result.sidewalkAprons).toEqual([]);
+    expect(buildIntersectionMarkings(result, flatH)).toEqual([]);
+  });
+
+  for (const degrees of [45, 90]) {
+    test(`${degrees}-degree marking turn is tangent-continuous and preserves positive/negative offsets`, () => {
+      const angle = (degrees * Math.PI) / 180;
+      const marking = { lines: [{ offset: 1.5, width: 0.2 }, { offset: -1.5, width: 0.2 }] };
+      const junction: RoadJunctionInput = {
+        x: 0,
+        z: 0,
+        arms: [{ angle: 0, width: 10 }, { angle, width: 10 }],
+      };
+      const result = buildTrimmedIntersections(
+        [{ path: armPath(0), width: 10, markings: marking }, { path: armPath(angle), width: 10, markings: marking }],
+        [junction],
+        flatH,
+      );
+      const paint = buildIntersectionMarkings(result, flatH, { connectorSegments: 64, maxSegmentLength: 100 });
+      expect(paint.length).toBe(6); // four approach ribbons + two junction connectors
+      const approaches = result.junctionApproaches[0]!;
+      expect(approaches.every((a) => a.direction !== undefined && a.sourceTangent !== undefined && a.streetIndex !== undefined)).toBe(true);
+      const usedStart = new Set<number>();
+      const usedEnd = new Set<number>();
+      for (let line = 0; line < 2; line += 1) {
+        const connector = ribbonCenters(paint[4 + line]!.positions);
+        const start = connector[0]!;
+        const end = connector[connector.length - 1]!;
+        const startLines = [ribbonCenters(paint[0]!.positions)[0]!, ribbonCenters(paint[1]!.positions)[0]!];
+        const endLines = [ribbonCenters(paint[2]!.positions)[0]!, ribbonCenters(paint[3]!.positions)[0]!];
+        const startIndex = Math.hypot(start[0]! - startLines[0]![0]!, start[1]! - startLines[0]![1]!) < 1e-5 ? 0 : 1;
+        const endIndex = Math.hypot(end[0]! - endLines[0]![0]!, end[1]! - endLines[0]![1]!) < 1e-5 ? 0 : 1;
+        expect(Math.hypot(start[0]! - startLines[startIndex]![0]!, start[1]! - startLines[startIndex]![1]!)).toBeLessThan(1e-5);
+        expect(Math.hypot(end[0]! - endLines[endIndex]![0]!, end[1]! - endLines[endIndex]![1]!)).toBeLessThan(1e-5);
+        expect(usedStart.has(startIndex)).toBe(false);
+        expect(usedEnd.has(endIndex)).toBe(false);
+        usedStart.add(startIndex);
+        usedEnd.add(endIndex);
+        const first = connector[1]!;
+        const last = connector[connector.length - 2]!;
+        const startTangent = [first[0]! - start[0]!, first[1]! - start[1]!];
+        const endTangent = [end[0]! - last[0]!, end[1]! - last[1]!];
+        const aDirection = approaches[0]!.direction!;
+        const bDirection = approaches[1]!.direction!;
+        expect((startTangent[0]! * -aDirection[0] + startTangent[1]! * -aDirection[1]) / Math.hypot(...startTangent as [number, number])).toBeGreaterThan(0.995);
+        expect((endTangent[0]! * bDirection[0] + endTangent[1]! * bDirection[1]) / Math.hypot(...endTangent as [number, number])).toBeGreaterThan(0.995);
+      }
+      const positiveStart = ribbonCenters(paint[4]!.positions)[0]!;
+      const negativeStart = ribbonCenters(paint[5]!.positions)[0]!;
+      expect(Math.hypot(positiveStart[0]! - negativeStart[0]!, positiveStart[1]! - negativeStart[1]!)).toBeCloseTo(3, 4);
+    });
+  }
+
+  test("a curved approach uses its sampled cut tangent instead of the node-to-mouth chord", () => {
+    const marking = { lines: [{ offset: 1, width: 0.2 }] };
+    const junction: RoadJunctionInput = {
+      x: 0,
+      z: 0,
+      arms: [{ angle: 0, width: 8 }, { angle: Math.PI / 2, width: 8 }],
+    };
+    const result = buildTrimmedIntersections(
+      [
+        { path: [[0, 0], [5, 5], [5, 40]], width: 8, markings: marking },
+        { path: armPath(Math.PI / 2), width: 8, markings: marking },
+      ],
+      [junction],
+      flatH,
+    );
+    const curved = result.junctionApproaches[0]![0]!;
+    expect(curved.direction?.[0]).toBeCloseTo(0, 8);
+    expect(curved.direction?.[1]).toBeCloseTo(1, 8);
+    expect(curved.center[0]).toBeCloseTo(5, 8); // radial inference would incorrectly point diagonally
+    const connector = ribbonCenters(buildIntersectionMarkings(result, flatH, { connectorSegments: 64, maxSegmentLength: 100 })[2]!.positions);
+    const tangent = [connector[1]![0]! - connector[0]![0]!, connector[1]![1]! - connector[0]![1]!];
+    expect(Math.abs(tangent[0]! / Math.hypot(...tangent as [number, number]))).toBeLessThan(0.02);
+    expect(tangent[1]).toBeLessThan(0);
+  });
+
+  test("straight two-arm joins pair signed offsets by physical side without crossing", () => {
+    const marking = { lines: [{ offset: 1.5, width: 0.2 }, { offset: -1.5, width: 0.2 }] };
+    const result = buildTrimmedIntersections(
+      [
+        { path: armPath(Math.PI / 2), width: 10, markings: marking },
+        { path: armPath(-Math.PI / 2), width: 10, markings: marking },
+      ],
+      [{ x: 0, z: 0, arms: [{ angle: Math.PI / 2, width: 10 }, { angle: -Math.PI / 2, width: 10 }] }],
+      flatH,
+    );
+    const paint = buildIntersectionMarkings(result, flatH, { connectorSegments: 32, maxSegmentLength: 100 });
+    expect(paint.length).toBe(6);
+    const connectorA = ribbonCenters(paint[4]!.positions);
+    const connectorB = ribbonCenters(paint[5]!.positions);
+    expect(connectorA.every((point) => Math.abs(point[1]! - connectorA[0]![1]!) < 1e-5)).toBe(true);
+    expect(connectorB.every((point) => Math.abs(point[1]! - connectorB[0]![1]!) < 1e-5)).toBe(true);
+    expect(connectorA[0]![1]! * connectorB[0]![1]!).toBeLessThan(0);
+  });
+
+  test("public tessellation controls are finite and bounded", () => {
+    const marking = { lines: [{ offset: 0, width: 0.2 }] };
+    const result = buildTrimmedIntersections(
+      [{ path: armPath(0), width: 8, markings: marking }, { path: armPath(Math.PI / 2), width: 8, markings: marking }],
+      [{ x: 0, z: 0, arms: [{ angle: 0, width: 8 }, { angle: Math.PI / 2, width: 8 }] }],
+      flatH,
+    );
+    expect(buildJunctionConnector({ x: 0, z: 0 }, result.junctionApproaches[0]!, Infinity)!.length).toBe(9);
+    const paint = buildIntersectionMarkings(result, flatH, { connectorSegments: Infinity, maxSegmentLength: 0 });
+    expect(paint.length).toBe(3);
+    expect(paint.reduce((sum, mesh) => sum + mesh.positions.length, 0)).toBeLessThan(10_000);
+    expect(paint.every((mesh) => [...mesh.positions].every(Number.isFinite))).toBe(true);
+  });
+
+  for (const degree of [3, 4]) {
+    test(`unequal-width ${degree === 3 ? "T" : "cross"} has non-overlapping sidewalk mouths and intentional paint termination`, () => {
+      const angles = degree === 3 ? [0, Math.PI / 2, -Math.PI / 2] : [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+      const widths = degree === 3 ? [16, 8, 8] : [16, 8, 12, 6];
+      const streets = angles.map((angle, i) => ({
+        path: armPath(angle),
+        width: widths[i]!,
+        sidewalks: { left: 2 + i * 0.25, right: 3 + i * 0.25 },
+        markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true },
+      }));
+      const junction = { x: 0, z: 0, arms: angles.map((angle, i) => ({ angle, width: widths[i]! })) };
+      const slope = (x: number, z: number) => x * 0.07 - z * 0.04;
+      const result = buildTrimmedIntersections(streets, [junction], slope, { filletSegments: 6 });
+      expect(result.sidewalks.length).toBe(degree * 2);
+      expect(result.sidewalkAprons.length).toBe(1);
+      const apron = result.sidewalkAprons[0]!;
+      expect(apron.indices.length).toBeGreaterThan(0);
+      // One indexed curb-return component per corner; road-mouth openings connect to the side bands.
+      expect(meshComponents(apron)).toBe(degree);
+      for (let t = 0; t < apron.indices.length; t += 3) {
+        expect(triNormalY(apron.positions, apron.indices[t]!, apron.indices[t + 1]!, apron.indices[t + 2]!)).toBeGreaterThan(1e-6);
+      }
+      // Every pavement mouth corner is the inner apron edge and a road-side sidewalk edge: no overlap or gap.
+      for (const ap of result.junctionApproaches[0]!) {
+        for (const corner of [ap.left, ap.right]) {
+          const inApron = Array.from({ length: apron.positions.length / 3 }, (_, v) => v).some(
+            (v) => Math.hypot(apron.positions[v * 3]! - corner[0], apron.positions[v * 3 + 2]! - corner[2]) < 1e-5,
+          );
+          expect(inApron).toBe(true);
+        }
+      }
+      const apronHas = (x: number, z: number) =>
+        Array.from({ length: apron.positions.length / 3 }, (_, v) => v).some(
+          (v) => Math.hypot(apron.positions[v * 3]! - x, apron.positions[v * 3 + 2]! - z) < 1e-5,
+        );
+      for (const sidewalk of result.sidewalks) {
+        // Every arm starts at the junction in this fixture. Both the pavement-edge and outer-edge
+        // vertices of each side band must be reused by the annular apron: no gap or overlap cap.
+        expect(apronHas(sidewalk.positions[0]!, sidewalk.positions[2]!)).toBe(true);
+        expect(apronHas(sidewalk.positions[3]!, sidewalk.positions[5]!)).toBe(true);
+        for (let t = 0; t < sidewalk.indices.length; t += 3) {
+          expect(triNormalY(sidewalk.positions, sidewalk.indices[t]!, sidewalk.indices[t + 1]!, sidewalk.indices[t + 2]!)).toBeGreaterThan(1e-6);
+        }
+      }
+      const paint = buildIntersectionMarkings(result, slope, { mouthClearance: 2 });
+      expect(paint.length).toBe(degree * 2); // one shortened longitudinal line + one stop line per arm
+      for (const mesh of [...result.sidewalks, apron, ...paint]) {
+        for (let v = 0; v * 3 + 2 < mesh.positions.length; v += 1) {
+          const x = mesh.positions[v * 3]!;
+          const z = mesh.positions[v * 3 + 2]!;
+          const layer = paint.includes(mesh) ? GROUND_DECAL_LAYERS.marking : GROUND_DECAL_LAYERS.road;
+          expect(mesh.positions[v * 3 + 1]).toBeCloseTo(slope(x, z) + layer, 5);
+        }
+      }
+    });
+  }
+
+  test("five-way pavement and annular sidewalk apron stay compact with bounded area and extent", () => {
+    const angles = [0, 0.9, 2.1, 3.4, 5.0];
+    const widths = [8, 18, 6, 14, 10];
+    const streets = angles.map((angle, i) => ({
+      path: armPath(angle, 60),
+      width: widths[i]!,
+      sidewalks: { left: 2, right: 3 },
+    }));
+    const result = buildTrimmedIntersections(
+      streets,
+      [{ x: 0, z: 0, arms: angles.map((angle, i) => ({ angle, width: widths[i]! })) }],
+      flatH,
+      { filletSegments: 6 },
+    );
+    const pavement = result.junctions[0]!;
+    const apron = result.sidewalkAprons[0]!;
+    const extent = (mesh: { positions: Float32Array }) => {
+      let max = 0;
+      for (let v = 0; v * 3 + 2 < mesh.positions.length; v += 1) max = Math.max(max, Math.hypot(mesh.positions[v * 3]!, mesh.positions[v * 3 + 2]!));
+      return max;
+    };
+    expect(extent(pavement)).toBeLessThan(20);
+    expect(extent(apron)).toBeLessThan(23);
+    expect(meshAreaXZ(pavement)).toBeLessThan(900);
+    expect(meshAreaXZ(apron)).toBeLessThan(500);
+    // An annular apron has no origin vertex or triangle spanning the pavement center.
+    for (let v = 0; v * 3 + 2 < apron.positions.length; v += 1) {
+      expect(Math.hypot(apron.positions[v * 3]!, apron.positions[v * 3 + 2]!)).toBeGreaterThan(4);
+    }
   });
 });

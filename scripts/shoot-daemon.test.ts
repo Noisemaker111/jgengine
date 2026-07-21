@@ -26,6 +26,7 @@ describe("shoot daemon CLI routing", () => {
     expect(isDaemonArgv(["wreckway", "--mode", "play"])).toBe(false);
     expect(isDaemonArgv(["--keep"])).toBe(false);
   });
+
 });
 
 describe("shoot daemon state file", () => {

@@ -63,11 +63,16 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Fixed
 
-- **Generated street dressing now connects through bends and junctions.** `buildJunctionConnector`
-  exposes shared tangent-continuous connector paths for sidewalks, curbs, and markings; the website
-  playground renders continuous sidewalk aprons and lane paint, and its deterministic query controls
-  can focus a junction for close-up inspection. The capture workflow now also supports managed website
-  screenshots and videos with Chrome-safe ports, lazy Vite targets, and fail-fast navigation errors.
+- **Generated street dressing now uses shared, non-overlapping junction geometry.**
+  `buildTrimmedIntersections` emits draped road-side bands and annular sidewalk aprons instead of a
+  widened pavement underlay; `buildIntersectionMarkings` carries signed offsets through degree-2 turns
+  and adds mouth clearance plus stop lines at multi-arm junctions. The website consumes those meshes,
+  reveals paint only after pavement, renders traffic lights as round points, and exposes deterministic
+  distance/pitch/yaw inspection framing. Plot frontage is re-resolved after block-corner subdivision so
+  buildings retain the correct street, and `lots.variety` now controls the deterministic plot-tier mix.
+- **Managed capture no longer steals Windows focus or waits on a background supervisor.** Daemon start
+  launches hidden Chrome directly, while Git, taskkill, Vite, Chrome, and ffmpeg subprocesses all suppress
+  console windows. Website query state hydrates before Three.js boot, preserving fail-fast route capture.
 - **Generated street bends and intersections now form compact, welded road geometry.** Hard degree-2
   turns are emitted as owned two-arm joins with tangent-continuous inner and outer curbs instead of two
   overlapping square caps; multi-arm curb returns bow into the crossing instead of ballooning outward;

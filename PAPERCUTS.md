@@ -150,3 +150,11 @@ running check-types on a fresh wave-director feature branch → gate fails on pr
 
 shipping #1319 re-exports: lane's focused verification (test + check-changelog + check-types) passed, but quick-CI check-skill-api failed — newly-exported types (ChargeResult/DefenseResolution/ResolvedShot) require JSDoc + a gen:skill-api regen. Focused-verification guidance for a barrel/export change should include 'if you export any new public symbol, run check-skill-api + gen:skill-api' so it doesn't only surface in CI.
 bun run gate after capture workflow integration -> no engine file references the throwaway studios timed out at 5s after taking 6.8s, failing an otherwise 7475-pass gate
+
+2026-07-21T01:23:23.388Z — openai/gpt-5.6-sol — NoisemakerJon
+
+managed playground capture after restoring deterministic query controls -> client-only query initialization caused an SSR hydration mismatch and fail-fast capture rejection
+
+2026-07-21T01:31:58.900Z — openai/gpt-5.6-sol — NoisemakerJon
+
+focused cityGenerator test after fixing playground's invalid lot footprint -> current origin/main spec-city frontage assertion already exceeds its documented curb allowance (21.26 > 18.75)
