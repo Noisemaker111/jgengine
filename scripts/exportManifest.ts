@@ -123,6 +123,173 @@ export function computeExposedSubpaths(pkg: PublishedPackage): string[] {
   return exposedSubpathsForPackageDir(packageDir(pkg), readPackageJson(pkg).exports ?? {});
 }
 
+// --- Stale/partial dist detection (advisory only) -------------------------
+//
+// The manifest reads `dist/*.js` as the source of truth, so generating before a
+// full package build silently omits new subpaths: a fresh `src/foo.ts` with no
+// `dist/foo.js` yet just does not appear, and the drift only surfaces later on a
+// fully-built (often unrelated) branch. A naive src->dist inverse check
+// false-positives on sources the build deliberately does not emit 1:1 (e.g.
+// `editor` `src/mcp/*` and `jgengine` `src/recipes/snippets/*`). We therefore
+// mirror exactly what the build emits by consulting each package's
+// `tsconfig.build.json` `include`/`exclude`/`rootDir`, so a fully-built tree
+// produces zero false positives while a partial dist is named loudly.
+
+interface BuildTsconfig {
+  include: string[];
+  exclude: string[];
+  rootDir: string;
+}
+
+export function readBuildTsconfig(pkgDir: string): BuildTsconfig | undefined {
+  let parsed: { compilerOptions?: { rootDir?: string }; include?: string[]; exclude?: string[] };
+  try {
+    parsed = JSON.parse(readFileSync(join(pkgDir, "tsconfig.build.json"), "utf8")) as typeof parsed;
+  } catch {
+    return undefined;
+  }
+  return {
+    include: parsed.include ?? ["src"],
+    exclude: parsed.exclude ?? [],
+    rootDir: parsed.compilerOptions?.rootDir ?? "src",
+  };
+}
+
+// Convert one TypeScript `exclude` entry to a matcher against a posix path
+// relative to the package dir. Handles the shapes these configs actually use:
+// a literal file path, a bare directory (excludes everything under it), and
+// `**`/`*`/`?` globs. Tokenized rather than chained string replaces so the
+// glob wildcards never collide with each other's output.
+function excludeEntryTester(pattern: string): (relPath: string) => boolean {
+  const clean = pattern.replace(/^\.\//, "").replace(/\/+$/, "");
+  if (!/[*?]/.test(clean)) {
+    return (relPath) => relPath === clean || relPath.startsWith(`${clean}/`);
+  }
+  let source = "";
+  for (let i = 0; i < clean.length; i += 1) {
+    const char = clean[i] as string;
+    if (char === "*") {
+      if (clean[i + 1] === "*") {
+        i += 1;
+        if (clean[i + 1] === "/") {
+          i += 1;
+          source += "(?:.*/)?"; // `**/` matches zero or more leading directories
+        } else {
+          source += ".*"; // `**` matches across directory separators
+        }
+      } else {
+        source += "[^/]*"; // `*` matches within a single path segment
+      }
+    } else if (char === "?") {
+      source += "[^/]";
+    } else if (/[.+^${}()|[\]\\]/.test(char)) {
+      source += `\\${char}`;
+    } else {
+      source += char;
+    }
+  }
+  const re = new RegExp(`^${source}$`);
+  return (relPath) => re.test(relPath);
+}
+
+function excludeTester(patterns: string[]): (relPath: string) => boolean {
+  const testers = patterns.map(excludeEntryTester);
+  return (relPath) => testers.some((test) => test(relPath));
+}
+
+const emittableExtensions = /\.(ts|tsx)$/;
+
+function emittableSrcRelPaths(pkgDir: string, cfg: BuildTsconfig): string[] {
+  const isExcluded = excludeTester(cfg.exclude);
+  const out: string[] = [];
+  const rel = (full: string): string => relative(pkgDir, full).replaceAll("\\", "/");
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const full = join(dir, entry.name);
+      const relPath = rel(full);
+      if (isExcluded(relPath)) continue;
+      if (entry.isDirectory()) {
+        walk(full);
+      } else if (emittableExtensions.test(entry.name) && !entry.name.endsWith(".d.ts")) {
+        out.push(relPath);
+      }
+    }
+  };
+  for (const include of cfg.include) {
+    const full = join(pkgDir, include);
+    let stat: ReturnType<typeof statSync>;
+    try {
+      stat = statSync(full);
+    } catch {
+      continue;
+    }
+    if (stat.isDirectory()) {
+      walk(full);
+    } else if (emittableExtensions.test(include) && !include.endsWith(".d.ts")) {
+      const relPath = rel(full);
+      if (!isExcluded(relPath)) out.push(relPath);
+    }
+  }
+  return out;
+}
+
+// Directory-based core so the staleness signal is testable against a temp
+// fixture without depending on a real package's mutable dist output.
+export function missingDistFilesForPackageDir(pkgDir: string, cfg: BuildTsconfig): string[] {
+  const rootDir = cfg.rootDir.replace(/^\.\//, "").replace(/\/+$/, "");
+  const missing: string[] = [];
+  for (const srcRel of emittableSrcRelPaths(pkgDir, cfg)) {
+    const withoutRoot = srcRel.startsWith(`${rootDir}/`) ? srcRel.slice(rootDir.length + 1) : srcRel;
+    const distRel = `${withoutRoot.replace(emittableExtensions, "")}.js`;
+    if (!existsSync(join(pkgDir, "dist", distRel))) missing.push(distRel);
+  }
+  return missing.sort();
+}
+
+export interface StalePackage {
+  package: string;
+  missing: string[];
+}
+
+// Packages whose dist is present but missing built output the build config says
+// it should emit. Fully-missing dist is deliberately skipped here — that case is
+// already loud via `computeExposedSubpaths` throwing.
+export function stalePackages(): StalePackage[] {
+  const stale: StalePackage[] = [];
+  for (const pkg of publishedPackages) {
+    if (!distExists(pkg)) continue;
+    const cfg = readBuildTsconfig(packageDir(pkg));
+    if (!cfg) continue;
+    const missing = missingDistFilesForPackageDir(packageDir(pkg), cfg);
+    if (missing.length > 0) stale.push({ package: readPackageJson(pkg).name, missing });
+  }
+  return stale;
+}
+
+const MAX_LISTED_MISSING = 5;
+
+export function formatStaleWarning(stale: StalePackage[]): string {
+  const lines = [
+    "WARNING: export manifest generated against a stale/partial dist.",
+    "These packages have source files with no built output yet — their new subpaths will be silently omitted until you rebuild:",
+  ];
+  for (const { package: name, missing } of stale) {
+    const shown = missing.slice(0, MAX_LISTED_MISSING).join(", ");
+    const more = missing.length > MAX_LISTED_MISSING ? ` (+${missing.length - MAX_LISTED_MISSING} more)` : "";
+    lines.push(`  - ${name}: ${shown}${more}`);
+  }
+  lines.push("Run `bun run build` (or `bun run agent:bootstrap`) before generating the manifest.");
+  return lines.join("\n");
+}
+
+// Advisory only: prints a loud warning to stderr and never throws or exits.
+export function warnIfStaleDist(logger: (message: string) => void = console.error): boolean {
+  const stale = stalePackages();
+  if (stale.length === 0) return false;
+  logger(formatStaleWarning(stale));
+  return true;
+}
+
 export function computeManifest(): Record<string, string[]> {
   const manifest: Record<string, string[]> = {};
   for (const pkg of publishedPackages) {
