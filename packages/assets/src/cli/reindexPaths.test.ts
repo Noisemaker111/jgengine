@@ -6,6 +6,25 @@ import { join } from "node:path";
 import { reindex } from "../indexGen";
 import { resolveGeneratedDir } from "./paths";
 
+/**
+ * The reindex cases build a small model tree on disk and regenerate the barrel,
+ * so their wall-time scales with machine load; a full `test:all` run under
+ * filesystem/CPU contention can blow past Bun's default 5s per-test budget even
+ * though each passes in isolation. Give them an explicit generous budget.
+ */
+const HEAVY_CASE_TIMEOUT_MS = 30_000;
+
+/**
+ * Hermetic scratch root: seed a controlled base under `tmpdir()` (created if
+ * absent) before `mkdtemp`, so these cases don't depend on ambient `/tmp` state
+ * on a contended shared box.
+ */
+function makeReindexRoot(): string {
+  const base = join(tmpdir(), "jgengine-reindex-tests");
+  mkdirSync(base, { recursive: true });
+  return mkdtempSync(join(base, "root-"));
+}
+
 describe("resolveGeneratedDir", () => {
   test("published CLI (dist/cli) writes into dist/generated", () => {
     expect(resolveGeneratedDir(join("pkg", "dist", "cli")).replace(/\\/g, "/")).toMatch(/pkg\/dist\/generated$/);
@@ -18,7 +37,7 @@ describe("resolveGeneratedDir", () => {
 
 describe("reindex post-install tree", () => {
   test("writes JSON + JS barrel that a published buildCatalog can import", () => {
-    const root = mkdtempSync(join(tmpdir(), "jgengine-reindex-"));
+    const root = makeReindexRoot();
     const modelsDir = join(root, "models", "quaternius-modular-scifi");
     const outDir = join(root, "dist", "generated");
     mkdirSync(modelsDir, { recursive: true });
@@ -44,10 +63,10 @@ describe("reindex post-install tree", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 
   test("reindexing a subset dir preserves other sources' barrel entries", () => {
-    const root = mkdtempSync(join(tmpdir(), "jgengine-reindex-"));
+    const root = makeReindexRoot();
     const outDir = join(root, "dist", "generated");
     const spaceDir = join(root, "models", "quaternius-modular-scifi");
     mkdirSync(spaceDir, { recursive: true });
@@ -68,10 +87,10 @@ describe("reindex post-install tree", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 
   test("reindexing an all-unknown dir leaves the barrel unchanged", () => {
-    const root = mkdtempSync(join(tmpdir(), "jgengine-reindex-"));
+    const root = makeReindexRoot();
     const outDir = join(root, "dist", "generated");
     const spaceDir = join(root, "models", "quaternius-modular-scifi");
     mkdirSync(spaceDir, { recursive: true });
@@ -91,5 +110,5 @@ describe("reindex post-install tree", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 });
