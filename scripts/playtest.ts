@@ -22,7 +22,31 @@ export interface PlaytestOptions {
   softlockThresholdMs: number;
   /** A metric moving by more than this counts as progress. */
   epsilon: number;
+  /**
+   * rAF frames the page actually rendered under input across the sampled run.
+   * When provided, a softlock verdict is only trusted if the run rendered fast
+   * enough to tell "stuck" apart from "frame-starved": on a software-GL host
+   * (~2fps) held-key motion barely advances per frame, so a flat window reads
+   * as a softlock that is really just slow rendering (issue #1506). Below
+   * {@link minEffectiveFps} such a run is reported inconclusive, not softlocked.
+   * Omit to skip the frame-rate gate entirely (legacy behavior).
+   */
+  framesRendered?: number;
+  /**
+   * Effective-FPS floor below which a flat run is inconclusive rather than a
+   * softlock. Defaults to {@link DEFAULT_MIN_EFFECTIVE_FPS}. Ignored when
+   * {@link framesRendered} is omitted.
+   */
+  minEffectiveFps?: number;
 }
+
+/**
+ * Below this rendered FPS a flat playtest window is treated as frame-starvation,
+ * not a genuine softlock. Real hardware GL sustains 30–60fps, so a softlock
+ * there still shows plenty of frames; software GL (cloud, ~1–2fps) never clears
+ * this bar, so its unavoidable flatness never masquerades as a stuck loop.
+ */
+export const DEFAULT_MIN_EFFECTIVE_FPS = 10;
 
 export interface PlaytestResult {
   seed: number;
@@ -36,10 +60,21 @@ export interface PlaytestResult {
   totalProgress: number;
   /** Longest contiguous span (ms) where every metric held flat within epsilon. */
   softlockWindowMs: number;
-  /** True when the flat span reached the threshold and the run was long enough to judge it. */
+  /** True when the flat span reached the threshold and the run rendered fast enough to trust it. */
   softlocked: boolean;
   /** Whether any probe sample was read at all. */
   probed: boolean;
+  /** rAF frames the page rendered under input over the run; undefined when not measured. */
+  framesRendered?: number;
+  /** Rendered frames per second (framesRendered / durationSec); undefined when not measured or duration is 0. */
+  effectiveFps?: number;
+  /**
+   * True when progress stayed flat long enough to look like a softlock but the
+   * run rendered too few frames per second to trust the verdict — the render
+   * was frame-starved (software GL), so use the deterministic stepping rung
+   * instead of reading a softlock into it (issue #1506).
+   */
+  inconclusive: boolean;
 }
 
 function metricKeys(samples: readonly ProbeSample[]): string[] {
@@ -111,8 +146,17 @@ export function summarizePlaytest(samples: readonly ProbeSample[], options: Play
   const totalProgress = Object.values(delta).reduce((sum, value) => sum + Math.abs(value), 0);
   const softlockWindowMs = longestFlatWindowMs(samples, options.epsilon);
   const durationMs = probed ? samples[samples.length - 1]!.t - samples[0]!.t : 0;
-  const softlocked =
+  const flatEnough =
     probed && durationMs >= options.softlockThresholdMs && softlockWindowMs >= options.softlockThresholdMs;
+  const durationSec = durationMs / 1000;
+  const effectiveFps =
+    options.framesRendered !== undefined && durationSec > 0 ? options.framesRendered / durationSec : undefined;
+  const minEffectiveFps = options.minEffectiveFps ?? DEFAULT_MIN_EFFECTIVE_FPS;
+  // A flat window on a frame-starved render (software GL) is indistinguishable
+  // from a genuine softlock, so it is inconclusive — never a softlock verdict.
+  const frameStarved = effectiveFps !== undefined && effectiveFps < minEffectiveFps;
+  const softlocked = flatEnough && !frameStarved;
+  const inconclusive = flatEnough && frameStarved;
   return {
     seed: options.seed,
     framesElapsed: samples.length,
@@ -122,5 +166,8 @@ export function summarizePlaytest(samples: readonly ProbeSample[], options: Play
     softlockWindowMs,
     softlocked,
     probed,
+    framesRendered: options.framesRendered,
+    effectiveFps,
+    inconclusive,
   };
 }

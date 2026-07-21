@@ -102,8 +102,46 @@ describe("summarizePlaytest", () => {
     }));
     const result = summarizePlaytest(stuck, OPTS);
     expect(result.softlocked).toBe(true);
+    expect(result.inconclusive).toBe(false);
     expect(result.softlockWindowMs).toBeGreaterThanOrEqual(OPTS.softlockThresholdMs);
     expect(result.totalProgress).toBe(0);
+  });
+
+  test("frame-starved flat run is inconclusive, not a softlock (issue #1506)", () => {
+    // Software-GL cloud host: flat metrics over ~8s but only ~2fps rendered.
+    const stuck: ProbeSample[] = Array.from({ length: 4 }, (_, index) => ({
+      t: index * 2000,
+      metrics: { x: 3, score: 0 },
+    }));
+    const result = summarizePlaytest(stuck, { ...OPTS, framesRendered: 16 });
+    expect(result.effectiveFps).toBeCloseTo(16 / 6, 5);
+    expect(result.softlocked).toBe(false);
+    expect(result.inconclusive).toBe(true);
+    expect(result.softlockWindowMs).toBeGreaterThanOrEqual(OPTS.softlockThresholdMs);
+  });
+
+  test("healthy frame rate still flags the same flat run as a softlock", () => {
+    const stuck: ProbeSample[] = Array.from({ length: 4 }, (_, index) => ({
+      t: index * 2000,
+      metrics: { x: 3, score: 0 },
+    }));
+    // 6s of wall-clock at ~60fps → ~360 rendered frames: plenty to trust flatness.
+    const result = summarizePlaytest(stuck, { ...OPTS, framesRendered: 360 });
+    expect(result.effectiveFps).toBeCloseTo(60, 5);
+    expect(result.softlocked).toBe(true);
+    expect(result.inconclusive).toBe(false);
+  });
+
+  test("omitting framesRendered keeps the legacy fps-blind ruling", () => {
+    const stuck: ProbeSample[] = Array.from({ length: 30 }, (_, index) => ({
+      t: index * 100,
+      metrics: { x: 3 },
+    }));
+    const result = summarizePlaytest(stuck, OPTS);
+    expect(result.softlocked).toBe(true);
+    expect(result.inconclusive).toBe(false);
+    expect(result.effectiveFps).toBeUndefined();
+    expect(result.framesRendered).toBeUndefined();
   });
 
   test("flat but too-short run does not flag (nothing to judge yet)", () => {

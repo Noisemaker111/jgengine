@@ -843,6 +843,40 @@ export async function navigateCapturePageWithRetry(
   }
 }
 
+/**
+ * Persistence a game boots a save from — cleared before an honest capture so a
+ * warm/daemon/`--connect` Chrome (which keeps one `--user-data-dir` alive across
+ * drives) doesn't restore a prior run's session and read stale `capture.probe`
+ * metrics (issue #1505). Everything a game could save into: keep this in sync
+ * with any new save backend a game adopts.
+ */
+const CAPTURE_STORAGE_TYPES = "local_storage,indexeddb,websql,cache_storage,service_workers";
+
+/**
+ * Wipe the target origin's persisted game state before the capture navigation so
+ * every drive/shoot boots from a clean slate. A no-op-cheap safety on a fresh
+ * profile; the fix that matters on a warm profile, where a prior drive's
+ * `localStorage` save would otherwise auto-restore and silently corrupt probe
+ * evidence. Best-effort: a failure warns rather than aborting the capture.
+ * `originOrUrl` may be a full URL — only its origin is used.
+ */
+export async function clearCaptureStorage(session: CdpSession, originOrUrl: string): Promise<void> {
+  let origin: string;
+  try {
+    origin = new URL(originOrUrl).origin;
+  } catch {
+    origin = originOrUrl;
+  }
+  try {
+    await session.send("Storage.clearDataForOrigin", { origin, storageTypes: CAPTURE_STORAGE_TYPES });
+  } catch (error) {
+    console.error(
+      `capture: could not clear storage for ${origin} (${error instanceof Error ? error.message : String(error)}) — ` +
+        `a warm profile may restore a stale save and corrupt probe evidence`,
+    );
+  }
+}
+
 /** Write bytes to a temp path then atomically swap into place (never a torn PNG). */
 export function writePngAtomic(outPath: string, bytes: Buffer): void {
   const tmpPath = `${outPath}.tmp`;

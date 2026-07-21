@@ -23,6 +23,7 @@ import { isAbsolute, join, resolve } from "node:path";
 import {
   CdpSession,
   applyDevice,
+  clearCaptureStorage,
   ensureDevServer,
   ensureWebServer,
   navigateCapturePageWithRetry,
@@ -34,7 +35,7 @@ import {
   type SizeMode,
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
-import { summarizePlaytest, type ProbeSample } from "./playtest";
+import { DEFAULT_MIN_EFFECTIVE_FPS, summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
 import { assembleGif } from "./gif";
@@ -68,6 +69,8 @@ type Args = {
   sampleMs: number;
   softlockMs: number;
   epsilon: number;
+  minFps: number;
+  keepStorage: boolean;
   spawn?: string;
   site?: string;
   record?: string;
@@ -133,6 +136,15 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       and can starve a heavy scene's render thread into a false softlock)
   --softlock <ms>     flat-progress span under input that counts as a softlock (default 2000)
   --epsilon <n>       smallest metric change that counts as progress (default 0.001)
+  --min-fps <n>       lowest rendered FPS a softlock verdict is trusted at (default ${DEFAULT_MIN_EFFECTIVE_FPS}).
+                      Below it a flat run is reported INCONCLUSIVE, not a softlock —
+                      software GL (cloud ~2fps) can't advance held-key motion fast
+                      enough to judge, so use the deterministic headless stepping rung
+  --keep-storage      keep the target origin's localStorage/IndexedDB instead of
+                      clearing it before boot. By default every drive boots from a
+                      CLEAN game state so a warm/--connect Chrome doesn't restore a
+                      prior run's save and read stale capture.probe metrics. Pass this
+                      only when a run must reuse a saved session (e.g. a load path)
   --help              show this text
 
 Warm loop:
@@ -161,6 +173,8 @@ function parseArgs(argv: string[]): Args {
     sampleMs: 250,
     softlockMs: 2000,
     epsilon: 1e-3,
+    minFps: DEFAULT_MIN_EFFECTIVE_FPS,
+    keepStorage: false,
     recordWidth: 640,
     recordFps: 24,
     recordRealtime: false,
@@ -206,6 +220,8 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--sample") args.sampleMs = Number(argv[++index] ?? args.sampleMs);
     else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
     else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
+    else if (value === "--min-fps") args.minFps = Number(argv[++index] ?? args.minFps);
+    else if (value === "--keep-storage") args.keepStorage = true;
     else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--site") args.site = argv[++index];
     else if (value === "--record") {
@@ -513,6 +529,14 @@ const exitCode = await withBrowserSession(
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       if (args.playtest) url.searchParams.set("seed", String(args.seed));
+      // Honest capture boots from a clean game state by default: clear the origin's
+      // saved session BEFORE navigating so a warm/--connect Chrome doesn't restore a
+      // prior drive's save and read stale capture.probe metrics (issue #1505). Scoped
+      // to game drives — site/editor routes keep their own persistence. --keep-storage
+      // opts out when a run must reuse a saved session.
+      if (!args.keepStorage && args.site === undefined) {
+        await clearCaptureStorage(session, dev.base);
+      }
       await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs);
       await new Promise((r) => setTimeout(r, 500));
       await installFrameCounter(session);
@@ -560,6 +584,10 @@ const exitCode = await withBrowserSession(
       const samples: ProbeSample[] = [];
       let sampling = args.playtest;
       const sampleStart = Date.now();
+      // rAF frames rendered across the playtest window — lets the softlock ruling
+      // tell a genuine stuck loop apart from a frame-starved software-GL render
+      // that merely looks flat (issue #1506).
+      const playtestStartFrames = args.playtest ? await readFrames(session) : 0;
       const sampler = args.playtest
         ? (async () => {
             while (sampling) {
@@ -650,20 +678,36 @@ const exitCode = await withBrowserSession(
       if (args.playtest) {
         sampling = false;
         await sampler;
+        const framesRendered = Math.max(0, (await readFrames(session)) - playtestStartFrames);
         const result = summarizePlaytest(samples, {
           seed: args.seed,
           softlockThresholdMs: args.softlockMs,
           epsilon: args.epsilon,
+          framesRendered,
+          minEffectiveFps: args.minFps,
         });
         console.log(JSON.stringify(result));
+        const fpsNote =
+          result.effectiveFps !== undefined ? ` (~${result.effectiveFps.toFixed(1)}fps, ${framesRendered} frames)` : "";
         if (!result.probed) {
           console.error(
             `drive: no progress probe read — ${args.game} exposes no capture.probe (or it returned no metrics). Declare capture.probe to run the playtest rung.`,
           );
           if (args.strict) code = 1;
+        } else if (result.inconclusive) {
+          // Frame-starved software GL: the flat window is unreliable, not a verdict.
+          // Degrade to the deterministic rung instead of reporting a false softlock.
+          console.error(
+            `drive: INCONCLUSIVE — progress stayed flat for ${result.softlockWindowMs}ms but the page only rendered${fpsNote}, ` +
+              `below ${args.minFps}fps. Under software GL held-key motion is too slow to read as a softlock. ` +
+              `Use the deterministic headless rung (stepPlayerMovement / createHeadlessRunner) for a trustworthy verdict; ` +
+              `--strict does not fail on an inconclusive run.`,
+          );
+          // Deliberately not a strict failure — a slow render is not a game bug.
         } else if (result.softlocked) {
           console.error(
-            `drive: SOFTLOCK — progress stayed flat for ${result.softlockWindowMs}ms under active input (threshold ${args.softlockMs}ms, seed ${args.seed}). The loop did not advance.`,
+            `drive: SOFTLOCK — progress stayed flat for ${result.softlockWindowMs}ms under active input${fpsNote} ` +
+              `(threshold ${args.softlockMs}ms, seed ${args.seed}). The loop did not advance.`,
           );
           if (args.strict) code = 1;
         } else if (args.steps.every((step) => step.kind !== "key")) {

@@ -6,6 +6,7 @@ import {
   type CdpSession,
   checkoutIdentity,
   chromeGraphicsArgs,
+  clearCaptureStorage,
   closePageTarget,
   navigateCapturePage,
   normalizeLoopbackUrl,
@@ -39,6 +40,44 @@ function fakeSession(options: {
     },
   } as unknown as CdpSession;
 }
+
+function recordingSession(opts: { fail?: boolean } = {}): {
+  session: CdpSession;
+  calls: Array<{ method: string; params?: Record<string, unknown> }>;
+} {
+  const calls: Array<{ method: string; params?: Record<string, unknown> }> = [];
+  const session = {
+    async send(method: string, params?: Record<string, unknown>) {
+      calls.push({ method, params });
+      if (opts.fail === true) throw new Error("boom");
+      return {};
+    },
+  } as unknown as CdpSession;
+  return { session, calls };
+}
+
+describe("clearCaptureStorage (issue #1505)", () => {
+  test("clears the origin's save backends before an honest capture boot", async () => {
+    const { session, calls } = recordingSession();
+    await clearCaptureStorage(session, "http://localhost:4517");
+    expect(calls).toHaveLength(1);
+    expect(calls[0]!.method).toBe("Storage.clearDataForOrigin");
+    expect(calls[0]!.params?.origin).toBe("http://localhost:4517");
+    expect(String(calls[0]!.params?.storageTypes)).toContain("local_storage");
+    expect(String(calls[0]!.params?.storageTypes)).toContain("indexeddb");
+  });
+
+  test("reduces a full URL to its origin", async () => {
+    const { session, calls } = recordingSession();
+    await clearCaptureStorage(session, "http://localhost:4517/?game=wreckway&mode=play");
+    expect(calls[0]!.params?.origin).toBe("http://localhost:4517");
+  });
+
+  test("a CDP failure warns but never aborts the capture", async () => {
+    const { session } = recordingSession({ fail: true });
+    await expect(clearCaptureStorage(session, "http://localhost:4517")).resolves.toBeUndefined();
+  });
+});
 
 describe("worktree-scoped ports", () => {
   test("checkoutIdentity is a non-empty absolute-ish path", () => {

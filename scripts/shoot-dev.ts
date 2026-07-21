@@ -15,6 +15,7 @@ import {
   DEVICES,
   applyDevice,
   checkoutIdentity,
+  clearCaptureStorage,
   ensureDevServer,
   ensureWebServer,
   isUp,
@@ -73,6 +74,7 @@ type Args = {
   site?: string;
   connect?: number;
   keep: boolean;
+  keepStorage: boolean;
   inspect: boolean;
   help: boolean;
   timeoutMs: number;
@@ -107,6 +109,10 @@ const HELP = `bun run shoot [game] [options]
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
                       running after this shot — pair with --connect <port>
                       on every following shot in the loop (warm-loop pattern)
+  --keep-storage      keep the target origin's localStorage/IndexedDB instead of
+                      clearing it before boot. By default a game shot boots from a
+                      CLEAN game state so a warm/--connect Chrome doesn't restore a
+                      prior run's save; pass this only to reuse a saved session
   --serve             keep Chrome warm; start the requested Vite lazily
   --inspect           run the pixel-metrics pass on the PNG we already have
                       in memory (no second browser launch) and write
@@ -135,6 +141,7 @@ function parseArgs(argv: string[]): Args {
     size: "full",
     connect: undefined,
     keep: false,
+    keepStorage: false,
     inspect: false,
     help: false,
     listFixtures: false,
@@ -189,6 +196,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--site") args.site = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--keep") args.keep = true;
+    else if (value === "--keep-storage") args.keepStorage = true;
     else if (value === "--inspect") args.inspect = true;
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value === "--timeout") {
@@ -320,6 +328,12 @@ async function shootOne(
     await applyDevice(session, device, args.size);
     mark("setup");
     const url = targetUrl(args, device, devBase);
+    // Boot game captures from a clean save by default so a warm/--connect Chrome
+    // doesn't restore a prior run's localStorage session (issue #1505). Scoped to
+    // dev-runner game shots — arbitrary --url and --site routes keep their storage.
+    if (!args.keepStorage && args.site === undefined && args.url === undefined) {
+      await clearCaptureStorage(session, devBase);
+    }
     await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS);
     mark("ready");
     await new Promise((r) => setTimeout(r, 600));
