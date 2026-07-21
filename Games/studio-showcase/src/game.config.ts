@@ -10,6 +10,8 @@ import { physics, world } from "./world";
 
 export const game = defineGame({
   name: "Studio Showcase",
+  // A free-roam showcase stage — no menu/pause/end screens; it runs live from boot. Stated, not implied (#1337).
+  lifecycle: "always-live",
   world,
   physics,
   input: keybinds,

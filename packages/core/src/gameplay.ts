@@ -122,6 +122,7 @@ export { createCosmetics } from "./game/cosmetics";
 export {
   type GameDefinition,
   type GameDefinitionConfig,
+  type GameLifecycle,
   type GameLoop,
   type InventoryDeclaration,
   type LifecycleConfig,

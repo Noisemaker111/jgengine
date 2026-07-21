@@ -11,6 +11,8 @@ import { DAY_LENGTH, physics, world } from "./world";
 
 export const game = defineGame({
   name: "Starhome",
+  // No menu/pause/end screens — the colony sim runs live from boot. Stated, not implied (#1337).
+  lifecycle: "always-live",
   world,
   physics,
   input: keybinds,

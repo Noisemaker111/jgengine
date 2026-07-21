@@ -171,6 +171,21 @@ export interface LifecycleConfig<TState = unknown> {
   };
 }
 
+/**
+ * How a game declares its run-phase story to {@link defineGameDefinition}. Every game states this
+ * explicitly so the shell never has to guess — a silent game used to default to `"playing"`, which
+ * painted the touch dock over title/menu/results screens (#1337, Vice Isle #1329).
+ *
+ * - A {@link LifecycleConfig} — the game moves through menu/playing/paused/ended run states; the
+ *   runtime owns the command glue and phase sync.
+ * - `"always-live"` — an explicit, truthful declaration that the game has **no** menu/pause/end
+ *   screens and runs live from boot. Runtime behaviour is identical to declaring no lifecycle at all
+ *   (no phase sync, no start/restart commands), but the intent is now *stated*, not implied by
+ *   silence. Games that instead drive phases by hand call {@link setGamePhase} directly and leave
+ *   this unset.
+ */
+export type GameLifecycle<TState = unknown> = LifecycleConfig<TState> | "always-live";
+
 /** Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems. */
 export interface GameDefinition<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
@@ -211,7 +226,12 @@ export interface GameDefinition<
   persist?: boolean | PersistConfig;
   ui?: unknown;
   loop?: GameLoop<GameContext>;
-  /** Declarative start/restart run lifecycle — see {@link LifecycleConfig}. Omitted games keep hand-rolling their own commands. */
+  /**
+   * Resolved run lifecycle — see {@link LifecycleConfig}. The config boundary also accepts the
+   * `"always-live"` sentinel ({@link GameLifecycle}); {@link defineGameDefinition} resolves that to
+   * `undefined` here, so a resolved definition only ever carries a real {@link LifecycleConfig} or
+   * nothing.
+   */
   lifecycle?: LifecycleConfig;
   /**
    * Host-side per-viewer replication policy — private-state and area-of-interest projection over the
@@ -226,8 +246,14 @@ export interface GameDefinition<
 export type GameDefinitionConfig<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
   TMultiplayer = unknown,
-> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets"> & {
+> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets" | "lifecycle"> & {
   assets?: AssetCatalog<TAssetRef>;
+  /**
+   * The game's run-phase story — a {@link LifecycleConfig} or the `"always-live"` sentinel. Every
+   * game must state one (or drive phases by hand via {@link setGamePhase}); `check-game-shape`
+   * enforces it. See {@link GameLifecycle}.
+   */
+  lifecycle?: GameLifecycle;
 };
 
 /**
@@ -250,11 +276,17 @@ export function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplay
   // A place world carries the laws of that place: its physics resolves over the game-level default,
   // so every consumer of definition.physics (movement, combat, shell) sees the active world's laws.
   const physics = resolveWorldPhysics(config.world, config.physics);
+  // `"always-live"` is an explicit "no lifecycle sync" declaration — resolve the sentinel to
+  // `undefined` so every downstream consumer only ever sees a real LifecycleConfig or nothing,
+  // exactly as before the sentinel existed. The statement was for the gate, not the runtime.
+  const lifecycle: LifecycleConfig | undefined =
+    config.lifecycle === "always-live" ? undefined : config.lifecycle;
   return {
     ...config,
     ...(physics === undefined ? {} : { physics }),
     features,
     loop,
+    lifecycle,
     scene: createEntityStore(),
     assets: config.assets ?? createAssetCatalog(),
   };

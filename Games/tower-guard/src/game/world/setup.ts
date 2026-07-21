@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { EntityDiedEvent } from "@jgengine/core/game/events";
+import { setGamePhase } from "@jgengine/core/game/gamePhase";
 
 import { registerBuildCommands } from "../build/commands";
 import { BASE_CATALOG_ID, BASE_ENTITY_ID, GOLD_CURRENCY, STARTING_GOLD } from "../entities/base/catalog";
@@ -11,6 +12,7 @@ import { KEEP_POINT } from "./path";
 function handleEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
   if (event.catalogId === BASE_CATALOG_ID) {
     session.gameOver = true;
+    setGamePhase(ctx, "ended");
     return;
   }
   if (event.catalogId in CREEP_CATALOG) {
