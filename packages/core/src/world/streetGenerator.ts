@@ -205,6 +205,8 @@ export interface StreetNetwork {
 /** Fully-defaulted slider set the generator reads. */
 export interface StreetNetworkRules {
   seed: string;
+  /** Organic boundary clipping amount, when supported by the caller. */
+  outline?: number;
   /** 1 = regular lattice nodes; 0 = organic scatter. */
   gridness: number;
   /** 0 = tree (dead-ends); 1 = a single closed circuit. */
