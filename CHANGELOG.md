@@ -67,6 +67,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Fixed
 
+- **`extractBlocks` now flags an implausible face-count collapse instead of failing silently (#1502).**
+  Proximity welding merges street endpoints within a fixed radius; wandered / arc-filleted centerlines
+  pull a junction's arms apart past it, so they never weld — the chains prune away and the block faces
+  silently vanish (a 16-street ring yielded 1 face; a real overhaul saw 38 streets → 2 faces).
+  `extractBlocks` now returns a `diagnostics` field (`{ streetCount, faceCount, collapsed }`) and emits a
+  dev-mode `console.warn` pointing at `extractGraphBlocks` when a substantial street set collapses to a
+  handful of faces. Welding/extraction behavior is unchanged; a consumer that destructures only
+  `blocks`/`deadEnds` needs no code change.
 - **City-scale player movement no longer freezes `pose` at ~3 fps (#1517).** Broadphase reach is split into capped horizontal vs vertical extents (tower height no longer inflates XZ/Y queries), `objectStore.inBox` bails to a linear object scan when the 1 m cell volume is huge, dense mesh-box colliders collapse to outer AABBs for walking, and `movement.frozen` skips the gather (seated drivers).
 - **Generated intersections are compact carriageway unions, not plaza discs (#1511).**
   Apron pull-back is the projected crossing half-width only (opposite through-arms are ignored; curb
