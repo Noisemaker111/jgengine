@@ -60,6 +60,14 @@ export interface ObjectStore {
 
 const CELL_SIZE = 1;
 
+/**
+ * When an `inBox` query spans more than this many 1 m cells, walk the object list instead of the
+ * cell grid. Tall/wide colliders (city buildings) can inflate movement broadphase to hundreds of
+ * metres on each axis — at 1 m cells that is O(10⁶) empty `Map.get`s per frame and freezes `pose`.
+ * Linear scan over a few hundred objects is cheaper the moment the cell volume exceeds the scene.
+ */
+const IN_BOX_CELL_VOLUME_LIMIT = 4096;
+
 function cellIndexOf(value: number): number {
   return Math.floor(value / CELL_SIZE);
 }
@@ -70,6 +78,11 @@ function cellKey(cx: number, cy: number, cz: number): string {
 
 function cellKeyOf(position: EntityPosition): string {
   return cellKey(cellIndexOf(position[0]), cellIndexOf(position[1]), cellIndexOf(position[2]));
+}
+
+function objectInAabb(object: SceneObject, min: EntityPosition, max: EntityPosition): boolean {
+  const [x, y, z] = object.position;
+  return x >= min[0] && x <= max[0] && y >= min[1] && y <= max[1] && z >= min[2] && z <= max[2];
 }
 
 export function createObjectStore(): ObjectStore {
@@ -202,13 +215,26 @@ export function createObjectStore(): ObjectStore {
       return results;
     },
     inBox(min, max) {
-      const hits: SceneObject[] = [];
       const minCx = cellIndexOf(min[0]);
       const maxCx = cellIndexOf(max[0]);
       const minCy = cellIndexOf(min[1]);
       const maxCy = cellIndexOf(max[1]);
       const minCz = cellIndexOf(min[2]);
       const maxCz = cellIndexOf(max[2]);
+      const cellsX = Math.max(0, maxCx - minCx + 1);
+      const cellsY = Math.max(0, maxCy - minCy + 1);
+      const cellsZ = Math.max(0, maxCz - minCz + 1);
+      const cellVolume = cellsX * cellsY * cellsZ;
+      // Huge queries (city-scale movement broadphase inflated by tall building colliders): scanning
+      // every empty 1 m cell is far more expensive than testing the few hundred placed objects.
+      if (cellVolume > IN_BOX_CELL_VOLUME_LIMIT) {
+        const hits: SceneObject[] = [];
+        for (const object of store.arraySnapshot()) {
+          if (objectInAabb(object, min, max)) hits.push(object);
+        }
+        return hits;
+      }
+      const hits: SceneObject[] = [];
       for (let cx = minCx; cx <= maxCx; cx += 1) {
         for (let cy = minCy; cy <= maxCy; cy += 1) {
           for (let cz = minCz; cz <= maxCz; cz += 1) {
@@ -217,14 +243,7 @@ export function createObjectStore(): ObjectStore {
             for (const instanceId of bucket) {
               const object = store.get(instanceId);
               if (object === undefined) continue;
-              const [x, y, z] = object.position;
-              if (
-                x >= min[0] && x <= max[0] &&
-                y >= min[1] && y <= max[1] &&
-                z >= min[2] && z <= max[2]
-              ) {
-                hits.push(object);
-              }
+              if (objectInAabb(object, min, max)) hits.push(object);
             }
           }
         }
