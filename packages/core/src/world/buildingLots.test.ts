@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { deriveBuildingLots, facingRotation, type RoadFrontage } from "./buildingLots";
 import { resolveStructureBuildings } from "./environmentSummary";
 import { building } from "./features";
-import type { Vec2 } from "./cityGeometry";
+import { rectClearsPolyline, rectsSeparated, type Vec2 } from "./cityGeometry";
 
 function line(a: Vec2, b: Vec2, n = 6): Vec2[] {
   const pts: Vec2[] = [];
@@ -207,5 +207,107 @@ describe("resolveStructureBuildings — along mode", () => {
     const b = make();
     expect(a.length).toBe(b.length);
     expect(a.map((x) => [x.center, x.rotationY])).toEqual(b.map((x) => [x.center, x.rotationY]));
+  });
+});
+
+describe("deriveBuildingLots — plot contract (#1454)", () => {
+  const cross = [
+    { path: [[-200, 0], [200, 0]] as const, width: 10 },
+    { path: [[0, -200], [0, 200]] as const, width: 10 },
+    { path: [[-200, -14], [200, 20]] as const, width: 8 }, // diagonal near-parallel road
+  ];
+
+  test("no two plots overlap, whichever roads placed them", () => {
+    const lots = deriveBuildingLots({ roads: cross, footprint: { w: 12, d: 10 }, spacing: 2, setback: 3 });
+    expect(lots.length).toBeGreaterThan(4);
+    for (let i = 0; i < lots.length; i += 1) {
+      for (let j = i + 1; j < lots.length; j += 1) {
+        expect(
+          rectsSeparated(
+            { x: lots[i]!.center[0], z: lots[i]!.center[1], hw: 5.95, hd: 4.95, angle: lots[i]!.rotationY },
+            { x: lots[j]!.center[0], z: lots[j]!.center[1], hw: 5.95, hd: 4.95, angle: lots[j]!.rotationY },
+          ),
+        ).toBe(true);
+      }
+    }
+  });
+
+  test("full plot footprints stay off every corridor — corners never hang over a crossing road", () => {
+    const lots = deriveBuildingLots({ roads: cross, footprint: { w: 12, d: 10 }, spacing: 2, setback: 3 });
+    for (const lot of lots) {
+      const rect = { x: lot.center[0], z: lot.center[1], hw: 6, hd: 5, angle: lot.rotationY };
+      for (const road of cross) {
+        expect(rectClearsPolyline(rect, road.path, road.width / 2 - 0.1)).toBe(true);
+      }
+    }
+  });
+
+  test("avoid corridors get no frontage but still repel plots", () => {
+    const roads = [{ path: [[-200, 0], [200, 0]] as const, width: 10 }];
+    const alley = [{ path: [[-200, 18], [200, 18]] as const, width: 6 }];
+    const lots = deriveBuildingLots({ roads, avoid: alley, footprint: { w: 12, d: 10 }, spacing: 2, setback: 3 });
+    expect(lots.length).toBeGreaterThan(0);
+    expect(lots.every((lot) => lot.road === 0)).toBe(true);
+    for (const lot of lots) {
+      const rect = { x: lot.center[0], z: lot.center[1], hw: 6, hd: 5, angle: lot.rotationY };
+      expect(rectClearsPolyline(rect, alley[0]!.path, 3 - 0.1)).toBe(true);
+    }
+  });
+});
+
+describe("deriveBuildingLots — plot spacing dial (#1454)", () => {
+  const road: RoadFrontage[] = [{ path: [[-200, 0], [200, 0]], width: 10 }];
+
+  test("spacing 0 packs plots edge-to-edge — touching is legal, overlap is not", () => {
+    const touching = deriveBuildingLots({ roads: road, footprint: { w: 12, d: 10 }, spacing: 0, setback: 3 });
+    const spaced = deriveBuildingLots({ roads: road, footprint: { w: 12, d: 10 }, spacing: 4, setback: 3 });
+    // Zero spacing must not silently drop same-road neighbours: the pitch tightens, so a fixed
+    // frontage fits MORE plots than a 4 m gap does.
+    expect(touching.length).toBeGreaterThan(spaced.length);
+    const side = touching.filter((lot) => lot.side === 1).sort((a, b) => a.center[0] - b.center[0]);
+    for (let i = 1; i < side.length; i += 1) {
+      const gap = side[i]!.center[0] - side[i - 1]!.center[0] - 12;
+      expect(gap).toBeGreaterThanOrEqual(-1e-6); // never overlapping…
+      expect(gap).toBeLessThanOrEqual(1e-6); // …and exactly touching at spacing 0
+    }
+  });
+});
+
+describe("deriveBuildingLots — plot variants (#1454)", () => {
+  const road: RoadFrontage[] = [{ path: [[-260, 0], [260, 0]], width: 10 }];
+  const variants = [
+    { w: 12, d: 10, weight: 2 },
+    { w: 6, d: 16, weight: 2 }, // apartment slice
+    { w: 20, d: 14, weight: 1 }, // wide detached parcel
+  ];
+
+  test("a weighted variant list mixes distinct plot sizes along one frontage", () => {
+    const lots = deriveBuildingLots({ roads: road, footprint: variants, seed: "mix", spacing: 2, setback: 3 });
+    const sizes = new Set(lots.map((lot) => `${lot.footprint.w}x${lot.footprint.d}`));
+    expect(sizes.size).toBe(3);
+    expect(lots.length).toBeGreaterThan(10);
+  });
+
+  test("mixed sizes keep the plot contract — no overlaps, deterministic per seed", () => {
+    const a = deriveBuildingLots({ roads: road, footprint: variants, seed: "mix", spacing: 2, setback: 3 });
+    const b = deriveBuildingLots({ roads: road, footprint: variants, seed: "mix", spacing: 2, setback: 3 });
+    expect(a).toEqual(b);
+    for (let i = 0; i < a.length; i += 1) {
+      for (let j = i + 1; j < a.length; j += 1) {
+        expect(
+          rectsSeparated(
+            { x: a[i]!.center[0], z: a[i]!.center[1], hw: a[i]!.footprint.w / 2 - 0.05, hd: a[i]!.footprint.d / 2 - 0.05, angle: a[i]!.rotationY },
+            { x: a[j]!.center[0], z: a[j]!.center[1], hw: a[j]!.footprint.w / 2 - 0.05, hd: a[j]!.footprint.d / 2 - 0.05, angle: a[j]!.rotationY },
+          ),
+        ).toBe(true);
+      }
+    }
+  });
+
+  test("the two sides of a street roll independent variant runs", () => {
+    const lots = deriveBuildingLots({ roads: road, footprint: variants, seed: "mix", spacing: 2, setback: 3 });
+    const key = (side: 1 | -1) =>
+      lots.filter((lot) => lot.side === side).map((lot) => lot.footprint.w).join(",");
+    expect(key(1)).not.toBe(key(-1));
   });
 });

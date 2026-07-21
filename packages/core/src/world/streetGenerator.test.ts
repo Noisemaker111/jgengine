@@ -539,8 +539,60 @@ describe("structural hierarchy (#1368)", () => {
       if (!isArterial(s.level) || s.loop) continue;
       for (const end of [s.nodes[0]!, s.nodes[s.nodes.length - 1]!]) {
         if (rim(end)) continue;
-        if ((deg.get(end) ?? 0) < 2) continue; // cul-de-sac terminus is allowed
+        if ((deg.get(end) ?? 0) < 2) continue; // interior stubs asserted separately below
         expect(arterialAt.get(end)! >= 2).toBe(true);
+      }
+    }
+  });
+
+  test("no arterial ever dead-ends at an interior node — wide roads never stub out (#1454)", () => {
+    for (const seed of ["art", "vice-isle", "stub-a", "stub-b", "stub-c"]) {
+      const net = generateStreets(rules({ seed, deadEnds: 0.6, branching: 0.35 }), 300, 300);
+      const deg = new Map(net.nodes.map((n) => [n.id, n.degree] as const));
+      const byId = new Map(net.nodes.map((n) => [n.id, n] as const));
+      const rim = (id: number) => {
+        const n = byId.get(id)!;
+        return Math.abs(n.x) >= 300 - 0.5 || Math.abs(n.z) >= 300 - 0.5;
+      };
+      for (const s of net.streets) {
+        if ((s.level !== "avenue" && s.level !== "boulevard") || s.loop) continue;
+        for (const end of [s.nodes[0]!, s.nodes[s.nodes.length - 1]!]) {
+          expect((deg.get(end) ?? 0) >= 2 || rim(end)).toBe(true);
+        }
+      }
+    }
+  });
+});
+
+describe("planarity (#1454)", () => {
+  test("no two edge chords cross without a shared node — every crossing is a junction", () => {
+    const cross = (a: StreetVec2, b: StreetVec2, c: StreetVec2, d: StreetVec2): boolean => {
+      const rx = b[0] - a[0];
+      const rz = b[1] - a[1];
+      const sx = d[0] - c[0];
+      const sz = d[1] - c[1];
+      const denom = rx * sz - rz * sx;
+      if (Math.abs(denom) < 1e-9) return false;
+      const t = ((c[0] - a[0]) * sz - (c[1] - a[1]) * sx) / denom;
+      const u = ((c[0] - a[0]) * rz - (c[1] - a[1]) * rx) / denom;
+      const eps = 1e-3;
+      return t > eps && t < 1 - eps && u > eps && u < 1 - eps;
+    };
+    // High branching + loopiness + low gridness exercises the chord-reconnect and spur paths hard.
+    for (const seed of ["p1", "p2", "p3", "vice-isle"]) {
+      const net = generateStreets(
+        rules({ seed, branching: 0.8, loopiness: 0.6, deadEnds: 0.1, gridness: 0.3, connectivity: 0.7 }),
+        300,
+        300,
+      );
+      const pos = new Map(net.nodes.map((n) => [n.id, [n.x, n.z] as StreetVec2] as const));
+      for (let i = 0; i < net.edges.length; i += 1) {
+        for (let j = i + 1; j < net.edges.length; j += 1) {
+          const e = net.edges[i]!;
+          const f = net.edges[j]!;
+          if (e.a === f.a || e.a === f.b || e.b === f.a || e.b === f.b) continue;
+          expect(cross(pos.get(e.a)!, pos.get(e.b)!, pos.get(f.a)!, pos.get(f.b)!)).toBe(false);
+        }
       }
     }
   });

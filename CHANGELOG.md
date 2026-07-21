@@ -79,6 +79,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **City generation now enforces plot clearance and planar streets (#1454).** Building plots clear
+  one another and street corridors, building massing fits its plot, landmark footprints avoid roads
+  and overlap, and generated street chords and branches cannot cross without a junction. Interior
+  arterial stubs are demoted, dead ends receive cul-de-sac bulbs, and the playground exposes a
+  linkable plan view plus plot spacing and variety controls.
+
 - **`lifecycle: "always-live"` sentinel + `GameLifecycle` type (#1337).** `defineGame`'s `lifecycle`
   now accepts the string sentinel `"always-live"` alongside a `LifecycleConfig`. It is an explicit,
   truthful declaration that the game has no menu/pause/end screens and runs live from boot — runtime

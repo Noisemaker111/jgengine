@@ -42,7 +42,9 @@
  *
  * Hierarchy is STRUCTURAL, not a length percentile: an approximate edge-betweenness centrality over the
  * grown graph elects a connected arterial skeleton (avenues/boulevards) that never dead-ends at an
- * interior junction of lesser roads; everything else is a local street, spurs are lanes.
+ * interior junction of lesser roads NOR at an interior cul-de-sac (wide roads never stub out
+ * mid-district); everything else is a local street, spurs are lanes. Grown chords and spur lanes
+ * keep the graph planar — no edge ever crosses another without a shared junction node.
  *
  * Circuit mode is a CURVE-FIRST centerline, not a filleted polygon (which read as straights joined by
  * small corner caps). The layout synthesis is unchanged — seeded points scattered, hulled, a random subset
@@ -152,7 +154,7 @@ export interface Street {
   heights?: number[];
 }
 
-/** One crossing or width-changing road seam: patch center/radius plus outgoing arm directions. */
+/** One crossing of three or more streets: patch center/radius plus outgoing arm directions. */
 export interface StreetJunction {
   x: number;
   z: number;
@@ -203,6 +205,8 @@ export interface StreetNetwork {
 /** Fully-defaulted slider set the generator reads. */
 export interface StreetNetworkRules {
   seed: string;
+  /** Organic boundary clipping amount, when supported by the caller. */
+  outline?: number;
   /** 1 = regular lattice nodes; 0 = organic scatter. */
   gridness: number;
   /** 0 = tree (dead-ends); 1 = a single closed circuit. */
@@ -211,6 +215,8 @@ export interface StreetNetworkRules {
   connectivity: number;
   /** Spur-lane density forking off the mains (and, in a circuit, the pit-lane trigger). */
   branching: number;
+  /** Share of branch streets that use residential side-street rules. */
+  residentialBranches?: number;
   /** Fraction of dangling ends kept as cul-de-sacs (vs reconnected). */
   deadEnds: number;
   /** Target node spacing / block size, world units. */
@@ -236,18 +242,6 @@ export interface StreetNetworkRules {
   elevation?: number;
   /** Maximum road slope (rise/run) the grade cap enforces on every street's height sequence. Default 0.07. */
   maxGrade?: number;
-  /** District OUTLINE irregularity, 0..1. 0 (default) keeps the full rectangular footprint —
-   *  byte-identical to a pre-outline network. Rising values clip the lattice to a seeded organic
-   *  boundary blob (low-frequency radial harmonics inside the `hx`/`hz` rect), so every seed grows a
-   *  differently-shaped city — lobes, bays, shaved corners — instead of the same filled square. The
-   *  surviving network is reduced to its largest connected component, so streets always connect.
-   *  Only meaningful for the street net; ignored in circuit mode. */
-  outline?: number;
-  /** Share (0..1) of branch spurs grown as RESIDENTIAL SIDE STREETS — winding 1–3-segment
-   *  street-level chains ending in cul-de-sac bulbs, optionally forking once — instead of the
-   *  legacy single-stub service alleys. 0 (default) keeps the alley-only behavior byte-identical.
-   *  `generateCity` defaults it to 0.6 for the suburb look. */
-  residentialBranches?: number;
   /** SPACE-FILLING circuit layout dial, 0..1. 0 (default) = the hull construction (a flowing loop around
    *  an empty middle), BYTE-IDENTICAL to a pre-compactness network. Rising values switch the circuit
    *  LAYOUT stage to a grid spanning-tree CYCLE that folds back through its own interior: parallel
@@ -539,35 +533,6 @@ function seedLattice(rules: StreetNetworkRules, hx: number, hz: number, rng: () 
   return { nodes, cols, rows, index: (i, j) => j * stride + i };
 }
 
-/**
- * Seeded organic district boundary: a radial blob from 3 low-frequency harmonics over the
- * normalized (u = x/hx, v = z/hz) footprint. Returns an inside-test. At `outline` 0 the caller
- * skips the mask entirely, so the legacy full-rectangle footprint stays byte-identical.
- */
-function makeOutlineMask(
-  outline: number,
-  rng: () => number,
-): (x: number, z: number, hx: number, hz: number) => boolean {
-  // Harmonic amplitudes/phases: k=2 gives lobes/ovals, k=3 tri-lobes, k=5 coastline nibble.
-  const amps = [0.28 + rng() * 0.3, 0.16 + rng() * 0.22, 0.06 + rng() * 0.12];
-  const phases = [rng() * TAU, rng() * TAU, rng() * TAU];
-  const ks = [2, 3, 5];
-  const strength = Math.max(0, Math.min(1, outline));
-  return (x, z, hx, hz) => {
-    const u = x / Math.max(1e-6, hx);
-    const v = z / Math.max(1e-6, hz);
-    const r = Math.hypot(u, v);
-    const theta = Math.atan2(v, u);
-    let h = 0;
-    for (let i = 0; i < ks.length; i += 1) h += amps[i]! * Math.sin(ks[i]! * theta + phases[i]!);
-    // Boundary radius in normalized space: shrinks with the dial, waves with the harmonics. The
-    // 1.16 base keeps mid-edge reach near the rim at low dials while corners (r≈1.41) get shaved —
-    // the mask nibbles lobes and bays out of the silhouette rather than gutting the net.
-    const boundary = 1.16 - strength * 0.24 + strength * 0.38 * h;
-    return r <= Math.max(0.4, boundary);
-  };
-}
-
 interface Uf {
   find: (a: number) => number;
   union: (a: number, b: number) => boolean;
@@ -627,34 +592,19 @@ function buildNet(
   const lattice = seedLattice(rules, hx, hz, streams("lattice"));
   const nodes = lattice.nodes;
   const { cols, rows, index } = lattice;
-  // Organic district outline: nodes outside the seeded boundary blob die before any edge exists,
-  // so the net grows into a seed-unique silhouette instead of always filling the rectangle.
-  const outline = rules.outline ?? 0;
-  const inMask =
-    outline > 0 ? makeOutlineMask(outline, streams("outline")) : null;
-  const dead = new Array<boolean>(nodes.length).fill(false);
-  if (inMask !== null) {
-    for (let n = 0; n < nodes.length; n += 1) {
-      if (!inMask(nodes[n]![0], nodes[n]![1], hx, hz)) dead[n] = true;
-    }
-    // Never let the mask eat the whole lattice (extreme dial + tiny grid): keep at least a 3×3 core.
-    let alive = 0;
-    for (let n = 0; n < nodes.length; n += 1) if (!dead[n]) alive += 1;
-    if (alive < 9) dead.fill(false);
-  }
-  // Candidate lattice edges: right + down neighbors (between surviving nodes only).
+  // Candidate lattice edges: right + down neighbors.
   const candidates: RawEdge[] = [];
   for (let j = 0; j <= rows; j += 1) {
     for (let i = 0; i <= cols; i += 1) {
       const here = index(i, j);
-      if (here >= nodes.length || dead[here]) continue;
+      if (here >= nodes.length) continue;
       if (i < cols) {
         const r = index(i + 1, j);
-        if (r < nodes.length && !dead[r]) candidates.push({ a: here, b: r, lane: false });
+        if (r < nodes.length) candidates.push({ a: here, b: r, lane: false });
       }
       if (j < rows) {
         const d = index(i, j + 1);
-        if (d < nodes.length && !dead[d]) candidates.push({ a: here, b: d, lane: false });
+        if (d < nodes.length) candidates.push({ a: here, b: d, lane: false });
       }
     }
   }
@@ -685,19 +635,31 @@ function buildNet(
     degree[b] += 1;
   };
   for (const e of edges) addAdj(e.a, e.b);
+  // A new chord/spur must keep the graph PLANAR: it may not cross or shadow any edge it does not
+  // share a node with — otherwise two roads overlap mid-segment with no junction node, and every
+  // downstream consumer (blocks, lots, renderers) sees pavement crossing pavement with no crossing.
+  const corridorClear = rules.width * 1.6;
+  const chordClear = (a: StreetVec2, b: StreetVec2, endA: number, endB: number): boolean => {
+    for (const e of edges) {
+      if (e.a === endA || e.b === endA || e.a === endB || e.b === endB) continue;
+      if (segSegDistance(a, b, nodes[e.a]!, nodes[e.b]!) < corridorClear) return false;
+    }
+    return true;
+  };
   const loopRng = streams("loops");
   for (let n = 0; n < nodes.length; n += 1) {
     if (degree[n] !== 1) continue;
     const keep = loopRng() < rules.deadEnds;
     if (keep) continue; // becomes a cul-de-sac
     if (loopRng() > rules.loopiness + 0.15) continue; // otherwise mostly left as-is
-    // Reconnect to the nearest node that isn't already a neighbor, forming a loop.
+    // Reconnect to the nearest node that isn't already a neighbor, forming a loop — but only via a
+    // chord that stays clear of every unrelated edge (no node-less crossings).
     let best = -1;
     let bestD = Infinity;
     for (let m = 0; m < nodes.length; m += 1) {
-      if (m === n || dead[m] || adj.get(n)?.has(m)) continue;
+      if (m === n || adj.get(n)?.has(m)) continue;
       const d = Math.hypot(nodes[n]![0] - nodes[m]![0], nodes[n]![1] - nodes[m]![1]);
-      if (d < bestD && d < rules.segmentLength * 1.8) {
+      if (d < bestD && d < rules.segmentLength * 1.8 && chordClear(nodes[n]!, nodes[m]!, n, m)) {
         bestD = d;
         best = m;
       }
@@ -708,105 +670,76 @@ function buildNet(
     }
   }
 
-  // 4. branching — spurs forking outward off existing nodes. A spur is either a service ALLEY
-  // (the legacy single lane-level stub) or — at `residentialBranches` > 0 — a RESIDENTIAL BRANCH:
-  // a short winding street-level chain of 1–3 segments — the "one street off the main with just
-  // houses on it" suburb move — ending in a dangling node that downstream becomes a cul-de-sac
-  // bulb, and occasionally forking once. At the 0 default the pass replays the legacy alley
-  // behavior byte-identically (same rng draw order, same acceptance rules).
-  const spurCount = Math.min(Math.round(rules.branching * nodes.length * 0.6), MAX_LANES);
-  const residentialShare = Math.max(0, Math.min(1, rules.residentialBranches ?? 0));
+  // 4. branching — spur lanes (alleys) forking off MID-BLOCK, ending in a fresh cul-de-sac node.
+  // An alley leaves its street at a right angle from the middle of a block face — never from a
+  // junction (where it would shadow a road) and never at a random diagonal (which reads as a
+  // glitch cutting through the grid). The host edge is split at the branch point so the graph
+  // stays planar and the crossing is a real T node.
+  const laneCount = Math.min(Math.round(rules.branching * nodes.length * 0.6), MAX_LANES);
   const branchRng = streams("branches");
-  // Grow one spur segment from `from` toward `angle`; returns the new node id or -1 when rejected.
-  const growSegment = (from: number, angle: number, len: number, lane: boolean, clashRadius: number, crossCheck: boolean): number => {
-    const fp = nodes[from]!;
-    const nx = fp[0] + Math.cos(angle) * len;
-    const nz = fp[1] + Math.sin(angle) * len;
-    if (Math.abs(nx) > hx - 1 || Math.abs(nz) > hz - 1) return -1;
-    if (inMask !== null && !inMask(nx, nz, hx, hz)) return -1;
-    if (crossCheck) {
-      // Near-parallel arms necessarily overlap for a long run at their shared node. Reject that
-      // topology instead of asking the junction mesher to hide it under an enormous apron.
-      const ux = Math.cos(angle);
-      const uz = Math.sin(angle);
-      const minGap = (35 * Math.PI) / 180;
-      for (const e of edges) {
-        if (e.a !== from && e.b !== from) continue;
-        const other = e.a === from ? e.b : e.a;
-        const op = nodes[other]!;
-        const dx = op[0] - fp[0];
-        const dz = op[1] - fp[1];
-        const d = Math.hypot(dx, dz) || 1;
-        const gap = Math.acos(Math.max(-1, Math.min(1, (ux * dx + uz * dz) / d)));
-        if (gap < minGap) return -1;
+  for (let b = 0; b < laneCount && nodes.length + 2 <= MAX_NODES && edges.length + 2 <= MAX_EDGES; b += 1) {
+    const ei = Math.floor(branchRng() * edges.length);
+    const hostEdge = edges[ei]!;
+    const tRoll = 0.35 + branchRng() * 0.3;
+    const sideRoll = branchRng() < 0.5 ? Math.PI / 2 : -Math.PI / 2;
+    const jitter = (branchRng() - 0.5) * (1 - rules.gridness) * (Math.PI / 2) * 0.8;
+    const baseLen = rules.segmentLength * (0.6 + branchRng() * 0.7);
+    if (hostEdge.lane) continue; // alleys fork off streets, not off other alleys
+    const pa = nodes[hostEdge.a]!;
+    const pb = nodes[hostEdge.b]!;
+    const hostLen = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]);
+    if (hostLen < rules.segmentLength * 0.5) continue; // too short a face to host an alley
+    const mid: StreetVec2 = [pa[0] + (pb[0] - pa[0]) * tRoll, pa[1] + (pb[1] - pa[1]) * tRoll];
+    const edgeDir = Math.atan2(pb[1] - pa[1], pb[0] - pa[0]);
+    // Try both perpendicular sides and progressively shorter lanes until one candidate keeps the
+    // graph planar and clear — a blocked alley shrinks before it is abandoned.
+    let tip: StreetVec2 | null = null;
+    for (const flip of [0, Math.PI]) {
+      if (tip !== null) break;
+      for (const lenF of [1, 0.72, 0.52]) {
+        const angle = edgeDir + sideRoll + flip + jitter;
+        const len = baseLen * lenF;
+        if (len < rules.segmentLength * 0.3) break;
+        const nx = mid[0] + Math.cos(angle) * len;
+        const nz = mid[1] + Math.sin(angle) * len;
+        if (Math.abs(nx) > hx - 1 || Math.abs(nz) > hz - 1) continue;
+        // Reject spurs whose tip would land on top of an existing node.
+        let clash = false;
+        for (let m = 0; m < nodes.length; m += 1) {
+          if (Math.hypot(nodes[m]![0] - nx, nodes[m]![1] - nz) < rules.segmentLength * 0.45) {
+            clash = true;
+            break;
+          }
+        }
+        if (clash) continue;
+        // Planarity: the spur may not cross/shadow any edge other than the host it forks from.
+        const candidate: StreetVec2 = [nx, nz];
+        let blocked = false;
+        for (let k = 0; k < edges.length; k += 1) {
+          if (k === ei) continue;
+          const e = edges[k]!;
+          if (segSegDistance(mid, candidate, nodes[e.a]!, nodes[e.b]!) < corridorClear) {
+            blocked = true;
+            break;
+          }
+        }
+        if (!blocked) {
+          tip = candidate;
+          break;
+        }
       }
     }
-    // Reject a segment that would land on an existing node…
-    for (let m = 0; m < nodes.length; m += 1) {
-      if (m === from) continue;
-      if (Math.hypot(nodes[m]![0] - nx, nodes[m]![1] - nz) < clashRadius) return -1;
-    }
-    // …or slice across an existing edge (a branch must stay a branch, never a fake crossing).
-    if (crossCheck) {
-      for (const e of edges) {
-        if (e.a === from || e.b === from) continue;
-        if (segSegDistance(fp, [nx, nz], nodes[e.a]!, nodes[e.b]!) < rules.width * 1.6) return -1;
-      }
-    }
-    const id = nodes.length;
-    nodes.push([nx, nz]);
-    edges.push({ a: from, b: id, lane });
-    return id;
-  };
-  for (let b = 0; b < spurCount && nodes.length < MAX_NODES; b += 1) {
-    const host = Math.floor(branchRng() * nodes.length);
-    if (dead[host] === true) continue;
-    // Short-circuit keeps the rng draw order identical to the legacy path at share 0.
-    const residential = residentialShare > 0 && branchRng() < residentialShare;
-    if (!residential) {
-      // Service alley: one lane-level stub, the legacy look (legacy clash radius, no cross check).
-      growSegment(host, branchRng() * TAU, rules.segmentLength * (0.6 + branchRng() * 0.7), true, rules.segmentLength * 0.45, residentialShare > 0);
-      continue;
-    }
-    // Residential branch: 1–3 chained street-level segments with a drifting heading (reads as one
-    // winding side street once chained), with at most one early fork.
-    const segments = 1 + Math.floor(branchRng() * 3);
-    let heading = branchRng() * TAU;
-    let cursor = host;
-    for (let s = 0; s < segments && nodes.length < MAX_NODES; s += 1) {
-      const len = rules.segmentLength * (0.5 + branchRng() * 0.35);
-      const next = growSegment(cursor, heading, len, false, rules.segmentLength * 0.4, true);
-      if (next < 0) break;
-      if (s === 0 && branchRng() < 0.25) {
-        // Early fork: a short sibling street off the first branch node.
-        growSegment(next, heading + (branchRng() < 0.5 ? 1 : -1) * (0.9 + branchRng() * 0.5), rules.segmentLength * (0.45 + branchRng() * 0.3), false, rules.segmentLength * 0.4, true);
-      }
-      heading += (branchRng() - 0.5) * 1.1;
-      cursor = next;
-    }
+    if (tip === null) continue;
+    const midId = nodes.length;
+    nodes.push(mid);
+    const tipId = nodes.length;
+    nodes.push(tip);
+    // Split the host edge at the branch point; both halves keep the host's street role.
+    edges[ei] = { a: hostEdge.a, b: midId, lane: false };
+    edges.push({ a: midId, b: hostEdge.b, lane: false });
+    edges.push({ a: midId, b: tipId, lane: true });
   }
-  let finalEdges = edges.slice(0, MAX_EDGES);
-  if (inMask !== null && finalEdges.length > 0) {
-    // The blob can pinch the lattice into separate islands; keep only the largest component so the
-    // network stays one connected city.
-    const comp = makeUf(nodes.length);
-    for (const e of finalEdges) comp.union(e.a, e.b);
-    const sizes = new Map<number, number>();
-    for (const e of finalEdges) {
-      const root = comp.find(e.a);
-      sizes.set(root, (sizes.get(root) ?? 0) + 1);
-    }
-    let bestRoot = -1;
-    let bestSize = -1;
-    for (const [root, size] of sizes) {
-      if (size > bestSize) {
-        bestSize = size;
-        bestRoot = root;
-      }
-    }
-    finalEdges = finalEdges.filter((e) => comp.find(e.a) === bestRoot);
-  }
-  return { nodes, edges: finalEdges };
+  return { nodes, edges: edges.slice(0, MAX_EDGES) };
 }
 
 /** Convex hull (Andrew's monotone chain), returns hull points CCW. */
@@ -837,8 +770,22 @@ function convexHull(pts: StreetVec2[]): StreetVec2[] {
   return lower.concat(upper);
 }
 
-/** Minimum distance between two line segments in the XZ plane. */
+/** True when segments p1–p2 and p3–p4 intersect (including touching). */
+function segSegIntersects(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): boolean {
+  const rx = p2[0] - p1[0];
+  const rz = p2[1] - p1[1];
+  const sx = p4[0] - p3[0];
+  const sz = p4[1] - p3[1];
+  const denom = rx * sz - rz * sx;
+  if (Math.abs(denom) < 1e-12) return false; // parallel — the distance test covers overlap
+  const t = ((p3[0] - p1[0]) * sz - (p3[1] - p1[1]) * sx) / denom;
+  const u = ((p3[0] - p1[0]) * rz - (p3[1] - p1[1]) * rx) / denom;
+  return t >= 0 && t <= 1 && u >= 0 && u <= 1;
+}
+
+/** Minimum distance between two line segments in the XZ plane (0 when they intersect). */
 function segSegDistance(p1: StreetVec2, p2: StreetVec2, p3: StreetVec2, p4: StreetVec2): number {
+  if (segSegIntersects(p1, p2, p3, p4)) return 0;
   const pointSeg = (p: StreetVec2, a: StreetVec2, b: StreetVec2): number => {
     const abx = b[0] - a[0];
     const abz = b[1] - a[1];
@@ -1922,15 +1869,8 @@ function levelForStreets(
 ): StreetLevel[] {
   const levels = new Array<StreetLevel>(chains.length).fill("street");
   // Centrality score per non-lane chain: sum of endpoint-node betweenness weighted by chain length.
-  // A chain that DEAD-ENDS (an endpoint no other chain reaches — residential branches, cul-de-sacs)
-  // is never arterial: arterials are through-routes, and a bulb-capped boulevard reads absurd.
   const score = chains.map((c) => {
     if (c.lane) return -1;
-    if (!c.loop) {
-      const first = c.nodes[0]!;
-      const last = c.nodes[c.nodes.length - 1]!;
-      if ((ctx.chainsAt.get(first)?.length ?? 0) <= 1 || (ctx.chainsAt.get(last)?.length ?? 0) <= 1) return -1;
-    }
     let s = 0;
     for (const nid of c.nodes) s += ctx.bt[nid] ?? 0;
     return s * Math.max(1, c.length);
@@ -1941,15 +1881,27 @@ function levelForStreets(
   const arterialCut = Math.max(1, Math.ceil(nonLane.length * 0.28));
   for (let r = 0; r < ranked.length && arterial.size < arterialCut; r += 1) arterial.add(ranked[r]!);
 
+  // A wide road must never stub out mid-district: an arterial chain whose end dangles at an
+  // INTERIOR degree-1 node is demoted to a local street — cul-de-sacs are fine for streets and
+  // lanes, but a boulevard/avenue that just stops mid-map reads as broken pavement. Rim endpoints
+  // stay arterial (the road exits the district).
+  const interiorDeadEnd = (ci: number): boolean => {
+    const chain = chains[ci]!;
+    if (chain.loop) return false;
+    for (const endNode of [chain.nodes[0]!, chain.nodes[chain.nodes.length - 1]!]) {
+      if ((ctx.degree[endNode] ?? 0) <= 1 && !ctx.isRim(endNode)) return true;
+    }
+    return false;
+  };
   // Connectivity repair: an arterial chain must not terminate at an interior junction whose other
-  // chains are all non-arterial. Extend through the most-central neighbor, or demote if impossible.
+  // chains are all non-arterial, and must not dead-end at an interior node. Extend through the
+  // most-central non-stub neighbor, or demote when impossible.
   const bestNeighborAt = (node: number, self: number): number => {
     const here = ctx.chainsAt.get(node) ?? [];
     let best = -1;
     let bestScore = -Infinity;
     for (const ci of here) {
-      if (ci === self || chains[ci]!.lane || arterial.has(ci)) continue;
-      if (score[ci]! < 0) continue; // never extend an artery into a dead-ending branch
+      if (ci === self || chains[ci]!.lane || arterial.has(ci) || interiorDeadEnd(ci)) continue;
       if (score[ci]! > bestScore) {
         bestScore = score[ci]!;
         best = ci;
@@ -1966,9 +1918,14 @@ function levelForStreets(
     for (const ci of Array.from(arterial)) {
       const chain = chains[ci]!;
       if (chain.loop) continue; // a closed ring has no dangling terminus
+      if (interiorDeadEnd(ci)) {
+        arterial.delete(ci);
+        changed = true;
+        continue;
+      }
       for (const endNode of [chain.nodes[0]!, chain.nodes[chain.nodes.length - 1]!]) {
         if (ctx.isRim(endNode)) continue; // rim endpoints are fine
-        if ((ctx.degree[endNode] ?? 0) < 2) continue; // a genuine cul-de-sac terminus is fine
+        if ((ctx.degree[endNode] ?? 0) < 2) continue; // unreachable for arterials (demoted above)
         const here = ctx.chainsAt.get(endNode) ?? [];
         const connected = here.some((other) => other !== ci && arterial.has(other));
         if (connected) continue;
@@ -1984,7 +1941,10 @@ function levelForStreets(
       }
     }
   }
-  if (arterial.size === 0 && ranked.length > 0) arterial.add(ranked[0]!);
+  if (arterial.size === 0 && ranked.length > 0) {
+    const fallback = ranked.find((ci) => !interiorDeadEnd(ci)) ?? ranked[0]!;
+    arterial.add(fallback);
+  }
 
   for (let ci = 0; ci < chains.length; ci += 1) {
     if (chains[ci]!.lane) {
@@ -2302,8 +2262,8 @@ export function generateStreets(
     loop: boolean;
   }
   const chains: Chain[] = [];
-  // Keep hard net corners as separate named/render runs (a pure grid remains axis-aligned), but the
-  // degree-2 seam is emitted as a welded junction below instead of leaving two square caps exposed.
+  // In a street net, a chain ends where the road bends hard, so streets read as straight runs (and a
+  // pure grid stays axis-aligned); a circuit chains its whole ring through every gentle corner.
   const chainSplit = mode === "circuit" ? Math.PI : (55 * Math.PI) / 180;
   const chordTurn = (prev: number, mid: number, next: number): number => {
     const ux = rawNodes[mid]![0] - rawNodes[prev]![0];
@@ -2332,7 +2292,7 @@ export function generateStreets(
         if (nextConn === undefined) break;
         if (rawEdges[nextConn.edge]!.lane !== lane) break;
         const prevTip = dir === 1 ? nodesSeq[nodesSeq.length - 2]! : nodesSeq[1]!;
-        if (chordTurn(prevTip, tip, nextConn.other) > chainSplit) break;
+        if (chordTurn(prevTip, tip, nextConn.other) > chainSplit) break; // road bends hard → end street
         usedEdge[nextConn.edge] = true;
         if (dir === 1) {
           // Closing the loop = reaching the far (unchanging) end, which is index 0 going forward.
@@ -2476,18 +2436,10 @@ export function generateStreets(
     streets.push(street);
   });
 
-  // A degree-2 node normally disappears inside one continuous, filleted street. If its edges could
-  // not chain (for example a lane meeting a wider street), retain it as a two-arm welded seam.
-  const edgeChain = new Array<number>(rawEdges.length).fill(-1);
-  chains.forEach((chain, ci) => {
-    for (const edge of chain.edges) edgeChain[edge] = ci;
-  });
-
-  // --- junctions from crossings and unchained degree-2 seams; arms from incident edge tangents ---
+  // --- junctions from degree≥3 nodes; arms from incident edge tangents ---
   const junctions: StreetJunction[] = [];
   for (let n = 0; n < rawNodes.length; n += 1) {
-    if (degree[n] < 2) continue;
-    if (degree[n] === 2 && edgeChain[adj[n]![0]!.edge] === edgeChain[adj[n]![1]!.edge]) continue;
+    if (degree[n] < 3) continue;
     const arms: { angle: number; width: number }[] = [];
     let radius = 0;
     let level: StreetLevel = "lane";

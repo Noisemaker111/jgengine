@@ -82,6 +82,7 @@ import {
   polygonMeanWidth,
   polygonsOverlap,
   insetRingUniform,
+  rectsSeparated,
   ringBounds,
   type Vec2,
 } from "./cityGeometry";
@@ -1022,51 +1023,6 @@ class StreetIndex {
     }
     return null;
   }
-}
-
-/** Separating-axis test for two rotated rectangles (center, half-extents, yaw): true when a gap exists. */
-function rectsSeparated(
-  a: { x: number; z: number; hw: number; hd: number; angle: number },
-  b: { x: number; z: number; hw: number; hd: number; angle: number },
-): boolean {
-  const axes: [number, number][] = [];
-  for (const angle of [a.angle, b.angle]) {
-    axes.push([Math.cos(angle), -Math.sin(angle)], [Math.sin(angle), Math.cos(angle)]);
-  }
-  const corners = (r: typeof a): [number, number][] => {
-    const c = Math.cos(r.angle);
-    const s = Math.sin(r.angle);
-    const out: [number, number][] = [];
-    for (const [dx, dz] of [
-      [r.hw, r.hd],
-      [r.hw, -r.hd],
-      [-r.hw, r.hd],
-      [-r.hw, -r.hd],
-    ] as const) {
-      out.push([r.x + dx * c + dz * s, r.z - dx * s + dz * c]);
-    }
-    return out;
-  };
-  const ca = corners(a);
-  const cb = corners(b);
-  for (const [ax, az] of axes) {
-    let minA = Infinity,
-      maxA = -Infinity,
-      minB = Infinity,
-      maxB = -Infinity;
-    for (const [x, z] of ca) {
-      const p = x * ax + z * az;
-      if (p < minA) minA = p;
-      if (p > maxA) maxA = p;
-    }
-    for (const [x, z] of cb) {
-      const p = x * ax + z * az;
-      if (p < minB) minB = p;
-      if (p > maxB) maxB = p;
-    }
-    if (maxA < minB || maxB < minA) return true; // gap on this axis → no overlap
-  }
-  return false;
 }
 
 interface PlacedLot {

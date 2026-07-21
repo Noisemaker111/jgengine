@@ -2475,8 +2475,9 @@
 - `FRONTAGE_FILL_REFERENCE` (const): const FRONTAGE_FILL_REFERENCE: 0.45 — Frontage-fill reference point: at this dial value the compaction is a no-op (legacy spacing/width), so callers can leave `blockFill` unset for the classic look and this value reproduces it exactly.
 - `LotArea` (interface): interface LotArea — Rectangular clip region lots must fall within (world center + half-extents).
 - `PlacedBuildingLot` (interface): interface PlacedBuildingLot — One placed building lot: where a building stands and how it is turned to face its road.
+- `PlotVariant` (interface): interface PlotVariant extends WorldBounds — One weighted plot size a frontage can mix in: `w` along the road, `d` into the block.
 - `RoadFrontage` (interface): interface RoadFrontage — One road the frontage placer lines with buildings: a centerline polyline and its full width.
-- `deriveBuildingLots` (function): function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] — Derive street-aligned building lots from road frontage. Lots are stepped along each road at `footprint.w + spacing`, offset to each side by `width / 2 + setback + footprint.d / 2`, and turned to face the road. Cross-road overlaps are rejected by a bounded nearest-neighbour test, so two roads meeting at a corner don't stack buildings. Deterministic: identical inputs (including seed) always yield the identical list.
+- `deriveBuildingLots` (function): function deriveBuildingLots(options: BuildingLotOptions): PlacedBuildingLot[] — Derive street-aligned building lots (PLOTS) from road frontage. Each side of each road walks the frontage placing plots at `plot.w + spacing` pitch — rolling the next plot size from the weighted `footprint` variants when several are given — offset outward by `width / 2 + setback + plot.d / 2` and turned to face the road. The PLOT CONTRACT is enforced here, exactly: no two plots ever overlap (true oriented-rect separation with the spacing gap, so corners and curved frontage can't stack buildings), and no plot footprint ever touches any road corridor in `roads` or `avoid` — not just its own frontage road. Deterministic: identical inputs (including seed) always yield the identical list.
 
 ## @jgengine/core/world/buildings
 
@@ -2598,6 +2599,7 @@
 
 ## @jgengine/core/world/cityGeometry
 
+- `OrientedRect` (interface): interface OrientedRect — A rotated rectangle: center, half-extents, and yaw in the engine rotationY convention.
 - `Vec2` (type): type Vec2 = readonly [number, number] — Deterministic 2D polygon math for the `city` studio's block/parcel pipeline: signed areas, point-in-polygon, half-plane clipping, per-edge inward insets (the curb → sidewalk → land and parcel → buildable transforms), simple-loop recovery after aggressive insets, and rotated-rect fitting inside arbitrary polygons. Pure functions over `[x, z]` tuples — no allocation-heavy classes, no rendering, no randomness — so every consumer from the resolver to the tests shares one geometric truth.
 - `clipHalfPlane` (function): function clipHalfPlane(ring: readonly Vec2[], normal: Vec2, limit: number): Vec2[] — Clip a polygon to the half-plane `dot(p, normal) <= limit` (Sutherland–Hodgman step). Returns the surviving ring, possibly empty. The subject may be concave; the output of a single half-plane clip of a simple ring is always a valid (possibly pinched) ring.
 - `dedupeRing` (function): function dedupeRing(ring: readonly Vec2[], epsilon = 1e-6): Vec2[] — Remove consecutive (near-)duplicate vertices; returns [] when fewer than 3 survive.
@@ -2615,8 +2617,10 @@
 - `polygonSignedArea` (function): function polygonSignedArea(ring: readonly Vec2[]): number — Signed area of a polygon ring (positive = counter-clockwise in XZ).
 - `polygonsOverlap` (function): function polygonsOverlap(a: readonly Vec2[], b: readonly Vec2[], shrink = 0.05): boolean — Conservative polygon-overlap test: any vertex of one strictly inside the other, or any edges crossing.
 - `rayDistanceToRing` (function): function rayDistanceToRing(ring: readonly Vec2[], origin: Vec2, dir: Vec2, minT = 0.6): number — Distance from `origin` along `dir` to the first ring-boundary crossing (ignoring hits closer than `minT`, e.g. the edge the origin sits on). Infinity when the ray never leaves — degenerate.
+- `rectClearsPolyline` (function): function rectClearsPolyline(rect: OrientedRect, path: readonly Vec2[], clearance: number): boolean — True when a rotated rect stays at least `clearance` away from every segment of a polyline — the plot-contract test that keeps building plots off road corridors (pass the road half-width as the clearance). Exact segment-vs-expanded-rect intersection, not corner sampling.
 - `rectCorners` (function): function rectCorners(cx: number, cz: number, hw: number, hd: number, rotationY: number): Vec2[] — All four corners of a rotated rect (center, half-extents, yaw in engine rotationY convention).
 - `rectInsidePolygon` (function): function rectInsidePolygon(ring: readonly Vec2[], cx: number, cz: number, hw: number, hd: number, rotationY: number): boolean — True when the whole rotated rect (corners + edge midpoints) sits inside the ring.
+- `rectsSeparated` (function): function rectsSeparated(a: OrientedRect, b: OrientedRect): boolean — Separating-axis test for two rotated rectangles: true when a gap exists (no overlap).
 - `ringBounds` (function): function ringBounds(ring: readonly Vec2[]): { minX: number; minZ: number; maxX: number; maxZ: number } — Axis-aligned bounding box of a ring.
 - `ringSelfIntersects` (function): function ringSelfIntersects(ring: readonly Vec2[]): boolean — True when any two non-adjacent edges of the ring properly cross. O(n²), fine for block-scale n.
 - `splitByLine` (function): function splitByLine(ring: readonly Vec2[], normal: Vec2, limit: number): { below: Vec2[]; above: Vec2[] } — Split a polygon by the line `dot(p, normal) = limit` into the `<=` and `>=` sides.
@@ -3217,7 +3221,7 @@
 - `StreetFeature` (interface): interface StreetFeature — A resolved path feature in world-of-the-volume space: a bridge deck or tunnel bore centerline.
 - `StreetFeatureKind` (type): type StreetFeatureKind = "bridge" | "tunnel" — A path feature spanning part of an edge/street: a bridge deck over a gap or a tunnel bore under a ridge.
 - `StreetFeatureSpan` (interface): interface StreetFeatureSpan — A feature span carried by a street: a `[from, to]` index window into the street's `points`.
-- `StreetJunction` (interface): interface StreetJunction — One crossing or width-changing road seam: patch center/radius plus outgoing arm directions.
+- `StreetJunction` (interface): interface StreetJunction — One crossing of three or more streets: patch center/radius plus outgoing arm directions.
 - `StreetLevel` (type): type StreetLevel = "boulevard" | "avenue" | "street" | "lane" — Road hierarchy, widest to narrowest — shared by the city fabric and the renderer.
 - `StreetNetwork` (interface): interface StreetNetwork — The fully-resolved network in volume-local coords.
 - `StreetNetworkContext` (interface): interface StreetNetworkContext — Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network.
