@@ -583,8 +583,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `environment` (function) · `import { environment } from "@jgengine/core/world"`
 
-## world-intersections — trim streets at junctions and weld curb-return crossing surfaces in one call
+## world-intersections — connect linear road dressing through two-arm bends
 
+- `buildJunctionConnector` (function) · `import { buildJunctionConnector } from "@jgengine/core/world/roads"`
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
 - `trimBandAtJunctions` (function) · `import { trimBandAtJunctions } from "@jgengine/core/world"`
 

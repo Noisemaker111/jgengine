@@ -2,6 +2,7 @@ import { steerYaw } from "@jgengine/core/movement/steering";
 import { DEFAULT_GRIP_CURVE, sampleGripCurve } from "@jgengine/core/physics/vehicleBody";
 
 import { blockedZ } from "../route/gates";
+import { CORRIDOR_DRIVE_HALF_WIDTH } from "../run/constants";
 import type { KartTuning } from "../parts/build";
 
 const METERS_PER_SECOND_TO_KMH = 3.6;
@@ -88,7 +89,8 @@ export function createVehicleController(spawn: {
       vx = fx * forwardSpeed - fz * newLateral;
       vz = fz * forwardSpeed + fx * newLateral;
 
-      const candidateX = x + vx * dt;
+      const candidateX = Math.max(-CORRIDOR_DRIVE_HALF_WIDTH, Math.min(CORRIDOR_DRIVE_HALF_WIDTH, x + vx * dt));
+      if (candidateX !== x + vx * dt) vx = 0;
       const candidateZ = z + vz * dt;
       const allowedZ = blockedZ(candidateX, z, candidateZ, tuning);
       const blockedByGate = allowedZ < candidateZ - 1e-6;

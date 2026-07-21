@@ -52,12 +52,22 @@ export function placeZoneDressing(ctx: GameContext): readonly PropRow[] {
   return rows.sort((a, b) => a.z - b.z);
 }
 
+/** Width covered by a single barricade prop — segments are tiled to seal a wider span. */
+const BARRICADE_SEGMENT_WIDTH = 8;
+
 export function placeGateBarricades(ctx: GameContext): void {
   for (const gate of ROUTE_GATES) {
     const catalogId = gate.requirement === "plow" ? GATE_BARRICADE_PLOW : GATE_BARRICADE_JUMP;
-    const centerX = (gate.laneX[0] + gate.laneX[1]) / 2;
-    const y = ctx.world.groundHeightAt(centerX, gate.atZ);
-    placeIdempotent(ctx, catalogId, centerX, y, gate.atZ, `gate-${gate.id}`);
+    const span = gate.laneX[1] - gate.laneX[0];
+    // +1 so the even spacing lands at <= one segment width apart and the props seal the span solidly.
+    const segments = Math.max(1, Math.ceil(span / BARRICADE_SEGMENT_WIDTH) + 1);
+    for (let i = 0; i < segments; i += 1) {
+      // Even spacing across [laneX[0], laneX[1]] so a corridor-spanning gate reads as a solid wall.
+      const t = segments === 1 ? 0.5 : i / (segments - 1);
+      const segX = gate.laneX[0] + t * span;
+      const y = ctx.world.groundHeightAt(segX, gate.atZ);
+      placeIdempotent(ctx, catalogId, segX, y, gate.atZ, `gate-${gate.id}-${i}`);
+    }
   }
 }
 

@@ -1,6 +1,15 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
+import * as THREE from "three";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-import { probeModelUrl } from "./modelLoad";
+import type { AssetLoadDiagnosis } from "@jgengine/core/scene/assetDiagnostics";
+
+import {
+  armTextureErrors,
+  textureErrorsSnapshot,
+} from "@jgengine/core/devtools/textureErrors";
+
+import { createFallbackModel, handleModelLoadFailure, probeModelUrl, recordManagerLoadError } from "./modelLoad";
 
 function stubResponse(body: Uint8Array, init: { status?: number; contentType?: string; statusText?: string }): Response {
   return new Response(body, {
@@ -63,5 +72,126 @@ describe("probeModelUrl", () => {
     );
     expect(diagnosis.kind).toBe("missing");
     expect(diagnosis.ok).toBe(false);
+  });
+});
+
+describe("createFallbackModel", () => {
+  test("produces a mountable GLTF whose scene is a single placeholder primitive", () => {
+    const gltf = createFallbackModel();
+    expect(gltf.scene).toBeInstanceOf(THREE.Group);
+    const meshes: THREE.Mesh[] = [];
+    gltf.scene.traverse((object) => {
+      if ((object as THREE.Mesh).isMesh) meshes.push(object as THREE.Mesh);
+    });
+    expect(meshes.length).toBe(1);
+    expect(meshes[0]!.geometry).toBeInstanceOf(THREE.BufferGeometry);
+    expect(gltf.animations).toEqual([]);
+    expect(gltf.userData.jgengineFallback).toBe(true);
+  });
+
+  test("stashes the diagnosis on userData for debugging", () => {
+    const diagnosis: AssetLoadDiagnosis = {
+      kind: "html",
+      ok: false,
+      url: "/models/missing/Prop.glb",
+      byteSignature: "html",
+      message: "missing",
+    };
+    expect(createFallbackModel(diagnosis).userData.jgengineDiagnosis).toBe(diagnosis);
+  });
+});
+
+describe("recordManagerLoadError (texture-error probe wiring)", () => {
+  afterEach(() => armTextureErrors(false));
+
+  test("records a texture/image sub-resource failure into the debug_snapshot probe", () => {
+    armTextureErrors(true);
+    // The shared LoadingManager's onError fires for a GLTF texture that 404'd while the model resolved.
+    recordManagerLoadError("/models/nature/textures/bark.png");
+    recordManagerLoadError("/models/nature/textures/bark.png");
+    expect(textureErrorsSnapshot()).toEqual([{ url: "/models/nature/textures/bark.png", count: 2 }]);
+  });
+
+  test("ignores the model container itself (already covered by the model-fallback probe)", () => {
+    armTextureErrors(true);
+    recordManagerLoadError("/models/nature/Tree.glb");
+    recordManagerLoadError("/models/nature/Tree.gltf?v=2");
+    expect(textureErrorsSnapshot()).toEqual([]);
+  });
+});
+
+describe("handleModelLoadFailure", () => {
+  const htmlDiagnosis: AssetLoadDiagnosis = {
+    kind: "html",
+    ok: false,
+    url: "/models/missing/Prop.glb",
+    byteSignature: "html",
+    message: 'Asset "/models/missing/Prop.glb" resolved to an HTML page, not a model.',
+  };
+
+  test("an HTML-instead-of-GLB response resolves to a fallback primitive and never calls onError", async () => {
+    let loaded: GLTF | null = null;
+    let errored = false;
+    const warnings: string[] = [];
+    await handleModelLoadFailure(
+      "/models/missing/Prop.glb",
+      new Error("Unexpected token < in JSON"),
+      (gltf) => {
+        loaded = gltf;
+      },
+      () => {
+        errored = true;
+      },
+      { probe: async () => htmlDiagnosis, warn: (m) => warnings.push(m) },
+    );
+    expect(errored).toBe(false);
+    expect(loaded).not.toBeNull();
+    expect((loaded as unknown as GLTF).scene).toBeInstanceOf(THREE.Group);
+    expect((loaded as unknown as GLTF).userData.jgengineFallback).toBe(true);
+    expect(warnings).toHaveLength(1);
+    expect(warnings[0]).toContain("HTML page");
+  });
+
+  test("a 404 (missing) response also resolves to the fallback primitive", async () => {
+    let loaded = false;
+    let errored = false;
+    await handleModelLoadFailure(
+      "/models/x.glb",
+      new Error("parse failed"),
+      () => {
+        loaded = true;
+      },
+      () => {
+        errored = true;
+      },
+      {
+        probe: async () => ({ kind: "missing", ok: false, url: "/models/x.glb", byteSignature: "empty", message: "gone" }),
+        warn: () => {},
+      },
+    );
+    expect(loaded).toBe(true);
+    expect(errored).toBe(false);
+  });
+
+  test("a genuine parse error over valid-looking bytes is surfaced through onError, not swallowed", async () => {
+    let loaded = false;
+    let erroredWith: unknown = null;
+    const original = new Error("draco decode failed");
+    await handleModelLoadFailure(
+      "/models/real.glb",
+      original,
+      () => {
+        loaded = true;
+      },
+      (event) => {
+        erroredWith = event;
+      },
+      {
+        probe: async () => ({ kind: "ok", ok: true, url: "/models/real.glb", byteSignature: "glb", message: "ok" }),
+        warn: () => {},
+      },
+    );
+    expect(loaded).toBe(false);
+    expect(erroredWith).toBe(original);
   });
 });

@@ -53,8 +53,33 @@ At publish, rename this heading to the new version and mirror the entries into
   straight line through an arc is a fake beam. The `projectile.settled` event and `ProjectileSettleReport`
   gain a required `ballistic: boolean`; code that emits or consumes them directly must set/handle the field.
 
+### Fixed
+
+- **Generated street dressing now connects through bends and junctions.** `buildJunctionConnector`
+  exposes shared tangent-continuous connector paths for sidewalks, curbs, and markings; the website
+  playground renders continuous sidewalk aprons and lane paint, and its deterministic query controls
+  can focus a junction for close-up inspection. The capture workflow now also supports managed website
+  screenshots and videos with Chrome-safe ports, lazy Vite targets, and fail-fast navigation errors.
+- **Generated street bends and intersections now form compact, welded road geometry.** Hard degree-2
+  turns are emitted as owned two-arm joins with tangent-continuous inner and outer curbs instead of two
+  overlapping square caps; multi-arm curb returns bow into the crossing instead of ballooning outward;
+  unequal-width seams remain welded; and residential branches reject near-parallel departures that
+  inherently overlap their host road. The playground camera override now supports true close-up orbits
+  down to 8 world units, and `bun run shoot --fixture StreetGeometryPreview` provides deterministic
+  close-ups of turns and unequal multi-arm intersections.
+- **`assets pull` / `assets add` default output dir now lands where the dev server serves models** (`@jgengine/assets` CLI, #1339) — inside the monorepo a bare `pull`/`add` previously wrote to a cwd-relative `public/`, so running it under `packages/assets` (or any subdir) dropped GLBs into a folder no game serves. It now defaults to the served root `apps/dev/public` when that exists (falling back to the historical cwd-relative `public` for out-of-monorepo consumers), so pulled bytes land in `apps/dev/public/models/<pack>` where the runner reads them. `--dir` still overrides.
+
 ### Added
 
+- **`debug_snapshot().probes.textureErrors` surfaces in-GLB texture-load failures (#1342).**
+  `@jgengine/core/devtools/textureErrors` adds an allocation-aware collector
+  (`armTextureErrors`/`reportTextureLoadError`/`resetTextureErrors`/`textureErrorsSnapshot`) that the
+  shell's shared GLB loading manager feeds on every texture/image `onError`. Previously only whole-model
+  catalog fallbacks (missing mapping/pack/scene) reached the `fallbacks` probe, so a model that resolved
+  but whose textures 404'd read as a clean scene to `debug_snapshot` — the exact signal `jgengine-verify`
+  tells agents to trust. The new `probes.textureErrors` list (`{ url, count }[]`) makes those failures
+  visible so a texture-404'd scene can be treated like a model fallback. Dev-only (armed with devtools);
+  a pure no-op in production.
 - **Result/option types of public barrel functions are now re-exported (#1319).** The
   `@jgengine/core/gameplay` barrel re-exports `ChargeResult`, `ChargeOptions`, and `Overdraft`
   alongside `charge`/`chargeAll`/`canAfford`, and `@jgengine/core/combat` re-exports
@@ -427,6 +452,10 @@ At publish, rename this heading to the new version and mirror the entries into
   identifier "undefined"`.
 
 ### Removed
+
+### Fixed
+
+- **A missing/mis-served GLB no longer white-screens the whole game — it degrades to one placeholder primitive** (`@jgengine/shell/render/modelLoad`, #1340). A Vite dev server returns its `index.html` fallback (HTTP 200) for a missing `/models/*.glb`; `GLTFLoader` then throws parsing HTML as a GLB, and that failure surfaced as a rejected `useLoader` Suspense promise which does **not** reliably re-throw into a per-model React error boundary inside the react-three-fiber reconciler — so it escaped to the app-level `GameUiErrorBoundary` and blanked the scene. `sharedGltfLoader` (`DiagnosticGLTFLoader`) now probes a failed URL and, for a diagnosed broken asset (missing / HTML fallback / corrupt / unsupported), **resolves to a `createFallbackModel` placeholder box instead of rejecting**, containing the failure at the load seam for every consumer with no reliance on boundary recovery; a genuine parse error over valid-looking bytes is still surfaced. Emits a dev console warning naming the broken path. No API change; `useLoader(sharedGltfLoader, url)` benefits with no call-site change.
 
 ## 0.14.0
 
