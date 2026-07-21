@@ -61,6 +61,10 @@ At publish, rename this heading to the new version and mirror the entries into
   straight line through an arc is a fake beam. The `projectile.settled` event and `ProjectileSettleReport`
   gain a required `ballistic: boolean`; code that emits or consumes them directly must set/handle the field.
 
+### Changed
+
+- **Kinematic vehicle drive feel** (#1515) — `createKinematicVehicle` gains a low-speed launch torque floor, softer reverse by default (`chassis.reverseForceScale`, default ~0.48 of engine force), handbrake rear-lock oversteer yaw, engine-braking that no longer fights powered reverse, and lighter ESC while handbraking. Existing chassis tunings pick this up with no migrate; override `reverseForceScale` only if you need the old full-force reverse.
+
 ### Fixed
 
 - **Generated intersections are compact carriageway unions, not plaza discs (#1511).**
