@@ -8,7 +8,7 @@
  *   bun run agent:bootstrap
  *   bun run agent:bootstrap --check   # report only; exit 1 if not ready
  */
-import { existsSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -19,14 +19,58 @@ const logPath = join(root, ".agent-bootstrap.log");
 // was killed mid-flight and node_modules must be wiped (half-hardlinked trees
 // corrupt the next install).
 const installingPath = join(root, ".agent-bootstrap.installing");
+const coreRoot = join(root, "packages", "core");
+const coreSrc = join(coreRoot, "src");
+const coreDist = join(coreRoot, "dist");
 
 function hasTsgo(): boolean {
   return existsSync(join(root, "node_modules", ".bin", "tsgo"))
     || existsSync(join(root, "node_modules", ".bin", "tsgo.exe"));
 }
 
-function hasCoreDist(): boolean {
-  return existsSync(join(root, "packages", "core", "dist"));
+function coreDistPresent(): boolean {
+  return existsSync(coreDist);
+}
+
+/**
+ * Detect a partial/stale core dist, not just a missing one.
+ *
+ * `tsgo -p tsconfig.build.json` emits exactly one `dist/<path>.js` for every
+ * non-test source module (the build config excludes `*.test.ts(x)` and
+ * `testFixtures.ts`), so the source tree is the completeness manifest. A dist
+ * *directory* can exist yet be missing entries when a prior build was killed
+ * mid-emit; that stale dist still satisfies a bare `existsSync` check but breaks
+ * downstream package builds that import subpaths — e.g.
+ * `@jgengine/core/vfx/screenEffects`, resolved through the `"./*"` export.
+ *
+ * Returns the first expected-but-missing dist file (relative to `distRoot`), or
+ * `null` when every expected output is present. Returns `"dist"` when the dist
+ * directory itself is absent.
+ */
+export function firstMissingCoreDistEntry(srcRoot: string, distRoot: string): string | null {
+  if (!existsSync(distRoot)) return "dist";
+  const stack: string[] = [srcRoot];
+  while (stack.length > 0) {
+    const dir = stack.pop()!;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const abs = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(abs);
+        continue;
+      }
+      if (!/\.tsx?$/.test(entry.name)) continue; // only ts/tsx sources compile to js
+      if (/\.test\.tsx?$/.test(entry.name)) continue; // excluded from tsconfig.build
+      const rel = abs.slice(srcRoot.length + 1);
+      if (rel === "testFixtures.ts") continue; // excluded from tsconfig.build
+      const jsRel = rel.replace(/\.tsx?$/, ".js");
+      if (!existsSync(join(distRoot, jsRel))) return jsRel;
+    }
+  }
+  return null;
+}
+
+function coreDistComplete(): boolean {
+  return firstMissingCoreDistEntry(coreSrc, coreDist) === null;
 }
 
 function run(label: string, cmd: string[], timeoutMs: number): void {
@@ -65,7 +109,7 @@ function joinOrAcquireLock(): void {
   while (lockAlive()) {
     console.log("agent-bootstrap: another bootstrap is running — waiting for it (do NOT kill it)");
     Bun.sleepSync(5_000);
-    if (!lockAlive() && hasTsgo() && hasCoreDist()) {
+    if (!lockAlive() && hasTsgo() && coreDistComplete()) {
       console.log("agent-bootstrap: the other bootstrap finished — tree is ready");
       process.exit(0);
     }
@@ -103,59 +147,86 @@ Verify:
 `);
 }
 
-if (!existsSync(join(root, "package.json")) || !existsSync(join(root, "bun.lock"))) {
-  console.error("agent-bootstrap: run from the jgengine monorepo root (package.json + bun.lock required)");
-  process.exit(1);
-}
-
-const ready = hasTsgo() && hasCoreDist();
-if (checkOnly) {
-  if (ready) {
-    console.log("agent-bootstrap: check ok (deps + core dist present)");
-    process.exit(0);
+if (import.meta.main) {
+  if (!existsSync(join(root, "package.json")) || !existsSync(join(root, "bun.lock"))) {
+    console.error("agent-bootstrap: run from the jgengine monorepo root (package.json + bun.lock required)");
+    process.exit(1);
   }
-  if (lockAlive()) {
-    const pid = readFileSync(lockPath, "utf8").trim();
-    const elapsed = Math.round((Date.now() - statSync(lockPath).mtimeMs) / 1000);
-    let last = "";
-    try {
-      last = readFileSync(logPath, "utf8").trimEnd().split("\n").filter(Boolean).at(-1) ?? "";
-    } catch {}
+
+  const missingEntry = firstMissingCoreDistEntry(coreSrc, coreDist);
+  const ready = hasTsgo() && missingEntry === null;
+  if (checkOnly) {
+    if (ready) {
+      console.log("agent-bootstrap: check ok (deps + core dist complete)");
+      process.exit(0);
+    }
+    if (lockAlive()) {
+      const pid = readFileSync(lockPath, "utf8").trim();
+      const elapsed = Math.round((Date.now() - statSync(lockPath).mtimeMs) / 1000);
+      let last = "";
+      try {
+        last = readFileSync(logPath, "utf8").trimEnd().split("\n").filter(Boolean).at(-1) ?? "";
+      } catch {}
+      console.error(
+        `agent-bootstrap: in progress (pid ${pid}, ~${elapsed}s elapsed, whole run ~2-3 min).` +
+          (last ? ` last: ${last}` : "") +
+          ` Do NOT start another or kill it — wait and re-check.`,
+      );
+      process.exit(1);
+    }
+    // A present-but-incomplete dist is the sneaky case: it looks built but is
+    // missing entries, so name it explicitly instead of a generic "not ready".
+    if (hasTsgo() && coreDistPresent() && missingEntry) {
+      console.error(
+        `agent-bootstrap: not ready — incomplete core dist (missing dist/${missingEntry} from a partial prior build); run \`bun run agent:bootstrap\` to rebuild`,
+      );
+    } else {
+      console.error(
+        "agent-bootstrap: not ready — run `bun run agent:bootstrap` (missing node_modules and/or packages/core/dist)",
+      );
+    }
+    process.exit(1);
+  }
+
+  joinOrAcquireLock();
+  process.on("exit", releaseLock);
+
+  if (!hasTsgo() || existsSync(installingPath)) {
+    // node_modules present but unusable (or a leftover installing marker) means a
+    // previous install was killed mid-flight (SIGKILL leaves half-hardlinked
+    // packages that corrupt the next install). Wipe first.
+    if (existsSync(join(root, "node_modules"))) {
+      console.log("agent-bootstrap: partial node_modules detected (killed install) — wiping before reinstall");
+      rmSync(join(root, "node_modules"), { recursive: true, force: true });
+    }
+    writeFileSync(installingPath, String(process.pid));
+    run("bun install --frozen-lockfile", ["bun", "install", "--frozen-lockfile"], 600_000);
+    rmSync(installingPath, { force: true });
+  } else {
+    console.log("agent-bootstrap: node_modules present (tsgo found)");
+  }
+
+  // A present-but-incomplete core dist (a build killed mid-emit) can otherwise
+  // survive the workspace build and break subpath imports downstream. Wipe it so
+  // the build re-emits every entry cleanly.
+  const partialEntry = firstMissingCoreDistEntry(coreSrc, coreDist);
+  if (coreDistPresent() && partialEntry) {
+    console.log(
+      `agent-bootstrap: partial core dist (missing dist/${partialEntry}) — removing for a clean rebuild`,
+    );
+    rmSync(coreDist, { recursive: true, force: true });
+  }
+
+  // Full workspace build writes dist for package typechecks and clean-consumer tests.
+  run("bun run build", ["bun", "run", "build"], 900_000);
+
+  const stillMissing = firstMissingCoreDistEntry(coreSrc, coreDist);
+  if (stillMissing) {
     console.error(
-      `agent-bootstrap: in progress (pid ${pid}, ~${elapsed}s elapsed, whole run ~2-3 min).` +
-        (last ? ` last: ${last}` : "") +
-        ` Do NOT start another or kill it — wait and re-check.`,
+      `agent-bootstrap: packages/core/dist still incomplete after build (missing dist/${stillMissing})`,
     );
     process.exit(1);
   }
-  console.error("agent-bootstrap: not ready — run `bun run agent:bootstrap` (missing node_modules and/or packages/core/dist)");
-  process.exit(1);
+
+  printContract();
 }
-
-joinOrAcquireLock();
-process.on("exit", releaseLock);
-
-if (!hasTsgo() || existsSync(installingPath)) {
-  // node_modules present but unusable (or a leftover installing marker) means a
-  // previous install was killed mid-flight (SIGKILL leaves half-hardlinked
-  // packages that corrupt the next install). Wipe first.
-  if (existsSync(join(root, "node_modules"))) {
-    console.log("agent-bootstrap: partial node_modules detected (killed install) — wiping before reinstall");
-    rmSync(join(root, "node_modules"), { recursive: true, force: true });
-  }
-  writeFileSync(installingPath, String(process.pid));
-  run("bun install --frozen-lockfile", ["bun", "install", "--frozen-lockfile"], 600_000);
-  rmSync(installingPath, { force: true });
-} else {
-  console.log("agent-bootstrap: node_modules present (tsgo found)");
-}
-
-// Full workspace build writes dist for package typechecks and clean-consumer tests.
-run("bun run build", ["bun", "run", "build"], 900_000);
-
-if (!hasCoreDist()) {
-  console.error("agent-bootstrap: packages/core/dist still missing after build");
-  process.exit(1);
-}
-
-printContract();
