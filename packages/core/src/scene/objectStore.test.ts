@@ -126,6 +126,17 @@ describe("scene object store", () => {
     expect(store.inBox([40, 0, 40], [50, 0, 50])).toEqual([]);
   });
 
+  test("inBox on a city-scale volume still finds objects without enumerating millions of empty 1m cells (#1517)", () => {
+    const store = createObjectStore();
+    store.place("crate", 0, 0, 0, { instanceId: "origin" });
+    store.place("crate", 50, 0, 50, { instanceId: "mid" });
+    store.place("crate", 200, 0, 200, { instanceId: "far" });
+    // ~100³ cell volume at 1 m cells would thrash; bailout must still return correct hits.
+    const hits = store.inBox([-50, -50, -50], [50, 50, 50]).map((o) => o.instanceId).sort();
+    expect(hits).toEqual(["mid", "origin"]);
+    expect(hits).not.toContain("far");
+  });
+
   test("subscribe fires once per mutation and snapshot is referentially stable", () => {
     const store = createObjectStore();
     let notified = 0;

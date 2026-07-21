@@ -101,9 +101,9 @@ export function createDriving(): Driving {
   let lastTelemetry: VehicleTelemetry = { mode: "ground", speedMs: 0, altitude: 0, verticalSpeed: 0, gear: 1, rpm: 0, stalled: false, vtol: false };
 
   /**
-   * The solids a car should slide along this tick (#1051): every nearby *solid* scene object (buildings,
-   * crates, planters — never the light `obj_*` props a car flattens) plus every other ground vehicle,
-   * excluding the car itself. A bounded ~30u gather over the scene lists, cheap enough for the hot path.
+   * The solids a car should slide along this tick (#1051): nearby *solid* scene objects (buildings,
+   * crates — never light props a car flattens) plus other ground vehicles, excluding self. Uses the
+   * object spatial `inBox` so a dense city does not re-scan every placed prop every tick.
    */
   function gatherObstacles(
     ctx: GameContext,
@@ -112,20 +112,22 @@ export function createDriving(): Driving {
     radius: number,
   ): CollisionObstacle[] {
     const cx = position[0];
+    const cy = position[1];
     const cz = position[2];
-    const reachSq = OBSTACLE_GATHER * OBSTACLE_GATHER;
+    const gather = OBSTACLE_GATHER + radius;
     const result: CollisionObstacle[] = [];
-    for (const obj of ctx.scene.object.list()) {
+    for (const obj of ctx.scene.object.inBox(
+      [cx - gather, cy - 4, cz - gather],
+      [cx + gather, cy + 12, cz + gather],
+    )) {
       const def = objectDefById(obj.catalogId);
       if (def === undefined || !def.solid) continue;
-      const dx = obj.position[0] - cx;
-      const dz = obj.position[2] - cz;
-      if (dx * dx + dz * dz > reachSq) continue;
       result.push({
         position: obj.position,
         halfExtents: [def.footprint.w / 2, def.footprint.h / 2, def.footprint.d / 2],
       });
     }
+    const reachSq = gather * gather;
     for (const entity of ctx.scene.entity.list()) {
       if (entity.id === selfId) continue;
       const vdef = vehicleById(entity.name);

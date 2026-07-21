@@ -344,6 +344,23 @@ describe("standing on and stepping over objects", () => {
     driveWith(ctx, "a", ["moveForward"], 120, COLLIDE, 0);
     expect(ctx.scene.entity.get("a")!.position[2]).toBeLessThan(2.8);
   });
+
+  test("a tall tower still blocks on foot without needing tower-height Y broadphase (#1517)", () => {
+    const ctx = collisionContext(0);
+    // 52 m tall solid — previously max(oy+hy) inflated inBox Y to ~100 m of empty 1 m cells per frame.
+    ctx.scene.object.reportBounds("tower", { min: [-4, 0, -4], max: [4, 52, 4] });
+    ctx.scene.object.place("tower", 0, 0, 6);
+    driveWith(ctx, "a", ["moveForward"], 120, COLLIDE, 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeLessThan(3.5);
+  });
+
+  test("movement.frozen skips the step entirely (seated rider does not pay obstacle gather)", () => {
+    const ctx = collisionContext(0);
+    ctx.scene.entity.update("a", { movement: { frozen: true } });
+    const before = ctx.scene.entity.get("a")!.position;
+    driveWith(ctx, "a", ["moveForward"], 60, COLLIDE, 0);
+    expect(ctx.scene.entity.get("a")!.position).toEqual(before);
+  });
 });
 
 describe("per-player motion queues", () => {
