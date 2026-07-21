@@ -19,9 +19,10 @@ import type {
 } from "@jgengine/core/world/cityContent";
 import type { Street, StreetLevel } from "@jgengine/core/world/streetGenerator";
 import {
+  buildIntersectionMarkings,
+  buildRoadRibbon,
   buildTrimmedIntersections,
   GROUND_DECAL_LAYERS,
-  trimBandAtJunctions,
   type IntersectionStreet,
   type RoadRibbon,
 } from "@jgengine/core/world/roads";
@@ -48,6 +49,8 @@ export interface CityPalette {
   junction?: number;
   /** Sidewalk band color. Defaults to a lightened `streets.street`. */
   sidewalk?: number;
+  /** Lane-paint color. Defaults to a warm off-white. */
+  marking?: number;
   /** Roof piece flat shade. Defaults to a darkened `building`. */
   roof?: number;
   /** Trim piece flat shade (parapets, cornices, posts). Defaults to a lightened `building`. */
@@ -82,6 +85,24 @@ const ROOF_U = 0.5 / TEX_CELLS;
 const ROOF_V = 0.5 / TEX_CELLS;
 /** Street hierarchy order, widest first, for a stable draw/sweep sequence. */
 const LEVEL_ORDER: StreetLevel[] = ["boulevard", "avenue", "street", "lane"];
+
+export interface CityRevealState {
+  /** Normalized road/sidewalk ribbon progress. */
+  ribbonProgress: number;
+  /** Junction and sidewalk-apron surfaces appear only after every approach ribbon exists. */
+  junctionsVisible: boolean;
+  /** Markings/glow/traffic never appear over unrevealed pavement. */
+  dressingOpacity: number;
+}
+
+/** Pure timing contract shared by the renderer and animation-order tests. */
+export function cityRevealState(elapsed: number, instant = false): CityRevealState {
+  const sweep = instant ? 1 : Math.max(0, Math.min(1, elapsed / BUILD_SWEEP_SECONDS));
+  const ribbonProgress = 1 - (1 - sweep) * (1 - sweep);
+  const junctionsVisible = sweep >= 1;
+  const fade = instant ? 1 : Math.max(0, Math.min(1, (elapsed - 0.9) / 1.2));
+  return { ribbonProgress, junctionsVisible, dressingOpacity: junctionsVisible ? fade : 0 };
+}
 
 /**
  * Per-class visual identity. This is THE extension point: to give a new building or landmark class
@@ -175,46 +196,6 @@ const CLASS_STYLE: Record<AnyCityClass, ClassStyle> = {
 };
 
 const FALLBACK_STYLE: ClassStyle = CLASS_STYLE.slab;
-
-/** Street ribbon strip along a polyline; used for the additive glow + sidewalk bands. */
-function pushRibbon(
-  positions: number[],
-  colors: number[],
-  indices: number[],
-  points: readonly (readonly [number, number])[],
-  width: number,
-  y: number,
-  color: THREE.Color,
-  sampleHeight?: (x: number, z: number) => number,
-): void {
-  if (points.length < 2) return;
-  const base = positions.length / 3;
-  const half = width / 2;
-  for (let i = 0; i < points.length; i += 1) {
-    const prev = points[Math.max(0, i - 1)]!;
-    const next = points[Math.min(points.length - 1, i + 1)]!;
-    let dx = next[0] - prev[0];
-    let dz = next[1] - prev[1];
-    const len = Math.hypot(dx, dz) || 1;
-    dx /= len;
-    dz /= len;
-    const px = points[i]![0];
-    const pz = points[i]![1];
-    const lx = px - dz * half;
-    const lz = pz + dx * half;
-    const rx = px + dz * half;
-    const rz = pz - dx * half;
-    const ly = sampleHeight ? sampleHeight(lx, lz) + y : y;
-    const ry = sampleHeight ? sampleHeight(rx, rz) + y : y;
-    positions.push(lx, ly, lz, rx, ry, rz);
-    colors.push(color.r, color.g, color.b, color.r, color.g, color.b);
-  }
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const a = base + i * 2;
-    // Wound so the face normal points +y (visible from above).
-    indices.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
-  }
-}
 
 /** Append a core `RoadRibbon` (flat xyz + Uint32 indices) into the merged street buffers. */
 function appendRibbon(
@@ -572,10 +553,10 @@ function streamFrom(street: Street, sampleHeight: (x: number, z: number) => numb
     perPoint !== undefined && perPoint.length === street.points.length
       ? perPoint
       : street.points.map((p) => sampleHeight(p[0], p[1]));
-  return { points: street.points, lengths, heights, total, y: ROAD_Y + 0.5 };
+  return { points: street.points, lengths, heights, total, y: ROAD_Y + 0.32 };
 }
 
-function sampleStream(stream: TrafficStream, distance: number, out: THREE.Vector3): void {
+function sampleStream(stream: TrafficStream, distance: number, out: THREE.Vector3): number {
   const d = ((distance % stream.total) + stream.total) % stream.total;
   let i = 1;
   while (i < stream.lengths.length - 1 && stream.lengths[i]! < d) i += 1;
@@ -584,6 +565,7 @@ function sampleStream(stream: TrafficStream, distance: number, out: THREE.Vector
   const b = stream.points[i]!;
   const h = stream.heights[i - 1]! + (stream.heights[i]! - stream.heights[i - 1]!) * t;
   out.set(a[0] + (b[0] - a[0]) * t, stream.y + h, a[1] + (b[1] - a[1]) * t);
+  return Math.atan2(b[0] - a[0], b[1] - a[1]);
 }
 
 /** Role → flat tint resolver for non-banded massing pieces. */
@@ -643,6 +625,29 @@ export function buildCityModel(
     sampleHeight?: (x: number, z: number) => number;
     /** Emit circuit dressing (corner kerbs + a checkered start/finish band) around the main loop. */
     trackDressing?: boolean;
+    /** Render connected pedestrian bands around paved streets. Default true. */
+    sidewalks?: boolean;
+    /** Pedestrian band width beyond each carriageway edge. Default 2.2. */
+    sidewalkWidth?: number;
+    /** Render lane guidance and stop lines. Default true. */
+    laneMarkings?: boolean;
+    /** Lane-paint ribbon width. Default 0.18. */
+    laneMarkingWidth?: number;
+    /** Signed lateral marking offset from the authored centerline. Default 0. */
+    laneMarkingOffset?: number;
+    /** Painted dash length. Reserved for shared marking style controls. */
+    laneMarkingDash?: number;
+    /** Gap between painted dashes. Reserved for shared marking style controls. */
+    laneMarkingGap?: number;
+    /** Decorative arterial glow independent of physical lane guidance. Default true. */
+    centerlineGlow?: boolean;
+    /**
+     * Emit placeholder traffic instances. Default false — colored cuboids read as capture artifacts,
+     * not vehicles. Enable only when a future path supplies unmistakable scaled vehicle meshes.
+     */
+    traffic?: boolean;
+    /** Extrude building lots. Default true; set false for unobstructed intersection close-ups. */
+    buildings?: boolean;
   },
 ): CityModel {
   const heightScale = options.heightScale ?? 1;
@@ -657,94 +662,141 @@ export function buildCityModel(
   const levelColors = Object.fromEntries(
     Object.entries(palette.streets).map(([level, hex]) => [level, new THREE.Color(hex)]),
   ) as Record<StreetLevel, THREE.Color>;
-  const junctionColor = new THREE.Color(palette.junction ?? palette.streets.boulevard).multiplyScalar(0.82);
   const sidewalkColor = new THREE.Color(palette.sidewalk ?? palette.streets.street).lerp(new THREE.Color(0xffffff), 0.22);
+  const markingColor = new THREE.Color(palette.marking ?? 0xf5e6c8);
 
   let radius = 40;
   for (const street of streets) for (const [x, z] of street.points) radius = Math.max(radius, Math.hypot(x, z));
 
   // --- streets: welded, trimmed intersections (no z-fighting, no floating discs), draped over relief ---
-  const intersectionStreets: IntersectionStreet[] = streets.map((s) => ({ path: s.points, width: s.width }));
-  const trimmed = buildTrimmedIntersections(intersectionStreets, city.network.junctions, sampleHeight);
+  const sidewalkWidth = options.sidewalks === false ? 0 : Math.max(0, options.sidewalkWidth ?? 2.2);
+  const markingWidth = Math.max(0.04, options.laneMarkingWidth ?? 0.18);
+  const intersectionStreets: IntersectionStreet[] = streets.map((street) => ({
+    path: street.points,
+    width: street.width,
+    ...(street.level !== "lane" && sidewalkWidth > 0
+      ? { sidewalks: { left: sidewalkWidth, right: sidewalkWidth } }
+      : {}),
+    ...(street.level !== "lane" && options.laneMarkings !== false
+      ? {
+          markings: {
+            lines: [{ offset: options.laneMarkingOffset ?? 0, width: markingWidth }],
+            stopLine: true,
+          },
+        }
+      : {}),
+  }));
+  const trimmed = buildTrimmedIntersections(intersectionStreets, city.network.junctions, sampleHeight, {
+    // Compact carriageway-union mouths; curb returns are exterior corner arcs only (see roads.ts).
+    curbReturnRadius: 2,
+    apronMargin: 0.25,
+    filletSegments: 6,
+  });
+  const markings = buildIntersectionMarkings(trimmed, sampleHeight, {
+    mouthClearance: 1.25,
+    dashLength: Math.max(0, options.laneMarkingDash ?? 4.8),
+    dashGap: Math.max(0, options.laneMarkingGap ?? 4),
+  });
 
   // Recover each ribbon's street level from an interior point of its trimmed sub-path (interior
   // vertices are original street points, so they map straight back to a level).
-  const pointLevel = new Map<string, StreetLevel>();
-  const key = (x: number, z: number) => `${x},${z}`;
-  for (const s of streets) for (const [x, z] of s.points) if (!pointLevel.has(key(x, z))) pointLevel.set(key(x, z), s.level);
-  const ribbonLevel = (path: readonly (readonly [number, number])[]): StreetLevel => {
-    for (let i = 1; i < path.length - 1; i += 1) {
-      const l = pointLevel.get(key(path[i]![0], path[i]![1]));
-      if (l !== undefined) return l;
-    }
-    for (const [x, z] of path) {
-      const l = pointLevel.get(key(x, z));
-      if (l !== undefined) return l;
-    }
-    return "street";
-  };
+  const ribbonLevel = (index: number): StreetLevel =>
+    streets[trimmed.trimmedStreetIndices[index]!]?.level ?? "street";
 
-  const streetPos: number[] = [];
-  const streetCol: number[] = [];
-  const streetIdx: number[] = [];
+  interface LayerArrays {
+    pos: number[];
+    col: number[];
+    idx: number[];
+  }
+  const newLayer = (): LayerArrays => ({ pos: [], col: [], idx: [] });
+  const sidewalkLayer = newLayer();
+  const roadLayer = newLayer();
+  const junctionLayer = newLayer();
+  const markingLayer = newLayer();
+  for (const sidewalk of trimmed.sidewalks) {
+    appendRibbon(sidewalkLayer.pos, sidewalkLayer.col, sidewalkLayer.idx, sidewalk, sidewalkColor);
+  }
+  const sidewalkSweepCount = sidewalkLayer.idx.length;
+  for (const apron of trimmed.sidewalkAprons) {
+    appendRibbon(sidewalkLayer.pos, sidewalkLayer.col, sidewalkLayer.idx, apron, sidewalkColor);
+  }
   // Widest levels first so the sweep reveals arterials before local streets.
   const order = trimmed.ribbons
     .map((_, i) => i)
-    .sort((a, b) => LEVEL_ORDER.indexOf(ribbonLevel(trimmed.trimmed[a]!.path)) - LEVEL_ORDER.indexOf(ribbonLevel(trimmed.trimmed[b]!.path)));
+    .sort((a, b) => LEVEL_ORDER.indexOf(ribbonLevel(a)) - LEVEL_ORDER.indexOf(ribbonLevel(b)));
   for (const i of order) {
-    appendRibbon(streetPos, streetCol, streetIdx, trimmed.ribbons[i]!, levelColors[ribbonLevel(trimmed.trimmed[i]!.path)]);
-  }
-  // Sidewalk bands flanking the arterials, at the road layer, a touch lighter — clipped out of every
-  // junction apron so they end at the crossing instead of sailing through it.
-  for (const s of streets) {
-    if (s.level === "lane" || s.sidewalks === undefined) continue;
-    for (const band of [s.sidewalks.left, s.sidewalks.right]) {
-      for (const sub of trimBandAtJunctions(band, 2.2, city.network.junctions)) {
-        pushRibbon(streetPos, streetCol, streetIdx, sub, 2.2, ROAD_Y, sidewalkColor, sampleHeight);
-      }
-    }
+    appendRibbon(roadLayer.pos, roadLayer.col, roadLayer.idx, trimmed.ribbons[i]!, levelColors[ribbonLevel(i)]);
   }
   // Cul-de-sac turning bulbs: a kept dead end is a deliberate turnaround, so pave it as one —
   // a disc at the dangling terminus in the street's own color — instead of a bare squared stub.
   const pushDisc = (cx: number, cz: number, radius: number, color: THREE.Color): void => {
     const segs = 20;
-    const base = streetPos.length / 3;
+    const base = roadLayer.pos.length / 3;
     const baseY = ROAD_Y + sampleHeight(cx, cz);
-    streetPos.push(cx, baseY, cz);
-    streetCol.push(color.r, color.g, color.b);
+    roadLayer.pos.push(cx, baseY, cz);
+    roadLayer.col.push(color.r, color.g, color.b);
     for (let i = 0; i <= segs; i += 1) {
       const a = (i / segs) * Math.PI * 2;
       const px = cx + Math.cos(a) * radius;
       const pz = cz + Math.sin(a) * radius;
-      streetPos.push(px, ROAD_Y + sampleHeight(px, pz), pz);
-      streetCol.push(color.r, color.g, color.b);
+      roadLayer.pos.push(px, ROAD_Y + sampleHeight(px, pz), pz);
+      roadLayer.col.push(color.r, color.g, color.b);
     }
-    for (let i = 0; i < segs; i += 1) streetIdx.push(base, base + 1 + i, base + 2 + i);
+    for (let i = 0; i < segs; i += 1) roadLayer.idx.push(base, base + 1 + i, base + 2 + i);
   };
   for (const s of streets) {
     if (s.bulb === undefined) continue;
     pushDisc(s.bulb[0], s.bulb[1], Math.max(s.width * 0.85, s.width / 2 + 2), levelColors[s.level]);
   }
   // Welded junction surfaces last (they read as one clean crossing patch).
-  const streetSweepCount = streetIdx.length;
-  for (const surface of trimmed.junctions) appendRibbon(streetPos, streetCol, streetIdx, surface, junctionColor);
+  trimmed.junctions.forEach((surface, index) => {
+    const level = city.network.junctions[trimmed.junctionIndices[index]!]?.level ?? "street";
+    const color = palette.junction === undefined ? levelColors[level] : new THREE.Color(palette.junction);
+    appendRibbon(junctionLayer.pos, junctionLayer.col, junctionLayer.idx, surface, color);
+  });
+  for (const marking of markings) {
+    appendRibbon(markingLayer.pos, markingLayer.col, markingLayer.idx, marking, markingColor);
+  }
 
-  const streetGeo = new THREE.BufferGeometry();
-  streetGeo.setAttribute("position", new THREE.Float32BufferAttribute(streetPos, 3));
-  streetGeo.setAttribute("color", new THREE.Float32BufferAttribute(streetCol, 3));
-  streetGeo.setIndex(streetIdx);
-  const streetMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
-  const streetMesh = new THREE.Mesh(streetGeo, streetMat);
-  group.add(streetMesh);
+  const makeLayer = (name: string, arrays: LayerArrays, polygonOffset = 0) => {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(arrays.pos, 3));
+    geometry.setAttribute("color", new THREE.Float32BufferAttribute(arrays.col, 3));
+    geometry.setIndex(arrays.idx);
+    const material = new THREE.MeshBasicMaterial({
+      vertexColors: true,
+      side: THREE.DoubleSide,
+      ...(polygonOffset === 0
+        ? {}
+        : { polygonOffset: true, polygonOffsetFactor: polygonOffset, polygonOffsetUnits: polygonOffset }),
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = name;
+    group.add(mesh);
+    return { geometry, material, mesh, count: arrays.idx.length };
+  };
+  const sidewalkMesh = makeLayer("city-sidewalks", sidewalkLayer);
+  const roadMesh = makeLayer("city-roads", roadLayer);
+  const junctionMesh = makeLayer("city-junctions", junctionLayer, -1);
+  const markingMesh = makeLayer("city-markings", markingLayer, -2);
+  markingMesh.mesh.renderOrder = 1;
 
   // --- boulevard/avenue centerline glow, additive, above markings with polygonOffset ---
   const glowPos: number[] = [];
   const glowCol: number[] = [];
   const glowIdx: number[] = [];
   const glowColor = new THREE.Color(palette.glow);
-  for (const street of streets) {
+  for (const street of options.centerlineGlow === false ? [] : streets) {
     if (street.level !== "boulevard" && street.level !== "avenue") continue;
-    pushRibbon(glowPos, glowCol, glowIdx, street.points, street.level === "boulevard" ? 1.1 : 0.7, GROUND_DECAL_LAYERS.glow, glowColor, sampleHeight);
+    appendRibbon(
+      glowPos,
+      glowCol,
+      glowIdx,
+      buildRoadRibbon(street.points, street.level === "boulevard" ? 0.9 : 0.55, sampleHeight, {
+        elevation: GROUND_DECAL_LAYERS.glow,
+      }),
+      glowColor,
+    );
   }
   const glowGeo = new THREE.BufferGeometry();
   glowGeo.setAttribute("position", new THREE.Float32BufferAttribute(glowPos, 3));
@@ -762,6 +814,7 @@ export function buildCityModel(
     polygonOffsetUnits: -1,
   });
   const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+  glowMesh.name = "city-glow";
   glowMesh.renderOrder = 2;
   group.add(glowMesh);
 
@@ -775,7 +828,7 @@ export function buildCityModel(
     }
   }
 
-  // --- buildings ---
+  // --- buildings (skippable for unobstructed intersection inspection) ---
   const boxWriter = makeWriter(); // windowed walls + flat boxes
   const shapeWriter = makeWriter(); // gable/cylinder/dome, DoubleSide, window-free
   const baseWall = new THREE.Color(palette.building);
@@ -783,9 +836,10 @@ export function buildCityModel(
   const heightsRng = rng("heights");
   const scratchShade = new THREE.Color();
   let tallest = 0;
+  const showBuildings = options.buildings !== false;
 
   const lotContent = city.lotContent;
-  if (lotContent !== undefined && lotContent.length > 0) {
+  if (showBuildings && lotContent !== undefined && lotContent.length > 0) {
     // Real massing pieces per lot, colored by the class's family identity (CLASS_STYLE), jittered
     // per building. Banded walls window per the class; roof/trim/accent take their own hues.
     const wall = new THREE.Color();
@@ -852,7 +906,7 @@ export function buildCityModel(
         }
       });
     }
-  } else {
+  } else if (showBuildings) {
     // Fallback (no resolved content, e.g. the hero world): windowed boxes on bare lots. One shared
     // window behavior tinted by the palette's warm window color — the hero scene has no class data.
     const fallbackEmit: EmitStyle = {
@@ -988,51 +1042,48 @@ export function buildCityModel(
   shapeMesh.material = shapeMat;
   group.add(shapeMesh);
 
-  // --- traffic: light dots flowing along street chains ---
-  const streams = streets
-    .filter((street) => street.points.length >= 2 && street.level !== "lane")
-    .map((street) => streamFrom(street, sampleHeight));
+  // --- traffic: only when explicitly requested. Default off — BoxGeometry stand-ins look like
+  // capture artifacts, not vehicles, and fail visual review for intersection evidence.
+  const showTraffic = options.traffic === true;
+  const streams = showTraffic
+    ? streets
+        .filter((street) => street.points.length >= 2 && street.level !== "lane")
+        .map((street) => streamFrom(street, sampleHeight))
+    : [];
   const totalLength = streams.reduce((sum, stream) => sum + stream.total, 0);
-  const dotCount = Math.min(220, Math.max(24, Math.floor(totalLength / 16)));
-  const dots: { stream: TrafficStream; offset: number; speed: number }[] = [];
+  const vehicleCount = showTraffic ? Math.min(220, Math.max(24, Math.floor(totalLength / 16))) : 0;
+  const vehicles: { stream: TrafficStream; offset: number; speed: number }[] = [];
   const traffic = rng("traffic");
-  const dotPos = new Float32Array(dotCount * 3);
-  const dotCol = new Float32Array(dotCount * 3);
   const colorA = new THREE.Color(palette.trafficA);
   const colorB = new THREE.Color(palette.trafficB);
-  for (let i = 0; i < dotCount && streams.length > 0; i += 1) {
-    const pickAt = traffic() * totalLength;
-    let acc = 0;
-    let stream = streams[0]!;
-    for (const candidate of streams) {
-      acc += candidate.total;
-      if (pickAt <= acc) {
-        stream = candidate;
-        break;
+  const vehicleGeo = new THREE.BoxGeometry(1.25, 0.5, 2.8);
+  const vehicleMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
+  const vehicleMesh = new THREE.InstancedMesh(vehicleGeo, vehicleMat, Math.max(1, vehicleCount));
+  if (showTraffic) {
+    for (let i = 0; i < vehicleCount && streams.length > 0; i += 1) {
+      const pickAt = traffic() * totalLength;
+      let acc = 0;
+      let stream = streams[0]!;
+      for (const candidate of streams) {
+        acc += candidate.total;
+        if (pickAt <= acc) {
+          stream = candidate;
+          break;
+        }
       }
+      const forward = traffic() < 0.5;
+      vehicles.push({ stream, offset: traffic() * stream.total, speed: (forward ? 1 : -1) * (9 + traffic() * 14) });
+      vehicleMesh.setColorAt(i, forward ? colorA : colorB);
     }
-    const forward = traffic() < 0.5;
-    dots.push({ stream, offset: traffic() * stream.total, speed: (forward ? 1 : -1) * (9 + traffic() * 14) });
-    const tint = forward ? colorA : colorB;
-    dotCol[i * 3] = tint.r;
-    dotCol[i * 3 + 1] = tint.g;
-    dotCol[i * 3 + 2] = tint.b;
+    vehicleMesh.count = vehicles.length;
+    vehicleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    if (vehicleMesh.instanceColor !== null) vehicleMesh.instanceColor.needsUpdate = true;
+    vehicleMesh.name = "city-traffic";
+    vehicleMesh.frustumCulled = false;
+    group.add(vehicleMesh);
+  } else {
+    vehicleMesh.count = 0;
   }
-  const dotGeo = new THREE.BufferGeometry();
-  dotGeo.setAttribute("position", new THREE.BufferAttribute(dotPos, 3));
-  dotGeo.setAttribute("color", new THREE.BufferAttribute(dotCol, 3));
-  const dotMat = new THREE.PointsMaterial({
-    size: 2.1,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0,
-    blending: THREE.AdditiveBlending,
-    depthWrite: false,
-    sizeAttenuation: true,
-  });
-  const dotMesh = new THREE.Points(dotGeo, dotMat);
-  dotMesh.frustumCulled = false;
-  group.add(dotMesh);
 
   // --- accent lights on the two busiest junctions ---
   const junctions = [...city.network.junctions].sort((a, b) => b.arms.length - a.arms.length);
@@ -1043,31 +1094,38 @@ export function buildCityModel(
     group.add(light);
   });
 
-  const totalIndices = streetSweepCount;
-  const junctionStart = streetSweepCount;
-  const junctionCount = streetIdx.length - streetSweepCount;
+  const roadCount = roadMesh.count;
   const scratch = new THREE.Vector3();
+  const scratchRotation = new THREE.Quaternion();
+  const scratchMatrix = new THREE.Matrix4();
+  const vehicleScale = new THREE.Vector3(1, 1, 1);
+  const up = new THREE.Vector3(0, 1, 0);
   let settledAt = Number.POSITIVE_INFINITY;
 
   const update = (dt: number, elapsed: number) => {
-    const sweep = options.instant === true ? 1 : Math.min(1, elapsed / BUILD_SWEEP_SECONDS);
-    const eased = 1 - (1 - sweep) * (1 - sweep);
-    const revealed = Math.ceil((totalIndices / 6) * eased) * 6;
-    // Reveal the swept ribbons, then the welded junction patches once the sweep completes.
-    streetGeo.setDrawRange(0, sweep >= 1 ? totalIndices + junctionCount : Math.min(revealed, junctionStart));
+    const reveal = cityRevealState(elapsed, options.instant === true);
+    const revealedRoad = Math.min(Math.ceil((roadCount / 6) * reveal.ribbonProgress) * 6, roadCount);
+    const revealedSidewalk = Math.min(Math.ceil((sidewalkSweepCount / 6) * reveal.ribbonProgress) * 6, sidewalkSweepCount);
+    roadMesh.geometry.setDrawRange(0, revealedRoad);
+    sidewalkMesh.geometry.setDrawRange(0, reveal.junctionsVisible ? sidewalkMesh.count : revealedSidewalk);
+    junctionMesh.mesh.visible = reveal.junctionsVisible;
+    markingMesh.mesh.visible = reveal.junctionsVisible;
+    glowMesh.visible = reveal.junctionsVisible;
+    if (showTraffic) vehicleMesh.visible = reveal.junctionsVisible;
     if (options.instant !== true) growUniform.value = elapsed - BUILD_SWEEP_SECONDS * 0.55;
-    const fadeIn = options.instant === true ? 1 : Math.max(0, Math.min(1, (elapsed - 0.9) / 1.2));
-    glowMat.opacity = fadeIn * (0.42 + Math.sin(elapsed * 1.7) * 0.1);
-    dotMat.opacity = fadeIn * 0.9;
-    for (let i = 0; i < dots.length; i += 1) {
-      const dot = dots[i]!;
-      dot.offset += dot.speed * dt;
-      sampleStream(dot.stream, dot.offset, scratch);
-      dotPos[i * 3] = scratch.x;
-      dotPos[i * 3 + 1] = scratch.y;
-      dotPos[i * 3 + 2] = scratch.z;
+    glowMat.opacity = reveal.dressingOpacity * (0.34 + Math.sin(elapsed * 1.7) * 0.07);
+    if (showTraffic) {
+      vehicleMat.opacity = reveal.dressingOpacity * 0.9;
+      for (let i = 0; i < vehicles.length; i += 1) {
+        const vehicle = vehicles[i]!;
+        vehicle.offset += vehicle.speed * dt;
+        const yaw = sampleStream(vehicle.stream, vehicle.offset, scratch) + (vehicle.speed < 0 ? Math.PI : 0);
+        scratchRotation.setFromAxisAngle(up, yaw);
+        scratchMatrix.compose(scratch, scratchRotation, vehicleScale);
+        vehicleMesh.setMatrixAt(i, scratchMatrix);
+      }
+      vehicleMesh.instanceMatrix.needsUpdate = true;
     }
-    dotGeo.attributes.position!.needsUpdate = true;
     if (settledAt === Number.POSITIVE_INFINITY && growUniform.value > 2.6) settledAt = elapsed;
   };
 
@@ -1084,21 +1142,23 @@ export function buildCityModel(
     update,
     dispose() {
       group.parent?.remove(group);
-      streetGeo.dispose();
+      for (const layer of [sidewalkMesh, roadMesh, junctionMesh, markingMesh]) {
+        layer.geometry.dispose();
+        layer.material.dispose();
+      }
       glowGeo.dispose();
       buildingMesh.geometry.dispose();
       shapeMesh.geometry.dispose();
-      dotGeo.dispose();
+      vehicleGeo.dispose();
       if (dressingMesh !== null) {
         dressingMesh.geometry.dispose();
         (dressingMesh.material as THREE.Material).dispose();
       }
       windows.dispose();
-      streetMat.dispose();
       glowMat.dispose();
       buildingMat.dispose();
       shapeMat.dispose();
-      dotMat.dispose();
+      vehicleMat.dispose();
     },
   };
 }

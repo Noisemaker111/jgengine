@@ -3,6 +3,7 @@ import { environment, road } from "./features";
 import { summarizeEnvironment } from "./environmentSummary";
 import {
   GROUND_DECAL_LAYERS,
+  buildIntersectionMarkings,
   buildJunctionConnector,
   buildJunctionPatch,
   buildJunctionSurface,
@@ -162,22 +163,23 @@ describe("GROUND_DECAL_LAYERS", () => {
 });
 
 describe("trimPathAtJunctions", () => {
-  test("cuts an approach back by the apron arc-length derived from the arms", () => {
-    // apron = max crossing half-width (4) + curbReturn (4) + margin (1) = 9.
+  test("cuts an approach back by the projected crossing half-width (not curb-return)", () => {
+    // Orthogonal equal-width: apron = half-width (4) + default margin (0.25) = 4.25.
+    // Curb returns are exterior arcs only — they must not inflate the mouth distance.
     const trimmed = trimPathAtJunctions([[0, 0], [30, 0]], 8, [crossJunction(8)]);
     expect(trimmed.length).toBe(1);
     const road = trimmed[0]!;
     expect(road.cuts.length).toBe(1);
     const cut = road.cuts[0]!;
     expect(cut.at).toBe("start");
-    expect(cut.apron).toBeCloseTo(9, 9);
-    // Cut point sits 9 units along +x from the node.
-    expect(cut.center[0]).toBeCloseTo(9, 9);
+    expect(cut.apron).toBeCloseTo(4.25, 9);
+    expect(cut.center[0]).toBeCloseTo(4.25, 9);
     expect(cut.center[1]).toBeCloseTo(0, 9);
-    expect(road.path[0]![0]).toBeCloseTo(9, 9);
-    // Left/right corners are ± half-width along the perpendicular.
-    expect(cut.left).toEqual([9, 4]);
-    expect(cut.right).toEqual([9, -4]);
+    expect(road.path[0]![0]).toBeCloseTo(4.25, 9);
+    expect(cut.left[0]).toBeCloseTo(4.25, 9);
+    expect(cut.left[1]).toBeCloseTo(4, 9);
+    expect(cut.right[0]).toBeCloseTo(4.25, 9);
+    expect(cut.right[1]).toBeCloseTo(-4, 9);
   });
 
   test("a through-street splits into two independently-trimmed sub-paths", () => {
@@ -185,14 +187,14 @@ describe("trimPathAtJunctions", () => {
     expect(trimmed.length).toBe(2);
     const left = trimmed.find((t) => t.path[0]![0] < 0)!;
     const right = trimmed.find((t) => t.path[0]![0] >= 0)!;
-    // Left run ends at −9 (cut from its end), right run starts at +9.
-    expect(left.path[left.path.length - 1]![0]).toBeCloseTo(-9, 9);
+    // Left run ends at −4.25, right run starts at +4.25 (carriageway-union mouths).
+    expect(left.path[left.path.length - 1]![0]).toBeCloseTo(-4.25, 9);
     expect(left.cuts[0]!.at).toBe("end");
-    expect(right.path[0]![0]).toBeCloseTo(9, 9);
+    expect(right.path[0]![0]).toBeCloseTo(4.25, 9);
     expect(right.cuts[0]!.at).toBe("start");
   });
 
-  test("unequal-width junction pulls narrow approaches back farther to clear a wide crossing", () => {
+  test("unequal-width junction pulls only the narrow approaches back farther", () => {
     const junction: RoadJunctionInput = {
       x: 0,
       z: 0,
@@ -203,12 +205,13 @@ describe("trimPathAtJunctions", () => {
         { angle: Math.PI, width: 8 }, // −z
       ],
     };
-    // Narrow +x approach: crossMax = max(8/2, 8/2, 20/2) = 10 → apron 10+4+1 = 15.
+    // Narrow +x: crossing arms include the 20-wide boulevard (sin 90° = 1) → 10 + 0.25.
+    // Opposite collinear −x is NOT a crosser, so it no longer inflates every arm to max half-width.
     const narrow = trimPathAtJunctions([[0, 0], [40, 0]], 8, [junction])[0]!;
-    expect(narrow.cuts[0]!.apron).toBeCloseTo(15, 9);
-    // Wide +z approach: crossMax = max(8/2, 8/2, 8/2) = 4 → apron 4+4+1 = 9.
+    expect(narrow.cuts[0]!.apron).toBeCloseTo(10.25, 9);
+    // Wide +z: clears the 8-wide streets only → 4 + 0.25.
     const wide = trimPathAtJunctions([[0, 0], [0, 40]], 20, [junction])[0]!;
-    expect(wide.cuts[0]!.apron).toBeCloseTo(9, 9);
+    expect(wide.cuts[0]!.apron).toBeCloseTo(4.25, 9);
   });
 
   test("trimmed corners agree with the ribbon's terminal vertices to 1e-9", () => {
@@ -238,45 +241,22 @@ describe("buildJunctionSurface", () => {
     }
   });
 
-  test("curb-return fillet arcs respect the requested radius", () => {
-    const radius = 6;
-    // A symmetric 4-way so every gap chord (~8.49) is below 2·radius and no clamp kicks in.
+  test("curb-return fillets stay compact and bow outward of the mouth chord", () => {
+    // Deliberately leave a gap between adjacent equal-width mouths so a return is emitted.
     const approaches = [
-      { center: [10, 0] as const, left: [10, 0, 4] as const, right: [10, 0, -4] as const },
-      { center: [0, 10] as const, left: [4, 0, 10] as const, right: [-4, 0, 10] as const },
-      { center: [-10, 0] as const, left: [-10, 0, 4] as const, right: [-10, 0, -4] as const },
-      { center: [0, -10] as const, left: [4, 0, -10] as const, right: [-4, 0, -10] as const },
+      { center: [6, 0] as const, left: [6, 0, 4] as const, right: [6, 0, -4] as const, width: 8, direction: [1, 0] as const },
+      { center: [0, 6] as const, left: [4, 0, 6] as const, right: [-4, 0, 6] as const, width: 8, direction: [0, 1] as const },
+      { center: [-6, 0] as const, left: [-6, 0, 4] as const, right: [-6, 0, -4] as const, width: 8, direction: [-1, 0] as const },
+      { center: [0, -6] as const, left: [4, 0, -6] as const, right: [-4, 0, -6] as const, width: 8, direction: [0, -1] as const },
     ];
-    const surf = buildJunctionSurface({ x: 0, z: 0 }, approaches, flatH, { curbReturnRadius: radius, filletSegments: 6 });
-    // Ring vertices (skip the center at index 0). Corners are the 8 approach edge points.
-    const corners = approaches.flatMap((a) => [
-      [a.left[0], a.left[2]],
-      [a.right[0], a.right[2]],
-    ]);
-    const isCorner = (x: number, z: number) => corners.some((c) => Math.hypot(c[0]! - x, c[1]! - z) < 1e-3);
-    // Walk the ring; find a fillet run (consecutive non-corner points bounded by two corners).
-    const ring: number[][] = [];
-    for (let v = 1; v * 3 + 2 < surf.positions.length; v += 1) ring.push([surf.positions[v * 3]!, surf.positions[v * 3 + 2]!]);
-    let checked = 0;
-    for (let i = 0; i < ring.length; i += 1) {
-      const prev = ring[(i - 1 + ring.length) % ring.length]!;
-      const cur = ring[i]!;
-      const next = ring[(i + 1) % ring.length]!;
-      // A fillet arc point whose neighbours bound a circle: circumradius of (prev, cur, next) ≈ radius.
-      if (!isCorner(cur[0]!, cur[1]!)) {
-        const A = Math.hypot(cur[0]! - prev[0]!, cur[1]! - prev[1]!);
-        const B = Math.hypot(next[0]! - cur[0]!, next[1]! - cur[1]!);
-        const C = Math.hypot(next[0]! - prev[0]!, next[1]! - prev[1]!);
-        const area = Math.abs((cur[0]! - prev[0]!) * (next[1]! - prev[1]!) - (next[0]! - prev[0]!) * (cur[1]! - prev[1]!)) / 2;
-        if (area > 1e-6) {
-          const circum = (A * B * C) / (4 * area);
-          // Cubic quarter-circle approximation stays within a small fraction of the requested radius.
-          expect(circum).toBeCloseTo(radius, 1);
-          checked += 1;
-        }
-      }
-    }
-    expect(checked).toBeGreaterThan(0);
+    const surf = buildJunctionSurface({ x: 0, z: 0 }, approaches, flatH, { curbReturnRadius: 2, filletSegments: 6 });
+    const ring = surfaceRing(surf.positions);
+    expect(polygonIsSimple(ring)).toBe(true);
+    // Compact: no ring vertex farther than the farthest mouth corner + a small return budget.
+    const cornerExtent = Math.max(...approaches.flatMap((a) => [Math.hypot(a.left[0], a.left[2]), Math.hypot(a.right[0], a.right[2])]));
+    expect(Math.max(...ring.map(([x, z]) => Math.hypot(x!, z!)))).toBeLessThanOrEqual(cornerExtent + 2.5);
+    // At least one sampled fillet point sits strictly outside the axis-aligned mouth box.
+    expect(ring.some(([x, z]) => Math.abs(x!) > 6.05 || Math.abs(z!) > 6.05)).toBe(true);
   });
 
   test("empty approaches yield no geometry", () => {
@@ -537,6 +517,48 @@ function shoelaceArea(ring: readonly (readonly number[])[]): number {
   return area / 2;
 }
 
+function meshAreaXZ(mesh: { positions: Float32Array; indices: Uint32Array }): number {
+  let area = 0;
+  for (let i = 0; i < mesh.indices.length; i += 3) {
+    area += Math.abs(triNormalY(mesh.positions, mesh.indices[i]!, mesh.indices[i + 1]!, mesh.indices[i + 2]!)) / 2;
+  }
+  return area;
+}
+
+function ribbonCenters(pos: Float32Array): number[][] {
+  const centers: number[][] = [];
+  for (let i = 0; i < pos.length / 6; i += 1) {
+    centers.push([(pos[i * 6]! + pos[i * 6 + 3]!) / 2, (pos[i * 6 + 2]! + pos[i * 6 + 5]!) / 2]);
+  }
+  return centers;
+}
+
+function meshComponents(mesh: { positions: Float32Array; indices: Uint32Array }): number {
+  const adjacency = Array.from({ length: mesh.positions.length / 3 }, () => new Set<number>());
+  for (let i = 0; i < mesh.indices.length; i += 3) {
+    const tri = [mesh.indices[i]!, mesh.indices[i + 1]!, mesh.indices[i + 2]!];
+    for (let a = 0; a < 3; a += 1) for (let b = a + 1; b < 3; b += 1) {
+      adjacency[tri[a]!]!.add(tri[b]!);
+      adjacency[tri[b]!]!.add(tri[a]!);
+    }
+  }
+  const seen = new Set<number>();
+  let components = 0;
+  for (let start = 0; start < adjacency.length; start += 1) {
+    if (seen.has(start) || adjacency[start]!.size === 0) continue;
+    components += 1;
+    const queue = [start];
+    seen.add(start);
+    while (queue.length > 0) {
+      for (const next of adjacency[queue.pop()!]!) if (!seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return components;
+}
+
 /** Build one draped junction approach from an arm spec (mirrors buildRoadRibbon's corner convention). */
 function makeApproach(
   angle: number,
@@ -755,22 +777,21 @@ describe("buildJunctionSurface simple-boundary triangulation (defect 2: shards)"
 
 describe("trimBandAtJunctions (defect 3: sidewalk/parallel-band trimming)", () => {
   test("a band parallel to a through-road is cut into two sub-paths around a 4-way junction", () => {
-    // apron radius = maxHalf(4) + curbReturn(4) + margin(1) + bandHalf(1.5) = 10.5.
+    // radius = maxHalf(4) + margin(0.25) + bandHalf(1.5) + curbAllow(min(2, 0.35*8)=2) = 7.75.
     const band: [number, number][] = [
       [-40, 6],
       [40, 6],
     ];
     const subs = trimBandAtJunctions(band, 3, [crossJunction(8)]);
     expect(subs.length).toBe(2);
-    // Cut where x² + 6² = 10.5² → |x| = sqrt(110.25 − 36) ≈ 8.617.
-    const boundaryX = Math.sqrt(10.5 * 10.5 - 36);
+    const r = 4 + 0.25 + 1.5 + 2;
+    const boundaryX = Math.sqrt(r * r - 36);
     const near = subs.find((s) => s[0]![0] < 0)!;
     const far = subs.find((s) => s[0]![0] >= 0)!;
     expect(near[near.length - 1]![0]).toBeCloseTo(-boundaryX, 6);
     expect(far[0]![0]).toBeCloseTo(boundaryX, 6);
-    // No surviving point sits inside the apron circle.
     for (const sub of subs) {
-      for (const p of sub) expect(Math.hypot(p[0], p[1])).toBeGreaterThan(10.5 - 1e-6);
+      for (const p of sub) expect(Math.hypot(p[0], p[1])).toBeGreaterThan(r - 1e-6);
     }
   });
 
@@ -808,5 +829,328 @@ describe("trimBandAtJunctions (defect 3: sidewalk/parallel-band trimming)", () =
     const subs = trimBandAtJunctions(band, 3, []);
     expect(subs.length).toBe(1);
     expect(subs[0]!.length).toBe(3);
+  });
+});
+
+describe("shared intersection dressing geometry", () => {
+  const armPath = (angle: number, length = 40): readonly [readonly [number, number], readonly [number, number]] => [
+    [0, 0],
+    [Math.sin(angle) * length, Math.cos(angle) * length],
+  ];
+
+  test("omitted declarations preserve pavement-only behavior and emit no dressing", () => {
+    const result = buildTrimmedIntersections(
+      [{ path: armPath(0), width: 8 }, { path: armPath(Math.PI / 2), width: 8 }],
+      [{ x: 0, z: 0, arms: [{ angle: 0, width: 8 }, { angle: Math.PI / 2, width: 8 }] }],
+      flatH,
+    );
+    expect(result.ribbons.length).toBe(2);
+    expect(result.junctions.length).toBe(1);
+    expect(result.sidewalks).toEqual([]);
+    expect(result.sidewalkAprons).toEqual([]);
+    expect(buildIntersectionMarkings(result, flatH)).toEqual([]);
+  });
+
+  for (const degrees of [45, 90]) {
+    test(`${degrees}-degree marking turn is tangent-continuous and preserves positive/negative offsets`, () => {
+      const angle = (degrees * Math.PI) / 180;
+      const marking = { lines: [{ offset: 1.5, width: 0.2 }, { offset: -1.5, width: 0.2 }] };
+      const junction: RoadJunctionInput = {
+        x: 0,
+        z: 0,
+        arms: [{ angle: 0, width: 10 }, { angle, width: 10 }],
+      };
+      const result = buildTrimmedIntersections(
+        [{ path: armPath(0), width: 10, markings: marking }, { path: armPath(angle), width: 10, markings: marking }],
+        [junction],
+        flatH,
+      );
+      const paint = buildIntersectionMarkings(result, flatH, { connectorSegments: 64, maxSegmentLength: 100 });
+      expect(paint.length).toBe(6); // four approach ribbons + two junction connectors
+      const approaches = result.junctionApproaches[0]!;
+      expect(approaches.every((a) => a.direction !== undefined && a.sourceTangent !== undefined && a.streetIndex !== undefined)).toBe(true);
+      const usedStart = new Set<number>();
+      const usedEnd = new Set<number>();
+      for (let line = 0; line < 2; line += 1) {
+        const connector = ribbonCenters(paint[4 + line]!.positions);
+        const start = connector[0]!;
+        const end = connector[connector.length - 1]!;
+        const startLines = [ribbonCenters(paint[0]!.positions)[0]!, ribbonCenters(paint[1]!.positions)[0]!];
+        const endLines = [ribbonCenters(paint[2]!.positions)[0]!, ribbonCenters(paint[3]!.positions)[0]!];
+        const startIndex = Math.hypot(start[0]! - startLines[0]![0]!, start[1]! - startLines[0]![1]!) < 1e-5 ? 0 : 1;
+        const endIndex = Math.hypot(end[0]! - endLines[0]![0]!, end[1]! - endLines[0]![1]!) < 1e-5 ? 0 : 1;
+        expect(Math.hypot(start[0]! - startLines[startIndex]![0]!, start[1]! - startLines[startIndex]![1]!)).toBeLessThan(1e-5);
+        expect(Math.hypot(end[0]! - endLines[endIndex]![0]!, end[1]! - endLines[endIndex]![1]!)).toBeLessThan(1e-5);
+        expect(usedStart.has(startIndex)).toBe(false);
+        expect(usedEnd.has(endIndex)).toBe(false);
+        usedStart.add(startIndex);
+        usedEnd.add(endIndex);
+        const first = connector[1]!;
+        const last = connector[connector.length - 2]!;
+        const startTangent = [first[0]! - start[0]!, first[1]! - start[1]!];
+        const endTangent = [end[0]! - last[0]!, end[1]! - last[1]!];
+        const aDirection = approaches[0]!.direction!;
+        const bDirection = approaches[1]!.direction!;
+        expect((startTangent[0]! * -aDirection[0] + startTangent[1]! * -aDirection[1]) / Math.hypot(...startTangent as [number, number])).toBeGreaterThan(0.995);
+        expect((endTangent[0]! * bDirection[0] + endTangent[1]! * bDirection[1]) / Math.hypot(...endTangent as [number, number])).toBeGreaterThan(0.995);
+      }
+      const positiveStart = ribbonCenters(paint[4]!.positions)[0]!;
+      const negativeStart = ribbonCenters(paint[5]!.positions)[0]!;
+      expect(Math.hypot(positiveStart[0]! - negativeStart[0]!, positiveStart[1]! - negativeStart[1]!)).toBeCloseTo(3, 4);
+    });
+  }
+
+  test("a curved approach uses its sampled cut tangent instead of the node-to-mouth chord", () => {
+    const marking = { lines: [{ offset: 1, width: 0.2 }] };
+    const junction: RoadJunctionInput = {
+      x: 0,
+      z: 0,
+      arms: [{ angle: 0, width: 8 }, { angle: Math.PI / 2, width: 8 }],
+    };
+    // Bend finishes before the compact mouth (~4.25) so the cut lands on the vertical run.
+    const result = buildTrimmedIntersections(
+      [
+        { path: [[0, 0], [2, 2], [2, 40]], width: 8, markings: marking },
+        { path: armPath(Math.PI / 2), width: 8, markings: marking },
+      ],
+      [junction],
+      flatH,
+    );
+    const curved = result.junctionApproaches[0]![0]!;
+    expect(curved.direction?.[0]).toBeCloseTo(0, 8);
+    expect(curved.direction?.[1]).toBeCloseTo(1, 8);
+    expect(curved.center[0]).toBeCloseTo(2, 8); // radial inference would incorrectly point diagonally
+    const connector = ribbonCenters(buildIntersectionMarkings(result, flatH, { connectorSegments: 64, maxSegmentLength: 100 })[2]!.positions);
+    const tangent = [connector[1]![0]! - connector[0]![0]!, connector[1]![1]! - connector[0]![1]!];
+    expect(Math.abs(tangent[0]! / Math.hypot(...tangent as [number, number]))).toBeLessThan(0.02);
+    expect(tangent[1]).toBeLessThan(0);
+  });
+
+  test("straight two-arm joins pair signed offsets by physical side without crossing", () => {
+    const marking = { lines: [{ offset: 1.5, width: 0.2 }, { offset: -1.5, width: 0.2 }] };
+    const result = buildTrimmedIntersections(
+      [
+        { path: armPath(Math.PI / 2), width: 10, markings: marking },
+        { path: armPath(-Math.PI / 2), width: 10, markings: marking },
+      ],
+      [{ x: 0, z: 0, arms: [{ angle: Math.PI / 2, width: 10 }, { angle: -Math.PI / 2, width: 10 }] }],
+      flatH,
+    );
+    const paint = buildIntersectionMarkings(result, flatH, { connectorSegments: 32, maxSegmentLength: 100 });
+    expect(paint.length).toBe(6);
+    const connectorA = ribbonCenters(paint[4]!.positions);
+    const connectorB = ribbonCenters(paint[5]!.positions);
+    expect(connectorA.every((point) => Math.abs(point[1]! - connectorA[0]![1]!) < 1e-5)).toBe(true);
+    expect(connectorB.every((point) => Math.abs(point[1]! - connectorB[0]![1]!) < 1e-5)).toBe(true);
+    expect(connectorA[0]![1]! * connectorB[0]![1]!).toBeLessThan(0);
+  });
+
+  test("public tessellation controls are finite and bounded", () => {
+    const marking = { lines: [{ offset: 0, width: 0.2 }] };
+    const result = buildTrimmedIntersections(
+      [{ path: armPath(0), width: 8, markings: marking }, { path: armPath(Math.PI / 2), width: 8, markings: marking }],
+      [{ x: 0, z: 0, arms: [{ angle: 0, width: 8 }, { angle: Math.PI / 2, width: 8 }] }],
+      flatH,
+    );
+    expect(buildJunctionConnector({ x: 0, z: 0 }, result.junctionApproaches[0]!, Infinity)!.length).toBe(9);
+    const paint = buildIntersectionMarkings(result, flatH, { connectorSegments: Infinity, maxSegmentLength: 0 });
+    expect(paint.length).toBe(3);
+    expect(paint.reduce((sum, mesh) => sum + mesh.positions.length, 0)).toBeLessThan(10_000);
+    expect(paint.every((mesh) => [...mesh.positions].every(Number.isFinite))).toBe(true);
+  });
+
+  for (const degree of [3, 4]) {
+    test(`unequal-width ${degree === 3 ? "T" : "cross"} has non-overlapping sidewalk mouths and intentional paint termination`, () => {
+      const angles = degree === 3 ? [0, Math.PI / 2, -Math.PI / 2] : [0, Math.PI / 2, Math.PI, -Math.PI / 2];
+      const widths = degree === 3 ? [16, 8, 8] : [16, 8, 12, 6];
+      const streets = angles.map((angle, i) => ({
+        path: armPath(angle),
+        width: widths[i]!,
+        sidewalks: { left: 2 + i * 0.25, right: 3 + i * 0.25 },
+        markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true },
+      }));
+      const junction = { x: 0, z: 0, arms: angles.map((angle, i) => ({ angle, width: widths[i]! })) };
+      const slope = (x: number, z: number) => x * 0.07 - z * 0.04;
+      const result = buildTrimmedIntersections(streets, [junction], slope, { filletSegments: 6 });
+      expect(result.sidewalks.length).toBe(degree * 2);
+      expect(result.sidewalkAprons.length).toBe(1);
+      const apron = result.sidewalkAprons[0]!;
+      expect(apron.indices.length).toBeGreaterThan(0);
+      // One indexed curb-return component per corner; road-mouth openings connect to the side bands.
+      expect(meshComponents(apron)).toBe(degree);
+      for (let t = 0; t < apron.indices.length; t += 3) {
+        expect(triNormalY(apron.positions, apron.indices[t]!, apron.indices[t + 1]!, apron.indices[t + 2]!)).toBeGreaterThan(1e-6);
+      }
+      // Every pavement mouth corner is the inner apron edge and a road-side sidewalk edge: no overlap or gap.
+      for (const ap of result.junctionApproaches[0]!) {
+        for (const corner of [ap.left, ap.right]) {
+          const inApron = Array.from({ length: apron.positions.length / 3 }, (_, v) => v).some(
+            (v) => Math.hypot(apron.positions[v * 3]! - corner[0], apron.positions[v * 3 + 2]! - corner[2]) < 1e-5,
+          );
+          expect(inApron).toBe(true);
+        }
+      }
+      const apronHas = (x: number, z: number) =>
+        Array.from({ length: apron.positions.length / 3 }, (_, v) => v).some(
+          (v) => Math.hypot(apron.positions[v * 3]! - x, apron.positions[v * 3 + 2]! - z) < 1e-5,
+        );
+      for (const sidewalk of result.sidewalks) {
+        // Every arm starts at the junction in this fixture. Both the pavement-edge and outer-edge
+        // vertices of each side band must be reused by the annular apron: no gap or overlap cap.
+        expect(apronHas(sidewalk.positions[0]!, sidewalk.positions[2]!)).toBe(true);
+        expect(apronHas(sidewalk.positions[3]!, sidewalk.positions[5]!)).toBe(true);
+        for (let t = 0; t < sidewalk.indices.length; t += 3) {
+          expect(triNormalY(sidewalk.positions, sidewalk.indices[t]!, sidewalk.indices[t + 1]!, sidewalk.indices[t + 2]!)).toBeGreaterThan(1e-6);
+        }
+      }
+      const paint = buildIntersectionMarkings(result, slope, { mouthClearance: 2 });
+      expect(paint.length).toBe(degree * 2); // one shortened longitudinal line + one stop line per arm
+      for (const mesh of [...result.sidewalks, apron, ...paint]) {
+        for (let v = 0; v * 3 + 2 < mesh.positions.length; v += 1) {
+          const x = mesh.positions[v * 3]!;
+          const z = mesh.positions[v * 3 + 2]!;
+          const layer = paint.includes(mesh) ? GROUND_DECAL_LAYERS.marking : GROUND_DECAL_LAYERS.road;
+          expect(mesh.positions[v * 3 + 1]).toBeCloseTo(slope(x, z) + layer, 5);
+        }
+      }
+    });
+  }
+
+  test("five-way pavement and sidewalk apron stay compact with bounded area and extent", () => {
+    const angles = [0, 0.9, 2.1, 3.4, 5.0];
+    const widths = [8, 18, 6, 14, 10];
+    const streets = angles.map((angle, i) => ({
+      path: armPath(angle, 60),
+      width: widths[i]!,
+      sidewalks: { left: 2, right: 3 },
+    }));
+    const result = buildTrimmedIntersections(
+      streets,
+      [{ x: 0, z: 0, arms: angles.map((angle, i) => ({ angle, width: widths[i]! })) }],
+      flatH,
+      { curbReturnRadius: 2, apronMargin: 0.25, filletSegments: 6 },
+    );
+    const pavement = result.junctions[0]!;
+    const apron = result.sidewalkAprons[0]!;
+    const extent = (mesh: { positions: Float32Array }) => {
+      let max = 0;
+      for (let v = 0; v * 3 + 2 < mesh.positions.length; v += 1) max = Math.max(max, Math.hypot(mesh.positions[v * 3]!, mesh.positions[v * 3 + 2]!));
+      return max;
+    };
+    // Compact relative to the old R-inflated apron (~20–23 extent / 900 area).
+    expect(extent(pavement)).toBeLessThan(18);
+    expect(extent(apron)).toBeLessThan(22);
+    expect(meshAreaXZ(pavement)).toBeLessThan(600);
+    expect(meshAreaXZ(apron)).toBeLessThan(320);
+    for (let v = 0; v * 3 + 2 < apron.positions.length; v += 1) {
+      expect(Math.hypot(apron.positions[v * 3]!, apron.positions[v * 3 + 2]!)).toBeGreaterThan(2);
+    }
+  });
+
+  test("equal cross is a compact W×W conflict area, not a plaza disc", () => {
+    const width = 8;
+    const result = buildTrimmedIntersections(
+      [
+        { path: [[-40, 0], [0, 0], [40, 0]], width, sidewalks: { left: 2, right: 2 }, markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true } },
+        { path: [[0, -40], [0, 0], [0, 40]], width, sidewalks: { left: 2, right: 2 }, markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true } },
+      ],
+      [crossJunction(width)],
+      flatH,
+      { curbReturnRadius: 2, apronMargin: 0.25, filletSegments: 6 },
+    );
+    const pavement = result.junctions[0]!;
+    const ring = surfaceRing(pavement.positions);
+    expect(polygonIsSimple(ring)).toBe(true);
+    // Mouths sit near half-width; area stays near W² (≤ 1.6× for returns/margin).
+    for (const ap of result.junctionApproaches[0]!) {
+      expect(Math.hypot(ap.center[0], ap.center[1])).toBeLessThan(width * 0.6);
+    }
+    expect(meshAreaXZ(pavement)).toBeLessThan(width * width * 1.6);
+    expect(Math.max(...ring.map(([x, z]) => Math.hypot(x!, z!)))).toBeLessThan(width * 0.85);
+  });
+
+  test("T-junction reads as a through-road with one stub (straight far curb, compact stem)", () => {
+    const result = buildTrimmedIntersections(
+      [
+        { path: [[-40, 0], [0, 0], [40, 0]], width: 8, sidewalks: { left: 2, right: 2 }, markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true } },
+        { path: [[0, 0], [0, 40]], width: 8, sidewalks: { left: 2, right: 2 }, markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true } },
+      ],
+      [{ x: 0, z: 0, arms: [{ angle: Math.PI / 2, width: 8 }, { angle: -Math.PI / 2, width: 8 }, { angle: 0, width: 8 }] }],
+      flatH,
+      { curbReturnRadius: 2, apronMargin: 0.25, filletSegments: 6 },
+    );
+    expect(result.junctionApproaches[0]!.length).toBe(3);
+    const ring = surfaceRing(result.junctions[0]!.positions);
+    expect(polygonIsSimple(ring)).toBe(true);
+    // South far curb of the through-road stays near z = −half-width (no semicircle plaza).
+    const south = ring.filter(([_, z]) => z! < -2);
+    expect(south.length).toBeGreaterThan(0);
+    expect(Math.max(...south.map(([_, z]) => Math.abs(z! + 4)))).toBeLessThan(1.5);
+    // No ring vertex deep into the empty southern half-plane.
+    expect(Math.min(...ring.map(([_, z]) => z!))).toBeGreaterThan(-7);
+    expect(meshAreaXZ(result.junctions[0]!)).toBeLessThan(120);
+  });
+
+  test("unequal cross does not inflate the wide boulevard mouth to its own half-width", () => {
+    const result = buildTrimmedIntersections(
+      [
+        { path: [[-50, 0], [0, 0], [50, 0]], width: 18, sidewalks: { left: 2.2, right: 2.2 }, markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true } },
+        { path: [[0, -50], [0, 0], [0, 50]], width: 8, sidewalks: { left: 2.2, right: 2.2 }, markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true } },
+      ],
+      [{
+        x: 0,
+        z: 0,
+        arms: [
+          { angle: Math.PI / 2, width: 18 },
+          { angle: -Math.PI / 2, width: 18 },
+          { angle: 0, width: 8 },
+          { angle: Math.PI, width: 8 },
+        ],
+      }],
+      flatH,
+      { curbReturnRadius: 2, apronMargin: 0.25, filletSegments: 6 },
+    );
+    const approaches = result.junctionApproaches[0]!;
+    const wide = approaches.filter((a) => a.width === 18);
+    const narrow = approaches.filter((a) => a.width === 8);
+    expect(wide.length).toBe(2);
+    expect(narrow.length).toBe(2);
+    // Wide mouths clear only the narrow half-width (~4.25), not the boulevard's own 9.
+    for (const ap of wide) expect(Math.hypot(ap.center[0], ap.center[1])).toBeLessThan(5.5);
+    // Narrow mouths clear the boulevard half-width (~9.25).
+    for (const ap of narrow) {
+      const d = Math.hypot(ap.center[0], ap.center[1]);
+      expect(d).toBeGreaterThan(8.5);
+      expect(d).toBeLessThan(10.5);
+    }
+    expect(meshAreaXZ(result.junctions[0]!)).toBeLessThan(220);
+  });
+
+  test("45° and 90° turns stay compact with continuous sidewalks and no diagonal-only cap", () => {
+    for (const degrees of [45, 90] as const) {
+      // Arm angles use atan2(dx, dz): +x = π/2, +z = 0, 45° between them = π/4.
+      const secondAngle = degrees === 90 ? 0 : Math.PI / 4;
+      const result = buildTrimmedIntersections(
+        [
+          { path: [[0, 0], [40, 0]], width: 8, sidewalks: { left: 2, right: 2 }, markings: { lines: [{ offset: 0, width: 0.2 }] } },
+          {
+            path: [[0, 0], [Math.sin(secondAngle) * 40, Math.cos(secondAngle) * 40]],
+            width: 8,
+            sidewalks: { left: 2, right: 2 },
+            markings: { lines: [{ offset: 0, width: 0.2 }] },
+          },
+        ],
+        [{ x: 0, z: 0, arms: [{ angle: Math.PI / 2, width: 8 }, { angle: secondAngle, width: 8 }] }],
+        flatH,
+        { curbReturnRadius: 2, apronMargin: 0.25, filletSegments: 8 },
+      );
+      expect(result.junctions.length).toBe(1);
+      const ring = surfaceRing(result.junctions[0]!.positions);
+      expect(polygonIsSimple(ring)).toBe(true);
+      expect(Math.max(...ring.map(([x, z]) => Math.hypot(x!, z!)))).toBeLessThan(12);
+      expect(result.sidewalks.length).toBe(4);
+      expect(result.sidewalkAprons.length).toBe(1);
+      expect(meshComponents(result.sidewalkAprons[0]!)).toBeGreaterThanOrEqual(1);
+    }
   });
 });

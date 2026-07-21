@@ -1,5 +1,5 @@
 import {
-  buildJunctionConnector,
+  buildIntersectionMarkings,
   buildTrimmedIntersections,
   type IntersectionStreet,
   type RoadJunctionInput,
@@ -96,73 +96,93 @@ function triangles(ribbon: RoadRibbon, scale: number, cx: number, cy: number): s
   return result;
 }
 
-function linePoints(path: readonly (readonly [number, number])[], scale: number, cx: number, cy: number): string {
-  return path.map(([x, z]) => `${cx + x * scale},${cy + z * scale}`).join(" ");
-}
-
 /**
  * Deterministic close-up gallery of the shared road/junction mesh seam.
  * @capability world-intersections inspect turns and junction meshes in a deterministic preview fixture
  */
 export function StreetGeometryPreview({ className }: { className?: string }) {
   return (
-    <div className={className} style={{ minHeight: "100%", background: "#07111f", color: "#dbeafe", padding: 24, fontFamily: "ui-monospace, monospace" }}>
-      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
+    <div className={className} style={{ minHeight: "100%", background: "radial-gradient(circle at 78% 68%, #25425a 0%, #142b40 28%, #0b1d2e 62%, #07131f 100%)", color: "#dbeafe", padding: 18, fontFamily: "ui-monospace, monospace" }}>
+      <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <h1 style={{ margin: "0 0 6px", fontSize: 24 }}>Street geometry close-ups</h1>
         <p style={{ margin: "0 0 20px", color: "#7dd3fc", fontSize: 13 }}>
-          Exact road, sidewalk, and marking geometry. Pale bands are welded sidewalks; blue is junction-owned pavement.
+          Compact carriageway-union junctions: 45°/90° turns, unequal T, unequal cross, five-way. Pale = sidewalks; blue = pavement; cream = markings.
         </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
           {cases.map((entry) => {
-            const geometry = buildTrimmedIntersections(entry.streets, [entry.junction], () => 0, { filletSegments: 10 });
-            const sidewalkGeometry = buildTrimmedIntersections(
-              entry.streets.map((street) => ({ path: street.path, width: street.width + 4.4 })),
-              [{ ...entry.junction, arms: entry.junction.arms.map((arm) => ({ ...arm, width: arm.width + 4.4 })) }],
-              () => 0,
-              { filletSegments: 10 },
-            );
+            const patternId = `grid-${entry.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+            const streets = entry.streets.map((street) => ({
+              ...street,
+              sidewalks: { left: 2.2, right: 2.2 },
+              markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true },
+            }));
+            const geometry = buildTrimmedIntersections(streets, [entry.junction], () => 0, {
+              curbReturnRadius: 2,
+              apronMargin: 0.25,
+              filletSegments: 10,
+            });
             const surface = geometry.junctions[0]!;
-            const connector = buildJunctionConnector(entry.junction, geometry.junctionApproaches[0]!) ?? [];
+            const markings = buildIntersectionMarkings(geometry, () => 0, {
+              mouthClearance: 1.25,
+              dashLength: 4.8,
+              dashGap: 4,
+            });
             let extent = 0;
             for (let i = 3; i < surface.positions.length; i += 3) {
               extent = Math.max(extent, Math.hypot(surface.positions[i]!, surface.positions[i + 2]!));
             }
             return (
-              <section key={entry.name} style={{ background: "#0b1b2d", border: "1px solid #1e3a5f", borderRadius: 12, overflow: "hidden" }}>
-                <div style={{ padding: "12px 14px 4px", display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <section key={entry.name} style={{ background: "#10263a", border: "1px solid #285174", borderRadius: 10, overflow: "hidden" }}>
+                <div style={{ padding: "8px 12px 3px", display: "flex", justifyContent: "space-between", gap: 8 }}>
                   <strong style={{ fontSize: 14 }}>{entry.name}</strong>
                   <span style={{ color: "#67e8f9", fontSize: 11 }}>extent {extent.toFixed(1)}</span>
                 </div>
-                <svg viewBox="0 0 280 240" role="img" aria-label={`${entry.name} road mesh`} style={{ display: "block", width: "100%", height: "auto" }}>
+                <svg viewBox="0 0 280 205" role="img" aria-label={`${entry.name} road mesh`} style={{ display: "block", width: "100%", height: "auto" }}>
                   <defs>
-                    <pattern id={`grid-${entry.name}`} width="20" height="20" patternUnits="userSpaceOnUse">
-                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#123352" strokeWidth="0.7" />
+                    <pattern id={patternId} width="20" height="20" patternUnits="userSpaceOnUse">
+                      <rect width="20" height="20" fill="#0d2234" />
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#1d4b68" strokeWidth="0.8" />
                     </pattern>
                   </defs>
-                  <rect width="280" height="240" fill={`url(#grid-${entry.name})`} />
-                  {sidewalkGeometry.ribbons.flatMap((ribbon, ri) => triangles(ribbon, 3.2, 140, 120).map((points, ti) => (
-                    <polygon key={`s-r-${ri}-${ti}`} points={points} fill="#cbd5e1" stroke="#cbd5e1" strokeWidth="0.35" />
+                  <rect width="280" height="205" fill={`url(#${patternId})`} />
+                  {geometry.sidewalks.flatMap((ribbon, ri) => triangles(ribbon, 2.65, 140, 102).map((points, ti) => (
+                    <polygon key={`s-r-${ri}-${ti}`} points={points} fill="#d8c9aa" stroke="#d8c9aa" strokeWidth="0.35" />
                   )))}
-                  {sidewalkGeometry.junctions.flatMap((junction, ji) => triangles(junction, 3.2, 140, 120).map((points, ti) => (
-                    <polygon key={`s-j-${ji}-${ti}`} points={points} fill="#cbd5e1" stroke="#cbd5e1" strokeWidth="0.35" />
+                  {geometry.sidewalkAprons.flatMap((junction, ji) => triangles(junction, 2.65, 140, 102).map((points, ti) => (
+                    <polygon key={`s-j-${ji}-${ti}`} points={points} fill="#d8c9aa" stroke="#d8c9aa" strokeWidth="0.35" />
                   )))}
-                  {geometry.ribbons.flatMap((ribbon, ri) => triangles(ribbon, 3.2, 140, 120).map((points, ti) => (
-                    <polygon key={`r-${ri}-${ti}`} points={points} fill="#64748b" stroke="#64748b" strokeWidth="0.35" />
+                  {geometry.ribbons.flatMap((ribbon, ri) => triangles(ribbon, 2.65, 140, 102).map((points, ti) => (
+                    <polygon key={`r-${ri}-${ti}`} points={points} fill="#52677d" stroke="#52677d" strokeWidth="0.35" />
                   )))}
-                  {triangles(surface, 3.2, 140, 120).map((points, ti) => (
-                    <polygon key={`j-${ti}`} points={points} fill="#0284c7" stroke="#0284c7" strokeWidth="0.35" />
+                  {triangles(surface, 2.65, 140, 102).map((points, ti) => (
+                    <polygon key={`j-${ti}`} points={points} fill="#2479a4" stroke="#2479a4" strokeWidth="0.35" />
                   ))}
-                  {geometry.trimmed.map((road, i) => (
-                    <polyline key={`m-${i}`} points={linePoints(road.path, 3.2, 140, 120)} fill="none" stroke="#f8fafc" strokeWidth="0.7" strokeDasharray="5 4" />
-                  ))}
-                  {connector.length > 0 && (
-                    <polyline points={linePoints(connector, 3.2, 140, 120)} fill="none" stroke="#f8fafc" strokeWidth="0.7" strokeDasharray="5 4" />
-                  )}
-                  <circle cx="140" cy="120" r="2.5" fill="#f8fafc" />
+                  {markings.flatMap((marking, mi) => triangles(marking, 2.65, 140, 102).map((points, ti) => (
+                    <polygon key={`m-${mi}-${ti}`} points={points} fill="#f8fafc" />
+                  )))}
                 </svg>
               </section>
             );
           })}
+          <section style={{ minHeight: 238, background: "linear-gradient(145deg, #18354c, #10263a)", border: "1px solid #356487", borderRadius: 10, padding: 18 }}>
+            <strong style={{ display: "block", marginBottom: 8, fontSize: 15 }}>Shared geometry contract</strong>
+            <p style={{ margin: "0 0 14px", color: "#8ed8ef", fontSize: 12, lineHeight: 1.5 }}>
+              Every panel is built from the same renderer-neutral meshes consumed by the Three.js city.
+            </p>
+            {[
+              ["#d8c9aa", "Sidewalk annulus", "No pavement overlap"],
+              ["#2479a4", "Junction apron", "Bounded by road widths"],
+              ["#f8fafc", "Lane guidance", "Mouth clearance + stop lines"],
+              ["#4ade80", "Terrain drape", "Every vertex sampled"],
+              ["#fbbf24", "Offset continuity", "Positive and negative"],
+            ].map(([color, label, detail]) => (
+              <div key={label} style={{ display: "grid", gridTemplateColumns: "12px 1fr auto", alignItems: "center", gap: 9, marginTop: 9, fontSize: 11 }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: color, boxShadow: `0 0 8px ${color}` }} />
+                <span style={{ color: "#e2edf5" }}>{label}</span>
+                <span style={{ color: "#82a9c2" }}>{detail}</span>
+              </div>
+            ))}
+          </section>
         </div>
       </div>
     </div>

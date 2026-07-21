@@ -489,6 +489,7 @@ const exitCode = await withBrowserSession(
     connect: args.connect,
     timeoutMs: args.timeoutMs,
     server: dev.child,
+    serverPid: dev.pid,
     debugPort: daemon?.chromePort,
     attach: daemon !== null,
     leaveWarm: args.keep || daemon !== null,

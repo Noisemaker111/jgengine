@@ -9,7 +9,7 @@
  *   bun run shoot daemon stop
  *   bun run shoot <game> --mode play   # auto-attaches when daemon is live
  */
-import { spawn, type ChildProcess } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
 import {
   closeSync,
   existsSync,
@@ -29,7 +29,7 @@ import {
   ensureWebServer,
   killPid,
   killProcessTree,
-  launchChrome,
+  launchPersistentChrome,
   resolveDevPort,
   resolveWarmChromePort,
   waitForDebugger,
@@ -82,7 +82,7 @@ export function clearDaemonState(cwd = process.cwd()): void {
   if (existsSync(path)) unlinkSync(path);
 }
 
-async function withDaemonStateLock<T>(cwd: string, fn: () => T): Promise<T> {
+async function withDaemonStateLock<T>(cwd: string, fn: () => T | Promise<T>): Promise<T> {
   const lockPath = `${daemonStatePath(cwd)}.lock`;
   const deadline = Date.now() + 5_000;
   let fd: number | undefined;
@@ -102,7 +102,7 @@ async function withDaemonStateLock<T>(cwd: string, fn: () => T): Promise<T> {
     }
   }
   try {
-    return fn();
+    return await fn();
   } finally {
     closeSync(fd);
     if (existsSync(lockPath)) unlinkSync(lockPath);
@@ -163,16 +163,17 @@ export async function ensureDaemonTarget(
       if (target === "web") {
         state.webPort = server.port;
         state.webBase = server.base;
-        state.webPid = server.child?.pid ?? state.webPid;
+        state.webPid = server.pid ?? server.child?.pid ?? state.webPid;
       } else {
         state.devPort = server.port;
         state.devBase = server.base;
-        state.devPid = server.child?.pid ?? state.devPid;
+        state.devPid = server.pid ?? server.child?.pid ?? state.devPid;
       }
       writeDaemonState(state, cwd);
     });
   } catch (error) {
     killProcessTree(server.child);
+    killPid(server.pid, true);
     throw error;
   }
   return server;
@@ -233,14 +234,17 @@ export async function startDaemon(options: {
   const identity = checkoutIdentity(cwd);
   const chromePort = resolveWarmChromePort(cwd);
   let chrome: ChildProcess | null = null;
+  let chromePid: number | undefined;
   try {
-    chrome = launchChrome(chromePort, "jg-shoot-daemon-");
+    const launched = launchPersistentChrome(chromePort, "jg-shoot-daemon-");
+    chrome = launched.child;
+    chromePid = launched.pid;
     await waitForDebugger(chromePort, 30_000);
   } catch (error) {
-    killProcessTree(chrome);
+    if (chrome !== null) killProcessTree(chrome);
+    else killPid(chromePid, true);
     throw error;
   }
-  const chromePid = chrome.pid;
 
   const state: ShootDaemonState = {
     identity,
@@ -255,7 +259,7 @@ export async function startDaemon(options: {
 
   if (options.foreground) {
     const stop = () => {
-      void stopDaemon({ cwd, chrome });
+      void (chrome === null ? stopDaemon({ cwd }) : stopDaemon({ cwd, chrome }));
       process.exit(0);
     };
     process.on("SIGINT", stop);
@@ -270,7 +274,7 @@ export async function startDaemon(options: {
       }, 250);
     });
   } else {
-    chrome.unref();
+    chrome?.unref();
   }
 
   return state;
@@ -342,25 +346,6 @@ export async function statusDaemon(cwd = process.cwd()): Promise<number> {
   return 0;
 }
 
-/**
- * Background start: spawn a detached `shoot --serve` child so the CLI returns.
- * On Windows we still spawn the same entrypoint; the child owns the long-lived
- * Chrome and any lazily-started Vite processes.
- */
-export function spawnDaemonBackground(cwd = process.cwd()): ChildProcess {
-  const entry = join(import.meta.dir, "shoot-dev.ts");
-  const child = spawn(process.execPath, [entry, "--serve"], {
-    cwd,
-    detached: true,
-    stdio: "ignore",
-    env: process.env,
-    windowsHide: true,
-  });
-  child.unref();
-  console.error(`shoot daemon: starting in background (pid ${child.pid ?? "?"})`);
-  return child;
-}
-
 export async function runDaemonCommand(argv: string[], cwd = process.cwd()): Promise<number> {
   const verb = argv[0] ?? "status";
   if (verb === "start") {
@@ -368,26 +353,21 @@ export async function runDaemonCommand(argv: string[], cwd = process.cwd()): Pro
       await startDaemon({ cwd, foreground: true });
       return 0;
     }
-    const existing = await attachDaemon(cwd);
-    if (existing !== null) {
-      console.error(
-        `shoot daemon: already running — chrome :${existing.chromePort}`,
-      );
+    return withDaemonStateLock(cwd, async () => {
+      const existing = await attachDaemon(cwd);
+      if (existing !== null) {
+        console.error(
+          `shoot daemon: already running — chrome :${existing.chromePort}`,
+        );
+        return 0;
+      }
+      await reapStaleDaemonState(cwd);
+      // Chrome is the persistent daemon. Launch it directly instead of spawning a second Bun
+      // supervisor and polling for a state file; that extra launcher caused console focus theft on
+      // Windows and could make a failed start wait blindly for two minutes.
+      await startDaemon({ cwd, foreground: false });
       return 0;
-    }
-    await reapStaleDaemonState(cwd);
-
-    const child = spawnDaemonBackground(cwd);
-    const state = await waitForDaemonLive(cwd, { pid: child.pid });
-    if (state === null) {
-      const reason = pidAlive(child.pid)
-        ? "did not become ready within 120 seconds"
-        : "exited before Chrome became ready";
-      console.error(`shoot daemon: failed — background process ${reason}`);
-      return 1;
-    }
-    console.error(`shoot daemon: ready — chrome :${state.chromePort}; Vite starts lazily on first capture`);
-    return 0;
+    });
   }
   if (verb === "stop") {
     await stopDaemon({ cwd });

@@ -39,6 +39,17 @@ interface Dials {
   blockFill: number;
   elevation: number;
   trackDensity: number;
+  sidewalks: boolean;
+  sidewalkWidth: number;
+  laneMarkings: boolean;
+  laneMarkingWidth: number;
+  laneMarkingOffset: number;
+  laneMarkingDash: number;
+  laneMarkingGap: number;
+  focusJunction: number;
+  cameraRadius: number;
+  cameraPitch: number;
+  cameraYaw: number;
 }
 
 const DEFAULTS: Dials = {
@@ -59,6 +70,17 @@ const DEFAULTS: Dials = {
   blockFill: 0.45,
   elevation: 0.35,
   trackDensity: 0.35,
+  sidewalks: true,
+  sidewalkWidth: 2.2,
+  laneMarkings: true,
+  laneMarkingWidth: 0.18,
+  laneMarkingOffset: 0,
+  laneMarkingDash: 4.8,
+  laneMarkingGap: 4,
+  focusJunction: -1,
+  cameraRadius: 120,
+  cameraPitch: 45,
+  cameraYaw: 45,
 };
 
 /** City vs. circuit start their Elevation dial in different places — gentle hills vs. a rolling lap. */
@@ -128,6 +150,21 @@ function Slider({
         className="mt-1 w-full accent-emerald-400"
       />
     </label>
+  );
+}
+
+function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!value)}
+      className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs transition ${
+        value ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-black/20 text-slate-500"
+      }`}
+    >
+      <span>{label}</span>
+      <span className="font-mono uppercase">{value ? "on" : "off"}</span>
+    </button>
   );
 }
 
@@ -371,18 +408,168 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
   );
 }
 
+export interface PlaygroundCam {
+  x: number;
+  z: number;
+  radius: number;
+  pitch: number;
+  yaw: number;
+}
+
+export interface PlaygroundQuery {
+  dials: Partial<Dials>;
+  cam: PlaygroundCam | null;
+  view: View | null;
+  mode: Mode | null;
+  inspect: boolean;
+  capture: boolean;
+}
+
+const DIAL_RANGES = {
+  size: [140, 400],
+  gridness: [0, 1],
+  connectivity: [0, 1],
+  branching: [0, 1],
+  winding: [0, 0.8],
+  segmentLength: [50, 160],
+  boulevards: [0, 0.6],
+  lotW: [8, 24],
+  lotD: [6, 24],
+  setback: [1, 10],
+  spacing: [0, 8],
+  variety: [0, 1],
+  landmarks: [0, 0.2],
+  blockFill: [0, 1],
+  elevation: [0, 1],
+  trackDensity: [0, 1],
+  sidewalkWidth: [0.5, 5],
+  laneMarkingWidth: [0.06, 0.6],
+  laneMarkingOffset: [-4, 4],
+  laneMarkingDash: [1, 12],
+  laneMarkingGap: [0.5, 12],
+  cameraRadius: [12, 180],
+  cameraPitch: [25, 85],
+  cameraYaw: [-180, 180],
+} as const satisfies Partial<Record<keyof Dials, readonly [number, number]>>;
+
+/** Parse every shareable playground control without allowing invalid geometry or camera values through. */
+export function parsePlaygroundQuery(search: string): PlaygroundQuery {
+  const query = new URLSearchParams(search);
+  const dials: Partial<Dials> = {};
+  const number = (key: string): number | undefined => {
+    const raw = query.get(key);
+    if (raw === null) return undefined;
+    const value = Number(raw);
+    return Number.isFinite(value) ? value : undefined;
+  };
+  const boolean = (key: string): boolean | undefined => {
+    const raw = query.get(key);
+    if (raw === null) return undefined;
+    return !["0", "false", "off", "no"].includes(raw.toLowerCase());
+  };
+  const setNumber = (dial: keyof typeof DIAL_RANGES, queryKey: string = dial) => {
+    const value = number(queryKey);
+    if (value === undefined) return;
+    const [min, max] = DIAL_RANGES[dial];
+    (dials as Record<string, unknown>)[dial] = Math.max(min, Math.min(max, value));
+  };
+
+  const seed = query.get("seed");
+  if (seed !== null && seed.length > 0) dials.seed = seed;
+  for (const dial of [
+    "size",
+    "gridness",
+    "connectivity",
+    "branching",
+    "winding",
+    "segmentLength",
+    "boulevards",
+    "lotW",
+    "lotD",
+    "setback",
+    "spacing",
+    "variety",
+    "landmarks",
+    "elevation",
+    "trackDensity",
+    "sidewalkWidth",
+    "cameraRadius",
+    "cameraPitch",
+    "cameraYaw",
+  ] as const) {
+    setNumber(dial);
+  }
+  setNumber("blockFill", query.has("blockFill") ? "blockFill" : "fill");
+  setNumber("laneMarkingWidth", query.has("laneMarkingWidth") ? "laneMarkingWidth" : "markingWidth");
+  setNumber("laneMarkingOffset", query.has("laneMarkingOffset") ? "laneMarkingOffset" : "markingOffset");
+  setNumber("laneMarkingDash", query.has("laneMarkingDash") ? "laneMarkingDash" : "markingDash");
+  setNumber("laneMarkingGap", query.has("laneMarkingGap") ? "laneMarkingGap" : "markingGap");
+
+  const sidewalks = boolean("sidewalks");
+  if (sidewalks !== undefined) dials.sidewalks = sidewalks;
+  const laneMarkings = boolean(query.has("laneMarkings") ? "laneMarkings" : "markings");
+  if (laneMarkings !== undefined) dials.laneMarkings = laneMarkings;
+  const junction = number("junction");
+  if (junction !== undefined) {
+    dials.focusJunction = Math.max(-1, Math.floor(junction));
+    if (dials.focusJunction >= 0) {
+      dials.cameraRadius ??= DEFAULTS.cameraRadius;
+      dials.cameraPitch ??= DEFAULTS.cameraPitch;
+      dials.cameraYaw ??= DEFAULTS.cameraYaw;
+    }
+  }
+
+  let cam: PlaygroundCam | null = null;
+  const rawCam = query.get("cam");
+  if (rawCam !== null) {
+    const parts = rawCam.split(",").map(Number);
+    if ((parts.length === 3 || parts.length === 4) && parts.every((value) => Number.isFinite(value))) {
+      cam = {
+        x: Math.max(-1000, Math.min(1000, parts[0]!)),
+        z: Math.max(-1000, Math.min(1000, parts[1]!)),
+        radius: Math.max(12, Math.min(180, parts[2]!)),
+        pitch: Math.max(25, Math.min(85, parts[3] ?? DEFAULTS.cameraPitch)),
+        yaw: DEFAULTS.cameraYaw,
+      };
+    }
+  }
+
+  const rawView = query.get("view");
+  const rawMode = query.get("mode");
+  return {
+    dials,
+    cam,
+    view: rawView === "map" || rawView === "3d" ? rawView : null,
+    mode: rawMode === "city" || rawMode === "circuit" ? rawMode : null,
+    inspect: boolean("inspect") === true,
+    capture: boolean("capture") === true,
+  };
+}
+
+const EMPTY_QUERY = parsePlaygroundQuery("");
+
 function Playground() {
+  // SSR and the first client render must match. Apply location-derived state after hydration, then
+  // boot Three.js; the default city is never mounted or declared capture-ready for a query capture.
+  const [query, setQuery] = useState<PlaygroundQuery>(EMPTY_QUERY);
+  const [queryReady, setQueryReady] = useState(false);
   const [mode, setMode] = useState<Mode>("city");
-  // `?view=map` makes the 2D plan view shareable/linkable (and screenshotable headlessly).
-  const [view, setView] = useState<View>(() =>
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("view") === "map" ? "map" : "3d",
-  );
+  const [view, setView] = useState<View>("3d");
   const [dials, setDials] = useState<Dials>(DEFAULTS);
   const [worldReady, setWorldReady] = useState(false);
   const viewerHost = useRef<HTMLDivElement>(null);
   const worldRef = useRef<PlaygroundWorldHandle | null>(null);
   const builtOnce = useRef(false);
   const set = (patch: Partial<Dials>) => setDials((d) => ({ ...d, ...patch }));
+
+  useEffect(() => {
+    const parsed = parsePlaygroundQuery(window.location.search);
+    setQuery(parsed);
+    setMode(parsed.mode ?? "city");
+    setView(parsed.view ?? "3d");
+    setDials({ ...DEFAULTS, ...parsed.dials });
+    setQueryReady(true);
+  }, []);
 
   const result = useMemo(() => {
     if (mode === "circuit") {
@@ -394,6 +581,7 @@ function Playground() {
         winding: dials.winding,
         segmentLength: dials.segmentLength,
         compactness: dials.trackDensity,
+        sidewalkWidth: dials.sidewalkWidth,
         elevation: dials.elevation,
         maxGrade: MAX_GRADE,
       };
@@ -407,39 +595,30 @@ function Playground() {
       winding: dials.winding,
       segmentLength: dials.segmentLength,
       boulevards: dials.boulevards,
+      sidewalkWidth: dials.sidewalkWidth,
       elevation: dials.elevation,
       maxGrade: MAX_GRADE,
     };
-    const city = generateCity(
-      {
-        seed: dials.seed,
-        streets: cityStreets,
-        lots: {
-          // Variety mixes weighted plot archetypes around the base size: apartment slices,
-          // cottages, wide detached parcels, estates. 0 = one uniform plot size.
-          footprint:
-            dials.variety <= 0
-              ? { w: dials.lotW, d: dials.lotD }
-              : [
-                  { w: dials.lotW, d: dials.lotD, weight: 3 },
-                  { w: dials.lotW * 0.55, d: dials.lotD * 1.5, weight: 3 * dials.variety },
-                  { w: dials.lotW * 0.8, d: dials.lotD * 0.8, weight: 2 * dials.variety },
-                  { w: dials.lotW * 1.5, d: dials.lotD * 1.2, weight: 2 * dials.variety },
-                  { w: dials.lotW * 2.1, d: dials.lotD * 1.6, weight: dials.variety },
-                ],
-          setback: dials.setback,
-          spacing: dials.spacing,
-        },
-        content: { landmarks: dials.landmarks, blockFill: dials.blockFill },
+    const cityOptions = {
+      seed: dials.seed,
+      streets: cityStreets,
+      lots: {
+        // The city plotter already emits deterministic small/medium/large/grand tiers from this
+        // scale hint. Passing building-lot variant arrays here is invalid and yields an empty city.
+        footprint: { w: dials.lotW, d: dials.lotD },
+        setback: dials.setback,
+        spacing: dials.spacing,
+        variety: dials.variety,
       },
-      dials.size,
-      dials.size,
-    );
+      content: { landmarks: dials.landmarks, blockFill: dials.blockFill },
+    };
+    const city = generateCity(cityOptions, dials.size, dials.size);
     return { network: city.network, city };
   }, [mode, dials]);
 
   // Boot the 3D viewer once (client-only; three.js loads lazily).
   useEffect(() => {
+    if (!queryReady) return;
     const host = viewerHost.current;
     if (host === null) return;
     let cancelled = false;
@@ -449,7 +628,9 @@ function Playground() {
         worldRef.current = createPlaygroundWorld(host);
         setWorldReady(true);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        document.documentElement.dataset.jgCapture = "error";
+        document.documentElement.dataset.jgCaptureError = error instanceof Error ? error.message : String(error);
         setView("map");
       });
     return () => {
@@ -457,7 +638,7 @@ function Playground() {
       worldRef.current?.dispose();
       worldRef.current = null;
     };
-  }, []);
+  }, [queryReady]);
 
   // Rebuild the 3D model on every regeneration. The first build grows in;
   // slider drags rebuild instantly so the feedback stays immediate.
@@ -465,23 +646,42 @@ function Playground() {
     if (!worldReady) return;
     const world = worldRef.current;
     if (world === null) return;
-    const city = result.city ?? { network: result.network, lots: [] };
-    world.setCity(city, {
+    const city = result.city ?? { network: result.network, lots: [], plots: [], parks: [] };
+    const focusIndex = Math.max(-1, Math.min(result.network.junctions.length - 1, Math.floor(dials.focusJunction)));
+    const focus = focusIndex >= 0 ? result.network.junctions[focusIndex] : undefined;
+    const camera =
+      focus !== undefined
+        ? { x: focus.x, z: focus.z, radius: dials.cameraRadius, pitch: dials.cameraPitch, yaw: dials.cameraYaw }
+        : query.cam ?? undefined;
+    let cancelled = false;
+    document.documentElement.dataset.jgCapture = "pending";
+    void world.setCity(city, {
       seed: dials.seed,
       heightScale: mode === "circuit" ? 0.5 : 1,
-      animate: !builtOnce.current,
+      animate: !query.capture && !builtOnce.current,
       mode,
       elevation: dials.elevation,
       extent: dials.size,
+      camera,
+      sidewalks: dials.sidewalks,
+      sidewalkWidth: dials.sidewalkWidth,
+      laneMarkings: dials.laneMarkings,
+      laneMarkingWidth: dials.laneMarkingWidth,
+      laneMarkingOffset: dials.laneMarkingOffset,
+      laneMarkingDash: dials.laneMarkingDash,
+      laneMarkingGap: dials.laneMarkingGap,
+    }).then(() => {
+      if (!cancelled) document.documentElement.dataset.jgCapture = "ready";
+    }).catch((error: unknown) => {
+      if (cancelled) return;
+      document.documentElement.dataset.jgCapture = "error";
+      document.documentElement.dataset.jgCaptureError = error instanceof Error ? error.message : String(error);
     });
     builtOnce.current = true;
-    // Screenshot tooling (jgengine-verify) waits for this flag; give the
-    // first build's grow animation time to settle before declaring ready.
-    const readyTimer = window.setTimeout(() => {
-      document.documentElement.dataset.jgCapture = "ready";
-    }, 3400);
-    return () => window.clearTimeout(readyTimer);
-  }, [worldReady, result, mode, dials.seed]);
+    return () => {
+      cancelled = true;
+    };
+  }, [worldReady, result, mode, query]);
 
   const rpc =
     mode === "circuit"
@@ -490,13 +690,15 @@ function Playground() {
 
   return (
     <Page>
-      <PageHero
-        eyebrow="Playground"
-        title="Grow a city — or a race circuit — from one seed"
-        blurb="This is the live street generator that ships in @jgengine/core, rendered in full 3D: streets, frontage building lots, traffic. Every drag regrows the whole city deterministically — same seed and sliders, same city, in the browser, in the editor, and in a shipped game."
-      />
-      <div className="mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-[320px_1fr]">
-        <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5">
+      {!query.inspect && (
+        <PageHero
+          eyebrow="Playground"
+          title="Grow a city — or a race circuit — from one seed"
+          blurb="This is the live street generator that ships in @jgengine/core, rendered in full 3D: streets, frontage building lots, traffic. Every drag regrows the whole city deterministically — same seed and sliders, same city, in the browser, in the editor, and in a shipped game."
+        />
+      )}
+      <div className={query.inspect ? "fixed inset-0 z-50 bg-[#0b1017]" : "mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-[320px_1fr]"}>
+        <div className={query.inspect ? "hidden" : "space-y-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5"}>
           <div className="flex gap-2">
             {(["city", "circuit"] as const).map((m) => (
               <button
@@ -541,6 +743,19 @@ function Playground() {
               <Slider label="Connectivity" value={dials.connectivity} min={0} max={1} step={0.05} onChange={(v) => set({ connectivity: v })} />
               <Slider label="Branching" value={dials.branching} min={0} max={1} step={0.05} onChange={(v) => set({ branching: v })} />
               <Slider label="Boulevards" value={dials.boulevards} min={0} max={0.6} step={0.05} onChange={(v) => set({ boulevards: v })} />
+              <Toggle label="Sidewalks" value={dials.sidewalks} onChange={(sidewalks) => set({ sidewalks })} />
+              {dials.sidewalks && (
+                <Slider label="Sidewalk width" value={dials.sidewalkWidth} min={0.5} max={5} step={0.1} onChange={(sidewalkWidth) => set({ sidewalkWidth })} />
+              )}
+              <Toggle label="Lane markings" value={dials.laneMarkings} onChange={(laneMarkings) => set({ laneMarkings })} />
+              {dials.laneMarkings && (
+                <>
+                  <Slider label="Marking width" value={dials.laneMarkingWidth} min={0.06} max={0.6} step={0.02} onChange={(laneMarkingWidth) => set({ laneMarkingWidth })} />
+                  <Slider label="Marking offset" value={dials.laneMarkingOffset} min={-4} max={4} step={0.25} onChange={(laneMarkingOffset) => set({ laneMarkingOffset })} />
+                  <Slider label="Dash length" value={dials.laneMarkingDash} min={1} max={12} step={0.5} onChange={(laneMarkingDash) => set({ laneMarkingDash })} />
+                  <Slider label="Dash gap" value={dials.laneMarkingGap} min={0.5} max={12} step={0.5} onChange={(laneMarkingGap) => set({ laneMarkingGap })} />
+                </>
+              )}
               <Slider label="Lot frontage" value={dials.lotW} min={8} max={24} step={1} onChange={(v) => set({ lotW: v })} />
               <Slider label="Lot depth" value={dials.lotD} min={6} max={24} step={1} onChange={(v) => set({ lotD: v })} />
               <Slider label="Sidewalk setback" value={dials.setback} min={1} max={10} step={1} onChange={(v) => set({ setback: v })} />
@@ -551,6 +766,18 @@ function Playground() {
             </>
           ) : (
             <Slider label="Track density" value={dials.trackDensity} min={0} max={1} step={0.05} onChange={(v) => set({ trackDensity: v })} />
+          )}
+          {view === "3d" && result.network.junctions.length > 0 && (
+            <>
+              <Slider label="Focus junction (-1 = free)" value={Math.min(dials.focusJunction, result.network.junctions.length - 1)} min={-1} max={result.network.junctions.length - 1} step={1} onChange={(focusJunction) => set({ focusJunction })} />
+              {dials.focusJunction >= 0 && (
+                <>
+                  <Slider label="Camera distance" value={dials.cameraRadius} min={12} max={180} step={2} onChange={(cameraRadius) => set({ cameraRadius })} />
+                  <Slider label="Camera pitch" value={dials.cameraPitch} min={25} max={85} step={1} onChange={(cameraPitch) => set({ cameraPitch })} />
+                  <Slider label="Camera yaw" value={dials.cameraYaw} min={-180} max={180} step={5} onChange={(cameraYaw) => set({ cameraYaw })} />
+                </>
+              )}
+            </>
           )}
           <div className="text-xs leading-relaxed text-slate-500">
             {mode === "city" ? (
@@ -574,7 +801,7 @@ function Playground() {
             </code>
           </div>
         </div>
-        <div className="relative min-h-[420px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0b1017] lg:min-h-[560px]">
+        <div className={query.inspect ? "absolute inset-0 overflow-hidden bg-[#0b1017]" : "relative min-h-[420px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0b1017] lg:min-h-[560px]"}>
           <div
             ref={viewerHost}
             className={`absolute inset-0 transition-opacity duration-500 ${
@@ -608,7 +835,7 @@ function Playground() {
           </div>
           {view === "3d" && (
             <p className="pointer-events-none absolute bottom-3 left-3 font-mono text-[10px] text-slate-600">
-              drag to orbit · scroll to zoom
+              {dials.focusJunction >= 0 ? `junction ${Math.floor(dials.focusJunction)} · ` : ""}drag to orbit · scroll to zoom
             </p>
           )}
         </div>

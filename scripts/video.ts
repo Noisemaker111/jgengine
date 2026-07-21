@@ -55,7 +55,7 @@ export function assembleMp4(frames: ApngFrame[], outPath: string): void {
         "-movflags", "+faststart",
         outPath,
       ],
-      { cwd: workDir, stdio: ["ignore", "ignore", "pipe"] },
+      { cwd: workDir, stdio: ["ignore", "ignore", "pipe"], windowsHide: true },
     );
   } finally {
     rmSync(workDir, { recursive: true, force: true });

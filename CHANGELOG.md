@@ -63,18 +63,19 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Fixed
 
-- **Generated street dressing now connects through bends and junctions.** `buildJunctionConnector`
-  exposes shared tangent-continuous connector paths for sidewalks, curbs, and markings; the website
-  playground renders continuous sidewalk aprons and lane paint, and its deterministic query controls
-  can focus a junction for close-up inspection. The capture workflow now also supports managed website
-  screenshots and videos with Chrome-safe ports, lazy Vite targets, and fail-fast navigation errors.
-- **Generated street bends and intersections now form compact, welded road geometry.** Hard degree-2
-  turns are emitted as owned two-arm joins with tangent-continuous inner and outer curbs instead of two
-  overlapping square caps; multi-arm curb returns bow into the crossing instead of ballooning outward;
-  unequal-width seams remain welded; and residential branches reject near-parallel departures that
-  inherently overlap their host road. The playground camera override now supports true close-up orbits
-  down to 8 world units, and `bun run shoot --fixture StreetGeometryPreview` provides deterministic
-  close-ups of turns and unequal multi-arm intersections.
+- **Generated intersections are compact carriageway unions, not plaza discs (#1511).**
+  Apron pull-back is the projected crossing half-width only (opposite through-arms are ignored; curb
+  return is no longer double-counted into the mouth distance). Exterior corners get small width-clamped
+  returns; T far sides stay straight through-curbs; degree-2 turns form L-unions via the outer edge
+  intersection. Sidewalk aprons offset along the local ring normal (not radially from the node), so
+  corners no longer become giant octagonal bands. `buildIntersectionMarkings` still joins degree-2
+  offsets and places stop lines at multi-arm mouths. Playground inspection hides buildings and does not
+  render cuboid traffic. Deterministic fixture: `bun run shoot --fixture StreetGeometryPreview`.
+- **Managed capture no longer steals Windows focus or waits on a background supervisor.** Daemon start
+  launches hidden Chrome directly, while Git, taskkill, Vite, Chrome, and ffmpeg subprocesses all suppress
+  console windows. Website query state hydrates before Three.js boot, preserving fail-fast route capture.
+  Plot frontage is re-resolved after block-corner subdivision so buildings retain the correct street, and
+  `lots.variety` now controls the deterministic plot-tier mix.
 - **`assets pull` / `assets add` default output dir now lands where the dev server serves models** (`@jgengine/assets` CLI, #1339) — inside the monorepo a bare `pull`/`add` previously wrote to a cwd-relative `public/`, so running it under `packages/assets` (or any subdir) dropped GLBs into a folder no game serves. It now defaults to the served root `apps/dev/public` when that exists (falling back to the historical cwd-relative `public` for out-of-monorepo consumers), so pulled bytes land in `apps/dev/public/models/<pack>` where the runner reads them. `--dir` still overrides.
 
 ### Added
