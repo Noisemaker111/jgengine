@@ -3221,7 +3221,7 @@
 - `StreetFeature` (interface): interface StreetFeature — A resolved path feature in world-of-the-volume space: a bridge deck or tunnel bore centerline.
 - `StreetFeatureKind` (type): type StreetFeatureKind = "bridge" | "tunnel" — A path feature spanning part of an edge/street: a bridge deck over a gap or a tunnel bore under a ridge.
 - `StreetFeatureSpan` (interface): interface StreetFeatureSpan — A feature span carried by a street: a `[from, to]` index window into the street's `points`.
-- `StreetJunction` (interface): interface StreetJunction — One crossing or width-changing road seam: patch center/radius plus outgoing arm directions.
+- `StreetJunction` (interface): interface StreetJunction — One crossing of three or more streets: patch center/radius plus outgoing arm directions.
 - `StreetLevel` (type): type StreetLevel = "boulevard" | "avenue" | "street" | "lane" — Road hierarchy, widest to narrowest — shared by the city fabric and the renderer.
 - `StreetNetwork` (interface): interface StreetNetwork — The fully-resolved network in volume-local coords.
 - `StreetNetworkContext` (interface): interface StreetNetworkContext — Ground sampler + feature toggles enabling bridges/tunnels; omit for a flat, feature-free network.
