@@ -71,6 +71,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **City generation now enforces plot clearance and planar streets (#1454).** Building plots clear
+  one another and street corridors, building massing fits its plot, landmark footprints avoid roads
+  and overlap, and generated street chords and branches cannot cross without a junction. Interior
+  arterial stubs are demoted, dead ends receive cul-de-sac bulbs, and the playground exposes a
+  linkable plan view plus plot spacing and variety controls.
+
 - **`debug_snapshot().probes.textureErrors` surfaces in-GLB texture-load failures (#1342).**
   `@jgengine/core/devtools/textureErrors` adds an allocation-aware collector
   (`armTextureErrors`/`reportTextureLoadError`/`resetTextureErrors`/`textureErrorsSnapshot`) that the
