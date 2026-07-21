@@ -42,6 +42,34 @@ export interface PlaytestResult {
   probed: boolean;
 }
 
+export interface RenderCadence {
+  /** Frames the page actually drew per second over the sampled window. */
+  effectiveFps: number;
+  /** True when the render cadence is too low (or the backend is software GL) for a
+   * flat progress probe to be trusted as a genuine softlock — the verdict must
+   * degrade to a warning rather than fail. See issue #1506. */
+  unreliable: boolean;
+}
+
+/**
+ * Classify whether a playtest ran fast enough for its softlock verdict to be
+ * trustworthy. Software GL (cloud SwiftShader) or a render cadence below
+ * `lowFpsThreshold` means a held key advanced the sim too few frames to tell
+ * real progress from a stuck loop — pure so the ruling is unit-testable off the
+ * browser. `framesRendered === 0` (nothing measured) is not treated as low-fps
+ * on its own; only a positive-but-tiny cadence trips the threshold.
+ */
+export function classifyRenderCadence(
+  framesRendered: number,
+  durationMs: number,
+  softwareGl: boolean,
+  lowFpsThreshold: number,
+): RenderCadence {
+  const effectiveFps = durationMs > 0 ? (framesRendered * 1000) / durationMs : 0;
+  const unreliable = softwareGl || (framesRendered > 0 && effectiveFps < lowFpsThreshold);
+  return { effectiveFps, unreliable };
+}
+
 function metricKeys(samples: readonly ProbeSample[]): string[] {
   const keys = new Set<string>();
   for (const sample of samples) {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  classifyRenderCadence,
   longestFlatWindowMs,
   progressDelta,
   summarizePlaytest,
@@ -81,6 +82,39 @@ describe("longestFlatWindowMs", () => {
     ];
     // last ramp point (x=10 @ t=400) already matches the flat tail → span t=400..2400
     expect(longestFlatWindowMs(samples, OPTS.epsilon)).toBe(2000);
+  });
+});
+
+describe("classifyRenderCadence", () => {
+  test("healthy real-time cadence is reliable", () => {
+    // 480 frames drawn over 8s ≈ 60fps
+    const cadence = classifyRenderCadence(480, 8000, false, 5);
+    expect(cadence.effectiveFps).toBeCloseTo(60, 5);
+    expect(cadence.unreliable).toBe(false);
+  });
+
+  test("software GL is always unreliable regardless of fps", () => {
+    const cadence = classifyRenderCadence(480, 8000, true, 5);
+    expect(cadence.unreliable).toBe(true);
+  });
+
+  test("positive-but-tiny cadence trips the low-fps threshold", () => {
+    // the #1506 evidence: ~2 frames in 8s ≈ 0.25fps
+    const cadence = classifyRenderCadence(2, 8000, false, 5);
+    expect(cadence.effectiveFps).toBeCloseTo(0.25, 5);
+    expect(cadence.unreliable).toBe(true);
+  });
+
+  test("zero measured frames alone is not treated as low-fps", () => {
+    // no counter reading is a measurement gap, not proof of a slow host
+    const cadence = classifyRenderCadence(0, 8000, false, 5);
+    expect(cadence.effectiveFps).toBe(0);
+    expect(cadence.unreliable).toBe(false);
+  });
+
+  test("zero duration cannot divide — reads as 0fps, reliable unless software GL", () => {
+    expect(classifyRenderCadence(0, 0, false, 5).unreliable).toBe(false);
+    expect(classifyRenderCadence(0, 0, true, 5).unreliable).toBe(true);
   });
 });
 
