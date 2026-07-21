@@ -641,6 +641,13 @@ export function buildCityModel(
     laneMarkingGap?: number;
     /** Decorative arterial glow independent of physical lane guidance. Default true. */
     centerlineGlow?: boolean;
+    /**
+     * Emit placeholder traffic instances. Default false — colored cuboids read as capture artifacts,
+     * not vehicles. Enable only when a future path supplies unmistakable scaled vehicle meshes.
+     */
+    traffic?: boolean;
+    /** Extrude building lots. Default true; set false for unobstructed intersection close-ups. */
+    buildings?: boolean;
   },
 ): CityModel {
   const heightScale = options.heightScale ?? 1;
@@ -680,12 +687,13 @@ export function buildCityModel(
       : {}),
   }));
   const trimmed = buildTrimmedIntersections(intersectionStreets, city.network.junctions, sampleHeight, {
-    curbReturnRadius: 2.5,
-    apronMargin: 0.5,
+    // Compact carriageway-union mouths; curb returns are exterior corner arcs only (see roads.ts).
+    curbReturnRadius: 2,
+    apronMargin: 0.25,
     filletSegments: 6,
   });
   const markings = buildIntersectionMarkings(trimmed, sampleHeight, {
-    mouthClearance: 1.5,
+    mouthClearance: 1.25,
     dashLength: Math.max(0, options.laneMarkingDash ?? 4.8),
     dashGap: Math.max(0, options.laneMarkingGap ?? 4),
   });
@@ -820,7 +828,7 @@ export function buildCityModel(
     }
   }
 
-  // --- buildings ---
+  // --- buildings (skippable for unobstructed intersection inspection) ---
   const boxWriter = makeWriter(); // windowed walls + flat boxes
   const shapeWriter = makeWriter(); // gable/cylinder/dome, DoubleSide, window-free
   const baseWall = new THREE.Color(palette.building);
@@ -828,9 +836,10 @@ export function buildCityModel(
   const heightsRng = rng("heights");
   const scratchShade = new THREE.Color();
   let tallest = 0;
+  const showBuildings = options.buildings !== false;
 
   const lotContent = city.lotContent;
-  if (lotContent !== undefined && lotContent.length > 0) {
+  if (showBuildings && lotContent !== undefined && lotContent.length > 0) {
     // Real massing pieces per lot, colored by the class's family identity (CLASS_STYLE), jittered
     // per building. Banded walls window per the class; roof/trim/accent take their own hues.
     const wall = new THREE.Color();
@@ -897,7 +906,7 @@ export function buildCityModel(
         }
       });
     }
-  } else {
+  } else if (showBuildings) {
     // Fallback (no resolved content, e.g. the hero world): windowed boxes on bare lots. One shared
     // window behavior tinted by the palette's warm window color — the hero scene has no class data.
     const fallbackEmit: EmitStyle = {
@@ -1033,40 +1042,48 @@ export function buildCityModel(
   shapeMesh.material = shapeMat;
   group.add(shapeMesh);
 
-  // --- traffic: small tangent-oriented vehicles flowing along street chains ---
-  const streams = streets
-    .filter((street) => street.points.length >= 2 && street.level !== "lane")
-    .map((street) => streamFrom(street, sampleHeight));
+  // --- traffic: only when explicitly requested. Default off — BoxGeometry stand-ins look like
+  // capture artifacts, not vehicles, and fail visual review for intersection evidence.
+  const showTraffic = options.traffic === true;
+  const streams = showTraffic
+    ? streets
+        .filter((street) => street.points.length >= 2 && street.level !== "lane")
+        .map((street) => streamFrom(street, sampleHeight))
+    : [];
   const totalLength = streams.reduce((sum, stream) => sum + stream.total, 0);
-  const vehicleCount = Math.min(220, Math.max(24, Math.floor(totalLength / 16)));
+  const vehicleCount = showTraffic ? Math.min(220, Math.max(24, Math.floor(totalLength / 16))) : 0;
   const vehicles: { stream: TrafficStream; offset: number; speed: number }[] = [];
   const traffic = rng("traffic");
   const colorA = new THREE.Color(palette.trafficA);
   const colorB = new THREE.Color(palette.trafficB);
   const vehicleGeo = new THREE.BoxGeometry(1.25, 0.5, 2.8);
   const vehicleMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0 });
-  const vehicleMesh = new THREE.InstancedMesh(vehicleGeo, vehicleMat, vehicleCount);
-  for (let i = 0; i < vehicleCount && streams.length > 0; i += 1) {
-    const pickAt = traffic() * totalLength;
-    let acc = 0;
-    let stream = streams[0]!;
-    for (const candidate of streams) {
-      acc += candidate.total;
-      if (pickAt <= acc) {
-        stream = candidate;
-        break;
+  const vehicleMesh = new THREE.InstancedMesh(vehicleGeo, vehicleMat, Math.max(1, vehicleCount));
+  if (showTraffic) {
+    for (let i = 0; i < vehicleCount && streams.length > 0; i += 1) {
+      const pickAt = traffic() * totalLength;
+      let acc = 0;
+      let stream = streams[0]!;
+      for (const candidate of streams) {
+        acc += candidate.total;
+        if (pickAt <= acc) {
+          stream = candidate;
+          break;
+        }
       }
+      const forward = traffic() < 0.5;
+      vehicles.push({ stream, offset: traffic() * stream.total, speed: (forward ? 1 : -1) * (9 + traffic() * 14) });
+      vehicleMesh.setColorAt(i, forward ? colorA : colorB);
     }
-    const forward = traffic() < 0.5;
-    vehicles.push({ stream, offset: traffic() * stream.total, speed: (forward ? 1 : -1) * (9 + traffic() * 14) });
-    vehicleMesh.setColorAt(i, forward ? colorA : colorB);
+    vehicleMesh.count = vehicles.length;
+    vehicleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    if (vehicleMesh.instanceColor !== null) vehicleMesh.instanceColor.needsUpdate = true;
+    vehicleMesh.name = "city-traffic";
+    vehicleMesh.frustumCulled = false;
+    group.add(vehicleMesh);
+  } else {
+    vehicleMesh.count = 0;
   }
-  vehicleMesh.count = vehicles.length;
-  vehicleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  if (vehicleMesh.instanceColor !== null) vehicleMesh.instanceColor.needsUpdate = true;
-  vehicleMesh.name = "city-traffic";
-  vehicleMesh.frustumCulled = false;
-  group.add(vehicleMesh);
 
   // --- accent lights on the two busiest junctions ---
   const junctions = [...city.network.junctions].sort((a, b) => b.arms.length - a.arms.length);
@@ -1094,19 +1111,21 @@ export function buildCityModel(
     junctionMesh.mesh.visible = reveal.junctionsVisible;
     markingMesh.mesh.visible = reveal.junctionsVisible;
     glowMesh.visible = reveal.junctionsVisible;
-    vehicleMesh.visible = reveal.junctionsVisible;
+    if (showTraffic) vehicleMesh.visible = reveal.junctionsVisible;
     if (options.instant !== true) growUniform.value = elapsed - BUILD_SWEEP_SECONDS * 0.55;
     glowMat.opacity = reveal.dressingOpacity * (0.34 + Math.sin(elapsed * 1.7) * 0.07);
-    vehicleMat.opacity = reveal.dressingOpacity * 0.9;
-    for (let i = 0; i < vehicles.length; i += 1) {
-      const vehicle = vehicles[i]!;
-      vehicle.offset += vehicle.speed * dt;
-      const yaw = sampleStream(vehicle.stream, vehicle.offset, scratch) + (vehicle.speed < 0 ? Math.PI : 0);
-      scratchRotation.setFromAxisAngle(up, yaw);
-      scratchMatrix.compose(scratch, scratchRotation, vehicleScale);
-      vehicleMesh.setMatrixAt(i, scratchMatrix);
+    if (showTraffic) {
+      vehicleMat.opacity = reveal.dressingOpacity * 0.9;
+      for (let i = 0; i < vehicles.length; i += 1) {
+        const vehicle = vehicles[i]!;
+        vehicle.offset += vehicle.speed * dt;
+        const yaw = sampleStream(vehicle.stream, vehicle.offset, scratch) + (vehicle.speed < 0 ? Math.PI : 0);
+        scratchRotation.setFromAxisAngle(up, yaw);
+        scratchMatrix.compose(scratch, scratchRotation, vehicleScale);
+        vehicleMesh.setMatrixAt(i, scratchMatrix);
+      }
+      vehicleMesh.instanceMatrix.needsUpdate = true;
     }
-    vehicleMesh.instanceMatrix.needsUpdate = true;
     if (settledAt === Number.POSITIVE_INFINITY && growUniform.value > 2.6) settledAt = elapsed;
   };
 

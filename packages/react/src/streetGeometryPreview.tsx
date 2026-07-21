@@ -106,7 +106,7 @@ export function StreetGeometryPreview({ className }: { className?: string }) {
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <h1 style={{ margin: "0 0 6px", fontSize: 24 }}>Street geometry close-ups</h1>
         <p style={{ margin: "0 0 20px", color: "#7dd3fc", fontSize: 13 }}>
-          Exact road, sidewalk, and marking geometry. Pale bands are welded sidewalks; blue is junction-owned pavement.
+          Compact carriageway-union junctions: 45°/90° turns, unequal T, unequal cross, five-way. Pale = sidewalks; blue = pavement; cream = markings.
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
           {cases.map((entry) => {
@@ -117,13 +117,13 @@ export function StreetGeometryPreview({ className }: { className?: string }) {
               markings: { lines: [{ offset: 0, width: 0.2 }], stopLine: true },
             }));
             const geometry = buildTrimmedIntersections(streets, [entry.junction], () => 0, {
-              curbReturnRadius: 2.5,
-              apronMargin: 0.5,
+              curbReturnRadius: 2,
+              apronMargin: 0.25,
               filletSegments: 10,
             });
             const surface = geometry.junctions[0]!;
             const markings = buildIntersectionMarkings(geometry, () => 0, {
-              mouthClearance: 1.5,
+              mouthClearance: 1.25,
               dashLength: 4.8,
               dashGap: 4,
             });

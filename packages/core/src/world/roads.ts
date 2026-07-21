@@ -460,9 +460,17 @@ export interface RoadJunctionInput {
 
 /** Tunables shared by {@link trimPathAtJunctions}, {@link buildJunctionSurface}, and {@link buildTrimmedIntersections}. */
 export interface JunctionGeometryOptions {
-  /** Curb-return fillet radius blended between adjacent approaches. Default 4. */
+  /**
+   * Requested curb-return radius at exterior corners between adjacent approaches. Default 2.
+   * Clamped per corner by the two adjacent road widths, the corner chord, and available mouth gap —
+   * never inflates the paved conflict area the way an apron pull-back would.
+   */
   curbReturnRadius?: number;
-  /** Extra apron beyond the crossing half-width + curb return, so ribbons clear the node. Default 1. */
+  /**
+   * Extra clearance beyond the projected crossing half-width so ribbons stop just outside the
+   * carriageway union. Default 0.25. Does **not** include the curb-return radius (returns live only
+   * on the exterior corner arcs).
+   */
   apronMargin?: number;
   /** Samples per curb-return fillet arc between two adjacent approach corners. Default 4. */
   filletSegments?: number;
@@ -506,38 +514,72 @@ function armDirection(angle: number): readonly [number, number] {
 }
 
 /**
- * Apron pull-back for one approach: the widest crossing arm's half-width plus the curb-return radius
- * plus a margin. The approach's own arm is matched to `outward` and excluded, so a narrow street
- * crossing a wide boulevard is pulled back far enough to clear the boulevard, not just itself.
+ * Apron pull-back for one approach: how far the ribbon must retreat so its mouth sits on the
+ * carriageway-union boundary of the *crossing* arms.
+ *
+ * For each arm that is neither this approach (dot ≈ +1) nor its through-continuation (dot ≈ −1),
+ * the clearance along this centerline is `(arm.width / 2) / sin(φ)` where φ is the angle between
+ * the two directions. Orthogonal equal-width roads therefore trim at half-width; a narrow stub
+ * into a wide boulevard trims farther; the wide boulevard only trims by the stub's half-width.
+ *
+ * The curb-return radius is deliberately **not** part of the apron — returns are exterior corner
+ * arcs only. Including them here was the oversized-plaza failure mode (mouths pushed out by R,
+ * then filleted again).
  */
 function apronDistance(
   junction: RoadJunctionInput,
   outward: readonly [number, number],
-  curbReturnRadius: number,
   margin: number,
+  /** Half-width of the approach being trimmed (for acute-angle mouth clearance). */
+  selfHalf = 0,
 ): number {
   const arms = junction.arms;
-  if (arms.length === 0) return curbReturnRadius + margin;
-  let bestK = -1;
-  let bestDot = -Infinity;
-  for (let k = 0; k < arms.length; k += 1) {
-    const [ax, az] = armDirection(arms[k]!.angle);
-    const dot = outward[0] * ax + outward[1] * az;
-    if (dot > bestDot) {
-      bestDot = dot;
-      bestK = k;
-    }
-  }
+  if (arms.length === 0) return margin;
   let crossMax = 0;
+  let anyCrosser = false;
+  let widestHalf = 0;
   for (let j = 0; j < arms.length; j += 1) {
-    if (j === bestK) continue;
-    crossMax = Math.max(crossMax, arms[j]!.width / 2);
+    const half = arms[j]!.width / 2;
+    widestHalf = Math.max(widestHalf, half);
+    const [ax, az] = armDirection(arms[j]!.angle);
+    const dot = outward[0] * ax + outward[1] * az;
+    // Same-direction arm or opposite through-continuation — not a crosser.
+    if (dot > 0.85 || dot < -0.85) continue;
+    // |sin φ| from the 2-D cross magnitude of unit directions.
+    const sinPhi = Math.abs(outward[0] * az - outward[1] * ax);
+    if (sinPhi < 1e-6) continue;
+    anyCrosser = true;
+    // Clear the crossing carriageway projected along this centerline.
+    let needed = half / sinPhi;
+    // Degree-2 acute turns also need enough pull-back that the two mouth end-caps no longer
+    // properly cross (a 90° cross is fine at half-width; a 45° fork is not). Multi-arm nodes
+    // keep the pure projection so unequal five-ways stay compact.
+    if (arms.length === 2) {
+      const phi = Math.atan2(sinPhi, Math.max(-1, Math.min(1, Math.abs(dot))));
+      if (phi < Math.PI / 2 - 1e-6) {
+        const tanHalf = Math.tan(Math.max(phi / 2, 1e-3));
+        needed = Math.max(needed, (selfHalf + half) / (2 * tanHalf));
+      }
+    }
+    crossMax = Math.max(crossMax, needed);
   }
-  if (crossMax === 0) {
-    // Single-arm or unmatched: fall back to the widest arm so we still clear the node.
-    for (let j = 0; j < arms.length; j += 1) crossMax = Math.max(crossMax, arms[j]!.width / 2);
-  }
-  return crossMax + curbReturnRadius + margin;
+  if (!anyCrosser) crossMax = widestHalf;
+  return crossMax + margin;
+}
+
+/** Clamp a requested curb-return radius by the two adjacent road widths and the corner chord. */
+function clampCurbReturnRadius(
+  requested: number,
+  widthA: number,
+  widthB: number,
+  chord: number,
+): number {
+  if (requested <= 0 || chord <= 1e-9) return 0;
+  // Ordinary street corners stay well below half the narrower carriageway.
+  const byWidth = 0.35 * Math.min(widthA, widthB);
+  // A circular return cannot exceed half the gap chord (degenerate semicircle).
+  const byChord = chord * 0.45;
+  return Math.max(0, Math.min(requested, byWidth, byChord));
 }
 
 /** Point + forward tangent at arc-length `dist` from the start of `sub`; used to place a cut. */
@@ -589,8 +631,7 @@ export function trimPathAtJunctions(
   options: JunctionGeometryOptions = {},
 ): TrimmedRoad[] {
   if (path.length < 2 || width <= 0) return [];
-  const curbReturnRadius = options.curbReturnRadius ?? 4;
-  const margin = options.apronMargin ?? 1;
+  const margin = options.apronMargin ?? 0.25;
   const eps = options.nodeEpsilon ?? 1e-6;
   const half = width / 2;
   const n = path.length;
@@ -629,14 +670,14 @@ export function trimPathAtJunctions(
       const dx = sub[1]![0] - sub[0]![0];
       const dz = sub[1]![1] - sub[0]![1];
       const l = Math.hypot(dx, dz) || 1;
-      startApron = apronDistance(junctions[startJ]!, [dx / l, dz / l], curbReturnRadius, margin);
+      startApron = apronDistance(junctions[startJ]!, [dx / l, dz / l], margin, half);
     }
     if (endJ !== -1) {
       const last = sub.length - 1;
       const dx = sub[last - 1]![0] - sub[last]![0];
       const dz = sub[last - 1]![1] - sub[last]![1];
       const l = Math.hypot(dx, dz) || 1;
-      endApron = apronDistance(junctions[endJ]!, [dx / l, dz / l], curbReturnRadius, margin);
+      endApron = apronDistance(junctions[endJ]!, [dx / l, dz / l], margin, half);
     }
 
     // Clamp so the two aprons never cross: leave a sliver of ribbon between adjacent junctions.
@@ -692,10 +733,10 @@ export interface BandTrimOptions extends JunctionGeometryOptions {
  * `Street.sidewalks.{left,right}`) out of every junction's apron, so the band stops at the crossing
  * instead of sailing straight through it. Unlike {@link trimPathAtJunctions} the band never passes
  * through a node, so it is clipped by DISTANCE: each junction contributes a circular apron of radius
- * `max arm half-width + curbReturnRadius + apronMargin + bandWidth/2 + clearance`, and any part of the
- * band inside any apron circle is removed, splitting the band into the sub-paths that survive outside.
- * Entry/exit points land exactly on the apron boundary. A band that never enters an apron passes
- * through as a single untouched copy.
+ * `max arm half-width + apronMargin + bandWidth/2 + clearance` (plus a small curb-return allowance),
+ * and any part of the band inside any apron circle is removed, splitting the band into the sub-paths
+ * that survive outside. Entry/exit points land exactly on the apron boundary. A band that never
+ * enters an apron passes through as a single untouched copy.
  *
  * Pure geometry, deterministic, bounded by the band-vertex and junction counts.
  *
@@ -716,8 +757,8 @@ export function trimBandAtJunctions(
   options: BandTrimOptions = {},
 ): RoadPoint[][] {
   if (bandPath.length < 2) return [];
-  const curbReturnRadius = options.curbReturnRadius ?? 4;
-  const margin = options.apronMargin ?? 1;
+  const curbReturnRadius = options.curbReturnRadius ?? 2;
+  const margin = options.apronMargin ?? 0.25;
   const clearance = options.clearance ?? 0;
   const half = Math.max(0, bandWidth) / 2;
 
@@ -730,8 +771,14 @@ export function trimBandAtJunctions(
   for (let ji = 0; ji < junctions.length; ji += 1) {
     const j = junctions[ji]!;
     let maxHalf = 0;
-    for (let a = 0; a < j.arms.length; a += 1) maxHalf = Math.max(maxHalf, j.arms[a]!.width / 2);
-    const r = maxHalf + curbReturnRadius + margin + half + clearance;
+    let minWidth = Infinity;
+    for (let a = 0; a < j.arms.length; a += 1) {
+      maxHalf = Math.max(maxHalf, j.arms[a]!.width / 2);
+      minWidth = Math.min(minWidth, j.arms[a]!.width);
+    }
+    // Small curb allowance (not the full return) so parallel bands clear exterior corner arcs.
+    const curbAllow = Math.min(curbReturnRadius, 0.35 * (Number.isFinite(minWidth) ? minWidth : 0));
+    const r = maxHalf + margin + half + clearance + curbAllow;
     if (r > 0) circles.push({ x: j.x, z: j.z, r2: r * r });
   }
   const copy = (): RoadPoint[] => bandPath.map((p) => [p[0], p[1]] as RoadPoint);
@@ -877,15 +924,17 @@ export function buildJunctionConnector(
 
 /**
  * Weld one triangulated junction surface onto the corner vertices its incident ribbons END at
- * (from {@link trimPathAtJunctions}). Corners are ordered by angle around the node; the two corners
- * of one approach are joined by the ribbon's straight end-edge (the shared seam), and the gap
- * between adjacent approaches is bridged by a bounded tangent cubic approximating the requested
- * `curbReturnRadius`. Two-arm turns curve both road edges
- * with bounded tangent handles, so 90-degree and oblique bends have no diagonal cap. The grouped,
- * potentially concave boundary is ear-clipped without separating either corner pair, and every
- * triangle is wound so its normal points +Y. Draped height matches
- * {@link buildRoadRibbon}: `sampleHeight(x, z) + elevation`. Boundary vertices are the approach
- * corners verbatim — no overlap, no floating disc.
+ * (from {@link trimPathAtJunctions}). Corners are grouped by approach (so unequal widths cannot
+ * interleave a neighbour between a mouth pair), ordered around the node, and bridged as follows:
+ *
+ * - **Road mouth** — the straight end-edge of the approach (shared seam with the ribbon).
+ * - **Through edge (~180°)** — straight chord along the continuing curb (T-junction far side).
+ * - **Exterior corner** — a compact circular curb-return of radius ≤ `curbReturnRadius`, clamped by
+ *   adjacent widths and chord length; bows *outward* only, never a plaza disc.
+ * - **Two-arm turn** — both edges get the same compact returns (no diagonal cap, no remote tangent).
+ *
+ * The boundary is ear-clipped so every triangle faces +Y. Draped height matches
+ * {@link buildRoadRibbon}. Mouth corners are the approach corners verbatim.
  */
 export function buildJunctionSurface(
   junction: { x: number; z: number },
@@ -895,7 +944,7 @@ export function buildJunctionSurface(
 ): RoadRibbon {
   if (approaches.length === 0) return { positions: new Float32Array(0), indices: new Uint32Array(0) };
   const elevation = options.elevation ?? GROUND_DECAL_LAYERS.junction;
-  const curbReturnRadius = options.curbReturnRadius ?? 4;
+  const curbReturnRadius = options.curbReturnRadius ?? 2;
   const filletSegments = Math.max(1, Math.floor(options.filletSegments ?? 4));
   const cx = junction.x;
   const cz = junction.z;
@@ -908,27 +957,14 @@ export function buildJunctionSurface(
     return v;
   };
 
-  // ---- Build a STRICTLY SIMPLE, angularly-monotonic boundary loop before triangulating. ----
-  //
-  // Root cause of the old shard/sliver triangulation: it sorted ALL 2·N corners globally by their
-  // angle around the node, then decided "seam vs fillet" purely from whether two angularly-adjacent
-  // corners happened to share an approach index. On unequal-width junctions the aprons differ, so a
-  // WIDE approach's corner can interleave between the two corners of a NARROW neighbour — its two
-  // corners are no longer adjacent in the global sort. Seam edges then get treated as fillet gaps
-  // (and vice-versa), the fillet arcs sweep across a neighbour's corner, and the fan-from-centre
-  // covers the resulting non-simple boundary with overlapping slivers.
-  //
-  // Fix: group by APPROACH first. Order the approaches by their outward direction around the node,
-  // emit each approach's own two corners together (in consistent CCW order, wrap-safe because the
-  // corner angle is measured RELATIVE to that approach's outward direction), and bridge the gap to
-  // the NEXT approach with a single outward-bulging curb-return arc. The result is monotonic in
-  // node-angle by construction, so a fan from the node is simple and shard-free.
+  // Group by approach first (unequal aprons must not interleave a neighbour between a mouth pair).
   interface Ap {
     first: { x: number; y: number; z: number };
     second: { x: number; y: number; z: number };
     firstAngle: number;
     secondAngle: number;
     outAngle: number;
+    width: number;
   }
   const ordered: Ap[] = [];
   for (let i = 0; i < approaches.length; i += 1) {
@@ -940,8 +976,7 @@ export function buildJunctionSurface(
     const rightC = { x: ap.right[0], y: ap.right[1], z: ap.right[2] };
     const leftOff = wrapAngle(Math.atan2(leftC.z - cz, leftC.x - cx) - outAngle);
     const rightOff = wrapAngle(Math.atan2(rightC.z - cz, rightC.x - cx) - outAngle);
-    // `first` is the CW-most corner (smaller signed offset), `second` the CCW-most: a CCW walk
-    // around the node visits first → second, keeping each approach's pair contiguous and ordered.
+    // `first` is the CW-most corner, `second` the CCW-most for a CCW walk around the node.
     const firstIsLeft = leftOff <= rightOff;
     ordered.push({
       first: firstIsLeft ? leftC : rightC,
@@ -949,9 +984,80 @@ export function buildJunctionSurface(
       firstAngle: Math.atan2((firstIsLeft ? leftC : rightC).z - cz, (firstIsLeft ? leftC : rightC).x - cx),
       secondAngle: Math.atan2((firstIsLeft ? rightC : leftC).z - cz, (firstIsLeft ? rightC : leftC).x - cx),
       outAngle,
+      width: ap.width ?? Math.hypot(ap.left[0] - ap.right[0], ap.left[2] - ap.right[2]),
     });
   }
   ordered.sort((p, q) => p.outAngle - q.outAngle);
+
+  /**
+   * Compact cubic curb between two mouth corners. Handles follow each approach's edge direction
+   * (parallel to the centerline) and are capped so remote edge intersections cannot recreate the
+   * plaza-sized blob. Samples stay on the outward side of the chord.
+   */
+  const pushCurbCubic = (
+    from: { x: number; y: number; z: number },
+    to: { x: number; y: number; z: number },
+    outAngleA: number,
+    outAngleB: number,
+    handle: number,
+    into: { x: number; y: number; z: number }[],
+  ): void => {
+    const L = Math.hypot(to.x - from.x, to.z - from.z);
+    if (L < 1e-6 || handle < 1e-6) return;
+    const adx = Math.cos(outAngleA);
+    const adz = Math.sin(outAngleA);
+    const bdx = Math.cos(outAngleB);
+    const bdz = Math.sin(outAngleB);
+    const den = adx * bdz - adz * bdx;
+    let hA = handle;
+    let hB = handle;
+    // Prefer the edge-tangent intersection when it lies a short, finite distance away; otherwise
+    // fall back to equal capped handles along each edge.
+    if (Math.abs(den) > 1e-6) {
+      const qx = to.x - from.x;
+      const qz = to.z - from.z;
+      const alongA = (qx * bdz - qz * bdx) / den;
+      const alongB = (qx * adz - qz * adx) / den;
+      const cap = (v: number): number => Math.max(-handle, Math.min(handle, v));
+      hA = cap(alongA);
+      hB = cap(alongB);
+    }
+    const c1x = from.x + adx * hA;
+    const c1z = from.z + adz * hA;
+    const c2x = to.x + bdx * hB;
+    const c2z = to.z + bdz * hB;
+    // Reject cubics that dive through the junction interior (would look like a diagonal cut).
+    const midT = 0.5;
+    const u = 1 - midT;
+    const mx = u * u * u * from.x + 3 * u * u * midT * c1x + 3 * u * midT * midT * c2x + midT * midT * midT * to.x;
+    const mz = u * u * u * from.z + 3 * u * u * midT * c1z + 3 * u * midT * midT * c2z + midT * midT * midT * to.z;
+    const chordMx = (from.x + to.x) / 2;
+    const chordMz = (from.z + to.z) / 2;
+    // Outward = away from node relative to the chord midpoint.
+    const away = (chordMx - cx) * (mx - chordMx) + (chordMz - cz) * (mz - chordMz);
+    if (away < -1e-6) {
+      // Flip handle signs so the bulge faces outward.
+      const f1x = from.x - adx * hA;
+      const f1z = from.z - adz * hA;
+      const f2x = to.x - bdx * hB;
+      const f2z = to.z - bdz * hB;
+      for (let s = 1; s < filletSegments; s += 1) {
+        const t = s / filletSegments;
+        const uu = 1 - t;
+        const x = uu * uu * uu * from.x + 3 * uu * uu * t * f1x + 3 * uu * t * t * f2x + t * t * t * to.x;
+        const z = uu * uu * uu * from.z + 3 * uu * uu * t * f1z + 3 * uu * t * t * f2z + t * t * t * to.z;
+        into.push({ x, y: sampleHeight(x, z) + elevation, z });
+      }
+      return;
+    }
+    for (let s = 1; s < filletSegments; s += 1) {
+      const t = s / filletSegments;
+      const uu = 1 - t;
+      const x = uu * uu * uu * from.x + 3 * uu * uu * t * c1x + 3 * uu * t * t * c2x + t * t * t * to.x;
+      const z = uu * uu * uu * from.z + 3 * uu * uu * t * c1z + 3 * uu * t * t * c2z + t * t * t * to.z;
+      into.push({ x, y: sampleHeight(x, z) + elevation, z });
+    }
+  };
 
   const boundary: { x: number; y: number; z: number }[] = [];
   let angularFallback = false;
@@ -965,76 +1071,75 @@ export function buildJunctionSurface(
     const to = nxt.first;
     const L = Math.hypot(to.x - cur.x, to.z - cur.z);
     if (L < 1e-6) continue;
+
+    let armGap = wrapAngle(nxt.outAngle - ap.outAngle);
+    if (armGap < 0) armGap += Math.PI * 2;
+
+    // Near-parallel two-arm fork: keep the four mouth corners as a compact star-shaped polygon.
+    if (ordered.length === 2 && Math.min(armGap, Math.PI * 2 - armGap) < (35 * Math.PI) / 180) {
+      angularFallback = true;
+      continue;
+    }
+
     if (ordered.length === 2) {
-      const armGap = Math.abs(wrapAngle(nxt.outAngle - ap.outAngle));
-      if (armGap < (35 * Math.PI) / 180) {
-        // Two strips this close already overlap around the node. Their four mouth corners form the
-        // only compact star-shaped union boundary; sampled returns interleave in polar order and
-        // self-cross. Keep the straight wedge while generated branches reject this topology upstream.
-        angularFallback = true;
+      // Degree-2 bend: the pavement is the L-union of the two strips. The short gap is the inside
+      // curb return; the long gap must pass through the outer edge-intersection so the surface is
+      // an L, not a diagonal chord (which under-covers) or an interior cubic (which self-crosses).
+      const minW = Math.min(ap.width, nxt.width);
+      const isOuter = L > minW * 0.75;
+      if (!isOuter) {
+        const handle = Math.min(curbReturnRadius * 0.55, L * 0.4, minW * 0.35);
+        if (handle > 1e-6) pushCurbCubic(cur, to, ap.outAngle, nxt.outAngle, handle, boundary);
         continue;
       }
-      // A hard degree-2 turn has two curb edges, not one intersection corner plus a diagonal cap.
-      // Aim each cubic handle at the road-edge tangent intersection, but cap its reach by the corner
-      // chord. Near-parallel arms otherwise put that intersection arbitrarily far away and recreate
-      // the giant blob. Independent handles preserve tangency at both ends after the cap.
       const adx = Math.cos(ap.outAngle);
       const adz = Math.sin(ap.outAngle);
       const bdx = Math.cos(nxt.outAngle);
       const bdz = Math.sin(nxt.outAngle);
       const den = adx * bdz - adz * bdx;
-      if (Math.abs(den) > 1e-6) {
-        const qx = to.x - cur.x;
-        const qz = to.z - cur.z;
-        const alongA = (qx * bdz - qz * bdx) / den;
-        const alongB = (qx * adz - qz * adx) / den;
-        const maxHandle = Math.max(curbReturnRadius, L * 0.75);
-        const cap = (v: number): number => Math.max(-maxHandle, Math.min(maxHandle, v));
-        const aHandle = cap(alongA);
-        const bHandle = cap(alongB);
-        const controlAX = cur.x + adx * aHandle;
-        const controlAZ = cur.z + adz * aHandle;
-        const controlBX = to.x + bdx * bHandle;
-        const controlBZ = to.z + bdz * bHandle;
-        for (let s = 1; s < filletSegments; s += 1) {
-          const t = s / filletSegments;
-          const u = 1 - t;
-          const x = u * u * u * cur.x + 3 * u * u * t * controlAX + 3 * u * t * t * controlBX + t * t * t * to.x;
-          const z = u * u * u * cur.z + 3 * u * u * t * controlAZ + 3 * u * t * t * controlBZ + t * t * t * to.z;
-          boundary.push({ x, y: sampleHeight(x, z) + elevation, z });
-        }
-      }
-      continue;
-    }
-    // Skip the arc if the next approach angularly OVERLAPS this one (a straight seam chord keeps the
-    // ring simple where a fillet would sweep backward across a corner).
-    if (wrapAngle(nxt.firstAngle - ap.secondAngle) <= 1e-9) continue;
-    const adx = Math.cos(ap.outAngle);
-    const adz = Math.sin(ap.outAngle);
-    const bdx = Math.cos(nxt.outAngle);
-    const bdz = Math.sin(nxt.outAngle);
-    const den = adx * bdz - adz * bdx;
-    if (Math.abs(den) > 1e-6) {
+      if (Math.abs(den) <= 1e-6) continue;
       const qx = to.x - cur.x;
       const qz = to.z - cur.z;
       const alongA = (qx * bdz - qz * bdx) / den;
       const alongB = (qx * adz - qz * adx) / den;
-      // A cubic quarter-circle uses a ~0.552R tangent handle. Also cap by the chord so acute or
-      // unequal-width approaches cannot push one return through a neighboring mouth.
-      const maxHandle = Math.min(curbReturnRadius * 0.55228475, L * 0.45);
-      const cap = (v: number): number => Math.max(-maxHandle, Math.min(maxHandle, v));
-      const controlAX = cur.x + adx * cap(alongA);
-      const controlAZ = cur.z + adz * cap(alongA);
-      const controlBX = to.x + bdx * cap(alongB);
-      const controlBZ = to.z + bdz * cap(alongB);
-      for (let s = 1; s < filletSegments; s += 1) {
-        const t = s / filletSegments;
-        const u = 1 - t;
-        const x = u * u * u * cur.x + 3 * u * u * t * controlAX + 3 * u * t * t * controlBX + t * t * t * to.x;
-        const z = u * u * u * cur.z + 3 * u * u * t * controlAZ + 3 * u * t * t * controlBZ + t * t * t * to.z;
-        boundary.push({ x, y: sampleHeight(x, z) + elevation, z });
+      // Finite outer corner of the two edge lines; reject near-parallel runaway intersections.
+      const maxReach = Math.max(minW * 3, L * 1.5);
+      if (!Number.isFinite(alongA) || !Number.isFinite(alongB)) continue;
+      if (Math.abs(alongA) > maxReach || Math.abs(alongB) > maxReach) continue;
+      const ix = cur.x + adx * alongA;
+      const iz = cur.z + adz * alongA;
+      // Must lie on the far side of the chord from the node (true outer corner).
+      const chordMx = (cur.x + to.x) / 2;
+      const chordMz = (cur.z + to.z) / 2;
+      if ((ix - chordMx) * (chordMx - cx) + (iz - chordMz) * (chordMz - cz) > 1e-6) continue;
+      // Sharp L corner (optionally softened by a few samples pulled slightly toward the corner from
+      // each edge so the outer curb is not a single needle vertex on very acute angles).
+      const soft = Math.min(curbReturnRadius, minW * 0.25, Math.abs(alongA) * 0.35, Math.abs(alongB) * 0.35);
+      if (soft > 1e-3 && filletSegments > 1) {
+        for (let s = 1; s < filletSegments; s += 1) {
+          const t = s / filletSegments;
+          // Quadratic Bezier cur → outer-corner → to: always simple, always covers the L.
+          const u = 1 - t;
+          const x = u * u * cur.x + 2 * u * t * ix + t * t * to.x;
+          const z = u * u * cur.z + 2 * u * t * iz + t * t * to.z;
+          boundary.push({ x, y: sampleHeight(x, z) + elevation, z });
+        }
+      } else {
+        boundary.push({ x: ix, y: sampleHeight(ix, iz) + elevation, z: iz });
       }
+      continue;
     }
+
+    // Multi-arm through-road far side (~180°): straight curb along the continuing carriageway.
+    if (armGap > (150 * Math.PI) / 180) continue;
+
+    // Skip if the next mouth angularly overlaps (would sweep backward across a corner).
+    if (wrapAngle(nxt.firstAngle - ap.secondAngle) <= 1e-9) continue;
+
+    const R = clampCurbReturnRadius(curbReturnRadius, ap.width, nxt.width, L);
+    if (R < 1e-6) continue;
+    // Cubic quarter-circle uses ~0.55R handles; also never exceed the chord budget.
+    pushCurbCubic(cur, to, ap.outAngle, nxt.outAngle, Math.min(R * 0.55228475, L * 0.4), boundary);
   }
 
   if (angularFallback) {
@@ -1254,24 +1359,40 @@ function buildSidewalkApron(
     point: RoadPoint;
     outer: RoadPoint;
     approach: number;
+    width: number;
   }
   const corners: Corner[] = [];
   for (let i = 0; i < approaches.length; i += 1) {
     const ap = approaches[i]!;
-    const dx = ap.direction?.[0] ?? ap.center[0];
-    const dz = ap.direction?.[1] ?? ap.center[1];
+    const dx = ap.direction?.[0] ?? ap.center[0] - junction.x;
+    const dz = ap.direction?.[1] ?? ap.center[1] - junction.z;
     const length = Math.hypot(dx, dz) || 1;
-    const nx = -dz / length;
-    const nz = dx / length;
+    const ux = dx / length;
+    const uz = dz / length;
+    // Left normal of the outward approach direction (matches ribbon left/right).
+    const nx = -uz;
+    const nz = ux;
     const leftWidth = Math.max(0, ap.sidewalkWidths?.left ?? 0);
     const rightWidth = Math.max(0, ap.sidewalkWidths?.right ?? 0);
-    const sourceDot = (ap.sourceTangent?.[0] ?? dx) * dx + (ap.sourceTangent?.[1] ?? dz) * dz;
+    const sourceDot = (ap.sourceTangent?.[0] ?? ux) * ux + (ap.sourceTangent?.[1] ?? uz) * uz;
     const left: RoadPoint = [ap.left[0], ap.left[2]];
     const right: RoadPoint = [ap.right[0], ap.right[2]];
     const sourceSign = sourceDot >= 0 ? 1 : -1;
-    corners.push({ point: left, outer: [left[0] + nx * leftWidth * sourceSign, left[1] + nz * leftWidth * sourceSign], approach: i });
-    corners.push({ point: right, outer: [right[0] - nx * rightWidth * sourceSign, right[1] - nz * rightWidth * sourceSign], approach: i });
+    corners.push({
+      point: left,
+      outer: [left[0] + nx * leftWidth * sourceSign, left[1] + nz * leftWidth * sourceSign],
+      approach: i,
+      width: leftWidth,
+    });
+    corners.push({
+      point: right,
+      outer: [right[0] - nx * rightWidth * sourceSign, right[1] - nz * rightWidth * sourceSign],
+      approach: i,
+      width: rightWidth,
+    });
   }
+  if (corners.length === 0) return { positions: new Float32Array(0), indices: new Uint32Array(0) };
+
   const nearestCorner = (p: RoadPoint): { corner: Corner; distance: number } => {
     let corner = corners[0]!;
     let distance = Infinity;
@@ -1285,14 +1406,50 @@ function buildSidewalkApron(
     }
     return { corner, distance };
   };
-  const outerAt = (p: RoadPoint): RoadPoint => {
+
+  /**
+   * Offset a pavement-boundary point outward along the local ring normal by the sidewalk width.
+   * Using the ring normal (not a radial vector from the junction) keeps the apron a constant-width
+   * band around the curb — no giant annular/octagonal pads.
+   */
+  const outerAt = (p: RoadPoint, index: number): RoadPoint => {
     const nearest = nearestCorner(p);
     if (nearest.distance < 1e-3) return nearest.corner.outer;
-    const width = Math.hypot(nearest.corner.outer[0] - nearest.corner.point[0], nearest.corner.outer[1] - nearest.corner.point[1]);
-    const rx = p[0] - junction.x;
-    const rz = p[1] - junction.z;
-    const radius = Math.hypot(rx, rz) || 1;
-    return [p[0] + (rx / radius) * width, p[1] + (rz / radius) * width];
+    const prev = ring[(index - 1 + ring.length) % ring.length]!;
+    const next = ring[(index + 1) % ring.length]!;
+    let tx = next[0] - prev[0];
+    let tz = next[1] - prev[1];
+    const tl = Math.hypot(tx, tz);
+    if (tl < 1e-9) {
+      tx = next[0] - p[0];
+      tz = next[1] - p[1];
+    }
+    const tlen = Math.hypot(tx, tz) || 1;
+    tx /= tlen;
+    tz /= tlen;
+    // Outward normal: perpendicular of the tangent pointing away from the node.
+    let nx = -tz;
+    let nz = tx;
+    if ((p[0] - junction.x) * nx + (p[1] - junction.z) * nz < 0) {
+      nx = -nx;
+      nz = -nz;
+    }
+    // Interpolate width from the two nearest mouth corners so unequal sidewalks blend around the arc.
+    let w0 = nearest.corner.width;
+    let w1 = w0;
+    let d1 = Infinity;
+    for (const candidate of corners) {
+      if (candidate === nearest.corner) continue;
+      const d = Math.hypot(candidate.point[0] - p[0], candidate.point[1] - p[1]);
+      if (d < d1) {
+        d1 = d;
+        w1 = candidate.width;
+      }
+    }
+    const t = nearest.distance + d1 > 1e-9 ? d1 / (nearest.distance + d1) : 0.5;
+    const width = Math.max(0, w0 * t + w1 * (1 - t));
+    if (width < 1e-9) return p;
+    return [p[0] + nx * width, p[1] + nz * width];
   };
 
   const positions: number[] = [];
@@ -1322,8 +1479,8 @@ function buildSidewalkApron(
     const cb = nearestCorner(b);
     // The paired corners of one approach are a road mouth, not sidewalk: leave it open.
     if (ca.distance < 1e-3 && cb.distance < 1e-3 && ca.corner.approach === cb.corner.approach) continue;
-    const ao = outerAt(a);
-    const bo = outerAt(b);
+    const ao = outerAt(a, i);
+    const bo = outerAt(b, (i + 1) % ring.length);
     if (Math.hypot(ao[0] - a[0], ao[1] - a[1]) < 1e-9 && Math.hypot(bo[0] - b[0], bo[1] - b[1]) < 1e-9) continue;
     const ai = vertex(a);
     const bi = vertex(b);

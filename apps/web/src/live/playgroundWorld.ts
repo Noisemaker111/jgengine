@@ -52,6 +52,10 @@ export interface PlaygroundWorldHandle {
       laneMarkingOffset?: number;
       laneMarkingDash?: number;
       laneMarkingGap?: number;
+      /** Show building lots. Default true; false for unobstructed junction close-ups. */
+      buildings?: boolean;
+      /** Placeholder cuboid traffic. Default false (not acceptable as visual evidence). */
+      traffic?: boolean;
     },
   ): Promise<void>;
   dispose(): void;
@@ -135,6 +139,10 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
         laneMarkingDash: options.laneMarkingDash,
         laneMarkingGap: options.laneMarkingGap,
         centerlineGlow: false,
+        // Focused junction inspection: hide buildings so carriageways fill the frame.
+        buildings: options.buildings ?? options.camera === undefined,
+        // Cuboid traffic is not acceptable vehicle evidence; keep it off.
+        traffic: options.traffic === true,
       });
       handle.scene.add(model.group);
       // Reframe on the first build AND whenever the mode flips (city ↔ circuit is a new kind of layout);
