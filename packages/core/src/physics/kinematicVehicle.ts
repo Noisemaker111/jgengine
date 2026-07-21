@@ -52,6 +52,11 @@ export interface KinematicChassisTuning {
   comHeight: number;
   /** Lateral wheel spacing (track width), m; larger resists lateral weight transfer. */
   trackWidth: number;
+  /**
+   * Reverse drive force as a fraction of `engineForce` (default {@link DEFAULT_REVERSE_FORCE_SCALE}).
+   * Real gearboxes and games both keep reverse much softer than forward launch.
+   */
+  reverseForceScale?: number;
 }
 
 /** Data-first gearbox and torque-curve tuning for a kinematic ground vehicle. */
@@ -223,6 +228,21 @@ export function createKinematicVehicle(
         yawRate += (targetYaw - yawRate) * yawResponse;
         heading += yawRate * dt;
       }
+      // Handbrake rear-lock oversteer: pure grip bleed leaves a bicycle car going mostly straight
+      // while sliding. Extra yaw from steer×handbrake is what makes drifts initiate and hold
+      // (GTA/NFS-style street feel) without needing a dual-axle tire model.
+      if (axis.handbrake > 0.05 && Math.abs(speed) > HANDBRAKE_OVERSTEER_MIN_SPEED && Math.abs(axis.steer) > 0.02) {
+        const speedFactor = Math.min(1, Math.abs(speed) / HANDBRAKE_OVERSTEER_REF_SPEED);
+        const oversteerYaw =
+          -Math.sign(speed === 0 ? 1 : speed) *
+          axis.steer *
+          axis.handbrake *
+          HANDBRAKE_OVERSTEER_YAW *
+          speedFactor;
+        // Integrate immediately so this tick's heading (and next-frame velocity basis) rotate with the slide.
+        heading += oversteerYaw * dt;
+        yawRate += oversteerYaw * 0.65;
+      }
 
       const [fx, fz] = forward();
       let accel = 0;
@@ -255,6 +275,15 @@ export function createKinematicVehicle(
         const normalizedRpm = (rpm - powertrain.idleRpm) / Math.max(1, powertrain.redlineRpm - powertrain.idleRpm);
         const torque = sampleGripCurve(powertrain.torqueCurve, normalizedRpm);
         torqueFactor = torque * (shiftRemaining > 0 ? 0.32 : 1);
+        // Launch clutch floor: at crawl speeds the idle end of a torque curve under-reads what a
+        // clutched street car actually puts down. Fade the floor out by {@link LAUNCH_TORQUE_FADE_SPEED}
+        // so mid-range power still comes from the curve.
+        if (axis.throttle > 0) {
+          const launchBlend = 1 - Math.min(1, Math.abs(speed) / LAUNCH_TORQUE_FADE_SPEED);
+          if (launchBlend > 0) {
+            torqueFactor = Math.max(torqueFactor, LAUNCH_TORQUE_FLOOR * launchBlend + torqueFactor * (1 - launchBlend));
+          }
+        }
       }
 
       if (axis.throttle > 0 && speed < topSpeed) {
@@ -272,9 +301,12 @@ export function createKinematicVehicle(
             : (axis.brake * chassis.brakeForce * brakeScale) / chassis.massKg;
         }
         else if (speed > -tuning.reverseSpeed) {
+          // Reverse is intentionally softer than forward — full engineForce made performance cars
+          // hit reverse top in ~2 s and felt like a second highway gear.
+          const reverseScale = chassis?.reverseForceScale ?? DEFAULT_REVERSE_FORCE_SCALE;
           accel -= chassis === undefined
-            ? axis.brake * engineAccel
-            : (axis.brake * chassis.engineForce * (modifiers?.accelScale ?? 1)) / chassis.massKg;
+            ? axis.brake * engineAccel * reverseScale
+            : (axis.brake * chassis.engineForce * reverseScale * (modifiers?.accelScale ?? 1)) / chassis.massKg;
         }
       }
       const traction = tuning.dynamics?.tractionControl ?? 0;
@@ -296,7 +328,10 @@ export function createKinematicVehicle(
       // never push the car backwards.
       if (chassis !== undefined && dt > 0 && Math.abs(speed) > 1e-4) {
         let resistDecel = ROLLING_RESISTANCE_COEFFICIENT * GRAVITY;
-        if (axis.throttle <= 0 && tuning.powertrain !== undefined) {
+        // Engine braking is a coast/lift-off load only. Applying it while the brake axis is driving
+        // reverse (speed ≤ 0.2 + brake) would fight reverse accel and leave cars crawling backwards.
+        const reverseDriving = axis.brake > 0 && speed <= 0.2;
+        if (axis.throttle <= 0 && !reverseDriving && tuning.powertrain !== undefined) {
           resistDecel += ENGINE_BRAKE_COEFFICIENT * GRAVITY * gearLeverage;
         }
         accel -= Math.sign(speed) * Math.min(resistDecel, Math.abs(speed) / dt);
@@ -312,7 +347,8 @@ export function createKinematicVehicle(
       const downforce = 1 + (tuning.dynamics?.downforce ?? 0) * Math.min(1, Math.abs(forwardSpeed) / Math.max(1, topSpeed));
       const gripValue = sampleGripCurve(grip, slip) * surface * handbrakeFactor * downforce;
       const keep = Math.max(0, 1 - gripValue * tuning.gripStrength * dt);
-      const stability = tuning.dynamics?.stabilityControl ?? 0;
+      // ESC fights intentional slides — ease it off while the handbrake is held so drift stays steerable.
+      const stability = (tuning.dynamics?.stabilityControl ?? 0) * (1 - 0.85 * axis.handbrake);
       let keptLateral = lateralSpeed * keep * Math.max(0, 1 - stability * Math.abs(axis.steer) * dt);
       if (chassis !== undefined) {
         // Friction budget (#1051): total tire force F = μeff * m * g, with μeff = tireGrip * gripValue
@@ -447,6 +483,24 @@ export function createKinematicVehicle(
 
 /** Gravitational acceleration, m/s², for the chassis friction budget and weight-transfer ratio (#1051). */
 const GRAVITY = 9.81;
+
+/** Default reverse drive force as a fraction of forward `engineForce` / `engineAccel`. */
+export const DEFAULT_REVERSE_FORCE_SCALE = 0.48;
+
+/**
+ * Minimum torque-curve factor under throttle near standstill (launch clutch). Fades out by
+ * {@link LAUNCH_TORQUE_FADE_SPEED} so it only fills the weak idle end of the curve.
+ */
+const LAUNCH_TORQUE_FLOOR = 0.9;
+/** Forward speed (world units/s) by which the launch torque floor has fully faded. */
+const LAUNCH_TORQUE_FADE_SPEED = 9;
+
+/** Minimum |forward speed| before handbrake oversteer yaw kicks in. */
+const HANDBRAKE_OVERSTEER_MIN_SPEED = 2.5;
+/** Speed at which handbrake oversteer reaches full strength. */
+const HANDBRAKE_OVERSTEER_REF_SPEED = 12;
+/** Peak extra yaw rate (rad/s) from full steer + full handbrake at {@link HANDBRAKE_OVERSTEER_REF_SPEED}. */
+const HANDBRAKE_OVERSTEER_YAW = 3.1;
 
 /**
  * Tyre rolling-resistance coefficient μ_rr (#1051). The always-present coast force is `μ_rr · m · g`

@@ -85,4 +85,41 @@ describe("vice-isle vehicle catalog (#1051)", () => {
       expect(kmh, `${car.id} still coasting at ${kmh.toFixed(1)} km/h after ${coastMs.toFixed(1)}s`).toBeLessThanOrEqual(10);
     }
   });
+
+  test("street cars hit a midsize-feel launch band after 2 s full throttle (#1515)", () => {
+    // Compact / cruiser / SUV should feel like ~22–30 mph by 2 s; bus stays deliberately slower.
+    const dt = 1 / 60;
+    const targets: Record<string, { min: number; max: number }> = {
+      car_compact: { min: 9, max: 16 },
+      car_cop: { min: 10, max: 16 },
+      car_suv: { min: 9, max: 15 },
+      car_muscle: { min: 11, max: 20 },
+      car_sport: { min: 11, max: 20 },
+      car_bus: { min: 4, max: 10 },
+    };
+    for (const [id, band] of Object.entries(targets)) {
+      const def = vehicleById(id);
+      if (def === undefined || def.dynamics.type !== "ground") throw new Error(id);
+      const vehicle = createKinematicVehicle(def.dynamics.tuning);
+      let step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
+      for (let i = 1; i < 120; i += 1) step = vehicle.tick(dt, { throttle: 1, brake: 0, steer: 0, handbrake: 0 });
+      expect(step.forwardSpeed, `${id} 2s launch ${step.forwardSpeed.toFixed(2)} m/s`).toBeGreaterThanOrEqual(band.min);
+      expect(step.forwardSpeed, `${id} 2s launch ${step.forwardSpeed.toFixed(2)} m/s`).toBeLessThanOrEqual(band.max);
+    }
+  });
+
+  test("reverse after 2 s stays crawl-useful, not a second highway gear (#1515)", () => {
+    const dt = 1 / 60;
+    for (const car of groundCars) {
+      if (car.dynamics.type !== "ground") continue;
+      const vehicle = createKinematicVehicle(car.dynamics.tuning);
+      let step = vehicle.tick(dt, { throttle: 0, brake: 1, steer: 0, handbrake: 0 });
+      for (let i = 1; i < 120; i += 1) step = vehicle.tick(dt, { throttle: 0, brake: 1, steer: 0, handbrake: 0 });
+      // Bus is intentionally sluggish; everything else should reverse with intent by 2 s.
+      const minReverse = car.id === "car_bus" ? -1.5 : -3;
+      expect(step.forwardSpeed, `${car.id} reverse`).toBeLessThan(minReverse);
+      // Cap near reverseSpeed (~0.18× top) — never rocket reverse.
+      expect(step.forwardSpeed, `${car.id} reverse`).toBeGreaterThan(-(car.dynamics.tuning.reverseSpeed + 0.6));
+    }
+  });
 });

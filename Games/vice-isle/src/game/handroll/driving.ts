@@ -45,11 +45,12 @@ const OBSTACLE_GATHER = 30;
  * horizon; enter/exit/explode swap this patch in and out via `ctx.camera.setChaseTuning`.
  */
 const DRIVE_CAMERA_TUNING: ChaseCameraTuning = {
-  fov: { base: 60, max: 86, speedForMax: 40 },
-  velocityYaw: { blend: 0.6, minSpeed: 16, response: 5 },
-  shakePerSpeed: 0.0015,
-  lead: { time: 0.22, max: 8 },
-  bank: { perYawRate: 0.09, max: 0.16, damping: 7 },
+  // speedForMax tracks the retuned fleet tops (~34–52 m/s) so FOV still sells mid-speed punch.
+  fov: { base: 60, max: 88, speedForMax: 48 },
+  velocityYaw: { blend: 0.65, minSpeed: 12, response: 5.5 },
+  shakePerSpeed: 0.0016,
+  lead: { time: 0.24, max: 9 },
+  bank: { perYawRate: 0.1, max: 0.18, damping: 6.5 },
 };
 
 /** Drive axes bound to this game's own action names, not raw key codes — the `ctx.input.axis` contract (#533.7). */
