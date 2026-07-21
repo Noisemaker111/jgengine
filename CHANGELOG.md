@@ -63,6 +63,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Fixed
 
+- **City-scale player movement no longer freezes `pose` at ~3 fps (#1517).** Broadphase reach is split into capped horizontal vs vertical extents (tower height no longer inflates XZ/Y queries), `objectStore.inBox` bails to a linear object scan when the 1 m cell volume is huge, dense mesh-box colliders collapse to outer AABBs for walking, and `movement.frozen` skips the gather (seated drivers).
 - **Generated intersections are compact carriageway unions, not plaza discs (#1511).**
   Apron pull-back is the projected crossing half-width only (opposite through-arms are ignored; curb
   return is no longer double-counted into the mouth distance). Exterior corners get small width-clamped
