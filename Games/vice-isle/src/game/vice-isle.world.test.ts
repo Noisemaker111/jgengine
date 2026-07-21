@@ -24,6 +24,7 @@ import {
   STASH_SPOTS,
   VCPD_POS,
 } from "./world/districts";
+import { curbPoseNear } from "./world/setup";
 
 describe("vice-isle authored scene parity", () => {
   test("four district footprints round-trip from the document unchanged", () => {
@@ -131,6 +132,12 @@ describe("vice-isle authored scene parity", () => {
       "car_muscle",
     ]);
     expect(new Set(AUTHORED_VEHICLE_SPAWNS.map((spawn) => spawn.id)).size).toBe(15);
+  });
+
+  test("curbPoseNear snaps lawn story-car coordinates onto asphalt (#1519)", () => {
+    // Former Bandolero lawn pad at (48,-72) must land on a road surface after curb snap.
+    const curb = curbPoseNear(48, -72, 0);
+    expect(streets.some((street) => isOnRoad(street.path, street.width + 0.5, curb.x, curb.z))).toBe(true);
   });
 });
 

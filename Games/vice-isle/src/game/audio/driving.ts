@@ -27,10 +27,20 @@ export interface DrivingAudio {
 
 const ENGINE_LOOP = "vi_engine";
 const SQUEAL_LOOP = "vi_squeal";
-/** ≤ 8 smoke bursts per second. */
-const SMOKE_MIN_INTERVAL = 1 / 8;
+/** ≤ 5 smoke bursts per second when a real slide is happening. */
+const SMOKE_MIN_INTERVAL = 1 / 5;
 
 const clamp01 = (value: number): number => Math.max(0, Math.min(1, value));
+
+/**
+ * Tyre smoke only for a real slide or a high-speed launch spin — not lawn crawls at 20 km/h (#1519).
+ * @internal exported for unit tests
+ */
+export function shouldEmitTireSmoke(params: Pick<DrivingAudioParams, "slip" | "wheelspin" | "speed" | "throttle">): boolean {
+  const sliding = params.slip >= 0.72 && params.speed >= 14;
+  const launching = params.wheelspin && params.throttle >= 0.55 && params.speed >= 11;
+  return sliding || launching;
+}
 
 /**
  * The Vice Isle driving audio driver (#1051): one retained engine loop pitched by rpm and gained by
@@ -52,20 +62,21 @@ export function createDrivingAudio(): DrivingAudio {
       });
 
       // Keep the squeal loop alive at gain 0 rather than stop/start it, so a hard slide fades in cleanly.
+      // Higher breakaway so curb grass scrub doesn't scream.
       ctx.game.audio.loop(SQUEAL_LOOP, "tire_squeal");
       ctx.game.audio.setLoop(SQUEAL_LOOP, {
-        gain: clamp01((params.slip - 0.35) / 0.5),
+        gain: clamp01((params.slip - 0.55) / 0.45),
         rate: 0.9 + 0.3 * params.slip,
       });
 
       if (lastGear !== -1 && params.gear !== lastGear) ctx.game.audio.play("shift_click");
       lastGear = params.gear;
 
-      if ((params.slip > 0.5 || params.wheelspin) && params.speed > 6) {
+      if (shouldEmitTireSmoke(params)) {
         const now = ctx.time.now();
         if (lastSmokeAt < 0 || now - lastSmokeAt >= SMOKE_MIN_INTERVAL) {
           lastSmokeAt = now;
-          ctx.scene.entity.vfx({ kind: "glow", color: 0xdcdcdc, from: params.position, radius: 1.3, durationMs: 500 });
+          ctx.scene.entity.vfx({ kind: "glow", color: 0xc8c8c8, from: params.position, radius: 0.85, durationMs: 280 });
         }
       }
     },

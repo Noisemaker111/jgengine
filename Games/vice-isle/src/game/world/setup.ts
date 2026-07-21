@@ -3,7 +3,7 @@ import { seededRng } from "@jgengine/core/random/rng";
 import { patrol } from "@jgengine/core/scene/behaviors";
 import type { Waypoint } from "@jgengine/core/nav/pathFollow";
 import { deriveBuildingLots } from "@jgengine/core/world/buildingLots";
-import { isOnRoad } from "@jgengine/core/world/roads";
+import { isOnRoad, nearestOnPath } from "@jgengine/core/world/roads";
 import { furnitureSpots, parkingSpots, sidewalkPoint } from "@jgengine/core/world/streets";
 import { streets } from "../../world";
 import { buildingsByStyle, type BuildingStyle } from "./buildings";
@@ -20,9 +20,52 @@ import {
   WORLD_D,
   WORLD_W,
 } from "./districts";
+import { vehicleById } from "../entities/vehicles/catalog";
 
 function ground(ctx: GameContext, x: number, z: number): readonly [number, number, number] {
   return [x, ctx.world.groundHeightAt(x, z), z];
+}
+
+/**
+ * Snap a ground-vehicle spawn to the nearest curbside parking pose so story cars sit on asphalt
+ * (not lawn voids between lots). Aircraft keep their authored pad. (#1519)
+ */
+export function curbPoseNear(
+  x: number,
+  z: number,
+  fallbackHeading: number,
+): { x: number; z: number; heading: number } {
+  let best: { dist: number; x: number; z: number; heading: number } | null = null;
+  for (const street of streets) {
+    for (const spot of parkingSpots(street, { spacing: 14, sides: "both" })) {
+      const dist = Math.hypot(spot.position[0] - x, spot.position[1] - z);
+      if (best === null || dist < best.dist) {
+        best = { dist, x: spot.position[0], z: spot.position[1], heading: spot.heading };
+      }
+    }
+  }
+  if (best !== null && best.dist < 120) {
+    return { x: best.x, z: best.z, heading: best.heading };
+  }
+  // Fallback: nearest centerline, nudged half a lane toward the curb.
+  let line: { dist: number; x: number; z: number; heading: number } | null = null;
+  for (const street of streets) {
+    const sample = nearestOnPath(street.path, x, z);
+    if (sample === null) continue;
+    if (line === null || sample.distance < line.dist) {
+      const [tx, tz] = sample.tangent;
+      const nx = -tz;
+      const nz = tx;
+      const edge = street.width / 2 - 1.2;
+      line = {
+        dist: sample.distance,
+        x: sample.point[0] + nx * edge,
+        z: sample.point[1] + nz * edge,
+        heading: Math.atan2(tx, tz),
+      };
+    }
+  }
+  return line !== null ? { x: line.x, z: line.z, heading: line.heading } : { x, z, heading: fallbackHeading };
 }
 
 const PED_KIND_BY_ROAD: readonly string[] = [
@@ -156,12 +199,21 @@ export function setupWorld(ctx: GameContext): void {
   placeBuildings(ctx, rng);
 
   for (const spawn of AUTHORED_VEHICLE_SPAWNS) {
-    const x = spawn.position[0];
-    const z = spawn.position[2];
+    const def = vehicleById(spawn.catalogId);
+    const isAircraft = def?.dynamics.type === "aircraft";
+    let x = spawn.position[0];
+    let z = spawn.position[2];
+    let rotationY = spawn.rotationY;
+    if (!isAircraft) {
+      const curb = curbPoseNear(x, z, rotationY);
+      x = curb.x;
+      z = curb.z;
+      rotationY = curb.heading;
+    }
     ctx.scene.entity.spawn(spawn.catalogId, {
       id: spawn.id,
       position: [x, ctx.world.groundHeightAt(x, z), z],
-      rotationY: spawn.rotationY,
+      rotationY,
       role: "prop",
     });
   }

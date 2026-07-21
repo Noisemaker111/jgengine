@@ -55,14 +55,16 @@ describe("handroll drivable-vehicle adoption", () => {
   test("throttle drives the vehicle entity forward over several ticks", () => {
     const ctx = boot();
     const handroll = createHandroll();
-    ctx.scene.entity.spawn("car_muscle", { id: "car_2", position: [0, 0, 0], rotationY: 0, role: "prop" });
+    // Spawn on an open avenue — origin is buried under downtown lots and the obstacle clamp pins the car.
+    ctx.scene.entity.spawn("car_muscle", { id: "car_2", position: [-180, 0, 40], rotationY: 0, role: "prop" });
     handroll.enterVehicle(ctx, "car_2");
 
     ctx.input.publish(["moveForward"]);
     for (let i = 0; i < 120; i += 1) handroll.tick(ctx, STEP);
 
     const vehicle = ctx.scene.entity.get("car_2")!;
-    expect(Math.hypot(vehicle.position[0], vehicle.position[2])).toBeGreaterThan(5);
+    const moved = Math.hypot(vehicle.position[0] - -180, vehicle.position[2] - 40);
+    expect(moved).toBeGreaterThan(5);
     expect(handroll.carSpeedKmh()).toBeGreaterThan(0);
   });
 

@@ -71,17 +71,18 @@ export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets
   car_compact: {
     model: `${CITY}/car_hatchback`,
     fallbackModel: `${CITY}/car_sedan`,
-    style: { targetHeight: 1.35 },
+    style: { targetHeight: 1.35, material: { color: "#f2c14e" } },
   },
+  // Sedan + red tint: station-wagon mesh read as a green estate and ignored the catalog body color (#1519).
   car_muscle: {
-    model: `${CITY}/car_stationwagon`,
-    fallbackModel: `${CITY}/car_sedan`,
-    style: { targetHeight: 1.4 },
+    model: `${CITY}/car_sedan`,
+    fallbackModel: `${CITY}/car_hatchback`,
+    style: { targetHeight: 1.38, material: { color: "#d64545" } },
   },
   car_sport: {
     model: `${CITY}/car_sedan`,
     fallbackModel: `${CITY}/car_hatchback`,
-    style: { targetHeight: 1.3 },
+    style: { targetHeight: 1.3, material: { color: "#33c1b1" } },
   },
   car_cop: {
     model: `${CITY}/car_police`,
