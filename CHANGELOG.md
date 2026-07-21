@@ -63,6 +63,18 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Fixed
 
+- **Generated street dressing now connects through bends and junctions.** `buildJunctionConnector`
+  exposes shared tangent-continuous connector paths for sidewalks, curbs, and markings; the website
+  playground renders continuous sidewalk aprons and lane paint, and its deterministic query controls
+  can focus a junction for close-up inspection. The capture workflow now also supports managed website
+  screenshots and videos with Chrome-safe ports, lazy Vite targets, and fail-fast navigation errors.
+- **Generated street bends and intersections now form compact, welded road geometry.** Hard degree-2
+  turns are emitted as owned two-arm joins with tangent-continuous inner and outer curbs instead of two
+  overlapping square caps; multi-arm curb returns bow into the crossing instead of ballooning outward;
+  unequal-width seams remain welded; and residential branches reject near-parallel departures that
+  inherently overlap their host road. The playground camera override now supports true close-up orbits
+  down to 8 world units, and `bun run shoot --fixture StreetGeometryPreview` provides deterministic
+  close-ups of turns and unequal multi-arm intersections.
 - **`assets pull` / `assets add` default output dir now lands where the dev server serves models** (`@jgengine/assets` CLI, #1339) — inside the monorepo a bare `pull`/`add` previously wrote to a cwd-relative `public/`, so running it under `packages/assets` (or any subdir) dropped GLBs into a folder no game serves. It now defaults to the served root `apps/dev/public` when that exists (falling back to the historical cwd-relative `public` for out-of-monorepo consumers), so pulled bytes land in `apps/dev/public/models/<pack>` where the runner reads them. `--dir` still overrides.
 
 ### Added
@@ -75,6 +87,15 @@ At publish, rename this heading to the new version and mirror the entries into
   to `undefined`, so downstream consumers still only ever see a real `LifecycleConfig` or nothing.
   `@jgengine/core/gameplay` exports the `GameLifecycle` union type. Pairs with the new
   `check-game-shape` run-phase requirement (see Migrate).
+- **`debug_snapshot().probes.textureErrors` surfaces in-GLB texture-load failures (#1342).**
+  `@jgengine/core/devtools/textureErrors` adds an allocation-aware collector
+  (`armTextureErrors`/`reportTextureLoadError`/`resetTextureErrors`/`textureErrorsSnapshot`) that the
+  shell's shared GLB loading manager feeds on every texture/image `onError`. Previously only whole-model
+  catalog fallbacks (missing mapping/pack/scene) reached the `fallbacks` probe, so a model that resolved
+  but whose textures 404'd read as a clean scene to `debug_snapshot` — the exact signal `jgengine-verify`
+  tells agents to trust. The new `probes.textureErrors` list (`{ url, count }[]`) makes those failures
+  visible so a texture-404'd scene can be treated like a model fallback. Dev-only (armed with devtools);
+  a pure no-op in production.
 - **Result/option types of public barrel functions are now re-exported (#1319).** The
   `@jgengine/core/gameplay` barrel re-exports `ChargeResult`, `ChargeOptions`, and `Overdraft`
   alongside `charge`/`chargeAll`/`canAfford`, and `@jgengine/core/combat` re-exports

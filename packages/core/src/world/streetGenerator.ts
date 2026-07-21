@@ -152,7 +152,7 @@ export interface Street {
   heights?: number[];
 }
 
-/** One crossing of three or more streets: patch center/radius plus outgoing arm directions. */
+/** One crossing or width-changing road seam: patch center/radius plus outgoing arm directions. */
 export interface StreetJunction {
   x: number;
   z: number;
@@ -724,6 +724,23 @@ function buildNet(
     const nz = fp[1] + Math.sin(angle) * len;
     if (Math.abs(nx) > hx - 1 || Math.abs(nz) > hz - 1) return -1;
     if (inMask !== null && !inMask(nx, nz, hx, hz)) return -1;
+    if (crossCheck) {
+      // Near-parallel arms necessarily overlap for a long run at their shared node. Reject that
+      // topology instead of asking the junction mesher to hide it under an enormous apron.
+      const ux = Math.cos(angle);
+      const uz = Math.sin(angle);
+      const minGap = (35 * Math.PI) / 180;
+      for (const e of edges) {
+        if (e.a !== from && e.b !== from) continue;
+        const other = e.a === from ? e.b : e.a;
+        const op = nodes[other]!;
+        const dx = op[0] - fp[0];
+        const dz = op[1] - fp[1];
+        const d = Math.hypot(dx, dz) || 1;
+        const gap = Math.acos(Math.max(-1, Math.min(1, (ux * dx + uz * dz) / d)));
+        if (gap < minGap) return -1;
+      }
+    }
     // Reject a segment that would land on an existing node…
     for (let m = 0; m < nodes.length; m += 1) {
       if (m === from) continue;
@@ -2285,8 +2302,8 @@ export function generateStreets(
     loop: boolean;
   }
   const chains: Chain[] = [];
-  // In a street net, a chain ends where the road bends hard, so streets read as straight runs (and a
-  // pure grid stays axis-aligned); a circuit chains its whole ring through every gentle corner.
+  // Keep hard net corners as separate named/render runs (a pure grid remains axis-aligned), but the
+  // degree-2 seam is emitted as a welded junction below instead of leaving two square caps exposed.
   const chainSplit = mode === "circuit" ? Math.PI : (55 * Math.PI) / 180;
   const chordTurn = (prev: number, mid: number, next: number): number => {
     const ux = rawNodes[mid]![0] - rawNodes[prev]![0];
@@ -2315,7 +2332,7 @@ export function generateStreets(
         if (nextConn === undefined) break;
         if (rawEdges[nextConn.edge]!.lane !== lane) break;
         const prevTip = dir === 1 ? nodesSeq[nodesSeq.length - 2]! : nodesSeq[1]!;
-        if (chordTurn(prevTip, tip, nextConn.other) > chainSplit) break; // road bends hard → end street
+        if (chordTurn(prevTip, tip, nextConn.other) > chainSplit) break;
         usedEdge[nextConn.edge] = true;
         if (dir === 1) {
           // Closing the loop = reaching the far (unchanging) end, which is index 0 going forward.
@@ -2459,10 +2476,18 @@ export function generateStreets(
     streets.push(street);
   });
 
-  // --- junctions from degree≥3 nodes; arms from incident edge tangents ---
+  // A degree-2 node normally disappears inside one continuous, filleted street. If its edges could
+  // not chain (for example a lane meeting a wider street), retain it as a two-arm welded seam.
+  const edgeChain = new Array<number>(rawEdges.length).fill(-1);
+  chains.forEach((chain, ci) => {
+    for (const edge of chain.edges) edgeChain[edge] = ci;
+  });
+
+  // --- junctions from crossings and unchained degree-2 seams; arms from incident edge tangents ---
   const junctions: StreetJunction[] = [];
   for (let n = 0; n < rawNodes.length; n += 1) {
-    if (degree[n] < 3) continue;
+    if (degree[n] < 2) continue;
+    if (degree[n] === 2 && edgeChain[adj[n]![0]!.edge] === edgeChain[adj[n]![1]!.edge]) continue;
     const arms: { angle: number; width: number }[] = [];
     let radius = 0;
     let level: StreetLevel = "lane";

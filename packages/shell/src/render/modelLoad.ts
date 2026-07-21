@@ -7,8 +7,25 @@ import {
   type AssetLoadDiagnosis,
   type AssetResponseProbe,
 } from "@jgengine/core/scene/assetDiagnostics";
+import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 
 import { resolveAssetBaseUrl } from "./assetBase";
+
+/** Model containers already covered by the whole-model fallback probe; not "texture" errors. @internal */
+const MODEL_URL_RE = /\.(glb|gltf)(\?|#|$)/i;
+
+/**
+ * The shared GLB {@link THREE.LoadingManager}'s `onError` sink. It fires for EVERY item the manager
+ * loads — the GLB container AND each texture/image a `GLTFLoader` fetches for it. The container's own
+ * failure is already surfaced by the model-fallback probe (it resolves to a placeholder), so this records
+ * only the sub-resource (texture) failures the fallback probe cannot see — a model that resolves but whose
+ * textures 404. Split out and exported so the wiring is unit-testable without a GL context.
+ * @internal
+ */
+export function recordManagerLoadError(url: string): void {
+  if (MODEL_URL_RE.test(url)) return;
+  reportTextureLoadError(url);
+}
 
 /**
  * Dedicated LoadingManager for every GLB load instead of THREE.DefaultLoadingManager.
@@ -19,6 +36,9 @@ import { resolveAssetBaseUrl } from "./assetBase";
  */
 const modelLoadingManager = new THREE.LoadingManager();
 modelLoadingManager.setURLModifier(resolveAssetBaseUrl);
+// Capture GLTF texture/image load failures that never reach the top-level model onError (the model still
+// resolves). Feeds the `textureErrors` probe so a texture-404'd scene is visible in debug_snapshot.
+modelLoadingManager.onError = recordManagerLoadError;
 
 /** How many leading bytes to read when probing a failed model URL for its signature. @internal */
 const PROBE_BYTE_LIMIT = 64;

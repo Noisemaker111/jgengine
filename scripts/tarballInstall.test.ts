@@ -65,7 +65,12 @@ function installTarballs(packages: readonly (typeof publishedPackages)[number][]
     const tgz = (JSON.parse(packed) as Array<{ filename: string }>)[0].filename;
     const extractDir = join(work, `extract-${pkg}`);
     mkdirSync(extractDir, { recursive: true });
-    execFileSync("tar", ["-xzf", join(work, tgz), "-C", extractDir]);
+    // Run tar from `work` with colon-free relative paths. Passing an absolute
+    // archive path (`C:\…\pkg.tgz`) makes GNU tar read the drive letter as a
+    // remote host ("Cannot connect to C: resolve failed") on Windows; a bare
+    // basename plus a relative `-C` dir extracts identically on GNU tar,
+    // bsdtar, and Linux.
+    execFileSync("tar", ["-xzf", tgz, "-C", `extract-${pkg}`], { cwd: work });
     renameSync(join(extractDir, "package"), join(scope, pkg));
   }
   return { consumer: join(work, "consumer"), scope };

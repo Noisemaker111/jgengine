@@ -91,6 +91,17 @@ marble, and more, over 400 materials generated per numbered family
 [`apps/dev/public/materials/`](apps/dev/public/materials). CC0 — no attribution
 required, credited here anyway. The gold standard for free PBR; go support it.
 
+## Robbyant (LingBot-Map)
+
+The offline video-to-3D asset-capture recipe in
+[`jgengine-assets`' references](.claude/skills/jgengine-assets/references/video-to-3d-capture.md)
+is built around **[LingBot-Map](https://github.com/Robbyant/lingbot-map)** by
+**Robbyant** (Apache-2.0) — a feed-forward 3D foundation model that
+reconstructs scene geometry from streaming video in real time. JGengine does
+not vendor or run this model itself; the reference documents how to run it
+externally and bring its output in as a catalogued asset. Apache-2.0 permits
+commercial use; credited here per its terms.
+
 ## game-icons.net (Ironhold HUD)
 
 The **[Ironhold](Games/ironhold)** command-console HUD uses vector glyphs from

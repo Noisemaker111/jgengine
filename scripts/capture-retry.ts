@@ -1,8 +1,8 @@
 /**
  * Post-HMR staleness guard for shoot captures.
  *
- * The shoot daemon keeps one Vite + Chrome warm across many captures. Each
- * capture opens a fresh page and navigates, but a navigation that lands during
+ * The shoot daemon keeps Chrome and each previously-used Vite target warm.
+ * Each capture opens a fresh page and navigates, but a navigation that lands during
  * Vite's transient rebuild window right after an edit — HMR module invalidation,
  * dependency re-optimization answering `504 Outdated Optimize Dep`, or a queued
  * full-reload — can load an inconsistent module graph: the shell mounts but the

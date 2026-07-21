@@ -607,6 +607,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Window` (function) · `import { Window } from "@jgengine/react"`
 
+## world-intersections — inspect turns and junction meshes in a deterministic preview fixture
+
+- `StreetGeometryPreview` (function) · `import { StreetGeometryPreview } from "@jgengine/react"`
+
 ## world-object-highlights — ground-ring highlight over every selected placed object
 
 - `WorldObjectHighlights` (function) · `import { WorldObjectHighlights } from "@jgengine/shell/world/WorldHud"`

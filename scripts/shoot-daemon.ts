@@ -1,8 +1,7 @@
 /**
- * Persistent screenshot service: keeps one apps/dev Vite + one headless Chrome
- * warm across many `bun run shoot` captures so later shots attach in seconds
- * instead of paying the 60–90s cold boot. Folds the manual `--keep`/`--connect`
- * warm loop into a discoverable managed service.
+ * Persistent capture service: starts headless Chrome immediately, then lazily
+ * starts and retains apps/dev or apps/web when a capture needs that target.
+ * Later shots reuse browser, module, and shader caches.
  *
  *   bun run shoot --serve              # start daemon (foreground)
  *   bun run shoot daemon start         # start daemon (background)
@@ -11,29 +10,42 @@
  *   bun run shoot <game> --mode play   # auto-attaches when daemon is live
  */
 import { spawn, type ChildProcess } from "node:child_process";
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  existsSync,
+  openSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
   checkoutIdentity,
   ensureDevServer,
-  isUp,
+  ensureWebServer,
   killPid,
   killProcessTree,
   launchChrome,
   resolveDevPort,
   resolveWarmChromePort,
   waitForDebugger,
+  type EnsureDevServerResult,
 } from "./browser-lib";
 
 export interface ShootDaemonState {
   identity: string;
   chromePort: number;
-  devPort: number;
-  devBase: string;
+  devPort?: number;
+  devBase?: string;
   chromePid?: number;
   devPid?: number;
+  webPort?: number;
+  webBase?: string;
+  webPid?: number;
   startedAt: string;
 }
 
@@ -59,12 +71,42 @@ export function readDaemonState(cwd = process.cwd()): ShootDaemonState | null {
 }
 
 export function writeDaemonState(state: ShootDaemonState, cwd = process.cwd()): void {
-  writeFileSync(daemonStatePath(cwd), `${JSON.stringify(state, null, 2)}\n`);
+  const path = daemonStatePath(cwd);
+  const temporary = `${path}.${process.pid}.tmp`;
+  writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`);
+  renameSync(temporary, path);
 }
 
 export function clearDaemonState(cwd = process.cwd()): void {
   const path = daemonStatePath(cwd);
   if (existsSync(path)) unlinkSync(path);
+}
+
+async function withDaemonStateLock<T>(cwd: string, fn: () => T): Promise<T> {
+  const lockPath = `${daemonStatePath(cwd)}.lock`;
+  const deadline = Date.now() + 5_000;
+  let fd: number | undefined;
+  while (fd === undefined) {
+    try {
+      fd = openSync(lockPath, "wx");
+    } catch (error) {
+      const code = error instanceof Error && "code" in error ? (error as NodeJS.ErrnoException).code : undefined;
+      if (code !== "EEXIST") throw error;
+      try {
+        if (Date.now() - statSync(lockPath).mtimeMs > 30_000) unlinkSync(lockPath);
+      } catch {
+        /* lock owner released it */
+      }
+      if (Date.now() >= deadline) throw new Error("shoot daemon: timed out waiting for state lock");
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+  }
+  try {
+    return fn();
+  } finally {
+    closeSync(fd);
+    if (existsSync(lockPath)) unlinkSync(lockPath);
+  }
 }
 
 function pidAlive(pid: number | undefined): boolean {
@@ -77,7 +119,7 @@ function pidAlive(pid: number | undefined): boolean {
   }
 }
 
-/** True when the recorded daemon is still serving Chrome CDP + this checkout's Vite. */
+/** True when the recorded daemon's persistent Chrome is reachable. Vite starts lazily per target. */
 export async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
   const state = readDaemonState(cwd);
   if (state === null) return false;
@@ -90,7 +132,6 @@ export async function isDaemonLive(cwd = process.cwd()): Promise<boolean> {
   } catch {
     return false;
   }
-  if (!(await isUp(state.devBase))) return false;
   return true;
 }
 
@@ -103,7 +144,57 @@ export async function attachDaemon(cwd = process.cwd()): Promise<ShootDaemonStat
   return readDaemonState(cwd);
 }
 
-/** Wait for a background daemon to expose both its Chrome and Vite endpoints. */
+export type ShootDaemonTarget = "dev" | "web";
+
+/** Start or reuse one Vite target and persist its endpoint in daemon state. */
+export async function ensureDaemonTarget(
+  state: ShootDaemonState,
+  target: ShootDaemonTarget,
+  cwd = process.cwd(),
+  ensure: (cwd: string) => Promise<EnsureDevServerResult> = target === "web" ? ensureWebServer : ensureDevServer,
+): Promise<EnsureDevServerResult> {
+  const server = await ensure(cwd);
+  try {
+    await withDaemonStateLock(cwd, () => {
+      const latest = readDaemonState(cwd);
+      if (latest === null) throw new Error("shoot daemon: stopped while starting Vite target");
+      if (latest.identity !== state.identity) throw new Error(`shoot daemon: state belongs to ${latest.identity}`);
+      Object.assign(state, latest);
+      if (target === "web") {
+        state.webPort = server.port;
+        state.webBase = server.base;
+        state.webPid = server.child?.pid ?? state.webPid;
+      } else {
+        state.devPort = server.port;
+        state.devBase = server.base;
+        state.devPid = server.child?.pid ?? state.devPid;
+      }
+      writeDaemonState(state, cwd);
+    });
+  } catch (error) {
+    killProcessTree(server.child);
+    throw error;
+  }
+  return server;
+}
+
+/** Reap recorded Chrome/Vite trees when their endpoints are no longer healthy. */
+export async function reapStaleDaemonState(cwd = process.cwd()): Promise<boolean> {
+  const state = readDaemonState(cwd);
+  if (state === null) return false;
+  if (state.identity !== checkoutIdentity(cwd)) {
+    throw new Error(`shoot daemon: state port collision with checkout ${state.identity}`);
+  }
+  if (await isDaemonLive(cwd)) return false;
+  if (pidAlive(state.chromePid)) killPid(state.chromePid, true);
+  if (pidAlive(state.devPid)) killPid(state.devPid, true);
+  if (pidAlive(state.webPid)) killPid(state.webPid, true);
+  clearDaemonState(cwd);
+  console.error("shoot daemon: reaped stale Chrome/Vite state before restart");
+  return true;
+}
+
+/** Wait for a background daemon to expose Chrome; Vite targets start on demand. */
 export async function waitForDaemonLive(
   cwd = process.cwd(),
   options: DaemonStartWaitOptions = {},
@@ -132,45 +223,54 @@ export async function startDaemon(options: {
     const existing = readDaemonState(cwd);
     if (existing !== null) {
       console.error(
-        `shoot daemon: already running — chrome :${existing.chromePort}, dev ${existing.devBase}`,
+        `shoot daemon: already running — chrome :${existing.chromePort}`,
       );
       return existing;
     }
   }
+  await reapStaleDaemonState(cwd);
 
   const identity = checkoutIdentity(cwd);
   const chromePort = resolveWarmChromePort(cwd);
-  const dev = await ensureDevServer(cwd);
-  const chrome = launchChrome(chromePort, "jg-shoot-daemon-");
-  await waitForDebugger(chromePort, 30_000);
+  let chrome: ChildProcess | null = null;
+  try {
+    chrome = launchChrome(chromePort, "jg-shoot-daemon-");
+    await waitForDebugger(chromePort, 30_000);
+  } catch (error) {
+    killProcessTree(chrome);
+    throw error;
+  }
+  const chromePid = chrome.pid;
 
   const state: ShootDaemonState = {
     identity,
     chromePort,
-    devPort: dev.port,
-    devBase: dev.base,
-    chromePid: chrome.pid,
-    devPid: dev.child?.pid,
+    chromePid,
     startedAt: new Date().toISOString(),
   };
   writeDaemonState(state, cwd);
-  console.error(`shoot daemon: ready — chrome :${chromePort}, dev ${dev.base}`);
+  console.error(`shoot daemon: ready — chrome :${chromePort}; Vite starts lazily on first capture`);
   console.error(`shoot daemon: next shot → bun run shoot <game> --mode play`);
   console.error(`shoot daemon: stop → bun run shoot daemon stop`);
 
   if (options.foreground) {
     const stop = () => {
-      void stopDaemon({ cwd, chrome, server: dev.child });
+      void stopDaemon({ cwd, chrome });
       process.exit(0);
     };
     process.on("SIGINT", stop);
     process.on("SIGTERM", stop);
-    await new Promise(() => {
-      /* stay alive until signal */
+    await new Promise<void>((resolve) => {
+      const monitor = setInterval(() => {
+        const current = readDaemonState(cwd);
+        if (current === null || current.chromePid !== chromePid || !pidAlive(chromePid)) {
+          clearInterval(monitor);
+          resolve();
+        }
+      }, 250);
     });
   } else {
     chrome.unref();
-    dev.child?.unref();
   }
 
   return state;
@@ -180,16 +280,24 @@ export async function stopDaemon(options: {
   cwd?: string;
   chrome?: ChildProcess | null;
   server?: ChildProcess | null;
+  webServer?: ChildProcess | null;
 } = {}): Promise<boolean> {
   const cwd = options.cwd ?? process.cwd();
-  const state = readDaemonState(cwd);
+  const state = await withDaemonStateLock(cwd, () => {
+    const current = readDaemonState(cwd);
+    if (current !== null && current.identity !== checkoutIdentity(cwd)) {
+      throw new Error(`shoot daemon: refusing to stop daemon owned by ${current.identity}`);
+    }
+    clearDaemonState(cwd);
+    return current;
+  });
   let stopped = false;
 
   if (options.chrome !== undefined) {
     killProcessTree(options.chrome);
     stopped = true;
   } else if (state?.chromePid !== undefined && pidAlive(state.chromePid)) {
-    killPid(state.chromePid);
+    killPid(state.chromePid, true);
     stopped = true;
   }
 
@@ -197,11 +305,18 @@ export async function stopDaemon(options: {
     killProcessTree(options.server);
     stopped = true;
   } else if (state?.devPid !== undefined && pidAlive(state.devPid)) {
-    killPid(state.devPid);
+    killPid(state.devPid, true);
     stopped = true;
   }
 
-  clearDaemonState(cwd);
+  if (options.webServer !== undefined) {
+    killProcessTree(options.webServer);
+    stopped = true;
+  } else if (state?.webPid !== undefined && pidAlive(state.webPid)) {
+    killPid(state.webPid, true);
+    stopped = true;
+  }
+
   if (stopped || state !== null) {
     console.error("shoot daemon: stopped");
     return true;
@@ -218,7 +333,7 @@ export async function statusDaemon(cwd = process.cwd()): Promise<number> {
   }
   const live = await isDaemonLive(cwd);
   if (!live) {
-    console.log("shoot daemon: stale state (Chrome/Vite not reachable)");
+    console.log("shoot daemon: stale state (Chrome not reachable)");
     console.log(JSON.stringify(state, null, 2));
     return 1;
   }
@@ -230,7 +345,7 @@ export async function statusDaemon(cwd = process.cwd()): Promise<number> {
 /**
  * Background start: spawn a detached `shoot --serve` child so the CLI returns.
  * On Windows we still spawn the same entrypoint; the child owns the long-lived
- * Chrome + Vite processes.
+ * Chrome and any lazily-started Vite processes.
  */
 export function spawnDaemonBackground(cwd = process.cwd()): ChildProcess {
   const entry = join(import.meta.dir, "shoot-dev.ts");
@@ -239,6 +354,7 @@ export function spawnDaemonBackground(cwd = process.cwd()): ChildProcess {
     detached: true,
     stdio: "ignore",
     env: process.env,
+    windowsHide: true,
   });
   child.unref();
   console.error(`shoot daemon: starting in background (pid ${child.pid ?? "?"})`);
@@ -255,21 +371,22 @@ export async function runDaemonCommand(argv: string[], cwd = process.cwd()): Pro
     const existing = await attachDaemon(cwd);
     if (existing !== null) {
       console.error(
-        `shoot daemon: already running — chrome :${existing.chromePort}, dev ${existing.devBase}`,
+        `shoot daemon: already running — chrome :${existing.chromePort}`,
       );
       return 0;
     }
+    await reapStaleDaemonState(cwd);
 
     const child = spawnDaemonBackground(cwd);
     const state = await waitForDaemonLive(cwd, { pid: child.pid });
     if (state === null) {
       const reason = pidAlive(child.pid)
         ? "did not become ready within 120 seconds"
-        : "exited before Chrome and Vite became ready";
+        : "exited before Chrome became ready";
       console.error(`shoot daemon: failed — background process ${reason}`);
       return 1;
     }
-    console.error(`shoot daemon: ready — chrome :${state.chromePort}, dev ${state.devBase}`);
+    console.error(`shoot daemon: ready — chrome :${state.chromePort}; Vite starts lazily on first capture`);
     return 0;
   }
   if (verb === "stop") {
@@ -281,12 +398,12 @@ export async function runDaemonCommand(argv: string[], cwd = process.cwd()): Pro
   }
   if (verb === "help" || verb === "--help" || verb === "-h") {
     console.log(`shoot daemon commands:
-  start [--foreground]   keep Vite + Chrome warm (background by default)
+  start [--foreground]   keep Chrome warm; start each Vite target lazily
   status                 print state JSON if live
   stop                   kill warm Chrome/Vite and clear state
 
 Shorthand: bun run shoot --serve  (= daemon start --foreground)
-While running, plain shoot attaches automatically (no --connect needed).`);
+While running, shoot and drive attach automatically (no --connect needed).`);
     return 0;
   }
   console.error(`shoot daemon: unknown command "${verb}" (try start|status|stop|help)`);

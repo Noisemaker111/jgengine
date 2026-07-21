@@ -1,10 +1,15 @@
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import type { AssetLoadDiagnosis } from "@jgengine/core/scene/assetDiagnostics";
 
-import { createFallbackModel, handleModelLoadFailure, probeModelUrl } from "./modelLoad";
+import {
+  armTextureErrors,
+  textureErrorsSnapshot,
+} from "@jgengine/core/devtools/textureErrors";
+
+import { createFallbackModel, handleModelLoadFailure, probeModelUrl, recordManagerLoadError } from "./modelLoad";
 
 function stubResponse(body: Uint8Array, init: { status?: number; contentType?: string; statusText?: string }): Response {
   return new Response(body, {
@@ -93,6 +98,25 @@ describe("createFallbackModel", () => {
       message: "missing",
     };
     expect(createFallbackModel(diagnosis).userData.jgengineDiagnosis).toBe(diagnosis);
+  });
+});
+
+describe("recordManagerLoadError (texture-error probe wiring)", () => {
+  afterEach(() => armTextureErrors(false));
+
+  test("records a texture/image sub-resource failure into the debug_snapshot probe", () => {
+    armTextureErrors(true);
+    // The shared LoadingManager's onError fires for a GLTF texture that 404'd while the model resolved.
+    recordManagerLoadError("/models/nature/textures/bark.png");
+    recordManagerLoadError("/models/nature/textures/bark.png");
+    expect(textureErrorsSnapshot()).toEqual([{ url: "/models/nature/textures/bark.png", count: 2 }]);
+  });
+
+  test("ignores the model container itself (already covered by the model-fallback probe)", () => {
+    armTextureErrors(true);
+    recordManagerLoadError("/models/nature/Tree.glb");
+    recordManagerLoadError("/models/nature/Tree.gltf?v=2");
+    expect(textureErrorsSnapshot()).toEqual([]);
   });
 });
 

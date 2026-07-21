@@ -132,16 +132,15 @@ const playerStatusPage = (title: string, body: string, refresh: boolean) => `<!d
 const gamesPlayerDevPlugin = (): Plugin => {
   let ready = false;
   let failed = false;
+  let build: ChildProcess | null = null;
   return {
     name: "games-player-dev",
     apply: "serve",
     configureServer(server) {
-      if (restoreFromCache()) {
-        ready = true;
-        console.log("[games-player] cache hit — serving /play from the cached build");
-      } else {
+      const startBuild = () => {
+        if (build !== null || ready || failed) return;
         console.log("[games-player] building the /play runner in the background…");
-        const build: ChildProcess = spawn("bun", ["run", "--cwd", devAppRoot, "build:site"], {
+        build = spawn("bun", ["run", "--cwd", devAppRoot, "build:site"], {
           stdio: "inherit",
         });
         build.once("exit", (code) => {
@@ -153,15 +152,24 @@ const gamesPlayerDevPlugin = (): Plugin => {
             failed = true;
           }
         });
-        const stopBuild = () => build.kill();
-        server.httpServer?.once("close", stopBuild);
-        process.once("exit", stopBuild);
+      };
+      if (restoreFromCache()) {
+        ready = true;
+        console.log("[games-player] cache hit — serving /play from the cached build");
+      } else if (process.env.JG_CAPTURE_SITE !== "1") {
+        startBuild();
+      } else {
+        console.log("[games-player] deferred /play runner build for website capture");
       }
+      const stopBuild = () => build?.kill();
+      server.httpServer?.once("close", stopBuild);
+      process.once("exit", stopBuild);
       server.middlewares.stack.unshift({
         route: "",
         handle: ((req, res, next) => {
           if (!isPlayerPath(req.url)) return next();
           if (!ready) {
+            startBuild();
             res.statusCode = failed ? 500 : 503;
             res.setHeader("content-type", "text/html");
             res.end(
