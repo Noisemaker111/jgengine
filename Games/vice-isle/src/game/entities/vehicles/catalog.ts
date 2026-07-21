@@ -60,9 +60,10 @@ interface CarSpec {
   torqueCurve?: GripCurve;
 }
 
-const TORQUE_DEFAULT: GripCurve = { points: [[0, 0.55], [0.35, 0.88], [0.62, 1], [0.86, 0.9], [1, 0.58]] };
+/** Street torque: strong enough off-idle that launch is not a crawl (paired with the kinematic launch floor). */
+const TORQUE_DEFAULT: GripCurve = { points: [[0, 0.78], [0.28, 0.94], [0.55, 1], [0.85, 0.9], [1, 0.6]] };
 /** Fat low-end so a muscle car saturates its friction budget off the line and wheelspins. */
-const TORQUE_MUSCLE: GripCurve = { points: [[0, 0.92], [0.28, 1], [0.6, 0.95], [0.82, 0.86], [1, 0.6]] };
+const TORQUE_MUSCLE: GripCurve = { points: [[0, 0.94], [0.28, 1], [0.6, 0.95], [0.82, 0.86], [1, 0.6]] };
 
 const GEARS_DEFAULT: readonly number[] = [3.2, 2.18, 1.57, 1.21, 0.97, 0.8];
 const GEARS_SUV: readonly number[] = [3.4, 2.1, 1.45, 1.05, 0.82];
@@ -75,15 +76,16 @@ function car(spec: CarSpec): KinematicVehicleTuning {
   const downforce = spec.downforce ?? 0.32;
   const steerResponse = spec.steerResponse ?? 10;
   const maxAngle = spec.maxAngle ?? 0.58;
-  // Lateral grip-bleed strength tracks tyre μ so grippier cars hold a line and low-μ cars slide.
-  const gripStrength = spec.tireGrip * 10;
+  // Lateral grip-bleed tracks tyre μ; slightly softer than pure μ·10 so street drifts stay steerable.
+  const gripStrength = spec.tireGrip * 8.5;
   return {
     // Legacy arcade fallbacks (superseded by `chassis` below, but the type requires them): keep them
     // coherent as force/mass so a chassis-less consumer would still drive roughly right.
     engineAccel: spec.engineForce / spec.massKg,
     brakeAccel: spec.brakeForce / spec.massKg,
     topSpeed,
-    reverseSpeed: Math.max(5, Math.round(topSpeed * 0.24)),
+    // Reverse top is a hard, low ceiling (~10–16 mph): useful for three-points, never scaled up for sports cars.
+    reverseSpeed: Math.min(7, Math.max(4.5, Math.round(topSpeed * 0.16 * 10) / 10)),
     turnRate: 2.3,
     turnSpeedRef: 7,
     gripStrength,
@@ -98,13 +100,14 @@ function car(spec: CarSpec): KinematicVehicleTuning {
       tireGrip: spec.tireGrip,
       comHeight: spec.comHeight,
       trackWidth: spec.trackWidth,
+      reverseForceScale: 0.42,
     },
     powertrain: {
       idleRpm: 850,
       redlineRpm,
       shiftUpRpm: redlineRpm - 700,
       shiftDownRpm: 2300,
-      shiftSeconds: 0.14,
+      shiftSeconds: 0.12,
       finalDrive: 3.7,
       wheelRadius: 0.34,
       gears,
@@ -116,14 +119,15 @@ function car(spec: CarSpec): KinematicVehicleTuning {
       highSpeedAngle: 0.15,
       highSpeedAt: topSpeed,
       response: steerResponse,
-      yawDamping: 11,
+      yawDamping: 9.5,
     },
     dynamics: {
-      aerodynamicDrag: 0.00045,
+      aerodynamicDrag: 0.0004,
       downforce,
-      tractionControl: 0.72,
+      // Slightly looser assists so launch bite and handbrake slides read as player skill, not ESC.
+      tractionControl: 0.55,
       abs: 0.82,
-      stabilityControl: 0.42,
+      stabilityControl: 0.22,
       bodyPitchFactor: 0.008,
       bodyRollFactor: 0.012,
       maxBodyPitch: 0.1,
@@ -133,13 +137,18 @@ function car(spec: CarSpec): KinematicVehicleTuning {
   };
 }
 
+/**
+ * Fleet forces are tuned so a midsize (cruiser/SUV class) hits ~10–13 m/s after 2 s full throttle
+ * from rest, reverse stays crawl-useful (~0.2× top), and handbrakeGrip leaves enough bite for
+ * controlled rear-lock slides (paired with kinematic handbrake oversteer).
+ */
 const CAR_SPECS: readonly CarSpec[] = [
-  { id: "car_compact", label: "Pico", body: "#f2c14e", cabin: "#26292f", price: 800, massKg: 1150, engineForce: 5200, brakeForce: 10500, tireGrip: 0.92, comHeight: 0.56, trackWidth: 1.48, wheelbase: 2.42, topSpeed: 26, handbrakeGrip: 0.3, collisionRadius: 1.4 },
-  { id: "car_muscle", label: "Bandolero", body: "#d64545", cabin: "#26292f", price: 2400, massKg: 1650, engineForce: 15000, brakeForce: 13500, tireGrip: 0.88, comHeight: 0.52, trackWidth: 1.6, wheelbase: 2.75, topSpeed: 38, handbrakeGrip: 0.16, collisionRadius: 1.4, torqueCurve: TORQUE_MUSCLE },
-  { id: "car_sport", label: "Cicada GT", body: "#33c1b1", cabin: "#1f2228", price: 6500, massKg: 1350, engineForce: 12800, brakeForce: 16500, tireGrip: 1.08, comHeight: 0.44, trackWidth: 1.62, wheelbase: 2.58, topSpeed: 47, handbrakeGrip: 0.2, collisionRadius: 1.4, downforce: 0.5, steerResponse: 12 },
-  { id: "car_cop", label: "VCPD Cruiser", body: "#e8ecf2", cabin: "#1b2f52", price: 0, massKg: 1750, engineForce: 10800, brakeForce: 14800, tireGrip: 0.95, comHeight: 0.55, trackWidth: 1.6, wheelbase: 2.79, topSpeed: 41, handbrakeGrip: 0.22, collisionRadius: 1.4 },
-  { id: "car_suv", label: "Vagabond", body: "#6b7d52", cabin: "#20242c", price: 3800, massKg: 2350, engineForce: 9200, brakeForce: 15500, tireGrip: 0.82, comHeight: 0.98, trackWidth: 1.66, wheelbase: 2.85, topSpeed: 33, handbrakeGrip: 0.35, collisionRadius: 1.6, gears: GEARS_SUV },
-  { id: "car_bus", label: "Islander", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 26000, brakeForce: 48000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 22, handbrakeGrip: 0.55, collisionRadius: 2.6, maxAngle: 0.42, steerResponse: 6, gears: GEARS_BUS, redlineRpm: 4600 },
+  { id: "car_compact", label: "Pico", body: "#f2c14e", cabin: "#26292f", price: 800, massKg: 1150, engineForce: 9800, brakeForce: 11000, tireGrip: 0.92, comHeight: 0.56, trackWidth: 1.48, wheelbase: 2.42, topSpeed: 34, handbrakeGrip: 0.28, collisionRadius: 1.4 },
+  { id: "car_muscle", label: "Bandolero", body: "#d64545", cabin: "#26292f", price: 2400, massKg: 1650, engineForce: 15500, brakeForce: 14000, tireGrip: 0.88, comHeight: 0.52, trackWidth: 1.6, wheelbase: 2.75, topSpeed: 42, handbrakeGrip: 0.22, collisionRadius: 1.4, torqueCurve: TORQUE_MUSCLE },
+  { id: "car_sport", label: "Cicada GT", body: "#33c1b1", cabin: "#1f2228", price: 6500, massKg: 1350, engineForce: 14200, brakeForce: 17000, tireGrip: 1.08, comHeight: 0.44, trackWidth: 1.62, wheelbase: 2.58, topSpeed: 52, handbrakeGrip: 0.24, collisionRadius: 1.4, downforce: 0.5, steerResponse: 12 },
+  { id: "car_cop", label: "VCPD Cruiser", body: "#e8ecf2", cabin: "#1b2f52", price: 0, massKg: 1750, engineForce: 13800, brakeForce: 15500, tireGrip: 0.95, comHeight: 0.55, trackWidth: 1.6, wheelbase: 2.79, topSpeed: 40, handbrakeGrip: 0.26, collisionRadius: 1.4 },
+  { id: "car_suv", label: "Vagabond", body: "#6b7d52", cabin: "#20242c", price: 3800, massKg: 2350, engineForce: 15200, brakeForce: 16500, tireGrip: 0.82, comHeight: 0.98, trackWidth: 1.66, wheelbase: 2.85, topSpeed: 36, handbrakeGrip: 0.3, collisionRadius: 1.6, gears: GEARS_SUV },
+  { id: "car_bus", label: "Islander", body: "#e0a53c", cabin: "#2a2d34", price: 9000, massKg: 11000, engineForce: 34000, brakeForce: 50000, tireGrip: 0.68, comHeight: 1.35, trackWidth: 2.05, wheelbase: 7.2, topSpeed: 24, handbrakeGrip: 0.48, collisionRadius: 2.6, maxAngle: 0.42, steerResponse: 6, gears: GEARS_BUS, redlineRpm: 4600 },
 ];
 
 const flightControls = {

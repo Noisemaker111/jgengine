@@ -778,6 +778,7 @@
 
 ## @jgengine/core/physics/kinematicVehicle
 
+- `DEFAULT_REVERSE_FORCE_SCALE` (const): const DEFAULT_REVERSE_FORCE_SCALE: 0.48 — Default reverse drive force as a fraction of forward `engineForce` / `engineAccel`.
 - `KinematicChassisTuning` (interface): interface KinematicChassisTuning — Mass-and-force chassis layer (#1051); when present it supersedes `engineAccel`/`brakeAccel` with force/mass dynamics. Drive/brake become forces divided by `massKg`, a per-tick tire friction budget (`tireGrip` * grip curve * surface * downforce * m * g) is split lateral-first then longitudinal so hard slides and launches saturate, and `comHeight`/`trackWidth` set weight-transfer washout and body lean. Coasting decelerates from physical road load, not a per-vehicle constant: rolling resistance `μ_rr · m · g` always, plus engine braking `ENGINE_BRAKE_FRACTION · engineForce` routed through the current gear (so it strengthens as the car downshifts) whenever the throttle is lifted and a `powertrain` is configured. All fields are required; omit the whole block for the legacy model.
 - `KinematicDynamicsTuning` (interface): interface KinematicDynamicsTuning — Aerodynamic and electronic-assist settings layered over tire grip.
 - `KinematicPowertrainTuning` (interface): interface KinematicPowertrainTuning — Data-first gearbox and torque-curve tuning for a kinematic ground vehicle.

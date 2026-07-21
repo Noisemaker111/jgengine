@@ -436,4 +436,41 @@ describe("createKinematicVehicle — chassis mass/force layer (#1051)", () => {
     const step = car.tick(DT, axis({ throttle: 1 }));
     expect(step.wheelspin).toBe(false);
   });
+
+  test("reverse drive is softer than full engineForce (no rocket reverse)", () => {
+    const car = createKinematicVehicle({ ...TUNING, topSpeed: 60, reverseSpeed: 20, chassis: chassis({ engineForce: 18000 }) });
+    let step = car.tick(DT, axis({ brake: 1 }));
+    for (let i = 0; i < 120; i += 1) step = car.tick(DT, axis({ brake: 1 }));
+    // 2 s of reverse with full force would be ~24 m/s; with the default reverse scale it stays well under reverseSpeed.
+    expect(step.forwardSpeed).toBeLessThan(-2);
+    expect(step.forwardSpeed).toBeGreaterThan(-12);
+  });
+
+  test("handbrake + steer rotates more than steer alone at speed (rear-lock oversteer)", () => {
+    const steering = { wheelbase: 2.6, maxAngle: 0.55, highSpeedAngle: 0.18, highSpeedAt: 40, response: 12, yawDamping: 10 };
+    const plain = createKinematicVehicle({ ...TUNING, topSpeed: 60, chassis: chassis(), steering });
+    const drifting = createKinematicVehicle({
+      ...TUNING,
+      topSpeed: 60,
+      chassis: chassis(),
+      handbrakeGrip: 0.25,
+      steering,
+    });
+    for (let i = 0; i < 180; i += 1) {
+      plain.tick(DT, axis({ throttle: 1 }));
+      drifting.tick(DT, axis({ throttle: 1 }));
+    }
+    const plainStart = plain.pose().heading;
+    const driftStart = drifting.pose().heading;
+    let driftSlip = 0;
+    for (let i = 0; i < 36; i += 1) {
+      plain.tick(DT, axis({ throttle: 0.5, steer: 1 }));
+      const d = drifting.tick(DT, axis({ throttle: 0.5, steer: 1, handbrake: 1 }));
+      driftSlip = Math.max(driftSlip, Math.abs(d.slip));
+    }
+    const plainDelta = Math.abs(plain.pose().heading - plainStart);
+    const driftDelta = Math.abs(drifting.pose().heading - driftStart);
+    expect(driftDelta).toBeGreaterThan(plainDelta * 1.12);
+    expect(driftSlip).toBeGreaterThan(0.08);
+  });
 });

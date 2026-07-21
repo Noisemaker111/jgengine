@@ -61,6 +61,10 @@ At publish, rename this heading to the new version and mirror the entries into
   straight line through an arc is a fake beam. The `projectile.settled` event and `ProjectileSettleReport`
   gain a required `ballistic: boolean`; code that emits or consumes them directly must set/handle the field.
 
+### Changed
+
+- **Kinematic vehicle drive feel** (#1515) — `createKinematicVehicle` gains a low-speed launch torque floor, softer reverse by default (`chassis.reverseForceScale`, default ~0.48 of engine force), handbrake rear-lock oversteer yaw, engine-braking that no longer fights powered reverse, and lighter ESC while handbraking. Existing chassis tunings pick this up with no migrate; override `reverseForceScale` only if you need the old full-force reverse.
+
 ### Fixed
 
 - **City-scale player movement no longer freezes `pose` at ~3 fps (#1517).** Broadphase reach is split into capped horizontal vs vertical extents (tower height no longer inflates XZ/Y queries), `objectStore.inBox` bails to a linear object scan when the 1 m cell volume is huge, dense mesh-box colliders collapse to outer AABBs for walking, and `movement.frozen` skips the gather (seated drivers).

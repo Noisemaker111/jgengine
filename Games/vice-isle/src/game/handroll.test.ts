@@ -31,7 +31,7 @@ describe("handroll drivable-vehicle adoption", () => {
     // Speed→FOV, bank, lead, drift-lag are a driving-only overlay, never the on-foot baseline.
     const tuning = ctx.camera.chaseTuning();
     expect(tuning).not.toBeNull();
-    expect(tuning?.fov?.max).toBe(86);
+    expect(tuning?.fov?.max).toBe(88);
     expect(tuning?.bank?.perYawRate).toBeGreaterThan(0);
 
     handroll.exitVehicle(ctx);
