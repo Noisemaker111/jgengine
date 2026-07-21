@@ -94,4 +94,59 @@ running ship:preflight immediately before commit as the workflow directs -> pref
 
 2026-07-20T23:12:46.770Z — openai/gpt-5.6-sol — NoisemakerJon
 
+bun run gate → packages/assets src/cli/pull.test.ts failed once in the full test:all run (offline pull found empty /tmp dir) but passes in isolation; flaky network/tmpdir-dependent test forced a full gate re-run
+
+2026-07-19T17:14:06.870Z — claude-fable-5 — Claude
+
+bun run gate fails on clean origin/main: scripts/exportManifest.test.ts — computed manifest has ./previewFixtures and ./harness subpaths missing from the committed manifest (likely #1336 landed without regenerating it); gate is red for every branch until regenerated
+
+2026-07-19T18:22:26.329Z — claude-opus — Claude
+
+capturing before/after terrain shots → 'bun run drive --shot' rejects an absolute path with a hard error (takes a bare name, output forced to shots/<game>-<name>.png), while 'bun run shoot --out' accepts a full path — the two capture entrypoints disagree on how you name the output file
+2026-07-19T18:26:23.894Z — claude-fable-5 — Claude
+
+running bun run gate for a touch-controls PR → gate is red on main itself: check-game-shape flags Games/vice-isle/src/editorKinds.ts(+test) from merged #1369 as off-shape, masking my own results; the offending PR landed without gate catching it
+
+2026-07-19T20:38:47.201Z — claude-fable-5 — Claude
+
+Running bun run gate on a fresh branch off origin/main → check-game-shape fails on pre-existing Games/vice-isle/src/editorKinds.ts(+test) placement, aborting the gate before test:all for unrelated PRs
+
+2026-07-19T20:41:47.420Z — claude-fable-5 — Claude
+
+test:all on a fresh branch → scripts/exportManifest.test.ts fails because export-manifest.json drift (editor ./camera/orbitFraming, ./harness) landed on main unregenerated — the PR quick CI job doesn't run this test, so drift only surfaces on later unrelated branches
+
+2026-07-19T21:06:59.865Z — claude-fable-5 — Claude
+
+recording a drive on the warm Chrome reused the profile's localStorage save — vice-isle restored the previous run's session and capture.probe read 0,0,0; fresh-profile drives (no --connect) were needed for honest recording runs
+
+2026-07-19T21:08:15.220Z — claude-fable-5 — Claude
+
+bun run gate fails on current main: check-game-shape rejects Games/vice-isle/src/editorKinds.ts(+test) from merged PR #1369 — either the files move under src/game/ or editorKinds*.ts joins the optional top-level extras
+
+2026-07-19T21:58:56.045Z — claude-opus-4-8 — Claude
+
+driving the-robots for tracer evidence → 'bun run drive' crashes with 'Cannot find package gifenc from scripts/gif.ts'; gifenc not installed after agent:bootstrap
+
+2026-07-19T22:40:53.030Z — claude-opus-4-8 — Claude
+
+bun run agent:bootstrap on a fresh worktree failed: shell build could not find @jgengine/core/vfx/screenEffects because core dist was stale/incomplete from a prior partial build; a plain rebuild of core then full build succeeded
+
+2026-07-19T22:40:53.111Z — claude-opus-4-8 — Claude
+
+bun run gate is red on origin/main (check-game-shape flags Games/vice-isle/src/editorKinds.ts + .test.ts as game-specific files that must live under src/game/) — unrelated to my change but the && chain short-circuits before check-types-all runs, masking the real verdict
+
+2026-07-20T01:33:39.073Z — fable — Claude
+
+overhauling generateCity onto the cityBlocks fabric → extractBlocks silently collapses on generateStreets output (wandered/arc-filleted centerlines defeat proximity welding: 38 streets → 2 faces, no warning), so the fabric looked adoptable but wasn't; had to add graph-exact extractGraphBlocks — extractBlocks should warn or assert when face count is implausibly low vs street count
+
+2026-07-20T01:10:10.411Z — claude-opus-4-8 — Claude
+
+Running bun run check-types on a clean camera-shake feature branch -> check-game-shape fails on pre-existing Games/vice-isle/src/editorKinds.ts + .test.ts (must live under src/game/), which also exists on origin/main and is unrelated to my diff; it blocks the content-gate/recipes/types stages from running.
+2026-07-20T01:07:21.998Z — claude-opus-4-8 — Claude
+
+running check-types on a fresh wave-director feature branch → gate fails on pre-existing Games/vice-isle editorKinds.ts game-shape violations on origin/main, blocking the real type check (check-types-all) that runs after it; had to run check-types-all.ts manually to confirm my code compiles
+
+2026-07-20T03:00:06.022Z — claude-opus-4-8 — Claude
+
+shipping #1319 re-exports: lane's focused verification (test + check-changelog + check-types) passed, but quick-CI check-skill-api failed — newly-exported types (ChargeResult/DefenseResolution/ResolvedShot) require JSDoc + a gen:skill-api regen. Focused-verification guidance for a barrel/export change should include 'if you export any new public symbol, run check-skill-api + gen:skill-api' so it doesn't only surface in CI.
 bun run gate after capture workflow integration -> no engine file references the throwaway studios timed out at 5s after taking 6.8s, failing an otherwise 7475-pass gate
