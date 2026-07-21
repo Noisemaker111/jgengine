@@ -1,8 +1,8 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
+import { basename, dirname, join } from "node:path";
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
 import {
   computeExposedSubpaths,
   distExists,
@@ -14,18 +14,61 @@ import {
 
 const built = publishedPackages.every((pkg) => distExists(pkg));
 
+// `npm pack` does real filesystem + gzip work whose wall-time scales with
+// machine load. Packing each package once per case (as this suite used to)
+// flaked past Bun's default 5s timeout under contention and could hang past a
+// command guard with no streamed output (issue #1504). Pack every published
+// package exactly once into a shared cache dir and reuse the tarball — both the
+// packed-file inventory and the clean-consumer extractions read from it.
+const PACK_ALL_TIMEOUT_MS = 300_000;
+
 interface PackEntry {
   path: string;
 }
 
-function packedFiles(pkg: (typeof publishedPackages)[number]): string[] {
-  const out = execFileSync("npm", ["pack", "--dry-run", "--json"], {
+interface PackedArtifact {
+  /** Absolute path to the produced `.tgz` inside the shared cache dir. */
+  tgz: string;
+  /** Normalized (`/`-separated) paths the tarball would ship. */
+  files: string[];
+}
+
+let packCacheDir: string | undefined;
+let extractSeq = 0;
+const packedArtifacts = new Map<string, PackedArtifact>();
+
+/** Pack `pkg` once (real tarball + file list) and memoize it for every case. */
+function packOnce(pkg: (typeof publishedPackages)[number]): PackedArtifact {
+  const cached = packedArtifacts.get(pkg);
+  if (cached !== undefined) return cached;
+  if (packCacheDir === undefined) throw new Error("pack cache dir not initialized");
+  const out = execFileSync("npm", ["pack", "--pack-destination", packCacheDir, "--json"], {
     cwd: packageDir(pkg),
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],
   });
-  const parsed = JSON.parse(out) as Array<{ files: PackEntry[] }>;
-  return parsed[0].files.map((f) => f.path.replaceAll("\\", "/"));
+  const entry = (JSON.parse(out) as Array<{ filename: string; files: PackEntry[] }>)[0];
+  const artifact: PackedArtifact = {
+    tgz: join(packCacheDir, entry.filename),
+    files: entry.files.map((f) => f.path.replaceAll("\\", "/")),
+  };
+  packedArtifacts.set(pkg, artifact);
+  return artifact;
+}
+
+if (built) {
+  beforeAll(() => {
+    packCacheDir = mkdtempSync(join(tmpdir(), "jgengine-pack-cache-"));
+    for (const pkg of publishedPackages) packOnce(pkg);
+  }, PACK_ALL_TIMEOUT_MS);
+
+  afterAll(() => {
+    if (packCacheDir !== undefined) rmSync(packCacheDir, { recursive: true, force: true });
+  });
+}
+
+function packedFiles(pkg: (typeof publishedPackages)[number]): string[] {
+  return packOnce(pkg).files;
 }
 
 function explicitExportTargets(pkg: (typeof publishedPackages)[number]): string[] {
@@ -53,24 +96,22 @@ describe.if(built)("published tarball contents", () => {
 });
 
 function installTarballs(packages: readonly (typeof publishedPackages)[number][]): { consumer: string; scope: string } {
+  if (packCacheDir === undefined) throw new Error("pack cache dir not initialized");
   const work = mkdtempSync(join(tmpdir(), "jgengine-tarballs-"));
   const scope = join(work, "consumer", "node_modules", "@jgengine");
   mkdirSync(scope, { recursive: true });
   for (const pkg of packages) {
-    const packed = execFileSync("npm", ["pack", "--pack-destination", work, "--json"], {
-      cwd: packageDir(pkg),
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    const tgz = (JSON.parse(packed) as Array<{ filename: string }>)[0].filename;
-    const extractDir = join(work, `extract-${pkg}`);
+    // Reuse the tarball packed once in beforeAll instead of re-packing per case.
+    const { tgz } = packOnce(pkg);
+    const extractName = `extract-${pkg}-${extractSeq++}`;
+    const extractDir = join(packCacheDir, extractName);
     mkdirSync(extractDir, { recursive: true });
-    // Run tar from `work` with colon-free relative paths. Passing an absolute
-    // archive path (`C:\…\pkg.tgz`) makes GNU tar read the drive letter as a
-    // remote host ("Cannot connect to C: resolve failed") on Windows; a bare
-    // basename plus a relative `-C` dir extracts identically on GNU tar,
+    // Extract from the cache dir with colon-free relative paths. Passing an
+    // absolute archive path (`C:\…\pkg.tgz`) makes GNU tar read the drive letter
+    // as a remote host ("Cannot connect to C: resolve failed") on Windows; a
+    // bare basename plus a relative `-C` dir extracts identically on GNU tar,
     // bsdtar, and Linux.
-    execFileSync("tar", ["-xzf", tgz, "-C", `extract-${pkg}`], { cwd: work });
+    execFileSync("tar", ["-xzf", basename(tgz), "-C", extractName], { cwd: packCacheDir });
     renameSync(join(extractDir, "package"), join(scope, pkg));
   }
   return { consumer: join(work, "consumer"), scope };
@@ -153,7 +194,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     } finally {
       rmSync(join(consumer, ".."), { recursive: true, force: true });
     }
-  }, 60_000);
+  }, 120_000);
 
   test("portable marker source and React minimap resolve together from real tarballs", () => {
     const { consumer } = installTarballs(["core", "react"]);
@@ -176,7 +217,7 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     } finally {
       rmSync(join(consumer, ".."), { recursive: true, force: true });
     }
-  }, 60_000);
+  }, 120_000);
 });
 
 test.if(built)("node test fixtures exist in source but are build-excluded", () => {
