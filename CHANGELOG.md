@@ -28,6 +28,15 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+- **`generateCity` output is plot-first and no longer square by default.** Same options in, but the
+  layout changes: lots derive from block-frontage plots (varied sizes), the street net clips to a
+  seeded organic outline (`streets: { outline: 0 }` restores the legacy rectangle-filling footprint),
+  and the landmark/interior-fill passes are gone — `content.landmarks` now dials the share of grand
+  (block-scale) plots and `blockFill` dials frontage coverage/plot depth/park share.
+  `ResolvedCityLot` drops the `interior`/`park` flags (no street-less interior lots exist anymore)
+  and the `INTERIOR_LOTS_PER_BLOCK_CAP` export is removed; `GeneratedCity` gains `plots` + `parks`.
+  A city consumer that only reads `lots`/`lotContent` (center/rotation/footprint/pieces) needs no
+  code change.
 - Walking-player object collision is now **on by default** (`PlayerMovementConfig.collideObjects`
   defaults `true`): placed scene objects with blocking colliders stop, support, and are stood upon by
   the player without opting in. A game that relies on walking through placed objects sets
@@ -44,18 +53,125 @@ At publish, rename this heading to the new version and mirror the entries into
   straight line through an arc is a fake beam. The `projectile.settled` event and `ProjectileSettleReport`
   gain a required `ballistic: boolean`; code that emits or consumes them directly must set/handle the field.
 
+### Fixed
+
+- **Generated street dressing now connects through bends and junctions.** `buildJunctionConnector`
+  exposes shared tangent-continuous connector paths for sidewalks, curbs, and markings; the website
+  playground renders continuous sidewalk aprons and lane paint, and its deterministic query controls
+  can focus a junction for close-up inspection. The capture workflow now also supports managed website
+  screenshots and videos with Chrome-safe ports, lazy Vite targets, and fail-fast navigation errors.
+- **Generated street bends and intersections now form compact, welded road geometry.** Hard degree-2
+  turns are emitted as owned two-arm joins with tangent-continuous inner and outer curbs instead of two
+  overlapping square caps; multi-arm curb returns bow into the crossing instead of ballooning outward;
+  unequal-width seams remain welded; and residential branches reject near-parallel departures that
+  inherently overlap their host road. The playground camera override now supports true close-up orbits
+  down to 8 world units, and `bun run shoot --fixture StreetGeometryPreview` provides deterministic
+  close-ups of turns and unequal multi-arm intersections.
+- **`assets pull` / `assets add` default output dir now lands where the dev server serves models** (`@jgengine/assets` CLI, #1339) — inside the monorepo a bare `pull`/`add` previously wrote to a cwd-relative `public/`, so running it under `packages/assets` (or any subdir) dropped GLBs into a folder no game serves. It now defaults to the served root `apps/dev/public` when that exists (falling back to the historical cwd-relative `public` for out-of-monorepo consumers), so pulled bytes land in `apps/dev/public/models/<pack>` where the runner reads them. `--dir` still overrides.
+
 ### Added
 
-- **City plot contract + plot-size variety.** `deriveBuildingLots` now enforces placement as a hard
-  contract — no two plots ever overlap (true oriented-rect separation; `spacing: 0` packs plots
-  edge-to-edge, touching legal, overlap never) and no plot footprint touches any road corridor,
-  including non-frontage lanes via the new `avoid` option (`generateCity` feeds it automatically).
-  `footprint` also accepts a weighted `PlotVariant` list to mix plot sizes along one frontage
-  (apartment slices beside cottages beside wide detached parcels; each street side rolls its own
-  seeded run), and `resolveCityLotContent` clamps every massing silhouette to its plot and biases
-  the class mix by the new `classPlotFit` so building stock matches parcel shape. Landmark parcels
-  must clear all street corridors, never overlap each other, and swallow any lot they intersect.
-  `cityGeometry` gains the shared `rectsSeparated` / `rectClearsPolyline` primitives.
+- **`debug_snapshot().probes.textureErrors` surfaces in-GLB texture-load failures (#1342).**
+  `@jgengine/core/devtools/textureErrors` adds an allocation-aware collector
+  (`armTextureErrors`/`reportTextureLoadError`/`resetTextureErrors`/`textureErrorsSnapshot`) that the
+  shell's shared GLB loading manager feeds on every texture/image `onError`. Previously only whole-model
+  catalog fallbacks (missing mapping/pack/scene) reached the `fallbacks` probe, so a model that resolved
+  but whose textures 404'd read as a clean scene to `debug_snapshot` — the exact signal `jgengine-verify`
+  tells agents to trust. The new `probes.textureErrors` list (`{ url, count }[]`) makes those failures
+  visible so a texture-404'd scene can be treated like a model fallback. Dev-only (armed with devtools);
+  a pure no-op in production.
+- **Result/option types of public barrel functions are now re-exported (#1319).** The
+  `@jgengine/core/gameplay` barrel re-exports `ChargeResult`, `ChargeOptions`, and `Overdraft`
+  alongside `charge`/`chargeAll`/`canAfford`, and `@jgengine/core/combat` re-exports
+  `DefenseResolution` (from `resolveDefense`) and `ResolvedShot` (from `resolveShot`). Consumers can
+  now name these return/parameter types directly instead of resorting to `ReturnType<>`/`Parameters<>`
+  gymnastics. Purely additive — no runtime or signature change.
+- **Conflict-aware key-rebinding session.** `@jgengine/core/input/rebindSession` adds
+  `createRebindSession({ actions | input, overrides?, now? })` — an observable key-remap
+  editor over the existing action-binding model: it tracks the effective binding per action
+  (default merged with `applyBindingOverrides`), exposes `rows()` with key glyphs + per-row
+  conflict sets, groups every clash via `conflicts()`, drives click-to-capture rebinds
+  (`beginCapture`/`capture`/`cancelCapture`, codes normalized), resets to defaults, and hands
+  back `BindingOverrides` to persist, with `snapshot`/`restore`. React `KeybindingMenu` +
+  `useRebindSession` (`@jgengine/react`) are the drop-in controls-settings surface — one row
+  per action with key glyph, conflict badges, per-row and Reset-all, HudTheme-skinnable.
+  Demo: `key-rebinding`.
+- **Vendor / shop stock + grid.** `@jgengine/core/economy/shopStock` adds a serializable, observable
+  `createShopStock({ entries })` — entries carry a free-string `kind`, a `price` in a free-string
+  `currency`, a finite or unlimited (`qty: null`) count, and an optional `sellPrice`. `buy`/`sell`
+  operate over a **caller-owned** `WalletState` (reusing the existing `wallet` model — `charge`/`grant`/
+  `canAfford`), returning the debited/credited wallet for the caller to adopt; plus `restock`/`setPrice`/
+  `add`/`remove`/`list`/`get`/`canAfford`/`subscribe`/`snapshot`/`restore`. `@jgengine/react`'s `ShopGrid`
+  host + `useShopStock` hook render it as a token-themed grid of item cards (icon, price with currency
+  glyph, stock count or "∞", afford-aware Buy, optional Sell) with a wallet balance readout.
+
+- **Save-slot / profile select menu.** `@jgengine/core/game/saveSlots` adds `createSaveSlots(config)` — a
+  serializable, observable index of per-slot *display* metadata (`{ id, name?, empty, savedAt?, meta }`
+  with free-string `meta` the game fills: level, playtime, chapter, thumbnail ref, …) that complements
+  `createSaveStore` (which owns the real payload). Ops: `write`/`clear`/`rename`/`get`/`list`/`mostRecent`
+  (powers Continue) plus `subscribe`/`snapshot`/`restore`. `@jgengine/react/saveSlots` ships the drop-in
+  `SaveSlotMenu` host (+ `useSaveSlots` hook) rendering the index as New / Continue / Load / Delete cards
+  with meta chips and relative save times, HudTheme-skinnable. Demo: `save-slots`.
+- **Event-log / kill-feed ticker.** `@jgengine/core/game/eventTicker` adds a thin, serializable,
+  observable `createEventTicker({ now?, limit?, ttlMs? })` over the existing `appendFeed`/`pruneFeed`
+  helpers: a single rolling, count-capped, time-fading list of free-string `{ kind, text, icon? }`
+  entries (`push`/`recent`-with-`fade`/`entries`/`clear`/`subscribe`/`snapshot`/`restore`). `recent()`
+  prunes expired entries and returns them newest-first with a `fade` `0..1` (age / `ttlMs`). The React
+  `KillFeed` host + `useEventTicker` hook render it as a fading, newest-on-top stack of per-kind
+  iconned, accent-colored rows over HudTheme tokens; `kill-feed` demo included.
+- **Interaction prompt registry ("Press E to …").** `@jgengine/core/world` adds `createPromptRegistry()` — a thin
+  observable, serializable store over the existing `resolveActivePrompt` resolver that owns positioned proximity
+  prompts (`register`/`update`/`unregister`/`clear`/`all`), resolves the nearest in-range prompt as the player moves,
+  and notifies subscribers only when the active prompt *changes* (so a HUD does not thrash per frame), with
+  `snapshot`/`restore`. React `@jgengine/react` adds `InteractionPrompt` (a screen-anchored callout rendering the active
+  prompt — key cap + label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable) and
+  `useInteractionPrompt(registry, playerPosition)`. Demo: `interaction-prompt`.
+- **Seeded trauma-based camera shake.** `@jgengine/core/vfx/cameraShake` adds `createCameraShake(config?)` —
+  a serializable, deterministic camera-shake/impulse controller: `add(amount, kind?)` raises trauma `0..1`
+  on impacts (free-string `kind` the game styles), `update(dt)` decays it, and `offset()` returns a pooled
+  `{ x, y, z, pitch, yaw, roll }` kick (`trauma^exponent` × per-axis maxima × seeded value-noise) with
+  snapshot/restore. `@jgengine/react` ships `CameraShakeMeter`/`useCameraShake` (trauma meter + kind label)
+  and `@jgengine/shell` ships `ControllerCameraShake`, an R3F consumer that applies the offset to the active
+  camera each frame so the view visibly shakes. Demo: `camera-shake`.
+
+- **Observable wave/spawn runner + drop-in HUD.** `@jgengine/core/ai/waveRunner` adds
+  `createWaveRunner(config)` — a thin, stateful, observable wrapper over the seeded `spawnDirector`
+  that owns a `SpawnDirectorState`, ticks it from `update(dt, ctx?)`, forwards each `SpawnRequest` to an
+  optional `onSpawn` sink (so the model never instantiates entities), and exposes a pooled `view()`
+  readout (1-based `WAVE N`, wave progress `0..1`, budget/alert, spawned-this-wave/total, done) plus
+  `forceNextWave`/`raiseAlert`/`subscribe`/`snapshot`/`restore`. `@jgengine/react/waveHud` adds
+  `WaveHud`/`useWaveRunner` — a theme-skinnable panel with a big WAVE N label, wave-progress bar, and
+  spawn/budget/alert readouts. Spawn-entry kinds stay free strings the runner never interprets.
+- **Count-based combo / multiplier meter.** `@jgengine/core/combat/comboMeter` adds
+  `createComboMeter({ windowMs, tiers?, dropStep?, multiplierPerTier? })` — an integer hit chain that
+  climbs on `hit(kind?)`, resets a decay window each hit, and drops (to 0, or by `dropStep`) when the
+  window elapses, driven by an injected `now` and/or `update(dt)`. Free-string `tiers` derive the active
+  `tier()` and a score `multiplier()`, with `peak()`, a pooled `view()`, `subscribe`, and
+  `snapshot`/`restore`. React `@jgengine/react/comboMeter` ships `ComboMeterHud` (big live count, tier
+  label, draining window bar, multiplier — per-tier colored from a caller map) and a `useComboMeter` hook.
+- **Off-screen objective / waypoint markers.** `@jgengine/core/ui/screenMarkers` adds a serializable,
+  observable `createWaypointTracker()` (`set`/`remove`/`clear`/`all`/`subscribe`/`snapshot`/`restore`,
+  free-string `kind`s the game styles) plus a pure, allocation-aware `layoutScreenMarker(projection,
+  viewport, options?)` that passes an on-screen point through and clamps an off-screen or behind-camera
+  point to the viewport edge with a bearing `angle` — the edge-clamp/arrow half that `layoutEntityFrames`
+  culls. `@jgengine/react`'s `WaypointMarkers` renders on-screen pins and off-screen directional arrows
+  with distance labels over any caller-owned `project` (e.g. shell `useWorldProjection`), skinnable via
+  HudTheme tokens and a per-`kind` color map. Demo: `waypoint-markers`.
+
+- **Scoreboard / leaderboard ranking.** `@jgengine/core/game/leaderboardRank` adds `rankLeaderboard(rows, options)`
+  — a pure, allocation-bounded selector that turns raw leaderboard rows (accepts `LeaderboardRow[]` straight from
+  `createLeaderboard().snapshot()`) into a render-ready ranked table: stable value sort (`desc`/`asc`), correct tie
+  handling (`standard` → 1,2,2,4; `dense` → 1,2,2,3), `isTie`/`isLocal` flags via `highlightUserId`, and top-N `limit`
+  — plus `medalFor(rank)` returning free-string `gold`/`silver`/`bronze` podium tokens. `@jgengine/react`'s reskinnable
+  `Scoreboard` table renders it with medal-colored podium icons, a highlighted local row, and HudTheme `--jg-*` tokens.
+- **Talent/upgrade tree from any unlock rule.** `@jgengine/core/game/talentTreeView` adds
+  `talentTreeViewFrom(nodes, status, totals?)` — a general builder that places a node graph (branch/tier
+  layout, prerequisite edges, learned/available/locked/maxed state) from a caller-supplied per-node
+  `{ rank, allocatable }`, so unlocks can come from a currency threshold, a level, a quest flag, or
+  nothing — not only point-spend. `talentTreeView(nodes, tree)` is now the point-spend adapter over it.
+  The React `TalentTree` widget accepts a precomputed `view` (plus `showPoints`) alongside the existing
+  `nodes`+`tree`, so the same widget renders a buy-with-points talent tree *or* a money-gated upgrade tree
+  with no renderer change.
 - **Floating combat text / damage numbers.** `@jgengine/core/ui/floatingText`' `createFloatingTextField` is a
   genre-agnostic, deterministic, allocation-aware field of world-anchored text pops (damage, crits, heals, XP/gold,
   status, barks): `emit({ position, text, kind?, color?, size?, rise?, drift?, lifetime? })`, `update(dt)` (rise +
@@ -73,7 +189,11 @@ At publish, rename this heading to the new version and mirror the entries into
 - **Generated street elevation** (`@jgengine/core/world/streetGenerator`) — new optional `elevation` (0..1 relief dial, default 0 = flat, byte-identical output) and `maxGrade` (default 0.07) rules: a seeded smooth field emits per-point `Street.heights` (grade-capped, loop-continuous across a circuit's start/finish) and a shared `StreetNetwork.elevationAt(x,z)` so renderers drape roads, junction welds, sidewalks, and building bases off one consistent surface. Distinct from `context.heightAt` terrain (bridges/tunnels unchanged).
 - **Per-corner radius classes on circuits** (`@jgengine/core/world/streetGenerator`) — circuit corners now fillet from a seeded radius mix (hairpins near `minCurveRadius`, standard corners at 2-4x, 1-3 sweepers per lap at 5-8x, inversely correlated with turn magnitude) so track layouts show genuinely different corner radii instead of one pinched minimum.
 - **`compactness` circuit dial — space-filling kart-style tracks** (`@jgengine/core/world/streetGenerator`) — 0..1 (default 0 = the open flowing hull loop, byte-identical): rising compactness lays the lap as the wall-follower cycle around a seeded direction-biased spanning tree on a corridor grid — provably one self-avoiding loop that folds back through its own footprint with parallel corridors at a clearance-safe pitch, switchback mazes, leaf hairpins, and a ≥3-pitch main straight — then runs the same spline/curvature-floor pipeline. At 1 a default-seed lap triples in length with 19-37 corners and ~61-77% footprint usage.
-- **`blockFill` density dial** (`@jgengine/core/world/cityGenerator` / `buildingLots`) — 0..1 (default 0.45 = today's look, byte-identical): rising fill collapses along-street spacing and widens lots to a touching streetwall, and the content pass packs block interiors with back-row lots including interior-only `garage`/`depot` filler classes while reserving a seeded fraction of blocks as parks — Manhattan-dense cities at 1 (~1.8x the buildings, frontage gaps <10%), sparse suburbs near 0. `ResolvedCityLot` gains `interior`/`park` flags.
+- **`blockFill` density dial** (`@jgengine/core/world/cityGenerator` / `buildingLots`) — 0..1 (default 0.45): rising fill packs street frontage toward a touching streetwall, deepens plots toward the block spine, and reserves fewer whole blocks as parks — Manhattan-dense cities at 1, sparse suburbs near 0. Block interiors are never filled with street-less buildings; every plot fronts a street.
+- **Plot-first city generator** (`@jgengine/core/world/cityGenerator`) — `generateCity` now extracts closed blocks from the street network's exact graph (`extractGraphBlocks` in `world/cityBlocks`) and subdivides every block's frontage into size-tiered polygonal PLOTS (`small`/`medium`/`large`/`grand` — many different plot sizes per city) via the new `deriveCityPlots`. `GeneratedCity` gains `plots` (`CityPlot[]`, `plots[i]` pairs with `lots[i]`) and `parks` (whole-block open space). The landmark cluster-merge pass and the street-less interior fill are gone: a landmark is just a grand plot (same pass, biggest tier — `content.landmarks` dials its share, `0` disables), building class now follows plot size (wide plots pull towers/slabs, narrow plots pull rowhouses/houses), and every building stands on street-fronting land by construction.
+- **`outline` street dial** (`@jgengine/core/world/streetGenerator`) — 0..1 (default 0 = the legacy full-rectangle footprint, byte-identical): rising values clip the lattice to a seeded organic boundary blob (radial harmonics), so every seed grows a differently-shaped city — lobes, bays, shaved corners — reduced to its largest connected component. `generateCity` defaults it to 0.4.
+- **Residential branch streets and cul-de-sacs** (`@jgengine/core/world/streetGenerator` / `cityGenerator`) — new `residentialBranches` rule (0..1 share, default 0 = legacy alleys byte-identically) grows two spur kinds off the mains under the `branching` dial: service alleys (the legacy lane stubs) and RESIDENTIAL BRANCHES — winding 1–3-segment street-level side streets that may fork once, never cross existing roads, end in a turning-bulb cul-de-sac, and are lined with small/medium house plots down both sides by the plot pass (dead-end corridors carry their street/level through `extractGraphBlocks`). Dead-ending chains are never classified arterial, so no bulb-capped boulevards. `generateCity` defaults `branching` to 0.4 and `residentialBranches` to 0.6.
+- **`TrimmedIntersections.junctionIndices`** (`@jgengine/core/world/roads`) — each welded junction surface now reports which input junction it belongs to, so renderers can color crossing patches by the junction's street level instead of one global junction color.
 - **`trimBandAtJunctions`** (`@jgengine/core/world/roads`) — clip a sidewalk/parallel band polyline out of every junction apron (arm-derived radius widened by the band's half-width + clearance), returning the surviving sub-paths — so sidewalks end at crossings instead of sailing through them. The playground consumes it for `Street.sidewalks`.
 - **Shared map drawings (multiplayer).** `@jgengine/core/world/sharedAnnotations`' `createSharedAnnotations`
   makes a map annotation layer collaborative: local `addStroke`/`addShape`/`addNote`/`remove`/`clear` apply
@@ -295,13 +415,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
-- **Street graph is planar by construction and wide roads never stub out.** `generateStreets`
-  rejects loop-reconnect chords that would cross or shadow an unrelated edge (its segment-distance
-  helper now reports 0 for crossing segments, also hardening circuit self-clearance against folded
-  loops); branch lanes fork mid-block at right angles through a real T node in the host street
-  instead of leaving junctions at random diagonals; and boulevard/avenue chains demote to local
-  streets when they would dead-end at an interior node (rim exits stay arterial). Kept dead ends
-  still emit cul-de-sac bulbs for renderers.
+- **`check-game-shape`/doctor accept editor-import-graph modules by convention** (`packages/jgengine` `gameShape`, #1377) — a top-level `src/editor<Name>.ts` module (plus its colocated `.test.ts`) is now an allowed game-shape extra, matched by the `editor<Name>.ts` naming convention instead of an exact-filename enumeration. Fixes `editorKinds.ts` tripping the shape gate and stops the next editor-graph module from re-reddening `main` the moment it lands. No game needs changes; `editorLayers`/`editorCatalogs`/`editorKinds` and any future sibling are all recognized.
 - **Road ribbons no longer self-intersect at bends** (`@jgengine/core/world/roads`) — `buildRoadRibbon` now miter-joins the inner edge of a bend and welds any residual fold when the local turn radius drops under the half-width, so dense arc-sampled corners render as one clean surface instead of a doubled bowtie. Straight ribbons and terminal cross-sections stay byte-identical (junction welds unaffected).
 - **Junction surfaces stopped emitting sliver triangles** (`@jgengine/core/world/roads`) — `buildJunctionSurface` grouped approach corners globally by angle, which interleaved unequal-width approaches and produced shard/sliver fans; corners now stay grouped per approach with wrap-safe ordering and outward curb-return arcs, and the fan runs over an angle-monotonic simple boundary.
 - **Street corner arcs sample at ≤~9° per vertex** (`@jgengine/core/world/streetGenerator`) — corner fillets previously stepped up to `maxTurnAngle` (~28°) per vertex and read as hard polygons at road width; both net and circuit corners now sample finely, and sidewalk offsets became true parallel offsets (outside arcs, inside miter-clamp + weld) that never pinch into the road surface.
@@ -338,6 +452,10 @@ At publish, rename this heading to the new version and mirror the entries into
   identifier "undefined"`.
 
 ### Removed
+
+### Fixed
+
+- **A missing/mis-served GLB no longer white-screens the whole game — it degrades to one placeholder primitive** (`@jgengine/shell/render/modelLoad`, #1340). A Vite dev server returns its `index.html` fallback (HTTP 200) for a missing `/models/*.glb`; `GLTFLoader` then throws parsing HTML as a GLB, and that failure surfaced as a rejected `useLoader` Suspense promise which does **not** reliably re-throw into a per-model React error boundary inside the react-three-fiber reconciler — so it escaped to the app-level `GameUiErrorBoundary` and blanked the scene. `sharedGltfLoader` (`DiagnosticGLTFLoader`) now probes a failed URL and, for a diagnosed broken asset (missing / HTML fallback / corrupt / unsupported), **resolves to a `createFallbackModel` placeholder box instead of rejecting**, containing the failure at the load seam for every consumer with no reliance on boundary recovery; a genuine parse error over valid-looking bytes is still surfaced. Emits a dev console warning naming the broken path. No API change; `useLoader(sharedGltfLoader, url)` benefits with no call-site change.
 
 ## 0.14.0
 

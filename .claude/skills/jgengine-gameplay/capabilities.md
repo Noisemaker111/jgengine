@@ -120,6 +120,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGameFeed` (function) · `import { createGameFeed } from "@jgengine/core/gameplay"`
 
+## event-ticker — rolling capped, timed-fade event/kill-feed ticker of free-string entries over the feed helpers — push/recent-with-fade, snapshot/restore
+
+- `createEventTicker` (function) · `import { createEventTicker } from "@jgengine/core/gameplay"`
+
 ## game-save — save/load game state with a pluggable backend, autosave, slots, and migration
 
 - `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/gameplay"`
@@ -176,6 +180,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## item-use-composition — compose pluggable, ordered item use-behaviors from serializable references
 
 - `createUseBehaviorRegistry` (function) · `import { createUseBehaviorRegistry } from "@jgengine/core/gameplay"`
+
+## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
+
+- `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/gameplay"`
 
 ## lap-splits — per-lap durations from a cumulative split book
 
@@ -375,6 +383,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRunDraft` (function) · `import { createRunDraft } from "@jgengine/core/gameplay"`
 
+## save-slots — serializable save-slot / profile metadata index — write/clear/rename/mostRecent over free-string per-slot meta, powering New/Continue/Load/Delete menus, with snapshot/restore
+
+- `createSaveSlots` (function) · `import { createSaveSlots } from "@jgengine/core/gameplay"`
+
+## scoreboard — pure tie-aware ranking selector over the leaderboard model — standard/dense ranks, local-entry highlight, top-N, medal tokens for a reskinnable table
+
+- `rankLeaderboard` (function) · `import { rankLeaderboard } from "@jgengine/core/gameplay"`
+
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 
 - `seededRng` (function) · `import { seededRng } from "@jgengine/core/gameplay"`
@@ -382,6 +398,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## set — a bounded keyed value in a caller-owned serializable record
 
 - `setValue` (function) · `import { setValue } from "@jgengine/core/gameplay"`
+
+## shop-grid — serializable vendor/shop stock with buy/sell over a caller-owned wallet — finite/unlimited qty, sell-back, restock/setPrice, snapshot/restore
+
+- `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`
 
 ## social-emotes — emotes and social interactions between nearby players
 
@@ -406,6 +426,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## talent-tree-view — flatten a talent tree into a placed, per-node render view — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
 
 - `talentTreeView` (function) · `import { talentTreeView } from "@jgengine/core/gameplay"`
+
+## talent-tree-view-from — build a placed talent/upgrade-tree render view from any per-node unlock rule (points, currency, level, flag) — branch/tier layout, learned/available/locked/maxed state, prerequisite edges
+
+- `talentTreeViewFrom` (function) · `import { talentTreeViewFrom } from "@jgengine/core/gameplay"`
 
 ## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
 

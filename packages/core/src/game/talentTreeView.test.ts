@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { createTalentTree, type TalentNodeDef } from "@jgengine/core/game/talents";
-import { talentTreeView } from "@jgengine/core/game/talentTreeView";
+import { talentTreeView, talentTreeViewFrom } from "@jgengine/core/game/talentTreeView";
 
 type Stat = "power" | "critChance";
 
@@ -76,5 +76,63 @@ describe("talentTreeView node state", () => {
     const view = talentTreeView(nodes, tree);
     expect(view.pointsSpent).toBe(1);
     expect(view.pointsAvailable).toBe(3);
+  });
+});
+
+describe("talentTreeViewFrom (any unlock rule)", () => {
+  test("drives layout/state/edges from a caller-supplied status — no point model", () => {
+    // A money-gated upgrade tree: a node is unlocked (rank 1) once its cash threshold is passed and
+    // its prerequisite is unlocked; nothing here spends talent points.
+    const cost: Record<string, number> = { root: 50, mid: 120, capstone: 300 };
+    const unlocked = new Set<string>(["root"]);
+    const gold = 150;
+
+    const view = talentTreeViewFrom(nodes, (node) => {
+      const has = unlocked.has(node.id);
+      const prereqMet = (node.requires ?? []).every((r) => unlocked.has(typeof r === "string" ? r : r.nodeId));
+      return { rank: has ? 1 : 0, allocatable: !has && prereqMet && gold >= (cost[node.id] ?? 0) };
+    });
+    const node = (id: string) => view.nodes.find((n) => n.id === id)!;
+
+    // root unlocked → learned; mid affordable + prereq met → available & allocatable; capstone locked.
+    expect(node("root").state).toBe("learned");
+    expect(node("mid").state).toBe("available");
+    expect(node("mid").allocatable).toBe(true);
+    expect(node("mid").requires[0]).toEqual({ from: "root", rank: 1, met: true });
+    expect(node("capstone").state).toBe("locked");
+    expect(node("capstone").allocatable).toBe(false);
+    // Same topology as the point-spend path.
+    expect(view.tiers).toBe(3);
+    expect(view.branches).toEqual(["fire", "ice"]);
+  });
+
+  test("gates allocatable independently of state — affordability can withhold an available node", () => {
+    // Broke: prerequisite met so mid is 'available', but the game's rule says not allocatable yet.
+    const unlocked = new Set<string>(["root"]);
+    const view = talentTreeViewFrom(nodes, (node) => ({
+      rank: unlocked.has(node.id) ? 1 : 0,
+      allocatable: false, // e.g. not enough cash for anything
+    }));
+    const mid = view.nodes.find((n) => n.id === "mid")!;
+    expect(mid.state).toBe("available"); // prereq (root rank 1) met
+    expect(mid.allocatable).toBe(false); // but the game withholds it
+  });
+
+  test("defaults point totals to zero when omitted", () => {
+    const view = talentTreeViewFrom(nodes, () => ({ rank: 0, allocatable: false }));
+    expect(view.pointsAvailable).toBe(0);
+    expect(view.pointsSpent).toBe(0);
+  });
+
+  test("point-spend talentTreeView matches an equivalent talentTreeViewFrom", () => {
+    const tree = createTalentTree<Stat>({ points: 4, nodes });
+    tree.allocate("root");
+    const adapter = talentTreeView(nodes, tree);
+    const manual = talentTreeViewFrom(
+      nodes,
+      (node) => ({ rank: tree.rank(node.id), allocatable: tree.canAllocate(node.id).ok }),
+      { pointsAvailable: tree.pointsAvailable(), pointsSpent: tree.pointsSpent() },
+    );
+    expect(manual).toEqual(adapter);
   });
 });

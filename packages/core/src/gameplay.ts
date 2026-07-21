@@ -65,8 +65,31 @@ export {
   type ScheduledRule,
   type ThresholdBand,
 } from "./economy/resourceLedger";
+export {
+  createShopStock,
+  type ShopBuyRejection,
+  type ShopBuyResult,
+  type ShopPrice,
+  type ShopSellRejection,
+  type ShopSellResult,
+  type ShopStock,
+  type ShopStockConfig,
+  type ShopStockEntry,
+  type ShopStockSnapshot,
+} from "./economy/shopStock";
 export { type TechNodeDef } from "./economy/techTree";
-export { balance, charge, chargeAll, createEmptyWallet, grant, isOverdrawn } from "./economy/wallet";
+export {
+  balance,
+  canAfford,
+  charge,
+  chargeAll,
+  createEmptyWallet,
+  grant,
+  isOverdrawn,
+  type ChargeOptions,
+  type ChargeResult,
+  type Overdraft,
+} from "./economy/wallet";
 export {
   createAchievementTracker,
   type AchievementDef,
@@ -118,6 +141,15 @@ export {
   type DialogueRunOptions,
 } from "./game/dialogueGraph";
 export {
+  createEventTicker,
+  type EventTicker,
+  type EventTickerEntry,
+  type EventTickerInput,
+  type EventTickerOptions,
+  type EventTickerSnapshot,
+  type EventTickerView,
+} from "./game/eventTicker";
+export {
   createGameEvents,
   type CombatTelegraphEvent,
   type CombatVfxEvent,
@@ -141,6 +173,14 @@ export {
 export { gamePhase, setGamePhase, type GamePhase } from "./game/gamePhase";
 export { createKeyValueStore, type KeyValueStorage } from "./game/keyValueStore";
 export { createLeaderboard, type LeaderboardRow, type LeaderboardScope } from "./game/leaderboard";
+export {
+  medalFor,
+  rankLeaderboard,
+  type RankLeaderboardOptions,
+  type RankableRow,
+  type RankedEntry,
+  type TieMode,
+} from "./game/leaderboardRank";
 export { createLevelSequence, type LevelSequence } from "./game/levelSequence";
 export { createLoadouts, type LoadoutDef } from "./game/loadout";
 export { evaluateLootFilter, lootFilter, type LootFilterRule } from "./game/lootFilter";
@@ -274,6 +314,14 @@ export {
 } from "./game/ruleSelection";
 export { createRunDraft, type RunDraft, type RunModifierOffer } from "./game/runDraft";
 export {
+  createSaveSlots,
+  type SaveSlotMeta,
+  type SaveSlotWrite,
+  type SaveSlots,
+  type SaveSlotsConfig,
+  type SaveSlotsSnapshot,
+} from "./game/saveSlots";
+export {
   createSaveStore,
   localSaveBackend,
   memorySaveBackend,
@@ -306,9 +354,12 @@ export {
 } from "./game/systemSchedule";
 export {
   talentTreeView,
+  talentTreeViewFrom,
   type TalentEdgeView,
   type TalentNodeState,
+  type TalentNodeStatus,
   type TalentNodeView,
+  type TalentPointTotals,
   type TalentTreeView,
 } from "./game/talentTreeView";
 export { createTalentTree, type TalentNodeDef, type TalentTree } from "./game/talents";
@@ -342,6 +393,17 @@ export {
 export { createGestureSurfaceTracker } from "./input/gestureSurface";
 export { aimToPoint, type PointerHit, type PointerVec3 } from "./input/pointer";
 export { normalizePointerToAxis, type PointerAxisState } from "./input/pointerAxis";
+export {
+  createRebindSession,
+  type RebindActionConfig,
+  type RebindConflict,
+  type RebindRow,
+  type RebindSession,
+  type RebindSessionActionsConfig,
+  type RebindSessionConfig,
+  type RebindSessionMapConfig,
+  type RebindSessionSnapshot,
+} from "./input/rebindSession";
 export { activeTouchControlsMode, setTouchControlsMode } from "./input/touchControlsMode";
 export { createTouchGestureTracker } from "./input/touchGestures";
 export {

@@ -1,3 +1,10 @@
+// API adoption evidence (searched as "api-adoption") — COMPUTED, not a data file.
+// There is NO scripts/api-adoption.json: adoption is derived live by scanning consumer
+// imports of @jgengine/* exports (collectAdoption below). To clear an orphan for a new
+// export, add a real consumer import, tag its @capability, or mark it @internal — never
+// edit a JSON. Consumers/owners: generator scripts/gen-skill-api.ts; domain routing
+// scripts/skillRouting.ts; persisted shrink-only allowlist scripts/api-orphan-baseline.json
+// (enforced by scripts/orphanRatchet.ts).
 import { readFileSync } from "node:fs";
 import { Glob } from "bun";
 

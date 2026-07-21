@@ -134,7 +134,8 @@ if (problems.length > 0) {
       `\n\nEvery game is one shape: src/ holds only the skeleton\n` +
       `  ${gameSkeletonRequiredSummary().replaceAll(", ", "  ")}\n` +
       `and all game-specific modules, ui, and tests live under src/game/.\n` +
-      `Optional top-level extras: loop.ts, world.ts, preview.tsx, scene-ownership.json, editorLayers*.ts, editorCatalogs*.ts, editor.scene.json.\n` +
+      `Optional top-level extras: loop.ts, world.ts, preview.tsx, scene-ownership.json, editor.scene.json,\n` +
+      `and any editor-import-graph module matching editor<Name>.ts (editorLayers, editorCatalogs, editorKinds, …) plus its .test.ts.\n` +
       `game.config.ts is the single entry — defineGame({...}) from "@jgengine/shell/gameKit".\n` +
       `The base scene mounts via defineGame({ editorLayers }) — games never import AuthoredScene directly.\n` +
       `Every game is also a standalone dev harness: index.html and vite.config.ts at the game root,\n` +

@@ -2,6 +2,11 @@ export interface WalletState {
   balances: Readonly<Record<string, number>>;
 }
 
+/**
+ * Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited
+ * {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why
+ * (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
+ */
 export type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" };
 
 /**
@@ -85,6 +90,7 @@ export function isOverdrawn(state: WalletState, currency: string): boolean {
   return balance(state, currency) < 0;
 }
 
+/** True when every currency in `costs` has at least that much balance (a pure, non-mutating check). */
 export function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean {
   return Object.entries(costs).every(([currency, amount]) => balance(state, currency) >= amount);
 }

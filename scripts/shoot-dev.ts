@@ -3,10 +3,9 @@
  * handshake), pull pixels via CDP Page.captureScreenshot, write binary PNG.
  * No Playwright. PNG never travels through the page console.
  *
- * Persistent service: `bun run shoot --serve` (or `shoot daemon start`) keeps
- * one Vite + headless Chrome warm; later plain `shoot <id>` calls attach in
- * seconds. Manual warm loop still works: `--keep` / `--connect <port>` /
- * `--size half`. See `jgengine-verify` / `jgengine-ui`.
+ * Persistent service: `shoot daemon start` keeps headless Chrome warm and
+ * starts apps/dev or apps/web lazily on first use. Manual `--keep`/`--connect`
+ * remains available. See `jgengine-verify`.
  */
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import type { ChildProcess } from "node:child_process";
@@ -17,11 +16,13 @@ import {
   applyDevice,
   checkoutIdentity,
   ensureDevServer,
+  ensureWebServer,
   isUp,
+  normalizeLoopbackUrl,
+  navigateCapturePageWithRetry,
   openPageSession,
   parseSizeArg,
   sizeSuffix,
-  waitCaptureReady,
   withBrowserSession,
   writePngAtomic,
   type Device,
@@ -31,13 +32,13 @@ import { decodePng } from "./png-reader";
 import { computeShotMetrics, evaluateThresholds } from "./shot-metrics";
 import {
   attachDaemon,
+  ensureDaemonTarget,
   isDaemonArgv,
   runDaemonCommand,
   startDaemon,
   writeDaemonState,
   type ShootDaemonState,
 } from "./shoot-daemon";
-import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 
 /** One reload retry absorbs Vite's transient post-HMR rebuild window; see capture-retry.ts. */
 const CAPTURE_MAX_ATTEMPTS = 2;
@@ -51,43 +52,6 @@ const CAPTURE_MAX_ATTEMPTS = 2;
  * into an automatic in-invocation recovery. Deterministic failures (unknown state,
  * unregistered command) are not stale-shaped, so they surface on the first attempt.
  */
-async function navigateForCapture(
-  session: CdpSession,
-  url: string,
-  devBase: string,
-  timeoutMs: number,
-): Promise<void> {
-  for (let attempt = 1; ; attempt += 1) {
-    await session.send("Page.navigate", { url });
-    try {
-      await waitCaptureReady(session, timeoutMs);
-      return;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!shouldRetryCapture({ attempt, maxAttempts: CAPTURE_MAX_ATTEMPTS, message })) throw error;
-      const settleMs = retrySettleMs(attempt);
-      console.error(
-        `shoot: capture attempt ${attempt} hit a stale page after HMR (${message}) — settling ${settleMs}ms for the dev server, then reloading fresh`,
-      );
-      await settleDevServer(devBase, settleMs);
-      // Force the reload past any cached (pre-edit) module for the retry only,
-      // so the normal first-attempt path keeps the warm cache and its speed.
-      await session.send("Network.enable");
-      await session.send("Network.setCacheDisabled", { cacheDisabled: true });
-    }
-  }
-}
-
-/** Wait `waitMs` for Vite to finish an in-flight rebuild, then confirm it still serves. */
-async function settleDevServer(base: string, waitMs: number): Promise<void> {
-  await new Promise((r) => setTimeout(r, waitMs));
-  const deadline = Date.now() + 5_000;
-  while (Date.now() < deadline) {
-    if (await isUp(base)) return;
-    await new Promise((r) => setTimeout(r, 200));
-  }
-}
-
 type Mode = "ui" | "play" | "poster" | "preview";
 type DeviceArg = Device | "both";
 
@@ -106,11 +70,13 @@ type Args = {
   spawn?: string;
   out?: string;
   url?: string;
+  site?: string;
   connect?: number;
   keep: boolean;
   inspect: boolean;
   help: boolean;
   timeoutMs: number;
+  timeoutExplicit: boolean;
 };
 
 const HELP = `bun run shoot [game] [options]
@@ -135,21 +101,24 @@ const HELP = `bun run shoot [game] [options]
   --url <url>         capture an arbitrary URL instead of the dev runner
                       (page MUST set document.documentElement.dataset.jgCapture
                       = "ready" when the frame is honest; otherwise shoot times out)
+  --site <path>       capture a route from the managed apps/web server, e.g.
+                      --site '/playground?inspect=1&junction=5'
   --connect <port>    attach to an already-running Chrome (skips launch/kill)
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
                       running after this shot — pair with --connect <port>
                       on every following shot in the loop (warm-loop pattern)
-  --serve             start the persistent screenshot daemon (Vite + Chrome stay warm)
+  --serve             keep Chrome warm; start the requested Vite lazily
   --inspect           run the pixel-metrics pass on the PNG we already have
                       in memory (no second browser launch) and write
                       shots/<name>.metrics.json beside it
-  --timeout <s>       per-shot timeout in seconds (default 60)
+  --timeout <s>       per-shot timeout (default 60; --site: 10 local, 30 Linux/CI)
   --help              show this text
 
 Persistent daemon (preferred for multi-shot loops):
-  bun run shoot --serve                      # keep Vite + Chrome warm
+  bun run shoot --serve                      # keep Chrome warm; Vite starts on demand
   bun run shoot daemon start|status|stop     # managed background service
   bun run shoot <game> --mode play           # auto-attaches when daemon is live (<5s)
+  bun run shoot --site '/playground'         # use the managed apps/web target
 
 Manual warm loop (still supported):
   bun run shoot <game> --mode play --keep                       # first shot: cold boot, stays warm
@@ -170,6 +139,7 @@ function parseArgs(argv: string[]): Args {
     help: false,
     listFixtures: false,
     timeoutMs: 60_000,
+    timeoutExplicit: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
@@ -212,15 +182,25 @@ function parseArgs(argv: string[]): Args {
     } else if (value === "--settle") args.settle = Number(argv[++index]);
     else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--out") args.out = argv[++index];
-    else if (value === "--url") args.url = argv[++index];
+    else if (value === "--url") {
+      const raw = argv[++index];
+      args.url = raw === undefined ? undefined : normalizeLoopbackUrl(raw);
+    }
+    else if (value === "--site") args.site = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--keep") args.keep = true;
     else if (value === "--inspect") args.inspect = true;
     else if (value === "--help" || value === "-h") args.help = true;
-    else if (value === "--timeout") args.timeoutMs = Number(argv[++index]) * 1000;
+    else if (value === "--timeout") {
+      args.timeoutMs = Number(argv[++index]) * 1000;
+      args.timeoutExplicit = true;
+    }
     else if (!value.startsWith("--")) args.game = value;
   }
   if (args.mode === "preview" && args.preview === undefined) args.preview = "";
+  if (args.site !== undefined && !args.timeoutExplicit) {
+    args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
+  }
   return args;
 }
 
@@ -250,12 +230,24 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
     const state = args.preview === "" ? "default" : args.preview.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `${args.game}-preview-${state}${suffix}.png`);
   }
+  if (args.site !== undefined) {
+    const pathname = new URL(args.site.startsWith("/") ? args.site : `/${args.site}`, "http://site").pathname;
+    const key = pathname.replace(/^\/+|\/+$/g, "").replace(/[^A-Za-z0-9._-]+/g, "_") || "home";
+    return join(outDir, `site-${key}${suffix}.png`);
+  }
   return join(outDir, `${args.game}-${args.mode}${suffix}.png`);
 }
 
 function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.url !== undefined) {
     const url = new URL(args.url);
+    url.searchParams.set("capture", "1");
+    url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
+    return url.toString();
+  }
+  if (args.site !== undefined) {
+    const path = args.site.startsWith("/") ? args.site : `/${args.site}`;
+    const url = new URL(path, devBase);
     url.searchParams.set("capture", "1");
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
     return url.toString();
@@ -328,7 +320,7 @@ async function shootOne(
     await applyDevice(session, device, args.size);
     mark("setup");
     const url = targetUrl(args, device, devBase);
-    await navigateForCapture(session, url, devBase, args.timeoutMs);
+    await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS);
     mark("ready");
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
@@ -435,9 +427,14 @@ let server: ChildProcess | null = null;
 let devBase = "";
 let attachedDaemon = false;
 if (daemon !== null) {
-  devBase = daemon.devBase;
+  const target = await ensureDaemonTarget(daemon, args.site !== undefined ? "web" : "dev");
+  devBase = target.base;
   attachedDaemon = true;
-  console.error(`shoot: attached to daemon — chrome :${daemon.chromePort}, dev ${daemon.devBase}`);
+  console.error(`shoot: attached to daemon — chrome :${daemon.chromePort}, target ${devBase}`);
+} else if (args.site !== undefined) {
+  const web = await ensureWebServer();
+  server = web.child;
+  devBase = web.base;
 } else if (args.url === undefined) {
   const dev = await ensureDevServer();
   server = dev.child;
@@ -465,7 +462,10 @@ const exitCode = await withBrowserSession(
     attach: attachedDaemon,
     leaveWarm: args.keep || attachedDaemon,
     chromePrefix: "jg-shoot-",
-    hardDeadlineMs: args.timeoutMs * Math.max(targets.length, 1) + 120_000,
+    hardDeadlineMs:
+      args.site === undefined
+        ? args.timeoutMs * Math.max(targets.length, 1) + 120_000
+        : args.timeoutMs * CAPTURE_MAX_ATTEMPTS * Math.max(targets.length, 1) + 10_000,
   },
   async ({ debugPort, chrome }) => {
     let code = 0;
@@ -474,16 +474,23 @@ const exitCode = await withBrowserSession(
       if (!fits) code = 1;
     }
     if (args.keep && !attachedDaemon) {
-      const devPort = Number(new URL(devBase).port);
-      writeDaemonState({
+      const state: ShootDaemonState = {
         identity: checkoutIdentity(),
         chromePort: debugPort,
-        devPort,
-        devBase,
         chromePid: chrome?.pid,
-        devPid: server?.pid,
         startedAt: new Date().toISOString(),
-      });
+      };
+      const target = { port: Number(new URL(devBase).port), base: devBase, pid: server?.pid };
+      if (args.site === undefined) {
+        state.devPort = target.port;
+        state.devBase = target.base;
+        state.devPid = target.pid;
+      } else {
+        state.webPort = target.port;
+        state.webBase = target.base;
+        state.webPid = target.pid;
+      }
+      writeDaemonState(state);
       console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${devBase}`);
       console.error(`shoot: next shot → bun run shoot ${args.game} --mode ${args.mode} (daemon auto-attach)`);
       console.error(`shoot: or explicit → bun run shoot ${args.game} --mode ${args.mode} --connect ${debugPort} --size half`);

@@ -8,6 +8,14 @@ export { type AnimationClip, type FrameRange } from "./combat/animationState";
 export { attackMeta, counters, isBlockable, isDodgeable, isParryable } from "./combat/attackTags";
 export { createBuildupMeter, createStaggerMeter, type BuildupProc } from "./combat/breakMeters";
 export { createCastRunner } from "./combat/castRunner";
+export {
+  createComboMeter,
+  type ComboMeter,
+  type ComboMeterConfig,
+  type ComboMeterSnapshot,
+  type ComboMeterView,
+  type ComboTier,
+} from "./combat/comboMeter";
 export { createComboPoints } from "./combat/comboPoints";
 export { advanceCombo, createComboRunner, type ComboStep } from "./combat/comboString";
 export {
@@ -40,7 +48,7 @@ export {
 export { resolveDamageHit, type DamageHitInput, type DamageHitResolution } from "./combat/damageResolution";
 export { createDeathSystem, type OnDeathSpec } from "./combat/death";
 export { type DeathReason } from "./combat/deathReason";
-export { createDefensiveWindow, resolveDefense } from "./combat/defensiveWindow";
+export { createDefensiveWindow, resolveDefense, type DefenseResolution } from "./combat/defensiveWindow";
 export { createDotField } from "./combat/dotField";
 export { createDownedState } from "./combat/downed";
 export { createEffectSystem, type ReceiveMap } from "./combat/effects";
@@ -129,6 +137,7 @@ export {
   convergeShot,
   eyeHeightFromColliders,
   resolveShot,
+  type ResolvedShot,
   type ShotOriginPolicy,
 } from "./combat/shotOrigin";
 export {

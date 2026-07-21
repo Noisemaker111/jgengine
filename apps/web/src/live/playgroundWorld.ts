@@ -23,7 +23,6 @@ const PALETTE: CityPalette = {
   lightA: 0x34d399,
   lightB: 0x22d3ee,
   fogDensity: 0.0014,
-  junction: 0x2b3c53,
   sidewalk: 0x394a61,
   roof: 0x1d2836,
   trim: 0x556880,
@@ -43,6 +42,16 @@ export interface PlaygroundWorldHandle {
       elevation?: number;
       /** World half-size the field wavelength scales from. */
       extent?: number;
+      /** Deterministic camera override: orbit target XZ, distance, and pitch (degrees). When set it
+       *  wins over the automatic framing on every rebuild — the close-up inspection seam. */
+      camera?: { x: number; z: number; radius: number; pitch: number };
+      sidewalks?: boolean;
+      sidewalkWidth?: number;
+      laneMarkings?: boolean;
+      laneMarkingWidth?: number;
+      laneMarkingOffset?: number;
+      laneMarkingDash?: number;
+      laneMarkingGap?: number;
     },
   ): void;
   dispose(): void;
@@ -81,7 +90,7 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.maxPolarAngle = Math.PI * 0.46;
-  controls.minDistance = 60;
+  controls.minDistance = 8;
   controls.maxDistance = 900;
   if (handle.reducedMotion) {
     // No RAF loop under reduced motion — render on demand as the user orbits.
@@ -110,13 +119,32 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
         heightScale: options.heightScale ?? 1,
         sampleHeight,
         trackDressing: circuit,
+        sidewalks: options.sidewalks,
+        sidewalkWidth: options.sidewalkWidth,
+        laneMarkings: options.laneMarkings,
+        laneMarkingWidth: options.laneMarkingWidth,
+        laneMarkingOffset: options.laneMarkingOffset,
+        laneMarkingDash: options.laneMarkingDash,
+        laneMarkingGap: options.laneMarkingGap,
       });
       handle.scene.add(model.group);
       // Reframe on the first build AND whenever the mode flips (city ↔ circuit is a new kind of layout);
       // between those the camera belongs to the user's orbiting.
       const reframe = options.animate === true || (options.mode !== undefined && options.mode !== lastMode);
       lastMode = options.mode;
-      if (reframe) {
+      if (options.camera !== undefined) {
+        const cam = options.camera;
+        const pitch = (cam.pitch * Math.PI) / 180;
+        const groundY = sampleHeight(cam.x, cam.z);
+        const horiz = cam.radius * Math.cos(pitch);
+        handle.camera.position.set(
+          cam.x + horiz * Math.SQRT1_2,
+          groundY + cam.radius * Math.sin(pitch),
+          cam.z + horiz * Math.SQRT1_2,
+        );
+        controls.target.set(cam.x, groundY, cam.z);
+        controls.update();
+      } else if (reframe) {
         // Frame the whole generated extent from a pleasing ~33–40° pitch orbit so first paint shows the
         // layout and its rolling silhouette, not a half-empty low angle.
         const r = model.radius;

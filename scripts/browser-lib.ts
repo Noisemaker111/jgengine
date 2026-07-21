@@ -13,6 +13,8 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
+
 /**
  * Default port when no worktree key is needed — kept for docs/bench that still
  * want a predictable single-session port. Prefer {@link resolveDevPort}.
@@ -105,6 +107,40 @@ export function findChromeExecutable(): string {
   throw new Error("No Chrome/Chromium found. Set CHROME_PATH or install Chrome.");
 }
 
+/** Native GPU locally; deterministic software GL only when explicitly requested or in CI. */
+export function chromeGraphicsArgs(
+  env: NodeJS.ProcessEnv = process.env,
+  platform: NodeJS.Platform = process.platform,
+): string[] {
+  const software = env.JG_CAPTURE_SOFTWARE_GL === "1" ||
+    (env.JG_CAPTURE_SOFTWARE_GL !== "0" && (env.CI !== undefined || platform === "linux"));
+  return software
+    ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
+    : ["--ignore-gpu-blocklist"];
+}
+
+/**
+ * Rewrite a `localhost` URL host to `127.0.0.1`. Node/Bun `fetch` (and the
+ * capture allowlist) treat the two as distinct: `fetch` resolves `localhost`
+ * to IPv6 `::1` first, so a dev server bound only to IPv4 `127.0.0.1` reads as
+ * down even while it is serving, and the allowlist only accepts `127.0.0.1`.
+ * Normalizing at the CLI entry point makes `--url http://localhost:…` behave
+ * identically to `--url http://127.0.0.1:…`. Non-URL or non-localhost inputs
+ * pass through untouched.
+ */
+export function normalizeLoopbackUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    if (url.hostname === "localhost") {
+      url.hostname = "127.0.0.1";
+      return url.toString();
+    }
+  } catch {
+    /* not a parseable URL — leave it for downstream handling */
+  }
+  return raw;
+}
+
 export async function isUp(url: string): Promise<boolean> {
   try {
     const response = await fetch(url, { signal: AbortSignal.timeout(1_000) });
@@ -148,6 +184,21 @@ export function resolveDevPort(cwd = process.cwd()): number {
 
 export function resolveDevBase(cwd = process.cwd()): string {
   return `http://127.0.0.1:${resolveDevPort(cwd)}`;
+}
+
+/** Per-checkout website port used by managed `shoot --site` captures. */
+export function resolveWebPort(cwd = process.cwd()): number {
+  const override = process.env.JG_WEB_PORT;
+  if (override !== undefined && override.length > 0) {
+    const n = Number(override);
+    if (Number.isFinite(n) && n > 0) return Math.floor(n);
+  }
+  // Stay clear of Chrome's blocked-port list (notably 5060/5061 SIP and 6000 X11).
+  return 5517 + hashPortOffset(checkoutIdentity(cwd), 400);
+}
+
+export function resolveWebBase(cwd = process.cwd()): string {
+  return `http://127.0.0.1:${resolveWebPort(cwd)}`;
 }
 
 /**
@@ -229,12 +280,17 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
     }
   }
 
-  const child = spawn("bunx", ["vite", "--port", String(port), "--host", "127.0.0.1", "--strictPort"], {
-    cwd: resolve(import.meta.dir, "../apps/dev"),
-    stdio: "ignore",
-    detached: process.platform !== "win32",
-    env: { ...process.env, JG_DEV_PORT: String(port) },
-  });
+  const child = spawn(
+    "bun",
+    ["--cwd=apps/dev", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"],
+    {
+      cwd,
+      stdio: "ignore",
+      detached: process.platform !== "win32",
+      env: { ...process.env, JG_DEV_PORT: String(port) },
+      windowsHide: true,
+    },
+  );
   child.unref();
   writeMarker(port, identity, child.pid);
 
@@ -242,6 +298,9 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   for (let attempt = 0; attempt < 60; attempt += 1) {
     await new Promise((r) => setTimeout(r, 500));
     if (await isUp(finalBase)) return { child, port, base: finalBase };
+    if (child.exitCode !== null) {
+      throw new Error(`Dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
+    }
   }
   child.kill();
   const viteInstalled =
@@ -251,6 +310,52 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
     ? "the apps/dev Vite server never became reachable — check for a port conflict or a Vite boot error"
     : "node_modules looks incomplete (vite is missing) — run `bun scripts/ensure-ready.ts` (or `bun install`) first";
   throw new Error(`Dev server failed to start on :${port} for ${identity} — ${hint}`);
+}
+
+/** Boot or reuse this checkout's website Vite server for `shoot --site` captures. */
+export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevServerResult> {
+  const identity = checkoutIdentity(cwd);
+  let port = resolveWebPort(cwd);
+  const base = `http://127.0.0.1:${port}`;
+  if (await isOurDevServer(port, identity)) return { child: null, port, base };
+
+  if (await isUp(base)) {
+    for (let step = 1; step <= 20; step += 1) {
+      const candidate = 5517 + ((port - 5517 + step * 17) % 400);
+      if (await isOurDevServer(candidate, identity)) {
+        return { child: null, port: candidate, base: `http://127.0.0.1:${candidate}` };
+      }
+      if (!(await isUp(`http://127.0.0.1:${candidate}`))) {
+        port = candidate;
+        break;
+      }
+    }
+  }
+
+  const child = spawn(
+    "bun",
+    ["--cwd=apps/web", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"],
+    {
+      cwd,
+      stdio: "ignore",
+      detached: process.platform !== "win32",
+      env: { ...process.env, JG_WEB_PORT: String(port), JG_CAPTURE_SITE: "1" },
+      windowsHide: true,
+    },
+  );
+  child.unref();
+  writeMarker(port, identity, child.pid);
+
+  const finalBase = `http://127.0.0.1:${port}`;
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    if (await isUp(finalBase)) return { child, port, base: finalBase };
+    if (child.exitCode !== null) {
+      throw new Error(`Website dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
+    }
+  }
+  killProcessTree(child);
+  throw new Error(`Website dev server failed to start on :${port} for ${identity}`);
 }
 
 /**
@@ -371,12 +476,18 @@ export class CdpSession {
     });
   }
 
-  /** Subscribe to a CDP event (e.g. `Page.screencastFrame`). Handlers run for
-   * every matching event until the session closes; there is no unsubscribe. */
-  on(method: string, handler: (params: Record<string, unknown>) => void): void {
+  /** Subscribe to a CDP event and return an unsubscribe callback. */
+  on(method: string, handler: (params: Record<string, unknown>) => void): () => void {
     const handlers = this.eventHandlers.get(method) ?? [];
     handlers.push(handler);
     this.eventHandlers.set(method, handlers);
+    return () => {
+      const current = this.eventHandlers.get(method);
+      if (current === undefined) return;
+      const index = current.indexOf(handler);
+      if (index >= 0) current.splice(index, 1);
+      if (current.length === 0) this.eventHandlers.delete(method);
+    };
   }
 
   send(method: string, params?: Record<string, unknown>): Promise<Record<string, unknown>> {
@@ -484,14 +595,12 @@ export function launchChrome(debugPort: number, prefix = "jg-drive-"): ChildProc
       "--disable-default-apps",
       "--mute-audio",
       "--hide-scrollbars",
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-      "--ignore-gpu-blocklist",
+      ...chromeGraphicsArgs(),
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "about:blank",
     ],
-    { stdio: "ignore" },
+    { stdio: "ignore", windowsHide: true },
   );
 }
 
@@ -513,6 +622,116 @@ export async function waitCaptureReady(session: CdpSession, timeoutMs: number): 
     await new Promise((r) => setTimeout(r, 100));
   }
   throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+}
+
+function exceptionMessage(params: Record<string, unknown>): string {
+  const details = params.exceptionDetails as
+    | { text?: unknown; exception?: { description?: unknown; value?: unknown }; url?: unknown; lineNumber?: unknown }
+    | undefined;
+  const description = details?.exception?.description;
+  const value = details?.exception?.value;
+  const text = details?.text;
+  const message =
+    typeof description === "string"
+      ? description
+      : typeof value === "string"
+        ? value
+        : typeof text === "string"
+          ? text
+          : "unknown exception";
+  const location =
+    typeof details?.url === "string" && details.url.length > 0
+      ? ` (${details.url}${typeof details.lineNumber === "number" ? `:${details.lineNumber + 1}` : ""})`
+      : "";
+  return `page exception: ${message}${location}`;
+}
+
+/** Navigate and surface browser/page failures instead of waiting for the capture timeout. */
+export async function navigateCapturePage(
+  session: CdpSession,
+  url: string,
+  timeoutMs: number,
+): Promise<void> {
+  let pageFailure: string | undefined;
+  let frameId: string | undefined;
+  const requestFrames = new Map<string, string>();
+  const pendingDocumentFailures: Array<{ frameId?: string; message: string }> = [];
+  const offException = session.on("Runtime.exceptionThrown", (params) => {
+    pageFailure ??= exceptionMessage(params);
+  });
+  const offRequest = session.on("Network.requestWillBeSent", (params) => {
+    if (params.type !== "Document") return;
+    if (typeof params.requestId === "string" && typeof params.frameId === "string") {
+      requestFrames.set(params.requestId, params.frameId);
+    }
+  });
+  const offLoadingFailed = session.on("Network.loadingFailed", (params) => {
+    if (params.type !== "Document") return;
+    const errorText = typeof params.errorText === "string" ? params.errorText : "unknown error";
+    const failedFrameId = typeof params.requestId === "string" ? requestFrames.get(params.requestId) : undefined;
+    const message = `page load failed: ${errorText}`;
+    if (frameId === undefined) pendingDocumentFailures.push({ frameId: failedFrameId, message });
+    else if (failedFrameId === undefined || failedFrameId === frameId) pageFailure ??= message;
+  });
+  try {
+    await session.send("Network.enable");
+    const navigation = await session.send("Page.navigate", { url });
+    if (typeof navigation.errorText === "string" && navigation.errorText.length > 0) {
+      throw new Error(`navigation failed for ${url}: ${navigation.errorText}`);
+    }
+    frameId = typeof navigation.frameId === "string" ? navigation.frameId : undefined;
+    const matchingFailure = pendingDocumentFailures.find(
+      (failure) => frameId === undefined || failure.frameId === undefined || failure.frameId === frameId,
+    );
+    if (matchingFailure !== undefined) pageFailure ??= matchingFailure.message;
+
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (pageFailure !== undefined) throw new Error(pageFailure);
+      const remote = await session.evaluate<{ status: string | null; error: string | null }>(`({
+        status: document.documentElement.dataset.jgCapture ?? null,
+        error: document.documentElement.dataset.jgCaptureError ?? null
+      })`);
+      if (remote?.status === "ready") return;
+      if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (pageFailure !== undefined) throw new Error(pageFailure);
+    throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+  } finally {
+    offException();
+    offRequest();
+    offLoadingFailed();
+  }
+}
+
+/** Navigate with one cache-bypassed retry for a transient post-HMR stale page. */
+export async function navigateCapturePageWithRetry(
+  session: CdpSession,
+  url: string,
+  serverBase: string,
+  timeoutMs: number,
+  maxAttempts = 2,
+): Promise<void> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      await navigateCapturePage(session, url, timeoutMs);
+      return;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!shouldRetryCapture({ attempt, maxAttempts, message })) throw error;
+      const settleMs = retrySettleMs(attempt);
+      console.error(
+        `capture attempt ${attempt} hit a stale page after HMR (${message}) - settling ${settleMs}ms, then reloading fresh`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, settleMs));
+      const deadline = Date.now() + 5_000;
+      while (Date.now() < deadline && !(await isUp(serverBase))) {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+      }
+      await session.send("Network.setCacheDisabled", { cacheDisabled: true });
+    }
+  }
 }
 
 /** Write bytes to a temp path then atomically swap into place (never a torn PNG). */

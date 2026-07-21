@@ -19,7 +19,12 @@
 - `CheckResult` (interface): interface CheckResult — ⚠ undocumented
 - `ClaimOutcome` (interface): interface ClaimOutcome — The outcome of a claim attempt — the updated pool and the grants owed (empty when the claim is refused).
 - `ClaimablePool` (interface): interface ClaimablePool — A serializable pool of results left open for later claiming — first-come contested drops or a `reservedFor` personal reward. Tracks `eligible` claimants, optional `expiresAtMs`, and the authoritative `claimedBy` winner so reconnect and duplicate-claim attempts resolve idempotently.
+- `ComboMeter` (interface): interface ComboMeter — A live, observable combo/multiplier meter — an integer hit chain with a decay window, free-string tier thresholds, a derived multiplier, and peak tracking.
+- `ComboMeterConfig` (interface): interface ComboMeterConfig — Options for {@link createComboMeter}.
+- `ComboMeterSnapshot` (interface): interface ComboMeterSnapshot — Serializable state for save/restore — clock-agnostic (stores time left, not an absolute deadline).
+- `ComboMeterView` (interface): interface ComboMeterView — A pooled, read-only snapshot of the live meter for a renderer to draw each frame. Reused across {@link ComboMeter.view} calls and overwritten on the next one — read it, do not retain it. For a save, use {@link ComboMeter.snapshot}.
 - `ComboStep` (interface): interface ComboStep — ⚠ undocumented
+- `ComboTier` (interface): interface ComboTier — One tier threshold in a {@link ComboMeter}. Tiers gate on the integer combo `count` (not a filled fraction), and `id` is a free string the game owns and styles ("good", "great", "savage", …) — the model never interprets it.
 - `CompletionPredicate` (type): type CompletionPredicate = ( params: Readonly<Record<string, unknown>>, ctx: PredicateContext, ) => boolean — A completion predicate: pure and deterministic, returns true when the node it gates is finished. Registered under a `kind` and reused across phases with different `params`.
 - `CrossingDirection` (type): type CrossingDirection = "falling" | "rising" — The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it.
 - `CrossingPolicy` (type): type CrossingPolicy = "once" | "repeat" — Whether a threshold may fire repeatedly (`repeat`) or at most once per direction (`once`).
@@ -40,6 +45,7 @@
 - `DamagePredicate` (interface): interface DamagePredicate — A typed predicate over a {@link DamageContext}. Every listed facet must match (AND); a facet matches when the context value is in the list (channels/sources) or shares any member (targetStatuses/tags). An empty predicate matches every hit.
 - `DamageResolution` (interface): interface DamageResolution — The outcome of running a pending application through the pipeline: what to apply, what was deferred, and why each value changed.
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
+- `DefenseResolution` (interface): interface DefenseResolution — Result of resolving an incoming hit against a defensive window: `outcome` is the graded defense (`"parry"`/`"block"`/`"iframe"`/`"hit"`) and `perfect` is true when the input landed inside the tight just-frame at the window's start rather than its wider active span.
 - `EncounterConfig` (interface): interface EncounterConfig<TData = unknown> — Non-serializable configuration for an encounter: the authored phase tree plus predicate and spawn-provider registries. Re-supplied alongside a loaded {@link EncounterState}, the way `advanceSpawnDirector` pairs config with state, so the state itself stays pure data.
 - `EncounterContext` (interface): interface EncounterContext — Context passed to {@link startEncounter} / {@link updateEncounter}: the caller signals predicates evaluate against, plus named `spawnPoints` catalogs (authored in the scene, referenced by key) that spawn providers place against. Never holds coordinates the sequence itself owns.
 - `EncounterEvent` (type): type EncounterEvent = | { type: "enter"; phaseId: string; iteration: number } | { type: "spawn"; phaseId: string; provider: string; requests: readonly EncounterSpawnRequest[] } | { type: "complete"; phaseId: string; iteration: number; reason: string } | { type: "done" } — A lifecycle event emitted while stepping an encounter, carrying provenance.
@@ -83,6 +89,7 @@
 - `ReceivedPolicy` (type): type ReceivedPolicy = | { kind: "scale"; factor: number } | { kind: "flat"; delta: number } | { kind: "cap"; max: number } | { kind: "floor"; min: number } | { kind: "convert"; toChannel: DamageChannelId; portion?: number } | { kind: "redirect"; toTarget: string; portion?: number } | { kind: "immune… — What a matched modifier does to the incoming amount. Amplification is one policy beside reduction — both are `scale` (factor `> 1` amplifies, `< 1` reduces). `cap`/`floor` clamp, `flat` adds/subtracts, `convert` moves a portion to another channel on the same target, `redirect` moves a portion to another target, and `immune` zeroes the hit outright.
 - `RenderCueTuning` (interface): interface RenderCueTuning — Tuning knobs for `advanceMotionCues` / `useEntityRenderCues`; every field has a default, override only what a weapon/rig's feel needs to differ.
 - `ResolvedMatchup` (interface): interface ResolvedMatchup — Fully-resolved matchup outputs (every axis populated) plus the contributions that produced them.
+- `ResolvedShot` (interface): interface ResolvedShot — A shot's resolved firing geometry in world space: `origin` is the point the projectile/ray starts from and `direction` is its normalized aim vector, both computed by {@link resolveShot} from the shooter's position, facing, and the chosen origin policy.
 - `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
 - `RewardClaimSpec` (interface): interface RewardClaimSpec — How a `claimed` allocation exposes its pool: open first-come (`first`) or `reserved` to one recipient.
 - `RewardGrant` (interface): interface RewardGrant — An authoritative, serializable award of one result stack to one recipient — carries `via` (the policy that produced it) and `private` (replication scope) so provenance and visibility survive save/load and viewer projection. Applying a grant twice with the same identity is the caller's idempotency contract; this seam only decides who is owed what.
@@ -139,6 +146,7 @@
 - `createAntiOneShotPolicy` (function): function createAntiOneShotPolicy(config: AntiOneShotConfig): AntiOneShotPolicy — Compose a reusable anti-one-shot / chip-guard clamp from caller data: while above `guardAboveFraction` a hit cannot drop the target below `leaveFraction`, and after such a save the target gets `recoverMs` of immunity. Below the guard fraction, lethal hits pass unchanged.
 - `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `createCastRunner` (function): function createCastRunner(): CastRunner — Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
+- `createComboMeter` (function): function createComboMeter(config: ComboMeterConfig): ComboMeter — A count-based combo / multiplier meter: an integer hit chain that climbs with every `hit()` and drops when a decay window elapses, crossing free-string tier thresholds ("good" → "great" → "savage") that derive a score multiplier, while tracking the peak reached. Time is injected (`now`, default `Date.now`) and/or driven by `update(dt)`; `view()` returns a pooled draw-state and `snapshot`/`restore` round-trips the chain through a save.
 - `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
 - `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
 - `createDamageClamp` (function): function createDamageClamp(config: DamageClampConfig): DamageInterceptor — A stateless interceptor that caps any single application at `maxPerHit`.
@@ -250,6 +258,15 @@
 - `CastRunner` (interface): interface CastRunner — Per-entity cast-time state machine — begin, tick with game-time `dt` plus how far the caster moved, and act on the returned event. The runner owns timing and move-interruption only; the caller spends resources, starts cooldowns, and executes the ability when `completed` fires (compose with `abilityKit` — check readiness before `begin`, `cast` on completion).
 - `createCastRunner` (function): function createCastRunner(): CastRunner — Run a channeled cast/charge timer that movement or damage can interrupt — the spell cast bar.
 
+## @jgengine/core/combat/comboMeter
+
+- `ComboMeter` (interface): interface ComboMeter — A live, observable combo/multiplier meter — an integer hit chain with a decay window, free-string tier thresholds, a derived multiplier, and peak tracking.
+- `ComboMeterConfig` (interface): interface ComboMeterConfig — Options for {@link createComboMeter}.
+- `ComboMeterSnapshot` (interface): interface ComboMeterSnapshot — Serializable state for save/restore — clock-agnostic (stores time left, not an absolute deadline).
+- `ComboMeterView` (interface): interface ComboMeterView — A pooled, read-only snapshot of the live meter for a renderer to draw each frame. Reused across {@link ComboMeter.view} calls and overwritten on the next one — read it, do not retain it. For a save, use {@link ComboMeter.snapshot}.
+- `ComboTier` (interface): interface ComboTier — One tier threshold in a {@link ComboMeter}. Tiers gate on the integer combo `count` (not a filled fraction), and `id` is a free string the game owns and styles ("good", "great", "savage", …) — the model never interprets it.
+- `createComboMeter` (function): function createComboMeter(config: ComboMeterConfig): ComboMeter — A count-based combo / multiplier meter: an integer hit chain that climbs with every `hit()` and drops when a decay window elapses, crossing free-string tier thresholds ("good" → "great" → "savage") that derive a score multiplier, while tracking the peak reached. Time is injected (`now`, default `Date.now`) and/or driven by `update(dt)`; `view()` returns a pooled draw-state and `snapshot`/`restore` round-trips the chain through a save.
+
 ## @jgengine/core/combat/comboPoints
 
 - `ComboPoints` (interface): interface ComboPoints — ⚠ undocumented
@@ -328,7 +345,7 @@
 
 - `DefenseKind` (type): type DefenseKind = "parry" | "block" | "dodge" — ⚠ undocumented
 - `DefenseOutcome` (type): type DefenseOutcome = "parry" | "block" | "iframe" | "hit" — ⚠ undocumented
-- `DefenseResolution` (interface): interface DefenseResolution — ⚠ undocumented
+- `DefenseResolution` (interface): interface DefenseResolution — Result of resolving an incoming hit against a defensive window: `outcome` is the graded defense (`"parry"`/`"block"`/`"iframe"`/`"hit"`) and `perfect` is true when the input landed inside the tight just-frame at the window's start rather than its wider active span.
 - `DefensiveWindow` (interface): interface DefensiveWindow — ⚠ undocumented
 - `DefensiveWindowConfig` (interface): interface DefensiveWindowConfig — ⚠ undocumented
 - `ResolveDefenseInput` (interface): interface ResolveDefenseInput — ⚠ undocumented
@@ -508,7 +525,7 @@
 ## @jgengine/core/combat/shotOrigin
 
 - `DEFAULT_EYE_HEIGHT` (const): const DEFAULT_EYE_HEIGHT: number — Shot-origin and first-person camera eye height above an entity's position: 90% of the default 1.8m hitbox top.
-- `ResolvedShot` (interface): interface ResolvedShot — ⚠ undocumented
+- `ResolvedShot` (interface): interface ResolvedShot — A shot's resolved firing geometry in world space: `origin` is the point the projectile/ray starts from and `direction` is its normalized aim vector, both computed by {@link resolveShot} from the shooter's position, facing, and the chosen origin policy.
 - `ShotOriginDeps` (interface): interface ShotOriginDeps — ⚠ undocumented
 - `ShotOriginPolicy` (type): type ShotOriginPolicy = | { kind: "converge"; muzzle?: EntityPosition; height?: number } | { kind: "eye"; height?: number } | { kind: "legacy" } | { kind: "entity" } | { kind: "entityOffset"; offset: EntityPosition } | { kind: "muzzle"; offset?: EntityPosition } | { kind: "camera"; origin: EntityPos… — How a shot's world-space origin (and optional direction) is resolved before prediction/settlement. - `converge` — the shot leaves the gun `muzzle` yet still passes through whatever the shooter's sightline (crosshair) covers: origin is the muzzle offset, direction is bent from the muzzle to the eye ray's aim point. The projectile system's default for a free `{ yaw, pitch }` aim, so a bullet visibly comes from the barrel without missing the reticle. Needs a scene raycast to find the aim point (`convergeShot`); a bare `resolveShot` degrades to a straight muzzle ray. Passes an explicit `{ origin, direction }` aim through untouched. - `eye` — `aim.origin` when present, else the shooter's entity position raised to eye height; the shot traces the shooter's sightline, so what the crosshair covers is what gets hit. - `legacy` — `aim.origin` when present, else the shooter's raw entity position (feet). - `entity` — always the shooter's entity position. - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model). - `camera` — explicit camera/reticle world origin (and optional direction override). - `world` — absolute world origin.
 - `aimDirection` (function): function aimDirection(aim: Aim): EntityPosition | null — ⚠ undocumented

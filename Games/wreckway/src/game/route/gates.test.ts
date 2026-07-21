@@ -1,12 +1,33 @@
 import { describe, expect, test } from "bun:test";
 
+import type { InstalledPart } from "@jgengine/core/item/modularItem";
+
 import { tuningFrom } from "../parts/build";
 import { partById } from "../parts/catalog";
-import { blockedZ, gateSatisfied, ROUTE_GATES } from "./gates";
-import { LEFT_LANE_X, MID_LANE_HALF_WIDTH, RIGHT_LANE_X } from "../run/constants";
+import { blockedZ, firstUnsatisfiedGate, gateSatisfied, ROUTE_GATES } from "./gates";
+import { CORRIDOR_LANE_SPAN, EXIT_Z } from "../run/constants";
 
 const NO_PARTS = tuningFrom([]);
-const PLOW_TUNING = tuningFrom([{ slotId: "front", part: partById("plow_blade")! }]);
+const PLOW_ONLY = tuningFrom([{ slotId: "front", part: partById("plow_blade")! }]);
+const JUMP_ONLY = tuningFrom([{ slotId: "wheels", part: partById("coil_springs")! }]);
+const FULLY_KITTED: readonly InstalledPart[] = [
+  { slotId: "front", part: partById("plow_blade")! },
+  { slotId: "wheels", part: partById("coil_springs")! },
+];
+const PLOW_AND_JUMP = tuningFrom(FULLY_KITTED);
+
+/** How far a straight run down the centerline gets before a barricade clamps it. */
+function reachAt(x: number, tuning: ReturnType<typeof tuningFrom>): number {
+  let z = 0;
+  // Advance in small steps up to the exit; blockedZ pins z at the first unsatisfied barricade.
+  for (let step = 0; step < 2000; step += 1) {
+    const next = blockedZ(x, z, z + 1, tuning);
+    if (next <= z) break;
+    z = next;
+    if (z >= EXIT_Z) break;
+  }
+  return z;
+}
 
 describe("wreckway route gates", () => {
   test("ships 8+ gates split across plow and jump requirements", () => {
@@ -21,41 +42,52 @@ describe("wreckway route gates", () => {
     for (const gate of ROUTE_GATES) expect(gateSatisfied(gate, NO_PARTS)).toBe(false);
   });
 
-  test("the mid lane is always open regardless of parts", () => {
+  test("every barricade spans the whole drivable corridor — the mid lane is no longer a free path", () => {
     for (const gate of ROUTE_GATES) {
+      expect(gate.laneX[0]).toBe(CORRIDOR_LANE_SPAN[0]);
+      expect(gate.laneX[1]).toBe(CORRIDOR_LANE_SPAN[1]);
+      // Driving straight down the centerline (x = 0) still lands inside the barricade band.
       const beyond = gate.atZ + 50;
-      expect(blockedZ(0, 0, beyond, NO_PARTS)).toBe(beyond);
+      expect(blockedZ(0, 0, beyond, NO_PARTS)).toBeLessThanOrEqual(gate.atZ);
     }
-    expect(MID_LANE_HALF_WIDTH).toBeLessThan(RIGHT_LANE_X[0]);
-    expect(-MID_LANE_HALF_WIDTH).toBeGreaterThan(LEFT_LANE_X[1]);
   });
 
-  test("plow satisfies plow gates and clears them, but not jump gates", () => {
-    const plowGate = ROUTE_GATES.find((gate) => gate.requirement === "plow")!;
-    const jumpGate = ROUTE_GATES.find((gate) => gate.requirement === "jump")!;
-    expect(gateSatisfied(plowGate, PLOW_TUNING)).toBe(true);
-    expect(gateSatisfied(jumpGate, PLOW_TUNING)).toBe(false);
+  test("an un-upgraded run is walled in at the first barricade and cannot reach the exit", () => {
+    const firstGate = ROUTE_GATES.reduce((lo, g) => (g.atZ < lo.atZ ? g : lo));
+    expect(firstUnsatisfiedGate(NO_PARTS)?.id).toBe(firstGate.id);
+    // Down the centerline, a partless kart is pinned at the first barricade — well short of the exit.
+    expect(reachAt(0, NO_PARTS)).toBe(firstGate.atZ);
+    expect(reachAt(0, NO_PARTS)).toBeLessThan(EXIT_Z);
   });
 
-  test("an unsatisfied gate clamps forward progress when approached from before it", () => {
-    const gate = ROUTE_GATES[0]!;
-    const laneX = (gate.laneX[0] + gate.laneX[1]) / 2;
-    const candidate = gate.atZ + 20;
-    expect(blockedZ(laneX, gate.atZ - 5, candidate, NO_PARTS)).toBe(gate.atZ);
+  test("a plow blade opens the plow walls but a jump ramp still stops a plow-only kart", () => {
+    const firstJump = ROUTE_GATES.filter((g) => g.requirement === "jump").reduce((lo, g) => (g.atZ < lo.atZ ? g : lo));
+    const firstPlow = ROUTE_GATES.filter((g) => g.requirement === "plow").reduce((lo, g) => (g.atZ < lo.atZ ? g : lo));
+    // Plow-only clears every plow wall before the first ramp, then is stopped at that ramp.
+    expect(firstPlow.atZ).toBeLessThan(firstJump.atZ);
+    expect(firstUnsatisfiedGate(PLOW_ONLY)?.requirement).toBe("jump");
+    expect(reachAt(0, PLOW_ONLY)).toBe(firstJump.atZ);
+    // Symmetrically, jump-only is stopped at the first plow wall.
+    expect(firstUnsatisfiedGate(JUMP_ONLY)?.requirement).toBe("plow");
+    expect(reachAt(0, JUMP_ONLY)).toBe(firstPlow.atZ);
+  });
+
+  test("a plow + jump build clears every barricade to the exit", () => {
+    expect(firstUnsatisfiedGate(PLOW_AND_JUMP)).toBeNull();
+    for (const gate of ROUTE_GATES) expect(gateSatisfied(gate, PLOW_AND_JUMP)).toBe(true);
+    expect(reachAt(0, PLOW_AND_JUMP)).toBeGreaterThanOrEqual(EXIT_Z);
   });
 
   test("a satisfied gate does not clamp progress", () => {
     const gate = ROUTE_GATES.find((g) => g.requirement === "plow")!;
-    const laneX = (gate.laneX[0] + gate.laneX[1]) / 2;
     const candidate = gate.atZ + 20;
-    expect(blockedZ(laneX, gate.atZ - 5, candidate, PLOW_TUNING)).toBe(candidate);
+    expect(blockedZ(0, gate.atZ - 5, candidate, PLOW_AND_JUMP)).toBe(candidate);
   });
 
-  test("a gate never yanks a kart back once it has already progressed past that z, even re-entering the same lane band far downstream", () => {
+  test("a gate never yanks a kart back once it has already progressed past that z", () => {
     const gate = ROUTE_GATES[0]!;
-    const laneX = (gate.laneX[0] + gate.laneX[1]) / 2;
     const farAhead = gate.atZ + 300;
     const candidate = farAhead + 10;
-    expect(blockedZ(laneX, farAhead, candidate, NO_PARTS)).toBe(candidate);
+    expect(blockedZ(0, farAhead, candidate, NO_PARTS)).toBe(candidate);
   });
 });
