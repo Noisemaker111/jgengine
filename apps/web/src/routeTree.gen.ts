@@ -16,6 +16,7 @@ import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as EditorRouteImport } from './routes/editor'
 import { Route as CapabilitiesRouteImport } from './routes/capabilities'
+import { Route as AgentsDotmdRouteImport } from './routes/agents[.]md'
 import { Route as AdoptRouteImport } from './routes/adopt'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GamesIndexRouteImport } from './routes/games.index'
@@ -58,6 +59,11 @@ const CapabilitiesRoute = CapabilitiesRouteImport.update({
   path: '/capabilities',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentsDotmdRoute = AgentsDotmdRouteImport.update({
+  id: '/agents.md',
+  path: '/agents.md',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdoptRoute = AdoptRouteImport.update({
   id: '/adopt',
   path: '/adopt',
@@ -92,6 +98,7 @@ const ApiGithubContributionsRoute = ApiGithubContributionsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
+  '/agents.md': typeof AgentsDotmdRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
+  '/agents.md': typeof AgentsDotmdRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/adopt': typeof AdoptRoute
+  '/agents.md': typeof AgentsDotmdRoute
   '/capabilities': typeof CapabilitiesRoute
   '/editor': typeof EditorRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/adopt'
+    | '/agents.md'
     | '/capabilities'
     | '/editor'
     | '/llms-full.txt'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/adopt'
+    | '/agents.md'
     | '/capabilities'
     | '/editor'
     | '/llms-full.txt'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/adopt'
+    | '/agents.md'
     | '/capabilities'
     | '/editor'
     | '/llms-full.txt'
@@ -186,6 +198,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdoptRoute: typeof AdoptRoute
+  AgentsDotmdRoute: typeof AgentsDotmdRoute
   CapabilitiesRoute: typeof CapabilitiesRoute
   EditorRoute: typeof EditorRoute
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CapabilitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agents.md': {
+      id: '/agents.md'
+      path: '/agents.md'
+      fullPath: '/agents.md'
+      preLoaderRoute: typeof AgentsDotmdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/adopt': {
       id: '/adopt'
       path: '/adopt'
@@ -298,6 +318,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdoptRoute: AdoptRoute,
+  AgentsDotmdRoute: AgentsDotmdRoute,
   CapabilitiesRoute: CapabilitiesRoute,
   EditorRoute: EditorRoute,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,

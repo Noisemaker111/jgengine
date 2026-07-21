@@ -195,6 +195,48 @@ const gamesPlayerDevPlugin = (): Plugin => {
   };
 };
 
+/**
+ * Nitro's dev Vite middleware (`nitroDevMiddlewarePre`, in
+ * nitro/dist/_build/vite.dev.mjs) decides whether a request is a static asset —
+ * and so is refused the SSR handler — from an internal `ASSET_EXT_RE` that
+ * includes `mdx?`. TanStack Start's server routes all sit behind Nitro's
+ * catch-all `/**`, so that extension test is the *only* thing that decides
+ * whether a `.md` URL reaches SSR. A `.md` server route (unlike `.txt`/`.xml`,
+ * whose extensions are not in the regex) therefore 404s from the static
+ * middleware for any client that does not send `Sec-Fetch-Dest: document` —
+ * curl, `fetch()`, and most agent tooling, i.e. exactly the callers a
+ * `/agents.md` brief exists for. (Browser top-bar navigation happens to work
+ * because it sends `document`.)
+ *
+ * Nitro treats a `document` request as a page, never an asset. For top-level
+ * `.md` request paths — a server route, not a bundled `.md` module import — we
+ * present that hint so Nitro routes the request through SSR and TanStack
+ * resolves the server route (or returns a real SSR 404). Vite/import traffic
+ * (`/@…`, `/src/…`, `/node_modules/…`, `/.vite/…`, or `?import|?raw|?url|?inline`)
+ * is left untouched so `.md` module imports keep flowing to Vite's transform.
+ */
+const mdServerRouteDevPlugin = (): Plugin => ({
+  name: "md-server-route-dev",
+  apply: "serve",
+  configureServer(server) {
+    server.middlewares.stack.unshift({
+      route: "",
+      handle: ((req, _res, next) => {
+        const url = req.url;
+        if (url !== undefined) {
+          const pathname = url.split(/[?#]/, 1)[0];
+          const isMdRoute =
+            pathname.endsWith(".md") &&
+            !/^\/(?:@|src\/|node_modules\/|\.vite\/)/.test(pathname) &&
+            !/[?&](?:import|raw|url|inline)(?:[=&]|$)/.test(url);
+          if (isMdRoute) req.headers["sec-fetch-dest"] = "document";
+        }
+        next();
+      }) as Connect.NextHandleFunction,
+    });
+  },
+});
+
 export default defineConfig({
   server: { port: 3000, fs: { allow: [repoRoot] } },
   resolve: {
@@ -224,5 +266,6 @@ export default defineConfig({
     gamesIndexPlugin(),
     gamesPlayerPlugin(),
     gamesPlayerDevPlugin(),
+    mdServerRouteDevPlugin(),
   ],
 });
