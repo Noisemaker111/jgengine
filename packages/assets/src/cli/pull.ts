@@ -25,6 +25,7 @@ import { reindexSprites } from "../spriteIndexGen";
 import { verifyManifest } from "../verify";
 import {
   resolveDefaultOutputRoot,
+  resolveDefaultReindexDir,
   resolveGeneratedDir,
   resolveGeneratedSpritesDir,
   resolvePackageRoot,
@@ -453,7 +454,7 @@ async function cmdAdd(argv: string[]): Promise<void> {
 }
 
 function cmdReindex(argv: string[]): void {
-  const modelsDir = resolve(argv[0] ?? join("public", "models"));
+  const modelsDir = resolve(argv[0] ?? resolveDefaultReindexDir(here, "models"));
   if (!existsSync(modelsDir)) fail(`models dir not found: ${modelsDir}`);
   const result = reindex(modelsDir, generatedDir);
   for (const row of result.perSource) console.log(`  ${row.source}: ${row.count}`);
@@ -461,7 +462,7 @@ function cmdReindex(argv: string[]): void {
 }
 
 function cmdReindexSprites(argv: string[]): void {
-  const spritesDir = resolve(argv[0] ?? join("public", "sprites"));
+  const spritesDir = resolve(argv[0] ?? resolveDefaultReindexDir(here, "sprites"));
   if (!existsSync(spritesDir)) fail(`sprites dir not found: ${spritesDir}`);
   const result = reindexSprites(spritesDir, generatedSpritesDir);
   for (const row of result.perSource) console.log(`  ${row.source}: ${row.count}`);

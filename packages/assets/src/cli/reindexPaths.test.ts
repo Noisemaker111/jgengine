@@ -2,9 +2,10 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { reindex } from "../indexGen";
-import { resolveGeneratedDir } from "./paths";
+import { resolveDefaultOutputRoot, resolveDefaultReindexDir, resolveGeneratedDir } from "./paths";
 
 describe("resolveGeneratedDir", () => {
   test("published CLI (dist/cli) writes into dist/generated", () => {
@@ -13,6 +14,20 @@ describe("resolveGeneratedDir", () => {
 
   test("source CLI (src/cli) writes into src/generated", () => {
     expect(resolveGeneratedDir(join("pkg", "src", "cli")).replace(/\\/g, "/")).toMatch(/pkg\/src\/generated$/);
+  });
+});
+
+describe("resolveDefaultReindexDir", () => {
+  // A bare `assets reindex` / `reindex-sprites` must scan the same served root
+  // `assets pull` writes into — otherwise pulled packs land in
+  // `apps/dev/public/models` while reindex scans an empty cwd `public/` (#1499).
+  test("defaults to <pull-output-root>/models — never a cwd-relative public/", () => {
+    // Real in-monorepo cli dir so the served-root branch (apps/dev/public) is taken.
+    const cliDir = fileURLToPath(new URL(".", import.meta.url));
+    const outputRoot = resolveDefaultOutputRoot(cliDir).replace(/\\/g, "/");
+    expect(outputRoot).toMatch(/apps\/dev\/public$/);
+    expect(resolveDefaultReindexDir(cliDir, "models").replace(/\\/g, "/")).toBe(`${outputRoot}/models`);
+    expect(resolveDefaultReindexDir(cliDir, "sprites").replace(/\\/g, "/")).toBe(`${outputRoot}/sprites`);
   });
 });
 

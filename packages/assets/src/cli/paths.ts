@@ -44,3 +44,17 @@ export function resolveDefaultOutputRoot(cliDir: string): string {
   if (existsSync(servedRoot)) return servedRoot;
   return resolve("public");
 }
+
+/**
+ * Where a bare `assets reindex` / `reindex-sprites` (no explicit dir arg) reads
+ * from. It must be the same served root {@link resolveDefaultOutputRoot} writes
+ * to — otherwise `assets pull` lands GLBs in `apps/dev/public/models` while a
+ * plain `assets reindex` scans a cwd-relative `public/models` that never
+ * received them, regenerating an index blind to the freshly pulled pack. Kept in
+ * lockstep with the pull default so the two never disagree on where packs live.
+ *
+ * @internal
+ */
+export function resolveDefaultReindexDir(cliDir: string, kind: "models" | "sprites"): string {
+  return join(resolveDefaultOutputRoot(cliDir), kind);
+}
