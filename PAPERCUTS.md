@@ -162,3 +162,7 @@ focused cityGenerator test after fixing playground's invalid lot footprint -> cu
 2026-07-21T12:41:10.192Z — claude-opus-4-8 — Claude
 
 Verifying #1506's drive --playtest fix on a heavy scene (wreckway) under software GL -> bun run drive's hard deadline (timeoutMs + 120s) blew during cold dev boot before producing evidence; had to warm a shoot daemon and raise --timeout to get a completed run. The same software-GL slowness #1506 addresses in the softlock verdict also needs headroom in drive's own outer deadline.
+
+2026-07-21T15:48:57.635Z — claude-opus-4-8 — Claude
+
+Ran an /implement backlog pass claiming #1499/#1501/#1503/#1504/#1502/#1310 via claim comments, but a second concurrent Claude session was independently working the exact same issue set at the same time and merged its own PRs (#1522/#1524/#1526) for #1501/#1503/#1504/#1499 minutes before mine landed -> real merge conflicts in scripts/agent-bootstrap.ts and packages/assets/src/cli/pull.test.ts, redundant closed-issue Closes claims, and rework to reconcile. Claim comments don't seem to be checked by other sessions before claiming the same issue; may need a stronger claim-lock signal (e.g. an assignee or label flip) that other sessions actually consult.
