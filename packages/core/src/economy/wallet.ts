@@ -6,6 +6,9 @@ export interface WalletState {
  * Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited
  * {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why
  * (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
+ *
+ * **Result convention (sdk #1320):** adapter/state-machine write paths use `status: "ok"|"rejected"`.
+ * Pure pool deltas use the change object from {@link adjustStatPool} without a status envelope.
  */
 export type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" };
 

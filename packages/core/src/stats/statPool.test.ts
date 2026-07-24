@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   applyStatPoolDelta,
+  adjustStatPool,
   changeStatPool,
   createStatPool,
   patchStatPool,
@@ -60,6 +61,12 @@ describe("portable stat pools", () => {
     expect(drained.pool).toBe(empty);
     expect(drained.applied).toBe(0);
     expect(drained.hitMin).toBe(true);
+  });
+
+  test("adjustStatPool is the preferred alias of changeStatPool (#1320)", () => {
+    expect(adjustStatPool).toBe(changeStatPool);
+    const pool = createStatPool({ current: 10, max: 10 });
+    expect(adjustStatPool(pool, -3).applied).toBe(-3);
   });
 
   test("round-trips through JSON as caller-owned save data", () => {

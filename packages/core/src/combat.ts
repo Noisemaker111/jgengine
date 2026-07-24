@@ -189,6 +189,7 @@ export { createEventMeter, type EventMeter, type EventMeterFeedResult } from "./
 export { rollCheck, type CheckAdvantage, type CheckResult } from "./stats/rollCheck";
 export { createStats, type Stats, type StatsSnapshot } from "./stats/statModifiers";
 export {
+  adjustStatPool,
   applyStatPoolDelta,
   changeStatPool,
   createStatPool,

@@ -20,6 +20,82 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./bars": {
+      "types": "./dist/bars.d.ts",
+      "default": "./dist/bars.js"
+    },
+    "./characterSheet": {
+      "types": "./dist/characterSheet.d.ts",
+      "default": "./dist/characterSheet.js"
+    },
+    "./chat": {
+      "types": "./dist/chat.d.ts",
+      "default": "./dist/chat.js"
+    },
+    "./components": {
+      "types": "./dist/components.d.ts",
+      "default": "./dist/components.js"
+    },
+    "./gameIcons": {
+      "types": "./dist/gameIcons.d.ts",
+      "default": "./dist/gameIcons.js"
+    },
+    "./hooks": {
+      "types": "./dist/hooks.d.ts",
+      "default": "./dist/hooks.js"
+    },
+    "./hud": {
+      "types": "./dist/hud.d.ts",
+      "default": "./dist/hud.js"
+    },
+    "./hudFrame": {
+      "types": "./dist/hudFrame.d.ts",
+      "default": "./dist/hudFrame.js"
+    },
+    "./hudLayout": {
+      "types": "./dist/hudLayout.d.ts",
+      "default": "./dist/hudLayout.js"
+    },
+    "./hudTheme": {
+      "types": "./dist/hudTheme.d.ts",
+      "default": "./dist/hudTheme.js"
+    },
+    "./iconTreatment": {
+      "types": "./dist/iconTreatment.d.ts",
+      "default": "./dist/iconTreatment.js"
+    },
+    "./inventoryGrid": {
+      "types": "./dist/inventoryGrid.d.ts",
+      "default": "./dist/inventoryGrid.js"
+    },
+    "./map": {
+      "types": "./dist/map.d.ts",
+      "default": "./dist/map.js"
+    },
+    "./panels": {
+      "types": "./dist/panels.d.ts",
+      "default": "./dist/panels.js"
+    },
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "default": "./dist/preview.js"
+    },
+    "./provider": {
+      "types": "./dist/provider.d.ts",
+      "default": "./dist/provider.js"
+    },
+    "./settings": {
+      "types": "./dist/settings.d.ts",
+      "default": "./dist/settings.js"
+    },
+    "./startScreen": {
+      "types": "./dist/startScreen.d.ts",
+      "default": "./dist/startScreen.js"
+    },
+    "./store": {
+      "types": "./dist/store.d.ts",
+      "default": "./dist/store.js"
+    },
     "./*": {
       "types": "./dist/*.d.ts",
       "default": "./dist/*.js"

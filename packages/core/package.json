@@ -30,29 +30,477 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./world": {
-      "types": "./dist/world.d.ts",
-      "default": "./dist/world.js"
+    "./ai/difficulty": {
+      "types": "./dist/ai/difficulty.d.ts",
+      "default": "./dist/ai/difficulty.js"
+    },
+    "./ai/driver": {
+      "types": "./dist/ai/driver.d.ts",
+      "default": "./dist/ai/driver.js"
+    },
+    "./ai/heatSystem": {
+      "types": "./dist/ai/heatSystem.d.ts",
+      "default": "./dist/ai/heatSystem.js"
+    },
+    "./ai/interestScheduler": {
+      "types": "./dist/ai/interestScheduler.d.ts",
+      "default": "./dist/ai/interestScheduler.js"
+    },
+    "./ai/pursuit": {
+      "types": "./dist/ai/pursuit.d.ts",
+      "default": "./dist/ai/pursuit.js"
+    },
+    "./ai/spawnDirector": {
+      "types": "./dist/ai/spawnDirector.d.ts",
+      "default": "./dist/ai/spawnDirector.js"
+    },
+    "./ai/targetAcquisition": {
+      "types": "./dist/ai/targetAcquisition.d.ts",
+      "default": "./dist/ai/targetAcquisition.js"
+    },
+    "./ai/threat": {
+      "types": "./dist/ai/threat.d.ts",
+      "default": "./dist/ai/threat.js"
+    },
+    "./area/areaEffectField": {
+      "types": "./dist/area/areaEffectField.d.ts",
+      "default": "./dist/area/areaEffectField.js"
+    },
+    "./audio/audioFalloff": {
+      "types": "./dist/audio/audioFalloff.d.ts",
+      "default": "./dist/audio/audioFalloff.js"
+    },
+    "./audio/music": {
+      "types": "./dist/audio/music.d.ts",
+      "default": "./dist/audio/music.js"
+    },
+    "./audio/synth": {
+      "types": "./dist/audio/synth.d.ts",
+      "default": "./dist/audio/synth.js"
+    },
+    "./authoring": {
+      "types": "./dist/authoring.d.ts",
+      "default": "./dist/authoring.js"
+    },
+    "./cards/cardPile": {
+      "types": "./dist/cards/cardPile.d.ts",
+      "default": "./dist/cards/cardPile.js"
     },
     "./combat": {
       "types": "./dist/combat.d.ts",
       "default": "./dist/combat.js"
     },
+    "./combat/abilityKit": {
+      "types": "./dist/combat/abilityKit.d.ts",
+      "default": "./dist/combat/abilityKit.js"
+    },
+    "./combat/damageInterceptors": {
+      "types": "./dist/combat/damageInterceptors.d.ts",
+      "default": "./dist/combat/damageInterceptors.js"
+    },
+    "./combat/damageMatchup": {
+      "types": "./dist/combat/damageMatchup.d.ts",
+      "default": "./dist/combat/damageMatchup.js"
+    },
+    "./combat/death": {
+      "types": "./dist/combat/death.d.ts",
+      "default": "./dist/combat/death.js"
+    },
+    "./combat/effects": {
+      "types": "./dist/combat/effects.d.ts",
+      "default": "./dist/combat/effects.js"
+    },
+    "./combat/receivedDamage": {
+      "types": "./dist/combat/receivedDamage.d.ts",
+      "default": "./dist/combat/receivedDamage.js"
+    },
+    "./crafting/recipe": {
+      "types": "./dist/crafting/recipe.d.ts",
+      "default": "./dist/crafting/recipe.js"
+    },
+    "./economy/listingBook": {
+      "types": "./dist/economy/listingBook.d.ts",
+      "default": "./dist/economy/listingBook.js"
+    },
+    "./economy/resourceLedger": {
+      "types": "./dist/economy/resourceLedger.d.ts",
+      "default": "./dist/economy/resourceLedger.js"
+    },
+    "./editor/document": {
+      "types": "./dist/editor/document.d.ts",
+      "default": "./dist/editor/document.js"
+    },
+    "./editor/index": {
+      "types": "./dist/editor/index.d.ts",
+      "default": "./dist/editor/index.js"
+    },
+    "./format/distance": {
+      "types": "./dist/format/distance.d.ts",
+      "default": "./dist/format/distance.js"
+    },
+    "./format/duration": {
+      "types": "./dist/format/duration.d.ts",
+      "default": "./dist/format/duration.js"
+    },
+    "./format/speed": {
+      "types": "./dist/format/speed.d.ts",
+      "default": "./dist/format/speed.js"
+    },
+    "./game/chat": {
+      "types": "./dist/game/chat.d.ts",
+      "default": "./dist/game/chat.js"
+    },
+    "./game/clipRoles": {
+      "types": "./dist/game/clipRoles.d.ts",
+      "default": "./dist/game/clipRoles.js"
+    },
+    "./game/defineGame": {
+      "types": "./dist/game/defineGame.d.ts",
+      "default": "./dist/game/defineGame.js"
+    },
+    "./game/defineSystem": {
+      "types": "./dist/game/defineSystem.d.ts",
+      "default": "./dist/game/defineSystem.js"
+    },
+    "./game/events": {
+      "types": "./dist/game/events.d.ts",
+      "default": "./dist/game/events.js"
+    },
+    "./game/feed": {
+      "types": "./dist/game/feed.d.ts",
+      "default": "./dist/game/feed.js"
+    },
+    "./game/gamePhase": {
+      "types": "./dist/game/gamePhase.d.ts",
+      "default": "./dist/game/gamePhase.js"
+    },
+    "./game/levelSequence": {
+      "types": "./dist/game/levelSequence.d.ts",
+      "default": "./dist/game/levelSequence.js"
+    },
+    "./game/loadout": {
+      "types": "./dist/game/loadout.d.ts",
+      "default": "./dist/game/loadout.js"
+    },
+    "./game/lootTable": {
+      "types": "./dist/game/lootTable.d.ts",
+      "default": "./dist/game/lootTable.js"
+    },
+    "./game/playableGame": {
+      "types": "./dist/game/playableGame.d.ts",
+      "default": "./dist/game/playableGame.js"
+    },
+    "./game/progression": {
+      "types": "./dist/game/progression.d.ts",
+      "default": "./dist/game/progression.js"
+    },
+    "./game/quest": {
+      "types": "./dist/game/quest.d.ts",
+      "default": "./dist/game/quest.js"
+    },
+    "./game/race": {
+      "types": "./dist/game/race.d.ts",
+      "default": "./dist/game/race.js"
+    },
+    "./game/talents": {
+      "types": "./dist/game/talents.d.ts",
+      "default": "./dist/game/talents.js"
+    },
+    "./game/toasts": {
+      "types": "./dist/game/toasts.d.ts",
+      "default": "./dist/game/toasts.js"
+    },
+    "./game/worldItem": {
+      "types": "./dist/game/worldItem.d.ts",
+      "default": "./dist/game/worldItem.js"
+    },
     "./gameplay": {
       "types": "./dist/gameplay.d.ts",
       "default": "./dist/gameplay.js"
+    },
+    "./input/actionBindings": {
+      "types": "./dist/input/actionBindings.d.ts",
+      "default": "./dist/input/actionBindings.js"
+    },
+    "./input/axisInput": {
+      "types": "./dist/input/axisInput.d.ts",
+      "default": "./dist/input/axisInput.js"
+    },
+    "./input/pointer": {
+      "types": "./dist/input/pointer.d.ts",
+      "default": "./dist/input/pointer.js"
+    },
+    "./input/touchControlsMode": {
+      "types": "./dist/input/touchControlsMode.d.ts",
+      "default": "./dist/input/touchControlsMode.js"
+    },
+    "./interaction/lockpick": {
+      "types": "./dist/interaction/lockpick.d.ts",
+      "default": "./dist/interaction/lockpick.js"
+    },
+    "./interaction/proximityPrompt": {
+      "types": "./dist/interaction/proximityPrompt.d.ts",
+      "default": "./dist/interaction/proximityPrompt.js"
+    },
+    "./interaction/skillCheck": {
+      "types": "./dist/interaction/skillCheck.d.ts",
+      "default": "./dist/interaction/skillCheck.js"
+    },
+    "./inventory/inventoryModel": {
+      "types": "./dist/inventory/inventoryModel.d.ts",
+      "default": "./dist/inventory/inventoryModel.js"
+    },
+    "./inventory/storageTier": {
+      "types": "./dist/inventory/storageTier.d.ts",
+      "default": "./dist/inventory/storageTier.js"
+    },
+    "./item/itemgen": {
+      "types": "./dist/item/itemgen.d.ts",
+      "default": "./dist/item/itemgen.js"
+    },
+    "./item/modularItem": {
+      "types": "./dist/item/modularItem.d.ts",
+      "default": "./dist/item/modularItem.js"
+    },
+    "./item/use": {
+      "types": "./dist/item/use.d.ts",
+      "default": "./dist/item/use.js"
+    },
+    "./movement/formation": {
+      "types": "./dist/movement/formation.d.ts",
+      "default": "./dist/movement/formation.js"
+    },
+    "./movement/playerMovement": {
+      "types": "./dist/movement/playerMovement.d.ts",
+      "default": "./dist/movement/playerMovement.js"
+    },
+    "./movement/poseState": {
+      "types": "./dist/movement/poseState.d.ts",
+      "default": "./dist/movement/poseState.js"
+    },
+    "./movement/steering": {
+      "types": "./dist/movement/steering.d.ts",
+      "default": "./dist/movement/steering.js"
     },
     "./multiplayer": {
       "types": "./dist/multiplayer.d.ts",
       "default": "./dist/multiplayer.js"
     },
-    "./ui": {
-      "types": "./dist/ui.d.ts",
-      "default": "./dist/ui.js"
+    "./nav/pathFollow": {
+      "types": "./dist/nav/pathFollow.d.ts",
+      "default": "./dist/nav/pathFollow.js"
+    },
+    "./physics/drivableVehicle": {
+      "types": "./dist/physics/drivableVehicle.d.ts",
+      "default": "./dist/physics/drivableVehicle.js"
+    },
+    "./physics/vehicleBody": {
+      "types": "./dist/physics/vehicleBody.d.ts",
+      "default": "./dist/physics/vehicleBody.js"
     },
     "./procedural": {
       "types": "./dist/procedural.d.ts",
       "default": "./dist/procedural.js"
+    },
+    "./progression/statGraph": {
+      "types": "./dist/progression/statGraph.d.ts",
+      "default": "./dist/progression/statGraph.js"
+    },
+    "./random/nameGen": {
+      "types": "./dist/random/nameGen.d.ts",
+      "default": "./dist/random/nameGen.js"
+    },
+    "./random/rng": {
+      "types": "./dist/random/rng.d.ts",
+      "default": "./dist/random/rng.js"
+    },
+    "./relation/keyedValues": {
+      "types": "./dist/relation/keyedValues.d.ts",
+      "default": "./dist/relation/keyedValues.js"
+    },
+    "./relation/thresholds": {
+      "types": "./dist/relation/thresholds.d.ts",
+      "default": "./dist/relation/thresholds.js"
+    },
+    "./render/postProcessing": {
+      "types": "./dist/render/postProcessing.d.ts",
+      "default": "./dist/render/postProcessing.js"
+    },
+    "./runtime/adapter": {
+      "types": "./dist/runtime/adapter.d.ts",
+      "default": "./dist/runtime/adapter.js"
+    },
+    "./runtime/cameraDirector": {
+      "types": "./dist/runtime/cameraDirector.d.ts",
+      "default": "./dist/runtime/cameraDirector.js"
+    },
+    "./runtime/gameContext": {
+      "types": "./dist/runtime/gameContext.d.ts",
+      "default": "./dist/runtime/gameContext.js"
+    },
+    "./runtime/perContext": {
+      "types": "./dist/runtime/perContext.d.ts",
+      "default": "./dist/runtime/perContext.js"
+    },
+    "./scene/assetCatalog": {
+      "types": "./dist/scene/assetCatalog.d.ts",
+      "default": "./dist/scene/assetCatalog.js"
+    },
+    "./scene/authoredTriggers": {
+      "types": "./dist/scene/authoredTriggers.d.ts",
+      "default": "./dist/scene/authoredTriggers.js"
+    },
+    "./scene/autoTarget": {
+      "types": "./dist/scene/autoTarget.d.ts",
+      "default": "./dist/scene/autoTarget.js"
+    },
+    "./scene/behaviorRuntime": {
+      "types": "./dist/scene/behaviorRuntime.d.ts",
+      "default": "./dist/scene/behaviorRuntime.js"
+    },
+    "./scene/behaviors": {
+      "types": "./dist/scene/behaviors.d.ts",
+      "default": "./dist/scene/behaviors.js"
+    },
+    "./scene/entityStats": {
+      "types": "./dist/scene/entityStats.d.ts",
+      "default": "./dist/scene/entityStats.js"
+    },
+    "./scene/entityStore": {
+      "types": "./dist/scene/entityStore.d.ts",
+      "default": "./dist/scene/entityStore.js"
+    },
+    "./scene/objectStore": {
+      "types": "./dist/scene/objectStore.d.ts",
+      "default": "./dist/scene/objectStore.js"
+    },
+    "./scene/sceneKinds": {
+      "types": "./dist/scene/sceneKinds.d.ts",
+      "default": "./dist/scene/sceneKinds.js"
+    },
+    "./scene/selection": {
+      "types": "./dist/scene/selection.d.ts",
+      "default": "./dist/scene/selection.js"
+    },
+    "./scene/vehicleSeat": {
+      "types": "./dist/scene/vehicleSeat.d.ts",
+      "default": "./dist/scene/vehicleSeat.js"
+    },
+    "./session/ring": {
+      "types": "./dist/session/ring.d.ts",
+      "default": "./dist/session/ring.js"
+    },
+    "./stats/statModifiers": {
+      "types": "./dist/stats/statModifiers.d.ts",
+      "default": "./dist/stats/statModifiers.js"
+    },
+    "./stats/statPool": {
+      "types": "./dist/stats/statPool.d.ts",
+      "default": "./dist/stats/statPool.js"
+    },
+    "./store/defineKeyedStore": {
+      "types": "./dist/store/defineKeyedStore.d.ts",
+      "default": "./dist/store/defineKeyedStore.js"
+    },
+    "./store/defineStore": {
+      "types": "./dist/store/defineStore.d.ts",
+      "default": "./dist/store/defineStore.js"
+    },
+    "./survival/decayMeter": {
+      "types": "./dist/survival/decayMeter.d.ts",
+      "default": "./dist/survival/decayMeter.js"
+    },
+    "./turn/turnLoop": {
+      "types": "./dist/turn/turnLoop.d.ts",
+      "default": "./dist/turn/turnLoop.js"
+    },
+    "./ui": {
+      "types": "./dist/ui.d.ts",
+      "default": "./dist/ui.js"
+    },
+    "./ui/swingTimer": {
+      "types": "./dist/ui/swingTimer.d.ts",
+      "default": "./dist/ui/swingTimer.js"
+    },
+    "./work/unitTraining": {
+      "types": "./dist/work/unitTraining.d.ts",
+      "default": "./dist/work/unitTraining.js"
+    },
+    "./world": {
+      "types": "./dist/world.d.ts",
+      "default": "./dist/world.js"
+    },
+    "./world/authoredObjects": {
+      "types": "./dist/world/authoredObjects.d.ts",
+      "default": "./dist/world/authoredObjects.js"
+    },
+    "./world/authoredSpawn": {
+      "types": "./dist/world/authoredSpawn.d.ts",
+      "default": "./dist/world/authoredSpawn.js"
+    },
+    "./world/buildingLots": {
+      "types": "./dist/world/buildingLots.d.ts",
+      "default": "./dist/world/buildingLots.js"
+    },
+    "./world/buildings": {
+      "types": "./dist/world/buildings.d.ts",
+      "default": "./dist/world/buildings.js"
+    },
+    "./world/features": {
+      "types": "./dist/world/features.d.ts",
+      "default": "./dist/world/features.js"
+    },
+    "./world/geometry": {
+      "types": "./dist/world/geometry.d.ts",
+      "default": "./dist/world/geometry.js"
+    },
+    "./world/grounded": {
+      "types": "./dist/world/grounded.d.ts",
+      "default": "./dist/world/grounded.js"
+    },
+    "./world/minimap": {
+      "types": "./dist/world/minimap.d.ts",
+      "default": "./dist/world/minimap.js"
+    },
+    "./world/minimapTrack": {
+      "types": "./dist/world/minimapTrack.d.ts",
+      "default": "./dist/world/minimapTrack.js"
+    },
+    "./world/pathTerrain": {
+      "types": "./dist/world/pathTerrain.d.ts",
+      "default": "./dist/world/pathTerrain.js"
+    },
+    "./world/resourceNode": {
+      "types": "./dist/world/resourceNode.d.ts",
+      "default": "./dist/world/resourceNode.js"
+    },
+    "./world/roads": {
+      "types": "./dist/world/roads.d.ts",
+      "default": "./dist/world/roads.js"
+    },
+    "./world/scatter": {
+      "types": "./dist/world/scatter.d.ts",
+      "default": "./dist/world/scatter.js"
+    },
+    "./world/scatterRegion": {
+      "types": "./dist/world/scatterRegion.d.ts",
+      "default": "./dist/world/scatterRegion.js"
+    },
+    "./world/streets": {
+      "types": "./dist/world/streets.d.ts",
+      "default": "./dist/world/streets.js"
+    },
+    "./world/terraform": {
+      "types": "./dist/world/terraform.d.ts",
+      "default": "./dist/world/terraform.js"
+    },
+    "./world/terrain": {
+      "types": "./dist/world/terrain.d.ts",
+      "default": "./dist/world/terrain.js"
+    },
+    "./world/vec3": {
+      "types": "./dist/world/vec3.d.ts",
+      "default": "./dist/world/vec3.js"
     },
     "./*": {
       "types": "./dist/*.d.ts",

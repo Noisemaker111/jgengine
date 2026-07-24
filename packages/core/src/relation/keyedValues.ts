@@ -4,10 +4,17 @@
  * relations.
  *
  * No hidden state and no social semantics: the record, its bounds, drift rates,
- * and keys are all caller data. Operations mutate the passed record in place and
- * return the resulting value, so a game keeps one plain `Record<string, number>`
+ * and keys are all caller data. Operations **mutate the passed record in place**
+ * and return the resulting value, so a game keeps one plain `Record<string, number>`
  * it can serialize with `JSON.stringify` and restore verbatim. Pair keys are the
  * injectable canonicalizer — compose `codec.key(a, b)` into any of the ops below.
+ *
+ * **Ownership tier (sdk #1320):** this is the *mutable record* tier — not the
+ * immutable wallet (`grant`/`charge` → new state + `{status}`) or the pure
+ * pool (`adjustStatPool` → change object) or the adapter pool
+ * (`applyStatPoolDelta` → `{status}`). Prefer wallet/stat-pool when you need
+ * immutable or adapter ownership; use keyedValues when a single mutable
+ * `Record` is the source of truth (relationships, soft counters).
  */
 import { clamp, moveTowards } from "../math/scalar";
 

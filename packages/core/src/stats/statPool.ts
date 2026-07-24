@@ -78,6 +78,11 @@ export function patchStatPool(pool: StatPool, patch: StatPoolPatch): StatPool {
 /**
  * Pure bounded delta transition with the exact applied amount and boundary flags.
  *
+ * **Preferred name:** {@link adjustStatPool} (same function). Prefer the `adjust*` verb for
+ * "add/subtract an amount" so it lines up with wallet `grant`/`charge` intent without
+ * implying a full structural patch ({@link patchStatPool}) or adapter write
+ * ({@link applyStatPoolDelta}). Result shape stays `{ previous, pool, applied, hitMin, hitMax }`.
+ *
  * @capability stat-pool-change immutably increase or decrease any named bounded resource with clamp evidence
  */
 export function changeStatPool(pool: StatPool, amount: number): StatPoolChange {
@@ -95,10 +100,22 @@ export function changeStatPool(pool: StatPool, amount: number): StatPoolChange {
 }
 
 /**
+ * Preferred alias of {@link changeStatPool} — pure "adjust by amount" on a pool value.
+ * Use this name in new code (#1320 / sdk remediation Phase 1.1).
+ *
+ * @capability stat-pool-adjust preferred pure delta on a serializable bounded pool
+ */
+export const adjustStatPool = changeStatPool;
+
+/**
  * Read, transition, and write a caller-owned pool through the structural
  * adapter. Positive amounts increase the resource; negative amounts decrease
  * it. The adapter receives a complete replacement value, never a hidden
  * mutation.
+ *
+ * Result discriminant is `{ status: "ok" | "rejected" }` — the adapter-tier
+ * convention (same key as wallet charge). Pure tier returns the change object
+ * directly via {@link adjustStatPool}; do not invent a third discriminant.
  *
  * @capability portable-stat-pool apply deterministic bounded resource changes through a caller-owned stat adapter
  */
@@ -110,7 +127,7 @@ export function applyStatPoolDelta<TOwnerId extends string, TStatId extends stri
 ): StatPoolAccessResult {
   const pool = access.get(ownerId, statId);
   if (pool === null) return { status: "rejected", reason: `unknown stat "${statId}"` };
-  const change = changeStatPool(pool, amount);
+  const change = adjustStatPool(pool, amount);
   access.set(ownerId, statId, change.pool);
   return { status: "ok", ...change };
 }
