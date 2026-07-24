@@ -29,7 +29,9 @@ export { environmentContentFromDocument } from "@jgengine/core/editor/environmen
 
 // World + camera.
 export { environment } from "@jgengine/core/world/features";
+export { grounded } from "@jgengine/core/world/grounded";
 export type { GameCameraConfig } from "@jgengine/core/game/playableGame";
+export { DEFAULT_WALK_CODES } from "./shellMovement";
 
 // HUD layout + drop-in building blocks — compose these, reskin with HudTheme; games own layout/terminology/art direction.
 export { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";

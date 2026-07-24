@@ -64,6 +64,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **SDK remediation Phase 1.2 + 2.3 — adoption ratchet + cheap seams (#1543).** `check-game-shape` now freezes module-level `export let` and local `Window`/`Bar`/`Chip`/`Slot` components via shrink-only `scripts/game-adoption-baseline.json` (new smells fail CI). Ships `grounded(ctx, x, z)` (`@jgengine/core/world/grounded`, also on `gameKit`), `DEFAULT_WALK_CODES` (WASD + Space on `@jgengine/shell/shellMovement` / `gameKit`), and a HudTheme-token default skin on `SettingsTrigger` (`SETTINGS_TRIGGER_CLASSNAME`) so bare triggers need no 8×8 className re-authoring.
 - **SDK remediation Phase 0 — one start-here + correct UI guidance (#1541).** `@jgengine/shell/gameKit` is the sole happy-path game entrypoint; `@jgengine/core/authoring` no longer claims "Game code should begin here" (still a core helper barrel for pure exports the kit does not re-export). The whole-game recipe and scaffold `GameUI` header now match CLAUDE.md: compose shipped HUD building blocks (`StatBar`, `Hotbar`, `Coins`, …) and reskin via HudTheme — games own layout/terminology/art direction, not re-derivation. Studio Showcase and Tower Guard import kit-covered symbols from `gameKit`.
 - **Kinematic vehicle drive feel** (#1515) — `createKinematicVehicle` gains a low-speed launch torque floor, softer reverse by default (`chassis.reverseForceScale`, default ~0.48 of engine force), handbrake rear-lock oversteer yaw, engine-braking that no longer fights powered reverse, and lighter ESC while handbraking. Existing chassis tunings pick this up with no migrate; override `reverseForceScale` only if you need the old full-force reverse.
 
@@ -89,6 +90,9 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`grounded(ctx, x, z)`** (#1543) — returns `[x, groundY, z]` from the live world surface; stop re-deriving `[x, ctx.world.groundHeightAt(x, z), z]`. Import from `@jgengine/core/world/grounded` or `@jgengine/shell/gameKit`.
+- **`DEFAULT_WALK_CODES`** (#1543) — stock WASD + Space map for the shell walk controller (`@jgengine/shell/shellMovement`, re-exported from `gameKit`).
+- **`SETTINGS_TRIGGER_CLASSNAME` + default `SettingsTrigger` skin** (#1543) — HudTheme-token 8×8 chrome button; omit `className` for the stock look.
 - **City generation now enforces plot clearance and planar streets (#1454).** Building plots clear
   one another and street corridors, building massing fits its plot, landmark footprints avoid roads
   and overlap, and generated street chords and branches cannot cross without a junction. Interior

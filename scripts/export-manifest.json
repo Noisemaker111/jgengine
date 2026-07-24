@@ -460,6 +460,7 @@
     "./world/geometry",
     "./world/grassKind",
     "./world/gridInstances",
+    "./world/grounded",
     "./world/interiors",
     "./world/lod",
     "./world/mapAnnotations",

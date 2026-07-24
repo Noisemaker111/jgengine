@@ -131,13 +131,21 @@ export function useHasSettings(): boolean {
 }
 
 /**
+ * Default HudTheme-token skin for {@link SettingsTrigger} — the 8×8 chrome button
+ * games re-authored seven times. Pass your own `className` only to override placement
+ * or brand chrome; the gear glyph already scales with `text-base` / `1em`.
+ */
+export const SETTINGS_TRIGGER_CLASSNAME =
+  "pointer-events-auto flex h-8 w-8 items-center justify-center rounded-md border border-[var(--jg-edge-bright)] bg-[var(--jg-surface)]/80 text-base text-[var(--jg-text-dim)] shadow-[0_1px_2px_rgba(0,0,0,0.6)] transition hover:bg-[var(--jg-surface-deep)] hover:text-[var(--jg-accent)]";
+
+/**
  * Inline settings entry — drop it anywhere in your game's menu or HUD; it opens
- * the themed settings menu. Headless: pass `className` for placement/skin and
- * `children` to replace the default gear glyph. Renders nothing when the game
- * has no settings to show, so it never leaves a dead button behind.
+ * the themed settings menu. Headless: pass `className` only when overriding the
+ * default HudTheme skin; pass `children` to replace the gear glyph. Renders nothing
+ * when the game has no settings to show, so it never leaves a dead button behind.
  */
 export function SettingsTrigger({
-  className,
+  className = SETTINGS_TRIGGER_CLASSNAME,
   children,
   label = "Settings",
 }: {

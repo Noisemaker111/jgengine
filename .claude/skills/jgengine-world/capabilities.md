@@ -281,6 +281,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `pointGravity` (function) · `import { pointGravity } from "@jgengine/core/world"`
 - `uniformGravity` (function) · `import { uniformGravity } from "@jgengine/core/world"`
 
+## grounded — ground an XZ point onto the world surface as a pose triple
+
+- `grounded` (function) · `import { grounded } from "@jgengine/core/world"`
+
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`

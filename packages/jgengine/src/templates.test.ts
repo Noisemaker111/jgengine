@@ -176,11 +176,10 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
   });
 
   for (const variant of ["standalone", "in-repo"] as const) {
-    test(`${variant}: scaffold walks out of the box (movement actions bound inline)`, () => {
+    test(`${variant}: scaffold walks out of the box (DEFAULT_WALK_CODES + interact)`, () => {
       const config = fileOf(render(variant), "src/game.config.ts");
-      for (const action of ["moveForward", "moveBack", "moveLeft", "moveRight", "jump", "interact"]) {
-        expect(config).toContain(`${action}:`);
-      }
+      expect(config).toContain("DEFAULT_WALK_CODES");
+      expect(config).toContain('interact: ["KeyE"]');
     });
 
     test(`${variant}: scaffold ships a wired editor scene document`, () => {

@@ -1228,7 +1228,7 @@ export interface GameConfigOptions {
 
 const gameConfigTs = (name: string, options: GameConfigOptions) => {
   const imports = [
-    'import { defineGame } from "@jgengine/shell/gameKit";',
+    'import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";',
     "",
     ...(options.editor ? ['import { editorLayers } from "./editorLayers";'] : []),
     ...(options.world
@@ -1243,14 +1243,7 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
     // The world carries its own physics (laws of the place) — no separate physics field to wire.
     ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
-    "  input: {",
-    '    moveForward: ["KeyW"],',
-    '    moveBack: ["KeyS"],',
-    '    moveLeft: ["KeyA"],',
-    '    moveRight: ["KeyD"],',
-    '    jump: ["Space"],',
-    '    interact: ["KeyE"],',
-    "  },",
+    "  input: { ...DEFAULT_WALK_CODES, interact: [\"KeyE\"] },",
     "  systems,",
     "  loop: { onNewPlayer },",
     "  GameUI,",

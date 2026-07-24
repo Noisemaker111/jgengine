@@ -322,6 +322,7 @@ export { createBodyBind } from "./scene/bodyBind";
 export { type ColliderPurpose, type EntityColliderSet, type ResolvedCollider } from "./scene/colliders";
 export { type StatCatalog, type StatValue } from "./scene/entityStats";
 export { entityMetaOf, groundSpeed, type EntityPosition, type SceneEntity } from "./scene/entityStore";
+export { grounded } from "./world/grounded";
 export { DEFAULT_FORWARD } from "./scene/facing";
 export { readNamedSockets, type ModelNode } from "./scene/modelSockets";
 export { MountController, createMountController } from "./scene/mount";
