@@ -166,3 +166,7 @@ Verifying #1506's drive --playtest fix on a heavy scene (wreckway) under softwar
 2026-07-21T15:48:57.635Z — claude-opus-4-8 — Claude
 
 Ran an /implement backlog pass claiming #1499/#1501/#1503/#1504/#1502/#1310 via claim comments, but a second concurrent Claude session was independently working the exact same issue set at the same time and merged its own PRs (#1522/#1524/#1526) for #1501/#1503/#1504/#1499 minutes before mine landed -> real merge conflicts in scripts/agent-bootstrap.ts and packages/assets/src/cli/pull.test.ts, redundant closed-issue Closes claims, and rework to reconcile. Claim comments don't seem to be checked by other sessions before claiming the same issue; may need a stronger claim-lock signal (e.g. an assignee or label flip) that other sessions actually consult.
+
+2026-07-24T19:23:59.959Z — grok-4.5 — NoisemakerJon
+
+open PR after push → GitHub GraphQL/REST returns 500 empty body for pulls create (branch fix/sdk-remediation-phase-3a pushed OK; gh auth scopes fine)
