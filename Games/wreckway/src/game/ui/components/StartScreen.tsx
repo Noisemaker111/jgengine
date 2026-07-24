@@ -13,7 +13,7 @@ export function StartScreen({ onStart }: StartScreenProps) {
   return (
     <MenuScreen
       className="pointer-events-auto absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#1c1a17]/90 p-4"
-      settings={<SettingsTrigger className="flex h-9 w-9 items-center justify-center rounded border-2 border-[#8d99a6]/50 bg-[#1c1a17] text-[#f0c419] transition hover:bg-[#2a251e]" />}
+      settings={<SettingsTrigger />}
       settingsWrapperClassName="absolute right-4 top-4 z-10"
     >
       <div className="w-full max-w-3xl rounded-lg border-2 border-[#b7410e] bg-[#241f19] p-6 shadow-[0_0_40px_rgba(0,0,0,0.6)] sm:p-8">
