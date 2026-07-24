@@ -133,6 +133,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
 
+## default-walk-codes — stock WASD + jump key codes for the shell walk controller
+
+- `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/shell/shellMovement"`
+
 ## dialogue-view — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun
 
 - `DialogueView` (function) · `import { DialogueView } from "@jgengine/react"`

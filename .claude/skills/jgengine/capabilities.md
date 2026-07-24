@@ -16,6 +16,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameContextModels` (interface) · `import { GameContextModels } from "@jgengine/core/runtime/gameContext"`
 
+## default-walk-codes — stock WASD + jump key codes for the shell walk controller
+
+- `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/shell/gameKit"`
+
 ## define-game — single public game-authoring path — compose systems, world, presentation, and authored scene in one definition
 
 - `defineGame` (function) · `import { defineGame } from "@jgengine/shell/gameKit"`
@@ -31,6 +35,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## game-system — declare a composable capability with its own schedule and lifecycle
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/shell/gameKit"`
+
+## grounded — ground an XZ point onto the world surface as a pose triple
+
+- `grounded` (function) · `import { grounded } from "@jgengine/shell/gameKit"`
 
 ## headless-runner — play a real game loop with no renderer — tick, feed input, read the world snapshot
 

@@ -16,6 +16,9 @@ const REQUIRED_TSCONFIG_PATHS: Record<string, string> = {
   "@jgengine/assets/*": "../../packages/assets/src/*",
 };
 
+/** Shrink-only allowlist for adoption smells that already exist under Games/* (Phase 1.2). */
+const ADOPTION_BASELINE_PATH = join(process.cwd(), "scripts/game-adoption-baseline.json");
+
 const gamesDir = join(process.cwd(), "Games");
 
 const rootScripts =
@@ -41,6 +44,32 @@ function sourceFilesUnder(dir: string): string[] {
 /** An import of the shell's AuthoredScene component, from any path. */
 function importsAuthoredScene(source: string): boolean {
   return /import\s[^;]*\bAuthoredScene\b[^;]*\sfrom\s/.test(source);
+}
+
+/**
+ * Mechanical adoption smells the ratchet freezes: module-global `export let` (use
+ * `perContext` / `defineStore`) and local Window/Bar/Chip/Slot components that shadow
+ * shipped `@jgengine/react` building blocks.
+ */
+function adoptionSmellsIn(file: string, source: string): string[] {
+  const fileRel = rel(file);
+  const found: string[] = [];
+  for (const line of source.split(/\r?\n/)) {
+    if (/^\s*export\s+let\s+/.test(line)) found.push(`${fileRel}:export-let`);
+    const widget = line.match(/^\s*(?:export\s+)?function\s+(Window|Bar|Chip|Slot)\s*\(/);
+    if (widget) found.push(`${fileRel}:local-widget-${widget[1]}`);
+  }
+  return found;
+}
+
+function readAdoptionBaseline(): Set<string> {
+  if (!existsSync(ADOPTION_BASELINE_PATH)) return new Set();
+  const raw = JSON.parse(readFileSync(ADOPTION_BASELINE_PATH, "utf8")) as unknown;
+  if (!Array.isArray(raw) || raw.some((k) => typeof k !== "string")) {
+    problems.push(`${rel(ADOPTION_BASELINE_PATH)}: must be a JSON string array`);
+    return new Set();
+  }
+  return new Set(raw as string[]);
 }
 
 for (const name of readdirSync(gamesDir)) {
@@ -146,6 +175,46 @@ for (const name of readdirSync(gamesDir)) {
   }
 }
 
+// --- Adoption ratchet (Phase 1.2): freeze known smells; block new ones; shrink baseline only.
+const adoptionBaseline = readAdoptionBaseline();
+const adoptionFound = new Set<string>();
+for (const name of readdirSync(gamesDir)) {
+  const srcDir = join(gamesDir, name, "src");
+  if (!existsSync(srcDir) || !statSync(srcDir).isDirectory()) continue;
+  for (const file of sourceFilesUnder(srcDir)) {
+    for (const smell of adoptionSmellsIn(file, readFileSync(file, "utf8"))) {
+      adoptionFound.add(smell);
+    }
+  }
+}
+
+const newAdoptionSmells = [...adoptionFound].filter((k) => !adoptionBaseline.has(k)).sort();
+const staleAdoptionBaseline = [...adoptionBaseline].filter((k) => !adoptionFound.has(k)).sort();
+
+for (const smell of newAdoptionSmells) {
+  const [file, kind] = smell.split(":");
+  if (kind === "export-let") {
+    problems.push(
+      `${file}: module-level \`export let\` — use \`perContext\` / \`defineStore\` so state is per GameContext (scale-by-default; host/tests/split-screen safe). ` +
+        `If this is a reviewed exception, add "${smell}" to scripts/game-adoption-baseline.json only after fixing what you can.`,
+    );
+  } else if (kind?.startsWith("local-widget-")) {
+    const widget = kind.slice("local-widget-".length);
+    problems.push(
+      `${file}: local \`${widget}\` component shadows a shipped building block — compose from @jgengine/react (Window/panels, bars, chips, slots) and reskin via HudTheme. ` +
+        `If this is a reviewed exception, add "${smell}" to scripts/game-adoption-baseline.json only after checking jgengine-ui capabilities.`,
+    );
+  } else {
+    problems.push(`${smell}: new adoption smell not in scripts/game-adoption-baseline.json`);
+  }
+}
+
+for (const stale of staleAdoptionBaseline) {
+  problems.push(
+    `scripts/game-adoption-baseline.json lists "${stale}" but that smell is gone — remove it (baseline only shrinks).`,
+  );
+}
+
 if (problems.length > 0) {
   console.error(
     `\ncheck-game-shape: ${problems.length} issue(s) off the canonical shape:\n` +
@@ -161,9 +230,13 @@ if (problems.length > 0) {
       `src/index.css for Tailwind (importing "./style.css") and a "dev" script in package.json to launch it.\n` +
       `src/style.css holds the game-specific CSS only — no "@import \\"tailwindcss\\"" — so the /play\n` +
       `runner's per-game lazy CSS chunk stays small instead of re-shipping the shared Tailwind base.\n` +
-      `The root package.json exposes each harness as "games:<id>": "bun run --cwd Games/<id> dev".\n`,
+      `The root package.json exposes each harness as "games:<id>": "bun run --cwd Games/<id> dev".\n` +
+      `Adoption smells (export let, local Window/Bar/Chip/Slot) are ratcheted via scripts/game-adoption-baseline.json — shrink only.\n`,
   );
   process.exit(1);
 }
 
-console.log("check-game-shape: clean — all games follow the canonical game.config.ts skeleton");
+console.log(
+  `check-game-shape: clean — all games follow the canonical game.config.ts skeleton` +
+    ` (${adoptionFound.size} adoption smell(s) baselined)`,
+);
