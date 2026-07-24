@@ -200,6 +200,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createStatPool` (function) · `import { createStatPool } from "@jgengine/core/combat"`
 
+## stat-pool-adjust — preferred pure delta on a serializable bounded pool
+
+- `adjustStatPool` (const) · `import { adjustStatPool } from "@jgengine/core/combat"`
+
 ## stat-pool-change — immutably increase or decrease any named bounded resource with clamp evidence
 
 - `changeStatPool` (function) · `import { changeStatPool } from "@jgengine/core/combat"`

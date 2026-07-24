@@ -16,13 +16,61 @@
     "skills"
   ],
   "exports": {
+    "./camera": {
+      "types": "./dist/camera/index.d.ts",
+      "default": "./dist/camera/index.js"
+    },
+    "./defineGame": {
+      "types": "./dist/defineGame.d.ts",
+      "default": "./dist/defineGame.js"
+    },
+    "./GameHost": {
+      "types": "./dist/GameHost.d.ts",
+      "default": "./dist/GameHost.js"
+    },
+    "./gameKit": {
+      "types": "./dist/gameKit.d.ts",
+      "default": "./dist/gameKit.js"
+    },
+    "./GameUiPreview": {
+      "types": "./dist/GameUiPreview.d.ts",
+      "default": "./dist/GameUiPreview.js"
+    },
+    "./materialOverride": {
+      "types": "./dist/materialOverride.d.ts",
+      "default": "./dist/materialOverride.js"
+    },
+    "./registry": {
+      "types": "./dist/registry.d.ts",
+      "default": "./dist/registry.js"
+    },
+    "./render/modelLoad": {
+      "types": "./dist/render/modelLoad.d.ts",
+      "default": "./dist/render/modelLoad.js"
+    },
+    "./render/modelRender": {
+      "types": "./dist/render/modelRender.d.ts",
+      "default": "./dist/render/modelRender.js"
+    },
+    "./render/resolveModel": {
+      "types": "./dist/render/resolveModel.d.ts",
+      "default": "./dist/render/resolveModel.js"
+    },
+    "./render/useModelAnimation": {
+      "types": "./dist/render/useModelAnimation.d.ts",
+      "default": "./dist/render/useModelAnimation.js"
+    },
+    "./shellMovement": {
+      "types": "./dist/shellMovement.d.ts",
+      "default": "./dist/shellMovement.js"
+    },
     "./weather": {
       "types": "./dist/weather/index.d.ts",
       "default": "./dist/weather/index.js"
     },
-    "./camera": {
-      "types": "./dist/camera/index.d.ts",
-      "default": "./dist/camera/index.js"
+    "./world/WorldHud": {
+      "types": "./dist/world/WorldHud.d.ts",
+      "default": "./dist/world/WorldHud.js"
     },
     "./*": {
       "types": "./dist/*.d.ts",
