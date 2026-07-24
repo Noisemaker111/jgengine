@@ -96,13 +96,24 @@ function rollEntry(entry: LootEntry, rng: () => number): Drop {
   return entry.item !== undefined ? { item: entry.item, count } : { currency: entry.currency, count };
 }
 
+/** Options for {@link createLootRegistry} — inject a default RNG so bare `roll(id)` uses the world stream. */
+export interface LootRegistryOptions {
+  /**
+   * Default `[0,1)` stream when `roll` is called without an explicit rng.
+   * Prefer the world stream from `createGameContext` (`ctx.rng`); bare registries
+   * still default to `Math.random` for portable call sites outside a game context.
+   */
+  rng?: () => number;
+}
+
 /**
  * Register named loot tables and roll weighted randomized drops from them.
  *
  * @capability loot-table register loot tables and roll weighted randomized drops
  */
-export function createLootRegistry(): LootRegistry {
+export function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry {
   const tables = new Map<string, LootTableDef>();
+  const defaultRng = options.rng ?? Math.random;
 
   return {
     register(def) {
@@ -115,7 +126,7 @@ export function createLootRegistry(): LootRegistry {
     has(id) {
       return tables.has(id);
     },
-    roll(id, rng = Math.random) {
+    roll(id, rng = defaultRng) {
       const table = tables.get(id);
       if (!table) {
         throw new Error(`unknown loot table: ${id}`);

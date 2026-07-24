@@ -48,7 +48,8 @@
 - `BloomConfig` (interface): interface BloomConfig — UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive).
 - `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
-- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
+- `PostAaMode` (type): type PostAaMode = "smaa" | "msaa" | false — Edge antialiasing for the post chain. SMAA runs in linear-sRGB before the output tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling. `"msaa"` keeps only the render-target multisample resolve; `false` disables AA stages.
+- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → SMAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
 
@@ -166,7 +167,7 @@
 - `PopoverOptions` (interface): interface PopoverOptions — Options for {@link placePopover}.
 - `PopoverPlacement` (interface): interface PopoverPlacement — The resolved popover position — the side it actually opened on and its clamped top-left.
 - `PopoverSide` (type): type PopoverSide = "top" | "bottom" | "left" | "right" — Which side of its anchor a popover opens toward.
-- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
+- `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → SMAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
 - `RadialArc` (interface): interface RadialArc — Arc the slices span. Omit for a full wheel (index 0 at the top). A partial `sweep` (e.g. `Math.PI` for a bottom half, `Math.PI / 2` for a quarter) packs the slices evenly inside `[startAngle, startAngle + sweep]` — the arc/quick-bar forms. Angles are radians from "up" (−Y), clockwise.
 - `RadialSlice` (interface): interface RadialSlice — One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise.
 - `RadialVectorOptions` (interface): interface RadialVectorOptions extends RadialArc — Options for {@link radialIndexFromVector}.
@@ -2096,7 +2097,7 @@
 
 ## @jgengine/shell/postfx/PostProcessing
 
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high" }: { config: PostProcessingConfig; quality?: GraphicsQuality }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → OutputPass → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high" }: { config: PostProcessingConfig; quality?: GraphicsQuality }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/shell/postfx/ScreenEffectsOverlay
 

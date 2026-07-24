@@ -732,6 +732,7 @@
     "./postfx/postfxOverlay",
     "./presentationResolve",
     "./registry",
+    "./render/CascadedShadows",
     "./render/EntityPreview",
     "./render/EnvironmentLighting",
     "./render/PartMotion",
