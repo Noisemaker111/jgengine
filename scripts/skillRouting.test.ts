@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { DESIGN_SKILL_DIRS, GAME_SKILLS } from "../packages/jgengine/src/skills";
+import { AGENT_UTILITY_SKILLS, DESIGN_SKILL_DIRS, GAME_SKILLS } from "../packages/jgengine/src/skills";
 import {
   INTAKE_ROUTES,
   NORMAL_GAME_INTAKE,
@@ -34,6 +34,8 @@ describe("skill routing contract", () => {
   });
 
   test("packaged skills use the canonical API domain registry", () => {
-    expect(GAME_SKILLS).toEqual([...SKILL_DIRS, ...DESIGN_SKILL_DIRS, "jgengine-verify"]);
+    expect(GAME_SKILLS).toEqual([...SKILL_DIRS, ...DESIGN_SKILL_DIRS, ...AGENT_UTILITY_SKILLS]);
+    expect(AGENT_UTILITY_SKILLS).toContain("ce-handoff");
+    expect(AGENT_UTILITY_SKILLS).toContain("jgengine-verify");
   });
 });

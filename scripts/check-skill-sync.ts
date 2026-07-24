@@ -43,7 +43,7 @@ if (claude !== agents) problems.push("CLAUDE.md and AGENTS.md must be byte-ident
 const skillDirs = readdirSync(skillsRoot)
   .filter((name) => existsSync(join(skillsRoot, name, "SKILL.md")))
   .sort();
-const requiredSkills = [...SKILL_DIRS, "jgengine-verify", "workflow"];
+const requiredSkills = [...SKILL_DIRS, "jgengine-verify", "workflow", "ce-handoff"];
 for (const name of requiredSkills) {
   if (!skillDirs.includes(name)) problems.push(`missing .claude/skills/${name}/SKILL.md`);
 }
