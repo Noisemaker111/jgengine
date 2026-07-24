@@ -3,7 +3,6 @@
   "Games/claudecraft/src/game/ui/components/Panels.tsx:local-widget-Window",
   "Games/claudecraft/src/game/ui/components/UnitFrames.tsx:local-widget-Bar",
   "Games/ironhold/src/game/session.ts:export-let",
-  "Games/ironhold/src/game/ui/components/Hud.tsx:local-widget-Bar",
   "Games/ironhold/src/game/ui/components/Hud.tsx:local-widget-Slot",
   "Games/loopline/src/game/ui/components/TopBar.tsx:local-widget-Chip",
   "Games/tower-guard/src/game/session.ts:export-let"

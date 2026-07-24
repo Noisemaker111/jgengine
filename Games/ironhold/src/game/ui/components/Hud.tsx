@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useState, useSyncExternalStore } from "react";
+import { ExperienceBar, HealthBar, ManaBar, barTokens } from "@jgengine/react/bars";
 import { useEntityStat, useGame } from "@jgengine/react/hooks";
 
 import { hudStore, type ArmyUnit, type HudSnapshot } from "../../hudStore";
@@ -35,20 +36,6 @@ function Corners() {
   );
 }
 
-/** A glossy stat bar with an optional inline value label (HP / mana / keep vitals). */
-function Bar({ value, max, from, to, label, h = "h-3" }: { value: number; max: number; from: string; to: string; label?: string; h?: string }) {
-  const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0;
-  return (
-    <div className={"relative w-full overflow-hidden rounded-[3px] border border-black/80 bg-black/70 shadow-inner " + h}>
-      <div className="h-full transition-[width] duration-200" style={{ width: `${pct * 100}%`, background: `linear-gradient(to bottom, ${from}, ${to})` }} />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/25 to-transparent" />
-      {label !== undefined ? (
-        <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-[9px] font-bold tabular-nums text-white/95 [text-shadow:0_1px_1px_rgba(0,0,0,.9)]">{label}</span>
-      ) : null}
-    </div>
-  );
-}
-
 function ResourceChip({ icon, value, tone }: { icon: string; value: string; tone: string }) {
   return (
     <div className="flex items-center gap-1.5">
@@ -69,13 +56,13 @@ function TopBar() {
       <ResourceChip icon="lumber" value={String(hud.lumber)} tone="text-orange-300" />
       <ResourceChip icon="food" value={`${hud.foodUsed}/${hud.foodCap}`} tone={foodTone} />
       <div className="mx-1 h-8 w-px bg-slate-500/25" />
-      <div className="flex w-32 flex-col gap-0.5">
+      <div className="flex w-32 flex-col gap-0.5" style={barTokens({ height: "10px", health: "#ff7a5c" })}>
         <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-rose-300"><span>Warcamp</span><span className="tabular-nums">{hud.enemyKeepHp}</span></div>
-        <Bar value={hud.enemyKeepHp} max={hud.enemyKeepMax} from="#ff7a5c" to="#b5321c" h="h-2.5" />
+        <HealthBar value={hud.enemyKeepHp} max={hud.enemyKeepMax} fill="#ff7a5c" showValue={false} width="100%" />
       </div>
-      <div className="flex w-32 flex-col gap-0.5">
+      <div className="flex w-32 flex-col gap-0.5" style={barTokens({ height: "10px", health: "#7db4ff" })}>
         <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-sky-300"><span>Ironhold</span><span className="tabular-nums">{hud.playerKeepHp}</span></div>
-        <Bar value={hud.playerKeepHp} max={hud.playerKeepMax} from="#7db4ff" to="#2f63c8" h="h-2.5" />
+        <HealthBar value={hud.playerKeepHp} max={hud.playerKeepMax} fill="#7db4ff" showValue={false} width="100%" />
       </div>
       <div className="mx-1 h-8 w-px bg-slate-500/25" />
       <div className="flex items-center gap-1.5" title="Marauder reinforcement wave">
@@ -296,11 +283,15 @@ function HeroPanel() {
         </div>
         <span className="absolute -bottom-px left-0 flex h-5 w-5 items-center justify-center rounded-tr-md border-r border-t border-amber-300/70 bg-slate-950/90 text-[11px] font-black text-amber-200 tabular-nums">{hud.heroLevel}</span>
       </div>
-      <div className="flex w-40 flex-col gap-1">
+      <div className="flex w-40 flex-col gap-1" style={barTokens({ height: "12px", health: "#5cd66a", mana: "#5fa8ff", xp: "#e0c04a" })}>
         <span className="text-[13px] font-bold text-amber-200 [text-shadow:0_1px_2px_rgba(0,0,0,.8)]">Bram the Bold</span>
-        {hp !== null ? <Bar value={hp.current} max={hp.max} from="#5cd66a" to="#2c8f38" label={`${Math.round(hp.current)} / ${hp.max}`} /> : null}
-        {mana !== null ? <Bar value={mana.current} max={mana.max} from="#5fa8ff" to="#2a5fc0" label={`${Math.round(mana.current)} / ${mana.max}`} /> : null}
-        {xp !== null && alive ? <Bar value={xp.current} max={xp.max} from="#e0c04a" to="#a07818" h="h-1.5" /> : null}
+        {hp !== null ? <HealthBar value={hp.current} max={hp.max} fill="#5cd66a" width="100%" /> : null}
+        {mana !== null ? <ManaBar value={mana.current} max={mana.max} fill="#5fa8ff" width="100%" /> : null}
+        {xp !== null && alive ? (
+          <div style={barTokens({ height: "6px", xp: "#e0c04a" })}>
+            <ExperienceBar value={xp.current} max={xp.max} fill="#e0c04a" showValue={false} width="100%" />
+          </div>
+        ) : null}
         <div className="mt-0.5 flex items-center gap-3 text-[11px] font-bold text-slate-200">
           <span className="flex items-center gap-1"><Icon name="footman" className="h-3.5 w-3.5 text-amber-300/90" />{dmg - 3}-{dmg + 6}</span>
           <span className="flex items-center gap-1"><Icon name="shield" className="h-3.5 w-3.5 text-sky-300/90" />{armor}</span>
@@ -326,7 +317,9 @@ function ArmyRow() {
           <div className="flex h-9 w-9 items-center justify-center rounded border border-amber-700/50 bg-gradient-to-b from-[#20242c] to-[#0b0d11]">
             <Icon name={UNIT_ICON[u.kind] ?? "footman"} className="h-6 w-6 text-amber-200/90" />
           </div>
-          <Bar value={u.hp} max={u.max} from="#5cd66a" to="#2c8f38" h="h-1" />
+          <div style={barTokens({ height: "4px", health: "#5cd66a" })} className="w-full">
+            <HealthBar value={u.hp} max={u.max} fill="#5cd66a" showValue={false} width="100%" />
+          </div>
         </div>
       ))}
       {overflow > 0 ? <div className="flex h-9 items-center px-1 text-[11px] font-bold text-amber-200">+{overflow}</div> : null}
