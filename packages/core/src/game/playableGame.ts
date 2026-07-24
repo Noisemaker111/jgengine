@@ -256,6 +256,14 @@ export interface DirectionalLightingConfig {
   shadowMapSize?: number;
   /** Half-extent of the orthographic shadow camera in world units — sized to the shadowed area. Default 40. */
   shadowCameraSize?: number;
+  /**
+   * Cascade count for cascaded shadow maps (CSM). When `> 1` and `castShadow`, the shell mounts
+   * three.js CSM so outdoor scenes keep shadows past a single ortho frustum. Default `1` (legacy
+   * single map). Typical outdoor value: `3` or `4`.
+   */
+  cascades?: number;
+  /** Max far plane for CSM cascades in world units. Default 200. */
+  shadowMaxFar?: number;
   /** Shadow depth bias to fight acne. Default -0.0004. */
   shadowBias?: number;
   /** Shadow normal bias to fight peter-panning. Default 0.02. */

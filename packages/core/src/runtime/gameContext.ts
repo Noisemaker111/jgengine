@@ -33,6 +33,7 @@ import { createRuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } fr
 import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock } from "../time/simClock";
+import { seededRng } from "../random/rng";
 import { createCameraDirector } from "./cameraDirector";
 import { createInputSnapshot } from "./inputSnapshot";
 import { baselineDescriptors, type BaselineDeps } from "./descriptors/baseline";
@@ -83,6 +84,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const { definition, content, player } = options;
   const now = options.now ?? Date.now;
   const occluder = options.occluder;
+  // Per-world deterministic stream — never Math.random on simulation paths (#1545).
+  const rng =
+    options.rng ??
+    seededRng(options.seed ?? `jg:${definition.name.trim().length > 0 ? definition.name : "game"}`);
 
   const signal = createChangeSignal();
   let actingUserId: string | null = null;
@@ -140,7 +145,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   // --- Shared game services (weapon, feed, features bag, commands, item use) ---
   const weapon = createWeaponStats((itemId) => content.itemById?.(itemId));
   const feed = createGameFeed(definition.feed);
-  const lootRegistry = createLootRegistry();
+  const lootRegistry = createLootRegistry({ rng });
   /**
    * Single feature-activation path (G9): `definition.features` is already the final map after
    * `defineGame` OR-merged explicit boolean sugar (`features: { quest: true }`) with system-implied
@@ -440,6 +445,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   // --- Assemble public GameContext ---
   const ctx: GameContext = {
+    rng,
     scene: {
       object: sceneObjects,
       entity: {

@@ -39,6 +39,37 @@ describe("defineGameDefinition", () => {
     expect(world2.scene.entity.get("mob-1")).toBeNull(); // no bleed across worlds on one host
   });
 
+  test("ctx.rng is deterministic per seed and independent across worlds (#1545)", () => {
+    const definition = defineGameDefinition(VALID);
+    const a = createGameContext({
+      definition,
+      content: {},
+      player: { userId: "a", isNew: true },
+      seed: "world-a",
+    });
+    const a2 = createGameContext({
+      definition,
+      content: {},
+      player: { userId: "a2", isNew: true },
+      seed: "world-a",
+    });
+    const b = createGameContext({
+      definition,
+      content: {},
+      player: { userId: "b", isNew: true },
+      seed: "world-b",
+    });
+    const seqA = [a.rng(), a.rng(), a.rng()];
+    const seqA2 = [a2.rng(), a2.rng(), a2.rng()];
+    const seqB = [b.rng(), b.rng(), b.rng()];
+    expect(seqA).toEqual(seqA2);
+    expect(seqA).not.toEqual(seqB);
+    for (const v of [...seqA, ...seqB]) {
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+  });
+
   test("omitted assets resolve to an empty catalog", () => {
     const game = defineGameDefinition({ name: "NoAssets", multiplayer: "off" as const });
     expect(game.assets.ids()).toEqual([]);

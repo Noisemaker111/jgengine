@@ -5,6 +5,7 @@ import { EffectComposer, RenderPass, UnrealBloomPass, type ShaderPass } from "th
 import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { GTAOPass } from "three/examples/jsm/postprocessing/GTAOPass.js";
 import { BokehPass } from "three/examples/jsm/postprocessing/BokehPass.js";
+import { SMAAPass } from "three/examples/jsm/postprocessing/SMAAPass.js";
 
 import type { PostProcessingConfig, ToneMappingMode } from "@jgengine/core/render/postProcessing";
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
@@ -87,14 +88,15 @@ function syncSize(built: BuiltGraph, width: number, height: number, pixelRatio: 
 /**
  * Mounts an `EffectComposer` inside the shell Canvas and takes over rendering
  * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
- * post chain: RenderPass → GTAO → UnrealBloom → OutputPass → Grade. Rendered only
+ * post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Grade. Rendered only
  * when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
  *
  * `quality` (the player's graphics-quality setting) gates the passes whose cost
  * scales with scene geometry or resolution beyond the dpr cap: GTAO re-renders
  * the whole scene for depth/normals and runs a multi-sample full-screen pass,
  * and Bokeh DOF renders scene depth again — both run on "high" only. Bloom,
- * tone mapping, and grade stay on every tier.
+ * SMAA, tone mapping, and grade stay on every tier (SMAA is the cheap edge fix
+ * for alpha-tested foliage that MSAA samples alone leave crawling).
  */
 export function PostProcessing({ config, quality = "high" }: { config: PostProcessingConfig; quality?: GraphicsQuality }) {
   const gl = useThree((s) => s.gl);
@@ -107,9 +109,11 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
   useEffect(() => {
     const width = Math.max(1, size.width);
     const height = Math.max(1, size.height);
+    const aa = config.aa === undefined ? "smaa" : config.aa;
+    const msaaSamples = aa === false ? 0 : 2;
     const target = new THREE.WebGLRenderTarget(width, height, {
       type: THREE.HalfFloatType,
-      samples: 2,
+      samples: msaaSamples,
     });
     const composer = new EffectComposer(gl, target);
     composer.addPass(new RenderPass(scene, camera));
@@ -149,6 +153,11 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
         maxblur: d.maxBlur ?? 0.01,
       });
       composer.addPass(dof);
+    }
+
+    // SMAA must run before OutputPass (linear-sRGB). Default on for post chains.
+    if (aa === "smaa") {
+      composer.addPass(new SMAAPass());
     }
 
     composer.addPass(new OutputPass());

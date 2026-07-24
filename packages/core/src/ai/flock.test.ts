@@ -154,6 +154,37 @@ describe("stepFlock", () => {
     }
   });
 
+  test("two independent flocks do not share grid state", () => {
+    const config: FlockConfig = {
+      maxSpeed: 4,
+      separationRadius: 1.5,
+      neighborRadius: 4,
+      cohesionWeight: 1,
+      alignmentWeight: 1,
+    };
+    const left: FlockStepAgent[] = [
+      { position: [0, 0, 0], velocity: [1, 0, 0] },
+      { position: [1, 0, 0], velocity: [1, 0, 0] },
+    ];
+    const right: FlockStepAgent[] = [
+      { position: [1000, 0, 1000], velocity: [-1, 0, 0] },
+      { position: [1001, 0, 1000], velocity: [-1, 0, 0] },
+    ];
+    const leftBefore = left.map((a) => [...a.position] as [number, number, number]);
+    const rightBefore = right.map((a) => [...a.position] as [number, number, number]);
+    // Interleave steps — the old module-global grid would corrupt one world with the other.
+    stepFlock(left, config, 1 / 60);
+    stepFlock(right, config, 1 / 60);
+    stepFlock(left, config, 1 / 60);
+    stepFlock(right, config, 1 / 60);
+    for (let i = 0; i < left.length; i += 1) {
+      expect(left[i]!.position[0]).not.toBe(leftBefore[i]![0]);
+      expect(left[i]!.position[0]).toBeLessThan(50);
+      expect(right[i]!.position[0]).not.toBe(rightBefore[i]![0]);
+      expect(right[i]!.position[0]).toBeGreaterThan(900);
+    }
+  });
+
   test("sparse large flock stays sub-quadratic", () => {
     const config: FlockConfig = {
       maxSpeed: 3,

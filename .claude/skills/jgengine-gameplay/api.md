@@ -593,8 +593,9 @@
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
 - `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
+- `LootRegistryOptions` (interface): interface LootRegistryOptions — Options for {@link createLootRegistry} — inject a default RNG so bare `roll(id)` uses the world stream.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
-- `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
+- `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
 - `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — ⚠ undocumented
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 
@@ -1439,7 +1440,7 @@
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 - `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — Save, name, and swap equipment loadouts.
 - `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
-- `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
+- `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
 - `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.

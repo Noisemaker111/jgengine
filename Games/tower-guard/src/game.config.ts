@@ -46,8 +46,11 @@ export const game = defineGame({
         intensity: 1.35,
         position: [-34, 46, 22],
         castShadow: true,
-        shadowMapSize: 2048,
+        // Cascaded shadows — outdoor arena keeps contact shadows past a single ortho frustum (#1545).
+        cascades: 3,
+        shadowMapSize: 1024,
         shadowCameraSize: 58,
+        shadowMaxFar: 120,
       },
     ],
   },

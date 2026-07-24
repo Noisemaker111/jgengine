@@ -52,7 +52,14 @@ export interface DofConfig {
 }
 
 /**
- * Declarative post-processing chain (RenderPass → AO → Bloom → tone-map output →
+ * Edge antialiasing for the post chain. SMAA runs in linear-sRGB before the output
+ * tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling.
+ * `"msaa"` keeps only the render-target multisample resolve; `false` disables AA stages.
+ */
+export type PostAaMode = "smaa" | "msaa" | false;
+
+/**
+ * Declarative post-processing chain (RenderPass → AO → Bloom → SMAA → tone-map output →
  * Grade). Present on a game means the shell mounts an `EffectComposer` and owns
  * the render; absent means the renderer draws directly (unchanged). Each stage is
  * a config object, `false` to skip, or omitted for its default. Pure data — no
@@ -65,6 +72,11 @@ export interface PostProcessingConfig {
   toneMapping?: ToneMappingMode;
   /** Exposure multiplier applied before tone mapping. Default 1. */
   exposure?: number;
+  /**
+   * Antialiasing. Default `"smaa"` (plus a light MSAA resolve on the beauty target).
+   * Set `"msaa"` to skip the SMAA pass, or `false` for neither.
+   */
+  aa?: PostAaMode;
   bloom?: BloomConfig | false;
   /** Ambient occlusion. Heavier than the other stages — omit or `false` on low-end targets. Default off (omitted). */
   ao?: AoConfig | false;
