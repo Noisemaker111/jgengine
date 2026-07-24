@@ -82,6 +82,10 @@ Screenshots come from the game's own dev server. Read every screenshot adversari
 - Run pixel inspection for blank/sparse/contrast regressions, then open the PNG and judge it against the UI scorecard.
 - If a WebGL capture hangs once, do not repeat the same foreground command; fall back to deterministic scene evidence and report the capture failure.
 
+## Behavior clips
+
+Behavior over time gets a clip, and every behavior change gets *tried*. When the change is about motion — collision, movement, camera, animation, a staged sequence — a still frame cannot carry it: record the sequence with `bun run drive <game> --record <name>` and present it as **video or still images — never a GIF**. The full-fidelity MP4 is the clip: `bun run pr-video <clip.mp4>` turns it into a natively-playing inline PR video when the `GH_SESSION_TOKEN` secret is provisioned; where the session cannot upload directly (missing secret, or cloud egress policy blocking user-attachments), push the MP4 with `pr-shots` and trigger the `pr-video` GitHub Actions workflow by commenting `/pr-video <clip_path>` on the target PR/issue — the runner uploads and replies with the inline-playing URL (needs `GH_SESSION_TOKEN` as a repository Actions secret); only when neither path works, link the MP4 for download plus representative still frames — do not fall back to an animated GIF. Pair the clip with `--probe` deltas. **Never send video files into the conversation** — they do not load in the user's client; the video lives on GitHub (the inline `pr-video` player, or the linked MP4). In chat, share representative still frames extracted from the clip (screenshots load fine) plus the GitHub link to the playing video. More broadly, tests alone never complete a runtime-behavior change: drive the actual game and watch the new behavior happen before claiming it works.
+
 ## Evidence report
 
 Report each applicable rung as pass/fail/skipped with the command or artifact: types, tests, world/document, gameplay, screenshot, pixel metrics, and visual score. A completion claim without the acceptance evidence is not complete.
