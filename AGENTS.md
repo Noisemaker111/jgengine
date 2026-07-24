@@ -44,7 +44,7 @@ Cold checkouts and git worktrees are not ready until bootstrapped. Do this befor
 ## Skill architecture
 
 - `jgengine` is intake and routing only. Load only domains the task needs; use each selected domain's `capabilities.md` for intent-to-import discovery, `api.md` for generated export inventory, and references for deeper workflows.
-- Each concept has one skill owner. `workflow` owns delivery, `jgengine-verify` owns evidence, `improve` owns backlog passes and post-fix friction retrospectives, and domain skills own their package/API boundaries. Concurrency has no skill: the parallelize-by-default invariant above is the whole policy.
+- Each concept has one skill owner. `workflow` owns delivery, `jgengine-verify` owns evidence, `improve` owns backlog passes and post-fix friction retrospectives, `ce-handoff` owns agent session continuity (create/resume handoffs for a fresh agent), and domain skills own their package/API boundaries. Concurrency has no skill: the parallelize-by-default invariant above is the whole policy.
 - Skill descriptions stay short and trigger-oriented. `SKILL.md` holds decisions and canonical workflows, not export catalogs or repeated project facts. The repository gates root mirroring, route integrity, and duplicate prose.
 
 ## Model identity

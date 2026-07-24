@@ -5,6 +5,10 @@ description: Carry repository changes from issue through verified ready pull req
 
 # Repository change workflow
 
+## Session handoffs
+
+When this session's context must survive a model/harness switch or a tear-down, use the `ce-handoff` skill (`/ce-handoff` or `/ce-handoff create <focus>`). Resume in the next session with `/ce-handoff resume <path-or-URL>` (or keywords). Orientation stops before action — the user chooses how to continue. Do not dump a full transcript into a plan or issue just to preserve temporary continuity.
+
 ## Bootstrap first
 
 Before claiming issues or editing packages, ensure the checkout can run Bun and resolve built `@jgengine/*` dist:

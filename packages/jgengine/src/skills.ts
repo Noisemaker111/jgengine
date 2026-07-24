@@ -19,7 +19,10 @@ export const API_SKILL_DIRS = [
 
 export const DESIGN_SKILL_DIRS = ["game-design", "level-design"] as const;
 
-export const GAME_SKILLS = [...API_SKILL_DIRS, ...DESIGN_SKILL_DIRS, "jgengine-verify"] as const;
+/** Agent utilities staged with the full skill set (not part of the low-token minimal create install). */
+export const AGENT_UTILITY_SKILLS = ["jgengine-verify", "ce-handoff"] as const;
+
+export const GAME_SKILLS = [...API_SKILL_DIRS, ...DESIGN_SKILL_DIRS, ...AGENT_UTILITY_SKILLS] as const;
 
 /** The low-token default a created project starts from — intake/routing, editor authoring, verify. */
 export const MINIMAL_GAME_SKILLS = ["jgengine", "jgengine-editor", "jgengine-verify"] as const;
