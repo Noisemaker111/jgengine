@@ -1,6 +1,6 @@
 import type { PhysicsConfig } from "@jgengine/core/game/defineGame";
-import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
-import { environment, sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
+import { sky, terrain, type EnvironmentWorldFeature } from "@jgengine/core/world/features";
+import { environment, environmentContentFromDocument } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 

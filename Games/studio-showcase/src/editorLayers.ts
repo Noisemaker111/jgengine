@@ -1,4 +1,4 @@
-import { normalizeEditorLayers, type EditorDocument } from "@jgengine/core/editor/index";
+import { normalizeEditorLayers, type EditorDocument } from "@jgengine/shell/gameKit";
 
 import { registerExampleStudios } from "@jgengine-examples/studios";
 

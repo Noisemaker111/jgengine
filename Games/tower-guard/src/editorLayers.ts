@@ -1,10 +1,5 @@
-import {
-  editorMarkerXZ,
-  normalizeEditorLayers,
-  seedEditorCatalogs,
-  type EditorDocument,
-  type EditorLayersInput,
-} from "@jgengine/core/editor/index";
+import { editorMarkerXZ, seedEditorCatalogs, type EditorLayersInput } from "@jgengine/core/editor/index";
+import { normalizeEditorLayers, type EditorDocument } from "@jgengine/shell/gameKit";
 import type { AvoidZone } from "@jgengine/core/world/geometry";
 import { clearanceZonesFrom } from "@jgengine/core/world/scatterRegion";
 import { createEditableTerrain, migrateTerrainSnapshot, type TerraformSnapshot } from "@jgengine/core/world/terraform";
