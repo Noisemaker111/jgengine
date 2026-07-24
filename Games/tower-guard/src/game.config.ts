@@ -1,4 +1,4 @@
-import { defineGame } from "@jgengine/shell/defineGame";
+import { defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { assets } from "./game/assets";

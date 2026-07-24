@@ -1,6 +1,5 @@
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { entityMetaOf } from "@jgengine/core/scene/entityStore";
-import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+import { authoredSpawnPosition, type GameContext } from "@jgengine/shell/gameKit";
 import { editorLayers } from "./editorLayers";
 import { createControlGroupManager, HOME_BOOKMARK, type ControlGroupManager } from "./game/controlGroups";
 import { player } from "./game/entities/players/catalog";

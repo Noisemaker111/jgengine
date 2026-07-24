@@ -1,5 +1,4 @@
-import { defineSystem } from "@jgengine/core/game/defineSystem";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineSystem, type GameContext } from "@jgengine/shell/gameKit";
 
 import { tickConstruction } from "./build/construction";
 import { tickTowers } from "./combat/towerAI";

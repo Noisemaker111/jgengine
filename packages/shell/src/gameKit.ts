@@ -1,8 +1,9 @@
 /**
- * The happy-path game kit — one import surface covering a whole simple game: authoring
- * (`defineGame`), mounting (`GameHost`), serializable state (`defineStore`), behavior
- * (`defineSystem`), the authored-scene document helpers, HUD primitives, and deterministic
- * randomness. Start here; reach for deep package paths only when a game outgrows the kit.
+ * **Start here for game code.** The sole happy-path import surface for a whole simple game:
+ * authoring (`defineGame`), mounting (`GameHost`), serializable state (`defineStore`), behavior
+ * (`defineSystem`), authored-scene helpers, HUD building blocks, and deterministic randomness.
+ * Reach for deep package paths only when a game outgrows the kit. Do not start from
+ * `@jgengine/core/authoring` — that module is a core-side helper barrel, not the game entrypoint.
  *
  * @capability game-kit one-stop happy-path import surface for authoring, mounting, state, systems, authored scenes, and HUD
  */
@@ -30,7 +31,7 @@ export { environmentContentFromDocument } from "@jgengine/core/editor/environmen
 export { environment } from "@jgengine/core/world/features";
 export type { GameCameraConfig } from "@jgengine/core/game/playableGame";
 
-// HUD layout + optional building blocks — games own custom chrome (not a stock face).
+// HUD layout + drop-in building blocks — compose these, reskin with HudTheme; games own layout/terminology/art direction.
 export { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react/hudLayout";
 export { StatBar, Hotbar, Clock, Coins } from "@jgengine/react/hud";
 

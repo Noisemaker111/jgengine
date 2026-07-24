@@ -28,6 +28,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+- **Start game code at `@jgengine/shell/gameKit` (#1541).** Prefer that surface for `defineGame`, `GameHost`, stores, systems, authored-scene helpers, and HUD building blocks. `@jgengine/core/authoring` remains for pure core helpers the kit does not re-export but is no longer a competing start-here path.
 - **Every game must now declare its run-phase story — silence is a gate error (#1337).** The run-phase
   contract used to be optional with a permissive default: a game that never published a phase read as
   `"playing"`, so the shell painted the touch dock over title/menu/results screens (Vice Isle #1329).
@@ -63,6 +64,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **SDK remediation Phase 0 — one start-here + correct UI guidance (#1541).** `@jgengine/shell/gameKit` is the sole happy-path game entrypoint; `@jgengine/core/authoring` no longer claims "Game code should begin here" (still a core helper barrel for pure exports the kit does not re-export). The whole-game recipe and scaffold `GameUI` header now match CLAUDE.md: compose shipped HUD building blocks (`StatBar`, `Hotbar`, `Coins`, …) and reskin via HudTheme — games own layout/terminology/art direction, not re-derivation. Studio Showcase and Tower Guard import kit-covered symbols from `gameKit`.
 - **Kinematic vehicle drive feel** (#1515) — `createKinematicVehicle` gains a low-speed launch torque floor, softer reverse by default (`chassis.reverseForceScale`, default ~0.48 of engine force), handbrake rear-lock oversteer yaw, engine-braking that no longer fights powered reverse, and lighter ESC while handbraking. Existing chassis tunings pick this up with no migrate; override `reverseForceScale` only if you need the old full-force reverse.
 
 ### Fixed

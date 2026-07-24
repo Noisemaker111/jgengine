@@ -2,7 +2,7 @@ import "./index.css";
 
 import { createRoot } from "react-dom/client";
 
-import { GameHost } from "@jgengine/shell/GameHost";
+import { GameHost } from "@jgengine/shell/gameKit";
 
 import { game } from "./game.config";
 
