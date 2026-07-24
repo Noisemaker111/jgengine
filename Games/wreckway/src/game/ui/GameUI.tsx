@@ -1,6 +1,7 @@
+import { SettingsTrigger } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
 import { useStore } from "@jgengine/react/store";
-import { SettingsTrigger } from "@jgengine/react";
+import { fieldkitVars } from "@/components/ui/jg-theme";
 
 import { runSessionStore, type RunSession, type SessionSnapshot } from "../run/session";
 import { CompactorBar } from "./components/CompactorBar";
@@ -23,30 +24,35 @@ export function GameUI() {
   if (snapshot === null) return null;
 
   return (
-    <div className="pointer-events-none absolute inset-0 font-sans">
-      {snapshot.phase === "start" && <StartScreen onStart={() => commands.run("startRun", {})} />}
+    <div style={{ ...fieldkitVars, display: "contents" }} className="font-sans">
+      <div className="pointer-events-none absolute inset-0 font-sans">
+        {snapshot.phase === "start" && <StartScreen onStart={() => commands.run("startRun", {})} />}
 
-      {(snapshot.phase === "running" || snapshot.phase === "won" || snapshot.phase === "crushed") && (
-        <>
-          <div className="absolute inset-x-0 top-3 flex justify-center px-3">
-            <CompactorBar snapshot={snapshot} />
-          </div>
-          <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
-            <SettingsTrigger className="pointer-events-auto flex h-8 w-8 items-center justify-center rounded border border-[#8d99a6]/40 bg-[#1c1a17]/85 text-[#f0c419] transition hover:bg-[#8d99a6]/20" />
-            <CorridorMinimap snapshot={snapshot} />
-            <KartDiagram snapshot={snapshot} />
-          </div>
-          <div className="absolute left-3 top-3">
-            <PitRadioTicker ticker={snapshot.ticker} />
-          </div>
-          <div className="absolute inset-x-0 bottom-24 flex justify-center px-3">
-            <PickupToast toast={snapshot.toast} />
-          </div>
-        </>
-      )}
+        {(snapshot.phase === "running" || snapshot.phase === "won" || snapshot.phase === "crushed") && (
+          <>
+            <div className="absolute inset-x-0 top-3 flex justify-center px-3">
+              <CompactorBar snapshot={snapshot} />
+            </div>
+            <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+              {/* Default SettingsTrigger skin (Phase 2.3) — no re-authored 8×8 className. */}
+              <SettingsTrigger />
+              <CorridorMinimap snapshot={snapshot} />
+              <KartDiagram snapshot={snapshot} />
+            </div>
+            <div className="absolute left-3 top-3">
+              <PitRadioTicker ticker={snapshot.ticker} />
+            </div>
+            <div className="absolute inset-x-0 bottom-24 flex justify-center px-3">
+              <PickupToast toast={snapshot.toast} />
+            </div>
+          </>
+        )}
 
-      {snapshot.phase === "won" && <WinScreen snapshot={snapshot} onRestart={() => commands.run("restart", {})} />}
-      {snapshot.phase === "crushed" && <CrushedScreen snapshot={snapshot} onRestart={() => commands.run("restart", {})} />}
+        {snapshot.phase === "won" && <WinScreen snapshot={snapshot} onRestart={() => commands.run("restart", {})} />}
+        {snapshot.phase === "crushed" && (
+          <CrushedScreen snapshot={snapshot} onRestart={() => commands.run("restart", {})} />
+        )}
+      </div>
     </div>
   );
 }
