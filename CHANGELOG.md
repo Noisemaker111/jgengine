@@ -32,7 +32,15 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`worldHealthBars.occlude` / `WorldHealthBars`+`WorldNameplates` `occlude` prop.** World bars and nameplates are a screen-space overlay drawn outside the WebGL depth buffer, so nothing in the scene can hide them and an enemy's health bar reads straight through the building it stands behind. Set `occlude: true` to drop a bar when world geometry blocks the line from the player to the entity. Default `false` preserves the always-visible behaviour every shipped game currently relies on.
+
+- **`DustField` + `WeatherLayer` mode `"dust"` (`@jgengine/shell/weather`) — wind-borne particulate.** `WeatherLayer` could only do `clear`/`rain`/`snow`/`mixed`, so an arid, volcanic, ashen, or blown-out world had no way to put anything in the air. Dust drifts on horizontal wind with a slow vertical bob rather than falling; `groundBias` packs density toward the surface, motes fade near the top of the volume so recycled ones do not pop against the sky, and faster motes ride higher. Set `dustAlways` to keep it in the air alongside rain or snow instead of replacing them. Defaults `DEFAULT_DUST_COUNT`/`DEFAULT_DUST_DENSITY` sit beside the rain and snow pair.
+
+
 ### Fixed
+
+- **Open storefronts are no longer holes through the building.** `generateBuilding` emitted an open ground-floor store as a lone `storefront` panel with no wall behind it, while every upper-floor window was correctly backed by one. Storefront and window materials render at 0.56 opacity and a generated building is a hollow shell, so those bays let you see straight through the building to the world beyond — and open stores only land on the street-facing facade, so a row of shops along a road was the worst case. The bay now emits its wall first, exactly as an upper floor does.
+
 
 ## 0.15.0
 
@@ -84,10 +92,6 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
-- **`worldHealthBars.occlude` / `WorldHealthBars`+`WorldNameplates` `occlude` prop.** World bars and nameplates are a screen-space overlay drawn outside the WebGL depth buffer, so nothing in the scene can hide them and an enemy's health bar reads straight through the building it stands behind. Set `occlude: true` to drop a bar when world geometry blocks the line from the player to the entity. Default `false` preserves the always-visible behaviour every shipped game currently relies on.
-
-- **`DustField` + `WeatherLayer` mode `"dust"` (`@jgengine/shell/weather`) — wind-borne particulate.** `WeatherLayer` could only do `clear`/`rain`/`snow`/`mixed`, so an arid, volcanic, ashen, or blown-out world had no way to put anything in the air. Dust drifts on horizontal wind with a slow vertical bob rather than falling; `groundBias` packs density toward the surface, motes fade near the top of the volume so recycled ones do not pop against the sky, and faster motes ride higher. Set `dustAlways` to keep it in the air alongside rain or snow instead of replacing them. Defaults `DEFAULT_DUST_COUNT`/`DEFAULT_DUST_DENSITY` sit beside the rain and snow pair.
-
 - **`advanceStepCadence` (`@jgengine/core/audio/stepCadence`) — distance-driven footstep timing.** Pure state-in/state-out: feed it the ground distance a mover covered this frame and it reports how many steps landed and which foot led, so foley stays locked to distance instead of a wall-clock timer that desyncs the moment speed changes. Configurable stride, per-advance `strideScale` for crouch/sprint, and a shorter first step from rest so walking off is heard immediately.
 - **`resolveMusicState` (`@jgengine/core/audio/musicState`) — combat-reactive soundtrack selection.** The engine could already crossfade themes but nothing decided *when*, so every game re-handrolled the threshold and got a track that flapped as one enemy walked in and out of range. Give it a tier ladder (intensity → theme) and it resolves the theme to play: escalation is immediate, de-escalation waits for the tier's `holdMs` and needs intensity to fall a `release` margin below the tier it is leaving. Pure and serialisable.
 - **Synth voices take a `sustain` (`ToneVoice`/`NoiseVoice`).** Seconds held at full gain before the decay. Default 0 preserves every existing patch. Without it there was no way to author a *sustained* sound at all: every voice decayed to silence inside its duration, so a patch rendered once and looped as an ambient bed pulsed audibly once per loop. Set `sustain` to `duration` for a flat wind, rain, or machine-hum bed that loops seamlessly.
@@ -95,8 +99,6 @@ At publish, rename this heading to the new version and mirror the entries into
 - **`ModelMaterialOverride.rim` — a fresnel rim light on any entity/object model.** `{ color, strength, power }` adds a bright edge where the surface turns away from the viewer, patched into the material's own shader so it shadows, fogs, and tonemaps with the body rather than floating in front of it. This is the standard fix for an actor that shares a value band with its ground: no albedo choice separates a body from terrain lit by the same key, but an edge does. Omit for no rim (default).
 
 ### Fixed
-
-- **Open storefronts are no longer holes through the building.** `generateBuilding` emitted an open ground-floor store as a lone `storefront` panel with no wall behind it, while every upper-floor window was correctly backed by one. Storefront and window materials render at 0.56 opacity and a generated building is a hollow shell, so those bays let you see straight through the building to the world beyond — and open stores only land on the street-facing facade, so a row of shops along a road was the worst case. The bay now emits its wall first, exactly as an upper floor does.
 
 - **Noise voices longer than the shared noise buffer no longer go silent partway through.** The 1-second buffer is sampled from a random offset, so any `NoiseVoice` whose duration exceeded the remainder ran off the end and finished in silence — invisible on short impact bursts, fatal for anything sustained. The source now wraps; the voice still ends on time.
 
