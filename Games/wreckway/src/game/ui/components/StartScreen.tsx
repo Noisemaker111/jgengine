@@ -7,9 +7,10 @@ import { PartIcon } from "./PartIcon";
 
 interface StartScreenProps {
   onStart: () => void;
+  onCredits: () => void;
 }
 
-export function StartScreen({ onStart }: StartScreenProps) {
+export function StartScreen({ onStart, onCredits }: StartScreenProps) {
   return (
     <MenuScreen
       className="pointer-events-auto absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#1c1a17]/90 p-4"
@@ -64,14 +65,23 @@ export function StartScreen({ onStart }: StartScreenProps) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onStart}
-          className="mt-7 w-full rounded border-2 border-[#f0c419] bg-[#b7410e] py-3 text-lg font-black tracking-widest text-[#fef3e0] transition hover:bg-[#d94f14] sm:w-auto sm:px-10"
-        >
-          BOLT IT ON, GO GO
-          <KeyHint> — {actionLabel(keybinds, "startRun") ?? "ENTER"}</KeyHint>
-        </button>
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={onStart}
+            className="w-full rounded border-2 border-[#f0c419] bg-[#b7410e] py-3 text-lg font-black tracking-widest text-[#fef3e0] transition hover:bg-[#d94f14] sm:w-auto sm:px-10"
+          >
+            BOLT IT ON, GO GO
+            <KeyHint> — {actionLabel(keybinds, "startRun") ?? "ENTER"}</KeyHint>
+          </button>
+          <button
+            type="button"
+            onClick={onCredits}
+            className="w-full rounded border-2 border-[#8d99a6]/60 py-3 text-sm font-black tracking-widest text-[#c9b8a4] transition hover:border-[#f0c419] hover:text-[#fef3e0] sm:w-auto sm:px-8"
+          >
+            CREDITS
+          </button>
+        </div>
       </div>
     </MenuScreen>
   );

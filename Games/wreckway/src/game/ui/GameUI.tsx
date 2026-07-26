@@ -1,11 +1,13 @@
 import { SettingsTrigger } from "@jgengine/react";
 import { useGame } from "@jgengine/react/hooks";
+import { useMenuRouter } from "@jgengine/react/menuRouter";
 import { useStore } from "@jgengine/react/store";
 import { fieldkitVars } from "@/components/ui/jg-theme";
 
 import { runSessionStore, type RunSession, type SessionSnapshot } from "../run/session";
 import { CompactorBar } from "./components/CompactorBar";
 import { CorridorMinimap } from "./components/CorridorMinimap";
+import { Credits } from "./components/Credits";
 import { CrushedScreen } from "./components/CrushedScreen";
 import { KartDiagram } from "./components/KartDiagram";
 import { PickupToast } from "./components/PickupToast";
@@ -20,13 +22,17 @@ function toSnapshot(session: RunSession | undefined): SessionSnapshot | null {
 export function GameUI() {
   const snapshot = useStore(runSessionStore, toSnapshot);
   const { commands } = useGame();
+  const menu = useMenuRouter<"title" | "credits">("title");
 
   if (snapshot === null) return null;
 
   return (
     <div style={{ ...fieldkitVars, display: "contents" }} className="font-sans">
       <div className="pointer-events-none absolute inset-0 font-sans">
-        {snapshot.phase === "start" && <StartScreen onStart={() => commands.run("startRun", {})} />}
+        {snapshot.phase === "start" && menu.current === "title" && (
+          <StartScreen onStart={() => commands.run("startRun", {})} onCredits={() => menu.open("credits")} />
+        )}
+        {snapshot.phase === "start" && menu.current === "credits" && <Credits onBack={() => menu.back()} />}
 
         {(snapshot.phase === "running" || snapshot.phase === "won" || snapshot.phase === "crushed") && (
           <>

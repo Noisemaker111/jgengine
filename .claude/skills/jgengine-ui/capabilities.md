@@ -113,6 +113,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
 
+## credits-screen — drop-in credits view over a CreditsDocument — headed sections, optional links, HudTheme-skinned
+
+- `CreditsScreen` (function) · `import { CreditsScreen } from "@jgengine/react/creditsScreen"`
+
 ## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
 
 - `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`
@@ -305,6 +309,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
 
 - `MapLegend` (function) · `import { MapLegend } from "@jgengine/react"`
+
+## menu-router — screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back
+
+- `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/react/menuRouter"`
+
+## menu-stack-reducer — pure push/back/replace/reset transitions for a menu screen stack
+
+- `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/react/menuRouter"`
 
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 
