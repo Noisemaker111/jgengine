@@ -1,5 +1,5 @@
 /** Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating. */
-export const VERSION = "0.15.0";
+export const VERSION = "0.16.0";
 
 /** One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md). */
 export interface ChangelogEntry {
@@ -11,6 +11,28 @@ export interface ChangelogEntry {
 
 /** Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`). */
 export const CHANGELOG: Record<string, ChangelogEntry> = {
+  "0.16.0": {
+    migrate: [
+      "Bump lockstep SDK packages to `^0.16.0`: `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`. CLI `jgengine` is `0.13.0`; `@jgengine/github` is `0.3.0`.",
+      "Placed objects now replicate. `objects` joined the always-on baseline snapshot modules, so `ctx.hydrate` replaces the client's placed object set with the host's, the way `entities` already did. A game whose peers all run the same authored placement is unaffected; a game that places props on the client only, after hydrate, must move that placement to the host or keep it out of `ctx.scene.object`.",
+    ],
+    added: [
+      "`worldHealthBars.occlude` / `WorldHealthBars`+`WorldNameplates` `occlude` prop. World bars and nameplates are a screen-space overlay drawn outside the WebGL depth buffer, so nothing in the scene can hide them and an enemy's health bar reads straight through the building it stands behind. Set `occlude: true` to drop a bar when world geometry blocks the line from the player to the entity. Default `false` preserves the always-visible behaviour every shipped game currently relies on.",
+      "`DustField` + `WeatherLayer` mode `\"dust\"` (`@jgengine/shell/weather`) \u2014 wind-borne particulate. `WeatherLayer` could only do `clear`/`rain`/`snow`/`mixed`, so an arid, volcanic, ashen, or blown-out world had no way to put anything in the air. Dust drifts on horizontal wind with a slow vertical bob rather than falling; `groundBias` packs density toward the surface, motes fade near the top of the volume so recycled ones do not pop against the sky, and faster motes ride higher. Set `dustAlways` to keep it in the air alongside rain or snow instead of replacing them. Defaults `DEFAULT_DUST_COUNT`/`DEFAULT_DUST_DENSITY` sit beside the rain and snow pair.",
+      "Authored `city` volumes render their near-LOD facades with a `BuildingKit`. `CityRules.buildingKit` names a kit; a game registers the bound art with `registerBuildingKit(kit)` from `@jgengine/shell/structures/buildingKitRegistry` and the scene document carries only the name, so a city stays portable and free of model paths. Unset or unknown names keep the palette blocks. This puts the whole `city` primitive \u2014 not just the `building()` feature \u2014 on the kit path.",
+      "`BuildingKit` from `@jgengine/core/world/buildingKit` binds a generated building's facade part slots to real models, so procedural buildings render as an instanced asset kit instead of untextured blocks. `defineBuildingKit({ parts: { wall: [\"Wall_A.glb\", \u2026] } })` maps a part kind \u2014 or a `${facade}.${kind}` slot \u2014 to ordered variants that `kit.variant` indexes, with `fit`/`offset`/`rotation`/`scale`/`tint`/`autoOrient` per variant. Kinds a kit leaves unbound keep rendering the palette block, so a partial kit is a valid kit, and `omit` drops a kind entirely. Pass one through `building({ kit })` or straight to `InstancedBuildings`; `buildingKitVariantCounts(kit)` feeds `generateBuilding` so its seeded picks span exactly the models the kit binds.",
+      "`generateBuilding`, `generateBuildingDistrict`, and `createBuildingConfig` are now documented public API (`@jgengine/core/world/buildings`) and appear in `capabilities.md` under `building-generator`.",
+      "`capture.views` on `defineGame` \u2014 named framings (`GameCaptureView`: `look`, `lookFrom`, `spawn`, `state`, `run`, `settleMs`) that `shoot <game> --view <name>` and `drive --view <name>` replay exactly, so a before/after pair is the same view by construction. `shoot <game> --list-views` prints what a game declares; an unknown name fails listing them, and any explicit capture flag still wins over the view's value.",
+      "`modelLoadIdleMs()` from `@jgengine/shell/render/modelLoad` reports how long the shared GLB loader has been idle (`0` while a model is in flight). Capture hosts wait on it instead of guessing a settle delay, so an establishing shot no longer races streaming models.",
+      "Per-instance state on placed objects \u2014 `SceneObject.state` (opaque `Record`), set through `ctx.scene.object.setState`/`patchState`/`place({ state })`. It survives move/rotate/setVisual, replicates and saves with the object, and round-trips as `RuntimeObjectRow.flags` via `toRuntimeObjectRow`/`fromRuntimeObjectRow` (`@jgengine/core/multiplayer`). A chest's locked flag or a machine's fill level no longer needs a game-owned map keyed by `instanceId`.",
+      "`slotInventory` is a working feature \u2014 `ctx.scene.object.slots` gives objects whose catalog entry declares it real per-instance container contents: `layout`/`state`/`count`, `put`/`take`, and `transferIn`/`transferOut` between a player inventory and the object, all validated against the declared slot count, `accepts` kind filter, and stack limits, with neither side mutated on a rejection. Contents live on `SceneObject.slots`, so they replicate and save with the placement.",
+      "`loadServerSnapshot` and `persistServerSnapshot` are public (`@jgengine/convex/server`), and `createGameServerFunctions` also returns `helpers` (`loadSnapshot`, `applyCommand`, `persistSnapshot`, `runCommand`) bound to the same runtimes and auth mode. A host mutation can now pair snapshot work with its own table writes in one transaction; the registered `runCommand` mutation delegates to `helpers.runCommand`, so there is one implementation.",
+    ],
+    changed: [
+      "`GeneratedBuilding`'s `kit` prop is now the `BuildingKit`; the per-part React escape hatch it used to name moved to `partRenderer`, so `kit` means the same thing on `GeneratedBuilding` and `InstancedBuildings`. Rename the prop if you passed a `BuildingKitRenderer`.",
+    ],
+    removed: [],
+  },
   "0.15.0": {
     migrate: [
       "Bump lockstep SDK packages to ^0.15.0: @jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}. CLI jgengine is 0.12.0; @jgengine/github is 0.2.0.",
