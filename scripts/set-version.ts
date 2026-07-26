@@ -4,6 +4,7 @@
 //
 //   bun run version:prerelease            # 0.14.0 -> 0.15.0-next.0, 0.15.0-next.0 -> 0.15.0-next.1
 //   bun run version:prerelease -- --id rc # ...-rc.0
+//   bun run version:release               # 0.15.0-next.2 -> 0.15.0 (stable, npm latest)
 //   bun scripts/set-version.ts --check    # fail if anything is out of step
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -12,10 +13,21 @@ const PACKAGES = ["core", "ws", "sql", "react", "convex", "node", "shell", "edit
 const root = fileURLToPath(new URL("..", import.meta.url));
 const args = process.argv.slice(2);
 const check = args.includes("--check");
+const release = args.includes("--release");
 const idIndex = args.indexOf("--id");
 const preId = idIndex >= 0 ? args[idIndex + 1] : "next";
 
 const manifestPath = (pkg: string) => `${root}packages/${pkg}/package.json`;
+
+// --release finalizes a prerelease in place (0.15.0-next.2 -> 0.15.0); on an already-stable
+// version it takes the next minor.
+function nextRelease(version: string): string {
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?$/.exec(version);
+  if (!match) throw new Error(`unparseable version: ${version}`);
+  const [, major, minor, patch] = match;
+  if (version.includes("-")) return `${major}.${minor}.${patch}`;
+  return `${major}.${Number(minor) + 1}.0`;
+}
 
 function nextPrerelease(version: string): string {
   const match = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?$/.exec(version);
@@ -37,7 +49,11 @@ const manifests = new Map(PACKAGES.map((pkg) => [pkg, JSON.parse(readFileSync(ma
 const byName = new Map<string, string>();
 const targets = new Map<string, string>();
 for (const [pkg, manifest] of manifests) {
-  const version = check ? manifest.version : nextPrerelease(manifest.version);
+  const version = check
+    ? manifest.version
+    : release
+      ? nextRelease(manifest.version)
+      : nextPrerelease(manifest.version);
   targets.set(pkg, version);
   byName.set(manifest.name, version);
 }
