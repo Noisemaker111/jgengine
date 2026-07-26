@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 import type { GeneratedCity } from "@jgengine/core/world/cityGenerator";
+import type { CircuitRoute } from "@jgengine/core/world/raceCircuit";
 import { buildCityModel, buildGround, makeElevationField, type CityModel, type CityPalette } from "./cityScene";
 import { disposeObject, mountLive, type LiveHandle } from "./mount";
 
@@ -36,8 +37,10 @@ export interface PlaygroundWorldHandle {
       seed: string;
       heightScale?: number;
       animate?: boolean;
-      /** "circuit" gets track dressing + a rolling-lap framing; "city" gets gentle-hill framing. */
-      mode?: "city" | "circuit";
+      /** "circuit" gets track dressing + a rolling-lap framing; "city" and "race" get gentle-hill framing. */
+      mode?: "city" | "circuit" | "race";
+      /** A lap lifted out of `city.network` — drawn as racing surface, kerbs, grid, and sealed side streets. */
+      route?: CircuitRoute;
       /** Elevation dial, 0..1 — scales the shared terrain field amplitude. */
       elevation?: number;
       /** World half-size the field wavelength scales from. */
@@ -131,6 +134,7 @@ export function createPlaygroundWorld(container: HTMLElement): PlaygroundWorldHa
         heightScale: options.heightScale ?? 1,
         sampleHeight,
         trackDressing: circuit,
+        ...(options.route === undefined ? {} : { raceRoute: options.route }),
         sidewalks: options.sidewalks,
         sidewalkWidth: options.sidewalkWidth,
         laneMarkings: options.laneMarkings,
