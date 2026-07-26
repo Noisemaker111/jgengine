@@ -35,6 +35,7 @@
     "report:skill-intake": "bun scripts/check-skill-sync.ts --report",
     "gen:skill-api": "bun scripts/gen-skill-api-safe.ts",
     "check-skill-api": "bun scripts/gen-skill-api.ts --check",
+    "gen": "bun scripts/guard.ts 1200 'bun scripts/run-stages.ts gen'",
     "gen:barrels": "bun scripts/gen-barrels.ts",
     "check-orphan-ratchet": "bun scripts/check-orphan-ratchet.ts",
     "gen:capabilities": "bun scripts/gen-capability-index.ts",

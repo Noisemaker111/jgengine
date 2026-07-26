@@ -1,3 +1,4 @@
+import { lootDropsOf } from "@jgengine/core/game/events";
 import { LevelUpFlash, ToastStack } from "@jgengine/react/components";
 import { useGame, useGameStore, usePlayer, useQuestJournal } from "@jgengine/react/hooks";
 import { useKeyedStore } from "@jgengine/react/store";
@@ -106,8 +107,7 @@ export function KillLootToasts() {
         limit={4}
         className="flex flex-col gap-1"
         renderToast={(entry) => {
-          const payload = entry.data as { drops?: { item?: string; currency?: string; count: number }[] } | undefined;
-          const drops = payload?.drops ?? [];
+          const drops = lootDropsOf(entry.data);
           return (
             <p className="text-sm [text-shadow:0_1px_2px_rgba(0,0,0,0.9)]">
               {drops.map((drop, index) => {

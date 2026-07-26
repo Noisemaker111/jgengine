@@ -1,6 +1,8 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
+import { adoptionSmellsIn } from "./gameAdoptionSmells.ts";
+
 import {
   gameSkeletonRequiredSummary,
   isAllowedGameSrcEntry,
@@ -44,22 +46,6 @@ function sourceFilesUnder(dir: string): string[] {
 /** An import of the shell's AuthoredScene component, from any path. */
 function importsAuthoredScene(source: string): boolean {
   return /import\s[^;]*\bAuthoredScene\b[^;]*\sfrom\s/.test(source);
-}
-
-/**
- * Mechanical adoption smells the ratchet freezes: module-global `export let` (use
- * `perContext` / `defineStore`) and local Window/Bar/Chip/Slot components that shadow
- * shipped `@jgengine/react` building blocks.
- */
-function adoptionSmellsIn(file: string, source: string): string[] {
-  const fileRel = rel(file);
-  const found: string[] = [];
-  for (const line of source.split(/\r?\n/)) {
-    if (/^\s*export\s+let\s+/.test(line)) found.push(`${fileRel}:export-let`);
-    const widget = line.match(/^\s*(?:export\s+)?function\s+(Window|Bar|Chip|Slot)\s*\(/);
-    if (widget) found.push(`${fileRel}:local-widget-${widget[1]}`);
-  }
-  return found;
 }
 
 function readAdoptionBaseline(): Set<string> {
@@ -182,7 +168,7 @@ for (const name of readdirSync(gamesDir)) {
   const srcDir = join(gamesDir, name, "src");
   if (!existsSync(srcDir) || !statSync(srcDir).isDirectory()) continue;
   for (const file of sourceFilesUnder(srcDir)) {
-    for (const smell of adoptionSmellsIn(file, readFileSync(file, "utf8"))) {
+    for (const smell of adoptionSmellsIn(rel(file), readFileSync(file, "utf8"))) {
       adoptionFound.add(smell);
     }
   }

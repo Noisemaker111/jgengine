@@ -7,6 +7,7 @@ import {
   type SkillCheckResult,
 } from "@jgengine/core/interaction/skillCheck";
 import { pendingQteStep, type QteStep } from "@jgengine/core/interaction/qte";
+import { lootDropsOf } from "@jgengine/core/game/events";
 import type { FeedEntry } from "@jgengine/core/game/feed";
 import type { StatLevelUpEvent } from "@jgengine/core/game/events";
 import { rollCheck, type CheckAdvantage, type CheckResult } from "@jgengine/core/stats/rollCheck";
@@ -421,11 +422,9 @@ export function CaptureOdds({
 }
 
 function defaultToast(entry: FeedEntry): ReactNode {
-  const data = entry.data as
-    | { drops?: { item?: string; currency?: string; count: number }[] }
-    | undefined;
-  if (data?.drops !== undefined) {
-    return data.drops.map((drop) => `${drop.item ?? drop.currency ?? "item"} ×${drop.count}`).join("  ");
+  const drops = lootDropsOf(entry.data);
+  if (drops.length > 0) {
+    return drops.map((drop) => `${drop.item ?? drop.currency ?? "item"} ×${drop.count}`).join("  ");
   }
   return typeof entry.data === "string" ? entry.data : JSON.stringify(entry.data);
 }

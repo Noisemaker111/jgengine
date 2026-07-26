@@ -50,7 +50,9 @@ export type {
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   const { id, name, variant, engineVersion, scene } = options;
   const editor = options.editor ?? true;
-  const world = options.world ?? false;
+  // Default on: the scaffold's own AGENTS.md calls flat untextured ground a failing result,
+  // so shipping proxy geometry by default failed the standard the template hands the agent.
+  const world = options.world ?? true;
   if (!GAME_ID_PATTERN.test(id)) {
     throw new Error(`game id "${id}" must be kebab-case: lowercase letters, digits, dashes, starting with a letter`);
   }
