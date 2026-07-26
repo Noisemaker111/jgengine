@@ -39,6 +39,7 @@ export function WorldEntityBars({
   roles,
   resolveRole,
   maxDistance = 60,
+  occlude = false,
 }: {
   statId: string;
   height?: number;
@@ -46,6 +47,9 @@ export function WorldEntityBars({
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
   /** Hide bars for entities farther than this from the player (world units). Default 60. */
   maxDistance?: number;
+  /** Hide the bar when world geometry stands between the player and the entity. These bars are a screen-space overlay outside the depth buffer, so without this they read through walls. Default false, preserving the always-visible behaviour. */
+  occlude?: boolean;
+
 }) {
   const ctx = useGameContext();
   const camera = useThree((state) => state.camera);
@@ -79,6 +83,7 @@ export function WorldEntityBars({
       samplesRef.current,
       projectRef.current,
       maxDistance,
+      occlude,
     );
     paintWorldBarSamples(canvas, samplesRef.current, dpr);
   });
@@ -101,6 +106,8 @@ export interface WorldNameplatesProps {
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
   /** Hide nameplates for entities farther than this from the player (world units). Default 40. */
   maxDistance?: number;
+  /** Hide the plate when world geometry stands between the player and the entity. Default false. */
+  occlude?: boolean;
   /** Minimum ms between position/health refreshes — trades smoothness for fewer re-renders at scale. Default 120. */
   tickMs?: number;
   /** Draw the built-in HP bar under the name. Set `false` for a name-only plate when the game already draws its own health bar (its own HUD, or `worldHealthBars`). Default true. */
@@ -128,6 +135,7 @@ export function WorldNameplates({
   roles,
   resolveRole,
   maxDistance = 40,
+  occlude = false,
   tickMs = 120,
   showHealth = true,
   className,
@@ -161,6 +169,7 @@ export function WorldNameplates({
       samplesRef.current,
       projectRef.current,
       maxDistance,
+      occlude,
     );
     setSamples([...samplesRef.current]);
   });

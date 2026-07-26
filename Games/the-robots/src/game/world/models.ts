@@ -276,7 +276,9 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
     fallbackModel: `${SCIFI}/Door_Frame_Square`,
     style: {
       scale: 2.2,
-      material: { color: "#2a1f3a", ...PANEL, emissive: "#8a2be2", emissiveIntensity: 0.7 },
+      // Emissive 0.7 on a 2.2-scaled door blew out under bloom into one flat violet wall that read
+      // as a missing texture from across the settlement. Keep the violet as a trim glow, not a surface.
+      material: { color: "#2a1f3a", ...PANEL, emissive: "#8a2be2", emissiveIntensity: 0.12 },
     },
   },
   // Scale 4 put single boulders at building size, close enough to the camera to hide whole enemy

@@ -21,6 +21,11 @@ describe("readCityRules", () => {
     expect(readCityRules(undefined)).toEqual(CITY_DEFAULTS);
   });
 
+  test("building kit name round-trips, defaulting to no kit", () => {
+    expect(readCityRules({}).buildingKit).toBe("");
+    expect(readCityRules({ buildingKit: "downtown" }).buildingKit).toBe("downtown");
+  });
+
   test("swapped floor bounds are normalized", () => {
     const rules = readCityRules({ floorsMin: 12, floorsMax: 3 });
     expect(rules.floorsMin).toBe(3);

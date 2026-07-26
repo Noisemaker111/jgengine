@@ -546,6 +546,7 @@ export function Shell3dPresentation({
                       roles={bars.roles}
                       resolveRole={resolveEntityRole}
                       {...(bars.maxDistance === undefined ? {} : { maxDistance: bars.maxDistance })}
+                      {...(bars.occlude === undefined ? {} : { occlude: bars.occlude })}
                     />
                   ) : null}
                   {nameplates !== null ? (

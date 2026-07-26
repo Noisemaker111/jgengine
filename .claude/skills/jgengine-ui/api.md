@@ -2388,6 +2388,13 @@
 - `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
 - `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
 
+## @jgengine/shell/structures/buildingKitRegistry
+
+- `clearBuildingKits` (function): function clearBuildingKits(): void — Drops every registration. For tests and hot-reload teardown.
+- `getBuildingKit` (function): function getBuildingKit(id: string | undefined): BuildingKit | undefined — The kit registered under `id`, or `undefined` for an unset or unknown name (renders blocks).
+- `listBuildingKits` (function): function listBuildingKits(): string[] — Every registered kit id — the editor's kit picker and diagnostics read this.
+- `registerBuildingKit` (function): function registerBuildingKit(kit: BuildingKit): void — Registers a kit under its own `id`, replacing any kit already registered under that name.
+
 ## @jgengine/shell/terrain
 
 - `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
@@ -2690,6 +2697,8 @@
 
 ## @jgengine/shell/weather
 
+- `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, seed = 51407, renderOrd… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
+- `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
 - `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
 - `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps — ⚠ undocumented
 - `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
@@ -2698,12 +2707,17 @@
 - `RainFieldProps` (interface): interface RainFieldProps — ⚠ undocumented
 - `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, seed = 72931, renderOrder = 11, frustumC… — ⚠ undocumented
 - `SnowFieldProps` (interface): interface SnowFieldProps — ⚠ undocumented
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
-- `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" — ⚠ undocumented
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, dust, dustAlways = false, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
+- `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — ⚠ undocumented
 - `WeatherUniformOptions` (interface): interface WeatherUniformOptions — ⚠ undocumented
 - `WeatherUniformSet` (interface): interface WeatherUniformSet — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
+
+## @jgengine/shell/weather/DustField
+
+- `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, seed = 51407, renderOrd… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
+- `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
 
 ## @jgengine/shell/weather/FireSpreadLayer
 
@@ -2727,12 +2741,14 @@
 
 ## @jgengine/shell/weather/WeatherLayer
 
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
-- `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" — ⚠ undocumented
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, dust, dustAlways = false, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
+- `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
 - `WeatherLayerProps` (interface): interface WeatherLayerProps — ⚠ undocumented
 
 ## @jgengine/shell/weather/weatherMath
 
+- `DEFAULT_DUST_COUNT` (const): const DEFAULT_DUST_COUNT: 1800 — Mote budget a {@link DustField} allocates before `density` scales it down.
+- `DEFAULT_DUST_DENSITY` (const): const DEFAULT_DUST_DENSITY: 0.4 — Share of {@link DEFAULT_DUST_COUNT} drawn at intensity 1 — dust reads thinner than rain or snow.
 - `DEFAULT_RAIN_COUNT` (const): const DEFAULT_RAIN_COUNT: 2000 — ⚠ undocumented
 - `DEFAULT_RAIN_DENSITY` (const): const DEFAULT_RAIN_DENSITY: 0.45 — ⚠ undocumented
 - `DEFAULT_SNOW_COUNT` (const): const DEFAULT_SNOW_COUNT: 1500 — ⚠ undocumented
@@ -2785,9 +2801,9 @@
 - `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
-- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from the player (world… — ⚠ undocumented
+- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, occlude = false, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from … — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
-- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, tickMs = 120, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
+- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, occlude = false, tickMs = 120, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
 - `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
 - `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
 - `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.

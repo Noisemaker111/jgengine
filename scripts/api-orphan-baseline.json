@@ -266,7 +266,6 @@
   "@jgengine/shell/water/OceanMaterial#createOceanMaterial",
   "@jgengine/shell/water/OceanMaterial#syncOceanMaterial",
   "@jgengine/shell/weather#LightningStrike",
-  "@jgengine/shell/weather#WeatherLayer",
   "@jgengine/shell/weather/LightningStrike#LightningStrike",
   "@jgengine/shell/weather/WeatherLayer#WeatherLayer",
   "@jgengine/shell/world/DataObjects#DataObjects",

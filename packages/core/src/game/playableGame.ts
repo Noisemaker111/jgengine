@@ -495,7 +495,15 @@ export interface PlayableGame<
   /** HUD design resolution + scale clamps (default 1600×900, scale 0.4–1). `mobile` overrides tune the phone fit separately — the same resolution system drives desktop UI-scale and phone shrink. */
   hudFit?: HudViewportConfig;
   /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the player (default 60). */
-  worldHealthBars?: boolean | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number };
+  worldHealthBars?:
+    | boolean
+    | {
+        statId?: string;
+        roles?: readonly CatalogEntityRole[];
+        maxDistance?: number;
+        /** Hide a bar when world geometry stands between the player and the entity. These bars are a screen-space overlay outside the depth buffer, so by default they draw through walls. Default false. */
+        occlude?: boolean;
+      };
   /**
    * Opt in to billboarded nameplates (name + optional HP bar) floating over non-local entities — the
    * MMO "who's this and how hurt are they" readout. `roles` restricts to entities whose catalog entry
