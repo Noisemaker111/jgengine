@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { PLANS, formatSummary, rerunHint, runPlan, type Stage } from "./run-stages.ts";
+import { PLANS, fixHint, formatSummary, rerunHint, runPlan, type Stage } from "./run-stages.ts";
 
 const stage = (name: string, needs?: string[]): Stage => ({ name, command: "bun", args: [], needs });
 
@@ -107,5 +107,37 @@ describe("plans", () => {
   test("check-types validators are independent of each other, not chained", () => {
     const stages = PLANS["check-types"] ?? [];
     for (const candidate of stages.slice(1)) expect(candidate.needs).toEqual(["ensure-ready"]);
+  });
+});
+
+describe("generated-artifact drift", () => {
+  test("a drifted artifact check points at the command that regenerates it", () => {
+    const stages = PLANS["check-types"] ?? [];
+    // Re-running these proves the drift again; it does not fix it.
+    expect(fixHint(stages, "check-capabilities")).toBe("bun run gen");
+    expect(fixHint(stages, "check-skill-api")).toBe("bun run gen");
+    // A genuine code failure has no "regenerate" escape hatch to offer.
+    expect(fixHint(stages, "check-types-all")).toBeUndefined();
+    expect(fixHint(stages, "check-game-shape")).toBeUndefined();
+  });
+
+  test("the summary surfaces the fix command once, not once per failed check", () => {
+    const stages = PLANS["check-types"] ?? [];
+    const results = runPlan(stages, (stage) => !["check-capabilities", "check-skill-api"].includes(stage.name));
+    const summary = formatSummary("check-types", stages, results);
+    expect(summary).toContain("fix drifted artifacts with:");
+    expect(summary.match(/bun run gen$/gm)?.length).toBe(1);
+  });
+
+  test("the gen plan regenerates every committed artifact, barrels first", () => {
+    expect((PLANS.gen ?? []).map((stage) => stage.name)).toEqual([
+      "ensure-ready",
+      "gen:barrels",
+      "gen:capabilities",
+      "gen:skill-api",
+      "gen:export-manifest",
+    ]);
+    // The three readers all hang off barrels, so one failing generator cannot hide the others.
+    for (const stage of (PLANS.gen ?? []).slice(2)) expect(stage.needs).toEqual(["gen:barrels"]);
   });
 });

@@ -27,9 +27,21 @@ export interface Stage {
   readonly needs?: readonly string[];
   /** Shown in the summary when the stage is not a plain `bun run <name>`. */
   readonly rerun?: string;
+  /**
+   * The command that *resolves* this failure, when re-running the check is not the fix. A drifted
+   * generated artifact is the case that matters: re-running `check-capabilities` proves the drift
+   * again, it does not regenerate anything.
+   */
+  readonly fix?: string;
 }
 
 const bun = (...args: string[]): { command: string; args: string[] } => ({ command: "bun", args });
+
+/**
+ * Checks whose failure means "a committed artifact drifted from its generator", not "your code is
+ * wrong". These are the ones that cost repeated round trips when the message only says what failed.
+ */
+const GENERATED_ARTIFACT_CHECKS = new Set(["check-skill-api", "check-capabilities", "check-artifacts"]);
 
 /**
  * `check-types` fans out over independent validators. None of them consumes
@@ -50,7 +62,13 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-pack-texture-layout",
     "check-recipes",
     "check-doc-symbols",
-  ].map((name): Stage => ({ name, ...bun("run", name), needs: ["ensure-ready"] })),
+  ].map((name): Stage => ({
+    name,
+    ...bun("run", name),
+    needs: ["ensure-ready"],
+    // The generated-artifact checks fail on drift, which re-running them cannot fix.
+    fix: GENERATED_ARTIFACT_CHECKS.has(name) ? "bun run gen" : undefined,
+  })),
   {
     name: "check-types-all",
     ...bun("scripts/check-types-all.ts"),
@@ -73,9 +91,25 @@ const GATE_STAGES: readonly Stage[] = [
   { name: "test:all", ...bun("run", "test:all"), needs: ["build"] },
 ];
 
+/**
+ * Every committed derived artifact, regenerated in dependency order by one command. These were four
+ * separate scripts that had to be run in the right sequence — and often after a build — with nothing
+ * naming the sequence, so a core API change cost several round trips through a failing gate.
+ * `ensure-ready` rebuilds stale package dist first, which `gen:export-manifest` reads.
+ */
+const GEN_STAGES: readonly Stage[] = [
+  { name: "ensure-ready", ...bun("scripts/ensure-ready.ts"), rerun: "bun scripts/ensure-ready.ts" },
+  // Barrels first: the export surface every later generator reads is derived from them.
+  { name: "gen:barrels", ...bun("run", "gen:barrels"), needs: ["ensure-ready"] },
+  ...["gen:capabilities", "gen:skill-api", "gen:export-manifest"].map(
+    (name): Stage => ({ name, ...bun("run", name), needs: ["gen:barrels"] }),
+  ),
+];
+
 export const PLANS: Readonly<Record<string, readonly Stage[]>> = {
   gate: GATE_STAGES,
   "check-types": CHECK_TYPES_STAGES,
+  gen: GEN_STAGES,
 };
 
 export type StageState = "passed" | "failed" | "skipped";
@@ -114,6 +148,11 @@ export function rerunHint(stages: readonly Stage[], name: string): string {
   return stage?.rerun ?? `bun run ${name}`;
 }
 
+/** The command that resolves a failure, when re-running the check is not it. */
+export function fixHint(stages: readonly Stage[], name: string): string | undefined {
+  return stages.find((candidate) => candidate.name === name)?.fix;
+}
+
 export function formatSummary(plan: string, stages: readonly Stage[], results: readonly StageResult[]): string {
   const mark: Record<StageState, string> = { passed: "PASS", failed: "FAIL", skipped: "SKIP" };
   const width = Math.max(...results.map((result) => result.name.length));
@@ -135,6 +174,8 @@ export function formatSummary(plan: string, stages: readonly Stage[], results: r
   if (failures.length > 0) {
     lines.push("re-run individually:");
     for (const failure of failures) lines.push(`  ${rerunHint(stages, failure.name)}`);
+    const fixes = [...new Set(failures.map((failure) => fixHint(stages, failure.name)).filter((f): f is string => f !== undefined))];
+    for (const fix of fixes) lines.push(`fix drifted artifacts with:\n  ${fix}`);
   }
   if (skipped.length > 0) {
     lines.push("these never ran and are NOT known-good — re-run the plan once the failures above are fixed.");
