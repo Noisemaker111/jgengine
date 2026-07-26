@@ -52,7 +52,7 @@ describe("findModuleGlobals", () => {
     const root = mkdtempSync(join(tmpdir(), "module-globals-"));
     mkdirSync(join(root, "Games/probe/src"), { recursive: true });
     writeFileSync(join(root, "Games/probe/src/loop.ts"), "// header\n\nlet timer = 0;\n");
-    expect(findModuleGlobals(root)[0]!.declaration).toBe("Games/probe/src/loop.ts:3");
+    expect(findModuleGlobals(root)[0]!.where).toBe("Games/probe/src/loop.ts:3");
     rmSync(root, { recursive: true, force: true });
   });
 });

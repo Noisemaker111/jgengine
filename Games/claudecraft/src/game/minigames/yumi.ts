@@ -151,9 +151,9 @@ export function tickProtectYumi(ctx: GameContext, userId: string, dt: number): v
   }
 
   if (ctx.time.now() >= session.teleportAt) {
-    session.teleportAt = ctx.time.now() + 10 + Math.random() * 6;
-    const angle = Math.random() * Math.PI * 2;
-    const radius = 4 + Math.random() * 8;
+    session.teleportAt = ctx.time.now() + 10 + ctx.rng() * 6;
+    const angle = ctx.rng() * Math.PI * 2;
+    const radius = 4 + ctx.rng() * 8;
     const [ax, az] = YUMI_ARENA;
     const nx = ax + Math.cos(angle) * radius;
     const nz = az + Math.sin(angle) * radius;
@@ -173,8 +173,8 @@ export function tickProtectYumi(ctx: GameContext, userId: string, dt: number): v
   for (const spawn of step.spawns) {
     const def = mobById(spawn.entryId);
     if (def === null) continue;
-    const px = spawn.point?.[0] ?? YUMI_ARENA[0] + (Math.random() - 0.5) * 16;
-    const pz = spawn.point?.[1] ?? YUMI_ARENA[1] + (Math.random() - 0.5) * 16;
+    const px = spawn.point?.[0] ?? YUMI_ARENA[0] + (ctx.rng() - 0.5) * 16;
+    const pz = spawn.point?.[1] ?? YUMI_ARENA[1] + (ctx.rng() - 0.5) * 16;
     const id = spawnMobAt(ctx, def, [px, pz], Math.max(def.minLevel, 3), { noRespawn: true });
     session.spawned.push(id);
   }

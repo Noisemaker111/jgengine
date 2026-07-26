@@ -66,22 +66,22 @@ function chooseTarget(guest: GuestState, pos: readonly [number, number, number],
 function spawnGuest(ctx: GameContext): void {
   const id = nextGuestId();
   const kind = guestKindFor(id);
-  const jitter = (Math.random() - 0.5) * 10;
+  const jitter = (ctx.rng() - 0.5) * 10;
   const start: [number, number, number] = [jitter, 0, ENTRANCE[2]];
   const guest: GuestState = {
     id,
     kind,
     happy: 62 - Math.max(0, session.ticketPrice - 16) * 1.1,
-    money: 34 + Math.random() * 46,
-    hunger: 12 + Math.random() * 22,
-    thirst: 16 + Math.random() * 24,
-    souvenir: Math.random() * 0.6,
+    money: 34 + ctx.rng() * 46,
+    hunger: 12 + ctx.rng() * 22,
+    thirst: 16 + ctx.rng() * 24,
+    souvenir: ctx.rng() * 0.6,
     visits: 0,
     phase: "seeking",
     targetId: null,
     target: null,
     busy: 0,
-    litterTimer: 4 + Math.random() * 6,
+    litterTimer: 4 + ctx.rng() * 6,
   };
   session.guests.set(id, guest);
   ctx.scene.entity.spawn(kind, { id, position: start, role: "npc" });
@@ -94,22 +94,22 @@ export function seedGuests(ctx: GameContext, count: number): void {
   for (let i = 0; i < count; i += 1) {
     const id = nextGuestId();
     const kind = guestKindFor(id);
-    const x = (Math.random() - 0.5) * 80;
-    const z = (Math.random() - 0.5) * 80;
+    const x = (ctx.rng() - 0.5) * 80;
+    const z = (ctx.rng() - 0.5) * 80;
     const guest: GuestState = {
       id,
       kind,
-      happy: 60 + Math.random() * 15,
-      money: 30 + Math.random() * 50,
-      hunger: 20 + Math.random() * 40,
-      thirst: 20 + Math.random() * 40,
-      souvenir: Math.random() * 0.5,
+      happy: 60 + ctx.rng() * 15,
+      money: 30 + ctx.rng() * 50,
+      hunger: 20 + ctx.rng() * 40,
+      thirst: 20 + ctx.rng() * 40,
+      souvenir: ctx.rng() * 0.5,
       visits: 0,
       phase: "seeking",
       targetId: null,
       target: null,
       busy: 0,
-      litterTimer: 3 + Math.random() * 6,
+      litterTimer: 3 + ctx.rng() * 6,
     };
     session.guests.set(id, guest);
     ctx.scene.entity.spawn(kind, { id, position: [x, 0, z], role: "npc" });
@@ -201,7 +201,7 @@ export function tickGuests(ctx: GameContext, dt: number, tracks: number): void {
     );
     guest.litterTimer -= dt;
     if (guest.litterTimer <= 0) {
-      guest.litterTimer = 5 + Math.random() * 6;
+      guest.litterTimer = 5 + ctx.rng() * 6;
       session.litter = Math.min(100, session.litter + 0.5);
     }
 

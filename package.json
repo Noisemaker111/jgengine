@@ -39,6 +39,7 @@
     "gen:barrels": "bun scripts/gen-barrels.ts",
     "check-stateful-ratchet": "bun scripts/check-stateful-ratchet.ts",
     "check-module-globals": "bun scripts/check-module-globals.ts",
+    "check-game-determinism": "bun scripts/check-game-determinism.ts",
     "check-orphan-ratchet": "bun scripts/check-orphan-ratchet.ts",
     "gen:capabilities": "bun scripts/gen-capability-index.ts",
     "check-capabilities": "bun scripts/gen-capability-index.ts --check",
