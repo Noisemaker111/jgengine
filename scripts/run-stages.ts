@@ -62,6 +62,7 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-pack-texture-layout",
     "check-recipes",
     "check-doc-symbols",
+    "check-hud-tokens",
   ].map((name): Stage => ({
     name,
     ...bun("run", name),

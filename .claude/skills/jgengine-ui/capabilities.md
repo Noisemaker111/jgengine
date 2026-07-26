@@ -253,9 +253,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StatBar` (function) · `import { StatBar } from "@jgengine/react"`
 
-## hud-theme — game-authored token object for bars, frames, slots, and minimap ring
+## hud-theme — game-authored token object covering bars, frames, slots, chrome, text, status colors, fonts, and rarity
 
 - `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/react"`
+
+## hud-theme-author — fill a full HudTheme from per-group partial overrides
+
+- `hudTheme` (function) · `import { hudTheme } from "@jgengine/react"`
+
+## hud-theme-derive — build a full HudTheme from an accent + surface seed pair
+
+- `deriveHudTheme` (function) · `import { deriveHudTheme } from "@jgengine/react"`
 
 ## hud-ticker — re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects
 
