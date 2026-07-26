@@ -47,6 +47,7 @@ const stateOf = perContext(() => ({
   cues: 0,
   loops: 0,
   steps: 0,
+  travelled: 0,
   barks: 0,
   musicChanges: 0,
 }));
@@ -57,7 +58,12 @@ const stateOf = perContext(() => ({
  */
 export function audioProbe(ctx: GameContext): Record<string, number> {
   const state = stateOf(ctx);
+  const position = ctx.scene.entity.get(ctx.player.userId)?.position ?? [0, 0, 0];
   return {
+    // Position rides along so a zero footstep count can be told apart from a player who never moved.
+    x: Math.round(position[0] * 100) / 100,
+    z: Math.round(position[2] * 100) / 100,
+    travelled: Math.round(state.travelled * 100) / 100,
     audioCues: state.cues,
     audioLoops: state.loops,
     footsteps: state.steps,
@@ -135,6 +141,7 @@ export function tickAudio(ctx: GameContext, nowMs: number): void {
 
   if (state.lastPosition !== null) {
     const travelled = Math.hypot(position[0] - state.lastPosition[0], position[2] - state.lastPosition[2]);
+    state.travelled += travelled;
     const step = advanceStepCadence(state.cadence, { distance: travelled, moving: travelled > 0.001 }, STEPS);
     state.cadence = step.state;
     if (step.steps > 0) {
