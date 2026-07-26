@@ -41,7 +41,7 @@ export const FERRALON = {
   rockLow: "#5f3c22",
   rockHigh: "#dba869",
   /** Slope/cliff face: cooler and darker than the flats so relief separates by value, not just shading. */
-  cliff: "#5c4c40",
+  cliff: "#6b5340",
   sand: "#cdab74",
   dust: "#b3663a",
   hudAmber: "#ffb400",

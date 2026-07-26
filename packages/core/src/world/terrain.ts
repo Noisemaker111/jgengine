@@ -625,6 +625,7 @@ export interface ResolvedTerrainDetailMaterial {
   maps: TerrainMaterialMaps;
   repeat: number;
   strength: number;
+  tint: number;
 }
 
 /** A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes. */
@@ -647,6 +648,7 @@ const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
 
 const DEFAULT_TERRAIN_MATERIAL_REPEAT = 4;
 const DEFAULT_TERRAIN_MATERIAL_STRENGTH = 1;
+const DEFAULT_TERRAIN_MATERIAL_TINT = 1;
 
 /** Fill a `TerrainDetailConfig` with defaults; `waterLevel` falls back to the terrain's own water level.
  * @internal
@@ -669,6 +671,7 @@ export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLe
           material: {
             maps: config.material.maps,
             repeat: config.material.repeat ?? DEFAULT_TERRAIN_MATERIAL_REPEAT,
+            tint: clamp01(config.material.tint ?? DEFAULT_TERRAIN_MATERIAL_TINT),
             strength: clamp01(config.material.strength ?? DEFAULT_TERRAIN_MATERIAL_STRENGTH),
           },
         }),

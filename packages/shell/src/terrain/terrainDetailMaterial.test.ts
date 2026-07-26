@@ -90,7 +90,9 @@ test("a material config with textures wires world-tiled color/roughness/normal/a
 
   expect(shader.fragmentShader).toContain("jgMatUv = jgWp / uMatRepeat");
   expect(shader.fragmentShader).toContain("texture2D(uMatColor, jgMatUv)");
-  expect(shader.fragmentShader).toContain("mix(jgCol, jgMatColor, uMatStrength)");
+  expect(shader.fragmentShader).toContain("mix(jgCol, jgMatColor, uMatStrength * uMatTint)");
+  // Grain and tint are separable: the luminance term is gated on the tint the caller did NOT spend.
+  expect(shader.fragmentShader).toContain("uMatStrength * (1.0 - uMatTint)");
   expect(shader.fragmentShader).toContain("roughnessFactor = mix(roughnessFactor, jgMatRough, uMatStrength)");
   expect(shader.fragmentShader).toContain("normal = normalize(normal + vec3(jgMatNormalXy.x");
   expect(shader.fragmentShader).toContain("reflectedLight.indirectDiffuse *= mix(1.0, jgMatAo, uMatStrength)");
@@ -112,4 +114,20 @@ test("passing a material config without loaded textures falls back to the proced
   material.onBeforeCompile?.(shader as never, undefined as never);
   expect(shader.uniforms.uMatColor).toBeUndefined();
   expect(shader.fragmentShader).not.toContain("texture2D(uMatColor");
+});
+
+test("material tint defaults to 1 so an existing detail material keeps replacing the authored colour", () => {
+  const detail = resolveTerrainDetail({ material: { maps: FAKE_MAPS } });
+  const { material } = createTerrainDetailMaterial(detail, fakeTextures());
+  const shader = fakeShader();
+  material.onBeforeCompile?.(shader as never, undefined as never);
+  expect(shader.uniforms.uMatTint?.value).toBe(1);
+});
+
+test("a low tint keeps the authored colour and takes the map as grain", () => {
+  const detail = resolveTerrainDetail({ material: { maps: FAKE_MAPS, tint: 0.2 } });
+  const { material } = createTerrainDetailMaterial(detail, fakeTextures());
+  const shader = fakeShader();
+  material.onBeforeCompile?.(shader as never, undefined as never);
+  expect(shader.uniforms.uMatTint?.value).toBe(0.2);
 });

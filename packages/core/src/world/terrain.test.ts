@@ -556,7 +556,7 @@ describe("terrain field", () => {
       displacement: "/materials/grass/displacement.jpg",
     };
     const detail = resolveTerrainDetail({ material: { maps } });
-    expect(detail.material).toEqual({ maps, repeat: 4, strength: 1 });
+    expect(detail.material).toEqual({ maps, repeat: 4, strength: 1, tint: 1 });
   });
 
   test("resolveTerrainDetail honors explicit material repeat/strength overrides", () => {
@@ -568,7 +568,7 @@ describe("terrain field", () => {
       displacement: "d",
     };
     const detail = resolveTerrainDetail({ material: { maps, repeat: 12, strength: 0.4 } });
-    expect(detail.material).toEqual({ maps, repeat: 12, strength: 0.4 });
+    expect(detail.material).toEqual({ maps, repeat: 12, strength: 0.4, tint: 1 });
   });
 });
 
