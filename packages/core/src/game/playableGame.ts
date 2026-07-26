@@ -169,6 +169,23 @@ export interface ModelMaterialOverride {
   emissiveIntensity?: number;
   /** Real PBR texture maps applied over the model's material — see {@link ModelMaterialMaps}. */
   maps?: ModelMaterialMaps;
+  /**
+   * Fresnel rim light: a bright edge where the surface turns away from the viewer. This is what
+   * separates an actor from ground of the same value — a body lit only by the scene's own key sits
+   * in the terrain's tonal band at range and reads as a smudge, however well its albedo is chosen.
+   * Omit for no rim.
+   */
+  rim?: ModelRimLight;
+}
+
+/** Fresnel rim-light term added on top of a model's lighting — see {@link ModelMaterialOverride.rim}. */
+export interface ModelRimLight {
+  /** Rim colour. Default "#ffffff". */
+  color?: string;
+  /** Rim brightness. 0 disables it; ~0.3 is a subtle read, ~1.5 is a hard sci-fi edge. Default 0.6. */
+  strength?: number;
+  /** Falloff exponent: higher confines the rim to the extreme edge. Default 2.5. */
+  power?: number;
 }
 
 /** Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame. */

@@ -72,6 +72,8 @@ export const MACHINE = {
   joint: "#586471",
   /** Corrosion bleed on old welds. */
   rust: "#8a4a2a",
+  /** Rim-light edge on machine hostiles — cool, so it never reads as sun bounce off the sand. */
+  rimCool: "#9fd0ff",
   /** Faction hazard stripe. */
   hazard: "#f0a828",
   /** Optic glow — the read for "this thing is alive and looking at you". */

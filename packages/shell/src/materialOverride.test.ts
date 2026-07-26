@@ -3,6 +3,8 @@ import * as THREE from "three";
 
 import { applyMaterialOverride } from "./materialOverride";
 
+const BASE_FRAGMENT = "#include <common>\n#include <opaque_fragment>";
+
 function meshWithStandardMaterial(): THREE.Mesh {
   return new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color: "#ffffff" }));
 }
@@ -94,5 +96,46 @@ describe("applyMaterialOverride", () => {
     const applied = mesh.material as THREE.MeshStandardMaterial;
     expect(applied.map).toBeNull();
     expect(applied.normalMap).toBeNull();
+  });
+
+  test("a rim override injects the fresnel term and its uniforms", () => {
+    const mesh = meshWithStandardMaterial();
+    applyMaterialOverride(mesh, { rim: { color: "#9fd0ff", strength: 0.8, power: 3 } });
+    const applied = mesh.material as THREE.MeshStandardMaterial;
+    const shader = { uniforms: {} as Record<string, { value: unknown }>, fragmentShader: BASE_FRAGMENT };
+    applied.onBeforeCompile?.(shader as never, undefined as never);
+
+    expect((shader.uniforms.uJgRimColor?.value as THREE.Color).getHexString()).toBe("9fd0ff");
+    expect(shader.uniforms.uJgRimStrength?.value).toBeCloseTo(0.8, 5);
+    expect(shader.uniforms.uJgRimPower?.value).toBeCloseTo(3, 5);
+    expect(shader.fragmentShader).toContain("outgoingLight += uJgRimColor * jgRim * uJgRimStrength");
+  });
+
+  test("rim tuning is part of the program cache key so two rims cannot share a program", () => {
+    const a = meshWithStandardMaterial();
+    const b = meshWithStandardMaterial();
+    applyMaterialOverride(a, { rim: { color: "#ff0000", strength: 1 } });
+    applyMaterialOverride(b, { rim: { color: "#0000ff", strength: 1 } });
+    const keyA = (a.material as THREE.MeshStandardMaterial).customProgramCacheKey();
+    const keyB = (b.material as THREE.MeshStandardMaterial).customProgramCacheKey();
+    expect(keyA).not.toBe(keyB);
+  });
+
+  test("a zero-strength rim compiles nothing", () => {
+    const mesh = meshWithStandardMaterial();
+    applyMaterialOverride(mesh, { rim: { strength: 0 } });
+    const applied = mesh.material as THREE.MeshStandardMaterial;
+    const shader = { uniforms: {} as Record<string, { value: unknown }>, fragmentShader: BASE_FRAGMENT };
+    applied.onBeforeCompile?.(shader as never, undefined as never);
+    expect(shader.fragmentShader).not.toContain("uJgRimColor");
+  });
+
+  test("omitting rim leaves the material's shader untouched", () => {
+    const mesh = meshWithStandardMaterial();
+    applyMaterialOverride(mesh, { color: "#ff0000" });
+    const applied = mesh.material as THREE.MeshStandardMaterial;
+    const shader = { uniforms: {} as Record<string, { value: unknown }>, fragmentShader: BASE_FRAGMENT };
+    applied.onBeforeCompile?.(shader as never, undefined as never);
+    expect(shader.fragmentShader).toBe(BASE_FRAGMENT);
   });
 });
