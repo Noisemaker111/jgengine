@@ -3,6 +3,15 @@ export interface CastConfig {
   castTimeMs: number;
   /** Total movement distance tolerated before the cast auto-interrupts; default `0.04`. `Infinity` allows casting on the move. */
   moveTolerance?: number;
+  /**
+   * Per-tick movement at or below this is ignored rather than added to the running total — the
+   * caster's noise floor. A 3D game's pose jitters every frame from terrain-following ground snap
+   * and float drift; since `moveTolerance` accumulates, feeding those raw deltas straight in will
+   * silently cancel casts the player never interrupted, and the failure is intermittent rather than
+   * obvious. Only the game knows its own noise floor, so declare it once here instead of filtering
+   * at every `tick` call site. Default `0` (count every reported movement).
+   */
+  moveDeadzone?: number;
 }
 
 export interface CastBarSnapshot {
@@ -33,7 +42,10 @@ export interface CastRunner {
   state(): CastBarSnapshot | null;
   /** Interrupt the in-flight cast now; returns the interruption event, or `null` when idle. */
   interrupt(reason?: CastInterruptReason): CastEvent | null;
-  /** Advance by `dtSeconds`; `movedDistance` accumulates toward the config's `moveTolerance`. */
+  /**
+   * Advance by `dtSeconds`; `movedDistance` accumulates toward the config's `moveTolerance`, except
+   * for per-tick movement at or below `moveDeadzone`, which is treated as jitter and ignored.
+   */
   tick(dtSeconds: number, movedDistance?: number): CastEvent | null;
 }
 
@@ -43,6 +55,7 @@ interface ActiveCast {
   abilityId: string;
   castTimeMs: number;
   moveTolerance: number;
+  moveDeadzone: number;
   elapsedMs: number;
   movedTotal: number;
 }
@@ -74,6 +87,7 @@ export function createCastRunner(): CastRunner {
         abilityId: config.abilityId,
         castTimeMs: Math.max(0, config.castTimeMs),
         moveTolerance: config.moveTolerance ?? DEFAULT_MOVE_TOLERANCE,
+        moveDeadzone: Math.max(0, config.moveDeadzone ?? 0),
         elapsedMs: 0,
         movedTotal: 0,
       };
@@ -89,7 +103,9 @@ export function createCastRunner(): CastRunner {
     },
     tick(dtSeconds, movedDistance = 0) {
       if (active === null) return null;
-      active.movedTotal += Math.max(0, movedDistance);
+      const moved = Math.max(0, movedDistance);
+      // Below the caster's noise floor this is jitter, not travel — do not accumulate it.
+      if (moved > active.moveDeadzone) active.movedTotal += moved;
       if (active.movedTotal > active.moveTolerance) {
         const abilityId = active.abilityId;
         active = null;

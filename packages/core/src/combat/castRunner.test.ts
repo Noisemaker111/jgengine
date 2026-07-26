@@ -59,3 +59,49 @@ describe("castRunner", () => {
     expect(runner.tick(0)).toEqual({ kind: "completed", abilityId: "jab" });
   });
 });
+
+describe("moveDeadzone", () => {
+  const CONFIG = { abilityId: "heal", castTimeMs: 2000, moveTolerance: 0.04, moveDeadzone: 0.04 };
+
+  it("jitter under the deadzone never accumulates, however many frames pass", () => {
+    // The failure this exists to prevent: 0.01 of ground-snap noise per frame silently summing past
+    // a 0.04 tolerance and cancelling a cast the player never interrupted.
+    const runner = createCastRunner();
+    runner.begin(CONFIG);
+    // 2000ms at 1/60s ≈ 120 ticks; stay just short of completion so every tick is genuinely quiet.
+    for (let i = 0; i < 110; i += 1) {
+      expect(runner.tick(1 / 60, 0.01)).toBeNull();
+    }
+    // ...and it then COMPLETES rather than interrupting, despite 110 frames of accumulated jitter.
+    let event = null;
+    for (let i = 0; i < 20 && event === null; i += 1) event = runner.tick(1 / 60, 0.01);
+    expect(event).toEqual({ kind: "completed", abilityId: "heal" });
+  });
+
+  it("without a deadzone the same jitter does cancel the cast", () => {
+    const runner = createCastRunner();
+    runner.begin({ ...CONFIG, moveDeadzone: undefined });
+    let event = null;
+    for (let i = 0; i < 200 && event === null; i += 1) event = runner.tick(1 / 60, 0.01);
+    expect(event).toEqual({ kind: "interrupted", abilityId: "heal", reason: "moved" });
+  });
+
+  it("real movement above the deadzone still interrupts", () => {
+    const runner = createCastRunner();
+    runner.begin(CONFIG);
+    expect(runner.tick(1 / 60, 0.01)).toBeNull();
+    expect(runner.tick(1 / 60, 0.5)).toEqual({ kind: "interrupted", abilityId: "heal", reason: "moved" });
+  });
+
+  it("movement exactly at the deadzone is jitter, not travel", () => {
+    const runner = createCastRunner();
+    runner.begin(CONFIG);
+    for (let i = 0; i < 50; i += 1) expect(runner.tick(1 / 60, 0.04)).toBeNull();
+  });
+
+  it("defaults to 0, so existing callers are unchanged", () => {
+    const runner = createCastRunner();
+    runner.begin({ abilityId: "bolt", castTimeMs: 2000 });
+    expect(runner.tick(1 / 60, 0.05)).toEqual({ kind: "interrupted", abilityId: "bolt", reason: "moved" });
+  });
+});
