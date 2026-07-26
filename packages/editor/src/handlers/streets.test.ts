@@ -163,6 +163,24 @@ describe("generate_streets", () => {
     dispose();
   });
 
+  test("params override the whole rule set, optional dials included", () => {
+    const { api, dispose } = hostWithVolume();
+    const bake = (params?: Record<string, number>): EditorPath[] => {
+      api.handle({ method: "generate_streets", volumeId: "vol_box", seed: "s1", mode: "net", ...(params === undefined ? {} : { params }) });
+      return genPaths(api.getSession().getState().document);
+    };
+    const flat = bake();
+    expect(flat.every((path) => path.points.every((point) => point.y === 5))).toBe(true);
+    // Road relief rides the baked path, grade-capped by its own dial.
+    const hilly = bake({ elevation: 0.8, maxGrade: 0.12 });
+    const ys = hilly.flatMap((path) => path.points.map((point) => point.y));
+    expect(Math.max(...ys) - Math.min(...ys)).toBeGreaterThan(3);
+    // And a compact circuit lays out a different lap than the hull construction.
+    const circuit = { loopiness: 1, connectivity: 0, branching: 0 };
+    expect(JSON.stringify(bake({ ...circuit, compactness: 0.8 }))).not.toBe(JSON.stringify(bake(circuit)));
+    dispose();
+  });
+
   test("rejects a bake with neither a volume nor explicit bounds", () => {
     const { api, dispose } = createEditorHost({ gameId: "pathnet-test", layers: {} });
     const res = api.handle({ method: "generate_streets", seed: "s1" });

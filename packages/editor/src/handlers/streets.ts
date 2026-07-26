@@ -52,12 +52,15 @@ const CIRCUIT_DEFAULTS: Omit<StreetNetworkRules, "seed"> = {
   boulevards: 0,
 };
 
-/** The numeric slider keys a caller may overlay onto the mode preset via `params`. */
+/** Every numeric slider a caller may overlay onto the mode preset via `params` — the whole rule set
+ *  bar the seed, so the verb can reach anything the generator answers to. */
 const RULE_KEYS: readonly (keyof Omit<StreetNetworkRules, "seed">)[] = [
+  "outline",
   "gridness",
   "loopiness",
   "connectivity",
   "branching",
+  "residentialBranches",
   "deadEnds",
   "segmentLength",
   "aspect",
@@ -67,6 +70,10 @@ const RULE_KEYS: readonly (keyof Omit<StreetNetworkRules, "seed">)[] = [
   "maxTurnAngle",
   "width",
   "boulevards",
+  "sidewalkWidth",
+  "elevation",
+  "maxGrade",
+  "compactness",
 ];
 
 /** The tag every baked path carries in `meta.generator`, so a re-run can find and replace its own output. */
@@ -138,8 +145,14 @@ export const streetsHandlers: Pick<HandlerTable, "generate_streets"> = {
     const kind = request.kind ?? (network.mode === "circuit" ? "route" : "road");
     const baseY = origin.y;
 
+    // Road-surface relief rides the baked path's y; without the `elevation` dial the generator emits
+    // no heights and every point stays at the volume's base height, as it always did.
     const toWorld = (street: Street): EditorVec3[] =>
-      street.points.map(([lx, lz]) => ({ x: origin.x + lx, y: baseY, z: origin.z + lz }));
+      street.points.map(([lx, lz], index) => ({
+        x: origin.x + lx,
+        y: baseY + (street.heights?.[index] ?? 0),
+        z: origin.z + lz,
+      }));
 
     // Through-streets → one path each (a circuit's ring is a single closed loop street: first ≈ last).
     const newPaths: EditorPath[] = [];

@@ -37,8 +37,15 @@ import {
   type CityIntersection,
   type CityTree,
 } from "@jgengine/core/world/cityKind";
-import type { CityTreeSpecies, CityPieceRole } from "@jgengine/core/world/cityContent";
-import { generateBuilding, resolveBuildingPalette, type BuildingPalette } from "@jgengine/core/world/buildings";
+import { zoneBand, zoneMetric, type CityTreeSpecies, type CityPieceRole, type CityZoneBand } from "@jgengine/core/world/cityContent";
+import {
+  generateBuilding,
+  resolveBuildingPalette,
+  resolveBuildingWallTones,
+  type BuildingPalette,
+  type BuildingPartKind,
+} from "@jgengine/core/world/buildings";
+import { hashString } from "@jgengine/core/random/rng";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { buildScatterProxy } from "../scatter/scatterProxies";
@@ -47,19 +54,27 @@ import { getBuildingKit } from "../structures/buildingKitRegistry";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
-const ASPHALT_COLOR = "#3d3f45";
+const ASPHALT_COLOR = "#3a3b3d";
 const GRAVEL_COLOR = "#93815f";
-const SIDEWALK_COLOR = "#98948c";
-const MARKING_COLOR = "#e8e4d8";
+const SIDEWALK_COLOR = "#867f74";
+const MARKING_COLOR = "#ddd9cb";
 const MEDIAN_COLOR = "#4d7a40";
 const PAVEMENT_COLOR = "#a8a49a";
 const CONCRETE_COLOR = "#b0aba1";
 const STEEL_COLOR = "#4c505a";
 const TUNNEL_COLOR = "#5b5754";
-const CURB_COLOR = "#c4c0b6";
+const CURB_COLOR = "#b8b4aa";
 const HEDGE_COLOR = "#3d6631";
 const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#5c8348", buffer: "#63734a" } as const;
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
+/** Block-interior ground by zone band. A dense district keeps hard surface all the way to its rim;
+ *  only a low-density (large-block) district lets the edge band go back to lawn. */
+const BLOCK_SURFACE_COLORS: Record<CityZoneBand, string> = { core: "#5b5850", mid: "#6c6456", edge: "#78765c" };
+const BLOCK_EDGE_GREEN = "#6a7f4a";
+/** The developed ground fades into this at its outer reach so the fabric has no stamped rim. */
+const FRINGE_COLOR = "#5f7444";
+/** Non-buildable block land takes its open-space colour so a park block never shows raw terrain. */
+const BLOCK_OPEN_COLORS = { park: PARK_COLORS.green, plaza: PARK_COLORS.plaza, field: PARK_COLORS.field, buffer: PARK_COLORS.buffer } as const;
 
 /**
  * City ground-decal stack. The single-owner {@link GROUND_DECAL_LAYERS} table fixes the authored-road
@@ -67,19 +82,23 @@ const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
  * wants more clearance over relief, so it keeps its own baseline while mirroring the table's ordering
  * (terrain < road == junction < marking) and its two hard contracts: the welded junction surface
  * shares the road layer (seam-welded, never stacked), and markings ride above the road with
- * `polygonOffset`/`renderOrder` on the material. Values below preserve the district's prior look.
+ * `polygonOffset`/`renderOrder` on the material. Everything behind the curb (block land, sidewalk,
+ * parks) rides a curb-height step ABOVE the carriageway, and the curb face is real vertical
+ * geometry between the two — a flat sidewalk under the road plane cannot read as a street.
  */
-const SIDEWALK_LAYER = 0.1;
-const PARK_LAYER = 0.12;
-const DRIVEWAY_LAYER = 0.12;
-const BRIDGE_DECK_LIFT = 0.12;
-const PARKING_LAYER = 0.13;
-const PLAZA_LAYER = 0.14;
+const URBAN_LAYER = 0.06; // street-derived developed ground, under everything else
 const ROAD_LAYER = 0.16; // asphalt/gravel carriageway AND the welded junction surface (seam-shared)
-const CROP_LAYER = 0.2;
-const CURB_LAYER = 0.24;
-const MARKING_LAYER = 0.26;
+const MARKING_LAYER = 0.24;
 const MEDIAN_LAYER = 0.3;
+const BLOCK_LAND_LAYER = 0.3;
+const CURB_LAYER = 0.32;
+const SIDEWALK_LAYER = 0.32;
+const PARK_LAYER = 0.34;
+const DRIVEWAY_LAYER = 0.34;
+const PARKING_LAYER = 0.35;
+const PLAZA_LAYER = 0.36;
+const CROP_LAYER = 0.42;
+const BRIDGE_DECK_LIFT = 0.12;
 
 /** Trim + weld tuning shared by {@link trimPathAtJunctions} and {@link buildJunctionSurface} for the district. */
 const JUNCTION_OPTS = { curbReturnRadius: 3, apronMargin: 0.6, filletSegments: 6, elevation: ROAD_LAYER, maxSegmentLength: 2 };
@@ -188,6 +207,28 @@ class MeshAccumulator {
     for (const [x, z] of positions) this.positions.push(x, sample(x, z) + elevation, z);
     for (const index of indices) this.indices.push(index + base);
     this.pushColor(positions.length, color);
+  }
+
+  /** A vertical skirt around a closed ring — the curb face between carriageway and sidewalk. */
+  addRingWall(
+    ring: readonly RoadPoint[],
+    sample: Sampler,
+    bottom: number,
+    top: number,
+    color: THREE.Color | null = null,
+  ): void {
+    if (ring.length < 3) return;
+    const base = this.positions.length / 3;
+    for (const [x, z] of ring) {
+      const y = sample(x, z);
+      this.positions.push(x, y + bottom, z, x, y + top, z);
+    }
+    for (let i = 0; i < ring.length; i += 1) {
+      const a = base + i * 2;
+      const b = base + ((i + 1) % ring.length) * 2;
+      this.indices.push(a, a + 1, b, b, a + 1, b + 1);
+    }
+    this.pushColor(ring.length * 2, color);
   }
 
   build(): THREE.BufferGeometry | null {
@@ -358,6 +399,7 @@ const DETAIL_RADIUS = 95;
 const DETAIL_MAX = 12;
 const DETAIL_CLASSES = new Set(["tower", "slab", "shop", "rowhouse"]);
 
+<<<<<<< HEAD
 // Rooftop mechanical units read as debug cubes in the district's bright palette accent — force a
 // muted metal grey so they look like real HVAC/plant, never placeholder geometry.
 const ROOF_PROP_GREY = "#9a9ea3";
@@ -384,6 +426,87 @@ function DetailBuildings({
         rotationY: entry.rotationY,
       })),
     [buildings],
+=======
+/** Per-part-kind instanced batches for the near-LOD facade buildings (full lot yaw support). */
+function DetailBuildings({ buildings, palette }: { buildings: DetailBuilding[]; palette: BuildingPalette }) {
+  const meshes = useMemo(() => {
+    if (buildings.length === 0) return null;
+    const buckets = new Map<BuildingPartKind, { matrices: THREE.Matrix4[]; tints: THREE.Color[] }>();
+    const partMatrix = new THREE.Matrix4();
+    const compose = new THREE.Matrix4();
+    const tint = new THREE.Color();
+    for (const building of buildings) {
+      const wallShade = 0.82 + ((hashString(building.lotId) % 512) / 512) * 0.42;
+      for (const part of building.parts) {
+        partMatrix.compose(
+          new THREE.Vector3(part.position[0], part.position[1], part.position[2]),
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), part.rotationY),
+          new THREE.Vector3(Math.max(0.01, part.scale[0]), Math.max(0.01, part.scale[1]), Math.max(0.01, part.scale[2])),
+        );
+        compose.multiplyMatrices(building.matrix, partMatrix);
+        // Glazing is per-pane: a uniform sheet of bright quads is the checkerboard look. Everything
+        // else takes the building's own shade so neighbours differ.
+        if (part.kind === "window" || part.kind === "storefront") {
+          const pane = (hashString(part.id) % 997) / 997;
+          const lit = pane > 0.86;
+          tint.setRGB(0.3 + pane * 0.34, 0.32 + pane * 0.32, 0.38 + pane * 0.3);
+          if (lit) tint.setRGB(1.25, 1.1, 0.78);
+        } else if (part.kind === "roofProp" || part.kind === "storeSign") {
+          tint.setScalar(1);
+        } else {
+          tint.setScalar(wallShade);
+        }
+        const bucket = buckets.get(part.kind);
+        if (bucket === undefined) buckets.set(part.kind, { matrices: [compose.clone()], tints: [tint.clone()] });
+        else {
+          bucket.matrices.push(compose.clone());
+          bucket.tints.push(tint.clone());
+        }
+      }
+    }
+    const geometry = new THREE.BoxGeometry(1, 1, 1);
+    const out: THREE.InstancedMesh[] = [];
+    // Rooftop mechanical units read as debug cubes in the district's bright palette accent — force a
+    // muted metal grey so they look like real HVAC/plant, never placeholder geometry.
+    const ROOF_PROP_GREY = "#9a9ea3";
+    for (const [kind, bucket] of buckets) {
+      const color = kind === "roofProp" ? ROOF_PROP_GREY : palette[kind];
+      const material =
+        kind === "window" || kind === "storefront"
+          ? new THREE.MeshPhysicalMaterial({ color, roughness: 0.14, metalness: 0.1 })
+          : kind === "storeSign"
+            ? new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6, roughness: 0.5 })
+            : new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0 });
+      const mesh = new THREE.InstancedMesh(geometry, material, bucket.matrices.length);
+      bucket.matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
+      bucket.tints.forEach((value, i) => mesh.setColorAt(i, value));
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+      out.push(mesh);
+    }
+    return out;
+  }, [buildings, palette]);
+  useEffect(
+    () => () => {
+      if (meshes === null) return;
+      for (const mesh of meshes) {
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+      }
+    },
+    [meshes],
+  );
+  if (meshes === null) return null;
+  return (
+    <>
+      {meshes.map((mesh, i) => (
+        <primitive key={`detail:${i}`} object={mesh} />
+      ))}
+    </>
+>>>>>>> a52365e9 (feat(world): one slider surface for city and track, and a race the editor can author)
   );
   const detailPalette = useMemo(() => ({ ...palette, roofProp: ROOF_PROP_GREY }), [palette]);
   const kit = getBuildingKit(kitName);
@@ -490,21 +613,24 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       matrices: THREE.Matrix4[];
       colors: THREE.Color[];
       groundOffsets?: number[];
+      facades?: number[];
     }
     const buckets: Record<"box" | "banded" | "gable" | "cylinder" | "dome", Bucket> = {
       box: { matrices: [], colors: [] },
-      banded: { matrices: [], colors: [], groundOffsets: [] },
+      banded: { matrices: [], colors: [], groundOffsets: [], facades: [] },
       gable: { matrices: [], colors: [] },
       cylinder: { matrices: [], colors: [] },
       dome: { matrices: [], colors: [] },
     };
     const color = new THREE.Color();
+    const wallTones = resolveBuildingWallTones(resolved.rules.style).map((tone: string) => new THREE.Color(tone));
     const roleBase: Record<CityPieceRole, THREE.Color> = {
       wall: new THREE.Color(roleColor(palette, "wall")),
       roof: new THREE.Color(roleColor(palette, "roof")),
       trim: new THREE.Color(roleColor(palette, "trim")),
       accent: new THREE.Color(roleColor(palette, "accent")),
     };
+    const lotWall = new THREE.Color();
     for (const lot of resolved.lots) {
       if (detail.ids.has(lot.id)) continue;
       const c = Math.cos(lot.rotationY);
@@ -527,6 +653,17 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const foundationBase = minY - 0.5;
       // Edge-of-town lots vary more; downtown stays composed.
       const jitterAmp = lot.zone === "edge" ? 0.4 : lot.zone === "mid" ? 0.28 : 0.18;
+      // Each building draws its wall colour from the style's tone family, then shifts value/hue on
+      // top — one flat hue per style is what makes a whole skyline read as a single paint bucket.
+      const idHash = hashString(lot.id);
+      lotWall.copy(wallTones[idHash % wallTones.length]!);
+      const shade = ((idHash >>> 8) % 1024) / 1024;
+      const hue = ((idHash >>> 19) % 512) / 512;
+      lotWall.offsetHSL((hue - 0.5) * 0.07, (hue - 0.5) * 0.24, (shade - 0.5) * 0.2);
+      const facadeSeed = ((idHash >>> 17) % 997) / 997;
+      // Parking structures are the one class whose "windows" are open deck slots, and the resolver
+      // can seat an interior-fill class here that `CityLotClass` does not name.
+      const facadeKind = (lot.class as string) === "garage" ? 2 : lot.floors >= 8 ? 1 : 0;
       for (const piece of lot.pieces) {
         const px = lot.center[0] + piece.offset[0] * c + piece.offset[2] * s;
         const pz = lot.center[1] - piece.offset[0] * s + piece.offset[2] * c;
@@ -540,18 +677,20 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
           new THREE.Vector3(Math.max(0.05, piece.size[0]), Math.max(0.05, height), Math.max(0.05, piece.size[2])),
         );
         const amp = jitterAmp * ROLE_JITTER[piece.role];
-        color.copy(roleBase[piece.role]);
+        color.copy(piece.role === "wall" ? lotWall : roleBase[piece.role]);
+        // Trim/roof/accent stay in the lot's own family so a building reads as one object, not as
+        // borrowed parts: pull each partway toward its wall tone before the role jitter.
+        if (piece.role === "trim") color.lerp(lotWall, 0.45);
+        else if (piece.role === "roof") color.lerp(lotWall, 0.2);
         // Accent trim (awnings/cornices) is a saturated storefront color that reads as a stray red/pink
         // strip at district scale — pull it partway to the wall so it stays a tasteful accent.
-        if (piece.role === "accent") color.lerp(roleBase.wall, 0.5);
+        else if (piece.role === "accent") color.lerp(lotWall, 0.5);
         color.multiplyScalar(1 - amp / 2 + lot.jitter * amp);
-        // A whisper of hue shift so rows of houses never read as one paint bucket.
-        color.r *= 1 + (lot.jitter - 0.5) * 0.08;
-        color.b *= 1 + (0.5 - lot.jitter) * 0.08;
         const bucket = piece.shape === "box" ? (piece.banded ? buckets.banded : buckets.box) : buckets[piece.shape];
         bucket.matrices.push(matrix);
         bucket.colors.push(color.clone());
         bucket.groundOffsets?.push(groundOffset);
+        bucket.facades?.push(facadeSeed, facadeKind);
       }
     }
     // Cylinders/gables/domes scale from their base (geometry roots at y=0), boxes from center —
@@ -566,11 +705,15 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const mesh = new THREE.InstancedMesh(geometry, material, bucket.matrices.length);
       bucket.matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
       bucket.colors.forEach((tint, i) => mesh.setColorAt(i, tint));
-      if (bucket.groundOffsets !== undefined) {
+      if (bucket.groundOffsets !== undefined && bucket.facades !== undefined) {
         mesh.geometry = geometry.clone();
         mesh.geometry.setAttribute(
           "instanceGroundOffset",
           new THREE.InstancedBufferAttribute(new Float32Array(bucket.groundOffsets), 1),
+        );
+        mesh.geometry.setAttribute(
+          "instanceFacade",
+          new THREE.InstancedBufferAttribute(new Float32Array(bucket.facades), 2),
         );
       }
       mesh.instanceMatrix.needsUpdate = true;
@@ -603,11 +746,13 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   // --- Ground network: roads by surface, sidewalks, medians, patches, markings, driveways, parks. ---
   const ground = useMemo(() => {
     if (resolved === null || resolved.streets.length === 0) return null;
-    const asphalt = new MeshAccumulator();
+    const asphalt = new MeshAccumulator(true);
     const gravel = new MeshAccumulator();
     const sidewalks = new MeshAccumulator();
-    const patches = new MeshAccumulator();
-    const markings = new MeshAccumulator();
+    const urban = new MeshAccumulator(true);
+    const land = new MeshAccumulator(true);
+    const patches = new MeshAccumulator(true);
+    const markings = new MeshAccumulator(true);
     const curbs = new MeshAccumulator();
     const medians = new MeshAccumulator();
     const pavementDrives = new MeshAccumulator();
@@ -615,6 +760,11 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     const parks = new MeshAccumulator(true);
     const crops = new MeshAccumulator(true);
     const parkColor = new THREE.Color();
+    const wearColor = new THREE.Color();
+    const markColor = new THREE.Color();
+    const ZEBRA_TINT = new THREE.Color(1, 1, 1);
+    const LANE_TINT = new THREE.Color(0.78, 0.77, 0.72);
+    const STALL_TINT = new THREE.Color(0.55, 0.54, 0.5);
     // Sidewalks now come from block curb→land bands; only pre-block documents fall back to the old
     // per-street widened ribbon.
     const useBlockSidewalks = resolved.blocks.length > 0;
@@ -666,7 +816,13 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       return sample(x, z);
     };
 
-    const addMarkQuad = (center: RoadPoint, along: readonly [number, number], length: number, width: number) => {
+    const addMarkQuad = (
+      center: RoadPoint,
+      along: readonly [number, number],
+      length: number,
+      width: number,
+      tint: THREE.Color,
+    ) => {
       const perp: readonly [number, number] = [-along[1], along[0]];
       const base = markings.positions.length / 3;
       for (const [sa, sp] of [
@@ -678,6 +834,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         const x = center[0] + along[0] * length * sa + perp[0] * width * sp;
         const z = center[1] + along[1] * length * sa + perp[1] * width * sp;
         markings.positions.push(x, deckSampler(x, z) + MARKING_LAYER, z);
+        markings.colors?.push(tint.r, tint.g, tint.b);
       }
       markings.indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
     };
@@ -694,12 +851,16 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     }));
     const approachesByCross = new Map<number, JunctionApproach[]>();
 
-    for (const street of resolved.streets) {
-      if (street.points.length < 2) continue;
+    resolved.streets.forEach((street, streetIndex) => {
+      if (street.points.length < 2) return;
       const rounded = roundPathCorners(street.points, Math.max(2.5, street.width * 1.15), 9);
       const surface = street.surface === "gravel" ? gravel : asphalt;
+      // Every carriageway takes its own resurfacing tint, so a district is patched asphalt of many
+      // ages rather than one poured sheet of grey.
+      const wear = (hashString(`surface:${streetIndex}`) % 1024) / 1024;
+      wearColor.setRGB(0.86 + wear * 0.3, 0.87 + wear * 0.28, 0.9 + wear * 0.24);
       for (const sub of trimPathAtJunctions(rounded, street.width, intersectionInputs, JUNCTION_OPTS)) {
-        surface.addRibbon(sub.path, street.width, deckSampler, ROAD_LAYER);
+        surface.addRibbon(sub.path, street.width, deckSampler, ROAD_LAYER, street.surface === "gravel" ? null : wearColor);
         for (const cut of sub.cuts) {
           const approach: JunctionApproach = {
             center: cut.center,
@@ -712,30 +873,33 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         }
       }
       if (street.sidewalk && !useBlockSidewalks) sidewalks.addRibbon(rounded, street.width + 3.6, sample, SIDEWALK_LAYER);
-      // Curbs + painted edge/lane lines make a flat ribbon read as a real carriageway. Both break at
-      // junctions (the crossing owns its own pavement), so clip the centerline first.
+      // Painted edge/lane lines make a flat ribbon read as a real carriageway; they break at
+      // junctions (the crossing owns its own pavement), so clip the centerline first. Curbs come
+      // from the block curb rings below whenever the block pipeline ran — a per-street strip would
+      // be a second, misaligned copy of the same edge.
       if (street.surface === "asphalt") {
         const half = street.width / 2;
         for (const run of clipPolylineAtIntersections(rounded, resolved.intersections, half + 0.5)) {
           if (run.length < 2) continue;
-          const left = offsetPath(run, half);
-          const right = offsetPath(run, -half);
-          curbs.addRibbon(left, 0.55, deckSampler, CURB_LAYER);
-          curbs.addRibbon(right, 0.55, deckSampler, CURB_LAYER);
-          if (street.level !== "lane") {
-            // White edge (fog) lines just inside the curb.
-            markings.addRibbon(offsetPath(run, half - 0.75), 0.16, deckSampler, MARKING_LAYER);
-            markings.addRibbon(offsetPath(run, -(half - 0.75)), 0.16, deckSampler, MARKING_LAYER);
-            // Avenue+ get dashed lane dividers either side of the centerline.
+          if (!useBlockSidewalks) {
+            curbs.addRibbon(offsetPath(run, half), 0.55, deckSampler, CURB_LAYER);
+            curbs.addRibbon(offsetPath(run, -half), 0.55, deckSampler, CURB_LAYER);
+          }
+          // Only the big roads carry paint: edge lines on every street turn a district white.
+          if (street.level === "boulevard" || street.level === "avenue") {
+            markColor.copy(LANE_TINT);
+            markings.addRibbon(offsetPath(run, half - 0.8), 0.12, deckSampler, MARKING_LAYER, markColor);
+            markings.addRibbon(offsetPath(run, -(half - 0.8)), 0.12, deckSampler, MARKING_LAYER, markColor);
             if (street.level === "avenue") {
-              for (const dash of dashSegments(offsetPath(run, half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.13, deckSampler, MARKING_LAYER);
-              for (const dash of dashSegments(offsetPath(run, -half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.13, deckSampler, MARKING_LAYER);
+              for (const dash of dashSegments(offsetPath(run, half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.12, deckSampler, MARKING_LAYER, markColor);
+              for (const dash of dashSegments(offsetPath(run, -half * 0.5), 2.4, 3.2)) markings.addRibbon(dash, 0.12, deckSampler, MARKING_LAYER, markColor);
             }
           }
         }
       }
       if (street.bulb !== undefined) {
-        (street.surface === "gravel" ? gravel : asphalt).addDisc(street.bulb, street.width * 1.15, sample, ROAD_LAYER);
+        if (street.surface === "gravel") gravel.addDisc(street.bulb, street.width * 1.15, sample, ROAD_LAYER);
+        else asphalt.addDisc(street.bulb, street.width * 1.15, sample, ROAD_LAYER, wearColor);
         if (street.sidewalk) sidewalks.addDisc(street.bulb, street.width * 1.15 + 1.8, sample, SIDEWALK_LAYER);
       }
       if (street.surface === "asphalt" && street.level !== "lane") {
@@ -763,11 +927,12 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
                 break;
               }
             }
-            if (!inCross) markings.addRibbon(dash, 0.18, deckSampler, MARKING_LAYER);
+            markColor.copy(LANE_TINT);
+            if (!inCross) markings.addRibbon(dash, 0.16, deckSampler, MARKING_LAYER, markColor);
           }
         }
       }
-    }
+    });
     // NOTE: streetGenerator's `Street.sidewalks` offset polylines are NOT surfaced here — this renderer
     // consumes `resolveCityObject`'s `CityStreet` (which carries only a `sidewalk` boolean), and its
     // sidewalks come from richer block curb→land bands below. Wiring the raw offset polylines would be a
@@ -775,34 +940,169 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     // Sidewalk band per block: the region between the curb ring (outer) and the land ring (inner).
     // Blocks whose two rings coincide (no sidewalk) drop out — every band triangle is degenerate,
     // so `addRingBand` emits nothing.
-    if (useBlockSidewalks) {
-      for (const block of resolved.blocks) {
-        sidewalks.addRingBand(block.curb, block.polygon, sample, SIDEWALK_LAYER);
+    const hx = Math.max(1e-6, resolved.size[0] / 2);
+    const hz = Math.max(1e-6, resolved.size[1] / 2);
+    const cosR = Math.cos(resolved.rotationY);
+    const sinR = Math.sin(resolved.rotationY);
+    const bandAt = (x: number, z: number, roll: number): CityZoneBand => {
+      const dx = x - resolved.center[0];
+      const dz = z - resolved.center[2];
+      return zoneBand(
+        zoneMetric(dx * cosR - dz * sinR, dx * sinR + dz * cosR, hx, hz),
+        resolved.rules.profile,
+        resolved.rules.coreExtent,
+        resolved.rules.midExtent,
+        roll,
+      );
+    };
+    const lawnEdge = !resolved.rules.sidewalks || resolved.rules.blockSize > 64;
+
+    // Developed ground. Where the street graph yields real block faces the land ring behind the
+    // sidewalk is filled exactly; but block extraction routinely recovers only a fraction of a
+    // wandered district's faces, and every face it misses is terrain grass under downtown. So the
+    // fabric is also stamped as a street-distance field: any cell within reach of a centerline is
+    // developed, shaded pavement near the kerb and yard/service surface deeper into the block.
+    if (resolved.rules.fabric) {
+      // Reach and paved band are measured OUTWARD FROM THE KERB, not from the centreline: a
+      // 20 m boulevard and a 5 m lane must not lay the same width of pavement beside them.
+      const reach = Math.min(40, Math.max(10, resolved.rules.blockSize * 0.55));
+      const pavedTo = Math.max(1.2, resolved.rules.sidewalkWidth + 0.3);
+      const cell = 2.5;
+      let minX = Infinity;
+      let minZ = Infinity;
+      let maxX = -Infinity;
+      let maxZ = -Infinity;
+      let widest = 0;
+      for (const street of resolved.streets) {
+        widest = Math.max(widest, street.width);
+        for (const [x, z] of street.points) {
+          minX = Math.min(minX, x);
+          maxX = Math.max(maxX, x);
+          minZ = Math.min(minZ, z);
+          maxZ = Math.max(maxZ, z);
+        }
+      }
+      const pad = reach + widest / 2;
+      const originX = minX - pad;
+      const originZ = minZ - pad;
+      const nx = Math.ceil((maxX + pad - originX) / cell) + 1;
+      const nz = Math.ceil((maxZ + pad - originZ) / cell) + 1;
+      if (Number.isFinite(minX) && nx > 1 && nz > 1 && nx * nz <= 160_000) {
+        const field = new Float32Array(nx * nz).fill(Infinity);
+        for (const street of resolved.streets) {
+          const half = street.width / 2;
+          for (let s = 0; s + 1 < street.points.length; s += 1) {
+            const [ax, az] = street.points[s]!;
+            const [bx, bz] = street.points[s + 1]!;
+            const vx = bx - ax;
+            const vz = bz - az;
+            const len2 = Math.max(1e-6, vx * vx + vz * vz);
+            const span = reach + half;
+            const i0 = Math.max(0, Math.floor((Math.min(ax, bx) - span - originX) / cell));
+            const i1 = Math.min(nx - 1, Math.ceil((Math.max(ax, bx) + span - originX) / cell));
+            const j0 = Math.max(0, Math.floor((Math.min(az, bz) - span - originZ) / cell));
+            const j1 = Math.min(nz - 1, Math.ceil((Math.max(az, bz) + span - originZ) / cell));
+            for (let j = j0; j <= j1; j += 1) {
+              const pz = originZ + j * cell;
+              for (let i = i0; i <= i1; i += 1) {
+                const px = originX + i * cell;
+                const t = Math.max(0, Math.min(1, ((px - ax) * vx + (pz - az) * vz) / len2));
+                const d = Math.hypot(px - (ax + vx * t), pz - (az + vz * t)) - half;
+                const idx = j * nx + i;
+                if (d < field[idx]!) field[idx] = d;
+              }
+            }
+          }
+        }
+        const fringe = new THREE.Color(FRINGE_COLOR);
+        const fabricColor = new THREE.Color();
+        for (let j = 0; j + 1 < nz; j += 1) {
+          for (let i = 0; i + 1 < nx; i += 1) {
+            const d = (field[j * nx + i]! + field[j * nx + i + 1]! + field[(j + 1) * nx + i]! + field[(j + 1) * nx + i + 1]!) / 4;
+            if (d > reach) continue;
+            const x = originX + (i + 0.5) * cell;
+            const z = originZ + (j + 0.5) * cell;
+            const tone = (hashString(`fabric:${i}:${j}`) % 256) / 256;
+            if (d < pavedTo) {
+              fabricColor.set(SIDEWALK_COLOR);
+            } else {
+              const band = bandAt(x, z, tone);
+              fabricColor.set(band === "edge" && lawnEdge ? BLOCK_EDGE_GREEN : BLOCK_SURFACE_COLORS[band]);
+              // A block-sized patch tone over the fine per-cell grain: yards, courts and lots,
+              // not one poured apron.
+              fabricColor.multiplyScalar(0.8 + ((hashString(`yard:${Math.floor(x / 22)}:${Math.floor(z / 22)}`) % 256) / 256) * 0.42);
+            }
+            fabricColor.multiplyScalar(0.95 + tone * 0.1);
+            if (d > reach - 7) fabricColor.lerp(fringe, Math.min(1, (d - (reach - 7)) / 7));
+            urban.addPatch([x, z], [cell, cell], 0, sample, URBAN_LAYER, fabricColor);
+          }
+        }
       }
     }
-    // Junctions: corner curb-return apron (sidewalk ring peeking out under the asphalt patch), the
-    // patch itself, and a zebra crossing on every REAL arm — but only where the crossing warrants
-    // it. Avenue-and-up arms (or a boulevard/avenue junction) get zebra stripes and the apron;
-    // small residential crossings get just the asphalt patch.
+    // The land ring behind the sidewalk is the block INTERIOR — fill it with a surface read from
+    // the block's use and its zone band, varied per block so a district reads as many yards and
+    // service courts rather than one sheet.
+    if (useBlockSidewalks) {
+      const landColor = new THREE.Color();
+      for (const block of resolved.blocks) {
+        let cx = 0;
+        let cz = 0;
+        for (const [x, z] of block.polygon) {
+          cx += x;
+          cz += z;
+        }
+        cx /= Math.max(1, block.polygon.length);
+        cz /= Math.max(1, block.polygon.length);
+        const tone = (hashString(block.id) % 512) / 512;
+        const band = bandAt(cx, cz, tone);
+        landColor.set(
+          block.kind !== "buildable"
+            ? BLOCK_OPEN_COLORS[block.kind]
+            : band === "edge" && lawnEdge
+              ? BLOCK_EDGE_GREEN
+              : BLOCK_SURFACE_COLORS[band],
+        );
+        landColor.multiplyScalar(0.88 + tone * 0.24);
+        landColor.r *= 1 + (tone - 0.5) * 0.1;
+        landColor.b *= 1 + (0.5 - tone) * 0.12;
+        land.addPolygon(block.polygon, sample, BLOCK_LAND_LAYER, landColor);
+        sidewalks.addRingBand(block.curb, block.polygon, sample, SIDEWALK_LAYER);
+        curbs.addRingWall(block.curb, sample, ROAD_LAYER - 0.02, CURB_LAYER);
+      }
+    }
+    // Junctions: the corner curb-return apron, the welded pavement, and a zebra crossing only on
+    // arms that carry one. The apron is a RING between the widened outline and the pavement edge —
+    // a solid polygon at sidewalk height would bury the crossing it is supposed to wrap.
     resolved.intersections.forEach((cross, crossIndex) => {
       const bigLevel = cross.level === "boulevard" || cross.level === "avenue";
-      const armZebra = (width: number): boolean => bigLevel || width >= resolved.rules.streetWidth * 1.4;
+      // A crossing is painted only where a pedestrian would actually cross: a signalled main-road
+      // junction with three or more arms, or a genuinely oversized arm.
+      const armZebra = (width: number): boolean =>
+        (bigLevel && cross.arms.length >= 3) || width >= resolved.rules.streetWidth * 1.6;
       const paved = resolved.rules.sidewalks && cross.level !== "lane";
-      // A slightly larger apron underneath the crossing reads as the wrapped sidewalk/curb.
       if (paved) {
         const apron = junctionOutline(cross, 1.15, resolved.rules.sidewalkWidth + 0.4);
-        if (apron !== null) sidewalks.addPolygon(apron, sample, SIDEWALK_LAYER);
+        const kerb = junctionOutline(cross, 1.15, 0.1);
+        if (apron !== null && kerb !== null) {
+          sidewalks.addRingBand(apron, kerb, sample, SIDEWALK_LAYER);
+          curbs.addRingWall(kerb, sample, ROAD_LAYER - 0.02, CURB_LAYER);
+        } else if (apron !== null) {
+          sidewalks.addPolygon(apron, sample, SIDEWALK_LAYER);
+        }
       }
       // The junction pavement is welded onto the trimmed ribbon ends (seam-shared, no floating disc).
       // Crossings that got no trimmed approach fall back to the rounded outline / disc, so coverage
       // never regresses.
       const approaches = approachesByCross.get(crossIndex);
+      // Crossings wear darker than the roads that feed them — polished by turning traffic.
+      const scuff = (hashString(`cross:${crossIndex}`) % 512) / 512;
+      wearColor.setRGB(0.76 + scuff * 0.18, 0.77 + scuff * 0.17, 0.8 + scuff * 0.16);
       if (approaches !== undefined && approaches.length > 0) {
-        patches.addMesh(buildJunctionSurface({ x: cross.x, z: cross.z }, approaches, deckSampler, JUNCTION_OPTS));
+        patches.addMesh(buildJunctionSurface({ x: cross.x, z: cross.z }, approaches, deckSampler, JUNCTION_OPTS), wearColor);
       } else {
         const outline = junctionOutline(cross);
-        if (outline !== null) patches.addPolygon(outline, deckSampler, ROAD_LAYER);
-        else patches.addDisc([cross.x, cross.z], cross.radius, deckSampler, ROAD_LAYER);
+        if (outline !== null) patches.addPolygon(outline, deckSampler, ROAD_LAYER, wearColor);
+        else patches.addDisc([cross.x, cross.z], cross.radius, deckSampler, ROAD_LAYER, wearColor);
       }
       if (paved) {
         const maxHalf = Math.max(...cross.arms.map((arm) => arm.width / 2));
@@ -810,14 +1110,20 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
           if (!armZebra(arm.width)) continue;
           const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
           const perp: readonly [number, number] = [-dir[1], dir[0]];
-          // Stop line across the approach, just outside the crossing box.
-          const stopDist = maxHalf * 1.15 + 0.55;
-          addMarkQuad([cross.x + dir[0] * stopDist, cross.z + dir[1] * stopDist], perp, arm.width * 0.82, 0.5);
-          for (let stripe = 0; stripe < 4; stripe += 1) {
-            const dist = maxHalf * 1.15 + 1.5 + stripe * 0.85;
-            const center: RoadPoint = [cross.x + dir[0] * dist, cross.z + dir[1] * dist];
-            addMarkQuad(center, perp, arm.width * 0.8, 0.44);
+          // Bars run WITH traffic and sit at the MOUTH of the junction, inside the pavement: a
+          // full-width ladder near the centre merges all four arms into one painted field.
+          const barLength = Math.min(2, maxHalf * 0.38);
+          const bandDist = maxHalf * 0.95;
+          const span = arm.width * 0.66;
+          const bars = Math.max(3, Math.round(span / 1.7));
+          for (let bar = 0; bar < bars; bar += 1) {
+            const t = (bar + 0.5) / bars - 0.5;
+            const bx = cross.x + dir[0] * bandDist + perp[0] * t * span;
+            const bz = cross.z + dir[1] * bandDist + perp[1] * t * span;
+            addMarkQuad([bx, bz], dir, barLength, 0.36, ZEBRA_TINT);
           }
+          const stopDist = Math.min(maxHalf * 1.12, bandDist + barLength / 2 + 0.45);
+          addMarkQuad([cross.x + dir[0] * stopDist, cross.z + dir[1] * stopDist], perp, arm.width * 0.72, 0.3, LANE_TINT);
         }
       }
     });
@@ -834,7 +1140,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         const lx = (i / stalls - 0.5) * pad.size[0];
         const cx = pad.center[0] + lx * cos + (pad.size[1] * 0.24) * sin;
         const cz = pad.center[1] - lx * sin + (pad.size[1] * 0.24) * cos;
-        addMarkQuad([cx, cz], [sin, cos], pad.size[1] * 0.42, 0.12);
+        addMarkQuad([cx, cz], [sin, cos], pad.size[1] * 0.42, 0.1, STALL_TINT);
       }
     }
     for (const park of resolved.parks) {
@@ -854,6 +1160,8 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       asphalt: asphalt.build(),
       gravel: gravel.build(),
       sidewalks: sidewalks.build(),
+      urban: urban.build(),
+      land: land.build(),
       patches: patches.build(),
       markings: markings.build(),
       curbs: curbs.build(),
@@ -1043,14 +1351,18 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       const mesh = new THREE.InstancedMesh(geometry, material, trees.length);
       const matrix = new THREE.Matrix4();
       trees.forEach((tree, i) => {
-        const scale = tree.scale * SPECIES_SCALE[species];
+        // A second stream off the planting position: `tree.jitter` alone left every canopy the same
+        // ball on a stick, so age (girth vs height) and leaf tone vary independently of it.
+        const age = (hashString(`tree:${tree.x.toFixed(2)}:${tree.z.toFixed(2)}`) % 1024) / 1024;
+        const scale = tree.scale * SPECIES_SCALE[species] * (0.66 + age * 0.78);
+        const spread = 0.86 + tree.jitter * 0.34;
         matrix.compose(
           new THREE.Vector3(tree.x, sample(tree.x, tree.z) - 0.05, tree.z),
           new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), tree.jitter * Math.PI * 2),
-          new THREE.Vector3(scale, scale * (0.92 + tree.jitter * 0.16), scale),
+          new THREE.Vector3(scale * spread, scale * (0.8 + age * 0.55), scale * spread),
         );
         mesh.setMatrixAt(i, matrix);
-        color.setScalar(0.82 + tree.jitter * 0.36);
+        color.setRGB(0.74 + age * 0.42, 0.84 + tree.jitter * 0.3, 0.68 + ((age * 5) % 1) * 0.4);
         mesh.setColorAt(i, color);
       });
       mesh.instanceMatrix.needsUpdate = true;
@@ -1139,9 +1451,19 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   if (resolved === null) return null;
   return (
     <group>
+      {ground?.urban != null ? (
+        <mesh geometry={ground.urban} receiveShadow>
+          <meshStandardMaterial vertexColors roughness={1} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
+      {ground?.land != null ? (
+        <mesh geometry={ground.land} receiveShadow>
+          <meshStandardMaterial vertexColors roughness={1} metalness={0} side={THREE.DoubleSide} />
+        </mesh>
+      ) : null}
       {ground?.asphalt != null ? (
         <mesh geometry={ground.asphalt} receiveShadow>
-          <meshStandardMaterial color={ASPHALT_COLOR} roughness={0.96} metalness={0} side={THREE.DoubleSide} />
+          <meshStandardMaterial color={ASPHALT_COLOR} vertexColors roughness={0.96} metalness={0} side={THREE.DoubleSide} />
         </mesh>
       ) : null}
       {ground?.gravel != null ? (
@@ -1156,7 +1478,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       ) : null}
       {ground?.patches != null ? (
         <mesh geometry={ground.patches} receiveShadow>
-          <meshStandardMaterial color={ASPHALT_COLOR} roughness={0.96} metalness={0} side={THREE.DoubleSide} />
+          <meshStandardMaterial color={ASPHALT_COLOR} vertexColors roughness={0.96} metalness={0} side={THREE.DoubleSide} />
         </mesh>
       ) : null}
       {ground?.curbs != null ? (
@@ -1168,6 +1490,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         <mesh geometry={ground.markings} renderOrder={1}>
           <meshStandardMaterial
             color={MARKING_COLOR}
+            vertexColors
             roughness={0.8}
             metalness={0}
             side={THREE.DoubleSide}
