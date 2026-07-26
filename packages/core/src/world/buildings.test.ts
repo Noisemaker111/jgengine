@@ -127,3 +127,36 @@ describe("open storefronts are backed, not holes", () => {
     }
   });
 });
+
+describe("facade panels leave no see-through slits", () => {
+  test("structural panels tile each bay with no gap at the seams", () => {
+    // Buildings are a shell of thin panels with no solid core, so an undersized structural panel
+    // opens a continuous slit you can see through the building and out the far side.
+    const building = generateBuilding({
+      id: "solid",
+      seed: "slit",
+      floors: 3,
+      baysWide: 4,
+      baysDeep: 3,
+      bayWidth: 2,
+    });
+    const structural = building.parts.filter(
+      (part) => part.tags?.includes("structure") === true || part.kind === "shutter",
+    );
+    const front = structural
+      .filter((part) => part.facade === "front")
+      .map((part) => ({
+        x0: part.position[0] - part.scale[0] / 2,
+        x1: part.position[0] + part.scale[0] / 2,
+        y: Math.round(part.position[1] * 100) / 100,
+      }));
+    expect(front.length).toBeGreaterThan(0);
+
+    for (const level of new Set(front.map((panel) => panel.y))) {
+      const row = front.filter((panel) => panel.y === level).sort((a, b) => a.x0 - b.x0);
+      for (let index = 1; index < row.length; index += 1) {
+        expect(row[index]!.x0 - row[index - 1]!.x1).toBeLessThan(0.001);
+      }
+    }
+  });
+});

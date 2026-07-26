@@ -460,6 +460,13 @@ function panelPosition(
   return [faceDepth(facade, width, depth, config), y, z];
 }
 
+/**
+ * Panel dimensions inside one bay. Structural parts (wall, shutter) must pass 1/1 so they tile their
+ * bay completely — a generated building is a shell of thin panels with no solid core, so any ratio
+ * below 1 leaves a continuous slit at every bay seam and floor line that you can see through the
+ * building and out the far side. Decorative overlays (window, storefront, awning, sign) sit on top of
+ * a full wall and are meant to be inset.
+ */
 function panelScale(config: BuildingConfig, _facade: BuildingFacade, heightRatio: number, widthRatio = 0.92): Vec3 {
   const along = config.bayWidth * widthRatio;
   const high = config.floorHeight * heightRatio;
@@ -522,7 +529,7 @@ function pushUpperFloorParts(
   const cell: BuildingCellRef = { facade, level, bay };
   const key = `${facade}:${level}:${bay}`;
   const position = panelPosition(config, facade, bay, level, width, depth);
-  parts.push(part(config, "wall", facade, position, panelScale(config, facade, 0.92), `${key}:wall`, cell, ["structure", "upper"]));
+  parts.push(part(config, "wall", facade, position, panelScale(config, facade, 1, 1), `${key}:wall`, cell, ["structure", "upper"]));
   if (!chance(config.seed, `${key}:window`, config.probabilities.window)) return;
   parts.push(part(config, "window", facade, position, panelScale(config, facade, 0.46, 0.58), `${key}:window`, cell, ["upper"]));
   if (chance(config.seed, `${key}:awning`, config.probabilities.awning)) {
@@ -555,7 +562,7 @@ function pushGroundFloorParts(
     // hollow shell, so a translucent storefront with nothing behind it is a hole straight through the
     // building to the world beyond — and open stores only land on the street-facing facade, so a row
     // of shops along a road was the most visible place for it to read as see-through.
-    parts.push(part(config, "wall", facade, position, panelScale(config, facade, 0.92), `${key}:wall`, cell, ["structure", "ground"]));
+    parts.push(part(config, "wall", facade, position, panelScale(config, facade, 1, 1), `${key}:wall`, cell, ["structure", "ground"]));
     parts.push(part(config, "storefront", facade, position, panelScale(config, facade, 0.86), `${key}:store`, cell, ["ground", "open"]));
     if (chance(config.seed, `${key}:sign`, config.probabilities.storeSign)) {
       const signPosition: Vec3 = [position[0], position[1] + config.floorHeight * 0.34, position[2]];
@@ -564,7 +571,7 @@ function pushGroundFloorParts(
     return;
   }
   const kind: BuildingPartKind = facade === "front" ? "shutter" : "wall";
-  parts.push(part(config, kind, facade, position, panelScale(config, facade, 0.86), `${key}:${kind}`, cell, ["ground", "closed"]));
+  parts.push(part(config, kind, facade, position, panelScale(config, facade, 1, 1), `${key}:${kind}`, cell, ["ground", "closed"]));
 }
 
 function pushFacade(
