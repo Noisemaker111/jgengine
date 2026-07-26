@@ -74,3 +74,20 @@ describe("subject tokens", () => {
     expect(() => parseLookAim("@marker:   ", undefined)).toThrow(/empty id/);
   });
 });
+
+describe("named views", () => {
+  it("accepts a bare vantage that overrides a declared view's", () => {
+    expect(parseLookAim(undefined, "60,28", { withNamedView: true })).toEqual({ distance: 60, height: 28 });
+  });
+
+  it("omits look from the params when only the vantage is overridden", () => {
+    expect(lookSearchParams(parseLookAim(undefined, "60,28", { withNamedView: true })!)).toEqual({
+      lookFrom: "60,28,",
+    });
+  });
+
+  it("still rejects a bare vantage without a view", () => {
+    expect(() => parseLookAim(undefined, "60,28", { withNamedView: false })).toThrow(/needs --look/);
+    expect(() => parseLookAim(undefined, "60,28")).toThrow(/needs --look/);
+  });
+});

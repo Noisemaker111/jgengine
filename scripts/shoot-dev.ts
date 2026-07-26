@@ -87,6 +87,8 @@ type Args = {
   spawn?: string;
   look?: string;
   lookFrom?: string;
+  view?: string;
+  listViews: boolean;
   out?: string;
   url?: string;
   site?: string;
@@ -128,6 +130,13 @@ const HELP = `bun run shoot [game] [options]
                       bury, fails the shot instead of returning an empty frame.
   --look-from <dist[,height[,angle]]>
                       vantage for --look (default 12,5,0; angle in radians)
+  --view <name>       replay a framing the game declares in capture.views — the
+                      same camera, staging, and settle every run, so a
+                      before/after pair is the same view by construction rather
+                      than two hand-typed flag sets that drifted. Any explicit
+                      flag still wins over the view's value. With no name (or
+                      --list-views), prints the game's declared views and exits
+  --list-views        list the game's declared capture.views and exit
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
                       (page MUST set document.documentElement.dataset.jgCapture
@@ -169,6 +178,7 @@ function parseArgs(argv: string[]): Args {
     inspect: false,
     help: false,
     listFixtures: false,
+    listViews: false,
     timeoutMs: 60_000,
     timeoutExplicit: false,
   };
@@ -214,6 +224,15 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--look") args.look = argv[++index];
     else if (value === "--look-from") args.lookFrom = argv[++index];
+    else if (value === "--view") {
+      const next = argv[index + 1];
+      if (next !== undefined && !next.startsWith("--")) {
+        args.view = next;
+        index += 1;
+      } else {
+        args.listViews = true;
+      }
+    } else if (value === "--list-views") args.listViews = true;
     else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") {
       const raw = argv[++index];
@@ -254,6 +273,10 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
   if (args.fixture !== undefined && args.fixture.length > 0) {
     const key = args.fixture.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `fixture-${key}${suffix}.png`);
+  }
+  if (args.view !== undefined) {
+    const key = args.view.replace(/[^A-Za-z0-9._-]+/g, "_");
+    return join(outDir, `${args.game}-view-${key}${suffix}.png`);
   }
   if (args.state !== undefined) {
     const key = args.state.replace(/[^A-Za-z0-9._-]+/g, "_");
@@ -303,7 +326,8 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
   if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));
   if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
-  const aim = parseLookAim(args.look, args.lookFrom);
+  if (args.view !== undefined) url.searchParams.set("view", args.view);
+  const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
   if (aim !== undefined) {
     for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
   }
@@ -331,17 +355,28 @@ function gitProvenance(): { head: string; dirty: boolean } | undefined {
  * return a plausible screenshot of the game's own view and cost a whole round of re-shooting.
  */
 async function reportAppliedAim(session: CdpSession, args: Args): Promise<void> {
-  if (args.look === undefined || args.look.length === 0) return;
-  const applied = await session.evaluate<string | null>(
-    `document.documentElement.dataset.jgLook ?? null`,
-  );
+  const aimed = args.look !== undefined && args.look.length > 0;
+  // A `--view` can carry the aim instead of `--look`, and a view whose framing silently failed to
+  // apply is the same wrong-view-that-looks-fine failure as a dropped `--look`.
+  if (!aimed && args.view === undefined) return;
+  const { applied, shot } = (await session.evaluate<{ applied: string | null; shot: string | null }>(`({
+    applied: document.documentElement.dataset.jgLook ?? null,
+    shot: document.documentElement.dataset.jgView ?? null
+  })`)) ?? { applied: null, shot: null };
+  if (args.view !== undefined && shot !== args.view) {
+    throw new Error(`--view ${args.view} never reached the runner — no declared view was applied`);
+  }
   if (typeof applied !== "string" || applied.length === 0) {
+    if (!aimed && args.view !== undefined) {
+      console.error(`shoot: view ${args.view} applied (no camera override)`);
+      return;
+    }
     throw new Error(
       `--look ${args.look} never reached the camera — the runner reported no applied aim. ` +
         `--look only works on the dev-runner game shell (not --url/--site/--preview/--fixture captures).`,
     );
   }
-  console.error(`shoot: look applied ${applied}`);
+  console.error(`shoot: ${args.view === undefined ? "look" : `view ${args.view}`} applied ${applied}`);
 }
 
 async function readLayoutStatus(
@@ -549,6 +584,40 @@ if (daemon !== null) {
 } else {
   devBase = args.url;
 }
+/**
+ * Print the game's declared `capture.views`. The runner publishes them on `data-jg-shots` as soon
+ * as the game module resolves — well before an honest frame — so discovery costs a navigation, not
+ * a capture, and still works when the `?shot=` that sent you here was the wrong name.
+ */
+async function listViews(debugPort: number, base: string, game: string): Promise<number> {
+  const session = await openPageSession(debugPort);
+  try {
+    await session.send("Page.enable");
+    await session.send("Runtime.enable");
+    const url = new URL(base);
+    url.searchParams.set("game", game);
+    await session.send("Page.navigate", { url: url.toString() });
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      const raw = await session.evaluate<string | null>(`document.documentElement.dataset.jgViews ?? null`);
+      if (typeof raw === "string") {
+        const shots = JSON.parse(raw) as string[];
+        if (shots.length === 0) {
+          console.log(`${game} declares no capture.views — add them to defineGame({ capture: { views } })`);
+          return 0;
+        }
+        console.log(`declared views (bun run shoot ${game} --view <name>):`);
+        for (const shot of shots) console.log(`  ${shot}`);
+        return 0;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`timed out reading ${game}'s declared views`);
+  } finally {
+    await session.close();
+  }
+}
+
 const exitCode = await withBrowserSession(
   {
     keep: args.keep,
@@ -566,6 +635,7 @@ const exitCode = await withBrowserSession(
         : args.timeoutMs * CAPTURE_MAX_ATTEMPTS * Math.max(targets.length, 1) + 10_000,
   },
   async ({ debugPort, chrome }) => {
+    if (args.listViews) return listViews(debugPort, devBase, args.game);
     let code = 0;
     for (const device of targets) {
       const outPath = outPathFor(args, device, outDir);

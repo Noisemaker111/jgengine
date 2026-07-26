@@ -11,7 +11,24 @@ import {
 } from "@jgengine/shell/multiplayer";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
-import { CONVEX_URL, MODE, P2P_ROLE, RUN, STAGE, STATE_PARAM, WS_URL } from "./appEnv";
+import {
+  CONVEX_URL,
+  LOOK,
+  LOOK_FROM,
+  MODE,
+  P2P_ROLE,
+  RUN,
+  VIEW,
+  SPAWN,
+  STAGE,
+  STATE_PARAM,
+  WS_URL,
+  applyCaptureView,
+  resolvedRun,
+  resolvedSettleMs,
+  resolvedState,
+} from "./appEnv";
+import { describeViews, resolveCaptureView } from "./captureView";
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
 import {
   armCaptureReady,
@@ -44,7 +61,7 @@ export function DevApp({ gameId }: { gameId: string }) {
       setCaptureStatus("preparing");
       return;
     }
-    return armCaptureReady(MODE, playable?.capture?.settleMs);
+    return armCaptureReady(MODE, resolvedSettleMs() ?? playable?.capture?.settleMs);
   }, [playable]);
   useEffect(() => {
     if (!captureArmed()) return;
@@ -80,6 +97,29 @@ export function DevApp({ gameId }: { gameId: string }) {
                 force: WS_URL !== undefined,
               }),
           );
+        }
+        // Publish the declared shots before anything can fail, so `--list-views` works on a game
+        // whose `?shot=` is wrong — discovery must survive the error it exists to resolve.
+        document.documentElement.dataset.jgViews = JSON.stringify(describeViews(loaded.capture?.views));
+        const view = resolveCaptureView({
+          views: loaded.capture?.views,
+          viewName: VIEW,
+          explicit: {
+            ...(LOOK === null ? {} : { look: LOOK }),
+            ...(LOOK_FROM === null ? {} : { lookFrom: LOOK_FROM }),
+            ...(SPAWN === null ? {} : { spawn: SPAWN }),
+            ...(STATE_PARAM === null ? {} : { state: STATE_PARAM }),
+            ...(RUN.length === 0 ? {} : { run: RUN }),
+          },
+        });
+        if (view.kind === "error") {
+          setCaptureStatus("error", view.message);
+          setLoadError(view.message);
+          return;
+        }
+        if (view.kind === "view") {
+          applyCaptureView(view.overrides);
+          document.documentElement.dataset.jgView = view.name;
         }
         setPlayable(withCameraPreset(loaded, await loadLookMarkers(gameId)));
       })
@@ -118,8 +158,8 @@ export function DevApp({ gameId }: { gameId: string }) {
     STAGE && scenario !== undefined ? (ctx: GameContext) => scenario(ctx, playable) : undefined;
   const { captureRun, error: captureRunError } = resolveCaptureRun({
     capture: playable.capture,
-    stateParam: STATE_PARAM,
-    run: RUN,
+    stateParam: resolvedState(),
+    run: resolvedRun(),
     mode: MODE,
     gameId,
   });

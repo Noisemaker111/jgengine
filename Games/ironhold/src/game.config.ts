@@ -29,6 +29,27 @@ export const game = defineGame({
   // Selection rings, marquee + click select, and right-click orders are all shell-native: the game
   // supplies who is selectable and the verb that receives { selection, point }.
   pointer: { select: true, selectFilter: isPlayerSelectable, orderCommand: "unit.order" },
+  // The three views a reviewer asks about, pinned to authored markers so they frame the same thing
+  // after the map moves — `bun run shoot ironhold --view keep-enemy`.
+  capture: {
+    views: {
+      "keep-player": {
+        description: "The Vanguard keep and its opening formation.",
+        look: "@marker:keep_player",
+        lookFrom: "22,10",
+      },
+      "keep-enemy": {
+        description: "The Marauder warcamp — the objective the run is scored on.",
+        look: "@marker:keep_enemy",
+        lookFrom: "22,10",
+      },
+      hero: {
+        description: "Close on Bram, for hero model and health-bar work.",
+        look: "@entity:hero",
+        lookFrom: "10,4",
+      },
+    },
+  },
   // Authored map dressing (war-road ribbon + forest ring) renders from the document; units, keeps,
   // and props spawn as entities in onInit, so object placement stays off — no double render.
   editorLayers,
