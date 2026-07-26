@@ -182,3 +182,7 @@ Adding a settings surface to a game: dropped in SettingsTrigger and it rendered 
 2026-07-26T05:59:04.378Z — claude-opus-5 — Claude
 
 Capturing a game's title/menu screen: bun run shoot/drive boots vice-isle straight into play in both --mode ui and --mode play, so its title screen (and anything routed from it, like credits) cannot be captured at all.
+
+2026-07-26T15:11:05.785Z — claude-opus-5 — Claude
+
+Wiring ambientCG PBR maps into a game -> buildMaterialCatalog's MaterialMaps types ao/displacement as required strings, but a pack like ambientcg-metal007 ships without ao.jpg. Spreading the resolved maps onto a material 404s and hard-crashes the game with 'Could not load /materials/<id>/ao.jpg: undefined'. The JSDoc admits the files may be absent while the type says otherwise, and there is no way to ask the catalog which maps were actually pulled.

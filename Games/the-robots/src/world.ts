@@ -13,6 +13,7 @@ import {
   type TerrainMaterialRegion,
   type WorldFeature,
 } from "@jgengine/core/world/features";
+import { CLIFF_MAPS, GROUND_MAPS } from "./game/assets";
 import { FERRALON } from "./game/palette";
 import { ROUTES, SPUR_ROUTES, SIDE_POIS, poiFlattenMasks, roadPathProfiles } from "./game/world/level";
 import { WORLD_BOUNDS, ZONES } from "./game/world/zones";
@@ -113,16 +114,21 @@ const terrainDescriptor = terrain({
   ...TERRAIN_BASE,
   materialRegions,
   detail: {
-    rockColor: "#6f4f34",
-    sandColor: "#caa568",
+    // Cliff faces go cooler and darker than the flats so relief separates by value, not just by
+    // slope shading — the old near-ground-coloured rock made every hill a smooth brown blob.
+    rockColor: FERRALON.cliff,
+    sandColor: FERRALON.sand,
     snowColor: "#d8cbb0",
-    rockSlopeStart: 0.34,
+    rockSlopeStart: 0.28,
     snowHeight: 999,
     waterLevel: -999,
     detailScale: 12,
     macroScale: 24,
     roughness: 0.95,
     strength: 1,
+    // Real dirt grain over the procedural base. Without this the ground is pure vertex colour, which
+    // is what made the flats read as untextured mush at every distance.
+    material: { maps: GROUND_MAPS, repeat: 3.5, strength: 0.85 },
   },
   flatten: [
     ...ZONES.map((zone) => ({
@@ -134,15 +140,17 @@ const terrainDescriptor = terrain({
   pathProfiles: roadPathProfiles((x, z) => rawField.sampleHeight(x, z)),
 });
 
-const SCRUB_COLORS = ["#b39a4e", "#cbb469", "#e2d288"] as const;
+// Pale wide blades at low density read as scattered paper litter, not desert scrub. Denser, taller,
+// narrower blades in olive-to-straw greens give the clumps mass and separate them from the sand.
+const SCRUB_COLORS = ["#6d6b38", "#8a8144", "#a99a55"] as const;
 
 const scrubClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
   grass({
     area: { w: size, d: size, position: [x, z] },
-    density: 1,
-    bladeHeight: [0.18, 0.5],
-    bladeWidth: 0.11,
-    windStrength: 0.45,
+    density: 3.2,
+    bladeHeight: [0.3, 0.85],
+    bladeWidth: 0.05,
+    windStrength: 0.55,
     colors: [...SCRUB_COLORS],
     seed,
   });
@@ -195,16 +203,22 @@ export const world: WorldFeature = environment({
   terrain: terrainDescriptor,
   roads,
   vegetation,
+  // The old sky washed to near-white at the horizon and swamped the zenith gradient, so the whole
+  // upper frame was one flat grey field. A deeper zenith and lower haze restore the gradient and
+  // give the ridgeline something to sit against.
   sky: sky({
     preset: "day",
-    horizonColor: "#e6c48d",
-    zenithColor: "#7fa9c4",
-    sunIntensity: 1.55,
-    ambientIntensity: 0.82,
+    horizonColor: FERRALON.horizon,
+    zenithColor: FERRALON.skyZenith,
+    sunIntensity: 1.25,
+    ambientIntensity: 0.62,
     radius: 2600,
-    hazeStrength: 0.62,
-    sunGlowStrength: 0.6,
-    fog: { color: FERRALON.fog, near: 260, far: 1200 },
+    hazeStrength: 0.22,
+    sunGlowStrength: 0.45,
+    // The single fog source for the game (`backdrop.fog` is deliberately unset — two fog configs
+    // fought here before). `far` has to clear the ridgelines: at 1500 against a 2600-unit sky dome
+    // the whole upper frame saturated to flat fog and the zenith gradient never showed.
+    fog: { color: FERRALON.fog, near: 500, far: 3200 },
   }),
   structures: ZONES.filter((zone) => zone.settlement !== undefined).map((zone) => {
     const settlement = zone.settlement!;

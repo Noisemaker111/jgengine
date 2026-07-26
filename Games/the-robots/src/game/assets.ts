@@ -1,36 +1,96 @@
 import { buildCatalog } from "@jgengine/assets/catalogs/build";
+import { buildMaterialCatalog } from "@jgengine/assets/materials";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
-/** Preferred CC0 packs for this game — pull + reindex to light up MODEL_PLAN ids. */
+import { MACHINE } from "./palette";
+
+const MODEL_SOURCES = [
+  "quaternius-modular-scifi",
+  "quaternius-stylized-nature",
+  "kaykit-adventurers",
+  "kaykit-space-base",
+] as const;
+
+const MATERIAL_SOURCES = {
+  /** Ferralon's dirt floor — real grain so the flats stop reading as flat vertex colour. */
+  ground: "ambientcg-ground025",
+  /** Stratified sedimentary cliff — the layered banding that sells badlands relief. */
+  cliff: "ambientcg-rock022",
+  /** Warm scratched plate for scavenger chassis and improvised structures. */
+  scrapMetal: "ambientcg-metal007",
+  /** Riveted panel for manufactured loader armour and industrial props. */
+  panel: "ambientcg-metalplates001",
+} as const;
+
+/** Every pack this game ships — credits are generated from it, so it cannot drift. */
+export const ASSET_SOURCE_IDS: readonly string[] = [
+  ...MODEL_SOURCES,
+  ...Object.values(MATERIAL_SOURCES),
+];
+
 export const assets: AssetCatalog = buildCatalog({
   basePath: "/models",
-  sources: [
-    "quaternius-modular-scifi",
-    "quaternius-stylized-nature",
-    "kaykit-adventurers",
-    "kaykit-skeletons",
-    "kaykit-space-base",
-  ],
+  sources: [...MODEL_SOURCES],
 });
 
-export const FAMILY_COLORS: Record<string, { body: string; accent: string }> = {
-  psycho: { body: "#c96f3b", accent: "#e23c2e" },
-  marauder: { body: "#6f5a3e", accent: "#8a4a2e" },
-  nomad: { body: "#7a6a4a", accent: "#4e4436" },
-  skag_pup: { body: "#b09a72", accent: "#7d6844" },
-  skag: { body: "#9a8258", accent: "#6b5636" },
-  badass_skag: { body: "#7d6844", accent: "#a33c28" },
-  badass_psycho: { body: "#a34a2c", accent: "#ffb400" },
-  captain_rusk: { body: "#5a4a66", accent: "#ff7a1a" },
-  bullymong_brat: { body: "#8a9aa8", accent: "#5a6a78" },
-  bullymong: { body: "#71828f", accent: "#3f4c58" },
-  spiderant: { body: "#b08a4a", accent: "#6e5426" },
-  spiderant_soldier: { body: "#96702a", accent: "#ffb400" },
-  loader: { body: "#c9a23a", accent: "#e23c2e" },
-  loader_war: { body: "#a8842c", accent: "#ff7a1a" },
-  badass_loader: { body: "#8a6a1e", accent: "#3fc9ff" },
-  bad_maw: { body: "#7d5a3c", accent: "#e23c2e" },
-  the_warrior: { body: "#8a2f1e", accent: "#ff9a00" },
+const materials = buildMaterialCatalog({ basePath: "/materials" });
+
+function maps(sourceId: string) {
+  const material = materials.resolve(sourceId);
+  if (material === null) throw new Error(`the-robots: missing PBR material "${sourceId}" — run assets pull`);
+  return material.maps;
+}
+
+/**
+ * `MaterialMaps` types every role as a required URL, but ambientCG's whole `Metal` family ships
+ * without an ambient-occlusion map — so spreading a resolved material wholesale requests a file that
+ * is not there and the 404 takes the game down on boot. `ModelMaterialMaps` roles are all optional,
+ * so a model-side material names only the roles its pack actually pulled.
+ */
+function modelMaps(sourceId: string, roles: readonly ("color" | "normal" | "roughness" | "ao")[]) {
+  const resolved = maps(sourceId);
+  const out: { color?: string; normal?: string; roughness?: string; ao?: string } = {};
+  for (const role of roles) out[role] = resolved[role];
+  return out;
+}
+
+/** Terrain requires the full map set, so only complete materials may drive it. */
+export const GROUND_MAPS = maps(MATERIAL_SOURCES.ground);
+export const CLIFF_MAPS = modelMaps(MATERIAL_SOURCES.cliff, ["color", "normal", "roughness", "ao"]);
+export const SCRAP_METAL_MAPS = modelMaps(MATERIAL_SOURCES.scrapMetal, ["color", "normal", "roughness"]);
+export const PANEL_MAPS = modelMaps(MATERIAL_SOURCES.panel, ["color", "normal", "roughness", "ao"]);
+
+/**
+ * Chassis finish per enemy family. Every entry is a machine hue (see {@link MACHINE}) —
+ * deliberately never a terrain hue, so an enemy is never the same colour as the dirt it stands on.
+ * `plate` is the body; `accent` and `optic` are reserved for trim on models that expose a separate
+ * optic mesh (a whole-model emissive override lights the entire body, so single-mesh casts use
+ * `plate` alone and mark elites by taking the darkest, coldest values).
+ */
+export interface ChassisStyle {
+  plate: string;
+  accent: string;
+  optic: string;
+}
+
+export const CHASSIS: Record<string, ChassisStyle> = {
+  psycho: { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.opticElite },
+  marauder: { plate: MACHINE.steel, accent: MACHINE.hazard, optic: MACHINE.optic },
+  nomad: { plate: MACHINE.iron, accent: MACHINE.rust, optic: MACHINE.optic },
+  badass_psycho: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
+  skag_pup: { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.optic },
+  skag: { plate: MACHINE.scrap, accent: MACHINE.hazard, optic: MACHINE.optic },
+  badass_skag: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
+  bullymong_brat: { plate: MACHINE.steel, accent: MACHINE.joint, optic: MACHINE.optic },
+  bullymong: { plate: MACHINE.scrap, accent: MACHINE.joint, optic: MACHINE.optic },
+  spiderant: { plate: MACHINE.steel, accent: MACHINE.rust, optic: MACHINE.optic },
+  spiderant_soldier: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
+  loader: { plate: MACHINE.steel, accent: MACHINE.hazard, optic: MACHINE.optic },
+  loader_war: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
+  badass_loader: { plate: MACHINE.iron, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
+  bad_maw: { plate: MACHINE.scrap, accent: MACHINE.rust, optic: MACHINE.opticElite },
+  captain_rusk: { plate: MACHINE.iron, accent: MACHINE.hazard, optic: MACHINE.opticElite },
+  the_warrior: { plate: MACHINE.joint, accent: MACHINE.opticElite, optic: MACHINE.opticElite },
 };
 
 export const NPC_STYLES: Record<string, { coat: string }> = {
