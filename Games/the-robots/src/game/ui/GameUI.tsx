@@ -1,4 +1,5 @@
 import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
+import { lootDropsOf } from "@jgengine/core/game/events";
 import { ToastStack } from "@jgengine/react/components";
 import { itemNameById } from "../content";
 import { DamageVignette, HitMarker, LevelUpBurst } from "./components/Feedback";
@@ -42,8 +43,7 @@ export function GameUI() {
           action="loot.granted"
           className="flex flex-col items-end gap-1.5"
           renderToast={(entry) => {
-            const data = entry.data as { drops?: { item?: string; currency?: string; count: number }[] };
-            const text = (data.drops ?? [])
+            const text = lootDropsOf(entry.data)
               .map((drop) => `+${drop.count} ${drop.item !== undefined ? itemNameById(drop.item) : "$"}`)
               .join("   ");
             if (text === "") return null;

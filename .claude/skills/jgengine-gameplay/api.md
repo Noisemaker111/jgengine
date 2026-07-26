@@ -474,6 +474,7 @@
 - `GameEventMap` (interface): interface GameEventMap — ⚠ undocumented
 - `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
 - `InventoryAddedEvent` (interface): interface InventoryAddedEvent — ⚠ undocumented
+- `LootDrop` (interface): interface LootDrop — One granted reward: an inventory `item` id or a `currency` id, plus how many. Named because every consumer of `loot.granted` needs it — a toast renderer, a loot log, a session summary — and each one that re-declares the shape inline is a cast the compiler cannot check.
 - `LootGrantedEvent` (interface): interface LootGrantedEvent — ⚠ undocumented
 - `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent — ⚠ undocumented
 - `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent — ⚠ undocumented
@@ -492,6 +493,7 @@
 - `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent — ⚠ undocumented
 - `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent — ⚠ undocumented
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
+- `lootDropsOf` (function): function lootDropsOf(data: unknown): readonly LootDrop[] — Read the drops out of a `loot.granted` payload that arrived as `unknown` — a `FeedEntry.data`, a replicated event, a persisted log row. Returns `[]` for anything that is not shaped like a loot grant, so a renderer never has to guard the payload itself: `entry.data as { drops?: ... }` is the cast four separate call sites were writing, and the one that omitted the `| undefined` would have thrown on a payload-less entry.
 
 ## @jgengine/core/game/feed
 
