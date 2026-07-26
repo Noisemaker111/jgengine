@@ -35,6 +35,9 @@ import {
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
+import { decodePng } from "./png-reader";
+import { shotSignature } from "./shot-metrics";
+import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord } from "./shotProvenance";
 import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
@@ -78,6 +81,7 @@ type Args = {
   spawn?: string;
   look?: string;
   lookFrom?: string;
+  view?: string;
   site?: string;
   record?: string;
   recordWidth: number;
@@ -104,15 +108,20 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --spawn <x,y,z>     override the authored player spawn for this run only (adds a
                       ?spawn= overlay like ?cam=); never mutates editor.scene.json.
                        Accepts x,y,z or x,y,z,yaw (yaw radians)
-  --look <x,z | x,y,z>
+  --look <x,z | x,y,z | @marker:<id> | @entity:<id>>
                       pin a detached camera on a world point for this capture:
                       the vantage the shot actually wants, independent of the
                       player spawn, this run's look yaw, and where the AI
-                      wandered. x,z samples the ground height. A point outside
-                      the world, or a camera the terrain would bury, fails the
-                      run instead of returning an empty frame.
+                      wandered. x,z samples the ground height; @marker:<id>
+                      aims at an authored marker and @entity:<id> tracks a live
+                      entity. A point outside the world, an unknown id, or a
+                      camera the terrain would bury fails the run instead of
+                      returning an empty frame.
   --look-from <dist[,height[,angle]]>
                       vantage for --look (default 12,5,0; angle in radians)
+  --view <name>       replay a framing the game declares in capture.views (see
+                      shoot --list-views). Distinct from --shot, which names the
+                      output file: --view keep-enemy --shot before
   --site <path>       drive a route from the managed apps/web server instead of a game
   --rpc <json>        call the page's agent/editor bridge with this JSON payload.
                       Compose an editor aerial in one call, e.g.
@@ -235,6 +244,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--look") args.look = argv[++index];
     else if (value === "--look-from") args.lookFrom = argv[++index];
+    else if (value === "--view") args.view = argv[++index];
     else if (value === "--site") args.site = argv[++index];
     else if (value === "--record") {
       const name = argv[++index] ?? "clip";
@@ -530,11 +540,27 @@ class LockstepRecorder {
 }
 
 async function screenshot(session: CdpSession, outPath: string): Promise<void> {
+  // Cleared first, so a failed step leaves no earlier shot at this path to be read as its result.
+  const previous = clearShotTarget(outPath);
   const shot = await session.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const data = shot.data;
   if (typeof data !== "string" || data.length === 0) throw new Error("Page.captureScreenshot returned empty data");
-  writePngAtomic(outPath, Buffer.from(data, "base64"));
+  const bytes = Buffer.from(data, "base64");
+  writePngAtomic(outPath, bytes);
+  const decoded = decodePng(bytes);
+  const record = buildShotRecord({
+    bytes,
+    command: ["bun run drive", ...process.argv.slice(2)].join(" "),
+    capturedAt: new Date().toISOString(),
+    signature: shotSignature(decoded.width, decoded.height, decoded.data),
+    width: decoded.width,
+    height: decoded.height,
+    ...(previous === undefined ? {} : { previous }),
+  });
+  writeShotRecord(outPath, record);
   console.log(outPath);
+  const replacement = describeReplacement(record);
+  if (replacement !== null) console.error(`drive: ${replacement}`);
 }
 
 const args = parseArgs(process.argv.slice(2));
@@ -587,7 +613,8 @@ const exitCode = await withBrowserSession(
       }
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
-      const aim = parseLookAim(args.look, args.lookFrom);
+      if (args.view !== undefined) url.searchParams.set("view", args.view);
+      const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
       if (aim !== undefined) {
         for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
       }

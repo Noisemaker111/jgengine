@@ -13,9 +13,9 @@ import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsO
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
-import { CAM, LOOK, LOOK_FROM } from "./appEnv";
+import { CAM, resolvedLook, resolvedLookFrom } from "./appEnv";
 import { setCaptureStatus } from "./captureReady";
-import { formatAppliedAim, resolveLookCamera } from "./lookCamera";
+import { formatAppliedAim, resolveLookCamera, type LookMarkers } from "./lookCamera";
 
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   orbit: { rig: "orbit" },
@@ -41,10 +41,15 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
  * yaw, and anything that walks has walked by the time the frame settles. A rejected aim raises the
  * capture error status so the host fails with the reason instead of shooting the game's own camera.
  */
-function lookCamera(game: PlayableGame): GameCameraConfig | undefined {
+function lookCamera(game: PlayableGame, markers: LookMarkers | undefined): GameCameraConfig | undefined {
   const world = game.game.world;
   const terrain = resolveTerrainField(world?.kind === "environment" ? world.terrain : undefined);
-  const resolution = resolveLookCamera({ look: LOOK, lookFrom: LOOK_FROM, terrain });
+  const resolution = resolveLookCamera({
+    look: resolvedLook(),
+    lookFrom: resolvedLookFrom(),
+    terrain,
+    ...(markers === undefined ? {} : { markers }),
+  });
   if (resolution.kind === "none") return undefined;
   if (resolution.kind === "error") {
     // Fails the capture handshake rather than throwing: `setCaptureStatus("error")` is sticky, so
@@ -60,8 +65,21 @@ function lookCamera(game: PlayableGame): GameCameraConfig | undefined {
   return resolution.camera;
 }
 
-export function withCameraPreset(game: PlayableGame): PlayableGame {
-  const look = lookCamera(game);
+/**
+ * Authored marker positions for `?look=@marker:<id>`, loaded only when an aim actually names
+ * one — the editor document is a separate async load every other capture has no reason to pay.
+ */
+export async function loadLookMarkers(gameId: string): Promise<LookMarkers | undefined> {
+  const look = resolvedLook();
+  if (look === null || !look.startsWith("@marker:")) return undefined;
+  const layers = await editorLayerRegistry[gameId]?.();
+  const { normalizeEditorLayers } = await import("@jgengine/core/editor/index");
+  const doc = normalizeEditorLayers(layers ?? null);
+  return Object.fromEntries(doc.markers.map((marker) => [marker.id, { ...marker.position }]));
+}
+
+export function withCameraPreset(game: PlayableGame, markers?: LookMarkers): PlayableGame {
+  const look = lookCamera(game, markers);
   if (look !== undefined) return { ...game, camera: { ...game.camera, ...look } };
   if (CAM === null) return game;
   const preset = CAMERA_PRESETS[CAM];

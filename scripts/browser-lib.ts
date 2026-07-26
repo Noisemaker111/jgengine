@@ -755,6 +755,64 @@ function exceptionMessage(params: Record<string, unknown>): string {
   return `page exception: ${message}${location}`;
 }
 
+export interface CaptureRegions {
+  /** The WebGL canvas in device pixels — the 3D viewport, not the whole frame. */
+  region?: { x: number; y: number; width: number; height: number };
+  /** HUD rectangles drawn over it, in the same space. */
+  masks: { x: number; y: number; width: number; height: number }[];
+}
+
+/** Cap on returned mask rects; the largest are kept, so the tail costs nothing to drop. */
+const MAX_CAPTURE_MASKS = 200;
+
+/**
+ * Locate the 3D viewport and everything painted over it, in captured-image pixels. Scoring
+ * the whole frame lets a busy HUD carry a dead viewport past every threshold — a buried
+ * camera still scored `nonblank` because the panels alone supplied the entropy.
+ *
+ * Masks are discovered by what an element *paints*, not by what it opts into: a game whose
+ * HUD is raw divs is the common case, and an opt-in marker would have covered exactly the
+ * games that already use the shipped panels. `data-jg-capture-mask` forces an element in.
+ * Over-masking is safe — the viewport verdict is withheld once too little of the region
+ * survives (see `MIN_SAMPLED_SHARE`).
+ */
+export async function readCaptureRegions(session: CdpSession): Promise<CaptureRegions> {
+  const raw = await session.evaluate<CaptureRegions | null>(`(() => {
+    const dpr = window.devicePixelRatio || 1;
+    const box = (el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x * dpr, y: r.y * dpr, width: r.width * dpr, height: r.height * dpr };
+    };
+    const canvas = document.querySelector("canvas");
+    const canvasRect = canvas === null ? null : canvas.getBoundingClientRect();
+    const paints = (style) => {
+      if (style.backgroundImage !== "none") return true;
+      const match = /rgba?\\(([^)]+)\\)/.exec(style.backgroundColor);
+      if (match === null) return false;
+      const parts = match[1].split(",").map((v) => Number.parseFloat(v));
+      return parts.length < 4 || parts[3] > 0.05;
+    };
+    const masks = [];
+    for (const el of document.querySelectorAll("body *")) {
+      if (el.tagName === "CANVAS") continue;
+      const forced = el.hasAttribute("data-jg-capture-mask") || el.hasAttribute("data-hud-panel");
+      const r = el.getBoundingClientRect();
+      if (r.width < 6 || r.height < 6) continue;
+      if (canvasRect !== null && (r.right < canvasRect.left || r.left > canvasRect.right ||
+          r.bottom < canvasRect.top || r.top > canvasRect.bottom)) continue;
+      // An ancestor of the canvas is the page frame, not an overlay drawn on top of it.
+      if (canvas !== null && el.contains(canvas)) continue;
+      const style = getComputedStyle(el);
+      if (style.visibility === "hidden" || style.display === "none" || Number(style.opacity) <= 0.1) continue;
+      if (!forced && !paints(style)) continue;
+      masks.push(box(el));
+    }
+    masks.sort((a, b) => b.width * b.height - a.width * a.height);
+    return { ...(canvasRect === null ? {} : { region: box(canvas) }), masks: masks.slice(0, ${MAX_CAPTURE_MASKS}) };
+  })()`);
+  return { masks: [], ...(raw ?? {}) };
+}
+
 /**
  * Echo the page's own `console.warn`/`console.error` to stderr for the life of a capture.
  * The engine already explains most bad frames in the page console — the camera far-plane

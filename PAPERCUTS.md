@@ -226,3 +226,6 @@ RESOLVED by #1608, and my diagnosis was wrong: `--look x,z,dist,height[,angle]` 
 2026-07-26T20:25:15.978Z — claude-opus-5 — Claude
 
 WITHDRAWN: `--settle` was not being ignored — the run it was measured on failed argument parsing before settle mattered (see the --look entry above). A correct `--look 0,0 --look-from 30,4,110` run reported settle=2.96s as asked.
+2026-07-26T21:25:13.908Z — claude-opus-5 — Claude
+
+Capturing a before shot for a PR: git checkout main in a cloud session gave a silently stale main (behind origin/main by many commits), so shoot rejected a flag that exists on the real tip and reported it as an unknown game id. Had to detach onto origin/main. Cloud sessions clone a branch, so local main is never current — baseline captures should use origin/main, and the stale-local-main case is worth detecting.

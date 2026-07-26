@@ -5,8 +5,10 @@ import {
   resolveBuildingPalette,
   type BuildingPalette,
   type BuildingStyle,
+  type BuildingVariantCounts,
   type GeneratedBuilding,
 } from "./buildings";
+import { buildingKitVariantCounts, type BuildingKit } from "./buildingKit";
 import { deriveBuildingLots, type PlacedBuildingLot } from "./buildingLots";
 import type {
   BuildingEnvironmentDescriptor,
@@ -38,9 +40,16 @@ export function resolveStructureBuildings(descriptor: BuildingEnvironmentDescrip
     lotSize: descriptor.footprint,
     streetWidth: spacing,
     floorRange: descriptor.stories,
-    base: { floorHeight: descriptor.storyHeight },
+    base: { floorHeight: descriptor.storyHeight, ...kitVariants(descriptor.kit) },
     ...(descriptor.seed === undefined ? {} : { seed: descriptor.seed }),
   }).slice(0, descriptor.count);
+}
+
+/** Spread seeded variant picks across exactly the models a kit binds, so no bound variant goes unused. */
+function kitVariants(kit: BuildingKit | undefined): { variants?: Partial<BuildingVariantCounts> } {
+  if (kit === undefined) return {};
+  const variants = buildingKitVariantCounts(kit);
+  return Object.keys(variants).length === 0 ? {} : { variants };
 }
 
 function hashU32(input: string): number {
@@ -79,7 +88,10 @@ function resolveFrontageBuildings(
   });
   const [floorsMin, floorsMax] = descriptor.stories;
   const bayWidth = DEFAULT_BUILDING_CONFIG.bayWidth;
-  return lots.map((lot, index) => buildLot(lot, index, seed, floorsMin, floorsMax, bayWidth, descriptor.storyHeight));
+  const variants = kitVariants(descriptor.kit);
+  return lots.map((lot, index) =>
+    buildLot(lot, index, seed, floorsMin, floorsMax, bayWidth, descriptor.storyHeight, variants),
+  );
 }
 
 function buildLot(
@@ -90,6 +102,7 @@ function buildLot(
   floorsMax: number,
   bayWidth: number,
   storyHeight: number,
+  variants: { variants?: Partial<BuildingVariantCounts> } = {},
 ): GeneratedBuilding {
   const lo = Math.min(floorsMin, floorsMax);
   const hi = Math.max(floorsMin, floorsMax);
@@ -105,6 +118,7 @@ function buildLot(
     baysDeep,
     bayWidth,
     floorHeight: storyHeight,
+    ...variants,
   });
   return { ...building, rotationY: lot.rotationY };
 }

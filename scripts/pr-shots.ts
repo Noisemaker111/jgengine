@@ -1,7 +1,9 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, rmSync, statSync } from "node:fs";
+import { existsSync, readFileSync, rmSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import { tmpdir } from "node:os";
+
+import { findDuplicateShots } from "./shotProvenance";
 
 /**
  * Publish PR screenshots to the `pr-shots` archive branch without touching the working tree.
@@ -20,6 +22,7 @@ const ARCHIVE_BRANCH = "pr-shots";
 
 interface Args {
   files: string[];
+  allowIdentical: boolean;
   dir: string | null;
   branch: string | null;
   message: string | null;
@@ -47,6 +50,7 @@ function headSnapshot(): { symbolic: string | null; rev: string } {
 
 function parseArgs(argv: string[]): Args {
   const files: string[] = [];
+  let allowIdentical = false;
   let dir: string | null = null;
   let branch: string | null = null;
   let message: string | null = null;
@@ -57,13 +61,14 @@ function parseArgs(argv: string[]): Args {
     else if (arg === "--branch") branch = argv[++i] ?? null;
     else if (arg === "--message" || arg === "-m") message = argv[++i] ?? null;
     else if (arg === "--dry" || arg === "--dry-run") dry = true;
+    else if (arg === "--allow-identical") allowIdentical = true;
     else if (arg === "--help" || arg === "-h") {
       printHelp();
       process.exit(0);
     } else if (arg.startsWith("-")) fail(`unknown flag: ${arg}`);
     else files.push(arg);
   }
-  return { files, dir, branch, message, dry };
+  return { files, dir, branch, message, dry, allowIdentical };
 }
 
 function printHelp(): void {
@@ -78,6 +83,7 @@ function printHelp(): void {
       "  --dir <subdir>    Path under pr-shots/ to store them (default: the branch name)",
       "  -m, --message <s> Commit message (default: derived)",
       "  --dry             Print the raw URLs and do nothing else",
+      "  --allow-identical Publish byte-identical images anyway (default: refuse)",
       "",
       "Never moves HEAD, the task branch checkout, or the working tree.",
       "Safe inside a git worktree (uses absolute git-dir for the temp index).",
@@ -107,6 +113,21 @@ if (parsed.files.length === 0) {
 }
 for (const file of parsed.files) {
   if (!existsSync(file) || !statSync(file).isFile()) fail(`not a file: ${file}`);
+}
+
+// A before/after pair that is the same image is the loudest possible "nothing changed",
+// and it is invisible in a PR body — both embeds render the same picture.
+if (!parsed.allowIdentical) {
+  const duplicates = findDuplicateShots(parsed.files.map((path) => ({ path, bytes: readFileSync(path) })));
+  for (const group of duplicates) {
+    process.stderr.write(`pr-shots: these are the same image, byte for byte: ${group.join(", ")}\n`);
+  }
+  if (duplicates.length > 0) {
+    fail(
+      "refusing to publish duplicate images — a before/after pair that never changed proves nothing. " +
+        "Re-capture, or pass --allow-identical if the repetition is intended.",
+    );
+  }
 }
 
 const headBefore = headSnapshot();

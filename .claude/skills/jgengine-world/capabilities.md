@@ -122,6 +122,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBuildSocketCatalog` (function) · `import { createBuildSocketCatalog } from "@jgengine/core/world/buildSockets"`
 
+## building-generator — generate seeded buildings as placed facade parts — bays, floors, roof, decor
+
+- `createBuildingConfig` (function) · `import { createBuildingConfig } from "@jgengine/core/world/buildings"`
+- `generateBuilding` (function) · `import { generateBuilding } from "@jgengine/core/world/buildings"`
+- `generateBuildingDistrict` (function) · `import { generateBuildingDistrict } from "@jgengine/core/world/buildings"`
+
+## building-kit — bind generated facade part slots to real models instead of untextured blocks
+
+- `buildingKitVariantCounts` (function) · `import { buildingKitVariantCounts } from "@jgengine/core/world/buildingKit"`
+- `defineBuildingKit` (function) · `import { defineBuildingKit } from "@jgengine/core/world/buildingKit"`
+- `resolveBuildingKitPart` (function) · `import { resolveBuildingKitPart } from "@jgengine/core/world/buildingKit"`
+
 ## building-lots — derive street-facing building lots from road frontage
 
 - `deriveBuildingLots` (function) · `import { deriveBuildingLots } from "@jgengine/core/world/buildingLots"`

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "bun:test";
 
-import { LOOK_GROUND_CLEARANCE, resolveLookCamera, type LookTerrain } from "./lookCamera";
+import {
+  LOOK_GROUND_CLEARANCE,
+  formatAppliedAim,
+  resolveLookCamera,
+  verifyLookSubject,
+  type LookTerrain,
+} from "./lookCamera";
 
 const flat: LookTerrain = { sampleHeight: () => 0 };
 const slope: LookTerrain = { sampleHeight: (_x, z) => Math.max(0, z) };
@@ -99,5 +105,90 @@ describe("resolveLookCamera", () => {
     expect(applied.distance).toBe(12);
     expect(applied.height).toBe(20);
     expect(applied.angle).toBe(0);
+  });
+});
+
+describe("subject aiming", () => {
+  const markers = {
+    "west-gate": { x: 20, y: 0, z: -10 },
+    keep: { x: 0, y: 3, z: -30 },
+    hilltop: { x: 0, y: 0, z: 20 },
+  };
+
+  it("resolves a marker id to its authored position", () => {
+    const { applied } = camera(
+      resolveLookCamera({ look: "@marker:west-gate", lookFrom: null, terrain: flat, markers }),
+    );
+    expect(applied.target).toEqual({ x: 20, y: 0, z: -10 });
+    expect(applied.subject).toBe("@marker:west-gate");
+  });
+
+  it("gives a marker the same terrain clearance a coordinate gets", () => {
+    // Camera lands at z = 32 on the slope, where the ground is 32 units up.
+    const { applied } = camera(
+      resolveLookCamera({ look: "@marker:hilltop", lookFrom: null, terrain: slope, markers }),
+    );
+    expect(applied.lifted).toBe(true);
+    expect(applied.height).toBe(32 + LOOK_GROUND_CLEARANCE);
+  });
+
+  it("names the available markers when the id is wrong", () => {
+    expect(resolveLookCamera({ look: "@marker:nope", lookFrom: null, terrain: flat, markers })).toEqual({
+      kind: "error",
+      message: expect.stringContaining("known markers: hilltop, keep, west-gate"),
+    });
+  });
+
+  it("says so when the scene has no markers at all", () => {
+    expect(resolveLookCamera({ look: "@marker:any", lookFrom: null, terrain: flat })).toEqual({
+      kind: "error",
+      message: expect.stringContaining("no authored markers"),
+    });
+  });
+
+  it("binds an entity id straight onto the observer rig so the shot tracks it", () => {
+    const { camera: config, applied } = camera(
+      resolveLookCamera({ look: "@entity:boss-01", lookFrom: "20,6", terrain: flat }),
+    );
+    expect(config.observer?.bind).toEqual({ kind: "entity", entityId: "boss-01" });
+    expect(config.observer?.distance).toBe(20);
+    expect(applied.subject).toBe("@entity:boss-01");
+  });
+
+  it("omits the unknowable positions from an entity aim readout", () => {
+    const { applied } = camera(resolveLookCamera({ look: "@entity:boss-01", lookFrom: null, terrain: flat }));
+    expect(JSON.parse(formatAppliedAim(applied))).toMatchObject({ subject: "@entity:boss-01", target: null });
+  });
+
+  it("rejects an unknown subject kind", () => {
+    expect(resolveLookCamera({ look: "@prop:crate", lookFrom: null, terrain: flat })).toEqual({
+      kind: "error",
+      message: expect.stringContaining("not a subject kind"),
+    });
+  });
+
+  it("still validates the vantage on a subject aim", () => {
+    expect(resolveLookCamera({ look: "@entity:x", lookFrom: "0", terrain: flat })).toEqual({
+      kind: "error",
+      message: expect.stringContaining("distance must be positive"),
+    });
+  });
+});
+
+describe("verifyLookSubject", () => {
+  const has = (id: string) => id === "boss-01";
+
+  it("passes an entity aim that resolved", () => {
+    expect(verifyLookSubject("@entity:boss-01", has)).toBeNull();
+  });
+
+  it("fails a typo'd entity id rather than letting it frame the origin", () => {
+    expect(verifyLookSubject("@entity:boss-1", has)).toContain("no such entity");
+  });
+
+  it("ignores coordinate, marker, and absent aims", () => {
+    expect(verifyLookSubject("0,0", has)).toBeNull();
+    expect(verifyLookSubject("@marker:keep", has)).toBeNull();
+    expect(verifyLookSubject(null, has)).toBeNull();
   });
 });

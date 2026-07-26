@@ -30,12 +30,18 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **`GeneratedBuilding`'s `kit` prop is now the `BuildingKit`**; the per-part React escape hatch it used to name moved to `partRenderer`, so `kit` means the same thing on `GeneratedBuilding` and `InstancedBuildings`. Rename the prop if you passed a `BuildingKitRenderer`.
+
 ### Added
 
 - **`worldHealthBars.occlude` / `WorldHealthBars`+`WorldNameplates` `occlude` prop.** World bars and nameplates are a screen-space overlay drawn outside the WebGL depth buffer, so nothing in the scene can hide them and an enemy's health bar reads straight through the building it stands behind. Set `occlude: true` to drop a bar when world geometry blocks the line from the player to the entity. Default `false` preserves the always-visible behaviour every shipped game currently relies on.
 
 - **`DustField` + `WeatherLayer` mode `"dust"` (`@jgengine/shell/weather`) — wind-borne particulate.** `WeatherLayer` could only do `clear`/`rain`/`snow`/`mixed`, so an arid, volcanic, ashen, or blown-out world had no way to put anything in the air. Dust drifts on horizontal wind with a slow vertical bob rather than falling; `groundBias` packs density toward the surface, motes fade near the top of the volume so recycled ones do not pop against the sky, and faster motes ride higher. Set `dustAlways` to keep it in the air alongside rain or snow instead of replacing them. Defaults `DEFAULT_DUST_COUNT`/`DEFAULT_DUST_DENSITY` sit beside the rain and snow pair.
 
+- **Authored `city` volumes render their near-LOD facades with a `BuildingKit`.** `CityRules.buildingKit` names a kit; a game registers the bound art with `registerBuildingKit(kit)` from `@jgengine/shell/structures/buildingKitRegistry` and the scene document carries only the name, so a city stays portable and free of model paths. Unset or unknown names keep the palette blocks. This puts the whole `city` primitive — not just the `building()` feature — on the kit path.
+- **`BuildingKit` from `@jgengine/core/world/buildingKit`** binds a generated building's facade part slots to real models, so procedural buildings render as an instanced asset kit instead of untextured blocks. `defineBuildingKit({ parts: { wall: ["Wall_A.glb", …] } })` maps a part kind — or a `${facade}.${kind}` slot — to ordered variants that `kit.variant` indexes, with `fit`/`offset`/`rotation`/`scale`/`tint`/`autoOrient` per variant. Kinds a kit leaves unbound keep rendering the palette block, so a partial kit is a valid kit, and `omit` drops a kind entirely. Pass one through `building({ kit })` or straight to `InstancedBuildings`; `buildingKitVariantCounts(kit)` feeds `generateBuilding` so its seeded picks span exactly the models the kit binds.
+- **`generateBuilding`, `generateBuildingDistrict`, and `createBuildingConfig` are now documented public API** (`@jgengine/core/world/buildings`) and appear in `capabilities.md` under `building-generator`.
+- **`capture.views` on `defineGame`** — named framings (`GameCaptureView`: `look`, `lookFrom`, `spawn`, `state`, `run`, `settleMs`) that `shoot <game> --view <name>` and `drive --view <name>` replay exactly, so a before/after pair is the same view by construction. `shoot <game> --list-views` prints what a game declares; an unknown name fails listing them, and any explicit capture flag still wins over the view's value.
 - **`modelLoadIdleMs()` from `@jgengine/shell/render/modelLoad`** reports how long the shared GLB loader has been idle (`0` while a model is in flight). Capture hosts wait on it instead of guessing a settle delay, so an establishing shot no longer races streaming models.
 
 ### Fixed

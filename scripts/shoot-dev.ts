@@ -7,6 +7,7 @@
  * starts apps/dev or apps/web lazily on first use. Manual `--keep`/`--connect`
  * remains available. See `jgengine-verify`.
  */
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import type { ChildProcess } from "node:child_process";
 import { join, resolve } from "node:path";
@@ -18,6 +19,7 @@ import {
   ensureDevServer,
   ensureWebServer,
   forwardPageConsole,
+  readCaptureRegions,
   isUp,
   normalizeLoopbackUrl,
   navigateCapturePageWithRetry,
@@ -31,7 +33,20 @@ import {
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
 import { lookSearchParams, parseLookAim } from "./lookArg";
-import { computeShotMetrics, evaluateThresholds } from "./shot-metrics";
+import {
+  MIN_SAMPLED_SHARE,
+  computeShotMetrics,
+  deadViewport,
+  evaluateThresholds,
+  shotSignature,
+} from "./shot-metrics";
+import {
+  buildShotRecord,
+  clearShotTarget,
+  describeReplacement,
+  writeShotRecord,
+  type PreviousShot,
+} from "./shotProvenance";
 import {
   attachDaemon,
   ensureDaemonTarget,
@@ -72,6 +87,8 @@ type Args = {
   spawn?: string;
   look?: string;
   lookFrom?: string;
+  view?: string;
+  listViews: boolean;
   out?: string;
   url?: string;
   site?: string;
@@ -101,16 +118,25 @@ const HELP = `bun run shoot [game] [options]
   --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
                       ?spawn= overlay like --cam/?cam=); never mutates editor.scene.json.
                       Accepts x,y,z or x,y,z,yaw (yaw radians)
-  --look <x,z | x,y,z>
+  --look <x,z | x,y,z | @marker:<id> | @entity:<id>>
                       pin a detached camera on a world point for this capture:
                       the vantage the shot actually wants, independent of the
                       player spawn, this run's look yaw, and where the AI
-                      wandered. x,z samples the ground height. Aims at a
-                      coordinate, so it never misses the way --spawn does.
+                      wandered. x,z samples the ground height; @marker:<id>
+                      aims at an authored marker and @entity:<id> tracks a live
+                      entity. Aims at a subject, so it never misses the way
+                      --spawn does.
                       A point outside the world, or a camera the terrain would
                       bury, fails the shot instead of returning an empty frame.
   --look-from <dist[,height[,angle]]>
                       vantage for --look (default 12,5,0; angle in radians)
+  --view <name>       replay a framing the game declares in capture.views — the
+                      same camera, staging, and settle every run, so a
+                      before/after pair is the same view by construction rather
+                      than two hand-typed flag sets that drifted. Any explicit
+                      flag still wins over the view's value. With no name (or
+                      --list-views), prints the game's declared views and exits
+  --list-views        list the game's declared capture.views and exit
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
                       (page MUST set document.documentElement.dataset.jgCapture
@@ -152,6 +178,7 @@ function parseArgs(argv: string[]): Args {
     inspect: false,
     help: false,
     listFixtures: false,
+    listViews: false,
     timeoutMs: 60_000,
     timeoutExplicit: false,
   };
@@ -197,6 +224,15 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--look") args.look = argv[++index];
     else if (value === "--look-from") args.lookFrom = argv[++index];
+    else if (value === "--view") {
+      const next = argv[index + 1];
+      if (next !== undefined && !next.startsWith("--")) {
+        args.view = next;
+        index += 1;
+      } else {
+        args.listViews = true;
+      }
+    } else if (value === "--list-views") args.listViews = true;
     else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") {
       const raw = argv[++index];
@@ -237,6 +273,10 @@ function outPathFor(args: Args, device: Device, outDir: string): string {
   if (args.fixture !== undefined && args.fixture.length > 0) {
     const key = args.fixture.replace(/[^A-Za-z0-9._-]+/g, "_");
     return join(outDir, `fixture-${key}${suffix}.png`);
+  }
+  if (args.view !== undefined) {
+    const key = args.view.replace(/[^A-Za-z0-9._-]+/g, "_");
+    return join(outDir, `${args.game}-view-${key}${suffix}.png`);
   }
   if (args.state !== undefined) {
     const key = args.state.replace(/[^A-Za-z0-9._-]+/g, "_");
@@ -286,11 +326,27 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
   if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));
   if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
-  const aim = parseLookAim(args.look, args.lookFrom);
+  if (args.view !== undefined) url.searchParams.set("view", args.view);
+  const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
   if (aim !== undefined) {
     for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
   }
   return url.toString();
+}
+
+function shotCommand(): string {
+  return ["bun run shoot", ...process.argv.slice(2)].join(" ");
+}
+
+function gitProvenance(): { head: string; dirty: boolean } | undefined {
+  try {
+    const head = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" });
+    if (head.status !== 0) return undefined;
+    const status = spawnSync("git", ["status", "--porcelain"], { encoding: "utf8" });
+    return { head: head.stdout.trim(), dirty: (status.stdout ?? "").trim().length > 0 };
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -299,17 +355,28 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
  * return a plausible screenshot of the game's own view and cost a whole round of re-shooting.
  */
 async function reportAppliedAim(session: CdpSession, args: Args): Promise<void> {
-  if (args.look === undefined || args.look.length === 0) return;
-  const applied = await session.evaluate<string | null>(
-    `document.documentElement.dataset.jgLook ?? null`,
-  );
+  const aimed = args.look !== undefined && args.look.length > 0;
+  // A `--view` can carry the aim instead of `--look`, and a view whose framing silently failed to
+  // apply is the same wrong-view-that-looks-fine failure as a dropped `--look`.
+  if (!aimed && args.view === undefined) return;
+  const { applied, shot } = (await session.evaluate<{ applied: string | null; shot: string | null }>(`({
+    applied: document.documentElement.dataset.jgLook ?? null,
+    shot: document.documentElement.dataset.jgView ?? null
+  })`)) ?? { applied: null, shot: null };
+  if (args.view !== undefined && shot !== args.view) {
+    throw new Error(`--view ${args.view} never reached the runner — no declared view was applied`);
+  }
   if (typeof applied !== "string" || applied.length === 0) {
+    if (!aimed && args.view !== undefined) {
+      console.error(`shoot: view ${args.view} applied (no camera override)`);
+      return;
+    }
     throw new Error(
       `--look ${args.look} never reached the camera — the runner reported no applied aim. ` +
         `--look only works on the dev-runner game shell (not --url/--site/--preview/--fixture captures).`,
     );
   }
-  console.error(`shoot: look applied ${applied}`);
+  console.error(`shoot: ${args.view === undefined ? "look" : `view ${args.view}`} applied ${applied}`);
 }
 
 async function readLayoutStatus(
@@ -342,6 +409,7 @@ async function shootOne(
   device: Device,
   outPath: string,
   devBase: string,
+  previous: PreviousShot | undefined,
 ): Promise<boolean> {
   const startedAt = performance.now();
   let phaseStartedAt = startedAt;
@@ -367,6 +435,7 @@ async function shootOne(
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
     const { overflow, collision } = await readLayoutStatus(session);
+    const regions = await readCaptureRegions(session);
     mark("layout");
     const shot = await session.send("Page.captureScreenshot", {
       format: "png",
@@ -380,6 +449,21 @@ async function shootOne(
     }
     const bytes = Buffer.from(data, "base64");
     writePngAtomic(outPath, bytes);
+    const decoded = decodePng(bytes);
+    const frame = computeShotMetrics(decoded.width, decoded.height, decoded.data);
+    const scoped = computeShotMetrics(decoded.width, decoded.height, decoded.data, regions);
+    const viewport = (scoped.sampledShare ?? 1) >= MIN_SAMPLED_SHARE ? scoped : null;
+    const record = buildShotRecord({
+      bytes,
+      command: shotCommand(),
+      capturedAt: new Date().toISOString(),
+      signature: shotSignature(decoded.width, decoded.height, decoded.data),
+      width: decoded.width,
+      height: decoded.height,
+      ...(previous === undefined ? {} : { previous }),
+      git: gitProvenance(),
+    });
+    writeShotRecord(outPath, record);
     console.log(outPath);
     mark("capture");
     const profile = DEVICES[device];
@@ -393,24 +477,25 @@ async function shootOne(
       console.error(`MOBILE LAYOUT COLLISION [${label}]: ${formatCollisionReport(collision)}`);
       ok = false;
     }
-    if (args.inspect) {
-      try {
-        const decoded = decodePng(bytes);
-        const metrics = computeShotMetrics(decoded.width, decoded.height, decoded.data);
-        const metricsPath = outPath.replace(/\.png$/, ".metrics.json");
-        writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
-        console.log(metricsPath);
-        if (!metrics.nonblank) {
-          console.error(`inspect-shot [${label}]: blank or broken screenshot`);
-          ok = false;
-        }
-        for (const warning of evaluateThresholds(metrics)) {
-          console.error(`inspect-shot [${label}]: ${warning.message}`);
-        }
-      } catch (error) {
-        console.error(`inspect-shot [${label}]: failed — ${error instanceof Error ? error.message : error}`);
+    const replacement = describeReplacement(record);
+    if (replacement !== null) console.error(`shoot [${label}]: ${replacement}`);
+    // Viewport metrics are scored on every shot, not only under --inspect: a dead 3D view
+    // that nobody opens the PNG to notice is the failure this rung exists to catch. Skipped
+    // when the region is mostly covered (a HUD/menu capture has no 3D view to judge).
+    if (viewport !== null) {
+      const dead = deadViewport(viewport);
+      if (dead !== null) {
+        console.error(`shoot [${label}]: ${dead} — the HUD alone is carrying this frame`);
         ok = false;
       }
+      for (const warning of evaluateThresholds(viewport)) {
+        console.error(`shoot [${label}]: viewport ${warning.message}`);
+      }
+    }
+    if (args.inspect) {
+      const metricsPath = outPath.replace(/\.png$/, ".metrics.json");
+      writeFileSync(metricsPath, JSON.stringify({ frame, viewport }, null, 2));
+      console.log(metricsPath);
     }
     mark("inspect");
     console.error(
@@ -499,6 +584,40 @@ if (daemon !== null) {
 } else {
   devBase = args.url;
 }
+/**
+ * Print the game's declared `capture.views`. The runner publishes them on `data-jg-shots` as soon
+ * as the game module resolves — well before an honest frame — so discovery costs a navigation, not
+ * a capture, and still works when the `?shot=` that sent you here was the wrong name.
+ */
+async function listViews(debugPort: number, base: string, game: string): Promise<number> {
+  const session = await openPageSession(debugPort);
+  try {
+    await session.send("Page.enable");
+    await session.send("Runtime.enable");
+    const url = new URL(base);
+    url.searchParams.set("game", game);
+    await session.send("Page.navigate", { url: url.toString() });
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      const raw = await session.evaluate<string | null>(`document.documentElement.dataset.jgViews ?? null`);
+      if (typeof raw === "string") {
+        const shots = JSON.parse(raw) as string[];
+        if (shots.length === 0) {
+          console.log(`${game} declares no capture.views — add them to defineGame({ capture: { views } })`);
+          return 0;
+        }
+        console.log(`declared views (bun run shoot ${game} --view <name>):`);
+        for (const shot of shots) console.log(`  ${shot}`);
+        return 0;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`timed out reading ${game}'s declared views`);
+  } finally {
+    await session.close();
+  }
+}
+
 const exitCode = await withBrowserSession(
   {
     keep: args.keep,
@@ -516,9 +635,14 @@ const exitCode = await withBrowserSession(
         : args.timeoutMs * CAPTURE_MAX_ATTEMPTS * Math.max(targets.length, 1) + 10_000,
   },
   async ({ debugPort, chrome }) => {
+    if (args.listViews) return listViews(debugPort, devBase, args.game);
     let code = 0;
     for (const device of targets) {
-      const fits = await shootOne(debugPort, args, device, outPathFor(args, device, outDir), devBase);
+      const outPath = outPathFor(args, device, outDir);
+      // Cleared before the attempt, so a failed or hung capture leaves no file behind to be
+      // read as this run's result — the shape of every stale-screenshot mixup.
+      const previous = clearShotTarget(outPath);
+      const fits = await shootOne(debugPort, args, device, outPath, devBase, previous);
       if (!fits) code = 1;
     }
     if (args.keep && !attachedDaemon) {

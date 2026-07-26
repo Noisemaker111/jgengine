@@ -695,7 +695,8 @@
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
-- `GameCaptureConfig` (interface): interface GameCaptureConfig — How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`.
+- `GameCaptureConfig` (interface): interface GameCaptureConfig — How a game makes itself screenshottable: the commands that reach live play or a named screen, the framings worth re-capturing, and the progress metrics a bot playtest samples. Declaring these once is what lets a capture host reproduce a view instead of re-deriving it by hand every run.
+- `GameCaptureView` (interface): interface GameCaptureView — How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`.
 - `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig — ⚠ undocumented
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
