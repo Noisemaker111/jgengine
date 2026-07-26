@@ -233,3 +233,7 @@ Capturing a before shot for a PR: git checkout main in a cloud session gave a si
 2026-07-26T22:27:08.120Z — claude-opus-5 — Claude
 
 shoot the-robots twice with identical flags → one run captured with settle=1.51s and every dead tree missing from the frame, the next with settle=13.67s had them; default settle does not wait on modelLoadIdleMs so a capture can silently ship a half-loaded scene that looks like a content regression
+
+2026-07-26T21:28:30.860Z — cursor-grok-4.5-high — Cursor Agent
+
+city+race unify → session interrupted mid-flight twice, had to rediscover uncommitted street-life work from a prior agent turn
