@@ -221,8 +221,8 @@ Ran `bun run gate` and `bun run drive the-robots` concurrently on the software-G
 
 2026-07-26T19:44:00.696Z — claude-opus-5 — Claude
 
-`shoot <game> --look x,z,dist,height` returned a fully black 3D viewport (HUD drawn, world not) at two different world points, while --look 0,0 rendered fine. One frame caught the zone-title card mid-transition, so --look appears to capture before the relocated camera's world has streamed/settled. Cost 3 capture rounds and blocked visual evidence for an ambient-VFX change.
+RESOLVED by #1608, and my diagnosis was wrong: `--look x,z,dist,height[,angle]` was my own misuse — `--look` takes the aim point only and distance/height/angle belong in `--look-from`. The old parser silently aimed somewhere else, so I got black viewports and blamed a streaming race. #1608 now rejects the ambiguous arity with the exact corrected command, which is what unblocked me. Keeping the entry as a record that a silently-misparsed camera arg cost ~8 capture rounds.
 
 2026-07-26T20:25:15.978Z — claude-opus-5 — Claude
 
-shoot --settle N is ignored: ran 'shoot the-robots --look 0,0,30,4,110 --settle 4000' and the timing line reported settle=0.60s (the default). Cannot lengthen settle to work around the black-viewport race on --look.
+WITHDRAWN: `--settle` was not being ignored — the run it was measured on failed argument parsing before settle mattered (see the --look entry above). A correct `--look 0,0 --look-from 30,4,110` run reported settle=2.96s as asked.
