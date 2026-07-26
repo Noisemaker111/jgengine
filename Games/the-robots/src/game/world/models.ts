@@ -211,6 +211,14 @@ function buildEntityModels(): Record<string, ModelConfig> {
 
 export const entityModels: Record<string, ModelConfig> = buildEntityModels();
 
+/**
+ * Rim tuning for the world's own scenery. Weaker and warmer than the hostiles' cool edge on purpose:
+ * scenery has to gain form without competing with the read that says "that one can kill you".
+ */
+const BARK_RIM = { color: "#e8b06a", strength: 0.55, power: 3 } as const;
+const BONE_RIM = { color: "#f2e3c4", strength: 0.7, power: 2.8 } as const;
+const ROCK_RIM = { color: "#e0b47f", strength: 0.3, power: 3.6 } as const;
+
 /** Industrial props get real riveted panel; scavenged and improvised ones get scratched plate. */
 const PANEL = { metalness: 0.72, roughness: 0.42, maps: PANEL_MAPS } as const;
 const SCRAP = { metalness: 0.55, roughness: 0.68, maps: SCRAP_METAL_MAPS } as const;
@@ -278,16 +286,21 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
     fallbackModel: `${NATURE}/Rock_Medium_2`,
     style: {
       scale: 2,
-      material: { color: "#9c7a55", roughness: 0.95, metalness: 0.05, maps: CLIFF_MAPS },
+      material: { color: "#9c7a55", roughness: 0.95, metalness: 0.05, maps: CLIFF_MAPS, rim: ROCK_RIM },
     },
   },
-  // No material override: the nature pack ships its own bark texture, and a flat tint over it
+  // No colour override: the nature pack ships its own bark texture, and a flat tint over it
   // collapsed the whole trunk to an unlit black slab. Scale 3 also made every tree a frame-filling
   // black column at ground level.
+  //
+  // The rim is doing real work rather than decorating. Bark is a dark, fully-rough albedo, the key
+  // is low and raking, and ambient is deliberately thin — so a backlit trunk is *correctly* almost
+  // black and reads as a hole punched in the frame. A warm edge restores the form without lying
+  // about the lighting or lifting the whole scene's ambient to rescue one prop.
   dead_tree: {
     model: `${NATURE}/DeadTree_1`,
     fallbackModel: `${NATURE}/DeadTree_2`,
-    style: { scale: 1.5 },
+    style: { scale: 1.5, material: { rim: BARK_RIM } },
   },
   wreck: {
     model: `${SPACE}/cargo_A`,
@@ -342,7 +355,7 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
   bone_arch: {
     model: `${NATURE}/DeadTree_4`,
     fallbackModel: `${NATURE}/DeadTree_2`,
-    style: { scale: 1.8 },
+    style: { scale: 1.8, material: { rim: BONE_RIM } },
   },
   reactor_gate: {
     model: `${SCIFI}/Door_Frame_SquareTall`,
