@@ -4,6 +4,8 @@ import type { RarityStyle } from "@jgengine/core/game/worldItem";
 import { defineGame } from "@jgengine/shell/defineGame";
 
 import { assets } from "./game/assets";
+import { audio, objectSounds } from "./game/audio/catalog";
+import { audioProbe } from "./game/audio/drive";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
@@ -133,10 +135,15 @@ function prompts(ctx: GameContext): readonly PositionedPrompt[] {
 }
 
 export const game = defineGame({
-  capture: { play: [{ name: "character.pick", input: { characterId: "gunk" } }] },
+  capture: {
+    play: [{ name: "character.pick", input: { characterId: "gunk" } }],
+    probe: audioProbe,
+  },
   name: "The Robots",
   features: { quest: true, trade: true },
   assets,
+  audio,
+  objectSounds,
   world,
   physics,
   inventories,

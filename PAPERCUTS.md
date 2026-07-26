@@ -210,3 +210,11 @@ adding a field to SkyEnvironmentConfig → sky() copies config fields one by one
 2026-07-26T18:59:33.308Z — claude-opus-5 — Claude
 
 verifying any world content with shoot/drive → the only aiming primitive was --spawn, which moves the player but does not pin look yaw, so framing a known coordinate took repeated capture rounds and often never worked; fixed by --look in this PR
+
+2026-07-26T19:36:32.979Z — claude-opus-5 — Claude
+
+Waiting on a background `bun run gate` with `until pgrep -f 'run-stages.ts gate'; do sleep; done` never exits — the watcher shell's own command line contains the pattern, so pgrep matches itself. Cost ~15 wasted wake cycles before I noticed. A documented wait-for-background-command idiom (or pgrep guidance) would help.
+
+2026-07-26T19:36:33.037Z — claude-opus-5 — Claude
+
+Ran `bun run gate` and `bun run drive the-robots` concurrently on the software-GL cloud box; they starved each other and the 20s key-hold drive took ~20 min. Nothing warns that capture and gate should not overlap on a GL-less host.

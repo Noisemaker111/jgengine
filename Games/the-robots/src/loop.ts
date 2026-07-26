@@ -4,6 +4,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { activeCharacter, talentTree } from "./game/characters";
 import { registerCommands, resumeBuild } from "./game/commands";
+import { startAmbience, tickAudio } from "./game/audio/drive";
 import { noteEquipped, noteGameNow, noteLevelUp } from "./game/feel";
 import { tickEnemies } from "./game/entities/enemies/ai";
 import { enemyById, levelXpFor } from "./game/entities/enemies/catalog";
@@ -85,8 +86,10 @@ function onEntityDied(ctx: GameContext, event: EntityDiedEvent): void {
   if (event.instanceId === userId) return;
   const enemy = enemyById(event.catalogId);
   if (enemy === undefined) return;
+  const deathAt = deathAnchor(ctx, event);
+  ctx.game.audio.play("enemy_die", deathAt);
   if (event.reason.kind === "player_kill" && event.reason.killerUserId === userId) {
-    const anchor = deathAnchor(ctx, event);
+    const anchor = deathAt;
     grantXp(ctx, userId, levelXpFor(enemy.xp, zoneLevelAt(anchor[0], anchor[2])));
     grantCores(ctx, event);
     if (enemy.id === "the_warrior") {
@@ -118,6 +121,7 @@ function onLevelUp(ctx: GameContext, userId: string): void {
     ctx.scene.entity.stats.delta(userId, "skillPoints", 1);
   }
   noteLevelUp(ctx.time.now() * 1000);
+  ctx.game.audio.play("levelup");
   ctx.scene.entity.floatText({ instanceId: userId, text: "LEVEL UP! +1 SKILL POINT", kind: "pickup" });
 }
 
@@ -224,6 +228,7 @@ function onInit(ctx: GameContext): void {
     void ctx.game.save?.checkpoint();
   });
 
+  startAmbience(ctx);
   setupWorld(ctx);
   ctx.time.every(RESPAWN_SWEEP_SECONDS, () => respawnClusters(ctx));
 }
@@ -265,6 +270,7 @@ function onTick(ctx: GameContext, dt: number): void {
   const nowMs = ctx.time.now() * 1000;
   noteGameNow(nowMs);
   if (activeCharacter() === null) return;
+  tickAudio(ctx, nowMs);
   tickEnemies(ctx, dt);
   tickShields(ctx, nowMs, dt);
   tickDots(ctx, nowMs);

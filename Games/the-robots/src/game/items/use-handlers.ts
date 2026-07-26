@@ -6,6 +6,7 @@ import { AMMO_LABELS } from "../ammo";
 import { bonus } from "../characters";
 import { enemyById } from "../entities/enemies/catalog";
 import { noteHit, noteShot } from "../feel";
+import { playHit, playShot } from "../audio/drive";
 import {
   applyElementalProc,
   consumeRound,
@@ -68,6 +69,7 @@ function applyHitModifiers(
   }
   const killed = (ctx.scene.entity.stats.get(targetId, "health")?.current ?? 1) <= 0;
   noteHit(nowMs, crit, killed);
+  playHit(ctx, ctx.scene.entity.get(targetId)?.position ?? [0, 0, 0], crit);
   applyElementalProc(ctx, combatRng, gun, from, targetId, nowMs);
 }
 
@@ -96,6 +98,7 @@ const fireGun: ItemUseHandler<GameContext> = {
     }
     lastFiredAt.set(gateKey, nowMs + Math.round(gun.weapon.fireIntervalMs / (1 + bonus("fireRate"))));
     noteShot(nowMs, gun.family);
+    playShot(ctx, gun.family);
     cameraShake(Math.min(0.3, 0.05 + gun.weapon.damage / 400), 6);
 
     const aim = input.aim ?? { yaw: ctx.scene.entity.get(input.from)?.rotationY ?? 0, pitch: 0 };

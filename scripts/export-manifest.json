@@ -25,6 +25,8 @@
     "./assets/spriteSheet",
     "./audio/audioFalloff",
     "./audio/music",
+    "./audio/musicState",
+    "./audio/stepCadence",
     "./audio/synth",
     "./authoring",
     "./behaviour/behaviour",
