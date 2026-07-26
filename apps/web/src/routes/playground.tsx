@@ -2,7 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { generateCity, type GeneratedCity } from "@jgengine/core/world/cityGenerator";
-import { generateStreets, type StreetNetwork, type StreetNetworkRules } from "@jgengine/core/world/streetGenerator";
+import { extractCircuitRoute, type CircuitRoute } from "@jgengine/core/world/raceCircuit";
+import {
+  generateStreets,
+  streetNetworkMode,
+  type StreetNetwork,
+  type StreetNetworkMode,
+  type StreetNetworkRules,
+} from "@jgengine/core/world/streetGenerator";
 import { Page, PageHero } from "../components/Layout";
 import type { PlaygroundWorldHandle } from "../live/playgroundWorld";
 import { seo } from "../lib/seo";
@@ -10,25 +17,30 @@ import { seo } from "../lib/seo";
 export const Route = createFileRoute("/playground")({
   head: () =>
     seo({
-      title: "Playground — grow a 3D city or a race circuit from one seed",
+      title: "Playground — grow a 3D city, a circuit, or a street race from one seed",
       description:
-        "Live in-browser street generator: drag the sliders and watch a whole 3D city — streets, building lots, traffic — or a closed race circuit regrow deterministically from a seed. The same engine JGengine's editor bakes into scene documents.",
+        "Live in-browser street generator: one slider set grows a whole 3D city — streets, building lots — a closed race circuit at the other end of the same dials, or a street race lifted out of the city and sealed off. Deterministic from a seed, the same engine JGengine's editor bakes into scene documents.",
       path: "/playground",
     }),
   component: Playground,
 });
 
-type Mode = "city" | "circuit";
+type Mode = "city" | "circuit" | "race";
 type View = "3d" | "map";
 
 interface Dials {
   seed: string;
   size: number;
   gridness: number;
+  loopiness: number;
   connectivity: number;
   branching: number;
+  deadEnds: number;
   winding: number;
   segmentLength: number;
+  aspect: number;
+  roadWidth: number;
+  minCurveRadius: number;
   boulevards: number;
   lotW: number;
   lotD: number;
@@ -39,6 +51,9 @@ interface Dials {
   blockFill: number;
   elevation: number;
   trackDensity: number;
+  lapLength: number;
+  arterialBias: number;
+  checkpoints: number;
   sidewalks: boolean;
   sidewalkWidth: number;
   laneMarkings: boolean;
@@ -52,14 +67,19 @@ interface Dials {
   cameraYaw: number;
 }
 
-const DEFAULTS: Dials = {
+export const DEFAULTS: Dials = {
   seed: "vice-isle",
   size: 260,
   gridness: 0.85,
+  loopiness: 0.35,
   connectivity: 0.6,
   branching: 0.25,
+  deadEnds: 0.15,
   winding: 0.15,
   segmentLength: 90,
+  aspect: 1.4,
+  roadWidth: 9,
+  minCurveRadius: 18,
   boulevards: 0.2,
   lotW: 12,
   lotD: 10,
@@ -70,6 +90,9 @@ const DEFAULTS: Dials = {
   blockFill: 0.45,
   elevation: 0.35,
   trackDensity: 0.35,
+  lapLength: 2400,
+  arterialBias: 0.7,
+  checkpoints: 12,
   sidewalks: true,
   sidewalkWidth: 2.2,
   laneMarkings: true,
@@ -83,27 +106,136 @@ const DEFAULTS: Dials = {
   cameraYaw: 45,
 };
 
-/** City vs. circuit start their Elevation dial in different places — gentle hills vs. a rolling lap. */
-const CITY_ELEVATION = 0.35;
-const CIRCUIT_ELEVATION = 0.5;
+/**
+ * The mode buttons are PRESETS over the one shared slider set, not three tools: each writes the same
+ * layout dials to a different corner of the generator's space, so dragging away from a preset morphs
+ * a city into a circuit continuously.
+ */
+export const PRESETS: Record<Mode, Partial<Dials>> = {
+  city: {
+    gridness: 0.85,
+    loopiness: 0.35,
+    connectivity: 0.6,
+    branching: 0.25,
+    deadEnds: 0.15,
+    winding: 0.15,
+    segmentLength: 90,
+    aspect: 1.4,
+    roadWidth: 9,
+    minCurveRadius: 18,
+    boulevards: 0.2,
+    elevation: 0.35,
+  },
+  circuit: {
+    gridness: 0,
+    loopiness: 1,
+    connectivity: 0,
+    branching: 0,
+    deadEnds: 0,
+    winding: 0.55,
+    segmentLength: 80,
+    aspect: 1,
+    roadWidth: 10,
+    minCurveRadius: 24,
+    boulevards: 0,
+    elevation: 0.5,
+  },
+  race: {
+    gridness: 0.7,
+    loopiness: 0.5,
+    connectivity: 0.55,
+    branching: 0.3,
+    deadEnds: 0.1,
+    winding: 0.2,
+    segmentLength: 100,
+    aspect: 1.3,
+    roadWidth: 10,
+    minCurveRadius: 18,
+    boulevards: 0.35,
+    elevation: 0.3,
+  },
+};
+
+const MODE_LABEL: Record<Mode, string> = { city: "City", circuit: "Race circuit", race: "Street race" };
+
 /** Cap on road grade handed to the street rules (0..1). The generator clamps crest/dip steepness to it. */
 const MAX_GRADE = 0.12;
+const MIN_TURN_ANGLE = 12;
+const MAX_TURN_ANGLE = 110;
 
-const CIRCUIT_RULES: Omit<StreetNetworkRules, "seed"> = {
-  gridness: 0,
-  loopiness: 1,
-  connectivity: 0,
-  branching: 0,
-  deadEnds: 0,
-  segmentLength: 80,
-  aspect: 1,
-  winding: 0.55,
-  minCurveRadius: 24,
-  minTurnAngle: 10,
-  maxTurnAngle: 100,
-  width: 10,
-  boulevards: 0,
-};
+/** Every street dial the playground drives, in one place — the same set for all three modes. */
+export function playgroundStreetRules(dials: Dials): Omit<StreetNetworkRules, "seed"> {
+  return {
+    gridness: dials.gridness,
+    loopiness: dials.loopiness,
+    connectivity: dials.connectivity,
+    branching: dials.branching,
+    deadEnds: dials.deadEnds,
+    segmentLength: dials.segmentLength,
+    aspect: dials.aspect,
+    winding: dials.winding,
+    minCurveRadius: dials.minCurveRadius,
+    minTurnAngle: MIN_TURN_ANGLE,
+    maxTurnAngle: MAX_TURN_ANGLE,
+    width: dials.roadWidth,
+    boulevards: dials.boulevards,
+    sidewalkWidth: dials.sidewalkWidth,
+    elevation: dials.elevation,
+    maxGrade: MAX_GRADE,
+    compactness: dials.trackDensity,
+  };
+}
+
+export interface PlaygroundResult {
+  network: StreetNetwork;
+  city: GeneratedCity | null;
+  /** The lap lifted out of `network` in race mode; null in other modes or when no cycle exists. */
+  route: CircuitRoute | null;
+  /** What the sliders actually asked the generator for, independent of the chosen preset. */
+  topology: StreetNetworkMode;
+}
+
+/**
+ * Grow whatever the dials describe. `city` and `race` share one `generateCity` call — race then lifts
+ * a sealed lap out of that same network — so the race is a section of the city, never a second world.
+ */
+export function growPlayground(mode: Mode, dials: Dials): PlaygroundResult {
+  const streets = playgroundStreetRules(dials);
+  const topology = streetNetworkMode({ seed: dials.seed, ...streets });
+  if (mode === "circuit") {
+    return { network: generateStreets({ seed: dials.seed, ...streets }, dials.size, dials.size), city: null, route: null, topology };
+  }
+  const city = generateCity(
+    {
+      seed: dials.seed,
+      streets,
+      lots: {
+        // The city plotter already emits deterministic small/medium/large/grand tiers from this
+        // scale hint. Passing building-lot variant arrays here is invalid and yields an empty city.
+        footprint: { w: dials.lotW, d: dials.lotD },
+        setback: dials.setback,
+        spacing: dials.spacing,
+        variety: dials.variety,
+      },
+      content: { landmarks: dials.landmarks, blockFill: dials.blockFill },
+    },
+    dials.size,
+    dials.size,
+  );
+  const route =
+    mode === "race"
+      ? // `minCornerRadius` stays on the core default: it is the racing line's drivability floor, and a
+        // junction can only be rounded inside the street's own width — feeding it the street fillet
+        // radius rejects every lap an ordinary city can offer.
+        extractCircuitRoute(city.network, {
+          seed: dials.seed,
+          lapLength: dials.lapLength,
+          arterialBias: dials.arterialBias,
+          checkpoints: dials.checkpoints,
+        })
+      : null;
+  return { network: city.network, city, route, topology };
+}
 
 const LEVEL_COLOR: Record<string, string> = {
   boulevard: "#f8fafc",
@@ -151,6 +283,10 @@ function Slider({
       />
     </label>
   );
+}
+
+function GroupLabel({ children }: { children: string }) {
+  return <p className="pt-2 text-[11px] uppercase tracking-wide text-slate-500">{children}</p>;
 }
 
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) {
@@ -254,7 +390,17 @@ function circuitCorners(points: readonly Pt[], maxRadius = 130, mergeGap = 2): M
   return corners;
 }
 
-function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: GeneratedCity | null; size: number }) {
+function StreetsSvg({
+  network,
+  city,
+  route,
+  size,
+}: {
+  network: StreetNetwork;
+  city: GeneratedCity | null;
+  route: CircuitRoute | null;
+  size: number;
+}) {
   const view = size * 2 + 40;
   const toX = (x: number) => x + view / 2;
   const toZ = (z: number) => z + view / 2;
@@ -404,6 +550,52 @@ function StreetsSvg({ network, city, size }: { network: StreetNetwork; city: Gen
           START/FINISH
         </text>
       ) : null}
+      {/* Street race: the lap over the city streets it uses, plus a barrier tick per sealed side street. */}
+      {route !== null ? (
+        <g>
+          <polyline
+            points={[...route.centerline, route.centerline[0]!].map(([x, z]) => `${toX(x)},${toZ(z)}`).join(" ")}
+            fill="none"
+            stroke="#0d1016"
+            strokeWidth={route.widths[0] ?? 10}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <polyline
+            points={[...route.centerline, route.centerline[0]!].map(([x, z]) => `${toX(x)},${toZ(z)}`).join(" ")}
+            fill="none"
+            stroke="#f97316"
+            strokeWidth={1.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          {route.seals.map((seal, i) => {
+            const spread = seal.width / 2 + 1.5;
+            const ax = Math.cos(seal.heading) * spread;
+            const az = -Math.sin(seal.heading) * spread;
+            return (
+              <line
+                key={`sl${i}`}
+                x1={toX(seal.x - ax)}
+                y1={toZ(seal.z - az)}
+                x2={toX(seal.x + ax)}
+                y2={toZ(seal.z + az)}
+                stroke="#ef4444"
+                strokeWidth={2.2}
+                strokeLinecap="round"
+              />
+            );
+          })}
+          <line
+            x1={toX(route.start.line[0][0])}
+            y1={toZ(route.start.line[0][1])}
+            x2={toX(route.start.line[1][0])}
+            y2={toZ(route.start.line[1][1])}
+            stroke="#f8fafc"
+            strokeWidth={2.4}
+          />
+        </g>
+      ) : null}
     </svg>
   );
 }
@@ -428,11 +620,19 @@ export interface PlaygroundQuery {
 const DIAL_RANGES = {
   size: [140, 400],
   gridness: [0, 1],
+  loopiness: [0, 1],
   connectivity: [0, 1],
   branching: [0, 1],
+  deadEnds: [0, 1],
   winding: [0, 0.8],
   segmentLength: [50, 160],
+  aspect: [1, 2.5],
+  roadWidth: [6, 16],
+  minCurveRadius: [6, 60],
   boulevards: [0, 0.6],
+  lapLength: [400, 6000],
+  arterialBias: [0, 1],
+  checkpoints: [4, 24],
   lotW: [8, 24],
   lotD: [6, 24],
   setback: [1, 10],
@@ -479,11 +679,19 @@ export function parsePlaygroundQuery(search: string): PlaygroundQuery {
   for (const dial of [
     "size",
     "gridness",
+    "loopiness",
     "connectivity",
     "branching",
+    "deadEnds",
     "winding",
     "segmentLength",
+    "aspect",
+    "roadWidth",
+    "minCurveRadius",
     "boulevards",
+    "lapLength",
+    "arterialBias",
+    "checkpoints",
     "lotW",
     "lotD",
     "setback",
@@ -540,7 +748,7 @@ export function parsePlaygroundQuery(search: string): PlaygroundQuery {
     dials,
     cam,
     view: rawView === "map" || rawView === "3d" ? rawView : null,
-    mode: rawMode === "city" || rawMode === "circuit" ? rawMode : null,
+    mode: rawMode === "city" || rawMode === "circuit" || rawMode === "race" ? rawMode : null,
     inspect: boolean("inspect") === true,
     capture: boolean("capture") === true,
   };
@@ -564,57 +772,17 @@ function Playground() {
 
   useEffect(() => {
     const parsed = parsePlaygroundQuery(window.location.search);
+    const parsedMode = parsed.mode ?? "city";
     setQuery(parsed);
-    setMode(parsed.mode ?? "city");
+    setMode(parsedMode);
     setView(parsed.view ?? "3d");
-    setDials({ ...DEFAULTS, ...parsed.dials });
+    // A shared URL carries whichever dials it names; the rest come from the mode's preset, so
+    // `?mode=circuit` still lands on a circuit instead of a city wearing a circuit label.
+    setDials({ ...DEFAULTS, ...PRESETS[parsedMode], ...parsed.dials });
     setQueryReady(true);
   }, []);
 
-  const result = useMemo(() => {
-    if (mode === "circuit") {
-      // Built as a standalone const (not an inline literal) so the extra `elevation`/`maxGrade` dials
-      // pass through cleanly whether or not the core rules type has adopted them yet.
-      const circuitRules = {
-        seed: dials.seed,
-        ...CIRCUIT_RULES,
-        winding: dials.winding,
-        segmentLength: dials.segmentLength,
-        compactness: dials.trackDensity,
-        sidewalkWidth: dials.sidewalkWidth,
-        elevation: dials.elevation,
-        maxGrade: MAX_GRADE,
-      };
-      const network = generateStreets(circuitRules, dials.size, dials.size);
-      return { network, city: null as GeneratedCity | null };
-    }
-    const cityStreets = {
-      gridness: dials.gridness,
-      connectivity: dials.connectivity,
-      branching: dials.branching,
-      winding: dials.winding,
-      segmentLength: dials.segmentLength,
-      boulevards: dials.boulevards,
-      sidewalkWidth: dials.sidewalkWidth,
-      elevation: dials.elevation,
-      maxGrade: MAX_GRADE,
-    };
-    const cityOptions = {
-      seed: dials.seed,
-      streets: cityStreets,
-      lots: {
-        // The city plotter already emits deterministic small/medium/large/grand tiers from this
-        // scale hint. Passing building-lot variant arrays here is invalid and yields an empty city.
-        footprint: { w: dials.lotW, d: dials.lotD },
-        setback: dials.setback,
-        spacing: dials.spacing,
-        variety: dials.variety,
-      },
-      content: { landmarks: dials.landmarks, blockFill: dials.blockFill },
-    };
-    const city = generateCity(cityOptions, dials.size, dials.size);
-    return { network: city.network, city };
-  }, [mode, dials]);
+  const result = useMemo(() => growPlayground(mode, dials), [mode, dials]);
 
   // Boot the 3D viewer once (client-only; three.js loads lazily).
   useEffect(() => {
@@ -670,6 +838,7 @@ function Playground() {
       laneMarkingOffset: dials.laneMarkingOffset,
       laneMarkingDash: dials.laneMarkingDash,
       laneMarkingGap: dials.laneMarkingGap,
+      ...(result.route === null ? {} : { route: result.route }),
     }).then(() => {
       if (!cancelled) document.documentElement.dataset.jgCapture = "ready";
     }).catch((error: unknown) => {
@@ -683,39 +852,39 @@ function Playground() {
     };
   }, [worldReady, result, mode, query]);
 
-  const rpc =
-    mode === "circuit"
-      ? `{"method":"generate_streets","seed":"${dials.seed}","mode":"circuit","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"winding":${dials.winding},"segmentLength":${dials.segmentLength},"compactness":${dials.trackDensity},"elevation":${dials.elevation},"maxGrade":${MAX_GRADE}}}`
-      : `{"method":"generate_streets","seed":"${dials.seed}","mode":"net","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":{"gridness":${dials.gridness},"connectivity":${dials.connectivity},"branching":${dials.branching},"winding":${dials.winding},"segmentLength":${dials.segmentLength},"boulevards":${dials.boulevards},"elevation":${dials.elevation},"maxGrade":${MAX_GRADE}}}`;
+  const rpc = `{"method":"generate_streets","seed":"${dials.seed}","mode":"${result.topology}","halfX":${dials.size},"halfZ":${dials.size},"center":{"x":0,"y":0,"z":0},"params":${JSON.stringify(playgroundStreetRules(dials))}}`;
+  const lap = result.route;
 
   return (
     <Page>
       {!query.inspect && (
         <PageHero
           eyebrow="Playground"
-          title="Grow a city — or a race circuit — from one seed"
-          blurb="This is the live street generator that ships in @jgengine/core, rendered in full 3D: streets, frontage building lots, traffic. Every drag regrows the whole city deterministically — same seed and sliders, same city, in the browser, in the editor, and in a shipped game."
+          title="One slider set: a city, a circuit, or a street race through the city"
+          blurb="This is the live street generator that ships in @jgengine/core, rendered in full 3D: streets, frontage building lots, a sealed-off racing lap. The three buttons are presets over the same dials — a city and a race track are opposite corners of one space, and a street race is a section of the city with barriers dropped in. Every drag regrows it deterministically — same seed and sliders, same world, in the browser, in the editor, and in a shipped game."
         />
       )}
       <div className={query.inspect ? "fixed inset-0 z-50 bg-[#0b1017]" : "mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-[320px_1fr]"}>
         <div className={query.inspect ? "hidden" : "space-y-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5"}>
-          <div className="flex gap-2">
-            {(["city", "circuit"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => {
-                  setMode(m);
-                  if (m === "circuit") set({ winding: dials.winding < 0.3 ? 0.5 : dials.winding, elevation: CIRCUIT_ELEVATION });
-                  else set({ elevation: CITY_ELEVATION });
-                }}
-                className={`flex-1 rounded-full px-3 py-1.5 text-sm capitalize transition ${
-                  mode === m ? "bg-emerald-400/15 text-emerald-300" : "bg-white/[0.04] text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                {m === "city" ? "City" : "Race circuit"}
-              </button>
-            ))}
+          <div>
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">Preset — moves the shared sliders</p>
+            <div className="flex gap-2">
+              {(["city", "circuit", "race"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    setMode(m);
+                    set(PRESETS[m]);
+                  }}
+                  className={`flex-1 rounded-full px-2 py-1.5 text-xs transition ${
+                    mode === m ? "bg-emerald-400/15 text-emerald-300" : "bg-white/[0.04] text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {MODE_LABEL[m]}
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -733,29 +902,38 @@ function Playground() {
               🎲
             </button>
           </div>
+          <GroupLabel>Layout — every mode, every slider</GroupLabel>
           <Slider label="World half-size" value={dials.size} min={140} max={400} step={20} onChange={(v) => set({ size: v })} />
           <Slider label="Block size" value={dials.segmentLength} min={50} max={160} step={5} onChange={(v) => set({ segmentLength: v })} />
+          <Slider label="Block aspect" value={dials.aspect} min={1} max={2.5} step={0.1} onChange={(v) => set({ aspect: v })} />
+          <Slider label="Road width" value={dials.roadWidth} min={6} max={16} step={0.5} onChange={(v) => set({ roadWidth: v })} />
+          <Slider label="Loopiness (0 = city tree, 1 = circuit)" value={dials.loopiness} min={0} max={1} step={0.05} onChange={(v) => set({ loopiness: v })} />
+          <Slider label="Dead ends" value={dials.deadEnds} min={0} max={1} step={0.05} onChange={(v) => set({ deadEnds: v })} />
+          <Slider label="Gridness" value={dials.gridness} min={0} max={1} step={0.05} onChange={(v) => set({ gridness: v })} />
+          <Slider label="Connectivity" value={dials.connectivity} min={0} max={1} step={0.05} onChange={(v) => set({ connectivity: v })} />
+          <Slider label="Branching" value={dials.branching} min={0} max={1} step={0.05} onChange={(v) => set({ branching: v })} />
+          <Slider label="Boulevards" value={dials.boulevards} min={0} max={0.6} step={0.05} onChange={(v) => set({ boulevards: v })} />
           <Slider label="Winding" value={dials.winding} min={0} max={0.8} step={0.05} onChange={(v) => set({ winding: v })} />
+          <Slider label="Min curve radius" value={dials.minCurveRadius} min={6} max={60} step={1} onChange={(v) => set({ minCurveRadius: v })} />
           <Slider label="Elevation" value={dials.elevation} min={0} max={1} step={0.05} onChange={(v) => set({ elevation: v })} />
-          {mode === "city" ? (
+          <Slider label="Track density" value={dials.trackDensity} min={0} max={1} step={0.05} onChange={(v) => set({ trackDensity: v })} />
+          <GroupLabel>Paving</GroupLabel>
+          <Toggle label="Sidewalks" value={dials.sidewalks} onChange={(sidewalks) => set({ sidewalks })} />
+          {dials.sidewalks && (
+            <Slider label="Sidewalk width" value={dials.sidewalkWidth} min={0.5} max={5} step={0.1} onChange={(sidewalkWidth) => set({ sidewalkWidth })} />
+          )}
+          <Toggle label="Lane markings" value={dials.laneMarkings} onChange={(laneMarkings) => set({ laneMarkings })} />
+          {dials.laneMarkings && (
             <>
-              <Slider label="Gridness" value={dials.gridness} min={0} max={1} step={0.05} onChange={(v) => set({ gridness: v })} />
-              <Slider label="Connectivity" value={dials.connectivity} min={0} max={1} step={0.05} onChange={(v) => set({ connectivity: v })} />
-              <Slider label="Branching" value={dials.branching} min={0} max={1} step={0.05} onChange={(v) => set({ branching: v })} />
-              <Slider label="Boulevards" value={dials.boulevards} min={0} max={0.6} step={0.05} onChange={(v) => set({ boulevards: v })} />
-              <Toggle label="Sidewalks" value={dials.sidewalks} onChange={(sidewalks) => set({ sidewalks })} />
-              {dials.sidewalks && (
-                <Slider label="Sidewalk width" value={dials.sidewalkWidth} min={0.5} max={5} step={0.1} onChange={(sidewalkWidth) => set({ sidewalkWidth })} />
-              )}
-              <Toggle label="Lane markings" value={dials.laneMarkings} onChange={(laneMarkings) => set({ laneMarkings })} />
-              {dials.laneMarkings && (
-                <>
-                  <Slider label="Marking width" value={dials.laneMarkingWidth} min={0.06} max={0.6} step={0.02} onChange={(laneMarkingWidth) => set({ laneMarkingWidth })} />
-                  <Slider label="Marking offset" value={dials.laneMarkingOffset} min={-4} max={4} step={0.25} onChange={(laneMarkingOffset) => set({ laneMarkingOffset })} />
-                  <Slider label="Dash length" value={dials.laneMarkingDash} min={1} max={12} step={0.5} onChange={(laneMarkingDash) => set({ laneMarkingDash })} />
-                  <Slider label="Dash gap" value={dials.laneMarkingGap} min={0.5} max={12} step={0.5} onChange={(laneMarkingGap) => set({ laneMarkingGap })} />
-                </>
-              )}
+              <Slider label="Marking width" value={dials.laneMarkingWidth} min={0.06} max={0.6} step={0.02} onChange={(laneMarkingWidth) => set({ laneMarkingWidth })} />
+              <Slider label="Marking offset" value={dials.laneMarkingOffset} min={-4} max={4} step={0.25} onChange={(laneMarkingOffset) => set({ laneMarkingOffset })} />
+              <Slider label="Dash length" value={dials.laneMarkingDash} min={1} max={12} step={0.5} onChange={(laneMarkingDash) => set({ laneMarkingDash })} />
+              <Slider label="Dash gap" value={dials.laneMarkingGap} min={0.5} max={12} step={0.5} onChange={(laneMarkingGap) => set({ laneMarkingGap })} />
+            </>
+          )}
+          {mode !== "circuit" && (
+            <>
+              <GroupLabel>Plots and buildings</GroupLabel>
               <Slider label="Lot frontage" value={dials.lotW} min={8} max={24} step={1} onChange={(v) => set({ lotW: v })} />
               <Slider label="Lot depth" value={dials.lotD} min={6} max={24} step={1} onChange={(v) => set({ lotD: v })} />
               <Slider label="Sidewalk setback" value={dials.setback} min={1} max={10} step={1} onChange={(v) => set({ setback: v })} />
@@ -764,8 +942,14 @@ function Playground() {
               <Slider label="Landmarks" value={dials.landmarks} min={0} max={0.2} step={0.01} onChange={(v) => set({ landmarks: v })} />
               <Slider label="Block fill" value={dials.blockFill} min={0} max={1} step={0.05} onChange={(v) => set({ blockFill: v })} />
             </>
-          ) : (
-            <Slider label="Track density" value={dials.trackDensity} min={0} max={1} step={0.05} onChange={(v) => set({ trackDensity: v })} />
+          )}
+          {mode === "race" && (
+            <>
+              <GroupLabel>Street race — the lap lifted out of the city</GroupLabel>
+              <Slider label="Lap length (m)" value={dials.lapLength} min={400} max={6000} step={100} onChange={(v) => set({ lapLength: v })} />
+              <Slider label="Arterial bias" value={dials.arterialBias} min={0} max={1} step={0.05} onChange={(v) => set({ arterialBias: v })} />
+              <Slider label="Checkpoints" value={dials.checkpoints} min={4} max={24} step={1} onChange={(v) => set({ checkpoints: v })} />
+            </>
           )}
           {view === "3d" && result.network.junctions.length > 0 && (
             <>
@@ -779,20 +963,38 @@ function Playground() {
               )}
             </>
           )}
-          <div className="text-xs leading-relaxed text-slate-500">
-            {mode === "city" ? (
-              <>
-                <span className="text-emerald-300">{result.network.streets.length}</span> streets ·{" "}
-                <span className="text-emerald-300">{result.city?.lotContent?.length ?? result.city?.lots.length ?? 0}</span> buildings
-              </>
-            ) : (
-              <>
-                A closed circuit of <span className="text-emerald-300">{result.network.edges.length}</span> welded segments — the
-                same engine, loopiness at 1. Track density{" "}
-                <span className="text-emerald-300">{dials.trackDensity}</span> folds the lap into its footprint: 0 keeps an open,
-                flowing loop; 1 fills the interior with parallel corridors and switchbacks.
-              </>
+          <div className="space-y-1 text-xs leading-relaxed text-slate-500">
+            <p>
+              These sliders grow a <span className="font-mono text-emerald-300">{result.topology}</span> —{" "}
+              <span className="text-emerald-300">{result.network.streets.length}</span> streets,{" "}
+              <span className="text-emerald-300">{result.network.loops}</span> independent loops. Loopiness decides which; the
+              preset buttons only move it.
+            </p>
+            {mode === "city" && (
+              <p>
+                <span className="text-emerald-300">{result.city?.lotContent?.length ?? result.city?.lots.length ?? 0}</span>{" "}
+                buildings on street-fronting plots.
+              </p>
             )}
+            {mode === "circuit" && (
+              <p>
+                Track density <span className="text-emerald-300">{dials.trackDensity}</span> folds the lap into its footprint: 0
+                keeps an open, flowing loop; 1 fills the interior with parallel corridors and switchbacks.
+              </p>
+            )}
+            {mode === "race" &&
+              (lap === null ? (
+                <p className="text-amber-300/80">
+                  No drivable cycle in this city — raise Loopiness or Connectivity until a lap can close.
+                </p>
+              ) : (
+                <p>
+                  <span className="text-emerald-300">{Math.round(lap.length)} m</span> lap ·{" "}
+                  <span className="text-emerald-300">{lap.corners.length}</span> corners · runs on{" "}
+                  <span className="text-emerald-300">{lap.edges.length}</span> of {result.network.edges.length} city streets ·{" "}
+                  <span className="text-emerald-300">{lap.seals.length}</span> side streets sealed off.
+                </p>
+              ))}
           </div>
           <div className="rounded-lg border border-white/[0.06] bg-black/30 p-3">
             <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">Bake this exact layout into a game</p>
@@ -811,7 +1013,7 @@ function Playground() {
           />
           {view === "map" && (
             <div className="absolute inset-0">
-              <StreetsSvg network={result.network} city={result.city} size={dials.size} />
+              <StreetsSvg network={result.network} city={result.city} route={result.route} size={dials.size} />
             </div>
           )}
           {view === "3d" && !worldReady && (

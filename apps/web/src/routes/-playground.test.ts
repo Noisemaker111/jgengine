@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { parsePlaygroundQuery } from "./playground";
+import { DEFAULTS, PRESETS, growPlayground, parsePlaygroundQuery } from "./playground";
 
 describe("playground query controls", () => {
   test("parses all generation and inspection controls deterministically", () => {
@@ -50,5 +50,67 @@ describe("playground query controls", () => {
       cameraPitch: 45,
       cameraYaw: 45,
     });
+  });
+
+  test("round-trips the street-race mode and every shared topology dial", () => {
+    const search = "?mode=race&loopiness=.62&deadEnds=.08&aspect=1.8&roadWidth=12&minCurveRadius=26&lapLength=1800&arterialBias=.85&checkpoints=16";
+    const parsed = parsePlaygroundQuery(search);
+    expect(parsed).toEqual(parsePlaygroundQuery(search));
+    expect(parsed).toMatchObject({
+      mode: "race",
+      dials: {
+        loopiness: 0.62,
+        deadEnds: 0.08,
+        aspect: 1.8,
+        roadWidth: 12,
+        minCurveRadius: 26,
+        lapLength: 1800,
+        arterialBias: 0.85,
+        checkpoints: 16,
+      },
+    });
+  });
+
+  test("clamps the topology and race dials to safe ranges", () => {
+    expect(parsePlaygroundQuery("?loopiness=9&deadEnds=-1&aspect=0&roadWidth=99&minCurveRadius=1&lapLength=99999&arterialBias=-3&checkpoints=99").dials).toMatchObject({
+      loopiness: 1,
+      deadEnds: 0,
+      aspect: 1,
+      roadWidth: 16,
+      minCurveRadius: 6,
+      lapLength: 6000,
+      arterialBias: 0,
+      checkpoints: 24,
+    });
+  });
+});
+
+describe("street race generation", () => {
+  const dials = { ...DEFAULTS, ...PRESETS.race };
+
+  test("lifts the lap out of the very city street network the city mode grows", () => {
+    const race = growPlayground("race", dials);
+    const city = growPlayground("city", dials);
+    expect(race.topology).toBe("net");
+    expect(race.network.edges.map((edge) => edge.id)).toEqual(city.network.edges.map((edge) => edge.id));
+    const route = race.route;
+    expect(route).not.toBeNull();
+    const cityEdges = new Set(race.network.edges.map((edge) => edge.id));
+    expect(route!.edges.every((id) => cityEdges.has(id))).toBe(true);
+    expect(route!.edges.length).toBeLessThan(race.network.edges.length);
+    expect(route!.seals.length).toBeGreaterThan(0);
+    expect(route!.length).toBeGreaterThan(0);
+  });
+
+  test("the circuit preset lands the same shared sliders on a closed lap", () => {
+    const circuit = growPlayground("circuit", { ...DEFAULTS, ...PRESETS.circuit });
+    expect(circuit.topology).toBe("circuit");
+    expect(circuit.network.mode).toBe("circuit");
+    expect(circuit.route).toBeNull();
+  });
+
+  test("only the mode picks what renders — city and race share one network", () => {
+    expect(growPlayground("city", dials).route).toBeNull();
+    expect(growPlayground("race", dials).city).not.toBeNull();
   });
 });

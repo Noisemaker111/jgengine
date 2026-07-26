@@ -17,6 +17,7 @@ import type {
   CityFillerClass,
   CityLandmarkClass,
 } from "@jgengine/core/world/cityContent";
+import { circuitKerbs, type CircuitRoute } from "@jgengine/core/world/raceCircuit";
 import type { Street, StreetLevel } from "@jgengine/core/world/streetGenerator";
 import {
   buildIntersectionMarkings,
@@ -625,6 +626,9 @@ export function buildCityModel(
     sampleHeight?: (x: number, z: number) => number;
     /** Emit circuit dressing (corner kerbs + a checkered start/finish band) around the main loop. */
     trackDressing?: boolean;
+    /** Draw a race lap lifted out of this city: racing surface, kerbs, start/finish, grid, and the
+     *  barriers sealing every side street off the lap. */
+    raceRoute?: CircuitRoute;
     /** Render connected pedestrian bands around paved streets. Default true. */
     sidewalks?: boolean;
     /** Pedestrian band width beyond each carriageway edge. Default 2.2. */
@@ -827,6 +831,10 @@ export function buildCityModel(
       if (dressingMesh !== null) group.add(dressingMesh);
     }
   }
+
+  // --- street race: the lap over the city streets it uses, and the barriers that instance it ---
+  const raceMeshes = options.raceRoute === undefined ? [] : buildRaceDressing(options.raceRoute, sampleHeight);
+  for (const mesh of raceMeshes) group.add(mesh);
 
   // --- buildings (skippable for unobstructed intersection inspection) ---
   const boxWriter = makeWriter(); // windowed walls + flat boxes
@@ -1154,6 +1162,10 @@ export function buildCityModel(
         dressingMesh.geometry.dispose();
         (dressingMesh.material as THREE.Material).dispose();
       }
+      for (const mesh of raceMeshes) {
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+      }
       windows.dispose();
       glowMat.dispose();
       buildingMat.dispose();
@@ -1403,6 +1415,8 @@ export function makeElevationField(seed: string, amplitude: number, wavelength: 
   };
 }
 
+const RACE_ASPHALT = new THREE.Color(0x0c0f15);
+const RACE_EDGE = new THREE.Color(0xdfe4ea);
 const KERB_RED = new THREE.Color(0xd23a34);
 const KERB_WHITE = new THREE.Color(0xe8e8ea);
 const CHECK_DARK = new THREE.Color(0x101015);
@@ -1511,4 +1525,277 @@ function buildTrackDressing(loop: Street, sampleHeight: (x: number, z: number) =
   const mesh = new THREE.Mesh(geo, mat);
   mesh.renderOrder = 3;
   return mesh;
+}
+
+// --- street race dressing: a lap lifted out of the city, and the barriers that instance it ---
+
+interface DressingBuffers {
+  pos: number[];
+  col: number[];
+  idx: number[];
+}
+
+function pushDressingQuad(
+  out: DressingBuffers,
+  quad: readonly (readonly [number, number, number])[],
+  color: THREE.Color,
+): void {
+  const base = out.pos.length / 3;
+  for (const [x, y, z] of quad) {
+    out.pos.push(x, y, z);
+    out.col.push(color.r, color.g, color.b);
+  }
+  out.idx.push(base, base + 1, base + 2, base, base + 2, base + 3);
+}
+
+/** One striped barrier block: a rotated box, top plus four sides, each face its own vertices. */
+function pushSealBlock(
+  out: DressingBuffers,
+  cx: number,
+  cz: number,
+  baseY: number,
+  height: number,
+  halfRun: number,
+  halfDepth: number,
+  ax: number,
+  az: number,
+  fx: number,
+  fz: number,
+  color: THREE.Color,
+): void {
+  const at = (u: number, v: number): [number, number] => [cx + ax * u + fx * v, cz + az * u + fz * v];
+  const footprint = [at(-halfRun, -halfDepth), at(halfRun, -halfDepth), at(halfRun, halfDepth), at(-halfRun, halfDepth)];
+  pushDressingQuad(
+    out,
+    footprint.map(([x, z]) => [x, baseY + height, z] as [number, number, number]),
+    color,
+  );
+  for (let i = 0; i < 4; i += 1) {
+    const [x0, z0] = footprint[i]!;
+    const [x1, z1] = footprint[(i + 1) % 4]!;
+    pushDressingQuad(
+      out,
+      [
+        [x0, baseY, z0],
+        [x1, baseY, z1],
+        [x1, baseY + height, z1],
+        [x0, baseY + height, z0],
+      ],
+      color,
+    );
+  }
+}
+
+/**
+ * Dress a {@link CircuitRoute} onto the city it was lifted from: the lap resurfaced as a dark, white-
+ * edged racing ribbon over the streets it follows, core-derived kerbs through every corner, a
+ * checkered start/finish, painted grid boxes, and a striped barrier across each sealed side street.
+ * Two merged, vertex-colored meshes — flat decals and standing barriers — so the whole race is two
+ * draw calls. Corner geometry belongs to `@jgengine/core/world/raceCircuit`; nothing is re-derived here.
+ */
+export function buildRaceDressing(route: CircuitRoute, sampleHeight: (x: number, z: number) => number): THREE.Mesh[] {
+  const points = route.centerline;
+  const n = points.length;
+  if (n < 8) return [];
+  const surfaceY = GROUND_DECAL_LAYERS.marking + 0.02;
+  const paintY = GROUND_DECAL_LAYERS.glow + 0.03;
+  const decals: DressingBuffers = { pos: [], col: [], idx: [] };
+  const barriers: DressingBuffers = { pos: [], col: [], idx: [] };
+  const drape = (x: number, z: number, lift: number): [number, number, number] => [x, sampleHeight(x, z) + lift, z];
+
+  const inset = 0.3;
+  const edgePaint = 0.34;
+  // Per-POINT normals, not per-segment: a 22 m boulevard turning at a junction would otherwise splay
+  // its 2.5 m quads into a fan at every corner.
+  const normals = points.map((_, i) => {
+    const before = points[(i - 1 + n) % n]!;
+    const after = points[(i + 1) % n]!;
+    const dx = after[0] - before[0];
+    const dz = after[1] - before[1];
+    const len = Math.hypot(dx, dz) || 1;
+    return [dz / len, -dx / len] as const;
+  });
+  const half = points.map((_, i) => Math.max(1.5, (route.widths[i] ?? 9) * 0.5 - inset));
+  const surfaceY0 = points.map((p, i) => (route.heights?.[i] ?? sampleHeight(p[0], p[1])));
+  const rim = (i: number, off: number, lift: number): [number, number, number] => [
+    points[i]![0] + normals[i]![0] * off,
+    surfaceY0[i]! + lift,
+    points[i]![1] + normals[i]![1] * off,
+  ];
+  for (let i = 0; i < n; i += 1) {
+    const j = (i + 1) % n;
+    pushDressingQuad(
+      decals,
+      [rim(i, -half[i]!, surfaceY), rim(j, -half[j]!, surfaceY), rim(j, half[j]!, surfaceY), rim(i, half[i]!, surfaceY)],
+      RACE_ASPHALT,
+    );
+    for (const side of [-1, 1] as const) {
+      pushDressingQuad(
+        decals,
+        [
+          rim(i, side * half[i]!, paintY),
+          rim(j, side * half[j]!, paintY),
+          rim(j, side * (half[j]! - edgePaint), paintY),
+          rim(i, side * (half[i]! - edgePaint), paintY),
+        ],
+        RACE_EDGE,
+      );
+    }
+  }
+
+  for (const kerb of circuitKerbs(route)) {
+    const run = kerb.points;
+    if (run.length < 2) continue;
+    const outward = run.map((_, i) => {
+      const before = run[Math.max(0, i - 1)]!;
+      const after = run[Math.min(run.length - 1, i + 1)]!;
+      const dx = after[0] - before[0];
+      const dz = after[1] - before[1];
+      const len = Math.hypot(dx, dz) || 1;
+      return [(dz / len) * kerb.side, (-dx / len) * kerb.side] as const;
+    });
+    let travelled = 0;
+    for (let i = 0; i + 1 < run.length; i += 1) {
+      const a = run[i]!;
+      const b = run[i + 1]!;
+      const seg = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (seg < 1e-6) continue;
+      const oa = outward[i]!;
+      const ob = outward[i + 1]!;
+      let t = 0;
+      // Split each span at the core's stripe pitch so the red/white run reads at its true scale.
+      while (t < 1 - 1e-6) {
+        const here = travelled + t * seg;
+        const band = Math.floor(here / kerb.stripe + 1e-6);
+        const next = Math.min(1, Math.max(t + 1e-3, t + ((band + 1) * kerb.stripe - here) / seg));
+        const along = (u: number): [number, number] => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+        const away = (u: number): [number, number] => [oa[0] + (ob[0] - oa[0]) * u, oa[1] + (ob[1] - oa[1]) * u];
+        const [x0, z0] = along(t);
+        const [x1, z1] = along(next);
+        const [ox0, oz0] = away(t);
+        const [ox1, oz1] = away(next);
+        pushDressingQuad(
+          decals,
+          [
+            drape(x0, z0, paintY),
+            drape(x1, z1, paintY),
+            drape(x1 + ox1 * kerb.width, z1 + oz1 * kerb.width, paintY),
+            drape(x0 + ox0 * kerb.width, z0 + oz0 * kerb.width, paintY),
+          ],
+          band % 2 === 0 ? KERB_RED : KERB_WHITE,
+        );
+        t = next;
+      }
+      travelled += seg;
+    }
+  }
+
+  const [lineA, lineB] = route.start.line;
+  const acrossX = lineB[0] - lineA[0];
+  const acrossZ = lineB[1] - lineA[1];
+  const travelX = Math.sin(route.start.heading);
+  const travelZ = Math.cos(route.start.heading);
+  const cols = 10;
+  const rows = 2;
+  const depth = 5;
+  for (let r = 0; r < rows; r += 1) {
+    for (let c = 0; c < cols; c += 1) {
+      const cell = (u: number, v: number): [number, number, number] =>
+        drape(lineA[0] + acrossX * u + travelX * v, lineA[1] + acrossZ * u + travelZ * v, paintY);
+      const v0 = -depth / 2 + (r / rows) * depth;
+      const v1 = -depth / 2 + ((r + 1) / rows) * depth;
+      pushDressingQuad(
+        decals,
+        [cell(c / cols, v0), cell((c + 1) / cols, v0), cell((c + 1) / cols, v1), cell(c / cols, v1)],
+        (c + r) % 2 === 0 ? CHECK_DARK : CHECK_LIGHT,
+      );
+    }
+  }
+
+  const slotHalfWidth = 1.3;
+  const slotHalfLength = 2.6;
+  const slotBar = 0.18;
+  for (const slot of route.grid) {
+    const fx = Math.sin(slot.heading);
+    const fz = Math.cos(slot.heading);
+    const ax = Math.cos(slot.heading);
+    const az = -Math.sin(slot.heading);
+    const corner = (u: number, v: number): [number, number, number] =>
+      drape(slot.x + ax * u + fx * v, slot.z + az * u + fz * v, paintY);
+    const bars: readonly (readonly [number, number, number, number])[] = [
+      [-slotHalfWidth, -slotHalfWidth + slotBar, -slotHalfLength, slotHalfLength],
+      [slotHalfWidth - slotBar, slotHalfWidth, -slotHalfLength, slotHalfLength],
+      [-slotHalfWidth, slotHalfWidth, slotHalfLength - slotBar, slotHalfLength],
+    ];
+    for (const [u0, u1, v0, v1] of bars) {
+      pushDressingQuad(decals, [corner(u0, v0), corner(u1, v0), corner(u1, v1), corner(u0, v1)], RACE_EDGE);
+    }
+  }
+
+  const sealHeight = 1.05;
+  const sealDepth = 0.28;
+  const sealStripe = 1.4;
+  for (const seal of route.seals) {
+    const fx = Math.sin(seal.heading);
+    const fz = Math.cos(seal.heading);
+    const ax = Math.cos(seal.heading);
+    const az = -Math.sin(seal.heading);
+    const span = seal.width + 3;
+    const blocks = Math.max(3, Math.round(span / sealStripe));
+    const halfRun = span / blocks / 2;
+    for (let s = 0; s < blocks; s += 1) {
+      const u = -span / 2 + ((s + 0.5) / blocks) * span;
+      const cx = seal.x + ax * u;
+      const cz = seal.z + az * u;
+      pushSealBlock(
+        barriers,
+        cx,
+        cz,
+        sampleHeight(cx, cz),
+        sealHeight,
+        halfRun,
+        sealDepth,
+        ax,
+        az,
+        fx,
+        fz,
+        s % 2 === 0 ? KERB_RED : KERB_WHITE,
+      );
+    }
+  }
+
+  const meshes: THREE.Mesh[] = [];
+  if (decals.idx.length > 0) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(decals.pos, 3));
+    geometry.setAttribute("color", new THREE.Float32BufferAttribute(decals.col, 3));
+    geometry.setIndex(decals.idx);
+    const mesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshBasicMaterial({
+        vertexColors: true,
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -4,
+        polygonOffsetUnits: -4,
+      }),
+    );
+    mesh.name = "race-surface";
+    mesh.renderOrder = 4;
+    meshes.push(mesh);
+  }
+  if (barriers.idx.length > 0) {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(barriers.pos, 3));
+    geometry.setAttribute("color", new THREE.Float32BufferAttribute(barriers.col, 3));
+    geometry.setIndex(barriers.idx);
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0.04, side: THREE.DoubleSide }),
+    );
+    mesh.name = "race-seals";
+    meshes.push(mesh);
+  }
+  return meshes;
 }
