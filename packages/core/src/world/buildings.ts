@@ -320,6 +320,35 @@ export const BUILDING_STYLE_PALETTES: Record<BuildingStyle, BuildingPalette> = {
   },
 };
 
+/**
+ * Per-style facade-tone family: the wall colours a district spreads across its buildings so
+ * neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's
+ * own `wall`; the rest fan warmer/cooler and lighter/darker around it.
+ */
+export const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> = {
+  generic: ["#9c8f80", "#736a60", "#b7a894", "#8b8a80", "#c3ac90", "#635c54", "#a1978c"],
+  capital: ["#cfc5ad", "#ac9878", "#e6e0cf", "#a8a698", "#c8b48d", "#847b68", "#ded2b3"],
+  village: ["#b59e7a", "#9c8360", "#c9b895", "#8d7a5f", "#c2a173", "#a8977f", "#d6c3a1"],
+  desert: ["#c9a877", "#b08f61", "#ddc396", "#a4855c", "#d3b98d", "#93764f", "#c6b189"],
+  industrial: ["#7c838f", "#565d69", "#96a0ac", "#68737a", "#8a8173", "#4a5058", "#a0a6ac"],
+  coastal: ["#e8e2d2", "#cfd6d3", "#f1ece0", "#c9c0ac", "#dbe0dc", "#b7b3a3", "#e5d9c4"],
+  neon: ["#1b1b26", "#262233", "#141a24", "#2c2030", "#181f2b", "#221d1f", "#101018"],
+  ruin: ["#6b6156", "#57503f", "#7d7266", "#4f4a44", "#736450", "#8a8072", "#5d5b53"],
+  frontier: ["#7f5539", "#6a462d", "#96684a", "#5c4331", "#8a6540", "#a07a55", "#6f523c"],
+  aerial: ["#dfe7ec", "#c6d2da", "#eef3f6", "#b6c3cb", "#d3dde2", "#a7b7c0", "#e7eef1"],
+};
+
+/**
+ * The facade-tone family for a style — the ramp {@link BUILDING_STYLE_WALL_TONES} keeps, falling
+ * back to the style's single palette wall when a style has no ramp.
+ * @internal
+ */
+export function resolveBuildingWallTones(style: BuildingStyle = DEFAULT_BUILDING_STYLE): readonly string[] {
+  const tones = BUILDING_STYLE_WALL_TONES[style] as readonly string[] | undefined;
+  if (tones !== undefined && tones.length > 0) return tones;
+  return [resolveBuildingPalette(style).wall];
+}
+
 /** @internal */
 export function resolveBuildingPalette(
   style: BuildingStyle = DEFAULT_BUILDING_STYLE,
@@ -607,15 +636,29 @@ function pushRoof(parts: BuildingPartPlacement[], config: BuildingConfig, width:
   const roofCells = config.baysWide * config.baysDeep;
   for (let index = 0; index < roofCells; index += 1) {
     if (!chance(config.seed, `roof:prop:${index}`, config.probabilities.roofProp)) continue;
-    const x = config.center[0] - width / 2 + config.bayWidth * ((index % config.baysWide) + 0.5);
-    const z = config.center[1] - depth / 2 + config.bayWidth * (Math.floor(index / config.baysWide) + 0.5);
+    // Plant sized and nudged off its cell centre: props locked to the bay grid at one size read as
+    // a checkerboard of cubes rather than a roof of mechanical units.
+    const wide = hash01(config.seed, `roof:prop:${index}:w`);
+    const tall = hash01(config.seed, `roof:prop:${index}:h`);
+    const propW = config.bayWidth * (0.2 + wide * 0.4);
+    const propD = config.bayWidth * (0.18 + (1 - wide) * 0.36);
+    const propH = config.floorHeight * (0.14 + tall * 0.52);
+    const x =
+      config.center[0] -
+      width / 2 +
+      config.bayWidth * ((index % config.baysWide) + 0.5 + (hash01(config.seed, `roof:prop:${index}:x`) - 0.5) * 0.5);
+    const z =
+      config.center[1] -
+      depth / 2 +
+      config.bayWidth *
+        (Math.floor(index / config.baysWide) + 0.5 + (hash01(config.seed, `roof:prop:${index}:z`) - 0.5) * 0.5);
     parts.push(
       part(
         config,
         "roofProp",
         "roof",
-        [x, height + config.facadeDepth + config.floorHeight * 0.16, z],
-        [config.bayWidth * 0.34, config.floorHeight * 0.32, config.bayWidth * 0.34],
+        [x, height + config.facadeDepth + propH / 2, z],
+        [propW, propH, propD],
         `roof:prop:${index}`,
         { facade: "roof", level: config.floors, bay: index },
         ["decor"],

@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
-import { readCityRules, resolveCityObject, CITY_DEFAULTS, CITY_SCHEMA, type ResolvedCity } from "./cityKind";
+import { readCityRules, resolveCityObject, CITY_DEFAULTS, CITY_SCHEMA, type CityRules, type ResolvedCity } from "./cityKind";
 import { distanceToRing, pointInPolygon, polygonArea, polygonsOverlap, ringSelfIntersects } from "./cityGeometry";
 import { seededRng } from "../random/rng";
+import type { StreetNetworkRules } from "./streetGenerator";
 import type { SceneKindObject } from "../scene/sceneKinds";
 
 function cityVolume(meta: Record<string, unknown> = {}, overrides: Partial<SceneKindObject> = {}): SceneKindObject {
@@ -30,6 +31,49 @@ describe("readCityRules", () => {
   test("schema covers every rule knob", () => {
     const keys = CITY_SCHEMA.fields.filter((field) => field.type !== "action").map((field) => field.key);
     for (const key of Object.keys(CITY_DEFAULTS)) expect(keys).toContain(key);
+  });
+
+  // A city street net and a closed race circuit are the same generator at opposite slider extremes,
+  // so every dial the generator answers to must have a city rule behind it. `Record` over the whole
+  // key set makes this exhaustive at type-check time; `check-street-rule-parity` is the CI gate.
+  const DIAL_TO_RULE: Record<keyof Required<StreetNetworkRules>, keyof CityRules> = {
+    seed: "seed",
+    outline: "outline",
+    gridness: "gridness",
+    loopiness: "loopiness",
+    connectivity: "connectivity",
+    branching: "branching",
+    residentialBranches: "residentialBranches",
+    deadEnds: "deadEnds",
+    segmentLength: "blockSize",
+    aspect: "blockAspect",
+    winding: "curviness",
+    minCurveRadius: "minCurveRadius",
+    minTurnAngle: "minTurnAngle",
+    maxTurnAngle: "maxTurnAngle",
+    width: "streetWidth",
+    boulevards: "boulevards",
+    sidewalkWidth: "sidewalkWidth",
+    elevation: "elevation",
+    maxGrade: "maxGrade",
+    compactness: "compactness",
+  };
+
+  test("every street-generator dial reaches the volume as a schema-driven rule", () => {
+    const schemaKeys = new Set(CITY_SCHEMA.fields.map((field) => field.key));
+    for (const rule of Object.values(DIAL_TO_RULE)) {
+      expect(CITY_DEFAULTS).toHaveProperty(rule);
+      expect(schemaKeys.has(rule)).toBe(true);
+    }
+  });
+
+  test("the optional dials default to their pre-existing no-op values", () => {
+    expect(CITY_DEFAULTS.outline).toBe(0);
+    expect(CITY_DEFAULTS.residentialBranches).toBe(0);
+    expect(CITY_DEFAULTS.elevation).toBe(0);
+    expect(CITY_DEFAULTS.compactness).toBe(0);
+    expect(CITY_DEFAULTS.maxGrade).toBe(0.07);
+    expect(CITY_DEFAULTS.race).toBe(false);
   });
 });
 
@@ -848,5 +892,162 @@ describe("street hierarchy, intersections, furniture", () => {
         expect(piece.offset[1]).toBeGreaterThanOrEqual(0);
       }
     }
+  });
+});
+
+describe("elevation, compactness, and default stability", () => {
+  test("road elevation drapes grade-limited heights over the streets; the default stays flat", () => {
+    const flat = resolveCityObject(cityVolume({ seed: "relief" }))!;
+    const hilly = resolveCityObject(cityVolume({ seed: "relief", elevation: 0.7, maxGrade: 0.12 }))!;
+    expect(flat.streets.every((street) => street.heights === undefined)).toBe(true);
+    expect(hilly.streets.every((street) => street.heights?.length === street.points.length)).toBe(true);
+    const all = hilly.streets.flatMap((street) => [...(street.heights ?? [])]);
+    expect(Math.max(...all) - Math.min(...all)).toBeGreaterThan(4);
+    for (const street of hilly.streets) {
+      const heights = street.heights!;
+      for (let i = 0; i + 1 < heights.length; i += 1) {
+        const run = Math.hypot(street.points[i + 1]![0] - street.points[i]![0], street.points[i + 1]![1] - street.points[i]![1]);
+        if (run < 0.01) continue;
+        expect(Math.abs(heights[i + 1]! - heights[i]!) / run).toBeLessThan(0.13);
+      }
+    }
+  });
+
+  test("compactness folds a circuit lap back through its own footprint", () => {
+    const circuit = { seed: "compact", loopiness: 1, connectivity: 0.05, branching: 0.15, deadEnds: 0, fabric: false, blockSize: 95, streetWidth: 12 };
+    const lapLength = (compactness: number): number => {
+      const city = resolveCityObject(cityVolume({ ...circuit, compactness }, { halfExtents: { x: 260, y: 10, z: 260 } }))!;
+      const loop = city.streets.reduce((longest, street) => (street.points.length > longest.points.length ? street : longest));
+      return loop.points.reduce(
+        (sum, point, i) => (i === 0 ? 0 : sum + Math.hypot(point[0] - loop.points[i - 1]![0], point[1] - loop.points[i - 1]![1])),
+        0,
+      );
+    };
+    expect(lapLength(1)).toBeGreaterThan(lapLength(0) * 1.5);
+  });
+
+  test("the new dials leave shipped documents resolving exactly as they did", () => {
+    // Pinned against the pre-dial output: a default that quietly reshaped every authored city
+    // district would show up here first.
+    const bare = resolveCityObject(cityVolume())!;
+    expect([bare.streets.length, bare.lots.length]).toEqual([173, 168]);
+    const seeded = resolveCityObject(cityVolume({ seed: "d" }))!;
+    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 164]);
+  });
+});
+
+describe("street race", () => {
+  /** Distance from a world point to the nearest point of the lap. */
+  function onLap(race: NonNullable<ResolvedCity["race"]>, x: number, z: number): number {
+    let best = Infinity;
+    for (const [px, pz] of race.centerline) best = Math.min(best, Math.hypot(px - x, pz - z));
+    return best;
+  }
+
+  /** A seal's heading points down the sealed street, away from the lap it stands off. */
+  function leadsAwayFromLap(race: NonNullable<ResolvedCity["race"]>, seal: { x: number; z: number; heading: number }): boolean {
+    let near: readonly [number, number] = race.centerline[0]!;
+    let best = Infinity;
+    for (const point of race.centerline) {
+      const d = Math.hypot(point[0] - seal.x, point[1] - seal.z);
+      if (d < best) {
+        best = d;
+        near = point;
+      }
+    }
+    const ahead = Math.hypot(seal.x + Math.sin(seal.heading) * 4 - near[0], seal.z + Math.cos(seal.heading) * 4 - near[1]);
+    return ahead > best;
+  }
+
+  const raceMeta = { seed: "race", race: true, raceLapLength: 900 };
+  const raceVolume = (meta: Record<string, unknown> = {}, overrides: Partial<SceneKindObject> = {}): SceneKindObject =>
+    cityVolume({ ...raceMeta, ...meta }, { halfExtents: { x: 260, y: 10, z: 260 }, ...overrides });
+
+  test("the dial is off by default and off means no race", () => {
+    expect(resolveCityObject(cityVolume({ seed: "race" }))!.race).toBeUndefined();
+  });
+
+  test("a lap is lifted out of the district's own streets, sealed and gated", () => {
+    const city = resolveCityObject(raceVolume())!;
+    const race = city.race!;
+    expect(race).toBeDefined();
+    const streetIds = new Set(city.streets.map((street) => street.id));
+    expect(race.streets.length).toBeGreaterThan(2);
+    for (const id of race.streets) expect(streetIds.has(id)).toBe(true);
+    expect(race.centerline.length).toBeGreaterThan(50);
+    expect(race.widths.length).toBe(race.centerline.length);
+    expect(race.length).toBeGreaterThan(400);
+    expect(race.checkpoints.length).toBe(12);
+    expect(race.checkpoints[race.checkpoints.length - 1]!.id).toBe("finish");
+    expect(race.laps).toBe(3);
+    expect(race.grid.length).toBe(12);
+    expect(race.sectors[0]).toBe(0);
+    expect(race.seals.length).toBeGreaterThan(0);
+    expect(race.corners.length).toBeGreaterThan(0);
+    expect(race.kerbs.length).toBeGreaterThan(0);
+    expect(race.tightestRadius).toBeGreaterThan(0);
+    // The lap runs on the streets it names, and the start line sits on the lap.
+    expect(onLap(race, race.start.x, race.start.z)).toBeLessThan(1);
+    for (const slot of race.grid) expect(onLap(race, slot.x, slot.z)).toBeLessThan(race.start.width);
+    // Every seal stands clear of the racing surface and faces away down the street it closes.
+    for (const seal of race.seals) {
+      expect(onLap(race, seal.x, seal.z)).toBeGreaterThan(seal.width * 0.3);
+      expect(leadsAwayFromLap(race, seal)).toBe(true);
+    }
+  });
+
+  test("the same district resolves the same race twice, and the dials move it", () => {
+    expect(resolveCityObject(raceVolume())).toEqual(resolveCityObject(raceVolume()));
+    const short = resolveCityObject(raceVolume({ raceLapLength: 700 }))!.race!;
+    const long = resolveCityObject(raceVolume({ raceLapLength: 2200 }))!.race!;
+    expect(long.length).toBeGreaterThan(short.length);
+    expect(resolveCityObject(raceVolume({ raceSeals: false }))!.race!.seals.length).toBe(0);
+    const trimmed = resolveCityObject(raceVolume({ raceCheckpoints: 5, raceLaps: 7, raceGridSlots: 0 }))!.race!;
+    expect(trimmed.checkpoints.length).toBe(5);
+    expect(trimmed.laps).toBe(7);
+    expect(trimmed.grid.length).toBe(0);
+  });
+
+  test("race geometry rotates with the volume — positions and headings alike", () => {
+    const yaw = 0.9;
+    const flat = resolveCityObject(raceVolume())!.race!;
+    const turned = resolveCityObject(raceVolume({}, { rotationY: yaw }))!.race!;
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
+    // Same lap, expressed in the rotated frame: `toWorld` turns a local point BY the yaw.
+    expect(turned.centerline.length).toBe(flat.centerline.length);
+    for (let i = 0; i < flat.centerline.length; i += 37) {
+      const [x, z] = flat.centerline[i]!;
+      expect(turned.centerline[i]![0]).toBeCloseTo(x * cos + z * sin, 6);
+      expect(turned.centerline[i]![1]).toBeCloseTo(-x * sin + z * cos, 6);
+    }
+    const wrap = (angle: number): number => Math.atan2(Math.sin(angle), Math.cos(angle));
+    expect(wrap(turned.start.heading - flat.start.heading - yaw)).toBeCloseTo(0, 6);
+    expect(turned.seals.length).toBe(flat.seals.length);
+    for (let i = 0; i < flat.seals.length; i += 1) {
+      expect(wrap(turned.seals[i]!.heading - flat.seals[i]!.heading - yaw)).toBeCloseTo(0, 6);
+    }
+    for (let i = 0; i < flat.grid.length; i += 1) {
+      expect(wrap(turned.grid[i]!.heading - flat.grid[i]!.heading - yaw)).toBeCloseTo(0, 6);
+    }
+    // A heading is only right if it still points down the street it closes in the rotated frame.
+    for (const seal of turned.seals) expect(leadsAwayFromLap(turned, seal)).toBe(true);
+  });
+
+  test("a district with no drivable cycle simply has no race", () => {
+    const city = resolveCityObject(
+      cityVolume(
+        { seed: "tree", race: true, blockSize: 140, connectivity: 0, loopiness: 0, branching: 0, deadEnds: 1, fabric: false },
+        { halfExtents: { x: 110, y: 10, z: 110 } },
+      ),
+    )!;
+    expect(city.streets.length).toBeGreaterThan(0);
+    expect(city.race).toBeUndefined();
+  });
+
+  test("an elevated district hands the lap its road-surface heights", () => {
+    const race = resolveCityObject(raceVolume({ elevation: 0.6 }))!.race!;
+    expect(race.heights?.length).toBe(race.centerline.length);
+    for (const gate of race.checkpoints) expect(Number.isFinite(gate.center[1])).toBe(true);
   });
 });
