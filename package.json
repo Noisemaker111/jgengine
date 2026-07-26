@@ -48,6 +48,7 @@
     "check-pack-texture-layout": "bun scripts/check-pack-texture-layout.ts",
     "check-recipes": "bun scripts/check-recipes.ts",
     "check-doc-symbols": "bun scripts/check-doc-symbols.ts",
+    "check-hud-tokens": "bun scripts/check-hud-tokens.ts",
     "check-types": "bun scripts/guard.ts 900 'bun scripts/run-stages.ts check-types'",
     "build:registry": "bun scripts/build-registry.ts",
     "stage-skills": "bun scripts/stage-skills.ts",
