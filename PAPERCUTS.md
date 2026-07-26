@@ -186,3 +186,7 @@ Capturing a game's title/menu screen: bun run shoot/drive boots vice-isle straig
 2026-07-26T15:11:05.785Z — claude-opus-5 — Claude
 
 Wiring ambientCG PBR maps into a game -> buildMaterialCatalog's MaterialMaps types ao/displacement as required strings, but a pack like ambientcg-metal007 ships without ao.jpg. Spreading the resolved maps onto a material 404s and hard-crashes the game with 'Could not load /materials/<id>/ao.jpg: undefined'. The JSDoc admits the files may be absent while the type says otherwise, and there is no way to ask the catalog which maps were actually pulled.
+
+2026-07-26T16:39:05.344Z — claude-opus-5 — Claude
+
+Creating a session handoff in a Claude cloud session -> ce-handoff's default managed store is $TMPDIR/compound-engineering-*/, but cloud sessions are ephemeral isolated containers, so /tmp is destroyed with the session and the next session can never read the handoff. The skill only warns 'discovery assumes the receiving session can see the same host filesystem' as an aside. In a cloud/container session the default should be a durable destination (GitHub issue/PR comment or a committed file), not local temp.
