@@ -138,6 +138,26 @@ function ratio(slot: number, native: number): number {
 }
 
 /**
+ * Whether a model needs a quarter-turn about Y to run along its slot. Modular kits disagree on which
+ * horizontal axis a panel is authored along — within one pack a wall may run along Z while a door
+ * runs along X — so compare which horizontal axis is longer on each and turn when they disagree.
+ * @internal
+ */
+export function buildingKitQuarterTurn(
+  fit: BuildingKitFit,
+  slotScale: readonly [number, number, number],
+  nativeSize: readonly [number, number, number],
+  autoOrient = true,
+): boolean {
+  if (!autoOrient || fit === "native") return false;
+  const [sx, , sz] = slotScale;
+  const [nx, , nz] = nativeSize;
+  if (![sx, sz, nx, nz].every((value) => Number.isFinite(value))) return false;
+  if (Math.abs(nx - nz) < 1e-6 || Math.abs(sx - sz) < 1e-6) return false;
+  return sx >= sz !== nx >= nz;
+}
+
+/**
  * Maps a model's native extents onto the slot box per {@link BuildingKitFit}. Degenerate or
  * non-finite native extents fall back to a ratio of 1 on that axis rather than blowing the model up.
  * @internal
@@ -185,15 +205,29 @@ export function composeBuildingKitMatrix(
   bounds: BuildingKitModelBounds,
   target: THREE.Matrix4 = new THREE.Matrix4(),
 ): THREE.Matrix4 {
-  const fit = buildingKitFitScale(instance.fit, instance.slotScale, bounds.size);
+  const turn = buildingKitQuarterTurn(
+    instance.fit,
+    instance.slotScale,
+    bounds.size,
+    instance.part.autoOrient,
+  );
+  // The turn swaps which native axis faces the slot's width, so fit against the swapped extents.
+  const native: readonly [number, number, number] = turn
+    ? [bounds.size[2], bounds.size[1], bounds.size[0]]
+    : bounds.size;
+  const fit = buildingKitFitScale(instance.fit, instance.slotScale, native);
   const mul = instance.part.scale ?? [1, 1, 1];
-  scratchScale.set(fit[0] * mul[0], fit[1] * mul[1], fit[2] * mul[2]);
+  const fitted: [number, number, number] = turn
+    ? [fit[2] * mul[0], fit[1] * mul[1], fit[0] * mul[2]]
+    : [fit[0] * mul[0], fit[1] * mul[1], fit[2] * mul[2]];
+  scratchScale.set(fitted[0], fitted[1], fitted[2]);
   const rotation = instance.part.rotation;
-  scratchEuler.set(rotation?.[0] ?? 0, rotation?.[1] ?? 0, rotation?.[2] ?? 0, "XYZ");
+  const turnYaw = turn ? Math.PI / 2 : 0;
+  scratchEuler.set(rotation?.[0] ?? 0, (rotation?.[1] ?? 0) + turnYaw, rotation?.[2] ?? 0, "XYZ");
   scratchQuat.setFromEuler(scratchEuler);
   scratchQuat.premultiply(scratchYaw.setFromAxisAngle(UP, instance.yaw));
   const offset = instance.part.offset ?? [0, 0, 0];
-  const totalYaw = instance.yaw + (rotation?.[1] ?? 0);
+  const totalYaw = instance.yaw + (rotation?.[1] ?? 0) + turnYaw;
   const cos = Math.cos(totalYaw);
   const sin = Math.sin(totalYaw);
   scratchCenter

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it, test } from "bun:test";
 import * as THREE from "three";
 
 import { defineBuildingKit } from "@jgengine/core/world/buildingKit";
@@ -6,6 +6,8 @@ import { defineBuildingKit } from "@jgengine/core/world/buildingKit";
 import {
   bucketBuildingParts,
   buildingKitFitScale,
+  buildingKitQuarterTurn,
+  buildingKitQuarterTurn,
   composeBuildingKitMatrix,
   measureBuildingKitModel,
   type BuildingKitInstance,
@@ -229,5 +231,50 @@ describe("measureBuildingKitModel", () => {
 
   test("an empty root measures as zero rather than infinity", () => {
     expect(measureBuildingKitModel(new THREE.Group())).toEqual({ size: [0, 0, 0], center: [0, 0, 0] });
+  });
+});
+
+describe("buildingKitQuarterTurn", () => {
+  // A facade slot is wide along X and thin along Z; these are real measured pack extents.
+  const wallSlot = [1.84, 2.58, 0.18] as const;
+
+  it("turns a panel authored running along Z so it tiles a bay running along X", () => {
+    expect(buildingKitQuarterTurn("stretch", wallSlot, [1.21, 3.03, 4.0])).toBe(true);
+  });
+
+  it("leaves a panel already authored along X alone", () => {
+    expect(buildingKitQuarterTurn("stretch", wallSlot, [2.11, 4.05, 0.1])).toBe(false);
+  });
+
+  it("turns a rail authored along Z", () => {
+    expect(buildingKitQuarterTurn("contain", wallSlot, [0.07, 0.86, 3.93])).toBe(true);
+  });
+
+  it("never turns a native fit, or when the author opted out", () => {
+    expect(buildingKitQuarterTurn("native", wallSlot, [1.21, 3.03, 4.0])).toBe(false);
+    expect(buildingKitQuarterTurn("stretch", wallSlot, [1.21, 3.03, 4.0], false)).toBe(false);
+  });
+
+  it("stays put when either box is square in plan, so the turn is never a coin flip", () => {
+    expect(buildingKitQuarterTurn("stretch", wallSlot, [2, 3, 2])).toBe(false);
+    expect(buildingKitQuarterTurn("stretch", [2, 3, 2], [1.21, 3.03, 4.0])).toBe(false);
+  });
+
+  it("fits a turned panel against swapped extents, so the 4m run spans the bay", () => {
+    const matrix = composeBuildingKitMatrix(
+      {
+        position: [0, 0, 0],
+        yaw: 0,
+        slotScale: wallSlot,
+        part: { model: "Wall.glb" },
+        fit: "stretch",
+      },
+      { size: [1.21, 3.03, 4.0], center: [0, 0, 0] },
+    );
+    const scale = new THREE.Vector3();
+    matrix.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
+    // The 4.0 run is scaled to the 1.84 bay width, not crushed into the 0.18 depth.
+    expect(scale.z).toBeCloseTo(wallSlot[0] / 4.0, 5);
+    expect(scale.x).toBeCloseTo(wallSlot[2] / 1.21, 5);
   });
 });

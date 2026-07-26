@@ -34,6 +34,13 @@ export interface BuildingKitPart {
   /** Multiplier applied after `fit`. */
   scale?: Vec3;
   tint?: string;
+  /**
+   * Quarter-turn the model when its long horizontal axis disagrees with the slot's, so a panel
+   * authored running along Z still tiles a bay that runs along X. Default true — modular kits do not
+   * agree on a facing convention, and a stretched panel that is 90° off is always wrong. Set false
+   * when a model's authored orientation is deliberate.
+   */
+  autoOrient?: boolean;
 }
 
 /**
