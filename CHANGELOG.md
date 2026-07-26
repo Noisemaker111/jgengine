@@ -28,6 +28,17 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+### Changed
+
+### Added
+
+### Fixed
+
+## 0.16.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.16.0`:** `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`. CLI `jgengine` is `0.13.0`; `@jgengine/github` is `0.3.0`.
 - **Placed objects now replicate.** `objects` joined the always-on baseline snapshot modules, so `ctx.hydrate` replaces the client's placed object set with the host's, the way `entities` already did. A game whose peers all run the same authored placement is unaffected; a game that places props on the client only, after hydrate, must move that placement to the host or keep it out of `ctx.scene.object`.
 
 ### Changed
