@@ -2327,10 +2327,10 @@
 
 - `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
 - `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
+- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
 - `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
@@ -2344,10 +2344,10 @@
 
 - `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
 - `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
+- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
 - `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
@@ -2366,11 +2366,11 @@
 - `BuildingMaterialPalette` (interface): interface BuildingMaterialPalette — ⚠ undocumented
 - `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented
 - `BuildingPartPlacement` (interface): interface BuildingPartPlacement — ⚠ undocumented
-- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
+- `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
 - `GeneratedBuildingData` (interface): interface GeneratedBuildingData — ⚠ undocumented
 - `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
 - `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
-- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
+- `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
 - `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
 
 ## @jgengine/shell/structures/PlacementGhost

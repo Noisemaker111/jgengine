@@ -30,8 +30,14 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+### Changed
+
+- **`GeneratedBuilding`'s `kit` prop is now the `BuildingKit`**; the per-part React escape hatch it used to name moved to `partRenderer`, so `kit` means the same thing on `GeneratedBuilding` and `InstancedBuildings`. Rename the prop if you passed a `BuildingKitRenderer`.
+
 ### Added
 
+- **`BuildingKit` from `@jgengine/core/world/buildingKit`** binds a generated building's facade part slots to real models, so procedural buildings render as an instanced asset kit instead of untextured blocks. `defineBuildingKit({ parts: { wall: ["Wall_A.glb", …] } })` maps a part kind — or a `${facade}.${kind}` slot — to ordered variants that `kit.variant` indexes, with `fit`/`offset`/`rotation`/`scale`/`tint`/`autoOrient` per variant. Kinds a kit leaves unbound keep rendering the palette block, so a partial kit is a valid kit, and `omit` drops a kind entirely. Pass one through `building({ kit })` or straight to `InstancedBuildings`; `buildingKitVariantCounts(kit)` feeds `generateBuilding` so its seeded picks span exactly the models the kit binds.
+- **`generateBuilding`, `generateBuildingDistrict`, and `createBuildingConfig` are now documented public API** (`@jgengine/core/world/buildings`) and appear in `capabilities.md` under `building-generator`.
 - **`modelLoadIdleMs()` from `@jgengine/shell/render/modelLoad`** reports how long the shared GLB loader has been idle (`0` while a model is in flight). Capture hosts wait on it instead of guessing a settle delay, so an establishing shot no longer races streaming models.
 
 ### Fixed

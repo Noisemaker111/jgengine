@@ -325,7 +325,13 @@ function Structures({ structures, field }: { structures: BuildingEnvironmentDesc
     [structures.style, structures.palette],
   );
 
-  return <InstancedBuildings buildings={placements} palette={palette} />;
+  return (
+    <InstancedBuildings
+      buildings={placements}
+      palette={palette}
+      {...(structures.kit === undefined ? {} : { kit: structures.kit })}
+    />
+  );
 }
 
 export function EnvironmentScene({ feature }: EnvironmentSceneProps) {
