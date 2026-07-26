@@ -551,6 +551,11 @@ function pushGroundFloorParts(
   const key = `${facade}:0:${bay}`;
   const position = panelPosition(config, facade, bay, 0, width, depth);
   if (facade === "front" && chance(config.seed, `${key}:open`, config.probabilities.openStore)) {
+    // Back the glass with a wall the way an upper floor backs its window. A generated building is a
+    // hollow shell, so a translucent storefront with nothing behind it is a hole straight through the
+    // building to the world beyond — and open stores only land on the street-facing facade, so a row
+    // of shops along a road was the most visible place for it to read as see-through.
+    parts.push(part(config, "wall", facade, position, panelScale(config, facade, 0.92), `${key}:wall`, cell, ["structure", "ground"]));
     parts.push(part(config, "storefront", facade, position, panelScale(config, facade, 0.86), `${key}:store`, cell, ["ground", "open"]));
     if (chance(config.seed, `${key}:sign`, config.probabilities.storeSign)) {
       const signPosition: Vec3 = [position[0], position[1] + config.floorHeight * 0.34, position[2]];

@@ -98,3 +98,32 @@ describe("buildings", () => {
     expect(generateBuildingDistrict({ rows: 1, columns: 2, seed: "district" })).toHaveLength(2);
   });
 });
+
+describe("open storefronts are backed, not holes", () => {
+  test("every open-store bay also emits a wall behind the glass", () => {
+    // Storefront and window materials render translucent, and a generated building is a hollow
+    // shell — an unbacked bay is a hole straight through to the world beyond.
+    for (const seed of ["a", "b", "c", "d", "e", "f"]) {
+      const building = generateBuilding({
+        id: `shop-${seed}`,
+        seed,
+        floors: 2,
+        baysWide: 4,
+        baysDeep: 3,
+        probabilities: { openStore: 1 },
+      });
+      const stores = building.parts.filter((part) => part.kind === "storefront");
+      expect(stores.length).toBeGreaterThan(0);
+      for (const store of stores) {
+        const backing = building.parts.find(
+          (part) =>
+            part.kind === "wall" &&
+            part.cell.facade === store.cell.facade &&
+            part.cell.level === store.cell.level &&
+            part.cell.bay === store.cell.bay,
+        );
+        expect(backing).toBeDefined();
+      }
+    }
+  });
+});

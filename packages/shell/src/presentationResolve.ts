@@ -8,6 +8,7 @@ export interface ResolvedWorldOverlayBars {
   maxDistance?: number;
   /** Nameplates only: draw the built-in HP bar. `false` yields a name-only plate. Defaults to `true`. */
   showHealth?: boolean;
+  occlude?: boolean;
 }
 
 /**
@@ -20,7 +21,13 @@ export interface ResolvedWorldOverlayBars {
 export function resolveWorldOverlayBars(
   config:
     | boolean
-    | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number; showHealth?: boolean }
+    | {
+        statId?: string;
+        roles?: readonly CatalogEntityRole[];
+        maxDistance?: number;
+        showHealth?: boolean;
+        occlude?: boolean;
+      }
     | undefined,
 ): ResolvedWorldOverlayBars | null {
   if (config === undefined || config === false) return null;
@@ -30,6 +37,7 @@ export function resolveWorldOverlayBars(
     ...(config.roles === undefined ? {} : { roles: config.roles }),
     ...(config.maxDistance === undefined ? {} : { maxDistance: config.maxDistance }),
     ...(config.showHealth === undefined ? {} : { showHealth: config.showHealth }),
+    ...(config.occlude === undefined ? {} : { occlude: config.occlude }),
   };
 }
 
