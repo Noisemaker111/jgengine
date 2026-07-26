@@ -218,3 +218,7 @@ Waiting on a background `bun run gate` with `until pgrep -f 'run-stages.ts gate'
 2026-07-26T19:36:33.037Z — claude-opus-5 — Claude
 
 Ran `bun run gate` and `bun run drive the-robots` concurrently on the software-GL cloud box; they starved each other and the 20s key-hold drive took ~20 min. Nothing warns that capture and gate should not overlap on a GL-less host.
+
+2026-07-26T21:25:13.908Z — claude-opus-5 — Claude
+
+Capturing a before shot for a PR: git checkout main in a cloud session gave a silently stale main (behind origin/main by many commits), so shoot rejected a flag that exists on the real tip and reported it as an unknown game id. Had to detach onto origin/main. Cloud sessions clone a branch, so local main is never current — baseline captures should use origin/main, and the stale-local-main case is worth detecting.
