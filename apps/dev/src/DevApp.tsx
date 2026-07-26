@@ -22,7 +22,14 @@ import {
 } from "./captureReady";
 import { EditorModeApp } from "./EditorModeApp";
 import { useEditorSummon, useRuntimeError } from "./hooks";
-import { discoverGameTunables, gameRegistry, loadGameStyle, uiScenarioRegistry, withCameraPreset } from "./registries";
+import {
+  discoverGameTunables,
+  gameRegistry,
+  loadGameStyle,
+  loadLookMarkers,
+  uiScenarioRegistry,
+  withCameraPreset,
+} from "./registries";
 
 export function DevApp({ gameId }: { gameId: string }) {
   const [playable, setPlayable] = useState<PlayableGame | null>(null);
@@ -74,7 +81,7 @@ export function DevApp({ gameId }: { gameId: string }) {
               }),
           );
         }
-        setPlayable(withCameraPreset(loaded));
+        setPlayable(withCameraPreset(loaded, await loadLookMarkers(gameId)));
       })
       .catch((error: unknown) => {
         const message = formatLoadError(error);

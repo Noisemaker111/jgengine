@@ -107,13 +107,15 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --spawn <x,y,z>     override the authored player spawn for this run only (adds a
                       ?spawn= overlay like ?cam=); never mutates editor.scene.json.
                        Accepts x,y,z or x,y,z,yaw (yaw radians)
-  --look <x,z | x,y,z>
+  --look <x,z | x,y,z | @marker:<id> | @entity:<id>>
                       pin a detached camera on a world point for this capture:
                       the vantage the shot actually wants, independent of the
                       player spawn, this run's look yaw, and where the AI
-                      wandered. x,z samples the ground height. A point outside
-                      the world, or a camera the terrain would bury, fails the
-                      run instead of returning an empty frame.
+                      wandered. x,z samples the ground height; @marker:<id>
+                      aims at an authored marker and @entity:<id> tracks a live
+                      entity. A point outside the world, an unknown id, or a
+                      camera the terrain would bury fails the run instead of
+                      returning an empty frame.
   --look-from <dist[,height[,angle]]>
                       vantage for --look (default 12,5,0; angle in radians)
   --site <path>       drive a route from the managed apps/web server instead of a game
