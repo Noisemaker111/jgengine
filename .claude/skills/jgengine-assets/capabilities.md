@@ -12,6 +12,26 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `readGlbClips` (function) · `import { readGlbClips } from "@jgengine/assets/dims"`
 
+## credits-for-asset-ids — build a credits document from the asset ids a game ships
+
+- `creditsForAssetIds` (function) · `import { creditsForAssetIds } from "@jgengine/assets/credits"`
+
+## credits-for-source-ids — build a credits document from the asset source ids a game declares
+
+- `creditsForSourceIds` (function) · `import { creditsForSourceIds } from "@jgengine/assets/credits"`
+
+## credits-for-sources — generate credit sections from asset pack metadata, grouped by license or provider
+
+- `creditsForSources` (function) · `import { creditsForSources } from "@jgengine/assets/credits"`
+
+## sources-for-asset-ids — resolve the asset packs behind the ids a game actually ships
+
+- `sourcesForAssetIds` (function) · `import { sourcesForAssetIds } from "@jgengine/assets/credits"`
+
+## sources-for-source-ids — resolve the asset pack metadata behind the source ids a game declares
+
+- `sourcesForSourceIds` (function) · `import { sourcesForSourceIds } from "@jgengine/assets/credits"`
+
 ## starter-packs — themed CC0 model ids (people/props/nature/urban) ready for entityModels
 
 - `StarterTheme` (type) · `import { StarterTheme } from "@jgengine/assets"`

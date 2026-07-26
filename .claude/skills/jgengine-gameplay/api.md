@@ -399,6 +399,14 @@
 - `CosmeticsEvents` (interface): interface CosmeticsEvents — ⚠ undocumented
 - `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
 
+## @jgengine/core/game/credits
+
+- `CreditsDocument` (interface): interface CreditsDocument — Everything a credits screen shows. `notice` is the closing line (a license summary, a thank-you).
+- `CreditsEntry` (interface): interface CreditsEntry — One credited line — a person, a studio, an asset pack, a tool.
+- `CreditsSection` (interface): interface CreditsSection — A titled group of entries — "Design", "Music", "3D Assets".
+- `groupCredits` (function): function groupCredits<T>(items: readonly T[], heading: (item: T) => string, entry: (item: T) => CreditsEntry): CreditsSection[] — Groups entries into sections by a caller-supplied key — the shape most generated credits arrive in (a flat list of things used, grouped by license, provider, or role). Section order follows first appearance, so a stable input gives a stable screen.
+- `mergeCredits` (function): function mergeCredits(...documents: readonly (CreditsDocument | null | undefined)[]): CreditsDocument — Merges credit documents into one, concatenating same-heading sections in first-seen order and dropping exact duplicate entries. Use it to fold generated credits (asset packs, dependencies) into the game's hand-authored ones without curating the overlap by hand.
+
 ## @jgengine/core/game/defineGame
 
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.

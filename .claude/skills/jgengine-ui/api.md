@@ -1100,6 +1100,10 @@
 - `runDialogueChoice` (function): function runDialogueChoice(commands: { run(name: string, input?: unknown): unknown }, choice: DialogueChoice, result: CheckResult | null): void — Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), run that command, and otherwise close the dialogue — the write side that replaces a per-game `onChoice` that hand-rolls `resolveDialogueInvoke` + `dialogue.close`.
 - `useOpenDialogueId` (function): function useOpenDialogueId(): string | null — The id of the dialogue `ctx.game.dialogue` (or a `talkable(id)` prompt) currently has open, or `null`. The read side of the `features.dialogue` bridge — a panel looks the id up in its own dialogue catalog and renders {@link DialogueBox}, with no per-game open/close store.
 
+## @jgengine/react/creditsScreen
+
+- `CreditsScreen` (function): function CreditsScreen({ document, className, style, renderEntry, }: { document: CreditsDocument; className?: string; style?: CSSProperties; renderEntry?: (entry: CreditsEntry, index: number) => ReactNode; }): ReactNode — Renders a {@link CreditsDocument} as headed sections of credited lines. Skinned entirely through the `--jg-*` HudTheme tokens, so it inherits the game's look from the surrounding theme block; pass `renderEntry` to art-direct the line itself. Links render only when an entry carries `href`, and always open in a new tab with `noreferrer`.
+
 ## @jgengine/react/cutscene
 
 - `CutsceneLetterbox` (function): function CutsceneLetterbox({ active, caption, onSkip, skipLabel = "Skip", progress, theme, className, style, }: CutsceneLetterboxProps): ReactNode — A drop-in cinematic letterbox overlay: black bars slide in top and bottom while a cutscene is `active`, an optional caption/dialogue line sits above the lower bar with an optional progress line, and a Skip button rides the top bar. Presentation only — it never touches the director; wire `active`/`caption`/`progress`/`onSkip` from {@link useSequenceDirector} and your `onCue` handler. Reskin via {@link CutsceneLetterboxTheme}.
@@ -1423,6 +1427,13 @@
 - `WorldMapSurfaceProps` (interface): interface WorldMapSurfaceProps — Props for {@link WorldMapSurface}.
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useMarkers` (function): function useMarkers<TMeta = unknown>(markers: MarkerSet<TMeta>): readonly MapMarker<TMeta>[] — Subscribe to a native marker set or external marker source, or read a static marker array.
+
+## @jgengine/react/menuRouter
+
+- `MenuRouter` (interface): interface MenuRouter<Id extends string> — A menu screen stack: where you are, how you got there, and how to go back.
+- `MenuStackAction` (type): type MenuStackAction<Id extends string> = | { type: "open"; id: Id } | { type: "back" } | { type: "replace"; id: Id } | { type: "reset"; id?: Id } — A screen-stack transition. `reset` without an id collapses to the router's original root.
+- `menuStackReducer` (function): function menuStackReducer<Id extends string>(path: readonly Id[], action: MenuStackAction<Id>, root: Id): readonly Id[] — The pure screen-stack transition behind {@link useMenuRouter}. Exported so a game can drive the same navigation from its own store or a replayable command log instead of React state.
+- `useMenuRouter` (function): function useMenuRouter<Id extends string>(root: Id, options: { escapeToBack?: boolean } = {}): MenuRouter<Id> — The screen stack behind a game front-end: title → save select → settings → credits, and Escape back out. Every game menu needs this and none of it is game-specific, so it ships here rather than being re-derived per game. Holds no content and imposes no look — the game decides what each screen id renders.
 
 ## @jgengine/react/modals
 
