@@ -263,22 +263,23 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
     fallbackModel: `${SCIFI}/Prop_Crate3`,
     style: { scale: 3.2, material: { color: "#b3452a", ...SCRAP, emissive: "#e2582e", emissiveIntensity: 0.25 } },
   },
+  // Doors are flat panels with no depth, so a scaled, strongly-emissive one reads as an untextured
+  // slab rather than a station — which is what these two were. Every other interactive station in
+  // the game is a real prop with modelled relief, so these match that vocabulary now.
   fast_travel: {
-    model: `${SCIFI}/Door_Metal`,
-    fallbackModel: `${SCIFI}/Door_Simple`,
+    model: `${SCIFI}/Prop_AccessPoint`,
+    fallbackModel: `${SCIFI}/Prop_Computer`,
     style: {
       scale: 2.2,
-      material: { color: MACHINE.iron, ...PANEL, emissive: "#38e1ff", emissiveIntensity: 1.1 },
+      material: { color: MACHINE.iron, ...PANEL, emissive: "#38e1ff", emissiveIntensity: 0.5 },
     },
   },
   black_market: {
-    model: `${SCIFI}/Door_DarkMetal`,
-    fallbackModel: `${SCIFI}/Door_Frame_Square`,
+    model: `${SCIFI}/Prop_ItemHolder`,
+    fallbackModel: `${SCIFI}/Prop_Computer`,
     style: {
       scale: 2.2,
-      // Emissive 0.7 on a 2.2-scaled door blew out under bloom into one flat violet wall that read
-      // as a missing texture from across the settlement. Keep the violet as a trim glow, not a surface.
-      material: { color: "#2a1f3a", ...PANEL, emissive: "#8a2be2", emissiveIntensity: 0.12 },
+      material: { color: "#2a1f3a", ...PANEL, emissive: "#8a2be2", emissiveIntensity: 0.3 },
     },
   },
   // Scale 4 put single boulders at building size, close enough to the camera to hide whole enemy

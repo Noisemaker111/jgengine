@@ -6,6 +6,7 @@ import { terrainField, world } from "../../world";
 import { MAIN_QUEST_IDS, quests } from "../quests/catalog";
 import { SETTLEMENT_KITS } from "./buildingKit";
 import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, authoredScene } from "./level";
+import { entityModels, objectModels } from "./models";
 import { BOLT_POS, BOLT_YAW, PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./sites";
 import { ZONES, zoneAt, zoneLevelAt } from "./zones";
 
@@ -160,5 +161,16 @@ describe("settlement building kits", () => {
 
   test("clothesline is dropped rather than left to fall back to a block", () => {
     for (const kit of Object.values(SETTLEMENT_KITS)) expect(kit.omit).toContain("clothesline");
+  });
+
+  // The kit's models were checked here from the start; the object catalog's were not, and that is
+  // where a broken reference would show up as a magenta placeholder in the starting settlement.
+  test("every object and entity model the game mounts is a file it actually serves", () => {
+    const mounted = [...Object.values(objectModels), ...Object.values(entityModels)];
+    expect(mounted.length).toBeGreaterThan(0);
+    for (const config of mounted) {
+      expect(config.url.startsWith("/models/")).toBe(true);
+      expect(existsSync(join(publicRoot, config.url))).toBe(true);
+    }
   });
 });

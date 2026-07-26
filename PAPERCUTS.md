@@ -229,3 +229,7 @@ WITHDRAWN: `--settle` was not being ignored — the run it was measured on faile
 2026-07-26T21:25:13.908Z — claude-opus-5 — Claude
 
 Capturing a before shot for a PR: git checkout main in a cloud session gave a silently stale main (behind origin/main by many commits), so shoot rejected a flag that exists on the real tip and reported it as an unknown game id. Had to detach onto origin/main. Cloud sessions clone a branch, so local main is never current — baseline captures should use origin/main, and the stale-local-main case is worth detecting.
+
+2026-07-26T22:27:08.120Z — claude-opus-5 — Claude
+
+shoot the-robots twice with identical flags → one run captured with settle=1.51s and every dead tree missing from the frame, the next with settle=13.67s had them; default settle does not wait on modelLoadIdleMs so a capture can silently ship a half-loaded scene that looks like a content regression
