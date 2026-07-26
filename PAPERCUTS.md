@@ -174,3 +174,11 @@ open PR after push → GitHub GraphQL/REST returns 500 empty body for pulls crea
 2026-07-26T00:18:39.574Z — claude-opus-5 — Claude
 
 Regenerating derived artifacts after a core API change → had to run gen:barrels, gen:capabilities, gen:skill-api and gen:export-manifest as four separate commands in the right order (and rebuild core first), with no single command and no hint from the failing check telling me which to run
+
+2026-07-26T05:59:04.343Z — claude-opus-5 — Claude
+
+Adding a settings surface to a game: dropped in SettingsTrigger and it rendered nothing — it returns null unless the game also declares settings:{} in game.config.ts, with no dev warning saying so. Silent no-op cost a capture round trip.
+
+2026-07-26T05:59:04.378Z — claude-opus-5 — Claude
+
+Capturing a game's title/menu screen: bun run shoot/drive boots vice-isle straight into play in both --mode ui and --mode play, so its title screen (and anything routed from it, like credits) cannot be captured at all.
