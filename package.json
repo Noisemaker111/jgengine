@@ -69,7 +69,6 @@
     "pr-video": "bun scripts/pr-video.ts",
     "host": "bun scripts/host-game.ts",
     "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
-    "papercut": "bun scripts/papercut.ts",
     "games:claudecraft": "bun run --cwd Games/claudecraft dev",
     "games:duet-keys": "bun run --cwd Games/duet-keys dev",
     "games:ironhold": "bun run --cwd Games/ironhold dev",

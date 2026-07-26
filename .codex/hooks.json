@@ -29,14 +29,6 @@
             "command": "bun '.codex/hooks/warn-unpushed.mjs'"
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bun '.codex/hooks/papercut-reminder.mjs'"
-          }
-        ]
       }
     ]
   }

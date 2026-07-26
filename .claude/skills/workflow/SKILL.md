@@ -17,7 +17,7 @@ Before claiming issues or editing packages, ensure the checkout can run Bun and 
 - Local-machine parallelism only: `bun run agent:worktree -- <name>` or Claude `claude --worktree <name>`; cloud containers are already isolated — branch, do not worktree
 - Prefer `bun --cwd=packages/<pkg> run <script>` over `bun run --cwd packages/<pkg> <script>` — use the `=` form; the space form (`bun --cwd packages/<pkg> run ...`) mis-parses and prints `bun run` help while exiting 0 without running the script
 
-Do not open a multi-issue program or log papercuts until bootstrap succeeds.
+Do not open a multi-issue program until bootstrap succeeds.
 
 ## Scope and issue
 
