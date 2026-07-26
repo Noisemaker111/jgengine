@@ -72,6 +72,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Fixed
 
+- **A model `animation` config naming clips the rig does not have now warns instead of silently posing wrong.** An explicit `ModelConfig.animation` always beats `"auto"`, and a missing state clip fell back to the GLB's *first* clip while missing one-shots were dropped — so a mistyped or wrong-pack clip name left an actor looping an arbitrary animation (on a KayKit rig, `1H_Melee_Attack_Chop`) with no death or hit reaction, and nothing in the logs. `useModelAnimation` now warns once per mount naming the missing clips plus the rig's real clip names, and points at `animation: "auto"`. No behavior change for a config whose clips all resolve.
 - **City-scale player movement no longer freezes `pose` at ~3 fps (#1517).** Broadphase reach is split into capped horizontal vs vertical extents (tower height no longer inflates XZ/Y queries), `objectStore.inBox` bails to a linear object scan when the 1 m cell volume is huge, dense mesh-box colliders collapse to outer AABBs for walking, and `movement.frozen` skips the gather (seated drivers).
 - **Generated intersections are compact carriageway unions, not plaza discs (#1511).**
   Apron pull-back is the projected crossing half-width only (opposite through-arms are ignored; curb
