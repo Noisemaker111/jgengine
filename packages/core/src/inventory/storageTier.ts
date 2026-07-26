@@ -1,3 +1,4 @@
+import { resolveRng } from "../random/resolveRng";
 export type StorageTier = "carried" | "banked";
 
 export interface ItemStack {
@@ -111,7 +112,7 @@ export function insureLost(
   policy: InsurancePolicy,
   userId: string,
   now: number,
-  rng: () => number = Math.random,
+  rng?: () => number,
 ): ScheduledDelivery | null {
   const items = lost.filter((stack) => policy.isInsured(stack.itemId));
   if (items.length === 0) return null;
@@ -119,7 +120,7 @@ export function insureLost(
     userId,
     inventoryId: policy.returnInventoryId,
     items,
-    deliverAt: now + resolveDelay(policy.delaySeconds, rng),
+    deliverAt: now + resolveDelay(policy.delaySeconds, resolveRng(rng, "scheduleDelivery")),
   };
 }
 

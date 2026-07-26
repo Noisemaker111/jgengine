@@ -1522,7 +1522,7 @@
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
 - `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
-- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
+- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng?: () => number): ScheduledDelivery | null — ⚠ undocumented
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
 - `isDisabled` (function): function isDisabled(spec: DurabilitySpec, state: DurabilityState): boolean — ⚠ undocumented
 - `isIdentityValid` (function): function isIdentityValid(identity: ItemIdentity, rules: readonly CompatibilityRule[]): boolean — Convenience predicate: true when {@link validateIdentity} finds no violations.
@@ -1679,7 +1679,7 @@
 - `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
 - `StorageTier` (type): type StorageTier = "carried" | "banked" — ⚠ undocumented
 - `createDeliveryQueue` (function): function createDeliveryQueue(): DeliveryQueue — ⚠ undocumented
-- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
+- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng?: () => number): ScheduledDelivery | null — ⚠ undocumented
 - `partitionOnDeath` (function): function partitionOnDeath(containers: readonly ContainerSnapshot[]): DeathPartition — ⚠ undocumented
 - `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
 - `tierOf` (function): function tierOf(tiers: Record<string, StorageTier>, inventoryId: string): StorageTier — ⚠ undocumented
@@ -1862,6 +1862,11 @@
 
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
+
+## @jgengine/core/random/resolveRng
+
+- `resetRngFallbackWarnings` (function): function resetRngFallbackWarnings(): void — Clears the warned-site memo. Tests only — the warning is once-per-site for the life of the process.
+- `resolveRng` (function): function resolveRng(provided: (() => number) | undefined, site: string): () => number — Resolves an optional injected `[0,1)` generator, falling back to `Math.random` — and says so, once per call site.
 
 ## @jgengine/core/random/rng
 

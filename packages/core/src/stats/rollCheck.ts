@@ -1,3 +1,4 @@
+import { resolveRng } from "../random/resolveRng";
 export type CheckAdvantage = "advantage" | "disadvantage" | "normal";
 
 export interface CheckInput {
@@ -20,10 +21,11 @@ export interface CheckResult {
  *
  * @capability dice-check resolve a pass/fail roll against a target number with modifiers and crits
  */
-export function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult {
+export function rollCheck(input: CheckInput, rng?: () => number): CheckResult {
+  const random = resolveRng(rng, "rollCheck");
   const sides = input.diceSides ?? 20;
   const advantage = input.advantage ?? "normal";
-  const rollDie = () => Math.floor(rng() * sides) + 1;
+  const rollDie = () => Math.floor(random() * sides) + 1;
   const rolls = advantage === "normal" ? [rollDie()] : [rollDie(), rollDie()];
   const roll =
     advantage === "advantage"

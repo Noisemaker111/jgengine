@@ -47,7 +47,7 @@ export interface DamageHitInput {
   currentStatus?: StatusInstance | null;
   /** Statuses the target is immune to. */
   immunity?: StatusImmunity | null;
-  /** Deterministic RNG for the status roll; defaults to `Math.random`. */
+  /** Deterministic RNG for the status roll. Omitting it falls back to `Math.random` and warns once — pass `ctx.rng`. */
   rng?: () => number;
 }
 

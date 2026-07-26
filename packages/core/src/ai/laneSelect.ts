@@ -1,3 +1,4 @@
+import { resolveRng } from "../random/resolveRng";
 export interface LaneCandidate<TId extends string = string> {
   id: TId;
   cost: number;
@@ -26,7 +27,7 @@ export function pickLane<TId extends string>(
   if (candidates.length === 0) return null;
   const stickiness = options.stickiness ?? 1.2;
   const tieEpsilon = options.tieEpsilon ?? 0;
-  const rng = options.rng ?? Math.random;
+  const rng = resolveRng(options.rng, "selectLane");
 
   let best = candidates[0]!;
   for (const candidate of candidates) {

@@ -998,7 +998,7 @@
 
 - `CaptureCheckInput` (interface): interface CaptureCheckInput — ⚠ undocumented
 - `captureChance` (function): function captureChance(input: CaptureCheckInput): number — ⚠ undocumented
-- `rollCapture` (function): function rollCapture(input: CaptureCheckInput, rng: () => number = Math.random): boolean — ⚠ undocumented
+- `rollCapture` (function): function rollCapture(input: CaptureCheckInput, rng?: () => number): boolean — ⚠ undocumented
 
 ## @jgengine/core/scene/colliders
 

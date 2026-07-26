@@ -2,6 +2,7 @@ import type { EntityPosition } from "../scene/entityStore";
 import { distanceBetween } from "../scene/spatial";
 import { evaluateLootFilter, type LootFilterItem, type LootFilterRule } from "./lootFilter";
 import type { Drop } from "./lootTable";
+import { resolveRng } from "../random/resolveRng";
 
 /** Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object). */
 export const WORLD_ITEM_ENTITY_NAME = "world_item";
@@ -185,7 +186,7 @@ export function resolveDeathDrops(
   options: ResolveDeathDropsOptions,
 ): ResolvedDeathDrops {
   if (options.mode !== "world") return { worldSpawns: [], grants: [...drops] };
-  const rng = options.rng ?? Math.random;
+  const rng = resolveRng(options.rng, "worldItem");
   const worldSpawns: WorldItemSpawnInput[] = [];
   const grants: Drop[] = [];
   for (const drop of drops) {

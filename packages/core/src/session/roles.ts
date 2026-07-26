@@ -1,4 +1,5 @@
 import { shuffleWithRng } from "../cards/cardPile";
+import { resolveRng } from "../random/resolveRng";
 
 export interface RoleSpec {
   id: string;
@@ -15,10 +16,10 @@ export interface RoleSpec {
 export function assignRoles(
   userIds: readonly string[],
   roles: readonly RoleSpec[],
-  rng: () => number = Math.random,
+  rng?: () => number,
 ): Record<string, string> {
   if (roles.length === 0) throw new Error("assignRoles needs at least one role");
-  const shuffled = shuffleWithRng(userIds, rng);
+  const shuffled = shuffleWithRng(userIds, resolveRng(rng, "assignRoles"));
   const assignment: Record<string, string> = {};
   let index = 0;
 

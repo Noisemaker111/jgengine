@@ -1,3 +1,4 @@
+import { resolveRng } from "../random/resolveRng";
 /**
  * How a fresh application behaves when the target already carries the status.
  * - `refresh` — reset duration, hold the existing stack count.
@@ -69,7 +70,7 @@ export interface StatusApplicationInput {
   immunity?: StatusImmunity | null;
   /** Attribution written onto the resulting instance. */
   source?: string;
-  /** Deterministic RNG returning `[0,1)`; defaults to `Math.random`. Pass a seeded stream for reproducibility. */
+  /** Deterministic RNG returning `[0,1)`. Omitting it falls back to `Math.random` and warns once — pass `ctx.rng` or a seeded stream. */
   rng?: () => number;
 }
 
@@ -110,7 +111,7 @@ function clamp01(value: number): number {
  */
 export function resolveStatusApplication(input: StatusApplicationInput): StatusApplicationOutcome {
   const { spec, scale, current, immunity, source } = input;
-  const rng = input.rng ?? Math.random;
+  const rng = resolveRng(input.rng, "applyStatus");
 
   if (immunity?.statuses?.includes(spec.status) === true) {
     return { kind: "immune", instance: current ?? null, chance: 0, roll: null };

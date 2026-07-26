@@ -1,3 +1,4 @@
+import { resolveRng } from "../random/resolveRng";
 export type AutoTargetPolicy =
   | "nearest"
   | "farthest"
@@ -44,7 +45,7 @@ export function selectAutoTarget(
   if (candidates.length === 0) return null;
 
   if (policy === "random") {
-    const rng = deps.rng ?? Math.random;
+    const rng = resolveRng(deps.rng, "autoTarget");
     return candidates[Math.min(candidates.length - 1, Math.floor(rng() * candidates.length))]!;
   }
 

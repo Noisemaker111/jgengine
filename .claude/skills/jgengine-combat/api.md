@@ -192,7 +192,7 @@
 - `resolveShot` (function): function resolveShot(deps: ShotOriginDeps, from: string, aim: Aim, policy: ShotOriginPolicy = { kind: "eye" }): ResolvedShot | null — ⚠ undocumented
 - `resolveStatusApplication` (function): function resolveStatusApplication(input: StatusApplicationInput): StatusApplicationOutcome — Resolve one status application: reject on immunity, roll landing chance against injected RNG, scale magnitude/duration by the matchup, then fold into any existing instance per the stacking policy. Deterministic given a seeded `rng`; pure over serializable data, so authority can run it and replicate only the returned `instance`.
 - `resolveVfxPreset` (function): function resolveVfxPreset(name: string | undefined, overrides?: Partial<VfxPreset>): VfxPreset — Resolve a named visual flavor into a concrete `{ kind, color, durationMs?, radius? }`, with any provided `overrides` winning field by field. An unknown name resolves to {@link DEFAULT_VFX_PRESET} rather than throwing, so a flavor typo degrades to a visible spark. Used by `ctx.scene.entity.vfx({ preset })`; call it directly when you need the raw numbers (e.g. to seed a retained `vfxInstance` from the same vocabulary).
-- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
+- `rollCheck` (function): function rollCheck(input: CheckInput, rng?: () => number): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 - `startEncounter` (function): function startEncounter<TData>(config: EncounterConfig<TData>, state: EncounterState<TData>, ctx: EncounterContext = {}): EncounterStep<TData> — Start a created encounter: enter the first root phase, descending to its first leaf, and return the initial enter/spawn events. A no-op (with no events) on an already-started or empty encounter. Mutates and returns `state`.
 - `statusEffectRemainingFraction` (function): function statusEffectRemainingFraction(view: StatusEffectView): number — Fraction of the countdown still remaining, clamped to `[0,1]` — the value a countdown ring fills to. Returns `0` when the duration is non-positive. Pure; safe to call every frame.
 - `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`.
@@ -620,7 +620,7 @@
 - `CheckAdvantage` (type): type CheckAdvantage = "advantage" | "disadvantage" | "normal" — ⚠ undocumented
 - `CheckInput` (interface): interface CheckInput — ⚠ undocumented
 - `CheckResult` (interface): interface CheckResult — ⚠ undocumented
-- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
+- `rollCheck` (function): function rollCheck(input: CheckInput, rng?: () => number): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 
 ## @jgengine/core/stats/spawnLevelStats
 
