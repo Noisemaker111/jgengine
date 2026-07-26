@@ -342,6 +342,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createModalStack` (function) · `import { createModalStack } from "@jgengine/core/ui"`
 
+## model-fallbacks — models the loader replaced with a placeholder, for capture and smoke assertions
+
+- `modelLoadFallbacks` (function) · `import { modelLoadFallbacks } from "@jgengine/shell/render/modelLoad"`
+
 ## model-load-idle — how long the shared GLB loader has been idle, for capture settle waits
 
 - `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad"`

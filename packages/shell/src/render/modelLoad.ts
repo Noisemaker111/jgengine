@@ -141,7 +141,29 @@ export async function handleModelLoadFailure(
     return;
   }
   (overrides.warn ?? warnMissingModel)(diagnosis.message);
+  servedFallbacks.push({ url: resolvedUrl, message: diagnosis.message });
   onLoad(createFallbackModel(diagnosis));
+}
+
+const servedFallbacks: { url: string; message: string }[] = [];
+
+/**
+ * Every model the shared loader diagnosed as broken and replaced with a magenta placeholder, in
+ * load order.
+ *
+ * A placeholder is already a console warning, but a warning does not fail anything — a shipped game
+ * can render one in its starting area and nobody finds out until someone looks at a screenshot.
+ * Reading this turns "the loader knows the asset is bad" into an assertable fact: a capture host or
+ * a smoke test can require it to be empty.
+ * @capability model-fallbacks models the loader replaced with a placeholder, for capture and smoke assertions
+ */
+export function modelLoadFallbacks(): readonly { url: string; message: string }[] {
+  return servedFallbacks;
+}
+
+/** Drops the recorded placeholder list. For tests and between capture runs. @internal */
+export function clearModelLoadFallbacks(): void {
+  servedFallbacks.length = 0;
 }
 
 /**

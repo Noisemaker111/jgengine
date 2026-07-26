@@ -17,13 +17,13 @@ const stretched = (names: readonly string[]): string[] => names.map((name) => mo
 
 /**
  * Ferralon's settlements are prefab sci-fi panelling bolted onto scrap, so the facade generator's
- * part slots bind straight to the modular sci-fi pack. `roof` stays unbound on purpose — the flat
- * slab the engine already draws reads as a poured deck, and the pack's `Platform_*` plates tile at
- * the wrong pitch to fill a whole roof.
+ * part slots bind straight to the modular sci-fi pack. The `roof` slot is one slab spanning the
+ * whole building rather than a tiled grid, so a stretched deck plate covers it in a single instance.
  */
 export const DESERT_SETTLEMENT_KIT: BuildingKit = defineBuildingKit({
   id: "ferralon-settlement-desert",
   parts: {
+    roof: stretched(["Platform_DarkPlates"]),
     wall: stretched(["WallAstra_Straight", "WallAstra_Straight_Flat", "WallBand_Straight"]),
     window: stretched([
       "WallAstra_Straight_Window",
@@ -49,6 +49,7 @@ export const DESERT_SETTLEMENT_KIT: BuildingKit = defineBuildingKit({
 export const RUIN_SETTLEMENT_KIT: BuildingKit = defineBuildingKit({
   id: "ferralon-settlement-ruin",
   parts: {
+    roof: stretched(["Platform_Metal2"]),
     wall: stretched(["WallAstra_Straight_Broken", "WallBand_Straight_Broken", "WallAstra_Straight"]),
     window: stretched(["WallWindow_Straight", "WallAstra_Straight_Broken"]),
     storefront: stretched(["Door_Frame_Square_Blocked", "Door_Simple"]),
