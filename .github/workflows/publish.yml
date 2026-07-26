@@ -1,6 +1,7 @@
 name: Publish
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -51,10 +52,14 @@ jobs:
           for p in core ws sql react convex node shell editor assets github jgengine; do
             name=$(node -p "require('./packages/$p/package.json').name")
             version=$(node -p "require('./packages/$p/package.json').version")
+            case "$version" in
+              *-*) tag=next ;;
+              *) tag=latest ;;
+            esac
             if npm view "$name@$version" version >/dev/null 2>&1; then
               echo "skip $name@$version (already on npm)"
             else
-              echo "publish $name@$version"
-              (cd "packages/$p" && npm publish --access public)
+              echo "publish $name@$version --tag $tag"
+              (cd "packages/$p" && npm publish --access public --tag "$tag")
             fi
           done
