@@ -7,6 +7,7 @@
  * starts apps/dev or apps/web lazily on first use. Manual `--keep`/`--connect`
  * remains available. See `jgengine-verify`.
  */
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import type { ChildProcess } from "node:child_process";
 import { join, resolve } from "node:path";
@@ -18,6 +19,7 @@ import {
   ensureDevServer,
   ensureWebServer,
   forwardPageConsole,
+  readCaptureRegions,
   isUp,
   normalizeLoopbackUrl,
   navigateCapturePageWithRetry,
@@ -31,7 +33,20 @@ import {
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
 import { lookSearchParams, parseLookAim } from "./lookArg";
-import { computeShotMetrics, evaluateThresholds } from "./shot-metrics";
+import {
+  MIN_SAMPLED_SHARE,
+  computeShotMetrics,
+  deadViewport,
+  evaluateThresholds,
+  shotSignature,
+} from "./shot-metrics";
+import {
+  buildShotRecord,
+  clearShotTarget,
+  describeReplacement,
+  writeShotRecord,
+  type PreviousShot,
+} from "./shotProvenance";
 import {
   attachDaemon,
   ensureDaemonTarget,
@@ -293,6 +308,21 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   return url.toString();
 }
 
+function shotCommand(): string {
+  return ["bun run shoot", ...process.argv.slice(2)].join(" ");
+}
+
+function gitProvenance(): { head: string; dirty: boolean } | undefined {
+  try {
+    const head = spawnSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" });
+    if (head.status !== 0) return undefined;
+    const status = spawnSync("git", ["status", "--porcelain"], { encoding: "utf8" });
+    return { head: head.stdout.trim(), dirty: (status.stdout ?? "").trim().length > 0 };
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Read back the aim the runner actually applied. An accepted `--look` always publishes it, so a
  * missing readout means the override never reached the camera — the silent-no-op that used to
@@ -342,6 +372,7 @@ async function shootOne(
   device: Device,
   outPath: string,
   devBase: string,
+  previous: PreviousShot | undefined,
 ): Promise<boolean> {
   const startedAt = performance.now();
   let phaseStartedAt = startedAt;
@@ -367,6 +398,7 @@ async function shootOne(
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
     const { overflow, collision } = await readLayoutStatus(session);
+    const regions = await readCaptureRegions(session);
     mark("layout");
     const shot = await session.send("Page.captureScreenshot", {
       format: "png",
@@ -380,6 +412,21 @@ async function shootOne(
     }
     const bytes = Buffer.from(data, "base64");
     writePngAtomic(outPath, bytes);
+    const decoded = decodePng(bytes);
+    const frame = computeShotMetrics(decoded.width, decoded.height, decoded.data);
+    const scoped = computeShotMetrics(decoded.width, decoded.height, decoded.data, regions);
+    const viewport = (scoped.sampledShare ?? 1) >= MIN_SAMPLED_SHARE ? scoped : null;
+    const record = buildShotRecord({
+      bytes,
+      command: shotCommand(),
+      capturedAt: new Date().toISOString(),
+      signature: shotSignature(decoded.width, decoded.height, decoded.data),
+      width: decoded.width,
+      height: decoded.height,
+      ...(previous === undefined ? {} : { previous }),
+      git: gitProvenance(),
+    });
+    writeShotRecord(outPath, record);
     console.log(outPath);
     mark("capture");
     const profile = DEVICES[device];
@@ -393,24 +440,25 @@ async function shootOne(
       console.error(`MOBILE LAYOUT COLLISION [${label}]: ${formatCollisionReport(collision)}`);
       ok = false;
     }
-    if (args.inspect) {
-      try {
-        const decoded = decodePng(bytes);
-        const metrics = computeShotMetrics(decoded.width, decoded.height, decoded.data);
-        const metricsPath = outPath.replace(/\.png$/, ".metrics.json");
-        writeFileSync(metricsPath, JSON.stringify(metrics, null, 2));
-        console.log(metricsPath);
-        if (!metrics.nonblank) {
-          console.error(`inspect-shot [${label}]: blank or broken screenshot`);
-          ok = false;
-        }
-        for (const warning of evaluateThresholds(metrics)) {
-          console.error(`inspect-shot [${label}]: ${warning.message}`);
-        }
-      } catch (error) {
-        console.error(`inspect-shot [${label}]: failed — ${error instanceof Error ? error.message : error}`);
+    const replacement = describeReplacement(record);
+    if (replacement !== null) console.error(`shoot [${label}]: ${replacement}`);
+    // Viewport metrics are scored on every shot, not only under --inspect: a dead 3D view
+    // that nobody opens the PNG to notice is the failure this rung exists to catch. Skipped
+    // when the region is mostly covered (a HUD/menu capture has no 3D view to judge).
+    if (viewport !== null) {
+      const dead = deadViewport(viewport);
+      if (dead !== null) {
+        console.error(`shoot [${label}]: ${dead} — the HUD alone is carrying this frame`);
         ok = false;
       }
+      for (const warning of evaluateThresholds(viewport)) {
+        console.error(`shoot [${label}]: viewport ${warning.message}`);
+      }
+    }
+    if (args.inspect) {
+      const metricsPath = outPath.replace(/\.png$/, ".metrics.json");
+      writeFileSync(metricsPath, JSON.stringify({ frame, viewport }, null, 2));
+      console.log(metricsPath);
     }
     mark("inspect");
     console.error(
@@ -518,7 +566,11 @@ const exitCode = await withBrowserSession(
   async ({ debugPort, chrome }) => {
     let code = 0;
     for (const device of targets) {
-      const fits = await shootOne(debugPort, args, device, outPathFor(args, device, outDir), devBase);
+      const outPath = outPathFor(args, device, outDir);
+      // Cleared before the attempt, so a failed or hung capture leaves no file behind to be
+      // read as this run's result — the shape of every stale-screenshot mixup.
+      const previous = clearShotTarget(outPath);
+      const fits = await shootOne(debugPort, args, device, outPath, devBase, previous);
       if (!fits) code = 1;
     }
     if (args.keep && !attachedDaemon) {
