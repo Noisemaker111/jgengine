@@ -1,7 +1,7 @@
 /**
  * Shoot: launch system Chrome, wait for page `data-jg-capture=ready` (tiny
- * handshake), pull pixels via CDP Page.captureScreenshot, write binary PNG.
- * No Playwright. PNG never travels through the page console.
+ * handshake), pull pixels off the CDP screencast pump (see `captureViewportPng`),
+ * write binary PNG. No Playwright. PNG never travels through the page console.
  *
  * Persistent service: `shoot daemon start` keeps headless Chrome warm and
  * starts apps/dev or apps/web lazily on first use. Manual `--keep`/`--connect`
@@ -15,11 +15,14 @@ import {
   type CdpSession,
   DEVICES,
   applyDevice,
+  captureViewportPng,
   checkoutIdentity,
   ensureDevServer,
   ensureWebServer,
   forwardPageConsole,
-  readCaptureRegions,
+  readCapturePageState,
+  scaleProfile,
+  screencastCapturesFully,
   isUp,
   normalizeLoopbackUrl,
   navigateCapturePageWithRetry,
@@ -153,6 +156,9 @@ const HELP = `bun run shoot [game] [options]
                       shots/<name>.metrics.json beside it
   --timeout <s>       per-shot timeout (default 60; --site: 10 local, 30 Linux/CI)
   --help              show this text
+
+  JG_CAPTURE_SCREENCAST=0 forces Page.captureScreenshot instead of the screencast
+  frame pump (same pixels, several times slower on software GL).
 
 Persistent daemon (preferred for multi-shot loops):
   bun run shoot --serve                      # keep Chrome warm; Vite starts on demand
@@ -379,21 +385,6 @@ async function reportAppliedAim(session: CdpSession, args: Args): Promise<void> 
   console.error(`shoot: ${args.view === undefined ? "look" : `view ${args.view}`} applied ${applied}`);
 }
 
-async function readLayoutStatus(
-  session: CdpSession,
-): Promise<{ overflow: string | null; collision: string | null }> {
-  const value = await session.evaluate<{ overflow?: unknown; collision?: unknown }>(`({
-    overflow: document.querySelector("[data-hud-overflow]")?.getAttribute("data-hud-overflow") ?? null,
-    collision: document.querySelector("[data-jg-layout-collision]")?.getAttribute("data-jg-layout-collision") ?? null
-  })`);
-  return {
-    overflow:
-      typeof value?.overflow === "string" && value.overflow.length > 0 ? value.overflow : null,
-    collision:
-      typeof value?.collision === "string" && value.collision.length > 0 ? value.collision : null,
-  };
-}
-
 function formatCollisionReport(raw: string): string {
   try {
     const parsed = JSON.parse(raw) as { a: string; b: string; area: number }[];
@@ -426,28 +417,29 @@ async function shootOne(
     await session.send("Page.enable");
     await session.send("Runtime.enable");
     stopConsoleForward = forwardPageConsole(session, "shoot:");
+    mark("enable");
     await applyDevice(session, device, args.size);
-    mark("setup");
+    mark("device");
     const url = targetUrl(args, device, devBase);
     await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS);
     mark("ready");
     await reportAppliedAim(session, args);
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
-    const { overflow, collision } = await readLayoutStatus(session);
-    const regions = await readCaptureRegions(session);
-    mark("layout");
-    const shot = await session.send("Page.captureScreenshot", {
-      format: "png",
-      fromSurface: true,
-      captureBeyondViewport: false,
-      optimizeForSpeed: true,
-    });
-    const data = shot.data;
-    if (typeof data !== "string" || data.length === 0) {
-      throw new Error("Page.captureScreenshot returned empty data");
-    }
-    const bytes = Buffer.from(data, "base64");
+    const expected = scaleProfile(DEVICES[device], args.size);
+    // The DOM read runs on the main thread while the compositor produces the frame — two
+    // independent costs that used to be paid back to back.
+    const [{ overflow, collision, ...regions }, { bytes, via }] = await Promise.all([
+      readCapturePageState(session),
+      captureViewportPng(session, {
+        screencast: screencastCapturesFully(expected),
+        expect: {
+          width: Math.round(expected.width * expected.deviceScaleFactor),
+          height: Math.round(expected.height * expected.deviceScaleFactor),
+        },
+      }),
+    ]);
+    mark(`frame(${via})`);
     writePngAtomic(outPath, bytes);
     const decoded = decodePng(bytes);
     const frame = computeShotMetrics(decoded.width, decoded.height, decoded.data);
@@ -465,7 +457,7 @@ async function shootOne(
     });
     writeShotRecord(outPath, record);
     console.log(outPath);
-    mark("capture");
+    mark("score");
     const profile = DEVICES[device];
     const label = `${device} ${profile.width}x${profile.height}${args.size === "half" ? " (half-res)" : ""}`;
     let ok = true;

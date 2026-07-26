@@ -4,6 +4,8 @@ import type { AddressInfo } from "node:net";
 
 import {
   type CdpSession,
+  DEVICES,
+  captureViewportPng,
   checkoutIdentity,
   chromeGraphicsArgs,
   closePageTarget,
@@ -12,6 +14,7 @@ import {
   resolveDevPort,
   resolveWebPort,
   resolveWarmChromePort,
+  screencastCapturesFully,
   windowsPersistentChromeCommand,
 } from "./browser-lib";
 
@@ -210,5 +213,98 @@ describe("capture navigation failures", () => {
       },
     });
     await expect(navigateCapturePage(session, "http://127.0.0.1:5712/playground", 1_000)).resolves.toBeUndefined();
+  });
+});
+
+/** Minimal PNG head — {@link captureViewportPng}'s size guard only reads the IHDR. */
+function pngHead(width: number, height: number): string {
+  const bytes = Buffer.alloc(24);
+  Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]).copy(bytes, 0);
+  bytes.write("IHDR", 12, "ascii");
+  bytes.writeUInt32BE(width, 16);
+  bytes.writeUInt32BE(height, 20);
+  return bytes.toString("base64");
+}
+
+function castSession(options: {
+  /** Frames the pump emits once `Page.startScreencast` is sent, in order. */
+  frames?: { data: string; timestamp?: number }[];
+  screenshot?: string;
+}): { session: CdpSession; calls: string[] } {
+  const calls: string[] = [];
+  const handlers = new Map<string, (params: Record<string, unknown>) => void>();
+  const session = {
+    on(method: string, handler: (params: Record<string, unknown>) => void) {
+      handlers.set(method, handler);
+      return () => handlers.delete(method);
+    },
+    async send(method: string) {
+      calls.push(method);
+      if (method === "Page.startScreencast") {
+        for (const frame of options.frames ?? []) {
+          setTimeout(
+            () =>
+              handlers.get("Page.screencastFrame")?.({
+                sessionId: 1,
+                data: frame.data,
+                metadata: { timestamp: frame.timestamp ?? Date.now() / 1000 + 1 },
+              }),
+            1,
+          );
+        }
+      }
+      if (method === "Page.captureScreenshot") return { data: options.screenshot ?? pngHead(1600, 900) };
+      return {};
+    },
+    async evaluate() {
+      return undefined;
+    },
+  } as unknown as CdpSession;
+  return { session, calls };
+}
+
+describe("captureViewportPng", () => {
+  const expect1600 = { width: 1600, height: 900 };
+
+  test("takes the next composited frame off the screencast pump", async () => {
+    const { session, calls } = castSession({ frames: [{ data: pngHead(1600, 900) }] });
+    const shot = await captureViewportPng(session, { expect: expect1600, timeoutMs: 2_000 });
+    expect(shot.via).toBe("screencast");
+    expect(calls).toContain("Page.stopScreencast");
+    expect(calls).not.toContain("Page.captureScreenshot");
+  });
+
+  test("ignores a frame the compositor presented before the request", async () => {
+    const stale = { data: pngHead(1600, 900), timestamp: 1 };
+    const { session } = castSession({ frames: [stale] });
+    const shot = await captureViewportPng(session, { expect: expect1600, timeoutMs: 300 });
+    expect(shot.via).toBe("screenshot");
+  });
+
+  test("falls back when the pump delivers a differently-sized frame", async () => {
+    // The pump emits CSS pixels, so a dsf>1 profile would silently halve the shot.
+    const { session } = castSession({ frames: [{ data: pngHead(390, 844) }] });
+    const shot = await captureViewportPng(session, { expect: { width: 780, height: 1688 }, timeoutMs: 2_000 });
+    expect(shot.via).toBe("screenshot");
+  });
+
+  test("falls back when no frame arrives before the deadline", async () => {
+    const { session, calls } = castSession({ frames: [] });
+    const shot = await captureViewportPng(session, { expect: expect1600, timeoutMs: 100 });
+    expect(shot.via).toBe("screenshot");
+    expect(calls).toContain("Page.stopScreencast");
+  });
+
+  test("screencast: false never starts the pump", async () => {
+    const { session, calls } = castSession({ frames: [{ data: pngHead(1600, 900) }] });
+    const shot = await captureViewportPng(session, { screencast: false });
+    expect(shot.via).toBe("screenshot");
+    expect(calls).not.toContain("Page.startScreencast");
+  });
+
+  test("screencastCapturesFully rejects the dsf>1 profiles", () => {
+    expect(screencastCapturesFully(DEVICES.desktop)).toBe(true);
+    expect(screencastCapturesFully(DEVICES.mobile)).toBe(false);
+    expect(screencastCapturesFully(DEVICES["mobile-landscape"])).toBe(false);
   });
 });

@@ -713,6 +713,121 @@ export function launchPersistentChrome(
   return { pid, child: null };
 }
 
+export type CaptureVia = "screencast" | "screenshot";
+
+export interface ViewportPng {
+  bytes: Buffer;
+  /** Which CDP path produced the pixels — recorded in the shot's timing line. */
+  via: CaptureVia;
+}
+
+/** Screencast wait before falling back; below the ~20s a software-GL captureScreenshot costs. */
+export const SCREENCAST_CAPTURE_TIMEOUT_MS = 15_000;
+
+/**
+ * Whether the screencast pump reproduces this profile's pixels exactly. It emits CSS-pixel
+ * frames, so a `deviceScaleFactor` above 1 would silently halve a mobile shot's resolution.
+ */
+export function screencastCapturesFully(profile: DeviceProfile): boolean {
+  return profile.deviceScaleFactor === 1;
+}
+
+/** IHDR width/height without inflating the image data. */
+function pngSize(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes.length < 24 || bytes[0] !== 137 || bytes[1] !== 80) return null;
+  const read = (offset: number): number =>
+    ((bytes[offset] << 24) | (bytes[offset + 1] << 16) | (bytes[offset + 2] << 8) | bytes[offset + 3]) >>> 0;
+  return { width: read(16), height: read(20) };
+}
+
+/**
+ * Take the next composited frame off the screencast pump, or null when none arrives
+ * in time. `notBefore` drops a frame the compositor presented before this request, so
+ * a stale surface can never be handed back as the capture.
+ */
+async function nextScreencastPng(
+  session: CdpSession,
+  timeoutMs: number,
+  expect?: { width: number; height: number },
+): Promise<Buffer | null> {
+  const notBefore = Date.now() / 1000;
+  return await new Promise<Buffer | null>((resolvePromise) => {
+    let settled = false;
+    const finish = (value: Buffer | null): void => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      off();
+      void session.send("Page.stopScreencast").catch(() => {});
+      resolvePromise(value);
+    };
+    const timer = setTimeout(() => finish(null), timeoutMs);
+    const off = session.on("Page.screencastFrame", (params) => {
+      const sessionId = params.sessionId;
+      if (typeof sessionId === "number" || typeof sessionId === "string") {
+        void session.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
+      }
+      const data = params.data;
+      if (typeof data !== "string" || data.length === 0) return;
+      const timestamp = (params.metadata as { timestamp?: number } | undefined)?.timestamp;
+      if (typeof timestamp === "number" && timestamp < notBefore) return;
+      const bytes = Buffer.from(data, "base64");
+      const size = pngSize(bytes);
+      // A downscaled or unreadable frame is not this shot — take the slow honest path.
+      if (size === null || (expect !== undefined && (size.width !== expect.width || size.height !== expect.height))) {
+        finish(null);
+        return;
+      }
+      finish(bytes);
+    });
+    void session.send("Page.startScreencast", { format: "png", everyNthFrame: 1 }).catch(() => finish(null));
+  });
+}
+
+/**
+ * Pull the viewport as a lossless PNG.
+ *
+ * `Page.captureScreenshot` re-rasters and re-composites the whole frame synchronously;
+ * on software GL that costs several frame times (measured ~22s against a 1600x900 WebGL
+ * scene whose own cadence is ~4s/frame). The screencast pump hands over the next
+ * composited frame instead — same compositor, same PNG encoder, same dimensions — for
+ * roughly one frame time. Anything that does not deliver a fresh, correctly-sized frame
+ * within `timeoutMs` falls back to `Page.captureScreenshot`, so a page that never
+ * commits another frame still captures. `JG_CAPTURE_SCREENCAST=0` forces the old path.
+ *
+ * The pump emits CSS-pixel frames — it ignores `deviceScaleFactor` — so a shot under a
+ * dsf>1 profile (mobile) must pass `screencast: false` and keep the full-resolution path.
+ * {@link screencastCapturesFully} decides that from the device profile.
+ */
+export async function captureViewportPng(
+  session: CdpSession,
+  options: { timeoutMs?: number; expect?: { width: number; height: number }; screencast?: boolean } = {},
+): Promise<ViewportPng> {
+  if (options.screencast !== false && process.env.JG_CAPTURE_SCREENCAST !== "0") {
+    try {
+      const bytes = await nextScreencastPng(
+        session,
+        options.timeoutMs ?? SCREENCAST_CAPTURE_TIMEOUT_MS,
+        options.expect,
+      );
+      if (bytes !== null) return { bytes, via: "screencast" };
+    } catch {
+      /* fall back to the synchronous capture */
+    }
+  }
+  const shot = await session.send("Page.captureScreenshot", {
+    format: "png",
+    fromSurface: true,
+    captureBeyondViewport: false,
+    optimizeForSpeed: true,
+  });
+  const data = shot.data;
+  if (typeof data !== "string" || data.length === 0) {
+    throw new Error("Page.captureScreenshot returned empty data");
+  }
+  return { bytes: Buffer.from(data, "base64"), via: "screenshot" };
+}
+
 /**
  * Poll `data-jg-capture` until the page reports an honest frame (`ready`) or
  * surfaces an error, shared by shoot and drive. Throws with the page-reported
@@ -765,19 +880,30 @@ export interface CaptureRegions {
 /** Cap on returned mask rects; the largest are kept, so the tail costs nothing to drop. */
 const MAX_CAPTURE_MASKS = 200;
 
+/** Layout status the shot is judged against, read in the same pass as the regions. */
+export interface CapturePageState extends CaptureRegions {
+  overflow: string | null;
+  collision: string | null;
+}
+
 /**
- * Locate the 3D viewport and everything painted over it, in captured-image pixels. Scoring
- * the whole frame lets a busy HUD carry a dead viewport past every threshold — a buried
- * camera still scored `nonblank` because the panels alone supplied the entropy.
+ * Locate the 3D viewport, everything painted over it (in captured-image pixels), and the
+ * HUD layout status — everything a shot needs off the page, in **one** `Runtime.evaluate`.
+ * Scoring the whole frame lets a busy HUD carry a dead viewport past every threshold — a
+ * buried camera still scored `nonblank` because the panels alone supplied the entropy.
  *
  * Masks are discovered by what an element *paints*, not by what it opts into: a game whose
  * HUD is raw divs is the common case, and an opt-in marker would have covered exactly the
  * games that already use the shipped panels. `data-jg-capture-mask` forces an element in.
  * Over-masking is safe — the viewport verdict is withheld once too little of the region
  * survives (see `MIN_SAMPLED_SHARE`).
+ *
+ * One evaluate, not two: each round trip queues behind the page's own rAF work, so a second
+ * read cost another whole frame time (measured 14.2s for the pair on a scene rendering at
+ * ~4s/frame).
  */
-export async function readCaptureRegions(session: CdpSession): Promise<CaptureRegions> {
-  const raw = await session.evaluate<CaptureRegions | null>(`(() => {
+export async function readCapturePageState(session: CdpSession): Promise<CapturePageState> {
+  const raw = await session.evaluate<CapturePageState | null>(`(() => {
     const dpr = window.devicePixelRatio || 1;
     const box = (el) => {
       const r = el.getBoundingClientRect();
@@ -793,6 +919,17 @@ export async function readCaptureRegions(session: CdpSession): Promise<CaptureRe
       return parts.length < 4 || parts[3] > 0.05;
     };
     const masks = [];
+    const accepted = [];
+    // A rect wholly inside an accepted mask adds nothing to the union, so it never needs a
+    // getComputedStyle — the per-element style resolution is what makes this pass expensive on
+    // a deep HUD (measured ~10s on one game, most of it style work on nested panel children).
+    const covered = (r) => {
+      for (let i = 0; i < accepted.length; i += 1) {
+        const m = accepted[i];
+        if (r.left >= m.left && r.right <= m.right && r.top >= m.top && r.bottom <= m.bottom) return true;
+      }
+      return false;
+    };
     for (const el of document.querySelectorAll("body *")) {
       if (el.tagName === "CANVAS") continue;
       const forced = el.hasAttribute("data-jg-capture-mask") || el.hasAttribute("data-hud-panel");
@@ -802,15 +939,26 @@ export async function readCaptureRegions(session: CdpSession): Promise<CaptureRe
           r.bottom < canvasRect.top || r.top > canvasRect.bottom)) continue;
       // An ancestor of the canvas is the page frame, not an overlay drawn on top of it.
       if (canvas !== null && el.contains(canvas)) continue;
+      if (covered(r)) continue;
       const style = getComputedStyle(el);
       if (style.visibility === "hidden" || style.display === "none" || Number(style.opacity) <= 0.1) continue;
       if (!forced && !paints(style)) continue;
+      accepted.push(r);
       masks.push(box(el));
     }
     masks.sort((a, b) => b.width * b.height - a.width * a.height);
-    return { ...(canvasRect === null ? {} : { region: box(canvas) }), masks: masks.slice(0, ${MAX_CAPTURE_MASKS}) };
+    const attr = (selector, name) => {
+      const value = document.querySelector(selector)?.getAttribute(name) ?? null;
+      return typeof value === "string" && value.length > 0 ? value : null;
+    };
+    return {
+      ...(canvasRect === null ? {} : { region: box(canvas) }),
+      masks: masks.slice(0, ${MAX_CAPTURE_MASKS}),
+      overflow: attr("[data-hud-overflow]", "data-hud-overflow"),
+      collision: attr("[data-jg-layout-collision]", "data-jg-layout-collision"),
+    };
   })()`);
-  return { masks: [], ...(raw ?? {}) };
+  return { masks: [], overflow: null, collision: null, ...(raw ?? {}) };
 }
 
 /**
@@ -838,6 +986,49 @@ export function forwardPageConsole(session: CdpSession, prefix: string): () => v
   });
 }
 
+const CAPTURE_SIGNAL_BINDING = "__jgCaptureSignal";
+/** Sessions whose readiness binding is already installed — re-registering duplicates it per navigation. */
+const readinessInstalled = new WeakSet<CdpSession>();
+
+/**
+ * Push readiness instead of polling for it. Every `Runtime.evaluate` poll queues behind the
+ * page's own rAF work, so on a heavy WebGL page the flag is seen up to a frame time after it
+ * is set; a MutationObserver reports it in the task that sets it. Installation is best-effort —
+ * the poll below stays as the backstop, so an older page or a failed binding still works.
+ */
+async function installReadinessSignal(session: CdpSession): Promise<void> {
+  if (readinessInstalled.has(session)) return;
+  readinessInstalled.add(session);
+  // Runs at document start, before <html> exists — hence the two-stage attach.
+  const source = `(() => {
+    const check = () => {
+      const root = document.documentElement;
+      if (root === null) return false;
+      const status = root.dataset.jgCapture ?? null;
+      if (status !== "ready" && status !== "error") return false;
+      const state = { status, error: root.dataset.jgCaptureError ?? null };
+      try { window.${CAPTURE_SIGNAL_BINDING}(JSON.stringify(state)); } catch { /* binding gone */ }
+      return true;
+    };
+    const attach = () => {
+      const root = document.documentElement;
+      if (root === null) return false;
+      if (!check()) {
+        new MutationObserver(check).observe(root, {
+          attributes: true,
+          attributeFilter: ["data-jg-capture"]
+        });
+      }
+      return true;
+    };
+    if (attach()) return;
+    const pending = new MutationObserver(() => { if (attach()) pending.disconnect(); });
+    pending.observe(document, { childList: true });
+  })()`;
+  await session.send("Runtime.addBinding", { name: CAPTURE_SIGNAL_BINDING });
+  await session.send("Page.addScriptToEvaluateOnNewDocument", { source });
+}
+
 /** Navigate and surface browser/page failures instead of waiting for the capture timeout. */
 export async function navigateCapturePage(
   session: CdpSession,
@@ -846,8 +1037,17 @@ export async function navigateCapturePage(
 ): Promise<void> {
   let pageFailure: string | undefined;
   let frameId: string | undefined;
+  let signalled: { status: string | null; error: string | null } | undefined;
   const requestFrames = new Map<string, string>();
   const pendingDocumentFailures: Array<{ frameId?: string; message: string }> = [];
+  const offSignal = session.on("Runtime.bindingCalled", (params) => {
+    if (params.name !== CAPTURE_SIGNAL_BINDING || typeof params.payload !== "string") return;
+    try {
+      signalled = JSON.parse(params.payload) as { status: string | null; error: string | null };
+    } catch {
+      /* malformed payload — the poll below still reads the real flag */
+    }
+  });
   const offException = session.on("Runtime.exceptionThrown", (params) => {
     pageFailure ??= exceptionMessage(params);
   });
@@ -867,6 +1067,7 @@ export async function navigateCapturePage(
   });
   try {
     await session.send("Network.enable");
+    await installReadinessSignal(session).catch(() => {});
     const navigation = await session.send("Page.navigate", { url });
     if (typeof navigation.errorText === "string" && navigation.errorText.length > 0) {
       throw new Error(`navigation failed for ${url}: ${navigation.errorText}`);
@@ -878,19 +1079,28 @@ export async function navigateCapturePage(
     if (matchingFailure !== undefined) pageFailure ??= matchingFailure.message;
 
     const deadline = Date.now() + timeoutMs;
+    // The pushed signal is the fast path; the evaluate below is the backstop, polled slowly
+    // so it does not itself compete with the page for the main thread.
+    let nextPollAt = Date.now();
     while (Date.now() < deadline) {
       if (pageFailure !== undefined) throw new Error(pageFailure);
-      const remote = await session.evaluate<{ status: string | null; error: string | null }>(`({
-        status: document.documentElement.dataset.jgCapture ?? null,
-        error: document.documentElement.dataset.jgCaptureError ?? null
-      })`);
+      const remote =
+        signalled ??
+        (Date.now() >= nextPollAt
+          ? ((nextPollAt = Date.now() + 500),
+            await session.evaluate<{ status: string | null; error: string | null }>(`({
+              status: document.documentElement.dataset.jgCapture ?? null,
+              error: document.documentElement.dataset.jgCaptureError ?? null
+            })`))
+          : undefined);
       if (remote?.status === "ready") return;
       if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 25));
     }
     if (pageFailure !== undefined) throw new Error(pageFailure);
     throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
   } finally {
+    offSignal();
     offException();
     offRequest();
     offLoadingFailed();
