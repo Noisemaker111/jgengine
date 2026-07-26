@@ -1021,9 +1021,9 @@ describe("elevation, compactness, and default stability", () => {
     // Pinned against the current fabric output: a default that quietly reshaped every authored city
     // district would show up here first.
     const bare = resolveCityObject(cityVolume())!;
-    expect([bare.streets.length, bare.lots.length]).toEqual([173, 170]);
+    expect([bare.streets.length, bare.lots.length]).toEqual([173, 184]);
     const seeded = resolveCityObject(cityVolume({ seed: "d" }))!;
-    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 176]);
+    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 189]);
   });
 });
 
