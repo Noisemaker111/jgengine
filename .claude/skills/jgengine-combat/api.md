@@ -271,6 +271,7 @@
 
 - `ComboPoints` (interface): interface ComboPoints — ⚠ undocumented
 - `ComboPointsConfig` (interface): interface ComboPointsConfig — ⚠ undocumented
+- `ComboPointsSnapshot` (interface): interface ComboPointsSnapshot — Complete serializable state for {@link ComboPoints}; `remaining: null` means no expiry is running.
 - `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
 
 ## @jgengine/core/combat/comboString
@@ -506,6 +507,8 @@
 
 - `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
 - `ResourcePoolConfig` (interface): interface ResourcePoolConfig — ⚠ undocumented
+- `ResourcePoolRetune` (interface): interface ResourcePoolRetune — Runtime tuning patch for {@link ResourcePool.retune} — omitted fields keep their current value.
+- `ResourcePoolSnapshot` (interface): interface ResourcePoolSnapshot — Complete serializable state for a {@link ResourcePool}.
 - `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
 
 ## @jgengine/core/combat/rewardAllocation
