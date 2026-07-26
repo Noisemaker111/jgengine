@@ -2,6 +2,28 @@
 
 Read [README.md](README.md) first. It owns stable project truth: repository map, packages, layering, stack, commands, publishing model, and license. Do not duplicate those facts here or in skills.
 
+## Talking to the user
+
+The user reads these replies on a phone. Long replies are a defect, not thoroughness. Verbosity is the single most-reported friction in this repo — treat a wall of prose as seriously as a failing test.
+
+**Default reply shape.** Every reply that reports work is a short answer, then a stop:
+
+```
+<one line: what you did>
+<one line each: what still needs doing, if anything>
+<links: PR, issue, screenshot>
+```
+
+**Hard limits.** Six lines or fewer by default; ten is the ceiling for a genuinely multi-part result. No section headers, no "Where this landed", no bolded essay titles, no closing summary that repeats the body. A prose paragraph over three sentences must be earned by a question the user actually asked. Numbered lists are for real enumerations (three files changed, two things left), never for narrating reasoning.
+
+**Do not write:** recaps of the plan you already stated, tours of what you read or considered and rejected, per-file walkthroughs, justifications for decisions nobody questioned, restatements of tool output the user can see, apologies, victory laps, or "let me know if you want…" offers. If it is not a result, a blocker, or a question, it does not go in chat.
+
+**Detail lives elsewhere.** Rationale, verification story, root-cause paragraphs, and screenshots belong in the PR body, the issue thread, or a commit message — those have readers who want them. Chat gets the link, not the contents.
+
+**Expand only on request.** "Explain", "why", "walk me through", or a direct design question earns depth — then answer that question and stop, still without ceremony. If a decision genuinely needs the user, ask one concrete question with the options named; never an essay ending in a question.
+
+**Subagents.** A worker's report to the main agent may be as dense as it needs to be. The user-facing synthesis is still six lines. Never paste a subagent report into chat.
+
 ## Product invariants
 
 - **Author world content in the editor.** Scenes, placement, terrain, paths, zones, foliage, and assets belong in `editor.scene.json`, authored through the editor GUI or RPC/CLI. Any request that adds, moves, restyles, or removes visible world content — streets, buildings, props, enemy/NPC placement, phase or trigger locations, "design this world", "make it look better" — is an editor authoring task first, however it is phrased. Runtime and gameplay consume that document through shared engine primitives. If the editor cannot express required content, file a `[FEATURE]` issue before any code fallback; never hardcode geometry or coordinate arrays a scene can own. Use `jgengine-editor` for authoring and `jgengine-world` for runtime consumption.

@@ -44,6 +44,8 @@ For a bugfix, write the root-cause reinforcement paragraph before shipping: name
 
 Check whether the branch already has a PR. Push with a standalone `git push -u origin <branch>` command, open one ready-for-review PR, and include validation, `Closes #N`, and (for bugfixes) the root-cause reinforcement paragraph. In the `Noisemaker111` repo, enable squash auto-merge on the PR (`enable_pr_auto_merge`, or `gh pr merge --squash --auto`) so GitHub lands it itself once CI is green. Subscribe to PR activity when supported, report the link, and stop.
 
+Report to the user in the short shape [CLAUDE.md](../../../CLAUDE.md#talking-to-the-user) defines: what shipped, what is still open, the PR link. The validation story, root-cause paragraph, and screenshots live in the PR body — do not repeat them in chat.
+
 Enable auto-merge only in the `Noisemaker111` repo — the user never merges by hand there. For any other owner/repo, park the PR unmerged and never enable auto-merge. Never bump a version or publish an npm release to force release unless the user explicitly asks; the user owns release and publish timing. CI failure feedback is fixed on the same branch and pushed to the same PR (auto-merge stays armed and lands the fixed run).
 
 Restarting a branch whose PR already squash-merged (its remote branch auto-deleted): run `git fetch --prune` before pushing again. Without it, `git push --force-with-lease` rejects with `stale info` and the branch has no remote ref to compare against — start the follow-up from a fresh branch off current `origin/main` rather than the parked one.
