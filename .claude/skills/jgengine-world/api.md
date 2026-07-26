@@ -788,7 +788,7 @@
 - `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions — ⚠ undocumented
 - `KinematicVehicleStep` (interface): interface KinematicVehicleStep — ⚠ undocumented
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
-- `createKinematicVehicle` (function): function createKinematicVehicle(tuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
+- `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 
 ## @jgengine/core/physics/physicsWorld
 
@@ -2149,7 +2149,7 @@
 - `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
 - `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
 - `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
-- `createKinematicVehicle` (function): function createKinematicVehicle(tuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
+- `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented

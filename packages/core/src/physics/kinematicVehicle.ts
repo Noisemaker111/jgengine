@@ -14,6 +14,28 @@ export interface KinematicVehicleTuning {
   handbrakeGrip: number;
   /** Forward-speed decay per second when coasting (sleds, boats); default `0`. */
   rollingResistance?: number;
+  /**
+   * Constant coast deceleration in world units/s², applied when the throttle is lifted and the brake
+   * is not driving reverse. Unlike `rollingResistance` (a proportional decay, so a fast car sheds
+   * speed quickly and a slow one crawls forever), this is the flat road-load feel karts and arcade
+   * racers want; it is capped at `|speed| / dt` so coasting can never push the vehicle backwards.
+   * The `chassis` block derives this from mass and gearing instead — set one or the other, not both.
+   * Default `0` (coast forever).
+   */
+  coastDeceleration?: number;
+  /**
+   * Reverse drive force as a fraction of `engineAccel`, for the arcade path. Reverse is intentionally
+   * softer than forward; raise it for karts that need a brisk backup, lower it for heavy vehicles.
+   * Default {@link DEFAULT_REVERSE_FORCE_SCALE}. With a `chassis` block, `chassis.reverseForceScale`
+   * takes precedence.
+   */
+  reverseForceScale?: number;
+  /**
+   * Downward acceleration in world units/s² applied to the vehicle's hop/air state, enabling
+   * {@link KinematicVehicle.hop}. Omit to disable vertical motion entirely, which keeps every
+   * existing ground vehicle on the flat path with no air state to integrate.
+   */
+  hopGravity?: number;
   /** Optional higher-fidelity powertrain. Omit to preserve the direct arcade acceleration model. */
   powertrain?: KinematicPowertrainTuning;
   /** Optional bicycle-model steering with speed-sensitive lock and smoothed rack response. */
@@ -127,6 +149,11 @@ export interface KinematicVehicleModifiers {
   accelScale?: number;
   /** Scale turn rate this tick (brace penalty, heavy-load steering). */
   turnRateScale?: number;
+  /**
+   * Scale braking force this tick (worn pads, ice, a brace bonus that stiffens the whole drivetrain).
+   * Separate from `accelScale` because stronger drive and stronger brakes are not the same upgrade.
+   */
+  brakeScale?: number;
 }
 
 export interface KinematicVehicleStep {
@@ -155,6 +182,14 @@ export interface KinematicVehicleStep {
   wheelspin: boolean;
   bodyPitch: number;
   bodyRoll: number;
+  /**
+   * Height above the vehicle's ground plane from an in-progress hop, world units; `0` while grounded
+   * and always `0` without `hopGravity`. `tickDrivableVehicle` adds this on top of the sampled ground
+   * height, so a hopping vehicle still follows terrain underneath it.
+   */
+  airOffset: number;
+  /** `true` while `airOffset > 0` — gate landing effects, air control, and trick scoring off this. */
+  airborne: boolean;
 }
 
 /**
@@ -169,16 +204,29 @@ export interface KinematicVehicle {
   velocity(): readonly [number, number];
   /** Scale the current velocity (boost pads, hard collisions). */
   scaleVelocity(factor: number): void;
+  /**
+   * Launch the vehicle upward with the given vertical impulse (world units/s). Returns `false` — and
+   * changes nothing — when the vehicle is already airborne or the tuning has no `hopGravity`, so a
+   * held jump key cannot ratchet a vehicle into orbit.
+   */
+  hop(impulse: number): boolean;
+  /**
+   * Replace the tuning in place, keeping position, heading, velocity and gear state. This is the
+   * seam for vehicles whose stats change during play — an installed part, a damaged engine, a
+   * temporary debuff — which must NOT cost the vehicle its momentum the way rebuilding the sim
+   * would. For a change that lasts a single tick, pass {@link KinematicVehicleModifiers} instead.
+   */
+  retune(next: KinematicVehicleTuning): void;
   resetTo(position: readonly [number, number, number], heading: number): void;
 }
 
 export function createKinematicVehicle(
-  tuning: KinematicVehicleTuning,
+  initialTuning: KinematicVehicleTuning,
   options: KinematicVehicleOptions = {},
 ): KinematicVehicle {
-  const grip = tuning.grip ?? DEFAULT_GRIP_CURVE;
-  const chassis = tuning.chassis;
-  const rollingResistance = tuning.rollingResistance ?? 0;
+  // Mutable so `retune` can swap the whole block without disturbing the integrator's state; every
+  // read below is per-tick rather than captured at construction for the same reason.
+  let tuning = initialTuning;
   const surfaceFriction = options.surfaceFriction ?? (() => 1);
   const dragAt = options.dragAt ?? (() => 0);
   const clampMove = options.clampMove;
@@ -197,6 +245,8 @@ export function createKinematicVehicle(
   let previousForwardSpeed = 0;
   let bodyPitch = 0;
   let bodyRoll = 0;
+  let airOffset = 0;
+  let verticalVelocity = 0;
 
   function forward(): readonly [number, number] {
     return [Math.sin(heading), Math.cos(heading)];
@@ -204,6 +254,10 @@ export function createKinematicVehicle(
 
   return {
     tick(dt, axis, modifiers) {
+      const grip = tuning.grip ?? DEFAULT_GRIP_CURVE;
+      const chassis = tuning.chassis;
+      const rollingResistance = tuning.rollingResistance ?? 0;
+      const hopGravity = tuning.hopGravity ?? 0;
       const topSpeed = tuning.topSpeed * (modifiers?.topSpeedScale ?? 1);
       const engineAccel = tuning.engineAccel * (modifiers?.accelScale ?? 1);
       const turnRate = tuning.turnRate * (modifiers?.turnRateScale ?? 1);
@@ -294,8 +348,10 @@ export function createKinematicVehicle(
       if (axis.brake > 0) {
         if (speed > 0.2) {
           const abs = tuning.dynamics?.abs ?? 0;
-          const brakeScale = Math.max(0.15, 1 - abs * Math.max(0, Math.abs(speed) / Math.max(1, topSpeed) - 0.72));
-          absActive = brakeScale < 0.999;
+          const brakeScale =
+            Math.max(0.15, 1 - abs * Math.max(0, Math.abs(speed) / Math.max(1, topSpeed) - 0.72)) *
+            (modifiers?.brakeScale ?? 1);
+          absActive = brakeScale < 0.999 * (modifiers?.brakeScale ?? 1);
           accel -= chassis === undefined
             ? axis.brake * tuning.brakeAccel * brakeScale
             : (axis.brake * chassis.brakeForce * brakeScale) / chassis.massKg;
@@ -303,7 +359,8 @@ export function createKinematicVehicle(
         else if (speed > -tuning.reverseSpeed) {
           // Reverse is intentionally softer than forward — full engineForce made performance cars
           // hit reverse top in ~2 s and felt like a second highway gear.
-          const reverseScale = chassis?.reverseForceScale ?? DEFAULT_REVERSE_FORCE_SCALE;
+          const reverseScale =
+            chassis?.reverseForceScale ?? tuning.reverseForceScale ?? DEFAULT_REVERSE_FORCE_SCALE;
           accel -= chassis === undefined
             ? axis.brake * engineAccel * reverseScale
             : (axis.brake * chassis.engineForce * reverseScale * (modifiers?.accelScale ?? 1)) / chassis.massKg;
@@ -335,6 +392,21 @@ export function createKinematicVehicle(
           resistDecel += ENGINE_BRAKE_COEFFICIENT * GRAVITY * gearLeverage;
         }
         accel -= Math.sign(speed) * Math.min(resistDecel, Math.abs(speed) / dt);
+      }
+      // Arcade coast road-load: a flat deceleration while genuinely coasting — no throttle and no
+      // brake — capped at |speed|/dt so it can never drag the vehicle backwards through zero. The
+      // `chassis` path above derives the same feel from mass and gearing, so the two are mutually
+      // exclusive by construction rather than by convention.
+      const coastDeceleration = tuning.coastDeceleration ?? 0;
+      if (
+        chassis === undefined &&
+        coastDeceleration > 0 &&
+        dt > 0 &&
+        axis.throttle <= 0 &&
+        axis.brake <= 0 &&
+        Math.abs(speed) > 1e-4
+      ) {
+        accel -= Math.sign(speed) * Math.min(coastDeceleration, Math.abs(speed) / dt);
       }
       vx += fx * accel * dt;
       vz += fz * accel * dt;
@@ -437,6 +509,17 @@ export function createKinematicVehicle(
       );
       bodyPitch += (targetPitch - bodyPitch) * attitudeResponse;
       bodyRoll += (targetRoll - bodyRoll) * attitudeResponse;
+      // Hop/air state is a pure vertical offset above the ground plane, deliberately independent of
+      // the planar sim: a hopping vehicle still steers, still slides, and still follows the terrain
+      // underneath it. Without `hopGravity` there is no state to integrate and `airOffset` stays 0.
+      if (hopGravity > 0 && (airOffset > 0 || verticalVelocity > 0)) {
+        verticalVelocity -= hopGravity * dt;
+        airOffset += verticalVelocity * dt;
+        if (airOffset <= 0) {
+          airOffset = 0;
+          verticalVelocity = 0;
+        }
+      }
       return {
         position: [x, y, z],
         heading,
@@ -454,6 +537,8 @@ export function createKinematicVehicle(
         wheelspin,
         bodyPitch,
         bodyRoll,
+        airOffset,
+        airborne: airOffset > 0,
       };
     },
     pose: () => ({ position: [x, y, z], heading }),
@@ -461,6 +546,14 @@ export function createKinematicVehicle(
     scaleVelocity(factor) {
       vx *= factor;
       vz *= factor;
+    },
+    hop(impulse) {
+      if ((tuning.hopGravity ?? 0) <= 0 || airOffset > 0 || verticalVelocity > 0) return false;
+      verticalVelocity = impulse;
+      return true;
+    },
+    retune(next) {
+      tuning = next;
     },
     resetTo(position, nextHeading) {
       x = position[0];
@@ -477,6 +570,8 @@ export function createKinematicVehicle(
       previousForwardSpeed = 0;
       bodyPitch = 0;
       bodyRoll = 0;
+      airOffset = 0;
+      verticalVelocity = 0;
     },
   };
 }
