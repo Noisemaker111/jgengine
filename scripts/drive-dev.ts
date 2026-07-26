@@ -75,6 +75,7 @@ type Args = {
   softlockMs: number;
   epsilon: number;
   spawn?: string;
+  look?: string;
   site?: string;
   record?: string;
   recordWidth: number;
@@ -101,6 +102,13 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --spawn <x,y,z>     override the authored player spawn for this run only (adds a
                       ?spawn= overlay like ?cam=); never mutates editor.scene.json.
                        Accepts x,y,z or x,y,z,yaw (yaw radians)
+  --look <x,y,z[,dist[,height[,angle]]]>
+                      pin a detached camera on a world point for this capture:
+                      the vantage the shot actually wants, independent of the
+                      player spawn, this run's look yaw, and where the AI
+                      wandered. dist 12, height 5, angle 0 (radians) by default.
+                      Aims at a coordinate, so it never misses the way
+                      --spawn does.
   --site <path>       drive a route from the managed apps/web server instead of a game
   --rpc <json>        call the page's agent/editor bridge with this JSON payload.
                       Compose an editor aerial in one call, e.g.
@@ -221,6 +229,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
     else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
     else if (value === "--spawn") args.spawn = argv[++index];
+    else if (value === "--look") args.look = argv[++index];
     else if (value === "--site") args.site = argv[++index];
     else if (value === "--record") {
       const name = argv[++index] ?? "clip";
@@ -573,6 +582,7 @@ const exitCode = await withBrowserSession(
       }
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
+      if (args.look !== undefined && args.look.length > 0) url.searchParams.set("look", args.look);
       if (args.playtest) url.searchParams.set("seed", String(args.seed));
       if (!args.reuseStorage) await clearOriginStorage(session, new URL(url.toString()).origin);
       await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs);

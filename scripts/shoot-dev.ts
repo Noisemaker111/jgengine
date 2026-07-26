@@ -68,6 +68,7 @@ type Args = {
   run?: string[];
   settle?: number;
   spawn?: string;
+  look?: string;
   out?: string;
   url?: string;
   site?: string;
@@ -97,6 +98,13 @@ const HELP = `bun run shoot [game] [options]
   --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
                       ?spawn= overlay like --cam/?cam=); never mutates editor.scene.json.
                       Accepts x,y,z or x,y,z,yaw (yaw radians)
+  --look <x,y,z[,dist[,height[,angle]]]>
+                      pin a detached camera on a world point for this capture:
+                      the vantage the shot actually wants, independent of the
+                      player spawn, this run's look yaw, and where the AI
+                      wandered. dist 12, height 5, angle 0 (radians) by default.
+                      Aims at a coordinate, so it never misses the way
+                      --spawn does.
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
                       (page MUST set document.documentElement.dataset.jgCapture
@@ -181,6 +189,7 @@ function parseArgs(argv: string[]): Args {
       args.run = list.length > 0 ? list : args.run;
     } else if (value === "--settle") args.settle = Number(argv[++index]);
     else if (value === "--spawn") args.spawn = argv[++index];
+    else if (value === "--look") args.look = argv[++index];
     else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") {
       const raw = argv[++index];
@@ -270,6 +279,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
   if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));
   if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
+  if (args.look !== undefined && args.look.length > 0) url.searchParams.set("look", args.look);
   return url.toString();
 }
 
