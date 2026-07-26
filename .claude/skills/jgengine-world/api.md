@@ -1617,7 +1617,7 @@
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along"> — ⚠ undocumented
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented
 - `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
 - `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
@@ -2490,6 +2490,18 @@
 - `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
 - `buildingIndex` (function): function buildingIndex(buildings: readonly GeneratedBuilding[]): BuildingIndex — ⚠ undocumented
 
+## @jgengine/core/world/buildingKit
+
+- `BuildingKit` (interface): interface BuildingKit — Binds a building's generated part slots to models. A kit is plain serializable data — scene documents can carry one — and is deliberately unopinionated about art direction: the engine ships the seam, games ship the bindings.
+- `BuildingKitBinding` (type): type BuildingKitBinding = | { readonly type: "model"; readonly part: BuildingKitPart; readonly fit: BuildingKitFit } | { readonly type: "box" } | { readonly type: "omit" } — What a renderer should do with one generated part.
+- `BuildingKitFit` (type): type BuildingKitFit = "stretch" | "contain" | "cover" | "native" — How a kit model's native bounds are mapped onto the slot box `BuildingPartPlacement.scale` describes.
+- `BuildingKitInput` (interface): interface BuildingKitInput — The authoring shape {@link defineBuildingKit} normalizes into a {@link BuildingKit}.
+- `BuildingKitPart` (interface): interface BuildingKitPart — One bindable variant for a building part slot. `model` is an opaque reference the host resolves (an asset id, a pack-relative path, or a URL) — core never loads anything.
+- `BuildingKitPartInput` (type): type BuildingKitPartInput = string | BuildingKitPart — A variant as authored: a bare model reference, or the full {@link BuildingKitPart} when it needs fit or transform tuning.
+- `buildingKitVariantCounts` (function): function buildingKitVariantCounts(kit: BuildingKit): Partial<BuildingVariantCounts> — The variant counts a kit actually supplies, shaped for `BuildingConfigInput.variants`. Feed this into `generateBuilding` so seeded picks spread across exactly the models the kit binds instead of indexing past them and wrapping unevenly.
+- `defineBuildingKit` (function): function defineBuildingKit(input: BuildingKitInput): BuildingKit — Validates and normalizes a kit description, accepting bare model strings as single-field variants. Throws on empty variant lists so a typo fails at authoring time rather than silently falling back to untextured boxes.
+- `resolveBuildingKitPart` (function): function resolveBuildingKitPart(kit: BuildingKit | undefined, kind: BuildingPartKind, slot?: BuildingKitSlot): BuildingKitBinding — Resolves one generated part against a kit. Pass the placement's `kind` and its `kit` slot; the slot's `variant` wraps around the bound list, so a kit may carry any number of variants independent of the generator's `variants` counts.
+
 ## @jgengine/core/world/buildingLots
 
 - `BuildingLotOptions` (interface): interface BuildingLotOptions — Options for {@link deriveBuildingLots}.
@@ -2523,6 +2535,9 @@
 - `DEFAULT_BUILDING_STYLE` (const): const DEFAULT_BUILDING_STYLE: BuildingStyle — ⚠ undocumented
 - `GeneratedBuilding` (interface): interface GeneratedBuilding — ⚠ undocumented
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — ⚠ undocumented
+- `createBuildingConfig` (function): function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig — Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities. Use it to inspect or adjust the resolved shape before generating.
+- `generateBuilding` (function): function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding — Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorative part rolled from `probabilities` and every part tagged with a `kit` slot the renderer binds to a model (see `world/buildingKit`). Deterministic from `seed`.
+- `generateBuildingDistrict` (function): function generateBuildingDistrict(config: BuildingGridConfig): GeneratedBuilding[] — Generate a grid of buildings on lots sized by `lotSize` and separated by `streetWidth`, each with its floor count rolled from `floorRange`.
 
 ## @jgengine/core/world/carve
 
@@ -2732,7 +2747,7 @@
 - `BiomeSky` (interface): interface BiomeSky — Per-band sky/light override cross-faded along z by `createBiomeSkySampler`; unset fields fall through to the base sky.
 - `BiomesWorldConfig` (interface): interface BiomesWorldConfig extends WorldGridConfig — ⚠ undocumented
 - `BuildingEnvironmentConfig` (interface): interface BuildingEnvironmentConfig — ⚠ undocumented
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along"> — ⚠ undocumented
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented
 - `BuildingFrontageConfig` (interface): interface BuildingFrontageConfig — Street-aware placement for `building()`: instead of a grid scattered around `position`, lots are stepped along each road's frontage, offset by a consistent setback (a curb + sidewalk strip), and turned so every building FRONT faces its road. `footprint` (`w` = frontage width, `d` = depth) and `spacing` (along-road gap) are shared with the grid mode. Deterministic and bounded by `maxLots`.
 - `BuildingFrontageRoad` (interface): interface BuildingFrontageRoad — One road a `building({ along })` frontage lines with buildings: centerline + full width.
 - `EnvironmentArea` (interface): interface EnvironmentArea extends WorldBounds — ⚠ undocumented

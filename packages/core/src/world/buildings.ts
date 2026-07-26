@@ -1,3 +1,8 @@
+/**
+ * Seeded procedural buildings: a footprint of bays × floors emitted as placed facade parts — walls,
+ * windows, storefronts, roof and decor — each tagged with a kit slot `world/buildingKit` binds to a
+ * model. Deterministic and renderer-agnostic.
+ */
 import { footprintAabb, type Aabb, type Footprint, type Vec2 } from "./geometry";
 
 export type BuildingSeed = number | string;
@@ -385,7 +390,12 @@ function rangeInt(seed: BuildingSeed, key: string, min: number, max: number): nu
   return lo + Math.floor(hash01(seed, key) * (hi - lo + 1));
 }
 
-/** @internal */
+/**
+ * Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and
+ * probabilities. Use it to inspect or adjust the resolved shape before generating.
+ *
+ * @capability building-generator generate seeded buildings as placed facade parts — bays, floors, roof, decor
+ */
 export function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig {
   return {
     id: input.id ?? DEFAULT_BUILDING_CONFIG.id,
@@ -648,7 +658,14 @@ function pushCorners(parts: BuildingPartPlacement[], config: BuildingConfig, wid
   });
 }
 
-/** @internal */
+/**
+ * Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground
+ * row, corners, and a roof, with every decorative part rolled from `probabilities` and every part
+ * tagged with a `kit` slot the renderer binds to a model (see `world/buildingKit`). Deterministic
+ * from `seed`.
+ *
+ * @capability building-generator generate a seeded building as placed facade parts (bays, floors, roof, decor)
+ */
 export function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding {
   const config = createBuildingConfig(input);
   const width = config.baysWide * config.bayWidth;
@@ -713,7 +730,12 @@ export function createBuildingGrid(config: BuildingGridConfig): BuildingLot[] {
   return lots;
 }
 
-/** @internal */
+/**
+ * Generate a grid of buildings on lots sized by `lotSize` and separated by `streetWidth`, each with
+ * its floor count rolled from `floorRange`.
+ *
+ * @capability building-generator generate a grid district of seeded buildings
+ */
 export function generateBuildingDistrict(config: BuildingGridConfig): GeneratedBuilding[] {
   return createBuildingGrid(config).map((lot) => generateBuilding(lot.config));
 }

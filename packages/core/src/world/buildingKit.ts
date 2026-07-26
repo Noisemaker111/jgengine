@@ -1,3 +1,8 @@
+/**
+ * Binds the part slots `world/buildings` generates to real models, so a procedural building renders
+ * as an instanced asset kit instead of untextured blocks. Pure serializable data — core resolves
+ * bindings, the renderer loads them.
+ */
 import type { BuildingKitSlot, BuildingPartKind, BuildingVariantCounts, Vec3 } from "./buildings";
 
 /**
@@ -31,6 +36,11 @@ export interface BuildingKitPart {
   tint?: string;
 }
 
+/**
+ * Binds a building's generated part slots to models. A kit is plain serializable data — scene
+ * documents can carry one — and is deliberately unopinionated about art direction: the engine ships
+ * the seam, games ship the bindings.
+ */
 export interface BuildingKit {
   id: string;
   /** Variants per part kind; `BuildingKitSlot.variant` indexes this list, wrapping. */
@@ -43,8 +53,10 @@ export interface BuildingKit {
   fit?: BuildingKitFit;
 }
 
+/** A variant as authored: a bare model reference, or the full {@link BuildingKitPart} when it needs fit or transform tuning. */
 export type BuildingKitPartInput = string | BuildingKitPart;
 
+/** The authoring shape {@link defineBuildingKit} normalizes into a {@link BuildingKit}. */
 export interface BuildingKitInput {
   id?: string;
   parts: Readonly<Partial<Record<BuildingPartKind, readonly BuildingKitPartInput[]>>>;
@@ -93,6 +105,8 @@ function normalizeList(
  * Validates and normalizes a kit description, accepting bare model strings as single-field variants.
  * Throws on empty variant lists so a typo fails at authoring time rather than silently falling back
  * to untextured boxes.
+ *
+ * @capability building-kit bind generated facade part slots to real models instead of untextured blocks
  */
 export function defineBuildingKit(input: BuildingKitInput): BuildingKit {
   const parts: Partial<Record<BuildingPartKind, readonly BuildingKitPart[]>> = {};
@@ -133,6 +147,8 @@ function variantsFor(
  *
  * Returns `box` when the kind is unbound — the renderer keeps drawing today's block, so a partial
  * kit is a valid kit.
+ *
+ * @capability building-kit resolve one generated part to its bound model, a block fallback, or nothing
  */
 export function resolveBuildingKitPart(
   kit: BuildingKit | undefined,
@@ -152,6 +168,8 @@ export function resolveBuildingKitPart(
  * The variant counts a kit actually supplies, shaped for `BuildingConfigInput.variants`. Feed this
  * into `generateBuilding` so seeded picks spread across exactly the models the kit binds instead of
  * indexing past them and wrapping unevenly.
+ *
+ * @capability building-kit bind generated facade part slots to real models instead of untextured blocks
  */
 export function buildingKitVariantCounts(kit: BuildingKit): Partial<BuildingVariantCounts> {
   const counts: Partial<BuildingVariantCounts> = {};

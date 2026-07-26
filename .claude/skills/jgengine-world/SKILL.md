@@ -14,6 +14,7 @@ Search [capabilities.md](capabilities.md) by intent before designing a primitive
 For a *connected* walkthrough that wires several primitives into a running loop, read the goal-oriented recipes under [recipes/](recipes/) — organized by composition seam (what connects to what), never by genre. Start there before reading a game's source to learn how pieces fit; a hybrid game is just a different composition of the same primitives.
 
 - [recipes/commanding-entities.md](recipes/commanding-entities.md) — select → order → tick → resolve: direct command over a group of entities (the command loop behind squad control, base-defense, herding, autobattle, or a mutating game's real-time phase).
+- [recipes/building-kit.md](recipes/building-kit.md) — bind the facade generator's part slots to real models: one massing, swappable art per style, blocks where the kit is silent.
 
 ## Canonical workflows
 
