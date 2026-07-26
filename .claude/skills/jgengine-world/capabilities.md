@@ -366,6 +366,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineMoveOrder` (function) · `import { defineMoveOrder } from "@jgengine/core/world"`
 
+## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
+
+- `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/world"`
+
 ## order-queue — serializable per-entity command queue with lifecycle, preemption, and pluggable order kinds
 
 - `createOrderQueue` (function) · `import { createOrderQueue } from "@jgengine/core/world"`

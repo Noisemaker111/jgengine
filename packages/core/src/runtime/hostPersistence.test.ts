@@ -10,7 +10,7 @@ import {
   trimFeedEntries,
   type GameServerRecord,
 } from "./hostPersistence";
-import { createEmptyServerRow, createRuntimeSnapshot } from "./snapshot";
+import { createEmptyServerRow, createRuntimeSnapshot, markAllPlayersDirty } from "./snapshot";
 
 function makeServer(overrides: Partial<GameServerRecord> = {}): GameServerRecord {
   return {
@@ -136,7 +136,7 @@ test("planServerPersist drains leaderboard, splits sessions, and gates writes by
   ]);
   expect(plan.server.serverState.session).toEqual({});
   expect(plan.server.revision).toBe(7);
-  expect(plan.server.dirtyAt).toBe(1_000);
+  expect(plan.server.dirtyAt).toBeUndefined();
   expect(plan.server.lastSavedAt).toBe(1_000);
   expect(plan.server.sessionPlayers.alice?.session).toEqual({ casting: "frostbolt" });
   expect(plan.profiles).toHaveLength(1);
@@ -147,6 +147,7 @@ test("planServerPersist drains leaderboard, splits sessions, and gates writes by
   const noSave = planServerPersist(server, snapshot, "none", 1_000);
   expect(noSave.profiles).toHaveLength(0);
   expect(noSave.chunks).toHaveLength(0);
+  expect(noSave.server.dirtyAt).toBe(1_000);
 });
 
 test("planServerPersist records dirty chunks with no snapshot as deletions", () => {
@@ -163,9 +164,50 @@ test("planServerPersist records dirty chunks with no snapshot as deletions", () 
   expect(plan.deletedChunks).toEqual(["1,0"]);
 });
 
-test("planServerPersist keeps prior dirtyAt when snapshot is clean", () => {
+test("markAllPlayersDirty makes a freshly hydrated snapshot plan a full profile write", () => {
+  const server = makeServer({ memberUserIds: ["alice", "bob"] });
+  const hydrated = createRuntimeSnapshot({
+    gameId: "demo",
+    serverId: "srv-1",
+    revision: 5,
+    players: {
+      alice: { userId: "alice", inventories: {}, economy: { gold: 3 }, unlocks: [], session: {} },
+      bob: { userId: "bob", inventories: {}, economy: { gold: 8 }, unlocks: [], session: {} },
+    },
+  });
+  expect(planServerPersist(server, hydrated, server.save, 1_000).profiles).toHaveLength(0);
+
+  const flushed = markAllPlayersDirty(hydrated);
+  expect(flushed.revision).toBe(5);
+  const plan = planServerPersist(server, flushed, server.save, 1_000);
+  expect(plan.profiles.map((profile) => profile.userId).sort()).toEqual(["alice", "bob"]);
+  expect(plan.server.revision).toBe(5);
+});
+
+test("planServerPersist clears dirtyAt once everything outstanding is written", () => {
   const server = makeServer({ dirtyAt: 42 });
   const snapshot = createRuntimeSnapshot({ gameId: "demo", serverId: "srv-1" });
-  const plan = planServerPersist(server, snapshot, server.save, 1_000);
-  expect(plan.server.dirtyAt).toBe(42);
+  expect(planServerPersist(server, snapshot, server.save, 1_000).server.dirtyAt).toBeUndefined();
+
+  const dirty = {
+    ...snapshot,
+    players: { alice: { userId: "alice", inventories: {}, economy: {}, unlocks: [], session: {} } },
+    dirty: { server: true, players: ["alice"], chunks: [] },
+  };
+  expect(planServerPersist(server, dirty, server.save, 1_000).server.dirtyAt).toBeUndefined();
+});
+
+test("planServerPersist keeps dirtyAt when save scope cannot write the dirty state", () => {
+  const server = makeServer({ dirtyAt: 42 });
+  const base = createRuntimeSnapshot({ gameId: "demo", serverId: "srv-1" });
+  const snapshot = {
+    ...base,
+    players: { alice: { userId: "alice", inventories: {}, economy: {}, unlocks: [], session: {} } },
+    chunks: { "0,0": { chunkKey: "0,0", objects: [], entities: [] } },
+    dirty: { server: true, players: ["alice"], chunks: ["0,0"] },
+  };
+
+  expect(planServerPersist(server, snapshot, { auto: "5s", scope: "chunks" }, 1_000).server.dirtyAt).toBe(42);
+  expect(planServerPersist(server, snapshot, { auto: "5s", scope: "player" }, 1_000).server.dirtyAt).toBe(42);
+  expect(planServerPersist(makeServer(), snapshot, "none", 1_000).server.dirtyAt).toBe(1_000);
 });

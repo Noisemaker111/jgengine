@@ -1068,7 +1068,7 @@ describe("ctx.snapshot / ctx.hydrate", () => {
       player: { userId: "user_a", isNew: true },
     });
     const snap = slim.snapshot();
-    expect(Object.keys(snap).sort()).toEqual(["entities", "feed", "inventory", "stats", "store"]);
+    expect(Object.keys(snap).sort()).toEqual(["entities", "feed", "inventory", "objects", "stats", "store"]);
     expect(snap["leaderboard"]).toBeUndefined();
     expect(snap["chat"]).toBeUndefined();
   });

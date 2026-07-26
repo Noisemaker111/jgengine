@@ -31,6 +31,8 @@ import {
 import { prepareCollisionMeshSource, type CollisionMeshSource } from "../../scene/collisionMesh";
 import { raycastObjects, raycastObjectsAll } from "../../scene/objectQuery";
 import { createObjectStore, objectVisualScale, type ObjectStore } from "../../scene/objectStore";
+import type { InventorySet, ItemTraits } from "../../inventory/inventoryModel";
+import { createObjectSlots } from "./objectSlots";
 import { createPaintLayer, type PaintLayer } from "../../scene/paintLayer";
 import { createSelectionSet } from "../../scene/selection";
 import {
@@ -99,6 +101,15 @@ export interface SceneSubsystem {
   setOnAfterSpawn: (fn: (instanceId: string) => void) => void;
   /** Install post-despawn side effects (pose.clear) after player is constructed. */
   setOnAfterDespawn: (fn: (instanceId: string) => void) => void;
+  /** Hand the player subsystem's inventories to `sceneObjects.slots`, which is built before they exist. */
+  setInventoryAccess: (access: ObjectSlotInventoryAccess) => void;
+}
+
+/** @internal What `sceneObjects.slots` needs from the player subsystem to move items between a player and an object. */
+export interface ObjectSlotInventoryAccess {
+  traits: ItemTraits;
+  hasInventory: (inventoryId: string) => boolean;
+  inventoryFor: (userId: string) => InventorySet<string>;
 }
 
 /** @internal */
@@ -418,6 +429,16 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     signalNotify,
   );
 
+  let inventoryAccess: ObjectSlotInventoryAccess | null = null;
+  const objectSlots = createObjectSlots({
+    objects,
+    layoutOf: (instanceId) => catalogObject(instanceId)?.slotInventory ?? null,
+    traits: () => inventoryAccess?.traits ?? { stackLimit: () => Number.POSITIVE_INFINITY },
+    hasInventory: (inventoryId) => inventoryAccess?.hasInventory(inventoryId) ?? false,
+    inventoryFor: (userId) => inventoryAccess?.inventoryFor(userId) ?? null,
+    notify: signalNotify,
+  });
+
   const sceneObjects: SceneObjectContext = {
     ...objects,
     remove(instanceId) {
@@ -437,6 +458,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     reportBounds: reportObjectBounds,
     reportCollisionMesh: reportObjectCollisionMesh,
     selection: objectSelection,
+    slots: objectSlots,
   };
 
   return {
@@ -471,6 +493,9 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     },
     setOnAfterDespawn(fn) {
       onAfterDespawn = fn;
+    },
+    setInventoryAccess(access) {
+      inventoryAccess = access;
     },
   };
 }

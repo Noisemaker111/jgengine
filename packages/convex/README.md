@@ -42,6 +42,19 @@ export const { joinServer, leaveServer, runCommand, flushSave, getServer, getPla
 
 No game-specific code lives there — any JGengine game can point at the same deployment. Games without a registered `GameRuntime` fall back to a no-save runtime that only understands `engine.ping`; pass `createGameServerFunctions({ runtimes: [createGameRuntime({ gameId, commands, loop, save })] })` to make `runCommand`/tick/save actually do something.
 
+The same factory also returns `helpers` — `loadSnapshot`, `applyCommand`, `persistSnapshot`, `runCommand` — bound to the same runtimes and auth mode, for a host mutation that must pair snapshot work with its own table writes in one transaction. `loadServerSnapshot` / `persistServerSnapshot` are exported standalone for the same reason:
+
+```ts
+export const buyWithReceipt = mutation({
+  args: { serverId: v.id("jgGameServers"), input: v.any() },
+  handler: async (ctx, args) => {
+    const outcome = await helpers.runCommand(ctx, { ...args, command: "shop.buy" });
+    if (outcome.ok) await ctx.db.insert("receipts", { serverId: args.serverId, at: Date.now() });
+    return outcome;
+  },
+});
+```
+
 Every factory defaults to `auth: "anonymous"` — the client's `externalId` is trusted as claimed, fine for local dev but spoofable. Pass `{ auth: "required" }` to every factory for production; the resolved actor becomes `ctx.auth.getUserIdentity()`'s `subject`, and `externalId` is only cross-checked against it, never trusted alone.
 
 See `examples/convex-host` for the reference thin consumer (`bunx convex dev` codegens `convex/_generated/` and prints the dev URL). Point any game that declares `multiplayer: convexPresence({ topology: "shared" })` (or `convex({ topology: "shared", authority: "server" })` for a shared sim) at the same deployment. No Convex Cloud account is needed — `examples/convex-host/docker-compose.yml` runs the open-source backend anywhere Docker runs, with `CONVEX_SELF_HOSTED_URL`/`CONVEX_SELF_HOSTED_ADMIN_KEY` pointing the same CLI at it.

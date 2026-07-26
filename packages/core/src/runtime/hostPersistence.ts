@@ -341,6 +341,9 @@ export function planServerPersist(
       : entry,
   );
 
+  const canWritePlayers = isSaveEnabled(save) && saveScopeIncludesPlayer(save.scope);
+  const canWriteChunks = isSaveEnabled(save) && saveScopeIncludesChunks(save.scope);
+
   const sessionPlayers: Record<string, RuntimePlayerRow> = {};
   const profiles: PlayerProfileRecord[] = [];
   for (const userId of Object.keys(snapshot.players)) {
@@ -349,11 +352,7 @@ export function planServerPersist(
     const { persistent, session } = splitProfilePlayer(player);
     sessionPlayers[userId] = { ...persistent, session };
 
-    if (
-      isSaveEnabled(save) &&
-      saveScopeIncludesPlayer(save.scope) &&
-      snapshot.dirty.players.includes(userId)
-    ) {
+    if (canWritePlayers && snapshot.dirty.players.includes(userId)) {
       profiles.push({
         userId,
         gameId: server.gameId,
@@ -366,7 +365,7 @@ export function planServerPersist(
 
   const chunks: WorldChunkRecord[] = [];
   const deletedChunks: string[] = [];
-  if (isSaveEnabled(save) && saveScopeIncludesChunks(save.scope)) {
+  if (canWriteChunks) {
     for (const chunkKey of snapshot.dirty.chunks) {
       const chunk = snapshot.chunks[chunkKey];
       if (chunk) {
@@ -377,13 +376,19 @@ export function planServerPersist(
     }
   }
 
+  // Server state is written unconditionally, so only unwritable player/chunk dirt keeps the row dirty;
+  // anything else would make shouldAutoSave re-fire forever after a successful full flush.
+  const unwritten =
+    (snapshot.dirty.players.length > 0 && !canWritePlayers) ||
+    (snapshot.dirty.chunks.length > 0 && !canWriteChunks);
+
   return {
     server: {
       ...server,
       serverState,
       sessionPlayers,
       revision: snapshot.revision,
-      dirtyAt: snapshot.dirty.server || snapshot.dirty.players.length > 0 ? now : server.dirtyAt,
+      dirtyAt: unwritten ? (server.dirtyAt ?? now) : undefined,
       updatedAt: now,
       lastSavedAt: now,
     },

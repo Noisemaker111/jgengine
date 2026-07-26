@@ -75,7 +75,6 @@
   "packages/core/src/scene/autoTarget.ts#createAutoTargeter",
   "packages/core/src/scene/bodyBind.ts#createBodyBind",
   "packages/core/src/scene/form.ts#createForms",
-  "packages/core/src/scene/objectStore.ts#createObjectStore",
   "packages/core/src/scene/paintLayer.ts#createPaintLayer",
   "packages/core/src/scene/possession.ts#createPossession",
   "packages/core/src/scene/selection.ts#createSelectionSet",

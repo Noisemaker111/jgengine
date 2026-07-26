@@ -4,6 +4,14 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## convex-load-server-snapshot — read a hosted server's runtime snapshot inside a host-written Convex mutation
+
+- `loadServerSnapshot` (function) · `import { loadServerSnapshot } from "@jgengine/convex"`
+
+## convex-persist-server-snapshot — write runtime state and host tables in one Convex transaction
+
+- `persistServerSnapshot` (function) · `import { persistServerSnapshot } from "@jgengine/convex"`
+
 ## convex-save — save a game to Convex (cloud) through the SaveBackend seam
 
 - `createConvexSaveBackend` (function) · `import { createConvexSaveBackend } from "@jgengine/convex"`
@@ -15,3 +23,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## host-listing-filter — exclude private sessions from public browse results
 
 - `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/convex"`
+
+## placed-object-rehydrate — rebuild live placed objects, with their state and slot contents, from persisted snapshot rows
+
+- `fromRuntimeObjectRow` (function) · `import { fromRuntimeObjectRow } from "@jgengine/core/multiplayer"`
+
+## placed-object-rows — a placed object's per-instance state and container contents convert to and from the persisted snapshot row a host stores
+
+- `toRuntimeObjectRow` (function) · `import { toRuntimeObjectRow } from "@jgengine/core/multiplayer"`

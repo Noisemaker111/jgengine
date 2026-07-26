@@ -9,7 +9,14 @@ import {
   applyCommandWithOcc,
   commitIfRevisionMatch,
 } from "./occ";
-import { canJoinPrivateServer, isListablePublicly, resolveActor } from "./server";
+import {
+  canJoinPrivateServer,
+  createGameServerFunctions,
+  isListablePublicly,
+  resolveActor,
+  type JGMutationCtx,
+} from "./server";
+import { handlerOf, makeDb, serverDoc, type Doc } from "./testFixtures";
 
 function identity(overrides: Partial<UserIdentity> = {}): UserIdentity {
   return {
@@ -215,4 +222,183 @@ test("canJoinPrivateServer always accepts an existing member, code or not", () =
   expect(canJoinPrivateServer({ isMember: true, joinCode: "SECRET1", suppliedCode: undefined })).toBe(
     true,
   );
+});
+
+const PLAYER_SAVE = { auto: "5s", scope: "player" } as const;
+
+function anonCtx(db: unknown) {
+  return { db, auth: { getUserIdentity: async () => null } };
+}
+
+function player(userId: string, gold: number) {
+  return { userId, inventories: {}, economy: { gold }, unlocks: [], session: {} };
+}
+
+function goldOf(rows: Doc[], userId: string): number | undefined {
+  const row = rows.find((doc) => doc.userId === userId);
+  return (row?.playerState as { economy: Record<string, number> } | undefined)?.economy.gold;
+}
+
+/** A runtime whose onNewPlayer grants starting money, the shape issue #1617 reported as lost. */
+function grantRuntime() {
+  return createGameRuntime({
+    gameId: "grant-demo",
+    save: PLAYER_SAVE,
+    commands: {},
+    loop: {
+      onNewPlayer(ctx) {
+        const existing = ctx.snapshot.players[ctx.player.userId];
+        if (!existing) return;
+        ctx.setSnapshot(
+          markPlayerDirty(
+            {
+              ...ctx.snapshot,
+              players: {
+                ...ctx.snapshot.players,
+                [ctx.player.userId]: { ...existing, economy: { ...existing.economy, gold: 100 } },
+              },
+            },
+            ctx.player.userId,
+          ),
+        );
+      },
+    },
+  });
+}
+
+test("joinServer persists the profile an onNewPlayer grant just created", async () => {
+  const { db, seed, rows } = makeDb();
+  seed(
+    "jgGameServers",
+    serverDoc({ _id: "srv:join", gameId: "grant-demo", memberUserIds: [], save: PLAYER_SAVE }),
+  );
+
+  const fns = createGameServerFunctions({ runtimes: [grantRuntime()], auth: "anonymous" });
+  const result = (await handlerOf(fns.joinServer)(anonCtx(db), {
+    gameId: "grant-demo",
+    serverId: "srv:join",
+    externalId: "alice",
+  })) as { serverId: string; isNew: boolean };
+
+  expect(result.isNew).toBe(true);
+  expect(goldOf(rows("jgPlayerProfiles"), "alice")).toBe(100);
+});
+
+test("flushSave writes profiles hydrated from session state and clears dirtyAt", async () => {
+  const { db, seed, rows } = makeDb();
+  const server = seed(
+    "jgGameServers",
+    serverDoc({
+      _id: "srv:flush",
+      gameId: "grant-demo",
+      save: PLAYER_SAVE,
+      dirtyAt: 1,
+      sessionPlayers: { alice: player("alice", 42) },
+    }),
+  );
+
+  const fns = createGameServerFunctions({ runtimes: [grantRuntime()], auth: "anonymous" });
+  const flushed = await handlerOf(fns.flushSave)(anonCtx(db), {
+    serverId: "srv:flush",
+    externalId: "alice",
+  });
+
+  expect(flushed).toBe(true);
+  expect(goldOf(rows("jgPlayerProfiles"), "alice")).toBe(42);
+  expect(server.dirtyAt).toBeUndefined();
+});
+
+test("flushDirtyServers writes profiles for every dirty server it sweeps", async () => {
+  const { db, seed, rows } = makeDb();
+  seed(
+    "jgGameServers",
+    serverDoc({
+      _id: "srv:sweep",
+      gameId: "grant-demo",
+      save: PLAYER_SAVE,
+      dirtyAt: Date.now(),
+      memberUserIds: ["alice", "bob"],
+      sessionPlayers: { alice: player("alice", 7), bob: player("bob", 9) },
+    }),
+  );
+
+  const fns = createGameServerFunctions({ runtimes: [grantRuntime()], auth: "anonymous" });
+  const result = (await handlerOf(fns.flushDirtyServers)({ db }, {})) as { saved: number };
+
+  expect(result.saved).toBe(1);
+  expect(goldOf(rows("jgPlayerProfiles"), "alice")).toBe(7);
+  expect(goldOf(rows("jgPlayerProfiles"), "bob")).toBe(9);
+});
+
+test("helpers compose a snapshot write with a host table write in one transaction", async () => {
+  const { db, seed, rows } = makeDb();
+  seed(
+    "jgGameServers",
+    serverDoc({
+      _id: "srv:helpers",
+      gameId: "occ-demo",
+      save: PLAYER_SAVE,
+      sessionPlayers: { alice: player("alice", 10) },
+    }),
+  );
+
+  const fns = createGameServerFunctions({ runtimes: [makeRuntime()], auth: "anonymous" });
+  const ctx = anonCtx(db) as unknown as JGMutationCtx;
+
+  const loaded = await fns.helpers.loadSnapshot(ctx, "srv:helpers");
+  expect(loaded).not.toBeNull();
+  if (!loaded) throw new Error("server missing");
+
+  const applied = fns.helpers.applyCommand({
+    gameId: loaded.server.gameId,
+    loadedRevision: loaded.server.revision,
+    currentRevision: loaded.server.revision,
+    snapshot: loaded.snapshot,
+    actorUserId: "alice",
+    command: "gold.grant",
+    input: { userId: "alice", amount: 5 },
+  });
+  expect(applied.ok).toBe(true);
+  if (!applied.ok) throw new Error(applied.reason);
+
+  await fns.helpers.persistSnapshot(ctx, loaded.server, applied.snapshot);
+  await ctx.db.insert("jgFeedBuffers", {
+    serverId: loaded.server._id,
+    action: "audit",
+    entries: [{ userId: "alice", amount: 5 }],
+    updatedAt: 1,
+  });
+
+  expect(goldOf(rows("jgPlayerProfiles"), "alice")).toBe(15);
+  expect(rows("jgFeedBuffers")).toHaveLength(1);
+});
+
+test("helpers.runCommand shares the registered mutation's implementation", async () => {
+  const { db, seed, rows } = makeDb();
+  seed(
+    "jgGameServers",
+    serverDoc({
+      _id: "srv:shared",
+      gameId: "occ-demo",
+      save: PLAYER_SAVE,
+      sessionPlayers: { alice: player("alice", 1) },
+    }),
+  );
+
+  const fns = createGameServerFunctions({ runtimes: [makeRuntime()], auth: "anonymous" });
+  const ctx = anonCtx(db);
+  const args = {
+    serverId: "srv:shared",
+    command: "gold.grant",
+    input: { userId: "alice", amount: 2 },
+    externalId: "alice",
+  };
+
+  expect(await fns.helpers.runCommand(ctx as unknown as JGMutationCtx, args)).toEqual({ ok: true });
+  expect(await handlerOf(fns.runCommand)(ctx, args)).toEqual({ ok: true });
+  expect(goldOf(rows("jgPlayerProfiles"), "alice")).toBe(5);
+
+  expect(
+    await fns.helpers.runCommand(ctx as unknown as JGMutationCtx, { ...args, externalId: "mallory" }),
+  ).toEqual(await handlerOf(fns.runCommand)(ctx, { ...args, externalId: "mallory" }));
 });

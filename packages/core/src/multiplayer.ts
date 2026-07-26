@@ -35,4 +35,5 @@ export {
   type VoiceRoute,
   type VoiceTransport,
 } from "./multiplayer/voiceContract";
+export { fromRuntimeObjectRow, toRuntimeObjectRow } from "./runtime/objectRows";
 export { type ReplicationPolicy } from "./runtime/worldProjection";

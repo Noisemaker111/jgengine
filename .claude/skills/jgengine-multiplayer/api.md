@@ -14,14 +14,21 @@
 - `ConvexSaveBackendOptions` (interface): interface ConvexSaveBackendOptions — Config for {@link createConvexSaveBackend} — the Convex client, optional function refs (defaults to the `saves.*` convention), and an optional key `namespace`.
 - `ConvexSaveFunctions` (interface): interface ConvexSaveFunctions — The three Convex functions a save backend calls — a `query` that returns the stored string (or `null`) and two `mutation`s. Point them at your app's own module, or lean on the default `saves.*` convention.
 - `DEFAULT_CONVEX_POSE_RULES` (const): const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules — ⚠ undocumented
+- `GameServerHelpers` (type): type GameServerHelpers = { loadSnapshot: (ctx: JGMutationCtx, serverId: string) => Promise<LoadedServerSnapshot | null>; applyCommand: (args: { gameId: string; loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; actorUserId: string; command: string; input: unknown; }) => … — The plain-function half of {@link createGameServerFunctions}, bound to the same runtime registry and auth mode as its mutations. Reach for it when a host mutation must pair snapshot work with its own table writes in one transaction, which a pre-registered mutation cannot do.
 - `HostedGameConfig` (interface): interface HostedGameConfig — One game the hosted path can serve, bound per `gameId`: its definition plus content lookup.
 - `HostedWorldInvocation` (interface): interface HostedWorldInvocation<T> — Everything one stateless invocation reconstructs a hosted world from: the persisted record via `store`, plus the member roster and held inputs the snapshot doesn't carry, and the op to apply to the fresh session.
 - `HostedWorldOutcome` (interface): interface HostedWorldOutcome<T> — What one stateless invocation produced: the op's value, the resulting revision, whether the world changed (and was saved back), and the post-op roster.
+- `JGDataModel` (type): type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes> — Data model of the {@link jgengineTables} schema — the shape a host's own Convex ctx must satisfy to call the exported persistence helpers.
+- `JGMutationCtx` (type): type JGMutationCtx = GenericMutationCtx<JGDataModel> — Mutation ctx accepted by {@link loadServerSnapshot} / {@link persistServerSnapshot}.
 - `JG_HOSTED_TICK_MS` (const): const JG_HOSTED_TICK_MS: 1000 — Default minimum elapsed ms before `tickHostedWorlds` advances a world — override via the factory's `tickMs`.
 - `JG_RUNTIME_TICK_MS` (const): const JG_RUNTIME_TICK_MS: 1000 — ⚠ undocumented
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
+- `LoadedServerSnapshot` (type): type LoadedServerSnapshot = { server: ServerDoc; runtime: GameRuntime; snapshot: GameRuntimeSnapshot; } — A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot.
 - `REVISION_CONFLICT_REASON` (const): const REVISION_CONFLICT_REASON: "Revision conflict" — ⚠ undocumented
+- `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; externalId?: string; } — Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper.
+- `RunCommandOutcome` (type): type RunCommandOutcome = { ok: true } | { ok: false; reason: string } — Outcome of a runtime command: applied, or refused with a reason (unknown server, non-member, validation, revision conflict).
+- `ServerDoc` (type): type ServerDoc = DocumentByName<JGDataModel, "jgGameServers"> — A `jgGameServers` row — the server handle the persistence helpers load from and write back to.
 - `canJoinPrivateServer` (function): function canJoinPrivateServer(args: { isMember: boolean; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Private-server join-code gate. Existing members always pass; non-members must present a matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide whether the server is private — this only answers the code/membership half.
 - `createConvexBackend` (function): function createConvexBackend<TRawPresenceRow extends { actorExternalId: string } = { actorExternalId: string }, TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string>(options: ConvexBackendOptions<TRawPresenceRow, TPresenceRow>): ConvexBackend<TPresenceRow, TPresenceLo… — ⚠ undocumented
 - `createConvexChatSync` (function): function createConvexChatSync(client: ConvexReactClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
@@ -36,6 +43,8 @@
 - `defaultConvexGameApi` (function): function defaultConvexGameApi(): ConvexGameApi — ⚠ undocumented
 - `defaultConvexSaveFunctions` (function): function defaultConvexSaveFunctions(): ConvexSaveFunctions — Default `saves.read` / `saves.write` / `saves.remove` refs for apps that follow the convention — pass your own `functions` to override.
 - `isListablePublicly` (function): function isListablePublicly(visibility: SessionVisibility | undefined): boolean — True when a server's `visibility` should surface in public listings / browse results.
+- `loadServerSnapshot` (function): function loadServerSnapshot(ctx: JGMutationCtx, server: ServerDoc, runtime: GameRuntime): Promise<GameRuntimeSnapshot> — Hydrate a server's `GameRuntimeSnapshot` from its row, its members' profiles, and its world chunks. Reach for it when writing your own mutation that must read runtime state before touching host tables.
+- `persistServerSnapshot` (function): function persistServerSnapshot(ctx: JGMutationCtx, server: ServerDoc, snapshot: GameRuntimeSnapshot, save: SaveConfig): Promise<void> — Write a snapshot back: server row, dirty player profiles, dirty chunks, and drained leaderboard increments, all under `save`. Pair it with your own table writes to keep both in one transaction.
 - `randomConvexPlayerId` (function): function randomConvexPlayerId(): string — ⚠ undocumented
 - `resolveConvexMultiplayer` (function): function resolveConvexMultiplayer(args: { game: GameDefinition; gameId: string; url?: string; client?: ConvexReactClient; api?: ConvexGameApi; userId?: string; force?: boolean; feedActions?: string[]; poseTuning?: PoseSyncTuning; }): MultiplayerSession | null — ⚠ undocumented
 - `watchConvexQuery` (function): function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(client: ConvexReactClient, query: FunctionReference<"query", "public", TArgs, TResult>, args: TArgs, toView: (result: TResult) => TView, onChange: (view: TView) => void): () => void — ⚠ undocumented
@@ -96,11 +105,20 @@
 ## @jgengine/convex/server
 
 - `DEFAULT_CONVEX_POSE_RULES` (const): const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules — ⚠ undocumented
+- `GameServerHelpers` (type): type GameServerHelpers = { loadSnapshot: (ctx: JGMutationCtx, serverId: string) => Promise<LoadedServerSnapshot | null>; applyCommand: (args: { gameId: string; loadedRevision: number; currentRevision: number; snapshot: GameRuntimeSnapshot; actorUserId: string; command: string; input: unknown; }) => … — The plain-function half of {@link createGameServerFunctions}, bound to the same runtime registry and auth mode as its mutations. Reach for it when a host mutation must pair snapshot work with its own table writes in one transaction, which a pre-registered mutation cannot do.
+- `JGDataModel` (type): type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes> — Data model of the {@link jgengineTables} schema — the shape a host's own Convex ctx must satisfy to call the exported persistence helpers.
+- `JGMutationCtx` (type): type JGMutationCtx = GenericMutationCtx<JGDataModel> — Mutation ctx accepted by {@link loadServerSnapshot} / {@link persistServerSnapshot}.
 - `JG_RUNTIME_TICK_MS` (const): const JG_RUNTIME_TICK_MS: 1000 — ⚠ undocumented
 - `JgAuthMode` (type): type JgAuthMode = "anonymous" | "required" — ⚠ undocumented
 - `JgCronSpec` (type): type JgCronSpec = { name: string; intervalSeconds: number; functionKey: "tickActiveServers" | "flushDirtyServers"; } — ⚠ undocumented
+- `LoadedServerSnapshot` (type): type LoadedServerSnapshot = { server: ServerDoc; runtime: GameRuntime; snapshot: GameRuntimeSnapshot; } — A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot.
+- `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; externalId?: string; } — Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper.
+- `RunCommandOutcome` (type): type RunCommandOutcome = { ok: true } | { ok: false; reason: string } — Outcome of a runtime command: applied, or refused with a reason (unknown server, non-member, validation, revision conflict).
+- `ServerDoc` (type): type ServerDoc = DocumentByName<JGDataModel, "jgGameServers"> — A `jgGameServers` row — the server handle the persistence helpers load from and write back to.
 - `canJoinPrivateServer` (function): function canJoinPrivateServer(args: { isMember: boolean; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Private-server join-code gate. Existing members always pass; non-members must present a matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide whether the server is private — this only answers the code/membership half.
 - `isListablePublicly` (function): function isListablePublicly(visibility: SessionVisibility | undefined): boolean — True when a server's `visibility` should surface in public listings / browse results.
+- `loadServerSnapshot` (function): function loadServerSnapshot(ctx: JGMutationCtx, server: ServerDoc, runtime: GameRuntime): Promise<GameRuntimeSnapshot> — Hydrate a server's `GameRuntimeSnapshot` from its row, its members' profiles, and its world chunks. Reach for it when writing your own mutation that must read runtime state before touching host tables.
+- `persistServerSnapshot` (function): function persistServerSnapshot(ctx: JGMutationCtx, server: ServerDoc, snapshot: GameRuntimeSnapshot, save: SaveConfig): Promise<void> — Write a snapshot back: server row, dirty player profiles, dirty chunks, and drained leaderboard increments, all under `save`. Pair it with your own table writes to keep both in one transaction.
 
 ## @jgengine/core/multiplayer
 
@@ -137,10 +155,12 @@
 - `createPoseSyncGate` (function): function createPoseSyncGate(tuning: PoseSyncTuning): PoseSyncGate — ⚠ undocumented
 - `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
 - `findByJoinCode` (function): function findByJoinCode(listings: readonly SessionListing[], code: string): SessionListing | null — ⚠ undocumented
+- `fromRuntimeObjectRow` (function): function fromRuntimeObjectRow(row: RuntimeObjectRow): SceneObject — Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
 - `normalizeJoinCode` (function): function normalizeJoinCode(code: string): string — ⚠ undocumented
 - `quickMatch` (function): function quickMatch(listings: readonly SessionListing[], filter: MatchFilter = {}): SessionListing | null — ⚠ undocumented
 - `resolveGuestSession` (function): function resolveGuestSession(seed?: string): AuthSession — ⚠ undocumented
 - `sessionPlayer` (function): function sessionPlayer(session: AuthSession): PlayerIdentity — ⚠ undocumented
+- `toRuntimeObjectRow` (function): function toRuntimeObjectRow(object: SceneObject): RuntimeObjectRow — Convert a live placed object into its persisted row — the bridge between `ctx.scene.object` and `GameRuntimeSnapshot.server.objects`/`chunks[].objects`. Per-instance `state` is carried as `flags`. Presentation overrides (`visual`, `animation`) are catalog- and authoring-resolved and deliberately stay off the persisted row — put anything a command must own in `state`.
 - `validateFeedWrite` (function): function validateFeedWrite(gate: FeedWriteGate | undefined, action: string): { ok: true } | { ok: false; reason: string } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/chatContract

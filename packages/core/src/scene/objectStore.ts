@@ -1,5 +1,6 @@
 import { createObservableKeyedStore } from "../store/observableKeyedStore";
 import type { ModelAnimationConfig } from "../game/playableGame";
+import type { InventoryState } from "../inventory/inventoryModel";
 import type { EntityPosition } from "./entityStore";
 
 export interface ObjectVisual {
@@ -22,6 +23,19 @@ export interface SceneObject {
    * `resolveAuthoredObjects` → `placeAuthoredObjects`; `undefined` keeps the catalog-resolved default.
    */
   animation?: ModelAnimationConfig | "auto" | "none";
+  /**
+   * Opaque per-instance state for this placement — a chest's locked flag, a machine's fill level, the
+   * owner of a placed turret. Replicated and saved with the object through the `objects` snapshot
+   * module and round-trips as `RuntimeObjectRow.flags`, so a command may own it without the game
+   * hand-rolling a parallel store keyed by `instanceId`.
+   */
+  state?: Record<string, unknown>;
+  /**
+   * Container contents when this object's catalog entry declares `slotInventory`. Mutate through
+   * `ctx.scene.object.slots` rather than writing it directly — that path validates against the
+   * declared `accepts` and stack limits.
+   */
+  slots?: InventoryState;
 }
 
 export interface PlaceOptions {
@@ -29,6 +43,10 @@ export interface PlaceOptions {
   parentSpace?: string;
   rotation?: number;
   visual?: ObjectVisual;
+  /** Initial {@link SceneObject.state} for this placement. */
+  state?: Record<string, unknown>;
+  /** Initial {@link SceneObject.slots} contents; omit to start from the catalog `slotInventory` layout's empty slots. */
+  slots?: InventoryState;
   /** Per-placement rig animation override stored on the placed {@link SceneObject}; same shape as `ModelConfig.animation`. Omit to keep the catalog-resolved default. */
   animation?: ModelAnimationConfig | "auto" | "none";
   /** When `instanceId` is already placed: `"throw"` (default), `"replace"` (fresh placement over it — remount-safe world setup, #284.10), or `"keep"` (leave it untouched and return the id). */
@@ -45,6 +63,12 @@ export interface ObjectStore {
   move(instanceId: string, x: number, y: number, z: number): boolean;
   rotate(instanceId: string, rotationY: number): boolean;
   setVisual(instanceId: string, visual: ObjectVisual | undefined): boolean;
+  /** Replace {@link SceneObject.state} wholesale; `undefined` drops the field. Returns `false` when the instance is not placed. */
+  setState(instanceId: string, state: Record<string, unknown> | undefined): boolean;
+  /** Shallow-merge `patch` into {@link SceneObject.state}; a key set to `undefined` is removed. Returns `false` when the instance is not placed. */
+  patchState(instanceId: string, patch: Record<string, unknown>): boolean;
+  /** Replace {@link SceneObject.slots} wholesale; prefer `ctx.scene.object.slots` which validates against the catalog layout. */
+  setSlots(instanceId: string, slots: InventoryState | undefined): boolean;
   get(instanceId: string): SceneObject | null;
   list(filter?: ObjectListFilter): readonly SceneObject[];
   /** Stable-identity list of all placed object ids; identity changes only on place/remove, not on move/rotate/setVisual. Pair with {@link subscribeMembership} for membership-only React subscriptions (#625). */
@@ -56,6 +80,8 @@ export interface ObjectStore {
   /** Notified only when the object set changes (place/remove), never on move/rotate/setVisual — markers read live poses imperatively. */
   subscribeMembership(listener: () => void): () => void;
   snapshot(): readonly SceneObject[];
+  /** Replace the placed set with `objects` — the client half of `objects` replication; instances absent from the payload are removed. */
+  hydrate(objects: readonly SceneObject[]): void;
 }
 
 const CELL_SIZE = 1;
@@ -137,6 +163,8 @@ export function createObjectStore(): ObjectStore {
         ...(options.parentSpace !== undefined ? { parentSpace: options.parentSpace } : {}),
         ...(options.visual !== undefined ? { visual: options.visual } : {}),
         ...(options.animation !== undefined ? { animation: options.animation } : {}),
+        ...(options.state !== undefined ? { state: options.state } : {}),
+        ...(options.slots !== undefined ? { slots: options.slots } : {}),
       });
       indexAdd(instanceId, position);
       return instanceId;
@@ -166,15 +194,34 @@ export function createObjectStore(): ObjectStore {
     setVisual(instanceId, visual) {
       const current = store.get(instanceId);
       if (!current) return false;
-      store.set(instanceId, {
-        instanceId: current.instanceId,
-        catalogId: current.catalogId,
-        position: current.position,
-        rotationY: current.rotationY,
-        ...(current.parentSpace !== undefined ? { parentSpace: current.parentSpace } : {}),
-        ...(current.animation !== undefined ? { animation: current.animation } : {}),
-        ...(visual !== undefined ? { visual } : {}),
-      });
+      const { visual: _cleared, ...rest } = current;
+      store.set(instanceId, visual === undefined ? rest : { ...rest, visual });
+      return true;
+    },
+    setState(instanceId, state) {
+      const current = store.get(instanceId);
+      if (!current) return false;
+      const { state: _cleared, ...rest } = current;
+      store.set(instanceId, state === undefined ? rest : { ...rest, state });
+      return true;
+    },
+    patchState(instanceId, patch) {
+      const current = store.get(instanceId);
+      if (!current) return false;
+      const state: Record<string, unknown> = { ...current.state };
+      for (const [key, value] of Object.entries(patch)) {
+        if (value === undefined) delete state[key];
+        else state[key] = value;
+      }
+      const { state: _cleared, ...rest } = current;
+      store.set(instanceId, Object.keys(state).length === 0 ? rest : { ...rest, state });
+      return true;
+    },
+    setSlots(instanceId, slots) {
+      const current = store.get(instanceId);
+      if (!current) return false;
+      const { slots: _cleared, ...rest } = current;
+      store.set(instanceId, slots === undefined ? rest : { ...rest, slots });
       return true;
     },
     get(instanceId) {
@@ -264,6 +311,21 @@ export function createObjectStore(): ObjectStore {
     },
     snapshot() {
       return store.arraySnapshot();
+    },
+    hydrate(objects) {
+      const incoming = new Set(objects.map((object) => object.instanceId));
+      for (const current of store.arraySnapshot()) {
+        if (!incoming.has(current.instanceId)) {
+          store.delete(current.instanceId);
+          indexRemove(current.instanceId, current.position);
+        }
+      }
+      for (const object of objects) {
+        const current = store.get(object.instanceId);
+        if (current !== undefined) indexRemove(object.instanceId, current.position);
+        store.set(object.instanceId, object);
+        indexAdd(object.instanceId, object.position);
+      }
     },
   };
 }
