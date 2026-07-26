@@ -36,6 +36,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 - **`DustField` + `WeatherLayer` mode `"dust"` (`@jgengine/shell/weather`) — wind-borne particulate.** `WeatherLayer` could only do `clear`/`rain`/`snow`/`mixed`, so an arid, volcanic, ashen, or blown-out world had no way to put anything in the air. Dust drifts on horizontal wind with a slow vertical bob rather than falling; `groundBias` packs density toward the surface, motes fade near the top of the volume so recycled ones do not pop against the sky, and faster motes ride higher. Set `dustAlways` to keep it in the air alongside rain or snow instead of replacing them. Defaults `DEFAULT_DUST_COUNT`/`DEFAULT_DUST_DENSITY` sit beside the rain and snow pair.
 
+- **`modelLoadIdleMs()` from `@jgengine/shell/render/modelLoad`** reports how long the shared GLB loader has been idle (`0` while a model is in flight). Capture hosts wait on it instead of guessing a settle delay, so an establishing shot no longer races streaming models.
 
 ### Fixed
 

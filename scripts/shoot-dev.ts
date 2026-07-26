@@ -17,6 +17,7 @@ import {
   checkoutIdentity,
   ensureDevServer,
   ensureWebServer,
+  forwardPageConsole,
   isUp,
   normalizeLoopbackUrl,
   navigateCapturePageWithRetry,
@@ -29,6 +30,7 @@ import {
   type SizeMode,
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
+import { lookSearchParams, parseLookAim } from "./lookArg";
 import { computeShotMetrics, evaluateThresholds } from "./shot-metrics";
 import {
   attachDaemon,
@@ -69,6 +71,7 @@ type Args = {
   settle?: number;
   spawn?: string;
   look?: string;
+  lookFrom?: string;
   out?: string;
   url?: string;
   site?: string;
@@ -98,13 +101,16 @@ const HELP = `bun run shoot [game] [options]
   --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
                       ?spawn= overlay like --cam/?cam=); never mutates editor.scene.json.
                       Accepts x,y,z or x,y,z,yaw (yaw radians)
-  --look <x,y,z[,dist[,height[,angle]]]>
+  --look <x,z | x,y,z>
                       pin a detached camera on a world point for this capture:
                       the vantage the shot actually wants, independent of the
                       player spawn, this run's look yaw, and where the AI
-                      wandered. dist 12, height 5, angle 0 (radians) by default.
-                      Aims at a coordinate, so it never misses the way
-                      --spawn does.
+                      wandered. x,z samples the ground height. Aims at a
+                      coordinate, so it never misses the way --spawn does.
+                      A point outside the world, or a camera the terrain would
+                      bury, fails the shot instead of returning an empty frame.
+  --look-from <dist[,height[,angle]]>
+                      vantage for --look (default 12,5,0; angle in radians)
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
                       (page MUST set document.documentElement.dataset.jgCapture
@@ -190,6 +196,7 @@ function parseArgs(argv: string[]): Args {
     } else if (value === "--settle") args.settle = Number(argv[++index]);
     else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--look") args.look = argv[++index];
+    else if (value === "--look-from") args.lookFrom = argv[++index];
     else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") {
       const raw = argv[++index];
@@ -279,8 +286,30 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
   if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));
   if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
-  if (args.look !== undefined && args.look.length > 0) url.searchParams.set("look", args.look);
+  const aim = parseLookAim(args.look, args.lookFrom);
+  if (aim !== undefined) {
+    for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
+  }
   return url.toString();
+}
+
+/**
+ * Read back the aim the runner actually applied. An accepted `--look` always publishes it, so a
+ * missing readout means the override never reached the camera — the silent-no-op that used to
+ * return a plausible screenshot of the game's own view and cost a whole round of re-shooting.
+ */
+async function reportAppliedAim(session: CdpSession, args: Args): Promise<void> {
+  if (args.look === undefined || args.look.length === 0) return;
+  const applied = await session.evaluate<string | null>(
+    `document.documentElement.dataset.jgLook ?? null`,
+  );
+  if (typeof applied !== "string" || applied.length === 0) {
+    throw new Error(
+      `--look ${args.look} never reached the camera — the runner reported no applied aim. ` +
+        `--look only works on the dev-runner game shell (not --url/--site/--preview/--fixture captures).`,
+    );
+  }
+  console.error(`shoot: look applied ${applied}`);
 }
 
 async function readLayoutStatus(
@@ -324,14 +353,17 @@ async function shootOne(
   };
   const session = await openPageSession(debugPort);
   mark("target");
+  let stopConsoleForward: (() => void) | undefined;
   try {
     await session.send("Page.enable");
     await session.send("Runtime.enable");
+    stopConsoleForward = forwardPageConsole(session, "shoot:");
     await applyDevice(session, device, args.size);
     mark("setup");
     const url = targetUrl(args, device, devBase);
     await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS);
     mark("ready");
+    await reportAppliedAim(session, args);
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
     const { overflow, collision } = await readLayoutStatus(session);
@@ -386,6 +418,7 @@ async function shootOne(
     );
     return ok;
   } finally {
+    stopConsoleForward?.();
     await session.close();
   }
 }
