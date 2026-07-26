@@ -4,6 +4,7 @@ import { pickModel, resolveModelPlan, type ModelPick } from "@jgengine/shell/ren
 import { assets, CHASSIS, CLIFF_MAPS, NPC_STYLES, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
 import { MACHINE } from "../palette";
 import { enemies, type EnemyDef } from "../entities/enemies/catalog";
+import { robotChassis } from "./robots";
 
 const CHAR = "kaykit-adventurers";
 const SCIFI = "quaternius-modular-scifi";
@@ -162,6 +163,14 @@ function buildEntityModels(): Record<string, ModelConfig> {
     if (pick !== null) enemyPlan[def.id] = pick;
   }
   const models: Record<string, ModelConfig> = resolveModelPlan(assets, enemyPlan);
+
+  // Loaders walk as kit-bashed part compositions; the rigged pick above stays their fallback when a
+  // chassis piece is missing from the catalog.
+  for (const def of enemies) {
+    if (RIG_BY_ID[def.id]?.kind !== "machine") continue;
+    const chassis = robotChassis(def, BASE_HEIGHT.machine * def.scale);
+    if (chassis !== null) models[def.id] = chassis;
+  }
 
   const npcPlan: Record<string, ModelPick> = {};
   for (const [id, plan] of Object.entries(NPC_PLAN)) npcPlan[id] = npcPick(plan);

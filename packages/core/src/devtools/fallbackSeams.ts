@@ -10,9 +10,10 @@ export type FallbackSeam = "ground" | "entity" | "object" | "scatter";
 /**
  * Why a seam fell back: `omittedMapping` (no mapping supplied — often intended),
  * `unpulledPack` (a mapping was supplied but its asset pack is not pulled/indexed),
- * `noScene` (nothing authored — e.g. no environment component).
+ * `noScene` (nothing authored — e.g. no environment component),
+ * `renderError` (authored content was found but threw while rendering — always a defect).
  */
-export type FallbackCause = "omittedMapping" | "unpulledPack" | "noScene";
+export type FallbackCause = "omittedMapping" | "unpulledPack" | "noScene" | "renderError";
 
 /** A per-seam, per-cause count table. Serializable, allocation-stable (keys never change). */
 export type FallbackSeamCounts = Record<FallbackSeam, Record<FallbackCause, number>>;
@@ -21,7 +22,7 @@ export type FallbackSeamCounts = Record<FallbackSeam, Record<FallbackCause, numb
 export type FallbackSeamsReport = Partial<Record<FallbackSeam, Partial<Record<FallbackCause, number>>>>;
 
 const SEAMS: readonly FallbackSeam[] = ["ground", "entity", "object", "scatter"];
-const CAUSES: readonly FallbackCause[] = ["omittedMapping", "unpulledPack", "noScene"];
+const CAUSES: readonly FallbackCause[] = ["omittedMapping", "unpulledPack", "noScene", "renderError"];
 
 function freshCounts(): FallbackSeamCounts {
   const out = {} as FallbackSeamCounts;

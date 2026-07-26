@@ -190,3 +190,15 @@ Wiring ambientCG PBR maps into a game -> buildMaterialCatalog's MaterialMaps typ
 2026-07-26T16:39:05.344Z — claude-opus-5 — Claude
 
 Creating a session handoff in a Claude cloud session -> ce-handoff's default managed store is $TMPDIR/compound-engineering-*/, but cloud sessions are ephemeral isolated containers, so /tmp is destroyed with the session and the next session can never read the handoff. The skill only warns 'discovery assumes the receiving session can see the same host filesystem' as an aside. In a cloud/container session the default should be a durable destination (GitHub issue/PR comment or a committed file), not local temp.
+
+2026-07-26T17:39:05.009Z — claude-opus-5 — Claude
+
+capturing a 3D game preview with bun run shoot --preview → PreviewApp marked the frame ready two rAFs after mount and ignored --settle, so every capture raced GLB loading and the model was randomly half-missing (fixed in this PR)
+
+2026-07-26T17:39:05.068Z — claude-opus-5 — Claude
+
+diagnosing an invisible entity model with bun run drive/shoot → neither tool forwards the page's console output, so a caught render error that already warns with the url and stack is invisible to the agent; the only way to read it was rendering the error into the DOM from a game preview
+
+2026-07-26T17:39:05.119Z — claude-opus-5 — Claude
+
+verifying an enemy model in the-robots with bun run drive --spawn → enemies wander, so the same spawn+yaw shows robots in one run and empty desert in the next; roughly ten 2-minute capture runs went into 'is it invisible or is nothing there', which a deterministic entity preview solved in one

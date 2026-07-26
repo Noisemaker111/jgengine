@@ -5,7 +5,7 @@ import * as THREE from "three";
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 import { resolveAnimationConfig } from "@jgengine/core/game/clipRoles";
 import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
-import { useGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/react/provider";
 
 /**
  * An explicit `animation` config always wins over `"auto"`, and both the state machine and the
@@ -60,7 +60,10 @@ export function useModelAnimation(
   animationInput: ModelAnimationConfig | "auto" | "none" | undefined,
   instanceId?: string,
 ): void {
-  const ctx = useGameContext();
+  // Optional: a model must still animate its bind pose / auto clip in a preview or inspector that
+  // has no running game — a hard context requirement made every part composition unviewable outside
+  // the world, which is half of why #1588 took a session to see.
+  const ctx = useOptionalGameContext();
 
   // "auto" (stamped by catalog resolution, or set inline) derives states/one-shots from the
   // loaded GLB's actual clip names; "none" and absent render the bind pose.
@@ -194,7 +197,7 @@ export function useModelAnimation(
   ]);
 
   useEffect(() => {
-    if (instanceId === undefined || oneShots === undefined) return;
+    if (ctx === null || instanceId === undefined || oneShots === undefined) return;
     const fire = (event: string) => oneShotPlayRef.current?.(event);
     const offAnimation = ctx.game.events.on("entity.animation", (event) => {
       if (event.instanceId === instanceId) fire(event.event);
@@ -214,7 +217,7 @@ export function useModelAnimation(
 
   useFrame((_state, delta) => {
     const stateMachine = stateActionsRef.current;
-    if (stateMachine !== null && states !== undefined && instanceId !== undefined && delta > 0) {
+    if (stateMachine !== null && states !== undefined && instanceId !== undefined && delta > 0 && ctx !== null) {
       const entity = ctx.scene.entity.get(instanceId);
       if (entity !== null) {
         const [x, , z] = entity.position;

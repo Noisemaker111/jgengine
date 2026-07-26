@@ -125,7 +125,7 @@
 
 ## @jgengine/core/devtools/fallbackSeams
 
-- `FallbackCause` (type): type FallbackCause = "omittedMapping" | "unpulledPack" | "noScene" — Why a seam fell back: `omittedMapping` (no mapping supplied — often intended), `unpulledPack` (a mapping was supplied but its asset pack is not pulled/indexed), `noScene` (nothing authored — e.g. no environment component).
+- `FallbackCause` (type): type FallbackCause = "omittedMapping" | "unpulledPack" | "noScene" | "renderError" — Why a seam fell back: `omittedMapping` (no mapping supplied — often intended), `unpulledPack` (a mapping was supplied but its asset pack is not pulled/indexed), `noScene` (nothing authored — e.g. no environment component), `renderError` (authored content was found but threw while rendering — always a defect).
 - `FallbackSeam` (type): type FallbackSeam = "ground" | "entity" | "object" | "scatter" — Render seams that can resolve to a placeholder FALLBACK instead of authored content: `ground` (default green terrain), `entity`/`object` (primitive capsule/box actors), `scatter` (stylized proxy foliage).
 - `FallbackSeamCounts` (type): type FallbackSeamCounts = Record<FallbackSeam, Record<FallbackCause, number>> — A per-seam, per-cause count table. Serializable, allocation-stable (keys never change).
 - `FallbackSeamsReport` (type): type FallbackSeamsReport = Partial<Record<FallbackSeam, Partial<Record<FallbackCause, number>>>> — Non-zero-only view of {@link FallbackSeamCounts} returned by {@link fallbackSeamsSnapshot}.

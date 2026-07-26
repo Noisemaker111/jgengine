@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { ErrorPanel, LoadingPanel, formatLoadError } from "./appShared";
-import { captureArmed, setCaptureStatus } from "./captureReady";
+import { captureArmed, readCaptureQuery, setCaptureStatus } from "./captureReady";
 import { previewLoaders, type PreviewComponent } from "./registries";
 
 export function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: string }) {
@@ -38,9 +38,19 @@ export function PreviewApp({ gameId, stateKey }: { gameId: string; stateKey: str
   useEffect(() => {
     if (component === null || !captureArmed()) return;
     let cancelled = false;
+    // Two frames is honest for a DOM card, but a preview mounting a 3D canvas has not loaded a
+    // single GLB by then — `--settle` is how the caller says "this one needs longer".
+    const settle = readCaptureQuery().settle ?? 0;
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        if (!cancelled) setCaptureStatus("ready");
+        if (cancelled) return;
+        if (settle <= 0) {
+          setCaptureStatus("ready");
+          return;
+        }
+        setTimeout(() => {
+          if (!cancelled) setCaptureStatus("ready");
+        }, settle);
       });
     });
     return () => {
