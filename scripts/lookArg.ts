@@ -65,10 +65,16 @@ function parseNumbers(flag: string, raw: string): number[] {
  * neither was given. Throws a usage error naming the offending field — including
  * for the retired positional forms, whose message spells out the rewrite.
  */
-export function parseLookAim(look: string | undefined, from: string | undefined): LookAim | undefined {
+export function parseLookAim(
+  look: string | undefined,
+  from: string | undefined,
+  opts: { withNamedView?: boolean } = {},
+): LookAim | undefined {
   if (look === undefined || look.length === 0) {
-    if (from !== undefined && from.length > 0) throw new Error(`--look-from needs --look. ${USAGE}`);
-    return undefined;
+    if (from === undefined || from.length === 0) return undefined;
+    // A `--view` supplies the aim, so a bare vantage is a legal override of the view's own.
+    if (opts.withNamedView === true) return parseVantage(from);
+    throw new Error(`--look-from needs --look. ${USAGE}`);
   }
   if (look.startsWith("@")) return { subject: parseSubject(look), ...parseVantage(from) };
   const point = parseNumbers("--look", look);
@@ -105,7 +111,7 @@ function parseVantage(from: string | undefined): Omit<LookAim, "point" | "subjec
 /** URL params the dev runner reads for an aim — the canonical, unambiguous encoding. */
 export function lookSearchParams(aim: LookAim): Record<string, string> {
   const look = aim.subject !== undefined ? `@${aim.subject.kind}:${aim.subject.id}` : (aim.point ?? []).join(",");
-  const params: Record<string, string> = { look };
+  const params: Record<string, string> = look.length === 0 ? {} : { look };
   const vantage = [aim.distance, aim.height, aim.angle];
   if (vantage.some((value) => value !== undefined)) {
     params.lookFrom = vantage.map((value) => (value === undefined ? "" : String(value))).join(",");

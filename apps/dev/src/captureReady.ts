@@ -6,6 +6,7 @@
 
 import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad";
 
+import { resolvedLook } from "./appEnv";
 import { verifyLookSubject } from "./lookCamera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PlayableGame } from "@jgengine/shell/registry";
@@ -235,18 +236,13 @@ export function createCaptureContextReady(opts: {
   gameId: string;
 }): ((ctx: GameContext) => void) | undefined {
   const { captureRun, probe, stageScenario, gameId } = opts;
-  const aimsAtEntity =
-    typeof window !== "undefined" &&
-    (new URLSearchParams(window.location.search).get("look") ?? "").startsWith("@entity:");
+  const aimsAtEntity = typeof window !== "undefined" && (resolvedLook() ?? "").startsWith("@entity:");
   if (stageScenario === undefined && captureRun.length === 0 && probe === undefined && !aimsAtEntity) {
     return undefined;
   }
   const defaultCommandInput = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
   return (ctx: GameContext) => {
-    const subjectError = verifyLookSubject(
-      new URLSearchParams(window.location.search).get("look"),
-      (id) => ctx.scene.entity.get(id) !== null,
-    );
+    const subjectError = verifyLookSubject(resolvedLook(), (id) => ctx.scene.entity.get(id) !== null);
     if (subjectError !== null && captureArmed()) setCaptureStatus("error", `look override rejected: ${subjectError}`);
     if (probe !== undefined) installPlaytestProbe(() => probe(ctx));
     stageScenario?.(ctx);

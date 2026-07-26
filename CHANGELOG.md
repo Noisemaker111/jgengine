@@ -32,6 +32,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`capture.views` on `defineGame`** — named framings (`GameCaptureView`: `look`, `lookFrom`, `spawn`, `state`, `run`, `settleMs`) that `shoot <game> --view <name>` and `drive --view <name>` replay exactly, so a before/after pair is the same view by construction. `shoot <game> --list-views` prints what a game declares; an unknown name fails listing them, and any explicit capture flag still wins over the view's value.
 - **`modelLoadIdleMs()` from `@jgengine/shell/render/modelLoad`** reports how long the shared GLB loader has been idle (`0` while a model is in flight). Capture hosts wait on it instead of guessing a settle delay, so an establishing shot no longer races streaming models.
 
 ### Fixed

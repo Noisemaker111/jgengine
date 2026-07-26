@@ -13,7 +13,7 @@ import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsO
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
-import { CAM, LOOK, LOOK_FROM } from "./appEnv";
+import { CAM, resolvedLook, resolvedLookFrom } from "./appEnv";
 import { setCaptureStatus } from "./captureReady";
 import { formatAppliedAim, resolveLookCamera, type LookMarkers } from "./lookCamera";
 
@@ -44,7 +44,12 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
 function lookCamera(game: PlayableGame, markers: LookMarkers | undefined): GameCameraConfig | undefined {
   const world = game.game.world;
   const terrain = resolveTerrainField(world?.kind === "environment" ? world.terrain : undefined);
-  const resolution = resolveLookCamera({ look: LOOK, lookFrom: LOOK_FROM, terrain, ...(markers === undefined ? {} : { markers }) });
+  const resolution = resolveLookCamera({
+    look: resolvedLook(),
+    lookFrom: resolvedLookFrom(),
+    terrain,
+    ...(markers === undefined ? {} : { markers }),
+  });
   if (resolution.kind === "none") return undefined;
   if (resolution.kind === "error") {
     // Fails the capture handshake rather than throwing: `setCaptureStatus("error")` is sticky, so
@@ -65,7 +70,8 @@ function lookCamera(game: PlayableGame, markers: LookMarkers | undefined): GameC
  * one — the editor document is a separate async load every other capture has no reason to pay.
  */
 export async function loadLookMarkers(gameId: string): Promise<LookMarkers | undefined> {
-  if (LOOK === null || !LOOK.startsWith("@marker:")) return undefined;
+  const look = resolvedLook();
+  if (look === null || !look.startsWith("@marker:")) return undefined;
   const layers = await editorLayerRegistry[gameId]?.();
   const { normalizeEditorLayers } = await import("@jgengine/core/editor/index");
   const doc = normalizeEditorLayers(layers ?? null);

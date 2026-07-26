@@ -8,6 +8,8 @@ import { installAssetBase } from "@jgengine/shell/render/assetBase";
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { installSpawnOverride, parseSpawnOverride } from "@jgengine/core/world/spawnOverride";
 
+import type { CaptureViewOverrides } from "./captureView";
+
 // The site mounts this runner under /play/ — resolve games' root-absolute
 // /models and /materials paths against wherever the app is actually served.
 installAssetBase(import.meta.env.BASE_URL);
@@ -43,7 +45,30 @@ export const LOOK_FROM = urlParams.get("lookFrom");
  * spawn at the override without any mutation to `editor.scene.json`; absent/malformed → no override.
  */
 export const SPAWN = urlParams.get("spawn");
+/** `?view=<name>` replays a framing the game declares in `capture.views`. */
+export const VIEW = urlParams.get("view");
 installSpawnOverride(parseSpawnOverride(SPAWN));
+
+/**
+ * A declared view's values, merged once the game module has loaded. Routing params (`mode`,
+ * `device`) are settled before that point and so are never shot-owned; everything below is read
+ * through these accessors instead of the raw URL constants so a `?view=` can supply them.
+ */
+let viewOverrides: CaptureViewOverrides = {};
+
+export function applyCaptureView(overrides: CaptureViewOverrides): void {
+  viewOverrides = overrides;
+  // The spawn override is installed at boot from the URL; a view that carries one has to re-install
+  // it before the world spawns the player.
+  installSpawnOverride(parseSpawnOverride(resolvedSpawn()));
+}
+
+export const resolvedLook = (): string | null => viewOverrides.look ?? LOOK;
+export const resolvedLookFrom = (): string | null => viewOverrides.lookFrom ?? LOOK_FROM;
+export const resolvedSpawn = (): string | null => viewOverrides.spawn ?? SPAWN;
+export const resolvedState = (): string | null => viewOverrides.state ?? STATE_PARAM;
+export const resolvedRun = (): readonly string[] => viewOverrides.run ?? RUN;
+export const resolvedSettleMs = (): number | undefined => viewOverrides.settleMs;
 export const WS_URL = import.meta.env.VITE_JG_WS_URL as string | undefined;
 export const CONVEX_URL = import.meta.env.VITE_CONVEX_URL as string | undefined;
 export const P2P_ROLE = urlParams.get("p2p");

@@ -380,6 +380,34 @@ export interface PresentationEffectsConfig {
 }
 
 /** How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`. */
+/**
+ * One named framing in {@link GameCaptureConfig.views}: everything about a capture except the host-side
+ * viewport (`--device`, `--size`) and `--mode`, which the runner routes on before the game module loads.
+ * Every field mirrors the equivalent capture flag, and an explicit flag on the command line wins over the
+ * shot's value so a declared framing stays a starting point rather than a cage.
+ */
+export interface GameCaptureView {
+  /** One line naming what this shot is for — printed by `shoot <game> --list-views`. */
+  description?: string;
+  /** `--look`: `x,z`, `x,y,z`, `@marker:<id>`, or `@entity:<id>`. */
+  look?: string;
+  /** `--look-from`: `dist[,height[,angle]]`. */
+  lookFrom?: string;
+  /** `--spawn`: `x,y,z` or `x,y,z,yaw`, for a shot framed from the player's vantage instead of a detached camera. */
+  spawn?: string;
+  /** `--state`: a {@link GameCaptureConfig.states} entry to reach before capturing. */
+  state?: string;
+  /** `--run`: commands to dispatch before capturing, when the shot needs staging no declared state covers. */
+  run?: readonly string[];
+  /** `--settle`: milliseconds to wait before the frame, for a shot behind an animation. */
+  settleMs?: number;
+}
+
+/**
+ * How a game makes itself screenshottable: the commands that reach live play or a named screen, the
+ * framings worth re-capturing, and the progress metrics a bot playtest samples. Declaring these once
+ * is what lets a capture host reproduce a view instead of re-deriving it by hand every run.
+ */
 export interface GameCaptureConfig {
   /**
    * Commands run (in order, via `ctx.game.commands.run`) right after boot when a capture host requests the
@@ -397,6 +425,13 @@ export interface GameCaptureConfig {
   play?: readonly (string | { name: string; input?: unknown })[];
   /** Named capture states beyond live gameplay — any screen worth screenshotting on demand (`lobby`, `store`, `game_over`), each mapping to the command sequence that reaches it from boot. `shoot <game> --state <name>` runs that sequence and captures whatever is on screen — menus included, no live-play guard. An unknown state name fails the capture with the declared list. */
   states?: Record<string, readonly (string | { name: string; input?: unknown })[]>;
+  /**
+   * Named framings worth re-capturing — the views a reviewer actually asks about (`street`, `keep-exterior`,
+   * `boss-arena`), each pinning the camera, the staging, and the settle for that shot. `shoot <game> --view <name>`
+   * reproduces one exactly, so a before/after pair is the same framing by construction instead of two hand-typed
+   * flag sets that drifted. An unknown name fails the capture listing the declared views.
+   */
+  views?: Record<string, GameCaptureView>;
   /** Extra milliseconds the capture host waits after `play` commands before taking the play-mode screenshot — cover an intro cinematic or spawn-in fade. Default 2500. */
   settleMs?: number;
   /** Bot-playtest read hook: maps live game state to a flat vector of numeric progress metrics the `drive --playtest` harness samples over time (e.g. `{ x, z, score, phase }`). Genre-agnostic — "progress" is whatever the game reports; the engine stays neutral. The harness watches these numbers move under scripted input: any metric changing beyond an epsilon counts as forward progress, all metrics flat past the softlock threshold under active input flags a softlock. Return every value that should count as advancing; omit to opt the game out of the playtest rung. */
