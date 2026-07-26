@@ -28,6 +28,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+- **`jgengine create` scaffolds a textured world by default (#1550).** `--world` is now the default and `--no-world` is the opt-out (matching `--no-editor`); `--world` is still accepted. The default scaffold previously emitted untextured proxy geometry, which the AGENTS.md it ships declares a failing result. `create` now also pulls the starter asset packs into `public/models` after install, and never fails the scaffold if that pull cannot run (offline, blocked proxy, `--no-install`) — it prints `npx assets pull starter` in next steps instead, and the emitted AGENTS.md documents the same command. Skip the pull explicitly with `--no-assets`.
 - **Start game code at `@jgengine/shell/gameKit` (#1541).** Prefer that surface for `defineGame`, `GameHost`, stores, systems, authored-scene helpers, and HUD building blocks. `@jgengine/core/authoring` remains for pure core helpers the kit does not re-export but is no longer a competing start-here path.
 - **Every game must now declare its run-phase story — silence is a gate error (#1337).** The run-phase
   contract used to be optional with a permissive default: a game that never published a phase read as
@@ -92,6 +93,7 @@ At publish, rename this heading to the new version and mirror the entries into
 ### Added
 
 - **Runtime-mutable arcade car tuning + hops (#1550)** — `KinematicVehicle.retune(tuning)` swaps a vehicle's whole tuning block while keeping position, heading, velocity and gear state, for vehicles whose stats change during play (installed parts, damage, debuffs). New tuning fields `hopGravity` (enables `vehicle.hop(impulse)`, reported as `step.airOffset` / `step.airborne` and applied on top of the ground sample by `tickDrivableVehicle`), `coastDeceleration` (flat coast road-load, versus `rollingResistance`'s proportional decay), and `reverseForceScale` (reverse push on the arcade path, previously reachable only via a full `chassis` block). New per-tick modifier `brakeScale`. All additive: omit them and every existing vehicle behaves exactly as before.
+- **`assets pull starter` (#1550)** — one meta-id that pulls every pack the starter catalog needs (`kaykit-adventurers`, `kaykit-dungeon`, `kaykit-furniture`, `kaykit-city-builder`, `quaternius-stylized-nature`) into `public/models`, so a game does not have to name five pack ids to make `asset:` references resolve.
 - **`ctx.rng` + `createGameContext({ seed, rng })` (#1545)** — deterministic per-world `[0,1)` stream for sim paths; same seed → same sequence across worlds/hosts.
 - **Post `aa: "smaa" | "msaa" | false` (#1545)** — SMAA default on post chains (before OutputPass) for alpha-tested edge crawl.
 - **Procedural sky IBL + directional `cascades` CSM (#1545)** — `EnvironmentLighting` bakes sky/ground/sun into PMREM; `cascades > 1` on directional lighting mounts cascaded shadows.
