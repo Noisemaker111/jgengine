@@ -1,4 +1,5 @@
 import { clamp } from "../math/scalar";
+import { resolveRng } from "../random/resolveRng";
 
 /** A quantity that is either fixed or a uniformly sampled `[min, max]` range resolved by the field rng. */
 export type Quantity = number | readonly [number, number];
@@ -81,7 +82,7 @@ export interface ResourceNodeState {
 /** Construction options for {@link createResourceNodeField}: node definitions and an optional RNG/suppression hook. */
 export interface ResourceNodeFieldConfig {
   nodes: readonly ResourceNodeDef[];
-  /** Injected [0,1) generator for deterministic yield variance; defaults to `Math.random`. */
+  /** Injected [0,1) generator for deterministic yield variance. Omitting it falls back to `Math.random` and warns once. */
   rng?: () => number;
   /**
    * Freeze respawn for a node while this returns true — a structure within radius, a nearby occupant.
@@ -147,7 +148,7 @@ function toState(node: NodeRuntime): ResourceNodeState {
  * @capability resource-node depletable, respawning harvest nodes with tool-dependent yields
  */
 export function createResourceNodeField(config: ResourceNodeFieldConfig): ResourceNodeField {
-  const rng = config.rng ?? Math.random;
+  const rng = resolveRng(config.rng, "createResourceNode");
   const nodes = new Map<string, NodeRuntime>();
   const order: string[] = [];
 

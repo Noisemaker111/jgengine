@@ -56,9 +56,9 @@ export function PlayingCard({
           width,
           height,
           borderRadius: radius,
-          border: "1px solid var(--jg-card-back-edge)",
+          border: "1px solid var(--jg-card-back-edge, var(--jg-edge, #2c3340))",
           background:
-            "repeating-linear-gradient(45deg, var(--jg-card-back) 0, var(--jg-card-back) 4px, var(--jg-card-back-deep) 4px, var(--jg-card-back-deep) 8px)",
+            "repeating-linear-gradient(45deg, var(--jg-card-back, var(--jg-surface, #141820)) 0, var(--jg-card-back, var(--jg-surface, #141820)) 4px, var(--jg-card-back-deep, var(--jg-surface-deep, #0a0c10)) 4px, var(--jg-card-back-deep, var(--jg-surface-deep, #0a0c10)) 8px)",
         }}
       >
         <span
@@ -69,7 +69,7 @@ export function PlayingCard({
       </div>
     );
   }
-  const color = isRed(suit) ? "var(--jg-card-red)" : "var(--jg-card-black)";
+  const color = isRed(suit) ? "var(--jg-card-red, var(--jg-danger, #e5484d))" : "var(--jg-card-black, var(--jg-text, #f5f7fa))";
   const cornerFont = Math.round(height * 0.16);
   return (
     <div
@@ -83,9 +83,9 @@ export function PlayingCard({
         width,
         height,
         borderRadius: radius,
-        border: "1px solid var(--jg-card-edge)",
-        background: "var(--jg-card-face)",
-        fontFamily: "var(--jg-font-card)",
+        border: "1px solid var(--jg-card-edge, var(--jg-edge, #2c3340))",
+        background: "var(--jg-card-face, var(--jg-surface, #141820))",
+        fontFamily: "var(--jg-font-card, var(--jg-font-display, inherit))",
       }}
     >
       <span

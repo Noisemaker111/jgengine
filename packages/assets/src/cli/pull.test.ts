@@ -11,12 +11,29 @@ import { cmdPull } from "./pull";
 const source = sourceById.get("quaternius-stylized-nature")!;
 const originalFetch = globalThis.fetch;
 
+/**
+ * These cases do real zip decode + GLB extraction + filesystem writes, so their
+ * wall-time scales with machine load. Under a full `test:all` run the default 5s
+ * per-test budget can be exceeded on a contended box even though each passes in
+ * isolation, surfacing as a spurious timeout rather than a regression. Give every
+ * case an explicit generous budget so contention slows them without failing them.
+ */
+const HEAVY_CASE_TIMEOUT_MS = 30_000;
+
 function zipWithGlb(content: string): Uint8Array {
   return zipSync({ "model.glb": new TextEncoder().encode(content) });
 }
 
+/**
+ * Hermetic scratch dir: seed a controlled base under `tmpdir()` (created if
+ * absent) before `mkdtemp`, so the suite does not depend on ambient `/tmp` state
+ * — the offline case asserts against an *empty* target and must never inherit
+ * leftovers or a missing base from a contended shared `/tmp`.
+ */
 function makeTmpDir(): string {
-  return mkdtempSync(join(tmpdir(), "jgengine-assets-pull-"));
+  const base = join(tmpdir(), "jgengine-assets-pull-tests");
+  mkdirSync(base, { recursive: true });
+  return mkdtempSync(join(base, "case-"));
 }
 
 function neverFetch(): FetchLike {
@@ -54,7 +71,7 @@ describe("cmdPull --offline", () => {
       exitSpy.mockRestore();
       rmSync(dir, { recursive: true, force: true });
     }
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 
   test("skips the network entirely when the target dir is already populated", async () => {
     const dir = makeTmpDir();
@@ -66,7 +83,7 @@ describe("cmdPull --offline", () => {
     await cmdPull(["quaternius-stylized-nature", "--dir", dir, "--offline"]);
 
     rmSync(dir, { recursive: true, force: true });
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 });
 
 describe("cmdPull mirror resolution", () => {
@@ -87,7 +104,7 @@ describe("cmdPull mirror resolution", () => {
     expect(written).toBe("from-env-mirror");
 
     rmSync(dir, { recursive: true, force: true });
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 
   test("--mirror flag takes precedence over JGENGINE_ASSETS_MIRROR", async () => {
     const dir = makeTmpDir();
@@ -105,7 +122,7 @@ describe("cmdPull mirror resolution", () => {
     expect(calls).toEqual([expectedUrl]);
 
     rmSync(dir, { recursive: true, force: true });
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 
   test("falls through to the primary provider path when no mirror is configured", async () => {
     process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR = "1";
@@ -130,6 +147,6 @@ describe("cmdPull mirror resolution", () => {
     );
 
     rmSync(dir, { recursive: true, force: true });
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 });
 

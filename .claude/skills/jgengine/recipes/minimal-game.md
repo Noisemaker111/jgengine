@@ -72,10 +72,13 @@ export function onNewPlayer(ctx: GameContext): void {
 ```
 
 `GameUI` starts as an empty `HudCanvas` (`useHudLayout` + `HudCanvas` from the kit). That is
-intentional: **every game owns its UI**. Write a short UI art direction, then build custom
-panels for this pitch — do not ship stock drop-in widgets (`StatBar`, `Hotbar`, `Coins`, glass
-frames) as the product face. Reach for engine pieces only as headless data, layout, or
-interaction models under game-owned chrome (see `jgengine-ui`).
+intentional: **every game owns its UI composition** — layout, terminology, placement, and art
+direction. Compose the shipped building blocks the moment you need them (`StatBar`, `Hotbar`,
+`Coins`, `InventoryGrid`, `CharacterSheet`, window shells from `jgengine-ui`), then reskin via
+`HudTheme` tokens. Reaching for those is using the engine correctly, not incomplete work. What
+the engine does not ship is a whole finished game *face* or genre theme preset — do not leave an
+unarranged, unskinned generic dashboard as the product. Hand-roll markup only where no building
+block fits (see `jgengine-ui`).
 
 ## 3. Author, play, win
 

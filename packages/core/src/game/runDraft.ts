@@ -1,5 +1,6 @@
 import { pickWeighted } from "../world/scatterItems";
 import type { StatModifier, StatModifierSet, Stats } from "../stats/statModifiers";
+import { resolveRng } from "../random/resolveRng";
 
 export interface RunModifierOffer<TStat extends string = string, TData = unknown> {
   id: string;
@@ -113,7 +114,7 @@ export function createRunDraft<TStat extends string = string, TData = unknown>(
   config: RunDraftConfig<TStat, TData>,
 ): RunDraft<TStat, TData> {
   const stack = createRunModifierStack<TStat, TData>(config.offers);
-  const defaultRng = config.rng ?? Math.random;
+  const defaultRng = resolveRng(config.rng, "createRunDraft");
 
   return {
     present(count, rng = defaultRng) {

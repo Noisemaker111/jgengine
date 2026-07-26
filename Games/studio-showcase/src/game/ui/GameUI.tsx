@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from "react";
 
-import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/react";
 import { useEntityStat, usePlayer } from "@jgengine/react/hooks";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/shell/gameKit";
 
 import { currentAnnouncement, subscribeAnnouncement } from "../triggers";
 

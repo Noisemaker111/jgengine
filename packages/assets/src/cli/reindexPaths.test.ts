@@ -2,9 +2,29 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { reindex } from "../indexGen";
-import { resolveGeneratedDir } from "./paths";
+import { resolveDefaultOutputRoot, resolveDefaultReindexDir, resolveGeneratedDir } from "./paths";
+
+/**
+ * The reindex cases build a small model tree on disk and regenerate the barrel,
+ * so their wall-time scales with machine load; a full `test:all` run under
+ * filesystem/CPU contention can blow past Bun's default 5s per-test budget even
+ * though each passes in isolation. Give them an explicit generous budget.
+ */
+const HEAVY_CASE_TIMEOUT_MS = 30_000;
+
+/**
+ * Hermetic scratch root: seed a controlled base under `tmpdir()` (created if
+ * absent) before `mkdtemp`, so these cases don't depend on ambient `/tmp` state
+ * on a contended shared box.
+ */
+function makeReindexRoot(): string {
+  const base = join(tmpdir(), "jgengine-reindex-tests");
+  mkdirSync(base, { recursive: true });
+  return mkdtempSync(join(base, "root-"));
+}
 
 describe("resolveGeneratedDir", () => {
   test("published CLI (dist/cli) writes into dist/generated", () => {
@@ -16,9 +36,23 @@ describe("resolveGeneratedDir", () => {
   });
 });
 
+describe("resolveDefaultReindexDir", () => {
+  // A bare `assets reindex` / `reindex-sprites` must scan the same served root
+  // `assets pull` writes into — otherwise pulled packs land in
+  // `apps/dev/public/models` while reindex scans an empty cwd `public/` (#1499).
+  test("defaults to <pull-output-root>/models — never a cwd-relative public/", () => {
+    // Real in-monorepo cli dir so the served-root branch (apps/dev/public) is taken.
+    const cliDir = fileURLToPath(new URL(".", import.meta.url));
+    const outputRoot = resolveDefaultOutputRoot(cliDir).replace(/\\/g, "/");
+    expect(outputRoot).toMatch(/apps\/dev\/public$/);
+    expect(resolveDefaultReindexDir(cliDir, "models").replace(/\\/g, "/")).toBe(`${outputRoot}/models`);
+    expect(resolveDefaultReindexDir(cliDir, "sprites").replace(/\\/g, "/")).toBe(`${outputRoot}/sprites`);
+  });
+});
+
 describe("reindex post-install tree", () => {
   test("writes JSON + JS barrel that a published buildCatalog can import", () => {
-    const root = mkdtempSync(join(tmpdir(), "jgengine-reindex-"));
+    const root = makeReindexRoot();
     const modelsDir = join(root, "models", "quaternius-modular-scifi");
     const outDir = join(root, "dist", "generated");
     mkdirSync(modelsDir, { recursive: true });
@@ -44,10 +78,10 @@ describe("reindex post-install tree", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 
   test("reindexing a subset dir preserves other sources' barrel entries", () => {
-    const root = mkdtempSync(join(tmpdir(), "jgengine-reindex-"));
+    const root = makeReindexRoot();
     const outDir = join(root, "dist", "generated");
     const spaceDir = join(root, "models", "quaternius-modular-scifi");
     mkdirSync(spaceDir, { recursive: true });
@@ -68,10 +102,10 @@ describe("reindex post-install tree", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 
   test("reindexing an all-unknown dir leaves the barrel unchanged", () => {
-    const root = mkdtempSync(join(tmpdir(), "jgengine-reindex-"));
+    const root = makeReindexRoot();
     const outDir = join(root, "dist", "generated");
     const spaceDir = join(root, "models", "quaternius-modular-scifi");
     mkdirSync(spaceDir, { recursive: true });
@@ -91,5 +125,5 @@ describe("reindex post-install tree", () => {
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
-  });
+  }, HEAVY_CASE_TIMEOUT_MS);
 });

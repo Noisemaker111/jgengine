@@ -1,4 +1,5 @@
 import { createThreatTable, type ThreatTable, type ThreatTableConfig } from "./threat";
+import { resolveRng } from "../random/resolveRng";
 
 export type MobBrainMode = "idle" | "wander" | "chase" | "engage" | "evade";
 
@@ -94,7 +95,7 @@ export function createMobBrain(config: MobBrainConfig, deps: MobBrainDeps): MobB
   const wander = config.wander === false || config.wander === undefined ? null : config.wander;
   const wanderInterval = wander?.intervalSeconds ?? 4;
   const wanderArrive = wander?.arriveRadius ?? 0.6;
-  const rng = deps.rng ?? Math.random;
+  const rng = resolveRng(deps.rng, "createMobBrain");
 
   let currentMode: MobBrainMode = "idle";
   let currentTarget: string | null = null;

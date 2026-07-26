@@ -34,7 +34,7 @@ import {
   type SizeMode,
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
-import { summarizePlaytest, type ProbeSample } from "./playtest";
+import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
 import { assembleGif } from "./gif";
@@ -51,6 +51,12 @@ type Step =
 /** Extra wall-clock a frame-starved page gets to render one frame under a held
  * key before {@link holdKey} gives up (see {@link holdComplete}). */
 const FRAME_STARVE_GRACE_MS = 20_000;
+
+/** Below this effective render cadence (frames actually drawn per second over the
+ * playtest window) a held key advances the sim too little to distinguish real
+ * progress from a softlock, so the `--playtest` verdict degrades to a warning
+ * instead of a (false) SOFTLOCK — see issue #1506. */
+const LOW_FPS_THRESHOLD = 5;
 
 type Args = {
   game: string;
@@ -74,6 +80,7 @@ type Args = {
   recordWidth: number;
   recordFps: number;
   recordRealtime: boolean;
+  reuseStorage: boolean;
 };
 
 /** GitHub's camo image proxy stops serving around 5 MB — stay safely under it
@@ -118,6 +125,12 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       hold to prove a non-zero movement delta via RPC, which is
                       the honest movement check on a low-fps headless GL page
                       where held-key motion is too small to read off screenshots
+  --reuse-storage     keep the warm profile's existing localStorage/origin storage
+                      for the target instead of clearing it before the drive. By
+                      default a drive clears the target origin's storage so the game
+                      boots clean and capture.probe reflects THIS run — a game that
+                      auto-restores a save would otherwise resume the prior run's
+                      session on a warm/persistent Chrome and corrupt the evidence.
   --connect <port>    attach to an already-running Chrome (skips launch/kill)
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
                       running after this drive — pair with --connect <port>
@@ -164,6 +177,7 @@ function parseArgs(argv: string[]): Args {
     recordWidth: 640,
     recordFps: 24,
     recordRealtime: false,
+    reuseStorage: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
@@ -217,6 +231,7 @@ function parseArgs(argv: string[]): Args {
     } else if (value === "--record-width") args.recordWidth = Number(argv[++index] ?? args.recordWidth);
     else if (value === "--record-fps") args.recordFps = Number(argv[++index] ?? args.recordFps);
     else if (value === "--record-realtime") args.recordRealtime = true;
+    else if (value === "--reuse-storage") args.reuseStorage = true;
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
   }
@@ -383,6 +398,52 @@ async function readProbe(session: CdpSession): Promise<Record<string, number> | 
 }
 
 /**
+ * Clear localStorage / IndexedDB / origin storage for the capture target BEFORE
+ * navigating to it, so a game that auto-restores a save boots clean instead of
+ * resuming a prior drive's session off a warm/persistent Chrome profile (issue
+ * #1505). `Storage.clearDataForOrigin` takes an explicit origin, so it works
+ * from the initial `about:blank` page without a round-trip navigation. Best
+ * effort: a Chrome build that lacks the verb must not abort the drive.
+ */
+async function clearOriginStorage(session: CdpSession, origin: string): Promise<void> {
+  try {
+    await session.send("Storage.clearDataForOrigin", {
+      origin,
+      storageTypes: "local_storage,indexeddb,websql,cache_storage,service_workers",
+    });
+  } catch (error) {
+    console.error(
+      `drive: could not clear ${origin} storage before capture (${error instanceof Error ? error.message : error}) — a restored save may corrupt the probe; pass --reuse-storage to silence`,
+    );
+  }
+}
+
+/**
+ * Read the page's live WebGL renderer string and classify it as software GL.
+ * Cloud containers run headless Chrome on SwiftShader/ANGLE-software at a tiny
+ * fraction of real-time fps, so held-key movement barely advances and every
+ * game reads as a false SOFTLOCK (issue #1506). Detecting the software backend
+ * lets `--playtest` degrade its verdict to a warning instead of a hard failure.
+ */
+async function detectSoftwareGl(session: CdpSession): Promise<{ renderer: string | null; software: boolean }> {
+  const value = await session.evaluate<{ renderer: string | null; software: boolean }>(`(() => {
+      try {
+        const canvas = document.createElement("canvas");
+        const gl = canvas.getContext("webgl2") || canvas.getContext("webgl");
+        if (gl === null) return { renderer: null, software: true };
+        const ext = gl.getExtension("WEBGL_debug_renderer_info");
+        const raw = ext !== null ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
+        const renderer = typeof raw === "string" ? raw : null;
+        const software = renderer !== null && /swiftshader|llvmpipe|software|basic render|microsoft basic/i.test(renderer);
+        return { renderer, software };
+      } catch {
+        return { renderer: null, software: false };
+      }
+    })()`);
+  return value ?? { renderer: null, software: false };
+}
+
+/**
  * Lockstep recorder: takes over the page's `requestAnimationFrame` and clocks
  * (the timeweb/timecut technique) so game time only advances when we say so —
  * exactly ONE rendered frame per `1000/fps` ms tick, captured after it draws.
@@ -513,6 +574,7 @@ const exitCode = await withBrowserSession(
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       if (args.playtest) url.searchParams.set("seed", String(args.seed));
+      if (!args.reuseStorage) await clearOriginStorage(session, new URL(url.toString()).origin);
       await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs);
       await new Promise((r) => setTimeout(r, 500));
       await installFrameCounter(session);
@@ -557,9 +619,14 @@ const exitCode = await withBrowserSession(
         });
       }
 
+      // Renderer classification for the playtest verdict: a software-GL host
+      // (cloud SwiftShader) delivers a tiny fraction of real-time fps, so a
+      // flat progress probe cannot be trusted as a genuine softlock (#1506).
+      const gl = args.playtest ? await detectSoftwareGl(session) : { renderer: null, software: false };
       const samples: ProbeSample[] = [];
       let sampling = args.playtest;
       const sampleStart = Date.now();
+      const framesAtStart = args.playtest ? await readFrames(session) : 0;
       const sampler = args.playtest
         ? (async () => {
             while (sampling) {
@@ -650,22 +717,46 @@ const exitCode = await withBrowserSession(
       if (args.playtest) {
         sampling = false;
         await sampler;
+        const framesRendered = (await readFrames(session)) - framesAtStart;
         const result = summarizePlaytest(samples, {
           seed: args.seed,
           softlockThresholdMs: args.softlockMs,
           epsilon: args.epsilon,
         });
-        console.log(JSON.stringify(result));
+        // Effective render cadence over the sampled window. Below LOW_FPS a held
+        // key advances the sim only a few frames total, so a flat progress probe
+        // is indistinguishable from a genuine softlock — the verdict is unsafe.
+        const { effectiveFps, unreliable: unreliableRender } = classifyRenderCadence(
+          framesRendered,
+          result.durationMs,
+          gl.software,
+          LOW_FPS_THRESHOLD,
+        );
+        console.log(JSON.stringify({ ...result, effectiveFps: Number(effectiveFps.toFixed(2)), softwareGl: gl.software, renderer: gl.renderer }));
         if (!result.probed) {
           console.error(
             `drive: no progress probe read — ${args.game} exposes no capture.probe (or it returned no metrics). Declare capture.probe to run the playtest rung.`,
           );
           if (args.strict) code = 1;
+        } else if (result.softlocked && unreliableRender) {
+          // Do NOT report a false softlock on a software-GL / frame-starved host.
+          console.error(
+            `drive: playtest rung UNRELIABLE on this host — ${gl.software ? `software GL (${gl.renderer ?? "unknown renderer"})` : `only ~${effectiveFps.toFixed(1)}fps effective`} rendered ${framesRendered} frame(s) in ${(result.durationMs / 1000).toFixed(1)}s, so flat progress does NOT prove a softlock (#1506). Not treating this as a failure.`,
+          );
+          console.error(
+            `drive: for a trustworthy verdict, run on a GPU host, or use the deterministic headless rung — step the sim directly with stepPlayerMovement / createHeadlessRunner(...).step(1/60) instead of real-time frames (see jgengine-verify "Scene and gameplay proof").`,
+          );
+          // Intentionally does not set code=1 even under --strict: an untrustworthy
+          // signal must not fail CI as if it were a real softlock.
         } else if (result.softlocked) {
           console.error(
             `drive: SOFTLOCK — progress stayed flat for ${result.softlockWindowMs}ms under active input (threshold ${args.softlockMs}ms, seed ${args.seed}). The loop did not advance.`,
           );
           if (args.strict) code = 1;
+        } else if (unreliableRender && args.steps.some((step) => step.kind === "key")) {
+          console.error(
+            `drive: note — playtest ran under ${gl.software ? "software GL" : `~${effectiveFps.toFixed(1)}fps`} (${framesRendered} frame(s) in ${(result.durationMs / 1000).toFixed(1)}s); progress read as advancing, but on a frame-starved host prefer the deterministic stepPlayerMovement rung for firm evidence.`,
+          );
         } else if (args.steps.every((step) => step.kind !== "key")) {
           console.error("drive: --playtest ran with no --key hold — nothing drove input, so progress is unproven.");
         }

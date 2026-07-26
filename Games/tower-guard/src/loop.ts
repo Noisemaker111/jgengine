@@ -1,6 +1,5 @@
-import type { GameLoop } from "@jgengine/core/game/defineGame";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { GameContext, GameLoop } from "@jgengine/shell/gameKit";
 
 import { setupWorld } from "./game/world/setup";
 

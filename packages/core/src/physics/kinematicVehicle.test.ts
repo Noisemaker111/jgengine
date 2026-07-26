@@ -474,3 +474,186 @@ describe("createKinematicVehicle — chassis mass/force layer (#1051)", () => {
     expect(driftSlip).toBeGreaterThan(0.08);
   });
 });
+
+describe("hop / air state", () => {
+  const HOPPER: KinematicVehicleTuning = { ...TUNING, hopGravity: 22 };
+
+  test("without hopGravity a vehicle has no air state and hop() is refused", () => {
+    const vehicle = createKinematicVehicle(TUNING);
+    expect(vehicle.hop(5)).toBe(false);
+    const step = vehicle.tick(DT, axis({ throttle: 1 }));
+    expect(step.airOffset).toBe(0);
+    expect(step.airborne).toBe(false);
+  });
+
+  test("a hop rises, falls, and lands back exactly on the ground plane", () => {
+    const vehicle = createKinematicVehicle(HOPPER);
+    expect(vehicle.hop(6)).toBe(true);
+    let peak = 0;
+    let landedAfter = -1;
+    for (let i = 0; i < 240; i += 1) {
+      const step = vehicle.tick(DT, NEUTRAL_AXIS);
+      peak = Math.max(peak, step.airOffset);
+      if (landedAfter < 0 && i > 2 && !step.airborne) landedAfter = i;
+    }
+    // Analytic apex v²/2g = 36/44 ≈ 0.82 m for a 6 m/s impulse against gravity 22; the discrete
+    // integrator overshoots slightly, so allow a 10% band rather than pinning the exact sample.
+    expect(peak).toBeGreaterThan(0.82 * 0.9);
+    expect(peak).toBeLessThan(0.82 * 1.1);
+    expect(landedAfter).toBeGreaterThan(0);
+    expect(vehicle.tick(DT, NEUTRAL_AXIS).airOffset).toBe(0);
+  });
+
+  test("a held jump cannot ratchet: hop() is refused while already airborne", () => {
+    const vehicle = createKinematicVehicle(HOPPER);
+    expect(vehicle.hop(6)).toBe(true);
+    vehicle.tick(DT, NEUTRAL_AXIS);
+    expect(vehicle.hop(6)).toBe(false);
+    const before = vehicle.tick(DT, NEUTRAL_AXIS).airOffset;
+    expect(vehicle.hop(50)).toBe(false);
+    expect(vehicle.tick(DT, NEUTRAL_AXIS).airOffset).toBeLessThan(before + 1);
+  });
+
+  test("hopping does not disturb the planar sim — the car still drives while airborne", () => {
+    const grounded = createKinematicVehicle(HOPPER);
+    const hopping = createKinematicVehicle(HOPPER);
+    hopping.hop(6);
+    for (let i = 0; i < 60; i += 1) {
+      grounded.tick(DT, axis({ throttle: 1, steer: 0.4 }));
+      hopping.tick(DT, axis({ throttle: 1, steer: 0.4 }));
+    }
+    expect(hopping.pose().position[0]).toBeCloseTo(grounded.pose().position[0], 6);
+    expect(hopping.pose().heading).toBeCloseTo(grounded.pose().heading, 6);
+  });
+
+  test("resetTo clears an in-flight hop", () => {
+    const vehicle = createKinematicVehicle(HOPPER);
+    vehicle.hop(6);
+    vehicle.tick(DT, NEUTRAL_AXIS);
+    vehicle.resetTo([0, 0, 0], 0);
+    expect(vehicle.tick(DT, NEUTRAL_AXIS).airOffset).toBe(0);
+  });
+});
+
+describe("coastDeceleration", () => {
+  test("sheds a flat amount of speed per second while coasting", () => {
+    const vehicle = createKinematicVehicle({ ...TUNING, coastDeceleration: 3.5 });
+    for (let i = 0; i < 120; i += 1) vehicle.tick(DT, axis({ throttle: 1 }));
+    const before = vehicle.tick(DT, NEUTRAL_AXIS).forwardSpeed;
+    for (let i = 0; i < 60; i += 1) vehicle.tick(DT, NEUTRAL_AXIS);
+    const after = vehicle.tick(DT, NEUTRAL_AXIS).forwardSpeed;
+    expect(before - after).toBeCloseTo(3.5, 0);
+  });
+
+  test("never drags a coasting vehicle backwards through zero", () => {
+    const vehicle = createKinematicVehicle({ ...TUNING, coastDeceleration: 400 });
+    vehicle.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 30; i += 1) {
+      const step = vehicle.tick(DT, NEUTRAL_AXIS);
+      expect(step.forwardSpeed).toBeGreaterThanOrEqual(-1e-6);
+    }
+  });
+
+  test("applies only when coasting — braking and throttle are untouched", () => {
+    const plain = createKinematicVehicle(TUNING);
+    const coasting = createKinematicVehicle({ ...TUNING, coastDeceleration: 3.5 });
+    for (let i = 0; i < 60; i += 1) {
+      plain.tick(DT, axis({ throttle: 1 }));
+      coasting.tick(DT, axis({ throttle: 1 }));
+    }
+    expect(coasting.velocity()[1]).toBeCloseTo(plain.velocity()[1], 6);
+    for (let i = 0; i < 20; i += 1) {
+      plain.tick(DT, axis({ brake: 1 }));
+      coasting.tick(DT, axis({ brake: 1 }));
+    }
+    expect(coasting.velocity()[1]).toBeCloseTo(plain.velocity()[1], 6);
+  });
+});
+
+describe("reverseForceScale", () => {
+  test("scales reverse drive on the arcade path", () => {
+    const build = (reverseForceScale?: number): ReturnType<typeof createKinematicVehicle> =>
+      createKinematicVehicle({ ...TUNING, reverseForceScale });
+    const brisk = build(0.6);
+    const stock = build();
+    // Short window: both are still accelerating in reverse, before either reaches `reverseSpeed`.
+    for (let i = 0; i < 20; i += 1) {
+      brisk.tick(DT, axis({ brake: 1 }));
+      stock.tick(DT, axis({ brake: 1 }));
+    }
+    // Both reverse; the higher scale reverses harder, and the default is unchanged at 0.48.
+    expect(brisk.velocity()[1]).toBeLessThan(stock.velocity()[1]);
+    expect(brisk.velocity()[1] / stock.velocity()[1]).toBeCloseTo(0.6 / 0.48, 1);
+  });
+});
+
+describe("brakeScale modifier", () => {
+  test("scales braking force independently of accelScale", () => {
+    const weak = createKinematicVehicle(TUNING);
+    const strong = createKinematicVehicle(TUNING);
+    for (let i = 0; i < 120; i += 1) {
+      weak.tick(DT, axis({ throttle: 1 }));
+      strong.tick(DT, axis({ throttle: 1 }));
+    }
+    for (let i = 0; i < 10; i += 1) {
+      weak.tick(DT, axis({ brake: 1 }), { brakeScale: 0.5 });
+      strong.tick(DT, axis({ brake: 1 }), { brakeScale: 1.5 });
+    }
+    expect(strong.velocity()[1]).toBeLessThan(weak.velocity()[1]);
+  });
+
+  test("defaults to 1 — omitting it leaves braking exactly as before", () => {
+    const plain = createKinematicVehicle(TUNING);
+    const explicit = createKinematicVehicle(TUNING);
+    for (let i = 0; i < 60; i += 1) {
+      plain.tick(DT, axis({ throttle: 1 }));
+      explicit.tick(DT, axis({ throttle: 1 }));
+    }
+    for (let i = 0; i < 20; i += 1) {
+      plain.tick(DT, axis({ brake: 1 }));
+      explicit.tick(DT, axis({ brake: 1 }), { brakeScale: 1 });
+    }
+    expect(explicit.velocity()[1]).toBeCloseTo(plain.velocity()[1], 9);
+  });
+});
+
+describe("retune", () => {
+  test("new stats take effect without losing momentum", () => {
+    const vehicle = createKinematicVehicle(TUNING);
+    for (let i = 0; i < 120; i += 1) vehicle.tick(DT, axis({ throttle: 1 }));
+    const speedBefore = vehicle.tick(DT, axis({ throttle: 1 })).forwardSpeed;
+    const poseBefore = vehicle.pose();
+
+    vehicle.retune({ ...TUNING, topSpeed: 60, engineAccel: 40 });
+    const after = vehicle.tick(DT, axis({ throttle: 1 }));
+    // Momentum and placement survive the swap — this is the whole point versus rebuilding the sim.
+    expect(after.forwardSpeed).toBeGreaterThan(speedBefore);
+    expect(after.forwardSpeed - speedBefore).toBeLessThan(1);
+    expect(vehicle.pose().position[2]).toBeGreaterThan(poseBefore.position[2]);
+    expect(vehicle.pose().heading).toBeCloseTo(poseBefore.heading, 9);
+
+    // The raised ceiling is live: the old tuning capped at 30.
+    for (let i = 0; i < 600; i += 1) vehicle.tick(DT, axis({ throttle: 1 }));
+    expect(vehicle.tick(DT, axis({ throttle: 1 })).forwardSpeed).toBeGreaterThan(TUNING.topSpeed);
+  });
+
+  test("retuning to identical stats changes nothing", () => {
+    const plain = createKinematicVehicle(TUNING);
+    const retuned = createKinematicVehicle(TUNING);
+    for (let i = 0; i < 60; i += 1) {
+      plain.tick(DT, axis({ throttle: 1, steer: 0.3 }));
+      retuned.retune({ ...TUNING });
+      retuned.tick(DT, axis({ throttle: 1, steer: 0.3 }));
+    }
+    expect(retuned.pose().position[0]).toBeCloseTo(plain.pose().position[0], 9);
+    expect(retuned.pose().position[2]).toBeCloseTo(plain.pose().position[2], 9);
+    expect(retuned.pose().heading).toBeCloseTo(plain.pose().heading, 9);
+  });
+
+  test("hop availability follows the retuned block", () => {
+    const vehicle = createKinematicVehicle(TUNING);
+    expect(vehicle.hop(6)).toBe(false);
+    vehicle.retune({ ...TUNING, hopGravity: 22 });
+    expect(vehicle.hop(6)).toBe(true);
+  });
+});

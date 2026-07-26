@@ -133,7 +133,7 @@ export function classifyAssetResponse(probe: AssetResponseProbe): AssetLoadDiagn
     const suffix = statusText === undefined || statusText.length === 0 ? "" : ` ${statusText}`;
     return finish(
       "missing",
-      `Asset ${who} did not load: HTTP ${status}${suffix}. The file is not being served — provision the pack (e.g. \`assets pull <source>\`) or check the model path.`,
+      `Asset ${who} did not load: HTTP ${status}${suffix}. The bytes are not being served at that path — run \`assets pull <source>\`, which provisions the pack into the dev server's served models dir (\`apps/dev/public/models\` in the jgengine monorepo) so no manual copy is needed; or check the model path.`,
     );
   }
 
@@ -141,7 +141,7 @@ export function classifyAssetResponse(probe: AssetResponseProbe): AssetLoadDiagn
   if (signature === "html" || (htmlContentType && signature !== "glb" && signature !== "gltf-json")) {
     return finish(
       "html",
-      `Asset ${who} resolved to an HTML page, not a model — the dev server returned its fallback document because the file is missing. Provision the pack (\`assets pull <source>\`) so the bytes exist under the served path.`,
+      `Asset ${who} resolved to an HTML page, not a model — the dev server returned its fallback document because the file is missing. Run \`assets pull <source>\` to provision the pack into the served models dir (\`apps/dev/public/models\` in the jgengine monorepo); the bytes must exist there, no manual copy needed.`,
     );
   }
 

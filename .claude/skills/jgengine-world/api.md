@@ -788,7 +788,7 @@
 - `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions — ⚠ undocumented
 - `KinematicVehicleStep` (interface): interface KinematicVehicleStep — ⚠ undocumented
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
-- `createKinematicVehicle` (function): function createKinematicVehicle(tuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
+- `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 
 ## @jgengine/core/physics/physicsWorld
 
@@ -998,7 +998,7 @@
 
 - `CaptureCheckInput` (interface): interface CaptureCheckInput — ⚠ undocumented
 - `captureChance` (function): function captureChance(input: CaptureCheckInput): number — ⚠ undocumented
-- `rollCapture` (function): function rollCapture(input: CaptureCheckInput, rng: () => number = Math.random): boolean — ⚠ undocumented
+- `rollCapture` (function): function rollCapture(input: CaptureCheckInput, rng?: () => number): boolean — ⚠ undocumented
 
 ## @jgengine/core/scene/colliders
 
@@ -2149,7 +2149,7 @@
 - `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
 - `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
 - `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
-- `createKinematicVehicle` (function): function createKinematicVehicle(tuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
+- `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
@@ -2228,6 +2228,7 @@
 - `getTriggerAction` (function): function getTriggerAction(id: string): TriggerActionDefinition | undefined — Registered definition for an action id, or undefined when the game never declared it.
 - `grass` (function): function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor — Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
 - `groundSpeed` (function): function groundSpeed(entity: SceneEntity<unknown>): number — Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code.
+- `grounded` (function): function grounded(ctx: Pick<GameContext, "world">, x: number, z: number): readonly [number, number, number] — Ground an XZ point onto the live world surface as `[x, groundY, z]`.
 - `hasValidAdjacency` (function): function hasValidAdjacency(grid: FootprintGrid, cells: readonly GridCell[], accepts: (neighborKind: string) => boolean, requireConnection = false): boolean — Connective-piece adjacency validity: every occupied neighbor of `cells` must satisfy `accepts` (no incompatible piece touching), and when `requireConnection` is true at least one neighbor must (a road/pipe/belt segment placed with nothing to connect to is invalid). An empty-bordered footprint (no occupied neighbors at all) passes unless `requireConnection` demands one.
 - `headingToBearing` (function): function headingToBearing(yaw: number): number — Bearing of an entity facing direction given its `rotationY` (yaw) in radians.
 - `headingToRotationY` (function): function headingToRotationY(headingDegrees: number): number — Convert a compass heading (degrees, `0` = engine north, increasing clockwise) into the Three.js Y-rotation (radians, wrapped to `(-PI, PI]`) a renderer applies. Sign matches `world/placementController.quarterTurnsToRotationY`, so heading `90` equals one clockwise quarter turn. This is the one place degrees cross into the private radian space Three.js requires.
@@ -2824,6 +2825,10 @@
 - `GridInstanceTransform` (interface): interface GridInstanceTransform — ⚠ undocumented
 - `resolveGridCells` (function): function resolveGridCells(config: WorldGridConfig | GridWorldFeature): readonly WorldGridCell[] — ⚠ undocumented
 - `resolveGridInstances` (function): function resolveGridInstances(config: WorldGridConfig | GridWorldFeature): readonly GridInstanceTransform[] — ⚠ undocumented
+
+## @jgengine/core/world/grounded
+
+- `grounded` (function): function grounded(ctx: Pick<GameContext, "world">, x: number, z: number): readonly [number, number, number] — Ground an XZ point onto the live world surface as `[x, groundY, z]`.
 
 ## @jgengine/core/world/interiors
 

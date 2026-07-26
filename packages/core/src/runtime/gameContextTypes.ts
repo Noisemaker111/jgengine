@@ -123,6 +123,16 @@ export interface GameContextOptions<
   player: { userId: string; isNew: boolean };
   now?: () => number;
   occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
+  /**
+   * Seed for {@link GameContext.rng}. Defaults to the game name so two contexts of the same
+   * definition share a stream unless a host passes a unique seed per world/session.
+   */
+  seed?: string | number;
+  /**
+   * Injected `[0,1)` generator for this world. Defaults to a {@link seededRng} from {@link seed}.
+   * Never use `Math.random` on simulation paths — pass `ctx.rng` into pure helpers instead.
+   */
+  rng?: () => number;
   /** Bind `ctx.game.save` to a pluggable backend (offline/single-player whole-world save). The shell resolves this from `defineGame({ save })`; multiplayer leaves it off (the host persists). */
   save?: RuntimeSaveOptions;
   /**
@@ -447,6 +457,14 @@ export interface GameContext {
     raycastAll(input: SceneRaycastInput): readonly SceneRaycastHit[];
   };
   world: GameContextWorld;
+  /**
+   * Deterministic `[0,1)` stream for this world — loot, AI, combat rolls, and any sim path that
+   * needs randomness. Same seed → same sequence. Never fall back to `Math.random` in systems;
+   * pass this into pure helpers (`rollCheck`, `autoTarget`, loot tables, …).
+   *
+   * @capability game-context-rng per-world seeded randomness for replay, lockstep, and multi-world hosts
+   */
+  rng: () => number;
   game: {
     commands: GameContextCommands;
     events: GameEvents;

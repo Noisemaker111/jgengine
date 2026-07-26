@@ -1,0 +1,19 @@
+[
+  "Games/ironhold/src/game/hudStore.ts#snapshot",
+  "Games/ironhold/src/game/session.ts#session",
+  "Games/loopline/src/game/build/commands.ts#revision",
+  "Games/starhome/src/game/commands.ts#placeSeq",
+  "Games/starhome/src/game/needs/needs.ts#cachedDayLength",
+  "Games/starhome/src/game/needs/needs.ts#cachedDefs",
+  "Games/studio-showcase/src/game/triggers.ts#runtime",
+  "Games/studio-showcase/src/loop.ts#controlGroups",
+  "Games/the-robots/src/game/characters.ts#activeCharacterId",
+  "Games/the-robots/src/game/characters.ts#activeTree",
+  "Games/the-robots/src/game/feel.ts#equippedGunId",
+  "Games/the-robots/src/game/feel.ts#gameNowMs",
+  "Games/the-robots/src/game/handroll/roll.ts#gunSerial",
+  "Games/the-robots/src/game/session.ts#slot",
+  "Games/tower-guard/src/game/combat/pendingProjectiles.ts#queue",
+  "Games/tower-guard/src/game/combat/pendingProjectiles.ts#seq",
+  "Games/tower-guard/src/game/session.ts#session"
+]

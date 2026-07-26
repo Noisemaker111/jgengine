@@ -1,4 +1,5 @@
 import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
+import { lootDropsOf } from "@jgengine/core/game/events";
 import { ToastStack } from "@jgengine/react/components";
 import { useActivePrompt, useGameStore } from "@jgengine/react/hooks";
 import { ITEM_LABELS } from "../content";
@@ -95,8 +96,7 @@ export function GameUI() {
         <ToastStack
           action="loot.granted"
           renderToast={(entry) => {
-            const data = entry.data as { drops?: readonly { item?: string; currency?: string; count: number }[] } | undefined;
-            const first = data?.drops?.[0];
+            const first = lootDropsOf(entry.data)[0];
             if (first === undefined) return null;
             const label = first.item !== undefined ? (ITEM_LABELS[first.item] ?? first.item) : `$${first.count}`;
             return (

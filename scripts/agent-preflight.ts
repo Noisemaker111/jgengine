@@ -97,7 +97,10 @@ if (ship) {
   if (branch === "" || branch === "main") failures.push("ship from a dedicated branch, not main or detached HEAD");
 
   const status = run("git", ["status", "--porcelain"]);
-  if (status !== "") failures.push("worktree is dirty — finish the diff before shipping");
+  if (status !== "")
+    failures.push(
+      "worktree is dirty — commit (or stash) the remaining changes, then re-run. ship:preflight checks the committed branch diff, so it runs AFTER you commit, not before",
+    );
 
   // Catch stash-pop / merge conflict markers that leave the tree "clean" but break CI.
   // Only scan files changed vs origin/main (or the working tree if no commits yet).
@@ -132,7 +135,10 @@ if (ship) {
   }
 
   const diff = run("git", ["diff", "--stat", "origin/main...HEAD"]);
-  if (diff === "") failures.push("branch has no net diff from origin/main — do not open a no-op PR");
+  if (diff === "")
+    failures.push(
+      "branch has no net diff from origin/main — commit your work to this branch first (ship:preflight reads committed history, not the working tree), or drop the no-op PR",
+    );
 }
 
 if (failures.length > 0) {

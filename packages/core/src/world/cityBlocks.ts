@@ -23,6 +23,7 @@ import {
   polygonSignedArea,
   type Vec2,
 } from "./cityGeometry";
+import { isProductionEnvironment } from "../devtools/saveEndpoint";
 
 /** How a block (a face of the road graph) is used. */
 export type CityBlockKind = "buildable" | "park" | "plaza" | "field" | "buffer";
@@ -81,6 +82,18 @@ export interface FabricStreet {
 
 const MAX_BLOCKS = 420;
 const WELD_RADIUS = 1.4;
+
+// Proximity welding (WELD_RADIUS) assumes near-collinear / aligned centerlines. Wandered and
+// arc-filleted streets weld into a degenerate face set: a real case went 38 streets → 2 faces
+// with no signal. These constants gate a dev-mode collapse warning. A connected road grid has
+// bounded faces on the order of its street count (Euler: bounded faces = edges − nodes + 1), so
+// faces far below the street count means welding ate the topology, not that the district is sparse.
+// COLLAPSE_MIN_STREETS avoids false positives on genuinely tiny inputs (a handful of crossings
+// legitimately yields few faces); COLLAPSE_RATIO_DIVISOR flags only a gross collapse — with 8
+// streets it fires under 2 faces, with 38 streets under 9 (the 38 → 2 case triggers, a healthy
+// grid where faces ≥ street count never does).
+const COLLAPSE_MIN_STREETS = 8;
+const COLLAPSE_RATIO_DIVISOR = 4;
 const RIM_SNAP = 6;
 
 interface GraphNode {
@@ -459,6 +472,7 @@ export function extractBlocks(
 ): { blocks: BlockRings[]; deadEnds: { pts: Vec2[]; width: number }[] } {
   const { nodes, halves, deadEnds } = buildGraph(streets, hx, hz);
   const faces = extractFaces(nodes, halves);
+  warnOnImplausibleCollapse(streets.length, faces.length);
   faces.sort((a, b) => polygonArea(b.polygon) - polygonArea(a.polygon));
   const blocks: BlockRings[] = [];
   for (const face of faces) {
@@ -500,6 +514,26 @@ export function extractBlocks(
     blocks.push({ face: ccw, faceStreets: edgeStreets, curb, land });
   }
   return { blocks, deadEnds };
+}
+
+/**
+ * Dev-mode guard: warn when {@link extractBlocks} extracts implausibly few faces for the street
+ * count — the silent-collapse failure mode where proximity welding folds wandered / arc-filleted
+ * centerlines into a degenerate face set (see issue #1502: 38 streets → 2 faces). No-ops in a
+ * production build. Points at {@link extractGraphBlocks}, which traces faces from the exact street
+ * graph and is robust against the centerlines that defeat welding.
+ */
+function warnOnImplausibleCollapse(streetCount: number, faceCount: number): void {
+  if (isProductionEnvironment() || typeof console === "undefined") return;
+  if (streetCount < COLLAPSE_MIN_STREETS) return;
+  if (faceCount >= streetCount / COLLAPSE_RATIO_DIVISOR) return;
+  console.warn(
+    `[jgengine:extractBlocks] ${streetCount} streets extracted only ${faceCount} block face(s) — ` +
+      "implausibly few, likely a silent proximity-welding collapse on wandered / arc-filleted " +
+      "centerlines (the WELD_RADIUS heuristic assumes near-aligned streets). The fabric will look " +
+      "empty rather than error. Trace blocks from the exact street graph with extractGraphBlocks() " +
+      "instead, which is robust against centerlines that defeat welding.",
+  );
 }
 
 /** Reverse per-edge street labels when a ring got rewound to CCW. */

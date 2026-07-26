@@ -7,13 +7,14 @@ import { PartIcon } from "./PartIcon";
 
 interface StartScreenProps {
   onStart: () => void;
+  onCredits: () => void;
 }
 
-export function StartScreen({ onStart }: StartScreenProps) {
+export function StartScreen({ onStart, onCredits }: StartScreenProps) {
   return (
     <MenuScreen
       className="pointer-events-auto absolute inset-0 flex items-center justify-center overflow-y-auto bg-[#1c1a17]/90 p-4"
-      settings={<SettingsTrigger className="flex h-9 w-9 items-center justify-center rounded border-2 border-[#8d99a6]/50 bg-[#1c1a17] text-[#f0c419] transition hover:bg-[#2a251e]" />}
+      settings={<SettingsTrigger />}
       settingsWrapperClassName="absolute right-4 top-4 z-10"
     >
       <div className="w-full max-w-3xl rounded-lg border-2 border-[#b7410e] bg-[#241f19] p-6 shadow-[0_0_40px_rgba(0,0,0,0.6)] sm:p-8">
@@ -64,14 +65,23 @@ export function StartScreen({ onStart }: StartScreenProps) {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onStart}
-          className="mt-7 w-full rounded border-2 border-[#f0c419] bg-[#b7410e] py-3 text-lg font-black tracking-widest text-[#fef3e0] transition hover:bg-[#d94f14] sm:w-auto sm:px-10"
-        >
-          BOLT IT ON, GO GO
-          <KeyHint> — {actionLabel(keybinds, "startRun") ?? "ENTER"}</KeyHint>
-        </button>
+        <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={onStart}
+            className="w-full rounded border-2 border-[#f0c419] bg-[#b7410e] py-3 text-lg font-black tracking-widest text-[#fef3e0] transition hover:bg-[#d94f14] sm:w-auto sm:px-10"
+          >
+            BOLT IT ON, GO GO
+            <KeyHint> — {actionLabel(keybinds, "startRun") ?? "ENTER"}</KeyHint>
+          </button>
+          <button
+            type="button"
+            onClick={onCredits}
+            className="w-full rounded border-2 border-[#8d99a6]/60 py-3 text-sm font-black tracking-widest text-[#c9b8a4] transition hover:border-[#f0c419] hover:text-[#fef3e0] sm:w-auto sm:px-8"
+          >
+            CREDITS
+          </button>
+        </div>
       </div>
     </MenuScreen>
   );

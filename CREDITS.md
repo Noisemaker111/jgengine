@@ -35,6 +35,10 @@ renderer-agnostic (the wave math and building generator live in dependency-free
 audio, post-processing, and app-specific scene setup. But the good ideas are
 his. Each source project is MIT-licensed; go star them.
 
+## Every Inc (compound-engineering-plugin)
+
+The **`ce-handoff`** agent skill (session continuity: create/resume handoffs so a fresh agent can orient without the original transcript) is adapted from Every Inc's MIT-licensed [compound-engineering-plugin](https://github.com/EveryInc/compound-engineering-plugin) skill [`ce-handoff`](https://github.com/EveryInc/compound-engineering-plugin/blob/main/skills/ce-handoff/SKILL.md). JGengine's copy lives at [`.claude/skills/ce-handoff/SKILL.md`](.claude/skills/ce-handoff/SKILL.md) with monorepo path conventions (Windows + Unix scratch roots, Grok/Claude invocation, pointers into `workflow` / `jgengine-verify`). Go star the upstream project.
+
 ## Vladislav Kruteniuk (three-start)
 
 JGengine's behaviour lifecycle stands on

@@ -1,7 +1,11 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import { computeManifest, manifestPath, serializeManifest } from "./exportManifest";
+import { computeManifest, manifestPath, serializeManifest, warnIfStaleDist } from "./exportManifest";
 
 const check = process.argv.includes("--check");
+// Advisory only: name any packages whose dist is stale/partial before the
+// manifest is computed from dist, so silently-omitted subpaths become loud
+// instead of surfacing later as drift on an unrelated branch. Never fatal.
+warnIfStaleDist();
 const next = serializeManifest(computeManifest());
 
 if (check) {

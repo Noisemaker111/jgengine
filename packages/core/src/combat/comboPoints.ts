@@ -3,6 +3,14 @@ export interface ComboPointsConfig {
   expireAfterSeconds?: number;
 }
 
+/** Complete serializable state for {@link ComboPoints}; `remaining: null` means no expiry is running. */
+export interface ComboPointsSnapshot {
+  points: number;
+  remaining: number | null;
+  max: number;
+  expireAfterSeconds: number | null;
+}
+
 export interface ComboPoints {
   points(): number;
   gain(amount?: number): number;
@@ -11,6 +19,10 @@ export interface ComboPoints {
   tick(dtSeconds: number): void;
   expiresIn(): number | null;
   clear(): void;
+  /** The whole builder as plain data — save it, ship it to a host, diff it in a test. */
+  snapshot(): ComboPointsSnapshot;
+  /** Adopt a snapshot, replacing points, expiry, and tuning. */
+  restore(state: ComboPointsSnapshot): void;
 }
 
 /**
@@ -19,8 +31,8 @@ export interface ComboPoints {
  * @capability combo-points build up and spend finisher/combo points
  */
 export function createComboPoints(config: ComboPointsConfig): ComboPoints {
-  const max = config.max;
-  const expireAfterSeconds = config.expireAfterSeconds;
+  let max = config.max;
+  let expireAfterSeconds = config.expireAfterSeconds;
   let current = 0;
   let remaining: number | null = null;
 
@@ -58,6 +70,15 @@ export function createComboPoints(config: ComboPointsConfig): ComboPoints {
     expiresIn() {
       if (current <= 0 || remaining === null) return null;
       return remaining;
+    },
+    snapshot() {
+      return { points: current, remaining, max, expireAfterSeconds: expireAfterSeconds ?? null };
+    },
+    restore(state) {
+      max = state.max;
+      expireAfterSeconds = state.expireAfterSeconds ?? undefined;
+      current = Math.max(0, Math.min(max, state.points));
+      remaining = current <= 0 ? null : state.remaining;
     },
     clear() {
       current = 0;

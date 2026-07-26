@@ -166,3 +166,34 @@ describe("combo points clear", () => {
     expect(combo.points()).toBe(0);
   });
 });
+
+describe("snapshot / restore (#1575)", () => {
+  test("a snapshot round-trips points and the running expiry", () => {
+    const combo = createComboPoints({ max: 5, expireAfterSeconds: 10 });
+    combo.gain(3);
+    combo.tick(4);
+    const saved = combo.snapshot();
+
+    const loaded = createComboPoints({ max: 1 });
+    loaded.restore(saved);
+    expect(loaded.snapshot()).toEqual(saved);
+    expect(loaded.expiresIn()).toBe(combo.expiresIn());
+
+    loaded.tick(6);
+    combo.tick(6);
+    expect(loaded.points()).toBe(combo.points());
+    expect(loaded.points()).toBe(0);
+  });
+
+  test("restoring zero points drops any pending expiry", () => {
+    const combo = createComboPoints({ max: 5, expireAfterSeconds: 10 });
+    combo.restore({ points: 0, remaining: 7, max: 5, expireAfterSeconds: 10 });
+    expect(combo.expiresIn()).toBeNull();
+  });
+
+  test("restore clamps points to the restored max", () => {
+    const combo = createComboPoints({ max: 5 });
+    combo.restore({ points: 99, remaining: null, max: 3, expireAfterSeconds: null });
+    expect(combo.points()).toBe(3);
+  });
+});

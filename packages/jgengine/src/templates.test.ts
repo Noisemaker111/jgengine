@@ -47,10 +47,25 @@ const THIN_FILES = [
   "src/game/ui/GameUI.tsx",
 ];
 
+/** The default set: the thin skeleton plus the world scaffold, which is now on unless --no-world. */
+const WORLD_FILES = [...THIN_FILES, "src/world.ts", "src/game/assets.ts", "src/game/models.ts"];
+
 describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
   for (const variant of ["standalone", "in-repo"] as const) {
-    test(`${variant}: default is exactly the thin editor-first file set`, () => {
-      expect(render(variant).map((file) => file.path).sort()).toEqual([...THIN_FILES].sort());
+    test(`${variant}: default is the editor-first file set plus the world scaffold`, () => {
+      expect(render(variant).map((file) => file.path).sort()).toEqual([...WORLD_FILES].sort());
+    });
+
+    test(`${variant}: AGENTS.md tells the agent how to restore models if the pull was skipped`, () => {
+      // Models are pulled, not shipped in the package — a scaffold that skipped the pull otherwise
+      // renders placeholder primitives with nothing on the page explaining why.
+      const agents = fileOf(render(variant), "AGENTS.md");
+      expect(agents).toContain("npx assets pull starter");
+      expect(agents).toContain("public/models");
+    });
+
+    test(`${variant}: --no-world drops back to exactly the thin editor-first file set`, () => {
+      expect(render(variant, { world: false }).map((file) => file.path).sort()).toEqual([...THIN_FILES].sort());
     });
 
     test(`${variant}: src/ holds only the skeleton, everything else under src/game/`, () => {
@@ -176,11 +191,10 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
   });
 
   for (const variant of ["standalone", "in-repo"] as const) {
-    test(`${variant}: scaffold walks out of the box (movement actions bound inline)`, () => {
+    test(`${variant}: scaffold walks out of the box (DEFAULT_WALK_CODES + interact)`, () => {
       const config = fileOf(render(variant), "src/game.config.ts");
-      for (const action of ["moveForward", "moveBack", "moveLeft", "moveRight", "jump", "interact"]) {
-        expect(config).toContain(`${action}:`);
-      }
+      expect(config).toContain("DEFAULT_WALK_CODES");
+      expect(config).toContain('interact: ["KeyE"]');
     });
 
     test(`${variant}: scaffold ships a wired editor scene document`, () => {

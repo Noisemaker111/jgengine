@@ -303,7 +303,10 @@ describe("CI smoke-build (dry-run)", () => {
       expect(conf.bundle.targets).toEqual(["nsis"]);
       expect(existsSync(join(dir, ".jgengine", "desktop", "dist", "index.html"))).toBe(true);
     },
-    { timeout: 30_000 },
+    // Scaffolds a game and stages a Tauri project — real filesystem work whose
+    // wall-time scales with load; 30s got SIGTERM'd on slow filesystems under a
+    // full test:all run (issue #1504). Give it generous headroom.
+    { timeout: 120_000 },
   );
 
   test(
@@ -334,7 +337,7 @@ describe("CI smoke-build (dry-run)", () => {
       expect(conf.build.frontendDist).toBe("https://example.com/game");
       expect(conf.identifier).toBe("com.jgengine.hostedgame");
     },
-    { timeout: 30_000 },
+    { timeout: 120_000 },
   );
 });
 
@@ -350,6 +353,6 @@ describe("checkToolchains", () => {
         expect(report.missing.join(" ")).toMatch(/rustc|cargo|npx|npm|rustup|nodejs/);
       }
     },
-    { timeout: 30_000 },
+    { timeout: 120_000 },
   );
 });

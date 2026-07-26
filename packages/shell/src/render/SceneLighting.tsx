@@ -4,9 +4,18 @@ import type {
   LightingConfig,
 } from "@jgengine/core/game/playableGame";
 
+import { CascadedShadows } from "./CascadedShadows";
+
 const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
 
+function usesCascades(entry: DirectionalLightingConfig): boolean {
+  return (entry.castShadow ?? false) && (entry.cascades ?? 1) > 1;
+}
+
 function DirectionalShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
+  if (usesCascades(entry)) {
+    return <CascadedShadows entry={entry} />;
+  }
   const size = entry.shadowCameraSize ?? 40;
   return (
     <directionalLight

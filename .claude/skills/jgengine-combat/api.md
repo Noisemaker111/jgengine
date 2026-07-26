@@ -192,7 +192,7 @@
 - `resolveShot` (function): function resolveShot(deps: ShotOriginDeps, from: string, aim: Aim, policy: ShotOriginPolicy = { kind: "eye" }): ResolvedShot | null — ⚠ undocumented
 - `resolveStatusApplication` (function): function resolveStatusApplication(input: StatusApplicationInput): StatusApplicationOutcome — Resolve one status application: reject on immunity, roll landing chance against injected RNG, scale magnitude/duration by the matchup, then fold into any existing instance per the stacking policy. Deterministic given a seeded `rng`; pure over serializable data, so authority can run it and replicate only the returned `instance`.
 - `resolveVfxPreset` (function): function resolveVfxPreset(name: string | undefined, overrides?: Partial<VfxPreset>): VfxPreset — Resolve a named visual flavor into a concrete `{ kind, color, durationMs?, radius? }`, with any provided `overrides` winning field by field. An unknown name resolves to {@link DEFAULT_VFX_PRESET} rather than throwing, so a flavor typo degrades to a visible spark. Used by `ctx.scene.entity.vfx({ preset })`; call it directly when you need the raw numbers (e.g. to seed a retained `vfxInstance` from the same vocabulary).
-- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
+- `rollCheck` (function): function rollCheck(input: CheckInput, rng?: () => number): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 - `startEncounter` (function): function startEncounter<TData>(config: EncounterConfig<TData>, state: EncounterState<TData>, ctx: EncounterContext = {}): EncounterStep<TData> — Start a created encounter: enter the first root phase, descending to its first leaf, and return the initial enter/spawn events. A no-op (with no events) on an already-started or empty encounter. Mutates and returns `state`.
 - `statusEffectRemainingFraction` (function): function statusEffectRemainingFraction(view: StatusEffectView): number — Fraction of the countdown still remaining, clamped to `[0,1]` — the value a countdown ring fills to. Returns `0` when the duration is non-positive. Pure; safe to call every frame.
 - `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`.
@@ -271,6 +271,7 @@
 
 - `ComboPoints` (interface): interface ComboPoints — ⚠ undocumented
 - `ComboPointsConfig` (interface): interface ComboPointsConfig — ⚠ undocumented
+- `ComboPointsSnapshot` (interface): interface ComboPointsSnapshot — Complete serializable state for {@link ComboPoints}; `remaining: null` means no expiry is running.
 - `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
 
 ## @jgengine/core/combat/comboString
@@ -474,6 +475,8 @@
 
 - `RegenShield` (interface): interface RegenShield — A shield pool that stops regenerating for `regenDelayMs` after every hit, then refills at `regenPerSecond` — the delayed-regen primitive that replaces snapshot-comparing stat values per tick to detect "damage taken" (#536.3). `damage` resets the grace timer; `tick` counts it down and regenerates once it elapses.
 - `RegenShieldConfig` (interface): interface RegenShieldConfig — Tuning for `createRegenShield`: pool size, refill rate, and the post-damage grace period.
+- `RegenShieldPool` (interface): interface RegenShieldPool — External storage a {@link RegenShield} reads and writes instead of keeping the value itself — an entity stat, a replicated store, a save record. This is the same port `Magazine` exposes as `MagazineReserve`, and it exists for the same reason: in most games the shield value is already owned by the stat system that damage, the HUD, and replication all read, so a primitive that insists on owning the number privately cannot be adopted without creating a second source of truth.
+- `RegenShieldRates` (interface): interface RegenShieldRates — Per-tick rate overrides, for games that derive regen from live state — a talent tree, a buff, an equipped mod — rather than a constant fixed when the shield was built. Omit to use the configured values; the grace period in effect is whichever `regenDelayMs` was last passed to `tick`.
 - `createRegenShield` (function): function createRegenShield(config: RegenShieldConfig): RegenShield — Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
 
 ## @jgengine/core/combat/renderCues
@@ -504,6 +507,8 @@
 
 - `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
 - `ResourcePoolConfig` (interface): interface ResourcePoolConfig — ⚠ undocumented
+- `ResourcePoolRetune` (interface): interface ResourcePoolRetune — Runtime tuning patch for {@link ResourcePool.retune} — omitted fields keep their current value.
+- `ResourcePoolSnapshot` (interface): interface ResourcePoolSnapshot — Complete serializable state for a {@link ResourcePool}.
 - `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
 
 ## @jgengine/core/combat/rewardAllocation
@@ -615,7 +620,7 @@
 - `CheckAdvantage` (type): type CheckAdvantage = "advantage" | "disadvantage" | "normal" — ⚠ undocumented
 - `CheckInput` (interface): interface CheckInput — ⚠ undocumented
 - `CheckResult` (interface): interface CheckResult — ⚠ undocumented
-- `rollCheck` (function): function rollCheck(input: CheckInput, rng: () => number = Math.random): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
+- `rollCheck` (function): function rollCheck(input: CheckInput, rng?: () => number): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 
 ## @jgengine/core/stats/spawnLevelStats
 

@@ -1,5 +1,13 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
+
+/**
+ * This game's caster noise floor: per-frame movement at or below this is ground snap and float
+ * drift, not the player walking. Declared once as the cast runner's `moveDeadzone` so it filters
+ * accumulation itself, and reused as the `moveTolerance` any real step must exceed. Matches the
+ * threshold the hand-rolled interrupt used before adopting `createCastRunner`.
+ */
+const MOVE_DEADZONE = 0.04;
 import type { GameIconName } from "@jgengine/react/gameIcons";
 
 import { cue, schoolCue } from "../audio/cues";
@@ -365,7 +373,7 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
     return;
   }
   const now = ctx.time.now();
-  if (hero.casting !== null) return;
+  if (hero.caster.casting()) return;
   if (now < hero.gcdUntil) return;
   const resource = ctx.scene.entity.stats.get(userId, "resource")?.current ?? 0;
   const snapshot = hero.kit.state(ability.id, resource);
@@ -394,14 +402,20 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
     const castMod = abilityModsOf(ctx, userId).byAbility.get(ability.id)?.castPct ?? 0;
     const hastePct = heroSheet(ctx, userId)?.hastePct ?? 0;
     const castTime = Math.max(0.05, (ability.castTime * (1 + castMod)) / (1 + hastePct));
-    hero.casting = {
+    hero.caster.begin({
+      abilityId: ability.id,
+      castTimeMs: castTime * 1000,
+      moveTolerance: MOVE_DEADZONE,
+      moveDeadzone: MOVE_DEADZONE,
+    });
+    hero.castMeta = { name: ability.name, targetId: targetOf(ctx, userId) };
+    castStore.write(ctx, userId, {
       abilityId: ability.id,
       name: ability.name,
-      targetId: targetOf(ctx, userId),
+      targetId: hero.castMeta.targetId,
       startedAt: now,
       endAt: now + castTime,
-    };
-    castStore.write(ctx, userId, { ...hero.casting });
+    });
     cue(ctx, "cast_start");
     return;
   }
@@ -439,20 +453,22 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
   const now = ctx.time.now();
   const self = ctx.scene.entity.get(userId);
   if (self === null) return;
-  if (hero.casting !== null) {
-    const moved =
-      hero.lastPos !== null &&
-      (Math.abs(self.position[0] - hero.lastPos[0]) > 0.04 ||
-        Math.abs(self.position[2] - hero.lastPos[2]) > 0.04);
-    if (moved) {
-      hero.casting = null;
+  if (hero.caster.casting()) {
+    const frameMoved =
+      hero.lastPos === null
+        ? 0
+        : Math.hypot(self.position[0] - hero.lastPos[0], self.position[2] - hero.lastPos[2]);
+    const event = hero.caster.tick(dt, frameMoved);
+    if (event !== null) {
+      const abilityId = event.abilityId;
+      hero.castMeta = null;
       castStore.clear(ctx, userId);
-      say(ctx, userId, "Interrupted");
-    } else if (now >= hero.casting.endAt) {
-      const ability = classById(hero.classId).abilities.find((a) => a.id === hero.casting?.abilityId);
-      hero.casting = null;
-      castStore.clear(ctx, userId);
-      if (ability !== undefined) commitCast(ctx, userId, ability);
+      if (event.kind === "interrupted") {
+        say(ctx, userId, "Interrupted");
+      } else {
+        const ability = classById(hero.classId).abilities.find((a) => a.id === abilityId);
+        if (ability !== undefined) commitCast(ctx, userId, ability);
+      }
     }
   }
   hero.lastPos = [self.position[0], self.position[1], self.position[2]];

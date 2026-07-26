@@ -484,7 +484,14 @@ export function Shell3dPresentation({
                 style={{ touchAction: "none" }}
               >
                 {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
-                {cinematicLook ? <EnvironmentLighting /> : null}
+                {cinematicLook ? (
+                  <EnvironmentLighting
+                    skyColor={lighting?.hemisphere?.skyColor ?? "#87b5e0"}
+                    groundColor={lighting?.hemisphere?.groundColor ?? "#3d4a38"}
+                    sunDirection={lighting?.directional?.[0]?.position}
+                    sunColor={lighting?.directional?.[0]?.color ?? "#fff2d6"}
+                  />
+                ) : null}
                 {lighting !== undefined ? (
                   <ConfiguredLighting lighting={lighting} />
                 ) : effectiveSky === undefined ? (

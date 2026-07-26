@@ -1,5 +1,5 @@
 import { STUDIO_STAGE_POST } from "@jgengine/core/render/postProcessing";
-import { defineGame } from "@jgengine/shell/defineGame";
+import { defineGame } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "./editorLayers";
 import { content } from "./game/content";

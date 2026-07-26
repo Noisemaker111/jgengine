@@ -399,6 +399,14 @@
 - `CosmeticsEvents` (interface): interface CosmeticsEvents — ⚠ undocumented
 - `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
 
+## @jgengine/core/game/credits
+
+- `CreditsDocument` (interface): interface CreditsDocument — Everything a credits screen shows. `notice` is the closing line (a license summary, a thank-you).
+- `CreditsEntry` (interface): interface CreditsEntry — One credited line — a person, a studio, an asset pack, a tool.
+- `CreditsSection` (interface): interface CreditsSection — A titled group of entries — "Design", "Music", "3D Assets".
+- `groupCredits` (function): function groupCredits<T>(items: readonly T[], heading: (item: T) => string, entry: (item: T) => CreditsEntry): CreditsSection[] — Groups entries into sections by a caller-supplied key — the shape most generated credits arrive in (a flat list of things used, grouped by license, provider, or role). Section order follows first appearance, so a stable input gives a stable screen.
+- `mergeCredits` (function): function mergeCredits(...documents: readonly (CreditsDocument | null | undefined)[]): CreditsDocument — Merges credit documents into one, concatenating same-heading sections in first-seen order and dropping exact duplicate entries. Use it to fold generated credits (asset packs, dependencies) into the game's hand-authored ones without curating the overlap by hand.
+
 ## @jgengine/core/game/defineGame
 
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.
@@ -474,6 +482,7 @@
 - `GameEventMap` (interface): interface GameEventMap — ⚠ undocumented
 - `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
 - `InventoryAddedEvent` (interface): interface InventoryAddedEvent — ⚠ undocumented
+- `LootDrop` (interface): interface LootDrop — One granted reward: an inventory `item` id or a `currency` id, plus how many. Named because every consumer of `loot.granted` needs it — a toast renderer, a loot log, a session summary — and each one that re-declares the shape inline is a cast the compiler cannot check.
 - `LootGrantedEvent` (interface): interface LootGrantedEvent — ⚠ undocumented
 - `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent — ⚠ undocumented
 - `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent — ⚠ undocumented
@@ -492,6 +501,7 @@
 - `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent — ⚠ undocumented
 - `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent — ⚠ undocumented
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
+- `lootDropsOf` (function): function lootDropsOf(data: unknown): readonly LootDrop[] — Read the drops out of a `loot.granted` payload that arrived as `unknown` — a `FeedEntry.data`, a replicated event, a persisted log row. Returns `[]` for anything that is not shaped like a loot grant, so a renderer never has to guard the payload itself: `entry.data as { drops?: ... }` is the cast four separate call sites were writing, and the one that omitted the `| undefined` would have thrown on a payload-less entry.
 
 ## @jgengine/core/game/feed
 
@@ -593,8 +603,9 @@
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
 - `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
+- `LootRegistryOptions` (interface): interface LootRegistryOptions — Options for {@link createLootRegistry} — inject a default RNG so bare `roll(id)` uses the world stream.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
-- `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
+- `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
 - `grantDrops` (function): function grantDrops(drops: Drop[], appliers: { putItem: (itemId: string, count: number) => unknown; grantCurrency: (currencyId: string, amount: number) => unknown; }): void — ⚠ undocumented
 - `lootTable` (function): function lootTable(def: LootTableDef): LootTableDef — Validates a loot table definition and returns it unchanged, for use with {@link createLootRegistry}.
 
@@ -1439,7 +1450,7 @@
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 - `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — Save, name, and swap equipment loadouts.
 - `createLootPipeline` (function): function createLootPipeline<TCtx = unknown>(def: LootPipelineDef<TCtx>, deps: LootPipelineDeps = {}): LootPipeline<TCtx> — Build a composable loot-resolution pipeline: ordered source pools, context gates, fallbacks when a pool yields nothing, roll modifiers (luck, quantity, difficulty) applied as registered policies, and full provenance for every drop (stage, table, entry, original vs effective weights, modifier ids, seed). Rolling consumes the injected RNG in the same order as the base loot table, so a seeded resolution is deterministic and server-authoritatively replayable. Genre concepts (world, dedicated, boss, luck, rarity, pity) stay out of core and ship as stage/modifier compositions.
-- `createLootRegistry` (function): function createLootRegistry(): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
+- `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
 - `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
@@ -1511,7 +1522,7 @@
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
 - `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
-- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
+- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng?: () => number): ScheduledDelivery | null — ⚠ undocumented
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
 - `isDisabled` (function): function isDisabled(spec: DurabilitySpec, state: DurabilityState): boolean — ⚠ undocumented
 - `isIdentityValid` (function): function isIdentityValid(identity: ItemIdentity, rules: readonly CompatibilityRule[]): boolean — Convenience predicate: true when {@link validateIdentity} finds no violations.
@@ -1668,7 +1679,7 @@
 - `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
 - `StorageTier` (type): type StorageTier = "carried" | "banked" — ⚠ undocumented
 - `createDeliveryQueue` (function): function createDeliveryQueue(): DeliveryQueue — ⚠ undocumented
-- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng: () => number = Math.random): ScheduledDelivery | null — ⚠ undocumented
+- `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng?: () => number): ScheduledDelivery | null — ⚠ undocumented
 - `partitionOnDeath` (function): function partitionOnDeath(containers: readonly ContainerSnapshot[]): DeathPartition — ⚠ undocumented
 - `resolveConsolation` (function): function resolveConsolation(policy: ConsolationPolicy, partition: DeathPartition): { loadoutId: string } | null — ⚠ undocumented
 - `tierOf` (function): function tierOf(tiers: Record<string, StorageTier>, inventoryId: string): StorageTier — ⚠ undocumented
@@ -1851,6 +1862,11 @@
 
 - `pickUniform` (function): function pickUniform<T>(rng: () => number, items: readonly T[]): T | undefined — Pick one item uniformly at random from `items` using `rng` (a `() => number` in `[0, 1)`); returns undefined when empty.
 - `pickWeighted` (function): function pickWeighted<T>(rng: () => number, items: readonly T[], weightOf: (item: T) => number): T | undefined — Pick one item with probability proportional to `weightOf(item)`; skips non-positive weights, returns undefined when nothing is eligible.
+
+## @jgengine/core/random/resolveRng
+
+- `resetRngFallbackWarnings` (function): function resetRngFallbackWarnings(): void — Clears the warned-site memo. Tests only — the warning is once-per-site for the life of the process.
+- `resolveRng` (function): function resolveRng(provided: (() => number) | undefined, site: string): () => number — Resolves an optional injected `[0,1)` generator, falling back to `Math.random` — and says so, once per call site.
 
 ## @jgengine/core/random/rng
 

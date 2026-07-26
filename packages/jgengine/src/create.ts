@@ -121,12 +121,35 @@ function runInstall(pm: string, targetDir: string): ReturnType<typeof spawnSync>
   });
 }
 
+/**
+ * The one command that fills `public/models` for a scaffolded game. `starter` is a meta-id the
+ * assets CLI resolves to every pack the starter catalog needs, so this stays a single line in
+ * create's output, in AGENTS.md, and in the user's terminal.
+ */
+export const ASSETS_PULL_HINT = "npx assets pull starter";
+
+/**
+ * Pull the starter packs into the new game's `public/models`. Returns false on any failure —
+ * offline, a blocked proxy, a missing bin — so the caller can print {@link ASSETS_PULL_HINT}
+ * rather than fail a scaffold over a network condition.
+ */
+function runAssetsPull(targetDir: string): boolean {
+  const bin = join(targetDir, "node_modules", ".bin", process.platform === "win32" ? "assets.cmd" : "assets");
+  if (!existsSync(bin)) return false;
+  const result = spawnSync(bin, ["pull", "starter"], {
+    cwd: targetDir,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
+  return result.status === 0;
+}
+
 /** @internal */
 export function runCreate(argv: string[]): number {
   const nameArg = positionalArg(argv);
   if (nameArg === undefined) {
     console.error(
-      'usage: jgengine create "<Game Name>" [--from-scene <folder>] [--world] [--no-editor] [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]',
+      'usage: jgengine create "<Game Name>" [--from-scene <folder>] [--no-world] [--no-editor] [--in-repo|--standalone] [--no-install] [--no-skills] [--no-assets] [--pm bun|npm|pnpm]',
     );
     return 1;
   }
@@ -137,7 +160,8 @@ export function runCreate(argv: string[]): number {
   try {
     const sceneArg = flag(argv, "from-scene");
     const scene = sceneArg !== undefined ? readPromotedScene(sceneArg) : undefined;
-    const world = hasFlag(argv, "world");
+    // `--world` stays accepted (and is now the default); `--no-world` is the opt-out, matching --no-editor.
+    const world = !hasFlag(argv, "no-world");
     const editor = !hasFlag(argv, "no-editor");
     if (!editor && scene !== undefined) {
       console.error("error: --from-scene needs the editor scaffold — drop --no-editor");
@@ -221,6 +245,21 @@ export function runCreate(argv: string[]): number {
       if (!installed) console.error(`warning: ${pm} install failed — run it manually in ${targetDir}`);
     }
 
+    // Starter models are not shipped inside @jgengine/assets (it publishes dist + an `assets` CLI),
+    // so a --world scaffold points at /models with nothing behind it until they are pulled. Do it
+    // here so the default scaffold actually renders textured content rather than placeholders.
+    // Needs node_modules for the `assets` bin, and never fails the scaffold: offline, proxied and
+    // air-gapped machines get the exact command instead of a dead create.
+    let assetsPulled = false;
+    const wantAssets = world && !hasFlag(argv, "no-assets");
+    if (wantAssets && installed) {
+      console.log("pulling starter asset packs…");
+      assetsPulled = runAssetsPull(targetDir);
+      if (!assetsPulled) {
+        console.error("warning: asset pull failed — the game runs, but models fall back to placeholders");
+      }
+    }
+
     if (!hasFlag(argv, "no-skills")) {
       const skillsStatus = installSkills("project", targetDir);
       if (skillsStatus !== 0) {
@@ -232,6 +271,7 @@ export function runCreate(argv: string[]): number {
     console.log("\nnext steps:");
     console.log(`  cd ${cdHint}`);
     if (!installed) console.log("  bun install   # or npm install");
+    if (wantAssets && !assetsPulled) console.log(`  ${ASSETS_PULL_HINT}   # starter models into public/models`);
     console.log("  bun dev       # walkable base: WASD + jump, HUD canvas");
     if (editor) {
       console.log("  # F2+E in the browser opens the scene editor on src/editor.scene.json (Ctrl+S saves)");

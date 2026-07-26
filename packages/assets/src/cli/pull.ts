@@ -20,11 +20,13 @@ import {
   modelWiringSnippet,
   spriteWiringSnippet,
 } from "../snippet";
+import { STARTER_SOURCE_PACKS } from "../packs/starter";
 import { materialSources, sourceById, spriteSources } from "../sources";
 import { reindexSprites } from "../spriteIndexGen";
 import { verifyManifest } from "../verify";
 import {
   resolveDefaultOutputRoot,
+  resolveDefaultReindexDir,
   resolveGeneratedDir,
   resolveGeneratedSpritesDir,
   resolvePackageRoot,
@@ -163,7 +165,15 @@ export function isPopulated(dir: string): boolean {
 export async function cmdPull(argv: string[]): Promise<void> {
   const sourceId = argv[0];
   if (sourceId === undefined) {
-    fail("usage: pull <source-id> [--dir <dir>] [--mirror <baseUrl>] [--offline]");
+    fail("usage: pull <source-id|starter> [--dir <dir>] [--mirror <baseUrl>] [--offline]");
+  }
+  // `starter` is the meta-id a fresh game needs: every pack behind the starter catalog, so a
+  // scaffold resolves `asset:person_casual` and friends without the caller memorising five ids.
+  // The list lives with the catalog it serves, not in the CLI or in `jgengine create`.
+  if (sourceId === "starter") {
+    for (const id of STARTER_SOURCE_PACKS) await cmdPull([id, ...argv.slice(1)]);
+    console.log(`starter: ${STARTER_SOURCE_PACKS.length} pack(s) ready`);
+    return;
   }
   const source = sourceById.get(sourceId);
   if (source === undefined) fail(`unknown source: ${sourceId}`);
@@ -453,7 +463,7 @@ async function cmdAdd(argv: string[]): Promise<void> {
 }
 
 function cmdReindex(argv: string[]): void {
-  const modelsDir = resolve(argv[0] ?? join("public", "models"));
+  const modelsDir = resolve(argv[0] ?? resolveDefaultReindexDir(here, "models"));
   if (!existsSync(modelsDir)) fail(`models dir not found: ${modelsDir}`);
   const result = reindex(modelsDir, generatedDir);
   for (const row of result.perSource) console.log(`  ${row.source}: ${row.count}`);
@@ -461,7 +471,7 @@ function cmdReindex(argv: string[]): void {
 }
 
 function cmdReindexSprites(argv: string[]): void {
-  const spritesDir = resolve(argv[0] ?? join("public", "sprites"));
+  const spritesDir = resolve(argv[0] ?? resolveDefaultReindexDir(here, "sprites"));
   if (!existsSync(spritesDir)) fail(`sprites dir not found: ${spritesDir}`);
   const result = reindexSprites(spritesDir, generatedSpritesDir);
   for (const row of result.perSource) console.log(`  ${row.source}: ${row.count}`);
@@ -539,7 +549,8 @@ if (import.meta.main) {
       break;
     default:
       console.log(
-        "usage: assets <add|list|search|pull|register|reindex|reindex-sprites|verify|provenance> [...args]",
+        "usage: assets <add|list|search|pull|register|reindex|reindex-sprites|verify|provenance> [...args]\n" +
+        "  assets pull starter   # every pack the starter catalog needs, into ./public/models",
       );
       if (command !== undefined && command !== "help") process.exit(1);
   }

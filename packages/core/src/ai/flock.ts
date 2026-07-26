@@ -128,49 +128,36 @@ export interface FlockStepAgent {
 }
 
 const CELL_KEY_STRIDE = 1_048_576;
-const gridCells = new Map<number, number[]>();
-const freeBuckets: number[][] = [];
-const neighborScratch: FlockAgent[] = [];
-let steerScratch = new Float64Array(0);
 
 function cellKey(cx: number, cz: number): number {
   return cx * CELL_KEY_STRIDE + cz;
 }
 
-function takeBucket(): number[] {
-  return freeBuckets.pop() ?? [];
-}
-
-function ensureSteerCapacity(agentCount: number): void {
-  const needed = agentCount * 3;
-  if (steerScratch.length < needed) {
-    steerScratch = new Float64Array(needed);
-  }
-}
-
-function buildAgentGrid(agents: readonly FlockStepAgent[], invCell: number): void {
-  for (const bucket of gridCells.values()) {
-    bucket.length = 0;
-    freeBuckets.push(bucket);
-  }
-  gridCells.clear();
-
+/**
+ * Per-call spatial index + scratch — never module-global.
+ * Two `stepFlock` worlds in one process must not share a grid (#1545 / sdk remediation Phase 3a).
+ */
+function buildAgentGrid(agents: readonly FlockStepAgent[], invCell: number): Map<number, number[]> {
+  const gridCells = new Map<number, number[]>();
   for (let i = 0; i < agents.length; i += 1) {
     const position = agents[i]!.position;
     const key = cellKey(Math.floor(position[0] * invCell), Math.floor(position[2] * invCell));
     let bucket = gridCells.get(key);
     if (bucket === undefined) {
-      bucket = takeBucket();
+      bucket = [];
       gridCells.set(key, bucket);
     }
     bucket.push(i);
   }
+  return gridCells;
 }
 
 function fillNeighbors(
   agents: readonly FlockStepAgent[],
   agentIndex: number,
   invCell: number,
+  gridCells: Map<number, number[]>,
+  neighborScratch: FlockAgent[],
 ): number {
   const agent = agents[agentIndex]!;
   const cx = Math.floor(agent.position[0] * invCell);
@@ -206,11 +193,13 @@ export function stepFlock(
 
   const cellSize = config.neighborRadius > 1e-6 ? config.neighborRadius : 1;
   const invCell = 1 / cellSize;
-  buildAgentGrid(agents, invCell);
-  ensureSteerCapacity(count);
+  // All scratch is call-local so concurrent worlds (or re-entrant steps) never share a grid.
+  const gridCells = buildAgentGrid(agents, invCell);
+  const neighborScratch: FlockAgent[] = [];
+  const steerScratch = new Float64Array(count * 3);
 
   for (let i = 0; i < count; i += 1) {
-    fillNeighbors(agents, i, invCell);
+    fillNeighbors(agents, i, invCell, gridCells, neighborScratch);
     const steer = flockSteer(agents[i]!, neighborScratch, config, target);
     const base = i * 3;
     steerScratch[base] = steer[0];

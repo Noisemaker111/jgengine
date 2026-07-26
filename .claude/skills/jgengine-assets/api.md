@@ -119,6 +119,16 @@
 
 - `COLLISION_MESH_ASSET_IDS` (const): const COLLISION_MESH_ASSET_IDS: ReadonlySet<string> — Catalog assets that ship a collision mesh in the generated index. Opt-in only: each entry adds ~10-30KB of quantized triangles to the index and a BVH raycast per query, so list only concave models whose fitted box lies (archways, rings, frames).
 
+## @jgengine/assets/credits
+
+- `CreditsGrouping` (type): type CreditsGrouping = "license" | "provider" — Grouping for {@link creditsForSources} — one section per license (default) or per provider.
+- `allAssetSources` (function): function allAssetSources(): readonly AssetSource[] — Every catalogued source, for a credits screen that lists the whole shipped catalog.
+- `creditsForAssetIds` (function): function creditsForAssetIds(ids: Iterable<string>, options: { title?: string; grouping?: CreditsGrouping; notice?: string } = {}): CreditsDocument — One call from the asset ids a game ships to a ready {@link CreditsDocument} — the credit obligation for borrowed assets, derived rather than hand-maintained.
+- `creditsForSourceIds` (function): function creditsForSourceIds(ids: Iterable<string>, options: { title?: string; grouping?: CreditsGrouping; notice?: string } = {}): CreditsDocument — One call from the source ids a game declares to a ready {@link CreditsDocument} — the usual entry point, since `buildCatalog({ sources })` already names them.
+- `creditsForSources` (function): function creditsForSources(used: readonly AssetSource[], grouping: CreditsGrouping = "license"): CreditsSection[] — Turns asset sources into credit sections, one per license or provider, each entry naming the pack and its author with the pack homepage as `href`. Feed it {@link sourcesForAssetIds} so the screen credits what shipped, and fold the result into the game's hand-authored credits with `mergeCredits`.
+- `sourcesForAssetIds` (function): function sourcesForAssetIds(ids: Iterable<string>): AssetSource[] — The distinct asset sources behind a set of asset ids — the packs a game actually ships, not the whole catalog. Unknown ids are skipped; order follows first use so a stable id list gives a stable credits screen.
+- `sourcesForSourceIds` (function): function sourcesForSourceIds(ids: Iterable<string>): AssetSource[] — The distinct sources behind a set of source ids — the shape a game already declares to `buildCatalog({ sources })` / `buildMaterialCatalog`. Unknown ids are skipped.
+
 ## @jgengine/assets/dims
 
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.

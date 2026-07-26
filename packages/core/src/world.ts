@@ -577,6 +577,7 @@ export { boundaryNeighbors, createFootprintGrid, footprintObstacles, hasValidAdj
 export { type Aabb, type AvoidZone } from "./world/geometry";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
+export { grounded } from "./world/grounded";
 export { createLodScheduler } from "./world/lod";
 export {
   createAnnotationLayer,

@@ -113,6 +113,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ControlsList` (function) · `import { ControlsList } from "@jgengine/react"`
 
+## credits-screen — drop-in credits view over a CreditsDocument — headed sections, optional links, HudTheme-skinned
+
+- `CreditsScreen` (function) · `import { CreditsScreen } from "@jgengine/react/creditsScreen"`
+
 ## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
 
 - `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`
@@ -132,6 +136,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## default-look — one field that lights a scene like a shipped game (opt out with "flat")
 
 - `LookPreset` (type) · `import { LookPreset } from "@jgengine/core/ui"`
+
+## default-walk-codes — stock WASD + jump key codes for the shell walk controller
+
+- `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/shell/shellMovement"`
 
 ## dialogue-view — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun
 
@@ -249,9 +257,17 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StatBar` (function) · `import { StatBar } from "@jgengine/react"`
 
-## hud-theme — game-authored token object for bars, frames, slots, and minimap ring
+## hud-theme — game-authored token object covering bars, frames, slots, chrome, text, status colors, fonts, and rarity
 
 - `HudThemePalette` (interface) · `import { HudThemePalette } from "@jgengine/react"`
+
+## hud-theme-author — fill a full HudTheme from per-group partial overrides
+
+- `hudTheme` (function) · `import { hudTheme } from "@jgengine/react"`
+
+## hud-theme-derive — build a full HudTheme from an accent + surface seed pair
+
+- `deriveHudTheme` (function) · `import { deriveHudTheme } from "@jgengine/react"`
 
 ## hud-ticker — re-render a HUD element at a steady hz for time-derived readouts (cooldowns, cast/swing bars) — no hand-rolled setInterval effects
 
@@ -293,6 +309,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## map-legend — marker-kind key (glyph + color + label per kind) sharing the map's kindStyles
 
 - `MapLegend` (function) · `import { MapLegend } from "@jgengine/react"`
+
+## menu-router — screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back
+
+- `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/react/menuRouter"`
+
+## menu-stack-reducer — pure push/back/replace/reset transitions for a menu screen stack
+
+- `menuStackReducer` (function) · `import { menuStackReducer } from "@jgengine/react/menuRouter"`
 
 ## minimap — framed circular minimap with terrain bake, fog, markers, and facing arrow
 

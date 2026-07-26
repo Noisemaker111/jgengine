@@ -71,3 +71,52 @@ describe("defineStore", () => {
     expect(run.read(ctx)).toBe(run.read(ctx));
   });
 });
+
+describe("per-context isolation (#1579)", () => {
+  test("two contexts in one process hold independent values", () => {
+    const run = defineStore<RunState>("run.isolated", { score: 0, alive: true });
+    const host = makeContext();
+    const guest = makeContext();
+
+    run.write(host, { score: 40, alive: true });
+    run.write(guest, { score: 7, alive: false });
+
+    expect(run.read(host)).toEqual({ score: 40, alive: true });
+    expect(run.read(guest)).toEqual({ score: 7, alive: false });
+  });
+
+  test("a write in one context is invisible to another that never wrote", () => {
+    const run = defineStore<RunState>("run.unwritten", { score: 0, alive: true });
+    const host = makeContext();
+    const guest = makeContext();
+
+    run.write(host, { score: 99, alive: false });
+
+    expect(run.peek(guest)).toBeUndefined();
+    expect(run.read(guest)).toEqual({ score: 0, alive: true });
+  });
+
+  test("clearing one context leaves the other intact", () => {
+    const run = defineStore<RunState>("run.cleared", { score: 0, alive: true });
+    const host = makeContext();
+    const guest = makeContext();
+    run.write(host, { score: 12, alive: true });
+    run.write(guest, { score: 34, alive: true });
+
+    run.clear(host);
+
+    expect(run.read(host)).toEqual({ score: 0, alive: true });
+    expect(run.read(guest)).toEqual({ score: 34, alive: true });
+  });
+
+  test("a factory initial gives each context its own object, not a shared one", () => {
+    const run = defineStore<RunState>("run.factory", () => ({ score: 0, alive: true }));
+    const host = makeContext();
+    const guest = makeContext();
+
+    run.update(host, (previous) => ({ ...previous, score: previous.score + 5 }));
+
+    expect(run.read(host).score).toBe(5);
+    expect(run.read(guest).score).toBe(0);
+  });
+});

@@ -59,6 +59,11 @@ describe("classifyAssetResponse", () => {
     expect(d.message).toContain("kaykit-adventurers/Barbarian");
     expect(d.message).toContain("/models/kaykit-adventurers/Barbarian.glb");
     expect(d.message).toContain("404");
+    // Names the dir the dev server actually serves so the suggested `assets pull`
+    // fix resolves with no manual copy (issue #1499).
+    expect(d.message).toContain("assets pull <source>");
+    expect(d.message).toContain("apps/dev/public/models");
+    expect(d.message.toLowerCase()).toContain("no manual copy");
   });
 
   test("status 0 (network failure) is missing", () => {
@@ -76,6 +81,8 @@ describe("classifyAssetResponse", () => {
     expect(d.kind).toBe("html");
     expect(d.message.toLowerCase()).toContain("html page");
     expect(d.message).toContain("missing/Prop");
+    expect(d.message).toContain("apps/dev/public/models");
+    expect(d.message.toLowerCase()).toContain("no manual copy");
   });
 
   test("html content-type with no readable bytes still flags html", () => {

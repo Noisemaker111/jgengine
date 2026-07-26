@@ -1228,7 +1228,7 @@ export interface GameConfigOptions {
 
 const gameConfigTs = (name: string, options: GameConfigOptions) => {
   const imports = [
-    'import { defineGame } from "@jgengine/shell/gameKit";',
+    'import { DEFAULT_WALK_CODES, defineGame } from "@jgengine/shell/gameKit";',
     "",
     ...(options.editor ? ['import { editorLayers } from "./editorLayers";'] : []),
     ...(options.world
@@ -1243,14 +1243,7 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
     // The world carries its own physics (laws of the place) — no separate physics field to wire.
     ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",
-    "  input: {",
-    '    moveForward: ["KeyW"],',
-    '    moveBack: ["KeyS"],',
-    '    moveLeft: ["KeyA"],',
-    '    moveRight: ["KeyD"],',
-    '    jump: ["Space"],',
-    '    interact: ["KeyE"],',
-    "  },",
+    "  input: { ...DEFAULT_WALK_CODES, interact: [\"KeyE\"] },",
     "  systems,",
     "  loop: { onNewPlayer },",
     "  GameUI,",
@@ -1364,12 +1357,13 @@ export function onNewPlayer(ctx: GameContext): void {
 const loopTs = (editor: boolean) => (editor ? editorLoopTs : plainLoopTs);
 
 const gameUiTsx = (id: string, name: string, editor: boolean) => {
-  const header = `// ${name} — GameUI starts empty on purpose. Every game owns its UI: write a short UI art
-// direction, then build custom panels for this pitch. The engine supplies layout (HudCanvas /
-// HudPanel), data hooks, and interaction models — not a finished stock HUD. Do not ship
-// default StatBar/Hotbar/Coins/glass frames as the product face; compose game-owned chrome
-// (see jgengine-ui). Panel placement is editable live in canvas mode (F2+C) and can persist
-// to the scene document's ui.panels.`;
+  const header = `// ${name} — GameUI starts empty on purpose. Every game owns its UI composition: write a
+// short UI art direction, then compose the shipped building blocks (StatBar, Hotbar, Coins,
+// InventoryGrid, CharacterSheet, Window shells — see jgengine-ui) and reskin them with HudTheme
+// tokens. Reaching for those is correct, not incomplete work. What you must not ship is an
+// unarranged, unskinned generic face — layout, terminology, and art direction stay game-owned.
+// Panel placement is editable live in canvas mode (F2+C) and can persist to the scene document's
+// ui.panels.`;
   if (!editor) {
     return `import { HudCanvas, useHudLayout } from "@jgengine/react";
 
@@ -1473,6 +1467,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
   variant === "in-repo" ? " (engine source under packages/)" : " (dist under node_modules)"
 }, or the HUD — and the F2+E editor chrome mounted into this same page — is silently unstyled.
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
+- Models live in \`public/models\`, pulled — not shipped inside the package. \`jgengine create\` pulls them for you; if that was skipped (offline, \`--no-assets\`, \`--no-install\`) run \`npx assets pull starter\` in this folder, or every \`asset:\` id falls back to an untextured placeholder primitive and fails the bar above.
 - Screenshots: \`bun run shoot\` (or \`node scripts/shoot.mjs\`) captures the running game to \`shots/shot.png\` — it starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at 300x150, waits for an honest frame, and works headless. Add \`--device mobile\`, \`--out shots/hud.png\`, \`--settle <ms>\`, or \`--url <page>\`; \`--help\` for all flags. Do **not** rely on a browser tool's "screenshot" button for the 3D canvas — it captures before the GPU draws.
 - Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--key KeyW:2500\`, \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;

@@ -146,11 +146,11 @@ export function tickValeCup(ctx: GameContext, userId: string, dt: number): void 
   }
 
   const hero = ctx.scene.entity.get(userId);
-  if (hero !== null && Math.random() < dt * 0.35) {
+  if (hero !== null && ctx.rng() < dt * 0.35) {
     const awayKick = Math.hypot(match.ball.x - cx, match.ball.z - (cz - 6));
     if (awayKick < 10) {
-      match.ball.vx += (Math.random() - 0.5) * 6;
-      match.ball.vz -= 8 + Math.random() * 4;
+      match.ball.vx += (ctx.rng() - 0.5) * 6;
+      match.ball.vz -= 8 + ctx.rng() * 4;
     }
   }
 

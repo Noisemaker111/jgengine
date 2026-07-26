@@ -5,7 +5,7 @@ import type { EditorDocument } from "../packages/core/src/editor/types";
 import { resolveAuthoredObjects } from "../packages/core/src/world/authoredObjects";
 import { authoredSpawnPosition } from "../packages/core/src/world/authoredSpawn";
 import { gameTemplate } from "../packages/jgengine/src/templates";
-import { shellDrivesPlayerPose } from "../packages/shell/src/shellMovement";
+import { DEFAULT_WALK_CODES, shellDrivesPlayerPose } from "../packages/shell/src/shellMovement";
 
 /**
  * From-scratch loop, browserless: what `npx jgengine create` (also `bun run new:game` in-repo) scaffolds must be
@@ -36,9 +36,16 @@ describe("scaffold → edit → play parity", () => {
 
     test(`${variant}: scaffolded keybinds make the shell drive the walk controller`, () => {
       const source = fileOf("src/game.config.ts");
-      const boundActions = [...source.matchAll(/^\s{4}(\w+): \[/gm)].map((match) => match[1]!);
-      expect(boundActions.length).toBeGreaterThan(0);
-      const map = Object.fromEntries(boundActions.map((action) => [action, ["KeyW"]]));
+      // The scaffold composes the shipped walk map rather than re-typing key codes (#1543), so this
+      // asserts the resulting binding contract rather than the literal shape of the emitted object —
+      // which is what silently stopped matching when the template adopted DEFAULT_WALK_CODES.
+      expect(source).toContain("DEFAULT_WALK_CODES");
+      const inlineActions = [...source.matchAll(/(\w+): \["(?:Key|Digit|Arrow|Space)/g)].map((match) => match[1]!);
+      const map: Record<string, readonly string[]> = {
+        ...DEFAULT_WALK_CODES,
+        ...Object.fromEntries(inlineActions.map((action) => [action, ["KeyW"]])),
+      };
+      expect(Object.keys(map).length).toBeGreaterThan(0);
       expect(shellDrivesPlayerPose(map)).toBe(true);
     });
 

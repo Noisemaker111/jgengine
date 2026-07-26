@@ -1,4 +1,5 @@
-import { HudCanvas, HudPanel, SettingsTrigger, useHudLayout } from "@jgengine/react";
+import { SettingsTrigger } from "@jgengine/react";
+import { HudCanvas, HudPanel, useHudLayout } from "@jgengine/shell/gameKit";
 import { fieldkitVars } from "@/components/ui/jg-theme";
 
 import { BuildBar } from "./components/BuildBar";

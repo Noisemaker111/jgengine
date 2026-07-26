@@ -1,7 +1,5 @@
 import { createToastQueue, type ToastQueue } from "@jgengine/core/game/toasts";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import {
-  collectAuthoredTriggers,
   createAuthoredTriggerRuntime,
   getTriggerAction,
   listTriggerActions,
@@ -9,6 +7,7 @@ import {
   type AuthoredTriggerRuntime,
   type TriggerDispatchEvent,
 } from "@jgengine/core/scene/authoredTriggers";
+import { collectAuthoredTriggers, type GameContext } from "@jgengine/shell/gameKit";
 
 import { editorLayers } from "../editorLayers";
 

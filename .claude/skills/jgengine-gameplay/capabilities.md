@@ -132,6 +132,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/core/gameplay"`
 
+## group-credits — turn a flat list of credited things into ordered credit sections
+
+- `groupCredits` (function) · `import { groupCredits } from "@jgengine/core/game/credits"`
+
 ## imprint-bonus — apply imprint stat and handler bonuses at an imprint fraction
 
 - `applyImprintBonus` (function) · `import { applyImprintBonus } from "@jgengine/core/game/breeding"`
@@ -240,6 +244,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## maturation-stage — resolve the baby/juvenile/adolescent/adult stage from elapsed maturation
 
 - `maturationStage` (function) · `import { maturationStage } from "@jgengine/core/game/breeding"`
+
+## merge-credits — fold generated and hand-authored credit documents into one, deduped by entry
+
+- `mergeCredits` (function) · `import { mergeCredits } from "@jgengine/core/game/credits"`
 
 ## modular-item — attach parts into item mount slots to compute combined stats
 
@@ -356,6 +364,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## resolve — the current tier/band label for a keyed or scalar value
 
 - `tierAt` (function) · `import { tierAt } from "@jgengine/core/gameplay"`
+
+## resolve-rng — resolve an optional injected RNG, warning once per site when it falls back to `Math.random`
+
+- `resolveRng` (function) · `import { resolveRng } from "@jgengine/core/random/resolveRng"`
 
 ## resource-ledger — schedule recurring resource transactions with policy transforms
 
