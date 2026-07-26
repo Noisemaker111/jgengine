@@ -1,7 +1,10 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, test } from "bun:test";
 import { summarizeEnvironment } from "@jgengine/core/world/environmentSummary";
 import { terrainField, world } from "../../world";
 import { MAIN_QUEST_IDS, quests } from "../quests/catalog";
+import { SETTLEMENT_KITS } from "./buildingKit";
 import { AUTHORED_PIECES, ROUTES, SPUR_ROUTES, authoredScene } from "./level";
 import { BOLT_POS, BOLT_YAW, PLAYER_SPAWN, PLAYER_SPAWN_YAW } from "./sites";
 import { ZONES, zoneAt, zoneLevelAt } from "./zones";
@@ -63,6 +66,15 @@ describe("the-robots world", () => {
     const settled = ZONES.filter((zone) => zone.settlement !== undefined);
     expect(summary.counts.structureGroups).toBe(settled.length);
     expect(summary.counts.buildings).toBe(settled.reduce((sum, zone) => sum + zone.settlement!.count, 0));
+  });
+
+  test("every settlement carries the kit its zone style names", () => {
+    const settled = ZONES.filter((zone) => zone.settlement !== undefined);
+    const groups = world.structures ?? [];
+    expect(groups.length).toBe(settled.length);
+    for (const [index, zone] of settled.entries()) {
+      expect(groups[index]!.kit?.id).toBe(SETTLEMENT_KITS[zone.settlement!.style].id);
+    }
   });
 
   test("terrain resolves finite heights with real relief across the expanse", () => {
@@ -129,5 +141,24 @@ describe("campaign chain", () => {
     for (const quest of quests) {
       for (const next of quest.rewards?.quests ?? []) expect(byId.has(next)).toBe(true);
     }
+  });
+});
+
+describe("settlement building kits", () => {
+  const publicRoot = join(import.meta.dir, "../../../../../apps/dev/public");
+
+  test("every bound model is a file the game actually serves", () => {
+    for (const kit of Object.values(SETTLEMENT_KITS)) {
+      const bound = [...Object.values(kit.parts), ...Object.values(kit.slots ?? {})].flat();
+      expect(bound.length).toBeGreaterThan(0);
+      for (const part of bound) {
+        expect(part.model.startsWith("/models/")).toBe(true);
+        expect(existsSync(join(publicRoot, part.model))).toBe(true);
+      }
+    }
+  });
+
+  test("clothesline is dropped rather than left to fall back to a block", () => {
+    for (const kit of Object.values(SETTLEMENT_KITS)) expect(kit.omit).toContain("clothesline");
   });
 });

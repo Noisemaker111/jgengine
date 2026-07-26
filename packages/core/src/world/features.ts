@@ -1,4 +1,5 @@
 import type { BuildingPaletteOverrides, BuildingStyle } from "./buildings";
+import type { BuildingKit } from "./buildingKit";
 import type { AvoidZone } from "./geometry";
 import type { TerrainPathProfile } from "./pathTerrain";
 import type { PlaceWorldFeature } from "./place";
@@ -371,6 +372,11 @@ export interface BuildingEnvironmentConfig {
    * back by a sidewalk strip) instead of the grid around `position`. See {@link BuildingFrontageConfig}.
    */
   along?: BuildingFrontageConfig;
+  /**
+   * Binds facade part slots to real models (see `world/buildingKit`). Unbound kinds keep the
+   * untextured block; without a kit the whole facade stays blocks, as before.
+   */
+  kit?: BuildingKit;
 }
 
 export type PadSize = readonly [number, number] | { radius: number };
@@ -424,7 +430,7 @@ export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
 > &
-  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along">;
+  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit">;
 
 export type PadEnvironmentDescriptor = { kind: "pad" } & Required<
   Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color">
@@ -859,6 +865,7 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
       ...(config.position === undefined ? {} : { position: config.position }),
       ...(config.palette === undefined ? {} : { palette: config.palette }),
       ...(config.along === undefined ? {} : { along: config.along }),
+      ...(config.kit === undefined ? {} : { kit: config.kit }),
     },
   );
 }

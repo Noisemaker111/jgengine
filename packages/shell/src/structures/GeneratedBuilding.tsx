@@ -1,7 +1,12 @@
-import { useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { Suspense, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
+import type { BuildingKitSlot } from "@jgengine/core/world/buildings";
+import type { BuildingKit } from "@jgengine/core/world/buildingKit";
+
 import { useDisposable } from "../render/useDisposable";
+import { BuildingKitBatch } from "./BuildingKitBatch";
+import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit";
 
 export type BuildingFacade = "front" | "back" | "left" | "right" | "roof";
 export type BuildingPartKind =
@@ -25,6 +30,8 @@ export interface BuildingPartPlacement {
   position: readonly [number, number, number];
   rotationY: number;
   scale: readonly [number, number, number];
+  /** Which kit variant this slot asks for; emitted by the generator, consumed by `BuildingKit` binding. */
+  kit?: BuildingKitSlot;
 }
 
 export interface GeneratedBuildingData {
@@ -59,7 +66,12 @@ export interface BuildingBlockProps {
 export interface GeneratedBuildingProps {
   building: GeneratedBuildingData;
   palette?: BuildingMaterialPalette;
-  kit?: BuildingKitRenderer;
+  /** Per-part React escape hatch, tried before the kit; return undefined to fall through. */
+  partRenderer?: BuildingKitRenderer;
+  /** Binds part kinds to instanced GLB models; unbound kinds keep the palette boxes. */
+  kit?: BuildingKit;
+  /** Maps a kit part's `model` reference to a loadable URL. Defaults to identity. */
+  resolveModelUrl?: (model: string) => string;
   visibleKinds?: readonly BuildingPartKind[];
 }
 
@@ -75,6 +87,13 @@ export interface InstancedBuildingPlacement {
 export interface InstancedBuildingsProps {
   buildings: readonly InstancedBuildingPlacement[];
   palette?: BuildingMaterialPalette;
+  /**
+   * Binds part kinds to instanced GLB models. Kinds the kit leaves unbound keep rendering the palette
+   * boxes, and kinds it lists in `omit` render nothing; omit the prop for today's all-box massing.
+   */
+  kit?: BuildingKit;
+  /** Maps a kit part's `model` reference to a loadable URL. Defaults to identity. */
+  resolveModelUrl?: (model: string) => string;
   visibleKinds?: readonly BuildingPartKind[];
 }
 
@@ -95,21 +114,6 @@ const DEFAULT_PALETTE: Required<BuildingMaterialPalette> = {
 
 function colorFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): string {
   return palette?.[kind] ?? DEFAULT_PALETTE[kind];
-}
-
-function normalFor(facade: BuildingFacade): readonly [number, number] {
-  if (facade === "front") return [0, 1];
-  if (facade === "back") return [0, -1];
-  if (facade === "left") return [-1, 0];
-  if (facade === "right") return [1, 0];
-  return [0, 0];
-}
-
-function outwardOffset(part: BuildingPartPlacement): number {
-  if (part.kind === "wall" || part.kind === "roof" || part.kind === "corner") return 0;
-  if (part.kind === "window" || part.kind === "shutter" || part.kind === "storefront") return 0.025;
-  if (part.kind === "awning" || part.kind === "storeSign") return 0.09;
-  return 0.12;
 }
 
 function materialFor(part: BuildingPartPlacement, palette: BuildingMaterialPalette | undefined) {
@@ -138,60 +142,6 @@ function batchMaterialFor(kind: BuildingPartKind, palette: BuildingMaterialPalet
     return new THREE.MeshStandardMaterial({ color, roughness: 0.65, metalness: 0.1 });
   }
   return new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0 });
-}
-
-const CLOTHESLINE_ROW_OFFSETS = [-0.09, 0.09] as const;
-
-function bucketPartMatrices(
-  buildings: readonly InstancedBuildingPlacement[],
-  visible: ReadonlySet<BuildingPartKind> | null,
-): Map<BuildingPartKind, THREE.Matrix4[]> {
-  const dummy = new THREE.Object3D();
-  const buckets = new Map<BuildingPartKind, THREE.Matrix4[]>();
-  for (const placement of buildings) {
-    const [ox, oy, oz] = placement.position ?? [0, 0, 0];
-    // Building yaw turns the whole massing about its center. Engine Y-rotation convention (matches
-    // dummy.rotation.y below): a local vector (x, z) maps to (x·cos + z·sin, −x·sin + z·cos).
-    const yaw = placement.rotationY ?? 0;
-    const [px0, pz0] = placement.pivot ?? [0, 0];
-    const cos = Math.cos(yaw);
-    const sin = Math.sin(yaw);
-    for (const part of placement.building.parts) {
-      if (visible !== null && !visible.has(part.kind)) continue;
-      const [nx, nz] = normalFor(part.facade);
-      const offset = outwardOffset(part);
-      // Local offset from the pivot (part position + facade-normal nudge), then rotated by the yaw.
-      const lx = part.position[0] - px0 + nx * offset;
-      const lz = part.position[2] - pz0 + nz * offset;
-      const px = ox + px0 + lx * cos + lz * sin;
-      const py = oy + part.position[1];
-      const pz = oz + pz0 - lx * sin + lz * cos;
-      const partYaw = part.rotationY + yaw;
-      let bucket = buckets.get(part.kind);
-      if (bucket === undefined) {
-        bucket = [];
-        buckets.set(part.kind, bucket);
-      }
-      if (part.kind === "clothesline") {
-        const rowSin = Math.sin(partYaw);
-        const rowCos = Math.cos(partYaw);
-        for (const row of CLOTHESLINE_ROW_OFFSETS) {
-          dummy.position.set(px + row * rowSin, py, pz + row * rowCos);
-          dummy.rotation.set(0, partYaw, 0);
-          dummy.scale.set(part.scale[0], Math.max(part.scale[1], 0.025), 0.025);
-          dummy.updateMatrix();
-          bucket.push(dummy.matrix.clone());
-        }
-        continue;
-      }
-      dummy.position.set(px, py, pz);
-      dummy.rotation.set(0, partYaw, 0);
-      dummy.scale.set(part.scale[0], part.scale[1], part.scale[2]);
-      dummy.updateMatrix();
-      bucket.push(dummy.matrix.clone());
-    }
-  }
-  return buckets;
 }
 
 function BuildingKindBatch({
@@ -225,17 +175,28 @@ function BuildingKindBatch({
   );
 }
 
-export function InstancedBuildings({ buildings, palette, visibleKinds }: InstancedBuildingsProps) {
+export function InstancedBuildings({
+  buildings,
+  palette,
+  kit,
+  resolveModelUrl,
+  visibleKinds,
+}: InstancedBuildingsProps) {
   const geometry = useDisposable(() => new THREE.BoxGeometry(1, 1, 1), []);
-  const buckets = useMemo(() => {
+  const { boxes, models } = useMemo(() => {
     const visible = visibleKinds === undefined ? null : new Set<BuildingPartKind>(visibleKinds);
-    return bucketPartMatrices(buildings, visible);
-  }, [buildings, visibleKinds]);
-  if (buckets.size === 0) return null;
+    return bucketBuildingParts(buildings, visible, kit, resolveModelUrl);
+  }, [buildings, visibleKinds, kit, resolveModelUrl]);
+  if (boxes.size === 0 && models.size === 0) return null;
   return (
     <group>
-      {[...buckets.entries()].map(([kind, matrices]) => (
+      {[...boxes.entries()].map(([kind, matrices]) => (
         <BuildingKindBatch key={kind} kind={kind} matrices={matrices} palette={palette} geometry={geometry} />
+      ))}
+      {[...models.entries()].map(([url, instances]) => (
+        <Suspense key={url} fallback={null}>
+          <BuildingKitBatch url={url} instances={instances} />
+        </Suspense>
       ))}
     </group>
   );
@@ -282,14 +243,21 @@ export function BuildingBlock({ part, palette }: BuildingBlockProps) {
   return <BlockMesh part={part} palette={palette} />;
 }
 
-export function GeneratedBuilding({ building, palette, kit, visibleKinds }: GeneratedBuildingProps) {
+export function GeneratedBuilding({
+  building,
+  palette,
+  partRenderer,
+  kit,
+  resolveModelUrl,
+  visibleKinds,
+}: GeneratedBuildingProps) {
   const { kitParts, batched } = useMemo(() => {
     const visible = visibleKinds === undefined ? null : new Set<BuildingPartKind>(visibleKinds);
     const kitRendered: { id: string; node: ReactNode }[] = [];
     const batchedParts: BuildingPartPlacement[] = [];
     for (const part of building.parts) {
       if (visible !== null && !visible.has(part.kind)) continue;
-      const rendered = kit?.renderPart?.(part);
+      const rendered = partRenderer?.renderPart?.(part);
       if (rendered !== undefined) {
         kitRendered.push({ id: part.id, node: rendered });
         continue;
@@ -299,13 +267,18 @@ export function GeneratedBuilding({ building, palette, kit, visibleKinds }: Gene
     const placements: InstancedBuildingPlacement[] =
       batchedParts.length === 0 ? [] : [{ building: { id: building.id, parts: batchedParts } }];
     return { kitParts: kitRendered, batched: placements };
-  }, [building, kit, visibleKinds]);
+  }, [building, partRenderer, visibleKinds]);
   return (
     <group name={building.id}>
       {kitParts.map((entry) => (
         <group key={entry.id}>{entry.node}</group>
       ))}
-      <InstancedBuildings buildings={batched} palette={palette} />
+      <InstancedBuildings
+        buildings={batched}
+        palette={palette}
+        kit={kit}
+        resolveModelUrl={resolveModelUrl}
+      />
     </group>
   );
 }

@@ -15,6 +15,7 @@ import {
 } from "@jgengine/core/world/features";
 import { CLIFF_MAPS, GROUND_MAPS } from "./game/assets";
 import { FERRALON } from "./game/palette";
+import { SETTLEMENT_KITS } from "./game/world/buildingKit";
 import { ROUTES, SPUR_ROUTES, SIDE_POIS, poiFlattenMasks, roadPathProfiles } from "./game/world/level";
 import { WORLD_BOUNDS, ZONES } from "./game/world/zones";
 
@@ -243,6 +244,7 @@ export const world: WorldFeature = environment({
       storyHeight: 3,
       spacing: 5,
       style: settlement.style,
+      kit: SETTLEMENT_KITS[settlement.style],
       ...(settlement.palette !== undefined ? { palette: settlement.palette } : {}),
       seed: `${FERRALON_SEED}-${zone.id}`,
     });
