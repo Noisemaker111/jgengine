@@ -41,7 +41,9 @@ export function tickDrivableVehicle(
 ): DrivableVehicleStep {
   const step = vehicle.tick(dt, axis, options.modifiers);
   const [x, y, z] = step.position;
-  const resolvedY = options.groundHeight === undefined ? y : options.groundHeight(x, z);
+  // Ground-snap first, then lift by any hop in progress, so a jumping vehicle still follows the
+  // terrain beneath it instead of hanging at a fixed world height over a slope.
+  const resolvedY = (options.groundHeight === undefined ? y : options.groundHeight(x, z)) + step.airOffset;
   return {
     pose: { position: [x, resolvedY, z], rotationX: step.bodyPitch, rotationY: step.heading, rotationZ: step.bodyRoll, dt },
     step,

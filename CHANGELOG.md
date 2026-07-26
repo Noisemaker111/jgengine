@@ -91,6 +91,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **Runtime-mutable arcade car tuning + hops (#1550)** — `KinematicVehicle.retune(tuning)` swaps a vehicle's whole tuning block while keeping position, heading, velocity and gear state, for vehicles whose stats change during play (installed parts, damage, debuffs). New tuning fields `hopGravity` (enables `vehicle.hop(impulse)`, reported as `step.airOffset` / `step.airborne` and applied on top of the ground sample by `tickDrivableVehicle`), `coastDeceleration` (flat coast road-load, versus `rollingResistance`'s proportional decay), and `reverseForceScale` (reverse push on the arcade path, previously reachable only via a full `chassis` block). New per-tick modifier `brakeScale`. All additive: omit them and every existing vehicle behaves exactly as before.
 - **`ctx.rng` + `createGameContext({ seed, rng })` (#1545)** — deterministic per-world `[0,1)` stream for sim paths; same seed → same sequence across worlds/hosts.
 - **Post `aa: "smaa" | "msaa" | false` (#1545)** — SMAA default on post chains (before OutputPass) for alpha-tested edge crawl.
 - **Procedural sky IBL + directional `cascades` CSM (#1545)** — `EnvironmentLighting` bakes sky/ground/sun into PMREM; `cascades > 1` on directional lighting mounts cascaded shadows.
