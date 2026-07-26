@@ -162,11 +162,13 @@ export const game = defineGame({
   // pasted onto the ground. Sun up, ambient/hemisphere down, and a cool bounce from the sky so
   // shadowed metal goes blue-grey instead of muddy brown.
   lighting: {
-    ambient: { color: "#a8a293", intensity: 0.28 },
-    hemisphere: { skyColor: "#8fb4cc", groundColor: "#6b4a30", intensity: 0.4 },
+    ambient: { color: "#9aa3a8", intensity: 0.22 },
+    hemisphere: { skyColor: "#7fa9c8", groundColor: "#6b4a30", intensity: 0.45 },
+    // Mid-afternoon, not noon. The old key was almost overhead, so nothing cast a shadow long
+    // enough to describe its own shape and every object read as a sticker on flat sand.
     directional: [
-      { color: "#ffeccd", intensity: 2.5, position: [40, 60, 20], castShadow: true },
-      { color: "#5f7d99", intensity: 0.35, position: [-30, 30, -25] },
+      { color: "#ffe0b0", intensity: 2.6, position: [64, 46, -52], castShadow: true },
+      { color: "#6d90b4", intensity: 0.5, position: [-40, 26, 30] },
     ],
   },
   // GTAO was dropped here after perf profiling: it re-renders the whole scene
@@ -176,15 +178,15 @@ export const game = defineGame({
     toneMapping: "aces",
     // Threshold low enough that optics and hazard trim actually bloom (that glow is the enemy read),
     // contrast up so the flats stop sitting in one mid-tone band.
-    bloom: { strength: 0.42, radius: 0.6, threshold: 0.62 },
+    bloom: { strength: 0.26, radius: 0.66, threshold: 0.95 },
     // Cool lift + warm gain splits shadow and highlight so the flats stop sitting in one mid-tone
     // band; gamma under the 0.96 default deepens the midtones the old look washed out.
     grade: {
-      vignette: 0.28,
-      saturation: 1.16,
-      gamma: 0.92,
-      lift: [0.008, 0.012, 0.026],
-      gain: [1.07, 1.02, 0.94],
+      vignette: 0.34,
+      saturation: 1.22,
+      gamma: 0.88,
+      lift: [0.0, 0.006, 0.022],
+      gain: [1.04, 1.0, 0.97],
     },
   },
   movement: {

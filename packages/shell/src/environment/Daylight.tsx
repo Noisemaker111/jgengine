@@ -23,6 +23,8 @@ export interface SkyDomeProps {
   sunIntensity?: number;
   /** Horizon haze-band strength: 0 removes the dusty band, ~1 makes it heavy. Default 0.5. */
   hazeStrength?: number;
+  /** Procedural cloud-band opacity: 0 is a clear sky, 1 is heavy overcast. Default 0.35. */
+  cloudiness?: number;
   /** Sun-glow brightness multiplier around the sun disc. Default 1. */
   sunGlowStrength?: number;
   /** Exposes the created shader material so a time-of-day driver can mutate its uniforms per frame without recreating it. */
@@ -98,6 +100,7 @@ export function SkyDome({
   sunIntensity = 1,
   hazeStrength = 0.5,
   sunGlowStrength = 1,
+  cloudiness = 0.35,
   materialRef,
 }: SkyDomeProps = {}) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -113,6 +116,7 @@ export function SkyDome({
         uSunIntensity: { value: sunDirection === undefined ? 0 : sunIntensity },
         uHazeStrength: { value: hazeStrength },
         uSunGlow: { value: sunGlowStrength },
+        uCloudiness: { value: cloudiness },
       },
       vertexShader: `
         varying vec3 vWorldPosition;
@@ -130,6 +134,7 @@ export function SkyDome({
         uniform float uSunIntensity;
         uniform float uHazeStrength;
         uniform float uSunGlow;
+        uniform float uCloudiness;
         uniform float offset;
         uniform float exponent;
         varying vec3 vWorldPosition;
@@ -149,7 +154,7 @@ export function SkyDome({
           vec2 cuv = vd.xz / (max(vd.y, 0.06) + 0.15) * 1.2;
           float clouds = smoothstep(0.52, 0.82, sFbm(cuv));
           float band = smoothstep(0.08, 0.35, dir.y) * smoothstep(1.0, 0.35, dir.y);
-          col = mix(col, mix(topColor, vec3(1.0), 0.6), clouds * band * 0.35);
+          col = mix(col, mix(topColor, vec3(1.0), 0.6), clouds * band * uCloudiness);
           float sd = max(dot(vd, normalize(uSunDirection)), 0.0);
           float glow = pow(sd, 8.0) * 0.35 + pow(sd, 128.0) * 2.6;
           col += uSunColor * glow * uSunIntensity * uSunGlow;
@@ -160,7 +165,7 @@ export function SkyDome({
       depthWrite: false,
       fog: false,
     });
-  }, [topColor, horizonColor, offset, exponent, sunColor, sunDirection, sunIntensity, hazeStrength, sunGlowStrength]);
+  }, [topColor, horizonColor, offset, exponent, sunColor, sunDirection, sunIntensity, hazeStrength, sunGlowStrength, cloudiness]);
   useEffect(() => {
     if (materialRef !== undefined) materialRef.current = material;
     return () => {
@@ -250,11 +255,13 @@ export function SkyDaylight({ sky, lights = true, bands }: SkyDaylightProps) {
 /** Dome-shape overrides (radius, haze, sun-glow) carried by the sky descriptor, spread onto `SkyDome`; unset fields keep the dome defaults. */
 function skyDomeShape(
   sky: SkyEnvironmentDescriptor,
-): Pick<SkyDomeProps, "radius" | "hazeStrength" | "sunGlowStrength"> {
+): Pick<SkyDomeProps, "radius" | "hazeStrength" | "sunGlowStrength" | "exponent" | "cloudiness"> {
   return {
     ...(sky.radius === undefined ? {} : { radius: sky.radius }),
     ...(sky.hazeStrength === undefined ? {} : { hazeStrength: sky.hazeStrength }),
     ...(sky.sunGlowStrength === undefined ? {} : { sunGlowStrength: sky.sunGlowStrength }),
+    ...(sky.gradientExponent === undefined ? {} : { exponent: sky.gradientExponent }),
+    ...(sky.cloudiness === undefined ? {} : { cloudiness: sky.cloudiness }),
   };
 }
 
