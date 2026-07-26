@@ -584,6 +584,25 @@
         "buildingRoadSetback": 0.55,
         "buildingSpacing": 0.55,
         "clusterStrength": 0.35,
+        "coreMix": [
+          { "item": "tower", "weight": 5 },
+          { "item": "slab", "weight": 2 },
+          { "item": "shop", "weight": 1 }
+        ],
+        "midMix": [
+          { "item": "tower", "weight": 2 },
+          { "item": "slab", "weight": 3 },
+          { "item": "rowhouse", "weight": 2 },
+          { "item": "shop", "weight": 1 }
+        ],
+        "edgeMix": [
+          { "item": "slab", "weight": 2 },
+          { "item": "rowhouse", "weight": 3 },
+          { "item": "shop", "weight": 1 }
+        ],
+        "hedges": false,
+        "driveways": false,
+        "parking": false,
         "parkedCars": 0.9,
         "signals": 1,
         "race": true,

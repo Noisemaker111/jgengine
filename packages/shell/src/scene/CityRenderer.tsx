@@ -853,8 +853,8 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     }
     if (!useBlockSidewalks) {
       for (const sidewalk of trimmed.sidewalks) sidewalks.addMesh(sidewalk);
+      for (const apron of trimmed.sidewalkAprons) sidewalks.addMesh(apron);
     }
-    for (const apron of trimmed.sidewalkAprons) sidewalks.addMesh(apron);
     for (let j = 0; j < trimmed.junctions.length; j += 1) {
       const crossIndex = trimmed.junctionIndices[j]!;
       const scuff = (hashString(`cross:${crossIndex}`) % 512) / 512;
@@ -1562,6 +1562,19 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         const b = run[i + 1]!;
         const seg = Math.hypot(b[0] - a[0], b[1] - a[1]);
         if (seg < 1e-6) continue;
+        const midX = (a[0] + b[0]) * 0.5;
+        const midZ = (a[1] + b[1]) * 0.5;
+        let overJunction = false;
+        for (const cross of resolved.intersections) {
+          if (Math.hypot(cross.x - midX, cross.z - midZ) < cross.radius + 0.4) {
+            overJunction = true;
+            break;
+          }
+        }
+        if (overJunction) {
+          travelled += seg;
+          continue;
+        }
         const oa = outward[i]!;
         const ob = outward[i + 1]!;
         let t = 0;
