@@ -365,6 +365,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `tierAt` (function) · `import { tierAt } from "@jgengine/core/gameplay"`
 
+## resolve-rng — resolve an optional injected RNG, warning once per site when it falls back to `Math.random`
+
+- `resolveRng` (function) · `import { resolveRng } from "@jgengine/core/random/resolveRng"`
+
 ## resource-ledger — schedule recurring resource transactions with policy transforms
 
 - `createResourceLedger` (function) · `import { createResourceLedger } from "@jgengine/core/gameplay"`

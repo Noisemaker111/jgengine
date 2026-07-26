@@ -1,3 +1,4 @@
+import { resolveRng } from "../random/resolveRng";
 /** One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds. */
 export interface LootEntry {
   item?: string;
@@ -101,7 +102,7 @@ export interface LootRegistryOptions {
   /**
    * Default `[0,1)` stream when `roll` is called without an explicit rng.
    * Prefer the world stream from `createGameContext` (`ctx.rng`); bare registries
-   * still default to `Math.random` for portable call sites outside a game context.
+   * still fall back to `Math.random` (warning once) for portable call sites outside a game context.
    */
   rng?: () => number;
 }
@@ -113,7 +114,7 @@ export interface LootRegistryOptions {
  */
 export function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry {
   const tables = new Map<string, LootTableDef>();
-  const defaultRng = options.rng ?? Math.random;
+  const defaultRng = resolveRng(options.rng, "createLootRegistry");
 
   return {
     register(def) {

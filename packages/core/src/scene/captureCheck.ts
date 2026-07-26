@@ -1,3 +1,4 @@
+import { resolveRng } from "../random/resolveRng";
 export interface CaptureCheckInput {
   hpFraction: number;
   catchPower: number;
@@ -14,6 +15,6 @@ export function captureChance(input: CaptureCheckInput): number {
   return clamp01((input.catchPower * hpFactor) / Math.max(difficulty, 0.0001));
 }
 
-export function rollCapture(input: CaptureCheckInput, rng: () => number = Math.random): boolean {
-  return rng() < captureChance(input);
+export function rollCapture(input: CaptureCheckInput, rng?: () => number): boolean {
+  return resolveRng(rng, "rollCapture")() < captureChance(input);
 }

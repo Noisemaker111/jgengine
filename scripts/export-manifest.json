@@ -270,6 +270,7 @@
     "./puzzle/nonogram",
     "./random/nameGen",
     "./random/pick",
+    "./random/resolveRng",
     "./random/rng",
     "./random/seedLink",
     "./relation/keyedValues",
