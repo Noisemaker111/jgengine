@@ -56,6 +56,7 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-skill-api",
     "check-orphan-ratchet",
     "check-stateful-ratchet",
+    "check-module-globals",
     "check-capabilities",
     "check-game-shape",
     "check-content-gate",

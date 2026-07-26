@@ -45,11 +45,36 @@ const RACE_BANNER_SEC = 6;
 /** Convoy spawn counter lives in a store so mid-m7 saves keep unique ids and the 10-spawn cap. */
 const convoyStageStore = defineStore<number | undefined>("vice.convoyStage", undefined);
 
-let convoyTimer = 0;
-let kingpinSpawned = false;
-let bustedHold = 0;
-let raceSettled = false;
-let raceClearAt = 0;
+/**
+ * Per-run mission timers. In the store rather than module scope so a server host, a test, and two
+ * split-screen contexts each get their own — module-level `let` is shared by every context in the
+ * process.
+ */
+interface MissionState {
+  convoyTimer: number;
+  kingpinSpawned: boolean;
+  bustedHold: number;
+  raceSettled: boolean;
+  raceClearAt: number;
+}
+
+const FRESH_MISSION: MissionState = {
+  convoyTimer: 0,
+  kingpinSpawned: false,
+  bustedHold: 0,
+  raceSettled: false,
+  raceClearAt: 0,
+};
+
+const missionStore = defineStore<MissionState>("vice.mission", () => ({ ...FRESH_MISSION }));
+
+function mission(ctx: GameContext): MissionState {
+  return missionStore.read(ctx);
+}
+
+function patchMission(ctx: GameContext, patch: Partial<MissionState>): void {
+  missionStore.write(ctx, { ...mission(ctx), ...patch });
+}
 
 /**
  * Publish the shell's run phase from the one gate the UI already reads (`startedStore`):
@@ -63,12 +88,8 @@ function syncPhase(ctx: GameContext): void {
   if (gamePhase(ctx) !== desired) setGamePhase(ctx, desired);
 }
 
-export function resetMissionState(): void {
-  convoyTimer = 0;
-  kingpinSpawned = false;
-  bustedHold = 0;
-  raceSettled = false;
-  raceClearAt = 0;
+export function resetMissionState(ctx: GameContext): void {
+  missionStore.write(ctx, { ...FRESH_MISSION });
 }
 
 function tickGangers(ctx: GameContext, dt: number): void {
@@ -169,10 +190,11 @@ function tickMissionSpawns(ctx: GameContext, dt: number): void {
   const convoy = quests.find((q) => q.questId === "m7_carmine_convoy" && q.status === "active");
   const convoySpawned = convoyStageStore.read(ctx) ?? 0;
   if (convoy !== undefined && convoySpawned < CONVOY_TOTAL) {
-    convoyTimer -= dt;
+    const nextTimer = mission(ctx).convoyTimer - dt;
+    patchMission(ctx, { convoyTimer: nextTimer });
     const alive = ctx.scene.entity.list().filter((e) => e.name === "ganger_dock").length;
-    if (convoyTimer <= 0 && alive < 4) {
-      convoyTimer = 6;
+    if (nextTimer <= 0 && alive < 4) {
+      patchMission(ctx, { convoyTimer: 6 });
       const wave = convoySpawned + 1;
       convoyStageStore.write(ctx, wave);
       const angle = (wave / CONVOY_TOTAL) * Math.PI * 2;
@@ -187,8 +209,8 @@ function tickMissionSpawns(ctx: GameContext, dt: number): void {
   }
 
   const kingpin = quests.find((q) => q.questId === "m8_kingpin" && q.status === "active");
-  if (kingpin !== undefined && !kingpinSpawned) {
-    kingpinSpawned = true;
+  if (kingpin !== undefined && !mission(ctx).kingpinSpawned) {
+    patchMission(ctx, { kingpinSpawned: true });
     if (ctx.scene.entity.get("kingpin_sal") === null) {
       ctx.scene.entity.spawn("kingpin_sal", {
         id: "kingpin_sal",
@@ -244,12 +266,11 @@ function tickPedPanic(ctx: GameContext, dt: number): void {
 function tickRaceEconomy(ctx: GameContext): void {
   const snapshot = raceStore.peek(ctx);
   if (snapshot === undefined || !snapshot.finished) {
-    raceSettled = false;
+    patchMission(ctx, { raceSettled: false });
     return;
   }
-  if (!raceSettled) {
-    raceSettled = true;
-    raceClearAt = ctx.time.now() + RACE_BANNER_SEC;
+  if (!mission(ctx).raceSettled) {
+    patchMission(ctx, { raceSettled: true, raceClearAt: ctx.time.now() + RACE_BANNER_SEC });
     if (snapshot.won) {
       ctx.game.economy.grant(ctx.player.userId, "cash", RACE_WIN_PAYOUT);
       grantCred(ctx, RACE_WIN_CRED);
@@ -272,14 +293,14 @@ function tickRaceEconomy(ctx: GameContext): void {
       ctx.game.feed.push("vice.log", { text: `Lost ${snapshot.label}. The start line runs it again anytime.` });
     }
   }
-  if (ctx.time.now() >= raceClearAt) raceStore.clear(ctx);
+  if (ctx.time.now() >= mission(ctx).raceClearAt) raceStore.clear(ctx);
 }
 
 /** A cop on top of an on-foot wanted player for a sustained beat makes the arrest. */
 function tickBusted(ctx: GameContext, dt: number): void {
   const stars = handrollOf(ctx).wanted().stars;
   if (stars === 0 || handrollOf(ctx).drivingVehicleId() !== null) {
-    bustedHold = 0;
+    patchMission(ctx, { bustedHold: 0 });
     return;
   }
   const player = ctx.scene.entity.get(ctx.player.userId);
@@ -291,9 +312,10 @@ function tickBusted(ctx: GameContext, dt: number): void {
     const dist = Math.hypot(entity.position[0] - player.position[0], entity.position[2] - player.position[2]);
     return dist < BUSTED_RADIUS && ctx.scene.entity.hasLineOfSight(entity.id, ctx.player.userId);
   });
-  bustedHold = advanceBustedHold(bustedHold, copInReach, dt);
-  if (bustedHold < BUSTED_HOLD_SEC) return;
-  bustedHold = 0;
+  const held = advanceBustedHold(mission(ctx).bustedHold, copInReach, dt);
+  patchMission(ctx, { bustedHold: held });
+  if (held < BUSTED_HOLD_SEC) return;
+  patchMission(ctx, { bustedHold: 0 });
   const fine = bustedFine(ctx.game.economy.balance(ctx.player.userId, "cash"), stars);
   if (fine > 0) ctx.game.economy.charge(ctx.player.userId, "cash", fine);
   const y = ctx.world.groundHeightAt(VCPD_POS[0], VCPD_POS[2]);
@@ -310,7 +332,7 @@ function restageAfterWasted(ctx: GameContext): void {
   for (const entity of ctx.scene.entity.list()) {
     if (entity.id === "kingpin_sal" || entity.id.startsWith("sal_guard_")) ctx.scene.entity.despawn(entity.id);
   }
-  kingpinSpawned = false;
+  patchMission(ctx, { kingpinSpawned: false });
 }
 
 function tickWasted(ctx: GameContext): void {
@@ -369,7 +391,7 @@ async function resumeFromSave(ctx: GameContext): Promise<void> {
 
 function onInit(ctx: GameContext): void {
   resetWeaponState();
-  resetMissionState();
+  resetMissionState(ctx);
   resetStashRuntime();
   ctx.item.use.register(itemUseHandlers);
   ctx.player.loadout.register(loadouts);
