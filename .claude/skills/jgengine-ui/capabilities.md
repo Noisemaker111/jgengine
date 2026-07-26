@@ -631,6 +631,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `WaypointMarkers` (function) · `import { WaypointMarkers } from "@jgengine/react"`
 
+## weather-dust — airborne particulate that turns still air into visible wind
+
+- `DustField` (function) · `import { DustField } from "@jgengine/shell/weather"`
+
 ## window — standalone draggable, closable window primitive over HudFrame — no manager required
 
 - `Window` (function) · `import { Window } from "@jgengine/react"`

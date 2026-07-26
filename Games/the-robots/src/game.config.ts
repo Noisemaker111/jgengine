@@ -157,7 +157,9 @@ export const game = defineGame({
   entityModels,
   objectModels,
   WorldOverlay: FerralonWorldOverlay,
-  worldHealthBars: { roles: ["enemy"] },
+  // Bars are a screen-space overlay, so without `occlude` an enemy behind a shack still shows its
+  // health through the wall.
+  worldHealthBars: { roles: ["enemy"], occlude: true },
   // Direct-fire guns want the muzzle→impact tracer; grenades/launchers are ballistic and
   // skip it automatically (they arc, so a straight line would be a fake beam).
   presentationEffects: { tracers: true },

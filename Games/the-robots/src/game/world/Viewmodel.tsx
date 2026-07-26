@@ -1,7 +1,10 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { Group, Vector3 } from "three";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useGameContext } from "@jgengine/react/provider";
+import { WeatherLayer } from "@jgengine/shell/weather";
+import { airAt, gust } from "./air";
+import { zoneAt } from "./zones";
 import { equippedGun, gameNow, lastShot } from "../feel";
 import { gunById, isReloading, type GunDef, type GunFamily } from "../handroll";
 import { ELEMENT_COLORS } from "../palette";
@@ -161,8 +164,56 @@ function GunMesh({ gun }: { gun: GunDef }) {
   );
 }
 
+/**
+ * The air the player stands in. Dust density, drift, and colour come from the zone's one air
+ * description — the same numbers driving the wind bed — so a gust is heard and seen at once, and
+ * the Blight's violet reactor ash reads as a different place from Rustflat's sand.
+ */
+function FerralonAir() {
+  const ctx = useGameContext();
+  const camera = useThree((state) => state.camera);
+  const [air, setAir] = useState(() => airAt(null));
+  const [strength, setStrength] = useState(1);
+  const zoneId = useRef<string | null>(null);
+
+  useFrame(() => {
+    const zone = zoneAt(camera.position.x, camera.position.z);
+    const nextId = zone?.id ?? null;
+    if (nextId !== zoneId.current) {
+      zoneId.current = nextId;
+      setAir(airAt(nextId));
+    }
+    // Quantised so a continuous gust curve does not re-render every frame.
+    const next = Math.round(gust(ctx.time.now() * 1000) * 20) / 20;
+    setStrength((current) => (current === next ? current : next));
+  });
+
+  const blow = air.wind * strength;
+  return (
+    <WeatherLayer
+      mode="dust"
+      intensity={0.35 + blow * 0.85}
+      wind={[blow * 3.4 * air.rate, 0, blow * 1.6 * air.rate]}
+      dust={{
+        color: air.dust,
+        opacity: 0.24 + blow * 0.3,
+        size: 0.26,
+        speed: 1.6 + blow * 3.2,
+        // Tighter than the default volume so the motes concentrate in the near field where the
+        // parallax actually reads, instead of thinning out across 70 m of empty air.
+        volume: [46, 15, 46],
+      }}
+    />
+  );
+}
+
 export function FerralonWorldOverlay() {
-  return <FerralonViewmodel />;
+  return (
+    <>
+      <FerralonAir />
+      <FerralonViewmodel />
+    </>
+  );
 }
 
 export function FerralonViewmodel() {

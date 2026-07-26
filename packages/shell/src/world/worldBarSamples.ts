@@ -17,7 +17,39 @@ export interface Projectable {
   z: number;
 }
 
-/** @internal */
+/**
+ * True when world geometry stands between the player's eye and `target`. World bars and nameplates
+ * are DOM/canvas overlays projected to screen space, so nothing in the depth buffer can hide them —
+ * without this test an enemy's health bar reads straight through the building it is standing behind.
+ * @internal
+ */
+export function worldBarOccluded(
+  ctx: GameContext,
+  from: readonly [number, number, number],
+  target: readonly [number, number, number],
+  eyeHeight: number,
+): boolean {
+  const origin: [number, number, number] = [from[0], from[1] + eyeHeight, from[2]];
+  const dx = target[0] - origin[0];
+  const dy = target[1] + eyeHeight - origin[1];
+  const dz = target[2] - origin[2];
+  const length = Math.hypot(dx, dy, dz);
+  if (length < 0.001) return false;
+  const hit = ctx.scene.object.raycast({
+    origin,
+    direction: [dx / length, dy / length, dz / length],
+    // Stop short of the entity so its own collider never counts as its own occluder.
+    maxDistance: length - 0.5,
+  });
+  return hit !== null;
+}
+
+/**
+ * Projects every non-local, role/distance-filtered entity carrying `statId` into `into` as a
+ * `WorldBarSample`. Pure data step behind `WorldHealthBars` — call it directly to paint the bars
+ * with your own renderer.
+ * @internal
+ */
 export function collectWorldBarSamples(
   ctx: GameContext,
   statId: string,
@@ -29,6 +61,7 @@ export function collectWorldBarSamples(
   into: WorldBarSample[],
   project: Projectable,
   maxDistance = 60,
+  occlude = false,
 ): number {
   into.length = 0;
   const playerId = ctx.player.userId;
@@ -43,6 +76,7 @@ export function collectWorldBarSamples(
     ) {
       continue;
     }
+    if (occlude && player !== null && worldBarOccluded(ctx, player.position, entity.position, 1.5)) continue;
     const stat = ctx.scene.entity.stats.get(entity.id, statId);
     if (stat === null) continue;
     const range = stat.max - stat.min;
@@ -85,6 +119,7 @@ export function collectNameplateSamples(
   into: NameplateSample[],
   project: Projectable,
   maxDistance = 40,
+  occlude = false,
 ): number {
   into.length = 0;
   const playerId = ctx.player.userId;
@@ -97,6 +132,7 @@ export function collectNameplateSamples(
         ? 0
         : Math.hypot(entity.position[0] - player.position[0], entity.position[2] - player.position[2]);
     if (player !== null && distance > maxDistance) continue;
+    if (occlude && player !== null && worldBarOccluded(ctx, player.position, entity.position, 1.5)) continue;
     const stat = ctx.scene.entity.stats.get(entity.id, statId);
     let percent: number | null = null;
     if (stat !== null) {

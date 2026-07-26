@@ -822,6 +822,7 @@
     "./water/OceanShader",
     "./water/index",
     "./weather",
+    "./weather/DustField",
     "./weather/FireSpreadLayer",
     "./weather/LightningStrike",
     "./weather/RainField",

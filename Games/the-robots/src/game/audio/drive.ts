@@ -5,25 +5,13 @@ import { perContext } from "@jgengine/core/runtime/perContext";
 import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
 import { enemyById } from "../entities/enemies/catalog";
+import { airAt, gust } from "../world/air";
 import { zoneAt } from "../world/zones";
 
 const WIND_LOOP = "wind";
 const INDUSTRY_LOOP = "industry";
 const THREAT_RADIUS = 42;
 
-/**
- * Per-zone air. The flats are meant to sound like different places before they look like them:
- * Windshear is a gale, the Blight is a low reactor throb with the wind pushed down under it.
- */
-const ZONE_AIR: Record<string, { wind: number; rate: number; industry: number }> = {
-  windshear_waste: { wind: 1, rate: 1.18, industry: 0.15 },
-  southern_shelf: { wind: 0.72, rate: 1.02, industry: 0.2 },
-  arid_badlands: { wind: 0.5, rate: 0.92, industry: 0.55 },
-  three_horns: { wind: 0.66, rate: 0.96, industry: 0.3 },
-  the_dust: { wind: 0.85, rate: 1.06, industry: 0.35 },
-  eridium_blight: { wind: 0.45, rate: 0.74, industry: 1 },
-};
-const DEFAULT_AIR = { wind: 0.6, rate: 1, industry: 0.3 };
 
 const MUSIC: MusicStateConfig = {
   release: 0.6,
@@ -86,11 +74,6 @@ export function startAmbience(ctx: GameContext): void {
   state.loops = 2;
 }
 
-/** Slow, deterministic gust curve — two incommensurate periods so it never audibly repeats. */
-function gust(nowMs: number): number {
-  const t = nowMs / 1000;
-  return 0.72 + 0.2 * Math.sin(t / 7.3) + 0.08 * Math.sin(t / 2.9);
-}
 
 function threatIntensity(ctx: GameContext, playerPosition: EntityPosition): number {
   let intensity = 0;
@@ -135,7 +118,7 @@ export function tickAudio(ctx: GameContext, nowMs: number): void {
   const position = playerEntity.position;
 
   const zone = zoneAt(position[0], position[2]);
-  const air = (zone === null ? undefined : ZONE_AIR[zone.id]) ?? DEFAULT_AIR;
+  const air = airAt(zone?.id ?? null);
   ctx.game.audio.setLoop(WIND_LOOP, { gain: air.wind * gust(nowMs), rate: air.rate });
   ctx.game.audio.setLoop(INDUSTRY_LOOP, { gain: air.industry });
 
