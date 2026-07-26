@@ -223,6 +223,25 @@
 - `notesInWindow` (function): function notesInWindow(theme: MusicTheme, anchorSec: number, fromSec: number, toSec: number): ScheduledNote[] — Pure lookahead scheduler: every note occurrence of `theme` whose onset falls in the half-open window `(fromSec, toSec]`, given the theme's loop-zero at `anchorSec`. Handles any number of loop wraps, so a director calls it once per tick with a non-overlapping window and never double-schedules a note.
 - `themeLoopSeconds` (function): function themeLoopSeconds(theme: MusicTheme): number — Loop length of a theme in seconds.
 
+## @jgengine/core/audio/musicState
+
+- `MusicStateConfig` (interface): interface MusicStateConfig — The tier ladder plus the release margin that keeps a hovering intensity from flapping between tiers.
+- `MusicStateInput` (interface): interface MusicStateInput — The current intensity signal and clock reading for one resolve.
+- `MusicStateResult` (interface): interface MusicStateResult — Next state, the theme that should be playing, and whether this advance is the one that changed it.
+- `MusicStateSnapshot` (interface): interface MusicStateSnapshot — Which tier is playing and when it was entered, on the caller's clock. Serialisable.
+- `MusicTier` (interface): interface MusicTier — Hysteretic music-state selector: turns a continuous intensity signal (nearby threat, alert count, chase proximity) into a stable theme id. The engine can already crossfade a soundtrack; this decides *when*, without the flapping a bare threshold produces when one enemy walks in and out of range.
+- `createMusicState` (function): function createMusicState(): MusicStateSnapshot — Fresh state with no tier entered, so the first resolve always settles and reports `changed`.
+- `resolveMusicState` (function): function resolveMusicState(state: MusicStateSnapshot, input: MusicStateInput, config: MusicStateConfig): MusicStateResult — Pick the theme for the current intensity. Escalation is immediate; de-escalation waits for the tier's `holdMs` and needs the intensity to fall a `release` margin below the tier it is leaving.
+
+## @jgengine/core/audio/stepCadence
+
+- `StepCadenceConfig` (interface): interface StepCadenceConfig — Distance-driven footstep cadence. Pure state-in/state-out: feed it how far a mover travelled this frame and it tells you how many steps landed, so foley stays locked to ground distance instead of a wall-clock timer that desyncs when speed changes.
+- `StepCadenceInput` (interface): interface StepCadenceInput — What the mover did this advance: ground distance covered, whether feet are planting, and the stride multiplier.
+- `StepCadenceResult` (interface): interface StepCadenceResult — Outcome of one advance: the next state plus how many steps landed and which foot led.
+- `StepCadenceState` (interface): interface StepCadenceState — Cadence bookkeeping between advances — banked distance, last moving state, and the step count whose parity is the foot.
+- `advanceStepCadence` (function): function advanceStepCadence(state: StepCadenceState, input: StepCadenceInput, config: StepCadenceConfig): StepCadenceResult — Bank this advance's distance and report the steps it completed. Pure — same state and input always give the same result, so footstep timing is testable headless and replays identically.
+- `createStepCadenceState` (function): function createStepCadenceState(): StepCadenceState — Fresh cadence state for a mover that is standing still.
+
 ## @jgengine/core/audio/synth
 
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.

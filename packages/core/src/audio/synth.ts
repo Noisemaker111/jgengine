@@ -25,6 +25,13 @@ export interface ToneVoice {
   slideTo?: number;
   /** Attack ramp in seconds. Default 0.012. */
   attack?: number;
+  /**
+   * Seconds held at full gain after the attack, before the decay to silence at `duration`.
+   * Default 0 — a plain percussive decay. Set it to `duration` for a flat, sustained bed:
+   * a looped buffer only reads as continuous if its amplitude does not fall across the loop,
+   * so ambient hums and wind beds need this or they pulse once per loop.
+   */
+  sustain?: number;
 }
 
 /**
@@ -46,6 +53,11 @@ export interface NoiseVoice {
   decay?: number;
   /** Start offset in seconds from the cue trigger. Default 0. */
   delay?: number;
+  /**
+   * Seconds held at full gain before the decay begins. Default 0. Set it to `duration` for a
+   * flat noise bed (wind, rain, machine roar) that loops without pulsing.
+   */
+  sustain?: number;
 }
 
 /** One layered voice of a synth cue. */

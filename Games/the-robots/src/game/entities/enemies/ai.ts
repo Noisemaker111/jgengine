@@ -14,6 +14,8 @@ const nextAttackAtOf = perContext(() => new Map<string, number>());
 const nextNovaAtOf = perContext(() => new Map<string, number>());
 const homesOf = perContext(() => new Map<string, EntityPosition>());
 const wanderTargetsOf = perContext(() => new Map<string, { target: EntityPosition; untilMs: number }>());
+/** Ids currently engaged, so the alert bark fires on the transition rather than every tick. */
+const engagedOf = perContext(() => new Set<string>());
 
 export const FLYNT_NOVA = { intervalMs: 7000, windupMs: 1500, radius: 4.2, damage: 40 };
 export const LEASH_RADIUS = 46;
@@ -182,6 +184,15 @@ export function tickEnemies(ctx: GameContext, dt: number): void {
     const playerDistance = distance2d(entity.position, playerPos);
     const leashed = distance2d(entity.position, anchor) > LEASH_RADIUS;
     const engaged = !playerDowned && !leashed && playerDistance <= def.aggroRadius;
+
+    if (engaged !== engagedOf(ctx).has(entity.id)) {
+      if (engaged) {
+        engagedOf(ctx).add(entity.id);
+        ctx.game.audio.play("bark_alert", entity.position);
+      } else {
+        engagedOf(ctx).delete(entity.id);
+      }
+    }
 
     if (!engaged) {
       if (leashed) {

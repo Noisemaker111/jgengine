@@ -17,10 +17,12 @@ function realizeTone(ctx: BaseAudioContext, out: AudioNode, voice: ToneVoice, cu
   osc.type = voice.wave ?? "sine";
   osc.frequency.setValueAtTime(voice.freq, t);
   if (voice.slideTo !== undefined) osc.frequency.exponentialRampToValueAtTime(Math.max(1, voice.slideTo), t + voice.duration);
+  const sustainEnd = Math.max(attack, voice.sustain ?? 0);
   const g = ctx.createGain();
   g.gain.setValueAtTime(0, t);
   g.gain.linearRampToValueAtTime(peak, t + attack);
-  g.gain.exponentialRampToValueAtTime(0.001, t + voice.duration);
+  if (sustainEnd > attack) g.gain.setValueAtTime(peak, t + sustainEnd);
+  g.gain.exponentialRampToValueAtTime(0.001, t + Math.max(voice.duration, sustainEnd + 0.001));
   osc.connect(g).connect(out);
   osc.start(t);
   osc.stop(t + voice.duration + 0.05);
@@ -40,12 +42,18 @@ function realizeNoise(
   const src = ctx.createBufferSource();
   src.buffer = noiseBuf;
   src.playbackRate.value = 0.8 + Math.random() * 0.4;
+  // The shared buffer is 1 s and playback starts at a random offset inside it, so any voice longer
+  // than the remainder used to run off the end and go silent early. Wrapping keeps it noise throughout;
+  // the `duration` argument to start() still ends the voice on time.
+  src.loop = true;
   const filter = ctx.createBiquadFilter();
   filter.type = voice.filterType ?? "lowpass";
   filter.frequency.value = voice.filterFreq;
+  const sustain = Math.max(0, voice.sustain ?? 0);
   const g = ctx.createGain();
   g.gain.setValueAtTime(peak, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + voice.duration * decay);
+  if (sustain > 0) g.gain.setValueAtTime(peak, t + sustain);
+  g.gain.exponentialRampToValueAtTime(0.001, t + Math.max(voice.duration * decay, sustain + 0.001));
   src.connect(filter).connect(g).connect(out);
   src.start(t, Math.random() * 0.5, voice.duration);
 }
