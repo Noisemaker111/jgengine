@@ -67,6 +67,7 @@ export function createTerrainDetailMaterial(
   const hasTexture = textures !== undefined && detail.material !== undefined;
   const repeat = detail.material?.repeat ?? 4;
   const strength = detail.material?.strength ?? 1;
+  const tint = detail.material?.tint ?? 1;
 
   const uniforms = {
     uRockColor: { value: new THREE.Color(detail.rockColor) },
@@ -86,6 +87,7 @@ export function createTerrainDetailMaterial(
           uMatAo: { value: textures.ao },
           uMatRepeat: { value: Math.max(0.01, repeat) },
           uMatStrength: { value: strength },
+          uMatTint: { value: tint },
         }
       : {}),
   };
@@ -124,14 +126,21 @@ uniform sampler2D uMatNormal;
 uniform sampler2D uMatRoughness;
 uniform sampler2D uMatAo;
 uniform float uMatRepeat;
-uniform float uMatStrength;`
+uniform float uMatStrength;
+uniform float uMatTint;`
       : "";
 
     const materialColorGlsl = hasTexture
       ? `
 vec2 jgMatUv = jgWp / uMatRepeat;
 vec3 jgMatColor = texture2D(uMatColor, jgMatUv).rgb;
-jgCol = mix(jgCol, jgMatColor, uMatStrength);`
+// Two separable jobs. GRAIN: the map's luminance relative to its own mid-grey shades the authored
+// colour, which is what makes ground read as a surface. TINT: how much of the map's own hue
+// replaces that colour — at 1 the biome palette, macro sweeps, and slope rock underneath are simply
+// painted over, and a whole region collapses to the texture's single hue.
+float jgMatLum = dot(jgMatColor, vec3(0.2126, 0.7152, 0.0722));
+jgCol *= mix(1.0, clamp(jgMatLum / 0.35, 0.55, 1.7), uMatStrength * (1.0 - uMatTint));
+jgCol = mix(jgCol, jgMatColor, uMatStrength * uMatTint);`
       : "";
 
     const materialRoughnessGlsl = hasTexture

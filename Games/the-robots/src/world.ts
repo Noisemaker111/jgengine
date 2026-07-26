@@ -119,16 +119,21 @@ const terrainDescriptor = terrain({
     rockColor: FERRALON.cliff,
     sandColor: FERRALON.sand,
     snowColor: "#d8cbb0",
-    rockSlopeStart: 0.28,
+    // Low enough that dune flanks and gully walls pick up rock, not just cliff faces — at 0.28 the
+    // only geometry steep enough to qualify was the far mesas, so everything walkable was one hue.
+    rockSlopeStart: 0.24,
     snowHeight: 999,
     waterLevel: -999,
-    detailScale: 12,
-    macroScale: 24,
+    detailScale: 9,
+    macroScale: 70,
     roughness: 0.95,
     strength: 1,
     // Real dirt grain over the procedural base. Without this the ground is pure vertex colour, which
     // is what made the flats read as untextured mush at every distance.
-    material: { maps: GROUND_MAPS, repeat: 3.5, strength: 0.85 },
+    // Grain, not repaint: `tint` low keeps the biome palette, the macro sweeps, and the slope-rock
+    // blend visible and takes only the map's light and shade. At the default 1 the dirt albedo
+    // painted over all of it and every region came out the same flat tan.
+    material: { maps: GROUND_MAPS, repeat: 3.2, strength: 0.9, tint: 0.18 },
   },
   flatten: [
     ...ZONES.map((zone) => ({

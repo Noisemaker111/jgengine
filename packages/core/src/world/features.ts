@@ -84,6 +84,14 @@ export interface TerrainDetailMaterialConfig {
   repeat?: number;
   /** Blend strength of the texture over the procedural/vertex-colour base, 0..1. Default 1. */
   strength?: number;
+  /**
+   * How much of the map's OWN colour replaces the terrain's authored colour, 0..1. Default 1 —
+   * at which the map's albedo wins and the biome tint, macro sweeps, and slope-rock blend under it
+   * are painted over, so a whole region flattens to the texture's single hue. Drop toward 0 to keep
+   * the authored colour and take only the map's grain (its light and shade), which is what a
+   * hand-tinted world wants from a stock PBR set.
+   */
+  tint?: number;
 }
 
 export interface TerrainFlattenMask {
