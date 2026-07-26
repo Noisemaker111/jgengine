@@ -342,6 +342,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createModalStack` (function) · `import { createModalStack } from "@jgengine/core/ui"`
 
+## model-load-idle — how long the shared GLB loader has been idle, for capture settle waits
+
+- `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad"`
+
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`

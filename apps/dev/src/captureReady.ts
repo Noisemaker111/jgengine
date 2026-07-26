@@ -4,6 +4,7 @@
  * Page.captureScreenshot — never ships PNG/base64 through the page.
  */
 
+import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
@@ -109,6 +110,24 @@ function delay(ms: number): Promise<void> {
   });
 }
 
+/** Streaming counts as done after this much loader idle; below it a model can still pop in. */
+const MODEL_IDLE_MS = 400;
+const MODEL_IDLE_TIMEOUT_MS = 15_000;
+
+/**
+ * Block until the shared GLB loader has been idle for {@link MODEL_IDLE_MS}, bounded.
+ * A detached `?look=` camera frames a region the player never stood in, so its models
+ * are still streaming when a fixed settle expires — the reason establishing captures
+ * used to need a hand-tuned `--settle` before they stopped coming back half-empty.
+ */
+async function waitForModelStreaming(): Promise<void> {
+  const deadline = Date.now() + MODEL_IDLE_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (modelLoadIdleMs() >= MODEL_IDLE_MS) return;
+    await delay(100);
+  }
+}
+
 async function waitPlayFrames(settleMs: number): Promise<void> {
   await waitForSelector("canvas, [data-jg-frame-ready]", 25_000);
   await new Promise<void>((resolve) => {
@@ -116,6 +135,7 @@ async function waitPlayFrames(settleMs: number): Promise<void> {
       requestAnimationFrame(() => resolve());
     });
   });
+  await waitForModelStreaming();
   await delay(settleMs);
 }
 

@@ -34,6 +34,7 @@ import {
   type SizeMode,
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
+import { lookSearchParams, parseLookAim } from "./lookArg";
 import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
@@ -76,6 +77,7 @@ type Args = {
   epsilon: number;
   spawn?: string;
   look?: string;
+  lookFrom?: string;
   site?: string;
   record?: string;
   recordWidth: number;
@@ -102,13 +104,15 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --spawn <x,y,z>     override the authored player spawn for this run only (adds a
                       ?spawn= overlay like ?cam=); never mutates editor.scene.json.
                        Accepts x,y,z or x,y,z,yaw (yaw radians)
-  --look <x,y,z[,dist[,height[,angle]]]>
+  --look <x,z | x,y,z>
                       pin a detached camera on a world point for this capture:
                       the vantage the shot actually wants, independent of the
                       player spawn, this run's look yaw, and where the AI
-                      wandered. dist 12, height 5, angle 0 (radians) by default.
-                      Aims at a coordinate, so it never misses the way
-                      --spawn does.
+                      wandered. x,z samples the ground height. A point outside
+                      the world, or a camera the terrain would bury, fails the
+                      run instead of returning an empty frame.
+  --look-from <dist[,height[,angle]]>
+                      vantage for --look (default 12,5,0; angle in radians)
   --site <path>       drive a route from the managed apps/web server instead of a game
   --rpc <json>        call the page's agent/editor bridge with this JSON payload.
                       Compose an editor aerial in one call, e.g.
@@ -230,6 +234,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
     else if (value === "--spawn") args.spawn = argv[++index];
     else if (value === "--look") args.look = argv[++index];
+    else if (value === "--look-from") args.lookFrom = argv[++index];
     else if (value === "--site") args.site = argv[++index];
     else if (value === "--record") {
       const name = argv[++index] ?? "clip";
@@ -582,10 +587,20 @@ const exitCode = await withBrowserSession(
       }
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
-      if (args.look !== undefined && args.look.length > 0) url.searchParams.set("look", args.look);
+      const aim = parseLookAim(args.look, args.lookFrom);
+      if (aim !== undefined) {
+        for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
+      }
       if (args.playtest) url.searchParams.set("seed", String(args.seed));
       if (!args.reuseStorage) await clearOriginStorage(session, new URL(url.toString()).origin);
       await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs);
+      if (aim !== undefined) {
+        const applied = await session.evaluate<string | null>(`document.documentElement.dataset.jgLook ?? null`);
+        if (typeof applied !== "string" || applied.length === 0) {
+          throw new Error(`--look ${args.look} never reached the camera — the runner reported no applied aim`);
+        }
+        console.error(`drive: look applied ${applied}`);
+      }
       await new Promise((r) => setTimeout(r, 500));
       await installFrameCounter(session);
 

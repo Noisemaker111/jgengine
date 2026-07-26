@@ -13,7 +13,9 @@ import { applyStoredDevtoolsOverrides } from "@jgengine/shell/devtools/DevtoolsO
 import type { UiPreviewScenario } from "@jgengine/shell/GameUiPreview";
 import type { GameRegistry, PlayableGame } from "@jgengine/shell/registry";
 
-import { CAM, LOOK } from "./appEnv";
+import { CAM, LOOK, LOOK_FROM } from "./appEnv";
+import { setCaptureStatus } from "./captureReady";
+import { formatAppliedAim, resolveLookCamera } from "./lookCamera";
 
 const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
   orbit: { rig: "orbit" },
@@ -34,39 +36,28 @@ const CAMERA_PRESETS: Record<string, GameCameraConfig> = {
 };
 
 /**
- * `?look=x,y,z[,distance[,height[,angle]]]` → the shipped `observer` rig bound to that point with
- * the orbit stopped. Without this a capture can only be aimed by moving the player and hoping: the
- * spawn override does not pin look yaw, and anything that walks has walked by the time the frame
- * settles.
+ * `?look=` → the shipped `observer` rig bound to that point with the orbit stopped. Without this a
+ * capture can only be aimed by moving the player and hoping: the spawn override does not pin look
+ * yaw, and anything that walks has walked by the time the frame settles. A rejected aim raises the
+ * capture error status so the host fails with the reason instead of shooting the game's own camera.
  */
 function lookCamera(game: PlayableGame): GameCameraConfig | undefined {
-  if (LOOK === null) return undefined;
-  const parts = LOOK.split(",").map((part) => Number.parseFloat(part.trim()));
-  if (parts.length < 2 || !Number.isFinite(parts[0]) || !Number.isFinite(parts[1])) return undefined;
-  const finite = (value: number | undefined, fallback: number) =>
-    value !== undefined && Number.isFinite(value) ? value : fallback;
-  // `x,z` is the form a caller actually has — a marker's XZ out of the scene document — so the
-  // ground height is looked up rather than demanded. `x,y,z` stays available for a point in the air.
-  const groundForm = parts.length === 2 || parts.length === 4 || parts.length === 5;
-  const [x, z] = groundForm ? [parts[0]!, parts[1]!] : [parts[0]!, parts[2]!];
   const world = game.game.world;
-  const terrain = world?.kind === "environment" ? world.terrain : undefined;
-  const y = groundForm ? resolveTerrainField(terrain).sampleHeight(x, z) : parts[1]!;
-  const [distance, height, angle] = groundForm ? parts.slice(2) : parts.slice(3);
-  return {
-    rig: "observer",
-    // A detached camera has no hands, so the first-person viewmodel and reticle would just be
-    // furniture drawn over an establishing shot.
-    perspective: "third",
-    firstPerson: { viewmodel: false, reticle: false },
-    observer: {
-      bind: { kind: "point", position: { x, y, z } },
-      distance: finite(distance, 12),
-      height: finite(height, 5),
-      startAngle: finite(angle, 0),
-      orbitSpeed: 0,
-    },
-  };
+  const terrain = resolveTerrainField(world?.kind === "environment" ? world.terrain : undefined);
+  const resolution = resolveLookCamera({ look: LOOK, lookFrom: LOOK_FROM, terrain });
+  if (resolution.kind === "none") return undefined;
+  if (resolution.kind === "error") {
+    // Fails the capture handshake rather than throwing: `setCaptureStatus("error")` is sticky, so
+    // the host reports this reason instead of a load-error stack wrapped around it.
+    const message = `look override rejected: ${resolution.message}`;
+    setCaptureStatus("error", message);
+    console.error(`[jgengine:capture] ${message}`);
+    return undefined;
+  }
+  const summary = formatAppliedAim(resolution.applied);
+  document.documentElement.dataset.jgLook = summary;
+  console.debug("[jgengine:capture] look", summary);
+  return resolution.camera;
 }
 
 export function withCameraPreset(game: PlayableGame): PlayableGame {

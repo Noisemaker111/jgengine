@@ -30,11 +30,13 @@ export const RUN = (urlParams.get("run") ?? "")
   .filter((name) => name.length > 0);
 export const CAM = urlParams.get("cam");
 /**
- * `?look=x,y,z[,distance[,height[,angle]]]` pins a detached photo camera on a world point for this
- * capture only — the vantage a screenshot actually wants, independent of the authored player spawn,
- * the run's look yaw, and whatever the AI wandered off to do. Absent/malformed → no override.
+ * `?look=x,z` (or `x,y,z`) pins a detached photo camera on a world point for this capture only — the
+ * vantage a screenshot actually wants, independent of the authored player spawn, the run's look yaw,
+ * and whatever the AI wandered off to do. `?lookFrom=dist,height,angle` sets the vantage. A malformed
+ * value fails the capture handshake rather than quietly leaving the game's own camera in place.
  */
 export const LOOK = urlParams.get("look");
+export const LOOK_FROM = urlParams.get("lookFrom");
 /**
  * `?spawn=x,y,z` (optionally `x,y,z,yaw`) overrides the authored player spawn for this capture only,
  * mirroring `?cam=`. Installed at boot so games reading the shared `authoredSpawnPosition` primitive
