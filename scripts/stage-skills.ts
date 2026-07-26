@@ -6,16 +6,18 @@ import { fileURLToPath } from "node:url";
 import { GAME_SKILLS } from "../packages/jgengine/src/skills";
 
 const PACKAGE_SKILLS: Record<string, readonly string[]> = {
-  core: ["jgengine", "game-design", "jgengine-gameplay", "jgengine-combat", "jgengine-world"],
-  ws: ["jgengine", "jgengine-multiplayer"],
-  sql: ["jgengine", "jgengine-multiplayer"],
-  convex: ["jgengine", "jgengine-multiplayer"],
-  node: ["jgengine", "jgengine-multiplayer"],
-  react: ["jgengine", "jgengine-ui"],
-  shell: ["jgengine", "game-design", "level-design", "jgengine-ui", "jgengine-world"],
-  assets: ["jgengine", "jgengine-assets"],
-  github: ["jgengine"],
-  editor: ["jgengine", "level-design", "jgengine-editor"],
+  // ce-handoff is staged on every package skill tarball so monorepo and packaged
+  // agent installs can create/resume session handoffs without a separate install step.
+  core: ["jgengine", "game-design", "jgengine-gameplay", "jgengine-combat", "jgengine-world", "ce-handoff"],
+  ws: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
+  sql: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
+  convex: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
+  node: ["jgengine", "jgengine-multiplayer", "ce-handoff"],
+  react: ["jgengine", "jgengine-ui", "ce-handoff"],
+  shell: ["jgengine", "game-design", "level-design", "jgengine-ui", "jgengine-world", "ce-handoff"],
+  assets: ["jgengine", "jgengine-assets", "ce-handoff"],
+  github: ["jgengine", "ce-handoff"],
+  editor: ["jgengine", "level-design", "jgengine-editor", "ce-handoff"],
   jgengine: GAME_SKILLS,
 };
 
