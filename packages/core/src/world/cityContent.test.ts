@@ -175,7 +175,10 @@ describe("buildLotPieces", () => {
 
   test("tall towers step: higher tiers have smaller footprints", () => {
     const pieces = buildLotPieces("tower", 20, 18, 24, 3, rngFor("tiers"));
-    const walls = pieces.filter((piece) => piece.role === "wall").sort((a, b) => a.offset[1] - b.offset[1]);
+    // Primary shaft only (attached streetwall wings sit off-center and are not part of the step).
+    const walls = pieces
+      .filter((piece) => piece.role === "wall" && Math.abs(piece.offset[0]) < 0.01 && Math.abs(piece.offset[2]) < 0.01)
+      .sort((a, b) => a.offset[1] - b.offset[1]);
     expect(walls.length).toBeGreaterThanOrEqual(3);
     for (let i = 1; i < walls.length; i += 1) {
       expect(walls[i]!.size[0]).toBeLessThan(walls[i - 1]!.size[0]);

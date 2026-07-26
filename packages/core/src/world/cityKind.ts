@@ -435,8 +435,8 @@ export const CITY_SCHEMA: ParamSchema = {
         openSpace: 0.05,
         roadsideOccupancy: 0.97,
         blockDensity: 0.85,
-        buildingRoadSetback: 0.8,
-        buildingSpacing: 0.8,
+        buildingRoadSetback: 0.55,
+        buildingSpacing: 0.55,
         clusterStrength: 0.25,
         streetWidth: 9,
         boulevards: 0.5,
@@ -1568,18 +1568,25 @@ function buildFabric(
         prevClass = null;
         continue;
       }
-      const sideGap = Math.max(0.3, placement.gap / 2);
-      const buildable = buildablePolygon(poly, A, B, placement.setback, sideGap, 1.2, usedDepth);
+      const sideGap = Math.max(
+        cls === "shop" || cls === "rowhouse" ? 0.08 : 0.2,
+        placement.gap / 2 * (rules.blockDensity > 0.75 && (cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse") ? 0.45 : 1),
+      );
+      const frontSetback = Math.max(
+        0.05,
+        placement.setback * (rules.blockDensity > 0.75 && (cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse") ? 0.35 : 1),
+      );
+      const buildable = buildablePolygon(poly, A, B, frontSetback, sideGap, 1.2, usedDepth);
       parcel.buildable = buildable;
       let placedLot = false;
       if (buildable.length >= 3) {
         const outDir: Vec2 = [-midS.normal[0], -midS.normal[1]];
         const rotationY = Math.atan2(outDir[0], outDir[1]);
-        const maxW = Math.max(3, Math.min(placement.width, frontW - placement.gap));
-        const availDepth = usedDepth - placement.setback - 1.2;
+        const maxW = Math.max(3, Math.min(placement.width, frontW - placement.gap * (rules.blockDensity > 0.75 ? 0.4 : 1)));
+        const availDepth = usedDepth - frontSetback - 1.2;
         const maxD = Math.max(3, Math.min(placement.depth, availDepth));
-        const cx0 = midS.p[0] + midS.normal[0] * (placement.setback + maxD / 2);
-        const cz0 = midS.p[1] + midS.normal[1] * (placement.setback + maxD / 2);
+        const cx0 = midS.p[0] + midS.normal[0] * (frontSetback + maxD / 2);
+        const cz0 = midS.p[1] + midS.normal[1] * (frontSetback + maxD / 2);
         const fit = fitRectInPolygon(buildable, cx0, cz0, maxW, maxD, rotationY, 0.45);
         if (fit !== null && fit.w >= 3 && fit.d >= 2.6) {
           const slopeRoll = rng();
@@ -1681,8 +1688,8 @@ function buildFabric(
     // elsewhere) when it is big enough to read as a place rather than back yards.
     if (maxDepthUsed > 0) {
       const core = insetRingUniform(land, maxDepthUsed + 0.5);
-      if (core.length >= 3 && polygonArea(core) > 240) {
-        const type: CityPark["type"] = band === "core" ? "courtyard" : band === "mid" ? (parkJitter < 0.5 ? "courtyard" : "green") : "meadow";
+      if (core.length >= 3 && polygonArea(core) > 120) {
+        const type: CityPark["type"] = band === "core" ? "courtyard" : band === "mid" ? (parkJitter < 0.55 ? "courtyard" : "green") : "meadow";
         result.parks.push(parkFromRing(`court:${bi}`, type, core, parkJitter));
       }
     }

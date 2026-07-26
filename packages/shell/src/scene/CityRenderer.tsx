@@ -19,12 +19,12 @@ import * as THREE from "three";
 
 import {
   roundPathCorners,
-  buildJunctionSurface,
+  buildIntersectionMarkings,
   buildRoadRibbon,
+  buildTrimmedIntersections,
   dashSegments,
   GROUND_DECAL_LAYERS,
-  trimPathAtJunctions,
-  type JunctionApproach,
+  type IntersectionStreet,
   type RoadJunctionInput,
   type RoadPoint,
   type RoadRibbon,
@@ -77,7 +77,7 @@ const CHECK_DARK = new THREE.Color("#101015");
 const CHECK_LIGHT = new THREE.Color("#e8e8ea");
 const RACE_ASPHALT = new THREE.Color("#1a1c20");
 const RACE_EDGE = new THREE.Color("#d8d4c8");
-const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#5c8348", buffer: "#63734a" } as const;
+const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#6a655c", buffer: "#63734a" } as const;
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
 /** Block-interior ground by zone band. A dense district keeps hard surface all the way to its rim;
  *  only a low-density (large-block) district lets the edge band go back to lawn. */
@@ -114,8 +114,8 @@ const RACE_SURFACE_LAYER = 0.28;
 const RACE_PAINT_LAYER = 0.3;
 const BRIDGE_DECK_LIFT = 0.12;
 
-/** Trim + weld tuning shared by {@link trimPathAtJunctions} and {@link buildJunctionSurface} for the district. */
-const JUNCTION_OPTS = { curbReturnRadius: 3, apronMargin: 0.6, filletSegments: 6, elevation: ROAD_LAYER, maxSegmentLength: 2 };
+/** Compact carriageway-union — same seam as StreetGeometryPreview and playground `cityScene`. */
+const JUNCTION_OPTS = { curbReturnRadius: 2, apronMargin: 0.25, filletSegments: 6, elevation: ROAD_LAYER, maxSegmentLength: 2 };
 
 const SPECIES_PROXY: Record<CityTreeSpecies, string> = { broadleaf: "oak", conifer: "pine", palm: "palm", cypress: "cypress" };
 const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 2.7, conifer: 2.5, palm: 2.6, cypress: 2.3 };
@@ -361,83 +361,6 @@ function clipPolylineAtIntersections(
   if (last !== undefined && !blocked(last[0], last[1])) current.push(last);
   if (current.length >= 2) runs.push(current);
   return runs;
-}
-
-/** Andrew's monotone-chain convex hull of XZ points (CCW), degenerate-safe. */
-function convexHull(points: readonly RoadPoint[]): RoadPoint[] {
-  const pts = points.map((p) => [p[0], p[1]] as RoadPoint).sort((a, b) => (a[0] === b[0] ? a[1] - b[1] : a[0] - b[0]));
-  if (pts.length < 3) return pts;
-  const cross = (o: RoadPoint, a: RoadPoint, b: RoadPoint): number =>
-    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const lower: RoadPoint[] = [];
-  for (const p of pts) {
-    while (lower.length >= 2 && cross(lower[lower.length - 2]!, lower[lower.length - 1]!, p) <= 0) lower.pop();
-    lower.push(p);
-  }
-  const upper: RoadPoint[] = [];
-  for (let i = pts.length - 1; i >= 0; i -= 1) {
-    const p = pts[i]!;
-    while (upper.length >= 2 && cross(upper[upper.length - 2]!, upper[upper.length - 1]!, p) <= 0) upper.pop();
-    upper.push(p);
-  }
-  lower.pop();
-  upper.pop();
-  return lower.concat(upper);
-}
-
-/** Round every vertex of a CLOSED ring into a short arc — the curb-return radius that turns a hard
- *  polygon corner into a real street corner. Radius is clamped to each corner's shorter leg. */
-function roundRing(ring: readonly RoadPoint[], radius: number, segments = 5): RoadPoint[] {
-  if (ring.length < 3 || radius <= 0) return ring.map((p) => [p[0], p[1]] as RoadPoint);
-  const n = ring.length;
-  const out: RoadPoint[] = [];
-  for (let i = 0; i < n; i += 1) {
-    const a = ring[(i - 1 + n) % n]!;
-    const v = ring[i]!;
-    const b = ring[(i + 1) % n]!;
-    const ax = a[0] - v[0];
-    const az = a[1] - v[1];
-    const bx = b[0] - v[0];
-    const bz = b[1] - v[1];
-    const la = Math.hypot(ax, az) || 1;
-    const lb = Math.hypot(bx, bz) || 1;
-    const r = Math.min(radius, la / 2, lb / 2);
-    const p0: RoadPoint = [v[0] + (ax / la) * r, v[1] + (az / la) * r];
-    const p1: RoadPoint = [v[0] + (bx / lb) * r, v[1] + (bz / lb) * r];
-    out.push(p0);
-    for (let s = 1; s < segments; s += 1) {
-      const t = s / segments;
-      const u = 1 - t;
-      out.push([u * u * p0[0] + 2 * u * t * v[0] + t * t * p1[0], u * u * p0[1] + 2 * u * t * v[1] + t * t * p1[1]]);
-    }
-    out.push(p1);
-  }
-  return out;
-}
-
-/**
- * The pavement outline of a junction: each arm's roadway extended to the crossing, hulled into one
- * convex area, then corner-rounded. This reads as a real intersection (a squared crossing with
- * rounded curb corners) instead of the old stamped circle. Returns `null` for a degenerate junction.
- */
-function junctionOutline(cross: CityIntersection, reachScale = 1.15, expand = 0): RoadPoint[] | null {
-  if (cross.arms.length < 2) return null;
-  let maxHalf = 0;
-  for (const arm of cross.arms) maxHalf = Math.max(maxHalf, arm.width / 2);
-  const reach = maxHalf * reachScale + expand;
-  const mouth: RoadPoint[] = [];
-  for (const arm of cross.arms) {
-    const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
-    const perp: readonly [number, number] = [-dir[1], dir[0]];
-    const hw = arm.width / 2 + expand;
-    mouth.push([cross.x + dir[0] * reach + perp[0] * hw, cross.z + dir[1] * reach + perp[1] * hw]);
-    mouth.push([cross.x + dir[0] * reach - perp[0] * hw, cross.z + dir[1] * reach - perp[1] * hw]);
-  }
-  const hull = convexHull(mouth);
-  if (hull.length < 3) return null;
-  // Curb-return radius: a real corner, capped so a tight junction never over-rounds into a blob.
-  const cornerR = Math.min(maxHalf * 0.9 + expand, 5.5);
-  return roundRing(hull, cornerR, 6);
 }
 
 let unitGeometryCache: { box: THREE.BoxGeometry; gable: THREE.BufferGeometry; cylinder: THREE.CylinderGeometry; dome: THREE.SphereGeometry } | null = null;
@@ -811,12 +734,12 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     const parkColor = new THREE.Color();
     const wearColor = new THREE.Color();
     const markColor = new THREE.Color();
-    const ZEBRA_TINT = new THREE.Color(1, 1, 1);
     const LANE_TINT = new THREE.Color(0.78, 0.77, 0.72);
     const STALL_TINT = new THREE.Color(0.55, 0.54, 0.5);
     // Sidewalks now come from block curb→land bands; only pre-block documents fall back to the old
     // per-street widened ribbon.
     const useBlockSidewalks = resolved.blocks.length > 0;
+    const sidewalkW = Math.max(0, resolved.rules.sidewalkWidth);
 
     // Feature-aware height: because streets stay continuous across water and through ridges, the road
     // must ride UP onto a bridge deck and hold FLAT through a tunnel bore rather than dive under the
@@ -888,44 +811,75 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       markings.indices.push(base, base + 2, base + 1, base + 1, base + 2, base + 3);
     };
 
-    // Trim carriageways back to their junction boundaries and weld one surface per crossing (no
-    // overlapping ribbons hidden under a floating disc). Street endpoints coincide bitwise with
-    // junction nodes, so `trimPathAtJunctions` cuts each rounded ribbon exactly at the crossing; the
-    // terminal corners feed `buildJunctionSurface` per intersection. Any crossing that gets no trimmed
-    // approach (e.g. sliced past the intersection cap) falls back to the old rounded outline below.
+    // Trim carriageways and weld one compact surface per crossing — the same
+    // `buildTrimmedIntersections` seam StreetGeometryPreview and playground cityScene consume.
+    // Do not stack plaza discs, hull aprons, or fat zebra paint on top of that union.
+    const roundedPaths = resolved.streets.map((street) =>
+      street.points.length < 2 ? street.points : roundPathCorners(street.points, Math.max(2.5, street.width * 1.15), 9),
+    );
     const intersectionInputs: RoadJunctionInput[] = resolved.intersections.map((cross) => ({
       x: cross.x,
       z: cross.z,
       arms: cross.arms.map((arm) => ({ angle: arm.angle, width: arm.width })),
     }));
-    const approachesByCross = new Map<number, JunctionApproach[]>();
+    const intersectionStreets: IntersectionStreet[] = resolved.streets.map((street, streetIndex) => {
+      const path = roundedPaths[streetIndex]!;
+      // Always declare sidewalk widths when sidewalks are on so junction curb-return aprons weld;
+      // per-street sidewalk ribbons are skipped below when block curb rings already own the walk.
+      const wantSidewalk = street.sidewalk && sidewalkW > 0 && resolved.rules.sidewalks;
+      const arterial = street.level === "boulevard" || street.level === "avenue";
+      return {
+        path,
+        width: street.width,
+        ...(wantSidewalk ? { sidewalks: { left: sidewalkW, right: sidewalkW } } : {}),
+        ...(arterial && street.surface === "asphalt"
+          ? {
+              markings: {
+                lines: [{ offset: 0, width: 0.16 }],
+                stopLine: true,
+              },
+            }
+          : {}),
+      };
+    });
+    const trimmed = buildTrimmedIntersections(intersectionStreets, intersectionInputs, deckSampler, JUNCTION_OPTS);
+    for (let i = 0; i < trimmed.ribbons.length; i += 1) {
+      const streetIndex = trimmed.trimmedStreetIndices[i]!;
+      const street = resolved.streets[streetIndex]!;
+      const wear = (hashString(`surface:${streetIndex}`) % 1024) / 1024;
+      wearColor.setRGB(0.86 + wear * 0.3, 0.87 + wear * 0.28, 0.9 + wear * 0.24);
+      const target = street.surface === "gravel" ? gravel : asphalt;
+      target.addMesh(trimmed.ribbons[i]!, street.surface === "gravel" ? null : wearColor);
+    }
+    if (!useBlockSidewalks) {
+      for (const sidewalk of trimmed.sidewalks) sidewalks.addMesh(sidewalk);
+    }
+    for (const apron of trimmed.sidewalkAprons) sidewalks.addMesh(apron);
+    for (let j = 0; j < trimmed.junctions.length; j += 1) {
+      const crossIndex = trimmed.junctionIndices[j]!;
+      const scuff = (hashString(`cross:${crossIndex}`) % 512) / 512;
+      wearColor.setRGB(0.76 + scuff * 0.18, 0.77 + scuff * 0.17, 0.8 + scuff * 0.16);
+      patches.addMesh(trimmed.junctions[j]!, wearColor);
+    }
+    for (const paint of buildIntersectionMarkings(trimmed, deckSampler, {
+      mouthClearance: 1.25,
+      dashLength: 2.6,
+      dashGap: 3.6,
+      elevation: MARKING_LAYER,
+      maxSegmentLength: 2,
+    })) {
+      markColor.copy(LANE_TINT);
+      markings.addMesh(paint, markColor);
+    }
 
     resolved.streets.forEach((street, streetIndex) => {
       if (street.points.length < 2) return;
-      const rounded = roundPathCorners(street.points, Math.max(2.5, street.width * 1.15), 9);
-      const surface = street.surface === "gravel" ? gravel : asphalt;
-      // Every carriageway takes its own resurfacing tint, so a district is patched asphalt of many
-      // ages rather than one poured sheet of grey.
+      const rounded = roundedPaths[streetIndex]!;
       const wear = (hashString(`surface:${streetIndex}`) % 1024) / 1024;
       wearColor.setRGB(0.86 + wear * 0.3, 0.87 + wear * 0.28, 0.9 + wear * 0.24);
-      for (const sub of trimPathAtJunctions(rounded, street.width, intersectionInputs, JUNCTION_OPTS)) {
-        surface.addRibbon(sub.path, street.width, deckSampler, ROAD_LAYER, street.surface === "gravel" ? null : wearColor);
-        for (const cut of sub.cuts) {
-          const approach: JunctionApproach = {
-            center: cut.center,
-            left: [cut.left[0], deckSampler(cut.left[0], cut.left[1]) + ROAD_LAYER, cut.left[1]],
-            right: [cut.right[0], deckSampler(cut.right[0], cut.right[1]) + ROAD_LAYER, cut.right[1]],
-          };
-          const list = approachesByCross.get(cut.junctionIndex);
-          if (list) list.push(approach);
-          else approachesByCross.set(cut.junctionIndex, [approach]);
-        }
+      if (street.sidewalk && !useBlockSidewalks && sidewalkW <= 0) {
+        sidewalks.addRibbon(rounded, street.width + 3.6, sample, SIDEWALK_LAYER);
       }
-      if (street.sidewalk && !useBlockSidewalks) sidewalks.addRibbon(rounded, street.width + 3.6, sample, SIDEWALK_LAYER);
-      // Painted edge/lane lines make a flat ribbon read as a real carriageway; they break at
-      // junctions (the crossing owns its own pavement), so clip the centerline first. Curbs come
-      // from the block curb rings below whenever the block pipeline ran — a per-street strip would
-      // be a second, misaligned copy of the same edge.
       if (street.surface === "asphalt") {
         const half = street.width / 2;
         for (const run of clipPolylineAtIntersections(rounded, resolved.intersections, half + 0.5)) {
@@ -934,7 +888,6 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
             curbs.addRibbon(offsetPath(run, half), 0.55, deckSampler, CURB_LAYER);
             curbs.addRibbon(offsetPath(run, -half), 0.55, deckSampler, CURB_LAYER);
           }
-          // Only the big roads carry paint: edge lines on every street turn a district white.
           if (street.level === "boulevard" || street.level === "avenue") {
             markColor.copy(LANE_TINT);
             markings.addRibbon(offsetPath(run, half - 0.8), 0.12, deckSampler, MARKING_LAYER, markColor);
@@ -951,34 +904,15 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         else asphalt.addDisc(street.bulb, street.width * 1.15, sample, ROAD_LAYER, wearColor);
         if (street.sidewalk) sidewalks.addDisc(street.bulb, street.width * 1.15 + 1.8, sample, SIDEWALK_LAYER);
       }
-      if (street.surface === "asphalt" && street.level !== "lane") {
-        if (street.level === "boulevard") {
-          // Median strip instead of a center line, broken WELL clear of every junction — a median
-          // stub poking into a crossing reads as debris. Runs shorter than a car are dropped and
-          // ends get a rounded cap so each island reads designed.
-          for (const run of clipPolylineAtIntersections(rounded, resolved.intersections, 2.6)) {
-            let runLength = 0;
-            for (let i = 0; i + 1 < run.length; i += 1) runLength += Math.hypot(run[i + 1]![0] - run[i]![0], run[i + 1]![1] - run[i]![1]);
-            if (runLength < 7) continue;
-            const width = Math.max(1.3, street.width * 0.14);
-            medians.addRibbon(run, width, deckSampler, MEDIAN_LAYER);
-            medians.addDisc(run[0]!, width / 2, deckSampler, MEDIAN_LAYER, null, 8);
-            medians.addDisc(run[run.length - 1]!, width / 2, deckSampler, MEDIAN_LAYER, null, 8);
-          }
-        } else {
-          for (const dash of dashSegments(rounded, 2.6, 3.6)) {
-            const [a, b] = [dash[0]!, dash[dash.length - 1]!];
-            const mid: RoadPoint = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-            let inCross = false;
-            for (const cross of resolved.intersections) {
-              if (Math.hypot(cross.x - mid[0], cross.z - mid[1]) < cross.radius + 0.8) {
-                inCross = true;
-                break;
-              }
-            }
-            markColor.copy(LANE_TINT);
-            if (!inCross) markings.addRibbon(dash, 0.16, deckSampler, MARKING_LAYER, markColor);
-          }
+      if (street.surface === "asphalt" && street.level === "boulevard") {
+        for (const run of clipPolylineAtIntersections(rounded, resolved.intersections, 2.6)) {
+          let runLength = 0;
+          for (let i = 0; i + 1 < run.length; i += 1) runLength += Math.hypot(run[i + 1]![0] - run[i]![0], run[i + 1]![1] - run[i]![1]);
+          if (runLength < 7) continue;
+          const width = Math.max(1.3, street.width * 0.14);
+          medians.addRibbon(run, width, deckSampler, MEDIAN_LAYER);
+          medians.addDisc(run[0]!, width / 2, deckSampler, MEDIAN_LAYER, null, 8);
+          medians.addDisc(run[run.length - 1]!, width / 2, deckSampler, MEDIAN_LAYER, null, 8);
         }
       }
     });
@@ -1119,63 +1053,8 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         curbs.addRingWall(block.curb, sample, ROAD_LAYER - 0.02, CURB_LAYER);
       }
     }
-    // Junctions: the corner curb-return apron, the welded pavement, and a zebra crossing only on
-    // arms that carry one. The apron is a RING between the widened outline and the pavement edge —
-    // a solid polygon at sidewalk height would bury the crossing it is supposed to wrap.
-    resolved.intersections.forEach((cross, crossIndex) => {
-      const bigLevel = cross.level === "boulevard" || cross.level === "avenue";
-      // A crossing is painted only where a pedestrian would actually cross: a signalled main-road
-      // junction with three or more arms, or a genuinely oversized arm.
-      const armZebra = (width: number): boolean =>
-        (bigLevel && cross.arms.length >= 3) || width >= resolved.rules.streetWidth * 1.6;
-      const paved = resolved.rules.sidewalks && cross.level !== "lane";
-      if (paved) {
-        const apron = junctionOutline(cross, 1.15, resolved.rules.sidewalkWidth + 0.4);
-        const kerb = junctionOutline(cross, 1.15, 0.1);
-        if (apron !== null && kerb !== null) {
-          sidewalks.addRingBand(apron, kerb, sample, SIDEWALK_LAYER);
-          curbs.addRingWall(kerb, sample, ROAD_LAYER - 0.02, CURB_LAYER);
-        } else if (apron !== null) {
-          sidewalks.addPolygon(apron, sample, SIDEWALK_LAYER);
-        }
-      }
-      // The junction pavement is welded onto the trimmed ribbon ends (seam-shared, no floating disc).
-      // Crossings that got no trimmed approach fall back to the rounded outline / disc, so coverage
-      // never regresses.
-      const approaches = approachesByCross.get(crossIndex);
-      // Crossings wear darker than the roads that feed them — polished by turning traffic.
-      const scuff = (hashString(`cross:${crossIndex}`) % 512) / 512;
-      wearColor.setRGB(0.76 + scuff * 0.18, 0.77 + scuff * 0.17, 0.8 + scuff * 0.16);
-      if (approaches !== undefined && approaches.length > 0) {
-        patches.addMesh(buildJunctionSurface({ x: cross.x, z: cross.z }, approaches, deckSampler, JUNCTION_OPTS), wearColor);
-      } else {
-        const outline = junctionOutline(cross);
-        if (outline !== null) patches.addPolygon(outline, deckSampler, ROAD_LAYER, wearColor);
-        else patches.addDisc([cross.x, cross.z], cross.radius, deckSampler, ROAD_LAYER, wearColor);
-      }
-      if (paved) {
-        const maxHalf = Math.max(...cross.arms.map((arm) => arm.width / 2));
-        for (const arm of cross.arms) {
-          if (!armZebra(arm.width)) continue;
-          const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
-          const perp: readonly [number, number] = [-dir[1], dir[0]];
-          // Bars run WITH traffic and sit at the MOUTH of the junction, inside the pavement: a
-          // full-width ladder near the centre merges all four arms into one painted field.
-          const barLength = Math.min(2, maxHalf * 0.38);
-          const bandDist = maxHalf * 0.95;
-          const span = arm.width * 0.66;
-          const bars = Math.max(3, Math.round(span / 1.7));
-          for (let bar = 0; bar < bars; bar += 1) {
-            const t = (bar + 0.5) / bars - 0.5;
-            const bx = cross.x + dir[0] * bandDist + perp[0] * t * span;
-            const bz = cross.z + dir[1] * bandDist + perp[1] * t * span;
-            addMarkQuad([bx, bz], dir, barLength, 0.36, ZEBRA_TINT);
-          }
-          const stopDist = Math.min(maxHalf * 1.12, bandDist + barLength / 2 + 0.45);
-          addMarkQuad([cross.x + dir[0] * stopDist, cross.z + dir[1] * stopDist], perp, arm.width * 0.72, 0.3, LANE_TINT);
-        }
-      }
-    });
+    // Junction pavement + curb-return sidewalk aprons already came from `buildTrimmedIntersections`
+    // above. No plaza discs, hull aprons, or fat zebra ladders on top of that union.
     for (const drive of resolved.driveways) {
       (drive.surface === "gravel" ? gravelDrives : pavementDrives).addRibbon(drive.points, drive.width, sample, DRIVEWAY_LAYER);
     }
@@ -1639,6 +1518,17 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
     ];
     for (let i = 0; i < n; i += 1) {
       const j = (i + 1) % n;
+      const midX = (points[i]![0] + points[j]![0]) * 0.5;
+      const midZ = (points[i]![1] + points[j]![1]) * 0.5;
+      // Leave welded junction pavement visible — a continuous race ribbon over the mouth undoes the seam.
+      let overJunction = false;
+      for (const cross of resolved.intersections) {
+        if (Math.hypot(cross.x - midX, cross.z - midZ) < cross.radius + 0.6) {
+          overJunction = true;
+          break;
+        }
+      }
+      if (overJunction) continue;
       decals.addQuad(
         [rim(i, -half[i]!, RACE_SURFACE_LAYER), rim(j, -half[j]!, RACE_SURFACE_LAYER), rim(j, half[j]!, RACE_SURFACE_LAYER), rim(i, half[i]!, RACE_SURFACE_LAYER)],
         RACE_ASPHALT,

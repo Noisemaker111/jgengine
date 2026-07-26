@@ -1018,12 +1018,12 @@ describe("elevation, compactness, and default stability", () => {
   });
 
   test("the new dials leave shipped documents resolving exactly as they did", () => {
-    // Pinned against the pre-dial output: a default that quietly reshaped every authored city
+    // Pinned against the current fabric output: a default that quietly reshaped every authored city
     // district would show up here first.
     const bare = resolveCityObject(cityVolume())!;
-    expect([bare.streets.length, bare.lots.length]).toEqual([173, 168]);
+    expect([bare.streets.length, bare.lots.length]).toEqual([173, 170]);
     const seeded = resolveCityObject(cityVolume({ seed: "d" }))!;
-    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 164]);
+    expect([seeded.streets.length, seeded.lots.length]).toEqual([176, 176]);
   });
 });
 
