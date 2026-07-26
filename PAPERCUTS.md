@@ -210,3 +210,7 @@ adding a field to SkyEnvironmentConfig → sky() copies config fields one by one
 2026-07-26T18:59:33.308Z — claude-opus-5 — Claude
 
 verifying any world content with shoot/drive → the only aiming primitive was --spawn, which moves the player but does not pin look yaw, so framing a known coordinate took repeated capture rounds and often never worked; fixed by --look in this PR
+
+2026-07-26T21:28:30.860Z — cursor-grok-4.5-high — Cursor Agent
+
+city+race unify → session interrupted mid-flight twice, had to rediscover uncommitted street-life work from a prior agent turn
