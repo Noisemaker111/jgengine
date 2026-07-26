@@ -755,6 +755,31 @@ function exceptionMessage(params: Record<string, unknown>): string {
   return `page exception: ${message}${location}`;
 }
 
+/**
+ * Echo the page's own `console.warn`/`console.error` to stderr for the life of a capture.
+ * The engine already explains most bad frames in the page console — the camera far-plane
+ * warning, asset diagnostics — and none of it reached the agent driving the capture.
+ */
+export function forwardPageConsole(session: CdpSession, prefix: string): () => void {
+  return session.on("Runtime.consoleAPICalled", (params) => {
+    const level = params.type;
+    if (level !== "warning" && level !== "error") return;
+    const args = Array.isArray(params.args) ? params.args : [];
+    const text = args
+      .map((arg: { value?: unknown; description?: unknown }) =>
+        typeof arg?.value === "string" || typeof arg?.value === "number"
+          ? String(arg.value)
+          : typeof arg?.description === "string"
+            ? arg.description
+            : "",
+      )
+      .filter((part) => part.length > 0)
+      .join(" ")
+      .slice(0, 500);
+    if (text.length > 0) console.error(`${prefix} page ${level}: ${text}`);
+  });
+}
+
 /** Navigate and surface browser/page failures instead of waiting for the capture timeout. */
 export async function navigateCapturePage(
   session: CdpSession,

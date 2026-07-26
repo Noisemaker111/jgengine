@@ -173,6 +173,33 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
   }
 }
 
+// LoadingManager reports queue transitions, not per-item events: `onStart` fires when the
+// queue goes busy and `onLoad` when it drains (errors included, via itemEnd), so a flag plus
+// a drain timestamp is the whole state.
+let modelQueueBusy = false;
+let modelQueueDrainedAt = 0;
+const now = (): number => (typeof performance === "undefined" ? Date.now() : performance.now());
+modelLoadingManager.onStart = () => {
+  modelQueueBusy = true;
+};
+modelLoadingManager.onLoad = () => {
+  modelQueueBusy = false;
+  modelQueueDrainedAt = now();
+};
+
+/**
+ * How long the shared GLB loader has been idle, in ms — `0` while any model is still
+ * in flight. A capture host reads this to wait for streaming to finish instead of
+ * guessing a settle delay: models that pop in after the shot are why an establishing
+ * capture used to come back half-empty until someone hand-tuned `--settle`.
+ * @capability model-load-idle how long the shared GLB loader has been idle, for capture settle waits
+ */
+export function modelLoadIdleMs(): number {
+  if (modelQueueBusy) return 0;
+  if (modelQueueDrainedAt === 0) return Number.POSITIVE_INFINITY;
+  return now() - modelQueueDrainedAt;
+}
+
 /** Shared GLTF loader used by shell entity/object model mounts. @internal */
 export const sharedGltfLoader = new DiagnosticGLTFLoader(modelLoadingManager);
 sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
