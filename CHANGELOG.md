@@ -32,6 +32,8 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`modelLoadIdleMs()` from `@jgengine/shell/render/modelLoad`** reports how long the shared GLB loader has been idle (`0` while a model is in flight). Capture hosts wait on it instead of guessing a settle delay, so an establishing shot no longer races streaming models.
+
 ### Fixed
 
 ## 0.15.0
