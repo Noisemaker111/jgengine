@@ -4,7 +4,9 @@ import {
   DOMINANT_SHARE_SPARSE_THRESHOLD,
   EDGE_DENSITY_PRIMITIVE_THRESHOLD,
   ENTROPY_SPARSE_THRESHOLD,
+  MIN_SAMPLED_SHARE,
   computeShotMetrics,
+  deadViewport,
   evaluateThresholds,
 } from "./shot-metrics";
 
@@ -100,5 +102,65 @@ describe("evaluateThresholds", () => {
   test("clears every look-quality metric for a noisy buffer", () => {
     const metrics = computeShotMetrics(WIDTH, HEIGHT, noisyBuffer(7));
     expect(evaluateThresholds(metrics)).toEqual([]);
+  });
+});
+
+describe("viewport scoping", () => {
+  const HUD = { x: 0, y: 0, width: WIDTH, height: 60 };
+
+  // Busy HUD strip over a viewport that is one flat colour apart from a handful of specks —
+  // enough distinct colours to pass the blank check, which is how a dead 3D view used to slip by.
+  function frameWithBusyHudOverDeadViewport(): Uint8Array {
+    const random = mulberry32(3);
+    return makeBuffer(WIDTH, HEIGHT, (x, y) => {
+      if (y < 60) {
+        return [Math.floor(random() * 256), Math.floor(random() * 256), Math.floor(random() * 256), 255];
+      }
+      return (x * 7 + y * 13) % 401 === 0 ? [200, 40, 40, 255] : [12, 12, 14, 255];
+    });
+  }
+
+  test("whole-frame scoring lets a busy HUD hide a dead viewport", () => {
+    const metrics = computeShotMetrics(WIDTH, HEIGHT, frameWithBusyHudOverDeadViewport());
+    expect(metrics.nonblank).toBe(true);
+    expect(deadViewport(metrics)).toBeNull();
+  });
+
+  test("a uniform viewport reads as blank once the HUD is masked", () => {
+    const flat = makeBuffer(WIDTH, HEIGHT, (_x, y) => (y < 60 ? [200, 30, 30, 255] : [12, 12, 14, 255]));
+    expect(deadViewport(computeShotMetrics(WIDTH, HEIGHT, flat, { masks: [HUD] }))).toBe(
+      "the 3D viewport is blank",
+    );
+  });
+
+  test("masking the HUD exposes it", () => {
+    const metrics = computeShotMetrics(WIDTH, HEIGHT, frameWithBusyHudOverDeadViewport(), { masks: [HUD] });
+    expect(deadViewport(metrics)).toContain("single flat fill");
+  });
+
+  test("a region restricts sampling to the viewport rectangle", () => {
+    const metrics = computeShotMetrics(WIDTH, HEIGHT, frameWithBusyHudOverDeadViewport(), {
+      region: { x: 0, y: 60, width: WIDTH, height: HEIGHT - 60 },
+    });
+    expect(deadViewport(metrics)).toContain("single flat fill");
+  });
+
+  test("a live viewport under the same HUD passes", () => {
+    const metrics = computeShotMetrics(WIDTH, HEIGHT, noisyBuffer(11), { masks: [HUD] });
+    expect(deadViewport(metrics)).toBeNull();
+  });
+
+  test("withholds a verdict when the mask covers almost everything", () => {
+    const metrics = computeShotMetrics(WIDTH, HEIGHT, makeBuffer(WIDTH, HEIGHT, () => [5, 5, 5, 255]), {
+      masks: [{ x: 0, y: 0, width: WIDTH, height: HEIGHT - 4 }],
+    });
+    expect(metrics.sampledShare).toBeLessThan(MIN_SAMPLED_SHARE);
+    expect(deadViewport(metrics)).toBeNull();
+  });
+
+  test("sampledShare reports how much survived masking", () => {
+    const metrics = computeShotMetrics(WIDTH, HEIGHT, noisyBuffer(5), { masks: [HUD] });
+    expect(metrics.sampledShare).toBeGreaterThan(0.6);
+    expect(metrics.sampledShare).toBeLessThan(0.75);
   });
 });

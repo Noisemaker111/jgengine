@@ -35,6 +35,9 @@ import {
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
+import { decodePng } from "./png-reader";
+import { shotSignature } from "./shot-metrics";
+import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord } from "./shotProvenance";
 import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
@@ -530,11 +533,27 @@ class LockstepRecorder {
 }
 
 async function screenshot(session: CdpSession, outPath: string): Promise<void> {
+  // Cleared first, so a failed step leaves no earlier shot at this path to be read as its result.
+  const previous = clearShotTarget(outPath);
   const shot = await session.send("Page.captureScreenshot", { format: "png", fromSurface: true });
   const data = shot.data;
   if (typeof data !== "string" || data.length === 0) throw new Error("Page.captureScreenshot returned empty data");
-  writePngAtomic(outPath, Buffer.from(data, "base64"));
+  const bytes = Buffer.from(data, "base64");
+  writePngAtomic(outPath, bytes);
+  const decoded = decodePng(bytes);
+  const record = buildShotRecord({
+    bytes,
+    command: ["bun run drive", ...process.argv.slice(2)].join(" "),
+    capturedAt: new Date().toISOString(),
+    signature: shotSignature(decoded.width, decoded.height, decoded.data),
+    width: decoded.width,
+    height: decoded.height,
+    ...(previous === undefined ? {} : { previous }),
+  });
+  writeShotRecord(outPath, record);
   console.log(outPath);
+  const replacement = describeReplacement(record);
+  if (replacement !== null) console.error(`drive: ${replacement}`);
 }
 
 const args = parseArgs(process.argv.slice(2));
