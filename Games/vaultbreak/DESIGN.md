@@ -38,7 +38,7 @@ HOME VAULT (first person, safe, permanent)
   crew processes what you brought → upgrade facilities → craft a Key → gear up
         │
         ▼
-DELVE (you, or you and 1–2 friends, instanced, 12–25 min)
+DELVE (you, or up to four of you, instanced, 12–25 min)
   kill things → take the Augs they were using → spend Charge on the wheel
         │
     ┌───┴────┐
@@ -530,8 +530,10 @@ offer) · **Core** (objective or Herald).
 Minimum viable authored content: roughly **60 room prefabs across 3 archetypes**
 before the shuffle stops feeling repetitive. Budget for that honestly — it is the
 largest content cost in the project and the usual way games in this genre ship
-feeling thin. Every prefab must also read and fight correctly with **three bodies
-in it**, which is a real constraint on doorway and cover authoring (§20).
+feeling thin. Every prefab must also read and fight correctly with **four bodies
+in it** — two entrances minimum, cover in clusters, no single-file chokepoints in
+a combat room. That is a hard authoring constraint, not a guideline, and §20 has
+the reasoning and the rest of the cost.
 
 **The dead vault should read as a place people lived.** Cheap, high-yield
 dressing, all of it procedural placement over authored props: name plates on
@@ -801,10 +803,38 @@ tier — and Clearance 2, because you do not get to skip Depth 3. And the whole 
 he was the one sweating, because he had thirty hours on the line and she had
 none.
 
-**Squad size.** 1–3. First-person room combat and the loot budget both degrade at
-4, and every prefab has to be authored for the number we pick, so this must be
-decided before room authoring starts — it changes every doorway. 4 is the most
-requested number in the history of co-op games; flagged in §24.
+**Squad size: 1–4. Decided, and locked before room authoring begins.** Four is
+what a friend group actually is, and a co-op game that cannot seat the fourth
+friend loses that group entirely. Four bodies do not fit a first-person shooter
+for free, though, so the cost is paid explicitly in five places:
+
+1. **Room geometry.** Every combat prefab needs **two entrances minimum** and a
+   fighting floor that four people can spread across without a conga line.
+   Doorways widen, cover comes in clusters of three-plus rather than single
+   pillars, and the minimum combat-room footprint goes up roughly 40% over a
+   three-body layout. Corridors stay tight on purpose — that is where four
+   becomes a liability, and it should.
+2. **Loot density scales sublinearly.** Caches per delve go as roughly
+   `1 + 0.6 × (squad − 1)`, so four players find more in total and less each.
+   Combined with per-player rolls (rule 4), a full squad is a social choice and
+   a mild efficiency loss, never the optimal farming configuration.
+3. **Enemy packs scale by count and composition, never by individual strength.**
+   Rule 2 holds absolutely: the Warden is the same Warden. What changes at four
+   is how many of them and how many elites are mixed in, resolved once at
+   insert.
+4. **Revives need a real cost or four bodies makes death optional.** Reviving is
+   a long, loud, stationary channel; a downed player's bleed-out clock does not
+   pause for it; and each player can be revived **twice per delve**, after which
+   downed means dead and the career ends. Four people should mean four chances
+   to make a mistake, not immortality.
+5. **Extraction pads are squad-capacity in PvE and single-use in Breach.** A
+   four-stack cannot be forced to extract one at a time in normal play. In
+   Breach, being forced to is the whole point.
+
+Solo remains fully supported and separately tuned: vault size, pack count and
+cache density all scale down with headcount, so a one-player Depth 6 is a
+smaller, quieter, more frightening vault rather than a four-player vault with
+three people missing.
 
 **PvP: opt-in, as a Key modifier.** The **Breach Key** opens your instance to
 other squads. Doubles loot, makes pads single-use, and lets you take the Augs off
@@ -888,10 +918,14 @@ Honest gaps, priority order:
 3. **Is one starting slot too thin for the first hour?** §23 bets the constraint
    *is* the hook. If playtests disagree, move permanent slot 2 into the first
    session rather than starting at two.
-4. **Squad size 3 or 4?** Must be decided before room prefab authoring — it sets
-   every doorway, sightline and cover cluster in the game, and it is not a number
-   you can change later. 3 is better first-person combat; 4 is what friend groups
-   actually are.
+4. **Does four bodies flatten the horror?** Squad size is settled at 1–4 (§20)
+   and the geometry cost is priced in, but the remaining risk is tonal, not
+   mechanical: a vault that is genuinely frightening solo may be a comedy with
+   four people in it. Levers if it goes that way, in order of preference —
+   tighten the revive economy further, separate the squad by design (objectives
+   that need two rooms at once), and lean the Collapse phase harder on isolating
+   players rather than on spawning more enemies. Do not fix it by making a
+   four-stack weaker; that breaks rule 2.
 5. **Does Notoriety-driven aggro (§20.6) read as fair or as cheating?** Being
    hunted specifically is great fiction and might feel awful in practice for the
    veteran who just wanted a quiet run with a friend. Test whether it needs a
