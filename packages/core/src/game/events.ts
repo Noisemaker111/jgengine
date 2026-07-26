@@ -21,10 +21,41 @@ export interface EntityAnimationEvent {
   event: string;
 }
 
+/**
+ * One granted reward: an inventory `item` id or a `currency` id, plus how many. Named because every
+ * consumer of `loot.granted` needs it — a toast renderer, a loot log, a session summary — and each
+ * one that re-declares the shape inline is a cast the compiler cannot check.
+ */
+export interface LootDrop {
+  item?: string;
+  currency?: string;
+  count: number;
+}
+
 export interface LootGrantedEvent {
   userId: string;
-  drops: { item?: string; currency?: string; count: number }[];
+  drops: LootDrop[];
   source?: string;
+}
+
+/**
+ * Read the drops out of a `loot.granted` payload that arrived as `unknown` — a `FeedEntry.data`, a
+ * replicated event, a persisted log row. Returns `[]` for anything that is not shaped like a loot
+ * grant, so a renderer never has to guard the payload itself: `entry.data as { drops?: ... }` is the
+ * cast four separate call sites were writing, and the one that omitted the `| undefined` would have
+ * thrown on a payload-less entry.
+ */
+export function lootDropsOf(data: unknown): readonly LootDrop[] {
+  if (typeof data !== "object" || data === null) return [];
+  const drops = (data as { drops?: unknown }).drops;
+  if (!Array.isArray(drops)) return [];
+  return drops.filter(
+    (drop): drop is LootDrop =>
+      typeof drop === "object" &&
+      drop !== null &&
+      typeof (drop as LootDrop).count === "number" &&
+      Number.isFinite((drop as LootDrop).count),
+  );
 }
 
 export interface InventoryAddedEvent {
