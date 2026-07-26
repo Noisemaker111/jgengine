@@ -725,13 +725,104 @@ describe("street hierarchy, intersections, furniture", () => {
 
   test("furniture toggles empty their lists", () => {
     const bare = resolveCityObject(
-      cityVolume({ seed: "bare", hedges: false, driveways: false, parking: false, treeDensity: 0, lightDensity: 0 }),
+      cityVolume({ seed: "bare", hedges: false, driveways: false, parking: false, treeDensity: 0, lightDensity: 0, parkedCars: 0, signals: 0 }),
     )!;
     expect(bare.trees.length).toBe(0);
     expect(bare.lights.length).toBe(0);
     expect(bare.hedges.length).toBe(0);
     expect(bare.driveways.length).toBe(0);
     expect(bare.parkingLots.length).toBe(0);
+    expect(bare.vehicles.length).toBe(0);
+    expect(bare.signals.length).toBe(0);
+  });
+
+  test("a busy district parks a varied fleet at its curbs and in its pads, deterministically", () => {
+    const meta = { seed: "parked", parkedCars: 0.9 };
+    const city = resolveCityObject(cityVolume(meta))!;
+    expect(resolveCityObject(cityVolume(meta))!.vehicles).toEqual(city.vehicles);
+    expect(city.vehicles.length).toBeGreaterThan(100);
+    expect(new Set(city.vehicles.map((vehicle) => vehicle.kind)).size).toBe(3);
+    expect(new Set(city.vehicles.map((vehicle) => vehicle.paint)).size).toBeGreaterThan(4);
+    expect(city.vehicles.some((vehicle) => vehicle.stall === "curb")).toBe(true);
+    expect(city.vehicles.some((vehicle) => vehicle.stall === "lot")).toBe(true);
+    // Curb cars stand on the carriageway edge; nothing sits on a centerline or inside a footprint.
+    for (const vehicle of city.vehicles) {
+      for (const street of city.streets) expect(distToStreet(street, vehicle.x, vehicle.z)).toBeGreaterThan(1.5);
+      if (vehicle.stall === "curb") {
+        expect(city.streets.some((street) => distToStreet(street, vehicle.x, vehicle.z) < street.width / 2)).toBe(true);
+      }
+      for (const lot of city.lots) {
+        const dx = vehicle.x - lot.center[0];
+        const dz = vehicle.z - lot.center[1];
+        if (dx * dx + dz * dz > 40 * 40) continue;
+        const c = Math.cos(lot.rotationY);
+        const s = Math.sin(lot.rotationY);
+        expect(Math.abs(dx * c - dz * s) > lot.size[0] / 2 || Math.abs(dx * s + dz * c) > lot.size[1] / 2).toBe(true);
+      }
+    }
+  });
+
+  test("signals stand at a junction approach, face back down that arm, and only arterials get lights", () => {
+    const city = resolveCityObject(cityVolume({ seed: "signal", signals: 1 }))!;
+    expect(city.signals.length).toBeGreaterThan(20);
+    expect(city.signals.some((signal) => signal.kind === "signal")).toBe(true);
+    expect(city.signals.some((signal) => signal.kind === "sign")).toBe(true);
+    const off = Math.abs;
+    for (const signal of city.signals) {
+      const owner = city.intersections.find(
+        (cross) =>
+          Math.hypot(cross.x - signal.x, cross.z - signal.z) <= cross.radius + signal.reach + 4 &&
+          cross.arms.some((arm) => off(Math.atan2(Math.sin(arm.angle - signal.heading), Math.cos(arm.angle - signal.heading))) < 1e-9),
+      );
+      expect(owner).toBeDefined();
+      expect(owner!.arms.length).toBeGreaterThanOrEqual(3);
+      const arterial = owner!.level === "boulevard" || owner!.level === "avenue";
+      expect(signal.kind).toBe(arterial ? "signal" : "sign");
+    }
+  });
+
+  test("street life is capped, and near-empty on a rural preset", () => {
+    const preset = (id: string): Record<string, unknown> => ({
+      ...(CITY_SCHEMA.presets!.find((entry) => entry.id === id)!.values as Record<string, unknown>),
+      seed: "alpha",
+    });
+    const packed = resolveCityObject(
+      cityVolume({ seed: "packed", parkedCars: 1, signals: 1 }, { halfExtents: { x: 400, y: 10, z: 400 } }),
+    )!;
+    expect(packed.vehicles.length).toBe(900);
+    expect(packed.signals.length).toBe(640);
+    const rural = resolveCityObject(cityVolume(preset("ruralohio"), { halfExtents: { x: 260, y: 10, z: 260 } }))!;
+    expect(rural.vehicles.length).toBeLessThan(25);
+    expect(rural.signals.length).toBe(0);
+    const manhattan = resolveCityObject(cityVolume(preset("manhattan")))!;
+    expect(manhattan.vehicles.length).toBeGreaterThan(rural.vehicles.length * 20);
+    expect(manhattan.signals.length).toBeGreaterThan(50);
+  });
+
+  test("street life rotates with the volume — positions and headings alike", () => {
+    const yaw = 0.9;
+    const flat = resolveCityObject(cityVolume({ seed: "turn" }))!;
+    const turned = resolveCityObject(cityVolume({ seed: "turn" }, { rotationY: yaw }))!;
+    const cos = Math.cos(yaw);
+    const sin = Math.sin(yaw);
+    const wrap = (angle: number): number => Math.atan2(Math.sin(angle), Math.cos(angle));
+    expect(flat.vehicles.length).toBeGreaterThan(0);
+    expect(turned.vehicles.length).toBe(flat.vehicles.length);
+    for (let i = 0; i < flat.vehicles.length; i += 17) {
+      const [a, b] = [flat.vehicles[i]!, turned.vehicles[i]!];
+      expect(b.x).toBeCloseTo(a.x * cos + a.z * sin, 6);
+      expect(b.z).toBeCloseTo(-a.x * sin + a.z * cos, 6);
+      expect(wrap(b.rotationY - a.rotationY - yaw)).toBeCloseTo(0, 6);
+      expect(b.kind).toBe(a.kind);
+    }
+    expect(flat.signals.length).toBeGreaterThan(0);
+    expect(turned.signals.length).toBe(flat.signals.length);
+    for (let i = 0; i < flat.signals.length; i += 11) {
+      const [a, b] = [flat.signals[i]!, turned.signals[i]!];
+      expect(b.x).toBeCloseTo(a.x * cos + a.z * sin, 6);
+      expect(b.z).toBeCloseTo(-a.x * sin + a.z * cos, 6);
+      expect(wrap(b.heading - a.heading - yaw)).toBeCloseTo(0, 6);
+    }
   });
 
   test("suburbs pack tight: consistent small setbacks, rhythmic rows, occupied frontage", () => {
