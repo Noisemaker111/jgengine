@@ -14,6 +14,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
+import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
 
 /**
  * Default port when no worktree key is needed — kept for docs/bench that still
@@ -219,6 +220,8 @@ interface DevServerMarker {
   identity: string;
   port: number;
   pid?: number;
+  /** Commit this server booted from; absent for markers written before revision keying. */
+  head?: string;
 }
 
 function markerPath(port: number): string {
@@ -234,8 +237,8 @@ function readMarker(port: number): DevServerMarker | null {
   }
 }
 
-function writeMarker(port: number, identity: string, pid?: number): void {
-  const body: DevServerMarker = { identity, port, pid };
+function writeMarker(port: number, identity: string, pid?: number, head?: string): void {
+  const body: DevServerMarker = { identity, port, pid, head };
   writeFileSync(markerPath(port), `${JSON.stringify(body)}\n`);
 }
 
@@ -245,6 +248,31 @@ export async function isOurDevServer(port: number, identity: string): Promise<bo
   if (!(await isUp(base))) return false;
   const marker = readMarker(port);
   return marker !== null && marker.identity === identity;
+}
+
+/**
+ * Retire a warm server whose commit no longer matches the tree. Reusing it would
+ * serve the previous commit's module graph — the "start menu still on screen"
+ * / readiness-timeout failure that made every checkout-then-shoot loop flaky.
+ * Killing it here means the caller's normal boot path starts a clean one.
+ */
+export async function retireDriftedDevServer(port: number, cwd = process.cwd()): Promise<boolean> {
+  const marker = readMarker(port);
+  if (marker === null) return false;
+  if (!revisionDrifted(marker.head, headRevision(cwd))) return false;
+  if (!(await isUp(`http://127.0.0.1:${port}`))) return false;
+  killPid(marker.pid, true);
+  const cleared = clearViteCaches(cwd);
+  console.error(
+    `capture: warm Vite on :${port} booted from ${shortRevision(marker.head)} but HEAD is ${shortRevision(headRevision(cwd))} — restarting it${cleared.length > 0 ? " and clearing the dep cache" : ""}`,
+  );
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (!(await isUp(`http://127.0.0.1:${port}`))) return true;
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  throw new Error(
+    `capture: the Vite on :${port} from ${shortRevision(marker.head)} would not die — kill it by hand, then retry`,
+  );
 }
 
 export interface EnsureDevServerResult {
@@ -288,6 +316,7 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   let port = resolveDevPort(cwd);
   const base = `http://127.0.0.1:${port}`;
 
+  await retireDriftedDevServer(port, cwd);
   if (await isOurDevServer(port, identity)) {
     return { child: null, port, base };
   }
@@ -318,7 +347,7 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
       });
   const pid = child?.pid ?? launchPersistentCommand(process.execPath, args, cwd, { JG_DEV_PORT: String(port) });
   child?.unref();
-  writeMarker(port, identity, pid);
+  writeMarker(port, identity, pid, headRevision(cwd));
 
   const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 60; attempt += 1) {
@@ -344,6 +373,7 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
   const identity = checkoutIdentity(cwd);
   let port = resolveWebPort(cwd);
   const base = `http://127.0.0.1:${port}`;
+  await retireDriftedDevServer(port, cwd);
   if (await isOurDevServer(port, identity)) return { child: null, port, base };
 
   if (await isUp(base)) {
@@ -374,7 +404,7 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
     JG_CAPTURE_SITE: "1",
   });
   child?.unref();
-  writeMarker(port, identity, pid);
+  writeMarker(port, identity, pid, headRevision(cwd));
 
   const finalBase = `http://127.0.0.1:${port}`;
   for (let attempt = 0; attempt < 120; attempt += 1) {
