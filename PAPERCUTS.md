@@ -218,3 +218,7 @@ Waiting on a background `bun run gate` with `until pgrep -f 'run-stages.ts gate'
 2026-07-26T19:36:33.037Z — claude-opus-5 — Claude
 
 Ran `bun run gate` and `bun run drive the-robots` concurrently on the software-GL cloud box; they starved each other and the 20s key-hold drive took ~20 min. Nothing warns that capture and gate should not overlap on a GL-less host.
+
+2026-07-26T19:44:00.696Z — claude-opus-5 — Claude
+
+`shoot <game> --look x,z,dist,height` returned a fully black 3D viewport (HUD drawn, world not) at two different world points, while --look 0,0 rendered fine. One frame caught the zone-title card mid-transition, so --look appears to capture before the relocated camera's world has streamed/settled. Cost 3 capture rounds and blocked visual evidence for an ambient-VFX change.

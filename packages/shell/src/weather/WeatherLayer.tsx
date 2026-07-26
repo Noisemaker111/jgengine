@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 
+import { DustField, type DustFieldProps } from "./DustField";
 import { RainField, type RainFieldProps } from "./RainField";
 import { SnowField, type SnowFieldProps } from "./SnowField";
 import { WeatherUniformProvider, type WeatherVector } from "./weatherUniforms";
 
-export type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed";
+/** `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`. */
+export type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust";
 
 export interface WeatherLayerProps {
   mode?: WeatherLayerMode;
@@ -14,6 +16,10 @@ export interface WeatherLayerProps {
   timeScale?: number;
   rain?: Omit<RainFieldProps, "wind" | "lightning" | "timeScale"> | false;
   snow?: Omit<SnowFieldProps, "wind" | "timeScale"> | false;
+  /** Airborne particulate. Drawn in `"dust"` mode, and alongside rain/snow whenever `dustAlways` is set. */
+  dust?: Omit<DustFieldProps, "wind" | "timeScale"> | false;
+  /** Keep dust in the air in every mode — a world that is dusty whatever else the sky is doing. */
+  dustAlways?: boolean;
   enabled?: boolean;
   children?: ReactNode;
 }
@@ -30,6 +36,8 @@ export function WeatherLayer({
   timeScale,
   rain,
   snow,
+  dust,
+  dustAlways = false,
   enabled = true,
   children,
 }: WeatherLayerProps) {
@@ -39,6 +47,8 @@ export function WeatherLayer({
   const snowProps = snow === false ? null : (snow ?? {});
   const showRain = rainProps !== null && (mode === "rain" || mode === "mixed");
   const showSnow = snowProps !== null && (mode === "snow" || mode === "mixed");
+  const dustProps = dust === false ? null : (dust ?? {});
+  const showDust = dustProps !== null && (mode === "dust" || dustAlways);
 
   return (
     <WeatherUniformProvider wind={wind} lightning={lightning} timeScale={timeScale}>
@@ -47,6 +57,9 @@ export function WeatherLayer({
       ) : null}
       {showSnow ? (
         <SnowField {...snowProps} density={resolveLayerDensity(snowProps.density, 0.5, intensity)} />
+      ) : null}
+      {showDust ? (
+        <DustField {...dustProps} density={resolveLayerDensity(dustProps.density, 0.4, intensity)} />
       ) : null}
       {children}
     </WeatherUniformProvider>

@@ -2,6 +2,8 @@ export const DEFAULT_RAIN_COUNT = 2000;
 export const DEFAULT_SNOW_COUNT = 1500;
 export const DEFAULT_RAIN_DENSITY = 0.45;
 export const DEFAULT_SNOW_DENSITY = 0.5;
+export const DEFAULT_DUST_COUNT = 1800;
+export const DEFAULT_DUST_DENSITY = 0.4;
 
 /** @internal */
 export function clampWeatherRatio(value: number): number {
