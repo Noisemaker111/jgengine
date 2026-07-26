@@ -86,6 +86,14 @@ function enemyFinish(def: EnemyDef, kind: RigKind): ModelMaterialOverride {
     metalness: machined ? 0.5 : 0.2,
     roughness: machined ? 0.45 : 0.75,
     ...(machined ? { maps: def.badass ? PANEL_MAPS : SCRAP_METAL_MAPS } : {}),
+    // Silhouette separation. Hostiles stand on sand within a stop of their own value, so the read at
+    // 40 m is an edge, not an albedo: a cool rim for the machines, hotter and stronger on elites so
+    // a badass announces itself before its health bar does.
+    rim: {
+      color: def.badass ? style.optic : MACHINE.rimCool,
+      strength: def.badass ? 0.9 : 0.45,
+      power: def.badass ? 2.6 : 3.4,
+    },
     // No emissive here. `ModelMaterialOverride` applies to *every* material in the model, and these
     // are single-mesh casts with no separate optic — an emissive optic colour turns the whole body
     // into a glowing lamp. Elites read through their plate colour instead (see CHASSIS).
