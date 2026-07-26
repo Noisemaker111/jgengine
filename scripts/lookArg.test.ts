@@ -53,3 +53,24 @@ describe("lookSearchParams", () => {
     expect(lookSearchParams({ point: [1, 2], height: 9 })).toEqual({ look: "1,2", lookFrom: ",9," });
   });
 });
+
+describe("subject tokens", () => {
+  it("accepts marker and entity aims with a vantage", () => {
+    expect(parseLookAim("@marker:west-gate", "25,8")).toEqual({
+      subject: { kind: "marker", id: "west-gate" },
+      distance: 25,
+      height: 8,
+    });
+    expect(parseLookAim("@entity:boss-01", undefined)).toEqual({ subject: { kind: "entity", id: "boss-01" } });
+  });
+
+  it("round-trips a subject through the url params", () => {
+    expect(lookSearchParams(parseLookAim("@marker:keep", "30")!)).toEqual({ look: "@marker:keep", lookFrom: "30,," });
+  });
+
+  it("rejects an unknown kind, a malformed token, and an empty id", () => {
+    expect(() => parseLookAim("@prop:crate", undefined)).toThrow(/unknown subject kind "prop"/);
+    expect(() => parseLookAim("@westgate", undefined)).toThrow(/not a subject token/);
+    expect(() => parseLookAim("@marker:   ", undefined)).toThrow(/empty id/);
+  });
+});

@@ -116,12 +116,14 @@ const HELP = `bun run shoot [game] [options]
   --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
                       ?spawn= overlay like --cam/?cam=); never mutates editor.scene.json.
                       Accepts x,y,z or x,y,z,yaw (yaw radians)
-  --look <x,z | x,y,z>
+  --look <x,z | x,y,z | @marker:<id> | @entity:<id>>
                       pin a detached camera on a world point for this capture:
                       the vantage the shot actually wants, independent of the
                       player spawn, this run's look yaw, and where the AI
-                      wandered. x,z samples the ground height. Aims at a
-                      coordinate, so it never misses the way --spawn does.
+                      wandered. x,z samples the ground height; @marker:<id>
+                      aims at an authored marker and @entity:<id> tracks a live
+                      entity. Aims at a subject, so it never misses the way
+                      --spawn does.
                       A point outside the world, or a camera the terrain would
                       bury, fails the shot instead of returning an empty frame.
   --look-from <dist[,height[,angle]]>
