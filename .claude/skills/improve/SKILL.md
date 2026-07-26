@@ -37,4 +37,4 @@ Carry the answers forward: each retrospective sets the friction target for the n
 
 ## Finish the pass
 
-Report per issue: PR link, evidence, friction findings, and which seam improvements shipped or were filed. Close with a delta summary — what is now cheaper to build than at the start of the pass.
+Report one line per issue: what shipped and its PR link. Evidence, friction findings, and seam improvements go in the PR bodies and filed issues, not in chat. Close with a single line naming what is now cheaper to build than at the start of the pass — the reply obeys the length limit in [CLAUDE.md](../../../CLAUDE.md#talking-to-the-user) like any other.
