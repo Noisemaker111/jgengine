@@ -5,6 +5,21 @@ export interface ResourcePoolConfig {
   decayPerSecond?: number;
 }
 
+/** Complete serializable state for a {@link ResourcePool}. */
+export interface ResourcePoolSnapshot {
+  current: number;
+  max: number;
+  regenPerSecond: number;
+  decayPerSecond: number;
+}
+
+/** Runtime tuning patch for {@link ResourcePool.retune} — omitted fields keep their current value. */
+export interface ResourcePoolRetune {
+  max?: number;
+  regenPerSecond?: number;
+  decayPerSecond?: number;
+}
+
 export interface ResourcePool {
   current(): number;
   max(): number;
@@ -17,6 +32,12 @@ export interface ResourcePool {
   tick(dtSeconds: number): void;
   isFull(): boolean;
   isEmpty(): boolean;
+  /** The whole pool as plain data — save it, ship it to a host, diff it in a test. */
+  snapshot(): ResourcePoolSnapshot;
+  /** Adopt a snapshot, replacing current value and tuning. */
+  restore(state: ResourcePoolSnapshot): void;
+  /** Change regen/decay/max mid-run (a buff, a difficulty change) without rebuilding the pool. */
+  retune(patch: ResourcePoolRetune): void;
 }
 
 /**
@@ -26,8 +47,8 @@ export interface ResourcePool {
  */
 export function createResourcePool(config: ResourcePoolConfig): ResourcePool {
   let max = Math.max(0, config.max);
-  const regenPerSecond = Math.max(0, config.regenPerSecond ?? 0);
-  const decayPerSecond = Math.max(0, config.decayPerSecond ?? 0);
+  let regenPerSecond = Math.max(0, config.regenPerSecond ?? 0);
+  let decayPerSecond = Math.max(0, config.decayPerSecond ?? 0);
   let current = clamp(config.initial ?? max, max);
 
   function clamp(value: number, ceiling: number): number {
@@ -74,6 +95,21 @@ export function createResourcePool(config: ResourcePoolConfig): ResourcePool {
     },
     isEmpty() {
       return current <= 0;
+    },
+    snapshot() {
+      return { current, max, regenPerSecond, decayPerSecond };
+    },
+    restore(state) {
+      max = Math.max(0, state.max);
+      regenPerSecond = Math.max(0, state.regenPerSecond);
+      decayPerSecond = Math.max(0, state.decayPerSecond);
+      current = clamp(state.current, max);
+    },
+    retune(patch) {
+      if (patch.max !== undefined) max = Math.max(0, patch.max);
+      if (patch.regenPerSecond !== undefined) regenPerSecond = Math.max(0, patch.regenPerSecond);
+      if (patch.decayPerSecond !== undefined) decayPerSecond = Math.max(0, patch.decayPerSecond);
+      current = clamp(current, max);
     },
   };
 }

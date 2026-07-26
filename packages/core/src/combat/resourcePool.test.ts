@@ -206,3 +206,44 @@ describe("resource pool driving an ability kit", () => {
     expect(pool.current()).toBe(10);
   });
 });
+
+describe("snapshot / restore / retune (#1575)", () => {
+  test("a snapshot round-trips value and tuning through a fresh pool", () => {
+    const pool = createResourcePool({ max: 100, initial: 40, regenPerSecond: 5 });
+    pool.tick(2);
+    const saved = pool.snapshot();
+
+    const loaded = createResourcePool({ max: 1 });
+    loaded.restore(saved);
+    expect(loaded.snapshot()).toEqual(saved);
+    expect(loaded.current()).toBe(pool.current());
+
+    loaded.tick(1);
+    pool.tick(1);
+    expect(loaded.current()).toBe(pool.current());
+  });
+
+  test("restore clamps a current value above the restored max", () => {
+    const pool = createResourcePool({ max: 100 });
+    pool.restore({ current: 999, max: 50, regenPerSecond: 0, decayPerSecond: 0 });
+    expect(pool.current()).toBe(50);
+  });
+
+  test("retune changes regen mid-run and clamps to a lowered max", () => {
+    const pool = createResourcePool({ max: 100, initial: 100, regenPerSecond: 0 });
+    pool.spend(50);
+    pool.retune({ regenPerSecond: 10 });
+    pool.tick(1);
+    expect(pool.current()).toBe(60);
+
+    pool.retune({ max: 20 });
+    expect(pool.max()).toBe(20);
+    expect(pool.current()).toBe(20);
+  });
+
+  test("an omitted retune field keeps its current value", () => {
+    const pool = createResourcePool({ max: 100, initial: 10, regenPerSecond: 3, decayPerSecond: 1 });
+    pool.retune({ max: 80 });
+    expect(pool.snapshot()).toEqual({ current: 10, max: 80, regenPerSecond: 3, decayPerSecond: 1 });
+  });
+});
