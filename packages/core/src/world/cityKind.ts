@@ -1492,7 +1492,18 @@ function buildFabric(
       if (prevClass !== null && stickRoll < 0.45 + rules.clusterStrength * 0.4 && mix.some((entry) => entry.item === prevClass && entry.weight > 0)) {
         cls = prevClass;
       }
-      const placement = rollClassPlacement(cls, lotRng, rules.lotScale, rules.floorsMin, rules.floorsMax, rules.buildingRoadSetback, rules.buildingSpacing);
+      const stretchCommercial =
+        rules.blockDensity > 0.75 && (cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse");
+      const placement = rollClassPlacement(
+        cls,
+        lotRng,
+        rules.lotScale,
+        rules.floorsMin,
+        rules.floorsMax,
+        rules.buildingRoadSetback,
+        rules.buildingSpacing,
+        stretchCommercial ? 1 + rules.blockDensity * 0.35 : 1,
+      );
       const frontW = placement.width + placement.gap;
       if (cursor + frontW > walker.total - 0.5) break;
       // Parcel depth: setback + class depth + rear yard, deepened toward the block spine by
@@ -1577,23 +1588,25 @@ function buildFabric(
         prevClass = null;
         continue;
       }
-      const sideGap = Math.max(
-        cls === "shop" || cls === "rowhouse" ? 0.08 : 0.2,
-        placement.gap / 2 * (rules.blockDensity > 0.75 && (cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse") ? 0.45 : 1),
-      );
-      const frontSetback = Math.max(
-        0.05,
-        placement.setback * (rules.blockDensity > 0.75 && (cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse") ? 0.35 : 1),
-      );
+      const commercial = cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse";
+      const dense = rules.blockDensity > 0.75 && commercial;
+      const sideGap = Math.max(dense ? (cls === "shop" || cls === "rowhouse" ? 0.08 : 0.15) : 0.3, (placement.gap / 2) * (dense ? 0.45 : 1));
+      const frontSetback = Math.max(0.05, placement.setback * (dense ? 0.35 : 1));
       const buildable = buildablePolygon(poly, A, B, frontSetback, sideGap, 1.2, usedDepth);
       parcel.buildable = buildable;
       let placedLot = false;
       if (buildable.length >= 3) {
         const outDir: Vec2 = [-midS.normal[0], -midS.normal[1]];
         const rotationY = Math.atan2(outDir[0], outDir[1]);
-        const maxW = Math.max(3, Math.min(placement.width, frontW - placement.gap * (rules.blockDensity > 0.75 ? 0.4 : 1)));
+        const maxW = Math.max(
+          3,
+          Math.min(
+            dense ? Math.max(placement.width, frontW * 0.9) : placement.width,
+            frontW - Math.max(0.15, placement.gap * (dense ? 0.35 : 1)),
+          ),
+        );
         const availDepth = usedDepth - frontSetback - 1.2;
-        const maxD = Math.max(3, Math.min(placement.depth, availDepth));
+        const maxD = Math.max(3, Math.min(dense ? Math.max(placement.depth, availDepth * 0.85) : placement.depth, availDepth));
         const cx0 = midS.p[0] + midS.normal[0] * (frontSetback + maxD / 2);
         const cz0 = midS.p[1] + midS.normal[1] * (frontSetback + maxD / 2);
         const fit = fitRectInPolygon(buildable, cx0, cz0, maxW, maxD, rotationY, 0.45);
