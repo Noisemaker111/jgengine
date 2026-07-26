@@ -8,6 +8,12 @@ out. Extract and you keep going. Die and the character ends.
 shield, super speed, a rocket launcher — is an *item you find on something you
 killed*. Your class is whatever is in your slots this hour.
 
+**There are no character levels, and nobody goes out but players.** No AI
+companion, no hireling, no follower. The only thing that walks into a vault
+beside you is a friend, and the only thing that ever brings loot home is a
+person. That constraint is load-bearing: it is what lets a veteran and a
+first-timer run the same corridor and both have a real time (§20).
+
 Status: design only. No code exists yet. This document is the spec to argue with
 before anything gets built.
 
@@ -15,9 +21,9 @@ before anything gets built.
 | --- | --- |
 | **I — The game** | [1 Loop](#1-the-pitch-in-one-loop) · [2 Three rules](#2-the-three-rules-everything-hangs-off) · [3 Fiction](#3-fiction-what-a-vault-is-and-why-they-go-dark) · [4 References](#4-what-the-references-actually-give-us) |
 | **II — Systems** | [5 Augs](#5-augs--the-ability-system) · [6 Enemies](#6-enemies-are-the-drop-table) · [7 Slots](#7-slots--the-real-progression) · [8 Wheel](#8-the-talent-wheel) · [9 Death](#9-death-and-the-two-ledgers) |
-| **III — Home** | [10 The vault](#10-the-home-vault) · [11 Dwellers](#11-dwellers-are-the-emotional-centre) · [12 Vault life](#12-vault-life-time-upkeep-and-contamination) · [13 Rituals](#13-rituals-of-departure-and-return) |
+| **III — Home** | [10 The vault](#10-the-home-vault) · [11 The crew](#11-the-crew-halloway-vesk-and-forty-strangers) · [12 Vault life](#12-vault-life-time-upkeep-and-contamination) · [13 Rituals](#13-rituals-of-departure-and-return) |
 | **IV — The world** | [14 Delves](#14-delves) · [15 The radio](#15-the-radio-and-the-vaults-that-are-still-lit) · [16 Revenants](#16-revenants-and-the-nemesis) |
-| **V — Meta** | [17 The Ledger](#17-the-ledger) · [18 Feel](#18-first-person-feel) · [19 Finite careers](#19-keeping-careers-finite) · [20 Squads and PvP](#20-solo-squads-and-the-pvp-decision) · [21 Death spiral](#21-the-death-spiral-and-the-valve) · [22 Economy](#22-economy) · [23 First hour](#23-the-first-hour) · [24 Open questions](#24-open-questions) · [25 Build mapping](#25-if-this-gets-built-here) |
+| **V — Meta** | [17 The Ledger](#17-the-ledger) · [18 Feel](#18-first-person-feel) · [19 Finite careers](#19-keeping-careers-finite) · [**20 Playing together**](#20-playing-together-power-bands-squads-and-pvp) · [21 Death spiral](#21-the-death-spiral-and-the-valve) · [22 Economy](#22-economy) · [23 First hour](#23-the-first-hour) · [24 Open questions](#24-open-questions) · [25 Build mapping](#25-if-this-gets-built-here) |
 
 ---
 
@@ -29,10 +35,10 @@ A **Career** spans many delves. It survives extraction and ends at death.
 
 ```
 HOME VAULT (first person, safe, permanent)
-  assign dwellers → upgrade facilities → craft a Key → start or resume a Career
+  crew processes what you brought → upgrade facilities → craft a Key → gear up
         │
         ▼
-DELVE (solo or 1–3 squad, instanced, 12–25 min)
+DELVE (you, or you and 1–2 friends, instanced, 12–25 min)
   kill things → take the Augs they were using → spend Charge on the wheel
         │
     ┌───┴────┐
@@ -41,7 +47,7 @@ DELVE (solo or 1–3 squad, instanced, 12–25 min)
     │        │
  keep the   lose the Augs, the rig, the bag,
  whole      the talents, the Charge — the whole
- career     Career. Keep the vault and everything in it.
+ career     Career. Keep the vault and everyone in it.
     │        │
     └───┬────┘
         ▼
@@ -61,7 +67,7 @@ spellbook, no class kit, no unlock screen.
 rocket launcher compete for the same socket. "Fireball *and* a gun" is a real
 decision with a real cost, which is what makes it feel earned.
 
-**Rule 3 — You start every career with one slot.** Talents widen it. Quests
+**Rule 3 — You start every career with one slot.** Talents widen it. Contracts
 permanently raise the floor. A career is the story of going from one slot to
 seven and then losing it.
 
@@ -109,7 +115,7 @@ setting offers.
 | Source | The one thing we take |
 | --- | --- |
 | **Vault Hunters 3rd Ed.** | The *Key*: a craftable, modifiable run token that sets theme, objective, difficulty and loot multiplier before you insert. Plus sealed gear you carry home to open. |
-| **Fallout Shelter** | The home base as a persistent, stat-driven, *idle-productive* second game. Dwellers with stats, rooms that want specific stats, offline expeditions that pay out while you are logged off. |
+| **Fallout Shelter** | The home base as a persistent, stat-driven second game: named residents, rooms that want specific stats, work that continues while you are logged off. |
 | **Dark and Darker** | Extraction as a physical place you must reach, spawning late, one-use. Losing the character is the price of the fantasy. |
 | **Marathon (2025)** | Cores and implants as swappable modules that define a build. And **Rook** — a free, no-loadout, no-risk drop-in. That is our anti-death-spiral valve. |
 | **Borderlands** | Items as procedural part assemblies from opinionated manufacturers, and the drop that recontextualises everything you were doing. |
@@ -117,7 +123,8 @@ setting offers.
 
 Explicitly **not** taken: classes with fixed kits (Dark and Darker, Marathon),
 permanent account-level power growth (Borderlands), Fallout Shelter's
-tap-to-collect monetisation shape, Marathon's PvP-first foundation (§20).
+send-dwellers-to-loot-the-wasteland loop (§11 — players are the only source of
+loot here), Marathon's PvP-first foundation (§20).
 
 ---
 
@@ -157,8 +164,9 @@ drop is a component rather than trash.
 **Rarity:** Salvage · Standard · Marked · Sealed · Relic · **Vaultborne**.
 
 **Sealed** Augs drop unidentified. Crack one in the field (instant, worse roll
-spread) or carry it home to the Assay Lab (better roll, biased by your assigned
-dweller's Wit). A sealed Relic in your bag is the thing you should die for.
+spread) or carry it home to the Assay Lab (better roll, biased by the Wit of the
+crew member running it). A sealed Relic in your bag is the thing you should die
+for.
 
 **Aberrant** Augs come from **Toll Rooms** and are the Devil Deal: genuinely
 overpowered, each with a permanent-for-the-career cost — a slot burned, a hard
@@ -205,15 +213,15 @@ Four things fall out of assembling enemies this way:
 
 **Rules that keep it honest:** an enemy drops one of its visible Augs, never all
 of them, at a rarity roll below its own. Elites drop with certainty; chaff
-rarely. Enemy Augs use player cooldowns and player numbers with AI-facing tuning
-— if it felt unfair to fight, it will feel great to hold, and that symmetry is
-the sales pitch.
+rarely. **Enemy Augs use player numbers** with AI-facing tuning — if it felt
+unfair to fight, it will feel great to hold, and that symmetry is both the sales
+pitch and, per §20, the reason nothing is ever safe for anybody.
 
 ## 7. Slots — the real progression
 
 | Source | Scope | Ceiling |
 | --- | --- | --- |
-| **Quest / contract chains** | **Anchored — permanent, all future careers** | +2 over the whole game (careers start at 1, then 2, then 3) |
+| **Contract chains** | **Anchored — permanent, all future careers** | +2 over the whole game (careers start at 1, then 2, then 3) |
 | **Talent wheel — Capacity spoke** | **Career — lost on death** | +3 or so, expensive, deep in the spoke |
 | **Rig chassis** | **Career — lost with the rig** | +1 to +2, at a Strain cost |
 
@@ -295,12 +303,11 @@ punishing it in a game that already deletes your character is piling on.
 - **Every talent point and the entire wheel**
 - Unspent Charge and the career level
 - The career's Notoriety, streak and record — it closes and gets a headstone
-- **Any dweller who was in the delve with you** (§11 — this is the one that hurts)
 
 **Anchored ledger — never lost.**
 
 - The vault, every facility and its level
-- The dweller roster back home, their stats, bonds and histories
+- The crew, their stats, and their work in progress
 - The stash — *materials only* (see the hard rule)
 - **Base slot count** from completed contract chains
 - Blueprints, foundry licences, recipes
@@ -311,7 +318,7 @@ punishing it in a game that already deletes your character is piling on.
 stashed.** The vault stores junk, cores, parts, reagents and knowledge — it
 stores *potential*, never power. The instant a player can bank a Relic launcher
 for next time, death stops mattering and the game unwinds. Every facility in §10
-respects this.
+respects this, and so does trade in §15 and §20.
 
 **Two softeners, both costed:**
 
@@ -320,8 +327,9 @@ respects this.
   per-item cooldown. A soft landing, not a savings account.
 - **Headstone recovery.** A dead career leaves a headstone: a one-room hostile
   instance, live 24h, seeded where you fell. Your *new* career may enter it — at
-  whatever slot count it currently has — and try to take back one item. Losing a
-  fresh career to your own corpse is a very funny way to lose.
+  whatever slot count it currently has — and try to take back one item. A friend
+  may come with you. Losing a fresh career to your own corpse is a very funny way
+  to lose.
 
 ---
 
@@ -329,8 +337,8 @@ respects this.
 
 ## 10. The home vault
 
-First person, walkable, quiet, yours. Not a menu with a background. Your dwellers
-live there, your Archive uniques are on the wall, and the career you just ended
+First person, walkable, quiet, yours. Not a menu with a background. Your crew
+lives there, your Archive uniques are on the wall, and the career you just ended
 is a name in the Hall of Cycles.
 
 | Facility | Does | Fed by |
@@ -341,9 +349,10 @@ is a name in the Hall of Cycles.
 | **Foundry Bench** | Swap parts between Augs; apply foundry licences | Parts + licences |
 | **Cartography** | Craft and modify Keys; shows which archetypes carry which Aug families | Cores |
 | **Reliquary** | The Archive; mounted uniques; the Hall of Cycles; the Ledger | — |
-| **Barracks** | Dweller roster, assignment, training, bonds, idle expeditions | Food + beds |
+| **Barracks** | Crew roster, assignment, training, bunks | Food + beds |
+| **Refinery** | Breaks junk down into parts and reagents — the crew's main job | Junk + power |
 | **Radio Room** | The world outside: neighbour vaults, contracts, distress calls (§15) | Power |
-| **Infirmary** | Heals wounded dwellers; treats Hollow exposure (§12) | Reagents |
+| **Infirmary** | Treats Hollow exposure and contamination (§12) | Reagents |
 | **Workshop** | Craft rigs and baseline Augs from stashed parts — always below field-drop quality | Parts + cores |
 
 **The Armory is the interesting one.** It cannot give you a Relic. What it can do
@@ -357,118 +366,130 @@ the Reliquary at the other, so the walk from "I am back" to "I am going again"
 passes the trophies and the dead. Budget the full loop at ~60 seconds of walking,
 not five minutes. Sprinting at home is allowed and slightly rude.
 
-## 11. Dwellers are the emotional centre
+## 11. The crew: Halloway, Vesk, and forty strangers
 
-This is the most important section in the document, because it is the answer to
-"how does a game where you lose everything still make me care".
+**Nobody but a player ever leaves the vault.** The crew does not delve, does not
+scavenge, does not run wasteland expeditions, and never brings home a single
+piece of loot, gear or junk. Every material in the economy was carried in by a
+person, on their back, at risk.
 
-**Dwellers are anchored, but they can die.** They are the only thing in the game
-that is both permanent and losable. Everything else is either safe forever (the
-vault) or doomed anyway (the career). A dweller is the one thing you can
-genuinely, irreversibly lose through your own bad decision — and that is
-precisely why they, not your loot, are what the game is actually about.
+**The crew processes; players acquire.** That is the whole division, and it is a
+better base loop than Fallout Shelter's because it means the vault can never
+become a second income stream that plays itself. What the crew does with what you
+drop on the intake counter:
 
-**They are people, not stats.**
+- **Refine** junk into parts and reagents (the bulk job, gated by Grit)
+- **Assay** sealed Augs, with roll quality gated by Wit
+- **Craft** rigs, baseline Augs and Keys at the Workshop
+- **Maintain** facilities and hold the upkeep bands steady (§12)
+- **Cleanse** contamination at the Infirmary, slowly, at a cost
 
-- A name, a face, a voice, and a **vault of origin** — the vault you pulled them
-  out of, which they remember and will talk about.
-- A **former job** (Steward, Warden, Choir, Hydroponics, Records) that biases
-  their stats, their facility affinity, and their companion role. Yes: the jobs
-  are the same list as the enemy frames in §6. That is the point. You are
-  rescuing the people who would otherwise have become Wardens.
-- Three stats: **Grit** (labour, defence), **Wit** (analysis, crafting),
-  **Nerve** (risk, exploration).
-- A **Bond** with you that grows by delving together and unlocks dialogue,
-  better companion behaviour, and eventually a personal request.
+All of it is a **queue with real duration** that keeps running while you are
+logged off. You never come back to *new* loot — you come back to *finished
+work*. That distinction is what keeps §21's valve alive without breaking the
+players-only rule.
 
-**They come with you.** One companion by default, two with a Barracks upgrade.
+**Forty strangers.** The general crew is procedurally generated: name, face,
+former job, three stats (**Grit** / **Wit** / **Nerve**), a couple of traits, and
+a **vault of origin** they will mention. They arrive as rescues from delves and
+as applicants over the radio. You can favourite and rename them. They form
+friendships and rivalries that shift morale by who is bunked and assigned next to
+whom. They react to what you bring home, to the state of the vault, and to who
+did not come back.
 
-- They occupy none of *your* Aug slots. They carry **their own**, which you hand
-  them from a career's surplus. This is the one narrow exception to §9's
-  no-stashing rule and it is safe because a dweller's kit is **bonded to that
-  dweller**: you can never reclaim it, they cannot lend it back, and it dies with
-  them. Arming your companion is spending an Aug, not banking one — and it is
-  the only thing you can do with a Relic you have no slot for.
-- They talk. Ambient lines about the archetype, the loot you just picked up, the
-  build you are running, each other. A Records dweller reads the terminals aloud.
-  A former Warden tells you where security would have put the cameras.
-- They can be downed and carried. They can be left behind. **If you die in a
-  delve, the dweller with you dies too.** That is the real cost of a career
-  ending, and it is the one loss the vault cannot replace.
+They are population, not cast — and that is a deliberate downgrade from an
+earlier draft of this document. Forty authored characters is a writing budget
+nobody has, and forty *shallow* authored characters is worse than forty good
+procedural ones. Attachment here should be emergent and cheap: you will end up
+caring about a Records clerk called Ottoline because she has been running your
+Assay for thirty hours, not because someone wrote her a questline.
 
-**They live at home.** Assigned to facilities (high Wit in the Assay Lab, Grit in
-the Armory, Nerve in Cartography), or sent on idle expeditions while you are
-logged off — junk, cores, parts and rumours, at real risk. They form friendships
-and rivalries that shift morale by who is assigned next to whom. They react to
-what you bring home, to the state of the vault, and to who did not come back.
+**Two people are written.** They are the vault, they never leave it, and they
+cannot die in normal play.
 
-**Retirement.** A dweller who survives many delves becomes a **Veteran** with a
-title. You may retire them: they stop being deployable and permanently improve
-one facility, and they keep walking around the vault. Retiring someone you have
-run thirty delves with — trading a friend for a bonus so they do not die out
-there — is a better decision than most games ever ask for.
+**HALLOWAY** — Steward. Old, dry, practical, here before you were. Runs the
+upkeep, knows every pipe, and quietly does not want you going out again. He is
+the vault's past and its conscience: he will tell you what the contamination is
+doing, what the crew is saying, and which of your habits is going to kill you. He
+delivers bad news well.
 
-**Funerals.** When a career ends, the vault holds a service. The dwellers who
-knew you get a mood hit and a line about the person you were. The names of the
-dwellers who died with you go on the wall in the Hall of Cycles, next to your
-career's name. Your next career walks past that wall on the way to the door.
+**VESK** — a runner who came back from Depth 9 and never went out again. Lives in
+the Radio Room, tunes frequencies that should not carry, and is visibly a little
+Hollowed and entirely honest about it. She knows the Deep. She wants you to go
+further, and she is not sure any more whether that is her talking. She is the
+vault's future.
+
+Between them they carry the entire story: one wants you to stop, one knows you
+will not, and both are right. They react to every career death, every Vaultborne
+you hang on the wall, every neighbour vault that goes quiet. Over the long arc
+Halloway ages and Vesk gets worse, and the endgame is about that. **Two
+characters, unlimited reactivity, a writing budget a small team can actually
+afford.**
+
+**Where the emotional weight sits now.** Not on an AI companion who dies — the
+game has none. It sits on three things, all cheaper and all more durable: **the
+friends who actually came with you** (§20), **Halloway and Vesk**, and **the
+Ledger and the nemesis who has your gun** (§16–17).
 
 ## 12. Vault life: time, upkeep, and contamination
 
 **The shift clock.** The vault runs three shifts on a compressed real-time cycle.
 Coming home on Night shift is a different place: dim corridors, the skeleton
-crew, someone eating alone in the mess, the Radio Room unattended. Same rooms,
-different game. This costs almost nothing and buys enormous atmosphere.
+crew, someone eating alone in the mess, Vesk awake in the Radio Room because Vesk
+is always awake. Same rooms, different game. Costs almost nothing, buys enormous
+atmosphere.
 
 **Upkeep is bands, not chores.** Four meters — **Power, Water, Food, Morale** —
-each sitting in a band: *Failing · Thin · Steady · Surplus*. They modulate
-production rate, idle-expedition success, dweller chatter, and the lighting and
-soundscape of the vault itself.
+each in a band: *Failing · Thin · Steady · Surplus*. They modulate processing
+rate, Assay quality, crew chatter, and the lighting and soundscape of the vault
+itself.
 
 They never gate a delve. **The Vault Door always opens.** A management layer that
-can stop you from playing the game is a management layer that has become the
-game, and this one is texture and stakes, not a chore list.
+can stop you from playing the game has become the game, and this one is texture
+and stakes, not a chore list.
 
-**Contamination — the Hollow follows you home.** Everything you bring back
-carries trace: sealed Augs most, Aberrants worst, returning dwellers a little.
-Contamination accumulates in the vault and is cleansed at the Infirmary with
-cores.
+**Contamination — the Hollow follows you home.** Everything you carry back
+carries trace: sealed Augs most, Aberrants worst, rescued survivors a little.
+Contamination accumulates and is cleansed at the Infirmary with cores.
 
 At low levels it is only atmosphere — a corridor light that fails and gets fixed,
-a dweller who goes quiet for a shift, a sound in the ducts on Night shift that
-nobody comments on. At high levels dwellers start refusing assignments and
-production drops. At maximum: **Breach Night**, a one-off defence set piece
-fought inside your own vault, in your own corridors, against your own dwellers'
-frames. Survive it and the vault is cleansed; lose and you lose dwellers, not the
-vault.
+a crew member who goes quiet for a shift, a sound in the ducts on Night shift
+that nobody comments on and Halloway pointedly does not explain. At high levels
+crew refuse assignments and processing throughput drops. At maximum: **Breach
+Night**, a one-off defence set piece fought inside your own vault, in your own
+corridors, against your own crew's frames.
 
-This is the best sink in the economy because it is thematically load-bearing:
-the safe place is only conditionally safe, and it is your own greed that makes it
-less so. It also gives Depth-10 Aberrant hoarding a real cost that is not a stat
-penalty.
+Breach Night is now **the only way a crew member can die**, which is exactly
+where the stakes should be concentrated: in one authored, avoidable, entirely
+self-inflicted event rather than in idle-loop attrition you cannot watch. Survive
+it and the vault is cleansed. Lose and you lose people — never the vault, and
+never Halloway or Vesk.
 
 **Ownership.** Junk buys paint, lighting, furniture and mounts. Vaultborne Augs
-hang on the Reliquary wall and dwellers gather at a new one. This is the cheapest
-"lived in" per hour of work in the entire project and it should not be cut.
+hang on the Reliquary wall and the crew gathers at a new one. Cheapest "lived in"
+per hour of work in the entire project; do not cut it.
 
 ## 13. Rituals of departure and return
 
 Games feel real at the seams. Three of them are worth animating properly.
 
 **Departure.** You gear at a physical rack in the locker room — Augs into slots,
-Strain bar filling on the wall behind you. The dweller you are taking is already
-waiting by the door with their kit. The Vault Door cycles for six seconds and
-cannot be skipped, and you hear it seal behind you. That six seconds is the
-single most valuable animation in the game: it is the last moment you own
-anything.
+Strain bar filling on the wall behind you. Your friends gear at the racks beside
+yours, and you can see exactly what they are bringing, which is most of what a
+pre-run lobby is for anyway. The Vault Door cycles for six seconds and cannot be
+skipped, and you hear it seal behind you. That six seconds is the single most
+valuable animation in the game: it is the last moment you own anything.
 
 **Return.** You come back heavy. You physically dump junk onto the intake
-counter. A dweller comes to look at what you brought. The Reliquary shelf
-populates itself while you watch. The first time you carry home a Vaultborne, the
-vault gathers.
+counter and the Refinery queue ticks up. Someone comes to look at what you
+brought. The Reliquary shelf populates itself while you watch. The first time you
+carry home a Vaultborne, the vault gathers.
 
-**The funeral.** §11. Do not skip it, do not let it be a popup, and do not let it
-be longer than ninety seconds.
+**The funeral.** A career ending gets a service: the crew who knew you take a
+mood hit and a line about the person you were, Halloway says something short and
+true, and the name goes on the wall in the Hall of Cycles. Your next career walks
+past that wall on the way to the door. Ninety seconds, not a popup, and never
+longer.
 
 ---
 
@@ -484,8 +505,8 @@ the run:
   Habitation, The Long Hall.* Sets tileset, enemy frames, hazard, music, **and
   which Aug families you will find**, because the enemies are the drop table.
 - **Objective** — Elimination · Cache Hunt · Awakening (survive escalating waves
-  at the core) · Rescue (extract N dwellers) · Blueprint (reach and hack a
-  terminal)
+  at the core) · Rescue (extract N survivors, who become crew) · Blueprint (reach
+  and hack a terminal)
 - **Modifiers** — negatives you *choose* for a loot multiplier: no minimap,
   doubled density, halved pads, elemental affliction, a hunter that tracks you. A
   **Cursed Key** is a stack of them.
@@ -503,13 +524,14 @@ cannot rat-loot your way down.
    lighting, ambient story.
 
 Room kinds: **Cache** · **Arena** · **Environmental** (hazard/traversal) ·
-**Residential** (dwellers, benches, story, quiet dread) · **Toll** (Aberrant
+**Residential** (survivors, benches, story, quiet dread) · **Toll** (Aberrant
 offer) · **Core** (objective or Herald).
 
 Minimum viable authored content: roughly **60 room prefabs across 3 archetypes**
 before the shuffle stops feeling repetitive. Budget for that honestly — it is the
 largest content cost in the project and the usual way games in this genre ship
-feeling thin.
+feeling thin. Every prefab must also read and fight correctly with **three bodies
+in it**, which is a real constraint on doorway and cover authoring (§20).
 
 **The dead vault should read as a place people lived.** Cheap, high-yield
 dressing, all of it procedural placement over authored props: name plates on
@@ -533,13 +555,16 @@ Un-looted loot getting *better* as the vault gets *worse* is what makes staying 
 genuine temptation rather than a math error.
 
 **Extraction.** Pads are physical, announce themselves audibly across the level,
-and the channel takes time you cannot spend fighting. Carried dwellers must be
-alive when it completes.
+and the channel takes time you cannot spend fighting. Rescued survivors must be
+alive when it completes. Squadmates extract individually: leaving with the loot
+while your friend is still three rooms back is possible, and whether you do it is
+between the two of you.
 
 ## 15. The radio, and the vaults that are still lit
 
 Yours is not the only vault with the lights on. The Radio Room is a physical set
-you tune, and it is how the world proves it exists without you.
+you tune — Vesk is usually already there — and it is how the world proves it
+exists without you.
 
 **What is on the air.** Four to six named living vaults, each with an identity,
 an inventory and a way of talking — *Cassin* (agricultural, generous, naive),
@@ -559,10 +584,10 @@ ignored across enough real days goes quiet. Then, weeks later, it appears in you
 Cartography as a delve archetype — and you can walk in and loot the corpse of a
 place you knew, and meet the voice you used to talk to wearing a Herald frame.
 
-That mechanic is the single strongest "this world is real" lever in the document,
-because it is the only system that gets *worse* if you do nothing, and the only
-one whose consequences you have to physically walk through afterwards. Use it
-sparingly — one such loss per player per long arc, not a treadmill of guilt.
+That is the single strongest "this world is real" lever in the document, because
+it is the only system that gets *worse* if you do nothing and the only one whose
+consequences you have to physically walk through afterwards. Use it sparingly —
+one such loss per player per long arc, not a treadmill of guilt.
 
 **Trade** is junk, parts, cores, reagents, blueprints and rumours. **Never
 Augs** — a market for Augs is a stash with extra steps, and §9's hard rule holds
@@ -584,11 +609,13 @@ make it home and got continued.
   a warmer, more legible version of headstone recovery, and a genuinely eerie
   encounter the first time you round a corner into a thing wearing your last
   face.
+- It is also how a mostly-solo player still feels other people in the world, which
+  matters more now that nothing else follows you into a vault.
 
 **The nemesis.** Any enemy that ends a career is promoted: it gets a name, a
 record, and a permanent place at that depth. It keeps the Aug it took from you.
-It shows up again — in your delves, in your squadmates' — until somebody kills
-it, which retires the name and returns what it took.
+It shows up again — in your delves, in your friends' — until somebody kills it,
+which retires the name and returns what it took.
 
 Two runs later, "Ninefold is down there with my launcher" is a sentence a player
 says out loud, and that sentence is worth more than any quest text we could
@@ -610,19 +637,18 @@ CAREER 07 — Runner "Wick"          22 delves · deepest D8 · 41h
   Peak:     7 slots · Apex "Untethered" · Strain 88%
   Firsts:   Vaultborne "Long Sunday" (D6, The Choir)
             Contract chain "Cassin Relief" complete → base slot 3
-  Losses:   Dweller MARA VOSS (Hydroponics, Cassin) — D7, Cold Storage
+  With:     REEVE (11 delves) · TOLLAND (4) · sponsored SILT to D6 twice
   Ended:    D8, Cold Storage, Collapse phase
             Herald "NINEFOLD", carrying a Brand launcher
             recovered from Career 05.
 ```
 
 The last two lines are the whole design in a paragraph, and the game assembled
-them without a writer. A run history that names the dweller you got killed and
-the enemy that has been carrying your old gun for two careers is what "lived in"
+them without a writer. A run history that names the friends you ran with and the
+enemy that has been carrying your old gun for two careers is what "lived in"
 actually means.
 
-The Hall of Cycles is the physical version: every career, on the wall, in order,
-with its dead.
+The Hall of Cycles is the physical version: every career, on the wall, in order.
 
 ## 18. First-person feel
 
@@ -630,13 +656,19 @@ with its dead.
   and illegible in a tense first-person moment. Weight governs sprint, jump and
   extraction channel speed, so greed is physical.
 - **Aug wheel** is the core input surface: radial select, hold to swap, readable
-  at a glance with three slots or seven. The single most important UI in the game
+  at a glance with one slot or seven. The single most important UI in the game
   and the first thing to prototype.
 - **Looting is channelled** and audible — a pacing tool and a vulnerability.
-- **Sound is the primary intel channel.** Pads, Collapse phases, another squad
-  looting, a Kinetic Aug firing, the PA announcing a shift change to a dead room.
+- **Sound is the primary intel channel.** Pads, Collapse phases, a friend's
+  Kinetic Aug two rooms away, the PA announcing a shift change to a dead room.
 - **Enemies read by silhouette plus held Aug.** Per §6 this is a rendering
-  requirement, not a nice-to-have: every enemy must visibly wear its drop.
+  requirement, not a nice-to-have: every enemy must visibly wear its drop. The
+  same applies to squadmates — you should know what your friend is running by
+  looking at them.
+- **Solo is genuinely alone.** With no companions, a solo delve has no voice in
+  it but the vault's. That is a feature: the game should be quieter, slower and
+  more frightening by yourself, and bringing a friend should audibly change the
+  texture of a corridor.
 - **Character screen is a room**, not an overlay: paperdoll, Strain bar, the
   wheel on the wall, the Archive behind you, the Hall of Cycles down the corridor.
 - **Accessibility.** Because sound carries intel, every audio cue needs a visual
@@ -654,8 +686,11 @@ career. Five levers:
 2. **One Apex.** However many rim capstones you unlock, exactly one may be
    active. Your ceiling is a per-delve choice.
 3. **Depth pressure.** Charge and loot from content below your Clearance decay
-   sharply. A career that refuses to go deeper stops growing, so every long
-   career is necessarily deep in lethal territory. Self-correcting.
+   sharply, so a career that refuses to go deeper stops growing and every long
+   career is necessarily deep in lethal territory. **Patron contracts (§20) are
+   the deliberate carve-out** — running shallow with a friend pays anchored
+   rewards instead, so the one thing depth pressure must never punish is
+   generosity.
 4. **Notoriety.** The deeper and longer a career runs, the more the vaults know
    it. Hunters spawn — Stalker frames carrying *your own* Aug families, tuned to
    counter you. Loot rises with it. A great career gets more thrilling and more
@@ -667,30 +702,125 @@ The number to hold ourselves to: **best possible loadout beats a fresh one-slot
 career by roughly 5×, not 50×.**
 
 **Legacy** is the one thin permanent thread: earned by career milestones —
-deepest Clearance, first-time Archive entries, contract chains, dwellers retired
-alive — and spent only on the vault. It buys floor, never a stat.
+deepest Clearance, first-time Archive entries, contract chains, players
+sponsored — and spent only on the vault. It buys floor, never a stat.
 
-## 20. Solo, squads, and the PvP decision
+## 20. Playing together: power bands, squads, and PvP
 
-**Recommendation: PvE-primary, opt-in PvP as a Key modifier.**
+The requirement: a player a thousand hours in and a player on their first night
+run the same corridor, and it feels right for both. The veteran does not get
+nerfed into a wet noodle. The newcomer does not get one-shot or reduced to a
+spectator. **The enemies are the same enemies for both of them.**
 
-- Squads of **1–3**, plus companions (§11), so a solo player is never actually
-  alone in a corridor. Vault size, density and cache count are set at insert from
-  squad size. Loot scales sublinearly, so solo is more loot-per-player and far
-  more risk.
-- **Breach Key.** Opens your instance to other squads. Doubles loot, makes pads
-  single-use, and lets you take the Augs off a career you just ended. Killing
-  another player ends *their* career and creates a Revenant with your name in its
-  Ledger entry. That should be a heavy thing, and it should be rare.
+Nine rules get us there, and none of them scale a number to a player.
+
+**0. There is no character level, and the veteran is regularly a beginner.**
+Nothing in this game multiplies your damage by a rank. "Level 1000" means
+Clearance 10 and a mature career — and per §9 that career is one bad corridor
+from being a one-slot career again. The power curve is already flattened by
+permadeath in a way no MMO's ever is. Half of this problem solves itself.
+
+**1. The power budget is 5×, and it is a hard constraint, not an aspiration.**
+Everything from slot 1 to slot 7 with Relics has to fit inside a five-fold swing
+in effective output. In an FPS that is roughly the distance between a starting
+pistol and a good rifle — a gap two friends play across in every shooter ever
+made without noticing. Every tuning and content decision is checked against this
+budget. If a build breaks it, the build is the bug.
+
+**2. Enemies never scale to who is shooting them.** No per-attacker health, no
+hidden difficulty band, no rubber-banding. A Warden at Depth 4 is the same Warden
+for everyone in the room. This is non-negotiable: the moment bullets do different
+things for different people, both players stop trusting the game.
+
+**3. One squad, one depth.** The Key sets depth for everybody. A veteran running
+Depth 2 with a friend finds Depth 2 easy — exactly as easy as it is when he
+solos Depth 2, which is the correct and honest answer. He is over-geared for the
+content, not scaled against his friend.
+
+**4. Loot rolls per player, against that player's own Clearance.** Same corpse,
+two different rewards, no shared pool, nothing to argue over. The newcomer's
+drops roll near their tier so a Depth 8 carry does not hand them a Relic they
+cannot slot; the veteran's roll against his. Friend groups never have a loot
+fight, ever.
+
+**5. You can be carried to riches, never to depth.** Clearance advances **one
+tier at a time**, and only by completing an objective at your *own* current tier.
+A veteran can sponsor a friend into Depth 8 and that friend will come out richer
+and better-equipped — but their Clearance still moves one step, earned. Gear is
+shareable progress; access is not. This is the guard rail that keeps a boosted
+player from standing at the endgame with no idea how anything works.
+
+**6. Notoriety makes the veteran the target.** §19's Notoriety already tracks how
+deep and how long a career has run, and enemies preferentially hunt the
+highest-Notoriety player in the room. **The veteran is the aggro magnet, by
+mechanic and by fiction** — the vault knows him and has been waiting. That is
+what makes a newcomer survivable at Depth 8 without softening a single enemy:
+the vault is busy with the person it recognises. It also makes his accumulated
+power the literal thing that shields his friend, which is the best version of
+this fantasy.
+
+**7. Objectives reward bodies, not damage.** Cache Hunt, Rescue and Blueprint all
+scale with headcount and hands rather than DPS. A one-slot player at Depth 8
+cracks caches, carries survivors, hacks terminals, revives, and watches a
+corridor — all of which the objective actually needs. Nobody should ever be
+cargo.
+
+**8. Enemy Augs use player numbers (§6), so nothing is ever safe.** The veteran
+one-shots Husks — of course he does, he does that solo too, and that is allowed.
+But a Titan carrying Relic gear is running *his* numbers back at him, and a
+Herald is dangerous to a thousand-hour player for exactly the reason it is
+dangerous to a beginner. Content stays lethal because content is armed with the
+same catalogue you are.
+
+**9. The stakes are asymmetric even when the power is not.** A veteran forty
+hours into a career is risking forty hours. His friend is risking twenty minutes.
+The strong player is the scared player, the new player is the reckless one, and
+that inversion produces better co-op conversation than any balance patch could.
+
+**Patron contracts** close the incentive loop. A veteran needs a reason to run
+shallow that is not charity, so the Radio Room offers contracts that pay **only
+in anchored currency** — Legacy, foundry licences, Archive access, crew
+applicants, cosmetics — for completing a delve alongside a lower-Clearance
+player. His career power does not grow (§19.3 still applies), but his *vault*
+does. The two-ledger split earns its keep here: there is a whole category of
+reward that cannot inflate a build.
+
+**What it actually feels like.**
+
+*Veteran runs Depth 2 with a first-timer.* He is comfortable and she is not. He
+clears rooms fast, she loots them, and the danger she feels is real because the
+Wardens are real Wardens — he is just better at them than she is, visibly, in a
+way she can see herself becoming. He is there for a Patron contract and to watch
+her find her second Aug. Nobody was scaled.
+
+*First-timer sponsored to Depth 8.* Everything in the vault wants him
+specifically, and she is running behind him cracking caches with a pistol and
+one slot. It is the most frightening twenty minutes she has had and she is
+useful the whole time. She comes out with gear that outclasses anything at her
+tier — and Clearance 2, because you do not get to skip Depth 3. And the whole run
+he was the one sweating, because he had thirty hours on the line and she had
+none.
+
+**Squad size.** 1–3. First-person room combat and the loot budget both degrade at
+4, and every prefab has to be authored for the number we pick, so this must be
+decided before room authoring starts — it changes every doorway. 4 is the most
+requested number in the history of co-op games; flagged in §24.
+
+**PvP: opt-in, as a Key modifier.** The **Breach Key** opens your instance to
+other squads. Doubles loot, makes pads single-use, and lets you take the Augs off
+a career you just ended. Killing another player ends *their* career and creates a
+Revenant with your name in its Ledger entry. That should be heavy, and rare.
 
 Building PvP-first means every system is hostage to netcode, matchmaking,
 anti-cheat and balance-by-committee before the game is playable at all. As a Key
 modifier, **the entire game ships and is fun with zero PvP**, and §16's Revenants
-already deliver most of the "other players are out there" feeling with none of
-the cost.
+already deliver most of the "other players are out there" feeling for none of the
+cost. Note also that rules 2–9 above are tuned for *co-operative* mixed bands;
+Breach deliberately abandons that fairness, which is exactly why it is a modifier
+a player chooses rather than the default.
 
 **No auction house, no market, no currency trading.** Trading is squad-only,
-in-vault, hand to hand.
+in-vault, hand to hand, and only for materials — never Augs (§9).
 
 ## 21. The death spiral, and the valve
 
@@ -702,42 +832,44 @@ Losing a career must not lose the player. Five countermeasures:
 3. **The floor moves.** Contract-granted base slots, Archive passives and
    facility levels mean career #12 starts materially better-equipped than #1,
    with no stat inflation.
-4. **Idle dwellers** pay junk while you are offline, so the night your career
-   dies, tomorrow already has something in it.
-5. **The vault is still there and still needs you.** This is the real answer.
-   A player who loses everything still has forty people, a contract from Cassin,
-   a wall to hang something on, and a nemesis with their launcher. The management
-   layer is not a side dish; it is the reason a bad night ends with "one more"
-   instead of a refund request.
+4. **The work queue keeps running.** Your crew is still refining the junk you
+   already hauled, still finishing an Assay, still building a rig. The night your
+   career dies, tomorrow already has *finished work* in it — not new loot, which
+   only players can get, but the processed value of the last thing you did right.
+5. **The vault is still there and still needs you.** This is the real answer. A
+   player who loses everything still has forty people, Halloway with an opinion
+   about it, a contract from Cassin, a wall to hang something on, and a nemesis
+   with their launcher. The management layer is not a side dish; it is the reason
+   a bad night ends with "one more" instead of a refund request.
 
 ## 22. Economy
 
-Three currencies, no gold.
+Three currencies, no gold. Every unit of all three entered the world on a
+player's back.
 
-- **Junk** — bulk trash. Feeds facilities, decoration and cleansing.
-  Deliberately heavy, so hauling junk competes with hauling Augs.
+- **Junk** — bulk trash. Refined into parts and reagents; feeds facilities,
+  decoration and cleansing. Deliberately heavy, so hauling junk competes with
+  hauling Augs.
 - **Cores** — mid-rare. Keys, cleansing, Workshop crafting. The gate on how often
   you choose your run.
 - **Charge** — the wheel only, career-scoped, deleted on death.
 
 ## 23. The first hour
 
-The onboarding has to teach three rules, one slot, and a reason to care, without
-a tutorial voice. Beat sheet:
+Teach three rules, one slot, and a reason to care, with no tutorial voice:
 
 | Minutes | Beat |
 | --- | --- |
-| 0–5 | Wake in your vault. It is small, lit, half-staffed. Walk it. Three dwellers, names, one of them talks to you. The Vault Door is the only thing that is obviously important. |
-| 5–8 | Locker room. One Aug in the rack — a battered Kessler sidearm. One slot. The game never says "slot 1 of 1"; the rack has one hook and six empty ones. |
-| 8–20 | Depth 1, Habitation, Cache Hunt. Husks only. The PA is running. You find a bunk with a name plate. You kill a Husk holding a *hammer* and it drops the hammer, and the hook in your head — *that is how you get things* — lands without a line of text. |
+| 0–5 | Wake in your vault. Small, lit, half-staffed. Halloway is fixing something and does not stop to greet you properly. Walk the ring. The Vault Door is the only thing that is obviously important. |
+| 5–8 | Locker room. One Aug in the rack — a battered Kessler sidearm. The game never says "slot 1 of 1"; the rack has one hook and six empty ones. |
+| 8–20 | Depth 1, Habitation, Cache Hunt. Husks only. The PA is running. You find a bunk with a name plate. You kill a Husk holding a *hammer* and it drops the hammer, and the hook lands without a line of text: **that is how you get things.** |
 | 20–24 | You can hold the hammer **or** the sidearm. Not both. This is the moment the game explains itself. |
-| 24–30 | Extract. Dump junk on the counter. A dweller comes to look. Spend first Charge at the wheel: **Second Socket** is visible, expensive, and two delves away. |
-| 30–45 | Second delve. Rescue objective. You carry someone out. She has a name, a former job, and an opinion about your vault. |
-| 45–60 | Radio Room lights up: Cassin is calling. The contract chain that ends in permanent slot 2 begins. Somewhere in here, first death — cheap, at one slot, teaching the rule for almost nothing. |
+| 24–30 | Extract. Dump junk on the intake counter; the Refinery queue starts ticking. Spend first Charge: **Second Socket** is visible, expensive, two delves away. |
+| 30–45 | Second delve, Rescue objective. You carry someone out. She has a name, a former job, an opinion about your vault, and by tomorrow she is running your Refinery. |
+| 45–60 | The Radio Room lights up. Vesk is already in there and has been listening to Cassin call for two days. The contract chain that ends in permanent slot 2 begins. Somewhere in here, first death — cheap at one slot, teaching the rule for almost nothing. |
 
-The design goal of that hour: the player should be able to explain the entire
-game to a friend afterwards, and should already have one name they do not want
-to lose.
+Afterwards the player should be able to explain the whole game to a friend — and
+should want to, because the next beat is bringing that friend along.
 
 ## 24. Open questions
 
@@ -745,41 +877,50 @@ Honest gaps, priority order:
 
 1. **Does losing the whole wheel land as tragedy or as tedium?** Isaac gets away
    with it because a run is 40 minutes; ours is potentially 20 hours. §19's
-   Notoriety and §11's dwellers exist so a career ends at a dramatic peak with
-   something worth mourning, but that is theory until it is played. Riskiest
+   Notoriety and §16's nemesis exist so a career ends at a dramatic peak against
+   something that felt personal, but that is theory until it is played. Riskiest
    assumption in the document.
-2. **Is one starting slot too thin for the first hour?** §23 bets that the
-   constraint *is* the hook. If playtests disagree, the fix is to move permanent
-   slot 2 into the first session rather than to start at two.
-3. **Companion death may be too cruel.** Losing a career and a friend in the same
-   second could read as punitive rather than tragic. Possible softener: a
-   companion is *downed and captured*, recoverable from a rescue delve, and only
-   dies if you leave them. Test both.
-4. **Vault management competing with the shooter.** If upkeep, contamination,
+2. **Can the 5× power budget actually hold?** §20 rests entirely on it. Seven
+   slots of Relics with Resonance seams firing is exactly the situation where a
+   designer's 5× quietly becomes 30×, and every mixed-band promise in this
+   document dies with it. Needs a build calculator before content authoring, not
+   after.
+3. **Is one starting slot too thin for the first hour?** §23 bets the constraint
+   *is* the hook. If playtests disagree, move permanent slot 2 into the first
+   session rather than starting at two.
+4. **Squad size 3 or 4?** Must be decided before room prefab authoring — it sets
+   every doorway, sightline and cover cluster in the game, and it is not a number
+   you can change later. 3 is better first-person combat; 4 is what friend groups
+   actually are.
+5. **Does Notoriety-driven aggro (§20.6) read as fair or as cheating?** Being
+   hunted specifically is great fiction and might feel awful in practice for the
+   veteran who just wanted a quiet run with a friend. Test whether it needs a
+   ceiling.
+6. **Vault management competing with the shooter.** If upkeep, contamination,
    assignment and decoration together cost more than five minutes a session, the
    game has two halves that resent each other. Bands-not-chores (§12) is the
-   guard rail; watch it in testing.
-5. **How much authored room content is the real minimum?** 60 is an estimate. If
+   guard rail; watch it.
+7. **How much authored room content is the real minimum?** 60 is an estimate. If
    it is 200, the project shape changes.
-6. **Aug library size.** Enemy variety is downstream of Aug count, so a thin
-   library is a thin bestiary. Guess: **~50 Augs across six families**.
-7. **Losing a neighbour vault (§15) may just feel bad.** It is designed as one
-   memorable arc, not a system; if it reads as a punish-the-player timer it
-   should become a scripted one-time story beat instead.
-8. **Server authority cost.** Instanced PvE co-op with an authoritative host is
-   tractable; Breach is a different problem. Revenants are asynchronous and cheap
-   and should carry the multiplayer feeling until PvE ships.
+8. **Aug library size.** Enemy variety is downstream of Aug count. Guess: **~50
+   Augs across six families**.
+9. **Losing a neighbour vault (§15) may just feel bad.** Designed as one
+   memorable arc, not a system; if it reads as a punish-the-player timer it should
+   become a scripted one-time story beat.
+10. **Server authority cost.** Instanced PvE co-op with an authoritative host is
+    tractable; Breach is a different problem. Revenants are asynchronous and cheap
+    and should carry the multiplayer feeling until PvE ships.
 
 ## 25. If this gets built here
 
 | System | Owner |
 | --- | --- |
 | Room prefabs, archetype tilesets, dressing, the home vault itself | **`jgengine-editor`** — authored into `editor.scene.json`; the graph pass composes authored prefabs. No hardcoded geometry or coordinate arrays. |
-| Vault graph generation, movement, enemy AI, companion AI, interaction, hazards | **`jgengine-world`** |
-| Augs as abilities, damage, ammo, cooldowns, enemy Aug assembly, drop tables | **`jgengine-combat`** |
-| Career state, Charge, wheel, slots/Strain, dwellers, facilities, upkeep bands, shift clock, save | **`jgengine-gameplay`** — serializable state, injected RNG |
+| Vault graph generation, movement, enemy AI, Notoriety threat targeting, interaction, hazards | **`jgengine-world`** |
+| Augs as abilities, damage, ammo, cooldowns, enemy Aug assembly, per-player drop rolls | **`jgengine-combat`** |
+| Career state, Charge, wheel, slots/Strain, crew roster, processing queue, facilities, upkeep bands, shift clock, save | **`jgengine-gameplay`** — serializable state, injected RNG |
 | Aug wheel, HUD, inventory, character room, talent circle, Radio Room, the Ledger | **`jgengine-ui`** |
-| Squads, instance authority, Breach, Revenant distribution | **`jgengine-multiplayer`** |
+| Squads, sponsorship and Clearance gating, instance authority, Breach, Revenant distribution | **`jgengine-multiplayer`** |
 
 Reusable seams this pushes upstream, per the build-capability-upstream invariant
 — all genre-agnostic, all otherwise handrolled game-locally:
@@ -790,14 +931,17 @@ Reusable seams this pushes upstream, per the build-capability-upstream invariant
 - **Radial talent graph** — rings, spokes, adjacency gating
 - **Risk-ledger state** — at-risk vs. anchored partitions, atomic commit on
   extract
-- **Roster primitive** — named NPCs with stats, bonds, assignment, idle tasking
-  and permadeath, usable by any game with a base and a crew
+- **Per-player reward rolls** — one kill, N independent reward resolutions
+  against each observer's own progression tier, so mixed-power co-op never needs
+  a shared loot pool
+- **Roster and work queue** — named NPCs with stats, assignment and a durable
+  offline processing queue, usable by any game with a base and a crew
 - **Asynchronous ghost distribution** — a dead player state re-entering other
   players' worlds as content
 
 First slice should be the Aug wheel, one archetype, and §6's enemy assembly —
-that trio is the game. Everything in Parts III and IV is what turns the game into
-a place, and none of it should be started before that trio is fun.
+that trio is the game. Everything in Parts III and IV turns the game into a
+place, and none of it should start before that trio is fun.
 
 Before code lands: a `[FEATURE]` issue per vertical slice, and a `CREDITS.md`
 entry recording the six lineages in §4.
