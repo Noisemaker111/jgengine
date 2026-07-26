@@ -38,10 +38,12 @@ import {
   type CityTree,
 } from "@jgengine/core/world/cityKind";
 import type { CityTreeSpecies, CityPieceRole } from "@jgengine/core/world/cityContent";
-import { generateBuilding, resolveBuildingPalette, type BuildingPalette, type BuildingPartKind } from "@jgengine/core/world/buildings";
+import { generateBuilding, resolveBuildingPalette, type BuildingPalette } from "@jgengine/core/world/buildings";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 
 import { buildScatterProxy } from "../scatter/scatterProxies";
+import { InstancedBuildings, type InstancedBuildingPlacement } from "../structures/GeneratedBuilding";
+import { getBuildingKit } from "../structures/buildingKitRegistry";
 import { createCityWindowMaterial } from "./cityWindowMaterial";
 import { registerSceneKindRenderer, type SceneKindRenderContext } from "./sceneKindRenderers";
 
@@ -346,7 +348,9 @@ function roleColor(palette: BuildingPalette, role: CityPieceRole): string {
 
 interface DetailBuilding {
   lotId: string;
-  matrix: THREE.Matrix4;
+  center: readonly [number, number];
+  baseY: number;
+  rotationY: number;
   parts: ReturnType<typeof generateBuilding>["parts"];
 }
 
@@ -354,67 +358,37 @@ const DETAIL_RADIUS = 95;
 const DETAIL_MAX = 12;
 const DETAIL_CLASSES = new Set(["tower", "slab", "shop", "rowhouse"]);
 
-/** Per-part-kind instanced batches for the near-LOD facade buildings (full lot yaw support). */
-function DetailBuildings({ buildings, palette }: { buildings: DetailBuilding[]; palette: BuildingPalette }) {
-  const meshes = useMemo(() => {
-    if (buildings.length === 0) return null;
-    const buckets = new Map<BuildingPartKind, THREE.Matrix4[]>();
-    const partMatrix = new THREE.Matrix4();
-    const compose = new THREE.Matrix4();
-    for (const building of buildings) {
-      for (const part of building.parts) {
-        partMatrix.compose(
-          new THREE.Vector3(part.position[0], part.position[1], part.position[2]),
-          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), part.rotationY),
-          new THREE.Vector3(Math.max(0.01, part.scale[0]), Math.max(0.01, part.scale[1]), Math.max(0.01, part.scale[2])),
-        );
-        compose.multiplyMatrices(building.matrix, partMatrix);
-        const bucket = buckets.get(part.kind);
-        if (bucket === undefined) buckets.set(part.kind, [compose.clone()]);
-        else bucket.push(compose.clone());
-      }
-    }
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const out: THREE.InstancedMesh[] = [];
-    // Rooftop mechanical units read as debug cubes in the district's bright palette accent — force a
-    // muted metal grey so they look like real HVAC/plant, never placeholder geometry.
-    const ROOF_PROP_GREY = "#9a9ea3";
-    for (const [kind, matrices] of buckets) {
-      const color = kind === "roofProp" ? ROOF_PROP_GREY : palette[kind];
-      const material =
-        kind === "window" || kind === "storefront"
-          ? new THREE.MeshPhysicalMaterial({ color, roughness: 0.12, metalness: 0, transparent: true, opacity: 0.56 })
-          : kind === "storeSign"
-            ? new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6, roughness: 0.5 })
-            : new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0 });
-      const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
-      matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
-      mesh.instanceMatrix.needsUpdate = true;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.frustumCulled = false;
-      out.push(mesh);
-    }
-    return out;
-  }, [buildings, palette]);
-  useEffect(
-    () => () => {
-      if (meshes === null) return;
-      for (const mesh of meshes) {
-        mesh.geometry.dispose();
-        (mesh.material as THREE.Material).dispose();
-      }
-    },
-    [meshes],
+// Rooftop mechanical units read as debug cubes in the district's bright palette accent — force a
+// muted metal grey so they look like real HVAC/plant, never placeholder geometry.
+const ROOF_PROP_GREY = "#9a9ea3";
+
+/**
+ * Near-LOD facade buildings, rendered through the shared building path so an authored city picks up
+ * a `BuildingKit` exactly like a `building()` feature does: kit-bound parts instance their models,
+ * everything else keeps the palette blocks.
+ */
+function DetailBuildings({
+  buildings,
+  palette,
+  kitName,
+}: {
+  buildings: DetailBuilding[];
+  palette: BuildingPalette;
+  kitName: string;
+}) {
+  const placements = useMemo<InstancedBuildingPlacement[]>(
+    () =>
+      buildings.map((entry) => ({
+        building: { id: entry.lotId, parts: entry.parts },
+        position: [entry.center[0], entry.baseY, entry.center[1]],
+        rotationY: entry.rotationY,
+      })),
+    [buildings],
   );
-  if (meshes === null) return null;
-  return (
-    <>
-      {meshes.map((mesh, i) => (
-        <primitive key={`detail:${i}`} object={mesh} />
-      ))}
-    </>
-  );
+  const detailPalette = useMemo(() => ({ ...palette, roofProp: ROOF_PROP_GREY }), [palette]);
+  const kit = getBuildingKit(kitName);
+  if (placements.length === 0) return null;
+  return <InstancedBuildings buildings={placements} palette={detailPalette} {...(kit === undefined ? {} : { kit })} />;
 }
 
 /** One authored city volume → the full merged/instanced district. */
@@ -496,13 +470,14 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
         bayWidth: lot.size[0] / baysWide,
         floorHeight: resolved.rules.floorHeight,
       });
-      const matrix = new THREE.Matrix4().compose(
-        new THREE.Vector3(lot.center[0], maxY, lot.center[1]),
-        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), lot.rotationY),
-        new THREE.Vector3(1, 1, 1),
-      );
       ids.add(lot.id);
-      buildings.push({ lotId: lot.id, matrix, parts: building.parts });
+      buildings.push({
+        lotId: lot.id,
+        center: lot.center,
+        baseY: maxY,
+        rotationY: lot.rotationY,
+        parts: building.parts,
+      });
     }
     return { ids, buildings };
   }, [resolved, detailKey, sample]);
@@ -1244,7 +1219,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       {tunnels !== null && tunnels.stone.length > 0 ? <InstancedBoxes matrices={tunnels.stone} color={TUNNEL_COLOR} /> : null}
       {massing !== null ? massing.meshes.map((mesh, i) => <primitive key={`massing:${i}`} object={mesh} />) : null}
       {furniture !== null ? furniture.meshes.map((mesh, i) => <primitive key={`furniture:${i}`} object={mesh} />) : null}
-      <DetailBuildings buildings={detail.buildings} palette={palette} />
+      <DetailBuildings buildings={detail.buildings} palette={palette} kitName={resolved?.rules.buildingKit ?? ""} />
     </group>
   );
 }

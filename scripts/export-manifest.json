@@ -788,6 +788,7 @@
     "./structures/PlacementGhost",
     "./structures/TransformGizmo",
     "./structures/buildingKitFit",
+    "./structures/buildingKitRegistry",
     "./structures/index",
     "./terrain",
     "./terrain/CarvedTerrain",

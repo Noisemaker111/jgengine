@@ -191,6 +191,12 @@ export interface CityRules {
   sidewalkWidth: number;
   /** Building style palette id (see {@link BUILDING_STYLE_PALETTES}). */
   style: BuildingStyle;
+  /**
+   * Name of the `BuildingKit` the near-LOD facades render with, or `""` for the palette blocks.
+   * A game registers its bound art under this name; the document carries only the name, so a scene
+   * stays portable and small.
+   */
+  buildingKit: string;
   /** Seed string; same seed reproduces the same city. Empty falls back to the volume id. */
   seed: string;
 }
@@ -258,6 +264,7 @@ export const CITY_DEFAULTS: CityRules = {
   sidewalks: true,
   sidewalkWidth: 1.9,
   style: DEFAULT_BUILDING_STYLE,
+  buildingKit: "",
   seed: "",
 };
 
@@ -340,6 +347,7 @@ export const CITY_SCHEMA: ParamSchema = {
       default: CITY_DEFAULTS.style,
       options: Object.keys(BUILDING_STYLE_PALETTES).map((style) => ({ value: style })),
     },
+    { type: "text", key: "buildingKit", label: "building kit", group: "buildings", default: CITY_DEFAULTS.buildingKit },
     { type: "range", key: "treeDensity", label: "tree density", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.treeDensity },
     { type: "weightedList", key: "treeMix", label: "tree mix", group: "greenery", itemLabel: "species", default: CITY_DEFAULTS.treeMix },
     { type: "range", key: "lightDensity", label: "street lights", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.lightDensity },
@@ -721,6 +729,7 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     sidewalks: params["sidewalks"] as boolean,
     sidewalkWidth: params["sidewalkWidth"] as number,
     style: params["style"] as BuildingStyle,
+    buildingKit: (params["buildingKit"] as string | undefined) ?? CITY_DEFAULTS.buildingKit,
     seed: params["seed"] as string,
   };
 }

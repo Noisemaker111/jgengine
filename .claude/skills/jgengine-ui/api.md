@@ -2388,6 +2388,13 @@
 - `TransformGizmoSnap` (type): type TransformGizmoSnap = "grid" | "free" | "ground" — Snap policy: grid quantize, free drag, or ground-height sample on release.
 - `TransformGizmoSpace` (type): type TransformGizmoSpace = "world" | "local" — Gizmo handle orientation: world axes, or the target's local (yaw-rotated) axes.
 
+## @jgengine/shell/structures/buildingKitRegistry
+
+- `clearBuildingKits` (function): function clearBuildingKits(): void — Drops every registration. For tests and hot-reload teardown.
+- `getBuildingKit` (function): function getBuildingKit(id: string | undefined): BuildingKit | undefined — The kit registered under `id`, or `undefined` for an unset or unknown name (renders blocks).
+- `listBuildingKits` (function): function listBuildingKits(): string[] — Every registered kit id — the editor's kit picker and diagnostics read this.
+- `registerBuildingKit` (function): function registerBuildingKit(kit: BuildingKit): void — Registers a kit under its own `id`, replacing any kit already registered under that name.
+
 ## @jgengine/shell/terrain
 
 - `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
