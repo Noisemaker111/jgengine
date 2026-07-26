@@ -28,6 +28,17 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+### Changed
+
+### Added
+
+### Fixed
+
+## 0.15.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.15.0`:** `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`. CLI `jgengine` is `0.12.0`; `@jgengine/github` is `0.2.0`.
 - **`jgengine create` scaffolds a textured world by default (#1550).** `--world` is now the default and `--no-world` is the opt-out (matching `--no-editor`); `--world` is still accepted. The default scaffold previously emitted untextured proxy geometry, which the AGENTS.md it ships declares a failing result. `create` now also pulls the starter asset packs into `public/models` after install, and never fails the scaffold if that pull cannot run (offline, blocked proxy, `--no-install`) — it prints `npx assets pull starter` in next steps instead, and the emitted AGENTS.md documents the same command. Skip the pull explicitly with `--no-assets`.
 - **Start game code at `@jgengine/shell/gameKit` (#1541).** Prefer that surface for `defineGame`, `GameHost`, stores, systems, authored-scene helpers, and HUD building blocks. `@jgengine/core/authoring` remains for pure core helpers the kit does not re-export but is no longer a competing start-here path.
 - **Every game must now declare its run-phase story — silence is a gate error (#1337).** The run-phase
