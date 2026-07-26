@@ -222,3 +222,7 @@ Ran `bun run gate` and `bun run drive the-robots` concurrently on the software-G
 2026-07-26T19:44:00.696Z — claude-opus-5 — Claude
 
 `shoot <game> --look x,z,dist,height` returned a fully black 3D viewport (HUD drawn, world not) at two different world points, while --look 0,0 rendered fine. One frame caught the zone-title card mid-transition, so --look appears to capture before the relocated camera's world has streamed/settled. Cost 3 capture rounds and blocked visual evidence for an ambient-VFX change.
+
+2026-07-26T20:25:15.978Z — claude-opus-5 — Claude
+
+shoot --settle N is ignored: ran 'shoot the-robots --look 0,0,30,4,110 --settle 4000' and the timing line reported settle=0.60s (the default). Cannot lengthen settle to work around the black-viewport race on --look.
