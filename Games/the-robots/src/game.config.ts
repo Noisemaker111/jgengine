@@ -7,7 +7,7 @@ import { assets } from "./game/assets";
 import { content } from "./game/content";
 import { inventories } from "./game/inventories";
 import { keybinds } from "./game/keybinds";
-import { FERRALON, RARITY_COLORS } from "./game/palette";
+import { RARITY_COLORS } from "./game/palette";
 import { session } from "./game/session";
 import { GameUI } from "./game/ui/GameUI";
 import { entityModels, objectModels } from "./game/world/models";
@@ -157,15 +157,16 @@ export const game = defineGame({
   worldItem: { rarityStyle, pickupRadius: 2.8 },
   prompts,
   hotbarSelection: () => session.selectedSlot(),
-  backdrop: {
-    fog: { color: FERRALON.fog, near: 160, far: 680 },
-  },
+  // No `backdrop.fog`: the world's sky owns the single fog config, so the two cannot drift apart.
+  // Fill was bright enough to erase the shadow side of everything, which is why silhouettes looked
+  // pasted onto the ground. Sun up, ambient/hemisphere down, and a cool bounce from the sky so
+  // shadowed metal goes blue-grey instead of muddy brown.
   lighting: {
-    ambient: { color: "#c9b8a0", intensity: 0.5 },
-    hemisphere: { skyColor: "#b8d2de", groundColor: "#7a5638", intensity: 0.55 },
+    ambient: { color: "#a8a293", intensity: 0.28 },
+    hemisphere: { skyColor: "#8fb4cc", groundColor: "#6b4a30", intensity: 0.4 },
     directional: [
-      { color: "#fff2d8", intensity: 1.7, position: [40, 60, 20], castShadow: true },
-      { color: "#d9915c", intensity: 0.45, position: [-30, 30, -25] },
+      { color: "#ffeccd", intensity: 2.5, position: [40, 60, 20], castShadow: true },
+      { color: "#5f7d99", intensity: 0.35, position: [-30, 30, -25] },
     ],
   },
   // GTAO was dropped here after perf profiling: it re-renders the whole scene
@@ -173,8 +174,18 @@ export const game = defineGame({
   // contact-shadow gain this bright, fogged desert barely shows.
   postProcessing: {
     toneMapping: "aces",
-    bloom: { strength: 0.28, radius: 0.5, threshold: 0.88 },
-    grade: { vignette: 0.22, saturation: 1.08 },
+    // Threshold low enough that optics and hazard trim actually bloom (that glow is the enemy read),
+    // contrast up so the flats stop sitting in one mid-tone band.
+    bloom: { strength: 0.42, radius: 0.6, threshold: 0.62 },
+    // Cool lift + warm gain splits shadow and highlight so the flats stop sitting in one mid-tone
+    // band; gamma under the 0.96 default deepens the midtones the old look washed out.
+    grade: {
+      vignette: 0.28,
+      saturation: 1.16,
+      gamma: 0.92,
+      lift: [0.008, 0.012, 0.026],
+      gain: [1.07, 1.02, 0.94],
+    },
   },
   movement: {
     collideObjects: true,

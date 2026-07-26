@@ -15,16 +15,61 @@ export const ELEMENT_COLORS = {
   flux: "#c05cff",
 } as const;
 
+/**
+ * Ferralon reads on one rule: **the world is warm, the machines are cold.**
+ * Ground, rock, and haze sit in sandstone/ochre; every robot chassis sits in
+ * blue-grey steel with a saturated hazard accent. That hue split is what makes a
+ * silhouette legible at 60 m against open desert — the previous single-brown
+ * palette put enemies and terrain in the same hue *and* value, so nothing read.
+ */
 export const FERRALON = {
-  sky: "#8fb7c9",
-  horizon: "#d9b98a",
-  fog: "#cbb08a",
-  rockLow: "#6e4a33",
-  rockHigh: "#c2854f",
+  sky: "#5b93bd",
+  skyZenith: "#2f6d9e",
+  horizon: "#e3bd85",
+  fog: "#c9a677",
+  /**
+   * Terrain low/high. The gap between these two is what gives an open desert its relief — the old
+   * pair sat close together in value, so every ridge read as one smooth tan blob. Deep shadowed
+   * ochre in the hollows, bleached sandstone on the ridgelines.
+   */
+  rockLow: "#5f3c22",
+  rockHigh: "#dba869",
+  /** Slope/cliff face: cooler and darker than the flats so relief separates by value, not just shading. */
+  cliff: "#5c4c40",
+  sand: "#cdab74",
   dust: "#b3663a",
   hudAmber: "#ffb400",
   hudRed: "#e23c2e",
   hudShield: "#39a8e0",
   hudXp: "#8ee43e",
   hudPanel: "rgba(12, 14, 16, 0.82)",
+} as const;
+
+/**
+ * Machine finishes. Every robot chassis draws from these, never from the terrain
+ * hues, so enemies never camouflage into the ground they stand on.
+ */
+/**
+ * Machine finishes. Values are deliberately mid-to-light greys: in PBR a metal's albedo *is* its
+ * reflectance, so a near-black chassis at high metalness reflects almost nothing and renders as a
+ * flat black hole against bright sand. Everything here stays above ~#55 so robots read as machined
+ * metal with visible form, not as silhouette cutouts.
+ */
+export const MACHINE = {
+  /** Mass-production drone shell. */
+  steel: "#b3bec9",
+  /** Weathered scavenger plating. */
+  scrap: "#93a0ad",
+  /** Heavy frame / armour. */
+  iron: "#75828f",
+  /** Recessed joints, hydraulics, cabling — the darkest value, still well off black. */
+  joint: "#586471",
+  /** Corrosion bleed on old welds. */
+  rust: "#8a4a2a",
+  /** Faction hazard stripe. */
+  hazard: "#f0a828",
+  /** Optic glow — the read for "this thing is alive and looking at you". */
+  optic: "#3fd8ff",
+  /** Badass/elite optic + trim. */
+  opticElite: "#ff5a2e",
 } as const;

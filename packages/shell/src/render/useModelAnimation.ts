@@ -8,6 +8,46 @@ import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
 import { useGameContext } from "@jgengine/react/provider";
 
 /**
+ * An explicit `animation` config always wins over `"auto"`, and both the state machine and the
+ * one-shot table degrade quietly when a named clip is absent: states fall back to `clips[0]` (often
+ * an attack clip, so an actor "idles" mid-swing) and one-shots are dropped, so deaths and attacks
+ * never play. Neither leaves a trace, which makes a mistyped or wrong-pack clip name one of the
+ * hardest render bugs to see — the model loads, animates, and is simply wrong forever.
+ *
+ * Warn once per mount with the names that missed and the names the rig actually has, so the fix
+ * (usually deleting the hand-written config and letting `"auto"` derive it) is obvious.
+ */
+function warnMissingClips(
+  animation: ModelAnimationConfig,
+  clips: readonly THREE.AnimationClip[],
+): void {
+  if (typeof console === "undefined") return;
+  const available = new Set(clips.map((clip) => clip.name));
+  const missing = new Set<string>();
+  const { states, oneShots } = animation;
+  if (states !== undefined) {
+    for (const name of [states.idle, states.walk, states.run]) {
+      if (name !== undefined && !available.has(name)) missing.add(name);
+    }
+  }
+  if (oneShots !== undefined) {
+    for (const spec of Object.values(oneShots)) {
+      for (const name of typeof spec === "string" ? [spec] : spec) {
+        if (!available.has(name)) missing.add(name);
+      }
+    }
+  }
+  if (animation.clip !== undefined && !available.has(animation.clip)) missing.add(animation.clip);
+  if (missing.size === 0) return;
+  console.warn(
+    `[jgengine] model animation: clip(s) ${[...missing].map((name) => `"${name}"`).join(", ")} ` +
+      `not found on this rig. Available: ${clips.map((clip) => clip.name).join(", ")}. ` +
+      `States fall back to the first clip and one-shots are skipped — set animation: "auto" to ` +
+      `derive states/one-shots from the rig's own clip names.`,
+  );
+}
+
+/**
  * The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs,
  * for games that render a cloned scene themselves (custom materials, procedural composition).
  * Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades
@@ -52,6 +92,7 @@ export function useModelAnimation(
       stateActionsRef.current = null;
       return;
     }
+    warnMissingClips(animation, clips);
     const mixer = new THREE.AnimationMixer(scene);
     if (states !== undefined) {
       const clipFor = (name: string) => THREE.AnimationClip.findByName(clips, name) ?? clips[0]!;

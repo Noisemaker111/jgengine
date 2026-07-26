@@ -1,40 +1,76 @@
-import { Suspense, useEffect, useMemo, useRef } from "react";
-import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { Color, Group, MeshStandardMaterial, Vector3, type Object3D } from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { cloneModelScene, disposeClonedMaterials } from "@jgengine/shell/render/modelRender";
+import { useFrame, useThree } from "@react-three/fiber";
+import { Group, Vector3 } from "three";
+import { useRef } from "react";
 import { useGameContext } from "@jgengine/react/provider";
-import { assets } from "../assets";
 import { equippedGun, gameNow, lastShot } from "../feel";
 import { gunById, isReloading, type GunDef, type GunFamily } from "../handroll";
 import { ELEMENT_COLORS } from "../palette";
 
-const FAMILY_MUZZLE_Z: Record<GunFamily, number> = {
-  pistol: 0.32,
-  smg: 0.42,
-  shotgun: 0.5,
-  rifle: 0.52,
-  sniper: 0.62,
-  launcher: 0.56,
-};
+/**
+ * Blaster silhouettes, built from primitives rather than cast from a model pack.
+ *
+ * No pack we ship has a gun, and the previous casting pointed the player's weapon at fantasy melee
+ * meshes — a *dagger* stood in for the pistol, a crossbow for the SMG, an axe for the shotgun. In a
+ * first-person shooter that mesh is on screen every single frame, so it was the most-seen wrong
+ * asset in the game. Composed boxes read as a machined sci-fi weapon and take their proportions from
+ * the family, which a fantasy axe never could.
+ */
+interface BlasterSpec {
+  /** Receiver block: width, height, length in metres. */
+  body: readonly [number, number, number];
+  /** Barrel: radius, length. */
+  barrel: readonly [number, number];
+  /** Boxy magazine below the receiver, or `null` for none. */
+  magazine: readonly [number, number, number] | null;
+  /** Optic block above the receiver, or `null` for iron sights. */
+  optic: readonly [number, number, number] | null;
+  /** Muzzle-brake plate at the barrel tip — shotguns and launchers flare. */
+  brake: number | null;
+}
 
-/** Preferred KayKit / scifi weapon ids — soft-resolve; missing → box primitive. */
-const FAMILY_BLASTER: Record<GunFamily, { model: string; fallbackModel?: string }> = {
-  pistol: { model: "kaykit-adventurers/dagger", fallbackModel: "kaykit-adventurers/wand" },
-  smg: { model: "kaykit-adventurers/crossbow_1handed", fallbackModel: "kaykit-adventurers/sword_1handed" },
-  shotgun: { model: "kaykit-adventurers/axe_2handed", fallbackModel: "kaykit-adventurers/sword_2handed" },
-  rifle: { model: "kaykit-adventurers/crossbow_2handed", fallbackModel: "kaykit-adventurers/staff" },
-  sniper: { model: "kaykit-adventurers/staff", fallbackModel: "kaykit-adventurers/wand" },
-  launcher: { model: "kaykit-adventurers/axe_1handed", fallbackModel: "kaykit-adventurers/sword_2handed" },
-};
-
-const FAMILY_SCALE: Record<GunFamily, number> = {
-  pistol: 0.6,
-  smg: 0.44,
-  shotgun: 0.62,
-  rifle: 0.6,
-  sniper: 0.52,
-  launcher: 0.58,
+const FAMILY_BLASTER: Record<GunFamily, BlasterSpec> = {
+  pistol: {
+    body: [0.055, 0.1, 0.2],
+    barrel: [0.017, 0.12],
+    magazine: [0.045, 0.09, 0.05],
+    optic: null,
+    brake: null,
+  },
+  smg: {
+    body: [0.06, 0.1, 0.26],
+    barrel: [0.015, 0.14],
+    magazine: [0.04, 0.16, 0.05],
+    optic: [0.03, 0.025, 0.07],
+    brake: null,
+  },
+  shotgun: {
+    body: [0.075, 0.11, 0.34],
+    barrel: [0.028, 0.26],
+    magazine: null,
+    optic: null,
+    brake: 0.05,
+  },
+  rifle: {
+    body: [0.065, 0.11, 0.38],
+    barrel: [0.019, 0.24],
+    magazine: [0.045, 0.14, 0.06],
+    optic: [0.035, 0.035, 0.11],
+    brake: null,
+  },
+  sniper: {
+    body: [0.06, 0.1, 0.44],
+    barrel: [0.017, 0.34],
+    magazine: [0.04, 0.1, 0.05],
+    optic: [0.042, 0.045, 0.18],
+    brake: 0.032,
+  },
+  launcher: {
+    body: [0.09, 0.13, 0.36],
+    barrel: [0.055, 0.24],
+    magazine: null,
+    optic: [0.03, 0.03, 0.08],
+    brake: 0.085,
+  },
 };
 
 const MANUFACTURER_COLORS: Record<string, string> = {
@@ -48,81 +84,79 @@ const MANUFACTURER_COLORS: Record<string, string> = {
   Scrapjack: "#5a5248",
 };
 
-function resolveBlasterUrl(family: GunFamily): string | null {
-  const pick = FAMILY_BLASTER[family];
-  for (const id of [pick.model, pick.fallbackModel]) {
-    if (id === undefined) continue;
-    const url = assets.resolve(id)?.url;
-    if (url !== undefined) return url;
-  }
-  return null;
-}
+/** Machined dark steel for every receiver; the manufacturer colour rides on the plating instead. */
+const GUN_STEEL = "#3a3f45";
 
-function tintScene(scene: Object3D, body: string, glow: string | null): void {
-  const bodyColor = new Color(body);
-  const glowColor = glow === null ? null : new Color(glow);
-  scene.traverse((node) => {
-    const mesh = node as { isMesh?: boolean; material?: unknown };
-    if (mesh.isMesh !== true) return;
-    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-    for (const material of materials) {
-      if (!(material instanceof MeshStandardMaterial)) continue;
-      material.color.lerp(bodyColor, 0.55);
-      material.metalness = 0.65;
-      material.roughness = 0.42;
-      if (glowColor !== null) {
-        material.emissive.copy(glowColor);
-        material.emissiveIntensity = 0.35;
-      }
-    }
-  });
+/**
+ * Where the muzzle flash sits, derived from the family's own barrel geometry rather than a
+ * hand-tuned table — a table drifts out of sync the moment a barrel length changes. Matches the
+ * blaster group's own `position` and `rotation={[0, PI, 0]}`, so the sign is already flipped.
+ */
+function muzzleOffsetZ(family: GunFamily): number {
+  const spec = FAMILY_BLASTER[family];
+  const tip = spec.body[2] / 2 + spec.barrel[1] + (spec.brake === null ? 0 : 0.045);
+  return -(tip - 0.1);
 }
 
 function GunMesh({ gun }: { gun: GunDef }) {
-  const url = resolveBlasterUrl(gun.family);
-  const body = MANUFACTURER_COLORS[gun.manufacturer] ?? "#7a6a58";
+  const spec = FAMILY_BLASTER[gun.family];
+  const plating = MANUFACTURER_COLORS[gun.manufacturer] ?? "#7a6a58";
   const glow = gun.element !== "none" ? ELEMENT_COLORS[gun.element] : null;
-  const scale = FAMILY_SCALE[gun.family];
+  const [bodyW, bodyH, bodyL] = spec.body;
+  const [barrelR, barrelL] = spec.barrel;
+  const barrelZ = -(bodyL / 2 + barrelL / 2);
 
-  if (url === null) {
-    return (
-      <mesh rotation={[0, Math.PI, 0]} scale={scale} position={[0, -0.02, -0.1]}>
-        <boxGeometry args={[0.08, 0.12, 0.35]} />
-        <meshStandardMaterial
-          color={body}
-          metalness={0.65}
-          roughness={0.42}
-          emissive={glow ?? "#000000"}
-          emissiveIntensity={glow === null ? 0 : 0.35}
-        />
-      </mesh>
-    );
-  }
-
-  return <GunGlb url={url} body={body} glow={glow} scale={scale} />;
-}
-
-function GunGlb({
-  url,
-  body,
-  glow,
-  scale,
-}: {
-  url: string;
-  body: string;
-  glow: string | null;
-  scale: number;
-}) {
-  const gltf = useLoader(GLTFLoader, url);
-  const scene = useMemo(() => {
-    const cloned = cloneModelScene(gltf.scene);
-    tintScene(cloned, body, glow);
-    return cloned;
-  }, [gltf, body, glow]);
-  useEffect(() => () => disposeClonedMaterials(scene), [scene]);
   return (
-    <group rotation={[0, Math.PI, 0]} scale={scale} position={[0, -0.02, -0.1]}>
-      <primitive object={scene} />
+    <group rotation={[0, Math.PI, 0]} position={[0, -0.02, -0.1]}>
+      {/* Receiver */}
+      <mesh castShadow={false}>
+        <boxGeometry args={[bodyW, bodyH, bodyL]} />
+        <meshStandardMaterial color={GUN_STEEL} metalness={0.85} roughness={0.34} />
+      </mesh>
+      {/* Manufacturer plating along the receiver flank — where the brand colour reads. */}
+      <mesh position={[bodyW / 2 + 0.004, bodyH * 0.1, 0]}>
+        <boxGeometry args={[0.008, bodyH * 0.55, bodyL * 0.7]} />
+        <meshStandardMaterial color={plating} metalness={0.7} roughness={0.4} />
+      </mesh>
+      <mesh position={[-(bodyW / 2 + 0.004), bodyH * 0.1, 0]}>
+        <boxGeometry args={[0.008, bodyH * 0.55, bodyL * 0.7]} />
+        <meshStandardMaterial color={plating} metalness={0.7} roughness={0.4} />
+      </mesh>
+      {/* Barrel */}
+      <mesh position={[0, bodyH * 0.16, barrelZ]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[barrelR, barrelR, barrelL, 12]} />
+        <meshStandardMaterial color={GUN_STEEL} metalness={0.9} roughness={0.28} />
+      </mesh>
+      {spec.brake === null ? null : (
+        <mesh position={[0, bodyH * 0.16, barrelZ - barrelL / 2]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[spec.brake, barrelR * 1.2, 0.045, 12]} />
+          <meshStandardMaterial color={GUN_STEEL} metalness={0.85} roughness={0.36} />
+        </mesh>
+      )}
+      {/* Grip, angled back into the palm. */}
+      <mesh position={[0, -(bodyH * 0.62), bodyL * 0.3]} rotation={[0.32, 0, 0]}>
+        <boxGeometry args={[bodyW * 0.8, bodyH * 0.9, bodyL * 0.22]} />
+        <meshStandardMaterial color="#23262a" metalness={0.4} roughness={0.72} />
+      </mesh>
+      {spec.magazine === null ? null : (
+        <mesh position={[0, -(bodyH / 2 + spec.magazine[1] / 2), -bodyL * 0.08]}>
+          <boxGeometry args={spec.magazine as unknown as [number, number, number]} />
+          <meshStandardMaterial color="#2b2f34" metalness={0.6} roughness={0.5} />
+        </mesh>
+      )}
+      {spec.optic === null ? null : (
+        <mesh position={[0, bodyH / 2 + spec.optic[1] / 2, bodyL * 0.05]}>
+          <boxGeometry args={spec.optic as unknown as [number, number, number]} />
+          <meshStandardMaterial color="#1d2024" metalness={0.5} roughness={0.4} />
+        </mesh>
+      )}
+      {/* Element charge cell: the only emissive part, so the element read comes off the gun itself. */}
+      {glow === null ? null : (
+        <mesh position={[0, bodyH * 0.05, bodyL * 0.12]}>
+          <boxGeometry args={[bodyW * 1.06, bodyH * 0.2, bodyL * 0.18]} />
+          <meshStandardMaterial color={glow} emissive={glow} emissiveIntensity={1.8} roughness={0.3} />
+        </mesh>
+      )}
     </group>
   );
 }
@@ -178,13 +212,11 @@ export function FerralonViewmodel() {
   });
 
   if (gun === undefined) return null;
-  const muzzleZ = -FAMILY_MUZZLE_Z[gun.family];
+  const muzzleZ = muzzleOffsetZ(gun.family);
   return (
     <group ref={rig} renderOrder={999}>
-      <Suspense fallback={null}>
-        <GunMesh gun={gun} />
-      </Suspense>
-      <group ref={flash} position={[0, -0.005, muzzleZ]} visible={false}>
+      <GunMesh gun={gun} />
+      <group ref={flash} position={[0, 0.012, muzzleZ]} visible={false}>
         <mesh>
           <planeGeometry args={[0.16, 0.16]} />
           <meshBasicMaterial color="#ffd76a" transparent opacity={0.95} depthWrite={false} />
