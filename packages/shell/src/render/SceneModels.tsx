@@ -4,7 +4,8 @@ import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from 
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig, ModelMaterialMaps } from "@jgengine/core/game/playableGame";
-import { useGameContext } from "@jgengine/react/provider";
+import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
+import { useOptionalGameContext } from "@jgengine/react/provider";
 
 import { sharedGltfLoader } from "./modelLoad";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
@@ -39,17 +40,56 @@ export function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
   );
 }
 
-class ModelFallbackBoundary extends Component<
-  { fallback: ReactNode; children: ReactNode },
+/**
+ * Catches a render throw from a model subtree and swaps in `fallback` — but never silently: the
+ * failed state re-reports to the fallback-seam probe on every render (matching the per-seam frame
+ * boundary in `WorldScene`) and the catch warns once with the model url and the error. Without
+ * that, a throw anywhere in a composition erases the actor with an empty `probes.fallbacks`.
+ * @internal
+ */
+export class ModelFallbackBoundary extends Component<
+  { fallback: ReactNode; children: ReactNode; url: string; seam?: FallbackSeam },
   { failed: boolean }
 > {
   override state = { failed: false };
   static getDerivedStateFromError(): { failed: boolean } {
     return { failed: true };
   }
-  override render(): ReactNode {
-    return this.state.failed ? this.props.fallback : this.props.children;
+  override componentDidCatch(error: unknown): void {
+    if (typeof console === "undefined") return;
+    console.warn(
+      `[jgengine] model "${this.props.url}" threw while rendering and was replaced by its fallback ` +
+        `(nothing, unless one was supplied). Fix the throw below — the actor is invisible until then.`,
+      error,
+    );
   }
+  override render(): ReactNode {
+    if (!this.state.failed) return this.props.children;
+    reportFallbackSeam(this.props.seam ?? "entity", "renderError");
+    return this.props.fallback;
+  }
+}
+
+/**
+ * One model subtree behind its own error boundary and Suspense boundary, so a throwing or
+ * still-loading piece cannot erase its siblings. Every nested piece of a composition — parts,
+ * attachments, material maps — mounts through this.
+ * @internal
+ */
+export function IsolatedModelPart({
+  model,
+  seam,
+  children,
+}: {
+  model: ModelConfig;
+  seam?: FallbackSeam;
+  children: ReactNode;
+}) {
+  return (
+    <ModelFallbackBoundary fallback={null} url={model.url} seam={seam}>
+      <Suspense fallback={null}>{children}</Suspense>
+    </ModelFallbackBoundary>
+  );
 }
 
 export function IsolatedEntityModel({
@@ -64,7 +104,7 @@ export function IsolatedEntityModel({
   fallback?: ReactNode;
 }) {
   return (
-    <ModelFallbackBoundary fallback={fallback ?? null}>
+    <ModelFallbackBoundary fallback={fallback ?? null} url={model.url} seam={measure?.target}>
       <Suspense fallback={null}>
         <EntityModel model={model} instanceId={instanceId} measure={measure} />
       </Suspense>
@@ -133,7 +173,9 @@ function ModelPartGroup({
 }) {
   return (
     <group position={position ?? [0, 0, 0]} rotation={rotation ?? [0, 0, 0]} scale={scale ?? 1}>
-      <EntityModel model={model} />
+      <IsolatedModelPart model={model}>
+        <EntityModel model={model} />
+      </IsolatedModelPart>
     </group>
   );
 }
@@ -171,7 +213,10 @@ export function EntityModel({
   measure?: MeasureTarget;
 }) {
   const gltf = useLoader(sharedGltfLoader, model.url);
-  const ctx = useGameContext();
+  // Optional, not required: measured bounds and paint strokes are live-world extras, and a model
+  // that threw without a running game could not be inspected outside one — which is how a broken
+  // composition stayed undiagnosable in `EntityPreview` (#1588).
+  const ctx = useOptionalGameContext();
   const material = model.material;
   const baseY = model.y ?? 0;
   const dims = model.dims;
@@ -219,7 +264,7 @@ export function EntityModel({
   const dimsMaxY = dims?.maxY;
   const [positionX, positionY, positionZ] = position;
   useEffect(() => {
-    if (measureTarget === undefined || measureKey === undefined || dimsMaxY !== undefined) return;
+    if (ctx === null || measureTarget === undefined || measureKey === undefined || dimsMaxY !== undefined) return;
     const raw = measureLocalBounds(scene);
     if (raw === null) return;
     reportMeasuredBounds(ctx, measureTarget, measureKey, {
@@ -232,7 +277,7 @@ export function EntityModel({
   // Runs with or without index dims: the loaded geometry upgrades whatever box the kind resolved
   // (fitted or measured) to a hitbox that raycasts the model's own triangles.
   useEffect(() => {
-    if (measureTarget === undefined || measureKey === undefined) return;
+    if (ctx === null || measureTarget === undefined || measureKey === undefined) return;
     const triangles = measureLocalCollisionTriangles(scene, {
       scale,
       offset: [positionX, positionY, positionZ],
@@ -261,7 +306,7 @@ export function EntityModel({
   );
 
   useFrame(() => {
-    if (instanceId === undefined) return;
+    if (ctx === null || instanceId === undefined) return;
     const paint = ctx.scene.entity.paint;
     const version = paint.version(instanceId);
     if (version === paintVersionRef.current) return;
@@ -288,18 +333,23 @@ export function EntityModel({
   const base = (
     <>
       <primitive object={scene} position={position} scale={[scale, scale, scale]} />
-      {material?.maps !== undefined ? <ModelMaterialMapsApplier scene={scene} maps={material.maps} /> : null}
+      {material?.maps !== undefined ? (
+        <IsolatedModelPart model={model}>
+          <ModelMaterialMapsApplier scene={scene} maps={material.maps} />
+        </IsolatedModelPart>
+      ) : null}
       {(model.attachments ?? []).map((attachment, index) =>
         typeof attachment.model === "string" ? null : (
-          <BoneAttachment
-            key={`${attachment.slot}-${index}`}
-            rig={scene}
-            model={attachment.model}
-            slot={attachment.slot}
-            position={attachment.position}
-            rotation={attachment.rotation}
-            scale={attachment.scale}
-          />
+          <IsolatedModelPart key={`${attachment.slot}-${index}`} model={attachment.model}>
+            <BoneAttachment
+              rig={scene}
+              model={attachment.model}
+              slot={attachment.slot}
+              position={attachment.position}
+              rotation={attachment.rotation}
+              scale={attachment.scale}
+            />
+          </IsolatedModelPart>
         ),
       )}
     </>
@@ -314,7 +364,13 @@ export function EntityModel({
         parts={parts}
         model={model}
         instanceId={instanceId}
-        renderPart={(part) => (typeof part.model === "string" ? null : <EntityModel model={part.model} />)}
+        renderPart={(part) =>
+          typeof part.model === "string" ? null : (
+            <IsolatedModelPart model={part.model}>
+              <EntityModel model={part.model} />
+            </IsolatedModelPart>
+          )
+        }
       >
         {base}
       </PartMotionRig>

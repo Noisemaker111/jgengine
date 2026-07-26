@@ -10,7 +10,7 @@ import {
   samplePartPose,
   type PartMotionInput,
 } from "@jgengine/core/game/partAnimation";
-import { useGameContext } from "@jgengine/react/provider";
+import { useOptionalGameContext } from "@jgengine/react/provider";
 
 const FLINCH_RELEASE_SEC = 0.35;
 const DEATH_RAMP_PER_SEC = 2.5;
@@ -38,7 +38,7 @@ export function PartMotionRig({
   renderPart: (part: ModelPart, index: number) => ReactNode;
   children: ReactNode;
 }): ReactNode {
-  const ctx = useGameContext();
+  const ctx = useOptionalGameContext();
   const rootRef = useRef<THREE.Group>(null);
   const partRefs = useRef<(THREE.Group | null)[]>([]);
   const motionRef = useRef({
@@ -50,7 +50,7 @@ export function PartMotionRig({
   const phase = useMemo(() => partMotionPhase(instanceId ?? model.url), [instanceId, model.url]);
 
   useEffect(() => {
-    if (instanceId === undefined) return;
+    if (ctx === null || instanceId === undefined) return;
     const offHit = ctx.game.events.on("combat.hitReaction", (event) => {
       if (event.instanceId === instanceId) motionRef.current.flinch = 1;
     });
@@ -71,7 +71,7 @@ export function PartMotionRig({
 
   useFrame((frameState, delta) => {
     const motion = motionRef.current;
-    if (delta > 0 && instanceId !== undefined) {
+    if (delta > 0 && instanceId !== undefined && ctx !== null) {
       const entity = ctx.scene.entity.get(instanceId);
       if (entity !== null) {
         const [x, , z] = entity.position;
