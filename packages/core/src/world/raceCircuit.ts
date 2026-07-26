@@ -27,6 +27,35 @@ import type { StreetEdge, StreetLevel, StreetNetwork, StreetVec2 } from "./stree
 /** Road hierarchy rank — higher is wider/more arterial. Shared with the fabric's ordering. */
 const LEVEL_RANK: Record<StreetLevel, number> = { lane: 0, street: 1, avenue: 2, boulevard: 3 };
 
+/** Sharpest turn a lap takes at a junction (radians). Beyond this it doubles back on itself. */
+const MAX_LAP_TURN = (120 * Math.PI) / 180;
+
+/**
+ * Worst self-approach of a closed lap, as `gap − required` over every non-adjacent pair of points;
+ * negative means two stretches of the lap are close enough that their road surfaces overlap. The
+ * generator holds the same invariant for its own circuits — an extracted lap needs it too, or a
+ * junction fold hands back a "lap" that drives through itself.
+ */
+function selfClearance(points: readonly StreetVec2[], widths: readonly number[]): number {
+  const n = points.length;
+  const { at, total } = arcLengths(points);
+  let worst = Infinity;
+  for (let i = 0; i < n; i += 1) {
+    const a = points[i]!;
+    for (let j = i + 1; j < n; j += 1) {
+      const required = ((widths[i] ?? 9) + (widths[j] ?? 9)) * 0.5 * 1.15;
+      // Adjacency is measured along the lap, not in indices: two points a whole corner apart may
+      // still be one short edge apart by index, and that pair is not an overlap.
+      const along = at[j]! - at[i]!;
+      if (Math.min(along, total - along) < required * 2.5) continue;
+      const b = points[j]!;
+      const gap = Math.hypot(a[0] - b[0], a[1] - b[1]) - required;
+      if (gap < worst) worst = gap;
+    }
+  }
+  return worst;
+}
+
 /** How a sealed-off side street is closed: hard barriers, a cone line, or temporary fencing. */
 export type CircuitSealKind = "barrier" | "cones" | "fence";
 
@@ -37,7 +66,11 @@ export interface CircuitRouteRules {
   lapLength: number;
   /** 0 races any street; 1 keeps the lap on avenues and boulevards only. */
   arterialBias: number;
-  /** Reject a lap that kinks tighter than this radius (m) — an undrivable hairpin. */
+  /**
+   * Radius (m) the corner-rounding pass works the racing line toward. Bounded by `cornerCut` and the
+   * road width — the line never leaves the street — so the achieved figure is reported back as
+   * {@link CircuitRoute.tightestRadius} rather than enforced here.
+   */
   minCornerRadius: number;
   /** Ordered checkpoint gates placed around the lap. */
   checkpoints: number;
@@ -181,6 +214,13 @@ export interface CircuitRoute {
   sectors: number[];
   /** Share of lap length running on avenue-or-wider streets, 0..1. */
   arterialShare: number;
+  /**
+   * Tightest radius (m) the finished racing line actually holds. `minCornerRadius` is a TARGET the
+   * rounding pass works toward, not a guarantee: rounding may not pull the line outside the street it
+   * inherited, so a 90° junction on a narrow road stays tighter than any target can ask for. Read
+   * this to report what the lap really is — widen `streetWidth` to buy a smoother one.
+   */
+  tightestRadius: number;
 }
 
 interface Adjacency {
@@ -279,32 +319,31 @@ function resampleClosed(
   heights: readonly number[] | null,
   step: number,
 ): { points: StreetVec2[]; widths: number[]; heights: number[] | null } {
-  const total = polylineLength(points, true);
+  const n = points.length;
+  // Cumulative arc length at the START of each of the n closed segments, so the wrap-around segment
+  // from the last vertex back to the first is sampled like any other.
+  const starts = new Array<number>(n + 1).fill(0);
+  for (let i = 0; i < n; i += 1) {
+    const a = points[i]!;
+    const b = points[(i + 1) % n]!;
+    starts[i + 1] = starts[i]! + Math.hypot(b[0] - a[0], b[1] - a[1]);
+  }
+  const total = starts[n]!;
+  if (total < 1e-6) return { points: [...points], widths: [...widths], heights: heights === null ? null : [...heights] };
   const count = Math.max(12, Math.min(4000, Math.round(total / step)));
   const spacing = total / count;
   const out: StreetVec2[] = [];
   const outWidths: number[] = [];
   const outHeights: number[] | null = heights === null ? null : [];
   let segment = 0;
-  let consumed = 0;
-  let segmentLength = (() => {
-    const a = points[0]!;
-    const b = points[1 % points.length]!;
-    return Math.hypot(b[0] - a[0], b[1] - a[1]);
-  })();
   for (let i = 0; i < count; i += 1) {
-    let remaining = i * spacing - consumed;
-    while (remaining > segmentLength && segment + 1 < points.length) {
-      consumed += segmentLength;
-      remaining -= segmentLength;
-      segment += 1;
-      const a = points[segment]!;
-      const b = points[(segment + 1) % points.length]!;
-      segmentLength = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    }
+    const distance = i * spacing;
+    while (segment + 1 < n && starts[segment + 1]! <= distance) segment += 1;
+    const spanStart = starts[segment]!;
+    const spanLength = starts[segment + 1]! - spanStart;
+    const t = spanLength < 1e-9 ? 0 : Math.max(0, Math.min(1, (distance - spanStart) / spanLength));
     const a = points[segment]!;
-    const b = points[(segment + 1) % points.length]!;
-    const t = segmentLength < 1e-9 ? 0 : Math.max(0, Math.min(1, remaining / segmentLength));
+    const b = points[(segment + 1) % n]!;
     out.push([a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]);
     const wa = widths[segment] ?? 9;
     const wb = widths[(segment + 1) % widths.length] ?? wa;
@@ -620,7 +659,15 @@ function searchCycle(adjacency: Adjacency, rules: CircuitRouteRules): Candidate 
           break;
         }
       }
-      const options = links.filter((link) => !visited.has(link.other));
+      const fresh = links.filter((link) => !visited.has(link.other));
+      // A lap that doubles back down the street it arrived on is not raceable; drop reversals
+      // unless the walk would otherwise have nowhere to go.
+      const forward = fresh.filter((link) => {
+        if (heading === null) return true;
+        const edge = adjacency.edgeById.get(link.edge)!;
+        return Math.abs(angleDelta(heading, departureHeading(edge, current))) <= MAX_LAP_TURN;
+      });
+      const options = forward.length > 0 ? forward : fresh;
       if (options.length === 0) break;
       let total = 0;
       const weights = options.map((link) => {
@@ -669,13 +716,9 @@ function searchCycle(adjacency: Adjacency, rules: CircuitRouteRules): Candidate 
     const lengthError = Math.abs(length - rules.lapLength) / rules.lapLength;
     const score = arterialShare * rules.arterialBias * 1.5 - lengthError * 2 + Math.min(nodes.length, 24) * 0.01;
     if (score <= bestScore) continue;
-    // Reject undrivable kinks before accepting a candidate.
     const assembled = assembleCenterline(nodes, edges, adjacency);
     if (assembled.centerline.length < 8) continue;
-    const radii = curvatureProfile(assembled.centerline, Math.max(6, rules.minCornerRadius));
-    let tightest = Infinity;
-    for (const radius of radii) if (radius < tightest) tightest = radius;
-    if (tightest < rules.minCornerRadius * 0.6) continue;
+    if (selfClearance(assembled.centerline, assembled.widths) < 0) continue;
     bestScore = score;
     best = { nodes, edges, length, arterial: arterialShare };
   }
@@ -795,13 +838,15 @@ export function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = 
       const run: StreetVec2[] = [];
       for (const at of span) {
         const here = points[at]!;
+        // Mitre on the neighbour-to-neighbour tangent: a per-segment normal fans the strip open on
+        // the outside of a corner, which is exactly where a kerb must stay flush to the road edge.
+        const prev = points[(at - 1 + n) % n]!;
         const next = points[(at + 1) % n]!;
-        const dx = next[0] - here[0];
-        const dz = next[1] - here[1];
+        const dx = next[0] - prev[0];
+        const dz = next[1] - prev[1];
         const len = Math.hypot(dx, dz);
         if (len < 1e-6) continue;
         const half = (route.widths[at] ?? 8) * 0.5;
-        // Perpendicular in the XZ plane; kerb sits just outside the painted edge.
         run.push([here[0] + (dz / len) * half * side, here[1] - (dx / len) * half * side]);
       }
       if (run.length >= 2) kerbs.push({ points: run, width, side, stripe, corner: index });
@@ -853,6 +898,8 @@ export function extractCircuitRoute(
   if (centerline.length < 8) return null;
   const { at, total } = arcLengths(centerline);
   const radii = curvatureProfile(centerline, Math.max(6, resolved.minCornerRadius));
+  let tightestRadius = Infinity;
+  for (const radius of radii) if (radius < tightestRadius) tightestRadius = radius;
   const cornerThreshold = Math.max(resolved.minCornerRadius * 4, 40);
   const spacing = total / centerline.length;
   const corners = analyzeCorners(centerline, radii, cornerThreshold, Math.max(8, resolved.minCornerRadius), spacing);
@@ -926,5 +973,6 @@ export function extractCircuitRoute(
     grid,
     sectors,
     arterialShare: candidate.arterial,
+    tightestRadius,
   };
 }

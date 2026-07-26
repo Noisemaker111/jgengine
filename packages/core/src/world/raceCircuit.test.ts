@@ -244,18 +244,35 @@ describe("extractCircuitRoute", () => {
     }
   });
 
-  test("kerbs sit off the centerline by half the road width", () => {
+  test("kerbs hug the road edge of the corner they belong to", () => {
     const route = cityRoute("race-kerb-offset", { winding: 0.6, gridness: 0.2 });
     const kerbs = circuitKerbs(route);
     expect(kerbs.length).toBeGreaterThan(0);
+    const n = route.centerline.length;
     for (const kerb of kerbs) {
-      const point = kerb.points[0]!;
-      let nearest = Infinity;
-      for (const centre of route.centerline) {
-        const gap = Math.hypot(centre[0] - point[0], centre[1] - point[1]);
-        if (gap < nearest) nearest = gap;
+      const corner = route.corners[kerb.corner]!;
+      // Measure against this corner's own span: at a hairpin the lap legitimately doubles back, so a
+      // global nearest-point search finds the other leg rather than the edge this kerb paves.
+      const span: number[] = [];
+      for (let cursor = corner.entry, guard = 0; guard < n; guard += 1) {
+        span.push(cursor);
+        if (cursor === corner.exit) break;
+        cursor = (cursor + 1) % n;
       }
-      expect(nearest).toBeGreaterThan(1);
+      // Width varies where a corner crosses from one street onto another, so bound against the span.
+      const halves = span.map((index) => (route.widths[index] ?? 9) * 0.5);
+      const narrowest = Math.min(...halves);
+      const widest = Math.max(...halves);
+      for (const point of kerb.points) {
+        let nearest = Infinity;
+        for (const index of span) {
+          const centre = route.centerline[index]!;
+          const gap = Math.hypot(centre[0] - point[0], centre[1] - point[1]);
+          if (gap < nearest) nearest = gap;
+        }
+        expect(nearest).toBeGreaterThan(narrowest * 0.5);
+        expect(nearest).toBeLessThan(widest * 1.05);
+      }
     }
   });
 });
