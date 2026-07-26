@@ -214,3 +214,7 @@ verifying any world content with shoot/drive → the only aiming primitive was -
 2026-07-26T21:28:30.860Z — cursor-grok-4.5-high — Cursor Agent
 
 city+race unify → session interrupted mid-flight twice, had to rediscover uncommitted street-life work from a prior agent turn
+
+2026-07-26T21:47:45.472Z — cursor-grok-4.5-high — Cursor Agent
+
+continue PR 1614 city fabric → CityRenderer after-shots still read sparse streetwall / gray pads despite denser dials; shoot daemon needed restart after package rebuild to pick up dist
