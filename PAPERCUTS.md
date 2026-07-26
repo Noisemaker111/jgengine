@@ -170,3 +170,7 @@ Ran an /implement backlog pass claiming #1499/#1501/#1503/#1504/#1502/#1310 via 
 2026-07-24T19:23:59.959Z — grok-4.5 — NoisemakerJon
 
 open PR after push → GitHub GraphQL/REST returns 500 empty body for pulls create (branch fix/sdk-remediation-phase-3a pushed OK; gh auth scopes fine)
+
+2026-07-26T00:18:39.574Z — claude-opus-5 — Claude
+
+Regenerating derived artifacts after a core API change → had to run gen:barrels, gen:capabilities, gen:skill-api and gen:export-manifest as four separate commands in the right order (and rebuild core first), with no single command and no hint from the failing check telling me which to run

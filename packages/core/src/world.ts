@@ -322,7 +322,6 @@ export { createBodyBind } from "./scene/bodyBind";
 export { type ColliderPurpose, type EntityColliderSet, type ResolvedCollider } from "./scene/colliders";
 export { type StatCatalog, type StatValue } from "./scene/entityStats";
 export { entityMetaOf, groundSpeed, type EntityPosition, type SceneEntity } from "./scene/entityStore";
-export { grounded } from "./world/grounded";
 export { DEFAULT_FORWARD } from "./scene/facing";
 export { readNamedSockets, type ModelNode } from "./scene/modelSockets";
 export { MountController, createMountController } from "./scene/mount";
@@ -578,6 +577,7 @@ export { boundaryNeighbors, createFootprintGrid, footprintObstacles, hasValidAdj
 export { type Aabb, type AvoidZone } from "./world/geometry";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
+export { grounded } from "./world/grounded";
 export { createLodScheduler } from "./world/lod";
 export {
   createAnnotationLayer,
