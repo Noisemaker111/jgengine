@@ -30,7 +30,7 @@ Choose the PR boundary by cohesion:
 
 ## Change
 
-Implement the underlying seam and update the owning skill/reference plus generated artifacts. Preserve unrelated work. Public API changes require JSDoc and regenerated API/capability/export artifacts as applicable. Do not create freestanding design documents. Awkward or handrolled glue a custom game needs (catalog builders, loadout compose, boost meters, and the like) is lifted into `packages/*` or a skill recipe, not built as a game-local mini-framework or copied from `Games/*` (see [AGENTS.md](../../../AGENTS.md)).
+Implement the underlying seam and update the owning skill/reference plus generated artifacts. Preserve unrelated work. Public API changes require JSDoc and regenerated API/capability/export artifacts as applicable; inside function bodies write no comments beyond a non-obvious why (see [CLAUDE.md](../../../CLAUDE.md#comments-in-code)). Do not create freestanding design documents. Awkward or handrolled glue a custom game needs (catalog builders, loadout compose, boost meters, and the like) is lifted into `packages/*` or a skill recipe, not built as a game-local mini-framework or copied from `Games/*` (see [AGENTS.md](../../../AGENTS.md)).
 
 ## Verify
 
@@ -42,9 +42,9 @@ For a bugfix, write the one-sentence root-cause reinforcement before shipping: n
 
 ## Ship
 
-Check whether the branch already has a PR. Push with a standalone `git push -u origin <branch>` command, open one ready-for-review PR, and include validation, `Closes #N`, and (for bugfixes) the one-sentence root cause. Keep the body under fifteen lines — a bullet per changed area, no rationale essays (see [CLAUDE.md](../../../CLAUDE.md#write-short--everywhere)). In the `Noisemaker111` repo, enable squash auto-merge on the PR (`enable_pr_auto_merge`, or `gh pr merge --squash --auto`) so GitHub lands it itself once CI is green. Subscribe to PR activity when supported, report the link, and stop.
+Check whether the branch already has a PR. Push with a standalone `git push -u origin <branch>` command, open one ready-for-review PR, and include validation, `Closes #N`, and (for bugfixes) the one-sentence root cause. Keep the body tight — a bullet per changed area, no rationale essays (see [CLAUDE.md](../../../CLAUDE.md#write-short--everywhere)). In the `Noisemaker111` repo, enable squash auto-merge on the PR (`enable_pr_auto_merge`, or `gh pr merge --squash --auto`) so GitHub lands it itself once CI is green. Subscribe to PR activity when supported, report the link, and stop.
 
-Report to the user in six lines or fewer: what shipped, what is still open, the PR link. Validation and screenshots live in the PR body — do not repeat them in chat.
+Report to the user in a few lines: what shipped, what is still open, the PR link. Validation and screenshots live in the PR body — do not repeat them in chat.
 
 Enable auto-merge only in the `Noisemaker111` repo — the user never merges by hand there. For any other owner/repo, park the PR unmerged and never enable auto-merge. Never bump a version or publish an npm release to force release unless the user explicitly asks; the user owns release and publish timing. CI failure feedback is fixed on the same branch and pushed to the same PR (auto-merge stays armed and lands the fixed run).
 
