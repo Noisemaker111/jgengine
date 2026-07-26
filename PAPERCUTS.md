@@ -202,3 +202,7 @@ diagnosing an invisible entity model with bun run drive/shoot → neither tool f
 2026-07-26T17:39:05.119Z — claude-opus-5 — Claude
 
 verifying an enemy model in the-robots with bun run drive --spawn → enemies wander, so the same spawn+yaw shows robots in one run and empty desert in the next; roughly ten 2-minute capture runs went into 'is it invisible or is nothing there', which a deterministic entity preview solved in one
+
+2026-07-26T18:02:26.236Z — claude-opus-5 — Claude
+
+adding a field to SkyEnvironmentConfig → sky() copies config fields one by one, so the new field typechecked everywhere and silently did nothing at runtime; three capture rounds went into 'why is the sky still grey' before reading the factory. Every world feature factory has this shape

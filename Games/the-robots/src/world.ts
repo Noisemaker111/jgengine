@@ -210,15 +210,23 @@ export const world: WorldFeature = environment({
     preset: "day",
     horizonColor: FERRALON.horizon,
     zenithColor: FERRALON.skyZenith,
-    sunIntensity: 1.25,
+    sunIntensity: 1.1,
     ambientIntensity: 0.62,
     radius: 2600,
-    hazeStrength: 0.22,
-    sunGlowStrength: 0.45,
+    hazeStrength: 0.08,
+    sunGlowStrength: 0.14,
+    // An eye-level camera in a flat desert only ever sees the bottom slice of the dome. At the 0.65
+    // default the zenith hue stays banked overhead and every frame is a horizon wash — the reason
+    // this sky read as one flat grey band despite an authored blue.
+    gradientExponent: 0.2,
+    cloudiness: 0.16,
     // The single fog source for the game (`backdrop.fog` is deliberately unset — two fog configs
     // fought here before). `far` has to clear the ridgelines: at 1500 against a 2600-unit sky dome
     // the whole upper frame saturated to flat fog and the zenith gradient never showed.
-    fog: { color: FERRALON.fog, near: 500, far: 3200 },
+    // Aerial perspective is the depth cue this world has and was not using: at near 500 nothing
+    // within the playable bowl hazed at all, so a ridge two kilometres out read at the same value
+    // as the sand underfoot and the whole frame flattened.
+    fog: { color: FERRALON.haze, near: 90, far: 2400 },
   }),
   structures: ZONES.filter((zone) => zone.settlement !== undefined).map((zone) => {
     const settlement = zone.settlement!;

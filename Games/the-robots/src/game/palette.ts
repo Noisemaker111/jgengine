@@ -24,9 +24,15 @@ export const ELEMENT_COLORS = {
  */
 export const FERRALON = {
   sky: "#5b93bd",
-  skyZenith: "#2f6d9e",
-  horizon: "#e3bd85",
+  skyZenith: "#0f4c86",
+  horizon: "#dcc39c",
   fog: "#c9a677",
+  /**
+   * Aerial-perspective haze. Cooler and lighter than {@link FERRALON.fog} on purpose: distance in a
+   * dusty desert desaturates *toward the sky*, so a warm sand-coloured fog just repaints the sand
+   * over the ridgelines instead of pushing them back.
+   */
+  haze: "#b9bfc0",
   /**
    * Terrain low/high. The gap between these two is what gives an open desert its relief — the old
    * pair sat close together in value, so every ridge read as one smooth tan blob. Deep shadowed

@@ -306,6 +306,14 @@ export interface SkyEnvironmentConfig {
   hazeStrength?: number;
   /** Sun-glow brightness multiplier around the sun disc. Default 1. */
   sunGlowStrength?: number;
+  /**
+   * How fast the gradient reaches `zenithColor` off the horizon. Below 1 pulls the zenith hue down
+   * into the frame — the difference between a sky an eye-level camera actually sees and a horizon
+   * wash; above 1 keeps colour banked overhead. Default 0.65.
+   */
+  gradientExponent?: number;
+  /** Procedural cloud-band opacity over the gradient: 0 is a clear sky, 1 is heavy overcast. Default 0.35. */
+  cloudiness?: number;
   fog?: { color?: string; near?: number; far?: number };
   /** Raymarched volumetric cloud layer over the sky dome. Off by default — omit for no clouds. */
   volumetricClouds?: VolumetricCloudsConfig;
@@ -700,6 +708,8 @@ export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor
       ...(config.radius === undefined ? {} : { radius: config.radius }),
       ...(config.hazeStrength === undefined ? {} : { hazeStrength: config.hazeStrength }),
       ...(config.sunGlowStrength === undefined ? {} : { sunGlowStrength: config.sunGlowStrength }),
+      ...(config.gradientExponent === undefined ? {} : { gradientExponent: config.gradientExponent }),
+      ...(config.cloudiness === undefined ? {} : { cloudiness: config.cloudiness }),
       ...(config.fog === undefined ? {} : { fog: config.fog }),
       ...(config.volumetricClouds === undefined ? {} : { volumetricClouds: config.volumetricClouds }),
     },
