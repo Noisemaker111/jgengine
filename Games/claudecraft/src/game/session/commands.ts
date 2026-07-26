@@ -284,7 +284,8 @@ export function registerCommands(ctx: GameContext): void {
       deadStore.write(state, userId, false);
       const hero = heroOf(state, userId);
       if (hero !== null) {
-        hero.casting = null;
+        hero.caster.interrupt("cancelled");
+      hero.castMeta = null;
         hero.autoAttack = false;
         hero.combatUntil = 0;
       }

@@ -1,4 +1,5 @@
 import { createAbilityKit, type AbilityKit } from "@jgengine/core/combat/abilityKit";
+import { createCastRunner, type CastRunner } from "@jgengine/core/combat/castRunner";
 import { setGamePhase } from "@jgengine/core/game/gamePhase";
 import { createTalentTree, type TalentTree } from "@jgengine/core/game/talents";
 import { createStatGraph } from "@jgengine/core/progression/statGraph";
@@ -65,7 +66,10 @@ export interface HeroRuntime {
   classId: string;
   kit: AbilityKit;
   gcdUntil: number;
-  casting: CastState | null;
+  /** Cast timing + move-interruption, owned by the engine's cast runner. */
+  caster: CastRunner;
+  /** The presentation fields the runner does not carry: spell name and locked target. */
+  castMeta: { name: string; targetId: string | null } | null;
   nextSwingAt: number;
   autoAttack: boolean;
   combatUntil: number;
@@ -510,7 +514,8 @@ export function selectClass(
       })),
     ),
     gcdUntil: 0,
-    casting: null,
+    caster: createCastRunner(),
+    castMeta: null,
     nextSwingAt: 0,
     autoAttack: false,
     combatUntil: 0,
@@ -572,7 +577,8 @@ export function teleportHero(ctx: GameContext, userId: string, x: number, z: num
   applySheet(ctx, userId);
   const hero = heroesOf(ctx).get(userId);
   if (hero !== undefined) {
-    hero.casting = null;
+    hero.caster.interrupt("cancelled");
+    hero.castMeta = null;
     hero.autoAttack = false;
     hero.lastPos = null;
   }
