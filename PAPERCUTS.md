@@ -206,3 +206,7 @@ verifying an enemy model in the-robots with bun run drive --spawn → enemies wa
 2026-07-26T18:02:26.236Z — claude-opus-5 — Claude
 
 adding a field to SkyEnvironmentConfig → sky() copies config fields one by one, so the new field typechecked everywhere and silently did nothing at runtime; three capture rounds went into 'why is the sky still grey' before reading the factory. Every world feature factory has this shape
+
+2026-07-26T18:59:33.308Z — claude-opus-5 — Claude
+
+verifying any world content with shoot/drive → the only aiming primitive was --spawn, which moves the player but does not pin look yaw, so framing a known coordinate took repeated capture rounds and often never worked; fixed by --look in this PR
