@@ -10,6 +10,7 @@ import { nitro } from "nitro/vite";
 import { defineConfig, type Connect, type Plugin } from "vite";
 
 import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache";
+import { shouldRouteMdRequestToSsr } from "./src/lib/mdSsrRoute";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
@@ -196,40 +197,38 @@ const gamesPlayerDevPlugin = (): Plugin => {
 };
 
 /**
- * Nitro's dev Vite middleware (`nitroDevMiddlewarePre`, in
- * nitro/dist/_build/vite.dev.mjs) decides whether a request is a static asset —
- * and so is refused the SSR handler — from an internal `ASSET_EXT_RE` that
- * includes `mdx?`. TanStack Start's server routes all sit behind Nitro's
- * catch-all `/**`, so that extension test is the *only* thing that decides
- * whether a `.md` URL reaches SSR. A `.md` server route (unlike `.txt`/`.xml`,
- * whose extensions are not in the regex) therefore 404s from the static
- * middleware for any client that does not send `Sec-Fetch-Dest: document` —
- * curl, `fetch()`, and most agent tooling, i.e. exactly the callers a
- * `/agents.md` brief exists for. (Browser top-bar navigation happens to work
- * because it sends `document`.)
+ * Dev-only: let `.md` *server routes* reach SSR, matching `.txt`/`.xml`.
  *
- * Nitro treats a `document` request as a page, never an asset. For top-level
- * `.md` request paths — a server route, not a bundled `.md` module import — we
- * present that hint so Nitro routes the request through SSR and TanStack
- * resolves the server route (or returns a real SSR 404). Vite/import traffic
- * (`/@…`, `/src/…`, `/node_modules/…`, `/.vite/…`, or `?import|?raw|?url|?inline`)
- * is left untouched so `.md` module imports keep flowing to Vite's transform.
+ * Nitro's dev middleware (`nitro/dist/_build/vite.dev.mjs` → `nitroDevMiddlewarePre`)
+ * classifies any request whose extension matches its `ASSET_EXT_RE` — which includes
+ * `mdx?`, i.e. `.md` — as a static asset unless the request is an obvious document
+ * navigation (`Accept: text/html` or `sec-fetch-dest: document`). A `.md` request from
+ * curl, `fetch`, or a coding agent has neither, so nitro marks it handled and lets it
+ * fall through Vite's pipeline, which 404s because no file exists — the TanStack SSR
+ * route never runs. `.txt`/`.xml` are absent from that list, so they reach SSR.
+ *
+ * The classification exists so real `.md` files (a `/src/*.md` module import, a static
+ * markdown file) are served by Vite, not SSR — so this shim must not blanket-route every
+ * `.md` request. It only tags a `.md` request as a document navigation when nothing on
+ * disk backs it (no file under the project root or public dir): that is exactly the case
+ * of a virtual SSR route like `/agents.md`. Real `.md` files keep their existing Vite/
+ * nitro handling; an unmatched virtual `.md` path reaches SSR and gets a normal SSR 404,
+ * same as `.txt`. Registered ahead of nitro's middleware via the connect stack.
  */
-const mdServerRouteDevPlugin = (): Plugin => ({
-  name: "md-server-route-dev",
+const mdSsrRoutesDevPlugin = (): Plugin => ({
+  name: "jgengine-md-ssr-routes",
   apply: "serve",
   configureServer(server) {
+    const { root, publicDir } = server.config;
+    const fileExists = (rel: string): boolean =>
+      existsSync(join(root, rel)) ||
+      (typeof publicDir === "string" && publicDir !== "" && existsSync(join(publicDir, rel)));
     server.middlewares.stack.unshift({
       route: "",
       handle: ((req, _res, next) => {
-        const url = req.url;
-        if (url !== undefined) {
-          const pathname = url.split(/[?#]/, 1)[0];
-          const isMdRoute =
-            pathname.endsWith(".md") &&
-            !/^\/(?:@|src\/|node_modules\/|\.vite\/)/.test(pathname) &&
-            !/[?&](?:import|raw|url|inline)(?:[=&]|$)/.test(url);
-          if (isMdRoute) req.headers["sec-fetch-dest"] = "document";
+        const pathname = req.url?.split(/[?#]/, 1)[0];
+        if (pathname !== undefined && shouldRouteMdRequestToSsr(pathname, fileExists)) {
+          req.headers["sec-fetch-dest"] = "document";
         }
         next();
       }) as Connect.NextHandleFunction,
@@ -266,6 +265,6 @@ export default defineConfig({
     gamesIndexPlugin(),
     gamesPlayerPlugin(),
     gamesPlayerDevPlugin(),
-    mdServerRouteDevPlugin(),
+    mdSsrRoutesDevPlugin(),
   ],
 });

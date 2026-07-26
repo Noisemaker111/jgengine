@@ -3,10 +3,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { buildLlmsFullTxt } from "../lib/agentDocs";
 
 /**
- * `/agents.md` — the agent brief served as Markdown. Same content as
- * `/llms-full.txt`, exposed under the `.md` extension coding agents look for
- * (agents.md convention). Proves `.md` server routes reach SSR in dev, matching
- * the `.txt`/`.xml` routes; see apps/web/vite.config.ts `mdServerRouteDevPlugin`.
+ * `/agents.md` — the agent brief served as markdown (the AGENTS.md convention),
+ * alongside the `/llms.txt` + `/llms-full.txt` plain-text front door. Reuses the
+ * same `agentDocs` source so the two cannot drift. Reaching SSR for a `.md`
+ * request in dev depends on `mdSsrRoutesDevPlugin` in `vite.config.ts`; see the
+ * comment there for why nitro's dev asset heuristic otherwise 404s `.md` routes.
  */
 export const Route = createFileRoute("/agents.md")({
   server: {
