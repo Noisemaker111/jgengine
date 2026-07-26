@@ -474,6 +474,8 @@
 
 - `RegenShield` (interface): interface RegenShield — A shield pool that stops regenerating for `regenDelayMs` after every hit, then refills at `regenPerSecond` — the delayed-regen primitive that replaces snapshot-comparing stat values per tick to detect "damage taken" (#536.3). `damage` resets the grace timer; `tick` counts it down and regenerates once it elapses.
 - `RegenShieldConfig` (interface): interface RegenShieldConfig — Tuning for `createRegenShield`: pool size, refill rate, and the post-damage grace period.
+- `RegenShieldPool` (interface): interface RegenShieldPool — External storage a {@link RegenShield} reads and writes instead of keeping the value itself — an entity stat, a replicated store, a save record. This is the same port `Magazine` exposes as `MagazineReserve`, and it exists for the same reason: in most games the shield value is already owned by the stat system that damage, the HUD, and replication all read, so a primitive that insists on owning the number privately cannot be adopted without creating a second source of truth.
+- `RegenShieldRates` (interface): interface RegenShieldRates — Per-tick rate overrides, for games that derive regen from live state — a talent tree, a buff, an equipped mod — rather than a constant fixed when the shield was built. Omit to use the configured values; the grace period in effect is whichever `regenDelayMs` was last passed to `tick`.
 - `createRegenShield` (function): function createRegenShield(config: RegenShieldConfig): RegenShield — Builds a {@link RegenShield} that suppresses regen for `regenDelayMs` after each hit.
 
 ## @jgengine/core/combat/renderCues

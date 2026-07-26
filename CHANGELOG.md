@@ -91,6 +91,7 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **`createRegenShield({ pool })` — stat-backed shields (#1550).** A `RegenShieldPool` port (`current`/`max`/`set`) lets a regen shield read and write storage the game already owns — an entity stat, a replicated store — instead of keeping the value privately, which is what blocked adoption in games whose shields live in the stat system that damage, HUD and replication all read. A pool-backed shield also detects *external* decreases between ticks and restarts its regen grace period, replacing per-entity snapshot bookkeeping. Adds `noteDamage()` (restart the grace period without moving the value, for hits the shield cannot see) and per-tick `tick(dt, { regenPerSecond, regenDelayMs })` rate overrides for talent- or buff-derived rates. The grace period now advances on simulated `dt` rather than wall clock, so a paused game no longer regenerates.
 - **`ctx.rng` + `createGameContext({ seed, rng })` (#1545)** — deterministic per-world `[0,1)` stream for sim paths; same seed → same sequence across worlds/hosts.
 - **Post `aa: "smaa" | "msaa" | false` (#1545)** — SMAA default on post chains (before OutputPass) for alpha-tested edge crawl.
 - **Procedural sky IBL + directional `cascades` CSM (#1545)** — `EnvironmentLighting` bakes sky/ground/sun into PMREM; `cascades > 1` on directional lighting mounts cascaded shadows.
