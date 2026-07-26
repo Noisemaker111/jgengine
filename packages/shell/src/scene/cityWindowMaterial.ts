@@ -89,6 +89,11 @@ float cityHash(vec2 cell) {
     vec3 wall = diffuseColor.rgb;
     float floorT = fract(up / fh);
     float floorIndex = floor(up / fh);
+    // The facade is a procedural stripe pattern with no mip chain, so once a floor band shrinks
+    // toward a pixel it aliases into speckled static. Measure the on-screen footprint of one metre
+    // of facade and dissolve the detail into its own average before that happens.
+    float facadeFootprint = fwidth(up) + fwidth(along);
+    float detail = 1.0 - smoothstep(fh * 0.08, fh * 0.45, facadeFootprint);
     if (kind > 1.5) {
       // Open parking deck: shadowed slots between column bays, solid spandrel below each level.
       float bay = fract(along / 6.0);
@@ -135,6 +140,9 @@ float cityHash(vec2 cell) {
         }
       }
     }
+    vec3 distant = mix(wall, uWindowColor * 0.5, 0.42);
+    diffuseColor.rgb = mix(distant, diffuseColor.rgb, detail);
+    cityLit *= detail;
   }
 }
 `,

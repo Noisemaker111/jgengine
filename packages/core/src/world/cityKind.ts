@@ -18,8 +18,8 @@
  * (`cityContent`) — setback tower tiers, gabled houses, gambrel barns, domed silos. Blocks left
  * unbuilt become plazas/greens/meadows by band, or crop-row farm fields; slivers and block
  * interiors classify as buffers and courtyards, never leftover rectangles. Street
- * furniture (lights, species-mixed trees, estate hedges, driveways, parking lots) resolves as
- * bounded, seeded data hooked to the network. Turn `race` on and the district also hands back a
+ * furniture (lights, species-mixed trees, estate hedges, driveways, parking lots, parked vehicles,
+ * junction signals and sign posts) resolves as bounded, seeded data hooked to the network. Turn `race` on and the district also hands back a
  * {@link ResolvedRace}: a closed lap lifted out of its OWN streets with every side street leaving it
  * sealed off — the Monaco / open-world street-race model, not a separate track. Child `cityzone` volumes override the band/mix
  * locally, so hand-placed intent wins over the profile. Named presets (Manhattan, Los Angeles,
@@ -60,7 +60,7 @@ import {
   type CircuitRoute,
   type CircuitSealKind,
 } from "./raceCircuit";
-import { furnitureSpots } from "./streets";
+import { furnitureSpots, parkingSpots } from "./streets";
 import { CITY_BUILDING_BUDGET, budgetWarning, placedCoverage } from "./scatterCoverage";
 import type { RoadEnvironmentDescriptor } from "./features";
 import type { RoadPoint } from "./roads";
@@ -191,6 +191,10 @@ export interface CityRules {
   treeMix: WeightedParamEntry[];
   /** Street-light density along non-lane streets, 0..1. */
   lightDensity: number;
+  /** Parked-vehicle density along street curbs and inside parking pads, 0..1. */
+  parkedCars: number;
+  /** Junction control density, 0..1: mast-arm signals on arterial crossings, sign posts below them. */
+  signals: number;
   /** Ring estate lots (mansions) with perimeter hedges and a gated gap. */
   hedges: boolean;
   /** Connect houses/estates/farms to their street with driveways. */
@@ -290,6 +294,8 @@ export const CITY_DEFAULTS: CityRules = {
     { item: "conifer", weight: 1 },
   ],
   lightDensity: 0.5,
+  parkedCars: 0.55,
+  signals: 0.7,
   hedges: true,
   driveways: true,
   parking: true,
@@ -408,6 +414,8 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "range", key: "treeDensity", label: "tree density", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.treeDensity },
     { type: "weightedList", key: "treeMix", label: "tree mix", group: "greenery", itemLabel: "species", default: CITY_DEFAULTS.treeMix },
     { type: "range", key: "lightDensity", label: "street lights", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.lightDensity },
+    { type: "range", key: "parkedCars", label: "parked cars", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.parkedCars },
+    { type: "range", key: "signals", label: "traffic signals", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.signals },
     { type: "bool", key: "hedges", label: "estate hedges", group: "greenery", default: CITY_DEFAULTS.hedges },
     { type: "bool", key: "driveways", label: "driveways", group: "greenery", default: CITY_DEFAULTS.driveways },
     { type: "bool", key: "parking", label: "parking lots", group: "greenery", default: CITY_DEFAULTS.parking },
@@ -454,6 +462,8 @@ export const CITY_SCHEMA: ParamSchema = {
         treeDensity: 0.3,
         treeMix: [{ item: "broadleaf", weight: 1 }],
         lightDensity: 0.8,
+        parkedCars: 0.95,
+        signals: 1,
         hedges: false,
         driveways: false,
         parking: false,
@@ -507,6 +517,8 @@ export const CITY_SCHEMA: ParamSchema = {
           { item: "cypress", weight: 1 },
         ],
         lightDensity: 0.6,
+        parkedCars: 0.7,
+        signals: 0.8,
         hedges: false,
         driveways: true,
         parking: true,
@@ -558,6 +570,8 @@ export const CITY_SCHEMA: ParamSchema = {
           { item: "broadleaf", weight: 2 },
         ],
         lightDensity: 0.35,
+        parkedCars: 0.2,
+        signals: 0.12,
         hedges: true,
         driveways: true,
         parking: false,
@@ -611,6 +625,8 @@ export const CITY_SCHEMA: ParamSchema = {
           { item: "conifer", weight: 2 },
         ],
         lightDensity: 0.1,
+        parkedCars: 0.04,
+        signals: 0,
         hedges: false,
         driveways: true,
         parking: false,
@@ -648,6 +664,8 @@ export const CITY_SCHEMA: ParamSchema = {
         sidewalks: false,
         treeDensity: 0.2,
         lightDensity: 0.25,
+        parkedCars: 0,
+        signals: 0,
         hedges: false,
         driveways: false,
         parking: false,
@@ -684,6 +702,8 @@ export const CITY_SCHEMA: ParamSchema = {
         sidewalks: false,
         treeDensity: 0.65,
         lightDensity: 0.05,
+        parkedCars: 0,
+        signals: 0,
         hedges: false,
         driveways: false,
         parking: false,
@@ -715,6 +735,8 @@ export const CITY_SCHEMA: ParamSchema = {
         floorsMax: 34,
         treeDensity: 0.55,
         lightDensity: 0.6,
+        parkedCars: 0.85,
+        signals: 0.9,
         style: "generic",
       },
     },
@@ -786,6 +808,8 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     treeDensity: params["treeDensity"] as number,
     treeMix: params["treeMix"] as WeightedParamEntry[],
     lightDensity: params["lightDensity"] as number,
+    parkedCars: params["parkedCars"] as number,
+    signals: params["signals"] as number,
     hedges: params["hedges"] as boolean,
     driveways: params["driveways"] as boolean,
     parking: params["parking"] as boolean,
@@ -972,6 +996,33 @@ export interface CityParking {
   rotationY: number;
 }
 
+/** Silhouette class of a parked vehicle — sizes the body the renderer instances. */
+export type CityVehicleKind = "car" | "van" | "truck";
+
+/** One parked vehicle standing at a curb or nose-in inside a parking pad. */
+export interface CityVehicle {
+  x: number;
+  z: number;
+  /** Yaw the body points down (engine rotationY convention). */
+  rotationY: number;
+  kind: CityVehicleKind;
+  /** Seeded body-paint index; the renderer maps it into its own palette. */
+  paint: number;
+  /** Where it stands, so the renderer drapes it onto carriageway or pad height. */
+  stall: "curb" | "lot";
+}
+
+/** One junction control on an approach arm: an arterial mast-arm signal, or a plain sign post. */
+export interface CitySignal {
+  x: number;
+  z: number;
+  /** Yaw the head faces — into the traffic approaching down this arm. */
+  heading: number;
+  kind: "signal" | "sign";
+  /** How far the mast arm reaches over the carriageway, to the right of {@link CitySignal.heading}. */
+  reach: number;
+}
+
 /** One street closed off where it leaves the race lap: world XZ, the yaw down the sealed street, and
  * the width the barrier run spans. */
 export interface CityRaceSeal {
@@ -1066,6 +1117,10 @@ export interface ResolvedCity {
   hedges: readonly CityHedge[];
   driveways: readonly CityDriveway[];
   parkingLots: readonly CityParking[];
+  /** Parked vehicles along the curbs and inside the parking pads. */
+  vehicles: readonly CityVehicle[];
+  /** Traffic signals and sign posts, one per controlled junction approach. */
+  signals: readonly CitySignal[];
   /** The instanced street race through these streets, when `race` is on and a lap could be found. */
   race?: ResolvedRace;
 }
@@ -1084,9 +1139,20 @@ const MAX_TREES = 3200;
 const MAX_LIGHTS = 1200;
 const MAX_FIELD_ROWS = 2400;
 const MAX_PARKING = 380;
+const MAX_VEHICLES = 900;
+const MAX_SIGNALS = 640;
 const MAX_RACE_SEALS = 400;
 const MAX_RACE_KERBS = 320;
 const TAU = Math.PI * 2;
+
+/** Body footprint per silhouette as `[half width across, half length along the heading]`. */
+const VEHICLE_HALF_EXTENTS: Record<CityVehicleKind, readonly [number, number]> = {
+  car: [0.95, 2.25],
+  van: [1.05, 2.65],
+  truck: [1.2, 3.5],
+};
+/** Paint slots the resolver spreads vehicles across; the renderer owns the actual colors. */
+const VEHICLE_PAINT_COUNT = 8;
 
 interface LocalStreet {
   points: [number, number][];
@@ -1786,6 +1852,8 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     hedges: [],
     driveways: [],
     parkingLots: [],
+    vehicles: [],
+    signals: [],
   };
   if (hx < rules.blockSize * 0.75 || hz < rules.blockSize * 0.75) return empty;
   const cos = Math.cos(rotationY);
@@ -2047,6 +2115,83 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     }
   }
 
+  // Parked vehicles: curbside anchors come from the shared street helper, pad stalls from the
+  // pads laid above. Every candidate clears other streets, footprints, and the cars already parked.
+  const vehicles: { x: number; z: number; rotationY: number; kind: CityVehicleKind; paint: number; stall: CityVehicle["stall"] }[] = [];
+  if (rules.parkedCars > 0) {
+    const carRng = streams("vehicles");
+    const carIndex = new LotIndex();
+    const park = (x: number, z: number, heading: number, mix: number, stall: CityVehicle["stall"], street: number): void => {
+      const kind: CityVehicleKind = mix < 0.68 ? "car" : mix < 0.9 ? "van" : "truck";
+      const half = VEHICLE_HALF_EXTENTS[kind];
+      const rect: PlacedLot = { x, z, hw: half[0], hd: half[1], angle: heading };
+      if (!insideBounds(x, z)) return;
+      if (index.clearance(x, z, stall === "curb" ? 0.6 : 0.5, street) < 0) return;
+      if (lotResult.placed.overlapsAny(rect, 0.4)) return;
+      if (carIndex.overlapsAny(rect, 0.35)) return;
+      carIndex.add(rect);
+      vehicles.push({ x, z, rotationY: heading, kind, paint: Math.floor(mix * 9973) % VEHICLE_PAINT_COUNT, stall });
+    };
+    const spacing = Math.max(7, 26 - 19 * rules.parkedCars);
+    for (let si = 0; si < local.length && vehicles.length < MAX_VEHICLES; si += 1) {
+      const street = local[si]!;
+      // Gravel shoulders and narrow lanes have no curb lane: `parkingSpots` would seat the body
+      // over the centreline of anything under ~6.5 m.
+      if (street.surface === "gravel" || street.width < 6.5) continue;
+      for (const spot of parkingSpots(asDescriptor(street), { spacing })) {
+        if (vehicles.length >= MAX_VEHICLES) break;
+        const mix = carRng();
+        if (carRng() > rules.parkedCars) continue;
+        const [x, z] = spot.position;
+        if (nearIntersection(x, z, 4)) continue;
+        park(x, z, spot.heading, mix, "curb", si);
+      }
+    }
+    for (const pad of parking) {
+      if (vehicles.length >= MAX_VEHICLES) break;
+      const ca = Math.cos(pad.rotationY);
+      const sa = Math.sin(pad.rotationY);
+      const rows = pad.size[1] >= 11 ? 2 : 1;
+      const stalls = Math.max(1, Math.floor(pad.size[0] / 2.9));
+      for (let row = 0; row < rows; row += 1) {
+        const lz = rows === 1 ? 0 : (row === 0 ? -1 : 1) * pad.size[1] * 0.25;
+        for (let s = 0; s < stalls; s += 1) {
+          if (vehicles.length >= MAX_VEHICLES) break;
+          const mix = carRng();
+          if (carRng() > rules.parkedCars * 0.92) continue;
+          const lx = ((s + 0.5) / stalls - 0.5) * pad.size[0];
+          // Facing rows nose in on the aisle between them.
+          park(pad.center[0] + lx * ca + lz * sa, pad.center[1] - lx * sa + lz * ca, pad.rotationY + row * Math.PI, mix, "lot", -1);
+        }
+      }
+    }
+  }
+  // Junction control, one device per approach arm: arterial crossings get a signal on a mast arm,
+  // everything above lane level gets a sign post instead.
+  const signals: { x: number; z: number; heading: number; kind: CitySignal["kind"]; reach: number }[] = [];
+  if (rules.signals > 0) {
+    const signalRng = streams("signals");
+    for (const cross of intersections) {
+      if (signals.length >= MAX_SIGNALS) break;
+      if (cross.arms.length < 3 || cross.level === "lane") continue;
+      const arterial = LEVEL_RANK[cross.level] >= LEVEL_RANK.avenue;
+      if (signalRng() > rules.signals * (arterial ? 1 : 0.75)) continue;
+      for (const arm of cross.arms) {
+        if (signals.length >= MAX_SIGNALS) break;
+        const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
+        // Right-hand traffic: the pole stands on the near-right corner of the approach.
+        const perp: readonly [number, number] = [-dir[1], dir[0]];
+        const out = cross.radius + 1.8;
+        const side = arm.width / 2 + 1;
+        const x = cross.x + dir[0] * out + perp[0] * side;
+        const z = cross.z + dir[1] * out + perp[1] * side;
+        if (!insideBounds(x, z)) continue;
+        if (index.clearance(x, z, 0.3) < 0) continue;
+        signals.push({ x, z, heading: arm.angle, kind: arterial ? "signal" : "sign", reach: arm.width / 2 + 0.6 });
+      }
+    }
+  }
+
   return {
     center: [center.x, center.y, center.z],
     size: [hx * 2, hz * 2],
@@ -2156,6 +2301,14 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     parkingLots: parking.map((pad) => {
       const [x, z] = toWorld(pad.center[0], pad.center[1]);
       return { center: [x, z] as RoadPoint, size: pad.size, rotationY: pad.rotationY - rotationY };
+    }),
+    vehicles: vehicles.map((vehicle) => {
+      const [x, z] = toWorld(vehicle.x, vehicle.z);
+      return { x, z, rotationY: vehicle.rotationY + rotationY, kind: vehicle.kind, paint: vehicle.paint, stall: vehicle.stall };
+    }),
+    signals: signals.map((signal) => {
+      const [x, z] = toWorld(signal.x, signal.z);
+      return { x, z, heading: signal.heading + rotationY, kind: signal.kind, reach: signal.reach };
     }),
     ...(route === null
       ? {}

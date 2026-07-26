@@ -481,6 +481,7 @@
     "./world/placementController",
     "./world/poleLineKind",
     "./world/polyline",
+    "./world/raceCircuit",
     "./world/realm",
     "./world/regions",
     "./world/resourceNode",

@@ -5,7 +5,8 @@
  * sidewalks; styled bridges with railings, piers and abutments; massing pieces as five instanced
  * primitive meshes (plain walls, window-banded walls via `createCityWindowMaterial`, gable roofs,
  * cylinders, domes) with palette-role coloring and per-lot jitter; species-mixed instanced trees
- * (shared scatter proxies), street lights, estate hedges, driveways, parking pads, and
+ * (shared scatter proxies), street lights, estate hedges, driveways, parking pads, curbside and
+ * pad-stall parked vehicles, mast-arm junction signals with sign posts, and
  * vertex-colored parks with crop-row fields. Lots near the camera and flat enough swap their
  * massing for full `generateBuilding` facade kits (windows, awnings, storefronts) batched per part
  * kind — a bounded LOD that re-picks only when the camera crosses a coarse cell, never per frame.
@@ -36,6 +37,7 @@ import {
   CITY_ZONE_KIND,
   type CityIntersection,
   type CityTree,
+  type CityVehicleKind,
 } from "@jgengine/core/world/cityKind";
 import { zoneBand, zoneMetric, type CityTreeSpecies, type CityPieceRole, type CityZoneBand } from "@jgengine/core/world/cityContent";
 import {
@@ -63,6 +65,18 @@ const STEEL_COLOR = "#4c505a";
 const TUNNEL_COLOR = "#5b5754";
 const CURB_COLOR = "#b8b4aa";
 const HEDGE_COLOR = "#3d6631";
+const VEHICLE_PAINTS = ["#b9bdc3", "#2c2f33", "#79838f", "#8d3330", "#27446e", "#eceae1", "#3c5c48", "#a8792f"] as const;
+const VEHICLE_GLASS_COLOR = "#23262b";
+const SIGNAL_POST_COLOR = "#3b4046";
+const SIGNAL_HOUSING_COLOR = "#1e2226";
+const SIGN_FACE_COLOR = "#c8ccd2";
+const SIGNAL_LAMP_COLORS = ["#d43a2c", "#dfa32b", "#33a558"] as const;
+const KERB_RED = new THREE.Color("#d23a34");
+const KERB_WHITE = new THREE.Color("#e8e8ea");
+const CHECK_DARK = new THREE.Color("#101015");
+const CHECK_LIGHT = new THREE.Color("#e8e8ea");
+const RACE_ASPHALT = new THREE.Color("#1a1c20");
+const RACE_EDGE = new THREE.Color("#d8d4c8");
 const PARK_COLORS = { plaza: "#b3ada0", green: "#4e7c41", meadow: "#6d8a4c", field: "#94805a", courtyard: "#5c8348", buffer: "#63734a" } as const;
 const CROP_COLORS = ["#5d7a35", "#7a6b41", "#6f7f3a"] as const;
 /** Block-interior ground by zone band. A dense district keeps hard surface all the way to its rim;
@@ -96,6 +110,8 @@ const DRIVEWAY_LAYER = 0.34;
 const PARKING_LAYER = 0.35;
 const PLAZA_LAYER = 0.36;
 const CROP_LAYER = 0.42;
+const RACE_SURFACE_LAYER = 0.28;
+const RACE_PAINT_LAYER = 0.3;
 const BRIDGE_DECK_LIFT = 0.12;
 
 /** Trim + weld tuning shared by {@link trimPathAtJunctions} and {@link buildJunctionSurface} for the district. */
@@ -103,6 +119,28 @@ const JUNCTION_OPTS = { curbReturnRadius: 3, apronMargin: 0.6, filletSegments: 6
 
 const SPECIES_PROXY: Record<CityTreeSpecies, string> = { broadleaf: "oak", conifer: "pine", palm: "palm", cypress: "cypress" };
 const SPECIES_SCALE: Record<CityTreeSpecies, number> = { broadleaf: 2.7, conifer: 2.5, palm: 2.6, cypress: 2.3 };
+
+/**
+ * Three boxes per parked vehicle: painted body, an inset dark glass volume, and a narrower roof cap
+ * that gives the silhouette a taper. Sizes are `[across, up, along the heading]`; each `*Y` is the
+ * box centre above the surface the vehicle stands on, each `*Along` its shift down the body.
+ */
+interface VehicleShape {
+  body: readonly [number, number, number];
+  bodyY: number;
+  cabin: readonly [number, number, number];
+  cabinY: number;
+  cabinAlong: number;
+  roof: readonly [number, number, number];
+  roofY: number;
+  roofAlong: number;
+}
+
+const VEHICLE_SHAPES: Record<CityVehicleKind, VehicleShape> = {
+  car: { body: [1.82, 0.72, 4.42], bodyY: 0.62, cabin: [1.62, 0.62, 2.24], cabinY: 1.24, cabinAlong: -0.24, roof: [1.34, 0.12, 1.86], roofY: 1.58, roofAlong: -0.24 },
+  van: { body: [2.02, 1.0, 5.2], bodyY: 0.76, cabin: [1.82, 0.74, 3.2], cabinY: 1.58, cabinAlong: -0.42, roof: [1.56, 0.12, 2.8], roofY: 1.99, roofAlong: -0.42 },
+  truck: { body: [2.32, 1.46, 6.8], bodyY: 0.99, cabin: [2.1, 0.62, 0.54], cabinY: 1.32, cabinAlong: 3.18, roof: [1.94, 0.14, 6.1], roofY: 1.79, roofAlong: -0.2 },
+};
 
 type Sampler = (x: number, z: number) => number;
 
@@ -237,6 +275,55 @@ class MeshAccumulator {
     geometry.setIndex(this.indices);
     geometry.computeVertexNormals();
     return geometry;
+  }
+
+  /** Flat draped quad in XZ, already lifted: corners in order around the face. */
+  addQuad(corners: readonly (readonly [number, number, number])[], color: THREE.Color): void {
+    if (this.colors === null) return;
+    const base = this.positions.length / 3;
+    for (const corner of corners) this.positions.push(corner[0], corner[1], corner[2]);
+    this.indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    this.pushColor(4, color);
+  }
+
+  /** Standing barrier brick: a box extruded along `across` and `forward`, striped by the caller. */
+  addSealBlock(
+    x: number,
+    z: number,
+    y: number,
+    height: number,
+    halfAcross: number,
+    halfDepth: number,
+    across: readonly [number, number],
+    forward: readonly [number, number],
+    color: THREE.Color,
+  ): void {
+    if (this.colors === null) return;
+    const ax = across[0];
+    const az = across[1];
+    const fx = forward[0];
+    const fz = forward[1];
+    const corners: readonly (readonly [number, number, number])[] = [
+      [x - ax * halfAcross - fx * halfDepth, y, z - az * halfAcross - fz * halfDepth],
+      [x + ax * halfAcross - fx * halfDepth, y, z + az * halfAcross - fz * halfDepth],
+      [x + ax * halfAcross + fx * halfDepth, y, z + az * halfAcross + fz * halfDepth],
+      [x - ax * halfAcross + fx * halfDepth, y, z - az * halfAcross + fz * halfDepth],
+      [x - ax * halfAcross - fx * halfDepth, y + height, z - az * halfAcross - fz * halfDepth],
+      [x + ax * halfAcross - fx * halfDepth, y + height, z + az * halfAcross - fz * halfDepth],
+      [x + ax * halfAcross + fx * halfDepth, y + height, z + az * halfAcross + fz * halfDepth],
+      [x - ax * halfAcross + fx * halfDepth, y + height, z - az * halfAcross + fz * halfDepth],
+    ];
+    const base = this.positions.length / 3;
+    for (const corner of corners) this.positions.push(corner[0], corner[1], corner[2]);
+    const faces: readonly (readonly [number, number, number, number])[] = [
+      [0, 1, 5, 4],
+      [1, 2, 6, 5],
+      [2, 3, 7, 6],
+      [3, 0, 4, 7],
+      [4, 5, 6, 7],
+    ];
+    for (const [a, b, c, d] of faces) this.indices.push(base + a, base + b, base + c, base + a, base + c, base + d);
+    this.pushColor(8, color);
   }
 }
 
@@ -1295,7 +1382,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
   }, [resolved, sample]);
   useEffect(() => () => tunnels?.roof?.dispose(), [tunnels]);
 
-  // --- Instanced furniture: trees per species, street lights, hedges. ---
+  // --- Instanced furniture: trees per species, street lights, hedges, parked cars, junction signals. ---
   const furniture = useMemo(() => {
     if (resolved === null) return null;
     const meshes: THREE.Object3D[] = [];
@@ -1400,6 +1487,121 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       meshes.push(hedges);
       disposables.push(hedgeMaterial);
     }
+    if (resolved.vehicles.length > 0) {
+      const units = unitGeometries();
+      const paintMaterial = new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0.34 });
+      const glassMaterial = new THREE.MeshPhysicalMaterial({ color: VEHICLE_GLASS_COLOR, roughness: 0.16, metalness: 0.2 });
+      const bodies = new THREE.InstancedMesh(units.box, paintMaterial, resolved.vehicles.length);
+      const cabins = new THREE.InstancedMesh(units.box, glassMaterial, resolved.vehicles.length);
+      const roofs = new THREE.InstancedMesh(units.box, paintMaterial, resolved.vehicles.length);
+      const matrix = new THREE.Matrix4();
+      const quat = new THREE.Quaternion();
+      const upAxis = new THREE.Vector3(0, 1, 0);
+      const paint = new THREE.Color();
+      resolved.vehicles.forEach((vehicle, i) => {
+        const shape = VEHICLE_SHAPES[vehicle.kind];
+        const base = sample(vehicle.x, vehicle.z) + (vehicle.stall === "lot" ? PARKING_LAYER : ROAD_LAYER);
+        const along: readonly [number, number] = [Math.sin(vehicle.rotationY), Math.cos(vehicle.rotationY)];
+        quat.setFromAxisAngle(upAxis, vehicle.rotationY);
+        const place = (mesh: THREE.InstancedMesh, size: readonly [number, number, number], y: number, offset: number) => {
+          matrix.compose(
+            new THREE.Vector3(vehicle.x + along[0] * offset, base + y, vehicle.z + along[1] * offset),
+            quat,
+            new THREE.Vector3(size[0], size[1], size[2]),
+          );
+          mesh.setMatrixAt(i, matrix);
+        };
+        place(bodies, shape.body, shape.bodyY, 0);
+        place(cabins, shape.cabin, shape.cabinY, shape.cabinAlong);
+        place(roofs, shape.roof, shape.roofY, shape.roofAlong);
+        paint.set(VEHICLE_PAINTS[vehicle.paint % VEHICLE_PAINTS.length]!);
+        paint.multiplyScalar(0.88 + ((hashString(`car:${vehicle.x.toFixed(2)}:${vehicle.z.toFixed(2)}`) % 256) / 256) * 0.26);
+        bodies.setColorAt(i, paint);
+        roofs.setColorAt(i, paint);
+      });
+      for (const mesh of [bodies, cabins, roofs]) {
+        mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.frustumCulled = false;
+        meshes.push(mesh);
+      }
+      disposables.push(paintMaterial, glassMaterial);
+    }
+    if (resolved.signals.length > 0) {
+      const units = unitGeometries();
+      const mastCount = resolved.signals.filter((signal) => signal.kind === "signal").length;
+      const postMaterial = new THREE.MeshStandardMaterial({ color: SIGNAL_POST_COLOR, roughness: 0.55, metalness: 0.55 });
+      const headMaterial = new THREE.MeshStandardMaterial({ roughness: 0.62, metalness: 0.15 });
+      const lampMaterial = new THREE.MeshBasicMaterial({ toneMapped: false });
+      const posts = new THREE.InstancedMesh(units.cylinder, postMaterial, resolved.signals.length);
+      const heads = new THREE.InstancedMesh(units.box, headMaterial, resolved.signals.length);
+      const arms = mastCount > 0 ? new THREE.InstancedMesh(units.box, postMaterial, mastCount) : null;
+      const lamps = mastCount > 0 ? new THREE.InstancedMesh(units.box, lampMaterial, mastCount * 3) : null;
+      const matrix = new THREE.Matrix4();
+      const quat = new THREE.Quaternion();
+      const armQuat = new THREE.Quaternion();
+      const upAxis = new THREE.Vector3(0, 1, 0);
+      const tint = new THREE.Color();
+      let mast = 0;
+      resolved.signals.forEach((signal, i) => {
+        const y = sample(signal.x, signal.z);
+        const facing: readonly [number, number] = [Math.sin(signal.heading), Math.cos(signal.heading)];
+        // The mast arm reaches to the right of the facing direction — out over the lanes it controls.
+        const overRoad: readonly [number, number] = [facing[1], -facing[0]];
+        quat.setFromAxisAngle(upAxis, signal.heading);
+        const isSignal = signal.kind === "signal";
+        const postHeight = isSignal ? 5.3 : 2.5;
+        const thickness = isSignal ? 0.2 : 0.13;
+        matrix.compose(new THREE.Vector3(signal.x, y, signal.z), quat, new THREE.Vector3(thickness, postHeight, thickness));
+        posts.setMatrixAt(i, matrix);
+        if (!isSignal) {
+          matrix.compose(
+            new THREE.Vector3(signal.x, y + postHeight - 0.2, signal.z),
+            quat,
+            new THREE.Vector3(0.72, 0.72, 0.07),
+          );
+          heads.setMatrixAt(i, matrix);
+          tint.set(SIGN_FACE_COLOR);
+          heads.setColorAt(i, tint);
+          return;
+        }
+        const hx = signal.x + overRoad[0] * signal.reach;
+        const hz = signal.z + overRoad[1] * signal.reach;
+        armQuat.setFromAxisAngle(upAxis, signal.heading + Math.PI / 2);
+        matrix.compose(
+          new THREE.Vector3(signal.x + overRoad[0] * signal.reach * 0.5, y + postHeight - 0.15, signal.z + overRoad[1] * signal.reach * 0.5),
+          armQuat,
+          new THREE.Vector3(0.14, 0.14, signal.reach),
+        );
+        arms!.setMatrixAt(mast, matrix);
+        matrix.compose(new THREE.Vector3(hx, y + postHeight - 0.72, hz), quat, new THREE.Vector3(0.4, 1.14, 0.3));
+        heads.setMatrixAt(i, matrix);
+        tint.set(SIGNAL_HOUSING_COLOR);
+        heads.setColorAt(i, tint);
+        for (let lamp = 0; lamp < 3; lamp += 1) {
+          matrix.compose(
+            new THREE.Vector3(hx + facing[0] * 0.17, y + postHeight - 0.36 - lamp * 0.36, hz + facing[1] * 0.17),
+            quat,
+            new THREE.Vector3(0.22, 0.22, 0.08),
+          );
+          lamps!.setMatrixAt(mast * 3 + lamp, matrix);
+          tint.set(SIGNAL_LAMP_COLORS[lamp]!);
+          lamps!.setColorAt(mast * 3 + lamp, tint);
+        }
+        mast += 1;
+      });
+      for (const mesh of [posts, heads, arms, lamps]) {
+        if (mesh === null) continue;
+        mesh.instanceMatrix.needsUpdate = true;
+        if (mesh.instanceColor !== null) mesh.instanceColor.needsUpdate = true;
+        mesh.castShadow = mesh !== lamps;
+        mesh.frustumCulled = false;
+        meshes.push(mesh);
+      }
+      disposables.push(postMaterial, headMaterial, lampMaterial);
+    }
     return { meshes, disposables };
   }, [resolved, sample]);
   useEffect(
@@ -1408,6 +1610,183 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       for (const disposable of furniture.disposables) disposable.dispose();
     },
     [furniture],
+  );
+
+  // Race dressing: resurface the lap, stripe its kerbs, paint start/finish + grid, and stand a
+  // barrier across every sealed side street — the visual proof the race is a section of this city.
+  const race = useMemo(() => {
+    if (resolved?.race === undefined) return null;
+    const route = resolved.race;
+    const points = route.centerline;
+    const n = points.length;
+    if (n < 8) return null;
+    const decals = new MeshAccumulator(true);
+    const barriers = new MeshAccumulator(true);
+    const normals = points.map((_, i) => {
+      const before = points[(i - 1 + n) % n]!;
+      const after = points[(i + 1) % n]!;
+      const dx = after[0] - before[0];
+      const dz = after[1] - before[1];
+      const len = Math.hypot(dx, dz) || 1;
+      return [dz / len, -dx / len] as const;
+    });
+    const half = points.map((_, i) => Math.max(1.5, (route.widths[i] ?? 9) * 0.5 - 0.3));
+    const surfaceY0 = points.map((p, i) => route.heights?.[i] ?? sample(p[0], p[1]));
+    const rim = (i: number, off: number, lift: number): [number, number, number] => [
+      points[i]![0] + normals[i]![0] * off,
+      surfaceY0[i]! + lift,
+      points[i]![1] + normals[i]![1] * off,
+    ];
+    for (let i = 0; i < n; i += 1) {
+      const j = (i + 1) % n;
+      decals.addQuad(
+        [rim(i, -half[i]!, RACE_SURFACE_LAYER), rim(j, -half[j]!, RACE_SURFACE_LAYER), rim(j, half[j]!, RACE_SURFACE_LAYER), rim(i, half[i]!, RACE_SURFACE_LAYER)],
+        RACE_ASPHALT,
+      );
+      for (const side of [-1, 1] as const) {
+        decals.addQuad(
+          [
+            rim(i, side * half[i]!, RACE_PAINT_LAYER),
+            rim(j, side * half[j]!, RACE_PAINT_LAYER),
+            rim(j, side * (half[j]! - 0.34), RACE_PAINT_LAYER),
+            rim(i, side * (half[i]! - 0.34), RACE_PAINT_LAYER),
+          ],
+          RACE_EDGE,
+        );
+      }
+    }
+    for (const kerb of route.kerbs) {
+      const run = kerb.points;
+      if (run.length < 2) continue;
+      const outward = run.map((_, i) => {
+        const before = run[Math.max(0, i - 1)]!;
+        const after = run[Math.min(run.length - 1, i + 1)]!;
+        const dx = after[0] - before[0];
+        const dz = after[1] - before[1];
+        const len = Math.hypot(dx, dz) || 1;
+        return [(dz / len) * kerb.side, (-dx / len) * kerb.side] as const;
+      });
+      let travelled = 0;
+      for (let i = 0; i + 1 < run.length; i += 1) {
+        const a = run[i]!;
+        const b = run[i + 1]!;
+        const seg = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (seg < 1e-6) continue;
+        const oa = outward[i]!;
+        const ob = outward[i + 1]!;
+        let t = 0;
+        while (t < 1 - 1e-6) {
+          const here = travelled + t * seg;
+          const band = Math.floor(here / kerb.stripe + 1e-6);
+          const next = Math.min(1, Math.max(t + 1e-3, t + ((band + 1) * kerb.stripe - here) / seg));
+          const along = (u: number): [number, number] => [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+          const away = (u: number): [number, number] => [oa[0] + (ob[0] - oa[0]) * u, oa[1] + (ob[1] - oa[1]) * u];
+          const [x0, z0] = along(t);
+          const [x1, z1] = along(next);
+          const [ox0, oz0] = away(t);
+          const [ox1, oz1] = away(next);
+          const drape = (x: number, z: number): [number, number, number] => [x, sample(x, z) + RACE_PAINT_LAYER, z];
+          decals.addQuad(
+            [drape(x0, z0), drape(x1, z1), drape(x1 + ox1 * kerb.width, z1 + oz1 * kerb.width), drape(x0 + ox0 * kerb.width, z0 + oz0 * kerb.width)],
+            band % 2 === 0 ? KERB_RED : KERB_WHITE,
+          );
+          t = next;
+        }
+        travelled += seg;
+      }
+    }
+    const [lineA, lineB] = route.start.line;
+    const acrossX = lineB[0] - lineA[0];
+    const acrossZ = lineB[1] - lineA[1];
+    const travelX = Math.sin(route.start.heading);
+    const travelZ = Math.cos(route.start.heading);
+    for (let r = 0; r < 2; r += 1) {
+      for (let c = 0; c < 10; c += 1) {
+        const cell = (u: number, v: number): [number, number, number] => {
+          const x = lineA[0] + acrossX * u + travelX * v;
+          const z = lineA[1] + acrossZ * u + travelZ * v;
+          return [x, sample(x, z) + RACE_PAINT_LAYER, z];
+        };
+        const v0 = -2.5 + (r / 2) * 5;
+        const v1 = -2.5 + ((r + 1) / 2) * 5;
+        decals.addQuad(
+          [cell(c / 10, v0), cell((c + 1) / 10, v0), cell((c + 1) / 10, v1), cell(c / 10, v1)],
+          (c + r) % 2 === 0 ? CHECK_DARK : CHECK_LIGHT,
+        );
+      }
+    }
+    for (const slot of route.grid) {
+      const fx = Math.sin(slot.heading);
+      const fz = Math.cos(slot.heading);
+      const ax = Math.cos(slot.heading);
+      const az = -Math.sin(slot.heading);
+      const corner = (u: number, v: number): [number, number, number] => {
+        const x = slot.x + ax * u + fx * v;
+        const z = slot.z + az * u + fz * v;
+        return [x, sample(x, z) + RACE_PAINT_LAYER, z];
+      };
+      for (const [u0, u1, v0, v1] of [
+        [-1.3, -1.12, -2.6, 2.6],
+        [1.12, 1.3, -2.6, 2.6],
+        [-1.3, 1.3, 2.42, 2.6],
+      ] as const) {
+        decals.addQuad([corner(u0, v0), corner(u1, v0), corner(u1, v1), corner(u0, v1)], RACE_EDGE);
+      }
+    }
+    for (const seal of route.seals) {
+      const fx = Math.sin(seal.heading);
+      const fz = Math.cos(seal.heading);
+      const ax = Math.cos(seal.heading);
+      const az = -Math.sin(seal.heading);
+      const span = seal.width + 3;
+      const blocks = Math.max(3, Math.round(span / 1.4));
+      const halfRun = span / blocks / 2;
+      for (let s = 0; s < blocks; s += 1) {
+        const u = -span / 2 + ((s + 0.5) / blocks) * span;
+        const cx = seal.x + ax * u;
+        const cz = seal.z + az * u;
+        barriers.addSealBlock(cx, cz, sample(cx, cz), 1.05, halfRun, 0.28, [ax, az], [fx, fz], s % 2 === 0 ? KERB_RED : KERB_WHITE);
+      }
+    }
+    const geometries: THREE.BufferGeometry[] = [];
+    const meshes: THREE.Object3D[] = [];
+    const surface = decals.build();
+    if (surface !== null) {
+      geometries.push(surface);
+      const mesh = new THREE.Mesh(
+        surface,
+        new THREE.MeshBasicMaterial({
+          vertexColors: true,
+          side: THREE.DoubleSide,
+          polygonOffset: true,
+          polygonOffsetFactor: -4,
+          polygonOffsetUnits: -4,
+        }),
+      );
+      mesh.renderOrder = 4;
+      mesh.frustumCulled = false;
+      meshes.push(mesh);
+    }
+    const sealGeom = barriers.build();
+    if (sealGeom !== null) {
+      geometries.push(sealGeom);
+      const mesh = new THREE.Mesh(
+        sealGeom,
+        new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.72, metalness: 0.04, side: THREE.DoubleSide }),
+      );
+      mesh.castShadow = true;
+      mesh.frustumCulled = false;
+      meshes.push(mesh);
+    }
+    return { meshes, geometries, materials: meshes.map((mesh) => (mesh as THREE.Mesh).material as THREE.Material) };
+  }, [resolved, sample]);
+  useEffect(
+    () => () => {
+      if (race === null) return;
+      for (const geometry of race.geometries) geometry.dispose();
+      for (const material of race.materials) material.dispose();
+    },
+    [race],
   );
 
   if (resolved === null) return null;
@@ -1504,6 +1883,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       {tunnels !== null && tunnels.stone.length > 0 ? <InstancedBoxes matrices={tunnels.stone} color={TUNNEL_COLOR} /> : null}
       {massing !== null ? massing.meshes.map((mesh, i) => <primitive key={`massing:${i}`} object={mesh} />) : null}
       {furniture !== null ? furniture.meshes.map((mesh, i) => <primitive key={`furniture:${i}`} object={mesh} />) : null}
+      {race !== null ? race.meshes.map((mesh, i) => <primitive key={`race:${i}`} object={mesh} />) : null}
       <DetailBuildings buildings={detail.buildings} palette={palette} />
     </group>
   );
