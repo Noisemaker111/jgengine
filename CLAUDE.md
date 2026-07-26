@@ -2,27 +2,23 @@
 
 Read [README.md](README.md) first. It owns stable project truth: repository map, packages, layering, stack, commands, publishing model, and license. Do not duplicate those facts here or in skills.
 
-## Talking to the user
+## Write short — everywhere
 
-The user reads these replies on a phone. Long replies are a defect, not thoroughness. Verbosity is the single most-reported friction in this repo — treat a wall of prose as seriously as a failing test.
+Long prose is a defect, not thoroughness. This applies to **every** surface a human reads: chat replies, PR bodies, issues, commit messages, PR comments, review replies. One idea per line; no idea gets a paragraph.
 
-**Default reply shape.** Every reply that reports work is a short answer, then a stop:
+**Chat reply.** Six lines max. What you did, what is still open, the links. Nothing else.
 
-```
-<one line: what you did>
-<one line each: what still needs doing, if anything>
-<links: PR, issue, screenshot>
-```
+**PR body.** Fifteen lines max. Title line of context, a bullet per changed area (one line each — file plus what changed, not why it is good), `Closes #N`, verification as a line of command names and their verdict, screenshots. Bugfixes add **one sentence** of root cause, not a paragraph.
 
-**Hard limits.** Six lines or fewer by default; ten is the ceiling for a genuinely multi-part result. No section headers, no "Where this landed", no bolded essay titles, no closing summary that repeats the body. A prose paragraph over three sentences must be earned by a question the user actually asked. Numbered lists are for real enumerations (three files changed, two things left), never for narrating reasoning.
+**Issue.** Problem in a sentence, acceptance criteria as bullets. No background essay.
 
-**Do not write:** recaps of the plan you already stated, tours of what you read or considered and rejected, per-file walkthroughs, justifications for decisions nobody questioned, restatements of tool output the user can see, apologies, victory laps, or "let me know if you want…" offers. If it is not a result, a blocker, or a question, it does not go in chat.
+**Commit message.** Subject line plus at most three lines of body.
 
-**Detail lives elsewhere.** Rationale, verification story, root-cause paragraphs, and screenshots belong in the PR body, the issue thread, or a commit message — those have readers who want them. Chat gets the link, not the contents.
+**Never write, anywhere:** plan recaps, what you read or considered and rejected, per-file walkthroughs, justifications nobody asked for, restated tool output, closing summaries that repeat the body, apologies, victory laps, "let me know if you want…". Bold section headers belong in a PR body, never in a chat reply. Numbered lists are for real enumerations, never for narrating reasoning.
 
-**Expand only on request.** "Explain", "why", "walk me through", or a direct design question earns depth — then answer that question and stop, still without ceremony. If a decision genuinely needs the user, ask one concrete question with the options named; never an essay ending in a question.
+**Expand only on request.** "Explain", "why", or a direct design question earns depth — answer that question and stop. A decision that needs the user is one concrete question with the options named, never an essay ending in a question.
 
-**Subagents.** A worker's report to the main agent may be as dense as it needs to be. The user-facing synthesis is still six lines. Never paste a subagent report into chat.
+**Subagents.** A worker's report to the main agent may be dense. The user-facing synthesis is still six lines, and a subagent report is never pasted into chat or a PR body.
 
 ## Product invariants
 
@@ -58,7 +54,7 @@ Cold checkouts and git worktrees are not ready until bootstrapped. Do this befor
 - Follow the `workflow` skill for issue → change → verify → ship. Push with a standalone `git push` command. In the `Noisemaker111` repo, enable squash auto-merge when you open the PR so GitHub lands it itself once CI is green — the user never merges by hand. Never enable auto-merge or merge for any other owner/repo (park the PR there). Never bump versions or publish npm releases unless the user explicitly asks; the user owns release and publish timing.
 - Public API, workflow, convention, or tooling changes update their owning skill/reference and generated artifacts in the same PR. Do not create ADRs, audit reports, or freestanding design docs; durable guidance belongs here, an existing README, or the owning skill.
 - Log papercuts in the moment. Whenever work hits a small non-blocking friction — a preview build error on main, a retried or dead-end command, a misleading error, a flaky script, a confusing setup step, a task that took far longer than it should have, or any solvable bump in the road — log it immediately with `bun run papercut -m <your-model-id> "what you were doing → what got in the way"` and keep going. Do not wait for session end or ask permission; `/papercut` mines a whole session, and `improve` passes sweep `PAPERCUTS.md` (research each entry, fix the easy ones, remove fixed entries).
-- Reinforce the root cause, not just the symptom. A bugfix is complete only when its PR body answers three questions: (a) which engine seam, permissive default, or missing contract allowed the bug; (b) whether any other game or consumer could hit the same class — if yes, the systemic fix goes upstream into `packages/*` (explicit contracts, safe defaults, dev-mode warnings) and/or a gate or conformance check (`check-game-shape`, ratchet baselines) so silence fails CI; (c) if the reinforcement is too big for the fix PR, a tracked `[FEATURE]` issue is filed before the patch ships — the patch may land first, but the hole gets a ticket. Keep it proportionate: prefer making the wrong state unrepresentable or loudly detectable over flipping defaults, heavy process, or speculative frameworks; one short root-cause paragraph per bugfix PR is the ceiling of ceremony.
+- Reinforce the root cause, not just the symptom. A bugfix is complete only when its PR body answers three questions: (a) which engine seam, permissive default, or missing contract allowed the bug; (b) whether any other game or consumer could hit the same class — if yes, the systemic fix goes upstream into `packages/*` (explicit contracts, safe defaults, dev-mode warnings) and/or a gate or conformance check (`check-game-shape`, ratchet baselines) so silence fails CI; (c) if the reinforcement is too big for the fix PR, a tracked `[FEATURE]` issue is filed before the patch ships — the patch may land first, but the hole gets a ticket. Keep it proportionate: prefer making the wrong state unrepresentable or loudly detectable over flipping defaults, heavy process, or speculative frameworks; one sentence of root cause per bugfix PR is the ceiling of ceremony.
 - Treat completion as an evidence claim. Inspect the actual diff and acceptance criteria; run verification proportional to risk. `bun run gate` is the full local verdict and `bun run ship:preflight` is the final shipping check. Visual claims also follow `jgengine-verify` and include screenshot evidence.
 - Attach screenshots to the PR itself, not just to your local notes. Most changes here touch a rendered surface — HUD, menus, editor, scene, gameplay, any visible world content — and for those the PR body must embed before/after screenshots (or a short capture) of the affected view, captured via `jgengine-verify` (`bun run shoot` / `drive`). Assume a change needs screenshots unless it genuinely has no rendered surface (pure types, build config, docs, internal refactors with identical output); if you skip them, say why in the PR body. A visual or gameplay change without PR screenshots is incomplete work — the reviewer must see the result without checking out the branch.
 - Behavior over time gets a clip, and every behavior change gets *tried* — drive the actual game and watch the new behavior happen before claiming it works; tests alone never complete a runtime-behavior change. Present motion as **video or still images — never a GIF**, and never send video files into the conversation. See `jgengine-verify` for recording, `pr-video`, and clip-presentation mechanics.
