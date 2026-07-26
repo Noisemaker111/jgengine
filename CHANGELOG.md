@@ -28,6 +28,8 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+- **Placed objects now replicate.** `objects` joined the always-on baseline snapshot modules, so `ctx.hydrate` replaces the client's placed object set with the host's, the way `entities` already did. A game whose peers all run the same authored placement is unaffected; a game that places props on the client only, after hydrate, must move that placement to the host or keep it out of `ctx.scene.object`.
+
 ### Changed
 
 - **`GeneratedBuilding`'s `kit` prop is now the `BuildingKit`**; the per-part React escape hatch it used to name moved to `partRenderer`, so `kit` means the same thing on `GeneratedBuilding` and `InstancedBuildings`. Rename the prop if you passed a `BuildingKitRenderer`.
@@ -43,11 +45,14 @@ At publish, rename this heading to the new version and mirror the entries into
 - **`generateBuilding`, `generateBuildingDistrict`, and `createBuildingConfig` are now documented public API** (`@jgengine/core/world/buildings`) and appear in `capabilities.md` under `building-generator`.
 - **`capture.views` on `defineGame`** — named framings (`GameCaptureView`: `look`, `lookFrom`, `spawn`, `state`, `run`, `settleMs`) that `shoot <game> --view <name>` and `drive --view <name>` replay exactly, so a before/after pair is the same view by construction. `shoot <game> --list-views` prints what a game declares; an unknown name fails listing them, and any explicit capture flag still wins over the view's value.
 - **`modelLoadIdleMs()` from `@jgengine/shell/render/modelLoad`** reports how long the shared GLB loader has been idle (`0` while a model is in flight). Capture hosts wait on it instead of guessing a settle delay, so an establishing shot no longer races streaming models.
+- **Per-instance state on placed objects** — `SceneObject.state` (opaque `Record`), set through `ctx.scene.object.setState`/`patchState`/`place({ state })`. It survives move/rotate/setVisual, replicates and saves with the object, and round-trips as `RuntimeObjectRow.flags` via `toRuntimeObjectRow`/`fromRuntimeObjectRow` (`@jgengine/core/multiplayer`). A chest's locked flag or a machine's fill level no longer needs a game-owned map keyed by `instanceId`.
+- **`slotInventory` is a working feature** — `ctx.scene.object.slots` gives objects whose catalog entry declares it real per-instance container contents: `layout`/`state`/`count`, `put`/`take`, and `transferIn`/`transferOut` between a player inventory and the object, all validated against the declared slot count, `accepts` kind filter, and stack limits, with neither side mutated on a rejection. Contents live on `SceneObject.slots`, so they replicate and save with the placement.
+- **`loadServerSnapshot` and `persistServerSnapshot` are public** (`@jgengine/convex/server`), and `createGameServerFunctions` also returns `helpers` (`loadSnapshot`, `applyCommand`, `persistSnapshot`, `runCommand`) bound to the same runtimes and auth mode. A host mutation can now pair snapshot work with its own table writes in one transaction; the registered `runCommand` mutation delegates to `helpers.runCommand`, so there is one implementation.
 
 ### Fixed
 
 - **Open storefronts are no longer holes through the building.** `generateBuilding` emitted an open ground-floor store as a lone `storefront` panel with no wall behind it, while every upper-floor window was correctly backed by one. Storefront and window materials render at 0.56 opacity and a generated building is a hollow shell, so those bays let you see straight through the building to the world beyond — and open stores only land on the street-facing facade, so a row of shops along a road was the worst case. The bay now emits its wall first, exactly as an upper floor does.
-
+- **`joinServer`, `flushSave`, `flushDirtyServers`, and the `auto` autosave can write player profiles again.** All four cleared the snapshot's dirty set before handing it to the persist plan, which gates profile writes on exactly that set — so the functions named "flush" flushed the server row and chunks only, and an `onNewPlayer` grant (starting money, starting items) never reached `jgPlayerProfiles`. `joinServer` now persists the snapshot it just marked; the flush paths mark every player dirty first, since hydrating from storage resets the dirty set. `planServerPersist` also clears `dirtyAt` once everything outstanding is written, so a successful flush stops autosave from re-firing forever, and a profile patch no longer clobbers a host-maintained `dirtyAt`.
 
 ## 0.15.0
 

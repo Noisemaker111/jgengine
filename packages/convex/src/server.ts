@@ -48,7 +48,7 @@ import {
 } from "@jgengine/core/runtime/hostPolicy";
 import type { SaveConfig } from "@jgengine/core/runtime/save";
 import type { GameRuntimeSnapshot, RuntimeChunkRow, RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
-import { clearDirtyFlags, createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
+import { createEmptyServerRow, markAllPlayersDirty } from "@jgengine/core/runtime/snapshot";
 import { applyCommandWithOcc, commitIfRevisionMatch } from "./occ";
 
 /** @internal Re-export shared host-policy pure helpers so existing convex imports keep working. */
@@ -172,14 +172,18 @@ export function jgengineHostedTables() {
 }
 
 const schemaForTypes = defineSchema(jgengineTables());
-type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes>;
+/** Data model of the {@link jgengineTables} schema — the shape a host's own Convex ctx must satisfy to
+ * call the exported persistence helpers. */
+export type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes>;
 type JGQueryCtx = GenericQueryCtx<JGDataModel>;
-type JGMutationCtx = GenericMutationCtx<JGDataModel>;
+/** Mutation ctx accepted by {@link loadServerSnapshot} / {@link persistServerSnapshot}. */
+export type JGMutationCtx = GenericMutationCtx<JGDataModel>;
 const query = queryGeneric as QueryBuilder<JGDataModel, "public">;
 const mutation = mutationGeneric as MutationBuilder<JGDataModel, "public">;
 const internalMutation = internalMutationGeneric as MutationBuilder<JGDataModel, "internal">;
 
-type ServerDoc = DocumentByName<JGDataModel, "jgGameServers">;
+/** A `jgGameServers` row — the server handle the persistence helpers load from and write back to. */
+export type ServerDoc = DocumentByName<JGDataModel, "jgGameServers">;
 
 export type JgAuthMode = "anonymous" | "required";
 
@@ -303,7 +307,12 @@ function serverDocToRecord(server: ServerDoc): GameServerRecord {
   };
 }
 
-async function loadServerSnapshot(
+/**
+ * Hydrate a server's `GameRuntimeSnapshot` from its row, its members' profiles, and its world chunks.
+ * Reach for it when writing your own mutation that must read runtime state before touching host tables.
+ * @capability convex-load-server-snapshot read a hosted server's runtime snapshot inside a host-written Convex mutation
+ */
+export async function loadServerSnapshot(
   ctx: JGMutationCtx,
   server: ServerDoc,
   runtime: GameRuntime,
@@ -382,7 +391,12 @@ export async function applyLeaderboardIncrements(
   }
 }
 
-async function persistServerSnapshot(
+/**
+ * Write a snapshot back: server row, dirty player profiles, dirty chunks, and drained leaderboard
+ * increments, all under `save`. Pair it with your own table writes to keep both in one transaction.
+ * @capability convex-persist-server-snapshot write runtime state and host tables in one Convex transaction
+ */
+export async function persistServerSnapshot(
   ctx: JGMutationCtx,
   server: ServerDoc,
   snapshot: GameRuntimeSnapshot,
@@ -404,7 +418,6 @@ async function persistServerSnapshot(
     const profilePatch = {
       playerState: profile.playerState,
       revision: profile.revision,
-      dirtyAt: undefined,
       updatedAt: profile.updatedAt,
     };
 
@@ -472,11 +485,54 @@ async function flushServerIfDue(
   }
 
   const snapshot = await loadServerSnapshot(ctx, server, runtime);
-  await persistServerSnapshot(ctx, server, clearDirtyFlags(snapshot), server.save as SaveConfig);
+  await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
   return true;
 }
 
 export const JG_RUNTIME_TICK_MS = 1_000;
+
+/** Outcome of a runtime command: applied, or refused with a reason (unknown server, non-member, validation, revision conflict). */
+export type RunCommandOutcome = { ok: true } | { ok: false; reason: string };
+
+/** Arguments of the `runCommand` mutation, and of the equivalent {@link GameServerHelpers.runCommand} helper. */
+export type RunCommandArgs = {
+  serverId: string;
+  command: string;
+  input: unknown;
+  externalId?: string;
+};
+
+/** A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot. */
+export type LoadedServerSnapshot = {
+  server: ServerDoc;
+  runtime: GameRuntime;
+  snapshot: GameRuntimeSnapshot;
+};
+
+/**
+ * The plain-function half of {@link createGameServerFunctions}, bound to the same runtime registry and
+ * auth mode as its mutations. Reach for it when a host mutation must pair snapshot work with its own
+ * table writes in one transaction, which a pre-registered mutation cannot do.
+ */
+export type GameServerHelpers = {
+  loadSnapshot: (ctx: JGMutationCtx, serverId: string) => Promise<LoadedServerSnapshot | null>;
+  applyCommand: (args: {
+    gameId: string;
+    loadedRevision: number;
+    currentRevision: number;
+    snapshot: GameRuntimeSnapshot;
+    actorUserId: string;
+    command: string;
+    input: unknown;
+  }) => { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string };
+  persistSnapshot: (
+    ctx: JGMutationCtx,
+    server: ServerDoc,
+    snapshot: GameRuntimeSnapshot,
+    save?: SaveConfig,
+  ) => Promise<void>;
+  runCommand: (ctx: JGMutationCtx, args: RunCommandArgs) => Promise<RunCommandOutcome>;
+};
 
 /** @internal */
 export function createGameServerFunctions(options?: {
@@ -601,7 +657,7 @@ export function createGameServerFunctions(options?: {
 
       let snapshot = await loadServerSnapshot(ctx, refreshed, runtime);
       snapshot = runtime.joinPlayer(snapshot, actorUserId, isNew);
-      await persistServerSnapshot(ctx, refreshed, clearDirtyFlags(snapshot), save);
+      await persistServerSnapshot(ctx, refreshed, snapshot, save);
 
       return { serverId: refreshed._id, isNew };
     },
@@ -648,21 +704,24 @@ export function createGameServerFunctions(options?: {
     },
   });
 
-  const runCommand = mutation({
-    args: {
-      serverId: v.id("jgGameServers"),
-      command: v.string(),
-      input: v.any(),
-      externalId: v.optional(v.string()),
+  const helpers: GameServerHelpers = {
+    async loadSnapshot(ctx, serverId) {
+      const server = await ctx.db.get("jgGameServers", serverId as GenericId<"jgGameServers">);
+      if (!server) return null;
+      const runtime = resolveRuntime(registry, server.gameId);
+      return { server, runtime, snapshot: await loadServerSnapshot(ctx, server, runtime) };
     },
-    returns: v.union(
-      v.object({ ok: v.literal(true) }),
-      v.object({ ok: v.literal(false), reason: v.string() }),
-    ),
-    handler: async (ctx, args) => {
+    applyCommand(args) {
+      return applyCommandWithOcc({ ...args, runtime: resolveRuntime(registry, args.gameId) });
+    },
+    persistSnapshot(ctx, server, snapshot, save) {
+      return persistServerSnapshot(ctx, server, snapshot, save ?? (server.save as SaveConfig));
+    },
+    async runCommand(ctx, args): Promise<RunCommandOutcome> {
       const actorUserId = await requireActor(ctx, args.externalId, mode);
 
-      const server = await ctx.db.get("jgGameServers", args.serverId);
+      const serverId = args.serverId as GenericId<"jgGameServers">;
+      const server = await ctx.db.get("jgGameServers", serverId);
       if (!server) {
         return { ok: false as const, reason: "Server not found" };
       }
@@ -686,7 +745,7 @@ export function createGameServerFunctions(options?: {
         return result;
       }
 
-      const latest = await ctx.db.get("jgGameServers", args.serverId);
+      const latest = await ctx.db.get("jgGameServers", serverId);
       if (!latest) {
         return { ok: false as const, reason: "Server not found" };
       }
@@ -698,6 +757,20 @@ export function createGameServerFunctions(options?: {
       await persistServerSnapshot(ctx, latest, result.snapshot, latest.save as SaveConfig);
       return { ok: true as const };
     },
+  };
+
+  const runCommand = mutation({
+    args: {
+      serverId: v.id("jgGameServers"),
+      command: v.string(),
+      input: v.any(),
+      externalId: v.optional(v.string()),
+    },
+    returns: v.union(
+      v.object({ ok: v.literal(true) }),
+      v.object({ ok: v.literal(false), reason: v.string() }),
+    ),
+    handler: (ctx, args) => helpers.runCommand(ctx, args),
   });
 
   const flushSave = mutation({
@@ -714,7 +787,7 @@ export function createGameServerFunctions(options?: {
 
       const runtime = resolveRuntime(registry, server.gameId);
       const snapshot = await loadServerSnapshot(ctx, server, runtime);
-      await persistServerSnapshot(ctx, server, clearDirtyFlags(snapshot), server.save as SaveConfig);
+      await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
       return true;
     },
   });
@@ -943,7 +1016,7 @@ export function createGameServerFunctions(options?: {
       for (const server of servers) {
         const runtime = resolveRuntime(registry, server.gameId);
         const snapshot = await loadServerSnapshot(ctx, server, runtime);
-        await persistServerSnapshot(ctx, server, clearDirtyFlags(snapshot), server.save as SaveConfig);
+        await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
         saved += 1;
         void now;
       }
@@ -964,6 +1037,7 @@ export function createGameServerFunctions(options?: {
     listOpenServers,
     tickActiveServers,
     flushDirtyServers,
+    helpers,
   };
 }
 

@@ -8,6 +8,7 @@ import {
   type StatValueMap,
 } from "../../scene/entityStats";
 import type { EntityStore, SceneEntity } from "../../scene/entityStore";
+import type { ObjectStore, SceneObject } from "../../scene/objectStore";
 import type { Possession, PossessionSnapshot } from "../../scene/possession";
 import type { ObservableKeyedStore } from "../../store/observableKeyedStore";
 import type { ClockSnapshot, SimClock } from "../../time/simClock";
@@ -19,6 +20,7 @@ import { decodeArray, decodeEntries, decodeRecord } from "../context/snapshotCod
 export interface BaselineDeps {
   signalNotify: () => void;
   entities: EntityStore;
+  objects: ObjectStore;
   statsByInstance: Map<string, StatValueMap>;
   store: ObservableKeyedStore<unknown>;
   feed: GameFeed;
@@ -43,7 +45,7 @@ export interface BaselineBuild {
 
 /**
  * Always-on counterpart to {@link featureDescriptors}: each baseline subsystem (entities, stats,
- * store, feed, inventory, economy, time, pose, possession, motion) owns its own serialization here
+ * store, feed, inventory, economy, time, pose, possession, motion, objects) owns its own serialization here
  * instead of `createGameContext` hand-maintaining two distant module arrays. Order is
  * load-bearing — it fixes the snapshot key order, so it must stay stable.
  * @internal
@@ -201,6 +203,17 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
             d.motionFor(userId).hydrate(batch);
           }
         },
+      },
+    }),
+  },
+  {
+    key: "objects",
+    create: (d) => ({
+      replicate: {
+        key: "objects",
+        snapshot: () => d.objects.snapshot(),
+        decode: (raw) => decodeArray<SceneObject>(raw),
+        hydrate: (data) => d.objects.hydrate(data as readonly SceneObject[]),
       },
     }),
   },

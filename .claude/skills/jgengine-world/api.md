@@ -1837,6 +1837,9 @@
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
 - `NoteEvent` (interface): interface NoteEvent — One scheduled note in a theme, positioned on the loop's quarter-note grid.
+- `ObjectSlotRejection` (type): type ObjectSlotRejection = | "unknown-object" | "no-slot-inventory" | "unknown-inventory" | "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" | "insufficient" — Why an object slot mutation was refused — the instance, its catalog entry, the player inventory, or the declared `accepts`/capacity.
+- `ObjectSlotResult` (type): type ObjectSlotResult = { status: "ok" } | { status: "rejected"; reason: ObjectSlotRejection } — Outcome of an object slot mutation: applied, or refused with a reason and no state change on either side.
+- `ObjectSlotTransfer` (interface): interface ObjectSlotTransfer — Which player inventory a transfer moves between, and what it moves.
 - `ObjectVisual` (interface): interface ObjectVisual — ⚠ undocumented
 - `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented
 - `Order` (interface): interface Order<TPayload = unknown> — One issued order. Fully serializable: `kind` is a registry key (not a closure), `payload` is the caller's plain data, and `state` is the kind's own plain progress scratch (e.g. a patrol waypoint index) written during `start`/`update`. Never holds functions, so the whole queue round-trips through `JSON`/`structuredClone`.
@@ -1951,6 +1954,7 @@
 - `SceneKindObject` (interface): interface SceneKindObject — The raw document object a resolver receives — shape shared by markers, volumes, and paths.
 - `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
 - `SceneObject` (interface): interface SceneObject — ⚠ undocumented
+- `SceneObjectSlots` (interface): interface SceneObjectSlots — Per-instance container contents for placed objects whose catalog entry declares `slotInventory` — the engine side of "install a GPU into a rack", "put an item in a chest". Contents live on `SceneObject.slots`, so they replicate and save with the object rather than needing a game-owned table keyed by `instanceId`, and every mutation is validated against the declared `accepts` and stack limits.
 - `SceneRaycastApi` (interface): interface SceneRaycastApi — ⚠ undocumented
 - `SceneRaycastHit` (interface): interface SceneRaycastHit — ⚠ undocumented
 - `ScreenEffect` (interface): interface ScreenEffect — A live effect in the current composite: its label, color, region, and the eased opacity `0..1` to draw *right now*. These objects are pooled and reused across {@link ScreenEffectsController.composite} calls — read them, don't retain.

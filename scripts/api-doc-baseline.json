@@ -1381,7 +1381,6 @@
   "@jgengine/core/runtime/snapshot#RuntimeChunkRow",
   "@jgengine/core/runtime/snapshot#RuntimeEntityRow",
   "@jgengine/core/runtime/snapshot#RuntimeInventorySlot",
-  "@jgengine/core/runtime/snapshot#RuntimeObjectRow",
   "@jgengine/core/runtime/snapshot#RuntimePlayerRow",
   "@jgengine/core/runtime/snapshot#RuntimeProfileRow",
   "@jgengine/core/runtime/snapshot#RuntimeServerRow",

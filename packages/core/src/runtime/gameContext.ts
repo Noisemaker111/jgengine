@@ -219,6 +219,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     seedUserPool,
   } = playerSys;
   scene.setOnAfterDespawn((instanceId) => pose.clear(instanceId));
+  scene.setInventoryAccess({
+    traits: playerSys.itemTraits,
+    hasInventory: (inventoryId) => layouts[inventoryId] !== undefined,
+    inventoryFor,
+  });
 
   // Built-in inventory mutation commands so a HUD grid drives moves/splits through the notifying
   // command path (a raw InventorySet mutation would not re-render React). Each resolves the acting
@@ -363,6 +368,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const baselineDeps: BaselineDeps = {
     signalNotify: signal.notify,
     entities,
+    objects,
     statsByInstance,
     store,
     feed,

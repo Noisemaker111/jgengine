@@ -264,6 +264,13 @@
 - `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
 - `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
 
+## @jgengine/core/runtime/context/objectSlots
+
+- `ObjectSlotRejection` (type): type ObjectSlotRejection = | "unknown-object" | "no-slot-inventory" | "unknown-inventory" | "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" | "insufficient" — Why an object slot mutation was refused — the instance, its catalog entry, the player inventory, or the declared `accepts`/capacity.
+- `ObjectSlotResult` (type): type ObjectSlotResult = { status: "ok" } | { status: "rejected"; reason: ObjectSlotRejection } — Outcome of an object slot mutation: applied, or refused with a reason and no state change on either side.
+- `ObjectSlotTransfer` (interface): interface ObjectSlotTransfer — Which player inventory a transfer moves between, and what it moves.
+- `SceneObjectSlots` (interface): interface SceneObjectSlots — Per-instance container contents for placed objects whose catalog entry declares `slotInventory` — the engine side of "install a GPU into a rack", "put an item in a chest". Contents live on `SceneObject.slots`, so they replicate and save with the object rather than needing a game-owned table keyed by `instanceId`, and every mutation is validated against the declared `accepts` and stack limits.
+
 ## @jgengine/core/runtime/gameContext
 
 - `CatalogEntityRole` (type): type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle" — ⚠ undocumented
@@ -402,6 +409,11 @@
 - `MotionIntentBatch` (interface): interface MotionIntentBatch — ⚠ undocumented
 - `MotionIntents` (interface): interface MotionIntents — Seam for game code to reach the motion the shell's FrameDriver otherwise owns privately (#162.4). Game code calls `impulse`, `pushHorizontal`, `setVerticalVelocity`, and/or `setY` from `onTick` or commands; the shell calls `takePending()` once per frame, before integrating gravity, to drain what accumulated. `setY` wins over physics for that frame; impulses add to the velocity the driver is about to integrate; a later `setVerticalVelocity` replaces that velocity outright. Horizontal pushes compose with the walk controller (#282.4): they add to its horizontal velocity and decay naturally as it re-blends toward input — knockback, dashes, explosion shoves without raw `setPose` offsets.
 
+## @jgengine/core/runtime/objectRows
+
+- `fromRuntimeObjectRow` (function): function fromRuntimeObjectRow(row: RuntimeObjectRow): SceneObject — Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
+- `toRuntimeObjectRow` (function): function toRuntimeObjectRow(object: SceneObject): RuntimeObjectRow — Convert a live placed object into its persisted row — the bridge between `ctx.scene.object` and `GameRuntimeSnapshot.server.objects`/`chunks[].objects`. Per-instance `state` is carried as `flags`. Presentation overrides (`visual`, `animation`) are catalog- and authoring-resolved and deliberately stay off the persisted row — put anything a command must own in `state`.
+
 ## @jgengine/core/runtime/perContext
 
 - `perContext` (function): function perContext<T>(init: (ctx: GameContext) => T): (ctx: GameContext) => T — Per-`GameContext` lazy state, keyed by context identity through a `WeakMap` so it is reclaimed when the context is — the seam a game uses instead of a module-global `Map`, which is process-global and bleeds across worlds when one host serves several `serverId`s (#632). `init` runs once per distinct context on first access; the same context always resolves to the same value. This mirrors the engine's built-in per-ctx pattern (`ctx.player.motion`, `stepPlayerMovement`).
@@ -441,7 +453,7 @@
 - `RuntimeChunkRow` (type): type RuntimeChunkRow = { chunkKey: string; objects: RuntimeObjectRow[]; entities: RuntimeEntityRow[]; flags?: Record<string, unknown>; } — ⚠ undocumented
 - `RuntimeEntityRow` (type): type RuntimeEntityRow = { instanceId: string; catalogId: string; position?: [number, number, number]; rotationY?: number; parentSpace?: string; group?: string; stats?: Record<string, { current: number; max: number; min?: number }>; targetInstanceId?: string | null; userId?: string; } — ⚠ undocumented
 - `RuntimeInventorySlot` (type): type RuntimeInventorySlot = { item: string; count: number; slot?: number; } — ⚠ undocumented
-- `RuntimeObjectRow` (type): type RuntimeObjectRow = { instanceId: string; catalogId: string; position: [number, number, number]; rotationY?: number; parentSpace?: string; flags?: Record<string, unknown>; } — ⚠ undocumented
+- `RuntimeObjectRow` (type): type RuntimeObjectRow = { instanceId: string; catalogId: string; position: [number, number, number]; rotationY?: number; parentSpace?: string; /** Opaque per-instance state; the persisted name for `SceneObject.state`. */ flags?: Record<string, unknown>; /** Container contents for a catalog `slotInve… — The persisted form of a placed `SceneObject`: identity, placement, per-instance state, and slot contents. Convert with `toRuntimeObjectRow`/`fromRuntimeObjectRow` (`runtime/objectRows`).
 - `RuntimePlayerRow` (type): type RuntimePlayerRow = { userId: string; inventories: Record<string, RuntimeInventorySlot[]>; economy: Record<string, number>; unlocks: string[]; quests?: unknown; social?: unknown; leaderboard?: Record<string, number>; session?: Record<string, unknown>; } — ⚠ undocumented
 - `RuntimeProfileRow` (type): type RuntimeProfileRow = { userId: string; gameId: string; player: RuntimePlayerRow; updatedAt: number; } — ⚠ undocumented
 - `RuntimeServerRow` (type): type RuntimeServerRow = { entities: RuntimeEntityRow[]; objects: RuntimeObjectRow[]; session: Record<string, unknown>; feeds?: Record<string, unknown[]>; } — ⚠ undocumented

@@ -29,6 +29,7 @@ import type { Social } from "../game/social";
 import type { TradeField, TradeSystem } from "../game/trade";
 import type { Unlocks } from "../game/unlocks";
 import type { InventoryLayout, InventorySet } from "../inventory/inventoryModel";
+import type { SceneObjectSlots } from "./context/objectSlots";
 import type { ContextVerb } from "../interaction/contextMenu";
 import type { ProximityPrompt } from "../interaction/proximityPrompt";
 import type { ItemUseHandler, ItemUseInput, ItemUseRejection, ItemUseResult } from "../item/use";
@@ -101,6 +102,11 @@ export interface GameContextEntityEntry {
 export interface GameContextObjectEntry {
   proximityPrompt?: ProximityPrompt;
   breakable?: false | { baseBreakTime: number };
+  /**
+   * Declares this object a container: every placement gets its own slots, held on `SceneObject.slots`
+   * and mutated through `ctx.scene.object.slots`, which enforces the declared `slots` count and
+   * `accepts` kind filter.
+   */
   slotInventory?: InventoryLayout;
   /** Right-click context-menu verbs for this object (#31). */
   verbs?: readonly ContextVerb[];
@@ -192,6 +198,13 @@ export interface SceneObjectContext extends ObjectStore {
    * (`@jgengine/shell/world/WorldHud`).
    */
   selection: SelectionSet;
+  /**
+   * Per-instance container contents for objects whose catalog entry declares {@link GameContextObjectEntry.slotInventory}
+   * — chests, racks, machines. Contents live on `SceneObject.slots`, so they replicate and save with
+   * the placement, and `transferIn`/`transferOut` move items to and from a player inventory with the
+   * declared `accepts` and stack limits enforced.
+   */
+  slots: SceneObjectSlots;
 }
 
 export interface FloatTextInput {

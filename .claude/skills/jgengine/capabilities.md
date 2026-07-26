@@ -100,6 +100,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ws` (function) · `import { ws } from "@jgengine/core/runtime/adapter"`
 
+## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
+
+- `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/runtime/context/objectSlots"`
+
+## placed-object-rehydrate — rebuild live placed objects, with their state and slot contents, from persisted snapshot rows
+
+- `fromRuntimeObjectRow` (function) · `import { fromRuntimeObjectRow } from "@jgengine/core/runtime/objectRows"`
+
+## placed-object-rows — a placed object's per-instance state and container contents convert to and from the persisted snapshot row a host stores
+
+- `toRuntimeObjectRow` (function) · `import { toRuntimeObjectRow } from "@jgengine/core/runtime/objectRows"`
+
 ## render-fallback-diagnostics — Enable/disable the dev-only placeholder-fallback probe.
 
 - `armFallbackSeams` (function) · `import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams"`

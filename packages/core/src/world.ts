@@ -272,6 +272,12 @@ export {
   type VehicleImpact,
   type VehicleObstacleClamp,
 } from "./physics/vehicleObstacles";
+export {
+  type ObjectSlotRejection,
+  type ObjectSlotResult,
+  type ObjectSlotTransfer,
+  type SceneObjectSlots,
+} from "./runtime/context/objectSlots";
 export { createAssetCatalog, type AssetCatalog, type ModelAssetRef, type ModelDims } from "./scene/assetCatalog";
 export { partsBounds, registerAssetGenerator, type GeneratedAsset, type GeneratedPart } from "./scene/assetGenerator";
 export {
