@@ -22,12 +22,16 @@ import { existsSync, mkdirSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import {
   CdpSession,
+  DEVICES,
   applyDevice,
+  captureViewportPng,
   ensureDevServer,
   ensureWebServer,
   navigateCapturePageWithRetry,
   openPageSession,
   parseSizeArg,
+  scaleProfile,
+  screencastCapturesFully,
   sizeSuffix,
   withBrowserSession,
   writePngAtomic,
@@ -51,6 +55,9 @@ type Step =
   | { kind: "shot"; name: string; out?: string }
   | { kind: "rpc"; json: string }
   | { kind: "probe"; name: string };
+
+/** A lockstep step that commits no new frame falls back to a forced capture after this. */
+const LOCKSTEP_FRAME_TIMEOUT_MS = 20_000;
 
 /** Extra wall-clock a frame-starved page gets to render one frame under a held
  * key before {@link holdKey} gives up (see {@link holdComplete}). */
@@ -482,6 +489,8 @@ class LockstepRecorder {
   readonly frames: TimedPng[] = [];
   readonly frameMs: number;
   private virtualNow = 0;
+  private pump: ((frame: { data: string; timestamp: number }) => void) | null = null;
+  private stopPump: (() => void) | null = null;
 
   constructor(
     private readonly session: CdpSession,
@@ -511,7 +520,30 @@ class LockstepRecorder {
         for (const cb of cbs) { try { cb(virtual); } catch (err) { console.error(err); } }
       };
     })()`);
+    if (process.env.JG_CAPTURE_SCREENCAST === "0") {
+      await this.captureFrame();
+      return;
+    }
+    this.stopPump = this.session.on("Page.screencastFrame", (params) => {
+      const sessionId = params.sessionId;
+      if (typeof sessionId === "number" || typeof sessionId === "string") {
+        void this.session.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
+      }
+      const data = params.data;
+      const timestamp = (params.metadata as { timestamp?: number } | undefined)?.timestamp;
+      if (typeof data !== "string" || data.length === 0) return;
+      this.pump?.({ data, timestamp: typeof timestamp === "number" ? timestamp : Date.now() / 1000 });
+    });
+    await this.session.send("Page.startScreencast", { format: "jpeg", quality: 85, everyNthFrame: 1 });
     await this.captureFrame();
+  }
+
+  /** Release the screencast pump; safe to call twice. */
+  async stop(): Promise<void> {
+    this.stopPump?.();
+    this.stopPump = null;
+    this.pump = null;
+    await this.session.send("Page.stopScreencast").catch(() => {});
   }
 
   /** Advance game time by `ms`, rendering + capturing one frame per tick. */
@@ -524,28 +556,51 @@ class LockstepRecorder {
     }
   }
 
+  /**
+   * Take the frame the step just drew. The screencast pump hands over the composited
+   * frame for roughly one render; `Page.captureScreenshot` forces its own re-raster on
+   * top of that one and costs several (measured ~2s vs ~1s per half-res frame here), so
+   * it is only the fallback for a step that commits nothing. JPEG throughout — lockstep
+   * output is mp4, which takes JPEG frames directly.
+   */
   private async captureFrame(): Promise<void> {
-    // JPEG cuts the CDP transfer substantially, especially on software GL.
-    // Lockstep output is mp4-only, which
-    // takes JPEG frames directly.
-    const shot = await this.session.send("Page.captureScreenshot", {
-      format: "jpeg",
-      quality: 85,
-      fromSurface: true,
+    const notBefore = Date.now() / 1000;
+    const streamed = this.stopPump === null ? null : await new Promise<string | null>((resolvePromise) => {
+      const timer = setTimeout(() => {
+        this.pump = null;
+        resolvePromise(null);
+      }, LOCKSTEP_FRAME_TIMEOUT_MS);
+      this.pump = (frame) => {
+        if (frame.timestamp < notBefore) return;
+        clearTimeout(timer);
+        this.pump = null;
+        resolvePromise(frame.data);
+      };
     });
-    const data = shot.data;
+    const data =
+      streamed ??
+      (await this.session.send("Page.captureScreenshot", { format: "jpeg", quality: 85, fromSurface: true })).data;
     if (typeof data !== "string" || data.length === 0) return;
     this.frames.push({ png: Buffer.from(data, "base64"), tMs: this.virtualNow });
   }
 }
 
-async function screenshot(session: CdpSession, outPath: string): Promise<void> {
+async function screenshot(
+  session: CdpSession,
+  outPath: string,
+  size: SizeMode,
+  screencast: boolean,
+): Promise<void> {
   // Cleared first, so a failed step leaves no earlier shot at this path to be read as its result.
   const previous = clearShotTarget(outPath);
-  const shot = await session.send("Page.captureScreenshot", { format: "png", fromSurface: true });
-  const data = shot.data;
-  if (typeof data !== "string" || data.length === 0) throw new Error("Page.captureScreenshot returned empty data");
-  const bytes = Buffer.from(data, "base64");
+  const profile = scaleProfile(DEVICES.desktop, size);
+  const { bytes } = await captureViewportPng(session, {
+    screencast: screencast && screencastCapturesFully(profile),
+    expect: {
+      width: Math.round(profile.width * profile.deviceScaleFactor),
+      height: Math.round(profile.height * profile.deviceScaleFactor),
+    },
+  });
   writePngAtomic(outPath, bytes);
   const decoded = decodePng(bytes);
   const record = buildShotRecord({
@@ -713,10 +768,19 @@ const exitCode = await withBrowserSession(
         else if (step.kind === "probe") {
           const metrics = await readProbe(session);
           console.log(JSON.stringify({ probe: step.name, metrics }));
-        } else await screenshot(session, step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`));
+        } else {
+          // A recording owns the screencast pump; a shot must not start/stop it underneath.
+          await screenshot(
+            session,
+            step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`),
+            args.size,
+            args.record === undefined,
+          );
+        }
       }
 
       if (recorder !== null) {
+        await recorder.stop();
         const mp4Path = join(outDir, `${args.game}-${args.record}${sizeSuffix(args.size)}.mp4`);
         if (recorder.frames.length === 0) {
           console.error(`drive: --record captured no frames`);
