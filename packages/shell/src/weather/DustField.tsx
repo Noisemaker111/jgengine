@@ -41,6 +41,14 @@ const DEFAULT_VOLUME: WeatherVector = [70, 22, 70];
 const DEFAULT_ORIGIN: WeatherVector = [0, 0, 0];
 const DEFAULT_DUST_COLOR = "#c8a878";
 
+/**
+ * Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself
+ * should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a
+ * silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and
+ * snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
+ *
+ * @capability weather-dust airborne particulate that turns still air into visible wind
+ */
 export function DustField({
   count = DEFAULT_DUST_COUNT,
   density = DEFAULT_DUST_DENSITY,
