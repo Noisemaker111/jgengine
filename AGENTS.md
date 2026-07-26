@@ -6,19 +6,28 @@ Read [README.md](README.md) first. It owns stable project truth: repository map,
 
 Long prose is a defect, not thoroughness. This applies to **every** surface a human reads: chat replies, PR bodies, issues, commit messages, PR comments, review replies. One idea per line; no idea gets a paragraph.
 
-**Chat reply.** Six lines max. What you did, what is still open, the links. Nothing else.
+**Chat reply.** What you did, what is still open, the links. A few lines, not a page — if it runs past a phone screen, cut it.
 
-**PR body.** Fifteen lines max. Title line of context, a bullet per changed area (one line each — file plus what changed, not why it is good), `Closes #N`, verification as a line of command names and their verdict, screenshots. Bugfixes add **one sentence** of root cause, not a paragraph.
+**PR body.** A line of context, a bullet per changed area (file plus what changed, not why it is good), `Closes #N`, verification as command names and their verdict, screenshots. Bugfixes add a sentence of root cause. Scale with the diff — a two-file change does not get the same body as a twelve-file one — but never pad.
 
 **Issue.** Problem in a sentence, acceptance criteria as bullets. No background essay.
 
-**Commit message.** Subject line plus at most three lines of body.
+**Commit message.** Subject line, then only the body a reader actually needs.
 
 **Never write, anywhere:** plan recaps, what you read or considered and rejected, per-file walkthroughs, justifications nobody asked for, restated tool output, closing summaries that repeat the body, apologies, victory laps, "let me know if you want…". Bold section headers belong in a PR body, never in a chat reply. Numbered lists are for real enumerations, never for narrating reasoning.
 
 **Expand only on request.** "Explain", "why", or a direct design question earns depth — answer that question and stop. A decision that needs the user is one concrete question with the options named, never an essay ending in a question.
 
-**Subagents.** A worker's report to the main agent may be dense. The user-facing synthesis is still six lines, and a subagent report is never pasted into chat or a PR body.
+**Subagents.** A worker's report to the main agent may be dense. The user-facing synthesis is not, and a subagent report is never pasted into chat or a PR body.
+
+## Comments in code
+
+Default to none. Well-named code needs no narration, and a comment on every block is the same defect as a wall of prose in chat.
+
+- **JSDoc on exported public API stays** — it is the source for generated `api.md`/`capabilities.md` and the reason a consumer can discover a seam. Keep it tight: what it is and when to reach for it, not an essay.
+- **Inside a function body, a comment must earn its line.** Non-obvious *why* only: a workaround and what breaks without it, an invariant the types cannot express, a formula's source, a deliberate perf tradeoff. One line.
+- **Delete on sight:** restating the next line in English, section banners (`// ---- setup ----`), step numbering, `// TODO` with no issue link, commented-out code, changelog notes about what you just changed, and multi-line block comments explaining ordinary logic.
+- Match the density of the file you are editing. Do not add comments to code you are only passing through.
 
 ## Product invariants
 
