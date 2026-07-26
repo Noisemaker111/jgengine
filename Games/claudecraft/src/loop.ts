@@ -35,7 +35,8 @@ function onPlayerDied(
   deadStore.write(ctx, userId, true);
   const hero = heroOf(ctx, userId);
   if (hero !== null) {
-    hero.casting = null;
+    hero.caster.interrupt("cancelled");
+    hero.castMeta = null;
     hero.autoAttack = false;
   }
   castStore.clear(ctx, userId);
