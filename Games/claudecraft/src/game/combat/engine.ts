@@ -2,10 +2,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { seededRng } from "@jgengine/core/random/rng";
 
 /**
- * Per-frame movement below this is jitter (ground snap, float drift), not the player walking. The
- * cast runner accumulates whatever distance it is handed, so feeding it raw per-frame deltas would
- * let terrain-following noise cancel a cast; anything under the deadzone is reported as zero.
- * Matches the threshold the hand-rolled interrupt used before adopting `createCastRunner`.
+ * This game's caster noise floor: per-frame movement at or below this is ground snap and float
+ * drift, not the player walking. Declared once as the cast runner's `moveDeadzone` so it filters
+ * accumulation itself, and reused as the `moveTolerance` any real step must exceed. Matches the
+ * threshold the hand-rolled interrupt used before adopting `createCastRunner`.
  */
 const MOVE_DEADZONE = 0.04;
 import type { GameIconName } from "@jgengine/react/gameIcons";
@@ -402,7 +402,12 @@ export function castSlot(ctx: GameContext, userId: string, slot: number): void {
     const castMod = abilityModsOf(ctx, userId).byAbility.get(ability.id)?.castPct ?? 0;
     const hastePct = heroSheet(ctx, userId)?.hastePct ?? 0;
     const castTime = Math.max(0.05, (ability.castTime * (1 + castMod)) / (1 + hastePct));
-    hero.caster.begin({ abilityId: ability.id, castTimeMs: castTime * 1000, moveTolerance: MOVE_DEADZONE });
+    hero.caster.begin({
+      abilityId: ability.id,
+      castTimeMs: castTime * 1000,
+      moveTolerance: MOVE_DEADZONE,
+      moveDeadzone: MOVE_DEADZONE,
+    });
     hero.castMeta = { name: ability.name, targetId: targetOf(ctx, userId) };
     castStore.write(ctx, userId, {
       abilityId: ability.id,
@@ -453,7 +458,7 @@ export function tickHero(ctx: GameContext, userId: string, dt: number): void {
       hero.lastPos === null
         ? 0
         : Math.hypot(self.position[0] - hero.lastPos[0], self.position[2] - hero.lastPos[2]);
-    const event = hero.caster.tick(dt, frameMoved >= MOVE_DEADZONE ? frameMoved : 0);
+    const event = hero.caster.tick(dt, frameMoved);
     if (event !== null) {
       const abilityId = event.abilityId;
       hero.castMeta = null;
