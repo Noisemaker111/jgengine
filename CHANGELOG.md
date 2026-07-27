@@ -34,17 +34,24 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **Walking NPCs now stop at the geometry that stops the player.** `wander`, `patrol`, and `ctx.scene.entity.moveToward` consulted no obstacles at all, so a pedestrian walked through the building the player cannot enter. All three now slide their step against the scene's blocking physical colliders — the same query `stepPlayerMovement` reads. A patrol's path state still advances on its own clock (an authored route is not rewound by contact), but the entity can no longer end a tick inside a solid. Pass `avoidSolids: false` to `moveToward` for a mover meant to ignore the world (a flier, a camera rig).
+- **`@jgengine/assets` verify fails a model source that contributes no index entries.** A model pack that has never been pulled is a pin nothing has ever checked — that is how a Street Pack archive sat in the catalogue titled "Downtown City MegaKit". Record why a pack is not pulled in the new `AssetSource.unpulled` string; materials and sprites pull on demand and are exempt.
 - **`persistServerSnapshot` returns `boolean` and skips a write that would change nothing.** Every subscriber of a query that read a server row re-receives the whole result when that document changes, so an unconditional write on the 1 Hz tick re-pushed the entire world to every client once a second whether or not anything moved. `ServerPersistPlan` gains `changed` (`serverState` / `sessionPlayers` / `revision` / `any`) for hosts that write field-by-field.
 - **`sessionPlayers` is merged over the stored map, not rebuilt from the snapshot**, and entries for non-members are pruned. This is what makes a partially hydrated snapshot safe to persist.
 - **`tickActiveServers` is bounded** to `maxServersPerTick` (default 32) servers per transaction, oldest tick anchor first, instead of pulling every running server of every game into one transaction. `flushDirtyServers` is bounded the same way.
 
 ### Added
 
+- **`solidObstaclesNear` / `resolveWalkerStep` (`@jgengine/core/movement/solidObstacles`)** — the engine's single answer to "what is solid here", now shared rather than re-derived per consumer. `solidObstaclesNear(ctx, position, reachX, reachZ)` returns the blocking physical colliders near a point through a bounded `inBox` broadphase; `resolveWalkerStep(ctx, position, stepX, stepZ)` slides a horizontal step against them with the player's axis-separated sliding. Reach for these instead of deriving obstacles from a game catalog's own solidity flags.
 - **Bounded hydration and a client chunk read** — `loadServerSnapshot(ctx, server, runtime, { players, chunkKeys })` hydrates only the members and chunks a mutation will touch instead of a document read per member plus one per chunk, and the generated `getChunks` query lets a client read chunk state by key (capped at `MAX_CHUNKS_PER_QUERY`). Chunks were the documented escape hatch for world state too large for one row, but reads were unbounded and clients could not see them at all, so moving geometry there made things worse. `getServerMeta` returns lobby state (status, member count, revision) without the world payload.
 - **`@jgengine/core/runtime/worldChunks`** — `chunkKeyAt` / `chunkCoordAt` / `chunkKeyOf` / `parseChunkKey` / `chunkKeysInRadius` at a declared cell size, plus `setChunk` / `updateChunk` / `deleteChunk`, which mark the key dirty so the host actually persists it. `chunkKey` was an opaque game-chosen string and the engine never wrote `dirty.chunks`, so every game reimplemented the coordinate mapping and a game that forgot to push a key silently never saved that chunk.
 - **Placed objects cull to `replication.aoiRadius`.** `objects` is the one large spatial replicated set and had no projector, so a world with a few thousand placements sent all of them to every viewer. It now joins the same area-of-interest policy as `entities` and `stats`. Unset `aoiRadius` still replicates everything.
 - **`createGameServerFunctions({ matchmaking: "singleton" })`** — one shared world per game: auto-match always targets the existing world and a join past capacity fails loudly, instead of quietly creating a second world the player would be alone in. `joinServer` also reconciles a stored `slotsPerServer`/`save` that has drifted from the host options, which previously made raising the option a no-op on worlds that already existed. `selectJoinTarget` (`@jgengine/core/runtime/hostPolicy`) is the pure decision behind it.
 - **`GameRuntime.hasTick`** reports whether a runtime declares `loop.onTick`, so any host's scheduler can skip a server whose tick is a no-op by construction.
+
+### Removed
+
+- **Asset source `quaternius-downtown-city`.** It was titled "Downtown City MegaKit" but pinned at the Street Pack archive, which ships Blends/FBX/OBJ only — a pull found no models. Nothing referenced it.
 
 ### Fixed
 

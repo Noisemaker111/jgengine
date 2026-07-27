@@ -78,8 +78,8 @@ CC0 — no attribution required, credited here anyway. Go play his games.
 ## Quaternius
 
 JGengine's `@jgengine/assets` catalog mirrors **[Quaternius](https://quaternius.com)**
-megakits (CC0-1.0) — stylized nature, medieval village, downtown city, modular
-sci-fi, fantasy props, base characters, animated animals, and monsters
+megakits (CC0-1.0) — stylized nature, medieval village, modular sci-fi, fantasy
+props, base characters, animated animals, and monsters
 ([`packages/assets/src/sources/quaternius.ts`](packages/assets/src/sources/quaternius.ts)).
 CC0 — no attribution required, credited here anyway. Broadest low-poly CC0
 library around; go star it.

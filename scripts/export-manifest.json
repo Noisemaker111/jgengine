@@ -224,6 +224,7 @@
     "./movement/movementModel",
     "./movement/playerMovement",
     "./movement/poseState",
+    "./movement/solidObstacles",
     "./movement/steering",
     "./movement/voxelController",
     "./multiplayer",

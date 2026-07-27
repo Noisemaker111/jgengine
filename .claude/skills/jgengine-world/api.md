@@ -587,6 +587,12 @@
 - `PoseState` (interface): interface PoseState — ⚠ undocumented
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 
+## @jgengine/core/movement/solidObstacles
+
+- `ObstacleReach` (interface): interface ObstacleReach — Largest blocking-collider extent in the scene, split so tower height cannot inflate the XZ query.
+- `resolveWalkerStep` (function): function resolveWalkerStep(ctx: GameContext, position: EntityPosition, stepX: number, stepZ: number, options: { radius?: number; stepUpHeight?: number } = {}): { stepX: number; stepZ: number } — Slide a walker's horizontal step against the same solid geometry that stops the player, returning the X/Z it may actually take this tick. A step into a wall is cut on the blocked axis and preserved on the other, exactly as {@link stepPlayerMovement} resolves the player's.
+- `solidObstaclesNear` (function): function solidObstaclesNear(ctx: GameContext, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — Every blocking physical obstacle overlapping the box `position` ± `reachX`/`reachZ`, read from the scene's resolved colliders.
+
 ## @jgengine/core/movement/steering
 
 - `YawVectorXZ` (type): type YawVectorXZ = readonly [number, number] — Yaw-frame steering math. The engine's heading convention is `forward = (sin yaw, cos yaw)` on the XZ plane with +Y up, which makes a positive yaw increment rotate counterclockwise seen from above — a turn to the entity's LEFT on screen. Every hand-written `heading += steer * rate * dt` therefore turns the wrong way; integrate steering through `steerYaw` instead.

@@ -40,6 +40,14 @@ import {
   type SceneRaycastApi,
 } from "../../scene/sceneRaycast";
 import { createSpatialApi, type SpatialApi } from "../../scene/spatial";
+import { DEFAULT_OBSTACLE_PLAYER_RADIUS } from "../../movement/movementModel";
+import {
+  createObstacleReachCache,
+  slideStep,
+  sourceObstacleReach,
+  sourceObstaclesNear,
+  type SolidObstacleSource,
+} from "../../movement/solidObstacles";
 import { createTargeting, type Targeting } from "../../scene/targeting";
 import type { TerrainField } from "../../world/terrain";
 import type { SimClock } from "../../time/simClock";
@@ -159,11 +167,33 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     return candidateIds;
   }
 
+  // `moveToward` reads the same blocking colliders the player resolver does, so a chaser stops at the
+  // wall that stops the player rather than lerping through it.
+  const walkerReach = createObstacleReachCache();
+  const solidSource: SolidObstacleSource = {
+    list: () => objects.list(),
+    inBox: (min, max) => objects.inBox(min, max),
+    collidersOf: (instanceId) => objectCollidersOf(instanceId),
+  };
+
   const spatial = createSpatialApi({
     resolvePosition: (instanceId) => entities.get(instanceId)?.position,
     candidates: refreshCandidateIds,
     grid: { cellSize: 8 },
     getVersion: () => spatialGeneration,
+    resolveStep: (position, stepX, stepZ) =>
+      slideStep(
+        position,
+        stepX,
+        stepZ,
+        sourceObstaclesNear(
+          solidSource,
+          sourceObstacleReach(solidSource, walkerReach),
+          position,
+          Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
+          Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
+        ),
+      ),
     ...(occluder !== undefined ? { occluder } : {}),
   });
 

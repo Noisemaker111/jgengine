@@ -15,6 +15,7 @@ import { join, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
+import { decodePng } from "./png-reader";
 
 /**
  * Default port when no worktree key is needed — kept for docs/bench that still
@@ -762,6 +763,54 @@ export function screencastCapturesFully(profile: DeviceProfile): boolean {
   return profile.deviceScaleFactor === 1;
 }
 
+/**
+ * Flat screencast frames tolerated before the pump is written off for this shot. The pump
+ * composites the page's *last committed* layers, and a WebGL canvas that has not committed
+ * one since the screencast started is simply absent from them — so the frame arrives fast,
+ * correctly sized, correctly timestamped, and carries a black hole where the 3D view is.
+ * A few frames is enough to tell "the canvas has not committed yet" from "this page never
+ * will"; past that, the forced re-raster is the only honest capture.
+ */
+export const MAX_FLAT_SCREENCAST_FRAMES = 4;
+
+/** Distinct sampled colours at or below which a region carries no picture. */
+const FLAT_REGION_COLOURS = 2;
+
+/**
+ * Whether `region` of a captured PNG holds a picture at all, sampled on a stride grid.
+ *
+ * This is the acceptance test the fast capture path lacked: size, timestamp, and encoding
+ * all passed on a frame whose viewport was one flat colour, so a blank 3D view shipped as
+ * a real shot. Scoped to the region because a busy HUD alone clears any whole-frame check.
+ */
+export function regionCarriesPicture(
+  bytes: Uint8Array,
+  region: { x: number; y: number; width: number; height: number },
+): boolean {
+  let decoded: { width: number; height: number; data: Uint8Array };
+  try {
+    decoded = decodePng(bytes);
+  } catch {
+    return true; // undecodable here is the size guard's or the scorer's call, not this one
+  }
+  const { width, height, data } = decoded;
+  const x0 = Math.max(0, Math.floor(region.x));
+  const y0 = Math.max(0, Math.floor(region.y));
+  const x1 = Math.min(width, Math.ceil(region.x + region.width));
+  const y1 = Math.min(height, Math.ceil(region.y + region.height));
+  if (x1 - x0 < 2 || y1 - y0 < 2) return true;
+  const stride = Math.max(1, Math.floor(Math.min(x1 - x0, y1 - y0) / 24));
+  const seen = new Set<number>();
+  for (let y = y0; y < y1; y += stride) {
+    for (let x = x0; x < x1; x += stride) {
+      const i = (y * width + x) * 4;
+      seen.add(((data[i] ?? 0) << 16) | ((data[i + 1] ?? 0) << 8) | (data[i + 2] ?? 0));
+      if (seen.size > FLAT_REGION_COLOURS) return true;
+    }
+  }
+  return false;
+}
+
 /** IHDR width/height without inflating the image data. */
 function pngSize(bytes: Uint8Array): { width: number; height: number } | null {
   if (bytes.length < 24 || bytes[0] !== 137 || bytes[1] !== 80) return null;
@@ -771,16 +820,19 @@ function pngSize(bytes: Uint8Array): { width: number; height: number } | null {
 }
 
 /**
- * Take the next composited frame off the screencast pump, or null when none arrives
- * in time. `notBefore` drops a frame the compositor presented before this request, so
- * a stale surface can never be handed back as the capture.
+ * Take the next composited frame off the screencast pump that actually shows the page, or
+ * null when none arrives in time. `notBefore` drops a frame the compositor presented before
+ * this request, and `liveRegion` drops one whose 3D viewport is a flat colour — the pump can
+ * hand back a well-formed frame the canvas has not committed into yet.
  */
 async function nextScreencastPng(
   session: CdpSession,
   timeoutMs: number,
   expect?: { width: number; height: number },
+  liveRegion?: { x: number; y: number; width: number; height: number },
 ): Promise<Buffer | null> {
   const notBefore = Date.now() / 1000;
+  let flatFrames = 0;
   return await new Promise<Buffer | null>((resolvePromise) => {
     let settled = false;
     const finish = (value: Buffer | null): void => {
@@ -808,6 +860,11 @@ async function nextScreencastPng(
         finish(null);
         return;
       }
+      if (liveRegion !== undefined && !regionCarriesPicture(bytes, liveRegion)) {
+        flatFrames += 1;
+        if (flatFrames >= MAX_FLAT_SCREENCAST_FRAMES) finish(null);
+        return;
+      }
       finish(bytes);
     });
     void session.send("Page.startScreencast", { format: "png", everyNthFrame: 1 }).catch(() => finish(null));
@@ -825,13 +882,23 @@ async function nextScreencastPng(
  * within `timeoutMs` falls back to `Page.captureScreenshot`, so a page that never
  * commits another frame still captures. `JG_CAPTURE_SCREENCAST=0` forces the old path.
  *
+ * Pass `liveRegion` (the 3D viewport in captured pixels) whenever the caller knows it: the
+ * pump composites the page's last committed layers, so a canvas that has not committed one
+ * since the screencast started is missing from an otherwise valid frame. Without the region
+ * that frame is indistinguishable from a good one, and a blank 3D view ships as a real shot.
+ *
  * The pump emits CSS-pixel frames — it ignores `deviceScaleFactor` — so a shot under a
  * dsf>1 profile (mobile) must pass `screencast: false` and keep the full-resolution path.
  * {@link screencastCapturesFully} decides that from the device profile.
  */
 export async function captureViewportPng(
   session: CdpSession,
-  options: { timeoutMs?: number; expect?: { width: number; height: number }; screencast?: boolean } = {},
+  options: {
+    timeoutMs?: number;
+    expect?: { width: number; height: number };
+    screencast?: boolean;
+    liveRegion?: { x: number; y: number; width: number; height: number };
+  } = {},
 ): Promise<ViewportPng> {
   if (options.screencast !== false && process.env.JG_CAPTURE_SCREENCAST !== "0") {
     try {
@@ -839,6 +906,7 @@ export async function captureViewportPng(
         session,
         options.timeoutMs ?? SCREENCAST_CAPTURE_TIMEOUT_MS,
         options.expect,
+        options.liveRegion,
       );
       if (bytes !== null) return { bytes, via: "screencast" };
     } catch {

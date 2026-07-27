@@ -14,6 +14,8 @@ interface KayKitPack {
   itch: string;
   title: string;
   categories: readonly string[];
+  /** Why this pack contributes nothing to the index yet; see `AssetSource.unpulled`. */
+  unpulled?: string;
 }
 
 const KAYKIT_PACKS: readonly KayKitPack[] = [
@@ -44,6 +46,7 @@ const KAYKIT_PACKS: readonly KayKitPack[] = [
     itch: "kaykit-medieval-hexagon-pack",
     title: "KayKit Medieval Hexagon Pack",
     categories: ["hexagon", "medieval", "environment"],
+    unpulled: "catalogued for on-demand pull; no game needs hex tiles yet",
   },
   {
     id: "kaykit-furniture",
@@ -82,4 +85,5 @@ export const kaykitSources: readonly AssetSource[] = KAYKIT_PACKS.map((pack) => 
   download: { url: githubArchiveUrl(pack.repo) },
   homepage: `https://kaylousberg.itch.io/${pack.itch}`,
   mirror: githubArchiveUrl(pack.repo),
+  ...(pack.unpulled !== undefined ? { unpulled: pack.unpulled } : {}),
 }));

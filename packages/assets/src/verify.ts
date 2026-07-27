@@ -79,6 +79,18 @@ export function verifyData(input: VerifyInput): VerifyResult {
     seenIds.add(source.id);
   }
 
+  // A model pack that has never been pulled is a pin nothing has ever checked: not that the URL
+  // points at the pack it is titled after, not that the archive ships glTF at all. Materials and
+  // sprites are pulled on demand, so only model packs are held to this.
+  const indexedSources = new Set(input.index.map((entry) => entry.source));
+  for (const source of input.sources) {
+    if (source.kind !== undefined && source.kind !== "model") continue;
+    if (indexedSources.has(source.id) || source.unpulled !== undefined) continue;
+    errors.push(
+      `source ${source.id}: model pack contributes no index entries — pull it, or record why not in \`unpulled\``,
+    );
+  }
+
   return { ok: errors.length === 0, errors };
 }
 
