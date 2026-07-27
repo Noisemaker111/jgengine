@@ -824,9 +824,9 @@ Teach four rules, one hand, and a reason to care, with no tutorial voice:
 3. **Fully procedural versus a tile set.** §13 asks a generator to produce a
    legible route back out of reusable parts, which is the hardest thing on this
    list and the one most likely to need authored anchors after all.
-4. **Do overrides and copies need their own pools?** Both currently spend power
-   alongside shields and devices, so a shield build and an override build compete
-   for one meter.
+4. **Is six families the right number?** Guns, melee, spells, shields, movement
+   and devices each answer "what do you do in a fight". Two utility families were
+   tried and cut for not answering it.
 
 ## 23. If this gets built here
 

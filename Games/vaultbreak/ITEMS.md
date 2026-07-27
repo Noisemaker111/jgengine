@@ -4,7 +4,7 @@ The item catalogue. [DESIGN.md](DESIGN.md) owns the systems; this owns the list.
 
 Status: a proposal to cut from. Nothing here is approved.
 
-## Eight families
+## Six families
 
 | Family | Runs on | What it is for |
 | --- | --- | --- |
@@ -14,8 +14,6 @@ Status: a proposal to cut from. Nothing here is approved.
 | **Shields** | Power | Stopping things |
 | **Movement** | Stamina | Getting somewhere, and getting back |
 | **Devices** | Power | Placed things that hold ground while you do something else |
-| **Overrides** | Power | Operating the building against the things inside it |
-| **Copies** | Power | Duplicating weapons, decoys and people |
 
 ## Two kinds of rarity
 
@@ -35,7 +33,7 @@ named items above the ladder, plus item level from where it dropped (DESIGN.md �
 
 ## How the library gets large
 
-There are about 240 item types below. That is the authored layer, and it is not
+There are about 200 item types below. That is the authored layer, and it is not
 where the size comes from. A single drop is a type, times a maker, times rolled
 affixes, times rarity, times item level, times whatever its own tree has bought.
 Two players holding the same rifle are not holding the same rifle. Types are what
@@ -59,8 +57,7 @@ shape, it should be an affix or a tree node instead.
 4. **A cost that is not a pool** — oxygen, health, cache space, or a second hand.
 5. **Pairing** — it gains something when a named other item is in another hand.
 6. **World** — it changes the level rather than the enemies.
-7. **Copying** — it uses the fiction nothing else has.
-8. **Memory** — it remembers across dives, or across Lives.
+7. **Memory** — it remembers across dives, or across Lives.
 
 **No hand item extends your oxygen.** How long you can stay is equipment's job —
 the tank itself, plus affixes on rings and necklaces (DESIGN.md §6). Hand items
@@ -293,59 +290,6 @@ a fight and strongest at the end of one.
 | **Shift clock** | Prints in range clock out and walk back to quarters. | Sealed |
 | **Scarecrow** | A printed decoy body. Enemies commit to it. | Sealed |
 
-# Overrides — power
-
-The building is still running, and these operate it. Doors, lights, power, water,
-heat, the public address system, the gas. Almost none of them deal damage and
-several are stronger than anything that does.
-
-| Item | What it does | Found |
-| --- | --- | --- |
-| **Override key** | Opens a sealed door. Also closes an open one. | Stocked |
-| **Door welder** | Seals a door permanently, in both directions. | Restricted |
-| **Intake override** | Reopens the entrance you came in through, from anywhere. | Sealed |
-| **Lift key** | Calls a lift. Fast travel, and a defensible box. | Restricted |
-| **Vent map** | Reveals the layout, including the route you took in. | Stocked |
-| **Roster board** | Shows every print in the vault and where it is standing. | Sealed |
-| **Light board** | Kills the lights in a section. You brought a lamp; they did not. | Restricted |
-| **Power lever** | Cuts power to a section. No turrets, no lights, no doors. | Restricted |
-| **Water main** | Floods a corridor. Everything slows, and shock conducts. | Restricted |
-| **Furnace control** | Heats a section until standing in it hurts. | Sealed |
-| **Freezer control** | The opposite. | Sealed |
-| **Bulkhead trigger** | Slams a pressure door. Cuts a wave in half, or your squad. | Restricted |
-| **Quarantine call** | The vault seals a section with prints inside it. | Sealed |
-| **Tube routing card** | Reroutes the pneumatic network, changing where its lines come out. | Sealed |
-| **Suppression override** | Delays the gas, or triggers it early somewhere you are not standing. | Sealed |
-| **Shift whistle** | Every print in earshot returns to its post and stays there. | Sealed |
-| **Shift card** | A forged credential. Prints treat you as staff until you do something staff would not. | Sealed |
-| **PA console** | Issue a shift change. Whole sections of the roster relocate. | Sealed |
-| **Ward siren** | Turns a vault's own alarm on deliberately. Everything comes to you, and everything is carrying something. | One-off |
-| **Beacon of the house** | The vault decides you are staff and stops fighting, until you take something. | One-off |
-
-# Copies — power
-
-The printers made everything down here and they still work. These use them to
-duplicate a weapon, a decoy, or a person. Every one should feel like a bad idea.
-
-| Item | What it does | Found |
-| --- | --- | --- |
-| **Pattern reader** | See what is inside an unopened case before cracking it. | Restricted |
-| **Ink tap** | Draws ink straight out of a printhouse. Very loud. | Restricted |
-| **Copy plate** | Duplicates one item in your cache, badly. | Sealed |
-| **Recursive plate** | Prints a copy of the last item you used. | Sealed |
-| **Pattern lifter** | Copies the item a print is holding. You keep the worse copy for the dive. | Sealed |
-| **Green print** | Prints an ally that fights for you until it degrades. | Sealed |
-| **Body press** | Prints a copy of you that repeats your last few seconds of movement and fire. | Sealed |
-| **Death mask** | Wear a print's face. That archetype ignores you. | Sealed |
-| **Misprint injector** | Corrupts a living print. It turns on the ones next to it. | Sealed |
-| **Scrambler** | A print killed with this comes back wrong, and hostile to everything. | Sealed |
-| **Culling stamp** | A print killed with this is not reprinted for the rest of the dive. | Sealed |
-| **Pattern burn** | Destroys a pattern. That archetype stops spawning in this vault. | Sealed |
-| **Overprint** | Forces a printhouse to run too fast until it fails. | Sealed |
-| **Self ledger** | Records this Life. On death, your next Life starts holding one item this one carried. | One-off |
-| **Understudy** | A decoy printed from your own pattern. Enemies commit to it completely. | One-off |
-| **Second shift** | A print pinned by it goes on trying to work its route. | One-off |
-
 ---
 
 # Two-hand items
@@ -363,7 +307,6 @@ the hand progression something to unlock besides quantity.
 | **Twin cast** | Fires two spells at once, both at reduced strength. | Sealed |
 | **Portal frame** | Place two points and move freely between them. | Sealed |
 | **Breach drill** | Cuts through any wall in the vault. | Sealed |
-| **Printhouse rig** | A portable printer that makes items mid-dive. | Sealed |
 | **Chorus organ** | The Choir's full instrument. Controls a whole room of prints at once. | One-off |
 | **Long Sunday** | The Choir's last broadcast. Prints that hear it return to their posts, which is not the same as being stunned. | One-off |
 
@@ -393,17 +336,14 @@ enormous thing over four small ones.
 | Seed drill or sprinkler root slows a group | Cryo cleaver, which shatters anything held or chilled |
 | Freon jet freezes a body solid | Any heavy hit, which shatters it |
 | Void draw or gravity well collects a crowd | Grenade launcher, mine cluster, choral swell |
-| PA console moves a patrol into a corridor | Line rifle down the length of it |
-| Light board kills the lights | Nightglass and static veil, which only work in the dark |
-| Water main floods a corridor | Static pylon or arc lance, which conduct through it |
+| A PA speaker walks a patrol into a corridor | Line rifle down the length of it |
+| Field lamp blinds what is looking at it | Nightglass and static veil, which want the dark |
 | Static veil hides you | Bolt thrower, silent and does not raise the alert |
 | Items that hurt you when fired | Absorb lattice, which turns that damage into a burst |
 | Vent gun needs heat to fire | Any overheating item in another hand |
 | Recall anchor dropped at the entrance | Any push deeper than your tank allows |
 | Signal jam disables enemy devices | A room of turrets you were not going to survive |
-| Ward siren brings everything to you | Bulkhead trigger, which decides how much of it arrives |
-| Pattern lifter copies an elite's weapon | The rest of the dive, with a weapon you did not earn |
-| Culling stamp stops reprints | A long fight you would otherwise have to leave |
+| Alarm box pulls a room off you | Mine cluster waiting where they are going |
 
 ## How the makers skew the list
 
@@ -414,28 +354,24 @@ what they touch rather than each getting a copy of everything:
 - **Orrery** — spells and shields, strong only while a second Orrery item is in another hand.
 - **Kiln** — a self-harming variant of anything: rocket tube, counterweight maul, blood ledger, last shutter.
 - **Corvin** — hybrids that take one hand and do two jobs: guard set, suture blade, convertible rifle.
-- **Meridian** — the whole movement family, most vault items, and most utility.
+- **Meridian** — the whole movement family and most utility.
 - **Vigil** — shields, devices, and everything that helps somebody else.
 
 ---
 
 ## What I would ship first
 
-Nineteen items, chosen so the first slice already has setup and payoff rather
-than a damage ladder:
+Eighteen items, three per family, chosen so the first slice already has setup and
+payoff rather than a damage ladder:
 
 Sidearm, service rifle, rivet gun · baton, fire axe, gauntlets · fireball, arc
 lance, kinetic push · bubble shield, deflect plate, coolant shroud · sprint
-boost, blink, grapple winch · turret, healing pool, PA speaker · override key.
-
-The override key is the nineteenth because sealing a door behind you is the first
-moment the walk back out becomes a decision rather than a walk.
+boost, blink, grapple winch · turret, healing pool, PA speaker.
 
 ## Open questions
 
-1. **Do overrides and copies have their own pools?** Both currently spend power, which is also what shields and devices use. A shield build and an override build competing for the same meter may be wrong.
-2. **How far can a milestone node go?** A fireball whose tree makes it leave a burning patch has quietly become a device. Trees that hand out hardware are the best part of this design and also the easiest place for families to stop meaning anything.
-3. **Which print carries what?** Every item needs at least one print that visibly
+1. **How far can a milestone node go?** A fireball whose tree makes it leave a burning patch has quietly become a device. Trees that hand out hardware are the best part of this design and also the easiest place for families to stop meaning anything.
+2. **Which print carries what?** Every item needs at least one print that visibly
    carries it, because that is the only way it enters the game (DESIGN.md §7). The
    catalogue does not assign carriers yet, and that assignment is what decides
    which places can build which characters.
