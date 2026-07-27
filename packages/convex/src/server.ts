@@ -777,7 +777,7 @@ export function createGameServerFunctions(options?: {
         runtime,
         scopeWithActor(runtime.joinScope(actorUserId, isNew), actorUserId),
       );
-      snapshot = runtime.joinPlayer(snapshot, actorUserId, isNew);
+      snapshot = runtime.joinPlayer(snapshot, actorUserId, isNew, now);
       await persistServerSnapshot(ctx, refreshed, snapshot, save);
 
       return { serverId: refreshed._id, isNew };
@@ -1210,7 +1210,7 @@ export function createGameServerFunctions(options?: {
           const runtime = resolveRuntime(registry, server.gameId);
           // Unscoped on purpose: onTick is handed the whole world and may touch any of it.
           const loaded = await loadServerSnapshot(ctx, server, runtime);
-          const snapshot = runtime.tick(loaded, elapsedMs / 1_000);
+          const snapshot = runtime.tick(loaded, elapsedMs / 1_000, now);
           await persistServerSnapshot(ctx, server, snapshot, server.save as SaveConfig);
           await ctx.db.patch(server._id, { tickAnchorMs: now });
           ticked += 1;

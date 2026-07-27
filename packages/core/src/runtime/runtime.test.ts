@@ -259,3 +259,74 @@ test("tick runs onTick once per world step with player id fan-in", () => {
   expect(snapshot.server.session.ticks).toBe(1);
   expect(snapshot.revision).toBe(3);
 });
+
+test("the host clock reaches onInit, onNewPlayer, onTick, and a command", () => {
+  const seen: Record<string, number | undefined> = {};
+  const runtime = createGameRuntime({
+    gameId: "demo",
+    save: "none",
+    commands: {
+      "demo.stamp": {
+        validate: (_snapshot, _input, _actor, nowMs) => {
+          seen.validate = nowMs;
+          return null;
+        },
+        apply: (snapshot, _input, _actor, nowMs) => {
+          seen.apply = nowMs;
+          return snapshot;
+        },
+      },
+    },
+    loop: {
+      onInit: (ctx) => {
+        seen.init = ctx.nowMs;
+      },
+      onNewPlayer: (ctx) => {
+        seen.join = ctx.nowMs;
+      },
+      onTick: (ctx) => {
+        seen.tick = ctx.nowMs;
+      },
+    },
+  });
+
+  let snapshot = runtime.hydrate({
+    gameId: "demo",
+    serverId: "srv_1",
+    serverRow: { entities: [], objects: [], session: {} },
+    playersByUserId: {},
+    chunksByKey: {},
+    nowMs: 1_000,
+  });
+  snapshot = runtime.joinPlayer(snapshot, "alice", true, 2_000);
+  snapshot = runtime.tick(snapshot, 0.05, 3_000);
+  runtime.runCommand(snapshot, "alice", "demo.stamp", {}, 4_000);
+
+  expect(seen).toEqual({ init: 1_000, join: 2_000, tick: 3_000, validate: 4_000, apply: 4_000 });
+});
+
+test("a host that passes no clock gets the wall clock rather than zero", () => {
+  let ticked: number | undefined;
+  const runtime = createGameRuntime({
+    gameId: "demo",
+    save: "none",
+    commands: {},
+    loop: {
+      onTick: (ctx) => {
+        ticked = ctx.nowMs;
+      },
+    },
+  });
+  const before = Date.now();
+  runtime.tick(
+    runtime.hydrate({
+      gameId: "demo",
+      serverId: "srv_1",
+      serverRow: { entities: [], objects: [], session: {} },
+      playersByUserId: {},
+      chunksByKey: {},
+    }),
+    0.05,
+  );
+  expect(ticked).toBeGreaterThanOrEqual(before);
+});

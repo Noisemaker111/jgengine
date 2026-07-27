@@ -20,15 +20,18 @@ export type CommandDef<TInput = unknown> = {
    * the stored one with a blank. Omit it to keep the whole-world default.
    */
   scope?: (input: TInput, actorUserId: string) => CommandScope;
+  /** `nowMs` is the host wall clock, in ms — read it rather than a `now` the client put in `input`. */
   validate: (
     snapshot: import("./snapshot").GameRuntimeSnapshot,
     input: TInput,
     actorUserId: string,
+    nowMs: number,
   ) => CommandValidationError | null;
   apply: (
     snapshot: import("./snapshot").GameRuntimeSnapshot,
     input: TInput,
     actorUserId: string,
+    nowMs: number,
   ) => import("./snapshot").GameRuntimeSnapshot;
 };
 
@@ -93,18 +96,19 @@ export function runCommand<TInput>(
   commandName: string,
   input: TInput,
   actorUserId: string,
+  nowMs: number = Date.now(),
 ): RunCommandResult {
   const command = commands[commandName];
   if (!command) {
     return { ok: false, reason: `Unknown command: ${commandName}` };
   }
 
-  const validationError = command.validate(snapshot, input, actorUserId);
+  const validationError = command.validate(snapshot, input, actorUserId, nowMs);
   if (validationError) {
     return { ok: false, reason: validationError.reason };
   }
 
-  const next = command.apply(snapshot, input, actorUserId);
+  const next = command.apply(snapshot, input, actorUserId, nowMs);
   return {
     ok: true,
     snapshot: {

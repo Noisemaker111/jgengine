@@ -17,6 +17,20 @@ between (`--json` for structured output).
 
 ## [Unreleased]
 
+### Migrate
+
+- **`ServerTickPlan.due` is `{ id, runs }[]` instead of a repeated id list.** `planServerTick` repeated a system id once per missed interval, and the obvious way to consume that — `due.includes(id)` or a `Set` — ran the system once while the returned anchor had already advanced by every repeat, silently dropping the catch-up work. A host now reads `runs` (or `tickRunCount(plan, id)`) and loops that many times.
+- **`CommandDef.validate` / `CommandDef.apply` take a fourth argument, `nowMs`.** Existing implementations that ignore it are unaffected. Commands that took a `now` in their `input` should read this instead — the client supplied the old one.
+
+### Changed
+
+- **The host's wall clock reaches the runtime hooks.** `RuntimeInitContext` (so `onInit`, `onNewPlayer`, and `onTick` alike) carries `nowMs`, the host timestamp for that call. Anything keyed to real time — a UTC date rollover, a `lastTickAt` anchor read by non-tick code, an RNG seed or `createdAt` stamp — reads it rather than accumulating `dtSeconds` against an epoch persisted in the snapshot, which drifts by whatever the tick loses to stalls and `maxCatchUp` clamping. `GameRuntime.hydrate` takes an optional `nowMs`; `tick`, `joinPlayer`, and `runCommand` take an optional trailing `nowMs`. All default to `Date.now()`, and the shipped WS and Convex hosts pass the timestamp they already computed to plan the tick.
+
+### Added
+
+- **`resolveSourceWalkerStep(source, cache, position, stepX, stepZ, options)`** (`@jgengine/core/movement/solidObstacles`) — `resolveWalkerStep` with no `GameContext`, for movement rules that live in a pure package with no React or three.js. `SolidObstacleSource`, `ObstacleReachCache`, `createObstacleReachCache`, `sourceObstacleReach`, `sourceObstaclesNear`, and `slideStep` are public alongside it instead of `@internal`, so a game no longer has to push the resolver up into its app layer and inject it back down. `resolveWalkerStep`'s doc now states that it already resolves X and Z separately, so a caller doing its own axis-split must hand it one axis per call.
+- **`tickRunCount(plan, id)`** (`@jgengine/core/time/serverTick`) — how many runs a plan owes a system, or 0 when it is not due.
+
 <!--
 Every PR that changes `packages/*/src` records its consumer-facing change here, so
 the next release's notes are complete by construction. Add a bullet under the right
