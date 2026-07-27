@@ -141,7 +141,7 @@ numbers, it is further from the original.
 | **Fallout Shelter** | The home base as a persistent second game: named residents, rooms that want specific stats, work and scavenging that continue while you are logged off. |
 | **Dark and Darker** | Extraction as a place you must physically reach, and losing the character as the price of the fantasy. |
 | **Marathon (2025)** | Swappable items as the whole of build identity, and a free no-risk drop-in as the anti-death-spiral valve. |
-| **Borderlands** | Items as procedural part assemblies from opinionated manufacturers, and rarity tiers a player already understands. |
+| **Borderlands** | Opinionated manufacturers with real trade-offs, and rarity tiers a player already understands. |
 | **Diablo** | A grid you arrange, item levels, and per-item progression rather than one character tree. |
 | **Binding of Isaac** | Synergies over stats, and the honest one: a run ends. |
 
@@ -176,14 +176,14 @@ breath are both spells spending mana; one throws a ball and one is a cone.
 Fire, frost and shock are how an item looks and what status it applies, never a
 different resource or a different rule.
 
-**Anatomy.** Hand item = pattern + 2–4 parts + rolled affixes + item level +
-rarity. Parts come from opinionated makers and are swappable at home, so a bad
-drop is a component rather than trash.
+**Anatomy.** Hand item = a type + a maker + rolled affixes + item level + rarity
++ whatever its own tree has bought. There are no swappable components. A rifle is
+a rifle, and what it becomes it becomes by being used (§8).
 
 | Maker | Identity | Cost |
 | --- | --- | --- |
 | **Kessler** | Volume, cheap ammo, forgiving | Awful at range |
-| **Orrery** | Makes spells and shields sing | Weak unless paired with another Orrery part |
+| **Orrery** | Makes spells and shields sing | Weak unless another Orrery item is in another hand |
 | **Kiln** | Enormous damage | Self-harm, overheat, recoil that hurts you |
 | **Corvin** | Hybrids: gunblades, spell-swords, bayonets | Neither half is best-in-class |
 | **Meridian** | Movement and utility | Low raw damage |
@@ -236,6 +236,13 @@ the field for a worse roll spread, or carry it home for a better roll.
 
 **Every hand item carries its own skill tree** (§8), so two players holding the
 same rifle can have spent it differently.
+
+**Some items take two hands, and some pay you for empty ones.** A two-hand item
+is unusable at one hand and a real trade at four, which gives the hand
+progression something to unlock besides quantity. Empty-hand items scale with how
+many hands you leave open, so a one-hand character is a different character
+rather than a worse one, and a four-hand player can still choose one enormous
+thing over four small ones.
 
 The catalogue itself lives in [ITEMS.md](ITEMS.md).
 
@@ -342,11 +349,33 @@ experience, and its points buy nodes on its own tree — a rifle's tree is about
 mags, recoil and penetration; a fireball's is about radius, ignition and cast
 time. Two players with the same drop end up with different weapons.
 
-This replaces both the character talent tree and item upgrading. There is no
-separate refine or upgrade step; an item gets better because you used it.
+**Milestone nodes are hardware, not percentages.** The small nodes on a tree tune
+numbers. The big ones bolt something on, visibly, and change what the item is:
 
-Item trees are lost with the Life along with the item, except where §9 returns
-one. Whether a returned item keeps its tree progress is open (§22).
+| Item | A milestone might be |
+| --- | --- |
+| Service rifle | An underbarrel grenade launcher |
+| Scattergun | A second barrel, fired together or apart |
+| Fireball | It splits into three on the way out |
+| Frost lance | It leaves the ground frozen behind it |
+| Fire axe | A spike on the reverse for armour |
+| Bubble shield | It becomes a dome instead of a plate |
+| Grapple winch | A second line, so you can anchor two points |
+| Turret | It reloads itself from your ammo pool |
+
+A milestone changes the silhouette, which matters because §7 makes silhouettes
+the way players read a fight. A rifle with a launcher under it looks like a rifle
+with a launcher under it, on you and on a print.
+
+This replaces the character talent tree, item upgrading, and swappable
+components. There is no bench where you bolt a barrel onto something. An item
+gets better because you used it, and the things you would have bolted on are the
+reward for using it.
+
+**A returned item comes back untrained.** §9 hands a few items to your next Life,
+and each one arrives at zero tree progress. You get the weapon, not the hours you
+put into it, so the item is a head start and never a shortcut past the part of
+the game where you use something until it becomes yours.
 
 **Respec** is free at home, per item, between dives.
 
@@ -398,32 +427,31 @@ yours. Not a menu with a background. The homefolk call you a **diver**.
 | **The Printer** | Brings you back | Ink + power |
 | **Armorer** | Sets what a fresh character is issued. Upgrading raises the floor for every future Life. | Waste + alloy |
 | **Case Bench** | Cracks cased items, rerolls one affix | Wire + optics |
-| **Parts Bench** | Swaps parts between items; applies maker licences | Parts + licences |
 | **Stash** | Holds what death returned and what a squadmate lent you | — |
 | **Index** | Everything you have ever brought home, mounted; the Log; the wall of dead Lives | — |
 | **Bunks** | Homefolk roster, assignment, training. Its level is the roster cap. | Food + beds |
-| **Breaker** | Tears salvage into parts and reagents | Salvage + power |
+| **Breaker** | Tears salvage into components and reagents | Salvage + power |
 | **Radio** | Other lit vaults, contracts, distress calls (§16) | Power |
-| **Shop** | Crafts equipment and items. Cheap work is below field quality; a fully upgraded Shop can reach the top at very high cost. | Parts + cells |
-| **Vendor** | Rotating stock, refreshed on a timer, the same list for everyone | Salvage |
+| **Shop** | Crafts and sells common gear, plus one rare or epic item that changes every day | Alloy + cells |
 
 **Every station is a queue and every queue is staffed.** A station with nobody
 assigned does nothing. Homefolk stats set rate and quality, so more people means
 more parallel work finished per dive, and food and morale (§12) are the
 counterweight.
 
-**Two ways to get good gear without diving**, both slow. The Vendor rotates stock
-on a timer, so everyone sees the same list and occasionally it is worth buying.
-The Shop can eventually craft high rarity, but only at a fully upgraded station
-and at a cost high enough that a dive is almost always the faster route. Open
-question in §22: what the Shop's ceiling actually is.
+**The Shop is common stock and one good thing a day.** Everything it makes and
+sells is common, which covers a bad week and nothing else. On top of that it
+carries a single rare or epic item that changes daily and is the same for
+everyone. That is the whole of buying power in the game: a floor you can rely on,
+and one thing a day worth walking over to look at. Everything above epic has to
+be found.
 
 **Layout.** Stations ring an atrium with the Garage at one end and the Index at
 the other. Budget the full loop at about 60 seconds of walking.
 
 ## 11. Homefolk
 
-**They process, and they scavenge.** Homefolk break salvage into parts, crack
+**They process, and they scavenge.** Homefolk break salvage down, crack
 cases, craft, maintain the stations, keep the printer running — and they go out.
 A scavenging party leaves for a set duration and comes back with materials and
 sometimes items, at a rarity and item level meaningfully worse than what you find
@@ -432,7 +460,10 @@ yourself. They cost nothing to send.
 The intent is a floor under a bad week rather than a second income. If scavenging
 ever competes with diving, the numbers are wrong, not the idea.
 
-*Open:* whether a scavenging party can fail, be lost, or come back short.
+**A scavenging party never fails and never dies.** It can be unlucky. Some trips
+come back with nothing, and a run of nothing can last a while. Sending them is
+always right and never reliable, which keeps it a background comfort rather than
+a decision you optimise.
 
 **Forty strangers**, capped by the Bunks. Procedurally generated: name, face,
 former job, three stats (**Grit** / **Wit** / **Nerve**), a couple of traits, and
@@ -579,8 +610,11 @@ survivable if your squad is close. Exact numbers are open.
 bleed-out clock does not pause for it, and each player can be revived twice per
 dive, after which downed is dead.
 
-*Open (§22):* whether an alarm still exists as a separate escalation on top of the
-purge, or whether the gas is the only pressure a dive has.
+**There is no alarm.** The gas is the only pressure a dive has. Nothing you do to
+an objective starts a second clock, nothing escalates on a separate track, and
+the one meter on screen is the one that matters. Prints still notice you, converge
+and call for help, but that is local and it decays; the vault's own countermeasure
+is the purge and nothing else.
 
 ## 15. Salvage
 
@@ -591,7 +625,7 @@ things with different sources and uses.
 | --- | --- | --- |
 | **Waste** | Everything, everywhere | Armorer, structure, station levels |
 | **Wire** | Panels, terminals, Fitter prints | Case Bench, electronics |
-| **Cells** | Power rooms, Guard prints | The Garage, Shop, station power |
+| **Cells** | Power rooms, Guard prints | The Garage, the Shop, station power |
 | **Optics** | Sensors, Chorister prints, sealed labs | Case Bench, ranged equipment, map upgrades |
 | **Polymer** | Quarters, medical, hydroponics | Armor, seals, reagents |
 | **Alloy** | Far out only, structural | High-tier equipment, the good Armorer levels |
@@ -615,20 +649,20 @@ tune, and Vesk is usually already there.
 Four to six named living vaults, each with an identity, an inventory and a way of
 talking — *Cassin* (agricultural, generous, naive), *Ossuary Nine*
 (records-obsessed, trades knowledge only), *Foreman's Rest* (industrial,
-mercenary, sells parts), *the Wick* (one surviving voice who should not still be
+mercenary, sells materials), *the Wick* (one surviving voice who should not still be
 broadcasting). Between them, automated loops from vaults that died decades ago,
 still announcing shift change.
 
 **They ask you for things.** Contracts come from people rather than a job board,
 and contract chains pay in permanent things a Life cannot lose: stat points at
-reprint, maker licences, recipes, Vendor access, applicants, cosmetics.
+reprint, maker licences, recipes, Shop stock, applicants, cosmetics.
 
 **They can go dark.** A vault that broadcasts distress and gets ignored across
 enough real days goes quiet, and later shows up on your map as somewhere you can
 drive to. You can walk in and loot a place you knew, and meet the voice you used
 to talk to as a First. Use sparingly.
 
-**Trade** is salvage, parts, patterns and rumours.
+**Trade** is salvage, patterns and rumours.
 
 ---
 
@@ -756,32 +790,20 @@ Teach four rules, one hand, and a reason to care, with no tutorial voice:
 
 ## 22. Open questions
 
-1. **Is the purge the only pressure, or is there also an alarm?** §14 currently has
-   one clock. A separate objective-triggered escalation would add a second, and
-   two clocks may be one too many.
-2. **What is the Shop's actual ceiling?** §10 says a fully upgraded Shop can reach
-   high rarity at high cost. If it can reach legendary, home crafting eventually
-   competes with diving; if it stops at epic, the top of the ladder stays a place
-   you have to go.
-3. **Do returned items keep their item-tree progress?** §9 returns items and §8
-   puts progression on them. Returning a fully-trained weapon is a much bigger
-   gift than returning the base item.
-4. **Does the detection model survive four players?** Four bodies make four times
+1. **Does the detection model survive four players?** Four bodies make four times
    the noise, and if quiet is unreachable in a full squad it becomes a solo mode by
    accident.
-5. **How far can the tank stretch before the dive stops being tense?** The whole
+2. **How far can the tank stretch before the dive stops being tense?** The whole
    act structure is one number and it has not been chosen.
-6. **Does losing the whole Life still land, now that some of it comes back?** The
+3. **Does losing the whole Life still land, now that some of it comes back?** The
    softener in §9 protects the player and costs the moment some of its weight.
-7. **Can a scavenging party fail?** §11 says they cost nothing to send, which makes
-   sending them constant and thoughtless.
-8. **Fully procedural versus a tile set.** §13 asks a generator to produce a
+4. **Fully procedural versus a tile set.** §13 asks a generator to produce a
    legible route back out of reusable parts, which is the hardest thing on this
    list and the one most likely to need authored anchors after all.
-9. **Item library size.** Enemy variety is downstream of item count. Guess: about
-   50 items across six families, each with its own tree. [ITEMS.md](ITEMS.md)
-   proposes 88 and marks what it would cut.
-10. **PvP shape.** Contested locations and an opt-in mode are different products.
+5. **Do vault and printing items need their own pools?** Both currently spend
+   power alongside shields and devices, so a shield build and a vault build
+   compete for one meter.
+6. **PvP shape.** Contested locations and an opt-in mode are different products.
 
 ## 23. If this gets built here
 
@@ -796,13 +818,13 @@ Teach four rules, one hand, and a reason to care, with no tutorial voice:
 
 Reusable seams this pushes upstream, all genre-agnostic:
 
-- **Procedural item assembly** — pattern, parts, affixes, item level, rarity
+- **Procedural item assembly** — type, maker, affixes, item level, two rarity axes
 - **Shared ability slots** — one primitive where an NPC's equipped ability set is
   its behaviour set is its drop table
 - **Multi-pool resource costs** — abilities drawing on named, separately-sized
   pools that equipment sizes
 - **Per-item progression trees** — experience and nodes owned by an item instance
-  rather than a character
+  rather than a character, including nodes that add hardware and change its model
 - **Grid inventory** — shaped items, packing, and containers
 - **Consumable-clock extraction** — a depleting carried resource as the run timer,
   with the entrance as the exit
@@ -824,6 +846,6 @@ entry recording the lineages in §4.
 - [Fallout Shelter rooms](https://fallout.fandom.com/wiki/Fallout_Shelter_rooms) · [Dwellers](https://fallout-archive.fandom.com/wiki/Vault_dwellers_(Fallout_Shelter)) · [Wasteland exploration](https://gamerant.com/fallout-shelter-best-tips-for-exploring-wasteland/)
 - [Dark and Darker extraction](https://www.thegamer.com/dark-and-darker-extraction-guide/) · [Escape portals](https://gamerant.com/dark-and-darker-how-to-extract-escape/)
 - [Marathon Runner shells and abilities](https://kotaku.com/marathon-runner-shells-trailer-abilities-bungie-2000660170) · [Class list](https://gamerant.com/bungie-marathon-game-full-list-of-confirmed-classes-comparison/)
-- [Borderlands weapon parts](https://borderlands.fandom.com/wiki/Borderlands_2_Weapons) · [BL4 licensed parts](https://www.sportskeeda.com/esports/what-licensed-parts-system-borderlands-4)
+- [Borderlands manufacturers](https://borderlands.fandom.com/wiki/Manufacturer)
 - [Diablo II item quality](https://diablo.fandom.com/wiki/Item_Quality_(Diablo_II)) · [Item level](https://diablo.fandom.com/wiki/Item_Level)
 - [Isaac level generation](https://www.boristhebrave.com/2020/09/12/dungeon-generation-in-binding-of-isaac/) · [Rebirth wiki](https://bindingofisaacrebirth.fandom.com/wiki/Level_Generation)
