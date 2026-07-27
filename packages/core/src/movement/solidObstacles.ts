@@ -46,8 +46,8 @@ export interface ObstacleReach {
 
 /**
  * The slice of the scene's object store this query needs. Narrow on purpose: the scene context wires
- * its own store here while it is still being constructed, and `ctx.scene.object` satisfies it as-is.
- * @internal
+ * its own store here while it is still being constructed, `ctx.scene.object` satisfies it as-is, and a
+ * pure rules package with no `GameContext` to import can satisfy it from its own object list.
  */
 export interface SolidObstacleSource {
   list(): readonly { instanceId: string; position: EntityPosition; rotationY: number }[];
@@ -58,13 +58,13 @@ export interface SolidObstacleSource {
   collidersOf(instanceId: string): Parameters<typeof resolveColliders>[0] | null;
 }
 
-/** Mutable reach cache; one per source, invalidated by object count. @internal */
+/** Mutable reach cache; one per source, invalidated by object count. */
 export interface ObstacleReachCache {
   count: number;
   value: ObstacleReach;
 }
 
-/** A fresh {@link ObstacleReachCache} for a caller that owns its own source. @internal */
+/** A fresh {@link ObstacleReachCache} for a caller that owns its own source. */
 export function createObstacleReachCache(): ObstacleReachCache {
   return { count: -1, value: { horizontal: OBSTACLE_MAX_HALF_EXTENT, vertical: OBSTACLE_VERTICAL_FLOOR } };
 }
@@ -81,7 +81,7 @@ export function solidObstacleReach(ctx: GameContext): ObstacleReach {
   return sourceObstacleReach(ctx.scene.object, reachCache(ctx));
 }
 
-/** {@link solidObstacleReach} against a bare source and caller-owned cache. @internal */
+/** {@link solidObstacleReach} against a bare source and caller-owned cache. */
 export function sourceObstacleReach(source: SolidObstacleSource, cache: ObstacleReachCache): ObstacleReach {
   const objects = source.list();
   if (cache.count === objects.length) return cache.value;
@@ -210,7 +210,7 @@ export function solidObstaclesNear(
   return sourceObstaclesNear(ctx.scene.object, solidObstacleReach(ctx), position, reachX, reachZ, height);
 }
 
-/** {@link solidObstaclesNear} against a bare source and an already-resolved reach. @internal */
+/** {@link solidObstaclesNear} against a bare source and an already-resolved reach. */
 export function sourceObstaclesNear(
   source: SolidObstacleSource,
   reach: ObstacleReach,
@@ -253,6 +253,11 @@ export function sourceObstaclesNear(
  * Bounded by the same broadphase as the player's gather: one `inBox` query sized to this step, never a
  * full-world scan, so it stays affordable per NPC per tick.
  *
+ * The sliding is already axis-separated: X and Z are resolved independently inside, so a caller that
+ * also splits its own movement by axis must hand this exactly one axis per call (`stepZ: 0`, then
+ * `stepX: 0`). Running an axis-split pass over a step this function already resolved double-cuts it,
+ * and the composition is wrong in either order.
+ *
  * @capability walker-solid-step slide an NPC's step against the geometry that blocks the player
  */
 export function resolveWalkerStep(
@@ -268,7 +273,38 @@ export function resolveWalkerStep(
   return slideStep(position, stepX, stepZ, obstacles, radius, options.stepUpHeight ?? 0);
 }
 
-/** {@link resolveWalkerStep} against an already-gathered obstacle set. @internal */
+/**
+ * {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare
+ * {@link SolidObstacleSource} and a caller-owned {@link ObstacleReachCache}.
+ *
+ * This is the entry point for rules that live in a pure package — no React, no three.js, no engine
+ * context to import. Hold one cache per source for the life of that source (`createObstacleReachCache()`)
+ * rather than making a fresh one per step; it is what keeps the reach scan off the per-step path.
+ * The same axis-separation note as {@link resolveWalkerStep} applies.
+ *
+ * @capability walker-solid-step-source slide a step against solid geometry from a pure rules package
+ */
+export function resolveSourceWalkerStep(
+  source: SolidObstacleSource,
+  cache: ObstacleReachCache,
+  position: EntityPosition,
+  stepX: number,
+  stepZ: number,
+  options: { radius?: number; stepUpHeight?: number } = {},
+): { stepX: number; stepZ: number } {
+  if (stepX === 0 && stepZ === 0) return { stepX, stepZ };
+  const radius = options.radius ?? DEFAULT_OBSTACLE_PLAYER_RADIUS;
+  const obstacles = sourceObstaclesNear(
+    source,
+    sourceObstacleReach(source, cache),
+    position,
+    Math.abs(stepX) + radius,
+    Math.abs(stepZ) + radius,
+  );
+  return slideStep(position, stepX, stepZ, obstacles, radius, options.stepUpHeight ?? 0);
+}
+
+/** {@link resolveWalkerStep} against an already-gathered obstacle set. */
 export function slideStep(
   position: EntityPosition,
   stepX: number,

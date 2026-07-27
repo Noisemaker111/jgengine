@@ -26,6 +26,13 @@ export type ServerLoopHooks = {
 export type RuntimeInitContext = {
   snapshot: GameRuntimeSnapshot;
   setSnapshot: (snapshot: GameRuntimeSnapshot) => void;
+  /**
+   * Host wall clock at the start of this call, in ms. The host already knows it, so anything keyed to
+   * real time — a UTC date rollover, a `lastTickAt` anchor other code paths read, a seed or a
+   * `createdAt` stamp — reads it here instead of re-deriving one by accumulating `dtSeconds` against a
+   * persisted epoch. It is authoritative: unlike a `now` carried in command input, no client supplied it.
+   */
+  nowMs: number;
 };
 
 export type RuntimeLoopContext = RuntimeInitContext & {
@@ -53,6 +60,8 @@ export type HydrateInput = {
   playersByUserId: Record<string, RuntimePlayerRow>;
   chunksByKey: Record<string, RuntimeChunkRow>;
   revision?: number;
+  /** Host wall clock for `onInit`, in ms. Defaults to `Date.now()`. */
+  nowMs?: number;
 };
 
 export type GameRuntime = {
@@ -70,6 +79,8 @@ export type GameRuntime = {
     actorUserId: string,
     commandName: string,
     input: unknown,
+    /** Host wall clock handed to `validate`/`apply`, in ms. Defaults to `Date.now()`. */
+    nowMs?: number,
   ) => ReturnType<typeof runCommand>;
   /**
    * What a command declares it will touch, evaluated before hydration so a host can load that slice
@@ -78,11 +89,13 @@ export type GameRuntime = {
   commandScope: (commandName: string, input: unknown, actorUserId: string) => CommandScope | undefined;
   /** What a join has to hydrate. `undefined` means the whole world, as when `onNewPlayer` is unscoped. */
   joinScope: (userId: string, isNew: boolean) => CommandScope | undefined;
-  tick: (snapshot: GameRuntimeSnapshot, dtSeconds: number) => GameRuntimeSnapshot;
+  /** `nowMs` is the host wall clock at the start of the tick, in ms; defaults to `Date.now()`. */
+  tick: (snapshot: GameRuntimeSnapshot, dtSeconds: number, nowMs?: number) => GameRuntimeSnapshot;
   joinPlayer: (
     snapshot: GameRuntimeSnapshot,
     userId: string,
     isNew: boolean,
+    nowMs?: number,
   ) => GameRuntimeSnapshot;
   toProfileRow: (snapshot: GameRuntimeSnapshot, userId: string) => RuntimeProfileRow | null;
 };
@@ -112,6 +125,7 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
           get snapshot() {
             return current;
           },
+          nowMs: input.nowMs ?? Date.now(),
           setSnapshot(next) {
             current = next;
           },
@@ -120,8 +134,15 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
       return current;
     },
 
-    runCommand(snapshot, actorUserId, commandName, input) {
-      return runCommand(snapshot, definition.commands, commandName, input, actorUserId);
+    runCommand(snapshot, actorUserId, commandName, input, nowMs) {
+      return runCommand(
+        snapshot,
+        definition.commands,
+        commandName,
+        input,
+        actorUserId,
+        nowMs ?? Date.now(),
+      );
     },
 
     commandScope(commandName, input, actorUserId) {
@@ -133,7 +154,7 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
       return loop.joinScope?.(userId, isNew);
     },
 
-    tick(snapshot, dtSeconds) {
+    tick(snapshot, dtSeconds, nowMs) {
       if (!loop?.onTick) return snapshot;
       let current = snapshot;
       const ctx: RuntimeWorldContext = {
@@ -143,6 +164,7 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
         get playerIds() {
           return Object.keys(current.players);
         },
+        nowMs: nowMs ?? Date.now(),
         setSnapshot(next) {
           current = next;
         },
@@ -151,7 +173,7 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
       return current;
     },
 
-    joinPlayer(snapshot, userId, isNew) {
+    joinPlayer(snapshot, userId, isNew, nowMs) {
       const players = { ...snapshot.players };
       if (!players[userId]) {
         players[userId] = createEmptyPlayerRow(userId);
@@ -179,6 +201,7 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
           return next;
         },
         player: { userId, isNew },
+        nowMs: nowMs ?? Date.now(),
         setSnapshot(updated) {
           next = updated;
         },

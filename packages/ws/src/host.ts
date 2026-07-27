@@ -219,6 +219,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
       playersByUserId: buildHydratePlayers(record, profiles),
       chunksByKey,
       revision: record.revision,
+      nowMs: now(),
     });
     const existing = live.get(record.serverId);
     if (existing) return existing;
@@ -284,7 +285,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
 
           const runtime = resolveRuntime(entry.record.gameId);
           const before = entry.snapshot.revision;
-          entry.snapshot = runtime.tick(entry.snapshot, elapsedMs / 1_000);
+          entry.snapshot = runtime.tick(entry.snapshot, elapsedMs / 1_000, timestamp);
           entry.record = { ...entry.record, tickAnchorMs: timestamp, updatedAt: timestamp };
           if (entry.snapshot.revision !== before) {
             markMutated(entry);
@@ -404,7 +405,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
           updatedAt: timestamp,
           dirtyAt: timestamp,
         };
-        entry.snapshot = runtime.joinPlayer(entry.snapshot, args.userId, isNew);
+        entry.snapshot = runtime.joinPlayer(entry.snapshot, args.userId, isNew, timestamp);
         await flushServer(entry);
         emit({ type: "server", serverId: entry.record.serverId });
         emit({ type: "player", serverId: entry.record.serverId, userId: args.userId });
@@ -480,7 +481,7 @@ export function createGameHost(options: GameHostOptions): GameHost {
         const commandInput = envelope !== null ? envelope.input : args.input;
 
         const runtime = resolveRuntime(entry.record.gameId);
-        const result = runtime.runCommand(entry.snapshot, args.userId, args.command, commandInput);
+        const result = runtime.runCommand(entry.snapshot, args.userId, args.command, commandInput, now());
         const outcome: TransportRunCommandResult = result.ok
           ? { ok: true }
           : { ok: false, reason: result.reason };

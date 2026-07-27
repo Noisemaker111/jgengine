@@ -601,6 +601,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveWalkerStep` (function) · `import { resolveWalkerStep } from "@jgengine/core/movement/solidObstacles"`
 
+## walker-solid-step-source — slide a step against solid geometry from a pure rules package
+
+- `resolveSourceWalkerStep` (function) · `import { resolveSourceWalkerStep } from "@jgengine/core/movement/solidObstacles"`
+
 ## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
 
 - `createWaveRunner` (function) · `import { createWaveRunner } from "@jgengine/core/world"`

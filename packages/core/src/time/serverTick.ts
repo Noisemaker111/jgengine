@@ -7,8 +7,20 @@ export interface TickSystemDefinition<TSystemId extends string = string> {
 /** Last-run timestamp per system id. */
 export type TickAnchors = Record<string, number>;
 
+/** One due system and how many times this heartbeat owes it. */
+export interface TickSystemRun<TSystemId extends string = string> {
+  id: TSystemId;
+  /** Times to run the system now; above 1 when wall time stalled past several intervals. */
+  runs: number;
+}
+
 export interface ServerTickPlan<TSystemId extends string = string> {
-  due: TSystemId[];
+  /**
+   * Due systems, at most one entry per id. `runs` carries catch-up multiplicity — the anchors were
+   * advanced by that many intervals, so a host that runs the handler once per entry silently drops
+   * the rest.
+   */
+  due: TickSystemRun<TSystemId>[];
   anchors: TickAnchors;
 }
 
@@ -21,8 +33,9 @@ const DEFAULT_MAX_CATCH_UP = 3;
 
 /**
  * Decides which systems a heartbeat should run. A system with no anchor runs immediately.
- * When wall time stalls past multiple intervals, the system id is repeated (bounded by
- * maxCatchUp). Excess lag past the bound resyncs the anchor to `now`.
+ * When wall time stalls past multiple intervals the system's `runs` climbs (bounded by
+ * maxCatchUp), and the returned anchor moves by that many intervals — so a host that ignores
+ * `runs` loses the catch-up work. Excess lag past the bound resyncs the anchor to `now`.
  * Returned anchors carry only systems present in the pipeline, so removed systems clean up.
  */
 export function planServerTick<TSystemId extends string>(
@@ -32,17 +45,12 @@ export function planServerTick<TSystemId extends string>(
   options?: PlanServerTickOptions,
 ): ServerTickPlan<TSystemId> {
   const maxCatchUp = options?.maxCatchUp ?? DEFAULT_MAX_CATCH_UP;
-  const due: TSystemId[] = [];
+  const due: TickSystemRun<TSystemId>[] = [];
   const nextAnchors: TickAnchors = {};
   for (const system of systems) {
     const lastRunAt = anchors[system.id];
-    if (lastRunAt === undefined) {
-      due.push(system.id);
-      nextAnchors[system.id] = now;
-      continue;
-    }
-    if (system.intervalMs <= 0) {
-      due.push(system.id);
+    if (lastRunAt === undefined || system.intervalMs <= 0) {
+      due.push({ id: system.id, runs: 1 });
       nextAnchors[system.id] = now;
       continue;
     }
@@ -53,12 +61,20 @@ export function planServerTick<TSystemId extends string>(
     }
     const missed = Math.floor(elapsed / system.intervalMs);
     if (missed > maxCatchUp) {
-      for (let i = 0; i < maxCatchUp; i += 1) due.push(system.id);
+      due.push({ id: system.id, runs: maxCatchUp });
       nextAnchors[system.id] = now;
       continue;
     }
-    for (let i = 0; i < missed; i += 1) due.push(system.id);
+    due.push({ id: system.id, runs: missed });
     nextAnchors[system.id] = lastRunAt + missed * system.intervalMs;
   }
   return { due, anchors: nextAnchors };
+}
+
+/** Times this plan owes `id`, or 0 when it is not due. Saves a host a lookup over {@link ServerTickPlan.due}. */
+export function tickRunCount<TSystemId extends string>(
+  plan: ServerTickPlan<TSystemId>,
+  id: TSystemId,
+): number {
+  return plan.due.find((entry) => entry.id === id)?.runs ?? 0;
 }
