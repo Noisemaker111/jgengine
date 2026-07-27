@@ -25,7 +25,7 @@ Once a session resolves, `GamePlayerShell` wires it up with no game code changes
 
 ## Server
 
-`@jgengine/convex/server` exports factories, not a template to copy: `jgengineTables()`, `createGameServerFunctions({ runtimes?, auth? })`, `createLeaderboardFunctions({ auth? })`, `createPresenceFunctions({ auth?, freshWindowMs? })`, `createChatFunctions({ auth?, historyLimit?, maxBodyLength?, minIntervalMs? })`, and `jgengineCronSpecs()`. A consumer's `convex/` directory is ~25 lines total:
+`@jgengine/convex/server` exports factories, not a template to copy: `jgengineTables()`, `createGameServerFunctions({ runtimes?, auth? })`, `createLeaderboardFunctions({ auth? })`, `createPresenceFunctions({ auth?, freshWindowMs?, idleCutoffMs?, poseRules?, resolveSpawn? })`, `createChatFunctions({ auth?, historyLimit?, maxBodyLength?, minIntervalMs? })`, and `jgengineCronSpecs()`. A consumer's `convex/` directory is ~25 lines total:
 
 ```ts
 // convex/schema.ts
@@ -37,7 +37,7 @@ export default defineSchema({ ...jgengineTables() });
 import { createGameServerFunctions } from "@jgengine/convex/server";
 export const { joinServer, leaveServer, runCommand, flushSave, getServer, getPlayerProfile, getFeed, pushFeedEntry, listOpenServers, tickActiveServers, flushDirtyServers } = createGameServerFunctions();
 
-// convex/crons.ts registers tickActiveServers (1s) + flushDirtyServers (60s)
+// convex/crons.ts registers tickActiveServers (1s) + flushDirtyServers (60s) + reapIdlePresence (60s)
 ```
 
 No game-specific code lives there — any JGengine game can point at the same deployment. Games without a registered `GameRuntime` fall back to a no-save runtime that only understands `engine.ping`; pass `createGameServerFunctions({ runtimes: [createGameRuntime({ gameId, commands, loop, save })] })` to make `runCommand`/tick/save actually do something.

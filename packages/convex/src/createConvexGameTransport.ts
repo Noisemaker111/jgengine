@@ -68,12 +68,24 @@ export type ConvexGameApi = {
       "public",
       {
         serverId: string;
-        pose: { x: number; y: number; z: number; rotationY: number; rotationPitch: number };
+        pose?: { x: number; y: number; z: number; rotationY: number; rotationPitch: number };
+        sessionId?: string;
+        kind?: string;
+        label?: string;
         externalId?: string;
       },
+      {
+        pose: { x: number; y: number; z: number; rotationY: number; rotationPitch: number };
+        lastSeenAt: number;
+        displaced: boolean;
+      } | null
+    >;
+    leave: FunctionReference<
+      "mutation",
+      "public",
+      { serverId: string; sessionId?: string; externalId?: string },
       null
     >;
-    leave: FunctionReference<"mutation", "public", { serverId: string; externalId?: string }, null>;
   };
   chat: {
     messages: FunctionReference<
@@ -242,6 +254,9 @@ const DEFAULT_CONVEX_POSE_TUNING: PoseSyncTuning = {
   rotationEpsilon: 0.01,
 };
 
+/** How long a suppressed pose stream may go quiet before a position-less keep-alive is sent. */
+const KEEP_ALIVE_MS = 10_000;
+
 export function createConvexPresenceSync(
   client: ConvexReactClient,
   api: ConvexGameApi,
@@ -249,6 +264,7 @@ export function createConvexPresenceSync(
   tuning?: PoseSyncTuning,
 ): PresenceSync {
   const gate = createPoseSyncGate(tuning ?? DEFAULT_CONVEX_POSE_TUNING);
+  const lastSentAt = new Map<string, number>();
   return {
     subscribe(serverId, onChange) {
       return watchConvexQuery(
@@ -261,9 +277,19 @@ export function createConvexPresenceSync(
     },
 
     syncPose(serverId, pose) {
-      if (!gate.evaluate(pose, Date.now())) return;
+      const now = Date.now();
+      const moved = gate.evaluate(pose, now);
+      // The gate drops an unchanged pose, so a standing player would otherwise send nothing at all
+      // and the reaper would eventually collect a live session. Keep the row alive without a write.
+      const keepAlive = !moved && now - (lastSentAt.get(serverId) ?? 0) >= KEEP_ALIVE_MS;
+      if (!moved && !keepAlive) return;
+      lastSentAt.set(serverId, now);
       void client
-        .mutation(api.presence.sync, { serverId, pose, externalId: config.userId })
+        .mutation(api.presence.sync, {
+          serverId,
+          ...(moved ? { pose } : {}),
+          externalId: config.userId,
+        })
         .catch(() => undefined);
     },
   };

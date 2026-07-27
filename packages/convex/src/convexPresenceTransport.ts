@@ -10,6 +10,12 @@ import type {
   PresenceTransport,
 } from "@jgengine/core/multiplayer/presenceContract";
 
+/**
+ * The Convex functions a **game** supplies for a world it owns: presence keyed by the game's own ids,
+ * including which residents exist while offline, which is game content and has no engine analogue.
+ * Not satisfied by `createPresenceFunctions` (`@jgengine/convex/server`) — that is the pose lane of a
+ * hosted `jgGameServers` server, backing `PresenceSync` rather than `PresenceTransport`.
+ */
 export interface ConvexPresenceFunctions {
   snapshot: FunctionReference<"query">;
   cityResidents: FunctionReference<"query">;

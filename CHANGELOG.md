@@ -28,9 +28,17 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+- **Register the presence reaper and redeploy your schema.** `jgPoses` gains `sessionId` / `kind` / `label` / `revokedAt` (all optional) and a `by_updated` index, and `createPresenceFunctions` now also returns `reapIdlePresence`. Re-export it (`export const { list, sync, leave, reapIdlePresence } = createPresenceFunctions(...)`) and add `crons.interval("jg presence reap", { seconds: 60 }, internal.presence.reapIdlePresence, {})`. Without it nothing deletes the row of a player who closed the tab — `list` filtered stale rows at read time but the table grew forever. `jgengineCronSpecs()` carries the new entry, and every spec now names the `module` (`"runtime"` / `"presence"`) it is exported from.
+- **`presence.sync` returns `{ pose, lastSeenAt, displaced }` instead of `null`,** and `presence.leave` marks the row revoked instead of deleting it (the reaper collects it once idle). A caller that ignored the return value is unaffected.
+
 ### Changed
 
+- **`presence.sync` accepts a call with no `pose` at all,** which holds the stored position and moves only the liveness stamp. `createConvexPresenceSync` sends one itself when the pose gate has suppressed writes for 10s, so a standing player keeps their row alive without a pose write — and without the reaper collecting a live session.
+- **`PresencePoseRow` carries optional `sessionId` / `kind` / `label`,** so a nameplate reads off the presence row instead of joining against users per frame.
+
 ### Added
+
+- **`createPresenceFunctions` gains the policy hooks the pose lane was missing** — `resolveSpawn(ctx, { serverId, userId, kind })` for where a session with no row starts (async and ctx-bearing, so a spawn can read the world, replacing a hardcoded origin), `poseRules` as a function of the actor `kind` so an agent need not obey a human's speed cap, `idleCutoffMs` / `maxReapPerRun` for the reaper, and optional `sessionId` on `sync` / `leave`: a second tab is a second row, syncing revokes the others, and the displaced session learns it on its next call through `displaced: true`.
 
 - **A command declares what it touches, so `runCommand` hydrates that and nothing else.** `CommandDef` gains an optional `scope(input, actorUserId)` returning `{ players?, chunkKeys? }`, evaluated before hydration; the registered `runCommand` mutation also accepts an explicit `scope` argument, which wins over the declared one. A game that never sets either keeps the whole-world default. `ServerLoopHooks.joinScope(userId, isNew)` does the same for `onNewPlayer`.
 - **`GameRuntime.commandScope` / `GameRuntime.joinScope`** expose those declarations to any host, alongside the pure helpers `resolveCommandScope` / `scopeWithActor` / `commandScopeEscape` (`@jgengine/core/runtime/commandRunner`).
