@@ -98,8 +98,27 @@ test("buildHydratePlayers prefers profile state with session overlay", () => {
 
   expect(players.alice?.economy.gold).toBe(10);
   expect(players.alice?.session).toEqual({ combat: true });
-  expect(players.bob?.unlocks).toEqual(["axe"]);
+  // bob's profile row is gone; under a player-persisting save that is a deletion, not a cache miss,
+  // so the stale server-row copy must not come back as authoritative.
+  expect(players.bob?.unlocks).toEqual([]);
   expect(players.carol).toEqual({ userId: "carol", inventories: {}, economy: {}, unlocks: [], session: {} });
+});
+
+test("buildHydratePlayers keeps the server-row copy when the game never writes profiles", () => {
+  const server = makeServer({
+    save: "none",
+    memberUserIds: ["bob"],
+    sessionPlayers: {
+      bob: { userId: "bob", inventories: {}, economy: { gold: 5 }, unlocks: ["axe"], session: { at: 1 } },
+    },
+  });
+
+  expect(buildHydratePlayers(server, {}).bob?.unlocks).toEqual(["axe"]);
+});
+
+test("buildHydratePlayers hydrates only the requested members", () => {
+  const server = makeServer({ memberUserIds: ["alice", "bob"] });
+  expect(Object.keys(buildHydratePlayers(server, {}, ["bob"]))).toEqual(["bob"]);
 });
 
 test("planServerPersist drains leaderboard, splits sessions, and gates writes by save scope", () => {

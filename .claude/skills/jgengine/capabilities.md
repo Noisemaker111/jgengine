@@ -48,6 +48,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `canJoinPrivateServer` (function) · `import { canJoinPrivateServer } from "@jgengine/core/runtime/hostPolicy"`
 
+## host-join-target — choose or refuse an auto-matched server under a matchmaking mode
+
+- `selectJoinTarget` (function) · `import { selectJoinTarget } from "@jgengine/core/runtime/hostPolicy"`
+
 ## host-listing-filter — exclude private sessions from public browse results
 
 - `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/core/runtime/hostPolicy"`
@@ -145,6 +149,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## typed-store — a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative
 
 - `defineStore` (function) · `import { defineStore } from "@jgengine/shell/gameKit"`
+
+## world-chunk-key — map world positions to persisted chunk keys at a declared cell size
+
+- `chunkKeyOf` (function) · `import { chunkKeyOf } from "@jgengine/core/runtime/worldChunks"`
+
+## world-chunk-write — mutate a snapshot's chunk and have the host persist it
+
+- `setChunk` (function) · `import { setChunk } from "@jgengine/core/runtime/worldChunks"`
 
 ## world-convergence — derive environment coordinate content from the scene document
 

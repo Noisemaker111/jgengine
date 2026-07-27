@@ -52,6 +52,12 @@ export type HydrateInput = {
 export type GameRuntime = {
   gameId: string;
   save: SaveConfig;
+  /**
+   * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and
+   * persisting a server whose `tick` is a no-op by construction — the difference between a world that
+   * costs a full read/write every second while idle and one that costs nothing.
+   */
+  hasTick: boolean;
   hydrate: (input: HydrateInput) => GameRuntimeSnapshot;
   runCommand: (
     snapshot: GameRuntimeSnapshot,
@@ -76,6 +82,7 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
   return {
     gameId: definition.gameId,
     save: definition.save,
+    hasTick: loop?.onTick !== undefined,
 
     hydrate(input) {
       let current = createRuntimeSnapshot({

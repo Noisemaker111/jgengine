@@ -316,6 +316,7 @@
     "./runtime/transport",
     "./runtime/visibility",
     "./runtime/worldChannel",
+    "./runtime/worldChunks",
     "./runtime/worldMirror",
     "./runtime/worldProjection",
     "./runtime/worldReplication",

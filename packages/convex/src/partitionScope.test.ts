@@ -18,6 +18,15 @@ function runtime() {
   return createGameRuntime({ gameId: "demo", save: "none", commands: {} });
 }
 
+function tickingRuntime() {
+  return createGameRuntime({
+    gameId: "demo",
+    save: "none",
+    commands: {},
+    loop: { onTick: () => {} },
+  });
+}
+
 describe("tickActiveServers scopes to the running partition", () => {
   test("ticks only running servers and never reads open/closed rows", async () => {
     const { db, reads, seed } = makeDb();
@@ -25,7 +34,7 @@ describe("tickActiveServers scopes to the running partition", () => {
     const open = seed("jgGameServers", serverDoc({ _id: "srv:open", status: "open" }));
     const closed = seed("jgGameServers", serverDoc({ _id: "srv:closed", status: "closed" }));
 
-    const fns = createGameServerFunctions({ runtimes: [runtime()], auth: "anonymous" });
+    const fns = createGameServerFunctions({ runtimes: [tickingRuntime()], auth: "anonymous" });
     const result = (await handlerOf(fns.tickActiveServers)({ db }, {})) as {
       ticked: number;
       saved: number;
@@ -37,6 +46,36 @@ describe("tickActiveServers scopes to the running partition", () => {
     expect(reads.has(open._id)).toBe(false);
     expect(reads.has(closed._id)).toBe(false);
     expect((running.tickAnchorMs as number) > (open.tickAnchorMs as number)).toBe(true);
+  });
+
+  test("a game with no onTick is never swept, so an idle world costs no read or write", async () => {
+    const { db, reads, seed } = makeDb();
+    const running = seed("jgGameServers", serverDoc({ _id: "srv:idle", status: "running" }));
+    const anchor = running.tickAnchorMs;
+
+    const fns = createGameServerFunctions({ runtimes: [runtime()], auth: "anonymous" });
+    const result = (await handlerOf(fns.tickActiveServers)({ db }, {})) as { ticked: number };
+
+    expect(result.ticked).toBe(0);
+    expect(reads.has(running._id)).toBe(false);
+    expect(running.tickAnchorMs).toBe(anchor);
+    expect(running.updatedAt).toBe(running.updatedAt);
+  });
+
+  test("one transaction ticks at most maxServersPerTick servers", async () => {
+    const { db, seed } = makeDb();
+    for (let i = 0; i < 5; i += 1) {
+      seed("jgGameServers", serverDoc({ _id: `srv:${i}`, status: "running" }));
+    }
+
+    const fns = createGameServerFunctions({
+      runtimes: [tickingRuntime()],
+      auth: "anonymous",
+      maxServersPerTick: 2,
+    });
+    const result = (await handlerOf(fns.tickActiveServers)({ db }, {})) as { ticked: number };
+
+    expect(result.ticked).toBe(2);
   });
 });
 

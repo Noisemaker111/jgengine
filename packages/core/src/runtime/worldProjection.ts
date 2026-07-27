@@ -1,5 +1,5 @@
 import type { EntityPosition, SceneEntity } from "../scene/entityStore";
-import type { SnapshotViewer } from "./worldSnapshot";
+import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 
 /**
  * Host-side interest/privacy policy — how the authoritative world projects to each viewer over the
@@ -75,6 +75,31 @@ export function projectByVisibleIds<T>(byId: Record<string, T>, visible: Set<str
   const out: Record<string, T> = {};
   for (const [id, value] of Object.entries(byId)) if (visible.has(id)) out[id] = value;
   return out;
+}
+
+/** Where a viewer is standing, read off the replicated entity set; `undefined` when it has no entity yet.
+ * @internal host projection plumbing
+ */
+export function viewerOrigin(world: WorldSnapshot, viewer: SnapshotViewer): EntityPosition | undefined {
+  const entities = (world["entities"] ?? []) as readonly SceneEntity[];
+  return entities.find((entity) => entity.id === viewer.userId)?.position;
+}
+
+/**
+ * Cull placed objects to a viewer's area of interest. Placed objects are the one large spatial set a
+ * world grows without bound — a datacenter of racks, a city of props — so without this every viewer
+ * downloads every placement. Fails open (full list) when the viewer has no locatable entity, matching
+ * {@link projectEntitiesForViewer}.
+ * @internal host projection plumbing
+ */
+export function projectObjectsForViewer<T extends { position: EntityPosition }>(
+  objects: readonly T[],
+  origin: EntityPosition | undefined,
+  radius: number,
+): readonly T[] {
+  if (origin === undefined) return objects;
+  const radiusSquared = radius * radius;
+  return objects.filter((object) => distanceSquared(object.position, origin) <= radiusSquared);
 }
 
 /**

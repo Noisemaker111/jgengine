@@ -13,6 +13,7 @@ import { createWeaponStats } from "../item/weapon";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { type StatValueMap } from "../scene/entityStats";
 import { type SceneEntity } from "../scene/entityStore";
+import type { SceneObject } from "../scene/objectStore";
 import { createChangeSignal, notifyAfter } from "../store/changeSignal";
 import { createObservableKeyedStore } from "../store/observableKeyedStore";
 import {
@@ -26,7 +27,9 @@ import {
   policyProjectsViewers,
   projectByVisibleIds,
   projectEntitiesForViewer,
+  projectObjectsForViewer,
   projectPerUserForViewer,
+  viewerOrigin,
   visibleEntityIds,
 } from "./worldProjection";
 import { createRuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } from "./runtimeSave";
@@ -409,6 +412,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
           data,
           visibleEntityIds((world["entities"] ?? []) as readonly SceneEntity[], viewer, aoiRadius),
         ),
+      );
+    }
+    if (aoiRadius !== undefined && key === "objects") {
+      return typedProject<readonly SceneObject[]>((data, viewer, world) =>
+        projectObjectsForViewer(data, viewerOrigin(world, viewer), aoiRadius),
       );
     }
     if (replication?.privatePerUser === true && key === "inventory") {

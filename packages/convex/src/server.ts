@@ -35,16 +35,24 @@ import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord } from "@jgengine/core/runtime/hostPersistence";
-import { buildHydratePlayers, planServerPersist, shouldAutoSave, trimFeedEntries } from "@jgengine/core/runtime/hostPersistence";
 import {
-  isAutoJoinCandidate,
+  buildHydratePlayers,
+  planServerPersist,
+  shouldAutoSave,
+  trimFeedEntries,
+} from "@jgengine/core/runtime/hostPersistence";
+import {
+  JG_MAX_MEMBERS_PER_SERVER,
   isListablePublicly,
   isPrivateJoinBlocked,
   isServerFull,
   isServerMember,
+  selectJoinTarget,
   statusAfterLeave,
+  validateSlotsPerServer,
   withJoinedMember,
   withoutMember,
+  type MatchmakingMode,
 } from "@jgengine/core/runtime/hostPolicy";
 import type { SaveConfig } from "@jgengine/core/runtime/save";
 import type { GameRuntimeSnapshot, RuntimeChunkRow, RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
@@ -53,8 +61,11 @@ import { applyCommandWithOcc, commitIfRevisionMatch } from "./occ";
 
 /** @internal Re-export shared host-policy pure helpers so existing convex imports keep working. */
 export {
+  JG_MAX_MEMBERS_PER_SERVER,
   canJoinPrivateServer,
   isListablePublicly,
+  validateSlotsPerServer,
+  type MatchmakingMode,
 } from "@jgengine/core/runtime/hostPolicy";
 
 const saveConfigValidator = v.union(
@@ -89,6 +100,7 @@ export function jgengineTables() {
     })
       .index("by_game_and_status", ["gameId", "status"])
       .index("by_status", ["status"])
+      .index("by_game_status_tick", ["gameId", "status", "tickAnchorMs"])
       .index("by_dirty", ["dirtyAt"]),
     jgPlayerProfiles: defineTable({
       userId: v.string(),
@@ -308,18 +320,42 @@ function serverDocToRecord(server: ServerDoc): GameServerRecord {
 }
 
 /**
+ * How much of a server to hydrate. Both fields default to "everything", which is a document read per
+ * member plus one per chunk — the cost that makes a large shared world unaffordable per mutation.
+ * Narrow them when the caller knows what it will touch: a command that only moves the actor's own
+ * state needs `players: [actorUserId]`, and a spatial edit needs only the chunk keys it writes
+ * (`chunkKeysInRadius` from `@jgengine/core/runtime/worldChunks`).
+ *
+ * Persisting a narrowed snapshot is safe: the plan merges session state over the stored map and
+ * writes only dirty profiles and dirty chunks, so members and chunks left unhydrated are untouched.
+ */
+export type LoadSnapshotScope = {
+  /** Member ids to hydrate; omit for the whole roster. */
+  players?: readonly string[];
+  /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */
+  chunkKeys?: readonly string[];
+};
+
+/**
  * Hydrate a server's `GameRuntimeSnapshot` from its row, its members' profiles, and its world chunks.
  * Reach for it when writing your own mutation that must read runtime state before touching host tables.
+ * Pass a {@link LoadSnapshotScope} to bound the read instead of loading the whole world.
  * @capability convex-load-server-snapshot read a hosted server's runtime snapshot inside a host-written Convex mutation
  */
 export async function loadServerSnapshot(
   ctx: JGMutationCtx,
   server: ServerDoc,
   runtime: GameRuntime,
+  scope?: LoadSnapshotScope,
 ): Promise<GameRuntimeSnapshot> {
   const profiles: Record<string, PlayerProfileRecord | null> = {};
+  const memberIds = new Set(server.memberUserIds);
+  const hydrateUserIds =
+    scope?.players === undefined
+      ? server.memberUserIds
+      : scope.players.filter((userId) => memberIds.has(userId));
 
-  for (const userId of server.memberUserIds) {
+  for (const userId of hydrateUserIds) {
     const profile = await ctx.db
       .query("jgPlayerProfiles")
       .withIndex("by_user_and_game", (q) => q.eq("userId", userId).eq("gameId", server.gameId))
@@ -336,16 +372,23 @@ export async function loadServerSnapshot(
       : null;
   }
 
-  const playersByUserId = buildHydratePlayers(serverDocToRecord(server), profiles);
-
-  const chunks = await ctx.db
-    .query("jgWorldChunks")
-    .withIndex("by_server", (q) => q.eq("serverId", server._id))
-    .collect();
+  const playersByUserId = buildHydratePlayers(serverDocToRecord(server), profiles, hydrateUserIds);
 
   const chunksByKey: Record<string, RuntimeChunkRow> = {};
-  for (const chunk of chunks) {
-    chunksByKey[chunk.chunkKey] = chunk.snapshot as RuntimeChunkRow;
+  if (scope?.chunkKeys === undefined) {
+    const chunks = await ctx.db
+      .query("jgWorldChunks")
+      .withIndex("by_server", (q) => q.eq("serverId", server._id))
+      .collect();
+    for (const chunk of chunks) chunksByKey[chunk.chunkKey] = chunk.snapshot as RuntimeChunkRow;
+  } else {
+    for (const chunkKey of new Set(scope.chunkKeys)) {
+      const chunk = await ctx.db
+        .query("jgWorldChunks")
+        .withIndex("by_server_and_chunk", (q) => q.eq("serverId", server._id).eq("chunkKey", chunkKey))
+        .unique();
+      if (chunk) chunksByKey[chunk.chunkKey] = chunk.snapshot as RuntimeChunkRow;
+    }
   }
 
   return runtime.hydrate({
@@ -394,6 +437,11 @@ export async function applyLeaderboardIncrements(
 /**
  * Write a snapshot back: server row, dirty player profiles, dirty chunks, and drained leaderboard
  * increments, all under `save`. Pair it with your own table writes to keep both in one transaction.
+ *
+ * A persist that would change nothing writes nothing and returns `false`. That matters beyond write
+ * cost: every subscriber of a query that read this row re-receives the whole result when the document
+ * changes, so an unconditional write on a 1 Hz tick re-pushes the entire world to every client once a
+ * second whether or not anything moved.
  * @capability convex-persist-server-snapshot write runtime state and host tables in one Convex transaction
  */
 export async function persistServerSnapshot(
@@ -401,9 +449,10 @@ export async function persistServerSnapshot(
   server: ServerDoc,
   snapshot: GameRuntimeSnapshot,
   save: SaveConfig,
-): Promise<void> {
+): Promise<boolean> {
   const now = Date.now();
   const plan = planServerPersist(serverDocToRecord(server), snapshot, save, now);
+  if (!plan.changed.any) return false;
 
   if (plan.leaderboard.length > 0) {
     await applyLeaderboardIncrements(ctx, server.gameId, plan.leaderboard);
@@ -465,26 +514,29 @@ export async function persistServerSnapshot(
   }
 
   await ctx.db.patch(server._id, {
-    serverState: plan.server.serverState,
-    sessionPlayers: plan.server.sessionPlayers,
+    ...(plan.changed.serverState ? { serverState: plan.server.serverState } : {}),
+    ...(plan.changed.sessionPlayers ? { sessionPlayers: plan.server.sessionPlayers } : {}),
     revision: plan.server.revision,
     dirtyAt: plan.server.dirtyAt,
     updatedAt: plan.server.updatedAt,
     lastSavedAt: plan.server.lastSavedAt,
   });
+  return true;
 }
 
+/** Autosave a server whose `save.auto` interval has elapsed, reusing an already-hydrated snapshot. */
 async function flushServerIfDue(
   ctx: JGMutationCtx,
   server: ServerDoc,
   now: number,
   runtime: GameRuntime,
+  loaded?: GameRuntimeSnapshot,
 ): Promise<boolean> {
   if (!shouldAutoSave(server.save as SaveConfig, server.dirtyAt, server.lastSavedAt, now)) {
     return false;
   }
 
-  const snapshot = await loadServerSnapshot(ctx, server, runtime);
+  const snapshot = loaded ?? (await loadServerSnapshot(ctx, server, runtime));
   await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
   return true;
 }
@@ -515,7 +567,11 @@ export type LoadedServerSnapshot = {
  * table writes in one transaction, which a pre-registered mutation cannot do.
  */
 export type GameServerHelpers = {
-  loadSnapshot: (ctx: JGMutationCtx, serverId: string) => Promise<LoadedServerSnapshot | null>;
+  loadSnapshot: (
+    ctx: JGMutationCtx,
+    serverId: string,
+    scope?: LoadSnapshotScope,
+  ) => Promise<LoadedServerSnapshot | null>;
   applyCommand: (args: {
     gameId: string;
     loadedRevision: number;
@@ -530,21 +586,49 @@ export type GameServerHelpers = {
     server: ServerDoc,
     snapshot: GameRuntimeSnapshot,
     save?: SaveConfig,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   runCommand: (ctx: JGMutationCtx, args: RunCommandArgs) => Promise<RunCommandOutcome>;
 };
 
-/** @internal */
+/** How many running servers one `tickActiveServers` transaction may hydrate, tick, and persist. */
+export const DEFAULT_MAX_SERVERS_PER_TICK = 32;
+
+/** How many chunk rows one `getChunks` call may return. */
+export const MAX_CHUNKS_PER_QUERY = 64;
+
+/**
+ * Build the hosted-server Convex functions for a set of game runtimes.
+ *
+ * **Supported world size.** One server is one Convex document holding the world row, the member
+ * roster, and every member's session state, and the host rewrites that document whenever the world
+ * changes. `slotsPerServer` is therefore capped at {@link JG_MAX_MEMBERS_PER_SERVER} (256) and a
+ * larger value throws here, at wiring time, rather than at the write that overflows the document.
+ * World geometry that outgrows one row belongs in `jgWorldChunks`, hydrated by key
+ * ({@link LoadSnapshotScope}) and read by clients through `getChunks` — not in `serverState`.
+ *
+ * `matchmaking: "singleton"` makes auto-match target one shared world per game: a join past capacity
+ * fails loudly instead of quietly starting a second world the player would be alone in.
+ * @internal
+ */
 export function createGameServerFunctions(options?: {
   runtimes?: GameRuntime[];
   auth?: JgAuthMode;
   slotsPerServer?: number;
+  matchmaking?: MatchmakingMode;
+  maxServersPerTick?: number;
   allowedFeedActions?: readonly string[];
 }) {
   const mode: JgAuthMode = options?.auth ?? "required";
   const hostSlotsPerServer = options?.slotsPerServer ?? 16;
+  const slotsCheck = validateSlotsPerServer(hostSlotsPerServer);
+  if (!slotsCheck.ok) throw new Error(slotsCheck.reason);
+  const matchmaking: MatchmakingMode = options?.matchmaking ?? "auto";
+  const maxServersPerTick = Math.max(1, options?.maxServersPerTick ?? DEFAULT_MAX_SERVERS_PER_TICK);
   const feedWriteGate: FeedWriteGate = createFeedWriteGate(options?.allowedFeedActions ?? []);
   const registry = buildRuntimeRegistry(options?.runtimes);
+  const tickableGameIds = (options?.runtimes ?? [])
+    .filter((runtime) => runtime.hasTick)
+    .map((runtime) => runtime.gameId);
 
   const joinServer = mutation({
     args: {
@@ -579,6 +663,7 @@ export function createGameServerFunctions(options?: {
         throw new ConvexError("Server belongs to a different game");
       }
 
+      let mayCreate = true;
       if (!server) {
         const joinable = [];
         for (const status of ["running", "open"] as const) {
@@ -588,18 +673,21 @@ export function createGameServerFunctions(options?: {
             .collect();
           joinable.push(...rows);
         }
-        server =
-          joinable.find((row) =>
-            isAutoJoinCandidate({
-              memberUserIds: row.memberUserIds,
-              slotsPerServer: row.slotsPerServer,
-              visibility: row.visibility,
-              userId: actorUserId,
-            }),
-          ) ?? null;
+        // Two concurrent first-joins can both see an empty list here and both insert. Convex's OCC
+        // resolves it — the loser's read set is invalidated and its mutation retries against the
+        // winner's row — so the engine adds no lock. A `HostPersistence` backend without
+        // serializable-snapshot retry must supply that guarantee itself.
+        const target = selectJoinTarget(joinable, {
+          userId: actorUserId,
+          mode: matchmaking,
+          slotsPerServer,
+        });
+        if (target.kind === "refuse") throw new ConvexError(target.reason);
+        server = target.kind === "join" ? target.row : null;
+        mayCreate = target.kind === "create";
       }
 
-      if (!server) {
+      if (!server && mayCreate) {
         const serverId = await ctx.db.insert("jgGameServers", {
           gameId: args.gameId,
           status: "running",
@@ -619,6 +707,17 @@ export function createGameServerFunctions(options?: {
         });
         server = await ctx.db.get("jgGameServers", serverId);
         if (!server) throw new ConvexError("Failed to create server");
+      }
+
+      if (!server) throw new ConvexError("No joinable server");
+
+      // Capacity and save policy live in host options, not in the row. Without this a long-lived
+      // world keeps whatever it was created with and raising the host option silently does nothing.
+      if (server.slotsPerServer !== slotsPerServer || JSON.stringify(server.save) !== JSON.stringify(save)) {
+        await ctx.db.patch(server._id, { slotsPerServer, save, updatedAt: now });
+        const reconciled = await ctx.db.get("jgGameServers", server._id);
+        if (!reconciled) throw new ConvexError("Server missing after reconcile");
+        server = reconciled;
       }
 
       if (isServerFull(server.memberUserIds, server.slotsPerServer, actorUserId)) {
@@ -705,11 +804,11 @@ export function createGameServerFunctions(options?: {
   });
 
   const helpers: GameServerHelpers = {
-    async loadSnapshot(ctx, serverId) {
+    async loadSnapshot(ctx, serverId, scope) {
       const server = await ctx.db.get("jgGameServers", serverId as GenericId<"jgGameServers">);
       if (!server) return null;
       const runtime = resolveRuntime(registry, server.gameId);
-      return { server, runtime, snapshot: await loadServerSnapshot(ctx, server, runtime) };
+      return { server, runtime, snapshot: await loadServerSnapshot(ctx, server, runtime, scope) };
     },
     applyCommand(args) {
       return applyCommandWithOcc({ ...args, runtime: resolveRuntime(registry, args.gameId) });
@@ -832,6 +931,77 @@ export function createGameServerFunctions(options?: {
           updatedAt: server.updatedAt,
         };
       }),
+  });
+
+  /**
+   * Lobby-scale view of a server: status, capacity, revision — no world state. Subscribe a menu,
+   * roster, or "is it up" indicator to this instead of `getServer`, whose payload is the whole world.
+   */
+  const getServerMeta = query({
+    args: {
+      serverId: v.id("jgGameServers"),
+      externalId: v.optional(v.string()),
+    },
+    returns: v.union(
+      v.object({
+        _id: v.id("jgGameServers"),
+        gameId: v.string(),
+        status: v.union(v.literal("open"), v.literal("running"), v.literal("closed")),
+        mode: v.optional(v.string()),
+        memberCount: v.number(),
+        slotsPerServer: v.number(),
+        revision: v.number(),
+        updatedAt: v.number(),
+      }),
+      v.null(),
+    ),
+    handler: (ctx, args) =>
+      withMember(ctx, mode, args, null, (server) => ({
+        _id: server._id,
+        gameId: server.gameId,
+        status: server.status,
+        mode: server.mode,
+        memberCount: server.memberUserIds.length,
+        slotsPerServer: server.slotsPerServer,
+        revision: server.revision,
+        updatedAt: server.updatedAt,
+      })),
+  });
+
+  /**
+   * Read world chunks by key — the client half of the chunk escape hatch. Without it a game that moved
+   * geometry out of `serverState` had no way to show it, because `getServer` returns only the row.
+   * Bounded to {@link MAX_CHUNKS_PER_QUERY} keys; ask for the cells around the viewer
+   * (`chunkKeysInRadius`), not the world.
+   */
+  const getChunks = query({
+    args: {
+      serverId: v.id("jgGameServers"),
+      chunkKeys: v.array(v.string()),
+      externalId: v.optional(v.string()),
+    },
+    returns: v.array(v.object({ chunkKey: v.string(), snapshot: v.any(), updatedAt: v.number() })),
+    handler: (ctx, args) =>
+      withMember(
+        ctx,
+        mode,
+        args,
+        [] as { chunkKey: string; snapshot: unknown; updatedAt: number }[],
+        async (server) => {
+          const keys = [...new Set(args.chunkKeys)].slice(0, MAX_CHUNKS_PER_QUERY);
+          const out: { chunkKey: string; snapshot: unknown; updatedAt: number }[] = [];
+          for (const chunkKey of keys) {
+            const row = await ctx.db
+              .query("jgWorldChunks")
+              .withIndex("by_server_and_chunk", (q) =>
+                q.eq("serverId", server._id).eq("chunkKey", chunkKey),
+              )
+              .unique();
+            if (row) out.push({ chunkKey: row.chunkKey, snapshot: row.snapshot, updatedAt: row.updatedAt });
+          }
+          return out;
+        },
+      ),
   });
 
   const getPlayerProfile = query({
@@ -969,33 +1139,43 @@ export function createGameServerFunctions(options?: {
     },
   });
 
+  // Only games that declare `loop.onTick` are swept, and only `maxServersPerTick` of their servers per
+  // transaction, oldest anchor first. A game with no tick hook used to pay a full hydrate + persist per
+  // running server per second to hand `runtime.tick` a snapshot it returned unchanged; now it pays
+  // nothing, and no single transaction can fan out across every world of every game.
   const tickActiveServers = internalMutation({
     args: {},
     handler: async (ctx) => {
       const now = Date.now();
-      const servers = await ctx.db
-        .query("jgGameServers")
-        .withIndex("by_status", (q) => q.eq("status", "running"))
-        .collect();
       let ticked = 0;
       let saved = 0;
+      let budget = maxServersPerTick;
 
-      for (const server of servers) {
-        if (server.memberUserIds.length === 0) continue;
+      for (const gameId of tickableGameIds) {
+        if (budget <= 0) break;
+        const servers = await ctx.db
+          .query("jgGameServers")
+          .withIndex("by_game_status_tick", (q) => q.eq("gameId", gameId).eq("status", "running"))
+          .take(budget);
 
-        const elapsedMs = now - server.tickAnchorMs;
-        if (elapsedMs < JG_RUNTIME_TICK_MS) continue;
+        for (const server of servers) {
+          if (server.memberUserIds.length === 0) continue;
 
-        const runtime = resolveRuntime(registry, server.gameId);
-        let snapshot = await loadServerSnapshot(ctx, server, runtime);
-        snapshot = runtime.tick(snapshot, elapsedMs / 1_000);
-        await persistServerSnapshot(ctx, server, snapshot, server.save as SaveConfig);
-        await ctx.db.patch(server._id, { tickAnchorMs: now, updatedAt: now });
-        ticked += 1;
+          const elapsedMs = now - server.tickAnchorMs;
+          if (elapsedMs < JG_RUNTIME_TICK_MS) continue;
 
-        const refreshed = await ctx.db.get("jgGameServers", server._id);
-        if (refreshed && (await flushServerIfDue(ctx, refreshed, now, runtime))) {
-          saved += 1;
+          budget -= 1;
+          const runtime = resolveRuntime(registry, server.gameId);
+          const loaded = await loadServerSnapshot(ctx, server, runtime);
+          const snapshot = runtime.tick(loaded, elapsedMs / 1_000);
+          await persistServerSnapshot(ctx, server, snapshot, server.save as SaveConfig);
+          await ctx.db.patch(server._id, { tickAnchorMs: now });
+          ticked += 1;
+
+          const refreshed = await ctx.db.get("jgGameServers", server._id);
+          if (refreshed && (await flushServerIfDue(ctx, refreshed, now, runtime, snapshot))) {
+            saved += 1;
+          }
         }
       }
 
@@ -1006,11 +1186,10 @@ export function createGameServerFunctions(options?: {
   const flushDirtyServers = internalMutation({
     args: {},
     handler: async (ctx) => {
-      const now = Date.now();
       const servers = await ctx.db
         .query("jgGameServers")
         .withIndex("by_dirty", (q) => q.gt("dirtyAt", 0))
-        .collect();
+        .take(maxServersPerTick);
       let saved = 0;
 
       for (const server of servers) {
@@ -1018,7 +1197,6 @@ export function createGameServerFunctions(options?: {
         const snapshot = await loadServerSnapshot(ctx, server, runtime);
         await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
         saved += 1;
-        void now;
       }
 
       return { saved };
@@ -1031,6 +1209,8 @@ export function createGameServerFunctions(options?: {
     runCommand,
     flushSave,
     getServer,
+    getServerMeta,
+    getChunks,
     getPlayerProfile,
     getFeed,
     pushFeedEntry,
