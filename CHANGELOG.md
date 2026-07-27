@@ -30,7 +30,13 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **`@jgengine/assets` verify fails a model source that contributes no index entries.** A model pack that has never been pulled is a pin nothing has ever checked — that is how a Street Pack archive sat in the catalogue titled "Downtown City MegaKit". Record why a pack is not pulled in the new `AssetSource.unpulled` string; materials and sprites pull on demand and are exempt.
+
 ### Added
+
+### Removed
+
+- **Asset source `quaternius-downtown-city`.** It was titled "Downtown City MegaKit" but pinned at the Street Pack archive, which ships Blends/FBX/OBJ only — a pull found no models. Nothing referenced it.
 
 ### Fixed
 
