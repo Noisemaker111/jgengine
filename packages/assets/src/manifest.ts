@@ -49,6 +49,14 @@ export interface AssetSource {
   homepage?: string;
   /** Direct archive URL tried as a last resort when the primary provider path fails; see `downloadPackArchive`. */
   mirror?: string;
+  /**
+   * Why this model pack contributes nothing to the generated index yet. A model source with
+   * no index entries has never been pulled, so nothing has ever checked that its pinned URL
+   * points at the pack it is titled after or that the archive even ships `glTF/` — the shape
+   * that let a Street Pack sit in the catalogue as "Downtown City MegaKit". `verifyData`
+   * requires this string rather than letting the gap pass silently.
+   */
+  unpulled?: string;
 }
 
 export interface IndexEntry {

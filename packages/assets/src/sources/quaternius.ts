@@ -5,6 +5,11 @@ import type { AssetSource } from "../manifest";
  * (no `.zip` in HTML), so scrape fails in CI. Free **Standard** zips are also
  * mirrored on OpenGameArt with stable direct URLs and include a `glTF/` tree
  * (packed to `.glb` at extract). Prefer pinned OGA URLs when available.
+ *
+ * A pack only belongs here once its archive has been confirmed to ship `glTF/`.
+ * The Street Pack, pinned here as "Downtown City MegaKit", ships Blends/FBX/OBJ
+ * only — a pull found no models at all, and the wrong title made it read as a
+ * solved lead for modular city facades. See `unpulled` in `manifest.ts`.
  */
 interface QuaterniusPack {
   id: string;
@@ -13,6 +18,8 @@ interface QuaterniusPack {
   categories: readonly string[];
   /** OpenGameArt direct zip when known (Standard free pack). */
   ogaZip?: string;
+  /** Why this pack contributes nothing to the index yet; see `AssetSource.unpulled`. */
+  unpulled?: string;
 }
 
 const OGA_FILES = "https://opengameart.org/sites/default/files";
@@ -33,14 +40,6 @@ const QUATERNIUS_PACKS: readonly QuaterniusPack[] = [
     ogaZip: `${OGA_FILES}/medieval_village_megakitstandard.zip`,
   },
   {
-    id: "quaternius-downtown-city",
-    slug: "downtowncitymegakit",
-    title: "Downtown City MegaKit",
-    categories: ["building", "city", "environment"],
-    // Street Pack is the free modular city/street kit on OGA (CC0 Quaternius).
-    ogaZip: `${OGA_FILES}/Street%20Pack%20by%20%40Quaternius.zip`,
-  },
-  {
     id: "quaternius-modular-scifi",
     slug: "modularscifimegakit",
     title: "Modular SciFi MegaKit",
@@ -52,26 +51,28 @@ const QUATERNIUS_PACKS: readonly QuaterniusPack[] = [
     slug: "fantasypropsmegakit",
     title: "Fantasy Props MegaKit",
     categories: ["fantasy", "prop"],
+    unpulled: "no OGA zip pinned; the quaternius.com page JS-gates the download, so a pull cannot resolve it",
   },
   {
     id: "quaternius-base-characters",
     slug: "universalbasecharacters",
     title: "Universal Base Characters",
     categories: ["character", "rigged"],
-    // OGA free dump is FBX/OBJ only — needs Pro/glTF source; scrape stays until pinned.
+    unpulled: "OGA free dump is FBX/OBJ only — needs a Pro/glTF source; scrape stays until pinned",
   },
   {
     id: "quaternius-animated-animals",
     slug: "ultimateanimatedanimals",
     title: "Ultimate Animated Animal Pack",
     categories: ["animal", "creature", "wildlife", "rigged", "animated"],
+    unpulled: "no OGA zip pinned; the quaternius.com page JS-gates the download, so a pull cannot resolve it",
   },
   {
     id: "quaternius-monsters",
     slug: "ultimatemonsters",
     title: "Ultimate Monsters",
     categories: ["monster", "creature", "fantasy", "rigged", "animated"],
-    // OGA free dump is FBX/OBJ only — needs Pro/glTF source; scrape stays until pinned.
+    unpulled: "OGA free dump is FBX/OBJ only — needs a Pro/glTF source; scrape stays until pinned",
   },
 ];
 
@@ -88,4 +89,5 @@ export const quaterniusSources: readonly AssetSource[] = QUATERNIUS_PACKS.map((p
       : { scrape: `https://quaternius.com/packs/${pack.slug}.html` },
   homepage: `https://quaternius.com/packs/${pack.slug}.html`,
   ...(pack.ogaZip !== undefined ? { mirror: pack.ogaZip } : {}),
+  ...(pack.unpulled !== undefined ? { unpulled: pack.unpulled } : {}),
 }));

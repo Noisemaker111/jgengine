@@ -13,9 +13,14 @@ const okSource: AssetSource = {
   download: { scrape: "https://quaternius.com/packs/stylizednaturemegakit.html" },
 };
 
+/** One index entry from {@link okSource} — a model pack with none has never been pulled. */
+const okIndex = [
+  { id: "tree_01", source: okSource.id, categories: ["nature"], file: "tree_01.glb" },
+];
+
 describe("verifyData", () => {
   test("passes clean data", () => {
-    const result = verifyData({ sources: [okSource], singles: [], aliases: [], index: [] });
+    const result = verifyData({ sources: [okSource], singles: [], aliases: [], index: okIndex });
     expect(result.ok).toBe(true);
     expect(result.errors).toHaveLength(0);
   });
@@ -55,5 +60,27 @@ describe("verifyData", () => {
 
   test("the shipped manifest verifies clean", () => {
     expect(verifyManifest().ok).toBe(true);
+  });
+});
+
+describe("never-pulled model packs", () => {
+  test("fails a model pack that contributes no index entries", () => {
+    // The shape that let a Street Pack sit in the catalogue titled "Downtown City MegaKit":
+    // nothing had ever pulled it, so nothing had ever checked the pin.
+    const result = verifyData({ sources: [okSource], singles: [], aliases: [], index: [] });
+    expect(result.ok).toBe(false);
+    expect(result.errors.some((error) => error.includes("contributes no index entries"))).toBe(true);
+  });
+
+  test("passes one that records why in `unpulled`", () => {
+    const source: AssetSource = { ...okSource, unpulled: "page JS-gates the download" };
+    const result = verifyData({ sources: [source], singles: [], aliases: [], index: [] });
+    expect(result.ok).toBe(true);
+  });
+
+  test("holds only model packs to it — materials and sprites pull on demand", () => {
+    const material: AssetSource = { ...okSource, id: "ambientcg-rock001", provider: "ambientcg", kind: "material" };
+    const result = verifyData({ sources: [material], singles: [], aliases: [], index: [] });
+    expect(result.ok).toBe(true);
   });
 });
