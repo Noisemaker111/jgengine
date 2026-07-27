@@ -256,8 +256,9 @@ hard health cap, permanent visibility to enemies. Misprints cannot be unequipped
 
 Equipment does not carry hands. It does four jobs:
 
-1. **It carries your oxygen tank.** Tank size is the length of a dive (§14), and
-   it is the stat you will feel most.
+1. **It carries your oxygen tank.** The tank is the stat you will feel most. It
+   upgrades like any other equipment, and the best ones are quest rewards rather
+   than drops, so how long you can stay is something you go and earn.
 2. **It sizes your pools** — health, and every pool your equipped items draw on.
 3. **It sizes your cache grid** — how much you can bring back in one trip (§15).
 4. **It carries affixes** — resistances, reload speed, cast speed, vent rate,
@@ -533,6 +534,8 @@ reach. Each location carries, visible before you commit:
   will find, because the enemies are the drop table.
 - **Rarity** — how good the place is. Most locations are ordinary; a few are worth
   the drive, and the good ones do not stay on the map forever.
+- **Contested** — whether other squads can be in there with you (§19). Marked
+  before you commit, and avoidable for good.
 - **Modifiers** — properties of the location itself rather than something you
   chose: doubled patrols, no map, a hunter print, thin atmosphere that drains the
   tank faster. Better modifiers ride with better loot, so a rich location is a
@@ -603,8 +606,15 @@ the decision the whole dive builds to: every extra room inward is loot you want
 and tank you will need to get back, and the trip out crosses ground you already
 stirred up.
 
+**How long a dive lasts is not one number.** Four things set it, and each is
+something a player can act on: the tank you are wearing, the location's own
+modifiers (thin atmosphere drains faster, §13), the items you brought that bend
+the clock, and how far in you chose to go. A tank upgrade lengthens every dive; a
+scrubber placed on the way in lengthens this one; a rich location shortens it.
+That is the difference between a timer and a resource.
+
 **Running out of air** is a bleed, not an instant death, so a bad estimate is
-survivable if your squad is close. Exact numbers are open.
+survivable if your squad is close.
 
 **Downed and revives.** Reviving is a long, loud, stationary channel, the
 bleed-out clock does not pause for it, and each player can be revived twice per
@@ -751,10 +761,11 @@ density, packs that scale by count and never by individual strength, the revive
 cap in §14, and tank pressure tuned per headcount. Solo is separately tuned:
 smaller vault, fewer patrols, a shorter walk back.
 
-**PvP exists.** Form is not decided. The two shapes on the table are an opt-in
-mode where two squads meet in the same vault, and a set of deep locations that are
-always contested. Whichever it is, the game ships and is fun with zero PvP, and
-PvP does not gate any item a solo player needs.
+**PvP is certain places on the map, not a mode.** Some locations are contested
+and are marked as contested before you drive out. Going there means other squads
+can be in the vault with you. Never going there is a complete way to play: nothing
+a solo player needs sits behind a contested location, and the game ships and is
+fun for someone who visits none of them.
 
 **No auction house and no market.** Trading is squad-only, hand to hand.
 
@@ -793,17 +804,14 @@ Teach four rules, one hand, and a reason to care, with no tutorial voice:
 1. **Does the detection model survive four players?** Four bodies make four times
    the noise, and if quiet is unreachable in a full squad it becomes a solo mode by
    accident.
-2. **How far can the tank stretch before the dive stops being tense?** The whole
-   act structure is one number and it has not been chosen.
-3. **Does losing the whole Life still land, now that some of it comes back?** The
+2. **Does losing the whole Life still land, now that some of it comes back?** The
    softener in §9 protects the player and costs the moment some of its weight.
-4. **Fully procedural versus a tile set.** §13 asks a generator to produce a
+3. **Fully procedural versus a tile set.** §13 asks a generator to produce a
    legible route back out of reusable parts, which is the hardest thing on this
    list and the one most likely to need authored anchors after all.
-5. **Do vault and printing items need their own pools?** Both currently spend
+4. **Do vault and printing items need their own pools?** Both currently spend
    power alongside shields and devices, so a shield build and a vault build
    compete for one meter.
-6. **PvP shape.** Contested locations and an opt-in mode are different products.
 
 ## 23. If this gets built here
 
@@ -814,7 +822,7 @@ Teach four rules, one hand, and a reason to care, with no tutorial voice:
 | Hand items as abilities, pools, damage, enemy assembly, detection and alert states, per-player drop rolls | **`jgengine-combat`** |
 | Life state, character stats, item trees, equipment, homefolk, work and scavenging queues, stations, upkeep bands, shift clock, stash, save | **`jgengine-gameplay`** — serializable state, injected RNG |
 | Hand wheel, oxygen meter, pool meters, grid inventory, character screen, item trees, map, Radio, the Log | **`jgengine-ui`** |
-| Squads, instance authority, lending, PvP | **`jgengine-multiplayer`** |
+| Squads, instance authority, lending, contested locations | **`jgengine-multiplayer`** |
 
 Reusable seams this pushes upstream, all genre-agnostic:
 
