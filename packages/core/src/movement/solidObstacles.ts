@@ -36,14 +36,18 @@ const MOVEMENT_MESH_BOX_BUDGET = 12;
 /** Feet-to-head span a walker is tested over — matches the player's, so both agree on what a wall is. */
 const WALKER_HEIGHT = 1.8;
 
+/** Largest blocking-collider extent in the scene, split so tower height cannot inflate the XZ query. */
 export interface ObstacleReach {
+  /** Max XZ center-to-face distance of any blocking collider (capped). */
   horizontal: number;
+  /** Max vertical center-to-face distance of any blocking collider (capped, much tighter than H). */
   vertical: number;
 }
 
 /**
  * The slice of the scene's object store this query needs. Narrow on purpose: the scene context wires
  * its own store here while it is still being constructed, and `ctx.scene.object` satisfies it as-is.
+ * @internal
  */
 export interface SolidObstacleSource {
   list(): readonly { instanceId: string; position: EntityPosition; rotationY: number }[];
@@ -54,13 +58,13 @@ export interface SolidObstacleSource {
   collidersOf(instanceId: string): Parameters<typeof resolveColliders>[0] | null;
 }
 
-/** Mutable reach cache; one per source, invalidated by object count. */
+/** Mutable reach cache; one per source, invalidated by object count. @internal */
 export interface ObstacleReachCache {
   count: number;
   value: ObstacleReach;
 }
 
-/** A fresh {@link ObstacleReachCache} for a caller that owns its own source. */
+/** A fresh {@link ObstacleReachCache} for a caller that owns its own source. @internal */
 export function createObstacleReachCache(): ObstacleReachCache {
   return { count: -1, value: { horizontal: OBSTACLE_MAX_HALF_EXTENT, vertical: OBSTACLE_VERTICAL_FLOOR } };
 }
