@@ -217,6 +217,8 @@ the field for a worse roll spread, or carry it home for a better roll.
 **Every hand item carries its own skill tree** (§8), so two players holding the
 same rifle can have spent it differently.
 
+The catalogue itself lives in [ITEMS.md](ITEMS.md).
+
 **Misprints** come out of printers that have gone wrong. They are deliberately
 overpowered and each carries a permanent cost for that Life: a hand burned, a
 hard health cap, permanent visibility to enemies. Misprints cannot be unequipped.
@@ -756,7 +758,8 @@ Teach four rules, one hand, and a reason to care, with no tutorial voice:
    legible route back out of reusable parts, which is the hardest thing on this
    list and the one most likely to need authored anchors after all.
 9. **Item library size.** Enemy variety is downstream of item count. Guess: about
-   50 items across six families, each with its own tree.
+   50 items across six families, each with its own tree. [ITEMS.md](ITEMS.md)
+   proposes 88 and marks what it would cut.
 10. **PvP shape.** Contested locations and an opt-in mode are different products.
 
 ## 23. If this gets built here
