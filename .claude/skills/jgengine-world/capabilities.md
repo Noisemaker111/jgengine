@@ -496,6 +496,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SOIL_KIND` (const) · `import { SOIL_KIND } from "@jgengine/core/world"`
 
+## solid-obstacles — the one blocking-geometry query the player resolver and NPC movers share
+
+- `solidObstaclesNear` (function) · `import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles"`
+
 ## spatial-region-box — sample uniformly within an axis-aligned 3D box
 
 - `boxRegion` (function) · `import { boxRegion } from "@jgengine/core/world"`
@@ -592,6 +596,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## volumetric-clouds — raymarched cloud layer sky option
 
 - `VolumetricCloudsConfig` (interface) · `import { VolumetricCloudsConfig } from "@jgengine/core/world"`
+
+## walker-solid-step — slide an NPC's step against the geometry that blocks the player
+
+- `resolveWalkerStep` (function) · `import { resolveWalkerStep } from "@jgengine/core/movement/solidObstacles"`
 
 ## wave-runner — observable serializable wave/spawn runner over the seeded spawn director — WAVE N, wave progress, budget/alert readout, onSpawn sink, snapshot/restore
 

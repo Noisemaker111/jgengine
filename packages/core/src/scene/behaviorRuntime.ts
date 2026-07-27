@@ -8,6 +8,7 @@ import {
   type PathProgress,
   type Waypoint,
 } from "../nav/pathFollow";
+import { resolveWalkerStep } from "../movement/solidObstacles";
 import type { GameContext } from "../runtime/gameContext";
 import { perContext } from "../runtime/perContext";
 
@@ -15,6 +16,8 @@ import type { PatrolBehavior, WanderBehavior } from "./behaviors";
 
 const DEFAULT_WANDER_SPEED = 1.5;
 const WANDER_ARRIVAL = 0.6;
+/** Below this share of its intended step a wanderer counts as blocked and re-rolls its target. */
+const WANDER_BLOCKED_FRACTION = 0.25;
 
 /** Whether a behavior instance advances and writes pose (`active`), is temporarily suspended retaining
  * state (`paused`), or is held off until re-enabled (`disabled`). */
@@ -164,8 +167,11 @@ function stepWander(ctx: GameContext, id: string, nav: WanderNav, dt: number): v
   const dist = Math.hypot(dx, dz);
   if (dist < 1e-6) return;
   const step = Math.min(dist, speed * dt);
-  const nx = px + (dx / dist) * step;
-  const nz = pz + (dz / dist) * step;
+  const desired = resolveWalkerStep(ctx, entity.position, (dx / dist) * step, (dz / dist) * step);
+  const nx = px + desired.stepX;
+  const nz = pz + desired.stepZ;
+  // A wanderer pinned against a solid picks a fresh target next tick instead of grinding into it.
+  if (Math.hypot(desired.stepX, desired.stepZ) < step * WANDER_BLOCKED_FRACTION) nav.target = null;
   ctx.scene.entity.setPose(id, {
     position: [nx, ctx.world.groundHeightAt(nx, nz), nz],
     rotationY: Math.atan2(dx, dz),
@@ -173,10 +179,25 @@ function stepWander(ctx: GameContext, id: string, nav: WanderNav, dt: number): v
   });
 }
 
+/**
+ * Pose a patroller at its path point, with the *move* to that point slid against solids. The path state
+ * still advances on its own clock — the route is authored, and rewinding it on contact would stall the
+ * whole patrol behind one prop — but the entity can no longer end a tick inside geometry the player
+ * cannot walk through. A route drawn through a building shows up as an NPC pressed against its wall,
+ * which is the authoring bug made visible rather than hidden.
+ */
 function posePatrol(ctx: GameContext, id: string, nav: PatrolNav, dt: number): void {
   const [x, y, z] = nav.state.position;
+  const entity = ctx.scene.entity.get(id);
+  let px = x;
+  let pz = z;
+  if (entity !== null) {
+    const step = resolveWalkerStep(ctx, entity.position, x - entity.position[0], z - entity.position[2]);
+    px = entity.position[0] + step.stepX;
+    pz = entity.position[2] + step.stepZ;
+  }
   ctx.scene.entity.setPose(id, {
-    position: nav.groundClamp ? [x, ctx.world.groundHeightAt(x, z), z] : [x, y, z],
+    position: nav.groundClamp ? [px, ctx.world.groundHeightAt(px, pz), pz] : [px, y, pz],
     rotationY: nav.state.heading,
     dt,
   });

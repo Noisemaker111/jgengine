@@ -5,7 +5,6 @@ import type { InputFrame } from "../runtime/inputSnapshot";
 import { applyHorizontalImpulses, applyMotionImpulses } from "../runtime/motionIntents";
 import { groundFieldFor, hasEnvironmentTerrain, sampleSlope, type TerrainField } from "../world/terrain";
 import type { WorldFeature } from "../world/features";
-import { resolveColliders, type ResolvedCollider } from "../scene/colliders";
 import type { EntityPosition } from "../scene/entityStore";
 import {
   advancePlayerMotion,
@@ -22,6 +21,7 @@ import {
   type MovementTuningOverrides,
   type PlayerMotionState,
 } from "./movementModel";
+import { solidObstaclesNear } from "./solidObstacles";
 import { approachYaw, steerYaw } from "./steering";
 import {
   advanceVoxelPlayer,
@@ -93,18 +93,9 @@ interface PlayerMovementState {
   motion: PlayerMotionState | null;
 }
 
-interface ObstacleReach {
-  /** Max XZ center→face distance of any blocking collider (capped). */
-  horizontal: number;
-  /** Max vertical center→face distance of any blocking collider (capped, much tighter than H). */
-  vertical: number;
-}
-
 interface CtxMovementStore {
   players: Map<string, PlayerMovementState>;
   solids: { count: number; set: Set<string> };
-  /** Cached broadphase reach — split H/V so tower height does not inflate the XZ query (see {@link obstacleReachFor}). */
-  obstacleReach: { count: number; value: ObstacleReach };
 }
 
 const stores = new WeakMap<GameContext, CtxMovementStore>();
@@ -115,10 +106,6 @@ function storeFor(ctx: GameContext): CtxMovementStore {
     store = {
       players: new Map(),
       solids: { count: -1, set: new Set() },
-      obstacleReach: {
-        count: -1,
-        value: { horizontal: OBSTACLE_MAX_HALF_EXTENT, vertical: OBSTACLE_VERTICAL_FLOOR },
-      },
     };
     stores.set(ctx, store);
   }
@@ -321,7 +308,7 @@ export function stepPlayerMovement(
   const stepHeight = tuning.movement?.stepHeight ?? DEFAULT_PLAYER_STEP_HEIGHT;
   let obstacles: CollisionObstacle[] | null = null;
   if (tuning.movement?.collideObjects !== false) {
-    obstacles = gatherMovementObstacles(ctx, store, player.position, stepX, stepZ);
+    obstacles = gatherMovementObstacles(ctx, player.position, stepX, stepZ);
     // While grounded, a box the player could simply step onto is a ledge, not a wall.
     const resolved = resolveObstacleStep(
       player.position,
@@ -427,187 +414,21 @@ export function stepPlayerMovement(
   });
 }
 
-/** Feet-to-head span the obstruction test uses; matches `movementModel`'s `OBSTACLE_PLAYER_HEIGHT`. */
-const OBSTACLE_PLAYER_HEIGHT = 1.8;
 /**
- * Broadphase reach floor (XZ): the `inBox` query indexes objects by their center *point*, so the query
- * must extend past the player by at least the largest blocking-collider extent or a wide object's edge
- * is missed. Floored so default unit boxes stay covered.
- */
-const OBSTACLE_MAX_HALF_EXTENT = 4;
-/**
- * Hard cap on XZ broadphase reach. City lots ~12–17 m footprint need ~17–20 m after yaw expansion;
- * beyond that we refuse to grow the query into a city-wide box (and rely on the outer AABB of each
- * solid still blocking once its *center* is in range).
- */
-const OBSTACLE_HORIZONTAL_CAP = 22;
-/**
- * Vertical broadphase floor/cap. Player only needs nearby ground props / step-ups — never full tower
- * height. Using building height for Y was the Vice Isle pose killer: a 50 m tower turned `inBox` into
- * a 100³ empty cell walk every frame.
- */
-const OBSTACLE_VERTICAL_FLOOR = 3;
-const OBSTACLE_VERTICAL_CAP = 8;
-/**
- * Mesh compound `boxes` under this count are treated as intentional openings (archways). Above it we
- * walk against the outer fitted AABB only — solid city buildings often ship dense box soups that
- * multiply narrowphase cost without changing the blocked footprint.
- */
-const MOVEMENT_MESH_BOX_BUDGET = 12;
-
-/**
- * Largest blocking reach in the scene, split into horizontal vs vertical and hard-capped. Cached per
- * ctx and recomputed when the object count changes.
- */
-function obstacleReachFor(ctx: GameContext, store: CtxMovementStore): ObstacleReach {
-  const objects = ctx.scene.object.list();
-  const cache = store.obstacleReach;
-  if (cache.count === objects.length) return cache.value;
-  let horizontal = OBSTACLE_MAX_HALF_EXTENT;
-  let vertical = OBSTACLE_VERTICAL_FLOOR;
-  for (const object of objects) {
-    const set = ctx.scene.object.collidersOf(object.instanceId);
-    if (set === null) continue;
-    for (const collider of resolveColliders(set)) {
-      if (!collider.blocks || collider.purpose !== "physical") continue;
-      const shape = collider.shape;
-      const offset = shape.offset;
-      const ox = offset !== undefined ? Math.abs(offset[0]) : 0;
-      const oy = offset !== undefined ? Math.abs(offset[1]) : 0;
-      const oz = offset !== undefined ? Math.abs(offset[2]) : 0;
-      if (shape.kind === "sphere") {
-        horizontal = Math.max(horizontal, ox + oz + shape.radius);
-        vertical = Math.max(vertical, oy + shape.radius);
-      } else {
-        // Horizontal bound sums both axes so any yaw of the box stays covered.
-        const h = shape.halfExtents;
-        horizontal = Math.max(horizontal, ox + oz + h[0] + h[2]);
-        vertical = Math.max(vertical, oy + h[1]);
-      }
-    }
-  }
-  const value: ObstacleReach = {
-    horizontal: Math.min(horizontal, OBSTACLE_HORIZONTAL_CAP),
-    vertical: Math.min(vertical, OBSTACLE_VERTICAL_CAP),
-  };
-  cache.count = objects.length;
-  cache.value = value;
-  return value;
-}
-
-/**
- * Gather the player's nearby blocking obstacles from resolved colliders — the mesh-accurate replacement
- * for the old `nearbyObstacles(list(), …)` which emitted a default 1×1×1 box per object. Bounded by an
- * `inBox` broadphase (reach ≥ player radius + the scene's max blocking extent so wide walls can't be
- * missed), then, per candidate, keeps only blocking physical colliders and emits their real
- * half-extents/offset (or, for a mesh collider carrying a small `boxes` set, the compound sub-boxes),
- * conservatively yaw-rotated by the object's `rotationY`. Objects with no resolved collider fall back
- * to the default box; objects whose colliders don't block stop obstructing. Runs for both the shell's
- * local player and a host, so parity is automatic.
+ * The player's blocking obstacles for this step, from the shared solid seam. A walking NPC calls
+ * `resolveWalkerStep` against the same query, so "solid" means one thing engine-wide.
  */
 function gatherMovementObstacles(
   ctx: GameContext,
-  store: CtxMovementStore,
   position: EntityPosition,
   stepX: number,
   stepZ: number,
 ): CollisionObstacle[] {
-  const reach = obstacleReachFor(ctx, store);
-  const reachX = Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS + reach.horizontal;
-  const reachZ = Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS + reach.horizontal;
-  const min: EntityPosition = [
-    position[0] - reachX,
-    position[1] - reach.vertical,
-    position[2] - reachZ,
-  ];
-  const max: EntityPosition = [
-    position[0] + reachX,
-    position[1] + OBSTACLE_PLAYER_HEIGHT + reach.vertical,
-    position[2] + reachZ,
-  ];
-  const obstacles: CollisionObstacle[] = [];
-  for (const object of ctx.scene.object.inBox(min, max)) {
-    const set = ctx.scene.object.collidersOf(object.instanceId);
-    if (set === null) {
-      // No resolved collider: preserve today's default 1×1×1 box.
-      obstacles.push({ position: object.position });
-      continue;
-    }
-    for (const collider of resolveColliders(set)) {
-      if (!collider.blocks || collider.purpose !== "physical") continue;
-      obstacles.push(obstacleFromCollider(collider, object.position, object.rotationY));
-    }
-  }
-  return obstacles;
-}
-
-/** One blocking collider as a {@link CollisionObstacle}: a compound `boxes` obstacle for a mesh collider
- * carrying a small sub-box set (openings), else a single half-extents/offset AABB. Yaw is applied by
- * conservatively expanding each AABB to its rotated extent (mirroring `worldOffset`), so the obstruction
- * never under-covers. */
-function obstacleFromCollider(
-  collider: ResolvedCollider,
-  position: EntityPosition,
-  rotationY: number,
-): CollisionObstacle {
-  const cos = Math.cos(rotationY);
-  const sin = Math.sin(rotationY);
-  const shape = collider.shape;
-  // Dense compound soups (city buildings) collapse to the outer fitted AABB for movement — openings
-  // only stay mesh-box accurate when the box count is small (arches, doorways).
-  if (
-    shape.kind === "mesh" &&
-    shape.boxes !== undefined &&
-    shape.boxes.length > 0 &&
-    shape.boxes.length <= MOVEMENT_MESH_BOX_BUDGET
-  ) {
-    return {
-      position,
-      boxes: shape.boxes.map((b) => yawExpandLocalBox(b.min, b.max, cos, sin)),
-    };
-  }
-  let hx: number;
-  let hy: number;
-  let hz: number;
-  if (shape.kind === "sphere") {
-    hx = hy = hz = shape.radius;
-  } else {
-    hx = shape.halfExtents[0];
-    hy = shape.halfExtents[1];
-    hz = shape.halfExtents[2];
-  }
-  const offset = shape.offset;
-  const ox = offset !== undefined ? offset[0] : 0;
-  const oy = offset !== undefined ? offset[1] : 0;
-  const oz = offset !== undefined ? offset[2] : 0;
-  return {
+  return solidObstaclesNear(
+    ctx,
     position,
-    // Rotate the offset by yaw (mirror of colliders.worldOffset), expand the extents to the rotated AABB.
-    offset: [ox * cos + oz * sin, oy, -ox * sin + oz * cos],
-    halfExtents: [Math.abs(hx * cos) + Math.abs(hz * sin), hy, Math.abs(hx * sin) + Math.abs(hz * cos)],
-  };
+    Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
+    Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
+  );
 }
 
-/** Yaw-rotate an entity-local AABB about the object origin and re-fit it to an axis-aligned box, expressed
- * as `min`/`max` relative to `position`. Conservative: the rotated box is grown to its enclosing AABB. */
-function yawExpandLocalBox(
-  boxMin: readonly [number, number, number],
-  boxMax: readonly [number, number, number],
-  cos: number,
-  sin: number,
-): { min: [number, number, number]; max: [number, number, number] } {
-  const centerX = (boxMin[0] + boxMax[0]) / 2;
-  const centerY = (boxMin[1] + boxMax[1]) / 2;
-  const centerZ = (boxMin[2] + boxMax[2]) / 2;
-  const halfX = (boxMax[0] - boxMin[0]) / 2;
-  const halfY = (boxMax[1] - boxMin[1]) / 2;
-  const halfZ = (boxMax[2] - boxMin[2]) / 2;
-  const rcX = centerX * cos + centerZ * sin;
-  const rcZ = -centerX * sin + centerZ * cos;
-  const rhX = Math.abs(halfX * cos) + Math.abs(halfZ * sin);
-  const rhZ = Math.abs(halfX * sin) + Math.abs(halfZ * cos);
-  return {
-    min: [rcX - rhX, centerY - halfY, rcZ - rhZ],
-    max: [rcX + rhX, centerY + halfY, rcZ + rhZ],
-  };
-}
