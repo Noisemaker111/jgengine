@@ -5,8 +5,8 @@ into dead ones, take what you can carry, and get out before the place finishes
 printing enough bodies to stop you.
 
 **There are no classes.** Every ability in the game — a rifle, a fireball, a
-shield, super speed, a rocket launcher — is a **Module**: a lootable object, all
-competing for the same sockets. Your class is whatever is socketed this hour.
+shield, super speed, a rocket launcher — is a **slot item**: a lootable object,
+all competing for the same slots. Your class is whatever is slotted this hour.
 
 **Nobody goes out but players.** No AI companion, no hireling, no follower. The
 only thing that walks into a vault beside you is a friend, and the only thing
@@ -18,11 +18,34 @@ not carry your gear, your level, or your talents. It carries nothing but you.
 Status: design only. No code exists yet. This document is the spec to argue with
 before anything gets built.
 
+**The words.** Every term below is a decision, not a placeholder.
+
+| | |
+| --- | --- |
+| **Life** | One printed body and everything on it. Survives extraction, ends at death. |
+| **Dive** | One expedition into one dead vault. |
+| **Slot** | An equip position. Equipment carries them; you start with one. |
+| **Slot item** | Anything that goes in a slot — a rifle, a fireball, a shield. In speech, just its family or its name. |
+| **Cache** | The bag. Lost with the Life, but it drops where you fall (§9). |
+| **Equipment** | Head · Chest · Legs · Boots · Ring · Ring · Neck. Carries slots and sizes pools. |
+| **Pool** | A named resource an item family spends: Stamina, Mana, Ammo, Heat. |
+| **Print** | Anything walking a dead vault. A copy of a copy of somebody who worked there. |
+| **Generation** | How many prints from the original. The rarity ladder, literally (§5). |
+| **Key** | The consumable that sets vault, depth, objective and modifiers. |
+| **Depth** | 1–10. How far down, and how far from the original. |
+| **The Works** | The objective room. Cracking it trips the alarm. |
+| **Beacon** | The point you slam to call the Driller. |
+| **Driller** | The rig that comes through the ceiling to take you home. |
+| **Drift** | Accumulated printer inaccuracy at home. The cost of dying often (§12). |
+| **Lost** | A dead Life still walking a vault in its final loadout (§22). |
+| **Marrow** | Your vault. Renameable. |
+| **Diver** | What the homefolk call you, because you are the only one who goes. |
+
 | | |
 | --- | --- |
 | **I — The game** | [1 Loop](#1-the-pitch-in-one-loop) · [2 Rules](#2-the-rules-everything-hangs-off) · [3 Fiction](#3-fiction-the-printers-never-stopped) · [4 References](#4-what-the-references-give-us) |
-| **II — Systems** | [5 Modules](#5-modules) · [6 Equipment and resources](#6-equipment-and-resources) · [7 Enemies](#7-enemies-are-the-drop-table) · [8 XP and the wheel](#8-xp-levels-and-the-talent-wheel) · [9 Death](#9-death-and-reprinting) |
-| **III — Home** | [10 Stations](#10-the-home-vault-and-its-stations) · [11 Homefolk](#11-homefolk) · [12 Vault life](#12-vault-life) |
+| **II — Systems** | [5 Slot items](#5-slot-items) · [6 Equipment and pools](#6-equipment-and-pools) · [7 Enemies](#7-enemies-are-the-drop-table) · [8 XP and the circle](#8-xp-levels-and-the-talent-circle) · [9 Death](#9-death-and-reprinting) |
+| **III — Home** | [10 Stations](#10-marrow-and-its-stations) · [11 Homefolk](#11-homefolk) · [12 Vault life](#12-vault-life) |
 | **IV — The dive** | [13 Keys and generation](#13-keys-and-vault-generation) · [14 Mission shape](#14-the-shape-of-a-dive-quiet-alarm-beacon-driller) · [15 Salvage](#15-salvage) · [16 The radio](#16-the-radio) |
 | **V — Meta** | [17 The log](#17-the-log) · [18 Feel](#18-first-person-feel) · [19 Playing together](#19-playing-together) · [20 Death spiral](#20-the-death-spiral-and-the-valve) · [21 First hour](#21-the-first-hour) · [22 Open questions](#22-open-questions) · [23 Build mapping](#23-if-this-gets-built-here) |
 
@@ -48,7 +71,7 @@ DIVE (you, or up to four of you, instanced, 15–25 min)
     ▼        ▼
  EXTRACT    DIE
     │        │
- keep the   lose the modules, the equipment, the cache,
+ keep the   lose the items, the equipment, the cache,
  whole      the talents, the level — the whole Life.
  Life       Keep the vault and everyone in it.
     │        │
@@ -63,17 +86,17 @@ worth bragging about is 10–40 dives.
 ## 2. The rules everything hangs off
 
 **Rule 1 — Every active ability is loot.** Guns, spells, powers, shields, melee:
-all Modules, all found, none learned. No spellbook, no class kit, no unlock
+all slot items, all found, none learned. No spellbook, no class kit, no unlock
 screen.
 
-**Rule 2 — All Modules compete for the same sockets.** A fireball and a rocket
+**Rule 2 — All slot items compete for the same slots.** A fireball and a rocket
 launcher want the same hole. "Fireball *and* a gun" is a real decision with a
 real cost, which is what makes it feel earned.
 
-**Rule 3 — You start every Life with one socket.** Better equipment and talents
+**Rule 3 — You start every Life with one slot.** Better equipment and talents
 widen it. Contracts permanently raise the floor.
 
-**Rule 4 — Enemies are built like you are.** Same modules, same numbers. What an
+**Rule 4 — Enemies are built like you are.** Same items, same numbers. What an
 enemy is visibly holding is how it fights and what it drops.
 
 ## 3. Fiction: the printers never stopped
@@ -92,7 +115,7 @@ are not anyone any more, and they will kill you for standing in the corridor.
 
 This one idea carries the entire game:
 
-- **It explains why enemies carry Modules.** The print includes the loadout. A
+- **It explains why enemies carry items.** The print includes the loadout. A
   security officer prints holding a rifle because a security officer always held
   a rifle.
 - **It explains why they never run out.** Trip the alarm and the vault does what
@@ -119,21 +142,23 @@ prints are.
 | **Vault Hunters 3rd Ed.** | The *Key*: a craftable, modifiable token that sets where you go, how deep, and how bad it gets. |
 | **Fallout Shelter** | The home base as a persistent second game: named residents, rooms that want specific stats, work that continues while you are logged off. |
 | **Dark and Darker** | Extraction as a place you must physically reach. Losing the character is the price of the fantasy. |
-| **Marathon (2025)** | Swappable modules as the whole of build identity. And a free, no-loadout, no-risk drop-in as the anti-death-spiral valve. |
+| **Marathon (2025)** | Swappable slot items as the whole of build identity. And a free, no-loadout, no-risk drop-in as the anti-death-spiral valve. |
 | **Borderlands** | Items as procedural part assemblies from opinionated manufacturers, and the drop that recontextualises everything. |
 | **Binding of Isaac** | Hand-authored rooms shuffled by a graph, not noise. Synergies over stats. And the honest one: a run ends. |
 
-Explicitly **not** taken: classes with fixed kits, permanent account-level power
-growth, send-your-villagers-to-loot-the-map idle loops, and a PvP-first
-foundation (§19).
+Explicitly **not** taken: classes with fixed kits, a permanent power ceiling that
+grows with the account, send-your-villagers-to-loot-the-map idle loops, and a
+PvP-first foundation (§19). Permanent progress exists and is deliberate — the
+Armorer, contract slots, the Index — but all of it raises the **floor** a fresh
+print starts from and none of it raises the **ceiling** a Life can reach.
 
 ---
 
 # II — Systems
 
-## 5. Modules
+## 5. Slot items
 
-A **Module** is any equippable active. One category, six families:
+A **Slot item** is any equippable active. One category, six families:
 
 | Family | Examples | Runs on | Feels like |
 | --- | --- | --- | --- |
@@ -144,20 +169,31 @@ A **Module** is any equippable active. One category, six families:
 | **Kinetic** | super speed, flight, blink, leap | Stamina | Movement as a weapon |
 | **Field** | turrets, totems, gravity wells, healing pools | Heat | Placement and zoning |
 
-That resource column is the real balance system, and §6 explains why.
+That pool column is the real balance system, and §6 explains why.
 
-**Anatomy.** Module = **Pattern** + 2–4 **Parts** + rolled **Affixes** +
+**Your hands hold one thing.** Arms and Edge are **held**: they occupy your
+hands, one at a time, swapped on the slot wheel with a real swap time. Focus,
+Ward, Kinetic and Field are **worn**: bound to a button and used without
+changing what you are holding. That is what makes "a fireball *and* a rocket
+launcher" literally true — you cast the fireball with the launcher still up.
+Two hands are also the honest cap on seven slots of guns.
+
+**Cost is a pool. Cooldowns are rare.** Nothing is free, so almost nothing needs
+a cooldown on top; the handful of items big enough to break that rule carry one
+as a property of the item, not as a system everything obeys.
+
+**Anatomy.** Slot item = **Pattern** + 2–4 **Parts** + rolled **Affixes** +
 **Generation**. Parts come from opinionated makers and are swappable at home, so
 a bad drop is a component rather than trash.
 
 | Maker | Identity | Cost |
 | --- | --- | --- |
 | **Kessler** | Volume, cheap ammo, forgiving | Awful at range |
-| **Orrery** | Makes Focus and Ward modules sing | Weak unless paired with another Orrery part |
-| **Brand** | Enormous damage | Self-harm, overheat, recoil that hurts you |
+| **Orrery** | Makes Focus and Ward sing | Weak unless paired with another Orrery part |
+| **Kiln** | Enormous damage | Self-harm, overheat, recoil that hurts you |
 | **Corvin** | Hybrids: gunblades, spell-swords, bayonets | Neither half is best-in-class |
 | **Meridian** | Kinetic and utility | Low raw damage |
-| **Preserve** | Ward, Field, healing, squad support | Almost no solo carry |
+| **Vigil** | Ward, Field, healing, squad support | Almost no solo carry |
 
 **Generation is the rarity ladder, and it is literal.** Everything in a dead
 vault is a copy of a copy, so an item's quality is how many prints it is from the
@@ -165,42 +201,49 @@ original:
 
 | Gen | Called | Where |
 | --- | --- | --- |
-| 5+ | **Worn** | Everywhere, shallow |
-| 4 | **Common** | Everywhere |
+| 5+ | **Faint** | Everywhere, shallow |
+| 4 | **Worn** | Everywhere |
 | 3 | **Clean** | Uncommon; deeper |
 | 2 | **Proof** | Rare; deep, on elites |
 | 1 | **Firstprint** | The original. Hand-authored, named, one per archetype. Scripted behaviour, not a stat line. |
 | — | **Misprint** | Off-ladder. See below. |
 
-Nobody has to be taught this ladder. "It's a third-gen rifle" explains itself,
-and it is the only rarity system I know of where the fiction *is* the mechanic.
+Nobody has to be taught this ladder. Legibility rises as you climb it, which is
+exactly what the fiction says happens, and "it's a third-gen rifle" explains
+itself. It is the only rarity system I know of where the fiction *is* the
+mechanic.
 
-**In the case.** Better modules drop still sealed in their issue case. Crack one
+**Firstprints are re-earnable.** Each one drops from its named First, that First
+is always down there at depth, and losing a Life costs you the hour it takes to
+go back for it — never the content itself. The Index keeps the trophy even when
+the Life does not (§9).
+
+**In the case.** Better items drop still sealed in their issue case. Crack one
 in the field for a worse roll spread, or carry it home for a better roll. A
 cased Proof in your cache is the thing you should die for.
 
 **Misprints** come out of printers that have gone properly wrong, and they are
 the devil deal: genuinely overpowered, each with a permanent-for-the-Life cost —
-a socket burned, a hard health cap, permanent visibility to enemies, no beacon
-call. Misprints cannot be unsocketed. Taking one changes what Life this is.
+a slot burned, a hard health cap, permanent visibility to enemies, no beacon
+call. Misprints cannot be unslotted. Taking one changes what Life this is.
 
-## 6. Equipment and resources
+## 6. Equipment and pools
 
 **Seven equipment slots.** Head · Chest · Legs · Boots · Ring · Ring · Neck.
 
 Equipment is not a power number. It does three jobs:
 
-1. **It carries your sockets.** A piece has 0–2 module sockets. Your total socket
-   count is the sum, and that is the single most valuable stat in the game. A
-   fresh print wears one socket. A good Life ends up around seven.
-2. **It sizes your resource pools** — Health, Stamina, Mana, Heat capacity, and
-   carry weight.
+1. **It carries your slots.** A piece has 0–2 slots. Your total slot count is the
+   sum, and that is the single most valuable stat in the game. A fresh print
+   wears one slot. A good Life ends up around seven.
+2. **It sizes your pools** — Health, carry weight, and every pool your slotted
+   items actually draw on.
 3. **It carries affixes** — the ordinary RPG layer: resistances, reload speed,
    cast speed, vent rate, salvage yield.
 
-**Resources are the balance system.** There is no abstract power budget. Instead,
-every module family draws on a different pool, and your seven pieces of equipment
-cannot max all four pools at once:
+**Pools are the balance system.** There is no abstract power budget. Instead,
+every family draws on a named pool, and your seven pieces of equipment cannot
+max all of them at once:
 
 | Pool | Spent by | Recovers by |
 | --- | --- | --- |
@@ -209,29 +252,44 @@ cannot max all four pools at once:
 | **Ammo** | Arms | Not at all in the field — mags come off the dead and out of stockrooms |
 | **Heat** | Ward, Field | Venting, which is loud and stationary |
 
+Four ship. The list is data, not an enum, and it can grow with the item library.
+**Heat is the one that runs backwards** — it fills as you use Ward and Field and
+you have to stand still and be loud to empty it.
+
 This is why a fireball *and* a rocket launcher is a real build rather than a free
-lunch. You can socket both. But the gear that gives you the mana to keep casting
+lunch. You can slot both. But the gear that gives you the mana to keep casting
 is not the gear that gives you the ammo capacity to keep firing, and a hybrid
 runs dry on both halves before a specialist runs dry on one. **Specialisation is
 the cap, and it is a cap players already understand from every RPG they have
 played.**
 
-Four pools also means four different rhythms in a fight, which is most of what
-makes a mixed build fun to play rather than merely legal.
+**Ammo is one pool shared by every Arms item you carry**, so a second gun doubles
+your options and not your bullets. Running dry is a real state and the answer is
+the rest of your build, or the dead, or a stockroom.
 
-**Where sockets come from:**
+**Health does not regenerate.** You get it back three ways, and each one costs
+you something you could have spent elsewhere: a Vigil Field item in a slot, a
+Vitality talent (§8), or reagents carried as a field consumable, which take cache
+space and weigh something.
+
+Separate pools also mean separate rhythms in a fight, which is most of what makes
+a mixed build fun to play rather than merely legal. **The HUD only draws the
+pools you are actually using** (§18), so one slot is one meter and the interface
+grows with the build instead of arriving fully loaded on your first dive.
+
+**Where slots come from:**
 
 | Source | Scope |
 | --- | --- |
 | Equipment | Lost with the Life |
-| Talent wheel — Capacity spoke | Lost with the Life |
+| Talent circle — Capacity spoke | Lost with the Life |
 | Contract chains | **Permanent — every future Life starts with them** |
 
 ## 7. Enemies are the drop table
 
-Because Rule 1 says abilities are loot, the enemy roster and the module roster
+Because Rule 1 says abilities are loot, the enemy roster and the item roster
 are the same roster. **Enemies are assembled exactly like you: equipment plus
-modules.** Everything in a dead vault is a **print** of somebody who worked
+slot items.** Everything in a dead vault is a **print** of somebody who worked
 there:
 
 | Print | Was | Role | Typically carries |
@@ -240,9 +298,9 @@ there:
 | **Guard** | Vault security | Line-holder, armored | Arm + Ward |
 | **Fitter** | Maintenance | Zoner, repairs the others | Field + Arm |
 | **Chorister** | The morale office — every vault had one | Caster, backline | 2 Focus |
-| **Runner** | Sent to another vault. Came back. | Flanker, fast | Kinetic + Edge |
-| **Overrun** | A print that came out of a printer that never stopped | Elite, room-boss | 3 modules, all wrong |
-| **First** | An early, near-perfect print of whoever ran this place | Named objective boss | Firstprint module |
+| **Courier** | Sent to another vault. Came back. | Flanker, fast | Kinetic + Edge |
+| **Overrun** | A print that came out of a printer that never stopped | Elite, room-boss | 3 items, all wrong |
+| **First** | An early, near-perfect print of whoever ran this place | Named objective boss | Firstprint item |
 
 **Five things fall out of this:**
 
@@ -252,19 +310,19 @@ there:
    The archetype is a shopping list, and the map station tells you which.
 3. **Difficulty and reward move together.** Something scarier got scarier by
    carrying something better. No separate tuning pass.
-4. **Content scales with the module library, not a monster budget.** Every new
-   module is a new enemy behaviour too.
+4. **Content scales with the item library, not a monster budget.** Every new
+   item is a new enemy behaviour too.
 5. **The alarm can print anything.** Wave composition during §14's alarm is just
    a spawn table over the same assembly system, so escalation is a data change,
    not new content.
 
-**Rules that keep it honest:** a print drops one of its visible modules, never
+**Rules that keep it honest:** a print drops one of its visible items, never
 all, at a generation roll worse than its own. Elites drop with certainty; chaff
-rarely. **Enemy modules use player numbers**, so an Overrun holding Proof gear is
+rarely. **Enemy items use player numbers**, so an Overrun holding Proof gear is
 dangerous to anybody — which is exactly why nothing is ever safe, at any level
 (§19).
 
-## 8. XP, levels, and the talent wheel
+## 8. XP, levels, and the talent circle
 
 Plain RPG progression, with one twist: **it belongs to the Life, not the
 account.**
@@ -284,30 +342,30 @@ A circle. Five spokes, four rings.
                     ╲   │   ╱
                      ╲  ●  ╱          ● = the centre, free nodes
                       ╲   ╱
-                VITALITY ─── KINESIS
+                VITALITY ─── MOTION
 
   rings, centre → rim:  I · II · III · Apex
 ```
 
 | Spoke | Governs | Sample nodes |
 | --- | --- | --- |
-| **Capacity** | Sockets, pool sizes, carry weight, swap speed | Second Socket, Deep Pockets, Reserve, *Apex:* **Wide Load** — a socket that costs no equipment |
-| **Mastery** | Potency of what is socketed; refining and upgrading modules | Amplify, Refine, Overtune, *Apex:* **Restore** — permanently raise one module a generation |
-| **Kinesis** | Movement, use-while-moving, cooldowns, reloads, vent rate | Fluid Cast, Sprint-Reload, Momentum, *Apex:* **Untethered** — every module usable airborne and sprinting |
+| **Capacity** | Slots, pool sizes, carry weight, swap speed | Second Slot, Deep Pockets, Reserve, *Apex:* **Wide Load** — a slot that costs no equipment |
+| **Mastery** | Potency of what is slotted; refining and upgrading items | Amplify, Refine, Overtune, *Apex:* **Restore** — permanently raise one item a generation |
+| **Motion** | Movement, use-while-moving, swap speed, reloads, vent rate | Fluid Cast, Sprint-Reload, Momentum, *Apex:* **Untethered** — every item usable airborne and sprinting |
 | **Vitality** | Health, regeneration, revives, downed resistance | Ironbone, Second Wind, Leech, *Apex:* **Refusal** — one death per dive becomes a downed state |
 | **Fortune** | Loot quality, stockroom detection, case-cracking, salvage yield | Diviner, Pry, Fast Hands, *Apex:* **Prospect** — cased drops roll a generation better |
 
-No fire spoke, no gun spoke, no melee spoke. Damage type is loot's job. The wheel
+No fire spoke, no gun spoke, no melee spoke. Damage type is loot's job. The circle
 never gives you a power — it decides what you can do with the powers you found.
 
 **Seams.** Between every pair of adjacent spokes sit nodes requiring points in
-both. This is where two socketed modules start talking to each other:
+both. This is where two slotted items start talking to each other:
 
-- Capacity × Mastery → **Harmonic**: each empty socket buffs your filled ones
-- Mastery × Kinesis → **Cascade**: a kill with one module refunds another's cooldown
-- Kinesis × Vitality → **Barrier**: any movement module grants a shield
+- Capacity × Mastery → **Harmonic**: each empty slot buffs your filled ones
+- Mastery × Motion → **Cascade**: a kill with one item refunds part of another's pool cost
+- Motion × Vitality → **Barrier**: any movement item grants a shield
 - Vitality × Fortune → **Tithe**: cracking a stockroom heals
-- Fortune × Capacity → **Field Kit**: an extra socket usable only by something
+- Fortune × Capacity → **Field Kit**: an extra slot usable only by something
   found *this dive*
 
 **Respec** is free at home between dives. Punishing experimentation in a game
@@ -317,9 +375,9 @@ that already deletes your character is piling on.
 
 **Lost with the Life:**
 
-- Every socketed module and everything in the **cache** (your bag)
+- Every slotted item and everything in the **cache** (your bag)
 - All seven pieces of equipment
-- Every talent point and the whole wheel
+- Every talent point and the whole circle
 - Your level and XP
 
 **Kept, always:**
@@ -327,13 +385,13 @@ that already deletes your character is piling on.
 - The vault, every station and its level
 - The homefolk, their stats, and their work in progress
 - The store — *materials only* (see the hard rule)
-- **Permanent socket count** from completed contract chains
+- **Permanent slot count** from completed contract chains
 - Blueprints, maker licences, recipes
-- The Index (every module you have ever brought home, and the small permanent
+- The Index (every item you have ever brought home, and the small permanent
   bonus each first-time entry grants)
 - Keys you have earned the right to craft; standing; cosmetics; the Log (§17)
 
-**The hard rule that protects the whole design: modules and equipment cannot be
+**The hard rule that protects the whole design: items and equipment cannot be
 stored.** Home holds salvage, parts, patterns and knowledge — it holds
 *potential*, never power. The instant a player can bank a Proof launcher for next
 time, death stops mattering and the game unwinds. Every station in §10 respects
@@ -344,35 +402,58 @@ Halloway is already there because he always is. The printer gives you a body and
 the Armorer gives you whatever the shop can currently issue — which is the one
 thing that improves permanently, with salvage, over the whole game (§10).
 
-**One softener, costed.** Before a dive you may put one module **on the plate**
-for a salvage fee. If the Life ends, the printer runs that module for your next
-one. Long per-item cooldown. A soft landing, not a savings account.
+**Your cache drops where you fall; you do not.** The bag hits the floor and
+anyone still alive can pick it up and carry it out — and if they extract with it,
+it is *theirs*. Your slotted items and your seven pieces of equipment are
+destroyed with the body and cannot be looted by anybody, or a squad becomes a
+place to farm builds off each other and death stops costing anything. **What you
+were carrying can be saved by a friend. What you *were* cannot.** Going back for
+a dead friend's bag under alarm fire is the best decision in the game and it is
+free content.
+
+**One softener, costed.** Before a dive you may put one item **on the plate** for
+an ink charge. If the Life ends, the printer runs that item for your next one.
+Two rules keep it from becoming a savings account: **plating an item removes it
+from the Life you are living** — it is inside the printer, not on you — and the
+plate **locks once filled** for the rest of that Life. You are paying a real item
+now for a soft landing later, and committing before you know what you will find.
 
 ---
 
 # III — Home
 
-## 10. The home vault and its stations
+## 10. Marrow, and its stations
 
-First person, walkable, quiet, yours. Not a menu with a background.
+Your vault has a name because the ones on the radio use it. **Marrow** —
+renameable, and the default the game ships with. First person, walkable, quiet,
+yours. Not a menu with a background.
+
+The homefolk call you a **diver**, because you are the only one who goes.
 
 | Station | Does | Fed by |
 | --- | --- | --- |
 | **The Door** | Insert a Key, form a squad, dive | — |
 | **The Printer** | Brings you back. The heart of the vault, and the room everyone is quietest in. | Ink + power |
-| **Armorer** | Sets what a fresh print is issued. Upgrading raises the **floor** for every future Life. | Scrap + alloy |
-| **Case Bench** | Cracks cased modules, rerolls one affix | Wire + optics |
-| **Parts Bench** | Swaps parts between modules; applies maker licences | Parts + licences |
-| **Map Room** | Craft and modify Keys; shows which vaults carry which module families | Cells + fragments |
+| **Armorer** | Sets what a fresh print is issued. Upgrading raises the **floor** for every future Life. | Waste + alloy |
+| **Case Bench** | Cracks cased items, rerolls one affix | Wire + optics |
+| **Parts Bench** | Swaps parts between items; applies maker licences | Parts + licences |
+| **Map Room** | Craft and modify Keys; shows which vaults carry which families | Cells + fragments |
 | **Index** | Everything you have ever brought home, mounted; the Log; the wall of dead Lives | — |
-| **Bunks** | Homefolk roster, assignment, training | Food + beds |
+| **Bunks** | Homefolk roster, assignment, training. Its level is the roster cap. | Food + beds |
 | **Breaker** | Tears salvage down into parts and reagents — the main job in the vault | Salvage + power |
 | **Radio** | The world outside: other lit vaults, contracts, distress calls (§16) | Power |
-| **Shop** | Craft equipment and baseline modules from stored parts — always below field-drop quality | Parts + cells |
+| **Shop** | Craft equipment and baseline items from stored parts — always below field-drop quality | Parts + cells |
+
+**Every station is a queue and every queue is staffed.** A station with nobody
+assigned does nothing. Homefolk stats set rate and quality — Grit for the
+Breaker, Wit for the benches, Nerve for the Printer — so more people means more
+parallel work finished per dive, and food and morale (§12) are the counterweight.
+That is the whole reason to want a bigger roster, and it is the whole reason a
+bigger roster costs you.
 
 **The Armorer is the one that matters.** It cannot give you a Proof. What it can
 do is improve what you are handed when you wake up on the plate with nothing —
-better boots, a second socket, a starting module you actually chose. That is the
+better boots, a second slot, a starting item you actually chose. That is the
 answer to "you lose everything but you keep your vault", and it is where the
 salvage goes. **Stations raise the floor and never the ceiling.**
 
@@ -394,7 +475,15 @@ maintain the stations, keep the printer running. All of it is **a queue with rea
 duration** that keeps working while you are logged off. You never come back to
 new loot — you come back to *finished work*.
 
-**Forty strangers.** Procedurally generated: name, face, former job, three stats
+The queue is **simulated forward when you load**, not held on a server. Single
+player works offline; co-op is instanced and host-authoritative (§23), and the
+vault is yours either way.
+
+**Homefolk do not die in normal play.** At the bottom of the morale band they
+leave, and drift (§12) can make one go quiet for a shift, but nothing kills them.
+A game where the vault can be depopulated is a different game.
+
+**Forty strangers**, capped by the Bunks. Procedurally generated: name, face, former job, three stats
 (**Grit** / **Wit** / **Nerve**), a couple of traits, and a vault of origin they
 will mention. They arrive as rescues from dives and as applicants over the radio.
 You can favourite and rename them. They form friendships and rivalries that shift
@@ -438,6 +527,12 @@ pointedly does not explain. Left long enough it starts costing you: worse issue
 on reprint, homefolk refusing assignments. At maximum it is a one-off set piece
 fought in your own corridors against your own vault's output.
 
+**The Printer never fails to print.** If ink is at zero you still come back — the
+run just costs drift instead, and the Armorer issues you the bare minimum. The
+Door always opens and so does the plate. That is also the most honest thing the
+economy can say: printing without ink is exactly what happened to every other
+vault down there, and now you are doing it to save an evening.
+
 That is the best sink in the economy because it is thematically load-bearing:
 dying often is what makes home worse, and it is the one pressure in the game that
 is entirely self-inflicted.
@@ -455,23 +550,32 @@ per hour of work in the project; do not cut it.
 **Keys.** Crafted at the Map Room, consumed on insert, and they fully determine
 the dive:
 
-- **Depth** (1–10) — print generation, enemy tier, module tier. You can only craft
-  a Key one depth beyond the deepest objective you have personally completed, so
-  a friend can carry you *into* depth but never *past* it (§19).
+- **Depth** (1–10) — print generation, pack density, hazard stacking. You can only
+  craft a Key one depth beyond the deepest objective you have personally
+  completed, so a friend can carry you *into* depth but never *past* it (§19).
 - **Vault** — *Hydroponics, Cold Storage, the Choir, Reactor Deck, Habitation, the
-  Long Hall.* Sets tileset, print roster, hazard, music, **and which module
-  families you will find**, because the enemies are the drop table.
-- **Objective** — the thing that trips the alarm. Crack the core · take the
+  Long Hall.* Sets tileset, print roster, hazard, music, **and which families you
+  will find**, because the enemies are the drop table.
+- **Objective** — the thing that trips the alarm. Crack the works · take the
   pattern archive · kill the First · restart a printer long enough to read it ·
   find and carry out survivors.
 - **Modifiers** — negatives you *choose* for a loot multiplier: no map, doubled
   patrols, faster alarm escalation, a hunter print that tracks you, no beacon
   until the objective is done.
 
+**Depth is density, not a damage multiplier.** A Depth 10 Guard is not a Depth 1
+Guard with forty times the health. It is the same Guard carrying Proof gear, with
+four friends, in a room with no light, backed by Overruns that are common down
+there and rare up here. Health does rise with depth, but inside the same fivefold
+band the player lives in (§19), because the moment depth outruns that band the
+"enemies never scale" rule is a lie and every co-op promise in §19 collapses with
+it. Depth gets harder through count, composition, hazard and generation — all of
+which are data, none of which are a number on a health bar.
+
 **Generation: authored rooms, procedural graph.** Isaac's lesson, not noise.
 
 1. A graph pass lays out nodes to a budget: 1 entry, 8–16 loot rooms, 2–4
-   objective rooms, 1 core, 2–3 beacon sites, 1–3 secrets behind conditions.
+   objective rooms, 1 works, 2–3 beacon sites, 1–3 secrets behind conditions.
 2. A room pass fills each node from a hand-authored prefab set for that vault,
    then dresses it: patrol packs assembled per §7, stockroom placement, hazards,
    lighting, ambient story.
@@ -479,7 +583,7 @@ the dive:
 Room kinds: **Stockroom** (loot) · **Arena** · **Environmental** (hazard or
 traversal) · **Quarters** (survivors, benches, story, quiet dread) · **Printhouse**
 (a working printer — Misprint offers, and during the alarm it is a spawner you can
-destroy) · **Core** (objective).
+destroy) · **the Works** (objective).
 
 Minimum viable authored content: roughly **60 room prefabs across 3 vaults**
 before the shuffle stops feeling repetitive. Every prefab must read and fight
@@ -502,6 +606,26 @@ The best structural change in this document, and it is yours. Three acts, and
 there. Patrols on routes. Stockrooms to crack. Prints to kill carefully, because
 a fight you lose control of is a fight that finds the next patrol. You can loot
 the whole vault this way and leave with a decent haul and no drama.
+
+**How a print notices you.** Sight is a cone, shortened by darkness. Hearing is a
+radius that grows with what you are doing — crouched, walking, sprinting, looting,
+venting, firing, in that order. Three states, and they are readable from across a
+room by posture alone:
+
+| State | What it is doing |
+| --- | --- |
+| **On route** | Walking its shift. It has not registered you. |
+| **Looking** | Something landed. It breaks route and goes to check. |
+| **Calling** | It has you and it is shouting. Prints in earshot converge. |
+
+**Calling decays.** Break line of sight, stay quiet, and prints drift back to
+route and the vault goes quiet again. This is the load-bearing part: without a
+reset, Act I ends the first time anyone is spotted and the three-act structure is
+decoration. Quiet kills — Edge from behind, a suppressed Arms part — raise
+nothing. Loud kills raise hearing locally.
+
+The alarm in Act II is the exception that makes the rule matter: **it never
+decays.**
 
 **Act II — The alarm.** Cracking the objective trips it. The vault does the one
 thing it was built to do in an emergency: **it starts printing staff.** Not a
@@ -528,7 +652,7 @@ Why this is better than everything it replaced:
 - **It makes the low-level player useful.** Waves attack the *beacon*, so holding
   a corridor and shooting things that are not looking at you is a real job that
   does not require a good build (§19).
-- **The greed decision is legible to everyone.** "Do we crack the core or leave
+- **The greed decision is legible to everyone.** "Do we crack the works or leave
   with what we have" is a sentence four friends can argue about out loud, and
   every answer is defensible.
 - **You can leave before act two.** Call the beacon in Act I and the defence is
@@ -547,8 +671,8 @@ heavy.
 
 | Material | From | Feeds |
 | --- | --- | --- |
-| **Scrap** | Everything, everywhere, heavy | Armorer, structure, station levels |
-| **Wire** | Panels, terminals, Fitter prints | Case Bench, sockets, electronics |
+| **Waste** | Everything, everywhere, heavy | Armorer, structure, station levels |
+| **Wire** | Panels, terminals, Fitter prints | Case Bench, slots, electronics |
 | **Cells** | Power rooms, Guard prints | Keys, Shop, station power |
 | **Optics** | Sensors, Chorister prints, sealed labs | Case Bench, ranged equipment, map upgrades |
 | **Polymer** | Quarters, medical, hydroponics | Armor, seals, reagents |
@@ -562,8 +686,9 @@ exists in the rooms full of the machines making more enemies. Wanting ink is
 wanting to walk into the worst room on the level.
 
 **Weight is the whole game.** Carry capacity is equipment (§6), alloy is heavy,
-and every stack of scrap is a stack you are not filling with something better.
-Hauling salvage should compete directly with hauling modules, and the answer
+and every stack of waste is a stack you are not filling with something better.
+Hauling salvage should compete directly with hauling items and with the reagents
+that are the only thing keeping your health bar honest (§6), and the answer
 should change depending on what your Armorer needs this week.
 
 ## 16. The radio
@@ -579,7 +704,7 @@ broadcasting). Between them, automated loops from vaults that died decades ago,
 still cheerfully announcing shift change.
 
 **They ask you for things.** Contracts come from people, not a job board, and
-contract chains are where the **permanent socket unlocks** live — so both anchored
+contract chains are where the **permanent slot unlocks** live — so both anchored
 progressions in the game come from other people needing you.
 
 **They can go dark.** A vault that broadcasts distress and gets ignored across
@@ -588,7 +713,7 @@ divable archetype. You can walk in and loot a place you knew, and meet the voice
 you used to talk to as a First. Use sparingly — one such loss per player per long
 arc, never a treadmill of guilt.
 
-**Trade** is salvage, parts, patterns and rumours. **Never modules or
+**Trade** is salvage, parts, patterns and rumours. **Never items or
 equipment** — a market for those is a store with extra steps, and §9's hard rule
 holds everywhere.
 
@@ -602,11 +727,11 @@ The game writes each Life down, terse and factual, readable at the Index and
 exportable as a card:
 
 ```
-LIFE 07                        22 dives · deepest D8 · 41h
+MARROW · LIFE 07               22 dives · deepest D8 · 41h
   Issued:   Kessler sidearm, patched boots (Armorer III)
-  Peak:     level 38 · 7 sockets · Apex "Untethered"
+  Peak:     level 38 · 7 slots · Apex "Untethered"
   Firsts:   Firstprint "Long Sunday" (D6, the Choir)
-            Cassin relief chain complete → permanent socket 3
+            Cassin relief chain complete → permanent slot 3
   With:     REEVE (11 dives) · TOLLAND (4)
   Ended:    D8, Cold Storage, 40s into the beacon defence,
             carrying a cased Proof launcher nobody ever opened.
@@ -620,17 +745,23 @@ without a writer. The Index wall is the physical version: every Life, in order.
 - **Inventory:** weight and slots, not Tetris. Spatial grids are legible at a desk
   and illegible in a tense first-person moment. Weight governs sprint, jump and
   beacon-channel speed, so greed is physical.
-- **The module wheel** is the core input surface: radial select, hold to swap,
-  readable at a glance with one socket or seven. First thing to prototype.
-- **Four resource meters must read at a glance** — stamina, mana, ammo, heat.
-  This is the hardest HUD problem in the game and the one most likely to be
-  solved by making three of them diegetic (heat on the weapon, ammo on the mag)
-  and one of them loud.
+- **The slot wheel** is the primary input surface: radial select, hold to swap,
+  readable at a glance with one slot or seven. First thing to prototype. Held
+  items (§5) swap through it; worn items sit on buttons and never interrupt what
+  is in your hands.
+- **The HUD only draws pools you are using.** One slot is one meter. Slot a
+  fireball and mana appears; drop it and mana goes away. This is what keeps §6
+  from becoming a wall of gauges on a first dive, and it means the interface
+  teaches the build instead of the build fighting the interface. Diegetic where
+  possible — heat on the weapon, ammo on the mag.
 - **Looting is channelled** and audible. A pacing tool and a vulnerability.
 - **Sound is the primary intel channel.** Patrol routes, the alarm, a friend's
-  module two rooms away, the PA announcing a shift change to a dead room.
-- **Prints read by silhouette plus held module.** Per §7 this is a rendering
-  requirement: every enemy visibly wears its drop. Same for squadmates.
+  item two rooms away, the PA announcing a shift change to a dead room. §14's
+  detection model is the other half of this: what you can hear is roughly what
+  can hear you.
+- **Prints read by silhouette, posture and held item.** Per §7 every enemy
+  visibly wears its drop, and per §14 its posture is its alert state. Both are
+  rendering requirements. Same for squadmates.
 - **Solo is genuinely alone.** No companions means a solo dive has no voice in it
   but the vault's. That is a feature — quieter, slower, more frightening.
 - **Accessibility.** Sound carries intel, so every audio cue needs visual
@@ -642,7 +773,7 @@ without a writer. The Index wall is the physical version: every Life, in order.
 
 A player a thousand hours in and a player on their first night should run the
 same corridor and both have a real time. **The enemies are the same enemies for
-both of them.** Eight rules, none of which scale a number to a player:
+both of them.** Nine rules, none of which scale a number to a player:
 
 **0. There is no account level, and the veteran is regularly a beginner.** Level
 belongs to the Life, and per §9 that Life is one bad corridor from being level 1
@@ -650,7 +781,7 @@ again. The power curve is flattened by permadeath in a way no persistent-level
 game's ever is. Half of this problem solves itself.
 
 **1. The power band is 5×, and it is a hard constraint.** Everything from one
-socket to seven with Proof gear fits inside a five-fold swing in effective
+slot to seven with Proof gear fits inside a five-fold swing in effective
 output. In an FPS that is roughly starting-pistol to good-rifle — a gap friends
 play across in every shooter ever made. If a build breaks the budget, the build is
 the bug.
@@ -678,7 +809,7 @@ target the beacon, not the strongest player. Holding an approach, destroying a
 printhouse, reviving, and carrying are all jobs the objective genuinely needs and
 none of them require a good build. Nobody is ever cargo.
 
-**7. Enemy modules use player numbers (§7), so nothing is ever safe.** The
+**7. Enemy items use player numbers (§7), so nothing is ever safe.** The
 veteran one-shots Hands — of course he does, he does that solo too, and that is
 allowed. But an Overrun holding Proof gear is running *his* numbers back at him.
 Content stays lethal because content is armed from the same catalogue.
@@ -687,6 +818,11 @@ Content stays lethal because content is armed from the same catalogue.
 hours into a Life is risking forty hours; his friend is risking twenty minutes.
 The strong player is the scared one, the new player is the reckless one, and that
 inversion produces better co-op than any balance patch.
+
+**9. A dead friend's bag is a decision, not a payout.** Per §9 the cache drops and
+the build does not, so you can save what somebody was carrying but never inherit
+what they were. Under alarm fire, going back is a genuine argument with a
+defensible answer either way, and it costs nothing to build.
 
 **Sponsor contracts** close the incentive loop: the Radio pays **only in
 permanent currency** — standing, maker licences, Index access, applicants,
@@ -701,9 +837,11 @@ headcount. Solo is separately tuned: smaller vault, fewer patrols, shorter
 defence. A one-player Depth 6 is a quieter, more frightening vault, not a
 four-player vault with three people missing.
 
-**PvP: opt-in, as a Key modifier.** A **Breach** Key opens your instance to
-another squad, doubles loot, and lets you take what they were carrying. Killing
-another player ends their Life. That should be heavy, and rare. Building
+**PvP: opt-in on both sides, as a Key modifier.** A **Breach** Key can only meet
+another squad that is also running one — there is no invasion, because invasion
+makes every system in the game hostage to anti-cheat. It doubles loot and lets
+you take what the other squad was carrying. Killing another player ends their
+Life. That should be heavy, and rare. Building
 PvP-first means every system is hostage to netcode, matchmaking and anti-cheat
 before the game is playable; as a modifier, **the whole game ships and is fun with
 zero PvP**.
@@ -715,11 +853,11 @@ in-vault, hand to hand, materials only.
 
 Losing a Life must not lose the player. Five countermeasures:
 
-1. **The free Key.** Always available. Fixed body, one fixed module, capped
+1. **The free Key.** Always available. Fixed body, one fixed item, capped
    cache, nothing to lose, shallow only. The bottom rung is always there.
 2. **The Armorer.** A fresh print is always issued something you chose, and that
    floor rises permanently with salvage across the whole game.
-3. **The floor moves.** Contract-granted permanent sockets and Index bonuses mean
+3. **The floor moves.** Contract-granted permanent slots and Index bonuses mean
    Life #12 starts materially better than Life #1, with no stat inflation.
 4. **The work queue keeps running.** The homefolk are still breaking down the
    salvage you already hauled. The night your Life ends, tomorrow already has
@@ -730,30 +868,31 @@ Losing a Life must not lose the player. Five countermeasures:
 
 ## 21. The first hour
 
-Teach four rules, one socket, and a reason to care, with no tutorial voice:
+Teach four rules, one slot, and a reason to care, with no tutorial voice:
 
 | Min | Beat |
 | --- | --- |
 | 0–5 | Wake on the printer plate. Halloway is there and does not make a thing of it. Walk the ring. The Door is the only thing that is obviously important. |
-| 5–8 | The Armorer hands you a battered sidearm. Your chest piece has one socket and your other six pieces have none. The game never says "1 of 7"; you can see the empty holes. |
+| 5–8 | The Armorer hands you a battered sidearm. Your chest piece has one slot and your other six pieces have none. The game never says "1 of 7"; you can see the empty holes. |
 | 8–20 | Depth 1, Habitation. Quiet act. Hands only. The PA is running. A bunk has a name plate. You kill a Hand holding a *hammer* and it drops the hammer, and the hook lands with no text: **that is how you get things.** |
-| 20–24 | You can socket the hammer **or** the sidearm. Not both. This is the moment the game explains itself. |
-| 24–32 | You crack the core. The alarm goes. Something starts printing down the hall and does not stop. You run for a beacon you passed ten minutes ago and were not paying attention to. |
+| 20–24 | You can slot the hammer **or** the sidearm. Not both. This is the moment the game explains itself. |
+| 24–32 | You crack the works. The alarm goes. Something starts printing down the hall and does not stop. You run for a beacon you passed ten minutes ago and were not paying attention to. |
 | 32–36 | Beacon defence, ninety seconds, deliberately winnable. The Driller comes through the ceiling. Nobody forgets their first one. |
-| 36–45 | Dump salvage on the intake counter; the Breaker queue starts. Spend first points. **Second Socket** is visible, expensive, two dives away. |
-| 45–60 | The Radio lights up — Vesk has been listening to Cassin call for two days. The contract chain that ends in permanent socket 2 begins. Somewhere in here, first death: cheap at one socket, and you meet the printer from the other side. |
+| 36–45 | Dump salvage on the intake counter; the Breaker queue starts. Spend first points. **Second Slot** is visible, expensive, two dives away. |
+| 45–60 | The Radio lights up — Vesk has been listening to Cassin call for two days. The contract chain that ends in permanent slot 2 begins. Somewhere in here, first death: cheap at one slot, and you meet the printer from the other side. |
 
 Afterwards a player should be able to explain the whole game to a friend, and
 want to, because the next beat is bringing that friend along.
 
 ## 22. Open questions
 
-1. **Can the 5× band hold?** §19 rests entirely on it, and seven sockets of Proof
+1. **Can the 5× band hold?** §19 rests entirely on it, and seven slots of Proof
    gear with seams firing is exactly where a designer's 5× quietly becomes 30×.
    Needs a build calculator before content authoring, not after.
-2. **Four resource pools may be one too many.** §6 is the balance system, but four
-   meters is a lot of HUD and a lot to track in a firefight. Fallback: merge Heat
-   into Stamina and let Ward/Field cost the same pool as Kinetic, leaving three.
+2. **Does the detection model survive four players?** §14's decay rule is what
+   makes Act I a place instead of a tripwire, and four bodies is four times the
+   noise. If quiet is unreachable in a full squad, quiet becomes a solo mode by
+   accident.
 3. **Does losing the whole Life land as tragedy or tedium?** Isaac gets away with
    it at 40 minutes a run; ours is potentially 20 hours. The alarm helps — a Life
    usually ends at a peak, mid-defence, holding something — but it is theory until
@@ -761,17 +900,18 @@ want to, because the next beat is bringing that friend along.
 4. **Is the alarm's infinite escalation readable enough?** Players must understand
    in their first thirty seconds that this is not a fight to win. If it reads as
    "we can hold here", the whole act structure fails.
-5. **Should lost Lives come back as enemies?** Cut for now. The system is cheap
-   and asynchronous — a dead Life walking a vault in its final loadout — and the
-   fiction already supports it, but it needs a reason to exist beyond novelty.
+5. **Should the Lost be built?** A **Lost** is a dead Life walking a vault in its
+   final loadout. Cut for now — the system is cheap and asynchronous and the
+   fiction already carries it, but it needs a reason to exist beyond novelty.
+   The name is settled so the question can stay open.
 6. **Does four bodies flatten the horror?** Geometry cost is priced in (§13); the
    remaining risk is tonal. Levers in order: tighten revives, split the squad with
    objectives that need two rooms at once, lean the alarm on isolating players.
    Never by making a four-stack weaker — that breaks rule 2.
 7. **How much authored room content is the real minimum?** 60 is an estimate. If
    it is 200, the project shape changes.
-8. **Module library size.** Enemy variety is downstream of module count. Guess:
-   **~50 modules across six families**.
+8. **Item library size.** Enemy variety is downstream of item count. Guess:
+   **~50 items across six families**.
 9. **Server authority cost.** Instanced four-player PvE with an authoritative host
    is tractable; Breach is a different problem and should wait.
 
@@ -781,16 +921,16 @@ want to, because the next beat is bringing that friend along.
 | --- | --- |
 | Room prefabs, vault tilesets, dressing, the home vault itself | **`jgengine-editor`** — authored into `editor.scene.json`; the graph pass composes authored prefabs. No hardcoded geometry. |
 | Vault graph generation, movement, print AI, patrols, alarm director, hazards | **`jgengine-world`** |
-| Modules as abilities, resource pools, damage, enemy assembly, per-player drop rolls | **`jgengine-combat`** |
-| Life state, XP/levels, wheel, equipment and sockets, homefolk, work queue, stations, upkeep bands, shift clock, save | **`jgengine-gameplay`** — serializable state, injected RNG |
-| Module wheel, four-pool HUD, inventory, character screen, talent circle, Radio, the Log | **`jgengine-ui`** |
+| Slot items as abilities, pools, damage, enemy assembly, detection and alert states, per-player drop rolls | **`jgengine-combat`** |
+| Life state, XP/levels, talent circle, equipment and slots, homefolk, work queue, stations, upkeep bands, shift clock, save | **`jgengine-gameplay`** — serializable state, injected RNG |
+| Slot wheel, pool meters, inventory, character screen, talent circle, Radio, the Log | **`jgengine-ui`** |
 | Squads, Key gating, instance authority, beacon defence sync, Breach | **`jgengine-multiplayer`** |
 
 Reusable seams this pushes upstream, per the build-capability-upstream
 invariant — all genre-agnostic, all otherwise handrolled game-locally:
 
 - **Procedural item assembly** — pattern + parts + affixes + generation
-- **Shared ability sockets** — one primitive where an NPC's equipped ability set
+- **Shared ability slots** — one primitive where an NPC's equipped ability set
   *is* its behaviour set *is* its drop table
 - **Multi-pool resource costs** — abilities that draw on named, separately-sized
   pools, with equipment sizing the pools
@@ -804,7 +944,7 @@ invariant — all genre-agnostic, all otherwise handrolled game-locally:
 - **Roster and work queue** — named NPCs with stats, assignment and a durable
   offline processing queue
 
-First slice: the module wheel, one vault, §7's enemy assembly, and §14's
+First slice: the slot wheel, one vault, §7's enemy assembly, and §14's
 alarm-to-Driller act structure. That is the game. Everything in Parts III and IV
 turns it into a place, and none of it should start before that slice is fun.
 
