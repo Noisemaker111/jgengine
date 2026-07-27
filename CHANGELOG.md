@@ -26,8 +26,11 @@ At publish, rename this heading to the new version and mirror the entries into
 `packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
 -->
 
+## 0.18.0
+
 ### Migrate
 
+- **Bump lockstep SDK packages to `^0.18.0`:** `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`. CLI `jgengine` is `0.15.0`; `@jgengine/github` is `0.5.0`.
 - **Register the presence reaper and redeploy your schema.** `jgPoses` gains `sessionId` / `kind` / `label` / `revokedAt` (all optional) and a `by_updated` index, and `createPresenceFunctions` now also returns `reapIdlePresence`. Re-export it (`export const { list, sync, leave, reapIdlePresence } = createPresenceFunctions(...)`) and add `crons.interval("jg presence reap", { seconds: 60 }, internal.presence.reapIdlePresence, {})`. Without it nothing deletes the row of a player who closed the tab — `list` filtered stale rows at read time but the table grew forever. `jgengineCronSpecs()` carries the new entry, and every spec now names the `module` (`"runtime"` / `"presence"`) it is exported from.
 - **`presence.sync` returns `{ pose, lastSeenAt, displaced }` instead of `null`,** and `presence.leave` marks the row revoked instead of deleting it (the reaper collects it once idle). A caller that ignored the return value is unaffected.
 
