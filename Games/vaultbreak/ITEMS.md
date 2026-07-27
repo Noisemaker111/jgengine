@@ -14,8 +14,8 @@ Status: a proposal to cut from. Nothing here is approved.
 | **Shields** | Power | Stopping things |
 | **Movement** | Stamina | Getting somewhere, and getting back |
 | **Devices** | Power | Placed things that hold ground while you do something else |
-| **Vault** | Power | Commanding a building that is still running |
-| **Printing** | Power | The one verb no other setting has |
+| **Overrides** | Power | Operating the building against the things inside it |
+| **Copies** | Power | Duplicating weapons, decoys and people |
 
 ## Two kinds of rarity
 
@@ -59,8 +59,13 @@ shape, it should be an affix or a tree node instead.
 4. **A cost that is not a pool** — oxygen, health, cache space, or a second hand.
 5. **Pairing** — it gains something when a named other item is in another hand.
 6. **World** — it changes the level rather than the enemies.
-7. **Printing** — it uses the fiction nothing else has.
+7. **Copying** — it uses the fiction nothing else has.
 8. **Memory** — it remembers across dives, or across Lives.
+
+**No hand item extends your oxygen.** How long you can stay is equipment's job —
+the tank itself, plus affixes on rings and necklaces (DESIGN.md §6). Hand items
+may *read* the clock, which is why the deadman's rifle stays: it gets stronger as
+your air runs out and gives you none of it back.
 
 Everything is printed from a workplace: security, maintenance, medical,
 hydroponics, the reactor deck, cold storage, the morale office, the printhouse.
@@ -222,8 +227,6 @@ a fight and strongest at the end of one.
 | **Sanctuary** | Nobody inside can be downed, only hurt. | Sealed |
 | **Coolant shroud** | Immunity to heat and fire, and it cools your other items. | Stocked |
 | **Vent screen** | A shield that doubles as a cooler for everything you carry. | Stocked |
-| **Sump** | Absorbs gas. Your oxygen does not count down inside it. | Sealed |
-| **Pressure seal** | A personal shield that refills your oxygen slowly. | Sealed |
 | **Phase skin** | Brief intangibility. Walk through bodies and thin partitions. | Sealed |
 | **Last shutter** | Total immunity for about two seconds, then a large power spike and self-damage. | Sealed |
 
@@ -283,8 +286,6 @@ a fight and strongest at the end of one.
 | **Beacon lamp** | Lights an area and reveals what was hiding in it. | Issue |
 | **Field lamp** | Portable light that also blinds prints looking at it. | Stocked |
 | **Signal relay** | Extends squad comms and marks through walls. | Restricted |
-| **Oxygen cache** | A placed tank that refills yours. | Restricted |
-| **Air scrubber** | A zone where your oxygen stops counting down. | Sealed |
 | **Tube cap** | Blocks a pneumatic line so nothing comes out of it. | Stocked |
 | **Alarm box** | A fake alarm. Prints converge on it instead of you. | Restricted |
 | **Bait crate** | A fake supply crate prints will try to guard. | Restricted |
@@ -292,10 +293,11 @@ a fight and strongest at the end of one.
 | **Shift clock** | Prints in range clock out and walk back to quarters. | Sealed |
 | **Scarecrow** | A printed decoy body. Enemies commit to it. | Sealed |
 
-# Vault — power
+# Overrides — power
 
-The building is still running. These command it. Almost none of them deal damage
-and several are stronger than anything that does.
+The building is still running, and these operate it. Doors, lights, power, water,
+heat, the public address system, the gas. Almost none of them deal damage and
+several are stronger than anything that does.
 
 | Item | What it does | Found |
 | --- | --- | --- |
@@ -320,9 +322,10 @@ and several are stronger than anything that does.
 | **Ward siren** | Turns a vault's own alarm on deliberately. Everything comes to you, and everything is carrying something. | One-off |
 | **Beacon of the house** | The vault decides you are staff and stops fighting, until you take something. | One-off |
 
-# Printing — power
+# Copies — power
 
-Every one of these should feel like a bad idea.
+The printers made everything down here and they still work. These use them to
+duplicate a weapon, a decoy, or a person. Every one should feel like a bad idea.
 
 | Item | What it does | Found |
 | --- | --- | --- |
@@ -360,7 +363,6 @@ the hand progression something to unlock besides quantity.
 | **Twin cast** | Fires two spells at once, both at reduced strength. | Sealed |
 | **Portal frame** | Place two points and move freely between them. | Sealed |
 | **Breach drill** | Cuts through any wall in the vault. | Sealed |
-| **Atmosphere pack** | Doubles your oxygen. Takes both hands to carry. | Sealed |
 | **Printhouse rig** | A portable printer that makes items mid-dive. | Sealed |
 | **Chorus organ** | The Choir's full instrument. Controls a whole room of prints at once. | One-off |
 | **Long Sunday** | The Choir's last broadcast. Prints that hear it return to their posts, which is not the same as being stunned. | One-off |
@@ -376,7 +378,6 @@ enormous thing over four small ones.
 | **Open palm** | Melee damage per empty hand. | Issue |
 | **Focus stone** | Spell damage per empty hand. | Stocked |
 | **Free grip** | Movement speed per empty hand. | Stocked |
-| **Light load** | Oxygen drains more slowly per empty hand. | Restricted |
 | **Quick draw** | Swap and reload speed per empty hand. | Stocked |
 | **Gambler's rig** | Loot quality per empty hand. | Sealed |
 | **Duelist** | Works only with every other hand empty. That hand hits enormously hard. | Sealed |
@@ -399,7 +400,6 @@ enormous thing over four small ones.
 | Items that hurt you when fired | Absorb lattice, which turns that damage into a burst |
 | Vent gun needs heat to fire | Any overheating item in another hand |
 | Recall anchor dropped at the entrance | Any push deeper than your tank allows |
-| Oxygen cache or air scrubber placed on the way in | The walk back out, which is the whole dive |
 | Signal jam disables enemy devices | A room of turrets you were not going to survive |
 | Ward siren brings everything to you | Bulkhead trigger, which decides how much of it arrives |
 | Pattern lifter copies an elite's weapon | The rest of the dive, with a weapon you did not earn |
@@ -433,7 +433,9 @@ moment the walk back out becomes a decision rather than a walk.
 
 ## Open questions
 
-1. **Do vault and printing items have their own pools?** Both currently spend power, which is also what shields and devices use. A shield build and a vault build competing for the same meter may be wrong.
+1. **Do overrides and copies have their own pools?** Both currently spend power, which is also what shields and devices use. A shield build and an override build competing for the same meter may be wrong.
 2. **How far can a milestone node go?** A fireball whose tree makes it leave a burning patch has quietly become a device. Trees that hand out hardware are the best part of this design and also the easiest place for families to stop meaning anything.
-4. **How much of the catalogue may touch oxygen?** Sump, air scrubber, pressure seal, atmosphere pack, light load and deadman's rifle all bend the clock. Too many and the dive stops being timed.
-5. **Do enemies use every item?** A recall anchor or a cargo exo makes no sense on a print. If part of the catalogue is player-only, Rule 4 needs an explicit exception.
+3. **Which print carries what?** Every item needs at least one print that visibly
+   carries it, because that is the only way it enters the game (DESIGN.md §7). The
+   catalogue does not assign carriers yet, and that assignment is what decides
+   which places can build which characters.
