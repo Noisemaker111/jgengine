@@ -30,9 +30,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Changed
 
+- **Walking NPCs now stop at the geometry that stops the player.** `wander`, `patrol`, and `ctx.scene.entity.moveToward` consulted no obstacles at all, so a pedestrian walked through the building the player cannot enter. All three now slide their step against the scene's blocking physical colliders — the same query `stepPlayerMovement` reads. A patrol's path state still advances on its own clock (an authored route is not rewound by contact), but the entity can no longer end a tick inside a solid. Pass `avoidSolids: false` to `moveToward` for a mover meant to ignore the world (a flier, a camera rig).
 - **`@jgengine/assets` verify fails a model source that contributes no index entries.** A model pack that has never been pulled is a pin nothing has ever checked — that is how a Street Pack archive sat in the catalogue titled "Downtown City MegaKit". Record why a pack is not pulled in the new `AssetSource.unpulled` string; materials and sprites pull on demand and are exempt.
 
 ### Added
+
+- **`solidObstaclesNear` / `resolveWalkerStep` (`@jgengine/core/movement/solidObstacles`)** — the engine's single answer to "what is solid here", now shared rather than re-derived per consumer. `solidObstaclesNear(ctx, position, reachX, reachZ)` returns the blocking physical colliders near a point through a bounded `inBox` broadphase; `resolveWalkerStep(ctx, position, stepX, stepZ)` slides a horizontal step against them with the player's axis-separated sliding. Reach for these instead of deriving obstacles from a game catalog's own solidity flags.
 
 ### Removed
 

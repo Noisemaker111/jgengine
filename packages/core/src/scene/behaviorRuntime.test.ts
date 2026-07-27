@@ -193,3 +193,81 @@ describe("behaviorControl lifecycle", () => {
     expect(control.list().some((i) => i.id === "w1")).toBe(true);
   });
 });
+
+/** A solid wall object spanning `size` on each side, `height` tall, at `(x, 0, z)` — the same shape the
+ * player resolver blocks on, placed through the same object store. */
+function placeWall(c: ReturnType<typeof ctx>, catalogId: string, x: number, z: number, size: number): void {
+  c.scene.object.reportBounds(catalogId, {
+    min: [-size / 2, 0, -size / 2],
+    max: [size / 2, 3, size / 2],
+  });
+  c.scene.object.place(catalogId, x, 0, z);
+}
+
+/** True when `(x, z)` is inside the wall's footprint — i.e. the mover ended a tick inside geometry. */
+function insideWall(x: number, z: number, wallX: number, wallZ: number, size: number): boolean {
+  return Math.abs(x - wallX) < size / 2 && Math.abs(z - wallZ) < size / 2;
+}
+
+describe("walking behaviors respect the geometry that blocks the player", () => {
+  test("a patrolling NPC cannot end a tick inside an object the player collides with", () => {
+    const c = ctx();
+    // Route drawn straight through the wall's footprint — the vice-isle pedestrian case.
+    placeWall(c, "building", 0, 5, 6);
+    c.scene.entity.spawn("civ", {
+      id: "walker",
+      position: [0, 0, 0],
+      role: "prop",
+      behaviors: [patrol({ waypoints: [[0, 0, 0], [0, 0, 12]], speed: 2, loop: false })],
+    });
+
+    for (let i = 0; i < 120; i += 1) {
+      advanceBehaviors(c, 0.1);
+      const p = c.scene.entity.get("walker")!.position;
+      expect(insideWall(p[0], p[2], 0, 5, 6)).toBe(false);
+    }
+  });
+
+  test("a wanderer never ends a tick inside a solid it is steered at", () => {
+    const c = ctx();
+    placeWall(c, "kiosk", 3, 0, 4);
+    c.scene.entity.spawn("civ", {
+      id: "drifter",
+      position: [-3, 0, 0],
+      role: "prop",
+      movement: { walkSpeed: 4 },
+      behaviors: [wander({ radius: 8 })],
+    });
+
+    for (let i = 0; i < 200; i += 1) {
+      advanceBehaviors(c, 0.1);
+      const p = c.scene.entity.get("drifter")!.position;
+      expect(insideWall(p[0], p[2], 3, 0, 4)).toBe(false);
+    }
+  });
+
+  test("moveToward stops a chaser at the wall instead of lerping through it", () => {
+    const c = ctx();
+    placeWall(c, "wall", 0, 4, 6);
+    c.scene.entity.spawn("cop", { id: "cop", position: [0, 0, 0], role: "npc" });
+    c.scene.entity.spawn("civ", { id: "target", position: [0, 0, 10], role: "prop" });
+
+    for (let i = 0; i < 100; i += 1) {
+      const next = c.scene.entity.moveToward("cop", "target", { speed: 3, dt: 0.1 });
+      if (next === null) break;
+      c.scene.entity.setPose("cop", { position: next, rotationY: 0, dt: 0.1 });
+      expect(insideWall(next[0], next[2], 0, 4, 6)).toBe(false);
+    }
+    expect(c.scene.entity.get("cop")!.position[2]).toBeLessThan(1);
+  });
+
+  test("avoidSolids: false keeps the old pure lerp for a mover that ignores the world", () => {
+    const c = ctx();
+    placeWall(c, "wall", 0, 4, 6);
+    c.scene.entity.spawn("drone", { id: "drone", position: [0, 0, 0], role: "npc" });
+    c.scene.entity.spawn("civ", { id: "target", position: [0, 0, 10], role: "prop" });
+
+    const next = c.scene.entity.moveToward("drone", "target", { speed: 30, dt: 0.2, avoidSolids: false });
+    expect(next?.[2]).toBeCloseTo(6);
+  });
+});

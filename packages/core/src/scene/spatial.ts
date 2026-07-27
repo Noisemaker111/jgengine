@@ -15,6 +15,12 @@ export interface MoveTowardOptions {
   speed: number;
   stopDistance?: number;
   dt: number;
+  /**
+   * Slide the step against the solid geometry that blocks the player instead of lerping through it
+   * (default `true` wherever the runtime wires a resolver). Set `false` for a mover that is meant to
+   * ignore the world — a flier, a camera rig, a decorative drift.
+   */
+  avoidSolids?: boolean;
 }
 
 export interface SpatialGridOptions {
@@ -37,6 +43,17 @@ export interface SpatialApiOptions {
   grid?: SpatialGridOptions | false;
   /** When this number changes between queries, the grid rebuilds without an explicit `invalidate()`. */
   getVersion?: () => number;
+  /**
+   * Slide a horizontal step against the scene's solid geometry, returning the step actually allowed.
+   * Wired by the runtime to the same blocking-collider query the player resolver reads, so a chaser
+   * calling `moveToward` stops at the wall the player stops at. Omitted (tests, bare indexes) leaves
+   * `moveToward` a pure lerp.
+   */
+  resolveStep?: (
+    position: EntityPosition,
+    stepX: number,
+    stepZ: number,
+  ) => { stepX: number; stepZ: number };
 }
 
 export interface SpatialApi {
@@ -85,7 +102,7 @@ interface GridIndex {
 const DEFAULT_CELL_SIZE = 8;
 
 export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
-  const { resolvePosition, candidates, occluder, getVersion } = options;
+  const { resolvePosition, candidates, occluder, getVersion, resolveStep } = options;
   const gridConfig = options.grid === false ? undefined : (options.grid ?? { cellSize: DEFAULT_CELL_SIZE });
   const cellSize = gridConfig?.cellSize;
   let gridIndex: GridIndex | null = null;
@@ -265,7 +282,7 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
     invalidate() {
       gridDirty = true;
     },
-    moveToward(instanceId, target, { speed, stopDistance = 0, dt }) {
+    moveToward(instanceId, target, { speed, stopDistance = 0, dt, avoidSolids = true }) {
       const current = resolvePosition(instanceId);
       const destination = resolveTarget(target);
       if (current === undefined || destination === undefined) return null;
@@ -274,10 +291,14 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
       if (remaining <= 0) return current;
       const step = Math.min(speed * dt, remaining);
       const scale = step / total;
+      const stepX = (destination[0] - current[0]) * scale;
+      const stepZ = (destination[2] - current[2]) * scale;
+      const slid =
+        avoidSolids && resolveStep !== undefined ? resolveStep(current, stepX, stepZ) : { stepX, stepZ };
       return [
-        current[0] + (destination[0] - current[0]) * scale,
+        current[0] + slid.stepX,
         current[1] + (destination[1] - current[1]) * scale,
-        current[2] + (destination[2] - current[2]) * scale,
+        current[2] + slid.stepZ,
       ];
     },
   };

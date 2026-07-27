@@ -5,6 +5,7 @@ import { game } from "../game.config";
 import { loop } from "../loop";
 import { content } from "./content";
 import { createHandroll } from "./handroll";
+import { advanceBehaviors } from "@jgengine/core/scene/behaviorRuntime";
 
 const HERO = "hero-test";
 const STEP = 1 / 60;
@@ -126,5 +127,27 @@ describe("handroll drivable-vehicle adoption", () => {
     handroll.clearWanted(ctx);
     expect(handroll.wanted().stars).toBe(0);
     expect(handroll.wanted().heat).toBe(0);
+  });
+});
+
+describe("pedestrians in the live world", () => {
+  test("still walk their routes now that patrol slides against solids", () => {
+    const ctx = boot();
+    const start = new Map(
+      ctx.scene.entity
+        .list()
+        .filter((entity) => entity.id.startsWith("ped_"))
+        .map((entity) => [entity.id, entity.position] as const),
+    );
+    expect(start.size).toBeGreaterThan(0);
+
+    for (let i = 0; i < 240; i += 1) advanceBehaviors(ctx, STEP);
+
+    // Sliding must not freeze the crowd: the routes still run.
+    const moved = [...start].filter(([id, from]) => {
+      const now = ctx.scene.entity.get(id)?.position;
+      return now !== undefined && Math.hypot(now[0] - from[0], now[2] - from[2]) > 0.1;
+    });
+    expect(moved.length).toBeGreaterThan(start.size / 2);
   });
 });
