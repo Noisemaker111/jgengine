@@ -258,7 +258,11 @@ Equipment does not carry hands. It does four jobs:
 
 1. **It carries your oxygen tank.** The tank is the stat you will feel most. It
    upgrades like any other equipment, and the best ones are quest rewards rather
-   than drops, so how long you can stay is something you go and earn.
+   than drops, so how long you can stay is something you go and earn. Rings and
+   necklaces roll the affixes that modify it — slower drain, a larger reserve, a
+   warning earlier. **No hand item extends your oxygen.** Air is equipment's
+   department and nothing else's, so building for a longer dive means changing
+   what you wear rather than giving up a hand.
 2. **It sizes your pools** — health, and every pool your equipped items draw on.
 3. **It sizes your cache grid** — how much you can bring back in one trip (§15).
 4. **It carries affixes** — resistances, reload speed, cast speed, vent rate,
@@ -326,6 +330,17 @@ What falls out of this:
 at a rarity roll no better than its own. Elites drop with certainty; chaff
 rarely. Enemy items use player numbers, so an elite holding legendary gear is
 dangerous to anybody.
+
+**What you fight is what you can become.** Every item in the game is carried by
+some print somewhere, and that is the only way it enters play. Fight security all
+week and you will be holding guns; fight the Choir and you will be casting. This
+is not flavour — it is the whole reason the map matters, because a location's
+roster is a shopping list and §13 tells you which list before you drive out. A
+player who wants to change what they are has to change where they go.
+
+The rule has a cost worth stating: **an item nobody carries cannot exist.** Every
+entry in the catalogue needs a print visibly holding it, which is a constraint on
+authoring, not a detail.
 
 ## 8. Character level and item trees
 
@@ -809,9 +824,9 @@ Teach four rules, one hand, and a reason to care, with no tutorial voice:
 3. **Fully procedural versus a tile set.** §13 asks a generator to produce a
    legible route back out of reusable parts, which is the hardest thing on this
    list and the one most likely to need authored anchors after all.
-4. **Do vault and printing items need their own pools?** Both currently spend
-   power alongside shields and devices, so a shield build and a vault build
-   compete for one meter.
+4. **Do overrides and copies need their own pools?** Both currently spend power
+   alongside shields and devices, so a shield build and an override build compete
+   for one meter.
 
 ## 23. If this gets built here
 
