@@ -28,6 +28,17 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Migrate
 
+### Changed
+
+### Added
+
+### Fixed
+
+## 0.17.0
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.17.0`:** `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`. CLI `jgengine` is `0.14.0`; `@jgengine/github` is `0.4.0`.
 - **A deleted player profile stays deleted.** When a game persists players (`save.scope` includes `player`), hydrating a member with no `jgPlayerProfiles` row no longer falls back to the copy of their state kept on the server row — that copy was resurrected and then written back as authoritative, so a world reset that cleared profiles but not servers silently restored every player's old balance. A game whose save scope excludes players (`"none"`, `"chunks"`) is unchanged: the server-row copy is still their state. If you seed members onto a server row without going through `joinServer`, write their profile row too.
 - **`slotsPerServer` is capped at 256** (`JG_MAX_MEMBERS_PER_SERVER`). `createGameServerFunctions` now throws at wiring time on a larger value instead of accepting it and failing at the write that overflows the document. One server is one Convex document holding the world row, the roster, and every member's session state; a bigger number was never a bigger world. Shard across servers, or move world state into `jgWorldChunks`.
 - **The tick cron only sweeps games that declare `loop.onTick`.** A game with no tick hook used to pay a full hydrate plus a full persist every second per running server, for a snapshot `runtime.tick` returned unchanged; it now costs nothing while idle. If you relied on the tick cron to autosave a hookless game, the 60s `flushDirtyServers` cron and the `flushSave` mutation still do it.
@@ -52,8 +63,6 @@ At publish, rename this heading to the new version and mirror the entries into
 ### Removed
 
 - **Asset source `quaternius-downtown-city`.** It was titled "Downtown City MegaKit" but pinned at the Street Pack archive, which ships Blends/FBX/OBJ only — a pull found no models. Nothing referenced it.
-
-### Fixed
 
 ## 0.16.0
 
