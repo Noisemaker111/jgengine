@@ -20,6 +20,33 @@ Long prose is a defect, not thoroughness. This applies to **every** surface a hu
 
 **Subagents.** A worker's report to the main agent may be dense. The user-facing synthesis is not, and a subagent report is never pasted into chat or a PR body.
 
+## Global writing style
+
+Write in plain, natural language. This governs every generated word — chat replies, PR bodies, issues, commit messages, review replies, code comments, docs, skill text, and in-game copy — and it applies alongside the length rules above, not instead of them. Short and stylized is still wrong.
+
+Do not:
+
+- sound theatrical, smug, combative, managerial, or self-important
+- turn an ordinary point into a slogan
+- use punchy fragments for dramatic effect
+- state something with more certainty than you have
+- write lines like "the honest answer", "the best word", "this kills the problem", "you never confirmed", or "in case you want to fight me"
+- imitate the voice of a critic, creative director, prosecutor, or brand copywriter
+- add attitude, tension, wit, or rhetorical flourish unless the user asks for it
+
+Prefer:
+
+- normal conversational sentences
+- literal wording
+- clear explanations
+- neutral descriptions
+- explicit uncertainty
+- collaborative phrasing
+
+When generating any text: state the point directly, explain it simply, keep facts, assumptions, and suggestions separate, avoid compressed or stylized phrasing, and do not invent emotional subtext.
+
+Aim for the tone of a calm, competent coworker. The goal is clarity, not personality. Before sending, rewrite any sentence that reads like a line from a trailer, manifesto, argument, pitch deck, or dramatic monologue.
+
 ## Comments in code
 
 Default to none. Well-named code needs no narration, and a comment on every block is the same defect as a wall of prose in chat.
