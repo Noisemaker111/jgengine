@@ -27,6 +27,9 @@ import {
 import {
   DEFAULT_POSE_SYNC_RULES,
   decidePoseSync,
+  isPresenceExpired,
+  pickReusablePresence,
+  resolveActivePresence,
   spawnPresenceState,
   type PoseSyncRules,
   type PresencePoseState,
@@ -141,15 +144,24 @@ export function jgengineTables() {
     jgPoses: defineTable({
       serverId: v.string(),
       userId: v.string(),
+      /** One row per live session, so a second tab is a second row rather than a fight over one. */
+      sessionId: v.optional(v.string()),
+      /** Actor class, e.g. `"player"` / `"agent"`, which selects the pose rules applied to it. */
+      kind: v.optional(v.string()),
+      /** Display name carried on the row, so nameplates need no per-frame join against users. */
+      label: v.optional(v.string()),
       x: v.number(),
       y: v.number(),
       z: v.number(),
       rotationY: v.number(),
       rotationPitch: v.number(),
       updatedAt: v.number(),
+      /** Set when the session was displaced or left; the reaper deletes the row once it goes idle. */
+      revokedAt: v.optional(v.number()),
     })
       .index("by_server", ["serverId"])
-      .index("by_server_and_user", ["serverId", "userId"]),
+      .index("by_server_and_user", ["serverId", "userId"])
+      .index("by_updated", ["updatedAt"]),
     jgChatMessages: defineTable({
       serverId: v.string(),
       channelId: v.string(),
@@ -1332,15 +1344,64 @@ export function createLeaderboardFunctions(options?: { auth?: JgAuthMode }) {
   return { getTop, getProfile, incrementMany };
 }
 
-/** @internal */
+/** One member's pose as `list` reports it. */
+export type PresenceListRow = {
+  userId: string;
+  sessionId?: string;
+  kind?: string;
+  label?: string;
+  position: { x: number; y: number; z: number };
+  rotationY: number;
+  rotationPitch: number;
+  lastSeenAt: number;
+};
+
+/** What `sync` hands back: the pose the server holds after clamping, and whether this session had been displaced. */
+export type PresenceSyncResult = {
+  pose: { x: number; y: number; z: number; rotationY: number; rotationPitch: number };
+  lastSeenAt: number;
+  displaced: boolean;
+};
+
+/**
+ * The pose lane of a hosted server: the backend behind `PresenceSync`, which replicates where each
+ * member of one `jgGameServers` server is standing. It is not the backend for `PresenceTransport` —
+ * that contract (`ConvexPresenceFunctions` in `./convexPresenceTransport`) is a game-owned world's
+ * own presence, keyed by the game's own ids, with its own notion of who counts as a resident. A game
+ * on `createConvexPresenceTransport` supplies those functions itself; these do not substitute for them.
+ * @internal
+ */
 export function createPresenceFunctions(options?: {
   auth?: JgAuthMode;
+  /** How recently a row must have been written to appear in `list`. */
   freshWindowMs?: number;
-  poseRules?: PoseSyncRules;
+  /** How long a row may go unwritten before `reapIdlePresence` deletes it. */
+  idleCutoffMs?: number;
+  /** Rows deleted per reaper run, so one sweep is a bounded transaction. */
+  maxReapPerRun?: number;
+  /** Movement clamping, optionally per actor `kind` — an agent need not obey a human's speed cap. */
+  poseRules?: PoseSyncRules | ((kind: string | undefined) => PoseSyncRules);
+  /** Where a session with no row starts. Async and ctx-bearing, so a spawn can read the world. */
+  resolveSpawn?: (
+    ctx: JGMutationCtx,
+    args: { serverId: string; userId: string; kind?: string },
+  ) => Promise<{ x: number; y: number; z: number } | null> | { x: number; y: number; z: number } | null;
 }) {
   const mode: JgAuthMode = options?.auth ?? "required";
   const freshWindowMs = options?.freshWindowMs ?? 10_000;
-  const poseRules = options?.poseRules ?? DEFAULT_CONVEX_POSE_RULES;
+  const idleCutoffMs = options?.idleCutoffMs ?? 60_000;
+  const maxReapPerRun = options?.maxReapPerRun ?? 256;
+  const rulesOption = options?.poseRules ?? DEFAULT_CONVEX_POSE_RULES;
+  const rulesFor = (kind: string | undefined): PoseSyncRules =>
+    typeof rulesOption === "function" ? rulesOption(kind) : rulesOption;
+
+  const poseValidator = v.object({
+    x: v.number(),
+    y: v.number(),
+    z: v.number(),
+    rotationY: v.number(),
+    rotationPitch: v.number(),
+  });
 
   const list = query({
     args: {
@@ -1350,6 +1411,9 @@ export function createPresenceFunctions(options?: {
     returns: v.array(
       v.object({
         userId: v.string(),
+        sessionId: v.optional(v.string()),
+        kind: v.optional(v.string()),
+        label: v.optional(v.string()),
         position: v.object({ x: v.number(), y: v.number(), z: v.number() }),
         rotationY: v.number(),
         rotationPitch: v.number(),
@@ -1357,62 +1421,81 @@ export function createPresenceFunctions(options?: {
       }),
     ),
     handler: async (ctx, args) => {
-      return withMember(
-        ctx,
-        mode,
-        args,
-        [] as {
-          userId: string;
-          position: { x: number; y: number; z: number };
-          rotationY: number;
-          rotationPitch: number;
-          lastSeenAt: number;
-        }[],
-        async () => {
-          const threshold = Date.now() - freshWindowMs;
-          const rows = await ctx.db
-            .query("jgPoses")
-            .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
-            .collect();
+      return withMember(ctx, mode, args, [] as PresenceListRow[], async () => {
+        const threshold = Date.now() - freshWindowMs;
+        const rows = await ctx.db
+          .query("jgPoses")
+          .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
+          .collect();
 
-          return rows
-            .filter((row) => row.updatedAt >= threshold)
-            .map((row) => ({
-              userId: row.userId,
-              position: { x: row.x, y: row.y, z: row.z },
-              rotationY: row.rotationY,
-              rotationPitch: row.rotationPitch,
-              lastSeenAt: row.updatedAt,
-            }));
-        },
-      );
+        return rows
+          .filter((row) => row.revokedAt === undefined && row.updatedAt >= threshold)
+          .map((row) => ({
+            userId: row.userId,
+            sessionId: row.sessionId,
+            kind: row.kind,
+            label: row.label,
+            position: { x: row.x, y: row.y, z: row.z },
+            rotationY: row.rotationY,
+            rotationPitch: row.rotationPitch,
+            lastSeenAt: row.updatedAt,
+          }));
+      });
     },
   });
 
+  /**
+   * Upload a pose, or keep the session alive without one. Returns the pose the server actually holds
+   * after clamping, so a corrected client can reconcile, plus whether this session had been revoked
+   * by another of the same user's sessions since its last sync.
+   */
   const sync = mutation({
     args: {
       serverId: v.string(),
-      pose: v.object({
-        x: v.number(),
-        y: v.number(),
-        z: v.number(),
-        rotationY: v.number(),
-        rotationPitch: v.number(),
-      }),
+      pose: v.optional(poseValidator),
+      sessionId: v.optional(v.string()),
+      kind: v.optional(v.string()),
+      label: v.optional(v.string()),
       externalId: v.optional(v.string()),
     },
-    returns: v.null(),
+    returns: v.union(
+      v.null(),
+      v.object({
+        pose: poseValidator,
+        lastSeenAt: v.number(),
+        displaced: v.boolean(),
+      }),
+    ),
     handler: (ctx, args) =>
-      withMember(ctx, mode, args, null, async (_server, actorUserId) => {
+      withMember(ctx, mode, args, null as PresenceSyncResult | null, async (_server, actorUserId) => {
         const now = Date.now();
-        const existing = await ctx.db
+        const rows = await ctx.db
           .query("jgPoses")
           .withIndex("by_server_and_user", (q) => q.eq("serverId", args.serverId).eq("userId", actorUserId))
-          .unique();
+          .collect();
+        const resolvable = rows.map((row) => ({
+          row,
+          revokedAt: row.revokedAt,
+          lastSeenAt: row.updatedAt,
+        }));
 
+        const existing =
+          args.sessionId === undefined
+            ? (resolveActivePresence(resolvable).active ?? pickReusablePresence(resolvable))?.row
+            : rows.find((row) => row.sessionId === args.sessionId);
+
+        const rules = rulesFor(args.kind ?? existing?.kind);
         const current: PresencePoseState =
-          existing === null
-            ? spawnPresenceState(undefined, now, poseRules)
+          existing === undefined
+            ? spawnPresenceState(
+                (await options?.resolveSpawn?.(ctx, {
+                  serverId: args.serverId,
+                  userId: actorUserId,
+                  kind: args.kind,
+                })) ?? undefined,
+                now,
+                rules,
+              )
             : {
                 position: { x: existing.x, y: existing.y, z: existing.z },
                 rotationY: existing.rotationY,
@@ -1420,41 +1503,63 @@ export function createPresenceFunctions(options?: {
                 lastSeenAtMs: existing.updatedAt,
               };
 
+        // A pose-less call is a keep-alive: hold the stored pose and only move the stamp forward.
         const decision = decidePoseSync(
           current,
-          {
-            position: { x: args.pose.x, y: args.pose.y, z: args.pose.z },
-            rotationY: args.pose.rotationY,
-            rotationPitch: args.pose.rotationPitch,
-          },
-          poseRules,
+          args.pose === undefined
+            ? { position: current.position, rotationY: current.rotationY, rotationPitch: current.rotationPitch }
+            : {
+                position: { x: args.pose.x, y: args.pose.y, z: args.pose.z },
+                rotationY: args.pose.rotationY,
+                rotationPitch: args.pose.rotationPitch,
+              },
+          rules,
           now,
         );
 
-        const patch = {
+        const pose = {
           x: decision.position.x,
           y: decision.position.y,
           z: decision.position.z,
           rotationY: decision.rotationY,
           rotationPitch: decision.rotationPitch,
-          updatedAt: now,
+        };
+        const identity = {
+          ...(args.sessionId === undefined ? {} : { sessionId: args.sessionId }),
+          ...(args.kind === undefined ? {} : { kind: args.kind }),
+          ...(args.label === undefined ? {} : { label: args.label }),
         };
 
+        const displaced = existing?.revokedAt !== undefined;
         if (existing) {
-          if (decision.changed || decision.refreshKeepAlive) {
-            await ctx.db.patch(existing._id, patch);
+          if (decision.changed || decision.refreshKeepAlive || displaced || Object.keys(identity).length > 0) {
+            await ctx.db.patch(existing._id, { ...pose, ...identity, updatedAt: now, revokedAt: undefined });
           }
         } else {
-          await ctx.db.insert("jgPoses", { serverId: args.serverId, userId: actorUserId, ...patch });
+          await ctx.db.insert("jgPoses", {
+            serverId: args.serverId,
+            userId: actorUserId,
+            ...pose,
+            ...identity,
+            updatedAt: now,
+          });
         }
 
-        return null;
+        // This session is the live one; any other session of the same user is revoked, not deleted,
+        // so it learns it was displaced on its next sync instead of silently reappearing.
+        for (const row of rows) {
+          if (row._id === existing?._id || row.revokedAt !== undefined) continue;
+          await ctx.db.patch(row._id, { revokedAt: now });
+        }
+
+        return { pose, lastSeenAt: now, displaced };
       }),
   });
 
   const leave = mutation({
     args: {
       serverId: v.string(),
+      sessionId: v.optional(v.string()),
       externalId: v.optional(v.string()),
     },
     returns: v.null(),
@@ -1462,17 +1567,46 @@ export function createPresenceFunctions(options?: {
       const actorUserId = await resolveActor(ctx, args.externalId, mode);
       if (!actorUserId) return null;
 
-      const existing = await ctx.db
+      const now = Date.now();
+      const rows = await ctx.db
         .query("jgPoses")
         .withIndex("by_server_and_user", (q) => q.eq("serverId", args.serverId).eq("userId", actorUserId))
-        .unique();
+        .collect();
 
-      if (existing) await ctx.db.delete(existing._id);
+      for (const row of rows) {
+        if (args.sessionId !== undefined && row.sessionId !== args.sessionId) continue;
+        if (row.revokedAt === undefined) await ctx.db.patch(row._id, { revokedAt: now });
+      }
       return null;
     },
   });
 
-  return { list, sync, leave };
+  /**
+   * Delete rows nobody has written for `idleCutoffMs`. `list` filters stale rows at read time but
+   * nothing removed them, so a player who closed the tab left a row behind forever. Register it on a
+   * cron — {@link jgengineCronSpecs} carries the interval.
+   */
+  const reapIdlePresence = internalMutation({
+    args: {},
+    returns: v.object({ reaped: v.number() }),
+    handler: async (ctx) => {
+      const now = Date.now();
+      const stale = await ctx.db
+        .query("jgPoses")
+        .withIndex("by_updated", (q) => q.lt("updatedAt", now - idleCutoffMs))
+        .take(maxReapPerRun);
+
+      let reaped = 0;
+      for (const row of stale) {
+        if (!isPresenceExpired(row.updatedAt, now, idleCutoffMs)) continue;
+        await ctx.db.delete(row._id);
+        reaped += 1;
+      }
+      return { reaped };
+    },
+  });
+
+  return { list, sync, leave, reapIdlePresence };
 }
 
 /** @internal */
@@ -1582,12 +1716,15 @@ export function createChatFunctions(options?: {
 export type JgCronSpec = {
   name: string;
   intervalSeconds: number;
-  functionKey: "tickActiveServers" | "flushDirtyServers";
+  functionKey: "tickActiveServers" | "flushDirtyServers" | "reapIdlePresence";
+  /** Which factory's exports the function lives in, i.e. which `convex/*.ts` file to reach it through. */
+  module: "runtime" | "presence";
 };
 
 const JG_CRON_SPECS: readonly JgCronSpec[] = [
-  { name: "jg tick", intervalSeconds: 1, functionKey: "tickActiveServers" },
-  { name: "jg flush", intervalSeconds: 60, functionKey: "flushDirtyServers" },
+  { name: "jg tick", intervalSeconds: 1, functionKey: "tickActiveServers", module: "runtime" },
+  { name: "jg flush", intervalSeconds: 60, functionKey: "flushDirtyServers", module: "runtime" },
+  { name: "jg presence reap", intervalSeconds: 60, functionKey: "reapIdlePresence", module: "presence" },
 ];
 
 /** @internal */
