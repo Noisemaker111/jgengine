@@ -427,18 +427,18 @@ async function shootOne(
     await new Promise((r) => setTimeout(r, 600));
     mark("settle");
     const expected = scaleProfile(DEVICES[device], args.size);
-    // The DOM read runs on the main thread while the compositor produces the frame — two
-    // independent costs that used to be paid back to back.
-    const [{ overflow, collision, ...regions }, { bytes, via }] = await Promise.all([
-      readCapturePageState(session),
-      captureViewportPng(session, {
-        screencast: screencastCapturesFully(expected),
-        expect: {
-          width: Math.round(expected.width * expected.deviceScaleFactor),
-          height: Math.round(expected.height * expected.deviceScaleFactor),
-        },
-      }),
-    ]);
+    // Read before capturing, not alongside it: the region is what lets the fast path reject a
+    // frame whose 3D viewport the canvas never committed into, and a shot that is a black hole
+    // where the world should be is worth more than the frame time the overlap saved.
+    const { overflow, collision, ...regions } = await readCapturePageState(session);
+    const { bytes, via } = await captureViewportPng(session, {
+      screencast: screencastCapturesFully(expected),
+      expect: {
+        width: Math.round(expected.width * expected.deviceScaleFactor),
+        height: Math.round(expected.height * expected.deviceScaleFactor),
+      },
+      ...(regions.region === undefined ? {} : { liveRegion: regions.region }),
+    });
     mark(`frame(${via})`);
     writePngAtomic(outPath, bytes);
     const decoded = decodePng(bytes);

@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { deflateSync } from "node:zlib";
 
 import {
   type CdpSession,
   DEVICES,
+  MAX_FLAT_SCREENCAST_FRAMES,
   captureViewportPng,
   checkoutIdentity,
   chromeGraphicsArgs,
@@ -14,6 +16,7 @@ import {
   resolveDevPort,
   resolveWebPort,
   resolveWarmChromePort,
+  regionCarriesPicture,
   screencastCapturesFully,
   windowsPersistentChromeCommand,
 } from "./browser-lib";
@@ -216,6 +219,75 @@ describe("capture navigation failures", () => {
   });
 });
 
+function pngChunk(type: string, data: Buffer): Buffer {
+  const out = Buffer.alloc(12 + data.length);
+  out.writeUInt32BE(data.length, 0);
+  out.write(type, 4, "latin1");
+  data.copy(out, 8);
+  const table = new Uint32Array(256);
+  for (let n = 0; n < 256; n += 1) {
+    let c = n;
+    for (let k = 0; k < 8; k += 1) c = (c & 1) === 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    table[n] = c >>> 0;
+  }
+  let crc = 0xffffffff;
+  for (const byte of out.subarray(4, 8 + data.length)) crc = table[(crc ^ byte) & 0xff]! ^ (crc >>> 8);
+  out.writeUInt32BE((crc ^ 0xffffffff) >>> 0, 8 + data.length);
+  return out;
+}
+
+/**
+ * Truecolor PNG whose left half is one flat colour and whose right half is noise — the shape
+ * of the frames this guard exists for: a live HUD beside a viewport the canvas never drew.
+ */
+function splitPng(width: number, height: number, textured: "left" | "right" | "none"): Buffer {
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr.writeUInt8(8, 8);
+  ihdr.writeUInt8(2, 9);
+  const stride = 1 + width * 3;
+  const scanlines = Buffer.alloc(height * stride);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const inLeft = x < width / 2;
+      const noisy = textured === "none" ? false : textured === "left" ? inLeft : !inLeft;
+      const value = noisy ? (x * 37 + y * 91) % 251 : 0;
+      const at = y * stride + 1 + x * 3;
+      scanlines[at] = value;
+      scanlines[at + 1] = noisy ? (value * 3) % 251 : 0;
+      scanlines[at + 2] = noisy ? (value * 7) % 251 : 0;
+    }
+  }
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk("IHDR", ihdr),
+    pngChunk("IDAT", deflateSync(scanlines)),
+    pngChunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+
+describe("regionCarriesPicture", () => {
+  const viewport = { x: 0, y: 0, width: 40, height: 40 };
+
+  test("a flat region carries no picture", () => {
+    expect(regionCarriesPicture(splitPng(80, 40, "right"), viewport)).toBe(false);
+  });
+
+  test("a textured region does", () => {
+    expect(regionCarriesPicture(splitPng(80, 40, "left"), viewport)).toBe(true);
+  });
+
+  test("a busy HUD outside the region never rescues a dead viewport", () => {
+    // The whole frame is far from flat; scoped to the viewport it is empty.
+    expect(regionCarriesPicture(splitPng(80, 40, "right"), { x: 0, y: 0, width: 39, height: 39 })).toBe(false);
+  });
+
+  test("an undecodable frame is left to the size guard and the scorer", () => {
+    expect(regionCarriesPicture(Buffer.from(pngHead(80, 40), "base64"), viewport)).toBe(true);
+  });
+});
+
 /** Minimal PNG head — {@link captureViewportPng}'s size guard only reads the IHDR. */
 function pngHead(width: number, height: number): string {
   const bytes = Buffer.alloc(24);
@@ -279,6 +351,34 @@ describe("captureViewportPng", () => {
     const { session } = castSession({ frames: [stale] });
     const shot = await captureViewportPng(session, { expect: expect1600, timeoutMs: 300 });
     expect(shot.via).toBe("screenshot");
+  });
+
+  test("falls back once the pump keeps delivering frames with a dead viewport", async () => {
+    // The regression this guards: on a page whose canvas has not committed since the
+    // screencast started, every frame is well-formed and shows a black hole where the world is.
+    const blind = splitPng(80, 40, "right").toString("base64");
+    const frames = Array.from({ length: MAX_FLAT_SCREENCAST_FRAMES }, () => ({ data: blind }));
+    const { session, calls } = castSession({ frames });
+    const shot = await captureViewportPng(session, {
+      expect: { width: 80, height: 40 },
+      liveRegion: { x: 0, y: 0, width: 40, height: 40 },
+      timeoutMs: 2_000,
+    });
+    expect(shot.via).toBe("screenshot");
+    expect(calls).toContain("Page.stopScreencast");
+  });
+
+  test("takes the first frame whose viewport actually shows the world", async () => {
+    const blind = splitPng(80, 40, "right").toString("base64");
+    const live = splitPng(80, 40, "left").toString("base64");
+    const { session, calls } = castSession({ frames: [{ data: blind }, { data: live }] });
+    const shot = await captureViewportPng(session, {
+      expect: { width: 80, height: 40 },
+      liveRegion: { x: 0, y: 0, width: 40, height: 40 },
+      timeoutMs: 2_000,
+    });
+    expect(shot.via).toBe("screencast");
+    expect(calls).not.toContain("Page.captureScreenshot");
   });
 
   test("falls back when the pump delivers a differently-sized frame", async () => {

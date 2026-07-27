@@ -30,6 +30,7 @@ import {
   navigateCapturePageWithRetry,
   openPageSession,
   parseSizeArg,
+  readCapturePageState,
   scaleProfile,
   screencastCapturesFully,
   sizeSuffix,
@@ -594,12 +595,14 @@ async function screenshot(
   // Cleared first, so a failed step leaves no earlier shot at this path to be read as its result.
   const previous = clearShotTarget(outPath);
   const profile = scaleProfile(DEVICES.desktop, size);
+  const { region } = await readCapturePageState(session);
   const { bytes } = await captureViewportPng(session, {
     screencast: screencast && screencastCapturesFully(profile),
     expect: {
       width: Math.round(profile.width * profile.deviceScaleFactor),
       height: Math.round(profile.height * profile.deviceScaleFactor),
     },
+    ...(region === undefined ? {} : { liveRegion: region }),
   });
   writePngAtomic(outPath, bytes);
   const decoded = decodePng(bytes);
