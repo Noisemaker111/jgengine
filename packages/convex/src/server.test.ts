@@ -680,3 +680,201 @@ test("a non-member gets nothing from getServerMeta or getChunks", async () => {
   expect(await handlerOf(fns.getServerMeta)(anonCtx(db), args)).toBeNull();
   expect(await handlerOf(fns.getChunks)(anonCtx(db), { ...args, chunkKeys: ["0,0"] })).toEqual([]);
 });
+
+const CHUNK_SAVE = { auto: "5s", scope: "player+chunks" } as const;
+
+function chunkRow(chunkKey: string, label: string) {
+  return { chunkKey, objects: [{ id: label }], entities: [] };
+}
+
+function markChunkDirty(snapshot: GameRuntimeSnapshot, chunkKey: string): GameRuntimeSnapshot {
+  return {
+    ...snapshot,
+    dirty: { ...snapshot.dirty, server: true, chunks: [...snapshot.dirty.chunks, chunkKey] },
+  };
+}
+
+function placeChunk(snapshot: GameRuntimeSnapshot, chunkKey: string, label: string) {
+  return markChunkDirty(
+    { ...snapshot, chunks: { ...snapshot.chunks, [chunkKey]: chunkRow(chunkKey, label) } },
+    chunkKey,
+  );
+}
+
+/** A spatial runtime whose commands declare the one chunk they touch. */
+function placeRuntime() {
+  return createGameRuntime({
+    gameId: "place-demo",
+    save: CHUNK_SAVE,
+    commands: {
+      "world.place": {
+        scope: (input: unknown) => ({ players: [], chunkKeys: [(input as { chunkKey: string }).chunkKey] }),
+        validate: () => null,
+        apply: (snapshot: GameRuntimeSnapshot, input: unknown) =>
+          placeChunk(snapshot, (input as { chunkKey: string }).chunkKey, "rack"),
+      },
+      "world.stray": {
+        scope: () => ({ players: [], chunkKeys: [] }),
+        validate: () => null,
+        apply: (snapshot: GameRuntimeSnapshot) => placeChunk(snapshot, "9,9", "stray"),
+      },
+    },
+  });
+}
+
+function seedPlaceServer(seed: ReturnType<typeof makeDb>["seed"]) {
+  seed(
+    "jgGameServers",
+    serverDoc({
+      _id: "srv:place",
+      gameId: "place-demo",
+      save: CHUNK_SAVE,
+      memberUserIds: ["alice", "bob"],
+    }),
+  );
+  const bob = seed(
+    "jgPlayerProfiles",
+    profileDoc({ userId: "bob", gameId: "place-demo", playerState: player("bob", 7) }),
+  );
+  const far = seed("jgWorldChunks", {
+    _id: "chunk:place:far",
+    _creationTime: 0,
+    serverId: "srv:place",
+    chunkKey: "9,9",
+    snapshot: chunkRow("9,9", "kept"),
+    updatedAt: 0,
+  });
+  return { bob, far };
+}
+
+test("runCommand hydrates only what the command declares it touches", async () => {
+  const { db, seed, reads, rows } = makeDb();
+  const { bob, far } = seedPlaceServer(seed);
+
+  const fns = createGameServerFunctions({ runtimes: [placeRuntime()], auth: "anonymous" });
+  const args = {
+    serverId: "srv:place",
+    command: "world.place",
+    input: { chunkKey: "0,0" },
+    externalId: "alice",
+  };
+
+  expect(await handlerOf(fns.runCommand)(anonCtx(db), args)).toEqual({ ok: true });
+  expect(reads.has(bob._id)).toBe(false);
+  expect(reads.has(far._id)).toBe(false);
+
+  const chunks = rows("jgWorldChunks");
+  expect(chunks.map((doc) => doc.chunkKey).sort()).toEqual(["0,0", "9,9"]);
+  expect(chunks.find((doc) => doc.chunkKey === "9,9")?.snapshot).toEqual(chunkRow("9,9", "kept"));
+});
+
+test("runCommand takes an explicit scope, overriding what the command declares", async () => {
+  const { db, seed, reads } = makeDb();
+  const { far } = seedPlaceServer(seed);
+
+  const fns = createGameServerFunctions({ runtimes: [placeRuntime()], auth: "anonymous" });
+  expect(
+    await handlerOf(fns.runCommand)(anonCtx(db), {
+      serverId: "srv:place",
+      command: "world.place",
+      input: { chunkKey: "9,9" },
+      externalId: "alice",
+      scope: { players: ["alice"], chunkKeys: ["9,9"] },
+    }),
+  ).toEqual({ ok: true });
+  expect(reads.has(far._id)).toBe(true);
+});
+
+test("runCommand refuses a write outside the scope it hydrated under", async () => {
+  const { db, seed, rows } = makeDb();
+  seedPlaceServer(seed);
+
+  const fns = createGameServerFunctions({ runtimes: [placeRuntime()], auth: "anonymous" });
+  const outcome = (await handlerOf(fns.runCommand)(anonCtx(db), {
+    serverId: "srv:place",
+    command: "world.stray",
+    input: {},
+    externalId: "alice",
+  })) as { ok: boolean; reason?: string };
+
+  expect(outcome.ok).toBe(false);
+  expect(outcome.reason).toContain("outside its declared scope");
+  expect(rows("jgWorldChunks").find((doc) => doc.chunkKey === "9,9")?.snapshot).toEqual(
+    chunkRow("9,9", "kept"),
+  );
+});
+
+test("a command declaring no scope still hydrates the whole world", async () => {
+  const { db, seed, reads } = makeDb();
+  const { bob } = seedPlaceServer(seed);
+  seed(
+    "jgPlayerProfiles",
+    profileDoc({ userId: "alice", gameId: "place-demo", playerState: player("alice", 1) }),
+  );
+
+  const fns = createGameServerFunctions({
+    runtimes: [createGameRuntime({ gameId: "place-demo", save: CHUNK_SAVE, commands: {
+      "world.noop": { validate: () => null, apply: (snapshot: GameRuntimeSnapshot) => snapshot },
+    } })],
+    auth: "anonymous",
+  });
+  expect(
+    await handlerOf(fns.runCommand)(anonCtx(db), {
+      serverId: "srv:place",
+      command: "world.noop",
+      input: {},
+      externalId: "alice",
+    }),
+  ).toEqual({ ok: true });
+  expect(reads.has(bob._id)).toBe(true);
+});
+
+test("joinServer without onNewPlayer hydrates only the joining member", async () => {
+  const { db, seed, reads } = makeDb();
+  const { bob, far } = seedPlaceServer(seed);
+
+  const fns = createGameServerFunctions({ runtimes: [placeRuntime()], auth: "anonymous" });
+  await handlerOf(fns.joinServer)(anonCtx(db), {
+    gameId: "place-demo",
+    serverId: "srv:place",
+    externalId: "carol",
+  });
+
+  expect(reads.has(bob._id)).toBe(false);
+  expect(reads.has(far._id)).toBe(false);
+});
+
+test("joinServer hydrates what an onNewPlayer hook declares through joinScope", async () => {
+  const { db, seed, reads } = makeDb();
+  const { bob, far } = seedPlaceServer(seed);
+
+  const runtime = createGameRuntime({
+    gameId: "place-demo",
+    save: CHUNK_SAVE,
+    commands: {},
+    loop: {
+      joinScope: (userId) => ({ players: [userId], chunkKeys: ["9,9"] }),
+      onNewPlayer: (ctx) => ctx.setSnapshot(ctx.snapshot),
+    },
+  });
+  const fns = createGameServerFunctions({ runtimes: [runtime], auth: "anonymous" });
+  await handlerOf(fns.joinServer)(anonCtx(db), {
+    gameId: "place-demo",
+    serverId: "srv:place",
+    externalId: "carol",
+  });
+
+  expect(reads.has(far._id)).toBe(true);
+  expect(reads.has(bob._id)).toBe(false);
+});
+
+test("leaveServer hydrates only the leaving member", async () => {
+  const { db, seed, reads } = makeDb();
+  const { bob, far } = seedPlaceServer(seed);
+
+  const fns = createGameServerFunctions({ runtimes: [placeRuntime()], auth: "anonymous" });
+  await handlerOf(fns.leaveServer)(anonCtx(db), { serverId: "srv:place", externalId: "alice" });
+
+  expect(reads.has(bob._id)).toBe(false);
+  expect(reads.has(far._id)).toBe(false);
+});
