@@ -1,8 +1,11 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  JG_MAX_MEMBERS_PER_SERVER,
   canJoinPrivateServer,
   isAutoJoinCandidate,
+  selectJoinTarget,
+  validateSlotsPerServer,
   isListablePublicly,
   isPrivateJoinBlocked,
   isServerFull,
@@ -168,5 +171,68 @@ describe("isAutoJoinCandidate", () => {
         userId: "bob",
       }),
     ).toBe(true);
+  });
+});
+
+describe("slotsPerServer ceiling", () => {
+  test("accepts a capacity one document can hold and rejects anything past it", () => {
+    expect(validateSlotsPerServer(1).ok).toBe(true);
+    expect(validateSlotsPerServer(JG_MAX_MEMBERS_PER_SERVER).ok).toBe(true);
+
+    const tooMany = validateSlotsPerServer(10_000);
+    expect(tooMany.ok).toBe(false);
+    if (!tooMany.ok) expect(tooMany.reason).toContain("JG_MAX_MEMBERS_PER_SERVER");
+  });
+
+  test("rejects a non-positive or fractional capacity", () => {
+    expect(validateSlotsPerServer(0).ok).toBe(false);
+    expect(validateSlotsPerServer(-4).ok).toBe(false);
+    expect(validateSlotsPerServer(2.5).ok).toBe(false);
+  });
+});
+
+describe("selectJoinTarget", () => {
+  const room = (overrides: Partial<Parameters<typeof selectJoinTarget>[0][number]> = {}) => ({
+    memberUserIds: [] as string[],
+    slotsPerServer: 2,
+    visibility: "public" as const,
+    createdAt: 0,
+    ...overrides,
+  });
+
+  test("auto fills a room with space and creates one when none has any", () => {
+    expect(selectJoinTarget([room()], { userId: "alice" })).toEqual({ kind: "join", row: room() });
+    expect(selectJoinTarget([room({ memberUserIds: ["a", "b"] })], { userId: "alice" })).toEqual({
+      kind: "create",
+    });
+  });
+
+  test("singleton refuses at capacity instead of quietly starting a second world", () => {
+    const full = room({ memberUserIds: ["a", "b"], createdAt: 1 });
+    expect(selectJoinTarget([full], { userId: "alice", mode: "singleton" })).toEqual({
+      kind: "refuse",
+      reason: "Server is full",
+    });
+  });
+
+  test("singleton always targets the oldest world, never a newer shard", () => {
+    const oldest = room({ createdAt: 1, memberUserIds: ["a"] });
+    const newer = room({ createdAt: 9 });
+    const target = selectJoinTarget([newer, oldest], { userId: "alice", mode: "singleton" });
+    expect(target).toEqual({ kind: "join", row: oldest });
+  });
+
+  test("an existing member rejoins their own room under either mode", () => {
+    const mine = room({ memberUserIds: ["alice", "b"], createdAt: 9 });
+    for (const mode of ["auto", "singleton"] as const) {
+      expect(selectJoinTarget([room({ createdAt: 1 }), mine], { userId: "alice", mode })).toEqual({
+        kind: "join",
+        row: mine,
+      });
+    }
+  });
+
+  test("singleton creates the world when none exists yet", () => {
+    expect(selectJoinTarget([], { userId: "alice", mode: "singleton" })).toEqual({ kind: "create" });
   });
 });

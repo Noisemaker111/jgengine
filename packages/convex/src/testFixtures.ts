@@ -155,6 +155,29 @@ export function serverDoc(overrides: Partial<Doc> & { _id: string }): Doc {
   };
 }
 
+/** A `jgPlayerProfiles` row for a member of a player-persisting server.
+ * @internal
+ */
+export function profileDoc(args: {
+  userId: string;
+  gameId: string;
+  playerState: unknown;
+  revision?: number;
+}): Doc {
+  const now = Date.now();
+  return {
+    _id: `jgPlayerProfiles:${args.gameId}:${args.userId}`,
+    _creationTime: now,
+    userId: args.userId,
+    gameId: args.gameId,
+    playerState: args.playerState,
+    revision: args.revision ?? 1,
+    dirtyAt: undefined,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
 /** @internal */
 export type Handler = (ctx: unknown, args: unknown) => Promise<unknown>;
 

@@ -294,27 +294,59 @@ export type HostPersistence = {
   getLeaderboardProfile: (args: { gameId: string; userId: string }) => Promise<Record<string, number>>;
 };
 
-/** @internal */
+/**
+ * Hydrate the runtime's player map from the server row plus whatever profiles were loaded.
+ *
+ * `userIds` narrows the work to a subset of the roster (partial hydration); omit it for the whole
+ * roster. A member with a loaded profile takes it as authoritative and keeps its session blob from
+ * the server row.
+ *
+ * A member with no profile row resolves by save scope, not by falling back to the blob: when the game
+ * persists players, a missing profile means the profile was deleted, so the member hydrates empty and
+ * the deletion sticks. Only a game that never writes profiles (`save: "none"`, or a scope without
+ * `player`) treats the server row's session copy as the player's state.
+ * @internal
+ */
 export function buildHydratePlayers(
   server: GameServerRecord,
   profiles: Record<string, PlayerProfileRecord | null>,
+  userIds?: readonly string[],
 ): Record<string, RuntimePlayerRow> {
+  const persistsPlayers = isSaveEnabled(server.save) && saveScopeIncludesPlayer(server.save.scope);
   const players: Record<string, RuntimePlayerRow> = {};
-  for (const userId of server.memberUserIds) {
+  for (const userId of userIds ?? server.memberUserIds) {
     const profile = profiles[userId] ?? null;
     const sessionPlayer = server.sessionPlayers[userId];
+    const session = sessionPlayer?.session;
     if (profile) {
       players[userId] = {
         ...profile.playerState,
-        ...(sessionPlayer?.session ? { session: sessionPlayer.session } : {}),
+        ...(session ? { session } : {}),
       };
-    } else if (sessionPlayer) {
+    } else if (sessionPlayer && !persistsPlayers) {
       players[userId] = sessionPlayer;
     } else {
-      players[userId] = createEmptyPlayerRow(userId);
+      players[userId] = {
+        ...createEmptyPlayerRow(userId),
+        ...(session ? { session } : {}),
+      };
     }
   }
   return players;
+}
+
+/** True when a snapshot carries no unwritten mutation — nothing for a persist to do. */
+export function isSnapshotClean(snapshot: GameRuntimeSnapshot): boolean {
+  return (
+    !snapshot.dirty.server &&
+    snapshot.dirty.players.length === 0 &&
+    snapshot.dirty.chunks.length === 0
+  );
+}
+
+function sameJson(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  return JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 }
 
 export type ServerPersistPlan = {
@@ -323,6 +355,17 @@ export type ServerPersistPlan = {
   chunks: WorldChunkRecord[];
   deletedChunks: string[];
   leaderboard: LeaderboardIncrement[];
+  /**
+   * Which fields of the server row the plan actually moved. A store that pays per written field —
+   * or whose subscribers re-push a whole document on any change — writes only what changed and skips
+   * the row entirely when `changed.any` is false.
+   */
+  changed: {
+    serverState: boolean;
+    sessionPlayers: boolean;
+    revision: boolean;
+    any: boolean;
+  };
 };
 
 /** @internal */
@@ -344,13 +387,19 @@ export function planServerPersist(
   const canWritePlayers = isSaveEnabled(save) && saveScopeIncludesPlayer(save.scope);
   const canWriteChunks = isSaveEnabled(save) && saveScopeIncludesChunks(save.scope);
 
+  // Merged over the stored map rather than rebuilt from `snapshot.players`, so a partially hydrated
+  // snapshot cannot drop the session state of members it never loaded.
   const sessionPlayers: Record<string, RuntimePlayerRow> = {};
+  const roster = new Set(server.memberUserIds);
+  for (const [userId, stored] of Object.entries(server.sessionPlayers ?? {})) {
+    if (roster.has(userId)) sessionPlayers[userId] = stored;
+  }
   const profiles: PlayerProfileRecord[] = [];
   for (const userId of Object.keys(snapshot.players)) {
     const player = snapshot.players[userId];
     if (!player) continue;
     const { persistent, session } = splitProfilePlayer(player);
-    sessionPlayers[userId] = { ...persistent, session };
+    if (roster.has(userId)) sessionPlayers[userId] = { ...persistent, session };
 
     if (canWritePlayers && snapshot.dirty.players.includes(userId)) {
       profiles.push({
@@ -382,6 +431,10 @@ export function planServerPersist(
     (snapshot.dirty.players.length > 0 && !canWritePlayers) ||
     (snapshot.dirty.chunks.length > 0 && !canWriteChunks);
 
+  const serverStateChanged = !sameJson(serverState, server.serverState);
+  const sessionPlayersChanged = !sameJson(sessionPlayers, server.sessionPlayers);
+  const revisionChanged = snapshot.revision !== server.revision;
+
   return {
     server: {
       ...server,
@@ -396,5 +449,19 @@ export function planServerPersist(
     chunks,
     deletedChunks,
     leaderboard,
+    changed: {
+      serverState: serverStateChanged,
+      sessionPlayers: sessionPlayersChanged,
+      revision: revisionChanged,
+      any:
+        serverStateChanged ||
+        sessionPlayersChanged ||
+        revisionChanged ||
+        profiles.length > 0 ||
+        chunks.length > 0 ||
+        deletedChunks.length > 0 ||
+        leaderboard.length > 0 ||
+        (server.dirtyAt !== undefined) !== unwritten,
+    },
   };
 }

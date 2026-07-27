@@ -111,6 +111,21 @@ describe("ctx.snapshot per-viewer projection (through the descriptor contract)",
     expect(ctx.replicatesPerViewer()).toBe(true);
   });
 
+  test("placed objects cull to the viewer's area of interest like entities do", () => {
+    const ctx = hostContext();
+    ctx.scene.entity.spawn("unit", { id: "alice", position: [0, 0, 0] });
+    ctx.scene.object.place("crate", 2, 0, 0);
+    ctx.scene.object.place("crate", 100, 0, 0);
+
+    const all = ctx.snapshot()["objects"] as { position: [number, number, number] }[];
+    expect(all).toHaveLength(2);
+
+    const forAlice = ctx.snapshot({ userId: "alice" })["objects"] as {
+      position: [number, number, number];
+    }[];
+    expect(forAlice.map((o) => o.position[0])).toEqual([2]);
+  });
+
   test("with no replication policy the viewer argument is a no-op — every client sees the whole world", () => {
     const ctx = createGameContext({
       definition: defineGameDefinition({

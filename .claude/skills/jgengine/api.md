@@ -334,7 +334,7 @@
 
 ## @jgengine/core/runtime/gameRuntime
 
-- `GameRuntime` (type): type GameRuntime = { gameId: string; save: SaveConfig; hydrate: (input: HydrateInput) => GameRuntimeSnapshot; runCommand: ( snapshot: GameRuntimeSnapshot, actorUserId: string, commandName: string, input: unknown, ) => ReturnType<typeof runCommand>; tick: (snapshot: GameRuntimeSnapshot, dtSeconds: nu… — ⚠ undocumented
+- `GameRuntime` (type): type GameRuntime = { gameId: string; save: SaveConfig; /** * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and * persisting a server whose `tick` is a no-op by construction — the difference between a world that * costs a full read/write every second while… — ⚠ undocumented
 - `GameRuntimeDefinition` (type): type GameRuntimeDefinition = { gameId: string; save: SaveConfig; commands: Record<string, CommandDef>; loop?: ServerLoopHooks; } — ⚠ undocumented
 - `HydrateInput` (type): type HydrateInput = { gameId: string; serverId: string; serverRow: RuntimeServerRow; playersByUserId: Record<string, RuntimePlayerRow>; chunksByKey: Record<string, RuntimeChunkRow>; revision?: number; } — ⚠ undocumented
 - `RuntimeInitContext` (type): type RuntimeInitContext = { snapshot: GameRuntimeSnapshot; setSnapshot: (snapshot: GameRuntimeSnapshot) => void; } — ⚠ undocumented
@@ -365,21 +365,28 @@
 - `OPEN_SERVER_LISTING_MAX` (const): const OPEN_SERVER_LISTING_MAX: 100 — ⚠ undocumented
 - `PlayerProfileRecord` (type): type PlayerProfileRecord = { userId: string; gameId: string; playerState: RuntimePlayerRow; revision: number; updatedAt: number; } — ⚠ undocumented
 - `ServerListing` (type): type ServerListing = { serverId: string; status: GameServerStatus; memberCount: number; slotsPerServer: number; mode?: string; label?: string; visibility?: SessionVisibility; joinCode?: string; tags?: string[]; updatedAt: number; } — ⚠ undocumented
-- `ServerPersistPlan` (type): type ServerPersistPlan = { server: GameServerRecord; profiles: PlayerProfileRecord[]; chunks: WorldChunkRecord[]; deletedChunks: string[]; leaderboard: LeaderboardIncrement[]; } — ⚠ undocumented
+- `ServerPersistPlan` (type): type ServerPersistPlan = { server: GameServerRecord; profiles: PlayerProfileRecord[]; chunks: WorldChunkRecord[]; deletedChunks: string[]; leaderboard: LeaderboardIncrement[]; /** * Which fields of the server row the plan actually moved. A store that pays per written field — * or whose subscribers r… — ⚠ undocumented
 - `SessionAttributes` (type): type SessionAttributes = { label?: string; mode?: string; visibility?: SessionVisibility; joinCode?: string; tags?: string[]; } — ⚠ undocumented
 - `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
 - `ToServerListingOptions` (type): type ToServerListingOptions = { includeJoinCode?: boolean; } — ⚠ undocumented
 - `WorldChunkRecord` (type): type WorldChunkRecord = { serverId: string; chunkKey: string; snapshot: RuntimeChunkRow; updatedAt: number; } — ⚠ undocumented
+- `isSnapshotClean` (function): function isSnapshotClean(snapshot: GameRuntimeSnapshot): boolean — True when a snapshot carries no unwritten mutation — nothing for a persist to do.
 
 ## @jgengine/core/runtime/hostPolicy
 
+- `JG_MAX_MEMBERS_PER_SERVER` (const): const JG_MAX_MEMBERS_PER_SERVER: 256 — Hard ceiling on `slotsPerServer` for a single hosted server row.
+- `JoinCandidate` (type): type JoinCandidate = { memberUserIds: readonly string[]; slotsPerServer: number; visibility?: SessionVisibility | undefined; createdAt: number; } — A row `selectJoinTarget` can choose between — the matchmaking-relevant fields of a server record.
+- `JoinTarget` (type): type JoinTarget<T extends JoinCandidate> = | { kind: "join"; row: T } | { kind: "create" } | { kind: "refuse"; reason: string } — What a join should do with the candidate rows it found.
+- `MatchmakingMode` (type): type MatchmakingMode = "auto" | "singleton" — How auto-match behaves when no `serverId` is supplied.
 - `canJoinPrivateServer` (function): function canJoinPrivateServer(args: { isMember: boolean; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Private-server join-code gate. Existing members always pass; non-members must present a matching `joinCode` (loose-normalized via {@link normalizeJoinCode}). Callers still decide whether the server is private — this only answers the code/membership half.
 - `isAutoJoinCandidate` (function): function isAutoJoinCandidate(args: { memberUserIds: readonly string[]; slotsPerServer: number; visibility: SessionVisibility | undefined; userId: string; }): boolean — Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity. Private rooms are never auto-picked (join-by-code / direct id only).
 - `isListablePublicly` (function): function isListablePublicly(visibility: SessionVisibility | undefined): boolean — True when a server's `visibility` should surface in public listings / browse results.
 - `isPrivateJoinBlocked` (function): function isPrivateJoinBlocked(args: { visibility: SessionVisibility | undefined; memberUserIds: readonly string[]; userId: string; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Whether a private-visibility server blocks this join (non-member without a matching code). Public / undefined visibility never blocks.
 - `isServerFull` (function): function isServerFull(memberUserIds: readonly string[], slotsPerServer: number, userId: string): boolean — True when the server has no free slots for a non-member. Existing members never count as "full" so rejoin/leave cycles keep working.
 - `isServerMember` (function): function isServerMember(memberUserIds: readonly string[], userId: string): boolean — Whether `userId` is already on the server's member roster.
+- `selectJoinTarget` (function): function selectJoinTarget<T extends JoinCandidate>(rows: readonly T[], args: { userId: string; mode?: MatchmakingMode; /** Capacity to judge rows against — the host's current option, when it supersedes the stored value. */ slotsPerServer?: number; }): JoinTarget<T> — Resolve an auto-match join against the game's joinable rows under a {@link MatchmakingMode}. Reach for it instead of hand-rolling the "find a room with space, else make one" scan, which is where a singleton world silently shards into per-player copies.
 - `statusAfterLeave` (function): function statusAfterLeave(remainingMemberCount: number, currentStatus: GameServerStatus): GameServerStatus — Status after a leave: empty rooms reopen; non-empty rooms keep their current status.
+- `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number): { ok: true } | { ok: false; reason: string } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
 - `withJoinedMember` (function): function withJoinedMember(memberUserIds: readonly string[], userId: string): string[] — Roster after a successful join: unchanged when already a member, else appended.
 - `withoutMember` (function): function withoutMember(memberUserIds: readonly string[], userId: string): string[] — Roster after a leave: `userId` removed; order of remaining members preserved.
 
@@ -494,6 +501,20 @@
 - `WorldHost` (interface): interface WorldHost — The transport-agnostic host: fans one {@link HostedWorldSession} out to many connections, each tracking its own revision cursor so a joiner gets a baseline and everyone else gets diffs. A ws server, a Convex function, or an in-process loopback all drive the same shape — decode a frame → `connection.receive`; after `session.tick` → `broadcast`. No wire format is assumed; frames are plain data a transport serializes however it likes.
 - `WorldHostConnection` (interface): interface WorldHostConnection — One client's link on the host side: routes its upstream frames into the shared session, pushes it sync frames.
 - `WorldServerFrame` (type): type WorldServerFrame = | { t: "baseline"; revision: number; snapshot: WorldSnapshot } | { t: "diff"; diff: WorldDiff } — Host→client frame: the full baseline a joiner needs, then per-tick diffs. What a transport marshals downstream.
+
+## @jgengine/core/runtime/worldChunks
+
+- `ChunkCoord` (type): type ChunkCoord = { cx: number; cz: number } — Integer cell coordinates of a chunk on the ground plane.
+- `DEFAULT_CHUNK_SIZE` (const): const DEFAULT_CHUNK_SIZE: 64 — Default edge length, in world units, of one persisted world chunk.
+- `chunkCoordAt` (function): function chunkCoordAt(position: readonly [number, number, number], size: number = DEFAULT_CHUNK_SIZE): ChunkCoord — Chunk coordinates containing a world position at `size` units per cell.
+- `chunkKeyAt` (function): function chunkKeyAt(position: readonly [number, number, number], size: number = DEFAULT_CHUNK_SIZE): string — Chunk key containing a world position at `size` units per cell.
+- `chunkKeyOf` (function): function chunkKeyOf(coord: ChunkCoord): string — Chunk key for a cell — the canonical `"cx,cz"` string a `jgWorldChunks` row is stored under. Games used to invent this mapping each time, which made two systems in one game disagree about which row a position belongs to.
+- `chunkKeysInRadius` (function): function chunkKeysInRadius(center: readonly [number, number, number], radius: number, size: number = DEFAULT_CHUNK_SIZE): string[] — Every chunk key whose cell intersects a radius around a world position — the key list a viewer's bounded hydration or client chunk query asks for, instead of loading a whole world.
+- `createEmptyChunkRow` (function): function createEmptyChunkRow(chunkKey: string): RuntimeChunkRow — An empty chunk row for `chunkKey` — the starting value for a cell nothing has been placed in yet.
+- `deleteChunk` (function): function deleteChunk(snapshot: GameRuntimeSnapshot, chunkKey: string): GameRuntimeSnapshot — Drop a chunk from a snapshot and mark the key dirty so the host deletes its stored row.
+- `parseChunkKey` (function): function parseChunkKey(key: string): ChunkCoord | null — Parse a `chunkKeyOf` string back to coordinates; `null` for anything not in that form.
+- `setChunk` (function): function setChunk(snapshot: GameRuntimeSnapshot, chunkKey: string, chunk: RuntimeChunkRow): GameRuntimeSnapshot — Write a chunk into a snapshot and mark it dirty, so the next persist actually stores it. The engine never writes `dirty.chunks` for a raw `snapshot.chunks[key] = …` assignment, so a command that mutated the map by hand silently never saved that chunk.
+- `updateChunk` (function): function updateChunk(snapshot: GameRuntimeSnapshot, chunkKey: string, update: (chunk: RuntimeChunkRow) => RuntimeChunkRow): GameRuntimeSnapshot — Read-modify-write a chunk (creating it empty when absent), marking it dirty.
 
 ## @jgengine/core/runtime/worldMirror
 
