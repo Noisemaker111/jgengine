@@ -24,10 +24,11 @@ marks what is still open. Anything labelled a proposal has not been approved.
 | **Hand item** | Anything you equip into a hand — a rifle, a fireball, a sword. |
 | **Cache** | The grid you carry loot in. |
 | **Equipment** | Head, chest, legs, boots, two rings, neck. Carries stats, pools and your oxygen tank. |
-| **Pool** | A named resource a hand item spends: stamina, mana, rage, ammo, heat. |
+| **Pool** | A named resource a hand item spends: stamina, rage, mana, ammo, power. |
 | **Print** | Anything walking a dead vault. A copy of somebody who worked there. |
 | **Item level** | How strong an item's numbers are. Set by where you found it. |
-| **Rarity** | Common, uncommon, rare, epic, legendary, and named items above all of them. |
+| **Rarity** | How good one item turned out: common, uncommon, rare, epic, legendary, and named above all of them. |
+| **Found** | How rare the kind of item is at all: issue, stocked, restricted, sealed, one-off. |
 | **Drift** | Accumulated printer inaccuracy at home. The cost of dying often. |
 | **Purge** | The gas a dead vault releases once it notices you. Your oxygen clock. |
 | **Stash** | Home storage for what death returns and what a squadmate lends you. |
@@ -159,19 +160,19 @@ A **hand item** is any equippable active. One category, six families:
 
 | Family | Examples | Runs on | Feels like |
 | --- | --- | --- | --- |
-| **Arms** | rifles, SMGs, launchers, bows | Ammo | Mags, reloads, recoil |
-| **Edge** | swords, hammers, gauntlets, whips | Rage | Stance, momentum, parry timing |
-| **Focus** | fireball, chain arc, frost lance | Mana | Cast time, charge, channel |
-| **Ward** | bubble shield, deflect plate, phase skin | Heat | Uptime, overheat, vent windows |
-| **Kinetic** | super speed, flight, blink, leap | Stamina | Movement as a weapon |
-| **Field** | turrets, totems, gravity wells, healing pools | Heat | Placement and zoning |
+| **Guns** | rifles, SMGs, launchers, bows | Ammo | Mags, reloads, recoil |
+| **Melee** | swords, hammers, gauntlets, whips | Rage | Stance, momentum, parry timing |
+| **Spells** | fireball, chain arc, frost lance | Mana | Cast time, charge, channel |
+| **Shields** | bubble shield, deflect plate, phase skin | Power | Uptime, coverage, drop timing |
+| **Movement** | super speed, flight, blink, leap | Stamina | Movement as a weapon |
+| **Devices** | turrets, totems, gravity wells, healing pools | Power | Placement and zoning |
 
-*Proposal:* Edge spends rage, which builds as you fight rather than starting
-full, while stamina covers Kinetic items and sprinting. Say the word if you want
+*Proposal:* melee spends rage, which builds as you fight rather than starting
+full, while stamina covers movement items and sprinting. Say the word if you want
 rage and stamina the other way round, or on different families.
 
 **Elements are presentation, not a separate system.** A fireball and a fire
-breath are both Focus items spending mana; one throws a ball and one is a cone.
+breath are both spells spending mana; one throws a ball and one is a cone.
 Fire, frost and shock are how an item looks and what status it applies, never a
 different resource or a different rule.
 
@@ -182,15 +183,29 @@ drop is a component rather than trash.
 | Maker | Identity | Cost |
 | --- | --- | --- |
 | **Kessler** | Volume, cheap ammo, forgiving | Awful at range |
-| **Orrery** | Makes Focus and Ward sing | Weak unless paired with another Orrery part |
+| **Orrery** | Makes spells and shields sing | Weak unless paired with another Orrery part |
 | **Kiln** | Enormous damage | Self-harm, overheat, recoil that hurts you |
 | **Corvin** | Hybrids: gunblades, spell-swords, bayonets | Neither half is best-in-class |
-| **Meridian** | Kinetic and utility | Low raw damage |
-| **Vigil** | Ward, Field, healing, squad support | Almost no solo carry |
+| **Meridian** | Movement and utility | Low raw damage |
+| **Vigil** | Shields, devices, healing, squad support | Almost no solo carry |
 
-**Rarity is the ordinary five-tier ladder.** Rarity controls how many affixes an
-item rolls and how often it drops. Nothing about it needs explaining to a player
-who has seen an RPG before.
+**An item has two ratings and they answer different questions.** How rare the
+kind of thing is to find at all, and how good this particular one turned out.
+
+**How rare the type is** never changes and belongs to the item, not the roll. A
+pistol is in every locker; a rocket tube is not.
+
+| Found | Means |
+| --- | --- |
+| **Issue** | Everybody was given one |
+| **Stocked** | Kept in supply rooms |
+| **Restricted** | Armoury and secure storage only |
+| **Sealed** | Locked away, far out, or on something that will fight about it |
+| **One-off** | A single authored item, one place, one holder |
+
+**How good this one is** is the ordinary five-tier ladder. Rarity controls how
+many affixes an item rolls. Nothing about it needs explaining to a player who has
+seen an RPG before.
 
 | Rarity | Affixes | Where |
 | --- | --- | --- |
@@ -200,6 +215,11 @@ who has seen an RPG before.
 | **Epic** | 3 | Rare, deep, on elites |
 | **Legendary** | 4 | Very rare, deep, on elites and bosses |
 | **Named** | Fixed | Above the ladder. Hand-authored, one per archetype, scripted behaviour rather than a stat line. |
+
+The two multiply. A legendary pistol is a great roll on a boring thing and you
+will own several. A common rocket tube is a poor roll on something you were glad
+to find. Both are interesting for opposite reasons, and neither exists with one
+axis.
 
 **Item level comes from where you found it, not from you.** Every location on the
 map has a level range (§13), and a drop rolls inside that range. This is the axis
@@ -245,19 +265,20 @@ pieces cannot max all of them at once.
 
 | Pool | Spent by | Recovers by |
 | --- | --- | --- |
-| **Stamina** | Kinetic, sprint | Time, fast |
-| **Rage** | Edge | Builds by dealing and taking damage; decays out of combat |
-| **Mana** | Focus | Time, slow; or on-kill affixes |
-| **Ammo** | Arms | Not at all in the field — mags come off the dead and out of stockrooms |
-| **Heat** | Ward, Field | Venting, which is loud and stationary |
+| **Stamina** | Movement, sprint | Time, fast |
+| **Rage** | Melee | Builds by dealing and taking damage; decays out of combat |
+| **Mana** | Spells | Time, slow; or on-kill affixes |
+| **Ammo** | Guns | Not at all in the field — mags come off the dead and out of stockrooms |
+| **Power** | Shields, devices | Time, slowly; or a device that recharges it |
 
-Heat runs backwards: it fills as you use Ward and Field items, and you have to
-stand still and be loud to empty it.
+Overheating is a property of individual items rather than a pool that fills
+backwards. An item that overheats says so and forces a loud, stationary vent;
+most items do not.
 
-Ammo is one pool shared by every Arms item you carry, so a second gun gives you
+Ammo is one pool shared by every gun you carry, so a second gun gives you
 another option and not more bullets.
 
-**Health does not regenerate.** You restore it with a Vigil Field item in a hand,
+**Health does not regenerate.** You restore it with a Vigil device in a hand,
 a healing consumable made from reagents, or an equipment affix. Each one costs
 you a hand, cache space, or an affix slot.
 
@@ -272,11 +293,11 @@ items.** Everything in a dead vault is a print of somebody who worked there:
 
 | Print | Was | Role | Typically carries |
 | --- | --- | --- | --- |
-| **Hand** | General population | Chaff, swarms | 1 low-rarity Edge or Arm |
-| **Guard** | Vault security | Line-holder, armored | Arm + Ward |
-| **Fitter** | Maintenance | Zoner, repairs the others | Field + Arm |
-| **Chorister** | The morale office — every vault had one | Caster, backline | 2 Focus |
-| **Courier** | Sent to another vault. Came back. | Flanker, fast | Kinetic + Edge |
+| **Hand** | General population | Chaff, swarms | 1 low-rarity melee or gun |
+| **Guard** | Vault security | Line-holder, armored | Gun + shield |
+| **Fitter** | Maintenance | Zoner, repairs the others | Device + gun |
+| **Chorister** | The morale office — every vault had one | Caster, backline | 2 spells |
+| **Courier** | Sent to another vault. Came back. | Flanker, fast | Movement + melee |
 | **Overrun** | A print that came out of a printer that never stopped | Elite, room-boss | 3 items, all wrong |
 | **First** | An early, near-perfect print of whoever ran this place | Named boss | A named item |
 
@@ -311,7 +332,7 @@ cracked stockrooms and rescues, and lost when the Life ends. Levelling gives
 | Stat | Does |
 | --- | --- |
 | **Might** | Melee damage, carry stamina, downed resistance |
-| **Intellect** | Mana pool, cast speed, Focus damage |
+| **Intellect** | Mana pool, cast speed, spell damage |
 | **Reflex** | Movement, reload and swap speed, vent rate |
 | **Grit** | Health, oxygen efficiency, hazard resistance |
 | **Luck** | Rarity odds, stockroom detection, case-cracking |
