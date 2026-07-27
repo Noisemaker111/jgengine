@@ -32,7 +32,12 @@ At publish, rename this heading to the new version and mirror the entries into
 
 ### Added
 
+- **A command declares what it touches, so `runCommand` hydrates that and nothing else.** `CommandDef` gains an optional `scope(input, actorUserId)` returning `{ players?, chunkKeys? }`, evaluated before hydration; the registered `runCommand` mutation also accepts an explicit `scope` argument, which wins over the declared one. A game that never sets either keeps the whole-world default. `ServerLoopHooks.joinScope(userId, isNew)` does the same for `onNewPlayer`.
+- **`GameRuntime.commandScope` / `GameRuntime.joinScope`** expose those declarations to any host, alongside the pure helpers `resolveCommandScope` / `scopeWithActor` / `commandScopeEscape` (`@jgengine/core/runtime/commandRunner`).
+
 ### Fixed
+
+- **`runCommand` no longer reads the whole world on every command.** `LoadSnapshotScope` landed in 0.17 but only `helpers.loadSnapshot` accepted one, so the supported way to run a command — the registered `runCommand` mutation, a one-line delegation to `helpers.runCommand` — hydrated every member profile and every chunk however narrow the command was, and a game could only get bounded hydration by reimplementing the mutation. `runCommand`, `joinServer`, and `leaveServer` now hydrate a scope; a command whose `apply` dirties a player or chunk its scope never named is refused rather than persisted, since writing an unhydrated chunk overwrites the stored one with a blank. `flushSave` / `flushServerIfDue` / `tickActiveServers` / `flushDirtyServers` still hydrate everything, which is correct for what they write.
 
 ## 0.17.0
 

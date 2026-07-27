@@ -1,6 +1,6 @@
 import type { SaveConfig } from "./save";
-import type { CommandDef } from "./commandRunner";
-import { runCommand } from "./commandRunner";
+import type { CommandDef, CommandScope } from "./commandRunner";
+import { resolveCommandScope, runCommand } from "./commandRunner";
 import {
   createEmptyPlayerRow,
   createRuntimeSnapshot,
@@ -15,6 +15,12 @@ export type ServerLoopHooks = {
   onInit?: (ctx: RuntimeInitContext) => void;
   onNewPlayer?: (ctx: RuntimeLoopContext) => void;
   onTick?: (ctx: RuntimeWorldContext, dtSeconds: number) => void;
+  /**
+   * What `onNewPlayer` touches, so a join hydrates that instead of the whole world. Only consulted
+   * when `onNewPlayer` exists — without the hook a join provably needs the joining member and nothing
+   * else. Omit it and a join keeps hydrating everything.
+   */
+  joinScope?: (userId: string, isNew: boolean) => CommandScope;
 };
 
 export type RuntimeInitContext = {
@@ -65,6 +71,13 @@ export type GameRuntime = {
     commandName: string,
     input: unknown,
   ) => ReturnType<typeof runCommand>;
+  /**
+   * What a command declares it will touch, evaluated before hydration so a host can load that slice
+   * and nothing else. `undefined` means the command declared no scope — hydrate everything.
+   */
+  commandScope: (commandName: string, input: unknown, actorUserId: string) => CommandScope | undefined;
+  /** What a join has to hydrate. `undefined` means the whole world, as when `onNewPlayer` is unscoped. */
+  joinScope: (userId: string, isNew: boolean) => CommandScope | undefined;
   tick: (snapshot: GameRuntimeSnapshot, dtSeconds: number) => GameRuntimeSnapshot;
   joinPlayer: (
     snapshot: GameRuntimeSnapshot,
@@ -109,6 +122,15 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
 
     runCommand(snapshot, actorUserId, commandName, input) {
       return runCommand(snapshot, definition.commands, commandName, input, actorUserId);
+    },
+
+    commandScope(commandName, input, actorUserId) {
+      return resolveCommandScope(definition.commands, commandName, input, actorUserId);
+    },
+
+    joinScope(userId, isNew) {
+      if (!loop?.onNewPlayer) return { players: [userId], chunkKeys: [] };
+      return loop.joinScope?.(userId, isNew);
     },
 
     tick(snapshot, dtSeconds) {

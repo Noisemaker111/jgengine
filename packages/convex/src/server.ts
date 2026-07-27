@@ -31,7 +31,8 @@ import {
   type PoseSyncRules,
   type PresencePoseState,
 } from "@jgengine/core/multiplayer/presenceModel";
-import type { CommandDef } from "@jgengine/core/runtime/commandRunner";
+import type { CommandDef, CommandScope } from "@jgengine/core/runtime/commandRunner";
+import { commandScopeEscape, scopeWithActor } from "@jgengine/core/runtime/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord } from "@jgengine/core/runtime/hostPersistence";
@@ -328,13 +329,11 @@ function serverDocToRecord(server: ServerDoc): GameServerRecord {
  *
  * Persisting a narrowed snapshot is safe: the plan merges session state over the stored map and
  * writes only dirty profiles and dirty chunks, so members and chunks left unhydrated are untouched.
+ *
+ * The registered `runCommand` mutation takes one, and a {@link CommandDef} can derive its own from
+ * its input via `scope`, so a game gets bounded hydration without writing its own mutation.
  */
-export type LoadSnapshotScope = {
-  /** Member ids to hydrate; omit for the whole roster. */
-  players?: readonly string[];
-  /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */
-  chunkKeys?: readonly string[];
-};
+export type LoadSnapshotScope = CommandScope;
 
 /**
  * Hydrate a server's `GameRuntimeSnapshot` from its row, its members' profiles, and its world chunks.
@@ -536,6 +535,7 @@ async function flushServerIfDue(
     return false;
   }
 
+  // Unscoped on purpose: markAllPlayersDirty writes every member, so every member has to be hydrated.
   const snapshot = loaded ?? (await loadServerSnapshot(ctx, server, runtime));
   await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
   return true;
@@ -552,6 +552,11 @@ export type RunCommandArgs = {
   command: string;
   input: unknown;
   externalId?: string;
+  /**
+   * How much of the server to hydrate before applying the command. Overrides whatever the
+   * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world.
+   */
+  scope?: LoadSnapshotScope;
 };
 
 /** A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot. */
@@ -754,7 +759,12 @@ export function createGameServerFunctions(options?: {
       const refreshed = await ctx.db.get("jgGameServers", server._id);
       if (!refreshed) throw new ConvexError("Server missing after join");
 
-      let snapshot = await loadServerSnapshot(ctx, refreshed, runtime);
+      let snapshot = await loadServerSnapshot(
+        ctx,
+        refreshed,
+        runtime,
+        scopeWithActor(runtime.joinScope(actorUserId, isNew), actorUserId),
+      );
       snapshot = runtime.joinPlayer(snapshot, actorUserId, isNew);
       await persistServerSnapshot(ctx, refreshed, snapshot, save);
 
@@ -776,7 +786,11 @@ export function createGameServerFunctions(options?: {
 
       const now = Date.now();
       const runtime = resolveRuntime(registry, server.gameId);
-      const snapshot = await loadServerSnapshot(ctx, server, runtime);
+      // Flushes the leaver's own state before the roster drops them; nobody else's rows are touched.
+      const snapshot = await loadServerSnapshot(ctx, server, runtime, {
+        players: [actorUserId],
+        chunkKeys: [],
+      });
       await persistServerSnapshot(ctx, server, snapshot, server.save as SaveConfig);
 
       const memberUserIds = withoutMember(server.memberUserIds, actorUserId);
@@ -830,7 +844,11 @@ export function createGameServerFunctions(options?: {
 
       const loadedRevision = server.revision;
       const runtime = resolveRuntime(registry, server.gameId);
-      const snapshot = await loadServerSnapshot(ctx, server, runtime);
+      const scope = scopeWithActor(
+        args.scope ?? runtime.commandScope(args.command, args.input, actorUserId),
+        actorUserId,
+      );
+      const snapshot = await loadServerSnapshot(ctx, server, runtime, scope);
       const result = applyCommandWithOcc({
         loadedRevision,
         currentRevision: server.revision,
@@ -842,6 +860,11 @@ export function createGameServerFunctions(options?: {
       });
       if (!result.ok) {
         return result;
+      }
+
+      const escape = commandScopeEscape(scope, result.snapshot.dirty, args.command);
+      if (escape !== null) {
+        return { ok: false as const, reason: escape };
       }
 
       const latest = await ctx.db.get("jgGameServers", serverId);
@@ -864,6 +887,12 @@ export function createGameServerFunctions(options?: {
       command: v.string(),
       input: v.any(),
       externalId: v.optional(v.string()),
+      scope: v.optional(
+        v.object({
+          players: v.optional(v.array(v.string())),
+          chunkKeys: v.optional(v.array(v.string())),
+        }),
+      ),
     },
     returns: v.union(
       v.object({ ok: v.literal(true) }),
@@ -885,6 +914,7 @@ export function createGameServerFunctions(options?: {
       if (server === null) return false;
 
       const runtime = resolveRuntime(registry, server.gameId);
+      // Unscoped on purpose: markAllPlayersDirty writes every member.
       const snapshot = await loadServerSnapshot(ctx, server, runtime);
       await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
       return true;
@@ -1166,6 +1196,7 @@ export function createGameServerFunctions(options?: {
 
           budget -= 1;
           const runtime = resolveRuntime(registry, server.gameId);
+          // Unscoped on purpose: onTick is handed the whole world and may touch any of it.
           const loaded = await loadServerSnapshot(ctx, server, runtime);
           const snapshot = runtime.tick(loaded, elapsedMs / 1_000);
           await persistServerSnapshot(ctx, server, snapshot, server.save as SaveConfig);
@@ -1194,6 +1225,7 @@ export function createGameServerFunctions(options?: {
 
       for (const server of servers) {
         const runtime = resolveRuntime(registry, server.gameId);
+        // Unscoped on purpose: markAllPlayersDirty writes every member.
         const snapshot = await loadServerSnapshot(ctx, server, runtime);
         await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
         saved += 1;
