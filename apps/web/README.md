@@ -45,6 +45,8 @@ The Ignored Build Step resolves the repository root before running `git diff`, t
 
 After the first import, add the **`jgengine.com`** domain to the project (Vercel → Domains). Every push to `main` then builds and goes live automatically.
 
+`vercel.json`'s `git.deploymentEnabled` allowlists only `main` for deployments. PR/branch preview builds are disabled project-wide — this repo's agent workflow opens and pushes to many short-lived branches per day, and each push was building a full preview even though PR screenshot evidence comes from local `jgengine-verify` captures, not a Vercel preview URL (see "Deploy signal, honestly" below). That volume, not build size, was the driver behind a real Vercel build-CPU spike. Production deploys on `main` (the ones that actually ship `jgengine.com`) are unaffected.
+
 CLI alternative: `bunx vercel --cwd apps/web` (preview) / `bunx vercel --prod --cwd apps/web` (production).
 
 If a cancel-storm leaves Production on an old SHA, force a new production deploy from Actions: **Deploy Web** workflow (`workflow_dispatch`) runs `scripts/vercel-force-prod.ts` with `VERCEL_TOKEN`. Do not redeploy an old Ready row in the Vercel UI — that rebuilds the stale snapshot.
