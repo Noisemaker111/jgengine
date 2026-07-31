@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- **City and street races share one generator.** `extractCircuitRoute` lifts a sealed-off race lap from a city street network; city rules, editor baking, playground modes, and the shell renderer carry the same street dials through the resulting race surface and junction dressing.
 - **`resolveSourceWalkerStep(source, cache, position, stepX, stepZ, options)`** (`@jgengine/core/movement/solidObstacles`) — `resolveWalkerStep` with no `GameContext`, for movement rules that live in a pure package with no React or three.js. `SolidObstacleSource`, `ObstacleReachCache`, `createObstacleReachCache`, `sourceObstacleReach`, `sourceObstaclesNear`, and `slideStep` are public alongside it instead of `@internal`, so a game no longer has to push the resolver up into its app layer and inject it back down. `resolveWalkerStep`'s doc now states that it already resolves X and Z separately, so a caller doing its own axis-split must hand it one axis per call.
 - **`tickRunCount(plan, id)`** (`@jgengine/core/time/serverTick`) — how many runs a plan owes a system, or 0 when it is not due.
 

@@ -45,7 +45,6 @@ import {
   resolveBuildingPalette,
   resolveBuildingWallTones,
   type BuildingPalette,
-  type BuildingPartKind,
 } from "@jgengine/core/world/buildings";
 import { hashString } from "@jgengine/core/random/rng";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
@@ -435,7 +434,6 @@ function DetailBuildings({
         rotationY: entry.rotationY,
       })),
     [buildings],
-  );
   );
   const detailPalette = useMemo(() => ({ ...palette, roofProp: ROOF_PROP_GREY }), [palette]);
   const kit = getBuildingKit(kitName);
