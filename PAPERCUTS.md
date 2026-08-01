@@ -249,3 +249,7 @@ lighting cascades: three's CSM mounts one directional light PER cascade at the c
 2026-08-01T08:36:03.415Z — claude-opus-5 — Claude
 
 sky({ zenithColor, horizonColor }) with timeOfDay:true only sets the NOON keyframe of the daylight curve — at any other time.start the authored colours are cross-faded with the engine dawn/dusk presets, so an authored tropical blue renders pink with no warning
+
+2026-08-01T09:05:45.591Z — claude-fable-5 — Claude
+
+Merged #1654 left main red: it deleted Games/loopline/src/game/build/* but world/setup.ts and sim/economy.ts still imported placeObject/placedList/registerBuildCommands — check-types and 4 tests failed on a fresh main checkout; PR quick CI never runs check-types so auto-merge landed it

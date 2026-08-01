@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "provider": "wreckway",
+  "declarations": [
+    {
+      "provenance": { "kind": "runtime", "providerId": "wreckway", "instanceId": "corridor-world" },
+      "reason": "Corridor survival racer whose yard — zone terrain bands, frontage building rows, scattered wrecks, lamps, gates, and the advancing compactor — is regenerated every run from the zone catalog and run seed. There is no static placement to author: the world is a function of run state, and pickups/barricades move with the compactor."
+    }
+  ]
+}

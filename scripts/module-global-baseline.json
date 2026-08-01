@@ -1,7 +1,6 @@
 [
   "Games/ironhold/src/game/hudStore.ts#snapshot",
   "Games/ironhold/src/game/session.ts#session",
-  "Games/loopline/src/game/build/commands.ts#revision",
   "Games/starhome/src/game/commands.ts#placeSeq",
   "Games/starhome/src/game/needs/needs.ts#cachedDayLength",
   "Games/starhome/src/game/needs/needs.ts#cachedDefs",
