@@ -38,6 +38,8 @@ const MAX_CONCURRENT_BURSTS = 32;
  * Whether a spec change touches something the JSX reads (blending, static offset,
  * follow binding) and therefore needs a React re-render — config-only retunes are
  * applied imperatively to the live system and must stay render-free.
+ *
+ * @internal WorldParticles render-boundary helper, exported for its regression test.
  */
 export function specNeedsRender(prev: ParticleEmitterSpec, next: ParticleEmitterSpec): boolean {
   if (prev.blending !== next.blending || prev.follow !== next.follow) return true;
