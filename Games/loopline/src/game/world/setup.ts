@@ -3,11 +3,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { editorMarkerXZ } from "@jgengine/core/editor/index";
 
 import { editorLayers } from "../../editorLayers";
-import { registerBuildCommands } from "../build/commands";
-import { placeObject } from "../build/placement";
-import { buildableDef } from "../objects/catalog";
+import { GRID, snapToGrid } from "../catalog";
+import { buildableDef, type BuildableDef } from "../objects/catalog";
 import { seedGuests } from "../sim/guests";
-import { resetSession, session } from "../session";
+import { nextObjectId, resetSession, session, type PlacedObject } from "../session";
 
 const TRACK_PATH_ID = "coaster-track";
 
@@ -48,13 +47,62 @@ export function seedPlacements(): SeedPlacement[] {
   return [...rides, ...trackPieces, ...rest];
 }
 
+function footprintN(def: BuildableDef): number {
+  return Math.max(1, Math.round(def.footprint / GRID));
+}
+
+function footprintCells(def: BuildableDef, gx: number, gz: number): string[] {
+  const n = footprintN(def);
+  const start = -Math.floor((n - 1) / 2);
+  const cells: string[] = [];
+  for (let i = 0; i < n; i += 1) {
+    for (let j = 0; j < n; j += 1) {
+      cells.push(`${gx + (start + i) * GRID},${gz + (start + j) * GRID}`);
+    }
+  }
+  return cells;
+}
+
+function blockCenter(def: BuildableDef, gx: number, gz: number): [number, number] {
+  const n = footprintN(def);
+  const start = -Math.floor((n - 1) / 2);
+  const min = start * GRID;
+  const max = (start + n - 1) * GRID;
+  return [gx + (min + max) / 2, gz + (min + max) / 2];
+}
+
+// The authored document is the source of truth; the only rule kept from the deleted
+// build mode is first-wins on an occupied cell, so seeding order stays meaningful.
+function seedPlace(ctx: GameContext, catalogId: string, x: number, z: number): void {
+  const def = buildableDef(catalogId);
+  const gx = snapToGrid(x);
+  const gz = snapToGrid(z);
+  const cells = footprintCells(def, gx, gz);
+  for (const key of cells) {
+    if (session.occupied.has(key)) return;
+  }
+  const [cx, cz] = blockCenter(def, gx, gz);
+  const id = nextObjectId(catalogId);
+  const placed: PlacedObject = {
+    id,
+    catalogId,
+    x: cx,
+    z: cz,
+    stock: def.stall?.stock ?? 0,
+    soldTotal: 0,
+    occupants: 0,
+  };
+  session.placed.set(id, placed);
+  for (const key of cells) session.occupied.set(key, id);
+  ctx.scene.object.place(catalogId, cx, 0, cz, { instanceId: id });
+}
+
 function seedStarterPark(ctx: GameContext): void {
-  for (const placement of seedPlacements()) placeObject(ctx, placement.catalogId, placement.x, placement.z);
+  for (const placement of seedPlacements()) seedPlace(ctx, placement.catalogId, placement.x, placement.z);
 }
 
 export function setupWorld(ctx: GameContext): void {
   resetSession();
-  registerBuildCommands(ctx);
   seedStarterPark(ctx);
   seedGuests(ctx, 24);
   session.started = true;

@@ -11,7 +11,6 @@ import { DAY_LENGTH, MILESTONES } from "../catalog";
 import { buildableDef } from "../objects/catalog";
 import { pushToast, session } from "../session";
 import { computeMetrics, ratingTarget, type ParkMetrics } from "./rating";
-import { placedList } from "../build/placement";
 
 const BANKRUPT_LIMIT = 3;
 
@@ -41,7 +40,7 @@ export function settleDailyUpkeep(
 }
 
 export function currentMetrics(): ParkMetrics {
-  return computeMetrics(placedList());
+  return computeMetrics(Array.from(session.placed.values()));
 }
 
 export function restockCost(): number {
