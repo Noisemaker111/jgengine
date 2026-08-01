@@ -31,6 +31,8 @@ between (`--json` for structured output).
 
 ### Added
 
+- **`ctx.particles` — the game-reachable particle seam.** Game logic queues one-shot bursts (`ctx.particles.burst(config, count)`) and keyed standing emitters (`attach`/`retune`/`detach`, with `follow` to track a scene entity) as plain serializable data (`@jgengine/core/vfx/particleDirector`); the shell auto-mounts a renderer that turns them into pooled GPU point clouds via the existing `createParticleSystem`/`ParticleField`, caps pool sizes by graphics quality (low 128 / medium 256 / high 512 per effect, degrading density instead of dropping effects), and reaps finished bursts. Dust, sparks, exhaust, and debris no longer require forking the shell; headless tests assert the requested effects straight off the director.
+
 - **`resolveSourceWalkerStep(source, cache, position, stepX, stepZ, options)`** (`@jgengine/core/movement/solidObstacles`) — `resolveWalkerStep` with no `GameContext`, for movement rules that live in a pure package with no React or three.js. `SolidObstacleSource`, `ObstacleReachCache`, `createObstacleReachCache`, `sourceObstacleReach`, `sourceObstaclesNear`, and `slideStep` are public alongside it instead of `@internal`, so a game no longer has to push the resolver up into its app layer and inject it back down. `resolveWalkerStep`'s doc now states that it already resolves X and Z separately, so a caller doing its own axis-split must hand it one axis per call.
 - **`tickRunCount(plan, id)`** (`@jgengine/core/time/serverTick`) — how many runs a plan owes a system, or 0 when it is not due.
 

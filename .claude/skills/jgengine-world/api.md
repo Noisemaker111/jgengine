@@ -1459,6 +1459,16 @@
 - `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
 - `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
 
+## @jgengine/core/vfx/particleDirector
+
+- `ParticleAttachOptions` (interface): interface ParticleAttachOptions — Options for {@link ParticleDirector.attach}.
+- `ParticleBlendHint` (type): type ParticleBlendHint = "additive" | "normal" — How a particle effect composites on screen: `additive` for sparks/fire/glow, `normal` for smoke/dust.
+- `ParticleBurst` (interface): interface ParticleBurst — A one-shot burst request — consumed once by the renderer, never serialized.
+- `ParticleDirector` (interface): interface ParticleDirector — The game-side seam for particle effects. Game logic requests one-shot bursts and standing emitters as plain data; the shell renders them through `createParticleSystem`/`ParticleField`, applies the graphics-quality particle cap, and tracks `follow` entities. Nothing here touches a renderer, so commands and `onTick` systems can drive VFX headlessly and tests can assert the requested effects.
+- `ParticleDirectorState` (interface): interface ParticleDirectorState — Serializable director state: the standing emitters (bursts are transient by nature).
+- `ParticleEmitterSpec` (interface): interface ParticleEmitterSpec — A keyed continuous emitter owned by the director until detached.
+- `createParticleDirector` (function): function createParticleDirector(): ParticleDirector — Create the particle intent registry a `GameContext` exposes as `ctx.particles`. State is data-only and serializable: standing emitters survive `snapshot`/`restore`, queued bursts are transient. The renderer subscribes, drains bursts, and mirrors the emitter list — the director never allocates particle pools itself.
+
 ## @jgengine/core/vfx/particles
 
 - `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).

@@ -38,6 +38,7 @@ import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock } from "../time/simClock";
 import { seededRng } from "../random/rng";
 import { createCameraDirector } from "./cameraDirector";
+import { createParticleDirector } from "../vfx/particleDirector";
 import { createInputSnapshot } from "./inputSnapshot";
 import { baselineDescriptors, type BaselineDeps } from "./descriptors/baseline";
 import { featureDescriptors, type FeatureDeps } from "./descriptors/features";
@@ -323,6 +324,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
   const { pile, loop, raceState, cardPiles, turnLoops } = createContextRegistries(signal.notify);
   const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
+  const particles = createParticleDirector();
   const input = createInputSnapshot();
 
   // --- Descriptor install (single feature enable path) ---
@@ -620,6 +622,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     },
     time,
     camera,
+    particles,
     input,
     subscribe: signal.subscribe,
     version: signal.version,
