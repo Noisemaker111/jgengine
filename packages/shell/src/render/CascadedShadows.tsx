@@ -92,6 +92,11 @@ export interface CsmMaterialSetup {
   setupMaterial(material: THREE.Material): void;
 }
 
+/**
+ * Run CSM's `setupMaterial` over every unpatched standard material in the scene,
+ * chaining rather than clobbering a material's own `onBeforeCompile`. Called every
+ * frame (WeakSet-guarded) so streamed meshes never render lit by all cascades at once.
+ */
 export function patchSceneMaterials(
   scene: THREE.Scene,
   csm: CsmMaterialSetup,
