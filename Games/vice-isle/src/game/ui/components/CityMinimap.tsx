@@ -7,6 +7,7 @@ import {
   BOUNTY_SPOTS,
   BRIEFCASE_POS,
   CICADA_STAGE_POS,
+  DISTRICTS,
   DOCK_FIGHT_CENTER,
   GARAGE_POS,
   KINGPIN_POS,
@@ -14,6 +15,7 @@ import {
   RACE_ROUTES,
   ROADS,
   SAFEHOUSE_POS,
+  SHORE_X,
   STASH_SPOTS,
   districtAt,
 } from "../../world/districts";
@@ -24,6 +26,37 @@ import { raceStore, wantedStore } from "../../handroll";
 
 const SIZE = 176;
 const RADIUS = 130;
+
+/** Map-ink per district, so the panel reads as Vice Isle rather than as lines on a slab. */
+const DISTRICT_TINTS: Record<string, string> = {
+  ocean_drive: "#dcc79b",
+  downtown: "#a8a496",
+  port_carmine: "#918e84",
+  palm_heights: "#b9ad7e",
+};
+
+/** Sea and beach bands, in world XZ — the same coastline the terrain's shore falloff carves. */
+const SEA_CORNERS: readonly (readonly [number, number])[] = [
+  [SHORE_X - 22, -600],
+  [-900, -600],
+  [-900, 600],
+  [SHORE_X - 22, 600],
+];
+const BEACH_CORNERS: readonly (readonly [number, number])[] = [
+  [SHORE_X + 24, -600],
+  [SHORE_X - 24, -600],
+  [SHORE_X - 24, 600],
+  [SHORE_X + 24, 600],
+];
+
+function polygonPoints(corners: readonly (readonly [number, number])[], view: MinimapView): string {
+  return corners
+    .map((corner) => {
+      const point = projectToMinimap(corner, view);
+      return `${point.x.toFixed(1)},${point.y.toFixed(1)}`;
+    })
+    .join(" ");
+}
 
 interface MapSnapshot {
   player: readonly [number, number, number];
@@ -156,7 +189,22 @@ export function CityMinimap() {
         style={{ width: SIZE, height: SIZE, background: "#0e2431" }}
       >
         <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-          <rect width={SIZE} height={SIZE} fill="#123244" />
+          <rect width={SIZE} height={SIZE} fill="#c9bf9f" />
+          <polygon points={polygonPoints(SEA_CORNERS, view)} fill="#12889f" />
+          <polygon points={polygonPoints(BEACH_CORNERS, view)} fill="#e6d3a4" />
+          {DISTRICTS.map((district) => {
+            const center = projectToMinimap(district.center, view);
+            return (
+              <circle
+                key={district.id}
+                cx={center.x}
+                cy={center.y}
+                r={(district.radius * SIZE) / (RADIUS * 2)}
+                fill={DISTRICT_TINTS[district.id] ?? "#8f8f86"}
+                fillOpacity={0.85}
+              />
+            );
+          })}
           {ROADS.map((seg, i) => {
             const a = projectToMinimap(seg.from, view);
             const b = projectToMinimap(seg.to, view);

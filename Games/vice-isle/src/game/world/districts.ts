@@ -1,5 +1,5 @@
 import { editorMarkerPosition, findEditorMarker } from "@jgengine/core/editor/index";
-import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
 
 import { editorLayers } from "../../editorLayers";
 
@@ -49,6 +49,25 @@ export const ROADS: readonly RoadSegment[] = editorLayers.paths
     return { from: [from.x, from.z] as const, to: [to.x, to.z] as const };
   });
 
+export interface Promenade {
+  id: string;
+  label: string;
+  points: readonly (readonly [number, number])[];
+}
+
+/**
+ * Palm-lined walks authored as `promenade` paths in the scene document — the beachfront boardwalk
+ * and the Palm Heights villa row. `setup.ts` steps each polyline and dresses it, so re-routing the
+ * boardwalk is dragging a path in the editor, not editing a coordinate loop in TypeScript.
+ */
+export const PROMENADES: readonly Promenade[] = editorLayers.paths
+  .filter((path) => path.kind === "promenade")
+  .map((path) => ({
+    id: path.id,
+    label: path.label ?? path.id,
+    points: path.points.map((point) => [point.x, point.z] as const),
+  }));
+
 export interface RaceRoute {
   id: string;
   label: string;
@@ -87,6 +106,8 @@ export const KINGPIN_POS: readonly [number, number, number] = markerXYZ("kingpin
 // (shoot/drive `--spawn`) applies; falls back to the authored marker it reads anyway.
 export const PLAYER_SPAWN: readonly [number, number, number] =
   authoredSpawnPosition(editorLayers) ?? markerXYZ("player_spawn");
+/** Authored facing of the spawn marker — what the player, and so the chase camera, opens looking at. */
+export const PLAYER_SPAWN_YAW: number = authoredSpawnRotation(editorLayers);
 export const MARCO_POS: readonly [number, number, number] = markerXYZ("marco");
 export const GUNSHOP_POS: readonly [number, number, number] = markerXYZ("gunshop");
 export const GARAGE_POS: readonly [number, number, number] = markerXYZ("garage");

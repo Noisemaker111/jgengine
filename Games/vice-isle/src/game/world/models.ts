@@ -11,61 +11,73 @@ const NATURE = "quaternius-stylized-nature";
 const DUNGEON = "kaykit-dungeon";
 const FURN = "kaykit-furniture";
 
+/**
+ * Casting note (asset-catalog gap): every rigged human this repository can pull is a fantasy
+ * adventurer, so the isle is cast out of the three KayKit bodies whose SILHOUETTE can pass for
+ * modern street wear — `Rogue` (jacket), `Rogue_Hooded` (hoodie) and `Barbarian` (bare torso) —
+ * with `Knight`'s plate reserved for police, where a hard-shell torso reads as a vest. `Mage` is
+ * cast nowhere, in any role or fallback: the pointed hat and robe are the one shape no tint can
+ * talk out of being a wizard. Overrides multiply the pack's own atlas rather than replacing it, so
+ * these are wardrobe tints — the cloth and stitching detail survives them.
+ */
 export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
   street_runner: {
     model: `${CHAR}/Rogue`,
     fallbackModel: `${CHAR}/Rogue_Hooded`,
-    style: { targetHeight: 1.8 },
+    style: { targetHeight: 1.8, material: { color: "#f0ead9" } },
   },
   ped_beach: {
-    model: `${CHAR}/Mage`,
+    model: `${CHAR}/Barbarian`,
     fallbackModel: `${CHAR}/Rogue`,
-    style: { targetHeight: 1.75 },
+    style: { targetHeight: 1.76, material: { color: "#ffd6ae" } },
   },
   ped_city: {
-    model: `${CHAR}/Knight`,
-    fallbackModel: `${CHAR}/Barbarian`,
-    style: { targetHeight: 1.8 },
+    model: `${CHAR}/Rogue`,
+    fallbackModel: `${CHAR}/Rogue_Hooded`,
+    style: { targetHeight: 1.78, material: { color: "#dde6f0" } },
   },
   ped_docks: {
     model: `${CHAR}/Rogue_Hooded`,
-    fallbackModel: `${CHAR}/Mage`,
-    style: { targetHeight: 1.78 },
+    fallbackModel: `${CHAR}/Rogue`,
+    style: { targetHeight: 1.8, material: { color: "#9aa387" } },
   },
   contact_marco: {
-    model: `${CHAR}/Barbarian`,
-    fallbackModel: `${CHAR}/Knight`,
-    style: { targetHeight: 1.85, material: { color: "#f4efe2" } },
+    model: `${CHAR}/Rogue`,
+    fallbackModel: `${CHAR}/Rogue_Hooded`,
+    style: { targetHeight: 1.84, material: { color: "#f7f1dc" } },
   },
   ganger_dock: {
-    model: `${CHAR}/Rogue`,
-    fallbackModel: `${CHAR}/Barbarian`,
-    style: { targetHeight: 1.85, material: { color: "#c23b3b" } },
+    model: `${CHAR}/Rogue_Hooded`,
+    fallbackModel: `${CHAR}/Rogue`,
+    style: { targetHeight: 1.84, material: { color: "#c8455a" } },
   },
   ganger_enforcer: {
     model: `${CHAR}/Barbarian`,
-    fallbackModel: `${CHAR}/Knight`,
-    style: { targetHeight: 2.05, material: { color: "#7a1c1c" } },
+    fallbackModel: `${CHAR}/Rogue_Hooded`,
+    style: { targetHeight: 2.02, material: { color: "#8f2434" } },
   },
   kingpin_sal: {
     model: `${CHAR}/Knight`,
-    fallbackModel: `${CHAR}/Mage`,
-    style: { targetHeight: 2.25, material: { color: "#c9a227" } },
+    fallbackModel: `${CHAR}/Barbarian`,
+    style: {
+      targetHeight: 2.15,
+      material: { color: "#f0e0ac", metalness: 0.34, roughness: 0.34, rim: { color: "#ffd98a", strength: 0.7 } },
+    },
   },
   cop_patrol: {
-    model: `${CHAR}/Mage`,
-    fallbackModel: `${CHAR}/Knight`,
-    style: { targetHeight: 1.85, material: { color: "#2e4f8f" } },
+    model: `${CHAR}/Knight`,
+    fallbackModel: `${CHAR}/Rogue`,
+    style: { targetHeight: 1.86, material: { color: "#2c4a8c" } },
   },
   cop_swat: {
     model: `${CHAR}/Knight`,
-    fallbackModel: `${CHAR}/Barbarian`,
-    style: { targetHeight: 1.9, material: { color: "#20242e" } },
+    fallbackModel: `${CHAR}/Rogue_Hooded`,
+    style: { targetHeight: 1.92, material: { color: "#1b1f28" } },
   },
   bounty_mark: {
     model: `${CHAR}/Barbarian`,
     fallbackModel: `${CHAR}/Rogue`,
-    style: { targetHeight: 1.95, material: { color: "#6d2f8f" } },
+    style: { targetHeight: 1.94, material: { color: "#7c3aa0", rim: { color: "#ff7ad4", strength: 0.5 } } },
   },
 
   car_compact: {
@@ -127,13 +139,42 @@ export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets
   },
 });
 
+/**
+ * Street-tree casting. The CC0 packs ship no palm, so the boulevard is planted with the tallest
+ * green-leaved trunks available, at three heights so a boardwalk is never one repeated shape down
+ * its whole run. `TwistedTree` was tried for its leaning-palm silhouette and rejected: its crown
+ * texture is deep autumn red (`Leaves_TwistedTree_C`), which no multiply can turn tropical — it
+ * survives only as the occasional flame tree, which is a real Miami street tree.
+ *
+ * No colour override on any of them: the pack's bark and frond maps ship with the repository and
+ * resolve, and the flat green tint that used to stand in for them was multiplying that away.
+ */
+const PALMS: readonly { id: string; model: string; fallbackModel: string; targetHeight: number }[] = [
+  { id: "obj_palm", model: `${NATURE}/CommonTree_2`, fallbackModel: `${NATURE}/CommonTree_1`, targetHeight: 7.6 },
+  { id: "obj_palm_tall", model: `${NATURE}/CommonTree_4`, fallbackModel: `${NATURE}/CommonTree_2`, targetHeight: 9 },
+  { id: "obj_palm_low", model: `${NATURE}/CommonTree_5`, fallbackModel: `${NATURE}/CommonTree_3`, targetHeight: 6.2 },
+  { id: "obj_flametree", model: `${NATURE}/TwistedTree_2`, fallbackModel: `${NATURE}/CommonTree_3`, targetHeight: 6.8 },
+];
+
+/**
+ * Street-tree planting cycle — `setup.ts` walks it so no two neighbours match. The flame tree lands
+ * once every seven, so its red crown reads as an accent on a green street rather than an autumn wood.
+ */
+export const PALM_IDS: readonly string[] = [
+  "obj_palm",
+  "obj_palm_tall",
+  "obj_palm_low",
+  "obj_palm",
+  "obj_palm_low",
+  "obj_palm_tall",
+  "obj_flametree",
+];
+
 const objectPlan: Record<string, ModelPick> = {
   obj_palm_planter: {
-    // Quaternius nature textures aren't committed (multi-MB, #1005) — a flat toon
-    // green keeps street trees readable instead of untextured white.
-    model: `${NATURE}/CommonTree_1`,
+    model: `${NATURE}/TwistedTree_5`,
     fallbackModel: `${CITY}/bush`,
-    style: { targetHeight: 5.6, material: { color: "#57a05b" } },
+    style: { targetHeight: 5.8 },
   },
   obj_streetlight: {
     model: `${CITY}/streetlight`,
@@ -160,13 +201,6 @@ const objectPlan: Record<string, ModelPick> = {
     fallbackModel: `${CITY}/dumpster`,
     style: { targetHeight: 1 },
   },
-  obj_palm: {
-    // No dedicated palm in the CC0 packs — a tall toon tree reads as one against the coast. Flat
-    // green keeps it readable while Quaternius textures stay uncommitted (#1005).
-    model: `${NATURE}/CommonTree_2`,
-    fallbackModel: `${NATURE}/CommonTree_1`,
-    style: { targetHeight: 6.4, material: { color: "#4f9a54" } },
-  },
   obj_bench: {
     model: `${CITY}/bench`,
     fallbackModel: `${FURN}/chair_A`,
@@ -187,15 +221,29 @@ const objectPlan: Record<string, ModelPick> = {
     fallbackModel: `${CITY}/box_B`,
     style: { targetHeight: 1.3, material: { color: "#3f6d4a" } },
   },
+  // Emissive, not just pink: the bloom stage needs something above threshold to glow around, and a
+  // storefront sign is the only light source a daylit street legitimately has.
   obj_neon: {
     model: `${DUNGEON}/banner_red`,
     fallbackModel: `${CITY}/trafficlight_B`,
-    style: { targetHeight: 3.2, material: { color: "#f2599b" } },
+    style: { targetHeight: 3.4, material: { color: "#ff5aa8", emissive: "#ff2f95", emissiveIntensity: 1.5 } },
+  },
+  // Street signal rather than a second banner: at kerb height a hanging cloth reads as a stick, and
+  // a lit signal head is the piece of furniture a junction is actually missing.
+  obj_signal: {
+    model: `${CITY}/trafficlight_B`,
+    fallbackModel: `${CITY}/trafficlight_A`,
+    style: { targetHeight: 3.6, material: { emissive: "#2fd8b0", emissiveIntensity: 0.55 } },
   },
   obj_hedge: {
     model: `${NATURE}/Bush_Common`,
     fallbackModel: `${CITY}/bush`,
-    style: { targetHeight: 1.3, material: { color: "#4e8a4a" } },
+    style: { targetHeight: 1.5 },
+  },
+  obj_planter: {
+    model: `${NATURE}/Bush_Common_Flowers`,
+    fallbackModel: `${NATURE}/Bush_Common`,
+    style: { targetHeight: 1.3 },
   },
   obj_cargo: {
     model: `${SPACE}/containers_B`,
@@ -204,16 +252,24 @@ const objectPlan: Record<string, ModelPick> = {
   },
   obj_cactus: {
     model: `${FURN}/cactus_medium_A`,
-    fallbackModel: `${NATURE}/CommonTree_1`,
-    style: { targetHeight: 1.8, material: { color: "#5f8a4f" } },
+    fallbackModel: `${FURN}/cactus_small_A`,
+    style: { targetHeight: 1.9 },
   },
 };
+
+for (const palm of PALMS) {
+  objectPlan[palm.id] = {
+    model: palm.model,
+    fallbackModel: palm.fallbackModel,
+    style: { targetHeight: palm.targetHeight },
+  };
+}
 
 for (const b of BUILDING_SPECS) {
   objectPlan[b.id] = {
     model: b.model,
     fallbackModel: b.fallbackModel,
-    style: { targetHeight: b.targetHeight },
+    style: { targetHeight: b.targetHeight, material: { color: b.tint } },
   };
 }
 

@@ -16,11 +16,14 @@ import {
   KINGPIN_POS,
   MARCO_POS,
   PLAYER_SPAWN,
+  PLAYER_SPAWN_YAW,
+  PROMENADES,
   RACE_CHECKPOINTS,
   RACE_ROUTES,
   roadPoints,
   ROADS,
   SAFEHOUSE_POS,
+  SHORE_X,
   STASH_SPOTS,
   VCPD_POS,
 } from "./world/districts";
@@ -75,7 +78,7 @@ describe("vice-isle authored scene parity", () => {
   });
 
   test("every gameplay POI resolves to its exact position", () => {
-    expect(PLAYER_SPAWN).toEqual([-176, 0, 24]);
+    expect(PLAYER_SPAWN).toEqual([-190, 0, 40]);
     expect(KINGPIN_POS).toEqual([92, 0, -252]);
     expect(MARCO_POS).toEqual([52, 0, -52]);
     expect(GUNSHOP_POS).toEqual([-52, 0, 8]);
@@ -201,11 +204,42 @@ describe("vice-isle world", () => {
     expect(roadPoints(20).length).toBeGreaterThan(100);
   });
 
-  test("a tropical rain system rolls in over Ocean Drive", () => {
+  test("a rain squall sits offshore, not over the sun-drenched boulevard", () => {
     expect(summary.counts.weatherSystems).toBe(1);
     const [rain] = summary.weather;
     expect(rain?.kind).toBe("rain");
-    expect(rain?.area.position).toEqual([-170, 0]);
     expect(rain?.density).toBeGreaterThan(0);
+    // Well west of the shoreline, so the city keeps its sun and the horizon gets the weather.
+    expect(rain?.area.position?.[0]).toBeLessThan(SHORE_X - 100);
+  });
+
+  test("the ground carries real texture maps, not bare vertex colour", () => {
+    const detail = world.terrain?.detail;
+    expect(detail).toBeDefined();
+    expect(detail?.material?.maps.color).toContain("/materials/");
+    expect(detail?.material?.maps.normal).toContain("/materials/");
+    // Grain, not repaint: a high tint would paint the beach, pavement and scrub all one flat tan.
+    expect(detail?.material?.tint ?? 1).toBeLessThan(0.4);
+  });
+
+  test("pavement, beach and district washes paint the ground under the city", () => {
+    const regions = world.terrain?.materialRegions ?? [];
+    // One apron per authored street, plus a wash per district, plus the two beach bands.
+    expect(regions.filter((region) => region.shape === "polyline")).toHaveLength(ROADS.length + 2);
+    expect(regions.length).toBeGreaterThanOrEqual(ROADS.length + DISTRICTS.length + 2);
+  });
+
+  test("promenades are authored paths the runtime dresses, not a coordinate loop in code", () => {
+    expect(PROMENADES.map((walk) => walk.id)).toEqual(["boardwalk", "heights_drive"]);
+    const boardwalk = PROMENADES[0]!;
+    expect(boardwalk.points.length).toBeGreaterThanOrEqual(4);
+    // It runs the seafront: every vertex sits west of the shoreline, on the beach side of Avenue W.
+    for (const [x] of boardwalk.points) expect(x).toBeLessThan(SHORE_X + 15);
+  });
+
+  test("the spawn frames the city with an authored facing", () => {
+    expect(districtAt(PLAYER_SPAWN[0], PLAYER_SPAWN[2])?.id).toBe("ocean_drive");
+    expect(Number.isFinite(PLAYER_SPAWN_YAW)).toBe(true);
+    expect(PLAYER_SPAWN_YAW).not.toBe(0);
   });
 });
