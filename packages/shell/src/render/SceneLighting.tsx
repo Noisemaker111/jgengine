@@ -1,3 +1,6 @@
+import { useLayoutEffect, useRef } from "react";
+import type { DirectionalLight } from "three";
+
 import type {
   BackdropConfig,
   DirectionalLightingConfig,
@@ -16,21 +19,48 @@ function DirectionalShadowLight({ entry }: { entry: DirectionalLightingConfig })
   if (usesCascades(entry)) {
     return <CascadedShadows entry={entry} />;
   }
+  return <SingleShadowLight entry={entry} />;
+}
+
+/**
+ * Refresh a directional light's shadow projection after its frustum bounds change.
+ * R3F pierced `shadow-camera-*` props write the bounds but never call
+ * `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box
+ * and `shadowCameraSize` is silently inert.
+ */
+export function syncShadowProjection(light: DirectionalLight): void {
+  light.shadow.camera.updateProjectionMatrix();
+}
+
+function SingleShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
+  const lightRef = useRef<DirectionalLight>(null);
   const size = entry.shadowCameraSize ?? 40;
+  const far = Math.max(200, size * 6);
+  const mapSize = entry.shadowMapSize ?? 1024;
+  useLayoutEffect(() => {
+    if (lightRef.current !== null) syncShadowProjection(lightRef.current);
+  }, [size, far]);
+  useLayoutEffect(() => {
+    const light = lightRef.current;
+    if (light === null || light.shadow.map === null) return;
+    light.shadow.map.dispose();
+    light.shadow.map = null;
+  }, [mapSize]);
   return (
     <directionalLight
+      ref={lightRef}
       position={[entry.position[0], entry.position[1], entry.position[2]]}
       intensity={entry.intensity ?? 1.3}
       color={entry.color}
       castShadow={entry.castShadow ?? false}
-      shadow-mapSize-width={entry.shadowMapSize ?? 1024}
-      shadow-mapSize-height={entry.shadowMapSize ?? 1024}
+      shadow-mapSize-width={mapSize}
+      shadow-mapSize-height={mapSize}
       shadow-camera-left={-size}
       shadow-camera-right={size}
       shadow-camera-top={size}
       shadow-camera-bottom={-size}
       shadow-camera-near={0.5}
-      shadow-camera-far={Math.max(200, size * 6)}
+      shadow-camera-far={far}
       shadow-bias={entry.shadowBias ?? -0.0004}
       shadow-normalBias={entry.shadowNormalBias ?? 0.02}
     />

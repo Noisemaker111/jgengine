@@ -23,7 +23,6 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
   const scene = useThree((s) => s.scene);
   const csmRef = useRef<CSM | null>(null);
   const patchedRef = useRef(new WeakSet<THREE.Material>());
-  const frameRef = useRef(0);
 
   useEffect(() => {
     const cascades = Math.max(2, Math.min(4, Math.floor(entry.cascades ?? 3)));
@@ -56,7 +55,6 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
     patchedRef.current = new WeakSet();
     patchSceneMaterials(scene, csm, patchedRef.current);
     csmRef.current = csm;
-    frameRef.current = 0;
     return () => {
       csm.dispose();
       csmRef.current = null;
@@ -80,25 +78,42 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
     const csm = csmRef.current;
     if (csm === null) return;
     csm.camera = camera;
-    frameRef.current += 1;
-    // Async model mounts need setupMaterial — re-scan every 30 frames after the first.
-    if (frameRef.current === 1 || frameRef.current % 30 === 0) {
-      patchSceneMaterials(scene, csm, patchedRef.current);
-    }
+    // Every frame: a mesh that renders before setupMaterial receives all cascade
+    // lights at once (a cascades× sun) — the WeakSet keeps the traverse cheap.
+    patchSceneMaterials(scene, csm, patchedRef.current);
     csm.update();
   });
 
   return null;
 }
 
-function patchSceneMaterials(scene: THREE.Scene, csm: CSM, patched: WeakSet<THREE.Material>): void {
+/** Structural slice of CSM so the patcher is testable without a renderer. */
+export interface CsmMaterialSetup {
+  setupMaterial(material: THREE.Material): void;
+}
+
+export function patchSceneMaterials(
+  scene: THREE.Scene,
+  csm: CsmMaterialSetup,
+  patched: WeakSet<THREE.Material>,
+): void {
   scene.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
     if (!mesh.isMesh) return;
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const mat of materials) {
       if (!isStandardMaterial(mat) || patched.has(mat)) continue;
+      const prior = mat.onBeforeCompile;
       csm.setupMaterial(mat);
+      const csmHook = mat.onBeforeCompile;
+      if (prior !== THREE.Material.prototype.onBeforeCompile && prior !== csmHook) {
+        // setupMaterial assigns onBeforeCompile, which would drop a material's own
+        // shader surgery (rim light, detail maps) — run both, the material's first.
+        mat.onBeforeCompile = function (shader, renderer) {
+          prior.call(this, shader, renderer);
+          csmHook.call(this, shader, renderer);
+        };
+      }
       patched.add(mat);
     }
   });

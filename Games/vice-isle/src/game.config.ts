@@ -107,13 +107,10 @@ export const game = defineGame({
         intensity: 2.05,
         position: [170, 74, 44],
         castShadow: true,
-        // Sized to the isle rather than to a subject, because the ortho shadow camera is anchored on
-        // the world origin. Note that neither this nor `cascades` currently puts a shadow on the
-        // ground: the shell passes these as `shadow-camera-*` props and nothing calls
-        // `updateProjectionMatrix` on that camera, so three keeps its default 10×10 box, and the CSM
-        // path multiplies the sun by its cascade count while patching materials only every 30
-        // frames. Both are engine-side; the values here are what the game wants once that is fixed.
-        shadowCameraSize: 220,
+        // Cascades follow the camera, so the spawn at (-190, 40) gets the same shadow
+        // density as the origin — a single origin-anchored box cannot cover this isle.
+        cascades: 3,
+        shadowMaxFar: 220,
         shadowMapSize: 2048,
       },
       { color: "#8fbcdc", intensity: 0.26, position: [-170, 44, -70] },

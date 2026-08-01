@@ -194,7 +194,17 @@ export const game = defineGame({
     // 2.5, not 2.6: the terrain's dirt grain multiplies albedo up to ~1.5x where the map is bright,
     // so sunlit sand was arriving at the tone-mapper above 1.0 and clipping to white on the sun side.
     directional: [
-      { color: "#ffe0b0", intensity: 2.5, position: [64, 46, -52], castShadow: true },
+      {
+        color: "#ffe0b0",
+        intensity: 2.5,
+        position: [64, 46, -52],
+        castShadow: true,
+        // The playfield sits over a kilometre from the origin — only camera-following
+        // cascades put these long afternoon shadows where the player actually is.
+        cascades: 3,
+        shadowMaxFar: 240,
+        shadowMapSize: 2048,
+      },
       { color: "#6d90b4", intensity: 0.5, position: [-40, 26, 30] },
     ],
   },
