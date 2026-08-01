@@ -233,3 +233,19 @@ Capturing a before shot for a PR: git checkout main in a cloud session gave a si
 2026-07-26T22:27:08.120Z — claude-opus-5 — Claude
 
 shoot the-robots twice with identical flags → one run captured with settle=1.51s and every dead tree missing from the frame, the next with settle=13.67s had them; default settle does not wait on modelLoadIdleMs so a capture can silently ship a half-loaded scene that looks like a content regression
+
+2026-08-01T08:35:53.942Z — claude-opus-5 — Claude
+
+shoot: capturing a game with persist:true on the warm daemon → the Chrome profile's localStorage save is restored, so three capture rounds silently framed a world pinned to an OLD editor.scene.json spawn while the dev server was serving fresh modules; drive clears origin storage by default but shoot has no equivalent flag
+
+2026-08-01T08:36:03.319Z — claude-opus-5 — Claude
+
+lighting.directional[].shadowCameraSize is inert: SceneLighting passes it as shadow-camera-left/right/top/bottom props and nothing calls shadow.camera.updateProjectionMatrix(), so three keeps the default 10x10 ortho box at the world origin and an open-world game gets no cast shadows anywhere
+
+2026-08-01T08:36:03.355Z — claude-opus-5 — Claude
+
+lighting cascades: three's CSM mounts one directional light PER cascade at the configured intensity, so cascades:4 silently quadruples the sun and blows the scene white; its patchSceneMaterials also only re-scans every 30 frames, which on software-GL capture is minutes, so streamed models never receive CSM shadows in a shot
+
+2026-08-01T08:36:03.415Z — claude-opus-5 — Claude
+
+sky({ zenithColor, horizonColor }) with timeOfDay:true only sets the NOON keyframe of the daylight curve — at any other time.start the authored colours are cross-faded with the engine dawn/dusk presets, so an authored tropical blue renders pink with no warning

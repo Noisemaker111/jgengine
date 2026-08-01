@@ -7,13 +7,17 @@ import { isOnRoad, nearestOnPath } from "@jgengine/core/world/roads";
 import { furnitureSpots, parkingSpots, sidewalkPoint } from "@jgengine/core/world/streets";
 import { streets } from "../../world";
 import { buildingsByStyle, type BuildingStyle } from "./buildings";
+import { PALM_IDS } from "./models";
 import {
   BRIEFCASE_POS,
   AUTHORED_VEHICLE_SPAWNS,
   districtAt,
   DOCK_FIGHT_CENTER,
+  GARAGE_POS,
   GUNSHOP_POS,
   MARCO_POS,
+  PLAYER_SPAWN,
+  PROMENADES,
   SAFEHOUSE_POS,
   SHORE_X,
   VCPD_POS,
@@ -83,9 +87,9 @@ const PED_KIND_BY_ROAD: readonly string[] = [
 const STREET_BLOCKERS: readonly (readonly [number, number])[] = [
   [MARCO_POS[0], MARCO_POS[2]],
   [GUNSHOP_POS[0], GUNSHOP_POS[2]],
-  [-68, 116],
+  [GARAGE_POS[0], GARAGE_POS[2]],
   [DOCK_FIGHT_CENTER[0], DOCK_FIGHT_CENTER[2]],
-  [-176, 24],
+  [PLAYER_SPAWN[0], PLAYER_SPAWN[2]],
   [SAFEHOUSE_POS[0], SAFEHOUSE_POS[2]],
   [VCPD_POS[0], VCPD_POS[2]],
 ];
@@ -133,22 +137,41 @@ function styleAt(x: number, z: number, rng: () => number): BuildingStyle {
   return "suburban";
 }
 
-/** The sidewalk prop that fits a location's district, or null out in the no-man's-land between them. */
-function districtProp(x: number, z: number, rng: () => number): string | null {
+/** Palms cycle by index rather than by roll, so a run of them never repeats the same silhouette. */
+function palmAt(index: number): string {
+  return PALM_IDS[index % PALM_IDS.length]!;
+}
+
+/**
+ * The sidewalk prop that fits a location's district. Between districts the streets get palms and
+ * planters rather than nothing — a bare kerb running out of the city was the biggest reason the
+ * mid-distance read as empty plain.
+ */
+function districtProp(x: number, z: number, index: number, rng: () => number): string | null {
   const district = districtAt(x, z);
   switch (district?.id) {
-    case "ocean_drive":
-      return rng() < 0.55 ? "obj_palm" : "obj_bench";
+    case "ocean_drive": {
+      const roll = rng();
+      return roll < 0.5 ? palmAt(index) : roll < 0.68 ? "obj_bench" : roll < 0.84 ? "obj_planter" : "obj_signal";
+    }
     case "downtown": {
       const roll = rng();
-      return roll < 0.4 ? "obj_neon" : roll < 0.72 ? "obj_hydrant" : "obj_trashcan";
+      if (roll < 0.26) return "obj_neon";
+      if (roll < 0.4) return "obj_signal";
+      if (roll < 0.56) return palmAt(index);
+      if (roll < 0.74) return "obj_hydrant";
+      return roll < 0.88 ? "obj_trashcan" : "obj_planter";
     }
-    case "port_carmine":
-      return rng() < 0.5 ? "obj_dumpster" : "obj_trashcan";
-    case "palm_heights":
-      return rng() < 0.5 ? "obj_hedge" : "obj_cactus";
+    case "port_carmine": {
+      const roll = rng();
+      return roll < 0.4 ? "obj_dumpster" : roll < 0.7 ? "obj_trashcan" : roll < 0.86 ? "obj_crate_dock" : palmAt(index);
+    }
+    case "palm_heights": {
+      const roll = rng();
+      return roll < 0.36 ? "obj_hedge" : roll < 0.58 ? "obj_cactus" : roll < 0.82 ? palmAt(index) : "obj_planter";
+    }
     default:
-      return null;
+      return rng() < 0.42 ? palmAt(index) : rng() < 0.5 ? "obj_planter" : null;
   }
 }
 
@@ -161,6 +184,14 @@ const BUILDING_FOOTPRINT = { w: 22, d: 16 };
  * CROSSING street would run through. Without it, buildings spawn in the middle of the cross streets.
  */
 const BUILDING_ROAD_CLEARANCE = 16;
+
+/**
+ * Ocean Drive is built on one side only. The frontage engine lines both kerbs of every avenue, which
+ * put a row of blocks out on the sand between the boulevard and the water — so the seafront read as
+ * another back street and the beach never opened up. Lots west of this line are dropped, leaving the
+ * boardwalk, the dunes and the Gulf as the whole left half of the city's establishing view.
+ */
+const SEAFRONT_BUILD_LINE = SHORE_X + 24;
 
 /**
  * Line every authored street with collidable, street-facing buildings using the engine's street-aware
@@ -182,6 +213,7 @@ function placeBuildings(ctx: GameContext, rng: () => number): void {
   });
   for (const lot of lots) {
     const [x, z] = lot.center;
+    if (x < SEAFRONT_BUILD_LINE) continue;
     if (streets.some((street) => isOnRoad(street.path, street.width + BUILDING_ROAD_CLEARANCE, x, z))) continue;
     if (STREET_BLOCKERS.some(([bx, bz]) => Math.hypot(x - bx, z - bz) < 22)) continue;
     const options = buildingsByStyle(styleAt(x, z, rng));
@@ -190,6 +222,60 @@ function placeBuildings(ctx: GameContext, rng: () => number): void {
     ctx.scene.object.place(pick.id, Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
       rotation: lot.rotationY,
     });
+  }
+}
+
+/** World units between palms on an authored promenade; benches and planters land on alternate steps. */
+const PROMENADE_SPACING = 18;
+
+/**
+ * Dress every `promenade` path from the scene document: a double row of palms with benches and
+ * flowering planters between them. The walk's route, length and shape all come from the authored
+ * polyline, so moving the boardwalk is dragging it in the editor.
+ */
+function dressPromenades(ctx: GameContext, rng: () => number): void {
+  let step = 0;
+  for (const walk of PROMENADES) {
+    for (let segment = 0; segment + 1 < walk.points.length; segment += 1) {
+      const [ax, az] = walk.points[segment]!;
+      const [bx, bz] = walk.points[segment + 1]!;
+      const dx = bx - ax;
+      const dz = bz - az;
+      const length = Math.hypot(dx, dz);
+      if (length < 1) continue;
+      const nx = -dz / length;
+      const nz = dx / length;
+      const steps = Math.max(1, Math.round(length / PROMENADE_SPACING));
+      for (let i = 0; i < steps; i += 1) {
+        const t = i / steps;
+        const cx = ax + dx * t;
+        const cz = az + dz * t;
+        step += 1;
+        for (const side of [-1, 1] as const) {
+          const px = cx + nx * side * 4.5;
+          const pz = cz + nz * side * 4.5;
+          ctx.scene.object.place(
+            PALM_IDS[(step + (side > 0 ? 1 : 0)) % PALM_IDS.length]!,
+            Math.round(px),
+            ctx.world.groundHeightAt(px, pz),
+            Math.round(pz),
+            { rotation: rng() * Math.PI * 2 },
+          );
+        }
+        if (step % 3 === 0) {
+          const bxp = cx + nx * 8.5;
+          const bzp = cz + nz * 8.5;
+          ctx.scene.object.place("obj_bench", Math.round(bxp), ctx.world.groundHeightAt(bxp, bzp), Math.round(bzp), {
+            rotation: Math.atan2(nx, nz),
+          });
+        }
+        if (step % 4 === 1) {
+          const gx = cx - nx * 8.5;
+          const gz = cz - nz * 8.5;
+          ctx.scene.object.place("obj_planter", Math.round(gx), ctx.world.groundHeightAt(gx, gz), Math.round(gz));
+        }
+      }
+    }
   }
 }
 
@@ -223,7 +309,7 @@ export function setupWorld(ctx: GameContext): void {
   let pedCount = 0;
   streets.forEach((street, roadIndex) => {
     const kind = PED_KIND_BY_ROAD[roadIndex] ?? "ped_city";
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < 7; i += 1) {
       const side = rng() < 0.5 ? "left" : "right";
       const fraction = 0.15 + rng() * 0.7;
       const point = sidewalkPoint(street, side, fraction);
@@ -251,14 +337,18 @@ export function setupWorld(ctx: GameContext): void {
     }
   });
 
+  // Curbside metal on every avenue: a street-level frame needs parked cars in the near and mid
+  // ground or the kerbs read as an unused film set. Kept to a fixed list so the count is bounded.
   const parkedKinds = [
     "car_compact", "car_muscle", "car_compact", "car_sport", "car_muscle", "car_compact", "car_muscle", "car_sport",
     "car_compact", "car_muscle", "car_compact", "car_suv", "car_muscle", "car_compact", "car_sport", "car_muscle",
+    "car_compact", "car_sport", "car_suv", "car_muscle", "car_compact", "car_muscle", "car_sport", "car_compact",
+    "car_muscle", "car_compact", "car_suv", "car_sport", "car_compact", "car_muscle", "car_compact", "car_sport",
   ];
   let parkedCount = 0;
   for (const street of streets) {
     if (parkedCount >= parkedKinds.length) break;
-    const spots = parkingSpots(street, { spacing: 90, sides: "right" });
+    const spots = parkingSpots(street, { spacing: 46, sides: "both" });
     for (const spot of spots) {
       if (parkedCount >= parkedKinds.length) break;
       if (rng() < 0.35) continue;
@@ -281,9 +371,9 @@ export function setupWorld(ctx: GameContext): void {
   TRAFFIC_BLOCKS.forEach((block, i) => {
     const waypoints = blockLoopWaypoints(block);
     const start = waypoints[0]!;
-    for (let lap = 0; lap < 2; lap += 1) {
+    for (let lap = 0; lap < 3; lap += 1) {
       const id = `traffic_${i}_${lap}`;
-      const kind = (i + lap) % 3 === 2 ? "car_muscle" : "car_compact";
+      const kind = (i + lap) % 3 === 2 ? "car_muscle" : (i + lap) % 3 === 1 ? "car_sport" : "car_compact";
       ctx.scene.entity.spawn(kind, {
         id,
         position: ground(ctx, start[0], start[2]),
@@ -331,9 +421,10 @@ export function setupWorld(ctx: GameContext): void {
     ctx.scene.object.place("obj_crate_dock", Math.round(x), Math.round(ctx.world.groundHeightAt(x, z)), Math.round(z));
   }
 
-  streets.forEach((street, roadIndex) => {
+  let propIndex = 0;
+  streets.forEach((street) => {
     // Denser lighting the length of every street reads as a lived-in city at night.
-    for (const spot of furnitureSpots(street, { spacing: 56, outset: 0.9 })) {
+    for (const spot of furnitureSpots(street, { spacing: 50, outset: 1.1 })) {
       ctx.scene.object.place(
         "obj_streetlight",
         spot.position[0],
@@ -346,29 +437,20 @@ export function setupWorld(ctx: GameContext): void {
     // dock clutter in Port Carmine, hedges + cacti up in Palm Heights. Placed on the curb-side sidewalk
     // spots the furniture engine returns, so nothing lands on the asphalt, and gameplay POIs are kept
     // clear so signage/contacts stay readable.
-    for (const spot of furnitureSpots(street, { spacing: 30, outset: 2.6 })) {
+    for (const spot of furnitureSpots(street, { spacing: 26, outset: 3.4 })) {
       const [x, z] = spot.position;
       if (STREET_BLOCKERS.some(([bx, bz]) => Math.hypot(x - bx, z - bz) < 12)) continue;
-      const prop = districtProp(x, z, rng);
+      propIndex += 1;
+      const prop = districtProp(x, z, propIndex, rng);
       if (prop === null) continue;
-      const isTree = prop === "obj_palm" || prop === "obj_hedge" || prop === "obj_cactus";
+      const isTree = prop.startsWith("obj_palm") || prop === "obj_hedge" || prop === "obj_cactus" || prop === "obj_planter";
       ctx.scene.object.place(prop, Math.round(x), ctx.world.groundHeightAt(x, z), Math.round(z), {
-        rotation: isTree ? 0 : spot.heading,
+        rotation: isTree ? rng() * Math.PI * 2 : spot.heading,
       });
     }
   });
 
-  // A palm-and-bench boardwalk runs the beach shoulder west of Avenue W, giving Ocean Drive a seafront
-  // instead of a bare terrain edge.
-  for (let i = 0; i < 26; i += 1) {
-    const z = -260 + i * 20;
-    const x = SHORE_X + 18;
-    ctx.scene.object.place("obj_palm", x, ctx.world.groundHeightAt(x, z), z);
-    if (i % 2 === 0) {
-      const bx = SHORE_X + 26;
-      ctx.scene.object.place("obj_bench", bx, ctx.world.groundHeightAt(bx, z), z, { rotation: Math.PI / 2 });
-    }
-  }
+  dressPromenades(ctx, rng);
 
   // Port Carmine reads as a working waterfront: stacked cargo around the dock beyond the loose crates.
   const cargoSpots: readonly (readonly [number, number, number])[] = [

@@ -2150,6 +2150,11 @@
 - `RenderObject` (type): type RenderObject = (object: SceneObject) => ReactNode — ⚠ undocumented
 - `resolveGameLoader` (function): function resolveGameLoader(registry: GameRegistry, gameId: string, fallbackGameId?: string): (() => Promise<PlayableGame>) | undefined — ⚠ undocumented
 
+## @jgengine/shell/render/CascadedShadows
+
+- `CsmMaterialSetup` (interface): interface CsmMaterialSetup — Structural slice of CSM so the patcher is testable without a renderer.
+- `patchSceneMaterials` (function): function patchSceneMaterials(scene: THREE.Scene, csm: CsmMaterialSetup, patched: WeakSet<THREE.Material>): void — Run CSM's `setupMaterial` over every unpatched standard material in the scene, chaining rather than clobbering a material's own `onBeforeCompile`. Called every frame (WeakSet-guarded) so streamed meshes never render lit by all cascades at once.
+
 ## @jgengine/shell/render/EntityPreview
 
 - `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
@@ -2163,6 +2168,7 @@
 
 - `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
 - `ConfiguredLighting` (function): function ConfiguredLighting({ lighting }: { lighting: LightingConfig }): React.JSX.Element — ⚠ undocumented
+- `syncShadowProjection` (function): function syncShadowProjection(light: DirectionalLight): void — Refresh a directional light's shadow projection after its frustum bounds change. R3F pierced `shadow-camera-*` props write the bounds but never call `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box and `shadowCameraSize` is silently inert.
 
 ## @jgengine/shell/render/SceneModels
 

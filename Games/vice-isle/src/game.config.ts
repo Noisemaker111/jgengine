@@ -63,6 +63,28 @@ export const game = defineGame({
   GameUI,
   capture: {
     play: ["game.start"],
+    // `game.start` is what builds the isle — 170+ building lots, street furniture, traffic and peds
+    // all start streaming only once it has run, which is *after* the host's readiness gate has
+    // already seen an idle loader. Without this wait a play capture frames the bare terrain the
+    // world had not been placed on yet, which is exactly what "sparse prototype" screenshots were.
+    settleMs: 12000,
+    views: {
+      boulevard: {
+        description: "Ocean Drive looking down the palm boulevard — beach and Gulf on the left, deco blocks on the right.",
+        look: "@marker:player_spawn",
+        lookFrom: "34,9,0.5",
+      },
+      downtown: {
+        description: "Vice plaza street level: tower blocks, neon, traffic.",
+        look: "@marker:bounty_plaza",
+        lookFrom: "46,14,2.4",
+      },
+      beach: {
+        description: "The boardwalk from the water line — dunes, palms, and the city behind them.",
+        look: "-198,60",
+        lookFrom: "30,8,4.5",
+      },
+    },
     probe: (ctx) => {
       const vehicleId = drivingStore.read(ctx);
       const entity = ctx.scene.entity.get(vehicleId ?? ctx.player.userId);
@@ -72,12 +94,47 @@ export const game = defineGame({
   prompts,
   entityModels,
   objectModels,
+  // Mid-afternoon Gulf sun, not noon. The old key was almost overhead at a low intensity with a
+  // very bright ambient, so nothing cast a shadow long enough to describe its own shape and every
+  // building read as a flat sticker. Sun down and up in strength, ambient way down, plus a cool
+  // bounce off the water so the shaded side of a pastel block goes blue rather than muddy.
   lighting: {
-    ambient: { color: "#ffe6c4", intensity: 0.72 },
-    hemisphere: { skyColor: "#bfe2f2", groundColor: "#7a8560", intensity: 0.7 },
-    directional: [{ color: "#fff2d8", intensity: 1.25, position: [120, 220, 40], castShadow: true }],
+    ambient: { color: "#ffe4c0", intensity: 0.18 },
+    hemisphere: { skyColor: "#a9d8ef", groundColor: "#b09a6f", intensity: 0.34 },
+    directional: [
+      {
+        color: "#fff0cf",
+        intensity: 2.05,
+        position: [170, 74, 44],
+        castShadow: true,
+        // Cascades follow the camera, so the spawn at (-190, 40) gets the same shadow
+        // density as the origin — a single origin-anchored box cannot cover this isle.
+        cascades: 3,
+        shadowMaxFar: 220,
+        shadowMapSize: 2048,
+      },
+      { color: "#8fbcdc", intensity: 0.26, position: [-170, 44, -70] },
+    ],
   },
   shadows: true,
+  // Tropical film look: ACES so the sky and the white stucco stop clipping, bloom low enough that
+  // chrome, water glints and neon actually catch, and a grade that lifts the shadows warm and pulls
+  // the highlights golden. Saturation is the tropical read; the vignette and a touch of grain keep
+  // the frame from looking like a flat render. AO is deliberately off — it re-renders the scene for
+  // depth/normals and this open, hazy city barely shows the contact gain.
+  postProcessing: {
+    toneMapping: "aces",
+    exposure: 0.96,
+    bloom: { strength: 0.24, radius: 0.7, threshold: 0.9 },
+    grade: {
+      lift: [0.018, 0.011, 0.004],
+      gain: [1.06, 1.02, 0.94],
+      gamma: 0.96,
+      saturation: 1.24,
+      vignette: 0.26,
+      grain: 0.012,
+    },
+  },
   worldHealthBars: { roles: ["enemy", "hostile"] },
   // Direct-fire weapons want the muzzle→impact tracer; ballistic/exploding shots skip it
   // automatically so a lobbed round never draws a straight fake beam.
@@ -110,10 +167,14 @@ export const game = defineGame({
     shake: { maxOffset: 0.24, maxRoll: 0.045, decayPerSecond: 2.8, exponent: 2, frequency: 21 },
     frustum: { far: 900 },
   },
+  // Warm sea haze rather than the old near-white wash, and it starts far closer so the city
+  // separates into near, mid, and horizon bands instead of one evenly-lit slab.
   backdrop: {
-    background: "#a9dcf0",
-    fog: { color: "#cfe9f2", near: 150, far: 640 },
+    background: "#79bde2",
+    fog: { color: "#b9cfd8", near: 90, far: 620 },
   },
-  time: { dayLength: 720, start: 320 },
+  // Starts at the day curve's noon keyframe, which is the only point where `world.ts`'s authored
+  // sky colours reach the dome unblended with the engine's dawn and dusk presets.
+  time: { dayLength: 720, start: 360 },
   orientation: "landscape",
 });

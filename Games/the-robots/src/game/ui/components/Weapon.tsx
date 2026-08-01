@@ -34,7 +34,7 @@ export function AmmoPlate() {
   const reloading = isReloading(ctx, gun);
 
   return (
-    <div className="flex flex-col items-end gap-0.5">
+    <div className="bl2-scrim-corner flex flex-col items-end gap-0.5 pl-16 pt-10">
       <div className="text-right">
         <div
           className="text-sm font-black uppercase tracking-widest drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]"
@@ -42,7 +42,7 @@ export function AmmoPlate() {
         >
           {gun.name}
         </div>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-300">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-200 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
           {gun.manufacturer} {gun.family} · lv{gun.level} · {gun.weapon.damage} dmg
           {gun.element !== "none" ? (
             <span style={{ color: ELEMENT_COLORS[gun.element] }}> · {gun.element}</span>
@@ -57,9 +57,11 @@ export function AmmoPlate() {
         >
           {reloading ? "—" : loaded}
         </span>
-        <span className="text-lg font-bold tabular-nums text-stone-400">/ {Math.round(reserve?.current ?? 0)}</span>
+        <span className="text-lg font-bold tabular-nums text-stone-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]">
+          / {Math.round(reserve?.current ?? 0)}
+        </span>
       </div>
-      <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-400">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-stone-300 drop-shadow-[0_1px_2px_rgba(0,0,0,0.95)]">
         {reloading ? "RELOADING…" : `${AMMO_LABELS[gun.ammo]} ammo · [R] reload`} · ✜ {Math.round(grenades?.current ?? 0)}
       </div>
     </div>

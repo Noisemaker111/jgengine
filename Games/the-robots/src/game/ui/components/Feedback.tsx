@@ -10,7 +10,7 @@ export function HitMarker() {
   const nowMs = useNowMs();
   const hit = lastHit();
   const age = nowMs - hit.atMs;
-  if (hit.atMs === 0 || age < 0 || age > 220) return null;
+  if (age < 0 || age > 220) return null;
   const color = hit.kill ? "#e23c2e" : hit.crit ? "#ffb400" : "#f5f0e6";
   const size = hit.crit || hit.kill ? 30 : 22;
   return (
@@ -31,7 +31,7 @@ export function DamageVignette() {
   const nowMs = useNowMs();
   const hurtAt = lastHurtAtMs();
   const age = nowMs - hurtAt;
-  if (hurtAt === 0 || age < 0 || age > 450) return null;
+  if (age < 0 || age > 450) return null;
   const strength = 1 - age / 450;
   return (
     <div

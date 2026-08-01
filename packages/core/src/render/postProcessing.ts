@@ -7,7 +7,11 @@ export interface BloomConfig {
   strength?: number;
   /** Glow spread radius, 0..1. Default 0.55. */
   radius?: number;
-  /** Luminance above which a pixel blooms, 0..1. Default 0.85. */
+  /**
+   * Luminance above which a pixel blooms. Default 0.85. Measured on raw HDR
+   * before the tone-map/exposure stage, so lowering `exposure` does not change
+   * which pixels bloom — push past 1.0 to select only emissives.
+   */
   threshold?: number;
 }
 

@@ -24,6 +24,9 @@ between (`--json` for structured output).
 
 ### Changed
 
+- **Directional shadow frustum config actually reaches the GPU.** `shadowCameraSize` on a single (non-cascaded) shadow light was silently inert: the shell wrote the bounds through R3F pierced props and nothing refreshed the shadow camera's projection matrix, so three rendered depth with its default ~10-unit box at the world origin — the reason no open-world game had cast shadows away from spawn. The shell now syncs the projection (and reallocates the shadow map when `shadowMapSize` changes). `bloom.threshold`'s doc also now states it measures raw HDR before the exposure stage.
+- **CSM (`cascades > 1`) no longer over-lights streamed meshes or clobbers material shaders.** Cascade scoping is injected per material, but the scan ran every 30 frames, so a model that streamed in rendered lit by every cascade light at once (a cascades× sun) until the next scan — a sub-second flash on desktop, the whole shot on capture rigs. The scan now runs every frame behind a WeakSet, and `setupMaterial` chains with a material's own `onBeforeCompile` (rim light, detail maps) instead of replacing it.
+
 - **The host's wall clock reaches the runtime hooks.** `RuntimeInitContext` (so `onInit`, `onNewPlayer`, and `onTick` alike) carries `nowMs`, the host timestamp for that call. Anything keyed to real time — a UTC date rollover, a `lastTickAt` anchor read by non-tick code, an RNG seed or `createdAt` stamp — reads it rather than accumulating `dtSeconds` against an epoch persisted in the snapshot, which drifts by whatever the tick loses to stalls and `maxCatchUp` clamping. `GameRuntime.hydrate` takes an optional `nowMs`; `tick`, `joinPlayer`, and `runCommand` take an optional trailing `nowMs`. All default to `Date.now()`, and the shipped WS and Convex hosts pass the timestamp they already computed to plan the tick.
 
 ### Added

@@ -5,10 +5,11 @@
       "id": "player_spawn",
       "kind": "player_spawn",
       "position": {
-        "x": -176,
+        "x": -190,
         "y": 0,
-        "z": 24
+        "z": 40
       },
+      "rotationY": 2.75,
       "label": "Player spawn"
     },
     {
@@ -634,6 +635,31 @@
         }
       ],
       "label": "Street S"
+    },
+    {
+      "id": "boardwalk",
+      "kind": "promenade",
+      "points": [
+        { "x": -207, "y": 0, "z": -286 },
+        { "x": -204, "y": 0, "z": -186 },
+        { "x": -209, "y": 0, "z": -84 },
+        { "x": -205, "y": 0, "z": 16 },
+        { "x": -210, "y": 0, "z": 118 },
+        { "x": -205, "y": 0, "z": 214 },
+        { "x": -208, "y": 0, "z": 288 }
+      ],
+      "label": "Ocean Drive boardwalk"
+    },
+    {
+      "id": "heights_drive",
+      "kind": "promenade",
+      "points": [
+        { "x": 8, "y": 0, "z": -256 },
+        { "x": 62, "y": 0, "z": -268 },
+        { "x": 118, "y": 0, "z": -252 },
+        { "x": 146, "y": 0, "z": -212 }
+      ],
+      "label": "Palm Heights villa row"
     },
     {
       "id": "race-loop",
