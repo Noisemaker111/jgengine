@@ -93,6 +93,71 @@
       }
     },
     {
+      "id": "rustflat_convoy_hauler",
+      "kind": "prop",
+      "position": {
+        "x": -468.5,
+        "y": 0,
+        "z": 553.6
+      },
+      "rotationY": 2.15,
+      "meta": {
+        "catalogId": "bus_wreck"
+      }
+    },
+    {
+      "id": "rustflat_convoy_cargo",
+      "kind": "prop",
+      "position": {
+        "x": -448,
+        "y": 0,
+        "z": 522
+      },
+      "rotationY": 0.7,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "rustflat_convoy_spire",
+      "kind": "prop",
+      "position": {
+        "x": -490.4,
+        "y": 0,
+        "z": 538.3
+      },
+      "rotationY": 1.2,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_convoy_banner",
+      "kind": "prop",
+      "position": {
+        "x": -478.5,
+        "y": 0,
+        "z": 530.2
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "rustflat_convoy_watch",
+      "kind": "prop",
+      "position": {
+        "x": -497,
+        "y": 0,
+        "z": 549
+      },
+      "rotationY": 4.3,
+      "meta": {
+        "catalogId": "watchtower"
+      }
+    },
+    {
       "id": "rustflat_spire_a",
       "kind": "prop",
       "position": {

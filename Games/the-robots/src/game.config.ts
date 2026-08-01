@@ -138,6 +138,19 @@ export const game = defineGame({
   capture: {
     play: [{ name: "character.pick", input: { characterId: "gunk" } }],
     probe: audioProbe,
+    // Ferralon's opening view carries the terrain shader, the scrub field, and a settlement's worth
+    // of streamed GLB materials, and every one of those programs compiles on the first drawn frame.
+    // On a software renderer that is seconds of work after readiness reports done, and the default
+    // 2.5 s wait was landing the capture before anything had been rasterised at all.
+    settleMs: 9000,
+    views: {
+      convoy: {
+        description: "The wrecked hauler landmark that gives the opening view its midground.",
+        look: "@marker:rustflat_convoy_hauler",
+        lookFrom: "24,9,0.6",
+        settleMs: 20000,
+      },
+    },
   },
   name: "The Robots",
   features: { quest: true, trade: true },
@@ -171,12 +184,17 @@ export const game = defineGame({
   // pasted onto the ground. Sun up, ambient/hemisphere down, and a cool bounce from the sky so
   // shadowed metal goes blue-grey instead of muddy brown.
   lighting: {
-    ambient: { color: "#9aa3a8", intensity: 0.22 },
-    hemisphere: { skyColor: "#7fa9c8", groundColor: "#6b4a30", intensity: 0.45 },
+    // Warm grey, not cool: the hemisphere already supplies the cold sky bounce that keeps machines
+    // blue in shade, and stacking a second cool fill on top of it turned every shadowed hillside
+    // olive-green in a world whose whole rule is that the ground stays warm.
+    ambient: { color: "#b3a693", intensity: 0.2 },
+    hemisphere: { skyColor: "#7fa9c8", groundColor: "#6b4a30", intensity: 0.4 },
     // Mid-afternoon, not noon. The old key was almost overhead, so nothing cast a shadow long
     // enough to describe its own shape and every object read as a sticker on flat sand.
+    // 2.5, not 2.6: the terrain's dirt grain multiplies albedo up to ~1.5x where the map is bright,
+    // so sunlit sand was arriving at the tone-mapper above 1.0 and clipping to white on the sun side.
     directional: [
-      { color: "#ffe0b0", intensity: 2.6, position: [64, 46, -52], castShadow: true },
+      { color: "#ffe0b0", intensity: 2.5, position: [64, 46, -52], castShadow: true },
       { color: "#6d90b4", intensity: 0.5, position: [-40, 26, 30] },
     ],
   },
@@ -185,17 +203,22 @@ export const game = defineGame({
   // contact-shadow gain this bright, fogged desert barely shows.
   postProcessing: {
     toneMapping: "aces",
-    // Threshold low enough that optics and hazard trim actually bloom (that glow is the enemy read),
-    // contrast up so the flats stop sitting in one mid-tone band.
-    bloom: { strength: 0.26, radius: 0.66, threshold: 0.95 },
+    // The whole exposure chain rides on this rather than on the key light, so the sun/shade ratio
+    // that makes the afternoon dramatic survives while the sun-facing sand stops clipping to paper.
+    exposure: 0.8,
+    // Bloom runs on the raw HDR *before* exposure, so a threshold under 1.0 was picking up lit sand
+    // and smearing a white veil over the sun side of every frame. Above 1.0 only emissives — optics,
+    // hazard trim, element cells, muzzle flash — cross it, which is the glow that was wanted.
+    bloom: { strength: 0.3, radius: 0.62, threshold: 1.1 },
     // Cool lift + warm gain splits shadow and highlight so the flats stop sitting in one mid-tone
-    // band; gamma under the 0.96 default deepens the midtones the old look washed out.
+    // band. Saturation carries the warmth rather than a red-heavy gain: ACES desaturates hard as it
+    // approaches white, so a gain that pushes red is the channel that clips first.
     grade: {
-      vignette: 0.34,
-      saturation: 1.22,
-      gamma: 0.88,
-      lift: [0.0, 0.006, 0.022],
-      gain: [1.04, 1.0, 0.97],
+      vignette: 0.32,
+      saturation: 1.3,
+      gamma: 0.93,
+      lift: [0.002, 0.008, 0.024],
+      gain: [1.02, 1.0, 0.96],
     },
   },
   movement: {

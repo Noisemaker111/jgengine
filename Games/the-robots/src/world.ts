@@ -146,16 +146,25 @@ const terrainDescriptor = terrain({
   pathProfiles: roadPathProfiles((x, z) => rawField.sampleHeight(x, z)),
 });
 
-// Pale wide blades at low density read as scattered paper litter, not desert scrub. Denser, taller,
-// narrower blades in olive-to-straw greens give the clumps mass and separate them from the sand.
-const SCRUB_COLORS = ["#6d6b38", "#8a8144", "#a99a55"] as const;
+// Pale wide blades at low density read as scattered paper litter, not desert scrub. Denser, shorter,
+// narrower blades give the clumps mass and separate them from the sand.
+//
+// Warm, not olive: only the first and last entry are read (root and tip), and the old cool-olive
+// root put the scrub in a hue the rest of Ferralon does not own. Dry ochre roots into straw tips —
+// the world is warm, the machines are cold — and the tip still sits well clear of the sand's value
+// so a clump reads as a plant rather than a stain on the ground.
+const SCRUB_COLORS = ["#6b5526", "#8f7534", "#c4a659"] as const;
 
 const scrubClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
   grass({
     area: { w: size, d: size, position: [x, z] },
-    density: 3.2,
-    bladeHeight: [0.3, 0.85],
-    bladeWidth: 0.05,
+    // Blades per square metre. At 3.2 an individual clump was see-through — a handful of crossed
+    // planes with sand between every one — which is what made the midground read as bare dirt.
+    density: 4.6,
+    // Shorter and stiffer than before: tall thin blades at this density comb into a fringe, while a
+    // low tuft holds a silhouette and keeps the ground plane visible behind it.
+    bladeHeight: [0.22, 0.62],
+    bladeWidth: 0.062,
     windStrength: 0.55,
     colors: [...SCRUB_COLORS],
     seed,
@@ -167,6 +176,7 @@ const scrubClumps = (
   spread: number,
   count: number,
   seed: string,
+  size: readonly [number, number] = [9, 6],
 ): GrassEnvironmentDescriptor[] => {
   const rng = seededRng(seed);
   const clumps: GrassEnvironmentDescriptor[] = [];
@@ -174,7 +184,12 @@ const scrubClumps = (
     const angle = rng() * Math.PI * 2;
     const distance = spread * (0.15 + rng() * 0.85);
     clumps.push(
-      scrubClump(cx + Math.cos(angle) * distance, cz + Math.sin(angle) * distance, 9 + rng() * 6, `${seed}-${index}`),
+      scrubClump(
+        cx + Math.cos(angle) * distance,
+        cz + Math.sin(angle) * distance,
+        size[0] + rng() * size[1],
+        `${seed}-${index}`,
+      ),
     );
   }
   return clumps;
@@ -184,7 +199,12 @@ const rustflat = ZONES[0]!;
 
 const vegetation: readonly GrassEnvironmentDescriptor[] = [
   ...scrubClumps(rustflat.center.x + 18, rustflat.center.z + 34, 18, 4, "bl2-scrub-spawn"),
-  ...ZONES.flatMap((zone) => scrubClumps(zone.center.x, zone.center.z, zone.flattenRadius * 1.3, 6, `bl2-scrub-${zone.id}`)),
+  // The 40–110 m band of the opening view. Zone clumps alone spread six patches over a 90 m radius,
+  // which leaves the whole middle distance bare sand — the layer that separates foreground scrub
+  // from the ridgeline was simply missing. Wider patches, because at this range a 9 m clump is a
+  // smudge, and inside the 150 m where blades still render at all.
+  ...scrubClumps(rustflat.center.x + 18, rustflat.center.z + 34, 70, 5, "bl2-scrub-spawn-midfield", [16, 8]),
+  ...ZONES.flatMap((zone) => scrubClumps(zone.center.x, zone.center.z, zone.flattenRadius * 1.3, 5, `bl2-scrub-${zone.id}`, [12, 6])),
   ...SIDE_POIS.flatMap((poi) => scrubClumps(poi.x, poi.z, poi.radius, 3, `bl2-scrub-${poi.id}`)),
 ];
 
