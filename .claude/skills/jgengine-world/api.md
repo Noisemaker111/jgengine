@@ -1779,7 +1779,7 @@
 - `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.
 - `Glide` (class): class Glide — A reduced-gravity, forward-thrust glide over a physics body — wingsuit / glider / paraglider (Enshrouded, Grounded). Call `apply(dt, steerX, steerZ)` each frame *before* `world.step`: it feeds back most of the gravity the sim is about to apply (leaving `gravityScale` of it), pushes the body along the steer vector by `thrust`, and clamps descent to `maxFallSpeed`. Stop calling it to fall normally again — no attach/detach state to leak.
 - `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
-- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed"> — ⚠ undocumented
+- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift"> — ⚠ undocumented
 - `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
 - `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
 - `GripCurve` (interface): interface GripCurve — ⚠ undocumented
@@ -1942,7 +1942,7 @@
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
 - `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
 - `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
-- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
 - `RevealHit` (interface): interface RevealHit — ⚠ undocumented
 - `RevealQuery` (interface): interface RevealQuery — ⚠ undocumented
@@ -2785,7 +2785,7 @@
 - `EnvironmentWorldConfig` (interface): interface EnvironmentWorldConfig — ⚠ undocumented
 - `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature — ⚠ undocumented
 - `GrassEnvironmentConfig` (interface): interface GrassEnvironmentConfig — ⚠ undocumented
-- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed"> — ⚠ undocumented
+- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift"> — ⚠ undocumented
 - `OceanEnvironmentConfig` (interface): interface OceanEnvironmentConfig — ⚠ undocumented
 - `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented
 - `PadEnvironmentConfig` (interface): interface PadEnvironmentConfig — ⚠ undocumented
@@ -3397,7 +3397,7 @@
 - `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — ⚠ undocumented
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
-- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedTerrainDetailMaterial` (interface): interface ResolvedTerrainDetailMaterial — A resolved {@link TerrainDetailMaterialConfig} — `repeat`/`strength` filled with defaults, `maps` passed through.
 - `RollingFieldConfig` (interface): interface RollingFieldConfig — ⚠ undocumented
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented

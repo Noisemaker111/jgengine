@@ -321,8 +321,8 @@ function FerralonAir() {
         // Grit, not weather. At the old opacity and size the motes that happened to sit above the
         // camera projected onto the sky as discrete bright dots — read as render noise, or snow, not
         // as dusty air. Small and faint is what makes a mote read as suspended dust.
-        opacity: 0.15 + blow * 0.2,
-        size: 0.13,
+        opacity: 0.1 + blow * 0.14,
+        size: 0.11,
         speed: 1.6 + blow * 3.2,
         // Tighter than the default volume so the motes concentrate in the near field where the
         // parallax actually reads, instead of thinning out across 70 m of empty air. The 15 m column

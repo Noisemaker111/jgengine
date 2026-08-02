@@ -54,6 +54,13 @@ export interface TerrainDetailConfig {
   roughness?: number;
   /** Overall detail intensity 0..1. Default 1. */
   strength?: number;
+  /**
+   * RGB multipliers for the two macro colour sweeps painted over the base ground. `dry` tints the
+   * sun-bleached patches, `wet` the cooler pockets between them. The defaults ([1.14, 1.05, 0.76]
+   * and [0.78, 1.0, 0.86]) suit temperate meadows; the green-leaning `wet` default paints mossy
+   * pockets onto any biome that keeps it, so arid/ashen worlds should supply warm or neutral tints.
+   */
+  sweeps?: { dry?: readonly [number, number, number]; wet?: readonly [number, number, number] };
   /** Real PBR texture maps blended over the procedural detail — the seam for `@jgengine/assets` `buildMaterialCatalog` output. Omit to keep the procedural-only look. */
   material?: TerrainDetailMaterialConfig;
 }
@@ -280,6 +287,14 @@ export interface GrassEnvironmentConfig {
   windStrength?: number;
   colors?: readonly string[];
   seed?: string;
+  /** Blade curl range (arc amount, min..max). Shell default [0.12, 0.42] — raise for wind-combed scrub, lower for stiff turf. */
+  bladeBend?: readonly [number, number];
+  /** Tuft spread radius in meters — how far a clump's blades splay from its root. Shell default 0.16; wider reads as bushy clumps rather than lone blades. */
+  tuftRadius?: number;
+  /** Per-tuft brightness jitter 0..1 (shell default 0.28) — higher breaks up the field so it never reads as one repeated blade. */
+  colorVariation?: number;
+  /** 0..1 blend of blade normals toward straight-up (shell default 0.6). Low values light each blade plane individually and go dark when side-lit; high values light the field like a soft carpet. */
+  normalLift?: number;
 }
 
 export interface OceanEnvironmentConfig {
@@ -420,7 +435,7 @@ export type SnowEnvironmentDescriptor = { kind: "snow" } & Required<
 export type GrassEnvironmentDescriptor = { kind: "grass" } & Required<
   Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors">
 > &
-  Pick<GrassEnvironmentConfig, "seed">;
+  Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift">;
 
 export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
   Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color">
@@ -791,18 +806,20 @@ export function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescrip
 
 /** Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors. */
 export function grass(config: GrassEnvironmentConfig = {}): GrassEnvironmentDescriptor {
-  return withOptional(
-    {
-      kind: "grass" as const,
-      area: withAreaPosition(config.area ?? { w: 128, d: 128 }, config.position),
-      density: config.density ?? 4,
-      bladeHeight: config.bladeHeight ?? [0.25, 0.9],
-      bladeWidth: config.bladeWidth ?? 0.035,
-      windStrength: config.windStrength ?? 0.35,
-      colors: config.colors ?? ["#3f7d2d", "#66a83f"],
-    },
-    config.seed === undefined ? undefined : { seed: config.seed },
-  );
+  return {
+    kind: "grass" as const,
+    area: withAreaPosition(config.area ?? { w: 128, d: 128 }, config.position),
+    density: config.density ?? 4,
+    bladeHeight: config.bladeHeight ?? [0.25, 0.9],
+    bladeWidth: config.bladeWidth ?? 0.035,
+    windStrength: config.windStrength ?? 0.35,
+    colors: config.colors ?? ["#3f7d2d", "#66a83f"],
+    ...(config.seed === undefined ? {} : { seed: config.seed }),
+    ...(config.bladeBend === undefined ? {} : { bladeBend: config.bladeBend }),
+    ...(config.tuftRadius === undefined ? {} : { tuftRadius: config.tuftRadius }),
+    ...(config.colorVariation === undefined ? {} : { colorVariation: config.colorVariation }),
+    ...(config.normalLift === undefined ? {} : { normalLift: config.normalLift }),
+  };
 }
 
 /** Declares an ocean water body for `environment()` — bounds, level, and wave tuning. */

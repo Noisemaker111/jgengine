@@ -629,9 +629,10 @@ export interface ResolvedTerrainDetailMaterial {
 }
 
 /** A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes. */
-export type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & {
+export type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & {
   waterLevel: number;
   material?: ResolvedTerrainDetailMaterial;
+  sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] };
 };
 
 const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
@@ -644,6 +645,7 @@ const DEFAULT_TERRAIN_DETAIL: Omit<ResolvedTerrainDetail, "waterLevel"> = {
   macroScale: 45,
   roughness: 0.9,
   strength: 1,
+  sweeps: { dry: [1.14, 1.05, 0.76], wet: [0.78, 1.0, 0.86] },
 };
 
 const DEFAULT_TERRAIN_MATERIAL_REPEAT = 4;
@@ -664,6 +666,10 @@ export function resolveTerrainDetail(config: TerrainDetailConfig, terrainWaterLe
     macroScale: config.macroScale ?? DEFAULT_TERRAIN_DETAIL.macroScale,
     roughness: config.roughness ?? DEFAULT_TERRAIN_DETAIL.roughness,
     strength: clamp01(config.strength ?? DEFAULT_TERRAIN_DETAIL.strength),
+    sweeps: {
+      dry: config.sweeps?.dry ?? DEFAULT_TERRAIN_DETAIL.sweeps.dry,
+      wet: config.sweeps?.wet ?? DEFAULT_TERRAIN_DETAIL.sweeps.wet,
+    },
     waterLevel: config.waterLevel ?? terrainWaterLevel,
     ...(config.material === undefined
       ? {}

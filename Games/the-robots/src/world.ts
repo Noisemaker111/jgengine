@@ -27,7 +27,10 @@ const TERRAIN_BASE = {
   material: "rock",
   height: 52,
   frequency: 0.0035,
-  octaves: 5,
+  // Six, not five: the sixth octave is the medium-scale relief — gully lips, dune shoulders, rock
+  // shelves — that separates a sculpted badlands from smooth heightmap blobs. Large forms are
+  // unchanged (same seed/frequency), so authored flatten pads and roads keep their sites.
+  octaves: 6,
   ridged: true,
   segments: 340,
   colors: { low: FERRALON.rockLow, high: FERRALON.rockHigh },
@@ -129,6 +132,10 @@ const terrainDescriptor = terrain({
     macroScale: 70,
     roughness: 0.95,
     strength: 1,
+    // The shader's default "wet pocket" sweep is green-leaning — meadow moss painted onto a desert
+    // is what made whole hillsides read olive. Dry stays bleached sandstone; wet becomes darker
+    // compacted soil, so the patchwork breaks up the flats without leaving the warm palette.
+    sweeps: { dry: [1.16, 1.06, 0.82], wet: [0.82, 0.74, 0.64] },
     // Real dirt grain over the procedural base. Without this the ground is pure vertex colour, which
     // is what made the flats read as untextured mush at every distance.
     // Grain, not repaint: `tint` low keeps the biome palette, the macro sweeps, and the slope-rock
@@ -146,28 +153,51 @@ const terrainDescriptor = terrain({
   pathProfiles: roadPathProfiles((x, z) => rawField.sampleHeight(x, z)),
 });
 
-// Pale wide blades at low density read as scattered paper litter, not desert scrub. Denser, shorter,
-// narrower blades give the clumps mass and separate them from the sand.
+// Dry-grass scrub in two silhouettes: a short dense ground tuft that carries most of the coverage,
+// and a sparse taller accent clump reserved for pockets — the 70/30 split that reads as vegetation
+// growing where it can instead of one blade stamped everywhere.
 //
-// Warm, not olive: only the first and last entry are read (root and tip), and the old cool-olive
-// root put the scrub in a hue the rest of Ferralon does not own. Dry ochre roots into straw tips —
-// the world is warm, the machines are cold — and the tip still sits well clear of the sand's value
-// so a clump reads as a plant rather than a stain on the ground.
-const SCRUB_COLORS = ["#6b5526", "#8f7534", "#c4a659"] as const;
+// Roots lifted well off black: the old #6b5526 root meant every side-lit blade rendered as a dark
+// strip against bright sand — the "black cardboard" read. Ochre roots into straw tips keeps the
+// warm-world rule while the whole blade stays in a value the light can actually model.
+const SCRUB_COLORS = ["#7d6434", "#a68a46", "#d8bc6e"] as const;
 
 const scrubClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
   grass({
     area: { w: size, d: size, position: [x, z] },
-    // Blades per square metre. At 3.2 an individual clump was see-through — a handful of crossed
+    // Blades per square metre. At 4.6 an individual clump was see-through — a handful of crossed
     // planes with sand between every one — which is what made the midground read as bare dirt.
-    density: 4.6,
-    // Shorter and stiffer than before: tall thin blades at this density comb into a fringe, while a
-    // low tuft holds a silhouette and keeps the ground plane visible behind it.
-    bladeHeight: [0.22, 0.62],
-    bladeWidth: 0.062,
+    density: 8,
+    // Low ground tufts: short enough to hold a silhouette and keep the ground plane readable.
+    bladeHeight: [0.16, 0.48],
+    bladeWidth: 0.05,
     windStrength: 0.55,
     colors: [...SCRUB_COLORS],
     seed,
+    // Wind-combed curl plus a wide tuft splay: each instance reads as a bushy clump, not a lone card.
+    bladeBend: [0.25, 0.6],
+    tuftRadius: 0.3,
+    // High brightness jitter breaks the repeated-blade read; near-full normal lift stops side-lit
+    // blades from going black — the sun models the clump as a soft mound instead of dark planes.
+    colorVariation: 0.45,
+    normalLift: 0.8,
+  });
+
+// Tall dry accent plants — the 10% silhouette tier. Sparse on purpose: a few reeds catching light
+// over the low scrub reads as growth in a protected pocket, a field of them reads as giant reeds.
+const accentClump = (x: number, z: number, size: number, seed: string): GrassEnvironmentDescriptor =>
+  grass({
+    area: { w: size, d: size, position: [x, z] },
+    density: 1.6,
+    bladeHeight: [0.55, 1.0],
+    bladeWidth: 0.045,
+    windStrength: 0.7,
+    colors: ["#8a6d38", "#c0a052", "#e2c878"],
+    seed,
+    bladeBend: [0.35, 0.75],
+    tuftRadius: 0.22,
+    colorVariation: 0.4,
+    normalLift: 0.65,
   });
 
 const scrubClumps = (
@@ -183,14 +213,14 @@ const scrubClumps = (
   for (let index = 0; index < count; index += 1) {
     const angle = rng() * Math.PI * 2;
     const distance = spread * (0.15 + rng() * 0.85);
-    clumps.push(
-      scrubClump(
-        cx + Math.cos(angle) * distance,
-        cz + Math.sin(angle) * distance,
-        size[0] + rng() * size[1],
-        `${seed}-${index}`,
-      ),
-    );
+    const x = cx + Math.cos(angle) * distance;
+    const z = cz + Math.sin(angle) * distance;
+    clumps.push(scrubClump(x, z, size[0] + rng() * size[1], `${seed}-${index}`));
+    // Every third patch grows a small stand of tall accents inside it — height variation clustered
+    // where scrub already holds, never scattered alone on open sand.
+    if (index % 3 === 0) {
+      clumps.push(accentClump(x + (rng() - 0.5) * 4, z + (rng() - 0.5) * 4, 3 + rng() * 3, `${seed}-acc-${index}`));
+    }
   }
   return clumps;
 };
@@ -208,7 +238,9 @@ const vegetation: readonly GrassEnvironmentDescriptor[] = [
   ...SIDE_POIS.flatMap((poi) => scrubClumps(poi.x, poi.z, poi.radius, 3, `bl2-scrub-${poi.id}`)),
 ];
 
-const FERRALON_DIRT_ROAD = "#5c4529";
+// Lighter than the old #5c4529: against sun-bleached sand that value read as an asphalt-black
+// ribbon; compacted dirt should sit a step below the sand, not ten.
+const FERRALON_DIRT_ROAD = "#71583a";
 
 const roadRibbon = (route: { points: readonly { x: number; z: number }[] }, width: number, elevation: number): RoadEnvironmentDescriptor =>
   road({

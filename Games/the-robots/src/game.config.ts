@@ -188,7 +188,10 @@ export const game = defineGame({
     // blue in shade, and stacking a second cool fill on top of it turned every shadowed hillside
     // olive-green in a world whose whole rule is that the ground stays warm.
     ambient: { color: "#b3a693", intensity: 0.2 },
-    hemisphere: { skyColor: "#7fa9c8", groundColor: "#6b4a30", intensity: 0.4 },
+    // Sky bounce desaturated from #7fa9c8: a saturated cyan fill times warm tan albedo lands on
+    // olive — the whole desert's shadow side was reading green. A greyer blue keeps machines cool
+    // in shade without repainting the ground.
+    hemisphere: { skyColor: "#9aa8b8", groundColor: "#6b4a30", intensity: 0.4 },
     // Mid-afternoon, not noon. The old key was almost overhead, so nothing cast a shadow long
     // enough to describe its own shape and every object read as a sticker on flat sand.
     // 2.5, not 2.6: the terrain's dirt grain multiplies albedo up to ~1.5x where the map is bright,
@@ -196,7 +199,9 @@ export const game = defineGame({
     directional: [
       {
         color: "#ffe0b0",
-        intensity: 2.5,
+        // 2.35, not 2.5: at 2.5 the sun-side dune faces still summed past 1.0 with the dirt-grain
+        // albedo boost and clipped to one white field across the whole right of frame.
+        intensity: 2.35,
         position: [64, 46, -52],
         castShadow: true,
         // The playfield sits over a kilometre from the origin — only camera-following
@@ -223,9 +228,11 @@ export const game = defineGame({
     // Cool lift + warm gain splits shadow and highlight so the flats stop sitting in one mid-tone
     // band. Saturation carries the warmth rather than a red-heavy gain: ACES desaturates hard as it
     // approaches white, so a gain that pushes red is the channel that clips first.
+    // Saturation eased off 1.3: that boost was amplifying every residual hue error — olive shadow
+    // sides, cyan haze — faster than it warmed the sand.
     grade: {
       vignette: 0.32,
-      saturation: 1.3,
+      saturation: 1.15,
       gamma: 0.93,
       lift: [0.002, 0.008, 0.024],
       gain: [1.02, 1.0, 0.96],
