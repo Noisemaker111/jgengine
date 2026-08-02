@@ -73,6 +73,8 @@ export function createTerrainDetailMaterial(
     uRockColor: { value: new THREE.Color(detail.rockColor) },
     uSandColor: { value: new THREE.Color(detail.sandColor) },
     uSnowColor: { value: new THREE.Color(detail.snowColor) },
+    uSweepDry: { value: new THREE.Vector3(...detail.sweeps.dry) },
+    uSweepWet: { value: new THREE.Vector3(...detail.sweeps.wet) },
     uRockSlopeStart: { value: detail.rockSlopeStart },
     uSnowHeight: { value: detail.snowHeight },
     uWaterLevel: { value: detail.waterLevel },
@@ -170,6 +172,8 @@ varying vec3 vJgWorldNormal;
 uniform vec3 uRockColor;
 uniform vec3 uSandColor;
 uniform vec3 uSnowColor;
+uniform vec3 uSweepDry;
+uniform vec3 uSweepWet;
 uniform float uRockSlopeStart;
 uniform float uSnowHeight;
 uniform float uWaterLevel;
@@ -196,9 +200,9 @@ float jgFleck = jgVNoise(jgWp / max(0.05, uDetailScale * 0.024));
 float jgFleckMid = jgVNoise(jgWp / max(0.12, uDetailScale * 0.07) + vec2(51.3, 7.9));
 vec3 jgBase = diffuseColor.rgb;
 jgBase *= mix(1.0 - 0.2 * uStrength, 1.0 + 0.16 * uStrength, jgFine);
-// Meadow patchwork: hue-shifted sun-dried sweeps and cooler lush pockets, not just darker spots.
-jgBase = mix(jgBase, jgBase * vec3(1.14, 1.05, 0.76), smoothstep(0.5, 0.8, jgMacro) * 0.55 * uStrength);
-jgBase = mix(jgBase, jgBase * vec3(0.78, 1.0, 0.86), smoothstep(0.52, 0.85, jgPatch) * 0.5 * uStrength);
+// Biome patchwork: hue-shifted dry sweeps and cooler wet pockets, tinted per-world via detail.sweeps.
+jgBase = mix(jgBase, jgBase * uSweepDry, smoothstep(0.5, 0.8, jgMacro) * 0.55 * uStrength);
+jgBase = mix(jgBase, jgBase * uSweepWet, smoothstep(0.52, 0.85, jgPatch) * 0.5 * uStrength);
 // Rolling large-scale light/dark sweeps keep far hills from flattening into one tone.
 jgBase *= 1.0 + (jgFbm(jgWp / (uMacroScale * 2.3) + vec2(9.1, 73.4)) - 0.5) * 0.22 * uStrength;
 jgBase *= 1.0 + (jgFleck - 0.5) * 0.48 * uStrength * jgNear;

@@ -107,7 +107,11 @@ describe("the-robots world", () => {
     // Blades stop rendering past 150 m, so 35–110 m is the whole band a desert horizon shot has to
     // fill. Six zone-wide clumps spread over that band left most of it bare sand.
     expect(ringed.length).toBeGreaterThanOrEqual(6);
-    for (const patch of summary.vegetation) expect(patch.density).toBeGreaterThanOrEqual(4);
+    // Two tiers by design: dense ground scrub carries coverage; sparse tall accent stands only ever
+    // sit inside a scrub patch, so they may be thin without the field reading as bare.
+    const dense = summary.vegetation.filter((patch) => patch.density >= 4);
+    expect(dense.length).toBeGreaterThanOrEqual(summary.vegetation.length / 2);
+    for (const patch of summary.vegetation) expect(patch.density).toBeGreaterThanOrEqual(1.5);
   });
 
   test("every settlement zone contributes a structure group", () => {

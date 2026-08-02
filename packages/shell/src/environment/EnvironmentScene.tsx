@@ -196,6 +196,10 @@ function Vegetation({
         seed={grass.seed}
         bladeHeight={grass.bladeHeight}
         bladeWidth={grass.bladeWidth}
+        bladeBend={grass.bladeBend}
+        tuftRadius={grass.tuftRadius}
+        colorVariation={grass.colorVariation}
+        normalLift={grass.normalLift}
         heightAt={heightAt}
         colorBase={colorBase}
         colorTip={colorTip}

@@ -29,6 +29,7 @@ export const worldObjects: readonly WorldObjectDef[] = [
   { id: "reactor_gate", name: "Reactor Gate", color: "#3a2c4a", height: 8 },
   { id: "cover_crate", name: "Cover Crate", color: "#6b5a44", height: 1.1 },
   { id: "banner_pole", name: "Scrapjack Banner", color: "#7a2c1e", height: 3.2 },
+  { id: "wind_turbine", name: "Harvest Turbine", color: "#b3bec9", height: 7 },
 ];
 
 const byId = new Map(worldObjects.map((object) => [object.id, object]));

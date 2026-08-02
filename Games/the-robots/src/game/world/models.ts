@@ -323,12 +323,15 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
   tent: {
     model: `${SPACE}/structure_low`,
     fallbackModel: `${SCIFI}/Prop_Vent_Wide`,
-    style: { scale: 2.4, material: { color: "#6b5a42", ...SCRAP } },
+    style: { scale: 2.4, material: { color: "#b09878", ...SCRAP } },
   },
+  // Decal_Sign is flat wall/floor decal geometry — placed in the open it lay on the sand as a
+  // painted diamond, so every "signpost" was invisible at eye level. A standing floodlight post
+  // reads as roadside infrastructure from any angle.
   signpost: {
-    model: `${SCIFI}/Decal_Sign`,
+    model: `${SPACE}/lights`,
     fallbackModel: `${SCIFI}/Column_Simple`,
-    style: { scale: 4, material: { color: MACHINE.hazard, metalness: 0.4, roughness: 0.6 } },
+    style: { scale: 1.6, material: { color: MACHINE.hazard, metalness: 0.4, roughness: 0.6 } },
   },
   street_lamp: {
     model: `${SCIFI}/Prop_Light_Floor`,
@@ -368,14 +371,28 @@ export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets
       material: { color: "#3a2c4a", ...PANEL, emissive: "#c05cff", emissiveIntensity: 1 },
     },
   },
+  // Albedo maps multiply under the tint, so a mid-grey tint over a mid-grey map lands near black —
+  // these crates were reading as charcoal cubes. Tint high to let the scrap map carry the value.
   cover_crate: {
     model: `${SCIFI}/Prop_Crate4`,
     fallbackModel: `${SCIFI}/Prop_Crate3`,
-    style: { scale: 3.2, material: { color: MACHINE.scrap, ...SCRAP } },
+    style: { scale: 3.2, material: { color: "#cdd6de", ...SCRAP } },
   },
+  // Brighter rust + a warm rim: the old #7a2c1e column went full black when backlit — these were
+  // the featureless "monoliths" standing around the rustflat.
   banner_pole: {
     model: `${SCIFI}/Column_Simple`,
     fallbackModel: `${SCIFI}/Column_Round`,
-    style: { scale: 3, material: { color: "#7a2c1e", ...SCRAP } },
+    style: {
+      scale: 3,
+      material: { color: "#a8502c", ...SCRAP, rim: { color: "#ffb46a", strength: 0.5, power: 3 } },
+    },
+  },
+  // Tall verticals for ridgelines and story clusters — a harvester turbine reads at two kilometres
+  // and gives the eye a destination the smooth dunes never offered.
+  wind_turbine: {
+    model: `${SPACE}/windturbine_tall`,
+    fallbackModel: `${SPACE}/windturbine_low`,
+    style: { scale: 2.2, material: { color: MACHINE.steel, ...PANEL } },
   },
 });

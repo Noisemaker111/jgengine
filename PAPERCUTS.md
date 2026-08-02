@@ -253,3 +253,7 @@ sky({ zenithColor, horizonColor }) with timeOfDay:true only sets the NOON keyfra
 2026-08-01T09:05:45.591Z — claude-fable-5 — Claude
 
 Merged #1654 left main red: it deleted Games/loopline/src/game/build/* but world/setup.ts and sim/economy.ts still imported placeObject/placedList/registerBuildCommands — check-types and 4 tests failed on a fresh main checkout; PR quick CI never runs check-types so auto-merge landed it
+
+2026-08-02T00:10:32.049Z — claude-fable-5 — Claude
+
+shoot (daemon warm profile) restores a persist:true game's whole-world save, so newly authored scene objects are absent from captures while drive clears storage and shows them — cost ~40min of false 'object not rendering' diagnosis; shoot should clear origin storage per capture like drive (or warn when a save restore happened)
