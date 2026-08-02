@@ -35,6 +35,8 @@ between (`--json` for structured output).
 
 - **`resolveSourceWalkerStep(source, cache, position, stepX, stepZ, options)`** (`@jgengine/core/movement/solidObstacles`) — `resolveWalkerStep` with no `GameContext`, for movement rules that live in a pure package with no React or three.js. `SolidObstacleSource`, `ObstacleReachCache`, `createObstacleReachCache`, `sourceObstacleReach`, `sourceObstaclesNear`, and `slideStep` are public alongside it instead of `@internal`, so a game no longer has to push the resolver up into its app layer and inject it back down. `resolveWalkerStep`'s doc now states that it already resolves X and Z separately, so a caller doing its own axis-split must hand it one axis per call.
 - **`tickRunCount(plan, id)`** (`@jgengine/core/time/serverTick`) — how many runs a plan owes a system, or 0 when it is not due.
+- **`grass()` exposes the clump/lighting knobs its shader already had.** `GrassEnvironmentConfig` gains optional `bladeBend`, `tuftRadius`, `colorVariation`, and `normalLift`, forwarded by the shell's environment renderer — a world descriptor can now author bushy wind-combed scrub instead of the fixed lawn-blade look; defaults unchanged.
+- **`TerrainDetailConfig.sweeps`** — the detail shader's two macro colour sweeps (sun-dried patches, cooler wet pockets) take per-world RGB multipliers instead of hardcoded meadow tints. The old green-leaning "lush pocket" default painted moss onto arid/ashen biomes; defaults are unchanged, so a desert world should set warm/neutral `sweeps` explicitly.
 
 <!--
 Every PR that changes `packages/*/src` records its consumer-facing change here, so
