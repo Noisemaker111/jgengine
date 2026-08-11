@@ -2544,6 +2544,7 @@
 ## @jgengine/core/world/buildings
 
 - `BUILDING_STYLE_PALETTES` (const): const BUILDING_STYLE_PALETTES: Record<BuildingStyle, BuildingPalette> — ⚠ undocumented
+- `BUILDING_STYLE_WALL_TONES` (const): const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> — Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's own `wall`; the rest fan warmer/cooler and lighter/darker around it.
 - `BuildingCellRef` (interface): interface BuildingCellRef — ⚠ undocumented
 - `BuildingConfig` (interface): interface BuildingConfig — ⚠ undocumented
 - `BuildingConfigInput` (type): type BuildingConfigInput = Partial< Omit<BuildingConfig, "probabilities" | "variants"> > & { probabilities?: Partial<BuildingProbabilities>; variants?: Partial<BuildingVariantCounts>; } — ⚠ undocumented
@@ -2710,12 +2711,20 @@
 - `CityParcelFrontageOut` (interface): interface CityParcelFrontageOut — One street-frontage edge of a parcel.
 - `CityPark` (interface): interface CityPark — One intentional open space: an unbuilt block, a block-interior courtyard, or a buffer sliver.
 - `CityParking` (interface): interface CityParking — One parking pad behind a commercial lot.
+- `CityRaceGridSlot` (interface): interface CityRaceGridSlot — One staggered spawn behind the start line.
+- `CityRaceKerb` (interface): interface CityRaceKerb — One kerb strip hugging a corner's road edge, as a world-space polyline to stripe.
+- `CityRaceSeal` (interface): interface CityRaceSeal — One street closed off where it leaves the race lap: world XZ, the yaw down the sealed street, and the width the barrier run spans.
+- `CityRaceStart` (interface): interface CityRaceStart — The start/finish line: where it is, which way cars face, and the painted line across the road.
 - `CityResolveContext` (interface): interface CityResolveContext extends SceneKindResolveContext — Extended resolve context: sibling `cityzone` volumes that override the band/mix locally.
 - `CityRules` (interface): interface CityRules — Fully-defaulted city params parsed from a volume's `meta`.
+- `CitySignal` (interface): interface CitySignal — One junction control on an approach arm: an arterial mast-arm signal, or a plain sign post.
 - `CityStreet` (interface): interface CityStreet — One synthesized street: a world-space XZ polyline with width, hierarchy level, and surface.
 - `CityTree` (interface): interface CityTree — One placed tree: world XZ, species, and seeded scale/color jitter.
 - `CityTunnel` (interface): interface CityTunnel — One tunnel bore piercing a ridge: portal-to-portal polyline held at bank height.
+- `CityVehicle` (interface): interface CityVehicle — One parked vehicle standing at a curb or nose-in inside a parking pad.
+- `CityVehicleKind` (type): type CityVehicleKind = "car" | "van" | "truck" — Silhouette class of a parked vehicle — sizes the body the renderer instances.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
+- `ResolvedRace` (interface): interface ResolvedRace — An instanced street race lifted out of the district's OWN streets: a closed lap through the city, with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
 
 ## @jgengine/core/world/connectors
@@ -3089,6 +3098,22 @@
 
 - `Polyline` (interface): interface Polyline — A polyline prepared for repeated distance/fraction sampling, with cumulative arc-length precomputed.
 - `PolylineHit` (interface): interface PolylineHit — The closest point on a polyline to a query point, with where it lands along the line.
+
+## @jgengine/core/world/raceCircuit
+
+- `CIRCUIT_ROUTE_DEFAULTS` (const): const CIRCUIT_ROUTE_DEFAULTS: CircuitRouteRules — Defaults: a ~2.4 km arterial street lap with 12 gates, 3 laps, and barriered side streets.
+- `CircuitCorner` (interface): interface CircuitCorner — One analyzed corner: where the lap turns, how hard, and which way.
+- `CircuitGate` (interface): interface CircuitGate — One checkpoint trigger volume, shaped to hand straight to `raceTrack({ checkpoints })`.
+- `CircuitGridSlot` (interface): interface CircuitGridSlot — One grid slot: a staggered spawn behind the start line.
+- `CircuitKerb` (interface): interface CircuitKerb — One kerb strip on the outside or inside of a corner, as an offset polyline to stripe.
+- `CircuitKerbOptions` (interface): interface CircuitKerbOptions — Kerb strips on the outside and inside of every real corner.
+- `CircuitRoute` (interface): interface CircuitRoute — A closed race lap lifted out of a street network, with everything a race needs hung off it.
+- `CircuitRouteRules` (interface): interface CircuitRouteRules — Fully-defaulted sliders the route search answers to.
+- `CircuitSeal` (interface): interface CircuitSeal — One street closed off where it leaves the lap — the thing that turns public roads into an instanced event. Stands just off the junction, spanning the sealed street's full width.
+- `CircuitSealKind` (type): type CircuitSealKind = "barrier" | "cones" | "fence" — How a sealed-off side street is closed: hard barriers, a cone line, or temporary fencing.
+- `CircuitStart` (interface): interface CircuitStart — The start/finish line: where it is, which way cars face, and the painted line across the road.
+- `circuitKerbs` (function): function circuitKerbs(route: CircuitRoute, options: CircuitKerbOptions = {}): CircuitKerb[] — Red/white kerb strips hugging both road edges through each corner. Returns the polylines and stripe pitch as data; the renderer owns the mesh and the colors.
+- `extractCircuitRoute` (function): function extractCircuitRoute(network: StreetNetwork, rules: Partial<CircuitRouteRules> = {}): CircuitRoute | null — Lift a closed, sealed-off race lap out of an existing street network. Returns `null` when the network has no drivable cycle (a pure tree of dead-end streets), so callers can fall back or warn rather than render a broken race.
 
 ## @jgengine/core/world/realm
 

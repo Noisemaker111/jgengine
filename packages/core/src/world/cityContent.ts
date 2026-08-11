@@ -92,18 +92,18 @@ interface ClassProfile {
 }
 
 const CLASS_PROFILES: Record<CityLotClass | CityFillerClass, ClassProfile> = {
-  tower: { width: [16, 24], depth: [14, 20], setbackFactor: 0.3, spacingFactor: 1, floors: [12, 34], backRow: true },
-  slab: { width: [14, 20], depth: [11, 15], setbackFactor: 0.5, spacingFactor: 1, floors: [4, 9], backRow: true },
-  shop: { width: [10, 15], depth: [8, 12], setbackFactor: 0.2, spacingFactor: 0.6, floors: [1, 2], backRow: true },
-  rowhouse: { width: [6, 8.5], depth: [9, 12], setbackFactor: 0.5, spacingFactor: 0.12, floors: [2, 3], backRow: true },
+  tower: { width: [14, 22], depth: [12, 20], setbackFactor: 0.15, spacingFactor: 0.35, floors: [12, 34], backRow: true },
+  slab: { width: [12, 20], depth: [10, 16], setbackFactor: 0.2, spacingFactor: 0.4, floors: [4, 9], backRow: true },
+  shop: { width: [8, 14], depth: [8, 12], setbackFactor: 0.05, spacingFactor: 0.15, floors: [1, 2], backRow: true },
+  rowhouse: { width: [5.5, 8], depth: [9, 13], setbackFactor: 0.2, spacingFactor: 0.05, floors: [2, 3], backRow: true },
   house: { width: [9, 12], depth: [8, 11], setbackFactor: 1, spacingFactor: 1, floors: [1, 2], backRow: true },
   mansion: { width: [18, 26], depth: [14, 20], setbackFactor: 2, spacingFactor: 1.6, floors: [2, 3], backRow: false },
   farmhouse: { width: [11, 14], depth: [9, 12], setbackFactor: 2.8, spacingFactor: 4, floors: [2, 2], backRow: false },
   barn: { width: [12, 16], depth: [9, 13], setbackFactor: 3.6, spacingFactor: 5, floors: [1, 1], backRow: false },
   silo: { width: [5, 6], depth: [5, 6], setbackFactor: 4, spacingFactor: 3, floors: [1, 1], backRow: false },
   // Interior-fill fillers: broad, plain footprints that pack the backs of dense blocks.
-  garage: { width: [18, 26], depth: [16, 22], setbackFactor: 0.3, spacingFactor: 0.4, floors: [2, 6], backRow: true },
-  depot: { width: [20, 30], depth: [18, 26], setbackFactor: 0.4, spacingFactor: 0.5, floors: [1, 2], backRow: true },
+  garage: { width: [16, 24], depth: [14, 20], setbackFactor: 0.2, spacingFactor: 0.3, floors: [2, 6], backRow: true },
+  depot: { width: [18, 28], depth: [16, 24], setbackFactor: 0.25, spacingFactor: 0.35, floors: [1, 2], backRow: true },
 };
 
 /**
@@ -249,6 +249,86 @@ function gable(
 }
 
 /**
+ * Finish a flat roof at height `top`: a recessed dark deck, a parapet upstand on all four edges,
+ * and seeded rooftop plant (mechanical units, a stair bulkhead, a tank). A city skyline is mostly
+ * roofs seen from above, so every flat-capped class runs through here instead of a bare slab.
+ */
+function flatRoofTop(
+  pieces: CityLotPiece[],
+  width: number,
+  depth: number,
+  top: number,
+  rng: () => number,
+): void {
+  const rail = Math.min(1.15, 0.55 + rng() * 0.55);
+  const wall = Math.min(0.55, Math.max(0.18, Math.min(width, depth) * 0.035));
+  const innerW = Math.max(0.4, width - wall * 2);
+  const innerD = Math.max(0.4, depth - wall * 2);
+  pieces.push(box([0, top, 0], [innerW, 0.14, innerD], "roof"));
+  pieces.push(box([0, top, (depth - wall) / 2], [width, rail, wall], "trim"));
+  pieces.push(box([0, top, -(depth - wall) / 2], [width, rail, wall], "trim"));
+  pieces.push(box([(width - wall) / 2, top, 0], [wall, rail, innerD], "trim"));
+  pieces.push(box([-(width - wall) / 2, top, 0], [wall, rail, innerD], "trim"));
+  const deck = top + 0.14;
+  const units = innerW * innerD > 110 ? 1 + Math.floor(rng() * 3) : rng() < 0.7 ? 1 : 0;
+  for (let i = 0; i < units; i += 1) {
+    const uw = Math.min(innerW * 0.34, 1.6 + rng() * 2.4);
+    const ud = Math.min(innerD * 0.34, 1.4 + rng() * 2);
+    pieces.push(
+      box(
+        [(rng() - 0.5) * Math.max(0, innerW - uw), deck, (rng() - 0.5) * Math.max(0, innerD - ud)],
+        [uw, 0.6 + rng() * 0.9, ud],
+        "roof",
+      ),
+    );
+  }
+  if (rng() < 0.55) {
+    const bw = Math.min(innerW * 0.34, 2.2 + rng() * 1.6);
+    const bd = Math.min(innerD * 0.36, 2 + rng() * 1.4);
+    pieces.push(
+      box(
+        [(rng() - 0.5) * Math.max(0, innerW - bw), deck, (rng() - 0.5) * Math.max(0, innerD - bd)],
+        [bw, 1.9 + rng() * 1.1, bd],
+        "trim",
+      ),
+    );
+  }
+  if (rng() < 0.4) {
+    const r = Math.min(2.2, Math.min(innerW, innerD) * 0.26);
+    pieces.push({
+      shape: "cylinder",
+      offset: [(rng() - 0.5) * Math.max(0, innerW - r), deck, (rng() - 0.5) * Math.max(0, innerD - r)],
+      size: [r, 1.4 + rng() * 1.2, r],
+      rotationY: 0,
+      role: "trim",
+      grounded: false,
+      banded: false,
+    });
+  }
+}
+
+/**
+ * Street-level treatment for a commercial frontage: a plinth course wrapping the base, a recessed
+ * dark entrance on the street face, and a canopy over the sidewalk — so floor 1 never reads like
+ * floor 30. `overhang` is the plinth's outward step (0 keeps it flush for terraced classes).
+ */
+function streetLevel(
+  pieces: CityLotPiece[],
+  width: number,
+  depth: number,
+  bandHeight: number,
+  overhang: number,
+  rng: () => number,
+): void {
+  pieces.push(box([0, 0, 0], [width + overhang, bandHeight, depth + overhang], "trim", { grounded: true }));
+  const doorW = Math.min(width * 0.32, 3.4);
+  const doorX = (rng() - 0.5) * Math.max(0, width - doorW * 1.6) * 0.5;
+  const face = depth / 2 + overhang / 2;
+  pieces.push(box([doorX, 0, face], [doorW, bandHeight * 0.76, 0.5], "roof", { grounded: true }));
+  pieces.push(box([doorX, bandHeight * 0.8, face + 0.6], [doorW * 1.5, 0.22, 1.3], "accent"));
+}
+
+/**
  * Compose the massing pieces for one lot. Deterministic per `rng` stream: the same class, size,
  * floors, and stream always yield the identical silhouette. Sizes are in meters, lot-local.
  * @internal
@@ -271,45 +351,75 @@ export function buildLotPieces(
         const h2 = H * (0.24 + rng() * 0.08);
         const h3 = H - h1 - h2;
         pieces.push(box([0, 0, 0], [width, h1, depth], "wall", { grounded: true, banded: true }));
+        // Occasional attached wing breaks the identical-rect streetwall without replacing the shaft.
+        if (width >= 16 && depth >= 14 && rng() < 0.42) {
+          const wingW = width * (0.34 + rng() * 0.1);
+          const side = rng() < 0.5 ? 1 : -1;
+          pieces.push(box([side * (width / 2 - wingW / 2), 0, depth * 0.28], [wingW, h1 * (0.55 + rng() * 0.2), depth * 0.42], "wall", { grounded: true, banded: true }));
+        }
         const w2 = width * (0.78 + rng() * 0.08);
         const d2 = depth * (0.78 + rng() * 0.08);
         pieces.push(box([0, h1, 0], [w2, h2, d2], "wall", { banded: true }));
         const w3 = width * (0.55 + rng() * 0.1);
         const d3 = depth * (0.55 + rng() * 0.1);
         pieces.push(box([0, h1 + h2, 0], [w3, h3, d3], "wall", { banded: true }));
-        pieces.push(box([0, H, 0], [w3 * 1.04, 0.5, d3 * 1.04], "trim"));
+        flatRoofTop(pieces, w3 * 1.04, d3 * 1.04, H, rng);
         if (rng() < 0.35) pieces.push(box([0, H + 0.5, 0], [1.2, 3 + rng() * 5, 1.2], "trim"));
-        else if (rng() < 0.5) pieces.push(box([0, H + 0.5, 0], [w3 * 0.4, 1.6, d3 * 0.4], "roof"));
+        streetLevel(pieces, width, depth, Math.min(floorHeight * 1.1, H * 0.5), 0.35, rng);
       } else {
         const h1 = H * (0.66 + rng() * 0.1);
         pieces.push(box([0, 0, 0], [width, h1, depth], "wall", { grounded: true, banded: true }));
         const w2 = width * (0.72 + rng() * 0.1);
         const d2 = depth * (0.72 + rng() * 0.1);
         pieces.push(box([0, h1, 0], [w2, H - h1, d2], "wall", { banded: true }));
-        pieces.push(box([0, H, 0], [w2 * 1.05, 0.45, d2 * 1.05], "trim"));
+        flatRoofTop(pieces, w2 * 1.05, d2 * 1.05, H, rng);
+        streetLevel(pieces, width, depth, Math.min(floorHeight * 1.1, H * 0.5), 0.35, rng);
       }
       return pieces;
     }
     case "slab": {
-      pieces.push(box([0, 0, 0], [width, H, depth * 0.95], "wall", { grounded: true, banded: true }));
-      pieces.push(box([0, H, 0], [width * 1.02, 0.35, depth * 0.97], "trim"));
-      if (rng() < 0.6) pieces.push(box([(rng() - 0.5) * width * 0.4, H + 0.35, 0], [width * 0.22, 2, depth * 0.3], "roof"));
+      // Full streetwall depth; irregular plans break the identical-cell silhouette.
+      if (width >= 14 && depth >= 12 && rng() < 0.55) {
+        const wing = width * (0.38 + rng() * 0.14);
+        const side = rng() < 0.5 ? 1 : -1;
+        const frontH = H * (0.92 + rng() * 0.12);
+        const wingH = H * (0.7 + rng() * 0.25);
+        pieces.push(box([0, 0, depth * 0.08], [width, frontH, depth * 0.62], "wall", { grounded: true, banded: true }));
+        pieces.push(box([side * (width / 2 - wing / 2), 0, -depth * 0.08], [wing, wingH, depth * 0.82], "wall", { grounded: true, banded: true }));
+        flatRoofTop(pieces, width * 0.98, depth * 0.62, frontH, rng);
+        if (rng() < 0.45) flatRoofTop(pieces, wing * 1.02, depth * 0.78, wingH, rng);
+        streetLevel(pieces, width, depth * 0.62, Math.min(floorHeight * 1.05, frontH * 0.5), 0.25, rng);
+      } else if (width >= 16 && depth >= 14 && rng() < 0.35) {
+        // Open mid-block court: street wall + two side wings, rear open as a service yard.
+        const wallT = Math.min(width, depth) * 0.28;
+        pieces.push(box([0, 0, (depth - wallT) / 2], [width, H, wallT], "wall", { grounded: true, banded: true }));
+        pieces.push(box([(width - wallT) / 2, 0, -wallT * 0.15], [wallT, H * (0.75 + rng() * 0.2), depth - wallT], "wall", { grounded: true, banded: true }));
+        pieces.push(box([-(width - wallT) / 2, 0, -wallT * 0.15], [wallT, H * (0.7 + rng() * 0.2), depth - wallT], "wall", { grounded: true, banded: true }));
+        flatRoofTop(pieces, width * 1.01, wallT * 1.02, H, rng);
+        streetLevel(pieces, width, wallT, Math.min(floorHeight * 1.05, H * 0.5), 0.25, rng);
+      } else {
+        pieces.push(box([0, 0, 0], [width, H, depth], "wall", { grounded: true, banded: true }));
+        flatRoofTop(pieces, width * 1.02, depth * 1.02, H, rng);
+        streetLevel(pieces, width, depth, Math.min(floorHeight * 1.05, H * 0.5), 0.25, rng);
+      }
       return pieces;
     }
     case "shop": {
       pieces.push(box([0, 0, 0], [width, H, depth], "wall", { grounded: true }));
-      pieces.push(box([0, H, 0], [width * 1.03, 0.5, depth * 1.03], "trim"));
+      flatRoofTop(pieces, width * 1.03, depth * 1.03, H, rng);
       // Front awning strip over the sidewalk face.
       pieces.push(box([0, Math.min(H - 0.4, 2.6), depth / 2 + 0.35], [width * 0.9, 0.35, 0.9], "accent"));
+      pieces.push(box([0, 0, depth / 2 - 0.05], [width * 0.82, Math.min(H * 0.62, 2.5), 0.4], "roof", { grounded: true }));
       return pieces;
     }
     case "rowhouse": {
-      pieces.push(box([0, 0, 0], [width * 0.96, H, depth * 0.85], "wall", { grounded: true, banded: true }));
+      pieces.push(box([0, 0, 0], [width * 0.98, H, depth * 0.92], "wall", { grounded: true, banded: true }));
       if (rng() < 0.55) {
-        pieces.push(gable([0, H, 0], [width * 0.96, 1.6 + rng() * 0.8, depth * 0.9]));
+        pieces.push(gable([0, H, 0], [width * 0.98, 1.6 + rng() * 0.8, depth * 0.96]));
       } else {
-        pieces.push(box([0, H, 0], [width * 1.0, 0.45, depth * 0.9], "trim"));
+        pieces.push(box([0, H, 0], [width * 1.0, 0.45, depth * 0.94], "trim"));
       }
+      streetLevel(pieces, width * 0.98, depth * 0.92, Math.min(floorHeight * 0.95, H * 0.5), 0.04, rng);
       return pieces;
     }
     case "house": {
@@ -389,13 +499,7 @@ export function buildLotPieces(
     case "garage": {
       // Parking structure: a plain banded box (the window bands read as deck slots) with a flat cap.
       pieces.push(box([0, 0, 0], [width, H, depth], "wall", { grounded: true, banded: true }));
-      pieces.push(box([0, H, 0], [width * 1.02, 0.4, depth * 1.02], "trim"));
-      if (rng() < 0.6) {
-        // Stair/lift core poking above the roof deck.
-        const cx = (rng() - 0.5) * width * 0.5;
-        const cz = (rng() - 0.5) * depth * 0.4;
-        pieces.push(box([cx, H + 0.4, cz], [width * 0.16, 1.6 + rng() * 1.2, depth * 0.16], "accent"));
-      }
+      flatRoofTop(pieces, width * 1.02, depth * 1.02, H, rng);
       return pieces;
     }
     case "depot": {

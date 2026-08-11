@@ -18,8 +18,10 @@
  * (`cityContent`) — setback tower tiers, gabled houses, gambrel barns, domed silos. Blocks left
  * unbuilt become plazas/greens/meadows by band, or crop-row farm fields; slivers and block
  * interiors classify as buffers and courtyards, never leftover rectangles. Street
- * furniture (lights, species-mixed trees, estate hedges, driveways, parking lots) resolves as
- * bounded, seeded data hooked to the network. Child `cityzone` volumes override the band/mix
+ * furniture (lights, species-mixed trees, estate hedges, driveways, parking lots, parked vehicles,
+ * junction signals and sign posts) resolves as bounded, seeded data hooked to the network. Turn `race` on and the district also hands back a
+ * {@link ResolvedRace}: a closed lap lifted out of its OWN streets with every side street leaving it
+ * sealed off — the Monaco / open-world street-race model, not a separate track. Child `cityzone` volumes override the band/mix
  * locally, so hand-placed intent wins over the profile. Named presets (Manhattan, Los Angeles,
  * Beverly Hills, rural Ohio…) ship as plain slider bundles on the schema. Pure config + resolver
  * here; the instanced renderer lives in the `shell`. Everything is deterministic per seed and
@@ -50,7 +52,15 @@ import {
   type CityZoneBand,
   type CityZoneProfile,
 } from "./cityContent";
-import { furnitureSpots } from "./streets";
+import {
+  circuitKerbs,
+  extractCircuitRoute,
+  type CircuitCorner,
+  type CircuitGate,
+  type CircuitRoute,
+  type CircuitSealKind,
+} from "./raceCircuit";
+import { furnitureSpots, parkingSpots } from "./streets";
 import { CITY_BUILDING_BUDGET, budgetWarning, placedCoverage } from "./scatterCoverage";
 import type { RoadEnvironmentDescriptor } from "./features";
 import type { RoadPoint } from "./roads";
@@ -59,6 +69,7 @@ import {
   streetNetworkMode,
   type StreetFeatureKind,
   type StreetLevel,
+  type StreetNetwork,
   type StreetNetworkRules,
   type Street,
 } from "./streetGenerator";
@@ -114,6 +125,17 @@ export interface CityRules {
   minTurnAngle: number;
   /** Sharpest corner (degrees) a street may take — tighter ones are beveled away. */
   maxTurnAngle: number;
+  /** Organic boundary clipping, 0..1. 0 fills the volume's rectangle; higher grows lobes and bays. */
+  outline: number;
+  /** Share of branch lanes grown as winding residential side streets, 0..1. */
+  residentialBranches: number;
+  /** Road-surface relief, 0..1. 0 is dead flat; 1 is ~22 m of rise and fall across a ~520 m district. */
+  elevation: number;
+  /** Steepest road grade (rise/run) the elevation pass allows on any street. */
+  maxGrade: number;
+  /** Circuit space-filling, 0..1. 0 is a flowing loop around an empty middle; higher folds the lap
+   * back through its own interior (switchbacks, hairpins, parallel runs). Circuit mode only. */
+  compactness: number;
   /** Lay parcels + buildings against the streets (city fabric). Off = bare roads/track, no plots. */
   fabric: boolean;
   /** Streets bore through ridges on tunnel decks instead of climbing over them. */
@@ -169,6 +191,10 @@ export interface CityRules {
   treeMix: WeightedParamEntry[];
   /** Street-light density along non-lane streets, 0..1. */
   lightDensity: number;
+  /** Parked-vehicle density along street curbs and inside parking pads, 0..1. */
+  parkedCars: number;
+  /** Junction control density, 0..1: mast-arm signals on arterial crossings, sign posts below them. */
+  signals: number;
   /** Ring estate lots (mansions) with perimeter hedges and a gated gap. */
   hedges: boolean;
   /** Connect houses/estates/farms to their street with driveways. */
@@ -189,6 +215,22 @@ export interface CityRules {
   sidewalks: boolean;
   /** Sidewalk band width in meters at "street" hierarchy (boulevards scale up, lanes down). */
   sidewalkWidth: number;
+  /** Lift an instanced street race out of the district's own streets (see {@link ResolvedRace}). */
+  race: boolean;
+  /** Target race lap length in meters — the search keeps the cycle closest to this. */
+  raceLapLength: number;
+  /** 0 races any street; 1 keeps the lap on avenues and boulevards only. */
+  raceArterial: number;
+  /** Ordered checkpoint gates placed around the lap. */
+  raceCheckpoints: number;
+  /** Laps the race runs. */
+  raceLaps: number;
+  /** Close every side street leaving the lap with barriers — what makes it an instanced event. */
+  raceSeals: boolean;
+  /** Starting grid slots behind the line (0 = no grid). */
+  raceGridSlots: number;
+  /** Radius (m) the racing line is worked toward at the lap's junction corners. */
+  raceCornerRadius: number;
   /** Building style palette id (see {@link BUILDING_STYLE_PALETTES}). */
   style: BuildingStyle;
   /**
@@ -212,6 +254,11 @@ export const CITY_DEFAULTS: CityRules = {
   minCurveRadius: 24,
   minTurnAngle: 0,
   maxTurnAngle: 150,
+  outline: 0,
+  residentialBranches: 0,
+  elevation: 0,
+  maxGrade: 0.07,
+  compactness: 0,
   fabric: true,
   tunnels: true,
   blockSize: 48,
@@ -253,6 +300,8 @@ export const CITY_DEFAULTS: CityRules = {
     { item: "conifer", weight: 1 },
   ],
   lightDensity: 0.5,
+  parkedCars: 0.55,
+  signals: 0.7,
   hedges: true,
   driveways: true,
   parking: true,
@@ -263,6 +312,14 @@ export const CITY_DEFAULTS: CityRules = {
   bridgeStyle: "arch",
   sidewalks: true,
   sidewalkWidth: 1.9,
+  race: false,
+  raceLapLength: 1200,
+  raceArterial: 0.7,
+  raceCheckpoints: 12,
+  raceLaps: 3,
+  raceSeals: true,
+  raceGridSlots: 12,
+  raceCornerRadius: 9,
   style: DEFAULT_BUILDING_STYLE,
   buildingKit: "",
   seed: "",
@@ -272,6 +329,7 @@ export const CITY_DEFAULTS: CityRules = {
 export const CITY_SCHEMA: ParamSchema = {
   groups: [
     { id: "layout", label: "Layout" },
+    { id: "race", label: "Race" },
     { id: "placement", label: "Placement" },
     { id: "zoning", label: "Zoning" },
     { id: "buildings", label: "Buildings" },
@@ -287,6 +345,11 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "range", key: "minCurveRadius", label: "min curve radius", group: "layout", min: 6, max: 120, step: 1, default: CITY_DEFAULTS.minCurveRadius, unit: "m" },
     { type: "range", key: "minTurnAngle", label: "min turn angle", group: "layout", min: 0, max: 60, step: 1, default: CITY_DEFAULTS.minTurnAngle, unit: "°" },
     { type: "range", key: "maxTurnAngle", label: "max turn angle", group: "layout", min: 30, max: 180, step: 1, default: CITY_DEFAULTS.maxTurnAngle, unit: "°" },
+    { type: "range", key: "outline", label: "outline", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.outline },
+    { type: "range", key: "residentialBranches", label: "residential branches", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.residentialBranches },
+    { type: "range", key: "elevation", label: "road elevation", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.elevation },
+    { type: "range", key: "maxGrade", label: "max grade", group: "layout", min: 0.01, max: 0.3, step: 0.005, default: CITY_DEFAULTS.maxGrade },
+    { type: "range", key: "compactness", label: "circuit compactness", group: "layout", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.compactness },
     { type: "range", key: "blockSize", label: "block size", group: "layout", min: 20, max: 140, step: 1, default: CITY_DEFAULTS.blockSize, unit: "m" },
     { type: "range", key: "blockAspect", label: "block aspect", group: "layout", min: 1, max: 3, step: 0.05, default: CITY_DEFAULTS.blockAspect },
     { type: "range", key: "openSpace", label: "open space", group: "layout", min: 0, max: 0.9, step: 0.01, default: CITY_DEFAULTS.openSpace },
@@ -315,6 +378,14 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "bool", key: "sidewalks", label: "sidewalks", group: "layout", default: CITY_DEFAULTS.sidewalks },
     { type: "range", key: "sidewalkWidth", label: "sidewalk width", group: "layout", min: 1, max: 4, step: 0.1, default: CITY_DEFAULTS.sidewalkWidth, unit: "m" },
     { type: "action", key: "layoutRandomize", label: "randomize layout", group: "layout", action: "randomize" },
+    { type: "bool", key: "race", label: "street race", group: "race", default: CITY_DEFAULTS.race },
+    { type: "range", key: "raceLapLength", label: "lap length", group: "race", min: 200, max: 6000, step: 50, default: CITY_DEFAULTS.raceLapLength, unit: "m" },
+    { type: "range", key: "raceArterial", label: "arterial bias", group: "race", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.raceArterial },
+    { type: "range", key: "raceCheckpoints", label: "checkpoints", group: "race", min: 2, max: 48, step: 1, default: CITY_DEFAULTS.raceCheckpoints },
+    { type: "range", key: "raceLaps", label: "laps", group: "race", min: 1, max: 20, step: 1, default: CITY_DEFAULTS.raceLaps },
+    { type: "bool", key: "raceSeals", label: "seal side streets", group: "race", default: CITY_DEFAULTS.raceSeals },
+    { type: "range", key: "raceGridSlots", label: "grid slots", group: "race", min: 0, max: 40, step: 1, default: CITY_DEFAULTS.raceGridSlots },
+    { type: "range", key: "raceCornerRadius", label: "corner radius", group: "race", min: 3, max: 40, step: 1, default: CITY_DEFAULTS.raceCornerRadius, unit: "m" },
     {
       type: "select",
       key: "profile",
@@ -351,6 +422,8 @@ export const CITY_SCHEMA: ParamSchema = {
     { type: "range", key: "treeDensity", label: "tree density", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.treeDensity },
     { type: "weightedList", key: "treeMix", label: "tree mix", group: "greenery", itemLabel: "species", default: CITY_DEFAULTS.treeMix },
     { type: "range", key: "lightDensity", label: "street lights", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.lightDensity },
+    { type: "range", key: "parkedCars", label: "parked cars", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.parkedCars },
+    { type: "range", key: "signals", label: "traffic signals", group: "greenery", min: 0, max: 1, step: 0.01, default: CITY_DEFAULTS.signals },
     { type: "bool", key: "hedges", label: "estate hedges", group: "greenery", default: CITY_DEFAULTS.hedges },
     { type: "bool", key: "driveways", label: "driveways", group: "greenery", default: CITY_DEFAULTS.driveways },
     { type: "bool", key: "parking", label: "parking lots", group: "greenery", default: CITY_DEFAULTS.parking },
@@ -370,8 +443,8 @@ export const CITY_SCHEMA: ParamSchema = {
         openSpace: 0.05,
         roadsideOccupancy: 0.97,
         blockDensity: 0.85,
-        buildingRoadSetback: 0.8,
-        buildingSpacing: 0.8,
+        buildingRoadSetback: 0.55,
+        buildingSpacing: 0.55,
         clusterStrength: 0.25,
         streetWidth: 9,
         boulevards: 0.5,
@@ -397,6 +470,8 @@ export const CITY_SCHEMA: ParamSchema = {
         treeDensity: 0.3,
         treeMix: [{ item: "broadleaf", weight: 1 }],
         lightDensity: 0.8,
+        parkedCars: 0.95,
+        signals: 1,
         hedges: false,
         driveways: false,
         parking: false,
@@ -450,6 +525,8 @@ export const CITY_SCHEMA: ParamSchema = {
           { item: "cypress", weight: 1 },
         ],
         lightDensity: 0.6,
+        parkedCars: 0.7,
+        signals: 0.8,
         hedges: false,
         driveways: true,
         parking: true,
@@ -501,6 +578,8 @@ export const CITY_SCHEMA: ParamSchema = {
           { item: "broadleaf", weight: 2 },
         ],
         lightDensity: 0.35,
+        parkedCars: 0.2,
+        signals: 0.12,
         hedges: true,
         driveways: true,
         parking: false,
@@ -554,6 +633,8 @@ export const CITY_SCHEMA: ParamSchema = {
           { item: "conifer", weight: 2 },
         ],
         lightDensity: 0.1,
+        parkedCars: 0.04,
+        signals: 0,
         hedges: false,
         driveways: true,
         parking: false,
@@ -575,6 +656,9 @@ export const CITY_SCHEMA: ParamSchema = {
         minCurveRadius: 34,
         minTurnAngle: 0,
         maxTurnAngle: 95,
+        compactness: 0.5,
+        elevation: 0.3,
+        maxGrade: 0.06,
         blockSize: 95,
         blockAspect: 1,
         openSpace: 0,
@@ -588,6 +672,8 @@ export const CITY_SCHEMA: ParamSchema = {
         sidewalks: false,
         treeDensity: 0.2,
         lightDensity: 0.25,
+        parkedCars: 0,
+        signals: 0,
         hedges: false,
         driveways: false,
         parking: false,
@@ -608,6 +694,9 @@ export const CITY_SCHEMA: ParamSchema = {
         minCurveRadius: 12,
         minTurnAngle: 0,
         maxTurnAngle: 150,
+        outline: 0.5,
+        elevation: 0.8,
+        maxGrade: 0.14,
         blockSize: 72,
         blockAspect: 1,
         openSpace: 0,
@@ -621,6 +710,8 @@ export const CITY_SCHEMA: ParamSchema = {
         sidewalks: false,
         treeDensity: 0.65,
         lightDensity: 0.05,
+        parkedCars: 0,
+        signals: 0,
         hedges: false,
         driveways: false,
         parking: false,
@@ -652,6 +743,8 @@ export const CITY_SCHEMA: ParamSchema = {
         floorsMax: 34,
         treeDensity: 0.55,
         lightDensity: 0.6,
+        parkedCars: 0.85,
+        signals: 0.9,
         style: "generic",
       },
     },
@@ -691,6 +784,11 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     minCurveRadius: params["minCurveRadius"] as number,
     minTurnAngle: params["minTurnAngle"] as number,
     maxTurnAngle: params["maxTurnAngle"] as number,
+    outline: params["outline"] as number,
+    residentialBranches: params["residentialBranches"] as number,
+    elevation: params["elevation"] as number,
+    maxGrade: params["maxGrade"] as number,
+    compactness: params["compactness"] as number,
     fabric: params["fabric"] as boolean,
     tunnels: params["tunnels"] as boolean,
     blockSize: params["blockSize"] as number,
@@ -718,6 +816,8 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     treeDensity: params["treeDensity"] as number,
     treeMix: params["treeMix"] as WeightedParamEntry[],
     lightDensity: params["lightDensity"] as number,
+    parkedCars: params["parkedCars"] as number,
+    signals: params["signals"] as number,
     hedges: params["hedges"] as boolean,
     driveways: params["driveways"] as boolean,
     parking: params["parking"] as boolean,
@@ -728,6 +828,14 @@ export function readCityRules(meta: Record<string, unknown> | undefined): CityRu
     bridgeStyle: params["bridgeStyle"] as CityRules["bridgeStyle"],
     sidewalks: params["sidewalks"] as boolean,
     sidewalkWidth: params["sidewalkWidth"] as number,
+    race: params["race"] as boolean,
+    raceLapLength: params["raceLapLength"] as number,
+    raceArterial: params["raceArterial"] as number,
+    raceCheckpoints: params["raceCheckpoints"] as number,
+    raceLaps: params["raceLaps"] as number,
+    raceSeals: params["raceSeals"] as boolean,
+    raceGridSlots: params["raceGridSlots"] as number,
+    raceCornerRadius: params["raceCornerRadius"] as number,
     style: params["style"] as BuildingStyle,
     buildingKit: (params["buildingKit"] as string | undefined) ?? CITY_DEFAULTS.buildingKit,
     seed: params["seed"] as string,
@@ -743,6 +851,9 @@ export interface CityStreet {
   surface: "asphalt" | "gravel";
   /** Whether sidewalk ribbons flank this street. */
   sidewalk: boolean;
+  /** Grade-limited road-surface height per point, present only when `elevation` is above 0. This is
+   * ROAD relief, not the terrain the district stands on. */
+  heights?: readonly number[];
   /** Cul-de-sac turning bulb at a dangling end, when the lane never reconnected. */
   bulb?: RoadPoint;
   /** Bridge/tunnel spans along this street as `[from, to]` index windows into `points`. */
@@ -894,6 +1005,105 @@ export interface CityParking {
   rotationY: number;
 }
 
+/** Silhouette class of a parked vehicle — sizes the body the renderer instances. */
+export type CityVehicleKind = "car" | "van" | "truck";
+
+/** One parked vehicle standing at a curb or nose-in inside a parking pad. */
+export interface CityVehicle {
+  x: number;
+  z: number;
+  /** Yaw the body points down (engine rotationY convention). */
+  rotationY: number;
+  kind: CityVehicleKind;
+  /** Seeded body-paint index; the renderer maps it into its own palette. */
+  paint: number;
+  /** Where it stands, so the renderer drapes it onto carriageway or pad height. */
+  stall: "curb" | "lot";
+}
+
+/** One junction control on an approach arm: an arterial mast-arm signal, or a plain sign post. */
+export interface CitySignal {
+  x: number;
+  z: number;
+  /** Yaw the head faces — into the traffic approaching down this arm. */
+  heading: number;
+  kind: "signal" | "sign";
+  /** How far the mast arm reaches over the carriageway, to the right of {@link CitySignal.heading}. */
+  reach: number;
+}
+
+/** One street closed off where it leaves the race lap: world XZ, the yaw down the sealed street, and
+ * the width the barrier run spans. */
+export interface CityRaceSeal {
+  x: number;
+  z: number;
+  heading: number;
+  width: number;
+  kind: CircuitSealKind;
+}
+
+/** One kerb strip hugging a corner's road edge, as a world-space polyline to stripe. */
+export interface CityRaceKerb {
+  points: readonly RoadPoint[];
+  /** Strip width across, meters. */
+  width: number;
+  /** Which side of travel the strip sits on: -1 left, 1 right. */
+  side: -1 | 1;
+  /** Alternating stripe length along the run, meters. */
+  stripe: number;
+  /** Corner this kerb belongs to (index into {@link ResolvedRace.corners}). */
+  corner: number;
+}
+
+/** The start/finish line: where it is, which way cars face, and the painted line across the road. */
+export interface CityRaceStart {
+  x: number;
+  z: number;
+  /** Yaw cars face on the grid (direction of travel). */
+  heading: number;
+  /** The two road-edge ends of the painted line. */
+  line: readonly [RoadPoint, RoadPoint];
+  /** Arc-length position of the line along the lap, meters. */
+  distance: number;
+  width: number;
+}
+
+/** One staggered spawn behind the start line. */
+export interface CityRaceGridSlot {
+  x: number;
+  z: number;
+  heading: number;
+}
+
+/**
+ * An instanced street race lifted out of the district's OWN streets: a closed lap through the city,
+ * with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
+ */
+export interface ResolvedRace {
+  /** Closed lap centerline — the last point joins the first. */
+  centerline: readonly RoadPoint[];
+  /** Road width at each centerline point, inherited from the streets the lap follows. */
+  widths: readonly number[];
+  /** Road-surface height per point, present only when the district carries `elevation`. */
+  heights?: readonly number[];
+  /** Lap length, meters. */
+  length: number;
+  /** Ids of the district streets the lap runs on — style exactly these as track surface. */
+  streets: readonly string[];
+  seals: readonly CityRaceSeal[];
+  corners: readonly CircuitCorner[];
+  kerbs: readonly CityRaceKerb[];
+  /** Ordered gates, finish last — ready for `raceTrack({ checkpoints, laps })`. */
+  checkpoints: readonly CircuitGate[];
+  laps: number;
+  start: CityRaceStart;
+  grid: readonly CityRaceGridSlot[];
+  /** Arc-length fractions (0..1) where each timing sector begins; the first is always 0. */
+  sectors: readonly number[];
+  /** Tightest radius (m) the finished racing line actually holds. */
+  tightestRadius: number;
+}
+
 /** A resolved city district: world-space network, zoned lots, parks, and furniture. */
 export interface ResolvedCity {
   center: readonly [number, number, number];
@@ -916,6 +1126,12 @@ export interface ResolvedCity {
   hedges: readonly CityHedge[];
   driveways: readonly CityDriveway[];
   parkingLots: readonly CityParking[];
+  /** Parked vehicles along the curbs and inside the parking pads. */
+  vehicles: readonly CityVehicle[];
+  /** Traffic signals and sign posts, one per controlled junction approach. */
+  signals: readonly CitySignal[];
+  /** The instanced street race through these streets, when `race` is on and a lap could be found. */
+  race?: ResolvedRace;
 }
 
 /** Extended resolve context: sibling `cityzone` volumes that override the band/mix locally. */
@@ -932,7 +1148,20 @@ const MAX_TREES = 3200;
 const MAX_LIGHTS = 1200;
 const MAX_FIELD_ROWS = 2400;
 const MAX_PARKING = 380;
+const MAX_VEHICLES = 900;
+const MAX_SIGNALS = 640;
+const MAX_RACE_SEALS = 400;
+const MAX_RACE_KERBS = 320;
 const TAU = Math.PI * 2;
+
+/** Body footprint per silhouette as `[half width across, half length along the heading]`. */
+const VEHICLE_HALF_EXTENTS: Record<CityVehicleKind, readonly [number, number]> = {
+  car: [0.95, 2.25],
+  van: [1.05, 2.65],
+  truck: [1.2, 3.5],
+};
+/** Paint slots the resolver spreads vehicles across; the renderer owns the actual colors. */
+const VEHICLE_PAINT_COUNT = 8;
 
 interface LocalStreet {
   points: [number, number][];
@@ -940,6 +1169,7 @@ interface LocalStreet {
   level: CityStreet["level"];
   surface: CityStreet["surface"];
   sidewalk: boolean;
+  heights?: number[];
   bulb?: [number, number];
   features?: readonly { kind: StreetFeatureKind; from: number; to: number; bankHeight: number }[];
 }
@@ -1262,7 +1492,18 @@ function buildFabric(
       if (prevClass !== null && stickRoll < 0.45 + rules.clusterStrength * 0.4 && mix.some((entry) => entry.item === prevClass && entry.weight > 0)) {
         cls = prevClass;
       }
-      const placement = rollClassPlacement(cls, lotRng, rules.lotScale, rules.floorsMin, rules.floorsMax, rules.buildingRoadSetback, rules.buildingSpacing);
+      const stretchCommercial =
+        rules.blockDensity > 0.75 && (cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse");
+      const placement = rollClassPlacement(
+        cls,
+        lotRng,
+        rules.lotScale,
+        rules.floorsMin,
+        rules.floorsMax,
+        rules.buildingRoadSetback,
+        rules.buildingSpacing,
+        stretchCommercial ? 1 + rules.blockDensity * 0.35 : 1,
+      );
       const frontW = placement.width + placement.gap;
       if (cursor + frontW > walker.total - 0.5) break;
       // Parcel depth: setback + class depth + rear yard, deepened toward the block spine by
@@ -1347,18 +1588,27 @@ function buildFabric(
         prevClass = null;
         continue;
       }
-      const sideGap = Math.max(0.3, placement.gap / 2);
-      const buildable = buildablePolygon(poly, A, B, placement.setback, sideGap, 1.2, usedDepth);
+      const commercial = cls === "tower" || cls === "slab" || cls === "shop" || cls === "rowhouse";
+      const dense = rules.blockDensity > 0.75 && commercial;
+      const sideGap = Math.max(dense ? (cls === "shop" || cls === "rowhouse" ? 0.08 : 0.15) : 0.3, (placement.gap / 2) * (dense ? 0.45 : 1));
+      const frontSetback = Math.max(0.05, placement.setback * (dense ? 0.35 : 1));
+      const buildable = buildablePolygon(poly, A, B, frontSetback, sideGap, 1.2, usedDepth);
       parcel.buildable = buildable;
       let placedLot = false;
       if (buildable.length >= 3) {
         const outDir: Vec2 = [-midS.normal[0], -midS.normal[1]];
         const rotationY = Math.atan2(outDir[0], outDir[1]);
-        const maxW = Math.max(3, Math.min(placement.width, frontW - placement.gap));
-        const availDepth = usedDepth - placement.setback - 1.2;
-        const maxD = Math.max(3, Math.min(placement.depth, availDepth));
-        const cx0 = midS.p[0] + midS.normal[0] * (placement.setback + maxD / 2);
-        const cz0 = midS.p[1] + midS.normal[1] * (placement.setback + maxD / 2);
+        const maxW = Math.max(
+          3,
+          Math.min(
+            dense ? Math.max(placement.width, frontW * 0.9) : placement.width,
+            frontW - Math.max(0.15, placement.gap * (dense ? 0.35 : 1)),
+          ),
+        );
+        const availDepth = usedDepth - frontSetback - 1.2;
+        const maxD = Math.max(3, Math.min(dense ? Math.max(placement.depth, availDepth * 0.85) : placement.depth, availDepth));
+        const cx0 = midS.p[0] + midS.normal[0] * (frontSetback + maxD / 2);
+        const cz0 = midS.p[1] + midS.normal[1] * (frontSetback + maxD / 2);
         const fit = fitRectInPolygon(buildable, cx0, cz0, maxW, maxD, rotationY, 0.45);
         if (fit !== null && fit.w >= 3 && fit.d >= 2.6) {
           const slopeRoll = rng();
@@ -1460,8 +1710,8 @@ function buildFabric(
     // elsewhere) when it is big enough to read as a place rather than back yards.
     if (maxDepthUsed > 0) {
       const core = insetRingUniform(land, maxDepthUsed + 0.5);
-      if (core.length >= 3 && polygonArea(core) > 240) {
-        const type: CityPark["type"] = band === "core" ? "courtyard" : band === "mid" ? (parkJitter < 0.5 ? "courtyard" : "green") : "meadow";
+      if (core.length >= 3 && polygonArea(core) > 120) {
+        const type: CityPark["type"] = band === "core" ? "courtyard" : band === "mid" ? (parkJitter < 0.55 ? "courtyard" : "green") : "meadow";
         result.parks.push(parkFromRing(`court:${bi}`, type, core, parkJitter));
       }
     }
@@ -1506,6 +1756,94 @@ function buildFieldRows(parks: LocalPark[], placed: LotIndex, streams: (stream: 
   }
 }
 
+/** Ids of the through-streets carrying a lap's graph edges, in lap order and without repeats. */
+function lapStreetIds(network: StreetNetwork, edges: readonly number[], streetCount: number): string[] {
+  const pairKey = (a: number, b: number): string => (a < b ? `${a}:${b}` : `${b}:${a}`);
+  const owner = new Map<string, number>();
+  for (let index = 0; index < Math.min(network.streets.length, streetCount); index += 1) {
+    const nodes = network.streets[index]!.nodes;
+    for (let i = 0; i + 1 < nodes.length; i += 1) owner.set(pairKey(nodes[i]!, nodes[i + 1]!), index);
+  }
+  const byId = new Map(network.edges.map((edge) => [edge.id, edge] as const));
+  const ids: string[] = [];
+  const seen = new Set<number>();
+  for (const id of edges) {
+    const edge = byId.get(id);
+    if (edge === undefined) continue;
+    const index = owner.get(pairKey(edge.a, edge.b));
+    if (index === undefined || seen.has(index)) continue;
+    seen.add(index);
+    ids.push(`street:${index}`);
+  }
+  return ids;
+}
+
+/** Rotate and translate a volume-local circuit route into the world frame the rest of the plan uses. */
+function raceToWorld(
+  route: CircuitRoute,
+  streets: readonly string[],
+  seals: boolean,
+  toWorld: (x: number, z: number) => RoadPoint,
+  rotationY: number,
+): ResolvedRace {
+  // `toWorld` rotates a local direction BY `rotationY`, so a heading turns with it rather than against.
+  const heading = (local: number): number => local + rotationY;
+  // A checkpoint is an AABB with no yaw of its own; grow it to the bounds of the rotated gate.
+  const gateX = Math.abs(Math.cos(rotationY));
+  const gateZ = Math.abs(Math.sin(rotationY));
+  const [sx, sz] = toWorld(route.start.x, route.start.z);
+  return {
+    centerline: route.centerline.map(([x, z]) => toWorld(x, z)),
+    widths: [...route.widths],
+    ...(route.heights === undefined ? {} : { heights: [...route.heights] }),
+    length: route.length,
+    streets,
+    seals: seals
+      ? route.seals.slice(0, MAX_RACE_SEALS).map((seal) => {
+          const [x, z] = toWorld(seal.x, seal.z);
+          return { x, z, heading: heading(seal.heading), width: seal.width, kind: seal.kind };
+        })
+      : [],
+    corners: route.corners.map((corner) => ({ ...corner })),
+    kerbs: circuitKerbs(route)
+      .slice(0, MAX_RACE_KERBS)
+      .map((kerb) => ({
+        points: kerb.points.map(([x, z]) => toWorld(x, z)),
+        width: kerb.width,
+        side: kerb.side,
+        stripe: kerb.stripe,
+        corner: kerb.corner,
+      })),
+    checkpoints: route.checkpoints.map((gate) => {
+      const [x, z] = toWorld(gate.center[0], gate.center[2]);
+      return {
+        id: gate.id,
+        center: [x, gate.center[1], z] as const,
+        half: [
+          gate.half[0] * gateX + gate.half[2] * gateZ,
+          gate.half[1],
+          gate.half[0] * gateZ + gate.half[2] * gateX,
+        ] as const,
+      };
+    }),
+    laps: route.laps,
+    start: {
+      x: sx,
+      z: sz,
+      heading: heading(route.start.heading),
+      line: [toWorld(route.start.line[0][0], route.start.line[0][1]), toWorld(route.start.line[1][0], route.start.line[1][1])],
+      distance: route.start.distance,
+      width: route.start.width,
+    },
+    grid: route.grid.map((slot) => {
+      const [x, z] = toWorld(slot.x, slot.z);
+      return { x, z, heading: heading(slot.heading) };
+    }),
+    sectors: [...route.sectors],
+    tightestRadius: route.tightestRadius,
+  };
+}
+
 /**
  * Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned
  * frontage lots with massing pieces → furniture, all in the volume's local frame and then
@@ -1543,6 +1881,8 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     hedges: [],
     driveways: [],
     parkingLots: [],
+    vehicles: [],
+    signals: [],
   };
   if (hx < rules.blockSize * 0.75 || hz < rules.blockSize * 0.75) return empty;
   const cos = Math.cos(rotationY);
@@ -1599,10 +1939,12 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
   // net and a closed race circuit are the SAME generator at opposite slider extremes.
   const netRules: StreetNetworkRules = {
     seed: rules.seed.length > 0 ? rules.seed : object.id,
+    outline: rules.outline,
     gridness: rules.gridness,
     loopiness: rules.loopiness,
     connectivity: rules.connectivity,
     branching: rules.branching,
+    residentialBranches: rules.residentialBranches,
     deadEnds: rules.deadEnds,
     segmentLength: rules.blockSize,
     aspect: rules.blockAspect,
@@ -1612,6 +1954,10 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     maxTurnAngle: rules.maxTurnAngle,
     width: rules.streetWidth,
     boulevards: rules.boulevards,
+    sidewalkWidth: rules.sidewalkWidth,
+    elevation: rules.elevation,
+    maxGrade: rules.maxGrade,
+    compactness: rules.compactness,
   };
   const network = generateStreets(netRules, hx, hz, {
     heightAt: heightAt ?? undefined,
@@ -1630,6 +1976,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       level: street.level,
       surface,
       sidewalk: rules.sidewalks && surface === "asphalt",
+      ...(street.heights === undefined ? {} : { heights: [...street.heights] }),
       ...(street.bulb === undefined ? {} : { bulb: [street.bulb[0], street.bulb[1]] as [number, number] }),
       ...(street.features.length === 0 ? {} : { features: street.features }),
     };
@@ -1649,6 +1996,19 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     width: t.width,
     bankHeight: t.bankHeight,
   }));
+  // The race is a SECTION OF THIS CITY blocked off: the same streets the district already grew,
+  // with a closed lap lifted out of them. A district with no drivable cycle simply has no race.
+  const route = rules.race
+    ? extractCircuitRoute(network, {
+        seed: netRules.seed,
+        lapLength: rules.raceLapLength,
+        arterialBias: rules.raceArterial,
+        minCornerRadius: rules.raceCornerRadius,
+        checkpoints: rules.raceCheckpoints,
+        laps: rules.raceLaps,
+        gridSlots: rules.raceGridSlots,
+      })
+    : null;
   // Fabric (block/parcel/building subdivision) is optional: a bare road or race track leaves it off,
   // so a circuit never carries forced-on plots — parcels and buildings appear only when you want it.
   const emptyFabric: FabricResult = { blocks: [], parcels: [], parks: [], lots: [], placed: new LotIndex(), hedges: [], driveways: [] };
@@ -1784,6 +2144,83 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
     }
   }
 
+  // Parked vehicles: curbside anchors come from the shared street helper, pad stalls from the
+  // pads laid above. Every candidate clears other streets, footprints, and the cars already parked.
+  const vehicles: { x: number; z: number; rotationY: number; kind: CityVehicleKind; paint: number; stall: CityVehicle["stall"] }[] = [];
+  if (rules.parkedCars > 0) {
+    const carRng = streams("vehicles");
+    const carIndex = new LotIndex();
+    const park = (x: number, z: number, heading: number, mix: number, stall: CityVehicle["stall"], street: number): void => {
+      const kind: CityVehicleKind = mix < 0.68 ? "car" : mix < 0.9 ? "van" : "truck";
+      const half = VEHICLE_HALF_EXTENTS[kind];
+      const rect: PlacedLot = { x, z, hw: half[0], hd: half[1], angle: heading };
+      if (!insideBounds(x, z)) return;
+      if (index.clearance(x, z, stall === "curb" ? 0.6 : 0.5, street) < 0) return;
+      if (lotResult.placed.overlapsAny(rect, 0.4)) return;
+      if (carIndex.overlapsAny(rect, 0.35)) return;
+      carIndex.add(rect);
+      vehicles.push({ x, z, rotationY: heading, kind, paint: Math.floor(mix * 9973) % VEHICLE_PAINT_COUNT, stall });
+    };
+    const spacing = Math.max(7, 26 - 19 * rules.parkedCars);
+    for (let si = 0; si < local.length && vehicles.length < MAX_VEHICLES; si += 1) {
+      const street = local[si]!;
+      // Gravel shoulders and narrow lanes have no curb lane: `parkingSpots` would seat the body
+      // over the centreline of anything under ~6.5 m.
+      if (street.surface === "gravel" || street.width < 6.5) continue;
+      for (const spot of parkingSpots(asDescriptor(street), { spacing })) {
+        if (vehicles.length >= MAX_VEHICLES) break;
+        const mix = carRng();
+        if (carRng() > rules.parkedCars) continue;
+        const [x, z] = spot.position;
+        if (nearIntersection(x, z, 4)) continue;
+        park(x, z, spot.heading, mix, "curb", si);
+      }
+    }
+    for (const pad of parking) {
+      if (vehicles.length >= MAX_VEHICLES) break;
+      const ca = Math.cos(pad.rotationY);
+      const sa = Math.sin(pad.rotationY);
+      const rows = pad.size[1] >= 11 ? 2 : 1;
+      const stalls = Math.max(1, Math.floor(pad.size[0] / 2.9));
+      for (let row = 0; row < rows; row += 1) {
+        const lz = rows === 1 ? 0 : (row === 0 ? -1 : 1) * pad.size[1] * 0.25;
+        for (let s = 0; s < stalls; s += 1) {
+          if (vehicles.length >= MAX_VEHICLES) break;
+          const mix = carRng();
+          if (carRng() > rules.parkedCars * 0.92) continue;
+          const lx = ((s + 0.5) / stalls - 0.5) * pad.size[0];
+          // Facing rows nose in on the aisle between them.
+          park(pad.center[0] + lx * ca + lz * sa, pad.center[1] - lx * sa + lz * ca, pad.rotationY + row * Math.PI, mix, "lot", -1);
+        }
+      }
+    }
+  }
+  // Junction control, one device per approach arm: arterial crossings get a signal on a mast arm,
+  // everything above lane level gets a sign post instead.
+  const signals: { x: number; z: number; heading: number; kind: CitySignal["kind"]; reach: number }[] = [];
+  if (rules.signals > 0) {
+    const signalRng = streams("signals");
+    for (const cross of intersections) {
+      if (signals.length >= MAX_SIGNALS) break;
+      if (cross.arms.length < 3 || cross.level === "lane") continue;
+      const arterial = LEVEL_RANK[cross.level] >= LEVEL_RANK.avenue;
+      if (signalRng() > rules.signals * (arterial ? 1 : 0.75)) continue;
+      for (const arm of cross.arms) {
+        if (signals.length >= MAX_SIGNALS) break;
+        const dir: readonly [number, number] = [Math.sin(arm.angle), Math.cos(arm.angle)];
+        // Right-hand traffic: the pole stands on the near-right corner of the approach.
+        const perp: readonly [number, number] = [-dir[1], dir[0]];
+        const out = cross.radius + 1.8;
+        const side = arm.width / 2 + 1;
+        const x = cross.x + dir[0] * out + perp[0] * side;
+        const z = cross.z + dir[1] * out + perp[1] * side;
+        if (!insideBounds(x, z)) continue;
+        if (index.clearance(x, z, 0.3) < 0) continue;
+        signals.push({ x, z, heading: arm.angle, kind: arterial ? "signal" : "sign", reach: arm.width / 2 + 0.6 });
+      }
+    }
+  }
+
   return {
     center: [center.x, center.y, center.z],
     size: [hx * 2, hz * 2],
@@ -1796,6 +2233,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       level: street.level,
       surface: street.surface,
       sidewalk: street.sidewalk,
+      ...(street.heights === undefined ? {} : { heights: [...street.heights] }),
       ...(street.bulb === undefined ? {} : { bulb: toWorld(street.bulb[0], street.bulb[1]) }),
       ...(street.features === undefined ? {} : { features: street.features.map((f) => ({ ...f })) }),
     })),
@@ -1893,6 +2331,17 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
       const [x, z] = toWorld(pad.center[0], pad.center[1]);
       return { center: [x, z] as RoadPoint, size: pad.size, rotationY: pad.rotationY - rotationY };
     }),
+    vehicles: vehicles.map((vehicle) => {
+      const [x, z] = toWorld(vehicle.x, vehicle.z);
+      return { x, z, rotationY: vehicle.rotationY + rotationY, kind: vehicle.kind, paint: vehicle.paint, stall: vehicle.stall };
+    }),
+    signals: signals.map((signal) => {
+      const [x, z] = toWorld(signal.x, signal.z);
+      return { x, z, heading: signal.heading + rotationY, kind: signal.kind, reach: signal.reach };
+    }),
+    ...(route === null
+      ? {}
+      : { race: raceToWorld(route, lapStreetIds(network, route.edges, local.length), rules.raceSeals, toWorld, rotationY) }),
   };
 }
 
@@ -1930,6 +2379,11 @@ export function registerCityKind(): void {
       const feats = [
         resolved.bridges.length > 0 ? `${resolved.bridges.length} bridges` : "",
         resolved.tunnels.length > 0 ? `${resolved.tunnels.length} tunnels` : "",
+        resolved.rules.race
+          ? resolved.race === undefined
+            ? "no raceable lap in these streets"
+            : `${Math.round(resolved.race.length)} m lap · ${resolved.race.seals.length} seals`
+          : "",
       ].filter((s) => s.length > 0);
       const head = mode === "circuit" ? `circuit · ${resolved.streets.length} streets` : `${resolved.streets.length} streets`;
       // Shared clamp-and-warn: when the block/parcel pipeline hits the building budget, surface it in
