@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { DEFAULTS, PRESETS, growPlayground, parsePlaygroundQuery } from "./playground";
+import { DEFAULTS, PRESETS, growPlayground, parsePlaygroundQuery, shouldAnimatePlaygroundBuild } from "./playground";
 
 describe("playground query controls", () => {
   test("parses all generation and inspection controls deterministically", () => {
@@ -82,6 +82,21 @@ describe("playground query controls", () => {
       arterialBias: 0,
       checkpoints: 24,
     });
+  });
+});
+
+describe("playground first-build animation", () => {
+  const visible = { capture: false, builtOnce: false, top: 100, bottom: 660, viewportHeight: 900 };
+
+  test("animates only the first visible interactive build", () => {
+    expect(shouldAnimatePlaygroundBuild(visible)).toBe(true);
+    expect(shouldAnimatePlaygroundBuild({ ...visible, builtOnce: true })).toBe(false);
+    expect(shouldAnimatePlaygroundBuild({ ...visible, capture: true })).toBe(false);
+  });
+
+  test("settles an offscreen first build immediately", () => {
+    expect(shouldAnimatePlaygroundBuild({ ...visible, top: 950, bottom: 1510 })).toBe(false);
+    expect(shouldAnimatePlaygroundBuild({ ...visible, top: -600, bottom: -40 })).toBe(false);
   });
 });
 

@@ -93,6 +93,71 @@
       }
     },
     {
+      "id": "rustflat_convoy_hauler",
+      "kind": "prop",
+      "position": {
+        "x": -468.5,
+        "y": 0,
+        "z": 553.6
+      },
+      "rotationY": 2.15,
+      "meta": {
+        "catalogId": "bus_wreck"
+      }
+    },
+    {
+      "id": "rustflat_convoy_cargo",
+      "kind": "prop",
+      "position": {
+        "x": -448,
+        "y": 0,
+        "z": 522
+      },
+      "rotationY": 0.7,
+      "meta": {
+        "catalogId": "wreck"
+      }
+    },
+    {
+      "id": "rustflat_convoy_spire",
+      "kind": "prop",
+      "position": {
+        "x": -490.4,
+        "y": 0,
+        "z": 538.3
+      },
+      "rotationY": 1.2,
+      "meta": {
+        "catalogId": "rock_spire"
+      }
+    },
+    {
+      "id": "rustflat_convoy_banner",
+      "kind": "prop",
+      "position": {
+        "x": -478.5,
+        "y": 0,
+        "z": 530.2
+      },
+      "rotationY": 0,
+      "meta": {
+        "catalogId": "banner_pole"
+      }
+    },
+    {
+      "id": "rustflat_convoy_watch",
+      "kind": "prop",
+      "position": {
+        "x": -497,
+        "y": 0,
+        "z": 549
+      },
+      "rotationY": 4.3,
+      "meta": {
+        "catalogId": "watchtower"
+      }
+    },
+    {
       "id": "rustflat_spire_a",
       "kind": "prop",
       "position": {
@@ -5176,8 +5241,8 @@
         "y": 0,
         "z": 610
       },
-      "label": "red chest",
       "color": "#fbbf24",
+      "label": "red chest",
       "meta": {
         "kind": "red",
         "zoneId": "windshear_waste"
@@ -5191,8 +5256,8 @@
         "y": 0,
         "z": 530
       },
-      "label": "ammo chest",
       "color": "#94a3b8",
+      "label": "ammo chest",
       "meta": {
         "kind": "ammo",
         "zoneId": "windshear_waste"
@@ -5206,8 +5271,8 @@
         "y": 0,
         "z": 560
       },
-      "label": "Rustflat Waste travel",
       "color": "#34d399",
+      "label": "Rustflat Waste travel",
       "meta": {
         "zoneId": "windshear_waste"
       }
@@ -5220,8 +5285,8 @@
         "y": 0,
         "z": 520
       },
-      "label": "red chest",
       "color": "#fbbf24",
+      "label": "red chest",
       "meta": {
         "kind": "red",
         "zoneId": "southern_shelf"
@@ -5235,8 +5300,8 @@
         "y": 0,
         "z": 420
       },
-      "label": "ammo chest",
       "color": "#94a3b8",
+      "label": "ammo chest",
       "meta": {
         "kind": "ammo",
         "zoneId": "southern_shelf"
@@ -5250,8 +5315,8 @@
         "y": 0,
         "z": 560
       },
-      "label": "captain_rusk",
       "color": "#f43f5e",
+      "label": "captain_rusk",
       "meta": {
         "catalogId": "captain_rusk",
         "zoneId": "southern_shelf"
@@ -5265,8 +5330,8 @@
         "y": 0,
         "z": 440
       },
-      "label": "Southern Shelf travel",
       "color": "#34d399",
+      "label": "Southern Shelf travel",
       "meta": {
         "zoneId": "southern_shelf"
       }
@@ -5279,8 +5344,8 @@
         "y": 0,
         "z": 55
       },
-      "label": "red chest",
       "color": "#fbbf24",
+      "label": "red chest",
       "meta": {
         "kind": "red",
         "zoneId": "arid_badlands"
@@ -5294,8 +5359,8 @@
         "y": 0,
         "z": -46
       },
-      "label": "ammo chest",
       "color": "#94a3b8",
+      "label": "ammo chest",
       "meta": {
         "kind": "ammo",
         "zoneId": "arid_badlands"
@@ -5309,8 +5374,8 @@
         "y": 0,
         "z": 70
       },
-      "label": "ammo chest",
       "color": "#94a3b8",
+      "label": "ammo chest",
       "meta": {
         "kind": "ammo",
         "zoneId": "arid_badlands"
@@ -5324,8 +5389,8 @@
         "y": 0,
         "z": -20
       },
-      "label": "Arid Badlands — Coretown travel",
       "color": "#34d399",
+      "label": "Arid Badlands — Coretown travel",
       "meta": {
         "zoneId": "arid_badlands"
       }
@@ -5338,8 +5403,8 @@
         "y": 0,
         "z": 250
       },
-      "label": "red chest",
       "color": "#fbbf24",
+      "label": "red chest",
       "meta": {
         "kind": "red",
         "zoneId": "three_horns"
@@ -5353,8 +5418,8 @@
         "y": 0,
         "z": 340
       },
-      "label": "ammo chest",
       "color": "#94a3b8",
+      "label": "ammo chest",
       "meta": {
         "kind": "ammo",
         "zoneId": "three_horns"
@@ -5368,8 +5433,8 @@
         "y": 0,
         "z": 380
       },
-      "label": "bad_maw",
       "color": "#f43f5e",
+      "label": "bad_maw",
       "meta": {
         "catalogId": "bad_maw",
         "zoneId": "three_horns"
@@ -5383,8 +5448,8 @@
         "y": 0,
         "z": 290
       },
-      "label": "Three Horns Divide travel",
       "color": "#34d399",
+      "label": "Three Horns Divide travel",
       "meta": {
         "zoneId": "three_horns"
       }
@@ -5397,8 +5462,8 @@
         "y": 0,
         "z": -210
       },
-      "label": "red chest",
       "color": "#fbbf24",
+      "label": "red chest",
       "meta": {
         "kind": "red",
         "zoneId": "the_dust"
@@ -5412,8 +5477,8 @@
         "y": 0,
         "z": -300
       },
-      "label": "ammo chest",
       "color": "#94a3b8",
+      "label": "ammo chest",
       "meta": {
         "kind": "ammo",
         "zoneId": "the_dust"
@@ -5427,8 +5492,8 @@
         "y": 0,
         "z": -270
       },
-      "label": "The Dust travel",
       "color": "#34d399",
+      "label": "The Dust travel",
       "meta": {
         "zoneId": "the_dust"
       }
@@ -5441,8 +5506,8 @@
         "y": 0,
         "z": -510
       },
-      "label": "red chest",
       "color": "#fbbf24",
+      "label": "red chest",
       "meta": {
         "kind": "red",
         "zoneId": "eridium_blight"
@@ -5456,8 +5521,8 @@
         "y": 0,
         "z": -610
       },
-      "label": "red chest",
       "color": "#fbbf24",
+      "label": "red chest",
       "meta": {
         "kind": "red",
         "zoneId": "eridium_blight"
@@ -5471,8 +5536,8 @@
         "y": 0,
         "z": -540
       },
-      "label": "ammo chest",
       "color": "#94a3b8",
+      "label": "ammo chest",
       "meta": {
         "kind": "ammo",
         "zoneId": "eridium_blight"
@@ -5486,8 +5551,8 @@
         "y": 0,
         "z": -660
       },
-      "label": "the_warrior",
       "color": "#f43f5e",
+      "label": "the_warrior",
       "meta": {
         "catalogId": "the_warrior",
         "zoneId": "eridium_blight"
@@ -5501,8 +5566,8 @@
         "y": 0,
         "z": -520
       },
-      "label": "Cores Blight — Ember Gate travel",
       "color": "#34d399",
+      "label": "Cores Blight — Ember Gate travel",
       "meta": {
         "zoneId": "eridium_blight"
       }
@@ -5515,8 +5580,8 @@
         "y": 0,
         "z": 430
       },
-      "label": "Monglet Den",
       "color": "#e879f9",
+      "label": "Monglet Den",
       "meta": {
         "dressing": "skag_den",
         "spawns": [
@@ -5541,8 +5606,8 @@
         "y": 0,
         "z": 210
       },
-      "label": "Lost Apex Cache",
       "color": "#e879f9",
+      "label": "Lost Apex Cache",
       "meta": {
         "dressing": "cache",
         "spawns": [
@@ -5563,8 +5628,8 @@
         "y": 0,
         "z": 40
       },
-      "label": "Buzzard Wreck Field",
       "color": "#e879f9",
+      "label": "Buzzard Wreck Field",
       "meta": {
         "dressing": "wreck_field",
         "spawns": [
@@ -5589,8 +5654,8 @@
         "y": 0,
         "z": -6
       },
-      "label": "Rigg",
-      "color": "#a78bfa"
+      "color": "#a78bfa",
+      "label": "Rigg"
     },
     {
       "id": "vendor_zed",
@@ -5600,8 +5665,8 @@
         "y": 0,
         "z": -8
       },
-      "label": "Dr. Sparx",
-      "color": "#a78bfa"
+      "color": "#a78bfa",
+      "label": "Dr. Sparx"
     },
     {
       "id": "vendor_black_market",
@@ -5611,8 +5676,8 @@
         "y": 0,
         "z": 16
       },
-      "label": "Black Market",
-      "color": "#a78bfa"
+      "color": "#a78bfa",
+      "label": "Black Market"
     },
     {
       "id": "new_u_station",
@@ -5622,8 +5687,8 @@
         "y": 0,
         "z": 564
       },
-      "label": "Rebuild",
-      "color": "#34d399"
+      "color": "#34d399",
+      "label": "Rebuild"
     },
     {
       "id": "npc_zed",
@@ -5633,8 +5698,8 @@
         "y": 0,
         "z": -10
       },
-      "label": "dr_sparx",
       "color": "#60a5fa",
+      "label": "dr_sparx",
       "meta": {
         "name": "dr_sparx"
       }
@@ -5647,8 +5712,8 @@
         "y": 0,
         "z": -8
       },
-      "label": "rigg",
       "color": "#60a5fa",
+      "label": "rigg",
       "meta": {
         "name": "rigg"
       }
@@ -5661,10 +5726,52 @@
         "y": 0,
         "z": 20
       },
-      "label": "gauge",
       "color": "#60a5fa",
+      "label": "gauge",
       "meta": {
         "name": "gauge"
+      }
+    },
+    {
+      "id": "rustflat_turbine_a",
+      "kind": "prop",
+      "position": {
+        "x": -468,
+        "y": 0,
+        "z": 470
+      },
+      "rotationY": 0.6,
+      "label": "Harvest turbine A",
+      "meta": {
+        "catalogId": "wind_turbine"
+      }
+    },
+    {
+      "id": "rustflat_turbine_b",
+      "kind": "prop",
+      "position": {
+        "x": -428,
+        "y": 0,
+        "z": 398
+      },
+      "rotationY": 1.9,
+      "label": "Harvest turbine B",
+      "meta": {
+        "catalogId": "wind_turbine"
+      }
+    },
+    {
+      "id": "rustflat_turbine_c",
+      "kind": "prop",
+      "position": {
+        "x": -562,
+        "y": 0,
+        "z": 508
+      },
+      "rotationY": 3.4,
+      "label": "Harvest turbine C",
+      "meta": {
+        "catalogId": "wind_turbine"
       }
     }
   ],
@@ -5680,8 +5787,8 @@
       },
       "radius": 150,
       "height": 24,
-      "label": "Rustflat Waste",
       "color": "#38bdf8",
+      "label": "Rustflat Waste",
       "meta": {
         "zoneId": "windshear_waste",
         "level": 1
@@ -5698,8 +5805,8 @@
       },
       "radius": 70,
       "height": 8,
-      "label": "Rustflat Waste flatten",
       "color": "#94a3b8",
+      "label": "Rustflat Waste flatten",
       "meta": {
         "zoneId": "windshear_waste"
       }
@@ -5715,8 +5822,8 @@
       },
       "radius": 25,
       "height": 14,
-      "label": "bullymongx4",
       "color": "#fb923c",
+      "label": "bullymongx4",
       "meta": {
         "zoneId": "windshear_waste",
         "catalogId": "bullymong",
@@ -5735,8 +5842,8 @@
       },
       "radius": 22,
       "height": 14,
-      "label": "bullymong_bratx5",
       "color": "#fb923c",
+      "label": "bullymong_bratx5",
       "meta": {
         "zoneId": "windshear_waste",
         "catalogId": "bullymong_brat",
@@ -5755,8 +5862,8 @@
       },
       "radius": 190,
       "height": 24,
-      "label": "Southern Shelf",
       "color": "#38bdf8",
+      "label": "Southern Shelf",
       "meta": {
         "zoneId": "southern_shelf",
         "level": 4
@@ -5773,8 +5880,8 @@
       },
       "radius": 80,
       "height": 8,
-      "label": "Southern Shelf flatten",
       "color": "#94a3b8",
+      "label": "Southern Shelf flatten",
       "meta": {
         "zoneId": "southern_shelf"
       }
@@ -5790,8 +5897,8 @@
       },
       "radius": 31,
       "height": 14,
-      "label": "psychox5",
       "color": "#fb923c",
+      "label": "psychox5",
       "meta": {
         "zoneId": "southern_shelf",
         "catalogId": "psycho",
@@ -5810,8 +5917,8 @@
       },
       "radius": 31,
       "height": 14,
-      "label": "marauderx4",
       "color": "#fb923c",
+      "label": "marauderx4",
       "meta": {
         "zoneId": "southern_shelf",
         "catalogId": "marauder",
@@ -5830,8 +5937,8 @@
       },
       "radius": 22,
       "height": 14,
-      "label": "nomadx2",
       "color": "#fb923c",
+      "label": "nomadx2",
       "meta": {
         "zoneId": "southern_shelf",
         "catalogId": "nomad",
@@ -5850,8 +5957,8 @@
       },
       "radius": 28,
       "height": 14,
-      "label": "bullymongx3",
       "color": "#fb923c",
+      "label": "bullymongx3",
       "meta": {
         "zoneId": "southern_shelf",
         "catalogId": "bullymong",
@@ -5870,8 +5977,8 @@
       },
       "radius": 240,
       "height": 24,
-      "label": "Arid Badlands — Coretown",
       "color": "#38bdf8",
+      "label": "Arid Badlands — Coretown",
       "meta": {
         "zoneId": "arid_badlands",
         "level": 8
@@ -5888,8 +5995,8 @@
       },
       "radius": 90,
       "height": 8,
-      "label": "Arid Badlands — Coretown flatten",
       "color": "#94a3b8",
+      "label": "Arid Badlands — Coretown flatten",
       "meta": {
         "zoneId": "arid_badlands"
       }
@@ -5905,8 +6012,8 @@
       },
       "radius": 28,
       "height": 14,
-      "label": "skag_pupx5",
       "color": "#fb923c",
+      "label": "skag_pupx5",
       "meta": {
         "zoneId": "arid_badlands",
         "catalogId": "skag_pup",
@@ -5925,8 +6032,8 @@
       },
       "radius": 28,
       "height": 14,
-      "label": "skagx4",
       "color": "#fb923c",
+      "label": "skagx4",
       "meta": {
         "zoneId": "arid_badlands",
         "catalogId": "skag",
@@ -5945,8 +6052,8 @@
       },
       "radius": 17,
       "height": 14,
-      "label": "badass_skagx1",
       "color": "#fb923c",
+      "label": "badass_skagx1",
       "meta": {
         "zoneId": "arid_badlands",
         "catalogId": "badass_skag",
@@ -5965,8 +6072,8 @@
       },
       "radius": 34,
       "height": 14,
-      "label": "psychox5",
       "color": "#fb923c",
+      "label": "psychox5",
       "meta": {
         "zoneId": "arid_badlands",
         "catalogId": "psycho",
@@ -5985,8 +6092,8 @@
       },
       "radius": 34,
       "height": 14,
-      "label": "marauderx4",
       "color": "#fb923c",
+      "label": "marauderx4",
       "meta": {
         "zoneId": "arid_badlands",
         "catalogId": "marauder",
@@ -6005,8 +6112,8 @@
       },
       "radius": 17,
       "height": 14,
-      "label": "badass_psychox1",
       "color": "#fb923c",
+      "label": "badass_psychox1",
       "meta": {
         "zoneId": "arid_badlands",
         "catalogId": "badass_psycho",
@@ -6025,8 +6132,8 @@
       },
       "radius": 220,
       "height": 24,
-      "label": "Three Horns Divide",
       "color": "#38bdf8",
+      "label": "Three Horns Divide",
       "meta": {
         "zoneId": "three_horns",
         "level": 12
@@ -6043,8 +6150,8 @@
       },
       "radius": 70,
       "height": 8,
-      "label": "Three Horns Divide flatten",
       "color": "#94a3b8",
+      "label": "Three Horns Divide flatten",
       "meta": {
         "zoneId": "three_horns"
       }
@@ -6060,8 +6167,8 @@
       },
       "radius": 34,
       "height": 14,
-      "label": "marauderx5",
       "color": "#fb923c",
+      "label": "marauderx5",
       "meta": {
         "zoneId": "three_horns",
         "catalogId": "marauder",
@@ -6080,8 +6187,8 @@
       },
       "radius": 25,
       "height": 14,
-      "label": "nomadx3",
       "color": "#fb923c",
+      "label": "nomadx3",
       "meta": {
         "zoneId": "three_horns",
         "catalogId": "nomad",
@@ -6100,8 +6207,8 @@
       },
       "radius": 31,
       "height": 14,
-      "label": "spiderantx5",
       "color": "#fb923c",
+      "label": "spiderantx5",
       "meta": {
         "zoneId": "three_horns",
         "catalogId": "spiderant",
@@ -6120,8 +6227,8 @@
       },
       "radius": 25,
       "height": 14,
-      "label": "spiderant_soldierx3",
       "color": "#fb923c",
+      "label": "spiderant_soldierx3",
       "meta": {
         "zoneId": "three_horns",
         "catalogId": "spiderant_soldier",
@@ -6140,8 +6247,8 @@
       },
       "radius": 230,
       "height": 24,
-      "label": "The Dust",
       "color": "#38bdf8",
+      "label": "The Dust",
       "meta": {
         "zoneId": "the_dust",
         "level": 17
@@ -6158,8 +6265,8 @@
       },
       "radius": 70,
       "height": 8,
-      "label": "The Dust flatten",
       "color": "#94a3b8",
+      "label": "The Dust flatten",
       "meta": {
         "zoneId": "the_dust"
       }
@@ -6175,8 +6282,8 @@
       },
       "radius": 31,
       "height": 14,
-      "label": "spiderantx4",
       "color": "#fb923c",
+      "label": "spiderantx4",
       "meta": {
         "zoneId": "the_dust",
         "catalogId": "spiderant",
@@ -6195,8 +6302,8 @@
       },
       "radius": 25,
       "height": 14,
-      "label": "spiderant_soldierx3",
       "color": "#fb923c",
+      "label": "spiderant_soldierx3",
       "meta": {
         "zoneId": "the_dust",
         "catalogId": "spiderant_soldier",
@@ -6215,8 +6322,8 @@
       },
       "radius": 25,
       "height": 14,
-      "label": "badass_psychox2",
       "color": "#fb923c",
+      "label": "badass_psychox2",
       "meta": {
         "zoneId": "the_dust",
         "catalogId": "badass_psycho",
@@ -6235,8 +6342,8 @@
       },
       "radius": 34,
       "height": 14,
-      "label": "marauderx5",
       "color": "#fb923c",
+      "label": "marauderx5",
       "meta": {
         "zoneId": "the_dust",
         "catalogId": "marauder",
@@ -6255,8 +6362,8 @@
       },
       "radius": 25,
       "height": 14,
-      "label": "nomadx3",
       "color": "#fb923c",
+      "label": "nomadx3",
       "meta": {
         "zoneId": "the_dust",
         "catalogId": "nomad",
@@ -6275,8 +6382,8 @@
       },
       "radius": 220,
       "height": 24,
-      "label": "Cores Blight — Ember Gate",
       "color": "#38bdf8",
+      "label": "Cores Blight — Ember Gate",
       "meta": {
         "zoneId": "eridium_blight",
         "level": 24
@@ -6293,8 +6400,8 @@
       },
       "radius": 90,
       "height": 8,
-      "label": "Cores Blight — Ember Gate flatten",
       "color": "#94a3b8",
+      "label": "Cores Blight — Ember Gate flatten",
       "meta": {
         "zoneId": "eridium_blight"
       }
@@ -6310,8 +6417,8 @@
       },
       "radius": 31,
       "height": 14,
-      "label": "loaderx5",
       "color": "#fb923c",
+      "label": "loaderx5",
       "meta": {
         "zoneId": "eridium_blight",
         "catalogId": "loader",
@@ -6330,8 +6437,8 @@
       },
       "radius": 25,
       "height": 14,
-      "label": "loader_warx3",
       "color": "#fb923c",
+      "label": "loader_warx3",
       "meta": {
         "zoneId": "eridium_blight",
         "catalogId": "loader_war",
@@ -6350,8 +6457,8 @@
       },
       "radius": 31,
       "height": 14,
-      "label": "loaderx4",
       "color": "#fb923c",
+      "label": "loaderx4",
       "meta": {
         "zoneId": "eridium_blight",
         "catalogId": "loader",
@@ -6370,8 +6477,8 @@
       },
       "radius": 17,
       "height": 14,
-      "label": "badass_loaderx1",
       "color": "#fb923c",
+      "label": "badass_loaderx1",
       "meta": {
         "zoneId": "eridium_blight",
         "catalogId": "badass_loader",
@@ -6390,8 +6497,8 @@
       },
       "radius": 26,
       "height": 12,
-      "label": "Monglet Den",
       "color": "#e879f9",
+      "label": "Monglet Den",
       "meta": {
         "poiId": "poi_monglet_den"
       }
@@ -6407,8 +6514,8 @@
       },
       "radius": 22,
       "height": 12,
-      "label": "Lost Apex Cache",
       "color": "#e879f9",
+      "label": "Lost Apex Cache",
       "meta": {
         "poiId": "poi_lost_cache"
       }
@@ -6424,10 +6531,1526 @@
       },
       "radius": 28,
       "height": 12,
-      "label": "Buzzard Wreck Field",
       "color": "#e879f9",
+      "label": "Buzzard Wreck Field",
       "meta": {
         "poiId": "poi_wreck_field"
+      }
+    },
+    {
+      "id": "aggro_windshear_waste_0_bullymong",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -480,
+        "y": 0,
+        "z": 530
+      },
+      "radius": 25,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "bullymong aggro",
+      "meta": {
+        "catalogId": "bullymong",
+        "aggroRadius": 25
+      }
+    },
+    {
+      "id": "leash_windshear_waste_0_bullymong",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -480,
+        "y": 0,
+        "z": 530
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "bullymong leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_windshear_waste_0_bullymong",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -480,
+        "y": 0,
+        "z": 530
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_windshear_waste_1_bullymong_brat",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -555,
+        "y": 0,
+        "z": 600
+      },
+      "radius": 22,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "bullymong_brat aggro",
+      "meta": {
+        "catalogId": "bullymong_brat",
+        "aggroRadius": 22
+      }
+    },
+    {
+      "id": "leash_windshear_waste_1_bullymong_brat",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -555,
+        "y": 0,
+        "z": 600
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "bullymong_brat leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_windshear_waste_1_bullymong_brat",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -555,
+        "y": 0,
+        "z": 600
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_southern_shelf_0_psycho",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -110,
+        "y": 0,
+        "z": 420
+      },
+      "radius": 26,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "psycho aggro",
+      "meta": {
+        "catalogId": "psycho",
+        "aggroRadius": 26
+      }
+    },
+    {
+      "id": "leash_southern_shelf_0_psycho",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -110,
+        "y": 0,
+        "z": 420
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "psycho leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_southern_shelf_0_psycho",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -110,
+        "y": 0,
+        "z": 420
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_southern_shelf_1_marauder",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -110,
+        "y": 0,
+        "z": 420
+      },
+      "radius": 30,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "marauder aggro",
+      "meta": {
+        "catalogId": "marauder",
+        "aggroRadius": 30
+      }
+    },
+    {
+      "id": "leash_southern_shelf_1_marauder",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -110,
+        "y": 0,
+        "z": 420
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "marauder leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_southern_shelf_1_marauder",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -110,
+        "y": 0,
+        "z": 420
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_southern_shelf_2_nomad",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 480
+      },
+      "radius": 28,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "nomad aggro",
+      "meta": {
+        "catalogId": "nomad",
+        "aggroRadius": 28
+      }
+    },
+    {
+      "id": "leash_southern_shelf_2_nomad",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 480
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "nomad leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_southern_shelf_2_nomad",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 480
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_southern_shelf_3_bullymong",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -260,
+        "y": 0,
+        "z": 520
+      },
+      "radius": 25,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "bullymong aggro",
+      "meta": {
+        "catalogId": "bullymong",
+        "aggroRadius": 25
+      }
+    },
+    {
+      "id": "leash_southern_shelf_3_bullymong",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -260,
+        "y": 0,
+        "z": 520
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "bullymong leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_southern_shelf_3_bullymong",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -260,
+        "y": 0,
+        "z": 520
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_boss_rusk",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -60,
+        "y": 0,
+        "z": 560
+      },
+      "radius": 36,
+      "height": 8,
+      "color": "#ef4444",
+      "label": "captain_rusk aggro",
+      "meta": {
+        "instanceId": "boss_rusk",
+        "aggroRadius": 36
+      }
+    },
+    {
+      "id": "leash_boss_rusk",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -60,
+        "y": 0,
+        "z": 560
+      },
+      "radius": 46,
+      "height": 5,
+      "color": "#f59e0b",
+      "label": "captain_rusk leash",
+      "meta": {
+        "instanceId": "boss_rusk",
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "aggro_arid_badlands_0_skag_pup",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 22,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "skag_pup aggro",
+      "meta": {
+        "catalogId": "skag_pup",
+        "aggroRadius": 22
+      }
+    },
+    {
+      "id": "leash_arid_badlands_0_skag_pup",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "skag_pup leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_arid_badlands_0_skag_pup",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_arid_badlands_1_skag",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 24,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "skag aggro",
+      "meta": {
+        "catalogId": "skag",
+        "aggroRadius": 24
+      }
+    },
+    {
+      "id": "leash_arid_badlands_1_skag",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "skag leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_arid_badlands_1_skag",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_arid_badlands_2_badass_skag",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 28,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "badass_skag aggro",
+      "meta": {
+        "catalogId": "badass_skag",
+        "aggroRadius": 28
+      }
+    },
+    {
+      "id": "leash_arid_badlands_2_badass_skag",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "badass_skag leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_arid_badlands_2_badass_skag",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -70,
+        "y": 0,
+        "z": 110
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_arid_badlands_3_psycho",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 26,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "psycho aggro",
+      "meta": {
+        "catalogId": "psycho",
+        "aggroRadius": 26
+      }
+    },
+    {
+      "id": "leash_arid_badlands_3_psycho",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "psycho leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_arid_badlands_3_psycho",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_arid_badlands_4_marauder",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 30,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "marauder aggro",
+      "meta": {
+        "catalogId": "marauder",
+        "aggroRadius": 30
+      }
+    },
+    {
+      "id": "leash_arid_badlands_4_marauder",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "marauder leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_arid_badlands_4_marauder",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_arid_badlands_5_badass_psycho",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 32,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "badass_psycho aggro",
+      "meta": {
+        "catalogId": "badass_psycho",
+        "aggroRadius": 32
+      }
+    },
+    {
+      "id": "leash_arid_badlands_5_badass_psycho",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "badass_psycho leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_arid_badlands_5_badass_psycho",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 120,
+        "y": 0,
+        "z": 60
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_three_horns_0_marauder",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 360,
+        "y": 0,
+        "z": 250
+      },
+      "radius": 30,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "marauder aggro",
+      "meta": {
+        "catalogId": "marauder",
+        "aggroRadius": 30
+      }
+    },
+    {
+      "id": "leash_three_horns_0_marauder",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 360,
+        "y": 0,
+        "z": 250
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "marauder leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_three_horns_0_marauder",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 360,
+        "y": 0,
+        "z": 250
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_three_horns_1_nomad",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 360,
+        "y": 0,
+        "z": 250
+      },
+      "radius": 28,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "nomad aggro",
+      "meta": {
+        "catalogId": "nomad",
+        "aggroRadius": 28
+      }
+    },
+    {
+      "id": "leash_three_horns_1_nomad",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 360,
+        "y": 0,
+        "z": 250
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "nomad leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_three_horns_1_nomad",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 360,
+        "y": 0,
+        "z": 250
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_three_horns_2_spiderant",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 370
+      },
+      "radius": 24,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "spiderant aggro",
+      "meta": {
+        "catalogId": "spiderant",
+        "aggroRadius": 24
+      }
+    },
+    {
+      "id": "leash_three_horns_2_spiderant",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 370
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "spiderant leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_three_horns_2_spiderant",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 370
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_three_horns_3_spiderant_soldier",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 370
+      },
+      "radius": 26,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "spiderant_soldier aggro",
+      "meta": {
+        "catalogId": "spiderant_soldier",
+        "aggroRadius": 26
+      }
+    },
+    {
+      "id": "leash_three_horns_3_spiderant_soldier",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 370
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "spiderant_soldier leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_three_horns_3_spiderant_soldier",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 370
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_boss_bad_maw",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 380
+      },
+      "radius": 34,
+      "height": 8,
+      "color": "#ef4444",
+      "label": "bad_maw aggro",
+      "meta": {
+        "instanceId": "boss_bad_maw",
+        "aggroRadius": 34
+      }
+    },
+    {
+      "id": "leash_boss_bad_maw",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 500,
+        "y": 0,
+        "z": 380
+      },
+      "radius": 46,
+      "height": 5,
+      "color": "#f59e0b",
+      "label": "bad_maw leash",
+      "meta": {
+        "instanceId": "boss_bad_maw",
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "aggro_the_dust_0_spiderant",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 430,
+        "y": 0,
+        "z": -220
+      },
+      "radius": 24,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "spiderant aggro",
+      "meta": {
+        "catalogId": "spiderant",
+        "aggroRadius": 24
+      }
+    },
+    {
+      "id": "leash_the_dust_0_spiderant",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 430,
+        "y": 0,
+        "z": -220
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "spiderant leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_the_dust_0_spiderant",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 430,
+        "y": 0,
+        "z": -220
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_the_dust_1_spiderant_soldier",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 430,
+        "y": 0,
+        "z": -220
+      },
+      "radius": 26,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "spiderant_soldier aggro",
+      "meta": {
+        "catalogId": "spiderant_soldier",
+        "aggroRadius": 26
+      }
+    },
+    {
+      "id": "leash_the_dust_1_spiderant_soldier",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 430,
+        "y": 0,
+        "z": -220
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "spiderant_soldier leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_the_dust_1_spiderant_soldier",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 430,
+        "y": 0,
+        "z": -220
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_the_dust_2_badass_psycho",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 590,
+        "y": 0,
+        "z": -320
+      },
+      "radius": 32,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "badass_psycho aggro",
+      "meta": {
+        "catalogId": "badass_psycho",
+        "aggroRadius": 32
+      }
+    },
+    {
+      "id": "leash_the_dust_2_badass_psycho",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 590,
+        "y": 0,
+        "z": -320
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "badass_psycho leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_the_dust_2_badass_psycho",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 590,
+        "y": 0,
+        "z": -320
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_the_dust_3_marauder",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 590,
+        "y": 0,
+        "z": -320
+      },
+      "radius": 30,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "marauder aggro",
+      "meta": {
+        "catalogId": "marauder",
+        "aggroRadius": 30
+      }
+    },
+    {
+      "id": "leash_the_dust_3_marauder",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 590,
+        "y": 0,
+        "z": -320
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "marauder leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_the_dust_3_marauder",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 590,
+        "y": 0,
+        "z": -320
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_the_dust_4_nomad",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": 530,
+        "y": 0,
+        "z": -170
+      },
+      "radius": 28,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "nomad aggro",
+      "meta": {
+        "catalogId": "nomad",
+        "aggroRadius": 28
+      }
+    },
+    {
+      "id": "leash_the_dust_4_nomad",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": 530,
+        "y": 0,
+        "z": -170
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "nomad leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_the_dust_4_nomad",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": 530,
+        "y": 0,
+        "z": -170
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_eridium_blight_0_loader",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -20,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 30,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "loader aggro",
+      "meta": {
+        "catalogId": "loader",
+        "aggroRadius": 30
+      }
+    },
+    {
+      "id": "leash_eridium_blight_0_loader",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -20,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "loader leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_eridium_blight_0_loader",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -20,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_eridium_blight_1_loader_war",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -20,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 32,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "loader_war aggro",
+      "meta": {
+        "catalogId": "loader_war",
+        "aggroRadius": 32
+      }
+    },
+    {
+      "id": "leash_eridium_blight_1_loader_war",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -20,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "loader_war leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_eridium_blight_1_loader_war",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -20,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_eridium_blight_2_loader",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -160,
+        "y": 0,
+        "z": -610
+      },
+      "radius": 30,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "loader aggro",
+      "meta": {
+        "catalogId": "loader",
+        "aggroRadius": 30
+      }
+    },
+    {
+      "id": "leash_eridium_blight_2_loader",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -160,
+        "y": 0,
+        "z": -610
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "loader leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_eridium_blight_2_loader",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -160,
+        "y": 0,
+        "z": -610
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_eridium_blight_3_badass_loader",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -160,
+        "y": 0,
+        "z": -610
+      },
+      "radius": 34,
+      "height": 6,
+      "color": "#ef4444",
+      "label": "badass_loader aggro",
+      "meta": {
+        "catalogId": "badass_loader",
+        "aggroRadius": 34
+      }
+    },
+    {
+      "id": "leash_eridium_blight_3_badass_loader",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -160,
+        "y": 0,
+        "z": -610
+      },
+      "radius": 46,
+      "height": 4,
+      "color": "#f59e0b",
+      "label": "badass_loader leash",
+      "meta": {
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "respawn_skip_eridium_blight_3_badass_loader",
+      "kind": "respawn_skip",
+      "shape": "cylinder",
+      "center": {
+        "x": -160,
+        "y": 0,
+        "z": -610
+      },
+      "radius": 38,
+      "height": 3,
+      "color": "#64748b",
+      "label": "respawn skip",
+      "meta": {
+        "radius": 38
+      }
+    },
+    {
+      "id": "aggro_boss_warrior",
+      "kind": "aggro",
+      "shape": "cylinder",
+      "center": {
+        "x": -80,
+        "y": 0,
+        "z": -660
+      },
+      "radius": 44,
+      "height": 8,
+      "color": "#ef4444",
+      "label": "the_warrior aggro",
+      "meta": {
+        "instanceId": "boss_warrior",
+        "aggroRadius": 44
+      }
+    },
+    {
+      "id": "leash_boss_warrior",
+      "kind": "leash",
+      "shape": "cylinder",
+      "center": {
+        "x": -80,
+        "y": 0,
+        "z": -660
+      },
+      "radius": 46,
+      "height": 5,
+      "color": "#f59e0b",
+      "label": "the_warrior leash",
+      "meta": {
+        "instanceId": "boss_warrior",
+        "leashRadius": 46
+      }
+    },
+    {
+      "id": "discover_windshear_waste",
+      "kind": "discover",
+      "shape": "cylinder",
+      "center": {
+        "x": -520,
+        "y": 0,
+        "z": 560
+      },
+      "radius": 8,
+      "height": 6,
+      "color": "#4ade80",
+      "label": "Rustflat Waste discover",
+      "meta": {
+        "zoneId": "windshear_waste",
+        "radius": 8
+      }
+    },
+    {
+      "id": "discover_southern_shelf",
+      "kind": "discover",
+      "shape": "cylinder",
+      "center": {
+        "x": -190,
+        "y": 0,
+        "z": 440
+      },
+      "radius": 8,
+      "height": 6,
+      "color": "#4ade80",
+      "label": "Southern Shelf discover",
+      "meta": {
+        "zoneId": "southern_shelf",
+        "radius": 8
+      }
+    },
+    {
+      "id": "discover_arid_badlands",
+      "kind": "discover",
+      "shape": "cylinder",
+      "center": {
+        "x": -14,
+        "y": 0,
+        "z": -20
+      },
+      "radius": 8,
+      "height": 6,
+      "color": "#4ade80",
+      "label": "Arid Badlands — Coretown discover",
+      "meta": {
+        "zoneId": "arid_badlands",
+        "radius": 8
+      }
+    },
+    {
+      "id": "discover_three_horns",
+      "kind": "discover",
+      "shape": "cylinder",
+      "center": {
+        "x": 420,
+        "y": 0,
+        "z": 290
+      },
+      "radius": 8,
+      "height": 6,
+      "color": "#4ade80",
+      "label": "Three Horns Divide discover",
+      "meta": {
+        "zoneId": "three_horns",
+        "radius": 8
+      }
+    },
+    {
+      "id": "discover_the_dust",
+      "kind": "discover",
+      "shape": "cylinder",
+      "center": {
+        "x": 520,
+        "y": 0,
+        "z": -270
+      },
+      "radius": 8,
+      "height": 6,
+      "color": "#4ade80",
+      "label": "The Dust discover",
+      "meta": {
+        "zoneId": "the_dust",
+        "radius": 8
+      }
+    },
+    {
+      "id": "discover_eridium_blight",
+      "kind": "discover",
+      "shape": "cylinder",
+      "center": {
+        "x": -80,
+        "y": 0,
+        "z": -520
+      },
+      "radius": 8,
+      "height": 6,
+      "color": "#4ade80",
+      "label": "Cores Blight — Ember Gate discover",
+      "meta": {
+        "zoneId": "eridium_blight",
+        "radius": 8
       }
     }
   ],

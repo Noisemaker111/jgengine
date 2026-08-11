@@ -63,6 +63,57 @@ describe("the-robots world", () => {
     expect(boltDistance).toBeLessThan(45);
   });
 
+  // ~41 degrees: the horizontal half-angle the play camera covers at 16:9. Anything outside it is
+  // not in the opening frame, whatever the scene document says is nearby.
+  const HALF_VIEW_RADIANS = 0.72;
+
+  function offsetFromSpawnView(x: number, z: number): number {
+    let delta = Math.atan2(x - PLAYER_SPAWN[0], z - PLAYER_SPAWN[2]) - PLAYER_SPAWN_YAW;
+    while (delta > Math.PI) delta -= Math.PI * 2;
+    while (delta < -Math.PI) delta += Math.PI * 2;
+    return Math.abs(delta);
+  }
+
+  test("the opening frame is aimed at authored content, not empty desert", () => {
+    const rustflat = ZONES[0]!;
+    // Something to shoot, close enough that its silhouette resolves rather than dissolving into haze.
+    const clustersInView = rustflat.clusters.filter(
+      (cluster) => offsetFromSpawnView(cluster.center.x, cluster.center.z) < HALF_VIEW_RADIANS,
+    );
+    expect(clustersInView.length).toBeGreaterThan(0);
+    for (const cluster of clustersInView) {
+      const distance = Math.hypot(cluster.center.x - PLAYER_SPAWN[0], cluster.center.z - PLAYER_SPAWN[2]);
+      expect(distance).toBeLessThan(120);
+    }
+
+    // Mass in the middle distance. The 40–100 m band the enemy cluster stands in used to be bare
+    // sand from the spawn's own eye line, which is why the opening frame read as an empty plain with
+    // a horizon: nothing between the player's feet and the ridgeline for the eye to land on.
+    const midfield = AUTHORED_PIECES.filter((piece) => {
+      const distance = Math.hypot(piece.x - PLAYER_SPAWN[0], piece.z - PLAYER_SPAWN[2]);
+      return distance > 40 && distance < 100 && offsetFromSpawnView(piece.x, piece.z) < HALF_VIEW_RADIANS;
+    });
+    expect(midfield.length).toBeGreaterThanOrEqual(5);
+    // …and not five of the same prop, which composes as a repeated silhouette rather than a place.
+    expect(new Set(midfield.map((piece) => piece.catalogId)).size).toBeGreaterThanOrEqual(3);
+  });
+
+  test("scrub covers the middle distance, not only the ground the player stands on", () => {
+    const ringed = summary.vegetation.filter((patch) => {
+      const [x, z] = patch.area.position ?? [0, 0];
+      const distance = Math.hypot(x - PLAYER_SPAWN[0], z - PLAYER_SPAWN[2]);
+      return distance > 35 && distance < 110;
+    });
+    // Blades stop rendering past 150 m, so 35–110 m is the whole band a desert horizon shot has to
+    // fill. Six zone-wide clumps spread over that band left most of it bare sand.
+    expect(ringed.length).toBeGreaterThanOrEqual(6);
+    // Two tiers by design: dense ground scrub carries coverage; sparse tall accent stands only ever
+    // sit inside a scrub patch, so they may be thin without the field reading as bare.
+    const dense = summary.vegetation.filter((patch) => patch.density >= 4);
+    expect(dense.length).toBeGreaterThanOrEqual(summary.vegetation.length / 2);
+    for (const patch of summary.vegetation) expect(patch.density).toBeGreaterThanOrEqual(1.5);
+  });
+
   test("every settlement zone contributes a structure group", () => {
     const settled = ZONES.filter((zone) => zone.settlement !== undefined);
     expect(summary.counts.structureGroups).toBe(settled.length);

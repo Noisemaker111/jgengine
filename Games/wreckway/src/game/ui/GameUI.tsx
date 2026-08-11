@@ -36,7 +36,9 @@ export function GameUI() {
 
         {(snapshot.phase === "running" || snapshot.phase === "won" || snapshot.phase === "crushed") && (
           <>
-            <div className="absolute inset-x-0 top-3 flex justify-center px-3">
+            {/* Right padding clears the minimap/build column until the viewport is wide enough that
+                the bar can sit truly centred over the corridor. */}
+            <div className="absolute inset-x-0 top-3 flex justify-center px-3 pr-[17.5rem] lg:pr-3">
               <CompactorBar snapshot={snapshot} />
             </div>
             <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
@@ -45,7 +47,9 @@ export function GameUI() {
               <CorridorMinimap snapshot={snapshot} />
               <KartDiagram snapshot={snapshot} />
             </div>
-            <div className="absolute left-3 top-3">
+            {/* Bottom-left, not top-left: the centered compactor plate is 20rem wide and the two
+                panels collided at narrow viewports. */}
+            <div className="absolute bottom-3 left-3">
               <PitRadioTicker ticker={snapshot.ticker} />
             </div>
             <div className="absolute inset-x-0 bottom-24 flex justify-center px-3">

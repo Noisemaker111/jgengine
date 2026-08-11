@@ -69,6 +69,7 @@ import type { SimClock } from "../time/simClock";
 import type { TurnLoop, TurnLoopConfig } from "../turn/turnLoop";
 import type { RaceState, RaceStateConfig } from "../game/race";
 import type { CameraDirector } from "./cameraDirector";
+import type { ParticleDirector } from "../vfx/particleDirector";
 import type { InputSnapshot } from "./inputSnapshot";
 import type { MotionIntents } from "./motionIntents";
 import type { OnDeathSpec } from "../combat/death";
@@ -556,6 +557,8 @@ export interface GameContext {
   time: SimClock;
   /** Runtime camera-follow/cinematic override (#196.2); the shell reads `followedEntityId()` each frame. */
   camera: CameraDirector;
+  /** Particle VFX seam (#1659): queue bursts / standing emitters as data; the shell renders them quality-capped. */
+  particles: ParticleDirector;
   /** Held-input snapshot published by the shell each frame before `onTick` (#164.1). */
   input: InputSnapshot;
   subscribe(listener: () => void): () => void;

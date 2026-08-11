@@ -6,6 +6,10 @@ export const PROP_APPLIANCE_STACK = "prop_appliance_stack";
 export const PROP_SCRAP_HEAP = "prop_scrap_heap";
 export const PROP_CONTAINER_STACK = "prop_container_stack";
 export const PROP_CRANE_LEG = "prop_crane_leg";
+export const PROP_STRIPPED_CAR = "prop_stripped_car";
+export const PROP_DUMPSTER = "prop_dumpster";
+export const PROP_YARD_LAMP = "prop_yard_lamp";
+export const PROP_YARD_TOWER = "prop_yard_tower";
 
 export const GATE_BARRICADE_PLOW = "gate_barricade_plow";
 export const GATE_BARRICADE_JUMP = "gate_barricade_jump";
@@ -20,6 +24,8 @@ export const ZONE_PROP_IDS = [
   PROP_SCRAP_HEAP,
   PROP_CONTAINER_STACK,
   PROP_CRANE_LEG,
+  PROP_STRIPPED_CAR,
+  PROP_DUMPSTER,
 ] as const;
 
 export const OBJECT_CATALOG: Record<string, GameContextObjectEntry> = {
@@ -29,6 +35,10 @@ export const OBJECT_CATALOG: Record<string, GameContextObjectEntry> = {
   [PROP_SCRAP_HEAP]: {},
   [PROP_CONTAINER_STACK]: {},
   [PROP_CRANE_LEG]: {},
+  [PROP_STRIPPED_CAR]: {},
+  [PROP_DUMPSTER]: {},
+  [PROP_YARD_LAMP]: {},
+  [PROP_YARD_TOWER]: {},
   [GATE_BARRICADE_PLOW]: {},
   [GATE_BARRICADE_JUMP]: {},
   [PICKUP_MARKER]: {},

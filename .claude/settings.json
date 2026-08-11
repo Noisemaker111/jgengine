@@ -65,14 +65,6 @@
             "command": "bun .claude/hooks/warn-unpushed.mjs"
           }
         ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bun .claude/hooks/papercut-reminder.mjs"
-          }
-        ]
       }
     ]
   }

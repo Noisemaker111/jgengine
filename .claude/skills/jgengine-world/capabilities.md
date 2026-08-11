@@ -378,6 +378,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createOrderRegistry` (function) · `import { createOrderRegistry } from "@jgengine/core/world"`
 
+## particle-director — game-reachable VFX seam: queue one-shot particle bursts and keyed follow-capable standing emitters as serializable data for the shell to render
+
+- `createParticleDirector` (function) · `import { createParticleDirector } from "@jgengine/core/vfx/particleDirector"`
+
 ## particle-system — deterministic pooled particle emitter with SoA render buffers, burst/continuous emission, gravity/drag, size/color/alpha-over-life, and serializable state
 
 - `createParticleSystem` (function) · `import { createParticleSystem } from "@jgengine/core/world"`

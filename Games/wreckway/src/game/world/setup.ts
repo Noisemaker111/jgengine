@@ -2,14 +2,32 @@ import { seededStreams } from "@jgengine/core/random/rng";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { scatter } from "@jgengine/core/world/scatter";
 
-import { EXIT_GATE_ARCH, GATE_BARRICADE_JUMP, GATE_BARRICADE_PLOW, PICKUP_MARKER } from "../objects/catalog";
+import {
+  EXIT_GATE_ARCH,
+  GATE_BARRICADE_JUMP,
+  GATE_BARRICADE_PLOW,
+  PICKUP_MARKER,
+  PROP_YARD_LAMP,
+  PROP_YARD_TOWER,
+} from "../objects/catalog";
 import { PICKUPS } from "../run/pickups";
 import { EXIT_Z, RUN_SEED } from "../run/constants";
 import { ROUTE_GATES } from "../route/gates";
 import { ZONES } from "../zones/catalog";
 
 const CORRIDOR_AVOID = { minX: -21, maxX: 21 };
-const PROP_COUNT_PER_ZONE = 50;
+const PROP_COUNT_PER_ZONE = 46;
+/** Floodlights alternate sides down the corridor edge — the vertical beat that reads as speed. */
+const LAMP_SPACING_Z = 34;
+const LAMP_X = 23.5;
+/** Water towers punctuate the skyline; sparse on purpose, they are the tallest thing in the yard. */
+const TOWER_POSITIONS: readonly (readonly [number, number])[] = [
+  [-58, 74],
+  [62, 168],
+  [-64, 262],
+  [56, 352],
+  [-56, 438],
+];
 
 export interface PropRow {
   instanceId: string;
@@ -34,14 +52,14 @@ export function placeZoneDressing(ctx: GameContext): readonly PropRow[] {
   for (const zone of ZONES) {
     const stream = seededStreams(RUN_SEED)(`props-${zone.id}`);
     const points = scatter({
-      area: { w: 96, d: zone.end - zone.start, center: [0, (zone.start + zone.end) / 2] },
+      area: { w: 108, d: zone.end - zone.start, center: [0, (zone.start + zone.end) / 2] },
       count: PROP_COUNT_PER_ZONE,
       seed: `wreckway-props-${zone.id}`,
       minDistance: 3.4,
       avoid: [{ minX: CORRIDOR_AVOID.minX, minZ: zone.start, maxX: CORRIDOR_AVOID.maxX, maxZ: zone.end }],
     });
     points.forEach((point, index) => {
-      const propId = zone.propIds[stream() < 0.5 ? 0 : 1];
+      const propId = zone.propIds[Math.min(zone.propIds.length - 1, Math.floor(stream() * zone.propIds.length))]!;
       const instanceId = `prop-${zone.id}-${index}`;
       const y = ctx.world.groundHeightAt(point.x, point.z);
       const rotationY = stream() * Math.PI * 2;
@@ -49,7 +67,27 @@ export function placeZoneDressing(ctx: GameContext): readonly PropRow[] {
       rows.push({ instanceId, z: point.z });
     });
   }
+  rows.push(...placeCorridorLamps(ctx), ...placeYardTowers(ctx));
   return rows.sort((a, b) => a.z - b.z);
+}
+
+function placeCorridorLamps(ctx: GameContext): PropRow[] {
+  const rows: PropRow[] = [];
+  for (let index = 0, z = 18; z < EXIT_Z; z += LAMP_SPACING_Z, index += 1) {
+    const x = index % 2 === 0 ? -LAMP_X : LAMP_X;
+    const instanceId = `lamp-${index}`;
+    placeIdempotent(ctx, PROP_YARD_LAMP, x, ctx.world.groundHeightAt(x, z), z, instanceId, x < 0 ? 0 : Math.PI);
+    rows.push({ instanceId, z });
+  }
+  return rows;
+}
+
+function placeYardTowers(ctx: GameContext): PropRow[] {
+  return TOWER_POSITIONS.map(([x, z], index) => {
+    const instanceId = `tower-${index}`;
+    placeIdempotent(ctx, PROP_YARD_TOWER, x, ctx.world.groundHeightAt(x, z), z, instanceId);
+    return { instanceId, z };
+  });
 }
 
 /** Width covered by a single barricade prop — segments are tiled to seal a wider span. */
@@ -73,7 +111,7 @@ export function placeGateBarricades(ctx: GameContext): void {
 
 export function placePickupMarkers(ctx: GameContext): void {
   for (const pickup of PICKUPS) {
-    const y = ctx.world.groundHeightAt(pickup.position[0], pickup.position[2]) + 0.9;
+    const y = ctx.world.groundHeightAt(pickup.position[0], pickup.position[2]);
     placeIdempotent(ctx, PICKUP_MARKER, pickup.position[0], y, pickup.position[2], `marker-${pickup.id}`);
   }
 }

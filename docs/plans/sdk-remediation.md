@@ -280,13 +280,13 @@ Two games have a literal `src/game/handroll/` (~1,977 lines combined).
 
 ## PHASE 4 — Process hygiene
 
-- **Gate is red on `main`** — 6 papercuts across 3 models, two causes: `check-game-shape`
+- **Gate is red on `main`** — reported by 3 models, two causes: `check-game-shape`
   rejecting `vice-isle/src/editorKinds.ts`, and `exportManifest.test.ts` drift landing
   unregenerated. The `&&` chain short-circuits before `check-types-all`, masking everything.
   Fix the chain to run all checks and report all failures.
 - **`ship:preflight` is self-contradictory** — rejects a dirty tree AND requires a committed
   branch diff; "run before shipping" is impossible as written.
-- **Generated-artifact churn** — 4 papercuts on `gen:capabilities` / `gen:skill-api` /
+- **Generated-artifact churn** — 4 reports on `gen:capabilities` / `gen:skill-api` /
   `gen:export-manifest` needing re-runs in sequence, sometimes after a full build.
 - **`create` fails its own standard** — `--world` is opt-in, so default output is untextured
   proxy geometry, which the scaffold's own emitted `AGENTS.md:1475` declares a FAILING result.

@@ -756,6 +756,16 @@ export function parsePlaygroundQuery(search: string): PlaygroundQuery {
 
 const EMPTY_QUERY = parsePlaygroundQuery("");
 
+export function shouldAnimatePlaygroundBuild(options: {
+  capture: boolean;
+  builtOnce: boolean;
+  top: number;
+  bottom: number;
+  viewportHeight: number;
+}): boolean {
+  return !options.capture && !options.builtOnce && options.bottom > 0 && options.top < options.viewportHeight;
+}
+
 function Playground() {
   // SSR and the first client render must match. Apply location-derived state after hydration, then
   // boot Three.js; the default city is never mounted or declared capture-ready for a query capture.
@@ -821,12 +831,22 @@ function Playground() {
       focus !== undefined
         ? { x: focus.x, z: focus.z, radius: dials.cameraRadius, pitch: dials.cameraPitch, yaw: dials.cameraYaw }
         : query.cam ?? undefined;
+    const bounds = viewerHost.current?.getBoundingClientRect();
+    const animate =
+      bounds !== undefined &&
+      shouldAnimatePlaygroundBuild({
+        capture: query.capture,
+        builtOnce: builtOnce.current,
+        top: bounds.top,
+        bottom: bounds.bottom,
+        viewportHeight: window.innerHeight,
+      });
     let cancelled = false;
     document.documentElement.dataset.jgCapture = "pending";
     void world.setCity(city, {
       seed: dials.seed,
       heightScale: mode === "circuit" ? 0.5 : 1,
-      animate: !query.capture && !builtOnce.current,
+      animate,
       mode,
       elevation: dials.elevation,
       extent: dials.size,

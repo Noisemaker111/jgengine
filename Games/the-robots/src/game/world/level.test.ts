@@ -16,7 +16,7 @@ const pieceById = new Map(AUTHORED_PIECES.map((piece) => [piece.instanceId, piec
 
 describe("authored document", () => {
   test("every placed prop is a document marker with a resolvable catalog id", () => {
-    expect(AUTHORED_PIECES.length).toBe(395);
+    expect(AUTHORED_PIECES.length).toBe(403);
     for (const piece of AUTHORED_PIECES) expect(worldObjectById(piece.catalogId)).toBeDefined();
   });
 

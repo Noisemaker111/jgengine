@@ -12,7 +12,9 @@ export function CompactorBar({ snapshot }: { snapshot: SessionSnapshot }) {
   const fill = Math.max(0.04, Math.min(1, gap / 60));
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    // Scrim plate: the run reads against a bright burnt-orange sky, and unbacked hazard-yellow type
+    // on that sky is the one HUD element with nothing behind it.
+    <div className="flex flex-col items-center gap-1 rounded border border-[#8d99a6]/35 bg-[#1c1a17]/80 px-4 py-2">
       <div className="flex items-center gap-3 text-xs font-black tracking-[0.2em] text-[#f0c419]">
         <span>{snapshot.zone.label}</span>
         <span className="text-[#8d99a6]">•</span>

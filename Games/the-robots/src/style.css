@@ -10,6 +10,21 @@ body,
   clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
 }
 
+/*
+ * Legibility bed for the readouts that float over the world instead of sitting on a panel. Ferralon
+ * is a bright desert: sunlit sand runs near 200 luminance, which swallows the small grey type on the
+ * ammo plate entirely. A soft corner falloff — no edge, no border — gives that type its own value
+ * without turning a floating readout into another box.
+ */
+.bl2-scrim-corner {
+  background: radial-gradient(
+    120% 150% at 100% 100%,
+    rgba(8, 9, 11, 0.72) 0%,
+    rgba(8, 9, 11, 0.44) 42%,
+    rgba(8, 9, 11, 0) 76%
+  );
+}
+
 .bl2-hitmarker {
   animation: bl2-hit-pop 220ms ease-out forwards;
 }

@@ -87,6 +87,7 @@ import { FrameDriver } from "./drivers/FrameDriver";
 import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "./CombatPresentation";
+import { WorldParticles } from "./world/WorldParticles";
 import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,
@@ -559,6 +560,7 @@ export function Shell3dPresentation({
                     />
                   ) : null}
                   <WorldItems config={playable.worldItem} />
+                  <WorldParticles quality={graphics.quality} />
                   <CombatPresentation effects={effects} />
                   {devtoolsEnabled ? <CollisionDebugWorld /> : null}
                   <AudioListener engine={audioEngine} />

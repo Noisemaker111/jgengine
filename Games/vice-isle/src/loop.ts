@@ -31,6 +31,7 @@ import {
   KINGPIN_POS,
   MARCO_POS,
   PLAYER_SPAWN,
+  PLAYER_SPAWN_YAW,
   SAFEHOUSE_POS,
   VCPD_POS,
 } from "./game/world/districts";
@@ -434,6 +435,7 @@ function onNewPlayer(ctx: GameContext): void {
   ctx.scene.entity.spawn("street_runner", {
     id: ctx.player.userId,
     position: [PLAYER_SPAWN[0], y, PLAYER_SPAWN[2]],
+    rotationY: PLAYER_SPAWN_YAW,
     role: "player",
   });
   if (ctx.player.isNew) {

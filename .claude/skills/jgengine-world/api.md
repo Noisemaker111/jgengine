@@ -1459,6 +1459,16 @@
 - `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
 - `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
 
+## @jgengine/core/vfx/particleDirector
+
+- `ParticleAttachOptions` (interface): interface ParticleAttachOptions — Options for {@link ParticleDirector.attach}.
+- `ParticleBlendHint` (type): type ParticleBlendHint = "additive" | "normal" — How a particle effect composites on screen: `additive` for sparks/fire/glow, `normal` for smoke/dust.
+- `ParticleBurst` (interface): interface ParticleBurst — A one-shot burst request — consumed once by the renderer, never serialized.
+- `ParticleDirector` (interface): interface ParticleDirector — The game-side seam for particle effects. Game logic requests one-shot bursts and standing emitters as plain data; the shell renders them through `createParticleSystem`/`ParticleField`, applies the graphics-quality particle cap, and tracks `follow` entities. Nothing here touches a renderer, so commands and `onTick` systems can drive VFX headlessly and tests can assert the requested effects.
+- `ParticleDirectorState` (interface): interface ParticleDirectorState — Serializable director state: the standing emitters (bursts are transient by nature).
+- `ParticleEmitterSpec` (interface): interface ParticleEmitterSpec — A keyed continuous emitter owned by the director until detached.
+- `createParticleDirector` (function): function createParticleDirector(): ParticleDirector — Create the particle intent registry a `GameContext` exposes as `ctx.particles`. State is data-only and serializable: standing emitters survive `snapshot`/`restore`, queued bursts are transient. The renderer subscribes, drains bursts, and mirrors the emitter list — the director never allocates particle pools itself.
+
 ## @jgengine/core/vfx/particles
 
 - `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
@@ -1769,7 +1779,7 @@
 - `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.
 - `Glide` (class): class Glide — A reduced-gravity, forward-thrust glide over a physics body — wingsuit / glider / paraglider (Enshrouded, Grounded). Call `apply(dt, steerX, steerZ)` each frame *before* `world.step`: it feeds back most of the gravity the sim is about to apply (leaving `gravityScale` of it), pushes the body along the steer vector by `thrust`, and clamps descent to `maxFallSpeed`. Stop calling it to fall normally again — no attach/detach state to leak.
 - `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
-- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed"> — ⚠ undocumented
+- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift"> — ⚠ undocumented
 - `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
 - `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
 - `GripCurve` (interface): interface GripCurve — ⚠ undocumented
@@ -1932,7 +1942,7 @@
 - `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
 - `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
 - `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
-- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
 - `RevealHit` (interface): interface RevealHit — ⚠ undocumented
 - `RevealQuery` (interface): interface RevealQuery — ⚠ undocumented
@@ -2784,7 +2794,7 @@
 - `EnvironmentWorldConfig` (interface): interface EnvironmentWorldConfig — ⚠ undocumented
 - `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature — ⚠ undocumented
 - `GrassEnvironmentConfig` (interface): interface GrassEnvironmentConfig — ⚠ undocumented
-- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed"> — ⚠ undocumented
+- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift"> — ⚠ undocumented
 - `OceanEnvironmentConfig` (interface): interface OceanEnvironmentConfig — ⚠ undocumented
 - `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented
 - `PadEnvironmentConfig` (interface): interface PadEnvironmentConfig — ⚠ undocumented
@@ -3412,7 +3422,7 @@
 - `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — ⚠ undocumented
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
-- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
+- `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedTerrainDetailMaterial` (interface): interface ResolvedTerrainDetailMaterial — A resolved {@link TerrainDetailMaterialConfig} — `repeat`/`strength` filled with defaults, `maps` passed through.
 - `RollingFieldConfig` (interface): interface RollingFieldConfig — ⚠ undocumented
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
