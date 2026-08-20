@@ -97,6 +97,27 @@ const registryPlugin = (): Plugin => ({
   },
 });
 
+const ensureGamesScript = fileURLToPath(new URL("../../scripts/ensure-games.ts", import.meta.url));
+
+let gamesEnsured = false;
+
+const ensureGamesPlugin = (): Plugin => ({
+  name: "jgengine-ensure-games",
+  buildStart() {
+    if (gamesEnsured) return;
+    gamesEnsured = true;
+    if (existsSync(gamesDir)) return;
+    // On Vercel and in CI, the games repo is not committed — clone it so the site has games.
+    // Locally this also makes `bun dev` work after a fresh clone without a manual `bun run games:clone`.
+    // If the clone fails (offline, no git), we fall back to an empty games list rather than breaking the build.
+    console.log("[jgengine-ensure-games] Games/ not found — cloning Noisemaker111/JGengine-games…");
+    const result = spawnSync("bun", [ensureGamesScript], { stdio: "inherit", cwd: repoRoot });
+    if (result.status !== 0) {
+      console.warn("[jgengine-ensure-games] clone failed — site will build with no games");
+    }
+  },
+});
+
 let gamePlayerBuilt = false;
 
 const gamesPlayerPlugin = (): Plugin => ({
@@ -271,6 +292,7 @@ export default defineConfig({
     nitro({ devServer: { runner: "self" } }),
     viteReact(),
     registryPlugin(),
+    ensureGamesPlugin(),
     gamesIndexPlugin(),
     gamesPlayerPlugin(),
     gamesPlayerDevPlugin(),
