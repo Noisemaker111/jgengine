@@ -8,7 +8,9 @@ import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GameOrientation } from "../ui/orientation";
 import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
+import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
+import type { FreeFlightBindings } from "../movement/freeFlight";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { PartMotionParams, PartRole } from "./partAnimation";
 import type { CollisionMeshData } from "../scene/collisionMesh";
@@ -315,6 +317,34 @@ export interface BackdropConfig {
   fog?: BackdropFogConfig;
 }
 
+/** Free-flight families moved into the walk controller so one seam covers ground + air — creative/spectator/noclip/hover are weightless, aircraft/rotorcraft stay on `flightDynamics`. */
+export interface FlightConfig {
+  /** Which free-flight family to use when flight is active. Default "creative". */
+  mode?: "creative" | "spectator" | "noclip" | "hover";
+  /** Horizontal base speed (units/s). Default 8. */
+  speed?: number;
+  /** Vertical base speed for ascend/descend. Default = `speed`. */
+  verticalSpeed?: number;
+  /** Sprint multiplier while shift is held. Default 1.8. */
+  sprintMultiplier?: number;
+  /** Lerp rate toward target velocity. Default 20. */
+  acceleration?: number;
+  /** Downward acceleration for hover mode. Default 0 (weightless). */
+  gravity?: number;
+  /** Upward thrust while ascending in hover. Default 32. */
+  thrust?: number;
+  /** When true, W moves along the look pitch (6DOF spectator). Default false. */
+  alignWithLook?: boolean;
+  /** Whether flight slides against world solids. Default true for creative/hover, false for spectator/noclip. */
+  collide?: boolean;
+  /** Axis bindings for this flight — which actions drive each axis. Unlisted axes keep the defaults above. */
+  bindings?: FreeFlightBindings;
+  /** Camera POV while this flight is active — chase tuning overlay applied on mount, cleared on dismount. */
+  camera?: ChaseCameraTuning | null;
+  /** Gate flight behind live game state — creative toggle, stamina check, etc. `false` stays walking. Default true when `flight` is present. */
+  canFly?: (ctx: GameContext) => boolean;
+}
+
 /** Movement-control levers for the shell-driven local player walk controller. */
 export interface PlayerMovementConfig {
   /** "free" (default) moves camera-relative across the plane; "axis" locks travel to one world axis; "grid" snaps each committed position to cell centers. */
@@ -345,6 +375,15 @@ export interface PlayerMovementConfig {
   swim?: { speedMultiplier?: number } | boolean;
   /** Slide the player downhill on terrain steeper than they can stand on (heightfield worlds only). `true` uses defaults; default off. */
   slopeSlide?: { maxClimbSlope?: number } | boolean;
+  /**
+   * Free-flight — creative/spectator/noclip/hover — folded into the same walk controller so a game
+   * doesn't hand-roll a second movement loop to get Minecraft-like flight. `true` uses creative defaults;
+   * an object tunes speed/vertical/sprint/collide/canFly. Horizontal is always yaw-relative strafe
+   * (A = left, D = right — never roll/bank), vertical is Space/Ctrl, and aircraft/rotorcraft remain
+   * on `physics/flightDynamics`. The shell drives this automatically when present; `canFly` toggles
+   * between walking and flying per tick without rebuilding the config.
+   */
+  flight?: FlightConfig | boolean;
 }
 
 /** One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`. */

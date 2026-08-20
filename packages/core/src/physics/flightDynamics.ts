@@ -1,3 +1,5 @@
+import type { AxisBinding } from "../input/axisInput";
+import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 import { uniformGravity, type GravityField } from "./gravityField";
 
 /** Three-dimensional world-space vector used by the flight model. */
@@ -28,6 +30,9 @@ export interface FlightControlRates {
   stability: number;
 }
 
+/** Axes an aircraft can bind — which actions drive each flight control. */
+export type AircraftAxis = "pitch" | "roll" | "yaw" | "throttle" | "collective" | "airbrake" | "afterburner" | "vectoring";
+
 /** Data-first physical tuning shared by all aircraft instances of one catalog type. */
 export interface AircraftTuning {
   kind: AircraftKind;
@@ -46,6 +51,10 @@ export interface AircraftTuning {
   groundEffectHeight?: number;
   vtolTransitionSpeed?: number;
   groundClearance?: number;
+  /** Per-axis bindings for this aircraft — which actions drive each control. Unlisted axes keep the defaults (WASD + flightThrottleUp/Down etc.). */
+  bindings?: Partial<Record<AircraftAxis, AxisBinding>>;
+  /** Camera POV while this aircraft is piloted — chase tuning overlay applied on mount, cleared on dismount. */
+  camera?: ChaseCameraTuning | null;
 }
 
 /** Spawn state and injectable world-field samplers for an aircraft instance. */

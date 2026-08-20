@@ -218,6 +218,7 @@
     "./movement/cameraRig",
     "./movement/dash",
     "./movement/formation",
+    "./movement/freeFlight",
     "./movement/glideModel",
     "./movement/grappleSwing",
     "./movement/leaderTrail",

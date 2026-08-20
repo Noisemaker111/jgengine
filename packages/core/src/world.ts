@@ -154,6 +154,25 @@ export {
   type SlotAssignmentOptions,
   type WedgeFormationOptions,
 } from "./movement/formation";
+export {
+  CREATIVE_FLIGHT_TUNING,
+  HOVER_FLIGHT_TUNING,
+  NOCLIP_FLIGHT_TUNING,
+  SPECTATOR_FLIGHT_TUNING,
+  advanceFreeFlight,
+  createFreeFlightController,
+  createFreeFlightState,
+  resolveFlightStep,
+  resolveFreeFlightIntent,
+  resolveFreeFlightIntentFromInput,
+  type FreeFlightBindings,
+  type FreeFlightController,
+  type FreeFlightIntent,
+  type FreeFlightMode,
+  type FreeFlightState,
+  type FreeFlightStep,
+  type FreeFlightTuning,
+} from "./movement/freeFlight";
 export { createGlideModel } from "./movement/glideModel";
 export { createGrappleSwing } from "./movement/grappleSwing";
 export { createLeaderTrail } from "./movement/leaderTrail";
@@ -226,6 +245,7 @@ export { createDamageModel } from "./physics/damageZones";
 export { tickDrivableVehicle } from "./physics/drivableVehicle";
 export {
   createAircraftDynamics,
+  type AircraftAxis,
   type AircraftDynamics,
   type AircraftKind,
   type AircraftOptions,

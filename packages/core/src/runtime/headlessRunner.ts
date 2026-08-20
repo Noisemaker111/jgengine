@@ -36,8 +36,12 @@ export interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultipl
    * `onTick` and don't need it.
    */
   playerMovement?: boolean;
+  /** Movement tuning — when `playerMovement` is on, the shell resolves from `definition.world`/`physics`; pass a direct config to test flight or other movement overrides headlessly. */
+  movement?: import("../game/playableGame").PlayerMovementConfig;
   /** Yaw heading (radians) fed to the movement controller when `playerMovement` is on; the shell supplies its camera yaw. */
   heading?: number;
+  /** Pitch (radians) fed alongside yaw for 6DOF spectator flight when `alignWithLook` is set. */
+  pitch?: number;
   /** Render-model lookup for collider auto-fit — pass what the shell would derive from `entityModels`/`objectModels` so headless raycasts hit the same boxes as play. */
   models?: GameContextModels;
 }
@@ -101,7 +105,11 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
 
   const tuning: PlayerMovementTuning | null =
     options.playerMovement === true
-      ? resolvePlayerMovementTuning({ physics: definition.physics, world: definition.world })
+      ? resolvePlayerMovementTuning({
+          physics: definition.physics,
+          world: definition.world,
+          movement: options.movement,
+        })
       : null;
 
   function publishInput(input: HeadlessInput): void {
@@ -140,6 +148,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
           dt,
           tuning,
           options.heading,
+          options.pitch,
         );
       }
       loop?.onTick?.(ctx, gameDt);

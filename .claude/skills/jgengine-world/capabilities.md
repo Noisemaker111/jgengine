@@ -279,6 +279,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DEFAULT_FORWARD` (const) · `import { DEFAULT_FORWARD } from "@jgengine/core/world"`
 
+## free-flight — camera-relative creative/spectator/noclip/hover flight with correct strafe, sprint, and optional gravity
+
+- `createFreeFlightController` (function) · `import { createFreeFlightController } from "@jgengine/core/world"`
+
 ## glide — gliding/wingsuit descent control from a launch
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/world"`
