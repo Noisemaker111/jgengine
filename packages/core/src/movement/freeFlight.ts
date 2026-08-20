@@ -1,8 +1,23 @@
 import { MOVEMENT_TUNING, type AnalogMoveIntent, type CollisionObstacle, type MovementKeysState } from "./movementModel";
 import { DEFAULT_OBSTACLE_PLAYER_RADIUS } from "./movementModel";
+import { sampleAxisBindings, type AxisBinding } from "../input/axisInput";
+import type { PointerAxisState } from "../input/pointerAxis";
+import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 
 /** Free-flight families — character-scale 6DOF movement, distinct from vehicle aerodynamics. */
 export type FreeFlightMode = "creative" | "spectator" | "noclip" | "hover";
+
+/** Per-axis bindings for free-flight — which actions drive each flight axis. Positive is forward/right/up. */
+export interface FreeFlightBindings {
+  /** Forward/back — default `moveForward` / `moveBack` (W/S). */
+  forward?: AxisBinding;
+  /** Strafe right/left — default `moveRight` / `moveLeft` (D/A). */
+  strafe?: AxisBinding;
+  /** Ascend/descend — default `jump` / `crouch` (Space / Ctrl+C). */
+  vertical?: AxisBinding;
+  /** Sprint — default `sprint` (Shift) held. */
+  sprint?: AxisBinding;
+}
 
 /** Data-first tuning for one free-flight profile. */
 export interface FreeFlightTuning {
@@ -27,6 +42,10 @@ export interface FreeFlightTuning {
   maxFallSpeed?: number;
   /** Whether to slide against world solids. Default true for creative/hover, false for spectator/noclip. */
   collide?: boolean;
+  /** Axis bindings for this flight profile — which actions drive each axis. Unlisted axes keep the defaults above. */
+  bindings?: FreeFlightBindings;
+  /** Camera POV while this flight is active — chase tuning overlay applied on mount, cleared on dismount. Null clears. */
+  camera?: ChaseCameraTuning | null;
 }
 
 /** Velocity state for a free-flight actor — serializable and ownable by the caller. */
@@ -69,6 +88,11 @@ export function createFreeFlightState(): FreeFlightState {
   return { vx: 0, vy: 0, vz: 0 };
 }
 
+const DEFAULT_FORWARD_BINDING: AxisBinding = { positive: ["moveForward"], negative: ["moveBack"] };
+const DEFAULT_STRAFE_BINDING: AxisBinding = { positive: ["moveRight"], negative: ["moveLeft"] };
+const DEFAULT_VERTICAL_BINDING: AxisBinding = { positive: ["jump"], negative: ["crouch", "control", "c"] };
+const DEFAULT_SPRINT_BINDING: AxisBinding = { positive: ["sprint"] };
+
 /**
  * Translate held keys + analog into a free-flight intent.
  * Vertical is `space - (control|c)` so jump ascends and crouch descends — the same
@@ -86,6 +110,30 @@ export function resolveFreeFlightIntent(
   }
   const vertical = (keys.space ? 1 : 0) - (keys.control || keys.c ? 1 : 0);
   const sprint = keys.shift && vertical >= 0;
+  const moving = forward !== 0 || right !== 0 || vertical !== 0;
+  return { forward, right, vertical, sprint, moving };
+}
+
+/**
+ * Translate live input (held actions + analog + pointer) into a flight intent using
+ * per-profile axis bindings. Unlisted bindings fall back to the defaults above so
+ * existing games keep WASD/Space/Ctrl/Shift without declaring anything.
+ */
+export function resolveFreeFlightIntentFromInput(
+  isDown: (action: string) => boolean,
+  value: (action: string) => number,
+  pointer: PointerAxisState | null,
+  bindings?: FreeFlightBindings,
+): FreeFlightIntent {
+  const forwardBinding = bindings?.forward ?? DEFAULT_FORWARD_BINDING;
+  const strafeBinding = bindings?.strafe ?? DEFAULT_STRAFE_BINDING;
+  const verticalBinding = bindings?.vertical ?? DEFAULT_VERTICAL_BINDING;
+  const sprintBinding = bindings?.sprint ?? DEFAULT_SPRINT_BINDING;
+  const forward = sampleAxisBindings({ forward: forwardBinding }, isDown, pointer, undefined, value).forward;
+  const right = sampleAxisBindings({ strafe: strafeBinding }, isDown, pointer, undefined, value).strafe;
+  const vertical = sampleAxisBindings({ vertical: verticalBinding }, isDown, pointer, undefined, value).vertical;
+  const sprintVal = sampleAxisBindings({ sprint: sprintBinding }, isDown, pointer, { sprint: { min: 0, max: 1 } }, value).sprint;
+  const sprint = sprintVal > 0.5;
   const moving = forward !== 0 || right !== 0 || vertical !== 0;
   return { forward, right, vertical, sprint, moving };
 }

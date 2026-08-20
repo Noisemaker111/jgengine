@@ -164,6 +164,8 @@ export {
   createFreeFlightState,
   resolveFlightStep,
   resolveFreeFlightIntent,
+  resolveFreeFlightIntentFromInput,
+  type FreeFlightBindings,
   type FreeFlightController,
   type FreeFlightIntent,
   type FreeFlightMode,
@@ -243,6 +245,7 @@ export { createDamageModel } from "./physics/damageZones";
 export { tickDrivableVehicle } from "./physics/drivableVehicle";
 export {
   createAircraftDynamics,
+  type AircraftAxis,
   type AircraftDynamics,
   type AircraftKind,
   type AircraftOptions,

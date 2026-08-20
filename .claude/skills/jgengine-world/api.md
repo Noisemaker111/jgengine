@@ -529,6 +529,7 @@
 ## @jgengine/core/movement/freeFlight
 
 - `CREATIVE_FLIGHT_TUNING` (const): const CREATIVE_FLIGHT_TUNING: FreeFlightTuning — Preset for Minecraft-like creative flight — weightless, collides, yaw-relative strafe.
+- `FreeFlightBindings` (interface): interface FreeFlightBindings — Per-axis bindings for free-flight — which actions drive each flight axis. Positive is forward/right/up.
 - `FreeFlightController` (interface): interface FreeFlightController — Stateful handle for any free-flight actor with snapshot/restore/retune.
 - `FreeFlightIntent` (interface): interface FreeFlightIntent — Intent for one free-flight tick — forward/right from WASD/analog, vertical from jump/crouch.
 - `FreeFlightMode` (type): type FreeFlightMode = "creative" | "spectator" | "noclip" | "hover" — Free-flight families — character-scale 6DOF movement, distinct from vehicle aerodynamics.
@@ -543,6 +544,7 @@
 - `createFreeFlightState` (function): function createFreeFlightState(): FreeFlightState — Create an empty flight velocity state.
 - `resolveFlightStep` (function): function resolveFlightStep(position: readonly [number, number, number], stepX: number, stepY: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): { stepX: number; stepY: number; stepZ: number } — Resolve a flight step against world solids (XZ slide + Y clamp).
 - `resolveFreeFlightIntent` (function): function resolveFreeFlightIntent(keys: MovementKeysState, analog: AnalogMoveIntent | null | undefined): FreeFlightIntent — Translate held keys + analog into a free-flight intent. Vertical is `space - (control|c)` so jump ascends and crouch descends — the same keys that walk/jump/crouch use, re-mapped for flight without re-binding.
+- `resolveFreeFlightIntentFromInput` (function): function resolveFreeFlightIntentFromInput(isDown: (action: string) => boolean, value: (action: string) => number, pointer: PointerAxisState | null, bindings?: FreeFlightBindings): FreeFlightIntent — Translate live input (held actions + analog + pointer) into a flight intent using per-profile axis bindings. Unlisted bindings fall back to the defaults above so existing games keep WASD/Space/Ctrl/Shift without declaring anything.
 
 ## @jgengine/core/movement/glideModel
 
@@ -786,6 +788,7 @@
 
 ## @jgengine/core/physics/flightDynamics
 
+- `AircraftAxis` (type): type AircraftAxis = "pitch" | "roll" | "yaw" | "throttle" | "collective" | "airbrake" | "afterburner" | "vectoring" — Axes an aircraft can bind — which actions drive each flight control.
 - `AircraftDynamics` (interface): interface AircraftDynamics — Stateful six-degree-of-freedom aircraft simulation.
 - `AircraftKind` (type): type AircraftKind = "fixedWing" | "rotorcraft" | "vtol" — Supported aerodynamic/propulsion families.
 - `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
@@ -1611,6 +1614,7 @@
 - `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
+- `AircraftAxis` (type): type AircraftAxis = "pitch" | "roll" | "yaw" | "throttle" | "collective" | "airbrake" | "afterburner" | "vectoring" — Axes an aircraft can bind — which actions drive each flight control.
 - `AircraftDynamics` (interface): interface AircraftDynamics — Stateful six-degree-of-freedom aircraft simulation.
 - `AircraftKind` (type): type AircraftKind = "fixedWing" | "rotorcraft" | "vtol" — Supported aerodynamic/propulsion families.
 - `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
@@ -1784,6 +1788,7 @@
 - `ForceVolume` (class): class ForceVolume — A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`), conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only on entry by tracking membership between ticks.
 - `FormationSlotGenerator` (type): type FormationSlotGenerator = (count: number) => Vec2[] — Produces `count` slot offsets in the group's local frame — `[right, forward]` where `+forward` points where the group faces. Index order is the slot order; a generator must be pure (same `count` → same offsets) so placement stays deterministic. Sample generators below cover common shapes; games pass their own for anything else (crowds, convoys, sports positions) with no engine edit.
 - `FramingConfig` (interface): interface FramingConfig — ⚠ undocumented
+- `FreeFlightBindings` (interface): interface FreeFlightBindings — Per-axis bindings for free-flight — which actions drive each flight axis. Positive is forward/right/up.
 - `FreeFlightController` (interface): interface FreeFlightController — Stateful handle for any free-flight actor with snapshot/restore/retune.
 - `FreeFlightIntent` (interface): interface FreeFlightIntent — Intent for one free-flight tick — forward/right from WASD/analog, vertical from jump/crouch.
 - `FreeFlightMode` (type): type FreeFlightMode = "creative" | "spectator" | "noclip" | "hover" — Free-flight families — character-scale 6DOF movement, distinct from vehicle aerodynamics.
@@ -2388,6 +2393,7 @@
 - `resolveFacingRotationY` (function): function resolveFacingRotationY(headingDegrees: number, space?: Pick<AssetSpace, "forwardDegrees">): number — The Three.js Y-rotation that makes a model whose front is authored at `forwardDegrees` visually point `headingDegrees` (engine north = `0`). This is the catalog-owned replacement for per-game corrective yaw: a model authored facing south (`forwardDegrees: 180`) placed toward north resolves to `Math.PI`.
 - `resolveFlightStep` (function): function resolveFlightStep(position: readonly [number, number, number], stepX: number, stepY: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): { stepX: number; stepY: number; stepZ: number } — Resolve a flight step against world solids (XZ slide + Y clamp).
 - `resolveFreeFlightIntent` (function): function resolveFreeFlightIntent(keys: MovementKeysState, analog: AnalogMoveIntent | null | undefined): FreeFlightIntent — Translate held keys + analog into a free-flight intent. Vertical is `space - (control|c)` so jump ascends and crouch descends — the same keys that walk/jump/crouch use, re-mapped for flight without re-binding.
+- `resolveFreeFlightIntentFromInput` (function): function resolveFreeFlightIntentFromInput(isDown: (action: string) => boolean, value: (action: string) => number, pointer: PointerAxisState | null, bindings?: FreeFlightBindings): FreeFlightIntent — Translate live input (held actions + analog + pointer) into a flight intent using per-profile axis bindings. Unlisted bindings fall back to the defaults above so existing games keep WASD/Space/Ctrl/Shift without declaring anything.
 - `resolveGridInstances` (function): function resolveGridInstances(config: WorldGridConfig | GridWorldFeature): readonly GridInstanceTransform[] — ⚠ undocumented
 - `resolveLocalAvoidance` (function): function resolveLocalAvoidance(agents: AvoidanceAgent[], options: LocalAvoidanceOptions = {}): number — Resolve overlaps in `agents` in place and return how many overlapping pairs remained on the final pass (`0` = fully separated). Uses a bounded uniform hash grid sized to the largest agent, so only nearby agents are ever compared. Deterministic: corrections are accumulated then applied per pass, independent of agent order. Pass `weights` to pin or differentially push agents.
 - `resolvePlaceAsset` (function): function resolvePlaceAsset(input: ResolvePlaceAssetInput): PlaceAssetResult — Resolve a place-asset intent into a shared payload (editor + games, one verb).

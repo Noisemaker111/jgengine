@@ -8,7 +8,9 @@ import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GameOrientation } from "../ui/orientation";
 import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
+import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
+import type { FreeFlightBindings } from "../movement/freeFlight";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { PartMotionParams, PartRole } from "./partAnimation";
 import type { CollisionMeshData } from "../scene/collisionMesh";
@@ -335,6 +337,10 @@ export interface FlightConfig {
   alignWithLook?: boolean;
   /** Whether flight slides against world solids. Default true for creative/hover, false for spectator/noclip. */
   collide?: boolean;
+  /** Axis bindings for this flight — which actions drive each axis. Unlisted axes keep the defaults above. */
+  bindings?: FreeFlightBindings;
+  /** Camera POV while this flight is active — chase tuning overlay applied on mount, cleared on dismount. */
+  camera?: ChaseCameraTuning | null;
   /** Gate flight behind live game state — creative toggle, stamina check, etc. `false` stays walking. Default true when `flight` is present. */
   canFly?: (ctx: GameContext) => boolean;
 }

@@ -1,4 +1,5 @@
-import type { AxisInput } from "../input/axisInput";
+import type { AxisBinding, AxisInput } from "../input/axisInput";
+import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 import { steerYaw } from "../movement/steering";
 import { DEFAULT_GRIP_CURVE, sampleGripCurve, type GripCurve } from "./vehicleBody";
 
@@ -49,6 +50,10 @@ export interface KinematicVehicleTuning {
    * Omit to preserve the direct arcade acceleration model exactly.
    */
   chassis?: KinematicChassisTuning;
+  /** Per-axis bindings for this vehicle — which actions drive throttle/brake/steer/handbrake. Unlisted axes keep car defaults (W/S/A/D/Space). */
+  bindings?: Partial<Record<"throttle" | "brake" | "steer" | "handbrake", AxisBinding>>;
+  /** Camera POV while this vehicle is piloted — chase tuning overlay applied on mount, cleared on dismount. */
+  camera?: ChaseCameraTuning | null;
 }
 
 /**

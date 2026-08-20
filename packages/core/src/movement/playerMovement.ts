@@ -25,7 +25,7 @@ import {
   advanceFreeFlight,
   createFreeFlightState,
   resolveFlightStep,
-  resolveFreeFlightIntent,
+  resolveFreeFlightIntentFromInput,
   type FreeFlightState,
   type FreeFlightTuning,
 } from "./freeFlight";
@@ -187,6 +187,8 @@ function flightTuningFor(
       thrust: cfg.thrust,
       alignWithLook: cfg.alignWithLook,
       collide: cfg.collide,
+      bindings: cfg.bindings,
+      camera: cfg.camera ?? null,
     };
   }
   return null;
@@ -256,9 +258,11 @@ export function stepPlayerMovement(
 
   const flightTuning = flightTuningFor(tuning.movement, ctx);
   if (flightTuning !== null) {
-    keys.control = isDown("crouch") || isDown("sneak") || isDown("control") || isDown("c");
-    keys.c = keys.control;
-    const flightIntent = resolveFreeFlightIntent(keys, analogMove);
+    const value = (action: string): number => input.analog?.[action] ?? (isDown(action) ? 1 : 0);
+    let flightIntent = resolveFreeFlightIntentFromInput(isDown, value, input.pointer, flightTuning.bindings);
+    if (tuning.movement?.canSprint !== undefined && !tuning.movement.canSprint(ctx)) {
+      flightIntent = { ...flightIntent, sprint: false };
+    }
     let flightState = state.flight;
     if (flightState === null) {
       flightState = createFreeFlightState();
@@ -280,9 +284,15 @@ export function stepPlayerMovement(
       thrust: flightTuning.thrust,
       alignWithLook: flightTuning.alignWithLook,
       collide: flightTuning.collide,
+      bindings: flightTuning.bindings,
+      camera: flightTuning.camera,
     };
     if (normalizedFlightTuning.collide === undefined) {
       normalizedFlightTuning.collide = normalizedFlightTuning.mode === "creative" || normalizedFlightTuning.mode === "hover";
+    }
+    if (normalizedFlightTuning.camera !== undefined) {
+      const cam = (ctx as unknown as { camera?: { setChaseTuning: (t: unknown) => void } }).camera;
+      cam?.setChaseTuning(normalizedFlightTuning.camera ?? null);
     }
     const step = advanceFreeFlight(flightState, flightIntent, state.heading, pitch, dt, normalizedFlightTuning);
     let stepX = step.stepX;
@@ -337,6 +347,10 @@ export function stepPlayerMovement(
       dt,
     });
     return;
+  }
+  if (flightTuning === null && state.flight !== null) {
+    const cam = (ctx as unknown as { camera?: { setChaseTuning: (t: unknown) => void } }).camera;
+    cam?.setChaseTuning(null);
   }
 
   if (tuning.collision?.voxel === true) {
