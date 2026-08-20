@@ -10,7 +10,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@games/spire-cards": "workspace:*",
     "@jgengine/core": "workspace:*",
     "@jgengine/react": "workspace:*",
     "@jgengine/sql": "workspace:*",

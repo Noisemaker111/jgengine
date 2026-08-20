@@ -1,7 +1,9 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
-/** Every non-test `.ts`/`.tsx` under each game's `src`, as repo-relative paths with their source. */
+/** Every non-test `.ts`/`.tsx` under each game's `src`, as repo-relative paths with their source.
+ * Games now live in Noisemaker111/JGengine-games and are cloned at build time into ephemeral ./Games.
+ * When the directory is absent (fresh engine checkout with no clone), return no sources rather than throwing. */
 export function eachGameSource(root: string): { rel: string; source: string }[] {
   const gamesDir = join(root, "Games");
   const files: { rel: string; source: string }[] = [];
@@ -18,7 +20,13 @@ export function eachGameSource(root: string): { rel: string; source: string }[] 
     }
   };
 
-  for (const game of readdirSync(gamesDir)) {
+  let games: string[];
+  try {
+    games = readdirSync(gamesDir);
+  } catch {
+    return [];
+  }
+  for (const game of games) {
     const src = join(gamesDir, game, "src");
     try {
       if (!statSync(src).isDirectory()) continue;

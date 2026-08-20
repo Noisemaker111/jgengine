@@ -1,7 +1,15 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findModuleGlobals } from "./moduleGlobalState";
 import { runRatchet } from "./ratchet";
+
+const root = fileURLToPath(new URL("..", import.meta.url));
+if (!existsSync(join(root, "Games"))) {
+  console.log("check-module-globals: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games)");
+  process.exit(0);
+}
 
 runRatchet(
   {

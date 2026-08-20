@@ -23,6 +23,11 @@ const ADOPTION_BASELINE_PATH = join(process.cwd(), "scripts/game-adoption-baseli
 
 const gamesDir = join(process.cwd(), "Games");
 
+if (!existsSync(gamesDir)) {
+  console.log("check-game-shape: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games, clone with bun run games:clone)");
+  process.exit(0);
+}
+
 const rootScripts =
   (JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { scripts?: Record<string, string> })
     .scripts ?? {};
@@ -75,10 +80,9 @@ for (const name of readdirSync(gamesDir)) {
     problems.push(`${rel(packageJsonPath)}: missing a "dev" script to launch the standalone harness`);
   }
 
-  const rootGameScript = `bun run --cwd Games/${name} dev`;
-  if (rootScripts[`games:${name}`] !== rootGameScript) {
-    problems.push(`package.json: missing root script "games:${name}": "${rootGameScript}"`);
-  }
+  // Root games:* scripts were removed when games moved to Noisemaker111/JGengine-games (see package.json).
+  // A local Games/ clone is ephemeral (gitignored) and games run via `bun --cwd Games/<id> dev` or via the games repo itself.
+  // No longer enforce a root script entry.
 
   const tsconfigPath = join(gameDir, "tsconfig.json");
   if (!existsSync(tsconfigPath)) {
@@ -216,7 +220,7 @@ if (problems.length > 0) {
       `src/index.css for Tailwind (importing "./style.css") and a "dev" script in package.json to launch it.\n` +
       `src/style.css holds the game-specific CSS only — no "@import \\"tailwindcss\\"" — so the /play\n` +
       `runner's per-game lazy CSS chunk stays small instead of re-shipping the shared Tailwind base.\n` +
-      `The root package.json exposes each harness as "games:<id>": "bun run --cwd Games/<id> dev".\n` +
+      `Games live in Noisemaker111/JGengine-games (ephemeral ./Games clone via bun run games:clone); the engine repo no longer defines root games:* scripts.\n` +
       `Adoption smells (export let, local Window/Bar/Chip/Slot) are ratcheted via scripts/game-adoption-baseline.json — shrink only.\n`,
   );
   process.exit(1);

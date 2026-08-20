@@ -42,6 +42,11 @@ packages/*/skills/
 # (Agent({ isolation: "worktree" })) — transient, never committed.
 .claude/worktrees/
 
+# Games are now in the separate Noisemaker111/JGengine-games repo.
+# The website clones them at build time into ephemeral ./Games (see scripts/ensure-games.ts).
+# Committed Games/* was removed — keep the directory gitignored so a local clone does not look dirty.
+Games/
+
 # agent-bootstrap concurrency guard (never race two bun installs),
 # hook-spawned background log, and killed-install detection marker
 .agent-bootstrap.lock

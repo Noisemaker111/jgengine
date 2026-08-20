@@ -5,7 +5,6 @@
   "workspaces": {
     "packages": [
       "packages/*",
-      "Games/*",
       "apps/*",
       "examples/*",
       "registry"
@@ -63,8 +62,9 @@
     "stage-skills": "bun scripts/stage-skills.ts",
     "check-stage-skills": "bun scripts/stage-skills.ts --check",
     "test": "bun scripts/guard.ts 300 'bun scripts/ensure-ready.ts && bun test packages apps/dev apps/web apps/desktop scripts'",
-    "test:games": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts && bun test Games'",
-    "test:all": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts && bun test packages Games apps/dev apps/web apps/desktop scripts'",
+    "test:all": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts && bun test packages apps/dev apps/web apps/desktop scripts'",
+    "games:clone": "bun scripts/ensure-games.ts",
+    "games:update": "bun scripts/ensure-games.ts --update",
     "dev": "bun run --cwd apps/web dev",
     "dev:runner": "bun run --cwd apps/dev dev",
     "shoot": "bun scripts/guard.ts 420 'bun scripts/shoot-dev.ts'",
@@ -74,18 +74,7 @@
     "pr-shots": "bun scripts/pr-shots.ts",
     "pr-video": "bun scripts/pr-video.ts",
     "host": "bun scripts/host-game.ts",
-    "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'",
-    "games:claudecraft": "bun run --cwd Games/claudecraft dev",
-    "games:duet-keys": "bun run --cwd Games/duet-keys dev",
-    "games:ironhold": "bun run --cwd Games/ironhold dev",
-    "games:loopline": "bun run --cwd Games/loopline dev",
-    "games:spire-cards": "bun run --cwd Games/spire-cards dev",
-    "games:starhome": "bun run --cwd Games/starhome dev",
-    "games:studio-showcase": "bun run --cwd Games/studio-showcase dev",
-    "games:the-robots": "bun run --cwd Games/the-robots dev",
-    "games:tower-guard": "bun run --cwd Games/tower-guard dev",
-    "games:vice-isle": "bun run --cwd Games/vice-isle dev",
-    "games:wreckway": "bun run --cwd Games/wreckway dev"
+    "smoke": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts && bun scripts/smoke-games.ts'"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

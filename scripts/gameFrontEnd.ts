@@ -1,4 +1,4 @@
-import { readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { eachGameSource } from "./gameSourceScan";
@@ -34,8 +34,15 @@ export function findFrontEndGaps(root: string): RatchetFinding[] {
   }
 
   const gamesDir = join(root, "Games");
+  if (!existsSync(gamesDir)) return [];
   const gaps: RatchetFinding[] = [];
-  for (const game of readdirSync(gamesDir)) {
+  let games: string[];
+  try {
+    games = readdirSync(gamesDir);
+  } catch {
+    return [];
+  }
+  for (const game of games) {
     try {
       if (!statSync(join(gamesDir, game, "src")).isDirectory()) continue;
     } catch {

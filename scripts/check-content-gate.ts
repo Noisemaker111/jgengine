@@ -202,6 +202,7 @@ function scanGame(id: string): GameScan | null {
 }
 
 function scanAll(): GameScan[] {
+  if (!existsSync(GAMES_DIR)) return [];
   const out: GameScan[] = [];
   for (const id of readdirSync(GAMES_DIR).sort()) {
     const dir = join(GAMES_DIR, id);
@@ -242,6 +243,10 @@ function writeBaseline(path: string, values: string[]): void {
 }
 
 function main(argv: string[]): number {
+  if (!existsSync(GAMES_DIR)) {
+    console.log("check-content-gate: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games)");
+    return 0;
+  }
   const scans = scanAll();
   const declared = new Set<string>();
   const declarationProblems: string[] = [];

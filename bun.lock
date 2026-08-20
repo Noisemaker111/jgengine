@@ -14,283 +14,6 @@
         "user-attachments": "^2.0.2",
       },
     },
-    "Games/claudecraft": {
-      "name": "@games/claudecraft",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/duet-keys": {
-      "name": "@games/duet-keys",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@react-three/drei": "catalog:",
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/ironhold": {
-      "name": "@games/ironhold",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/drei": "^10.7.7",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@jgengine/node": "workspace:*",
-        "@tailwindcss/vite": "^4.0.15",
-        "@types/react": "^19",
-        "@types/react-dom": "^19",
-        "@types/three": "^0.182.0",
-        "@vitejs/plugin-react": "^4.3.4",
-        "tailwindcss": "^4.0.15",
-        "typescript": "^5",
-        "vite": "^6.2.2",
-      },
-    },
-    "Games/loopline": {
-      "name": "@games/loopline",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@react-three/drei": "catalog:",
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/spire-cards": {
-      "name": "@games/spire-cards",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/starhome": {
-      "name": "@games/starhome",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@react-three/drei": "catalog:",
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/studio-showcase": {
-      "name": "@games/studio-showcase",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine-examples/studios": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@react-three/drei": "catalog:",
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/the-robots": {
-      "name": "@games/the-robots",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/tower-guard": {
-      "name": "@games/tower-guard",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/vice-isle": {
-      "name": "@games/vice-isle",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@jgengine/ws": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
-    "Games/wreckway": {
-      "name": "@games/wreckway",
-      "version": "0.1.0",
-      "dependencies": {
-        "@jgengine/assets": "workspace:*",
-        "@jgengine/core": "workspace:*",
-        "@jgengine/editor": "workspace:*",
-        "@jgengine/react": "workspace:*",
-        "@jgengine/shell": "workspace:*",
-        "@jgengine/ws": "workspace:*",
-        "@react-three/fiber": "^9.5.0",
-        "react": "19.2.3",
-        "react-dom": "19.2.3",
-        "three": "^0.182.0",
-      },
-      "devDependencies": {
-        "@tailwindcss/vite": "catalog:",
-        "@types/react": "catalog:",
-        "@types/react-dom": "catalog:",
-        "@types/three": "catalog:",
-        "@vitejs/plugin-react": "catalog:",
-        "tailwindcss": "catalog:",
-        "typescript": "catalog:",
-        "vite": "catalog:",
-      },
-    },
     "apps/desktop": {
       "name": "@jgengine-apps/desktop",
       "version": "0.1.0",
@@ -406,7 +129,6 @@
       "name": "@jgengine-examples/next-host",
       "version": "0.1.0",
       "dependencies": {
-        "@games/spire-cards": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
@@ -447,7 +169,6 @@
       "name": "@jgengine-examples/tanstack-host",
       "version": "0.1.0",
       "dependencies": {
-        "@games/spire-cards": "workspace:*",
         "@jgengine/core": "workspace:*",
         "@jgengine/react": "workspace:*",
         "@jgengine/shell": "workspace:*",
@@ -472,7 +193,7 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.14.0",
+      "version": "0.18.0",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
@@ -486,7 +207,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.14.0",
+      "version": "0.18.0",
       "dependencies": {
         "@jgengine/core": "^0.11.0",
       },
@@ -502,11 +223,11 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.14.0",
+      "version": "0.18.0",
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.14.0",
+      "version": "0.18.0",
       "dependencies": {
         "@jgengine/core": "^0.14.0",
         "@jgengine/react": "^0.14.0",
@@ -532,11 +253,11 @@
     },
     "packages/github": {
       "name": "@jgengine/github",
-      "version": "0.1.0",
+      "version": "0.5.0",
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.11.0",
+      "version": "0.15.0",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
@@ -549,7 +270,7 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.14.0",
+      "version": "0.18.0",
       "dependencies": {
         "@jgengine/core": "^0.11.0",
         "@jgengine/ws": "^0.11.0",
@@ -565,9 +286,9 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.14.0",
+      "version": "0.18.0",
       "dependencies": {
-        "@jgengine/core": "^0.14.0",
+        "@jgengine/core": "^0.18.0",
       },
       "devDependencies": {
         "@types/react": "^19",
@@ -582,11 +303,11 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.14.0",
+      "version": "0.18.0",
       "dependencies": {
-        "@jgengine/core": "^0.14.0",
-        "@jgengine/react": "^0.14.0",
-        "@jgengine/ws": "^0.14.0",
+        "@jgengine/core": "^0.18.0",
+        "@jgengine/react": "^0.18.0",
+        "@jgengine/ws": "^0.18.0",
       },
       "devDependencies": {
         "@react-three/drei": "^10.7.7",
@@ -607,9 +328,9 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.14.0",
+      "version": "0.18.0",
       "dependencies": {
-        "@jgengine/core": "^0.11.0",
+        "@jgengine/core": "^0.18.0",
       },
       "devDependencies": {
         "pg-mem": "^3.0.5",
@@ -617,9 +338,9 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.14.0",
+      "version": "0.18.0",
       "dependencies": {
-        "@jgengine/core": "^0.14.0",
+        "@jgengine/core": "^0.18.0",
       },
     },
     "registry": {
@@ -772,28 +493,6 @@
     "@fontsource-variable/inter": ["@fontsource-variable/inter@5.2.8", "", {}, "sha512-kOfP2D+ykbcX/P3IFnokOhVRNoTozo5/JxhAIVYLpea/UBmCQ/YWPBfWIDuBImXX/15KH+eKh4xpEUyS2sQQGQ=="],
 
     "@fontsource-variable/jetbrains-mono": ["@fontsource-variable/jetbrains-mono@5.2.8", "", {}, "sha512-WBA9elru6Jdp5df2mES55wuOO0WIrn3kpXnI4+W2ek5u3ZgLS9XS4gmIlcQhiZOWEKl95meYdvK7xI+ETLCq/Q=="],
-
-    "@games/claudecraft": ["@games/claudecraft@workspace:Games/claudecraft"],
-
-    "@games/duet-keys": ["@games/duet-keys@workspace:Games/duet-keys"],
-
-    "@games/ironhold": ["@games/ironhold@workspace:Games/ironhold"],
-
-    "@games/loopline": ["@games/loopline@workspace:Games/loopline"],
-
-    "@games/spire-cards": ["@games/spire-cards@workspace:Games/spire-cards"],
-
-    "@games/starhome": ["@games/starhome@workspace:Games/starhome"],
-
-    "@games/studio-showcase": ["@games/studio-showcase@workspace:Games/studio-showcase"],
-
-    "@games/the-robots": ["@games/the-robots@workspace:Games/the-robots"],
-
-    "@games/tower-guard": ["@games/tower-guard@workspace:Games/tower-guard"],
-
-    "@games/vice-isle": ["@games/vice-isle@workspace:Games/vice-isle"],
-
-    "@games/wreckway": ["@games/wreckway@workspace:Games/wreckway"],
 
     "@img/colour": ["@img/colour@1.1.0", "", {}, "sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ=="],
 

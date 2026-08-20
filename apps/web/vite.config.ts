@@ -46,7 +46,11 @@ const parseGameCredit = (
   return { text, ...(url !== undefined ? { url } : {}), ...(handle !== undefined ? { handle } : {}) };
 };
 
-/** Exposes the Games/* ids and per-game credit to routes as `virtual:jgengine-games`, resolved at build time. */
+/** Exposes the Games/* ids and per-game credit to routes as `virtual:jgengine-games`, resolved at build time.
+ * Games now live in the separate Noisemaker111/JGengine-games repo and are cloned
+ * at build time into ephemeral ./Games (see scripts/ensure-games.ts). When the
+ * directory is absent (fresh engine checkout with no clone), the site builds with
+ * an empty game list rather than throwing at build time. */
 const gamesIndexPlugin = (): Plugin => ({
   name: "jgengine-games-index",
   resolveId(id) {
@@ -54,6 +58,11 @@ const gamesIndexPlugin = (): Plugin => ({
   },
   load(id) {
     if (id !== `\0${GAMES_INDEX_ID}`) return;
+    if (!existsSync(gamesDir)) {
+      console.warn("[jgengine-games-index] Games/ not found — site will build with no games. Run bun run games:clone to fetch Noisemaker111/JGengine-games.");
+      return `export const GAME_IDS = ${JSON.stringify([])};
+export const GAME_CREDITS = ${JSON.stringify({})};`;
+    }
     const ids = readdirSync(gamesDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
       .map((entry) => entry.name)

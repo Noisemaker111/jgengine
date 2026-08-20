@@ -10,11 +10,18 @@
  * hud-presentation games, so this list covers both world/canvas games and a
  * pure-DOM/HUD game (nonogram).
  */
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
 const GAMES = ["vice-isle", "the-robots", "wreckway", "spire-cards"];
 const root = resolve(import.meta.dir, "..");
+
+if (!existsSync(join(root, "Games"))) {
+  console.log("smoke: skipped — no Games/ checkout (games live in Noisemaker111/JGengine-games, run bun run games:clone for a smoke)");
+  process.exit(0);
+}
 
 function boot(game: string): Promise<number> {
   return new Promise((done) => {

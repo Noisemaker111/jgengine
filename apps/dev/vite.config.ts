@@ -15,12 +15,14 @@ const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, 
 const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
 const registryUi = fileURLToPath(new URL("../../registry/jgengine", import.meta.url));
 
-const gameAliases = readdirSync(gamesDir, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
-  .flatMap((entry) => [
-    { find: new RegExp(`^@games/${entry.name}$`), replacement: `${game(entry.name)}/index.tsx` },
-    { find: new RegExp(`^@games/${entry.name}/(.*)$`), replacement: `${game(entry.name)}/$1` },
-  ]);
+const gameAliases = existsSync(gamesDir)
+  ? readdirSync(gamesDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
+      .flatMap((entry) => [
+        { find: new RegExp(`^@games/${entry.name}$`), replacement: `${game(entry.name)}/index.tsx` },
+        { find: new RegExp(`^@games/${entry.name}/(.*)$`), replacement: `${game(entry.name)}/$1` },
+      ])
+  : [];
 
 const devProxyTable = parseDevProxyTable(process.env.VITE_JGENGINE_DEV_PROXY);
 const devProxy: Record<string, string | ProxyOptions> = Object.fromEntries(

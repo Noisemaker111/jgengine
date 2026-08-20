@@ -59,7 +59,7 @@ That is the whole product surface for humans. No install checklist, no “run sk
 
 Under the hood the agent uses `npx jgengine` (create, skills, doctor) and the skills in [`.claude/skills/`](.claude/skills) — an intake router, game/level design playbooks, and focused API domains, staged into published tarballs at `skills/` so they travel with `node_modules`. Power users may call the CLI themselves; that is optional, not the entry.
 
-The game the agent builds is **its own project in its own repo/directory**, on the published npm packages. Agents must **never clone this monorepo** to build a game, and must **never copy code, assets, or content from `Games/*`** — those are private in-repo test games (some recreate well-known commercial titles for engine-gap probing), not templates, and their content is not licensed for reuse. `npx jgengine create` is the only starting point.
+The game the agent builds is **its own project in its own repo/directory**, on the published npm packages. Agents must **never clone this monorepo** to build a game, and must **never copy code, assets, or content from the probe games** in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) — those are private probe games (some recreate well-known commercial titles for engine-gap probing), not templates, and their content is not licensed for reuse. `npx jgengine create` is the only starting point.
 
 ## Website — [jgengine.com](https://jgengine.com)
 
@@ -67,7 +67,7 @@ The game the agent builds is **its own project in its own repo/directory**, on t
 
 It deploys to Vercel via Nitro on every push to `main`. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
-Every game under `Games/*` is also playable on jgengine.com itself, at `/games/<id>` via the games page and header link — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. Root `bun dev` runs this same website locally on one server, serving that same static runner build (content-hash cached, rebuilt in the background when game or engine sources change), so the games are playable at `/games/<id>` locally too. Outside the browser, `bun run games:<id>` at the root (or `bun dev` inside any `Games/<id>` directory, or an external game scaffolded per `jgengine`'s standalone dev harness) launches one game on its own, no host app required.
+The probe games that live in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) are also playable on jgengine.com itself, at `/games/<id>` via the games page and header link — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. The website clones the games repo at build time into an ephemeral `./Games` directory (see `scripts/ensure-games.ts` / `bun run games:clone`); the clone is gitignored and never committed to this repo. Root `bun dev` runs this same website locally on one server, serving that same static runner build (content-hash cached, rebuilt in the background when game or engine sources change), so the games are playable at `/games/<id>` locally once you have a clone. To play a game standalone, run `bun run --cwd Games/<id> dev` after cloning, or use the standalone dev harness inside any external game scaffolded per `jgengine`'s dev harness.
 
 ## Layering
 
@@ -81,8 +81,10 @@ bun run build        # tsgo + import-extension rewrite, per package
 bun run check-types
 bun run test
 bun run gen           # regenerate every committed derived artifact, in dependency order
-bun dev              # jgengine.com locally, games playable at /games/<id>
-bun run games:<id>   # one game standalone, e.g. bun run games:studio-showcase
+bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games
+bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
+# a cloned game standalone:
+bun run --cwd Games/vice-isle dev
 ```
 
 Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.

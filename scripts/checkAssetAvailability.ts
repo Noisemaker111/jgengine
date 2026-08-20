@@ -108,8 +108,10 @@ export function packReferencesForGame(game: string, srcDir: string): PackReferen
   return [...refs.values()];
 }
 
-/** Every game's pack references, scanning each `Games/<id>/src` tree. */
+/** Every game's pack references, scanning each `Games/<id>/src` tree.
+ * When Games/ is absent (games live in Noisemaker111/JGengine-games), return no references. */
 export function referencedPacks(gamesDir: string): PackReference[] {
+  if (!existsSync(gamesDir)) return [];
   const refs: PackReference[] = [];
   for (const name of readdirSync(gamesDir)) {
     const srcDir = join(gamesDir, name, "src");
@@ -157,7 +159,12 @@ export function provisionedPacks(root: string): Set<string> {
 
 if (import.meta.main) {
   const root = process.cwd();
-  const references = referencedPacks(join(root, "Games"));
+  const gamesDir = join(root, "Games");
+  if (!existsSync(gamesDir)) {
+    console.log("check-asset-availability: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games)");
+    process.exit(0);
+  }
+  const references = referencedPacks(gamesDir);
   const committed = committedPacks(root);
   const provisioned = provisionedPacks(root);
   const result = checkAssetAvailability({ references, committed, provisioned });
