@@ -28,6 +28,11 @@ if (!existsSync(gamesDir)) {
   process.exit(0);
 }
 
+if (existsSync(join(gamesDir, "package.json"))) {
+  console.log("check-game-shape: clean — Games/ is a clone of Noisemaker111/JGengine-games (shape validated in that repo, not this one)");
+  process.exit(0);
+}
+
 const rootScripts =
   (JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { scripts?: Record<string, string> })
     .scripts ?? {};
