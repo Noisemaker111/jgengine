@@ -43,6 +43,7 @@ export function findFrontEndGaps(root: string): RatchetFinding[] {
     return [];
   }
   for (const game of games) {
+    if (!existsSync(join(gamesDir, game, "src/index.tsx"))) continue;
     try {
       if (!statSync(join(gamesDir, game, "src")).isDirectory()) continue;
     } catch {

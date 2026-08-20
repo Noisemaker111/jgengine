@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 /** Every non-test `.ts`/`.tsx` under each game's `src`, as repo-relative paths with their source.
@@ -27,6 +27,9 @@ export function eachGameSource(root: string): { rel: string; source: string }[] 
     return [];
   }
   for (const game of games) {
+    // Only real games have a src/index.tsx barrel (the dev harness entry). This excludes
+    // helper packages like `studios` (src/index.ts) and design-only folders like `vaultbreak`.
+    if (!existsSync(join(gamesDir, game, "src/index.tsx"))) continue;
     const src = join(gamesDir, game, "src");
     try {
       if (!statSync(src).isDirectory()) continue;

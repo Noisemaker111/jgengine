@@ -109,11 +109,13 @@ export function packReferencesForGame(game: string, srcDir: string): PackReferen
 }
 
 /** Every game's pack references, scanning each `Games/<id>/src` tree.
- * When Games/ is absent (games live in Noisemaker111/JGengine-games), return no references. */
+ * When Games/ is absent (games live in Noisemaker111/JGengine-games), return no references.
+ * Only real games (src/index.tsx) are scanned — helper packages like `studios` are ignored. */
 export function referencedPacks(gamesDir: string): PackReference[] {
   if (!existsSync(gamesDir)) return [];
   const refs: PackReference[] = [];
   for (const name of readdirSync(gamesDir)) {
+    if (!existsSync(join(gamesDir, name, "src/index.tsx"))) continue;
     const srcDir = join(gamesDir, name, "src");
     if (!existsSync(srcDir) || !statSync(join(gamesDir, name)).isDirectory()) continue;
     refs.push(...packReferencesForGame(name, srcDir));

@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const ROOTS = ["packages", "Games", "apps", "examples"];
+const ROOTS = ["packages", "apps", "examples"];
 const CONCURRENCY = 8;
 
 function workspaceDirs(): string[] {
