@@ -21,6 +21,14 @@ import {
   type MovementTuningOverrides,
   type PlayerMotionState,
 } from "./movementModel";
+import {
+  advanceFreeFlight,
+  createFreeFlightState,
+  resolveFlightStep,
+  resolveFreeFlightIntent,
+  type FreeFlightState,
+  type FreeFlightTuning,
+} from "./freeFlight";
 import { solidObstaclesNear } from "./solidObstacles";
 import { approachYaw, steerYaw } from "./steering";
 import {
@@ -91,6 +99,7 @@ interface PlayerMovementState {
   facing: number | null;
   voxelBody: VoxelPlayerBody | null;
   motion: PlayerMotionState | null;
+  flight: FreeFlightState | null;
 }
 
 interface CtxMovementStore {
@@ -115,7 +124,7 @@ function storeFor(ctx: GameContext): CtxMovementStore {
 function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState {
   let state = store.players.get(userId);
   if (state === undefined) {
-    state = { heading: 0, facing: null, voxelBody: null, motion: null };
+    state = { heading: 0, facing: null, voxelBody: null, motion: null, flight: null };
     store.players.set(userId, state);
   }
   return state;
@@ -159,13 +168,38 @@ function resolveBodyFacing(
   return next;
 }
 
+function flightTuningFor(
+  movement: PlayerMovementConfig | undefined,
+  ctx: GameContext,
+): FreeFlightTuning | null {
+  const cfg = movement?.flight;
+  if (cfg === undefined || cfg === false) return null;
+  if (cfg === true) return { mode: "creative" };
+  if (typeof cfg === "object") {
+    if (cfg.canFly !== undefined && !cfg.canFly(ctx)) return null;
+    return {
+      mode: cfg.mode ?? "creative",
+      speed: cfg.speed,
+      verticalSpeed: cfg.verticalSpeed,
+      sprintMultiplier: cfg.sprintMultiplier,
+      acceleration: cfg.acceleration,
+      gravity: cfg.gravity,
+      thrust: cfg.thrust,
+      alignWithLook: cfg.alignWithLook,
+      collide: cfg.collide,
+    };
+  }
+  return null;
+}
+
 /**
  * Integrate one player's movement for a tick from their held-input frame and commit the pose — the single
  * genre-agnostic controller both the shell (its local player) and a host (each connected player in `onTick`) call,
  * so single-player and server-authoritative movement are identical. Reads the player's controlled entity, terrain,
  * scene solids, and pending motion impulses; writes the entity pose via `setPose`. Retains heading + kinematic body
  * per `userId` on the `ctx`. Pass `heading` to override the internally-integrated yaw (the shell owns yaw for its
- * camera); omit it and the controller turns from the frame's `turnLeft`/`turnRight` actions.
+ * camera); omit it and the controller turns from the frame's `turnLeft`/`turnRight` actions. Pass `pitch` for
+ * 6DOF spectator flight when `alignWithLook` is set.
  */
 export function stepPlayerMovement(
   ctx: GameContext,
@@ -174,6 +208,7 @@ export function stepPlayerMovement(
   dt: number,
   tuning: PlayerMovementTuning,
   heading?: number,
+  pitch?: number,
 ): void {
   const playerId = ctx.player.possession.active(userId);
   const player = ctx.scene.entity.get(playerId);
@@ -218,6 +253,91 @@ export function stepPlayerMovement(
   const intent = resolveMovementIntent(keys, true, analogMove);
   const motionBatch = ctx.player.motionFor(userId).takePending();
   const walkSpeed = player.movement?.walkSpeed ?? DEFAULT_WALK_SPEED;
+
+  const flightTuning = flightTuningFor(tuning.movement, ctx);
+  if (flightTuning !== null) {
+    keys.control = isDown("crouch") || isDown("sneak") || isDown("control") || isDown("c");
+    keys.c = keys.control;
+    const flightIntent = resolveFreeFlightIntent(keys, analogMove);
+    let flightState = state.flight;
+    if (flightState === null) {
+      flightState = createFreeFlightState();
+      state.flight = flightState;
+    }
+    if (motionBatch !== null) {
+      flightState.vy = applyMotionImpulses(flightState.vy, motionBatch);
+      const [hx, hz] = applyHorizontalImpulses(flightState.vx, flightState.vz, motionBatch);
+      flightState.vx = hx;
+      flightState.vz = hz;
+    }
+    const normalizedFlightTuning: FreeFlightTuning = {
+      mode: flightTuning.mode,
+      speed: flightTuning.speed,
+      verticalSpeed: flightTuning.verticalSpeed,
+      sprintMultiplier: flightTuning.sprintMultiplier,
+      acceleration: flightTuning.acceleration,
+      gravity: flightTuning.gravity,
+      thrust: flightTuning.thrust,
+      alignWithLook: flightTuning.alignWithLook,
+      collide: flightTuning.collide,
+    };
+    if (normalizedFlightTuning.collide === undefined) {
+      normalizedFlightTuning.collide = normalizedFlightTuning.mode === "creative" || normalizedFlightTuning.mode === "hover";
+    }
+    const step = advanceFreeFlight(flightState, flightIntent, state.heading, pitch, dt, normalizedFlightTuning);
+    let stepX = step.stepX;
+    let stepY = step.stepY;
+    let stepZ = step.stepZ;
+    if (normalizedFlightTuning.collide !== false && tuning.movement?.collideObjects !== false) {
+      const obstacles = gatherMovementObstacles(ctx, player.position, stepX, stepZ);
+      const verticalResolved = resolveFlightStep(player.position, stepX, stepY, stepZ, obstacles, DEFAULT_OBSTACLE_PLAYER_RADIUS);
+      stepY = verticalResolved.stepY;
+      const xzResolved = resolveObstacleStep(player.position, stepX, stepZ, obstacles, DEFAULT_OBSTACLE_PLAYER_RADIUS, 0);
+      stepX = xzResolved.stepX;
+      stepZ = xzResolved.stepZ;
+      const ground = tuning.ground.sampleHeight(player.position[0] + stepX, player.position[2] + stepZ);
+      const nextY = player.position[1] + stepY;
+      if (nextY < ground + 0.2) {
+        stepY = ground + 0.2 - player.position[1];
+        if (flightState.vy < 0) flightState.vy = 0;
+      }
+    }
+    let nextX = player.position[0] + stepX;
+    let nextY = player.position[1] + stepY;
+    let nextZ = player.position[2] + stepZ;
+    if (motionBatch !== null && motionBatch.y !== null) {
+      nextY = motionBatch.y;
+    }
+    if (tuning.movement?.beforeCommit !== undefined) {
+      const frame: MovementCommitFrame = {
+        entityId: playerId,
+        current: player.position,
+        next: [nextX, nextY, nextZ],
+        dt,
+        ctx,
+      };
+      const replacement = tuning.movement.beforeCommit(frame);
+      if (replacement !== undefined) {
+        nextX = replacement[0];
+        nextY = replacement[1];
+        nextZ = replacement[2];
+      }
+    }
+    ctx.scene.entity.setPose(playerId, {
+      position: [nextX, nextY, nextZ],
+      rotationY: resolveBodyFacing(
+        state,
+        flightIntent.moving,
+        flightState.vx,
+        flightState.vz,
+        player.rotationY,
+        tuning.movement?.turnSpeed,
+        dt,
+      ),
+      dt,
+    });
+    return;
+  }
 
   if (tuning.collision?.voxel === true) {
     let body = state.voxelBody;

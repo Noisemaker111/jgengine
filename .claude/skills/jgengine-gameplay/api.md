@@ -694,6 +694,7 @@
 - `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
 - `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
 - `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
+- `FlightConfig` (interface): interface FlightConfig — Free-flight families moved into the walk controller so one seam covers ground + air — creative/spectator/noclip/hover are weightless, aircraft/rotorcraft stay on `flightDynamics`.
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
 - `GameCaptureConfig` (interface): interface GameCaptureConfig — How a game makes itself screenshottable: the commands that reach live play or a named screen, the framings worth re-capturing, and the progress metrics a bot playtest samples. Declaring these once is what lets a capture host reproduce a view instead of re-deriving it by hand every run.
 - `GameCaptureView` (interface): interface GameCaptureView — How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`.

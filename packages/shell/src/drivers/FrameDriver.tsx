@@ -168,6 +168,7 @@ export function FrameDriver({
         rawDt,
         movementTuning,
         yawRef.current,
+        pitchRef.current,
       );
       endPhase();
     }
