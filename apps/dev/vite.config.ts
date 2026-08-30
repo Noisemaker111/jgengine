@@ -13,6 +13,7 @@ import { devSavePlugin } from "./devSavePlugin";
 const src = (pkg: string) => fileURLToPath(new URL(`../../packages/${pkg}/src`, import.meta.url));
 const game = (name: string) => fileURLToPath(new URL(`../../Games/${name}/src`, import.meta.url));
 const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
+const studios = fileURLToPath(new URL("../../examples/studios/src", import.meta.url));
 const registryUi = fileURLToPath(new URL("../../registry/jgengine", import.meta.url));
 
 const gameAliases = existsSync(gamesDir)
@@ -80,6 +81,8 @@ export default defineConfig({
       { find: /^@jgengine\/assets\/(.*)$/, replacement: `${src("assets")}/$1` },
       { find: /^@jgengine\/editor$/, replacement: `${src("editor")}/index.ts` },
       { find: /^@jgengine\/editor\/(.*)$/, replacement: `${src("editor")}/$1` },
+      { find: /^@jgengine-examples\/studios$/, replacement: `${studios}/index.ts` },
+      { find: /^@jgengine-examples\/studios\/(.*)$/, replacement: `${studios}/$1` },
       ...gameAliases,
     ],
   },
