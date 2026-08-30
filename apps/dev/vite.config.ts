@@ -58,6 +58,10 @@ export default defineConfig({
     proxy: devProxy,
   },
   resolve: {
+    // Games are cloned outside this workspace package during clean hosting builds.
+    // Resolve their shared runtime dependencies from apps/dev so Bun's workspace
+    // links are used even when the importing file lives under ../../Games.
+    dedupe: ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"],
     extensions: [".ts", ".tsx", ".mjs", ".js", ".jsx", ".json"],
     alias: [
       { find: /^@\/components\/ui\/(.*)$/, replacement: `${registryUi}/$1` },
