@@ -4,9 +4,9 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
+import { cloudflare } from "@cloudflare/vite-plugin";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import viteReact from "@vitejs/plugin-react";
-import { nitro } from "nitro/vite";
 import { defineConfig, type Connect, type Plugin } from "vite";
 
 import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache";
@@ -278,6 +278,7 @@ export default defineConfig({
     ],
   },
   plugins: [
+    cloudflare({ viteEnvironment: { name: "ssr" } }),
     tailwindcss(),
     tanstackStart({
       prerender: {
@@ -289,7 +290,6 @@ export default defineConfig({
         },
       },
     } as Parameters<typeof tanstackStart>[0]),
-    nitro({ devServer: { runner: "self" } }),
     viteReact(),
     registryPlugin(),
     ensureGamesPlugin(),
