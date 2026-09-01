@@ -97,6 +97,7 @@ type Connection = {
   joinedServers: Set<string>;
   queue: Promise<void>;
   queuedMessages: number;
+  worldRevisions: Map<string, number | null>;
 };
 
 type PresenceEntry = PresencePoseState & { appearance?: WsAppearance };
@@ -361,6 +362,18 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   ) => {
     if (connection.userId === null) return;
     if (channel === "server") {
+      if (host.pullWorld !== undefined) {
+        const sinceRevision = connection.worldRevisions.get(serverId) ?? null;
+        const world = await host.pullWorld({ userId: connection.userId, serverId, sinceRevision });
+        if (world !== null) {
+          connection.worldRevisions.set(serverId, world.revision);
+          const data = await host.getServerView({ userId: connection.userId, serverId });
+          if (data !== null) {
+            send(connection, { v: 1, t: "update", channel, serverId, data: { ...data, serverState: world } });
+          }
+          return;
+        }
+      }
       const data = await host.getServerView({ userId: connection.userId, serverId });
       send(connection, { v: 1, t: "update", channel, serverId, data });
     } else if (channel === "player") {
@@ -623,6 +636,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             replyError(connection, message.id, "Not a member of this server");
             return;
           }
+          if (message.channel === "server") connection.worldRevisions.set(message.serverId, null);
           addSubscription(connection, subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
           await pushSubscription(connection, message.channel, message.serverId, message.action);
@@ -661,6 +675,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         joinedServers: new Set(),
         queue: Promise.resolve(),
         queuedMessages: 0,
+        worldRevisions: new Map(),
       };
       connections.add(connection);
       return {

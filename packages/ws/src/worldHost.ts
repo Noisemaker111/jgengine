@@ -4,6 +4,7 @@ import type {
   GameRuntimeServerView,
   JoinServerResult,
   TransportRunCommandResult,
+  WorldSyncFrame,
 } from "@jgengine/core/runtime/transport";
 import type { GameHost, HostChangeEvent } from "./host";
 
@@ -101,6 +102,21 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
         serverState: entry.session.snapshotFor({ userId }),
         updatedAt: now(),
       };
+    },
+    async pullWorld({ userId, serverId, sinceRevision }): Promise<WorldSyncFrame | null> {
+      const entry = live.get(serverId);
+      if (entry === undefined || !entry.session.members().includes(userId)) return null;
+      if (entry.session.projectsViewers()) {
+        return {
+          kind: "baseline",
+          revision: entry.session.revision(),
+          snapshot: entry.session.snapshotFor({ userId }),
+        };
+      }
+      const sync = entry.session.pull(sinceRevision);
+      return sync.kind === "baseline"
+        ? sync
+        : { kind: "diff", revision: sync.diff.revision, diff: sync.diff };
     },
     async getPlayerView(): Promise<null> {
       return null;

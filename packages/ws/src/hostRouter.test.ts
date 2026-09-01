@@ -5,6 +5,7 @@ import { createGameHost, memoryPersistence, type GameHost } from "./host";
 import { createHostRouter, loopbackPipe, MAX_QUEUED_MESSAGES, type HostRouter } from "./hostRouter";
 import { createWsBackend, type WsBackend } from "./createWsBackend";
 import type { WsChatMessage, WsPresenceRow } from "./protocol";
+import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
 
 function channel<T>() {
   const queue: T[] = [];
@@ -99,6 +100,61 @@ test("loopback: engine.ping command replies ok", async () => {
     expect(result).toEqual({ ok: true });
   } finally {
     await stack.shutdown();
+  }
+});
+
+test("loopback: server subscribers pull diffs and can request a baseline after a missed revision", async () => {
+  const host = createGameHost({ persistence: memoryPersistence() });
+  const baseline: WorldSyncFrame = {
+    kind: "baseline",
+    revision: 1,
+    snapshot: { entities: Array.from({ length: 20 }, (_, index) => ({ id: index === 0 ? "mover" : `entity-${index}`, position: [index, 0, 0] })) },
+  };
+  const diff: WorldSyncFrame = {
+    kind: "diff",
+    revision: 2,
+    diff: {
+      revision: 2,
+      baseRevision: 1,
+      entities: [{ id: "mover", position: [1, 0, 0] }],
+      removedEntities: [],
+      stats: {},
+      removedStats: [],
+      store: [],
+      removedStore: [],
+      modules: {},
+      removedModules: [],
+    },
+  };
+  const resync: WorldSyncFrame = { ...baseline, revision: 3, snapshot: { entities: Array.from({ length: 20 }, (_, index) => ({ id: index === 0 ? "mover" : `entity-${index}`, position: [index + (index === 0 ? 2 : 0), 0, 0] })) } };
+  const cursors: (number | null)[] = [];
+  host.pullWorld = async ({ sinceRevision }) => {
+    cursors.push(sinceRevision);
+    return sinceRevision === null ? baseline : sinceRevision === 1 ? diff : resync;
+  };
+  const router = createHostRouter({ host, allowAnonymous: true });
+  const backend = createWsBackend({ userId: "alice", pipe: loopbackPipe(router) });
+  try {
+    const { serverId } = await backend.transport.joinServer({ gameId: "test-game" });
+    const updates = channel<unknown>();
+    const unsubscribe = backend.feeds?.subscribeServer(serverId, (view) => updates.push(view?.serverState));
+    const first = await updates.next();
+    expect((first as WorldSyncFrame).kind).toBe("baseline");
+    expect(JSON.stringify(diff).length).toBeLessThan(JSON.stringify(baseline).length);
+
+    await host.runCommand({ userId: "alice", serverId, command: "engine.ping", input: null });
+    expect((await updates.next() as WorldSyncFrame).kind).toBe("diff");
+    backend.feeds?.requestServerBaseline?.(serverId);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    expect((await updates.next() as WorldSyncFrame).kind).toBe("baseline");
+    await host.runCommand({ userId: "alice", serverId, command: "engine.ping", input: null });
+    expect((await updates.next() as WorldSyncFrame).kind).toBe("diff");
+    expect(cursors).toEqual([null, 1, null, 1]);
+    unsubscribe?.();
+  } finally {
+    backend.close();
+    router.close();
+    await host.stop();
   }
 });
 

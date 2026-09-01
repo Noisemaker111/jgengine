@@ -43,6 +43,7 @@ import type {
   GameRuntimeServerView,
   JoinServerResult,
   TransportRunCommandResult,
+  WorldSyncFrame,
 } from "@jgengine/core/runtime/transport";
 
 /** A change notification emitted by a `GameHost` for a server, player, or feed mutation. */
@@ -90,6 +91,11 @@ export type GameHost = {
   }) => Promise<TransportRunCommandResult>;
   isMember: (args: { userId: string; serverId: string }) => Promise<boolean>;
   getServerView: (args: { userId: string; serverId: string }) => Promise<GameRuntimeServerView | null>;
+  pullWorld?: (args: {
+    userId: string;
+    serverId: string;
+    sinceRevision: number | null;
+  }) => Promise<WorldSyncFrame | null>;
   getPlayerView: (args: { userId: string; serverId: string }) => Promise<GameRuntimePlayerView | null>;
   getFeed: (args: { userId: string; serverId: string; action: string }) => Promise<unknown[]>;
   pushFeedEntry: (args: {

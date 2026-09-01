@@ -68,6 +68,8 @@ export interface HostedWorldSession {
   tick(dt: number): number;
   /** Replication pull: `null`/`0` cursor → full baseline; a prior revision → a diff since it. */
   sync(sinceRevision: number | null): HostedWorldSync;
+  /** Alias used by host transports when pulling the next baseline or diff for a subscriber. */
+  pull(sinceRevision: number | null): HostedWorldSync;
   /** The full world baseline projected for one viewer (private/AOI). Identity when no replication policy is set. */
   snapshotFor(viewer: SnapshotViewer): WorldSnapshot;
   /** True when {@link snapshotFor} is viewer-dependent — a host must serve each connection its own projected frame instead of a shared diff. */
@@ -106,6 +108,13 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
     store.save({ snapshot: runner.snapshot(), revision: savedRevision });
   }
 
+  const pull = (sinceRevision: number | null): HostedWorldSync => {
+    if (sinceRevision === null || sinceRevision <= 0) {
+      return { kind: "baseline", revision: runner.revision(), snapshot: runner.snapshot() };
+    }
+    return { kind: "diff", diff: runner.diff(sinceRevision) };
+  };
+
   return {
     join: (userId, isNew) => runner.join(userId, isNew),
     leave: (userId) => runner.leave(userId),
@@ -122,12 +131,8 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
       }
       return revision;
     },
-    sync(sinceRevision) {
-      if (sinceRevision === null || sinceRevision <= 0) {
-        return { kind: "baseline", revision: runner.revision(), snapshot: runner.snapshot() };
-      }
-      return { kind: "diff", diff: runner.diff(sinceRevision) };
-    },
+    pull,
+    sync: pull,
     snapshotFor: (viewer) => runner.snapshot(viewer),
     projectsViewers: () => runner.projectsViewers(),
     revision: () => runner.revision(),
