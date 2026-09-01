@@ -709,7 +709,7 @@
 - `ModelAttachment` (interface): interface ModelAttachment — Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame.
 - `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
-- `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph.
+- `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph.
 - `ModelPart` (interface): interface ModelPart — Static child model stacked at a fixed local offset under its parent's transform — no bone/rig resolution, unlike `ModelAttachment`. Assembles a compound entity (e.g. a modular castle wall + tower + roof) from several single-mesh kit pieces.
 - `ModelRimLight` (interface): interface ModelRimLight — Fresnel rim-light term added on top of a model's lighting — see {@link ModelMaterialOverride.rim}.
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
@@ -1190,7 +1190,7 @@
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
-- `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph.
+- `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph.
 - `ModularItemDef` (interface): interface ModularItemDef — ⚠ undocumented
 - `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
 - `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.

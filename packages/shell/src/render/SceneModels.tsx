@@ -187,9 +187,12 @@ function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps
     if (maps.normal !== undefined) record.normal = maps.normal;
     if (maps.roughness !== undefined) record.roughness = maps.roughness;
     if (maps.ao !== undefined) record.ao = maps.ao;
+    if (maps.metalness !== undefined) record.metalness = maps.metalness;
+    if (maps.emissive !== undefined) record.emissive = maps.emissive;
+    if (maps.height !== undefined) record.height = maps.height;
     return record;
-  }, [maps.color, maps.normal, maps.roughness, maps.ao]);
-  const textures = useTexture(entries) as Partial<Record<"color" | "normal" | "roughness" | "ao", THREE.Texture>>;
+  }, [maps.color, maps.normal, maps.roughness, maps.ao, maps.metalness, maps.emissive, maps.height]);
+  const textures = useTexture(entries) as Partial<Record<"color" | "normal" | "roughness" | "ao" | "metalness" | "emissive" | "height", THREE.Texture>>;
   useEffect(() => {
     if (textures.color !== undefined) textures.color.colorSpace = THREE.SRGBColorSpace;
     applyMaterialOverride(scene, {}, { clone: false, textures });
