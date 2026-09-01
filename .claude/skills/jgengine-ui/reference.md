@@ -551,3 +551,6 @@ UI work is complete only when:
 - screenshots have been reviewed and revised
 - the implementation remains accessible and performant
 - future generated UI is explicitly prevented from falling back to generic website-card styling
+## 2D sprite presentation
+
+Core owns renderer-independent atlas data and animation state. Convert Aseprite or TexturePacker JSON with `fromAseprite` / `fromTexturePacker` from `@jgengine/core/assets/spriteAtlas`, then drive a clip with `createSpriteClipPlayer` from `@jgengine/core/render/sprite2d`. Persist `snapshot()` and restore it on load; use `retune({ speed })` for runtime playback changes. Use `sortingOrder(layers, layer, offset)` when a game maps named presentation layers to renderer order.

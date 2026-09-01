@@ -507,6 +507,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/ui"`
 
+## sprite-2d — animate a sprite atlas clip from headless or rendered game code
+
+- `createSpriteClipPlayer` (function) · `import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d"`
+- `sortingOrder` (function) · `import { sortingOrder } from "@jgengine/core/render/sprite2d"`
+
 ## start-screen — headless title/attract overlay the game fills and skins
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
