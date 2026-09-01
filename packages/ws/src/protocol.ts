@@ -45,6 +45,7 @@ export type WsVoiceParticipant = {
 };
 
 export type WsClientMessage =
+  | { v: 1; t: "ping"; id: number; at: number }
   | { v: 1; t: "hello"; id: number; userId: string; token?: string }
   | {
       v: 1;
@@ -78,6 +79,7 @@ export type WsUpdateMessage =
   | { v: 1; t: "update"; channel: "voice"; serverId: string; action: string; data: WsVoiceParticipant[] };
 
 export type WsServerMessage =
+  | { v: 1; t: "pong"; id: number; at: number; serverAt: number }
   | { v: 1; t: "reply"; id: number; ok: true; result?: unknown }
   | { v: 1; t: "reply"; id: number; ok: false; reason: string }
   | WsUpdateMessage;
@@ -202,6 +204,8 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
   if (message === null) return null;
 
   switch (message.t) {
+    case "ping":
+      return typeof message.id === "number" && typeof message.at === "number" ? (message as WsClientMessage) : null;
     case "hello":
       return typeof message.id === "number" &&
         typeof message.userId === "string" &&
@@ -296,6 +300,8 @@ export function decodeWsServerMessage(raw: unknown): WsServerMessage | null {
   if (message === null) return null;
 
   switch (message.t) {
+    case "pong":
+      return typeof message.id === "number" && typeof message.at === "number" && typeof message.serverAt === "number" ? (message as WsServerMessage) : null;
     case "reply":
       if (typeof message.id !== "number") return null;
       if (message.ok === true) return message as WsServerMessage;
