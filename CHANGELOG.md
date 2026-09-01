@@ -19,6 +19,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- Core sprite atlas adapters and deterministic 2D sprite clip playback primitives.
 - `src/art-direction.md` scaffold and `check-art-direction` gate for created games.
 - Shared GLTF loader configuration for Draco and KTX2-compressed assets, with CDN defaults and renderer capability detection.
 - Material map overrides now support metalness, emissive, and height maps on standard and physical materials.

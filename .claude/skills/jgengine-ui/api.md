@@ -53,6 +53,13 @@
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
 
+## @jgengine/core/render/sprite2d
+
+- `SortingLayers` (const): const SortingLayers: readonly ["background", "world", "actors", "effects", "foreground", "ui"] — Canonical layers used by 2D presentations.
+- `SpriteClipState` (interface): interface SpriteClipState — Serializable playback position for a named sprite animation.
+- `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
+- `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
+
 ## @jgengine/core/settings/settingsModel
 
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
