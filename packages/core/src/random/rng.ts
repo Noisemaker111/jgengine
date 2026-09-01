@@ -41,17 +41,43 @@ export function stepRandomSeed(seed: RandomSeed): readonly [value: number, next:
   return [value, next as RandomSeed];
 }
 
+/** A {@link seededRng} stream: callable like any `() => number`, with its cursor readable and restorable for snapshots and replay. */
+export interface SeededRng {
+  (): number;
+  /** The current cursor; feed it back to {@link restore} (or a fresh stream's `restore`) to resume the exact sequence. */
+  state(): number;
+  restore(cursor: number): void;
+}
+
 /** Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
  *
  * @capability seeded-random injected deterministic randomness for game logic — never `Math.random` in a simulation
  */
-export function seededRng(seed: string | number): () => number {
+export function seededRng(seed: string | number): SeededRng {
   let cursor = randomSeedFrom(hashSeed(seed));
-  return () => {
-    const [value, next] = stepRandomSeed(cursor);
-    cursor = next;
+  const next = (): number => {
+    const [value, following] = stepRandomSeed(cursor);
+    cursor = following;
     return value;
   };
+  const rng = next as SeededRng;
+  rng.state = () => cursor;
+  rng.restore = (value: number) => {
+    cursor = randomSeedFrom(value);
+  };
+  return rng;
+}
+
+/** The cursor of a seeded stream, or `null` for a generator that carries no state (an injected closure, `Math.random`). */
+export function rngStateOf(rng: () => number): number | null {
+  const candidate = rng as Partial<SeededRng>;
+  return typeof candidate.state === "function" ? candidate.state() : null;
+}
+
+/** Restore a seeded stream's cursor; a no-op for generators that carry no state. */
+export function restoreRng(rng: () => number, cursor: number): void {
+  const candidate = rng as Partial<SeededRng>;
+  if (typeof candidate.restore === "function") candidate.restore(cursor);
 }
 
 /** Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name. */

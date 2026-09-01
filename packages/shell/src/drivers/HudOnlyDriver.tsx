@@ -47,14 +47,19 @@ export function HudOnlyDriver({
       try {
         let endPhase = devtools.profile.begin("time+input");
         const dt = Math.min(rawDt, 0.05);
-        const gameDt = ctx.time.advance(dt);
         ctx.input.publish(heldActionsFor(tracker, inputActions));
         ctx.input.publishPointer(pointerAxisRef.current);
         endPhase();
-        devtools.profile.measure("onTick", () => {
-          playable.loop.onTick(ctx, gameDt);
+        ctx.sim.advance(dt, (stepDt) => {
+          const gameDt = ctx.time.advance(stepDt);
+          ctx.sim.runStages("beforeMovement", stepDt);
+          ctx.sim.runStages("afterMovement", stepDt);
+          devtools.profile.measure("onTick", () => {
+            playable.loop.onTick(ctx, gameDt);
+          });
+          advanceBehaviors(ctx, gameDt);
+          ctx.sim.runStages("afterTick", stepDt);
         });
-        advanceBehaviors(ctx, gameDt);
         endPhase = devtools.profile.begin("actions");
         const nowMs = performance.now();
         for (const action of inputActions) {

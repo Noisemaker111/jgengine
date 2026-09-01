@@ -1587,7 +1587,7 @@
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
-- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+- `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 - `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
 - `selectRules` (function): function selectRules<TPayload = unknown>(pool: readonly RuleDef<TPayload>[], config: RuleSelectionConfig): RuleSelection<TPayload> — Select up to `count` rules from `pool` deterministically from `config.seed`. Locked ids are placed first (in order), then remaining slots are filled by weighted draw from tag-filtered, still-eligible candidates, honoring `requires`/`conflicts` after each pick. Each slot draws from an independent seed stream keyed by slot index, so a later slot's outcome never shifts an earlier one. Selection stops early when no compatible candidate remains. Pure given `pool` + `config`.
@@ -1700,7 +1700,7 @@
 - `RolledItem` (interface): interface RolledItem — ⚠ undocumented
 - `RollerConfig` (interface): interface RollerConfig — ⚠ undocumented
 - `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
-- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+- `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 
 ## @jgengine/core/item/durability
 
@@ -1875,9 +1875,12 @@
 ## @jgengine/core/random/rng
 
 - `RandomSeed` (type): type RandomSeed = number & { readonly __randomSeed: unique symbol } — Opaque, serializable PRNG cursor for state machines that must persist their own random stream (a spawn director, a heat/pursuit meter) instead of holding a closure — the state round-trips through save/load and multiplayer sync, so it can't carry a function. Never read or do arithmetic on the raw value directly; thread it through {@link stepRandomSeed} only.
+- `SeededRng` (interface): interface SeededRng — A {@link seededRng} stream: callable like any `() => number`, with its cursor readable and restorable for snapshots and replay.
 - `hashString` (function): function hashString(text: string): number — Deterministic 32-bit FNV-1a hash of a string → unsigned int. Same text, same number, on every platform — the stable seed behind per-id jitter, spread offsets, and content-addressed variation.
 - `randomSeedFrom` (function): function randomSeedFrom(seed: number): RandomSeed — Wraps an already-integer seed (e.g. a `config.seed`) as a {@link RandomSeed} — no hashing.
-- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+- `restoreRng` (function): function restoreRng(rng: () => number, cursor: number): void — Restore a seeded stream's cursor; a no-op for generators that carry no state.
+- `rngStateOf` (function): function rngStateOf(rng: () => number): number | null — The cursor of a seeded stream, or `null` for a generator that carries no state (an injected closure, `Math.random`).
+- `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 - `stepRandomSeed` (function): function stepRandomSeed(seed: RandomSeed): readonly [value: number, next: RandomSeed] — One step of the {@link seededRng} recurrence in pure (seed in, seed out) form — the same mulberry32-style generator, shared by every state machine that persists its own PRNG cursor instead of closing over a generator.
 

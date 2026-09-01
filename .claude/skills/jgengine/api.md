@@ -52,7 +52,7 @@
 - `plots` (function): function plots(config: PlotsWorldConfig = {}): WorldFeature — Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
 - `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `road` (function): function road(config: RoadEnvironmentConfig): RoadEnvironmentDescriptor — Declare a road ribbon for an `environment()` world; the shell drapes and renders it over the terrain.
-- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+- `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `seededStreams` (function): function seededStreams(seed: string | number): (stream: string) => () => number — Derives independent, deterministic {@link seededRng} streams from one base seed, keyed by stream name.
 - `snow` (function): function snow(config: SnowEnvironmentConfig = {}): SnowEnvironmentDescriptor — Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
@@ -406,6 +406,13 @@
 - `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
 - `HostedWorldSync` (type): type HostedWorldSync = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; diff: WorldDiff } — A client replication pull: a full baseline (first sync / fell behind) or a diff since the client's cursor.
 
+## @jgengine/core/runtime/inputRecorder
+
+- `InputRecorder` (interface): interface InputRecorder — Tick-indexed input log: record per tick, look up the frame in force at any tick.
+- `InputRecorderState` (interface): interface InputRecorderState — Serializable recorder contents, sorted by tick.
+- `RecordedInput` (interface): interface RecordedInput — An input frame and the first tick it applies to.
+- `createInputRecorder` (function): function createInputRecorder(): InputRecorder — Tick-indexed input log for deterministic replay: record what each tick saw, then feed {@link frameAt} back into a runner stepping from a matching {@link createSimSnapshotRegistry} snapshot.
+
 ## @jgengine/core/runtime/inputSnapshot
 
 - `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
@@ -440,6 +447,14 @@
 - `planScenarioReset` (function): function planScenarioReset(reset: ScenarioReset): NormalizedScenarioReset — ⚠ undocumented
 - `resetRun` (function): function resetRun<T extends Record<string, unknown>>(scoped: ScopedState<T>): ScopedState<T> — ⚠ undocumented
 
+## @jgengine/core/runtime/poseInterpolation
+
+- `PoseHistory` (interface): interface PoseHistory — Previous-step pose buffer: capture at each fixed step, sample between steps for rendering.
+- `PoseHistoryState` (interface): interface PoseHistoryState — Serializable previous-step poses keyed by entity id.
+- `RenderPose` (type): type RenderPose = [x: number, y: number, z: number, rotationY: number] — A render pose sampled between two simulation steps: `[x, y, z, rotationY]`.
+- `createPoseHistory` (function): function createPoseHistory(options?: { snapDistance?: number }): PoseHistory — Previous-step pose buffer for render interpolation under a fixed-step loop. Reuses one 4-slot array per entity so a step over N entities allocates only for entities seen for the first time.
+- `lerpAngle` (function): function lerpAngle(from: number, to: number, t: number): number — Shortest-arc interpolation between two yaw angles.
+
 ## @jgengine/core/runtime/runtimeSave
 
 - `RuntimeSave` (interface): interface RuntimeSave — Whole-world save/load bound to a live world and a pluggable backend. `save()` captures `target.snapshot()` and writes it; `load()` reads it back and `target.hydrate()`s the whole world. In `autosave` mode it also writes on a trailing timer while the world keeps changing. Named slots, versioned migration, and offline↔cloud (backend swap) all come for free from the underlying save store.
@@ -453,6 +468,30 @@
 
 - `SaveConfig` (type): type SaveConfig = | "none" | { auto: string; scope: SaveScope; } — ⚠ undocumented
 - `SaveScope` (type): type SaveScope = "player" | "chunks" | "player+chunks" — ⚠ undocumented
+
+## @jgengine/core/runtime/simContext
+
+- `SimContext` (interface): interface SimContext — `ctx.sim`: the simulation stepper shared by every driver plus the render-side interpolation it enables. Drivers call {@link advance} with real elapsed seconds and do their per-step work inside the callback; renderers call {@link renderPose} each frame.
+- `SimContextState` (interface): interface SimContextState — Serializable `ctx.sim` state: loop position plus the interpolation pose history.
+- `SimStage` (interface): interface SimStage — Extra work a game or engine seam (a physics backend, a netcode buffer) runs inside every simulation step.
+- `SimStagePhase` (type): type SimStagePhase = "beforeMovement" | "afterMovement" | "afterTick" — Where a registered stage runs inside one simulation step.
+- `createSimContext` (function): function createSimContext(options: { config?: SimulationConfig; entities: EntityStore }): SimContext — Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
+
+## @jgengine/core/runtime/simLoop
+
+- `SimAdvanceResult` (interface): interface SimAdvanceResult — What one {@link SimLoop.advance} did.
+- `SimLoop` (interface): interface SimLoop — The stepper handle: advance with real time, read the tick and interpolation alpha, retune the rate, snapshot and restore.
+- `SimLoopState` (interface): interface SimLoopState — Serializable loop position: the tick count and the real seconds accumulated toward the next fixed step.
+- `SimulationConfig` (interface): interface SimulationConfig — How the simulation is stepped: a fixed rate with a catch-up cap, or once per frame with the frame's dt.
+- `createSimLoop` (function): function createSimLoop(initial?: SimulationConfig): SimLoop — The simulation stepper every driver (shell frame, headless runner, authoritative host) advances through, so the sim sees the same dt sequence regardless of who drives it. Fixed mode accumulates real time and steps in equal slices with a catch-up cap; variable mode steps once per advance.
+
+## @jgengine/core/runtime/simSnapshot
+
+- `SimSnapshot` (type): type SimSnapshot = Record<string, unknown> — Captured contributor data keyed by contributor id.
+- `SimSnapshotContributor` (interface): interface SimSnapshotContributor<T = unknown> — One piece of simulation state that can be captured and restored by id.
+- `SimSnapshotRegistry` (interface): interface SimSnapshotRegistry — Registry of {@link SimSnapshotContributor}s that captures and restores them together.
+- `createContextSimSnapshot` (function): function createContextSimSnapshot(ctx: GameContext): SimSnapshotRegistry — The engine's own contributors for a context: replicated world state, the sim clock, the loop and pose history, and the rng cursor when `ctx.rng` is a seeded stream. Games register theirs on the same registry.
+- `createSimSnapshotRegistry` (function): function createSimSnapshotRegistry(): SimSnapshotRegistry — A registry of everything that must round-trip for a simulation to resume bit-for-bit: world state, the clock, the rng cursor, the loop accumulator, and whatever a physics backend or game adds. Pair with {@link createInputRecorder} for replay.
 
 ## @jgengine/core/runtime/snapshot
 
@@ -575,5 +614,5 @@
 - `environmentContentFromDocument` (function): function environmentContentFromDocument(doc: EditorDocument, options?: EnvironmentContentOptions): EnvironmentContent — Derives the coordinate/placement content of an `environment()` world from its scene document: terrain footprint (via {@link terrainBoundsFromDocument}), ground clearings under authored spawns/POIs (via `clearanceZonesFrom`), and the document's sculpt snapshot. This is the seam that lets a game author its world footprint and flatten regions in the editor instead of hardcoding them — the `world.ts` that consumes it carries only engine tuning.
 - `grounded` (function): function grounded(ctx: Pick<GameContext, "world">, x: number, z: number): readonly [number, number, number] — Ground an XZ point onto the live world surface as `[x, groundY, z]`.
 - `offline` (function): function offline(): MultiplayerAdapterConfig — Explicit single-player adapter. Solo games never need this — omitting `multiplayer` in the shell `defineGame` already defaults to offline; pass it only where an adapter value is structurally required.
-- `seededRng` (function): function seededRng(seed: string | number): () => number — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
+- `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
