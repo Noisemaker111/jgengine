@@ -20,6 +20,7 @@ between (`--json` for structured output).
 ### Added
 
 - `src/art-direction.md` scaffold and `check-art-direction` gate for created games.
+- Host-authoritative shell sessions now expose each accepted world frame to the local prediction buffer, reconciling and snapping the possessed pose only when drift exceeds its threshold.
 
 ### Migrate
 

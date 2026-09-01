@@ -4,7 +4,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 
-import { attachWorldSync } from "./worldSync";
+import { attachWorldSync, type AuthoritativeFrameHandler } from "./worldSync";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 
@@ -15,6 +15,7 @@ export function useShellMultiplayerSync(
   playable: PlayableGame,
   serverIdRef: { current: string | null },
   setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>,
+  authoritativeFrameRef?: { current: AuthoritativeFrameHandler | null },
 ): void {
   useEffect(() => {
     if (ctx === null || multiplayer === null) return;
@@ -31,7 +32,14 @@ export function useShellMultiplayerSync(
         serverIdRef.current = joined.serverId;
 
         if (isServerAuthoritative(playable.game.multiplayer) && multiplayer.backend.feeds !== undefined) {
-          cleanups.push(attachWorldSync(multiplayer.backend.feeds, joined.serverId, ctx));
+          cleanups.push(
+            attachWorldSync(
+              multiplayer.backend.feeds,
+              joined.serverId,
+              ctx,
+              (revision) => authoritativeFrameRef?.current?.(revision),
+            ),
+          );
         }
 
         cleanups.push(

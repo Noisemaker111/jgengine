@@ -20,7 +20,8 @@ describe("attachWorldSync", () => {
       },
     };
     const hydrated: WorldSnapshot[] = [];
-    const cleanup = attachWorldSync(feeds, "s1", { hydrate: (s) => hydrated.push(s) });
+    const revisions: number[] = [];
+    const cleanup = attachWorldSync(feeds, "s1", { hydrate: (s) => hydrated.push(s) }, (revision) => revisions.push(revision));
 
     const first: WorldSnapshot = { entities: [{ id: "a" }], store: [["phase", "combat"]] };
     onChange!(view(1, first));
@@ -30,6 +31,7 @@ describe("attachWorldSync", () => {
     onChange!(view(3, second));
 
     expect(hydrated).toEqual([first, second]);
+    expect(revisions).toEqual([1, 3]);
 
     cleanup();
     expect(unsubscribed).toBe(true);

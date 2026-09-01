@@ -77,6 +77,7 @@ import { PlaceScene } from "./world/PlaceScene";
 import { WorldItems } from "./world/WorldItems";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
+import type { AuthoritativeFrameHandler } from "./worldSync";
 import { TouchControlsDock, TouchPlaySurface, touchDockClearance, type TouchCodeSink } from "./touch/TouchControlsOverlay";
 import { SettingsRuntime } from "./settings/SettingsRuntime";
 import { SettingsChrome } from "./settings/SettingsChrome";
@@ -137,6 +138,7 @@ export function Shell3dPresentation({
   poster,
   posterFrozen,
   onPosterSettled,
+  authoritativeFrameRef,
 }: {
   playable: PlayableGame;
   ctx: GameContext;
@@ -177,6 +179,7 @@ export function Shell3dPresentation({
   poster: boolean;
   posterFrozen: boolean;
   onPosterSettled: () => void;
+  authoritativeFrameRef: { current: AuthoritativeFrameHandler | null };
 }) {
   const GameUI = playable.GameUI;
   const WorldOverlay = playable.WorldOverlay;
@@ -599,6 +602,7 @@ export function Shell3dPresentation({
                   pingCommand={pointer?.pingCommand}
                   poster={poster}
                   onPosterSettled={onPosterSettled}
+                  authoritativeFrameRef={authoritativeFrameRef}
                 />
                 <DevtoolsRendererProbe />
                 {resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (

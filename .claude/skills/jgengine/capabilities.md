@@ -12,6 +12,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/shell/gameKit"`
 
+## client-side — input prediction with replay reconciliation
+
+- `createPredictionBuffer` (function) · `import { createPredictionBuffer } from "@jgengine/core/runtime/prediction"`
+
 ## collider-autofit — hitboxes and physical bodies fit each kind's rendered model bounds automatically — no hand-tuned sizes
 
 - `GameContextModels` (interface) · `import { GameContextModels } from "@jgengine/core/runtime/gameContext"`

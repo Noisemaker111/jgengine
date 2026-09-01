@@ -27,6 +27,9 @@ import { NO_ACTIONS } from "../shellConstants";
 import type { PointerService } from "../pointer/pointerService";
 import type { ShellMultiplayer } from "../multiplayer";
 import type { PlayableGame } from "../registry";
+import type { AuthoritativeFrameHandler } from "../worldSync";
+import { createPredictionBuffer } from "@jgengine/core/runtime/prediction";
+import type { EntityPosition } from "@jgengine/core/scene/entityStore";
 
 const TURN_SPEED = 2.4;
 
@@ -50,6 +53,7 @@ export function FrameDriver({
   pingCommand,
   poster,
   onPosterSettled,
+  authoritativeFrameRef,
 }: {
   ctx: GameContext;
   playable: PlayableGame;
@@ -68,6 +72,7 @@ export function FrameDriver({
   pingCommand: string | undefined;
   poster: boolean;
   onPosterSettled: () => void;
+  authoritativeFrameRef: { current: AuthoritativeFrameHandler | null };
 }) {
   const posterElapsedRef = useRef(0);
   const posterDoneRef = useRef(false);
@@ -119,6 +124,24 @@ export function FrameDriver({
   );
   const lastSentInputRef = useRef<InputFrame | null>(null);
   const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
+  const predictionRef = useRef(createPredictionBuffer<EntityPosition>({
+    initial: [0, 0, 0],
+    maxTicks: 120,
+    step: (state: EntityPosition) => state,
+    snapThreshold: 0.1,
+  }));
+  const predictionHandler = useMemo<AuthoritativeFrameHandler>(() => (_revision) => {
+    const playerId = ctx.player.possession.active(ctx.player.userId);
+    const player = ctx.scene.entity.get(playerId);
+    if (player === null) return;
+    const prediction = predictionRef.current;
+    const current = player.position;
+    const snapshot = prediction.snapshot();
+    const tick = snapshot.records.at(-1)?.tick ?? snapshot.confirmedTick;
+    const result = prediction.reconcile(tick, current);
+    if (result.snapped) ctx.scene.entity.setPose(playerId, { position: current });
+  }, [ctx]);
+  authoritativeFrameRef.current = serverAuthoritative ? predictionHandler : null;
 
   useFrame((_state, rawDt) => {
     if (poster) {
@@ -166,7 +189,9 @@ export function FrameDriver({
       const gameDt = ctx.time.advance(stepDt);
       ctx.sim.runStages("beforeMovement", stepDt);
       const player = ctx.scene.entity.get(playerId);
-      if (player !== null && drivesPose && !serverAuthoritative) {
+      // Server-authoritative sessions still run the deterministic local step as a prediction; the
+      // replicated pose is the confirmation that the transport reconciles on the next world diff.
+      if (player !== null && drivesPose) {
         const endPose = devtools.profile.begin("pose");
         stepPlayerMovement(
           ctx,
@@ -177,6 +202,14 @@ export function FrameDriver({
           yawRef.current,
           pitchRef.current,
         );
+        const predicted = ctx.scene.entity.get(playerId);
+        if (predicted !== null) {
+          predictionRef.current.record(
+            { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog(), tick: ctx.sim.tick() },
+            stepDt,
+            predicted.position,
+          );
+        }
         endPose();
       }
       ctx.sim.runStages("afterMovement", stepDt);

@@ -455,6 +455,14 @@
 - `createPoseHistory` (function): function createPoseHistory(options?: { snapDistance?: number }): PoseHistory — Previous-step pose buffer for render interpolation under a fixed-step loop. Reuses one 4-slot array per entity so a step over N entities allocates only for entities seen for the first time.
 - `lerpAngle` (function): function lerpAngle(from: number, to: number, t: number): number — Shortest-arc interpolation between two yaw angles.
 
+## @jgengine/core/runtime/prediction
+
+- `PredictionBuffer` (type): type PredictionBuffer<S> = { record(input: InputFrame, dt?: number, observedState?: S): S; reconcile(tick: number, authoritative: S): { error: number; replayed: number; snapped: boolean; state: S }; state(): S; snapshot(): PredictionSnapshot<S>; restore(next: PredictionSnapshot<S>): void; } — ⚠ undocumented
+- `PredictionRecord` (type): type PredictionRecord<S> = { tick: number; input: InputFrame; state: S; dt: number } — ⚠ undocumented
+- `PredictionSnapshot` (type): type PredictionSnapshot<S> = { confirmedTick: number; confirmed: S; predicted: S; records: PredictionRecord<S>[]; } — ⚠ undocumented
+- `PredictionStep` (type): type PredictionStep<S> = (state: S, input: InputFrame, dt: number) => S — ⚠ undocumented
+- `createPredictionBuffer` (function): function createPredictionBuffer<S>(config: { initial: S; step: PredictionStep<S>; maxTicks: number; startTick?: number; dt?: number; /** Error above which a caller should snap its rendered pose to the reconciled result. */ snapThreshold?: number; }): PredictionBuffer<S> — Keeps local input predictions ahead of the last server confirmation. Reconciliation replaces the confirmed state and deterministically replays unconfirmed inputs through the supplied step function. `maxTicks` bounds retained work and memory; dropped inputs are folded into the confirmed baseline.
+
 ## @jgengine/core/runtime/runtimeSave
 
 - `RuntimeSave` (interface): interface RuntimeSave — Whole-world save/load bound to a live world and a pluggable backend. `save()` captures `target.snapshot()` and writes it; `load()` reads it back and `target.hydrate()`s the whole world. In `autosave` mode it also writes on a trailing timer while the world keeps changing. Named slots, versioned migration, and offline↔cloud (backend swap) all come for free from the underlying save store.
