@@ -8,6 +8,8 @@ import {
 import type { GameContext } from "../runtime/gameContext";
 import type { SnapshotModule } from "../runtime/worldSnapshot";
 
+const MAX_FIXED_SUBSTEPS = 8;
+
 /** @internal */
 export interface SystemModuleRegistration {
   registerSave(module: SnapshotModule): void;
@@ -96,10 +98,13 @@ export function installSystems(
     for (const group of schedule.fixed) {
       const step = 1 / group.rate;
       let acc = (fixedAcc.get(group.rate) ?? 0) + dt;
-      while (acc >= step) {
+      let substeps = 0;
+      while (acc >= step && substeps < MAX_FIXED_SUBSTEPS) {
         runIds(ctx, group.order, step);
         acc -= step;
+        substeps += 1;
       }
+      if (acc >= step) acc %= step;
       fixedAcc.set(group.rate, acc);
     }
 
