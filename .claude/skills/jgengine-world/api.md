@@ -528,6 +528,15 @@
 
 - `CAMERA_PITCH_LIMIT` (const): const CAMERA_PITCH_LIMIT: 1.45 — ⚠ undocumented
 
+## @jgengine/core/movement/characterController
+
+- `CharacterController` (interface): interface CharacterController — The controller handle: config, state, and the per-step move.
+- `CharacterControllerConfig` (interface): interface CharacterControllerConfig — Capsule dimensions and the walk rules a controller applies; every field is retunable during play.
+- `CharacterControllerState` (interface): interface CharacterControllerState — The controller's serializable state. `position` is the feet point; the capsule stands above it.
+- `CharacterMoveInput` (interface): interface CharacterMoveInput — One step of intent for {@link CharacterController.move}.
+- `CharacterMoveResult` (interface): interface CharacterMoveResult — What one move did.
+- `createCharacterController` (function): function createCharacterController(initial: CharacterControllerConfig): CharacterController — Collide-and-slide capsule controller over any {@link PhysicsBackend}: horizontal slide along walls, step-up over ledges, slope limit, ceiling test, crouch with headroom check, ground snapping, and moving-platform carry read from the ground body's velocity. Pure over the backend's `shapecast`/`overlap`; the caller owns input and gravity policy.
+
 ## @jgengine/core/movement/dash
 
 - `DashBurst` (interface): interface DashBurst — ⚠ undocumented
@@ -870,6 +879,36 @@
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
 - `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 
+## @jgengine/core/physics/physicsBackend
+
+- `BodyDesc` (interface): interface BodyDesc — Everything a backend needs to create a body. Rotation-free backends ignore `rotation` and `angularVelocity` and say so in {@link PhysicsCapabilities}.
+- `BodyHandle` (type): type BodyHandle = number — Backend-issued body id; stable for the body's lifetime and across snapshot/restore.
+- `BodyKind` (type): type BodyKind = "dynamic" | "kinematic" | "static" — `dynamic` integrates under forces, `kinematic` moves only through {@link PhysicsBackend.setKinematicTarget}, `static` never moves.
+- `BodyShape` (type): type BodyShape = | { kind: "box"; halfExtents: PhysicsVec3 } | { kind: "sphere"; radius: number } | { kind: "capsule"; radius: number; halfHeight: number } | { kind: "convex"; points: readonly PhysicsVec3[] } | { kind: "trimesh"; vertices: ArrayLike<number>; indices: ArrayLike<number> } | { kind: "h… — Collision shape of a body or a cast. Capsules stand along +Y; a trimesh or heightfield is static-only on every backend.
+- `BodyShapeKind` (type): type BodyShapeKind = BodyShape["kind"] — Shape discriminator, as listed in {@link PhysicsCapabilities.shapes}.
+- `BodyState` (interface): interface BodyState — A body's live pose and motion. Rotation-free backends report identity rotation and zero angular velocity.
+- `ContactEvent` (interface): interface ContactEvent — A contact reported during {@link PhysicsBackend.step}; the object is reused between calls, so copy what you keep.
+- `IDENTITY_QUAT` (const): const IDENTITY_QUAT: PhysicsQuat — The identity rotation.
+- `JointDesc` (interface): interface JointDesc — Joint between two bodies, or between `bodyA` and a world anchor when `bodyB` is omitted.
+- `JointHandle` (type): type JointHandle = number — Backend-issued joint id.
+- `OverlapDesc` (interface): interface OverlapDesc — Which bodies a shape placed at `position` intersects.
+- `PhysicsBackend` (interface): interface PhysicsBackend — The seam every physics consumer talks to: the in-tree `PhysicsWorld` behind `createPhysicsWorldBackend`, or a native solver such as Rapier behind its own adapter. Handles are backend-issued and survive snapshot/restore, so gameplay state can store them.
+- `PhysicsBackendConfig` (interface): interface PhysicsBackendConfig — Solver-wide knobs a backend accepts at creation and through `retune`.
+- `PhysicsCapabilities` (interface): interface PhysicsCapabilities — What a backend can actually simulate, so a game or the conformance suite can adapt instead of guessing.
+- `PhysicsQuat` (type): type PhysicsQuat = readonly [number, number, number, number] — Unit quaternion `[x, y, z, w]`; `[0, 0, 0, 1]` is identity.
+- `PhysicsVec3` (type): type PhysicsVec3 = readonly [number, number, number] — `[x, y, z]`.
+- `RayDesc` (interface): interface RayDesc — A ray query.
+- `RayHit` (interface): interface RayHit — Nearest surface a ray reached.
+- `ShapeCastDesc` (interface): interface ShapeCastDesc — Sweep `shape` from `position` along `motion` and report the first body it touches.
+- `ShapeCastHit` (interface): interface ShapeCastHit — First contact of a shape sweep.
+- `isIdentityQuat` (function): function isIdentityQuat(q: PhysicsQuat | undefined): boolean — True for an absent or identity rotation.
+- `shapeHalfExtents` (function): function shapeHalfExtents(shape: BodyShape): [number, number, number] — Axis-aligned bounds of a shape at identity rotation, as half extents.
+
+## @jgengine/core/physics/physicsBackendConformance
+
+- `ConformanceHarness` (interface): interface ConformanceHarness — The slice of a test runner the conformance suite needs; `bun:test` satisfies it directly.
+- `runPhysicsBackendConformance` (function): function runPhysicsBackendConformance(create: () => PhysicsBackend, harness: ConformanceHarness): void — Behavioral contract every {@link PhysicsBackend} must pass: bodies rest on floors, casts and rays report the first surface with an outward normal, kinematic targets produce velocity, masks filter, and snapshot/restore round-trips with stable handles. Backends declare what they cannot do through `capabilities`; the suite reads it. Expects `create()` to return a fresh backend whose world spans at least ±50 on every axis with a floor at y=0.
+
 ## @jgengine/core/physics/physicsWorld
 
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
@@ -893,6 +932,12 @@
 - `SphereBodyOptions` (interface): interface SphereBodyOptions extends BodyCommonOptions — The radius fills all three half-extent columns, so broadphase and bounds see the sphere's enclosing AABB.
 - `cellCoord` (function): function cellCoord(value: number, min: number, cellSize: number, cells: number): number — Grid cell containing a point, clamped into the grid. Pure — exported for tests.
 - `cellIndex` (function): function cellIndex(cx: number, cy: number, cz: number, nx: number, ny: number): number — Linear cell index from clamped 3D coords. Pure — exported for tests.
+
+## @jgengine/core/physics/physicsWorldBackend
+
+- `PhysicsWorldBackendOptions` (interface): interface PhysicsWorldBackendOptions extends PhysicsBackendConfig — Construction options: the `PhysicsWorld` capacity and bounds plus the shared backend config.
+- `PhysicsWorldBackendState` (interface): interface PhysicsWorldBackendState — Serializable backend state: every live body and joint, with handles preserved.
+- `createPhysicsWorldBackend` (function): function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): PhysicsBackend — `PhysicsWorld` behind the {@link PhysicsBackend} interface: zero dependencies, translation-only. Capsules, convex hulls, meshes, and heightfields collide as their bounding boxes; rotation, angular velocity, CCD, and hinge limits are accepted and ignored (see {@link PhysicsBackend.capabilities}). Reach for `@jgengine/rapier` when a game needs those for real; the seam is the same.
 
 ## @jgengine/core/physics/radialImpulse
 

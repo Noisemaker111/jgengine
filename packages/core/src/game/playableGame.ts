@@ -247,6 +247,8 @@ export interface ModelConfig {
   collisionMesh?: CollisionMeshData;
   /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
   material?: ModelMaterialOverride;
+  /** Shadow participation of every mesh in the model. Default `"both"` (casts and receives); `"none"` for foliage cards, decals, or viewmodels that must never shadow the world. */
+  shadows?: "cast" | "receive" | "both" | "none";
   /**
    * Plays a GLTF animation clip on the model when the source has any (skinned or not).
    * A model resolved from a catalog id whose index carries `clips` animates automatically —

@@ -146,6 +146,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createCameraShake` (function) · `import { createCameraShake } from "@jgengine/core/world"`
 
+## character-controller — capsule walk over the physics backend — slide, step-up, slopes, crouch, platforms
+
+- `createCharacterController` (function) · `import { createCharacterController } from "@jgengine/core/movement/characterController"`
+
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
@@ -418,6 +422,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## patrol-order — waypoint-route order that cycles a path, looping or completing at the end
 
 - `definePatrolOrder` (function) · `import { definePatrolOrder } from "@jgengine/core/world"`
+
+## physics-backend — one interface over interchangeable rigid-body solvers — bodies, joints, raycast, shapecast, snapshot
+
+- `PhysicsBackend` (interface) · `import { PhysicsBackend } from "@jgengine/core/physics/physicsBackend"`
+
+## physics-backend-conformance — the shared test contract a physics adapter runs to prove it matches the seam
+
+- `runPhysicsBackendConformance` (function) · `import { runPhysicsBackendConformance } from "@jgengine/core/physics/physicsBackendConformance"`
+
+## physics-world-backend — the zero-dependency PhysicsWorld solver exposed through the PhysicsBackend seam
+
+- `createPhysicsWorldBackend` (function) · `import { createPhysicsWorldBackend } from "@jgengine/core/physics/physicsWorldBackend"`
 
 ## piece-sockets-from-model — derive build-piece snap sockets from a model's named attach points
 

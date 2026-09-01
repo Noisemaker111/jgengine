@@ -221,11 +221,12 @@ export function EntityModel({
   const baseY = model.y ?? 0;
   const dims = model.dims;
 
+  const shadows = model.shadows;
   const scene = useMemo(() => {
-    const cloned = cloneModelScene(gltf.scene);
+    const cloned = cloneModelScene(gltf.scene, { shadows });
     if (material !== undefined) applyMaterialOverride(cloned, material, { clone: false });
     return cloned;
-  }, [gltf, material]);
+  }, [gltf, material, shadows]);
 
   const measured = useMemo(() => {
     if (model.targetHeight === undefined) return null;
