@@ -17,6 +17,10 @@ between (`--json` for structured output).
 
 ## [Unreleased]
 
+### Added
+
+- `src/art-direction.md` scaffold and `check-art-direction` gate for created games.
+
 ### Migrate
 
 - **`ServerTickPlan.due` is `{ id, runs }[]` instead of a repeated id list.** `planServerTick` repeated a system id once per missed interval, and the obvious way to consume that — `due.includes(id)` or a `Set` — ran the system once while the returned anchor had already advanced by every repeat, silently dropping the catch-up work. A host now reads `runs` (or `tickRunCount(plan, id)`) and loops that many times.

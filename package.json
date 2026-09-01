@@ -45,6 +45,7 @@
     "check-module-globals": "bun scripts/check-module-globals.ts",
     "check-game-determinism": "bun scripts/check-game-determinism.ts",
     "check-game-front-end": "bun scripts/check-game-front-end.ts",
+    "check-art-direction": "bun scripts/check-art-direction.ts",
     "check-orphan-ratchet": "bun scripts/check-orphan-ratchet.ts",
     "gen:capabilities": "bun scripts/gen-capability-index.ts",
     "check-capabilities": "bun scripts/gen-capability-index.ts --check",

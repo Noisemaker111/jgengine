@@ -1472,8 +1472,33 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--key KeyW:2500\`, \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;
 
+const artDirectionMd = `# Art direction
+
+## Reference images
+TODO: fill in
+
+## World palette
+TODO: fill in
+
+## Material language
+TODO: fill in
+
+## Lighting mood
+TODO: fill in
+
+## Silhouette rules
+TODO: fill in
+
+## UI typography
+TODO: fill in
+
+## Chosen look
+TODO: fill in
+`;
+
 export {
   agentsMd,
+  artDirectionMd,
   browserLibMjs,
   driveMjs,
   editorLayersTest,

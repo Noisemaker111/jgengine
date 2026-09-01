@@ -59,6 +59,7 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
     "check-module-globals",
     "check-game-determinism",
     "check-game-front-end",
+    "check-art-direction",
     "check-capabilities",
     "check-game-shape",
     "check-content-gate",
