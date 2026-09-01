@@ -67,6 +67,7 @@ export type WsVoiceSync = {
 };
 
 export type WsBackend = GameBackend & {
+  rtt: { sampleMs: number; smoothedMs: number };
   pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>;
   browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>;
   joinByCode: (args: { gameId: string; code: string; role?: "player" | "spectator" }) => Promise<JoinServerResult | null>;
@@ -151,6 +152,15 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   const resumeTickets = new Map<string, ResumeTicket>();
   const joinedGames = new Map<string, string>();
   const joinedRoles = new Map<string, "player" | "spectator">();
+  const rtt = { sampleMs: 0, smoothedMs: 0 };
+  let pingTimer: ReturnType<typeof setTimeout> | null = null;
+  const schedulePing = () => {
+    pingTimer = schedule(() => {
+      pingTimer = null;
+      if (open) rawSend({ v: 1, t: "ping", id: nextId++, at: now() });
+      if (!closed) schedulePing();
+    }, 1000);
+  };
 
   const clearRequestTimer = (request: PendingRequest) => {
     if (request.timer !== null) {
@@ -246,7 +256,11 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       }
       return;
     }
-    if (message.t === "pong") return;
+    if (message.t === "pong") {
+      rtt.sampleMs = Math.max(0, now() - message.at);
+      rtt.smoothedMs = rtt.smoothedMs === 0 ? rtt.sampleMs : rtt.smoothedMs * 0.8 + rtt.sampleMs * 0.2;
+      return;
+    }
 
     const key = subscriptionKey(
       message.channel,
@@ -306,6 +320,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       pipe = pipeFactory({
         onOpen: () => {
           open = true;
+          if (pingTimer === null) schedulePing();
           const id = nextId++;
           const helloBuild = (requestId: number): WsClientMessage => ({
             v: 1,
@@ -560,6 +575,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       publish: (channelId, streamId) => voiceSync.publish(serverId, channelId, streamId),
       subscribers: (channelId, onChange) => voiceSync.subscribe(serverId, channelId, onChange),
     }),
+    rtt,
     async pushFeedEntry(args) {
       await request((id) => ({
         v: 1,
@@ -616,6 +632,10 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     close: () => {
       closed = true;
       wantConnection = false;
+      if (pingTimer !== null) {
+        cancel(pingTimer);
+        pingTimer = null;
+      }
       clearReconnectTimer();
       failPending("Backend closed");
       pipe?.close();
