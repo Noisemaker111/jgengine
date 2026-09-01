@@ -169,9 +169,12 @@ export interface ModelMaterialMaps {
   normal?: string;
   roughness?: string;
   ao?: string;
+  metalness?: string;
+  emissive?: string;
+  height?: string;
 }
 
-/** Per-entity PBR material override (#151.3) applied to every `MeshStandardMaterial` in the model's cloned scene graph. */
+/** Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph. */
 export interface ModelMaterialOverride {
   color?: string;
   metalness?: number;
