@@ -11,7 +11,7 @@ Own the intended player experience and the rules that produce it: fantasy, pilla
 
 Use `level-design` for spatial realization; route implementation to `jgengine-gameplay`, `jgengine-world`, `jgengine-combat`, `jgengine-ui`, `jgengine-multiplayer` once intent is coherent.
 
-Read [references/application-playbook.md](references/application-playbook.md) only when the task explicitly calls for design depth — a design brief, a redesign, or "make this fun/better" work; it is not a mandatory step of creating a game. Read [references/field-guide.md](references/field-guide.md) when the task needs deeper loop, economy, progression, genre, accessibility, or research guidance.
+For a greenfield build, read [references/application-playbook.md](references/application-playbook.md) and produce its greenfield contract (promise, pillars, anti-pillars, core decision, and falsifier) before writing code. Audits may read only the playbook's audit sections. Read [references/field-guide.md](references/field-guide.md) when the task needs deeper loop, economy, progression, genre, accessibility, or research guidance.
 
 ## Choose the mode
 
