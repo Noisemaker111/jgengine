@@ -8,6 +8,12 @@ const gamesDir = join(repoRoot, "Games");
 const GAMES_REPO = "https://github.com/Noisemaker111/JGengine-games.git";
 const refFile = join(repoRoot, "scripts", "games-ref.txt");
 
+function gamesRepoUrl(): string {
+  const token = process.env.GAMES_CLONE_TOKEN?.trim();
+  if (!token) return GAMES_REPO;
+  return `https://x-access-token:${encodeURIComponent(token)}@github.com/Noisemaker111/JGengine-games.git`;
+}
+
 function run(cmd: string, args: string[]): boolean {
   const result = spawnSync(cmd, args, { stdio: "inherit", cwd: repoRoot });
   return result.status === 0;
@@ -56,7 +62,7 @@ if (checkOnly) {
 
 console.log(`ensure-games: cloning ${GAMES_REPO} into Games/…`);
 const ref = gamesRef();
-const cloneArgs = ["clone", "--depth", "1", GAMES_REPO, gamesDir];
+const cloneArgs = ["clone", "--depth", "1", gamesRepoUrl(), gamesDir];
 if (ref !== null) {
   console.log(`ensure-games: will checkout ref ${ref} after clone`);
 }

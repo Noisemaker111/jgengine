@@ -100,8 +100,32 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
 
+  games-gate:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.8
+      - uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: bun-${{ runner.os }}-
+      - run: bun install --frozen-lockfile
+      - run: bun run games:clone
+        env:
+          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
+      - run: bun run check-game-shape
+      - run: bun run check-game-front-end
+      - run: bun run check-content-gate
+      - run: bun run check-art-direction
+      - run: bun run check-game-feel
+
   ci:
-    needs: [quick, checks, web-build, smoke]
+    needs: [quick, checks, web-build, smoke, games-gate]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -110,7 +134,7 @@ jobs:
     steps:
       - run: |
           ok() { test "$1" = "success" || test "$1" = "skipped"; }
-          test "${{ needs.quick.result }}" = "success" && ok "${{ needs.checks.result }}" && ok "${{ needs.web-build.result }}" && ok "${{ needs.smoke.result }}"
+          test "${{ needs.quick.result }}" = "success" && ok "${{ needs.checks.result }}" && ok "${{ needs.web-build.result }}" && ok "${{ needs.smoke.result }}" && ok "${{ needs.games-gate.result }}"
       - name: Report red main as an issue
         if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:

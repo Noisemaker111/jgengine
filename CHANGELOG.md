@@ -28,6 +28,8 @@ between (`--json` for structured output).
 
 ### Changed
 
+- CI now clones the external games repository with `GAMES_CLONE_TOKEN` and runs the game shape, content, front-end, art-direction, and feel gates against it; those gates fail loudly in CI when the checkout is missing while remaining no-ops locally.
+
 - `jgengine create` now accepts `--player`, `--ground`, and `--scene` so generated games can choose their model, terrain ground, and empty or starter scene.
 
 - **Directional shadow frustum config actually reaches the GPU.** `shadowCameraSize` on a single (non-cascaded) shadow light was silently inert: the shell wrote the bounds through R3F pierced props and nothing refreshed the shadow camera's projection matrix, so three rendered depth with its default ~10-unit box at the world origin — the reason no open-world game had cast shadows away from spawn. The shell now syncs the projection (and reallocates the shadow map when `shadowMapSize` changes). `bloom.threshold`'s doc also now states it measures raw HDR before the exposure stage.
