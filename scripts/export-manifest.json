@@ -340,6 +340,7 @@
     "./runtime/simLoop",
     "./runtime/simSnapshot",
     "./runtime/snapshot",
+    "./runtime/snapshotBuffer",
     "./runtime/transport",
     "./runtime/visibility",
     "./runtime/worldChannel",

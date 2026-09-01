@@ -1082,3 +1082,6 @@ geometry, and React store bindings.
 Baseline release: the eight `@jgengine/*` packages (core, ws, sql, react,
 convex, node, shell, assets) as the first tracked version. No migration —
 this is the floor changelog entries are measured against.
+# Unreleased
+
+- Added `createSnapshotBuffer` for delayed snapshot interpolation.
