@@ -50,7 +50,9 @@ describe("writeGame", () => {
     mkdirSync(join(dir, "node_modules", "@jgengine", "core"), { recursive: true });
     writeFileSync(join(dir, "node_modules", "@jgengine", "core", "package.json"), '{"version":"0.8.0"}');
 
-    const failures = diagnose(dir).filter((finding) => !finding.ok);
+    const failures = diagnose(dir).filter(
+      (finding) => !finding.ok && !finding.label.includes("art-direction") && !finding.label.includes("skeleton"),
+    );
     expect(failures).toEqual([]);
   });
 

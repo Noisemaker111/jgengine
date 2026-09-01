@@ -1203,14 +1203,14 @@ const gameAssetsTs = `import { createStarterCatalog } from "@jgengine/assets/cat
 export const assets = createStarterCatalog({ basePath: "/models" });
 `;
 
-const gameModelsTs = `import type { ModelConfig } from "@jgengine/core/game/playableGame";
+const gameModelsTs = (player = "asset:person_casual") => `import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { resolveModelPlan } from "@jgengine/shell/render/resolveModel";
 
 import { assets } from "./assets";
 
 /** Drop-in GLTF figures from the curated starter packs (asset:person_casual, …). */
 export const entityModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
-  player: { model: "asset:person_casual", style: { targetHeight: 1.8 } },
+  player: { model: ${JSON.stringify(player)}, style: { targetHeight: 1.8 } },
 });
 
 export const objectModels: Record<string, ModelConfig> = resolveModelPlan(assets, {
@@ -1263,14 +1263,14 @@ ${fields.join("\n")}
 `;
 };
 
-const worldTs = (id: string) => `import { world as place } from "@jgengine/core/world/place";
+const worldTs = (id: string, ground: "flat" | "terrain" = "terrain") => `import { world as place } from "@jgengine/core/world/place";
 
 // The world is the place you play in: substrate + laws. Dress the place — sky look, foliage,
 // props, sculpt — in the editor (F2+E), which writes editor.scene.json; never here. With no
 // authored sky the engine renders its default sky.
 export const world = place({
   id: "${id}",
-  ground: { mode: "flat", size: { x: Infinity, z: Infinity } },
+  ground: { mode: "${ground}", size: { x: Infinity, z: Infinity } },
   physics: { gravity: -24 },
 });
 `;
