@@ -161,6 +161,9 @@ export function diagnose(dir: string): Finding[] {
     label: "vite.config.ts present",
     fix: "the standalone harness runs on vite with @vitejs/plugin-react + @tailwindcss/vite",
   });
+  const artDirectionPath = join(dir, "src", "art-direction.md");
+  const artDirection = existsSync(artDirectionPath) ? readFileSync(artDirectionPath, "utf8") : "";
+  findings.push({ ok: artDirection.length > 0 && !artDirection.includes("TODO: fill in"), label: "src/art-direction.md is filled in", fix: "write the required art-direction sections before coding" });
 
   const configPath = join(dir, "src", "game.config.ts");
   const configOk =

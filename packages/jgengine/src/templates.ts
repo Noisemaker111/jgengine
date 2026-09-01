@@ -1,5 +1,6 @@
 import {
   agentsMd,
+  artDirectionMd,
   browserLibMjs,
   driveMjs,
   editorLayersTest,
@@ -73,6 +74,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "AGENTS.md", contents: agentsMd(name, variant) },
     { path: "src/index.css", contents: indexCss(variant, editor) },
     { path: "src/style.css", contents: styleCss },
+    { path: "src/art-direction.md", contents: artDirectionMd },
     { path: "src/main.tsx", contents: mainTsx(editor) },
     { path: "src/index.tsx", contents: indexTsx(editor) },
     ...(editor

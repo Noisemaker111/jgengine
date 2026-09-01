@@ -9,6 +9,8 @@ Read the JGengine README for package truth, commands, layering, and license — 
 
 ## 1. Establish the target
 
+For greenfield builds, write `src/art-direction.md` before any code.
+
 Treat the pitch as a unique composition of needs, not a genre to fill in — never reach for a genre kit, preset, archetype, or class template ("default sports car", "default RPG", "default FPS") in the SDK or skills (see [AGENTS.md](../../../AGENTS.md)). Use `game-design` to turn the pitch into a testable player promise, verbs, loops, progression, failure, and completion scenario. Use `level-design` when play depends on authored spaces, routes, encounters, exploration, or spatial pacing. Capture only decisions that change architecture:
 
 - player point of view and controls
