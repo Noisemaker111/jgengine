@@ -309,3 +309,56 @@ Two games have a literal `src/game/handroll/` (~1,977 lines combined).
 
 Per CLAUDE.md: any PR touching a rendered surface needs before/after screenshots via
 `bun run shoot`/`drive`; behavior changes need a clip via `bun run pr-video`.
+
+---
+
+## Range audit — 2026-09-01
+
+Six parallel legs (rendering, simulation, content pipeline, application layer, multiplayer,
+process) asked one question: can a 2D cartoon game and a photoreal FPS both be built here
+without forking `shell` or `core`? Neither can yet. Phase 3a above has landed (CSM, SMAA,
+sky IBL, `ctx.rng`, front-end gate); 3b–3e (#1558–#1561) stay valid. Parent issue: **#1678**.
+
+**One diagnosis.** The engine ships one look, one sim shape, and one process, and the
+defaults are welded rather than chosen:
+
+- Look: `look` is `cinematic | flat`; cinematic injects ACES + bloom + AO + a fixed film
+  grade into every game (`core/render/lookPreset.ts:53`, `shell/postfx/gradeShader.ts:6-12`).
+  Lighting is ambient/directional/hemisphere only; IBL is a PMREM'd two-color gradient; cloned
+  GLB meshes never get `castShadow`/`receiveShadow` (only the fallback box at
+  `shell/render/modelLoad.ts:93`). No HDRI, KTX2, Draco, toon, outline, decal, or textured
+  particle anywhere.
+- Sim: variable dt clamped to 50 ms (`shell/drivers/FrameDriver.tsx:150`), no accumulator or
+  interpolation; `PhysicsWorld` is translation-only with box/sphere shapes; animation is one
+  hardcoded three-state machine in `shell/render/useModelAnimation.ts`; AI is a five-state
+  enum over a grid A*; the entity store is a `Map` whose every write rebuilds the spatial grid.
+- Range ends: there is no 2D path (tilemaps render as extruded boxes, `spriteSheet.ts` has
+  zero consumers, no pixel-perfect camera, no 2D collision) and no first-person path (the
+  viewmodel shares the world camera and near plane, one viewmodel per process via module
+  globals). No gamepad, no `PannerNode`, no prediction/reconciliation, no split-screen.
+- Process: `create` installs three skills and omits `game-design` and `jgengine-ui`
+  (`packages/jgengine/src/skills.ts:28`); no skill demands a visual target; the visual
+  scorecard is an uncited reference; the game gates no-op whenever `Games/` is absent, which
+  is always the case in engine CI.
+
+**Program (sub-issues of #1678).** Ordered so early seams are reused by later ones.
+
+| # | Seam | Unblocks |
+|---|---|---|
+| #1690 | Process: default skills, art-direction artifact + gate, scorecard as bar, feel gate, gates that run | every game, cheapest first |
+| #1680 | Environment source, punctual lights, shadow flags, LUT, graphics profile | photoreal, night, interiors |
+| #1679 | Sprite clips, textured tiles, pixel-perfect camera, 2D framing/collision, toon | every 2D game |
+| #1561 §1 | Fixed-step sim loop + interpolation | everything below |
+| #1682 | `PhysicsBackend` + capsule controller + Rapier adapter | FPS, vehicles, ragdoll |
+| #1683 | Animation graph, IK, root motion, events | any character that must read as real |
+| #1684 | Navmesh, perception, decision graph | enemies in any genre |
+| #1685 | Tick input queue, interpolation buffer, prediction, delta wire, resume, RTT | real-time multiplayer |
+| #1686 | Gamepad, action contexts, input buffer, local slots, viewports | console feel, couch co-op |
+| #1687 | Spatial audio graph, zones, banks, streamed layered music | every game with sound |
+| #1688 | HUD skin depth, SDF world text, captions, graphics settings | UI that diverges by game |
+| #1689 | BYO asset ingest, game-defined components, style profiles | breaking the four-pack monoculture |
+| #1681 | Viewmodel layer, decals, textured particles, hitmarker | first-person combat |
+
+Each closes with a probe-game adopter; the parent closes when a 2D sprite game and a
+first-person PBR game both pass `jgengine-verify` with no game-local renderer, physics, or
+audio code.
