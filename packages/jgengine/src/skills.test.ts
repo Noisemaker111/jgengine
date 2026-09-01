@@ -41,8 +41,8 @@ describe("parseSkillsArgs", () => {
 });
 
 describe("skill sets", () => {
-  test("minimal set is intake + editor + verify, a subset of the full set", () => {
-    expect(MINIMAL_GAME_SKILLS).toEqual(["jgengine", "jgengine-editor", "jgengine-verify"]);
+  test("minimal set is intake + editor + verify + design + ui, a subset of the full set", () => {
+    expect(MINIMAL_GAME_SKILLS).toEqual(["jgengine", "jgengine-editor", "jgengine-verify", "game-design", "jgengine-ui"]);
     for (const skill of MINIMAL_GAME_SKILLS) {
       expect(GAME_SKILLS).toContain(skill);
     }
@@ -59,7 +59,7 @@ describe("skillsInstallArgs", () => {
       expect(project).toContain(skill);
     }
     expect(project).not.toContain("jgengine-world");
-    expect(project).not.toContain("game-design");
+    expect(project).not.toContain("level-design");
     expect(project).not.toContain("-g");
 
     const global = skillsInstallArgs("global");
@@ -95,7 +95,7 @@ describe("installPackagedSkills", () => {
       expect(existsSync(join(target, skill, "SKILL.md"))).toBe(true);
     }
     expect(existsSync(join(target, "jgengine-world"))).toBe(false);
-    expect(existsSync(join(target, "game-design"))).toBe(false);
+    expect(existsSync(join(target, "level-design"))).toBe(false);
   });
 
   test('"all" copies the full set', () => {

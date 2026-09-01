@@ -5,13 +5,23 @@ import type { PaintStroke } from "@jgengine/core/scene/paintLayer";
 
 export const PAINT_TEXTURE_SIZE = 512;
 
+/** Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`. */
+export type ModelShadowMode = "cast" | "receive" | "both" | "none";
+
 /** @internal */
-export function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean }): THREE.Object3D {
+export function cloneModelScene(
+  source: THREE.Object3D,
+  options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode },
+): THREE.Object3D {
   const clone = cloneSkinned(source) as THREE.Object3D;
-  if (options?.cloneMaterials === false) return clone;
+  const shadows = options?.shadows ?? "both";
+  const cloneMaterials = options?.cloneMaterials !== false;
   clone.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
+    mesh.castShadow = shadows === "cast" || shadows === "both";
+    mesh.receiveShadow = shadows === "receive" || shadows === "both";
+    if (!cloneMaterials) return;
     mesh.material = Array.isArray(mesh.material)
       ? mesh.material.map((material) => material.clone())
       : mesh.material.clone();
