@@ -84,6 +84,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StatBar` (function) · `import { StatBar } from "@jgengine/shell/gameKit"`
 
+## input-recorder — tick-indexed input log for replay, rollback, and regression tests
+
+- `createInputRecorder` (function) · `import { createInputRecorder } from "@jgengine/core/runtime/inputRecorder"`
+
 ## loot-table — validate a loot table definition for use with the registry
 
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/authoring"`
@@ -116,6 +120,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `toRuntimeObjectRow` (function) · `import { toRuntimeObjectRow } from "@jgengine/core/runtime/objectRows"`
 
+## pose-interpolation — render entity poses between fixed simulation steps without stutter
+
+- `createPoseHistory` (function) · `import { createPoseHistory } from "@jgengine/core/runtime/poseInterpolation"`
+
 ## render-fallback-diagnostics — Enable/disable the dev-only placeholder-fallback probe.
 
 - `armFallbackSeams` (function) · `import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams"`
@@ -141,6 +149,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## seeded-random — injected deterministic randomness for game logic — never `Math.random` in a simulation
 
 - `seededRng` (function) · `import { seededRng } from "@jgengine/shell/gameKit"`
+
+## sim-loop — fixed-step or variable simulation stepping with tick count, catch-up cap, and interpolation alpha
+
+- `createSimLoop` (function) · `import { createSimLoop } from "@jgengine/core/runtime/simLoop"`
+
+## sim-snapshot — capture and restore whole-simulation state for replay, rollback, and regression tests
+
+- `createSimSnapshotRegistry` (function) · `import { createSimSnapshotRegistry } from "@jgengine/core/runtime/simSnapshot"`
 
 ## typed-keyed-store — a cast-free typed handle onto a per-owner keyed family of reactive game-store slots, replayable and host-authoritative
 

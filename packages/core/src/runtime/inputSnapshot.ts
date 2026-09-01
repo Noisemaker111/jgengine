@@ -7,6 +7,8 @@ export interface InputFrame {
   pointer: PointerAxisState | null;
   /** Analog per-action magnitudes (0..1) for actions driven by a continuous source (virtual joystick, gamepad stick); absent/null means every held action is fully pressed. */
   analog?: Readonly<Record<string, number>> | null;
+  /** Simulation tick (`ctx.sim.tick()`) the frame was captured for; hosts and replay align inputs on it. Absent from senders that predate the fixed-step loop. */
+  tick?: number;
 }
 
 export interface InputSnapshot {

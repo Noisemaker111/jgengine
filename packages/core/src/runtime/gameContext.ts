@@ -36,6 +36,7 @@ import { createRuntimeSave, type RuntimeSaveOptions, type RuntimeSaveTarget } fr
 import { isOffline } from "./adapter";
 import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock } from "../time/simClock";
+import { createSimContext } from "./simContext";
 import { seededRng } from "../random/rng";
 import { createCameraDirector } from "./cameraDirector";
 import { createParticleDirector } from "../vfx/particleDirector";
@@ -621,6 +622,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       weapon,
     },
     time,
+    sim: createSimContext({ config: definition.simulation, entities }),
     camera,
     particles,
     input,
