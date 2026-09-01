@@ -45,6 +45,15 @@ Classify each acceptance claim before scheduling proof. A plan that uses screens
 
 When a game is reported slow, play it and pull the debug menu's perf data instead of guessing:
 
+Use these budgets when reviewing frame metrics:
+
+| Profile | Frame budget | Draw-call budget | Triangle budget |
+| --- | ---: | ---: | ---: |
+| flat | 16.6 ms | 300 | 500,000 |
+| cinematic | 16.6 ms | 600 | 1,500,000 |
+
+PRs that add authored world content must include a before/after `debug_snapshot` pair. Capture both snapshots on the same hot path and compare `frame.avgFrameMs` with `render.drawCalls` and `render.triangles` against the applicable budget above.
+
 1. Run the game (`bun dev`), warm it up, call `debug_perf_reset` through the agent bridge (or F2+D's Perf panel), play the hot path, then take a `debug_snapshot` — reset drops load/shader-compile stalls from the frame window; the snapshot's `why` line names the culprit.
 2. Read `frame.avgSimMs` vs `frame.avgOutsideMs`: sim-heavy means game logic (wrap hot `onTick` work in `measure("name", fn)` and re-snapshot; phases rank themselves); outside-heavy means render/GPU — check `render.drawCalls`/`render.triangles` and the long-frame log.
 3. Fix at the owning seam, then re-run the same sequence and report before/after `avgFrameMs` + `render` counts as the evidence pair. Draw/triangle counts are deterministic and survive slow CI hardware; raw fps there is not the player's fps.
