@@ -244,6 +244,10 @@ function writeBaseline(path: string, values: string[]): void {
 
 function main(argv: string[]): number {
   if (!existsSync(GAMES_DIR)) {
+    if (process.env.CI === "true") {
+      console.error("check-content-gate: Games/ checkout is required in CI — run bun run games:clone first");
+      return 1;
+    }
     console.log("check-content-gate: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games)");
     return 0;
   }

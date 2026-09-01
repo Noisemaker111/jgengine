@@ -7,6 +7,10 @@ import { runRatchet } from "./ratchet";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 if (!existsSync(join(root, "Games"))) {
+  if (process.env.CI === "true") {
+    console.error("check-game-front-end: Games/ checkout is required in CI — run bun run games:clone first");
+    process.exit(1);
+  }
   console.log("check-game-front-end: clean — no Games/ checkout (games live in Noisemaker111/JGengine-games)");
   process.exit(0);
 }
