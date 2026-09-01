@@ -5,7 +5,26 @@ import * as THREE from "three";
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 import { resolveAnimationConfig } from "@jgengine/core/game/clipRoles";
 import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
+import {
+  ANIM_PARAMS_KEY,
+  createAnimGraphRuntime,
+  type AnimGraph,
+  type AnimGraphRuntime,
+  type AnimParamValue,
+} from "@jgengine/core/anim/animGraph";
+import { LOCOMOTION_SPEED_PARAM } from "@jgengine/core/anim/locomotionGraph";
 import { useOptionalGameContext } from "@jgengine/react/provider";
+
+function graphClipNames(graph: AnimGraph): Set<string> {
+  const names = new Set<string>();
+  for (const layer of graph.layers) {
+    for (const state of Object.values(layer.states)) {
+      if (state.kind === "clip") names.add(state.clip);
+      else for (const point of state.points) names.add(point.clip);
+    }
+  }
+  return names;
+}
 
 /**
  * An explicit `animation` config always wins over `"auto"`, and both the state machine and the
@@ -24,7 +43,7 @@ function warnMissingClips(
   if (typeof console === "undefined") return;
   const available = new Set(clips.map((clip) => clip.name));
   const missing = new Set<string>();
-  const { states, oneShots } = animation;
+  const { states, oneShots, graph } = animation;
   if (states !== undefined) {
     for (const name of [states.idle, states.walk, states.run]) {
       if (name !== undefined && !available.has(name)) missing.add(name);
@@ -37,6 +56,9 @@ function warnMissingClips(
       }
     }
   }
+  if (graph !== undefined) {
+    for (const name of graphClipNames(graph)) if (!available.has(name)) missing.add(name);
+  }
   if (animation.clip !== undefined && !available.has(animation.clip)) missing.add(animation.clip);
   if (missing.size === 0) return;
   console.warn(
@@ -47,12 +69,66 @@ function warnMissingClips(
   );
 }
 
+interface GraphPlayback {
+  runtime: AnimGraphRuntime;
+  actions: Map<string, THREE.AnimationAction>;
+  durations: Record<string, number>;
+  lastPos: [number, number, number] | null;
+  smoothedSpeed: number;
+}
+
+/** Per-layer action key: a masked or additive layer needs its own clip variant even for a clip another layer plays. */
+function actionKey(layer: string, clip: string): string {
+  return `${layer}:${clip}`;
+}
+
+function buildGraphPlayback(mixer: THREE.AnimationMixer, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPlayback {
+  const actions = new Map<string, THREE.AnimationAction>();
+  const durations: Record<string, number> = {};
+  for (const clip of clips) durations[clip.name] = clip.duration;
+  for (const layer of graph.layers) {
+    const names = new Set<string>();
+    for (const state of Object.values(layer.states)) {
+      if (state.kind === "clip") names.add(state.clip);
+      else for (const point of state.points) names.add(point.clip);
+    }
+    for (const name of names) {
+      const source = THREE.AnimationClip.findByName(clips, name);
+      if (source === null) continue;
+      let clip = source;
+      if (layer.mask !== undefined) {
+        const mask = layer.mask;
+        clip = new THREE.AnimationClip(
+          `${source.name}|${layer.id}`,
+          source.duration,
+          source.tracks.filter((track) => mask.some((prefix) => track.name.startsWith(prefix))),
+        );
+      }
+      if (layer.additive === true) {
+        clip = clip === source ? clip.clone() : clip;
+        THREE.AnimationUtils.makeClipAdditive(clip);
+      }
+      const action = mixer.clipAction(clip);
+      action.setLoop(THREE.LoopRepeat, Infinity);
+      action.enabled = true;
+      action.paused = true;
+      action.weight = 0;
+      if (layer.additive === true) action.blendMode = THREE.AdditiveAnimationBlendMode;
+      action.play();
+      actions.set(actionKey(layer.id, name), action);
+    }
+  }
+  return { runtime: createAnimGraphRuntime(graph), actions, durations, lastPos: null, smoothedSpeed: 0 };
+}
+
 /**
  * The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs,
  * for games that render a cloned scene themselves (custom materials, procedural composition).
  * Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades
  * read from the entity's live position when `instanceId` is set, one-shots fired from
  * `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp.
+ * With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight
+ * and the mixer only applies them; clip events surface as `animation.event`.
  */
 export function useModelAnimation(
   scene: THREE.Object3D,
@@ -84,8 +160,10 @@ export function useModelAnimation(
     lastPos: [number, number, number] | null;
     smoothedSpeed: number;
   } | null>(null);
+  const graphRef = useRef<GraphPlayback | null>(null);
   const states = animation?.states;
   const oneShots = animation?.oneShots;
+  const graph = animation?.graph;
   const oneShotPlayRef = useRef<((event: string) => void) | null>(null);
   const activeOneShotRef = useRef<{ action: THREE.AnimationAction; isDeath: boolean } | null>(null);
 
@@ -93,10 +171,22 @@ export function useModelAnimation(
     if (animation === undefined || clips.length === 0) {
       mixerRef.current = null;
       stateActionsRef.current = null;
+      graphRef.current = null;
       return;
     }
     warnMissingClips(animation, clips);
     const mixer = new THREE.AnimationMixer(scene);
+    if (graph !== undefined) {
+      graphRef.current = buildGraphPlayback(mixer, graph, clips);
+      mixer.update(0);
+      mixerRef.current = mixer;
+      animationPausedRef.current = false;
+      return () => {
+        mixer.stopAllAction();
+        mixerRef.current = null;
+        graphRef.current = null;
+      };
+    }
     if (states !== undefined) {
       const clipFor = (name: string) => THREE.AnimationClip.findByName(clips, name) ?? clips[0]!;
       const actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>> = {
@@ -194,11 +284,16 @@ export function useModelAnimation(
     animation?.time,
     states,
     oneShots,
+    graph,
   ]);
 
   useEffect(() => {
-    if (ctx === null || instanceId === undefined || oneShots === undefined) return;
-    const fire = (event: string) => oneShotPlayRef.current?.(event);
+    if (ctx === null || instanceId === undefined || (oneShots === undefined && graph === undefined)) return;
+    const fire = (event: string) => {
+      const playback = graphRef.current;
+      if (playback !== null) playback.runtime.trigger(event);
+      else oneShotPlayRef.current?.(event);
+    };
     const offAnimation = ctx.game.events.on("entity.animation", (event) => {
       if (event.instanceId === instanceId) fire(event.event);
     });
@@ -213,9 +308,40 @@ export function useModelAnimation(
       offHit();
       offDied();
     };
-  }, [ctx, instanceId, oneShots]);
+  }, [ctx, instanceId, oneShots, graph]);
 
   useFrame((_state, delta) => {
+    const playback = graphRef.current;
+    if (playback !== null && mixerRef.current !== null) {
+      const params: Record<string, AnimParamValue> = {};
+      if (ctx !== null && instanceId !== undefined) {
+        const entity = ctx.scene.entity.get(instanceId);
+        if (entity !== null && delta > 0) {
+          const [x, , z] = entity.position;
+          if (playback.lastPos !== null) {
+            const instantSpeed = Math.hypot(x - playback.lastPos[0], z - playback.lastPos[2]) / delta;
+            playback.smoothedSpeed += (instantSpeed - playback.smoothedSpeed) * Math.min(1, delta * 12);
+          }
+          playback.lastPos = [x, entity.position[1], z];
+        }
+        const extra = ctx.scene.entity.blackboard.get<Record<string, AnimParamValue>>(instanceId, ANIM_PARAMS_KEY);
+        if (extra !== undefined) Object.assign(params, extra);
+      }
+      params[LOCOMOTION_SPEED_PARAM] = playback.smoothedSpeed;
+      const out = playback.runtime.advance(delta * (animation?.timeScale ?? 1), params, playback.durations);
+      for (const action of playback.actions.values()) action.weight = 0;
+      for (const entry of out.clips) {
+        const action = playback.actions.get(actionKey(entry.layer, entry.clip));
+        if (action === undefined) continue;
+        action.weight += entry.weight;
+        action.time = entry.time;
+      }
+      mixerRef.current.update(0);
+      if (ctx !== null && instanceId !== undefined) {
+        for (const event of out.events) ctx.game.events.emit("animation.event", { instanceId, name: event.name, clip: event.clip });
+      }
+      return;
+    }
     const stateMachine = stateActionsRef.current;
     if (stateMachine !== null && states !== undefined && instanceId !== undefined && delta > 0 && ctx !== null) {
       const entity = ctx.scene.entity.get(instanceId);

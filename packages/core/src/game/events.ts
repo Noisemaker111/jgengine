@@ -15,10 +15,17 @@ export interface EntityDiedEvent {
   serverId?: string;
 }
 
-/** Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. */
+/** Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. With an `animation.graph`, `event` arms the trigger of that name. */
 export interface EntityAnimationEvent {
   instanceId: string;
   event: string;
+}
+
+/** A named clip moment (`AnimGraph.events`) the rig just crossed — foot plant, hit frame, reload point. Audio and combat listen by `name`. */
+export interface AnimationClipEvent {
+  instanceId: string;
+  name: string;
+  clip: string;
 }
 
 /**
@@ -319,6 +326,7 @@ export interface GameEventMap {
   "audio.loopSet": AudioLoopSetEvent;
   "audio.loopStop": AudioLoopStopEvent;
   "entity.animation": EntityAnimationEvent;
+  "animation.event": AnimationClipEvent;
 }
 
 export type GameEventHandler<TPayload> = (payload: TPayload) => void;

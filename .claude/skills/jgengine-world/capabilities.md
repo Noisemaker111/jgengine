@@ -16,6 +16,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDriverState` (function) · `import { createDriverState } from "@jgengine/core/ai/driver"`
 
+## anim-graph — data-first animation state machine with blend trees, crossfades, layers, and clip events
+
+- `createAnimGraphRuntime` (function) · `import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph"`
+
 ## area-effect-field — source-following area membership with enter/refresh/leave edges, stacking, and cleanup
 
 - `createAreaEffectField` (function) · `import { createAreaEffectField } from "@jgengine/core/world"`
@@ -340,6 +344,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
+
+## locomotion-graph — build the default idle/walk/run plus one-shot graph from clip names
+
+- `locomotionGraph` (function) · `import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph"`
 
 ## map-annotations — player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable
 

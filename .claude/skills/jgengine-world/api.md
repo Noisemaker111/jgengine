@@ -175,9 +175,36 @@
 - `WaveView` (interface): interface WaveView — A pooled, per-frame readout of the current wave — the "brain behind WAVE 3". Reused across {@link WaveRunner.view} calls (never per-frame allocated), so read it and render it, don't retain it.
 - `createWaveRunner` (function): function createWaveRunner(config: WaveRunnerConfig): WaveRunner — A thin, stateful, observable wrapper around the seeded {@link createSpawnDirectorState} / {@link advanceSpawnDirector} model. It OWNS a {@link SpawnDirectorState}, ticks it from `update(dt, ctx?)`, keeps the new state, and forwards each emitted {@link SpawnRequest} to an optional `onSpawn` sink so the model never instantiates entities. `view()` returns a pooled per-frame readout — the "brain behind WAVE 3": the 1-based wave number, wave progress `0..1`, banked budget, per-wave and total spawn counts, alert, and done flag. `forceNextWave` / `raiseAlert` drive it, `subscribe` observes it, and `snapshot`/`restore` round-trip the plain serializable state object through a save. Nothing here is genre-specific: spawn-entry `kind`s (the director's `entryId`s) stay free strings the runner never interprets.
 
+## @jgengine/core/anim/animGraph
+
+- `ANIM_PARAMS_KEY` (const): const ANIM_PARAMS_KEY: "anim.params" — Entity blackboard key the shell reads extra graph parameters from: `ctx.scene.entity.blackboard.set(id, ANIM_PARAMS_KEY, { aiming: true })`.
+- `AnimClipOutput` (interface): interface AnimClipOutput — One clip's contribution: weight 0..1 and the time to seek it to.
+- `AnimCompare` (type): type AnimCompare = ">" | "<" | ">=" | "<=" | "==" | "!=" — Comparison operators an {@link AnimCondition} supports.
+- `AnimCondition` (interface): interface AnimCondition — A parameter comparison; every condition on a transition must hold.
+- `AnimEvent` (interface): interface AnimEvent — A named moment inside a clip (foot plant, hit frame, reload point).
+- `AnimGraph` (interface): interface AnimGraph — Serializable animation graph. Clip durations come from the rig at runtime (see {@link AnimGraphClipInfo}).
+- `AnimGraphClipInfo` (type): type AnimGraphClipInfo = Readonly<Record<string, number>> — Per-clip duration in seconds, read from the loaded rig.
+- `AnimGraphOutput` (interface): interface AnimGraphOutput — What one advance asks the rig to show.
+- `AnimGraphRuntime` (interface): interface AnimGraphRuntime — The evaluator handle: arm triggers, advance, inspect, snapshot and restore.
+- `AnimGraphState` (interface): interface AnimGraphState — Serializable evaluator state.
+- `AnimLayer` (interface): interface AnimLayer — A blend layer with its own state machine. Masked layers apply only to bones whose track names start with a prefix.
+- `AnimParamValue` (type): type AnimParamValue = number | boolean — Parameter value a graph reads: floats for blends and comparisons, booleans for gates.
+- `AnimParams` (type): type AnimParams = Readonly<Record<string, AnimParamValue>> — The parameter set a graph evaluates against each advance.
+- `AnimState` (type): type AnimState = | { kind: "clip"; clip: string; speed?: number; loop?: boolean } | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean } | { kind: "blend2D"; params: readonly [string, string]; points: readonly { at: readonly [number, num… — A state plays one clip, or blends clips by one or two parameters.
+- `AnimTransition` (interface): interface AnimTransition — Edge between states. `from: "*"` matches any state except `to`.
+- `createAnimGraphRuntime` (function): function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime — Headless animation state machine and blend evaluator. It owns every clip's playback time and weight, so the renderer only seeks and weights actions on a mixer, and headless hosts, replays, and tests advance the same graph without three.js. Transitions are data (parameter comparisons and consumed triggers), layers can be masked or additive, and events fire by clip time, including across loop wraps.
+- `stateClipWeights` (function): function stateClipWeights(state: AnimState, params: AnimParams): Record<string, number> — Static clip weights of a state at `params`, before any crossfade.
+
 ## @jgengine/core/anim/easing
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
+
+## @jgengine/core/anim/locomotionGraph
+
+- `LOCOMOTION_LAYER` (const): const LOCOMOTION_LAYER: "base" — Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`.
+- `LOCOMOTION_SPEED_PARAM` (const): const LOCOMOTION_SPEED_PARAM: "speed" — The parameter name the shell feeds with the entity's smoothed ground speed.
+- `LocomotionGraphInput` (interface): interface LocomotionGraphInput — Inputs for {@link locomotionGraph}: the idle/walk/run clip names and the one-shot table a rig config already carries.
+- `locomotionGraph` (function): function locomotionGraph(input: LocomotionGraphInput): AnimGraph — The engine's default locomotion as an authored graph: a speed-driven blend between idle, walk, and run, plus a state per one-shot that plays once and returns (or clamps for `death`). What `useModelAnimation` used to hardcode.
 
 ## @jgengine/core/area/areaEffectField
 

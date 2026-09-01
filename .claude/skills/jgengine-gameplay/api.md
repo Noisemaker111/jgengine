@@ -460,6 +460,7 @@
 
 ## @jgengine/core/game/events
 
+- `AnimationClipEvent` (interface): interface AnimationClipEvent — A named clip moment (`AnimGraph.events`) the rig just crossed — foot plant, hit frame, reload point. Audio and combat listen by `name`.
 - `AudioLoopSetEvent` (interface): interface AudioLoopSetEvent — Live-update the retained loop `id`: `rate` re-pitches it (1 = authored, the shell clamps to 0.25–4), `gain` rescales its volume (0–1), and `at` repositions its emitter. Emitted every tick to track a live signal (RPM, tire slip); the shell smooths rate/gain and ignores an unknown `id` (#1051).
 - `AudioLoopStartEvent` (interface): interface AudioLoopStartEvent — Start (or idempotently keep) the retained, id-keyed audio loop `id` from catalog `sound`, optionally anchored at world `at`. Restarting with the same `sound` does not restart the source (no click); a different `sound` replaces it. Drives RPM-pitched engine loops and slip-scaled tire squeal (#1051).
 - `AudioLoopStopEvent` (interface): interface AudioLoopStopEvent — Stop and dispose the retained loop `id`; an unknown `id` is ignored (#1051).
@@ -474,7 +475,7 @@
 - `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
 - `EmotePlayedEvent` (interface): interface EmotePlayedEvent — ⚠ undocumented
-- `EntityAnimationEvent` (interface): interface EntityAnimationEvent — Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state.
+- `EntityAnimationEvent` (interface): interface EntityAnimationEvent — Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. With an `animation.graph`, `event` arms the trigger of that name.
 - `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
 - `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
 - `FormChangedEvent` (interface): interface FormChangedEvent — ⚠ undocumented

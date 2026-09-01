@@ -1,3 +1,4 @@
+import type { AnimGraph } from "../anim/animGraph";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
@@ -148,6 +149,14 @@ export interface ModelAnimationConfig {
    * `string[]` picks a random variant per trigger. `death` clamps on its final frame instead of returning.
    */
   oneShots?: Record<string, string | readonly string[]>;
+  /**
+   * A full animation graph (`@jgengine/core/anim/animGraph`) — layered state machine with blend trees, data
+   * transitions, triggers, and clip events. Takes over from `states`/`oneShots` when set: the shell feeds the
+   * entity's smoothed ground speed as the `speed` parameter plus anything under the entity blackboard key
+   * `ANIM_PARAMS_KEY`, arms triggers from `entity.animation` (`hit` and `death` from their combat events), and
+   * emits `animation.event` for clip events. `locomotionGraph()` builds the default idle/walk/run graph.
+   */
+  graph?: AnimGraph;
 }
 
 /**
