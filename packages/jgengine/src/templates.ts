@@ -26,7 +26,7 @@ import {
   worldTs,
 } from "./templates/gameFiles";
 import { GAME_ID_PATTERN } from "./templates/names";
-import type { TemplateFile, TemplateOptions } from "./templates/types";
+import type { EditorSceneDoc, TemplateFile, TemplateOptions } from "./templates/types";
 
 export { editorScaffold } from "./templates/editorWorkspace";
 export { IN_REPO_TSCONFIG_PATHS } from "./templates/gameFiles";
@@ -57,8 +57,10 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   if (!GAME_ID_PATTERN.test(id)) {
     throw new Error(`game id "${id}" must be kebab-case: lowercase letters, digits, dashes, starting with a letter`);
   }
-  const sceneContents = scene ? `${JSON.stringify(scene, null, 2)}\n` : editorSceneJson;
-  const sceneTest = scene ? editorLayersTestFor(scene) : editorLayersTest;
+  const emptyScene: EditorSceneDoc = { version: 1, markers: [{ id: "player_spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } }] };
+  const sceneDoc = scene ?? (options.sceneMode === "starter" ? undefined : emptyScene);
+  const sceneContents = sceneDoc ? `${JSON.stringify(sceneDoc, null, 2)}\n` : editorSceneJson;
+  const sceneTest = sceneDoc ? (scene ? editorLayersTestFor(scene) : editorLayersTestFor(emptyScene)) : editorLayersTest;
   return [
     { path: "index.html", contents: indexHtml(name) },
     { path: "vite.config.ts", contents: viteConfig(variant) },
@@ -88,9 +90,9 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "src/loop.ts", contents: loopTs(editor) },
     ...(world
       ? [
-          { path: "src/world.ts", contents: worldTs(id) },
+          { path: "src/world.ts", contents: worldTs(id, options.ground) },
           { path: "src/game/assets.ts", contents: gameAssetsTs },
-          { path: "src/game/models.ts", contents: gameModelsTs },
+    { path: "src/game/models.ts", contents: gameModelsTs(options.player) },
         ]
       : []),
     { path: "src/game/ui/GameUI.tsx", contents: gameUiTsx(id, name, editor) },

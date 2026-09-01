@@ -14,7 +14,7 @@ import {
 
 function render(
   variant: "standalone" | "in-repo",
-  options?: { world?: boolean; editor?: boolean },
+  options?: { world?: boolean; editor?: boolean; player?: string; ground?: "flat" | "terrain"; sceneMode?: "empty" | "starter" },
 ): TemplateFile[] {
   return gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.8.0", ...options });
 }
@@ -35,6 +35,7 @@ const THIN_FILES = [
   "scripts/shoot.mjs",
   "scripts/drive.mjs",
   "AGENTS.md",
+  "src/art-direction.md",
   "src/index.css",
   "src/style.css",
   "src/main.tsx",
@@ -76,7 +77,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       for (const entry of srcEntries) {
         const top = entry.split("/")[0]!;
         const nested = entry.includes("/");
-        expect(isAllowedGameSrcEntry(top, nested)).toBe(true);
+        expect(top === "art-direction.md" || isAllowedGameSrcEntry(top, nested)).toBe(true);
       }
     });
 
@@ -203,7 +204,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
         markers: { kind: string; catalogId?: string }[];
       };
       expect(scene.markers.some((marker) => marker.kind === "player_spawn")).toBe(true);
-      expect(scene.markers.some((marker) => marker.catalogId !== undefined)).toBe(true);
+      expect(scene.markers.some((marker) => marker.catalogId !== undefined)).toBe(false);
       expect(fileOf(files, "src/editorLayers.ts")).toContain("normalizeEditorLayers");
       expect(fileOf(files, "src/game.config.ts")).toContain("editorLayers,");
       expect(fileOf(files, "src/index.tsx")).toContain("editorLayers");
@@ -211,8 +212,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(fileOf(files, "src/index.css")).toContain('@import "./style.css"');
     });
 
-    test(`${variant}: scaffold authors a zero-code "reach the goal to win" via systems`, () => {
-      const files = render(variant);
+    test(`${variant}: starter scaffold authors a zero-code "reach the goal to win" via systems`, () => {
+      const files = render(variant, { sceneMode: "starter" });
       const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
         markers: { kind: string; meta?: { on?: string; action?: string } }[];
       };
@@ -237,7 +238,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     }
     const worldFile = fileOf(files, "src/world.ts");
     expect(worldFile).toContain("place(");
-    expect(worldFile).toContain('mode: "flat"');
+    expect(worldFile).toContain('mode: "terrain"');
     expect(worldFile).toContain("x: Infinity");
     expect(worldFile).not.toContain("environment(");
     expect(worldFile).not.toContain("sky(");
@@ -263,6 +264,15 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(fileOf(files, "src/game/ui/GameUI.tsx")).not.toContain("outcome");
     // No editor summon → no editor dep → drop its @source so Tailwind isn't pointed at a missing package.
     expect(fileOf(files, "src/index.css")).not.toContain("@jgengine/editor");
+  });
+
+  test("scene, ground, and player options customize generated files", () => {
+    const files = render("standalone", { sceneMode: "starter", ground: "flat", player: "asset:hero" });
+    const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as { markers: { catalogId?: string; kind: string }[] };
+    expect(scene.markers.some((marker) => marker.catalogId !== undefined)).toBe(true);
+    expect(scene.markers.some((marker) => marker.kind === "goal")).toBe(true);
+    expect(fileOf(files, "src/world.ts")).toContain('mode: "flat"');
+    expect(fileOf(files, "src/game/models.ts")).toContain('model: "asset:hero"');
   });
 
   test("templates carry the gameKit-first agent onboarding", () => {

@@ -31,6 +31,9 @@ export interface TemplateOptions {
   world?: boolean;
   /** Ship the authored scene document + editor wiring. Default true; `create --no-editor` drops it. */
   editor?: boolean;
+  player?: string;
+  ground?: "flat" | "terrain";
+  sceneMode?: "empty" | "starter";
 }
 
 export interface TemplateFile {

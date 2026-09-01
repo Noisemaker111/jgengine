@@ -28,6 +28,8 @@ between (`--json` for structured output).
 
 ### Changed
 
+- `jgengine create` now accepts `--player`, `--ground`, and `--scene` so generated games can choose their model, terrain ground, and empty or starter scene.
+
 - **Directional shadow frustum config actually reaches the GPU.** `shadowCameraSize` on a single (non-cascaded) shadow light was silently inert: the shell wrote the bounds through R3F pierced props and nothing refreshed the shadow camera's projection matrix, so three rendered depth with its default ~10-unit box at the world origin — the reason no open-world game had cast shadows away from spawn. The shell now syncs the projection (and reallocates the shadow map when `shadowMapSize` changes). `bloom.threshold`'s doc also now states it measures raw HDR before the exposure stage.
 - **CSM (`cascades > 1`) no longer over-lights streamed meshes or clobbers material shaders.** Cascade scoping is injected per material, but the scan ran every 30 frames, so a model that streamed in rendered lit by every cascade light at once (a cascades× sun) until the next scan — a sub-second flash on desktop, the whole shot on capture rigs. The scan now runs every frame behind a WeakSet, and `setupMaterial` chains with a material's own `onBeforeCompile` (rim light, detail maps) instead of replacing it.
 
