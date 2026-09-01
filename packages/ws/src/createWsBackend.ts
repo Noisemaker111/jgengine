@@ -456,6 +456,17 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         onChange(data as Parameters<typeof onChange>[0]),
       );
     },
+    requestServerBaseline(serverId) {
+      const subscription = subscriptions.get(subscriptionKey("server", serverId));
+      if (subscription === undefined) return;
+      void request((id) => ({
+        v: 1,
+        t: "subscribe",
+        id,
+        channel: "server",
+        serverId,
+      })).catch(() => undefined);
+    },
   };
 
   const poseGates = new Map<string, ReturnType<typeof createPoseSyncGate>>();

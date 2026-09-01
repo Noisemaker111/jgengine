@@ -1,5 +1,6 @@
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { GameRuntimeFeeds } from "@jgengine/core/runtime/transport";
+import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
 import { createWorldMirror } from "@jgengine/core/runtime/worldMirror";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
 
@@ -12,15 +13,31 @@ import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
   * @internal
   */
 export function attachWorldSync(
-  feeds: Pick<GameRuntimeFeeds, "subscribeServer">,
+  feeds: Pick<GameRuntimeFeeds, "subscribeServer" | "requestServerBaseline">,
   serverId: string,
   ctx: Pick<GameContext, "hydrate">,
 ): () => void {
   const mirror = createWorldMirror(ctx);
   return feeds.subscribeServer(serverId, (view) => {
     if (view === null) return;
-    const snapshot = view.serverState as WorldSnapshot | null | undefined;
-    if (snapshot === null || snapshot === undefined) return;
-    mirror.applyBaseline(view.revision, snapshot);
+    const frame = view.serverState as WorldSyncFrame | WorldSnapshot | null | undefined;
+    if (frame === null || frame === undefined) return;
+    if (isWorldSyncFrame(frame)) {
+      if (frame.kind === "baseline") mirror.applyBaseline(frame.revision, frame.snapshot);
+      else {
+        mirror.applyDiff(frame.diff);
+        if (mirror.needsResync()) feeds.requestServerBaseline?.(serverId);
+      }
+      return;
+    }
+    mirror.applyBaseline(view.revision, frame as WorldSnapshot);
   });
+}
+
+function isWorldSyncFrame(value: WorldSyncFrame | WorldSnapshot): value is WorldSyncFrame {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value.kind === "baseline" || value.kind === "diff")
+  );
 }

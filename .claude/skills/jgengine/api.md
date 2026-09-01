@@ -512,7 +512,7 @@
 - `GameRuntimeFeedView` (type): type GameRuntimeFeedView = { action: string; entries: unknown[]; } — ⚠ undocumented
 - `GameRuntimeFeeds` (type): type GameRuntimeFeeds = { subscribeServer: ( serverId: string, onChange: (view: GameRuntimeServerView | null) => void, ) => FeedUnsubscribe; subscribePlayer: ( args: { serverId: string }, onChange: (view: GameRuntimePlayerView | null) => void, ) => FeedUnsubscribe; subscribeFeed: ( args: { serverId:… — ⚠ undocumented
 - `GameRuntimePlayerView` (type): type GameRuntimePlayerView = { userId: string; gameId: string; playerState: unknown; updatedAt: number; } — ⚠ undocumented
-- `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown; updatedAt: number; } — ⚠ undocumented
+- `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown | WorldSyncFrame; updatedAt: number; } — ⚠ undocumented
 - `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string }) => Promise<JoinServerResult>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented
 - `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; } — ⚠ undocumented
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
@@ -521,6 +521,7 @@
 - `PresenceSync` (type): type PresenceSync = { subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe; syncPose: (serverId: string, pose: PlayerPose) => void; } — ⚠ undocumented
 - `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented
 - `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
+- `WorldSyncFrame` (type): type WorldSyncFrame = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; revision: number; diff: WorldDiff } — A revision-stamped world baseline or compact diff sent to a server-authoritative client.
 
 ## @jgengine/core/runtime/visibility
 

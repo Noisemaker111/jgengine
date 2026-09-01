@@ -1,6 +1,13 @@
 import type { ChatSync } from "../multiplayer/chatContract";
 import type { PlayerPose } from "../multiplayer/poseSyncGate";
 import type { PresenceTransport } from "../multiplayer/presenceContract";
+import type { WorldDiff } from "./worldReplication";
+import type { WorldSnapshot } from "./worldSnapshot";
+
+/** A revision-stamped world baseline or compact diff sent to a server-authoritative client. */
+export type WorldSyncFrame =
+  | { kind: "baseline"; revision: number; snapshot: WorldSnapshot }
+  | { kind: "diff"; revision: number; diff: WorldDiff };
 
 export type JoinServerResult = {
   serverId: string;
@@ -22,7 +29,7 @@ export type GameRuntimeServerView = {
   gameId: string;
   revision: number;
   memberUserIds: string[];
-  serverState: unknown;
+  serverState: unknown | WorldSyncFrame;
   updatedAt: number;
 };
 
@@ -59,6 +66,7 @@ export type GameRuntimeFeeds = {
     args: { serverId: string; action: string },
     onChange: (view: GameRuntimeFeedView) => void,
   ) => FeedUnsubscribe;
+  requestServerBaseline?: (serverId: string) => void;
 };
 
 export type GameBackend<

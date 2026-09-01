@@ -9,6 +9,8 @@ import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
  * growing a per-feature branch.
  */
 export interface ReplicationPolicy {
+  /** Decimal places used for replicated positions and angles. */
+  quantize?: { position?: number; angle?: number };
   /**
    * Replicate each player's private per-user state (inventory) only to that player — other viewers
    * receive none of it. Off by default so existing games keep broadcasting every player's state.
@@ -27,7 +29,23 @@ export interface ReplicationPolicy {
  */
 export function policyProjectsViewers(policy: ReplicationPolicy | undefined): boolean {
   if (policy === undefined) return false;
-  return policy.privatePerUser === true || policy.aoiRadius !== undefined;
+  return policy.privatePerUser === true || policy.aoiRadius !== undefined || policy.quantize !== undefined;
+}
+
+/** Quantize replicated entity poses according to a host projection policy.
+ * @internal host projection plumbing
+ */
+export function quantizeWorldForReplication(world: WorldSnapshot, policy: ReplicationPolicy | undefined): WorldSnapshot {
+  if (policy?.quantize?.position === undefined && policy?.quantize?.angle === undefined) return world;
+  const digits = (value: number, places: number | undefined) => places === undefined ? value : Number(value.toFixed(Math.max(0, places)));
+  const entities = (world["entities"] as readonly SceneEntity[] | undefined)?.map((entity) => ({
+    ...entity,
+    position: entity.position.map((value) => digits(value, policy.quantize?.position)) as unknown as EntityPosition,
+    rotationY: digits(entity.rotationY, policy.quantize?.angle),
+    rotationX: digits(entity.rotationX, policy.quantize?.angle),
+    rotationZ: digits(entity.rotationZ, policy.quantize?.angle),
+  }));
+  return entities === undefined ? world : { ...world, entities };
 }
 
 function distanceSquared(a: EntityPosition, b: EntityPosition): number {
