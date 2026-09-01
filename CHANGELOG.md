@@ -20,6 +20,7 @@ between (`--json` for structured output).
 ### Added
 
 - `src/art-direction.md` scaffold and `check-art-direction` gate for created games.
+- Shared GLTF loader configuration for Draco and KTX2-compressed assets, with CDN defaults and renderer capability detection.
 
 ### Migrate
 

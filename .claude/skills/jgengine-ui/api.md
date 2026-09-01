@@ -2198,6 +2198,9 @@
 
 ## @jgengine/shell/render/modelLoad
 
+- `ModelLoaderConfig` (interface): interface ModelLoaderConfig — CDN-backed decoder configuration for compressed model and texture assets.
+- `configureModelLoaders` (function): function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> — Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops.
+- `detectKtx2Support` (function): function detectKtx2Support(renderer: THREE.WebGLRenderer): void — Detects GPU support for the configured KTX2 transcoder after a renderer exists.
 - `modelLoadFallbacks` (function): function modelLoadFallbacks(): readonly { url: string; message: string }[] — Every model the shared loader diagnosed as broken and replaced with a magenta placeholder, in load order.
 - `modelLoadIdleMs` (function): function modelLoadIdleMs(): number — How long the shared GLB loader has been idle, in ms — `0` while any model is still in flight. A capture host reads this to wait for streaming to finish instead of guessing a settle delay: models that pop in after the shot are why an establishing capture used to come back half-empty until someone hand-tuned `--settle`.
 
