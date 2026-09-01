@@ -9,7 +9,7 @@ import {
   textureErrorsSnapshot,
 } from "@jgengine/core/devtools/textureErrors";
 
-import { createFallbackModel, handleModelLoadFailure, probeModelUrl, recordManagerLoadError } from "./modelLoad";
+import { configureModelLoaders, createFallbackModel, handleModelLoadFailure, probeModelUrl, recordManagerLoadError } from "./modelLoad";
 
 function stubResponse(body: Uint8Array, init: { status?: number; contentType?: string; statusText?: string }): Response {
   return new Response(body, {
@@ -72,6 +72,16 @@ describe("probeModelUrl", () => {
     );
     expect(diagnosis.kind).toBe("missing");
     expect(diagnosis.ok).toBe(false);
+  });
+});
+
+describe("configureModelLoaders", () => {
+  test("is idempotent and stores decoder paths", () => {
+    const options = { dracoDecoderPath: "/draco/", ktx2TranscoderPath: "/basis/" };
+    const first = configureModelLoaders(options);
+    const second = configureModelLoaders(options);
+    expect(first).toEqual(options);
+    expect(second).toBe(first);
   });
 });
 

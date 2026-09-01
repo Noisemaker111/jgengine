@@ -88,6 +88,7 @@ import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "./CombatPresentation";
 import { WorldParticles } from "./world/WorldParticles";
+import { detectKtx2Support } from "./render/modelLoad";
 import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,
@@ -179,6 +180,7 @@ export function Shell3dPresentation({
   onPosterSettled: () => void;
 }) {
   const GameUI = playable.GameUI;
+  const ktx2SupportDetected = useRef(false);
   const WorldOverlay = playable.WorldOverlay;
   const pointerService = useMemo(() => createPointerService(), []);
   const selection = useMemo(() => createSelectionSet(), [playable]);
@@ -464,6 +466,11 @@ export function Shell3dPresentation({
           >
             <GameViewportProvider platforms={playable.platforms}>
               <Canvas
+                onCreated={({ gl }) => {
+                  if (ktx2SupportDetected.current) return;
+                  ktx2SupportDetected.current = true;
+                  detectKtx2Support(gl);
+                }}
                 frameloop={poster && posterFrozen ? "demand" : "always"}
                 orthographic={orthographic}
                 camera={
