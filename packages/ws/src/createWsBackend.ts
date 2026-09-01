@@ -246,6 +246,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       }
       return;
     }
+    if (message.t === "pong") return;
 
     const key = subscriptionKey(
       message.channel,

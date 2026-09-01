@@ -558,7 +558,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     try {
       switch (message.t) {
         case "ping":
-          connection.send(encodeWsMessage({ v: 1, t: "pong", id: message.id, at: message.at, serverAt: Date.now() }));
+          send(connection, { v: 1, t: "pong", id: message.id, at: message.at, serverAt: now() });
           break;
         case "join": {
           if (!(await gate(connection, message.id, "join", { serverId: message.serverId }))) return;
