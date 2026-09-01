@@ -9,6 +9,7 @@ import type { ModelAssetRef } from "../scene/assetCatalog";
 import { advanceBehaviors } from "../scene/behaviorRuntime";
 import { createGameContext, type GameContext, type GameContextContent, type GameContextModels } from "./gameContext";
 import type { InputSnapshot } from "./inputSnapshot";
+import { createContextSimSnapshot, type SimSnapshot } from "./simSnapshot";
 
 /** One step's worth of player intent handed to {@link HeadlessRunner.step} — the held-action set and pointer state the shell would otherwise publish from the browser each frame. */
 export interface HeadlessInput {
@@ -82,6 +83,11 @@ export interface HeadlessRunner {
   publishInput(input: HeadlessInput): void;
   /** Drive the game's own UI commands / intents headlessly — the same registry `ctx.game.commands` and the shell's command sink dispatch into. No renderer, no pointer simulation: dispatch an intent, then read reactive state off `ctx`. */
   readonly ui: HeadlessCommandInterface;
+  /** Capture the whole simulation (world, clock, loop, rng cursor) for {@link restore}; with a fixed `simulation.hz` and recorded input, replaying from it reproduces the run exactly. */
+  snapshot(): SimSnapshot;
+  restore(snapshot: SimSnapshot): void;
+  /** Current simulation tick (`ctx.sim.tick()`). */
+  tick(): number;
 }
 
 export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(
@@ -102,6 +108,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
 
   loop?.onInit?.(ctx);
   loop?.onNewPlayer?.(ctx);
+  const simSnapshot = createContextSimSnapshot(ctx);
 
   const tuning: PlayerMovementTuning | null =
     options.playerMovement === true
@@ -139,21 +146,33 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
     step(dtSeconds, input) {
       if (input !== undefined) publishInput(input);
       const dt = Math.min(dtSeconds, maxStep);
-      const gameDt = ctx.time.advance(dt);
-      if (tuning !== null) {
-        stepPlayerMovement(
-          ctx,
-          player.userId,
-          { held: ctx.input.held(), pointer: ctx.input.pointer() },
-          dt,
-          tuning,
-          options.heading,
-          options.pitch,
-        );
-      }
-      loop?.onTick?.(ctx, gameDt);
-      advanceBehaviors(ctx, gameDt);
-      return gameDt;
+      let total = 0;
+      ctx.sim.advance(dt, (stepDt) => {
+        const gameDt = ctx.time.advance(stepDt);
+        total += gameDt;
+        ctx.sim.runStages("beforeMovement", stepDt);
+        if (tuning !== null) {
+          stepPlayerMovement(
+            ctx,
+            player.userId,
+            { held: ctx.input.held(), pointer: ctx.input.pointer() },
+            stepDt,
+            tuning,
+            options.heading,
+            options.pitch,
+          );
+        }
+        ctx.sim.runStages("afterMovement", stepDt);
+        loop?.onTick?.(ctx, gameDt);
+        advanceBehaviors(ctx, gameDt);
+        ctx.sim.runStages("afterTick", stepDt);
+      });
+      return total;
     },
+    snapshot: () => simSnapshot.capture(),
+    restore(snapshot) {
+      simSnapshot.restore(snapshot);
+    },
+    tick: () => ctx.sim.tick(),
   };
 }

@@ -66,6 +66,7 @@ import type { SnapshotModule, SnapshotViewer, WorldSnapshot } from "./worldSnaps
 import type { ReplicationPolicy } from "./worldProjection";
 import type { RuntimeSave, RuntimeSaveOptions } from "./runtimeSave";
 import type { SimClock } from "../time/simClock";
+import type { SimContext } from "./simContext";
 import type { TurnLoop, TurnLoopConfig } from "../turn/turnLoop";
 import type { RaceState, RaceStateConfig } from "../game/race";
 import type { CameraDirector } from "./cameraDirector";
@@ -555,6 +556,8 @@ export interface GameContext {
     weapon: WeaponStats;
   };
   time: SimClock;
+  /** The simulation stepper (fixed or variable) every driver advances through, plus render-side pose interpolation and per-step stages. */
+  sim: SimContext;
   /** Runtime camera-follow/cinematic override (#196.2); the shell reads `followedEntityId()` each frame. */
   camera: CameraDirector;
   /** Particle VFX seam (#1659): queue bursts / standing emitters as data; the shell renders them quality-capped. */

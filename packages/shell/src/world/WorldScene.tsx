@@ -23,7 +23,8 @@ import { MeasuredBoundsGroup } from "../render/measureBounds";
 import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
 import { resolveModel, resolveEntityModel, tryResolveCatalogModel } from "../render/resolveModel";
 import { useRenderVisibility } from "../visibility/CullingProvider";
-import { writeEntityPose } from "./entityPose";
+import { writeEntityPose, writeRenderPose } from "./entityPose";
+import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "../pointer/pointerService";
 
 const GROUND_SIZE = 160;
@@ -56,12 +57,13 @@ function EntityMarker({
   const name = entity.name;
   const color = isLocal ? "#4ade80" : role === "npc" ? colorFromId(name) : "#9ca3af";
 
+  const scratchRef = useRef<RenderPose>([0, 0, 0, 0]);
   useFrame(() => {
     const group = groupRef.current;
     if (group === null) return;
     const live = ctx.scene.entity.get(entityId);
     if (live === null) return;
-    writeEntityPose(group, live);
+    writeRenderPose(group, ctx, entityId, live, scratchRef.current);
     group.visible = live.hidden !== true && visibleRef.current(entityId);
   });
 

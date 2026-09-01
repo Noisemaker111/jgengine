@@ -132,7 +132,12 @@ export function FrameDriver({
     }
     const sendInput = () => {
       if (!serverAuthoritative) return;
-      const frame: InputFrame = { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() };
+      const frame: InputFrame = {
+        held: ctx.input.held(),
+        pointer: ctx.input.pointer(),
+        analog: ctx.input.analog(),
+        tick: ctx.sim.tick(),
+      };
       const last = lastSentInputRef.current;
       if (last !== null && inputFramesEqual(last, frame)) return;
       lastSentInputRef.current = frame;
@@ -148,7 +153,6 @@ export function FrameDriver({
     try {
     let endPhase = devtools.profile.begin("time+input");
     const dt = Math.min(rawDt, 0.05);
-    const gameDt = ctx.time.advance(dt);
     ctx.input.publish(heldActionsFor(tracker, inputActions));
     ctx.input.publishPointer(pointerAxisRef.current);
     ctx.input.publishAnalog(analogRef.current);
@@ -158,37 +162,43 @@ export function FrameDriver({
     endPhase();
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
-    const player = ctx.scene.entity.get(playerId);
-    if (player !== null && drivesPose && !serverAuthoritative) {
-      endPhase = devtools.profile.begin("pose");
-      stepPlayerMovement(
-        ctx,
-        ctx.player.userId,
-        { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() },
-        rawDt,
-        movementTuning,
-        yawRef.current,
-        pitchRef.current,
-      );
-      endPhase();
-    }
-
-    if (autoPickupRadius !== null && !serverAuthoritative) {
-      endPhase = devtools.profile.begin("pickup");
-      const self = ctx.scene.entity.get(playerId);
-      if (self !== null) {
-        const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
-        if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
+    ctx.sim.advance(dt, (stepDt) => {
+      const gameDt = ctx.time.advance(stepDt);
+      ctx.sim.runStages("beforeMovement", stepDt);
+      const player = ctx.scene.entity.get(playerId);
+      if (player !== null && drivesPose && !serverAuthoritative) {
+        const endPose = devtools.profile.begin("pose");
+        stepPlayerMovement(
+          ctx,
+          ctx.player.userId,
+          { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() },
+          stepDt,
+          movementTuning,
+          yawRef.current,
+          pitchRef.current,
+        );
+        endPose();
       }
-      endPhase();
-    }
+      ctx.sim.runStages("afterMovement", stepDt);
 
-    if (!serverAuthoritative) {
-      devtools.profile.measure("onTick", () => {
-        playable.loop.onTick(ctx, gameDt);
-      });
-      advanceBehaviors(ctx, gameDt);
-    }
+      if (autoPickupRadius !== null && !serverAuthoritative) {
+        const endPickup = devtools.profile.begin("pickup");
+        const self = ctx.scene.entity.get(playerId);
+        if (self !== null) {
+          const nearest = ctx.scene.worldItem.nearestInRadius(self.position, autoPickupRadius);
+          if (nearest !== null) ctx.scene.worldItem.pickup(nearest, ctx.player.userId);
+        }
+        endPickup();
+      }
+
+      if (!serverAuthoritative) {
+        devtools.profile.measure("onTick", () => {
+          playable.loop.onTick(ctx, gameDt);
+        });
+        advanceBehaviors(ctx, gameDt);
+      }
+      ctx.sim.runStages("afterTick", stepDt);
+    });
 
     endPhase = devtools.profile.begin("actions");
     if (tracker.wasPressed("tabTarget")) {

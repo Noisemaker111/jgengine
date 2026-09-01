@@ -14,6 +14,7 @@ import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../sc
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
 import type { StoreHandle } from "../store/defineStore";
 import type { TimeConfig } from "../time/simClock";
+import type { SimulationConfig } from "../runtime/simLoop";
 import type { WorldFeature } from "../world/features";
 import { resolveWorldPhysics } from "../world/place";
 
@@ -215,6 +216,8 @@ export interface GameDefinition<
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */
   time?: TimeConfig;
+  /** How the simulation is stepped — a fixed `hz` with render interpolation, or `"variable"` (default) once per frame. Exposed as `ctx.sim`. */
+  simulation?: SimulationConfig;
   /** Per-action ring-buffer capacity for `ctx.game.feed`. Default 20. */
   feed?: GameFeedOptions;
   inventories?: Record<string, InventoryDeclaration>;

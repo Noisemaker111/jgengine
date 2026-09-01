@@ -123,8 +123,13 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       return ctx.game.commands.runAs(userId, name, input);
     },
     tick(dt) {
-      loop.onTick?.(ctx, dt);
-      advanceBehaviors(ctx, dt);
+      ctx.sim.advance(dt, (stepDt) => {
+        ctx.sim.runStages("beforeMovement", stepDt);
+        ctx.sim.runStages("afterMovement", stepDt);
+        loop.onTick?.(ctx, stepDt);
+        advanceBehaviors(ctx, stepDt);
+        ctx.sim.runStages("afterTick", stepDt);
+      });
       syncLifecyclePhase(ctx, definition.lifecycle);
       return replicator.commit();
     },
