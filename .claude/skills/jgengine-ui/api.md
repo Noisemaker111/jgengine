@@ -2204,6 +2204,7 @@
 ## @jgengine/shell/render/modelRender
 
 - `MaterialCache` (interface): interface MaterialCache — ⚠ undocumented
+- `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`.
 - `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — ⚠ undocumented
 - `PaintCanvas` (interface): interface PaintCanvas — ⚠ undocumented
 
