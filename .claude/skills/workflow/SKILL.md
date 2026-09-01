@@ -38,7 +38,7 @@ Implement the underlying seam and update the owning skill/reference plus generat
 
 ## Verify
 
-Run checks proportional to risk while iterating. Before shipping, run supported generators, then `bun run gate`. Immediately before commit/push, run `bun run ship:preflight`. Use `jgengine-verify` for scene, UI, or gameplay evidence.
+Run checks proportional to risk while iterating. Before shipping, run supported generators, then `bun run gate`. Immediately before commit/push, run `bun run ship:preflight`. Use `jgengine-verify` for scene, UI, or gameplay evidence. PRs touching a rendered surface include the ten-category visual scorecard table.
 
 Inspect `git status`, the full diff, and acceptance criteria before staging. Stage only the intended files and commit once the cohesive change is complete.
 
@@ -55,4 +55,3 @@ Enable auto-merge only in the `Noisemaker111` repo — the user never merges by 
 When the user does ask for a release, it is one command: `bun run release` (`--dry-run` to preview) bumps every package, cuts `## [Unreleased]` into the new version section with the lockstep Migrate bullet, mirrors the notes into the typed `CHANGELOG` export, and regenerates `api.md`. Do not hand-assemble those edits or narrate them — run it, skim the diff, commit as `Release <version>`, push, open the PR.
 
 Restarting a branch whose PR already squash-merged (its remote branch auto-deleted): run `git fetch --prune` before pushing again. Without it, `git push --force-with-lease` rejects with `stale info` and the branch has no remote ref to compare against — start the follow-up from a fresh branch off current `origin/main` rather than the parked one.
-

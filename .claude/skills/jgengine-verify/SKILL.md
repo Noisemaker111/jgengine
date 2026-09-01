@@ -52,6 +52,8 @@ When a game is reported slow, play it and pull the debug menu's perf data instea
 
 ## Visual proof
 
+For any PR that touches a rendered surface, include the ten-category table from [references/visual-scorecard.md](references/visual-scorecard.md) with the inspected evidence.
+
 **Created standalone game (outside the monorepo):** run `bun run shoot` (or `node scripts/shoot.mjs`, shipped in the scaffold), or `npx jgengine shoot` — the CLI verb finds the project and runs the same capture, so it works even in an older scaffold whose `scripts/` were never added or were removed (it then materializes the bundled harness). It starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at R3F's 300×150 default, waits for an honest frame, and captures headless to `shots/shot.png` — no daemon, no npm deps (Chrome/Chromium is the only capture engine; set `CHROME_PATH` if it is not auto-detected). Flags: `--device desktop|mobile|mobile-landscape`, `--url`, `--out`, `--settle`, `--timeout`; `--help` for all. For shots that need play first (menus clicked through, keys held, RPC state set up), use `bun run drive` (or `npx jgengine drive`) with `--shot` steps instead of scripting a browser by hand. The daemon workflow below is the richer engine-monorepo path; the single-shot scripts are the portable rungs the created game ships.
 
 Inside the engine monorepo, use one managed capture session for an iteration loop:
