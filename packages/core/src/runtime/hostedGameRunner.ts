@@ -7,6 +7,7 @@ import { createGameContext, type GameContext, type GameContextContent, type Game
 import { type InputFrame } from "./inputSnapshot";
 import { serverStep } from "../movement/serverStep";
 import { resolvePlayerMovementTuning } from "../movement/playerMovement";
+import { createInputRecorder, type InputRecorder } from "./inputRecorder";
 import { createWorldReplicator, type WorldDiff } from "./worldReplication";
 import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 
@@ -79,7 +80,8 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     worldVersion: () => ctx.replicationVersion(),
   });
   const members = new Map<string, LoopPlayer>();
-  const inputs = new Map<string, InputFrame>();
+  const inputs = new Map<string, InputRecorder>();
+  const latestInputs = new Map<string, InputFrame>();
   const movementTuning = resolvePlayerMovementTuning({ world: definition.world, physics: definition.physics });
   const inputSeq = new Map<string, number>();
   let hostTick = 0;
@@ -106,6 +108,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       if (player === undefined) return;
       members.delete(userId);
       inputs.delete(userId);
+      latestInputs.delete(userId);
       inputSeq.delete(userId);
       loop.onPlayerLeave?.(ctx, player);
       ctx.game.players?.leave(userId);
@@ -117,22 +120,31 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
         if (lastSeq !== undefined && seq <= lastSeq) return;
         inputSeq.set(userId, seq);
       }
-      inputs.set(userId, frame);
-      ctx.game.players?.setInput(userId, frame);
+      let recorder = inputs.get(userId);
+      if (recorder === undefined) {
+        recorder = createInputRecorder();
+        inputs.set(userId, recorder);
+      }
+      recorder.record(frame.tick ?? ctx.sim.tick() + 1, frame);
+      latestInputs.set(userId, frame);
     },
     heldInput(userId) {
-      return inputs.get(userId) ?? null;
+      return latestInputs.get(userId) ?? null;
     },
     command(userId, name, input) {
       return ctx.game.commands.runAs(userId, name, input);
     },
     tick(dt) {
       hostTick += 1;
-      ctx.sim.advance(dt, (stepDt) => {
+      ctx.sim.advance(dt, (stepDt, tick) => {
+        for (const [userId, recorder] of inputs) {
+          const frame = recorder.frameAt(tick);
+          if (frame !== null) ctx.game.players?.setInput(userId, frame);
+        }
         ctx.sim.runStages("beforeMovement", stepDt);
         for (const userId of members.keys()) {
-          const frame = inputs.get(userId);
-          if (frame !== undefined) serverStep(ctx, userId, frame, stepDt, movementTuning);
+          const frame = inputs.get(userId)?.frameAt(tick) ?? null;
+          if (frame !== null) serverStep(ctx, userId, frame, stepDt, movementTuning);
         }
         ctx.sim.runStages("afterMovement", stepDt);
         loop.onTick?.(ctx, stepDt);
