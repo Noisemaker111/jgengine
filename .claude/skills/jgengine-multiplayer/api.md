@@ -490,7 +490,7 @@
 - `WorldGameHost` (interface): interface WorldGameHost extends GameHost — A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change.
 - `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.
 - `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
-- `WsBackend` (type): type WsBackend = GameBackend & { pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { gameId: string; code: string }) => Promise<JoinSe… — ⚠ undocumented
+- `WsBackend` (type): type WsBackend = GameBackend & { pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { gameId: string; code: string; role?: "player" | "… — ⚠ undocumented
 - `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutFn?: typeof s… — ⚠ undocumented
 - `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
 - `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
@@ -552,7 +552,7 @@
 
 ## @jgengine/ws/createWsBackend
 
-- `WsBackend` (type): type WsBackend = GameBackend & { pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { gameId: string; code: string }) => Promise<JoinSe… — ⚠ undocumented
+- `WsBackend` (type): type WsBackend = GameBackend & { pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { gameId: string; code: string; role?: "player" | "… — ⚠ undocumented
 - `WsBackendOptions` (type): type WsBackendOptions = { url?: string; pipe?: TransportPipeFactory; userId: string; token?: string; webSocketFactory?: (url: string) => WebSocket; reconnectDelayMs?: number; maxReconnectDelayMs?: number; rpcTimeoutMs?: number; poseTuning?: PoseSyncTuning; now?: () => number; setTimeoutFn?: typeof s… — ⚠ undocumented
 - `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
 - `WsPresenceSync` (type): type WsPresenceSync = { subscribe: (serverId: string, onChange: (rows: WsPresenceRow[]) => void) => () => void; /** `pose.appearance`, when provided, is forwarded to the host as-is and surfaces on every subscriber's presence row for that user. */ syncPose: (serverId: string, pose: WsPose) => void; } — ⚠ undocumented
