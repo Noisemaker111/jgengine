@@ -267,6 +267,11 @@ export interface ModelConfig {
    * rig's bind pose.
    */
   animation?: ModelAnimationConfig | "auto" | "none";
+  /** Optional runtime inverse-kinematics targets for a rigged model. Bone names are resolved on the loaded scene. */
+  ik?: {
+    feet: readonly { root: string; mid: string; tip: string }[];
+    lookAt?: { bone: string };
+  };
   /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
   attachments?: readonly ModelAttachment[];
   /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. Tag parts with a `role` to procedurally animate a rig-less character composition. */
