@@ -3677,3 +3677,13 @@
 - `WindZones` (interface): interface WindZones — Named, discrete wind zones over an ambient field — each zone runs a deterministic `StateSchedule` of wind states, so games get scheduled shifts with advance announcement (`forecastShift` drives the "gale in 12s" countdown) instead of one continuous field.
 - `WindZonesConfig` (interface): interface WindZonesConfig — ⚠ undocumented
 - `createWindZones` (function): function createWindZones(config: WindZonesConfig): WindZones — ⚠ undocumented
+
+## @jgengine/rapier
+
+- `RapierBackendOptions` (interface): interface RapierBackendOptions extends PhysicsBackendConfig — Construction options for the Rapier-backed {@link PhysicsBackend}.
+- `createRapierBackend` (function): function createRapierBackend(options: RapierBackendOptions = {}): Promise<PhysicsBackend> — Create a Rapier-backed {@link PhysicsBackend}; initialization loads Rapier's WASM module asynchronously.
+
+## @jgengine/rapier/rapierBackend
+
+- `RapierBackendOptions` (interface): interface RapierBackendOptions extends PhysicsBackendConfig — Construction options for the Rapier-backed {@link PhysicsBackend}.
+- `createRapierBackend` (function): function createRapierBackend(options: RapierBackendOptions = {}): Promise<PhysicsBackend> — Create a Rapier-backed {@link PhysicsBackend}; initialization loads Rapier's WASM module asynchronously.

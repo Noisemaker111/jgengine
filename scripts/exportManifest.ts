@@ -8,6 +8,7 @@ export const manifestPath = join(repoRoot, "scripts", "export-manifest.json");
 
 export const publishedPackages = [
   "core",
+  "rapier",
   "ws",
   "sql",
   "react",

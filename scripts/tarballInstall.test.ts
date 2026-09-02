@@ -196,6 +196,27 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
     }
   }, 120_000);
 
+  test("@jgengine/rapier resolves its public entry, wildcard rejects unknown subpaths", () => {
+    const { consumer } = installTarballs(["rapier"]);
+    try {
+      const script = [
+        "const module = await import('@jgengine/rapier');",
+        "if (typeof module.createRapierBackend !== 'function') throw new Error('Rapier backend export missing');",
+        "let blocked = false;",
+        "try { await import('@jgengine/rapier/testFixtures'); } catch { blocked = true; }",
+        "if (!blocked) throw new Error('unknown subpath resolved');",
+        "console.log('ok');",
+      ].join("\n");
+      const out = execFileSync("node", ["--input-type=module", "-e", script], {
+        cwd: consumer,
+        encoding: "utf8",
+      });
+      expect(out.trim()).toBe("ok");
+    } finally {
+      rmSync(join(consumer, ".."), { recursive: true, force: true });
+    }
+  }, 120_000);
+
   test("portable marker source and React minimap resolve together from real tarballs", () => {
     const { consumer } = installTarballs(["core", "react"]);
     try {

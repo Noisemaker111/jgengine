@@ -483,6 +483,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `evaluateQteSequence` (function) · `import { evaluateQteSequence } from "@jgengine/core/world"`
 
+## rapier-physics-backend — native capsules, shapecasts, rotation, CCD, joints, and collision queries
+
+- `createRapierBackend` (function) · `import { createRapierBackend } from "@jgengine/rapier"`
+
 ## reputation — faction standing that crosses named reputation tiers
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`

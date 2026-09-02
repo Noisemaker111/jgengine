@@ -538,6 +538,11 @@
     "./world/wind",
     "./world/windZones"
   ],
+  "@jgengine/rapier": [
+    ".",
+    "./index",
+    "./rapierBackend"
+  ],
   "@jgengine/ws": [
     ".",
     "./commandMiddleware",
