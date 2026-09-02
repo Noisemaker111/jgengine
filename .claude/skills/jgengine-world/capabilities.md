@@ -116,6 +116,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `registerBuiltinTriggerActions` (function) · `import { registerBuiltinTriggerActions } from "@jgengine/core/scene/authoredTriggers"`
 - `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/world"`
 
+## behavior-actions — register named callbacks for decision graph behavior descriptors
+
+- `registerBehaviorActions` (function) · `import { registerBehaviorActions } from "@jgengine/core/world"`
+
 ## behavior-control — pause/disable/resume/seek/inspect behavior instances per entity
 
 - `behaviorControl` (function) · `import { behaviorControl } from "@jgengine/core/world"`

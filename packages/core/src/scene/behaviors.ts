@@ -5,6 +5,7 @@ import {
   type ProximityPrompt,
 } from "../interaction/proximityPrompt";
 import type { PathProgress, Waypoint } from "../nav/pathFollow";
+import type { DecisionGraph } from "../ai/decisionGraph";
 
 export interface WanderBehavior {
   kind: "wander";
@@ -37,11 +38,19 @@ export interface PlayerBehavior {
   kind: "player";
 }
 
+/** Decision graph behavior descriptor using a named registered action set. */
+export interface DecisionGraphBehavior {
+  kind: "decisionGraph";
+  graph: DecisionGraph;
+  actions: string;
+}
+
 export type BehaviorDescriptor =
   | WanderBehavior
   | PatrolBehavior
   | PromptableBehavior
-  | PlayerBehavior;
+  | PlayerBehavior
+  | DecisionGraphBehavior;
 
 export function wander({ radius }: { radius: number }): WanderBehavior {
   return { kind: "wander", radius };
