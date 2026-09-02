@@ -11,6 +11,7 @@ import type {
   ShoulderCameraConfig,
   SideScrollCameraConfig,
 } from "@jgengine/core/game/playableGame";
+import { snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { usePlayer } from "@jgengine/react/hooks";
 import { useGameContext } from "@jgengine/react/provider";
@@ -260,6 +261,12 @@ export function SideScrollRig(props: RigProps) {
     };
     followRef.current = follow;
     const pose = resolveSideScrollPose(follow, resolved, config?.fov ?? currentFov(camera));
+    const pixelPerfect = props.config?.projection === "orthographic" ? props.config.pixelPerfect : undefined;
+    if (pixelPerfect !== undefined) {
+      const snapped = snapPixelPerfectPosition(pose.position, pixelPerfect.pixelsPerUnit);
+      pose.position = snapped;
+      pose.lookAt = snapPixelPerfectPosition(pose.lookAt, pixelPerfect.pixelsPerUnit);
+    }
     commit(pose, dt);
   }, CAMERA_RIG_FRAME_PRIORITY);
 

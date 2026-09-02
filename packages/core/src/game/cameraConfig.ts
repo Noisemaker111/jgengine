@@ -53,6 +53,13 @@ export type CameraRigKind =
 /** Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective". */
 export type CameraProjection = "perspective" | "orthographic";
 
+/** Pixel-art orthographic camera tuning. `pixelsPerUnit` is the authored pixel density. */
+export interface PixelPerfectCameraConfig {
+  pixelsPerUnit: number;
+  /** Increase density in whole-number steps to use the largest scale that fits the viewport. */
+  integerScale?: boolean;
+}
+
 /** Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input. */
 export interface SideScrollCameraConfig {
   /** World axis the action travels along; the camera watches from the perpendicular side. Default "x". */
@@ -313,6 +320,8 @@ export interface GameCameraConfig {
   rig?: CameraRigKind;
   /** Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default perspective. */
   projection?: CameraProjection;
+  /** Pixel-perfect orthographic rendering; ignored for perspective cameras. */
+  pixelPerfect?: PixelPerfectCameraConfig;
   /** Render frustum overrides applied to the canvas camera. `far` defaults to 300 — raise it for worlds whose content spans more than a few hundred units, or distant scenery silently clips. `zoom` is the orthographic zoom in canvas pixels per world unit, read only when `projection` is "orthographic"; default 50. */
   frustum?: { fov?: number; near?: number; far?: number; zoom?: number };
   /** Universal player FOV preference (slider + persistence) for perspective rigs. Ignored when `projection` is `"orthographic"`. */
