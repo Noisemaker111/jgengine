@@ -48,6 +48,7 @@ between (`--json` for structured output).
 - Hosted WS sessions now support spectator joins, viewer roles, throttled low-priority snapshot modules, and default command rate limits.
 - `@jgengine/navbake` bakes deterministic navigation meshes and editor documents can store named bake data.
 - Core tactical queries derive cover points and score bounded candidate positions.
+- Added createSnapshotBuffer for delayed snapshot interpolation.
 
 ### Migrate
 
@@ -1082,6 +1083,3 @@ geometry, and React store bindings.
 Baseline release: the eight `@jgengine/*` packages (core, ws, sql, react,
 convex, node, shell, assets) as the first tracked version. No migration —
 this is the floor changelog entries are measured against.
-# Unreleased
-
-- Added `createSnapshotBuffer` for delayed snapshot interpolation.
