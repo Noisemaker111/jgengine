@@ -612,6 +612,8 @@
     "./hudFrame",
     "./hudLayout",
     "./hudLayoutPersist",
+    "./hudSkin",
+    "./hudSkinPreview",
     "./hudTheme",
     "./hudThemePreview",
     "./hudViewport",

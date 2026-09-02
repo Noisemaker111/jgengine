@@ -203,6 +203,7 @@ function BarView({
         height: cssVar("height"),
         border: `${cssVar("frameWidth")} solid ${cssVar("frame")}`,
         background: cssVar("track"),
+        backgroundImage: "var(--jg-bar-skin-track, none)",
         boxShadow: cssVar("bevel"),
         overflow: "hidden",
         boxSizing: "border-box",
@@ -214,7 +215,7 @@ function BarView({
           position: "absolute",
           inset: 0,
           width: `${fraction * 100}%`,
-          background: fill,
+          background: "var(--jg-bar-skin-fill, " + fill + ")",
           transition: "width 160ms ease",
         }}
       />

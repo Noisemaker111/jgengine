@@ -640,6 +640,9 @@
 - `HudLayoutPersist` (type): type HudLayoutPersist = (id: string, panel: EditorUiPanelLayout) => void — Host-owned callback that commits one HUD panel layout into the scene document (typically an undoable `setUiPanel` dispatch). Injected by the editor so product UI never reaches for editor globals.
 - `HudLayoutPersistProvider` (function): function HudLayoutPersistProvider({ onPanelCommit, children, }: { onPanelCommit: HudLayoutPersist; children?: ReactNode; }): React.JSX.Element — Provides {@link HudLayoutPersist} / `onPanelCommit` to descendant `useHudLayout` calls. Mount around game UI when a host can accept document UI patches (editor). Absent provider → canvas moves/resizes are no-ops for document writes.
 - `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
+- `HudSkin` (interface): interface HudSkin — A game-authored visual skin layered over a {@link HudTheme}.
+- `HudSkinMaterial` (interface): interface HudSkinMaterial — Optional raster-backed materials for shared HUD chrome.
+- `HudSkinPreview` (function): function HudSkinPreview({ className }: { className?: string }): React.JSX.Element — Procedural two-skin fixture for visual regression captures.
 - `HudTheme` (interface): interface HudTheme — A full HUD theme. Author one with {@link hudTheme} or {@link deriveHudTheme}.
 - `HudThemeBar` (interface): interface HudThemeBar — Framed-trough tokens shared by every atomic bar.
 - `HudThemeFont` (interface): interface HudThemeFont — Typography roles. Any CSS `font-family` list.
@@ -855,6 +858,7 @@
 - `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
 - `formatTimerMs` (function): function formatTimerMs(ms: number, format: TimerFormat = "mm:ss"): string — Format a millisecond duration as digital timer text — `mm:ss` (default), `m:ss.d` (with tenths), or `ss.d` (seconds + tenths). Negative inputs clamp to zero. No genre meaning: the same helper serves a round clock, a respawn countdown, or an ability charge readout.
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
+- `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
 - `hudTheme` (function): function hudTheme(overrides: HudThemeOverrides): HudTheme — Builds a full {@link HudTheme} from per-group partials, filling the rest from {@link defaultHudTheme}. Reach for this when a game wants to name exact values; use {@link deriveHudTheme} when a seed color pair is enough.
 - `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
@@ -914,6 +918,7 @@
 - `useGameViewportLayout` (function): function useGameViewportLayout(): GameViewportLayout — The live shared viewport layout. Returns a neutral default outside a `GameViewportProvider` so it never throws in previews.
 - `useHasSettings` (function): function useHasSettings(): boolean — True when the game has any setting or game-action to show — gate your own settings entry on it.
 - `useHeldKeys` (function): function useHeldKeys(): (code: string) => boolean — Held-key predicate backed by window keydown/keyup/blur listeners (blur clears held state so a released-off-window key doesn't stick). SSR-safe: listeners attach in an effect, never at module scope. The returned predicate is stable across renders.
+- `useHudFont` (function): function useHudFont(skin?: HudSkin): boolean — Loads a skin font in browsers and reports when it is available.
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
@@ -1307,9 +1312,21 @@
 - `HudLayoutPersistProvider` (function): function HudLayoutPersistProvider({ onPanelCommit, children, }: { onPanelCommit: HudLayoutPersist; children?: ReactNode; }): React.JSX.Element — Provides {@link HudLayoutPersist} / `onPanelCommit` to descendant `useHudLayout` calls. Mount around game UI when a host can accept document UI patches (editor). Absent provider → canvas moves/resizes are no-ops for document writes.
 - `useHudLayoutPersist` (function): function useHudLayoutPersist(): HudLayoutPersist | null — Injected panel-commit port, or `null` when no host has provided one.
 
+## @jgengine/react/hudSkin
+
+- `HudSkin` (interface): interface HudSkin — A game-authored visual skin layered over a {@link HudTheme}.
+- `HudSkinMaterial` (interface): interface HudSkinMaterial — Optional raster-backed materials for shared HUD chrome.
+- `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
+- `useHudFont` (function): function useHudFont(skin?: HudSkin): boolean — Loads a skin font in browsers and reports when it is available.
+
+## @jgengine/react/hudSkinPreview
+
+- `HudSkinPreview` (function): function HudSkinPreview({ className }: { className?: string }): React.JSX.Element — Procedural two-skin fixture for visual regression captures.
+
 ## @jgengine/react/hudTheme
 
 - `HUD_THEME_PRESETS` (const): const HUD_THEME_PRESETS: { "arcane-stone": HudTheme; "survival-wood": HudTheme; "military-flat": HudTheme; "sleek-hex": HudTheme; "elemental-circle": HudTheme; "sandbox-slot": HudTheme; ember: HudTheme; synthwave: HudTheme; fieldkit: HudTheme; } — Built-in theme presets for demos/scaffold only — not product identity; games author their own theme.
+- `HudSkin` (interface): interface HudSkin — A game-authored visual skin layered over a {@link HudTheme}.
 - `HudTheme` (interface): interface HudTheme — A full HUD theme. Author one with {@link hudTheme} or {@link deriveHudTheme}.
 - `HudThemeBar` (interface): interface HudThemeBar — Framed-trough tokens shared by every atomic bar.
 - `HudThemeFont` (interface): interface HudThemeFont — Typography roles. Any CSS `font-family` list.
@@ -1324,6 +1341,7 @@
 - `HudThemeSurface` (interface): interface HudThemeSurface — Chrome surfaces, edges, and text — what panels, overlays, and menus are built out of.
 - `defaultHudTheme` (const): const defaultHudTheme: HudTheme — Default theme tokens for previews/scaffold — not a finished game look; author a custom theme.
 - `deriveHudTheme` (function): function deriveHudTheme(seed: HudThemeSeed): HudTheme — Derives a coherent full theme from an accent/surface pair — shades, edges, dim text, frames, bar troughs, and slots all fall out of the seed, so a game gets one consistent look across the `packages/react` primitives and the `registry/jgengine` blocks without naming 50 tokens. Hex seeds only (`#rgb` or `#rrggbb`).
+- `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
 - `hudTheme` (function): function hudTheme(overrides: HudThemeOverrides): HudTheme — Builds a full {@link HudTheme} from per-group partials, filling the rest from {@link defaultHudTheme}. Reach for this when a game wants to name exact values; use {@link deriveHudTheme} when a seed color pair is enough.
 - `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree.
 - `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
