@@ -5,6 +5,7 @@ import type { WorldFeature } from "@jgengine/core/world/features";
 import { resolveGridInstances } from "@jgengine/core/world/gridInstances";
 
 import { useDisposable } from "../render/useDisposable";
+import { TileLayerRenderer } from "./TileLayerRenderer";
 
 export interface GridWorldSceneProps {
   feature: WorldFeature;
@@ -24,6 +25,9 @@ function isGridWorldFeature(feature: WorldFeature): feature is GridWorldFeature 
  * `cells`, following the same direct-buffer pattern as `InstancedBodies`.
  */
 export function GridWorldScene({ feature }: GridWorldSceneProps) {
+  if (feature.kind === "tilemap" && feature.tileSet !== undefined) {
+    return <TileLayerRenderer config={feature} />;
+  }
   const instances = useMemo(
     () => (isGridWorldFeature(feature) ? resolveGridInstances(feature) : []),
     [feature],

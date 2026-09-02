@@ -4,6 +4,7 @@ import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
 import { SpriteClipPreview } from "./spriteClipPreview";
+import { TileLayerPreview } from "./tileLayerPreview";
 
 /**
  * One entry in the engine preview-fixture registry: a deterministic, engine-level
@@ -55,6 +56,11 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
     name: "SpriteClipPreview",
     description: "A procedurally drawn two-frame atlas driven by the core sprite clip player.",
     component: SpriteClipPreview,
+  },
+  TileLayerPreview: {
+    name: "TileLayerPreview",
+    description: "A procedural 3x3 atlas-backed tile layer preview.",
+    component: TileLayerPreview,
   },
 };
 

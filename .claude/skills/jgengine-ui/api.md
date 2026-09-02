@@ -1656,6 +1656,10 @@
 - `TalentTree` (function): function TalentTree<TStat extends string = string>({ view: viewProp, nodes, tree, onLearn, icon, label, branchLabel, title = "Talents", variation = "themed", nodeSize = 54, columnGap = 30, tierGap = 46, showPoints = true, className, style, }: TalentTreeProps<TStat>): ReactNode — Drop-in talent / skill-tree widget over the existing progression model (`@jgengine/core/game/talents` + its `talentTreeView` selector). The game passes its node definitions and a live `createTalentTree` instance; the widget lays nodes out by branch column and prerequisite-depth tier, draws SVG prerequisite edges, styles each node learned/available/locked/maxed, shows an icon + rank badge, and calls `onLearn(nodeId)` when the player clicks a node that is currently allocatable. All layout, edge-drawing, and eligibility come from the model/selector — the widget never re-derives topology. Unskinned and HudTheme-token driven; node ids/branches are opaque game data the game supplies icons and labels for.
 - `TalentTreeProps` (interface): interface TalentTreeProps<TStat extends string = string> — Props for {@link TalentTree}.
 
+## @jgengine/react/tileLayerPreview
+
+- `TileLayerPreview` (function): function TileLayerPreview({ className }: { className?: string }): React.JSX.Element — Deterministic canvas-backed tile-layer fixture for textured tile presentation evidence.
+
 ## @jgengine/react/timerReadout
 
 - `TimerFormat` (type): type TimerFormat = "mm:ss" | "m:ss.d" | "ss.d" — Digital text format for a timer readout.
@@ -2244,6 +2248,10 @@
 - `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
 - `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
 
+## @jgengine/shell/render/testFixtures/proceduralTileLayer
+
+- `drawProceduralTileLayer` (function): function drawProceduralTileLayer(canvas: CanvasFixture): TilemapWorldConfig — Draw the deterministic tile atlas used by textured tile-layer captures and tests.
+
 ## @jgengine/shell/render/useDisposable
 
 - `Disposable` (interface): interface Disposable — Anything exposing dispose() — three.js geometries, materials, textures, render targets.
@@ -2819,6 +2827,11 @@
 - `SpriteBatchInstance` (interface): interface SpriteBatchInstance — ⚠ undocumented
 - `SpriteBatchProps` (interface): interface SpriteBatchProps — ⚠ undocumented
 
+## @jgengine/shell/world/TileLayerRenderer
+
+- `TileLayerRenderer` (function): function TileLayerRenderer({ config, parallax = [1, 1], pixelated = true }: TileLayerRendererProps): React.JSX.Element | null — Renders a tilemap as one instanced quad mesh with atlas UV rectangles.
+- `TileLayerRendererProps` (interface): interface TileLayerRendererProps — Inputs for the instanced textured tile-layer renderer.
+
 ## @jgengine/shell/world/WorldEntityFrames
 
 - `WorldEntityFrames` (function): function WorldEntityFrames<E extends EntityFrameEntry>({ entries, renderFrame, tickMs = 0, className, anchorTransform, ...layout }: WorldEntityFramesProps<E>): React.JSX.Element — R3F convenience that mounts inside the scene, samples the live camera each frame (throttled by `tickMs`), and renders `@jgengine/react`'s {@link EntityFrames} through a fullscreen `<Html>` overlay. This is the one-line way an R3F game gets overhead enemy nameplates/health bars from its own entity array without a store: pass `entries` + a `renderFrame` that composes the shipped bars. The projection, viewport culling, and stacking come for free.
@@ -2874,6 +2887,11 @@
 - `PingOpacityInput` (interface): interface PingOpacityInput — Inputs to {@link pingOpacity}.
 - `pingBobOffset` (function): function pingBobOffset(elapsedSeconds: number, amplitude = 0.18, speedHz = 1.1): number — Vertical bob offset (world units) for a hovering ping arrow at `elapsedSeconds`.
 - `pingOpacity` (function): function pingOpacity(input: PingOpacityInput): number — Alpha for a world ping in `[0, 1]`: ramps up over `fadeInMs` after it appears and ramps back down over `fadeOutMs` before it expires. Pure math so the lifecycle can be unit-tested without an R3F canvas.
+
+## @jgengine/shell/world/tileLayerInstances
+
+- `TileLayerInstance` (interface): interface TileLayerInstance — One resolved map cell with its world position and atlas UV rectangle.
+- `resolveTileLayerInstances` (function): function resolveTileLayerInstances(config: TilemapWorldConfig): readonly TileLayerInstance[] — Resolve map glyphs to atlas frames and normalized UV rectangles for deterministic tests and renderers.
 
 ## @jgengine/shell/world/worldBarSamples
 
