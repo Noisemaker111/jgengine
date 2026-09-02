@@ -22,7 +22,7 @@ The range program needs rotation, capsules, CCD, and shapecasts, which `PhysicsW
 replace it, `physicsBackend.ts` defines the `PhysicsBackend` interface every consumer talks to, and
 `physicsWorldBackend.ts` puts `PhysicsWorld` behind it (translation-only, non-box shapes as bounding boxes,
 declared in `capabilities`). `physicsBackendConformance.ts` is the contract any adapter runs; `@jgengine/rapier`
-is the planned native adapter behind the same seam. `movement/characterController.ts` is the first consumer:
+is the native adapter behind the same seam. `movement/characterController.ts` is the first consumer:
 a capsule collide-and-slide controller that works on any backend.
 
 ## Non-goals

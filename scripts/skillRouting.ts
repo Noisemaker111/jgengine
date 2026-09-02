@@ -64,6 +64,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
 export const CORE_INTERNAL_DOMAINS = new Set(["assets"]);
 
 export const PACKAGE_SKILLS: Record<string, string> = {
+  rapier: "jgengine-world",
   editor: "jgengine-editor",
   ws: "jgengine-multiplayer",
   sql: "jgengine-multiplayer",

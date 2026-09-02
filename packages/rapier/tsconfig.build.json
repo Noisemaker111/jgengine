@@ -1,0 +1,1 @@
+{"extends":"./tsconfig.json","compilerOptions":{"noEmit":false,"declaration":true,"outDir":"dist","rootDir":"src","paths":{"@jgengine/rapier/*":["./src/*"]}},"include":["src"],"exclude":["src/**/*.test.ts"]}
