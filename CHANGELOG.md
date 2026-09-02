@@ -24,6 +24,7 @@ between (`--json` for structured output).
 - Core gamepad snapshot model, deadzone/curve resolver, and controller glyph labels.
 - Shell gamepad source polls connected pads, merges analog actions, supports synthetic `?gamepad=1` input, and exposes `ctx.input.rumble`.
 - Core action context stacks layer gameplay, menus, and passthrough overlays with snapshot/restore; shell action tracking now respects the active context.
+- Shell audio now supports listener orientation and per-sound Web Audio panners. `setListenerPose` accepts `{ position, forward, up }`; bare positions remain supported for one release.
 - Core perception tracks deterministic sight, hearing, occlusion, and bounded observation memory for AI.
 - `syncWorldColliders` now keeps terrain and static object colliders synchronized with a physics backend.
 - Core decision graphs provide deterministic selector, sequence, condition, action, and utility runtimes with snapshot/restore.
@@ -47,6 +48,7 @@ between (`--json` for structured output).
 
 ### Migrate
 
+- `AudioEngine.setListenerPose` now accepts `{ position, forward, up }`. Bare `Vec3` positions remain compatible for one release and use forward `[0, 0, -1]` with up `[0, 1, 0]`.
 - **Hosted world stores are asynchronous.** Implement `HostedWorldStore.load()` and `save()` as `Promise`-returning methods and construct persisted sessions with `createHostedWorldSessionAsync`; synchronous tests can keep using `memoryWorldStore`.
 - **Look presets now default to `neutral`.** Games that relied on the previous implicit cinematic
   sky/post stack should set `look: "photoreal"` (or keep `look: "cinematic"`) explicitly.

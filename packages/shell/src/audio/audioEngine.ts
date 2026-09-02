@@ -16,6 +16,12 @@ export interface Vec3 {
   z: number;
 }
 
+export interface ListenerPose {
+  position: Vec3;
+  forward: Vec3;
+  up: Vec3;
+}
+
 export interface AudioSceneConfig {
   sounds?: Record<string, SoundDef>;
   buses?: Record<string, AudioBusDef>;
@@ -35,7 +41,7 @@ export interface AudioEmitterHandle {
 }
 
 export interface AudioEngine {
-  setListenerPose(position: Vec3): void;
+  setListenerPose(pose: ListenerPose | Vec3): void;
   playOneShot(soundId: string, position?: Vec3): void;
   playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null;
   /** Crossfade the procedural soundtrack to `themeId` (null fades out). No-op when no `music` catalog is configured. */
@@ -73,6 +79,31 @@ function resolveOfflineAudioContextCtor(): typeof OfflineAudioContext | undefine
     window.OfflineAudioContext ??
     (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext }).webkitOfflineAudioContext
   );
+}
+
+function setAudioParam(param: AudioParam | undefined, value: number): void {
+  if (param === undefined) return;
+  param.value = value;
+}
+
+function setPannerPosition(panner: PannerNode, position: Vec3): void {
+  setAudioParam(panner.positionX, position.x);
+  setAudioParam(panner.positionY, position.y);
+  setAudioParam(panner.positionZ, position.z);
+}
+
+function createPanner(context: BaseAudioContext, spatial: NonNullable<SoundDef["spatial"]>, position: Vec3): PannerNode {
+  const panner = context.createPanner();
+  panner.panningModel = spatial.panning === "hrtf" ? "HRTF" : "equalpower";
+  panner.distanceModel = "inverse";
+  if (spatial.refDistance !== undefined) panner.refDistance = spatial.refDistance;
+  if (spatial.maxDistance !== undefined) panner.maxDistance = spatial.maxDistance;
+  if (spatial.rolloff !== undefined) panner.rolloffFactor = spatial.rolloff;
+  if (spatial.coneInner !== undefined) panner.coneInnerAngle = spatial.coneInner;
+  if (spatial.coneOuter !== undefined) panner.coneOuterAngle = spatial.coneOuter;
+  if (spatial.coneOuterGain !== undefined) panner.coneOuterGain = spatial.coneOuterGain;
+  setPannerPosition(panner, position);
+  return panner;
 }
 
 export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
@@ -176,8 +207,16 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     // A one-shot synth cue realises its decaying voices live and is fire-and-forget.
     if (sound.synth !== undefined && !loop) {
       const cueGain = context.createGain();
-      cueGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
-      cueGain.connect(bus);
+      cueGain.gain.value = sound.spatial === undefined
+        ? resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1)
+        : sound.gain ?? 1;
+      if (sound.spatial !== undefined) {
+        const panner = createPanner(context, sound.spatial, currentPosition);
+        cueGain.connect(panner);
+        panner.connect(bus);
+      } else {
+        cueGain.connect(bus);
+      }
       realizeSynthPatch(context, cueGain, sharedNoiseBuffer(), sound.synth);
       return NOOP_HANDLE;
     }
@@ -206,11 +245,13 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     let sourceNode: AudioBufferSourceNode | null = null;
     let userGainNode: GainNode | null = null;
     let falloffGain: GainNode | null = null;
+    let pannerNode: PannerNode | null = null;
 
     function updateFalloff(): void {
-      if (falloffGain !== null) {
+      if (falloffGain !== null && sound.spatial === undefined) {
         falloffGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
       }
+      if (pannerNode !== null) setPannerPosition(pannerNode, currentPosition);
     }
 
     void bufferPromise.then((buffer) => {
@@ -226,7 +267,15 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       fGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
       src.connect(uGain);
       uGain.connect(fGain);
-      fGain.connect(bus);
+      if (sound.spatial !== undefined) {
+        const panner = createPanner(context, sound.spatial, currentPosition);
+        fGain.gain.value = 1;
+        fGain.connect(panner);
+        panner.connect(bus);
+        pannerNode = panner;
+      } else {
+        fGain.connect(bus);
+      }
       src.start();
       sourceNode = src;
       userGainNode = uGain;
@@ -239,6 +288,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         src.disconnect();
         uGain.disconnect();
         fGain.disconnect();
+        pannerNode?.disconnect();
         sourceNode = null;
         userGainNode = null;
         falloffGain = null;
@@ -272,7 +322,18 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
 
   return {
     setListenerPose(position) {
-      listenerPosition = position;
+      const pose = "position" in position ? position : { position, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } };
+      listenerPosition = pose.position;
+      const listener = context.listener;
+      setAudioParam(listener.positionX, pose.position.x);
+      setAudioParam(listener.positionY, pose.position.y);
+      setAudioParam(listener.positionZ, pose.position.z);
+      setAudioParam(listener.forwardX, pose.forward.x);
+      setAudioParam(listener.forwardY, pose.forward.y);
+      setAudioParam(listener.forwardZ, pose.forward.z);
+      setAudioParam(listener.upX, pose.up.x);
+      setAudioParam(listener.upY, pose.up.y);
+      setAudioParam(listener.upZ, pose.up.z);
       for (const updateGain of activeSpatialUpdaters) updateGain();
     },
     playOneShot(soundId, position) {

@@ -1748,6 +1748,7 @@
 - `AudioEmitterHandle` (interface): interface AudioEmitterHandle — ⚠ undocumented
 - `AudioEngine` (interface): interface AudioEngine — ⚠ undocumented
 - `AudioSceneConfig` (interface): interface AudioSceneConfig — ⚠ undocumented
+- `ListenerPose` (interface): interface ListenerPose — ⚠ undocumented
 - `Vec3` (interface): interface Vec3 — ⚠ undocumented
 - `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — ⚠ undocumented
 

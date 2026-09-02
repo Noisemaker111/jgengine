@@ -1,12 +1,19 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useRef } from "react";
+import { Quaternion, Vector3 } from "three";
 import { useGameContext } from "@jgengine/react/provider";
 import type { AudioEmitterHandle, AudioEngine } from "./audioEngine";
 
 export function AudioListener({ engine }: { engine: AudioEngine }) {
   const camera = useThree((state) => state.camera);
   useFrame(() => {
-    engine.setListenerPose({ x: camera.position.x, y: camera.position.y, z: camera.position.z });
+    const direction = camera.getWorldDirection(new Vector3());
+    const up = camera.up.clone().applyQuaternion(camera.getWorldQuaternion(new Quaternion()));
+    engine.setListenerPose({
+      position: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+      forward: { x: direction.x, y: direction.y, z: direction.z },
+      up: { x: up.x, y: up.y, z: up.z },
+    });
   });
   return null;
 }
