@@ -391,6 +391,7 @@
     "./session/ring",
     "./session/roles",
     "./session/roundState",
+    "./settings/graphicsProfile",
     "./settings/settingsModel",
     "./stats/accumulatorMeter",
     "./stats/eventMeter",

@@ -29,6 +29,7 @@ between (`--json` for structured output).
 - Material map overrides now support metalness, emissive, and height maps on standard and physical materials.
 - Presentation and editor documents now accept gradient, HDRI/EXR, and cube-map environment sources.
 - Authored `light` markers now feed bounded point/spot punctual lights with an eight-light default budget and editor warning.
+- Graphics profiles now resolve per-tier render scale, shadow budgets, culling distance, particles, cascades, and post stages; games can override them with `defineGame({ graphics })`.
 - `defineGame({ physics: { backend } })` now adopts a capsule character controller for shell/headless movement and registers the backend simulation after movement, including floor collision and step-up behavior.
 
 ### Migrate

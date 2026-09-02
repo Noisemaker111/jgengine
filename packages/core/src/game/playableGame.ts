@@ -8,6 +8,7 @@ import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
+import type { GraphicsProfile } from "../settings/graphicsProfile";
 import type { GameOrientation } from "../ui/orientation";
 import type { HudPlatform, HudViewportConfig } from "../ui/hudScale";
 import type { PositionedPrompt } from "../interaction/proximityPrompt";
@@ -562,6 +563,8 @@ export interface PlayableGame<
   capture?: GameCaptureConfig;
   /** Cast/receive shadows across the scene (R3F Canvas shadow pass). Default true. */
   shadows?: boolean;
+  /** Per-quality renderer budgets; omitted tiers use {@link DEFAULT_GRAPHICS_PROFILES}. */
+  graphics?: Partial<Record<"low" | "medium" | "high", Partial<GraphicsProfile>>>;
   /** Pointer-driven input: click-to-move, box-select, right-click verbs, cursor aim (#22/#30/#31). */
   pointer?: PointerConfig;
   /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */

@@ -151,7 +151,7 @@ export function GamePlayerShell({
     () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(effectiveInput))),
     [effectiveInput],
   );
-  const graphics = useGraphicsSettings(settingsStore, playable.shadows ?? true);
+  const graphics = useGraphicsSettings(settingsStore, playable.shadows ?? true, playable.graphics);
   const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
     if (rect === undefined) return;

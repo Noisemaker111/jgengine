@@ -8,6 +8,7 @@ import type {
   PointLightingConfig,
   SpotLightingConfig,
 } from "@jgengine/core/game/playableGame";
+import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 
 import { CascadedShadows } from "./CascadedShadows";
 
@@ -37,11 +38,12 @@ function usesCascades(entry: DirectionalLightingConfig): boolean {
   return (entry.castShadow ?? false) && (entry.cascades ?? 1) > 1;
 }
 
-function DirectionalShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
-  if (usesCascades(entry)) {
-    return <CascadedShadows entry={entry} />;
+function DirectionalShadowLight({ entry, profile }: { entry: DirectionalLightingConfig; profile?: GraphicsProfile }) {
+  const resolved = profile === undefined ? entry : { ...entry, shadowMapSize: entry.shadowMapSize ?? profile.shadowMapSize, cascades: entry.cascades ?? profile.cascades };
+  if (usesCascades(resolved)) {
+    return <CascadedShadows entry={resolved} />;
   }
-  return <SingleShadowLight entry={entry} />;
+  return <SingleShadowLight entry={resolved} />;
 }
 
 /**
@@ -89,7 +91,7 @@ function SingleShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
   );
 }
 
-export function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
+export function ConfiguredLighting({ lighting, profile }: { lighting: LightingConfig; profile?: GraphicsProfile }) {
   const dynamic = resolveDynamicLights(lighting);
   return (
     <>
@@ -106,7 +108,7 @@ export function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
         />
       ) : null}
       {(lighting.directional ?? []).map((entry, index) => (
-        <DirectionalShadowLight key={index} entry={entry} />
+        <DirectionalShadowLight key={index} entry={entry} profile={profile} />
       ))}
       {dynamic.point.map((entry, index) => (
         <pointLight

@@ -15,8 +15,8 @@ const QUALITY_POOL_CAP: Record<GraphicsQuality, number> = { low: 128, medium: 25
  * clamped to the tier cap, so lower tiers degrade density instead of dropping
  * effects entirely.
  */
-export function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined): number {
-  const cap = QUALITY_POOL_CAP[quality];
+export function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined, particleCap?: number): number {
+  const cap = Math.max(1, Math.floor(particleCap ?? QUALITY_POOL_CAP[quality]));
   return Math.max(1, Math.min(requested ?? cap, cap));
 }
 
@@ -60,7 +60,7 @@ export function specNeedsRender(prev: ParticleEmitterSpec, next: ParticleEmitter
  *
  * @internal
  */
-export function WorldParticles({ quality }: { quality: GraphicsQuality }): ReactElement {
+export function WorldParticles({ quality, particleCap }: { quality: GraphicsQuality; particleCap?: number }): ReactElement {
   const ctx = useGameContext();
   const emittersRef = useRef(new Map<string, EmitterInstance>());
   const burstsRef = useRef<BurstInstance[]>([]);
@@ -74,7 +74,7 @@ export function WorldParticles({ quality }: { quality: GraphicsQuality }): React
       const liveIds = new Set<string>();
       for (const spec of specs) {
         liveIds.add(spec.id);
-        const poolMax = resolveParticleBudget(quality, spec.config.max);
+        const poolMax = resolveParticleBudget(quality, spec.config.max, particleCap);
         const current = emitters.get(spec.id);
         if (current === undefined || current.poolMax !== poolMax) {
           emitters.set(spec.id, {
@@ -95,7 +95,7 @@ export function WorldParticles({ quality }: { quality: GraphicsQuality }): React
         changed = true;
       }
       for (const burst of ctx.particles.drainBursts()) {
-        const poolMax = resolveParticleBudget(quality, Math.min(burst.count, burst.config.max ?? burst.count));
+        const poolMax = resolveParticleBudget(quality, Math.min(burst.count, burst.config.max ?? burst.count), particleCap);
         const system = createParticleSystem({ ...burst.config, max: poolMax, seed: burst.seq });
         system.emit(burst.count);
         burstsRef.current.push({ seq: burst.seq, system, blending: burst.blending ?? "additive" });
@@ -111,7 +111,7 @@ export function WorldParticles({ quality }: { quality: GraphicsQuality }): React
       emitters.clear();
       burstsRef.current = [];
     };
-  }, [ctx, quality]);
+  }, [ctx, quality, particleCap]);
 
   useFrame(() => {
     for (const instance of emittersRef.current.values()) {

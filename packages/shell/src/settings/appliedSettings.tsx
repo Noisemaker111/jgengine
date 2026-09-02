@@ -13,6 +13,7 @@ import {
   type GraphicsQuality,
   type SettingsStore,
 } from "@jgengine/core/settings/settingsModel";
+import { resolveGraphicsProfile, type GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
@@ -60,16 +61,19 @@ export function useSettingsRevision(store: SettingsStore): number {
 export function useGraphicsSettings(
   store: SettingsStore,
   shadowsDefault: boolean,
-): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality } {
+  overrides?: Partial<Record<GraphicsQuality, Partial<GraphicsProfile>>>,
+): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile } {
   useSettingsRevision(store);
   const rawQuality = store.get(SETTING_IDS.graphicsQuality, DEFAULT_GRAPHICS_QUALITY) as GraphicsQuality;
   const quality: GraphicsQuality = GRAPHICS_QUALITY_DPR[rawQuality] !== undefined ? rawQuality : "high";
+  const profile = resolveGraphicsProfile(quality, overrides?.[quality]);
   const rawUiScale = store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE);
   return {
     shadows: store.get(SETTING_IDS.graphicsShadows, shadowsDefault),
-    dpr: GRAPHICS_QUALITY_DPR[quality],
+    dpr: profile.renderScale,
     uiScale: Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, rawUiScale)),
     quality,
+    profile,
   };
 }
 
