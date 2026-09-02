@@ -342,6 +342,13 @@
 - `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
 
+## @jgengine/core/input/actionContexts
+
+- `ActionContext` (interface): interface ActionContext — Named action-binding layer that may optionally expose lower layers.
+- `ActionContextStack` (interface): interface ActionContextStack — Mutable layered action-map stack with snapshot and restore support.
+- `ActionContextStackSnapshot` (interface): interface ActionContextStackSnapshot — Serializable state for an action-context stack.
+- `createActionContextStack` (function): function createActionContextStack(): ActionContextStack — Creates a serializable stack of layered action maps for menus and gameplay modes.
+
 ## @jgengine/core/input/axisInput
 
 - `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented

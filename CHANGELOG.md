@@ -21,6 +21,7 @@ between (`--json` for structured output).
 
 - Core gamepad snapshot model, deadzone/curve resolver, and controller glyph labels.
 - Shell gamepad source polls connected pads, merges analog actions, supports synthetic `?gamepad=1` input, and exposes `ctx.input.rumble`.
+- Core action context stacks layer gameplay, menus, and passthrough overlays with snapshot/restore; shell action tracking now respects the active context.
 - Core perception tracks deterministic sight, hearing, occlusion, and bounded observation memory for AI.
 - `syncWorldColliders` now keeps terrain and static object colliders synchronized with a physics backend.
 - Core decision graphs provide deterministic selector, sequence, condition, action, and utility runtimes with snapshot/restore.

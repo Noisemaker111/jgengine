@@ -387,6 +387,8 @@
 ## @jgengine/core/game/controlGate
 
 - `PLAY_CONTROLS_STORE_KEY` (const): const PLAY_CONTROLS_STORE_KEY: "jg.playControls" — ⚠ undocumented
+- `actionContextStack` (function): function actionContextStack(ctx: GameContext): ActionContextStack — Returns the context stack associated with a game context.
+- `activeActionCodes` (function): function activeActionCodes(ctx: GameContext, base: ActionCodesMap): ActionCodesMap — Applies active contexts to a base action map for shell input tracking.
 - `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
 - `setPlayControlsActive` (function): function setPlayControlsActive(ctx: GameContext, active: boolean): void — ⚠ undocumented
 
