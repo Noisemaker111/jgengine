@@ -3,6 +3,7 @@ import type { EditorUiDocument } from "../ui/hudDocument";
 import type { MinimapBakeBounds } from "../world/minimapBake";
 import type { TerraformSnapshot } from "../world/terraform";
 import type { EditorGridLayer } from "./grid";
+import type { EnvironmentSource } from "../render/environment";
 
 export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelTypeDef } from "../ui/hudDocument";
 
@@ -214,6 +215,8 @@ export interface EditorFogConfig {
  * @capability editor-environment persist sky/fog/lighting knobs on the scene document
  */
 export interface EditorEnvironment {
+  /** Optional runtime environment map source; absent keeps the procedural gradient. */
+  source?: EnvironmentSource;
   /** Fixed sky look when `timeOfDay` is off (or no clock is available). */
   preset?: EditorSkyPreset;
   /** Drive sun/sky from the world clock's day fraction instead of the fixed `preset`. */

@@ -32,6 +32,7 @@ import type {
   EditorVolume,
   EditorVolumeShape,
 } from "./types";
+import type { EnvironmentSource } from "../render/environment";
 
 /** Copies a baked minimap so a document's PNG + bounds are never shared by reference across rebuilds. */
 function cloneMinimapBake(minimap: EditorMinimapBake): EditorMinimapBake {
@@ -41,6 +42,7 @@ function cloneMinimapBake(minimap: EditorMinimapBake): EditorMinimapBake {
 /** Deep-copies scene-document environment/lighting so edits never mutate history snapshots. */
 function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
   return {
+    ...(environment.source === undefined ? {} : { source: cloneEnvironmentSource(environment.source) }),
     ...(environment.preset === undefined ? {} : { preset: environment.preset }),
     ...(environment.timeOfDay === undefined ? {} : { timeOfDay: environment.timeOfDay }),
     ...(environment.horizonColor === undefined ? {} : { horizonColor: environment.horizonColor }),
@@ -49,6 +51,10 @@ function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
     ...(environment.ambientIntensity === undefined ? {} : { ambientIntensity: environment.ambientIntensity }),
     ...(environment.fog === undefined ? {} : { fog: { ...environment.fog } }),
   };
+}
+
+function cloneEnvironmentSource(source: EnvironmentSource): EnvironmentSource {
+  return source.kind === "cube" ? { ...source, urls: [...source.urls] as [string, string, string, string, string, string] } : { ...source };
 }
 
 function cloneDirective(directive: EditorDirective): EditorDirective {
@@ -1044,6 +1050,26 @@ function decodeEnvironment(
   }
   let failed = false;
   const env: EditorEnvironment = {};
+  if (value.source !== undefined) {
+    const source = value.source;
+    if (!isPlainObject(source) || typeof source.kind !== "string") {
+      errors.push({ path: `${path}.source`, message: "expected an environment source object" });
+      failed = true;
+    } else if (source.kind === "gradient") {
+      if (typeof source.sky !== "string") { errors.push({ path: `${path}.source.sky`, message: "expected a string" }); failed = true; }
+      if (typeof source.ground !== "string") { errors.push({ path: `${path}.source.ground`, message: "expected a string" }); failed = true; }
+      if (source.sun !== undefined && typeof source.sun !== "string") { errors.push({ path: `${path}.source.sun`, message: "expected a string" }); failed = true; }
+      if (source.intensity !== undefined && (typeof source.intensity !== "number" || !Number.isFinite(source.intensity))) { errors.push({ path: `${path}.source.intensity`, message: "expected a finite number" }); failed = true; }
+      if (!failed) env.source = { kind: "gradient", sky: source.sky as string, ground: source.ground as string, ...(source.sun === undefined ? {} : { sun: source.sun as string }), ...(source.intensity === undefined ? {} : { intensity: source.intensity as number }) };
+    } else if (source.kind === "hdri" && typeof source.url === "string") {
+      env.source = { kind: "hdri", url: source.url, ...(typeof source.rotation === "number" ? { rotation: source.rotation } : {}), ...(typeof source.intensity === "number" ? { intensity: source.intensity } : {}) };
+    } else if (source.kind === "cube" && Array.isArray(source.urls) && source.urls.length === 6 && source.urls.every((url: unknown) => typeof url === "string")) {
+      env.source = { kind: "cube", urls: [...source.urls] as [string, string, string, string, string, string], ...(typeof source.intensity === "number" ? { intensity: source.intensity } : {}) };
+    } else {
+      errors.push({ path: `${path}.source`, message: 'expected kind "gradient", "hdri", or "cube" with valid fields' });
+      failed = true;
+    }
+  }
   if (value.preset !== undefined) {
     if (typeof value.preset === "string" && SKY_PRESETS.has(value.preset)) {
       env.preset = value.preset as EditorSkyPreset;

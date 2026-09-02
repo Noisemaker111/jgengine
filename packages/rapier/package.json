@@ -1,0 +1,18 @@
+{
+  "name": "@jgengine/rapier",
+  "version": "0.18.0",
+  "description": "Rapier physics backend for JGengine",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Noisemaker111/jgengine.git",
+    "directory": "packages/rapier"
+  },
+  "files": ["dist", "CHANGELOG.md"],
+  "exports": {".": {"types": "./dist/index.d.ts", "default": "./dist/index.js"}, "./*": {"types": "./dist/*.d.ts", "default": "./dist/*.js"}},
+  "scripts": {"build": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist", "check-types": "bun ../../scripts/check-types-preflight.ts && tsgo --noEmit -p tsconfig.json", "test": "bun test src"},
+  "dependencies": {"@jgengine/core": "^0.18.0", "@dimforge/rapier3d-compat": "0.19.3"},
+  "publishConfig": {"access": "public"}
+}

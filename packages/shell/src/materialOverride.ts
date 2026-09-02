@@ -4,7 +4,7 @@ import type { ModelMaterialOverride, ModelRimLight } from "@jgengine/core/game/p
 
 export interface MaterialOverrideOptions {
   clone?: boolean;
-  /** Loaded PBR textures matching `ModelMaterialOverride.maps`' roles, applied onto each `MeshStandardMaterial` alongside the tint override. The caller (a React component, via `useTexture`) owns loading; this function never fetches a URL. */
+  /** Loaded PBR textures matching `ModelMaterialOverride.maps`' roles, applied onto each standard or physical material alongside the tint override. The caller (a React component, via `useTexture`) owns loading; this function never fetches a URL. */
   textures?: MaterialOverrideTextures;
 }
 
@@ -14,6 +14,9 @@ export interface MaterialOverrideTextures {
   normal?: THREE.Texture;
   roughness?: THREE.Texture;
   ao?: THREE.Texture;
+  metalness?: THREE.Texture;
+  emissive?: THREE.Texture;
+  height?: THREE.Texture;
 }
 
 /** @internal */
@@ -39,7 +42,7 @@ function overrideOne(
   clone: boolean,
   textures: MaterialOverrideTextures | undefined,
 ): THREE.Material {
-  if (!(material instanceof THREE.MeshStandardMaterial)) return material;
+  if (!isStandardOrPhysicalMaterial(material)) return material;
   const target = clone ? material.clone() : material;
   if (override.color !== undefined) target.color.set(override.color);
   if (override.metalness !== undefined) target.metalness = override.metalness;
@@ -50,9 +53,18 @@ function overrideOne(
   if (textures?.normal !== undefined) target.normalMap = textures.normal;
   if (textures?.roughness !== undefined) target.roughnessMap = textures.roughness;
   if (textures?.ao !== undefined) target.aoMap = textures.ao;
+  if (textures?.metalness !== undefined) target.metalnessMap = textures.metalness;
+  if (textures?.emissive !== undefined) target.emissiveMap = textures.emissive;
+  if (textures?.height !== undefined) target.displacementMap = textures.height;
   if (textures !== undefined) target.needsUpdate = true;
   if (override.rim !== undefined) applyRimLight(target, override.rim);
   return target;
+}
+
+function isStandardOrPhysicalMaterial(
+  material: THREE.Material,
+): material is THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial {
+  return (material as THREE.MeshStandardMaterial).isMeshStandardMaterial === true;
 }
 
 /**

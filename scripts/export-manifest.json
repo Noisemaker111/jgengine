@@ -24,6 +24,7 @@
     "./anim/oscillator",
     "./area/areaEffectField",
     "./area/stackPolicy",
+    "./assets/spriteAtlas",
     "./assets/spriteSheet",
     "./audio/audioFalloff",
     "./audio/music",
@@ -287,8 +288,10 @@
     "./relation/keyedValues",
     "./relation/thresholds",
     "./render/color",
+    "./render/environment",
     "./render/lookPreset",
     "./render/postProcessing",
+    "./render/sprite2d",
     "./rules/predicate",
     "./rules/ruleEffects",
     "./rules/triggeredRules",
@@ -537,6 +540,11 @@
     "./world/weather",
     "./world/wind",
     "./world/windZones"
+  ],
+  "@jgengine/rapier": [
+    ".",
+    "./index",
+    "./rapierBackend"
   ],
   "@jgengine/ws": [
     ".",

@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
+import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import {
@@ -195,6 +197,41 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
   }
 }
 
+/** CDN-backed decoder configuration for compressed model and texture assets. */
+export interface ModelLoaderConfig {
+  dracoDecoderPath?: string;
+  ktx2TranscoderPath?: string;
+}
+
+const DEFAULT_DRACO_DECODER_PATH = "https://cdn.jsdelivr.net/npm/three@0.182.0/examples/jsm/libs/draco/";
+const DEFAULT_KTX2_TRANSCODER_PATH = "https://cdn.jsdelivr.net/npm/three@0.182.0/examples/jsm/libs/basis/";
+
+let configuredModelLoaders: Readonly<Required<ModelLoaderConfig>> | undefined;
+let ktx2Loader: KTX2Loader | undefined;
+
+/** Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops. */
+export function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> {
+  const next = {
+    dracoDecoderPath: options.dracoDecoderPath ?? DEFAULT_DRACO_DECODER_PATH,
+    ktx2TranscoderPath: options.ktx2TranscoderPath ?? DEFAULT_KTX2_TRANSCODER_PATH,
+  };
+  if (configuredModelLoaders?.dracoDecoderPath === next.dracoDecoderPath && configuredModelLoaders.ktx2TranscoderPath === next.ktx2TranscoderPath) {
+    return configuredModelLoaders;
+  }
+  const draco = new DRACOLoader().setDecoderPath(next.dracoDecoderPath);
+  ktx2Loader = new KTX2Loader().setTranscoderPath(next.ktx2TranscoderPath);
+  sharedGltfLoader.setDRACOLoader(draco);
+  sharedGltfLoader.setKTX2Loader(ktx2Loader);
+  configuredModelLoaders = next;
+  return configuredModelLoaders;
+}
+
+/** Detects GPU support for the configured KTX2 transcoder after a renderer exists. */
+export function detectKtx2Support(renderer: THREE.WebGLRenderer): void {
+  configureModelLoaders();
+  ktx2Loader?.detectSupport(renderer);
+}
+
 // LoadingManager reports queue transitions, not per-item events: `onStart` fires when the
 // queue goes busy and `onLoad` when it drains (errors included, via itemEnd), so a flag plus
 // a drain timestamp is the whole state.
@@ -225,3 +262,4 @@ export function modelLoadIdleMs(): number {
 /** Shared GLTF loader used by shell entity/object model mounts. @internal */
 export const sharedGltfLoader = new DiagnosticGLTFLoader(modelLoadingManager);
 sharedGltfLoader.setMeshoptDecoder(MeshoptDecoder);
+configureModelLoaders();

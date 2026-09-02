@@ -89,6 +89,7 @@ import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "./CombatPresentation";
 import { WorldParticles } from "./world/WorldParticles";
+import { detectKtx2Support } from "./render/modelLoad";
 import {
   resolvePresentationEffects,
   resolveWorldOverlayBars,
@@ -182,6 +183,7 @@ export function Shell3dPresentation({
   authoritativeFrameRef: { current: AuthoritativeFrameHandler | null };
 }) {
   const GameUI = playable.GameUI;
+  const ktx2SupportDetected = useRef(false);
   const WorldOverlay = playable.WorldOverlay;
   const pointerService = useMemo(() => createPointerService(), []);
   const selection = useMemo(() => createSelectionSet(), [playable]);
@@ -207,7 +209,7 @@ export function Shell3dPresentation({
   const world = playable.game.world;
   const biomeBands = world?.kind === "environment" ? world.terrain?.biomeBands : undefined;
   const AutoEnvironment =
-    playable.environment ??
+    (typeof playable.environment === "function" ? playable.environment : undefined) ??
     (world?.kind === "environment"
       ? () => <EnvironmentScene feature={world} />
       : world?.kind === "place"
@@ -467,6 +469,11 @@ export function Shell3dPresentation({
           >
             <GameViewportProvider platforms={playable.platforms}>
               <Canvas
+                onCreated={({ gl }) => {
+                  if (ktx2SupportDetected.current) return;
+                  ktx2SupportDetected.current = true;
+                  detectKtx2Support(gl);
+                }}
                 frameloop={poster && posterFrozen ? "demand" : "always"}
                 orthographic={orthographic}
                 camera={
@@ -490,6 +497,7 @@ export function Shell3dPresentation({
                 {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
                 {cinematicLook ? (
                   <EnvironmentLighting
+                    source={playable.environmentSource}
                     skyColor={lighting?.hemisphere?.skyColor ?? "#87b5e0"}
                     groundColor={lighting?.hemisphere?.groundColor ?? "#3d4a38"}
                     sunDirection={lighting?.directional?.[0]?.position}

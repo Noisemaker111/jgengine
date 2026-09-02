@@ -10,9 +10,10 @@ export const MATERIAL_MAP_FILES = {
   roughness: "roughness.jpg",
   ao: "ao.jpg",
   displacement: "displacement.jpg",
+  ktx2: "material.ktx2",
 } as const;
 
-/** One PBR map's role within a material: color, normal, roughness, ao, or displacement. */
+/** One PBR map's role within a material, including an optional compressed KTX2 asset. */
 export type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES;
 
 const MAP_SUFFIXES: readonly { role: MaterialMapRole; pattern: RegExp }[] = [
@@ -56,6 +57,7 @@ export interface MaterialMaps {
   roughness: string;
   ao: string;
   displacement: string;
+  ktx2?: string;
 }
 
 /** A resolved material: identity, attribution, and its normalized map URLs. */
@@ -117,6 +119,7 @@ function refFor(source: AssetSource, basePath: string): MaterialRef {
       roughness: `${base}/${MATERIAL_MAP_FILES.roughness}`,
       ao: `${base}/${MATERIAL_MAP_FILES.ao}`,
       displacement: `${base}/${MATERIAL_MAP_FILES.displacement}`,
+      ktx2: `${base}/${MATERIAL_MAP_FILES.ktx2}`,
     },
   };
 }

@@ -1,6 +1,6 @@
 # Changelog
 
-The lockstep game SDK set is `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}`
+The lockstep game SDK set is `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets}`
 (this file’s 0.x.y releases). The CLI package `jgengine` and `@jgengine/github` use
 **separate** version lines and may lag. Format follows [Keep a Changelog](https://keepachangelog.com);
 each release **leads with a Migrate block** — the concrete steps to move a game
@@ -19,8 +19,12 @@ between (`--json` for structured output).
 
 ### Added
 
+- Core sprite atlas adapters and deterministic 2D sprite clip playback primitives.
 - `src/art-direction.md` scaffold and `check-art-direction` gate for created games.
 - Host-authoritative shell sessions now expose each accepted world frame to the local prediction buffer, reconciling and snapping the possessed pose only when drift exceeds its threshold.
+- Shared GLTF loader configuration for Draco and KTX2-compressed assets, with CDN defaults and renderer capability detection.
+- Material map overrides now support metalness, emissive, and height maps on standard and physical materials.
+- Presentation and editor documents now accept gradient, HDRI/EXR, and cube-map environment sources.
 
 ### Migrate
 
@@ -52,6 +56,7 @@ between (`--json` for structured output).
 - **`tickRunCount(plan, id)`** (`@jgengine/core/time/serverTick`) — how many runs a plan owes a system, or 0 when it is not due.
 - **`grass()` exposes the clump/lighting knobs its shader already had.** `GrassEnvironmentConfig` gains optional `bladeBend`, `tuftRadius`, `colorVariation`, and `normalLift`, forwarded by the shell's environment renderer — a world descriptor can now author bushy wind-combed scrub instead of the fixed lawn-blade look; defaults unchanged.
 - **`TerrainDetailConfig.sweeps`** — the detail shader's two macro colour sweeps (sun-dried patches, cooler wet pockets) take per-world RGB multipliers instead of hardcoded meadow tints. The old green-leaning "lush pocket" default painted moss onto arid/ashen biomes; defaults are unchanged, so a desert world should set warm/neutral `sweeps` explicitly.
+- **`@jgengine/rapier`** — a Rapier-backed `PhysicsBackend` adapter with native capsules, shapecasts, rotation, CCD, joints, and collision queries.
 
 <!--
 Every PR that changes `packages/*/src` records its consumer-facing change here, so

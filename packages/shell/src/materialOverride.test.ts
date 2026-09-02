@@ -81,6 +81,33 @@ describe("applyMaterialOverride", () => {
     expect(applied.version).toBeGreaterThan(versionBefore);
   });
 
+  test("applies metalness, emissive, and height maps to physical materials", () => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhysicalMaterial());
+    const textures = {
+      metalness: new THREE.Texture(),
+      emissive: new THREE.Texture(),
+      height: new THREE.Texture(),
+    };
+    applyMaterialOverride(mesh, {}, { textures });
+    const applied = mesh.material as THREE.MeshPhysicalMaterial;
+    expect(applied).toBeInstanceOf(THREE.MeshPhysicalMaterial);
+    expect(applied.metalnessMap).toBe(textures.metalness);
+    expect(applied.emissiveMap).toBe(textures.emissive);
+    expect(applied.displacementMap).toBe(textures.height);
+  });
+
+  test("applies material overrides to physical materials", () => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhysicalMaterial());
+    const original = mesh.material;
+    applyMaterialOverride(mesh, { color: "#ff0000", metalness: 0.8, roughness: 0.2 });
+    const applied = mesh.material as THREE.MeshPhysicalMaterial;
+    expect(applied).not.toBe(original);
+    expect(applied).toBeInstanceOf(THREE.MeshPhysicalMaterial);
+    expect(`#${applied.color.getHexString()}`).toBe("#ff0000");
+    expect(applied.metalness).toBeCloseTo(0.8, 5);
+    expect(applied.roughness).toBeCloseTo(0.2, 5);
+  });
+
   test("textures compose with a tint override on the same material", () => {
     const mesh = meshWithStandardMaterial();
     applyMaterialOverride(mesh, { roughness: 0.1 }, { textures: { color: new THREE.Texture() } });
