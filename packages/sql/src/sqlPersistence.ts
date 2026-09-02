@@ -24,6 +24,10 @@ export type SqlPool = SqlQueryable & {
 };
 
 const SCHEMA_STATEMENTS = [
+  `CREATE TABLE IF NOT EXISTS jg_hosted_worlds (
+    world_id text PRIMARY KEY,
+    record jsonb NOT NULL
+  )`,
   `CREATE TABLE IF NOT EXISTS jg_game_servers (
     server_id text PRIMARY KEY,
     game_id text NOT NULL,

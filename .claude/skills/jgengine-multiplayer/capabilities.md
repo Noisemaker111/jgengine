@@ -24,6 +24,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/convex"`
 
+## hosted-world-persistence — Persist hosted authoritative world snapshots in a local file.
+
+- `fileWorldStore` (function) · `import { fileWorldStore } from "@jgengine/node"`
+- `sqlWorldStore` (function) · `import { sqlWorldStore } from "@jgengine/sql"`
+
 ## placed-object-rehydrate — rebuild live placed objects, with their state and slot contents, from persisted snapshot rows
 
 - `fromRuntimeObjectRow` (function) · `import { fromRuntimeObjectRow } from "@jgengine/core/multiplayer"`

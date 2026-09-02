@@ -1,6 +1,6 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContextContent, GameContextModels } from "@jgengine/core/runtime/gameContext";
-import { createHostedWorldSession, type HostedWorldSession } from "@jgengine/core/runtime/hostedWorldSession";
+import { createHostedWorldSessionAsync, type HostedWorldSession } from "@jgengine/core/runtime/hostedWorldSession";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import { createWorldGameHost, type WorldGameHost } from "@jgengine/ws/worldHost";
 import { memoryWorldPersistence, type WorldPersistence } from "./persistence";
@@ -58,10 +58,10 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
 
   const host = createWorldGameHost({
     now: clock,
-    session: ({ gameId, serverId }) => {
+    session: async ({ gameId, serverId }) => {
       const resolved = resolveGame(gameId);
       if (resolved === null) return null;
-      const session = createHostedWorldSession({
+      const session = await createHostedWorldSessionAsync({
         definition: resolved.game,
         content: resolved.content,
         now: clock,
@@ -88,8 +88,8 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
     }
   }
 
-  function flush(): void {
-    for (const session of liveSessions.values()) session.save();
+  async function flush(): Promise<void> {
+    await Promise.all([...liveSessions.values()].map((session) => session.save()));
   }
 
   return {
@@ -110,7 +110,7 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
     },
     async close() {
       stop();
-      flush();
+      await flush();
       await ws.close();
     },
   };

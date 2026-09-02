@@ -405,6 +405,9 @@
 - `HostedWorldSessionOptions` (interface): interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedWorldSession}: the game, its persistence store, and the auto-save cadence.
 - `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
 - `HostedWorldSync` (type): type HostedWorldSync = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; diff: WorldDiff } — A client replication pull: a full baseline (first sync / fell behind) or a diff since the client's cursor.
+- `SyncHostedWorldStore` (interface): interface SyncHostedWorldStore — Synchronous store adapter retained for deterministic in-process tests.
+- `asyncMemoryWorldStore` (function): function asyncMemoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore — Async in-process store for callers exercising the production persistence contract.
+- `createHostedWorldSessionAsync` (function): function createHostedWorldSessionAsync<TAssetRef extends ModelAssetRef, TMultiplayer>(options: Omit<HostedWorldSessionOptions<TAssetRef, TMultiplayer>, "store"> & { store: HostedWorldStore }): Promise<HostedWorldSession> — Build a hosted session from an asynchronous persistence backend.
 
 ## @jgengine/core/runtime/inputRecorder
 

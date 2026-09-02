@@ -31,6 +31,7 @@ between (`--json` for structured output).
 
 ### Migrate
 
+- **Hosted world stores are asynchronous.** Implement `HostedWorldStore.load()` and `save()` as `Promise`-returning methods and construct persisted sessions with `createHostedWorldSessionAsync`; synchronous tests can keep using `memoryWorldStore`.
 - **`ServerTickPlan.due` is `{ id, runs }[]` instead of a repeated id list.** `planServerTick` repeated a system id once per missed interval, and the obvious way to consume that — `due.includes(id)` or a `Set` — ran the system once while the returned anchor had already advanced by every repeat, silently dropping the catch-up work. A host now reads `runs` (or `tickRunCount(plan, id)`) and loops that many times.
 - **`CommandDef.validate` / `CommandDef.apply` take a fourth argument, `nowMs`.** Existing implementations that ignore it are unaffected. Commands that took a `now` in their `input` should read this instead — the client supplied the old one.
 
