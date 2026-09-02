@@ -16,6 +16,7 @@ export interface Vec3 {
   z: number;
 }
 
+/** Position and orientation for a spatial-audio listener. */
 export interface ListenerPose {
   position: Vec3;
   forward: Vec3;
