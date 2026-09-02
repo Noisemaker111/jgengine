@@ -1240,6 +1240,7 @@ const gameConfigTs = (name: string, options: GameConfigOptions) => {
   ];
   const fields = [
     `  name: ${JSON.stringify(name)},`,
+    "  simulation: { hz: 60 },",
     // The world carries its own physics (laws of the place) — no separate physics field to wire.
     ...(options.world ? ["  assets,", "  world,"] : []),
     "  // Binding any movement action makes the shell drive the walk controller — a fresh game walks.",

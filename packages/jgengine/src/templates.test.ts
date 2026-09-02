@@ -83,6 +83,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
 
     test(`${variant}: game.config.ts uses defineGame from gameKit and index.tsx re-exports game`, () => {
       const files = render(variant);
+      expect(fileOf(files, "src/game.config.ts")).toContain("simulation: { hz: 60 }");
       expect(/from\s+["']@jgengine\/shell\/gameKit["']/.test(fileOf(files, "src/game.config.ts"))).toBe(true);
       expect(/\bgame\b/.test(fileOf(files, "src/index.tsx").match(/export\s*\{[^}]*\}/g)?.join(" ") ?? "")).toBe(true);
     });
