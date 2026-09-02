@@ -60,6 +60,8 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Create scaffolds now use a 60 Hz simulation with interpolation enabled by default.
+
 - Rigged `ModelConfig` entries can opt into shell foot IK with named thigh/shin/foot bones; the driver raycasts the shared scene terrain, solves each chain, and fades corrections while airborne.
 
 - Animation graph clips may carry root-bone position tracks; states with `rootMotion: true` return the sampled displacement and the shell applies it to the entity while restoring the root bone's bind translation.
