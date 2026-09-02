@@ -292,7 +292,7 @@
 - `DEFAULT_HEARTBEAT_INTERVAL_MS` (const): const DEFAULT_HEARTBEAT_INTERVAL_MS: 30000 — Default ping/pong interval; a socket that misses one round-trip is terminated.
 - `DEFAULT_MAX_CONNECTIONS` (const): const DEFAULT_MAX_CONNECTIONS: 10000 — Default max concurrent sockets this server accepts before rejecting new ones.
 - `DEFAULT_MAX_PAYLOAD_BYTES` (const): const DEFAULT_MAX_PAYLOAD_BYTES: 1048576 — Default per-message payload cap (bytes) — `ws` closes the socket with 1009 past this.
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: … — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: SnapshotViewer["role"]; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<Session… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
 - `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
 - `GameSocketIoServer` (type): type GameSocketIoServer = { rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `GameSocketIoServerOptions` (type): type GameSocketIoServerOptions = HostRouterOptions & { io: SocketIoLikeServer } — ⚠ undocumented
@@ -348,7 +348,7 @@
 
 ## @jgengine/node/host
 
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: … — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: SnapshotViewer["role"]; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<Session… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
 - `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
 - `HostChangeEvent` (type): type HostChangeEvent = { type: "server"; serverId: string; } | { type: "player"; serverId: string; userId: string; } | { type: "feed"; serverId: string; action: string; } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
 - `createGameHost` (function): function createGameHost(options: GameHostOptions): GameHost — Creates a `GameHost` that runs game servers over the given persistence and runtimes.
@@ -445,7 +445,7 @@
 - `DEFAULT_COMMAND_LIMITS` (const): const DEFAULT_COMMAND_LIMITS: CommandLimits — Recommended per-op limits a host can opt into via `limits: DEFAULT_COMMAND_LIMITS`. Rate limiting is off unless `limits` is set.
 - `DEFAULT_GRACE_MS` (const): const DEFAULT_GRACE_MS: 15000 — Default reconnect grace period for hosted socket sessions.
 - `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: … — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: SnapshotViewer["role"]; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<Session… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
 - `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
 - `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
 - `HostCommandOp` (type): type HostCommandOp = "pose" | "runCommand" | "join" | "browse" | "voice" — A host-side op the command middleware pipeline can gate: pose sync, `runCommand`, join/joinByCode, browse, or voice join/leave/publish.
@@ -496,7 +496,7 @@
 - `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
 - `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
 - `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
-- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; } | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string } | { v: 1; t: "browse"; … — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: "player" | "spectator"; } | { v: 1; t: "joinByCode"; id: number; gameId: string; code: s… — ⚠ undocumented
 - `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number; } — ⚠ undocumented
 - `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
 - `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
@@ -561,7 +561,7 @@
 
 ## @jgengine/ws/host
 
-- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: … — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
+- `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: SnapshotViewer["role"]; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<Session… — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
 - `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
 - `HostChangeEvent` (type): type HostChangeEvent = | { type: "server"; serverId: string } | { type: "player"; serverId: string; userId: string } | { type: "feed"; serverId: string; action: string } — A change notification emitted by a `GameHost` for a server, player, or feed mutation.
 - `OP_LEDGER_LIMIT` (const): const OP_LEDGER_LIMIT: 64 — Max recently-applied `runCommand` op IDs retained per (serverId, userId), oldest evicted first.
@@ -624,7 +624,7 @@
 - `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
 - `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
 - `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
-- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; } | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string } | { v: 1; t: "browse"; … — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: "player" | "spectator"; } | { v: 1; t: "joinByCode"; id: number; gameId: string; code: s… — ⚠ undocumented
 - `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number; } — ⚠ undocumented
 - `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
 - `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented

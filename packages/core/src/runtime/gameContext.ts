@@ -395,7 +395,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   ];
 
   const replication = options.replication;
-  const projectsViewers = policyProjectsViewers(replication);
+  const projectsViewers = policyProjectsViewers(replication) || snapshotModules.some((module) => module.priority !== undefined);
   const aoiRadius = replication?.aoiRadius;
   const typedProject =
     <T>(

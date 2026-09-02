@@ -45,6 +45,7 @@ import type {
   TransportRunCommandResult,
   WorldSyncFrame,
 } from "@jgengine/core/runtime/transport";
+import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
 
 /** A change notification emitted by a `GameHost` for a server, player, or feed mutation. */
 export type HostChangeEvent =
@@ -71,6 +72,7 @@ export type GameHost = {
     serverId?: string;
     attributes?: SessionAttributes;
     code?: string;
+    role?: SnapshotViewer["role"];
   }) => Promise<JoinServerResult>;
   browseServers: (args: {
     gameId: string;
@@ -90,11 +92,12 @@ export type GameHost = {
     input: unknown;
   }) => Promise<TransportRunCommandResult>;
   isMember: (args: { userId: string; serverId: string }) => Promise<boolean>;
-  getServerView: (args: { userId: string; serverId: string }) => Promise<GameRuntimeServerView | null>;
+  getServerView: (args: { userId: string; serverId: string; role?: SnapshotViewer["role"] }) => Promise<GameRuntimeServerView | null>;
   pullWorld?: (args: {
     userId: string;
     serverId: string;
     sinceRevision: number | null;
+    role?: SnapshotViewer["role"];
   }) => Promise<WorldSyncFrame | null>;
   getPlayerView: (args: { userId: string; serverId: string }) => Promise<GameRuntimePlayerView | null>;
   getFeed: (args: { userId: string; serverId: string; action: string }) => Promise<unknown[]>;

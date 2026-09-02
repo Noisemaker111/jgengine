@@ -55,4 +55,15 @@ describe("world snapshot seam", () => {
     applyWorldSnapshot([module], { n: 42 });
     expect(box.value).toBe(42);
   });
+
+  test("priority throttles a module on intervening viewer ticks", () => {
+    const module: SnapshotModule<number> = {
+      key: "slow",
+      snapshot: () => 7,
+      hydrate: () => {},
+      priority: () => 3,
+    };
+    expect(composeWorldSnapshot([module], { userId: "spectator", role: "spectator", tick: 1 })).toEqual({});
+    expect(composeWorldSnapshot([module], { userId: "spectator", role: "spectator", tick: 3 })).toEqual({ slow: 7 });
+  });
 });

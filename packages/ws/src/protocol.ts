@@ -54,8 +54,9 @@ export type WsClientMessage =
       serverId?: string;
       attributes?: SessionAttributes;
       code?: string;
+      role?: "player" | "spectator";
     }
-  | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string }
+  | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string; role?: "player" | "spectator" }
   | { v: 1; t: "browse"; id: number; gameId: string; filter?: MatchFilter; limit?: number }
   | { v: 1; t: "leave"; id: number; serverId: string }
   | { v: 1; t: "runCommand"; id: number; serverId: string; command: string; input: unknown }
@@ -211,13 +212,15 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
       return typeof message.id === "number" &&
         typeof message.gameId === "string" &&
         (message.serverId === undefined || typeof message.serverId === "string") &&
-        (message.code === undefined || typeof message.code === "string")
+        (message.code === undefined || typeof message.code === "string") &&
+        (message.role === undefined || message.role === "player" || message.role === "spectator")
         ? (message as WsClientMessage)
         : null;
     case "joinByCode":
       return typeof message.id === "number" &&
         typeof message.gameId === "string" &&
-        typeof message.code === "string"
+        typeof message.code === "string" &&
+        (message.role === undefined || message.role === "player" || message.role === "spectator")
         ? (message as WsClientMessage)
         : null;
     case "browse":

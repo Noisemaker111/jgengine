@@ -69,8 +69,8 @@ export type WsVoiceSync = {
 export type WsBackend = GameBackend & {
   pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>;
   browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>;
-  joinByCode: (args: { gameId: string; code: string }) => Promise<JoinServerResult | null>;
-  createSession: (args: { gameId: string; attributes?: SessionAttributes }) => Promise<JoinServerResult>;
+  joinByCode: (args: { gameId: string; code: string; role?: "player" | "spectator" }) => Promise<JoinServerResult | null>;
+  createSession: (args: { gameId: string; attributes?: SessionAttributes; role?: "player" | "spectator" }) => Promise<JoinServerResult>;
   presenceSync: WsPresenceSync;
   chatSync: WsChatSync;
   chatSyncFor: (serverId: string) => ChatSync;
@@ -150,6 +150,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   const subscriptions = new Map<string, Subscription>();
   const resumeTickets = new Map<string, ResumeTicket>();
   const joinedGames = new Map<string, string>();
+  const joinedRoles = new Map<string, "player" | "spectator">();
 
   const clearRequestTimer = (request: PendingRequest) => {
     if (request.timer !== null) {
@@ -213,7 +214,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
 
   const rejoinServers = () => {
     for (const [serverId, gameId] of joinedGames) {
-      rawSend({ v: 1, t: "join", id: nextId++, gameId, serverId });
+      rawSend({ v: 1, t: "join", id: nextId++, gameId, serverId, role: joinedRoles.get(serverId) });
     }
   };
   const helloToken = () => resumeTickets.values().next().value?.token ?? options.token;
@@ -394,9 +395,11 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         id,
         gameId: args.gameId,
         serverId: args.serverId,
+        role: args.role,
       }));
       const joined = result as JoinServerResult;
       joinedGames.set(joined.serverId, args.gameId);
+      joinedRoles.set(joined.serverId, args.role ?? "player");
       if (joined.resumeTicket !== undefined) resumeTickets.set(joined.serverId, joined.resumeTicket);
       return joined;
     },
@@ -404,6 +407,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       poseGates.delete(args.serverId);
       await request((id) => ({ v: 1, t: "leave", id, serverId: args.serverId }));
       joinedGames.delete(args.serverId);
+      joinedRoles.delete(args.serverId);
       resumeTickets.delete(args.serverId);
     },
     async runCommand(args) {
@@ -583,10 +587,12 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         id,
         gameId: args.gameId,
         code: args.code,
+        role: args.role,
       }));
       const joined = result as JoinServerResult | null;
       if (joined !== null) {
         joinedGames.set(joined.serverId, args.gameId);
+        joinedRoles.set(joined.serverId, args.role ?? "player");
         if (joined.resumeTicket !== undefined) resumeTickets.set(joined.serverId, joined.resumeTicket);
       }
       return joined;
@@ -598,9 +604,11 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         id,
         gameId: args.gameId,
         attributes: args.attributes,
+        role: args.role,
       }));
       const joined = result as JoinServerResult;
       joinedGames.set(joined.serverId, args.gameId);
+      joinedRoles.set(joined.serverId, args.role ?? "player");
       if (joined.resumeTicket !== undefined) resumeTickets.set(joined.serverId, joined.resumeTicket);
       return joined;
     },

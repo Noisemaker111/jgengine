@@ -22,6 +22,9 @@ export type JoinServerResult = {
   resumeTicket?: ResumeTicket;
 };
 
+/** Connection role used for authoritative world access; spectators are read-only. */
+export type MultiplayerRole = "player" | "spectator";
+
 export type RunCommandArgs = {
   serverId: string;
   command: string;
@@ -54,7 +57,7 @@ export type GameRuntimeFeedView = {
 };
 
 export type GameRuntimeTransport = {
-  joinServer: (args: { gameId: string; serverId?: string }) => Promise<JoinServerResult>;
+  joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole }) => Promise<JoinServerResult>;
   leaveServer: (args: { serverId: string }) => Promise<void>;
   runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>;
 };

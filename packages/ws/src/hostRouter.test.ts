@@ -95,6 +95,27 @@ test("loopback: second client joins the first client's server", async () => {
   }
 });
 
+test("loopback: spectators can join and receive server updates but cannot run commands or move", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const joined = await alice.transport.joinServer({ gameId: "test-game" });
+    const spectator = stack.connect("spectator");
+    await spectator.transport.joinServer({ gameId: "test-game", serverId: joined.serverId, role: "spectator" });
+    expect(await spectator.transport.runCommand({ serverId: joined.serverId, command: "engine.ping", input: null }))
+      .toEqual({ ok: false, reason: "Spectators cannot run commands" });
+    const serverFeed = spectator.feeds?.subscribeServer;
+    expect(serverFeed).toBeDefined();
+    const updates: unknown[] = [];
+    const unsubscribe = serverFeed!(joined.serverId, (view) => updates.push(view));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(updates.length).toBeGreaterThan(0);
+    unsubscribe();
+  } finally {
+    await stack.shutdown();
+  }
+});
+
 test("loopback: reconnect within the grace window keeps the player entity", async () => {
   const stack = startStack({ graceMs: 50 });
   try {

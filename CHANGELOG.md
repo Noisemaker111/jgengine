@@ -44,6 +44,7 @@ between (`--json` for structured output).
 - `defineGame({ physics: { backend } })` now adopts a capsule character controller for shell/headless movement and registers the backend simulation after movement, including floor collision and step-up behavior.
 - Added the `physics-probe` dev scene for Rapier crate, ragdoll, and vehicle motion.
 - Assets now expose import-spec validation and magic-byte classification for supported source files.
+- Hosted WS sessions now support spectator joins, viewer roles, throttled low-priority snapshot modules, and default command rate limits.
 
 ### Migrate
 

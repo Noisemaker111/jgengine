@@ -6,6 +6,7 @@ import type {
   TransportRunCommandResult,
   WorldSyncFrame,
 } from "@jgengine/core/runtime/transport";
+import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
 import type { GameHost, HostChangeEvent } from "./host";
 
 /** Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server. */
@@ -32,6 +33,7 @@ export interface WorldGameHost extends GameHost {
  */
 export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost {
   const live = new Map<string, { gameId: string; session: HostedWorldSession }>();
+  const roles = new Map<string, Map<string, SnapshotViewer["role"]>>();
   const listeners = new Set<(event: HostChangeEvent) => void>();
   const now = options.now ?? (() => Date.now());
 
@@ -66,13 +68,19 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
   }
 
   return {
-    async joinServer({ userId, gameId, serverId }): Promise<JoinServerResult> {
+    async joinServer({ userId, gameId, serverId, role }): Promise<JoinServerResult> {
       const id = serverId ?? gameId;
       const pending = ensure(gameId, id);
       const entry = pending instanceof Promise ? await pending : pending;
       if (entry === null) throw new Error(`no hosted world for game "${gameId}"`);
       const isNew = !entry.session.members().includes(userId);
-      entry.session.join(userId, isNew);
+      let serverRoles = roles.get(id);
+      if (serverRoles === undefined) {
+        serverRoles = new Map();
+        roles.set(id, serverRoles);
+      }
+      serverRoles.set(userId, role ?? "player");
+      if (role !== "spectator") entry.session.join(userId, isNew);
       emit({ type: "server", serverId: id });
       emit({ type: "player", serverId: id, userId });
       return { serverId: id, isNew };
@@ -80,7 +88,8 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
     async leaveServer({ userId, serverId }): Promise<void> {
       const entry = live.get(serverId);
       if (entry === undefined) return;
-      entry.session.leave(userId);
+      if (entry.session.members().includes(userId)) entry.session.leave(userId);
+      roles.get(serverId)?.delete(userId);
       emit({ type: "server", serverId });
     },
     async runCommand({ userId, serverId, command, input }): Promise<TransportRunCommandResult> {
@@ -98,9 +107,9 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
       return { ok: true };
     },
     async isMember({ userId, serverId }): Promise<boolean> {
-      return live.get(serverId)?.session.members().includes(userId) ?? false;
+      return live.get(serverId)?.session.members().includes(userId) || roles.get(serverId)?.has(userId) === true;
     },
-    async getServerView({ userId, serverId }): Promise<GameRuntimeServerView | null> {
+    async getServerView({ userId, serverId, role }): Promise<GameRuntimeServerView | null> {
       const entry = live.get(serverId);
       if (entry === undefined) return null;
       return {
@@ -108,18 +117,18 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
         gameId: entry.gameId,
         revision: entry.session.revision(),
         memberUserIds: [...entry.session.members()],
-        serverState: entry.session.snapshotFor({ userId }),
+        serverState: entry.session.snapshotFor({ userId, role: role ?? roles.get(serverId)?.get(userId) ?? "player" }),
         updatedAt: now(),
       };
     },
-    async pullWorld({ userId, serverId, sinceRevision }): Promise<WorldSyncFrame | null> {
+    async pullWorld({ userId, serverId, sinceRevision, role }): Promise<WorldSyncFrame | null> {
       const entry = live.get(serverId);
-      if (entry === undefined || !entry.session.members().includes(userId)) return null;
+      if (entry === undefined || (!entry.session.members().includes(userId) && roles.get(serverId)?.get(userId) !== "spectator")) return null;
       if (entry.session.projectsViewers()) {
         return {
           kind: "baseline",
           revision: entry.session.revision(),
-          snapshot: entry.session.snapshotFor({ userId }),
+          snapshot: entry.session.snapshotFor({ userId, role: role ?? roles.get(serverId)?.get(userId) ?? "player" }),
         };
       }
       const sync = entry.session.pull(sinceRevision);

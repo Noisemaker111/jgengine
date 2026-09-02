@@ -82,6 +82,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   const inputs = new Map<string, InputFrame>();
   const movementTuning = resolvePlayerMovementTuning({ world: definition.world, physics: definition.physics });
   const inputSeq = new Map<string, number>();
+  let hostTick = 0;
 
   loop.onInit?.(ctx);
   syncLifecyclePhase(ctx, definition.lifecycle);
@@ -126,6 +127,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       return ctx.game.commands.runAs(userId, name, input);
     },
     tick(dt) {
+      hostTick += 1;
       ctx.sim.advance(dt, (stepDt) => {
         ctx.sim.runStages("beforeMovement", stepDt);
         for (const userId of members.keys()) {
@@ -142,7 +144,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     },
     diff: (sinceRevision) => replicator.diff(sinceRevision),
     revision: () => replicator.revision(),
-    snapshot: (viewer) => ctx.snapshot(viewer),
+    snapshot: (viewer) => ctx.snapshot(viewer === undefined ? undefined : { ...viewer, tick: hostTick }),
     projectsViewers: () => ctx.replicatesPerViewer(),
     members: () => Array.from(members.keys()),
     context: () => ctx,
