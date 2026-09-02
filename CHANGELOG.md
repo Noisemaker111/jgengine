@@ -47,6 +47,7 @@ between (`--json` for structured output).
 - Assets now expose import-spec validation and magic-byte classification for supported source files.
 - Hosted WS sessions now support spectator joins, viewer roles, throttled low-priority snapshot modules, and default command rate limits.
 - `@jgengine/navbake` bakes deterministic navigation meshes and editor documents can store named bake data.
+- Core tactical queries derive cover points and score bounded candidate positions.
 
 ### Migrate
 

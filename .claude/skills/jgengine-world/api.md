@@ -166,6 +166,14 @@
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
 
+## @jgengine/core/ai/tacticalQueries
+
+- `ScoredPosition` (interface): interface ScoredPosition — A candidate position with its deterministic weighted tactical score.
+- `TacticalPositionEvaluators` (interface): interface TacticalPositionEvaluators — Functions that score one candidate position; higher values are preferred.
+- `TacticalPositionWeights` (interface): interface TacticalPositionWeights — Weights and a hard bound for tactical candidate scoring.
+- `coverPoints` (function): function coverPoints(mesh: NavMeshData, threatPos: Vec3, losBlocked: (a: Vec3, b: Vec3) => boolean): Vec3[] — Returns boundary locations that are hidden from a threat.
+- `scorePositions` (function): function scorePositions(points: readonly Vec3[], evaluators: TacticalPositionEvaluators, weights: TacticalPositionWeights = {}): ScoredPosition[] — Score positions and retain at most `maxCandidates`, ordered highest score first.
+
 ## @jgengine/core/ai/targetAcquisition
 
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.

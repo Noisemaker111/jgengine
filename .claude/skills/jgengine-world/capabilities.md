@@ -618,6 +618,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `surfaceRing` (function) · `import { surfaceRing } from "@jgengine/core/world"`
 
+## tactical-cover-points — derive cover candidates from navigation-mesh boundaries
+
+- `coverPoints` (function) · `import { coverPoints } from "@jgengine/core/ai/tacticalQueries"`
+
+## tactical-position-score — rank bounded tactical positions with caller-defined weights
+
+- `scorePositions` (function) · `import { scorePositions } from "@jgengine/core/ai/tacticalQueries"`
+
 ## target-acquirer — stateful held-target wrapper over an acquisition policy with retention
 
 - `createTargetAcquirer` (function) · `import { createTargetAcquirer } from "@jgengine/core/world"`

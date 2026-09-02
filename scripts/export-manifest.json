@@ -17,6 +17,7 @@
     "./ai/pursuit",
     "./ai/spawnDirector",
     "./ai/spawnPoint",
+    "./ai/tacticalQueries",
     "./ai/targetAcquisition",
     "./ai/threat",
     "./ai/waveRunner",
