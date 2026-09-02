@@ -144,12 +144,16 @@ function viewFromCamera(camera: THREE.Camera): CameraView | null {
  * conservative preload margin) are never submitted to the renderer, without unmounting them or
  * touching gameplay. UI, sky, terrain, and environment live outside this subtree and are unaffected.
  */
-export function CullingProvider({ config, children }: { config: VisibilityConfig | undefined; children: ReactNode }): ReactNode {
+export function CullingProvider({ config, drawDistance, children }: { config: VisibilityConfig | undefined; drawDistance?: number; children: ReactNode }): ReactNode {
   const ctx = useGameContext();
   const enabled = config?.enabled !== false;
   const predicateRef = useRef<VisiblePredicate>(ALWAYS_VISIBLE);
   const camera = useThree((state) => state.camera);
-  const driver = useMemo(() => (enabled ? buildSystem(ctx, config) : null), [ctx, config, enabled]);
+  const resolvedConfig = useMemo(() => {
+    if (drawDistance === undefined) return config;
+    return { ...config, culling: { ...config?.culling, defaultMaxRenderDistance: config?.culling?.defaultMaxRenderDistance ?? drawDistance } };
+  }, [config, drawDistance]);
+  const driver = useMemo(() => (enabled ? buildSystem(ctx, resolvedConfig) : null), [ctx, resolvedConfig, enabled]);
 
   useFrame(() => {
     if (driver === null) {

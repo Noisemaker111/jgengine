@@ -91,14 +91,11 @@ function syncSize(built: BuiltGraph, width: number, height: number, pixelRatio: 
  * post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Grade. Rendered only
  * when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
  *
- * `quality` (the player's graphics-quality setting) gates the passes whose cost
- * scales with scene geometry or resolution beyond the dpr cap: GTAO re-renders
- * the whole scene for depth/normals and runs a multi-sample full-screen pass,
- * and Bokeh DOF renders scene depth again — both run on "high" only. Bloom,
- * SMAA, tone mapping, and grade stay on every tier (SMAA is the cheap edge fix
- * for alpha-tested foliage that MSAA samples alone leave crawling).
+ * `stages` (resolved from the player's graphics profile) controls expensive passes
+ * independently. Medium keeps AO and DOF with reduced AO sampling; low can disable
+ * them while retaining cheaper bloom, SMAA, tone mapping, and grade stages.
  */
-export function PostProcessing({ config, quality = "high" }: { config: PostProcessingConfig; quality?: GraphicsQuality }) {
+export function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }) {
   const gl = useThree((s) => s.gl);
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
@@ -118,8 +115,8 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
     const composer = new EffectComposer(gl, target);
     composer.addPass(new RenderPass(scene, camera));
 
-    const heavyPasses = quality === "high";
-    if (heavyPasses && config.ao !== undefined && config.ao !== false) {
+    const resolvedStages = stages ?? { ao: quality === "high", bloom: true, dof: quality === "high", smaa: true };
+    if (resolvedStages.ao && config.ao !== undefined && config.ao !== false) {
       const ao = new OverlayAwareGTAOPass(scene, camera, width, height);
       ao.blendIntensity = config.ao.blend ?? 1;
       ao.updateGtaoMaterial({
@@ -127,12 +124,12 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
         distanceExponent: 1,
         thickness: config.ao.distanceFalloff ?? 3.6,
         scale: config.ao.intensity ?? 2.4,
-        samples: 16,
+        samples: quality === "high" ? 16 : 8,
       });
       composer.addPass(ao);
     }
 
-    if (config.bloom !== false) {
+    if (resolvedStages.bloom && config.bloom !== false) {
       const b = config.bloom ?? {};
       composer.addPass(
         new UnrealBloomPass(
@@ -145,18 +142,18 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
     }
 
     let dof: BokehPass | null = null;
-    if (heavyPasses && config.dof !== undefined && config.dof !== false) {
+    if (resolvedStages.dof && config.dof !== undefined && config.dof !== false) {
       const d = config.dof;
       dof = new OverlayAwareBokehPass(scene, camera, {
         focus: d.focus ?? 18,
-        aperture: d.aperture ?? 0.00025,
+        aperture: d.aperture ?? (quality === "high" ? 0.00025 : 0.00012),
         maxblur: d.maxBlur ?? 0.01,
       });
       composer.addPass(dof);
     }
 
     // SMAA must run before OutputPass (linear-sRGB). Default on for post chains.
-    if (aa === "smaa") {
+    if (resolvedStages.smaa && aa === "smaa") {
       composer.addPass(new SMAAPass());
     }
 
@@ -175,7 +172,7 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
       disposeGraph(graph);
       builtRef.current = null;
     };
-  }, [gl, scene, camera, config, quality]);
+  }, [gl, scene, camera, config, quality, stages]);
 
   useEffect(() => {
     const lut = config.grade !== undefined && config.grade !== false ? config.grade.lut : undefined;

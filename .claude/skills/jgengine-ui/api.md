@@ -67,6 +67,12 @@
 - `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
 - `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
 
+## @jgengine/core/settings/graphicsProfile
+
+- `DEFAULT_GRAPHICS_PROFILES` (const): const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile> — Conservative defaults that preserve the existing high-quality shell behavior.
+- `GraphicsProfile` (interface): interface GraphicsProfile — Serializable renderer budget selected by the player's graphics tier.
+- `resolveGraphicsProfile` (function): function resolveGraphicsProfile(quality: GraphicsQuality, overrides?: Partial<GraphicsProfile>): GraphicsProfile — Resolve one tier and apply game-authored field and post-stage overrides.
+
 ## @jgengine/core/settings/settingsModel
 
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
@@ -2138,7 +2144,7 @@
 
 ## @jgengine/shell/postfx/PostProcessing
 
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high" }: { config: PostProcessingConfig; quality?: GraphicsQuality }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/shell/postfx/ScreenEffectsOverlay
 
@@ -2181,7 +2187,7 @@
 ## @jgengine/shell/render/SceneLighting
 
 - `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
-- `ConfiguredLighting` (function): function ConfiguredLighting({ lighting }: { lighting: LightingConfig }): React.JSX.Element — ⚠ undocumented
+- `ConfiguredLighting` (function): function ConfiguredLighting({ lighting, profile }: { lighting: LightingConfig; profile?: GraphicsProfile }): React.JSX.Element — ⚠ undocumented
 - `POINT_LIGHT_BUDGET` (const): const POINT_LIGHT_BUDGET: 8 — Default cap for combined dynamic point and spot lights.
 - `syncShadowProjection` (function): function syncShadowProjection(light: DirectionalLight): void — Refresh a directional light's shadow projection after its frustum bounds change. R3F pierced `shadow-camera-*` props write the bounds but never call `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box and `shadowCameraSize` is silently inert.
 
@@ -2326,7 +2332,7 @@
 
 - `AudioSettingsBridge` (function): function AudioSettingsBridge({ store, engine, buses, }: { store: SettingsStore; engine: AudioEngine; buses: Record<string, AudioBusDef> | undefined; }): null — ⚠ undocumented
 - `TOUCH_STYLE_AUTO` (const): const TOUCH_STYLE_AUTO: "auto" — Sentinel Controls value meaning "defer to the game's suggested touch skin".
-- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality } — ⚠ undocumented
+- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean, overrides?: Partial<Record<GraphicsQuality, Partial<GraphicsProfile>>>): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile } — ⚠ undocumented
 - `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
 
 ## @jgengine/shell/settings/settingsController
@@ -2609,7 +2615,7 @@
 
 ## @jgengine/shell/visibility/CullingProvider
 
-- `CullingProvider` (function): function CullingProvider({ config, children }: { config: VisibilityConfig | undefined; children: ReactNode }): ReactNode — Drives automatic frustum + distance culling for every entity and placed object. It reads the live render camera each frame, updates the engine VisibilitySystem, and exposes a predicate the entity/object markers consult to toggle `group.visible` — objects fully outside the view (plus a conservative preload margin) are never submitted to the renderer, without unmounting them or touching gameplay. UI, sky, terrain, and environment live outside this subtree and are unaffected.
+- `CullingProvider` (function): function CullingProvider({ config, drawDistance, children }: { config: VisibilityConfig | undefined; drawDistance?: number; children: ReactNode }): ReactNode — Drives automatic frustum + distance culling for every entity and placed object. It reads the live render camera each frame, updates the engine VisibilitySystem, and exposes a predicate the entity/object markers consult to toggle `group.visible` — objects fully outside the view (plus a conservative preload margin) are never submitted to the renderer, without unmounting them or touching gameplay. UI, sky, terrain, and environment live outside this subtree and are unaffected.
 - `useRenderVisibility` (function): function useRenderVisibility(): MutableRefObject<VisiblePredicate> — Read the current render-visibility predicate. Backward compatible: with no CullingProvider mounted (or culling disabled) it returns an always-visible ref, so a marker that consults it behaves exactly as before this feature existed.
 
 ## @jgengine/shell/vision/FrustumSensorHud
@@ -2841,7 +2847,7 @@
 
 ## @jgengine/shell/world/WorldParticles
 
-- `resolveParticleBudget` (function): function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined): number — The per-effect particle pool a graphics tier allows: the requested `max` clamped to the tier cap, so lower tiers degrade density instead of dropping effects entirely.
+- `resolveParticleBudget` (function): function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined, particleCap?: number): number — The per-effect particle pool a graphics tier allows: the requested `max` clamped to the tier cap, so lower tiers degrade density instead of dropping effects entirely.
 
 ## @jgengine/shell/world/WorldPings
 

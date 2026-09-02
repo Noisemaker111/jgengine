@@ -34,6 +34,7 @@ import { DEFAULT_PICKUP_RADIUS } from "@jgengine/core/game/worldItem";
 import type { PointerConfig } from "@jgengine/core/game/playableGame";
 import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
 import type { GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
+import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import {
   BUILT_IN_SETTING_CATEGORIES,
   type GraphicsQuality,
@@ -164,7 +165,7 @@ export function Shell3dPresentation({
   orientationGateEl: React.ReactNode;
   coarsePointer: boolean;
   compact: boolean;
-  graphics: { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality };
+  graphics: { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile };
   settingsStore: SettingsStore;
   bindingOverrides: BindingOverrides;
   rebindAction: (action: string, code: string) => void;
@@ -505,7 +506,7 @@ export function Shell3dPresentation({
                   />
                 ) : null}
                 {lighting !== undefined ? (
-                  <ConfiguredLighting lighting={lighting} />
+                  <ConfiguredLighting lighting={lighting} profile={graphics.profile} />
                 ) : effectiveSky === undefined ? (
                   <>
                     <ambientLight intensity={0.55} />
@@ -530,7 +531,7 @@ export function Shell3dPresentation({
                 ) : null}
                 <BackdropFog fog={backdrop?.fog} />
                 <GameProvider context={ctx}>
-                  <CullingProvider config={playable.visibility}>
+                  <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
                     <WorldView
                       entitySprites={playable.entitySprites}
                       entityModels={playable.entityModels}
@@ -571,7 +572,7 @@ export function Shell3dPresentation({
                     />
                   ) : null}
                   <WorldItems config={playable.worldItem} />
-                  <WorldParticles quality={graphics.quality} />
+                  <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} />
                   <CombatPresentation effects={effects} />
                   {devtoolsEnabled ? <CollisionDebugWorld /> : null}
                   <AudioListener engine={audioEngine} />
@@ -614,7 +615,7 @@ export function Shell3dPresentation({
                 />
                 <DevtoolsRendererProbe />
                 {resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
-                  <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} />
+                  <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} />
                 ) : null}
               </Canvas>
               {!poster &&
