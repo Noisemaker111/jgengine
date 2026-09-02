@@ -14,6 +14,19 @@
 - `VisitorPhase` (type): type VisitorPhase = "seeking" | "traveling" | "dwelling" | "departing" | "done" — A many-agent visitor's current step of the seek→travel→arrive→dwell→depart loop.
 - `VisitorStep` (interface): interface VisitorStep — One tick's result from a {@link VisitorLoop}: current phase, where to steer, and which POI it concerns.
 
+## @jgengine/core/ai/decisionGraph
+
+- `Blackboard` (type): type Blackboard = Record<string, BlackboardValue> — Named facts available to conditions, utilities, and actions.
+- `BlackboardValue` (type): type BlackboardValue = number | boolean | string — Scalar values stored in a decision graph blackboard.
+- `DecisionAction` (type): type DecisionAction<Context = unknown> = ( ctx: Context, params: Record<string, BlackboardValue> | undefined, blackboard: Blackboard, ) => DecisionStatus — Callback implementation for an action node.
+- `DecisionGraph` (type): type DecisionGraph = DecisionNode — Root node for a serializable AI decision graph.
+- `DecisionGraphRuntime` (interface): interface DecisionGraphRuntime<Context = unknown> — Stateful evaluator for a serializable decision graph.
+- `DecisionGraphSnapshot` (interface): interface DecisionGraphSnapshot — Serializable state retained by an active decision graph.
+- `DecisionNode` (type): type DecisionNode = | { kind: "selector"; children: DecisionNode[] } | { kind: "sequence"; children: DecisionNode[] } | { kind: "condition"; key: string; op: DecisionOperator; value: BlackboardValue } | { kind: "action"; action: string; params?: Record<string, BlackboardValue> } | { kind: "utility";… — Serializable selector, sequence, condition, action, or utility node.
+- `DecisionOperator` (type): type DecisionOperator = "=" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "eq" | "ne" | "lt" | "lte" | "gt" | "gte" — Comparison operators supported by decision conditions.
+- `DecisionStatus` (type): type DecisionStatus = "running" | "done" | "failed" — Outcome reported when a decision graph evaluates.
+- `createDecisionGraphRuntime` (function): function createDecisionGraphRuntime<Context = unknown>(graph: DecisionGraph, actions: Record<string, DecisionAction<Context>>): DecisionGraphRuntime<Context> — Creates a deterministic runtime for a serializable decision graph.
+
 ## @jgengine/core/ai/difficulty
 
 - `DIFFICULTY_TIERS` (const): const DIFFICULTY_TIERS: Readonly<Record<DifficultyTier, DifficultyProfile>> — The canonical easy/standard/expert profiles. Frozen — use {@link difficultyProfile} to derive a tweaked copy instead of mutating.
@@ -104,6 +117,10 @@
 - `MobBrainStep` (interface): interface MobBrainStep — ⚠ undocumented
 - `MobVec3` (type): type MobVec3 = readonly [number, number, number] — ⚠ undocumented
 - `MobWanderConfig` (interface): interface MobWanderConfig — ⚠ undocumented
+
+## @jgengine/core/ai/mobBrainGraph
+
+- `mobBrainGraph` (const): const mobBrainGraph: DecisionGraph — Graph-shaped description of the mob brain's idle, wander, chase, engage, and evade decisions.
 
 ## @jgengine/core/ai/populationDirector
 
