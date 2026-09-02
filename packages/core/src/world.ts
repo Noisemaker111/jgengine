@@ -337,13 +337,23 @@ export { selectAutoTarget, type AutoTargetPolicy } from "./scene/autoTarget";
 export {
   advanceBehaviors,
   behaviorControl,
+  registerBehaviorActions,
+  type BehaviorAction,
+  type BehaviorActionContext,
   type BehaviorControl,
   type BehaviorInspection,
   type BehaviorResumePolicy,
   type BehaviorSnapshot,
   type BehaviorStatus,
 } from "./scene/behaviorRuntime";
-export { patrol, player, talkable, wander, type BehaviorDescriptor } from "./scene/behaviors";
+export {
+  patrol,
+  player,
+  talkable,
+  wander,
+  type BehaviorDescriptor,
+  type DecisionGraphBehavior,
+} from "./scene/behaviors";
 export { createBodyBind } from "./scene/bodyBind";
 export { type ColliderPurpose, type EntityColliderSet, type ResolvedCollider } from "./scene/colliders";
 export { type StatCatalog, type StatValue } from "./scene/entityStats";

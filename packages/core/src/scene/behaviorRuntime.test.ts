@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "../game/defineGame";
 import { createGameContext } from "../runtime/gameContext";
-import { advanceBehaviors, behaviorControl } from "./behaviorRuntime";
+import { advanceBehaviors, behaviorControl, registerBehaviorActions } from "./behaviorRuntime";
 import { patrol, wander } from "./behaviors";
 
 function ctx() {
@@ -11,6 +11,29 @@ function ctx() {
 }
 
 describe("advanceBehaviors", () => {
+  test("decision graph action moves an entity toward a remembered position", () => {
+    const c = ctx();
+    const unregister = registerBehaviorActions("investigator", {
+      investigate: ({ ctx: game, entityId, dt }) => {
+        const next = game.scene.entity.moveToward(entityId, "remembered", { speed: 2, dt });
+        if (next === null) return "failed";
+        game.scene.entity.setPose(entityId, { position: next, dt });
+        return "running";
+      },
+    });
+    c.scene.entity.spawn("remembered", { id: "remembered", position: [8, 0, 0], role: "prop" });
+    c.scene.entity.spawn("guard", {
+      id: "guard",
+      position: [0, 0, 0],
+      role: "npc",
+      behaviors: [{ kind: "decisionGraph", actions: "investigator", graph: { kind: "action", action: "investigate" } }],
+    });
+
+    advanceBehaviors(c, 1);
+    expect(c.scene.entity.get("guard")?.position[0]).toBeCloseTo(2);
+    unregister();
+  });
+
   test("advances a patrol entity along its waypoints and poses it", () => {
     const c = ctx();
     c.scene.entity.spawn("car", {
