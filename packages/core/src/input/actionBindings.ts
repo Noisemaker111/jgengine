@@ -1,3 +1,5 @@
+import { GAMEPAD_GLYPH_SETS, type GamepadGlyphName, type GamepadGlyphSet } from "./gamepadModel";
+
 /**
  * Action-binding model: games bind semantic actions ("jump", "interact") to
  * physical control codes; capture layers resolve raw events through this map
@@ -199,7 +201,14 @@ const CODE_LABELS: Record<string, string> = {
 /** Short display label for a raw key/button code (e.g. `"KeyW"` → `"W"`).
  * @internal
  */
-export function bindingLabel(code: string): string {
+export function bindingLabel(code: string, glyphSet: GamepadGlyphName | GamepadGlyphSet = "generic"): string {
+  const padButton = /^pad:(\d+)$/.exec(code);
+  if (padButton !== null) {
+    const set = typeof glyphSet === "string" ? GAMEPAD_GLYPH_SETS[glyphSet] : glyphSet;
+    return set.buttons[Number(padButton[1])] ?? `Button ${padButton[1]}`;
+  }
+  const padAxis = /^padaxis:(\d+)([+-])$/.exec(code);
+  if (padAxis !== null) return `Axis ${padAxis[1]}${padAxis[2]}`;
   const direct = CODE_LABELS[code];
   if (direct !== undefined) return direct;
   if (code.startsWith("Key") && code.length === 4) return code.slice(3);

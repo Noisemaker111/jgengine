@@ -19,6 +19,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- Core gamepad snapshot model, deadzone/curve resolver, and controller glyph labels.
 - Core perception tracks deterministic sight, hearing, occlusion, and bounded observation memory for AI.
 - `syncWorldColliders` now keeps terrain and static object colliders synchronized with a physics backend.
 - Core decision graphs provide deterministic selector, sequence, condition, action, and utility runtimes with snapshot/restore.
