@@ -565,7 +565,8 @@
   "@jgengine/sql": [
     ".",
     "./index",
-    "./sqlPersistence"
+    "./sqlPersistence",
+    "./sqlWorldStore"
   ],
   "@jgengine/react": [
     ".",
@@ -668,6 +669,7 @@
     "./assetNaming",
     "./devSavePlugin",
     "./editorHostPlugin",
+    "./fileWorldStore",
     "./host",
     "./index",
     "./persistence",

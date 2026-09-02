@@ -14,7 +14,7 @@ export interface WorldGameHostOptions {
    * Resolve (or lazily build) the authoritative {@link HostedWorldSession} for a server — called once per new
    * `serverId`. Return `null` for an unknown game. Bind the game's definition + content here.
    */
-  session(args: { gameId: string; serverId: string }): HostedWorldSession | null;
+  session(args: { gameId: string; serverId: string }): HostedWorldSession | Promise<HostedWorldSession | null> | null;
   now?: () => number;
 }
 
@@ -39,12 +39,20 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
     for (const listener of listeners) listener(event);
   }
 
-  function ensure(gameId: string, serverId: string): { gameId: string; session: HostedWorldSession } | null {
+  function ensure(gameId: string, serverId: string): { gameId: string; session: HostedWorldSession } | Promise<{ gameId: string; session: HostedWorldSession } | null> | null {
     const existing = live.get(serverId);
     if (existing !== undefined) return existing;
-    const session = options.session({ gameId, serverId });
-    if (session === null) return null;
-    const entry = { gameId, session };
+    const resolved = options.session({ gameId, serverId });
+    if (resolved instanceof Promise) {
+      return resolved.then((session) => {
+        if (session === null) return null;
+        const entry = { gameId, session };
+        live.set(serverId, entry);
+        return entry;
+      });
+    }
+    if (resolved === null) return null;
+    const entry = { gameId, session: resolved };
     live.set(serverId, entry);
     return entry;
   }
@@ -60,7 +68,8 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
   return {
     async joinServer({ userId, gameId, serverId }): Promise<JoinServerResult> {
       const id = serverId ?? gameId;
-      const entry = ensure(gameId, id);
+      const pending = ensure(gameId, id);
+      const entry = pending instanceof Promise ? await pending : pending;
       if (entry === null) throw new Error(`no hosted world for game "${gameId}"`);
       const isNew = !entry.session.members().includes(userId);
       entry.session.join(userId, isNew);

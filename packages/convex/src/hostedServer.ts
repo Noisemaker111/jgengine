@@ -17,7 +17,7 @@ import type { GameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContextContent, GameContextModels } from "@jgengine/core/runtime/gameContext";
 import { INPUT_COMMAND, type InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import {
-  createHostedWorldSession,
+  createHostedWorldSessionAsync,
   type HostedWorldRecord,
   type HostedWorldSession,
   type HostedWorldStore,
@@ -62,14 +62,14 @@ export interface HostedWorldOutcome<T> {
  * members and replay held inputs, run the op, then persist the snapshot at `revision + 1` iff the world changed.
   * @internal
   */
-export function invokeHostedWorld<T>(invocation: HostedWorldInvocation<T>): HostedWorldOutcome<T> {
+export async function invokeHostedWorld<T>(invocation: HostedWorldInvocation<T>): Promise<HostedWorldOutcome<T>> {
   const { game, store, members = [], inputs = {}, now, op } = invocation;
-  const loaded = store.load();
+  const loaded = await store.load();
   const loadedJson = loaded === null ? null : JSON.stringify(loaded.snapshot);
-  const session = createHostedWorldSession({
+  const session = await createHostedWorldSessionAsync({
     definition: game.definition,
     content: game.content,
-    store: { load: () => loaded, save: () => {} },
+    store: { load: async () => loaded, save: async () => {} },
     ...(now === undefined ? {} : { now }),
     ...(game.models === undefined ? {} : { models: game.models }),
   });
@@ -82,7 +82,7 @@ export function invokeHostedWorld<T>(invocation: HostedWorldInvocation<T>): Host
     return { value, revision: baseRevision, changed: false, members: session.members() };
   }
   const record: HostedWorldRecord = { snapshot, revision: baseRevision + 1 };
-  store.save(record);
+  await store.save(record);
   return { value, revision: record.revision, changed: true, members: session.members() };
 }
 
@@ -123,8 +123,8 @@ function worldStoreForRow(row: HostedWorldDoc | null): {
   let captured: HostedWorldRecord | null = null;
   return {
     store: {
-      load: () => loaded,
-      save(record) {
+      async load() { return loaded; },
+      async save(record) {
         captured = record;
       },
     },
@@ -245,7 +245,7 @@ export function createHostedGameServerFunctions(options: {
       const isNew = !(row?.memberUserIds ?? []).includes(actorUserId);
 
       const { store, captured } = worldStoreForRow(row);
-      const outcome = invokeHostedWorld({
+      const outcome = await invokeHostedWorld({
         game,
         store,
         members: row?.memberUserIds ?? [],
@@ -286,7 +286,7 @@ export function createHostedGameServerFunctions(options: {
 
       const game = resolveGame(args.gameId);
       const { store, captured } = worldStoreForRow(row);
-      const outcome = invokeHostedWorld({
+      const outcome = await invokeHostedWorld({
         game,
         store,
         members: row.memberUserIds,
@@ -348,7 +348,7 @@ export function createHostedGameServerFunctions(options: {
       const game = resolveGame(args.gameId);
       const loadedRevision = row.revision;
       const { store, captured } = worldStoreForRow(row);
-      const outcome = invokeHostedWorld({
+      const outcome = await invokeHostedWorld({
         game,
         store,
         members: row.memberUserIds,
@@ -432,7 +432,7 @@ export function createHostedGameServerFunctions(options: {
         const elapsedMs = nowMs - row.tickAnchorMs;
 
         const { store, captured } = worldStoreForRow(row);
-        const outcome = invokeHostedWorld({
+        const outcome = await invokeHostedWorld({
           game,
           store,
           members: row.memberUserIds,

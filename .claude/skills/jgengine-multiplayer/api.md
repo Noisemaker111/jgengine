@@ -317,6 +317,7 @@
 - `createGameWsServer` (function): function createGameWsServer(options: GameWsServerOptions): GameWsServer — ⚠ undocumented
 - `createWorldGameServer` (function): function createWorldGameServer(options: WorldGameServerOptions): WorldGameServer — Build a {@link WorldGameServer} — one process hosting authoritative GameContext worlds over ws, ready for two-client play once {@link WorldGameServer.start} runs.
 - `filePersistence` (function): function filePersistence(dir: string, now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `fileWorldStore` (function): function fileWorldStore(path: string): HostedWorldStore — JSON-file implementation of the asynchronous hosted-world persistence seam.
 - `installShutdownHook` (function): function installShutdownHook(shutdown: () => Promise<void> | void, options: InstallShutdownHookOptions = {}): ShutdownHook — Wires `SIGINT`/`SIGTERM` (or a custom signal list) to a clean-shutdown callback — e.g. `() => worldServer.close()` or `() => Promise.all([wsServer.close(), host.stop()])`. Bounded by `timeoutMs` so a stuck flush can't hang the process forever; idempotent — a second signal delivered mid-shutdown reuses the same in-flight run instead of flushing twice. Returns a {@link ShutdownHook} whose `remove()` uninstalls the listeners, for tests and embedders that want their own handling.
 - `memoryPersistence` (function): function memoryPersistence(now?: () => number): HostPersistence — Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `memoryWorldPersistence` (function): function memoryWorldPersistence(): WorldPersistence — Default {@link WorldPersistence}: an isolated in-memory {@link HostedWorldStore} per `gameId`/`serverId`, lost on process exit.
@@ -340,6 +341,10 @@
 - `EditorHostOptions` (interface): interface EditorHostOptions — Where the standalone editor reads and writes: the scene folder and the model folder it scans.
 - `EditorManifest` (interface): interface EditorManifest — What the standalone editor loads on boot: the on-disk scene document (if any) and every model in the asset folder.
 - `EditorManifestAsset` (interface): interface EditorManifestAsset — One placeable model the standalone editor lists — a stable id and a URL the dev server serves it from.
+
+## @jgengine/node/fileWorldStore
+
+- `fileWorldStore` (function): function fileWorldStore(path: string): HostedWorldStore — JSON-file implementation of the asynchronous hosted-world persistence seam.
 
 ## @jgengine/node/host
 
@@ -410,6 +415,7 @@
 - `SqlQueryable` (type): type SqlQueryable = { query: (text: string, params?: unknown[]) => Promise<SqlQueryResult>; } — ⚠ undocumented
 - `ensureSchema` (function): function ensureSchema(pool: SqlQueryable): Promise<void> — ⚠ undocumented
 - `sqlPersistence` (function): function sqlPersistence(pool: SqlPool, now: () => number = Date.now): HostPersistence — ⚠ undocumented
+- `sqlWorldStore` (function): function sqlWorldStore(pool: SqlQueryable, worldId: string): HostedWorldStore — Create an asynchronous hosted-world store backed by one JSONB row.
 
 ## @jgengine/sql/sqlPersistence
 
@@ -419,6 +425,10 @@
 - `SqlQueryable` (type): type SqlQueryable = { query: (text: string, params?: unknown[]) => Promise<SqlQueryResult>; } — ⚠ undocumented
 - `ensureSchema` (function): function ensureSchema(pool: SqlQueryable): Promise<void> — ⚠ undocumented
 - `sqlPersistence` (function): function sqlPersistence(pool: SqlPool, now: () => number = Date.now): HostPersistence — ⚠ undocumented
+
+## @jgengine/sql/sqlWorldStore
+
+- `sqlWorldStore` (function): function sqlWorldStore(pool: SqlQueryable, worldId: string): HostedWorldStore — Create an asynchronous hosted-world store backed by one JSONB row.
 
 ## @jgengine/ws
 

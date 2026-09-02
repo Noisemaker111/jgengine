@@ -49,6 +49,7 @@ test("server records round-trip and list by game", async () => {
   expect((await persistence.listServers("demo")).map((row) => row.serverId)).toEqual(["srv-1"]);
 });
 
+
 test("profiles and chunks round-trip", async () => {
   const persistence = await makePersistence();
   expect(await persistence.loadProfile({ userId: "alice", gameId: "demo" })).toBeNull();

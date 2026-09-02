@@ -18,6 +18,12 @@ export interface HostedWorldRecord {
  * saves on a cadence; a stateless host reconstructs from `load()` each invocation.
  */
 export interface HostedWorldStore {
+  load(): Promise<HostedWorldRecord | null>;
+  save(record: HostedWorldRecord): Promise<void>;
+}
+
+/** Synchronous store adapter retained for deterministic in-process tests. */
+export interface SyncHostedWorldStore {
   load(): HostedWorldRecord | null;
   save(record: HostedWorldRecord): void;
 }
@@ -25,13 +31,22 @@ export interface HostedWorldStore {
 /** In-process {@link HostedWorldStore} for tests, local play, and the browser-tab P2P host.
  * @internal
  */
-export function memoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore {
+export function memoryWorldStore(seed?: HostedWorldRecord): SyncHostedWorldStore {
   let record: HostedWorldRecord | null = seed ?? null;
   return {
     load: () => record,
     save(next) {
       record = { snapshot: next.snapshot, revision: next.revision };
     },
+  };
+}
+
+/** Async in-process store for callers exercising the production persistence contract. */
+export function asyncMemoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore {
+  let record: HostedWorldRecord | null = seed ?? null;
+  return {
+    async load() { return record; },
+    async save(next) { record = { snapshot: next.snapshot, revision: next.revision }; },
   };
 }
 
@@ -47,7 +62,7 @@ export interface HostedWorldSessionOptions<TAssetRef extends ModelAssetRef, TMul
   host?: LoopPlayer;
   now?: () => number;
   /** Where the authoritative snapshot persists; defaults to {@link memoryWorldStore}. */
-  store?: HostedWorldStore;
+  store?: SyncHostedWorldStore;
   /** Minimum elapsed ms between auto-saves on tick, measured against `now` (defaults to `Date.now` when omitted). Default `0` — persist on every revision-changing tick. */
   saveIntervalMs?: number;
   /** Render-model lookup for collider auto-fit, forwarded to the runner — see {@link HostedGameRunnerOptions.models}. */
@@ -140,4 +155,20 @@ export function createHostedWorldSession<TAssetRef extends ModelAssetRef, TMulti
     save: persist,
     runner: () => runner,
   };
+}
+
+/** Build a hosted session from an asynchronous persistence backend. */
+export async function createHostedWorldSessionAsync<TAssetRef extends ModelAssetRef, TMultiplayer>(
+  options: Omit<HostedWorldSessionOptions<TAssetRef, TMultiplayer>, "store"> & { store: HostedWorldStore },
+): Promise<HostedWorldSession> {
+  const { store, ...sessionOptions } = options;
+  const loaded = await store.load();
+  const session = createHostedWorldSession({
+    ...sessionOptions,
+    store: {
+      load: () => loaded,
+      save: (record) => { void store.save(record); },
+    },
+  });
+  return session;
 }

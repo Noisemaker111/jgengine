@@ -4,4 +4,5 @@ export * from "./shutdown";
 export * from "./socketIoServer";
 export * from "./webHandler";
 export * from "./worldServer";
+export * from "./fileWorldStore";
 export * from "./wsServer";
