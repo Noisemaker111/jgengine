@@ -167,6 +167,7 @@ export const editorLayerRegistry: Partial<
 
 export const gameRegistry: GameRegistry = {
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
+  "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
   "pointer-commander": () =>
     import("./demo/pointerDemo").then((module) => module.pointerDemoGame),
   "environment-showcase": () =>
