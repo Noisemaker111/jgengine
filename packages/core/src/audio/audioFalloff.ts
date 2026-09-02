@@ -32,6 +32,16 @@ export interface SoundDef {
   /** Positional emitters attenuate by distance from the listener; non-positional sounds (UI, music) play at flat gain. Default true. */
   positional?: boolean;
   falloff?: AudioFalloffConfig;
+  /** Web Audio spatial panning configuration. When present, the shell uses a PannerNode. */
+  spatial?: {
+    panning: "hrtf" | "equalpower";
+    refDistance?: number;
+    maxDistance?: number;
+    rolloff?: number;
+    coneInner?: number;
+    coneOuter?: number;
+    coneOuterGain?: number;
+  };
 }
 
 const DEFAULT_MIN_DISTANCE = 1;
