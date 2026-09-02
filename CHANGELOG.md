@@ -62,6 +62,7 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Hosted game runner queues authoritative inputs by simulation tick and applies the in-force frame each fixed step.
 - Create scaffolds now use a 60 Hz simulation with interpolation enabled by default.
 
 - Rigged `ModelConfig` entries can opt into shell foot IK with named thigh/shin/foot bones; the driver raycasts the shared scene terrain, solves each chain, and fades corrections while airborne.
