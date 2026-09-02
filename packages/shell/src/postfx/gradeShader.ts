@@ -21,10 +21,20 @@ const fragmentShader = /* glsl */ `
   uniform float uGrain;
   uniform float uChroma;
   uniform float uTime;
+  uniform sampler2D uLut;
+  uniform float uLutSize;
   varying vec2 vUv;
 
   float hash(vec2 p) {
     return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  }
+
+  vec3 sampleLut(vec3 color) {
+    float size = max(uLutSize, 2.0);
+    vec3 c = clamp(color, 0.0, 1.0) * (size - 1.0);
+    float blue = floor(c.b);
+    vec2 uv = vec2((blue * size + c.r + 0.5) / (size * size), (c.g + 0.5) / size);
+    return texture2D(uLut, uv).rgb;
   }
 
   void main() {
@@ -39,6 +49,7 @@ const fragmentShader = /* glsl */ `
     c = pow(max(c, 0.0), vec3(uGamma));
     float luma = dot(c, vec3(0.2126, 0.7152, 0.0722));
     c = mix(vec3(luma), c, uSaturation);
+    if (uLutSize > 1.0) c = sampleLut(c);
     vec2 d = vUv - 0.5;
     float vig = 1.0 - uVignette * smoothstep(0.6, 0.95, dot(d, d) * 2.2);
     c *= vig;
@@ -71,6 +82,8 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
       uGrain: { value: config.grain ?? DEFAULT_GRAIN },
       uChroma: { value: config.chromaticAberration ?? DEFAULT_CHROMA },
       uTime: { value: 0 },
+      uLut: { value: null },
+      uLutSize: { value: 0 },
     },
     vertexShader,
     fragmentShader,

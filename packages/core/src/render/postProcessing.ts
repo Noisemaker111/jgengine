@@ -29,6 +29,8 @@ export interface AoConfig {
 
 /** Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping. */
 export interface GradeConfig {
+  /** Optional 2D strip LUT URL. The strip contains size square tiles, one tile per blue slice. */
+  lut?: { url: string; size?: number };
   /** Additive shadow tint (RGB, ~0..0.1). Default cool [0.012, 0.010, 0.018]. */
   lift?: readonly [number, number, number];
   /** Multiplicative highlight tint (RGB, ~1). Default warm [1.05, 1.02, 0.98]. */

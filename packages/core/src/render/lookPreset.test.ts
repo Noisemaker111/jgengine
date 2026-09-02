@@ -1,26 +1,28 @@
 import { describe, expect, it } from "bun:test";
 
-import { CINEMATIC_POST_PROCESSING, CINEMATIC_SKY, resolveGameLook } from "./lookPreset";
+import { CINEMATIC_POST_PROCESSING, CINEMATIC_SKY, NEUTRAL_POST_PROCESSING, PHOTOREAL_POST_PROCESSING, TOON_POST_PROCESSING, resolveGameLook } from "./lookPreset";
 
 describe("resolveGameLook", () => {
-  it("defaults to cinematic when look is unset — wires sky + post so a bare scene reads lit", () => {
+  it("defaults to neutral without injecting a stylistic rig", () => {
     const look = resolveGameLook({});
-    expect(look.backdrop?.sky).toEqual(CINEMATIC_SKY);
-    expect(look.postProcessing).toEqual(CINEMATIC_POST_PROCESSING);
+    expect(look.backdrop).toBeUndefined();
+    expect(look.postProcessing).toEqual(NEUTRAL_POST_PROCESSING);
   });
 
   it('cinematic post stack carries tonemap + bloom + gentle SSAO + grade/vignette', () => {
-    const look = resolveGameLook({});
-    expect(look.postProcessing?.toneMapping).toBe("aces");
-    expect(look.postProcessing?.bloom).toBeDefined();
-    expect(look.postProcessing?.ao).toBeDefined();
-    expect(look.postProcessing?.grade).toBeDefined();
+    const look = resolveGameLook({ look: "photoreal" });
+    expect(look.postProcessing).toEqual(PHOTOREAL_POST_PROCESSING);
   });
 
   it('cinematic leaves the sky to the world when the world already declares one', () => {
-    const look = resolveGameLook({ hasWorldSky: true });
+    const look = resolveGameLook({ look: "cinematic", hasWorldSky: true });
     expect(look.backdrop).toBeUndefined();
     expect(look.postProcessing).toEqual(CINEMATIC_POST_PROCESSING);
+  });
+
+  it("selects the neutral and toon profiles exactly", () => {
+    expect(resolveGameLook({ look: "neutral" }).postProcessing).toEqual(NEUTRAL_POST_PROCESSING);
+    expect(resolveGameLook({ look: "toon" }).postProcessing).toEqual(TOON_POST_PROCESSING);
   });
 
   it('flat opts out — passes explicit knobs through untouched and adds nothing', () => {
@@ -41,7 +43,7 @@ describe("resolveGameLook", () => {
   });
 
   it("cinematic fills the sky while preserving an authored background/fog", () => {
-    const look = resolveGameLook({ backdrop: { background: "#101014" } });
+    const look = resolveGameLook({ look: "cinematic", backdrop: { background: "#101014" } });
     expect(look.backdrop?.background).toBe("#101014");
     expect(look.backdrop?.sky).toEqual(CINEMATIC_SKY);
   });

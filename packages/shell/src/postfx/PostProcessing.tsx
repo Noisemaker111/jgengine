@@ -178,6 +178,27 @@ export function PostProcessing({ config, quality = "high" }: { config: PostProce
   }, [gl, scene, camera, config, quality]);
 
   useEffect(() => {
+    const lut = config.grade !== undefined && config.grade !== false ? config.grade.lut : undefined;
+    const grade = builtRef.current?.grade;
+    if (lut === undefined || grade === null || grade === undefined) return;
+    let cancelled = false;
+    const loader = new THREE.TextureLoader();
+    loader.loadAsync(lut.url).then((texture) => {
+      if (cancelled) {
+        texture.dispose();
+        return;
+      }
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.NearestFilter;
+      texture.magFilter = THREE.NearestFilter;
+      texture.generateMipmaps = false;
+      grade.uniforms.uLut.value = texture;
+      grade.uniforms.uLutSize.value = lut.size ?? 32;
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [config.grade]);
+
+  useEffect(() => {
     const prevTone = gl.toneMapping;
     const prevExposure = gl.toneMappingExposure;
     gl.toneMapping = TONE_MAPPING[config.toneMapping ?? "aces"];
