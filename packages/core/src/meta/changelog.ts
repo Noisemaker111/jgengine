@@ -18,6 +18,7 @@ export const CHANGELOG: Record<string, ChangelogEntry> = {
       "`presence.sync` returns `{ pose, lastSeenAt, displaced }` instead of `null`, and `presence.leave` marks the row revoked instead of deleting it (the reaper collects it once idle). A caller that ignored the return value is unaffected.",
     ],
     added: [
+      "Polygon navigation meshes — `NavMeshData`, adjacency building, polygon A* paths, closest-point, and nav raycasts (`@jgengine/core/nav/navMesh`).",
       "`createPerception` (`@jgengine/core/sensor/perception`) tracks sight, sound, and damage stimuli per observer, with cone/range/occlusion checks, linearly decaying memory, retuning, and snapshot/restore.",
       "`syncWorldColliders(backend, ctx)` mirrors static scene-object colliders and the sampled ground heightfield into a physics backend, updating on object spawn, despawn, and pose changes.",
       "Physics-backed player movement — `defineGame({ physics: { backend } })` installs the backend's `afterMovement` simulation stage and makes the shell/headless walk controller use a capsule for gravity, shapecast collision, slopes, and step-up, while retaining the existing input and impulse feel.",

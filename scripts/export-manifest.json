@@ -253,6 +253,7 @@
     "./nav/navConstrain",
     "./nav/navFromEnvironment",
     "./nav/navGrid",
+    "./nav/navMesh",
     "./nav/pathFollow",
     "./nav/railGraph",
     "./nav/timetable",
