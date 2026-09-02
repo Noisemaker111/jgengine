@@ -45,6 +45,7 @@ between (`--json` for structured output).
 - Added the `physics-probe` dev scene for Rapier crate, ragdoll, and vehicle motion.
 - Assets now expose import-spec validation and magic-byte classification for supported source files.
 - Hosted WS sessions now support spectator joins, viewer roles, throttled low-priority snapshot modules, and default command rate limits.
+- `@jgengine/navbake` bakes deterministic navigation meshes and editor documents can store named bake data.
 
 ### Migrate
 

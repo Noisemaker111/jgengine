@@ -196,6 +196,13 @@ export interface EditorMinimapBake {
   bounds: MinimapBakeBounds;
 }
 
+/** A named baked artifact produced by an editor or build tool. */
+export interface EditorBake {
+  kind: "nav" | "minimap";
+  id: string;
+  data: unknown;
+}
+
 /** Named sky look stored on the scene document; matches runtime `SkyEnvironmentConfig.preset`. */
 export type EditorSkyPreset = "day" | "dusk" | "night";
 
@@ -272,6 +279,8 @@ export interface EditorDocument {
    * until baked, so old docs and unbaked games load unchanged.
    */
   minimap?: EditorMinimapBake;
+  /** Named baked artifacts; `minimap` remains as a compatible legacy alias. */
+  bakes?: EditorBake[];
   /**
    * Scene-document sky/fog/lighting (#1110). Absent until authored in the lighting workspace or
    * seeded via `editorLayers`, so old docs load unchanged and world.ts can keep a fallback sky.

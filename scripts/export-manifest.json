@@ -956,6 +956,7 @@
     "./handlers/hierarchy",
     "./handlers/index",
     "./handlers/minimap",
+    "./handlers/navmesh",
     "./handlers/runtime",
     "./handlers/streets",
     "./handlers/terrain",

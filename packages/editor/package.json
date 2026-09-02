@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@jgengine/core": "^0.18.0",
+    "@jgengine/navbake": "^0.18.0",
     "@jgengine/react": "^0.18.0",
     "@jgengine/shell": "^0.18.0"
   },

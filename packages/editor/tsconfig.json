@@ -15,6 +15,8 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@jgengine/core/*": ["../core/src/*"],
+      "@jgengine/navbake/*": ["../navbake/src/*"],
+      "@jgengine/navbake": ["../navbake/src/index.ts"],
       "@jgengine/react": ["../react/src/index.ts"],
       "@jgengine/react/*": ["../react/src/*"],
       "@jgengine/shell/*": ["../shell/src/*"],

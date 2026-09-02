@@ -5,6 +5,7 @@ import { documentHandlers } from "./document";
 import { gridHandlers } from "./grids";
 import { hierarchyHandlers } from "./hierarchy";
 import { minimapHandlers } from "./minimap";
+import { navMeshHandlers } from "./navmesh";
 import { streetsHandlers } from "./streets";
 import { runtimeHandlers } from "./runtime";
 import { terrainHandlers } from "./terrain";
@@ -19,6 +20,7 @@ export const EDITOR_RPC_HANDLERS: HandlerTable = {
   ...catalogHandlers,
   ...terrainHandlers,
   ...minimapHandlers,
+  ...navMeshHandlers,
   ...streetsHandlers,
   ...hierarchyHandlers,
   ...collectionHandlers,

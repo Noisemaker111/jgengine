@@ -77,6 +77,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "convert_scatter", description: "Detach a foliage/scatter region into individually-editable placed prop markers, removing the region." },
   { name: "generate_streets", description: "Bake the seed-driven street generator into the scene as authorable road/route paths inside a volume (or explicit center+halfX/halfZ). mode net→roads, circuit→closed route; params overlays sliders (gridness/loopiness/connectivity/winding/...). Idempotent: re-running the same seed replaces its own prior output. One undoable edit; round-trips --save." },
   { name: "bake_minimap", description: "Rasterize the authored terrain into a stored minimap PNG on the document (runtime reads it as the Minimap background). Live-editor only — needs the mounted viewport's terrain sampler, not a headless CLI." },
+  { name: "bakeNavMesh", description: "Bake indexed scene geometry into a named navigation mesh stored in the document." },
   { name: "add_foliage", description: "Add a foliage/scatter region from a closed polygon (≥3 x/z points) with density and item." },
   { name: "scatter_summary", description: "Count foliage/scatter regions and their total deterministic instance placements." },
   { name: "set_parent", description: "Parent objects under another (or null to unparent); cycles are refused. Moving a parent moves its subtree." },
