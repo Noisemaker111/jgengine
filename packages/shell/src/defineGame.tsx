@@ -15,6 +15,7 @@ import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
 import type { EnvironmentSource } from "@jgengine/core/render/environment";
 import { lightingFromDocument } from "@jgengine/core/editor/environment";
+import { resolveGameLook } from "@jgengine/core/render/lookPreset";
 
 import { EnvironmentScene } from "./environment";
 import { terrainGroundColorSampler } from "./environment/terrainGroundColor";
@@ -127,6 +128,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     lighting: authoredLighting,
     environmentSource,
     backdrop,
+    look,
     postProcessing,
     shadows,
     presentation,
@@ -142,6 +144,13 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     ...engineFields,
     multiplayer: multiplayer ?? offline(),
     loop,
+  });
+  const resolvedLook = resolveGameLook({
+    look,
+    lighting: authoredLighting,
+    backdrop,
+    postProcessing,
+    hasWorldSky: editorLayers?.environment?.preset !== undefined,
   });
 
   function withPhaseSync<A extends unknown[]>(
@@ -204,10 +213,10 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     worldItem,
     collision,
     movement,
-    lighting: authoredLighting ?? (editorLayers === undefined ? undefined : lightingFromDocument(editorLayers) ?? (editorLayers.environment?.pointLights === undefined ? undefined : { point: editorLayers.environment.pointLights })),
+    lighting: resolvedLook.lighting ?? (editorLayers === undefined ? undefined : lightingFromDocument(editorLayers) ?? (editorLayers.environment?.pointLights === undefined ? undefined : { point: editorLayers.environment.pointLights })),
     environmentSource: environmentSource ?? (isEnvironmentSource(environment) ? environment : undefined),
-    backdrop,
-    postProcessing,
+    backdrop: resolvedLook.backdrop,
+    postProcessing: resolvedLook.postProcessing,
     shadows,
     presentation,
     objectStyles,
