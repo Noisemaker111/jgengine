@@ -21,6 +21,7 @@ between (`--json` for structured output).
 
 - Core perception tracks deterministic sight, hearing, occlusion, and bounded observation memory for AI.
 - `syncWorldColliders` now keeps terrain and static object colliders synchronized with a physics backend.
+- Core decision graphs provide deterministic selector, sequence, condition, action, and utility runtimes with snapshot/restore.
 - WS sessions now issue resume tickets and retain disconnected memberships for a 15-second grace window, allowing reconnects to rejoin without replacing player state.
 - Shell entity sprites can play atlas-backed sprite clips while preserving raw texture sprites.
 - Core sprite atlas adapters and deterministic 2D sprite clip playback primitives.

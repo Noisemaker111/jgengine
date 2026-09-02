@@ -2,6 +2,7 @@
   "@jgengine/core": [
     ".",
     "./ai/crowd",
+    "./ai/decisionGraph",
     "./ai/difficulty",
     "./ai/driver",
     "./ai/flock",
@@ -11,6 +12,7 @@
     "./ai/jobBoard",
     "./ai/laneSelect",
     "./ai/mobBrain",
+    "./ai/mobBrainGraph",
     "./ai/populationDirector",
     "./ai/pursuit",
     "./ai/spawnDirector",

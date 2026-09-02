@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, and utility AI decisions.
+
+- `createDecisionGraphRuntime` (function) · `import { createDecisionGraphRuntime } from "@jgengine/core/ai/decisionGraph"`
+
 ## ai-driver — difficulty-aware chase/route driving step producing throttle/brake/steer for the vehicle sim
 
 - `driveStep` (function) · `import { driveStep } from "@jgengine/core/ai/driver"`
