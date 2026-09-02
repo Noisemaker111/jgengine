@@ -186,6 +186,7 @@
     "./i18n/i18n",
     "./index",
     "./input/actionBindings",
+    "./input/actionContexts",
     "./input/axisInput",
     "./input/bindingOverrides",
     "./input/controlGroups",

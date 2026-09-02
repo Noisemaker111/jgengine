@@ -16,6 +16,7 @@ import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengin
 import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { activeActionCodes } from "@jgengine/core/game/controlGate";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
@@ -148,8 +149,10 @@ export function GamePlayerShell({
     [playable],
   );
   const tracker = useMemo(
-    () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(effectiveInput))),
-    [effectiveInput],
+    () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(
+      ctx === null ? effectiveInput : activeActionCodes(ctx, effectiveInput),
+    ))),
+    [ctx, effectiveInput],
   );
   const graphics = useGraphicsSettings(settingsStore, playable.shadows ?? true, playable.graphics);
   const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
