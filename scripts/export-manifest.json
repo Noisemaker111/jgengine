@@ -275,6 +275,7 @@
     "./physics/traversal",
     "./physics/vehicleBody",
     "./physics/vehicleObstacles",
+    "./physics/worldColliders",
     "./procedural",
     "./progression/statGraph",
     "./puzzle/cellGrid",
