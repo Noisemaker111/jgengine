@@ -71,7 +71,9 @@ function warnMissingClips(
 interface GraphPlayback {
   runtime: AnimGraphRuntime;
   actions: Map<string, THREE.AnimationAction>;
-  durations: Record<string, number>;
+  durations: Record<string, { duration: number; rootTrack?: { times: Float32Array; values: Float32Array } }>;
+  rootBone: THREE.Bone | null;
+  rootBindPosition: THREE.Vector3 | null;
   lastPos: [number, number, number] | null;
   smoothedSpeed: number;
 }
@@ -81,10 +83,21 @@ function actionKey(layer: string, clip: string): string {
   return `${layer}:${clip}`;
 }
 
-function buildGraphPlayback(mixer: THREE.AnimationMixer, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPlayback {
+function buildGraphPlayback(scene: THREE.Object3D, mixer: THREE.AnimationMixer, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPlayback {
   const actions = new Map<string, THREE.AnimationAction>();
-  const durations: Record<string, number> = {};
-  for (const clip of clips) durations[clip.name] = clip.duration;
+  const durations: GraphPlayback["durations"] = {};
+  let resolvedRootBone: THREE.Bone | null = null;
+  scene.traverse((object: THREE.Object3D) => {
+    if (resolvedRootBone === null && object instanceof THREE.Bone) resolvedRootBone = object;
+  });
+  const rootBone = resolvedRootBone as THREE.Bone | null;
+  for (const clip of clips) {
+    const track = rootBone === null ? undefined : clip.tracks.find((candidate) => candidate.name === `${rootBone.name}.position`);
+    durations[clip.name] = {
+      duration: clip.duration,
+      ...(track === undefined ? {} : { rootTrack: { times: new Float32Array(track.times), values: new Float32Array(track.values) } }),
+    };
+  }
   for (const layer of graph.layers) {
     const names = new Set<string>();
     for (const state of Object.values(layer.states)) {
@@ -117,7 +130,15 @@ function buildGraphPlayback(mixer: THREE.AnimationMixer, graph: AnimGraph, clips
       actions.set(actionKey(layer.id, name), action);
     }
   }
-  return { runtime: createAnimGraphRuntime(graph), actions, durations, lastPos: null, smoothedSpeed: 0 };
+  return {
+    runtime: createAnimGraphRuntime(graph),
+    actions,
+    durations,
+    rootBone,
+    rootBindPosition: rootBone?.position.clone() ?? null,
+    lastPos: null,
+    smoothedSpeed: 0,
+  };
 }
 
 /**
@@ -184,7 +205,7 @@ export function useModelAnimation(
     warnMissingClips(animation, clips);
     const mixer = new THREE.AnimationMixer(scene);
     if (graph !== undefined) {
-      graphRef.current = buildGraphPlayback(mixer, graph, clips);
+      graphRef.current = buildGraphPlayback(scene, mixer, graph, clips);
       mixer.update(0);
       mixerRef.current = mixer;
       animationPausedRef.current = false;
@@ -274,7 +295,19 @@ export function useModelAnimation(
         action.time = entry.time;
       }
       mixerRef.current.update(0);
+      const currentPlayback = graphRef.current;
+      if (currentPlayback !== null && currentPlayback.rootBone !== null && currentPlayback.rootBindPosition !== null) {
+        currentPlayback.rootBone.position.copy(currentPlayback.rootBindPosition);
+      }
       if (ctx !== null && instanceId !== undefined) {
+        const rootDelta = out.rootDelta;
+        const entity = rootDelta === undefined ? null : ctx.scene.entity.get(instanceId);
+        if (entity !== null && rootDelta !== undefined) {
+          ctx.scene.entity.setPose(instanceId, {
+            position: [entity.position[0] + rootDelta[0], entity.position[1] + rootDelta[1], entity.position[2] + rootDelta[2]],
+            dt: delta,
+          });
+        }
         for (const event of out.events) ctx.game.events.emit("animation.event", { instanceId, name: event.name, clip: event.clip });
       }
       return;

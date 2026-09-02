@@ -33,6 +33,16 @@ describe("stateClipWeights", () => {
 });
 
 describe("createAnimGraphRuntime", () => {
+  test("returns root motion sampled from a synthetic root track", () => {
+    const rt = createAnimGraphRuntime({
+      layers: [{ id: "base", entry: "walk", states: { walk: { kind: "clip", clip: "walk", rootMotion: true } }, transitions: [] }],
+    });
+    const out = rt.advance(0.5, {}, {
+      walk: { duration: 1, rootTrack: { times: new Float32Array([0, 1]), values: new Float32Array([0, 0, 0, 2, 0, 0]) } },
+    });
+    expect(out.rootDelta).toEqual([1, 0, 0]);
+  });
+
   test("a clip state advances time, loops, and fires events across the wrap", () => {
     const graph: AnimGraph = {
       layers: [{ id: "base", entry: "idle", states: { idle: { kind: "clip", clip: "walk" } }, transitions: [] }],

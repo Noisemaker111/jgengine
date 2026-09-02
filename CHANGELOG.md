@@ -52,6 +52,8 @@ between (`--json` for structured output).
 
 - Rigged `ModelConfig` entries can opt into shell foot IK with named thigh/shin/foot bones; the driver raycasts the shared scene terrain, solves each chain, and fades corrections while airborne.
 
+- Animation graph clips may carry root-bone position tracks; states with `rootMotion: true` return the sampled displacement and the shell applies it to the entity while restoring the root bone's bind translation.
+
 - Added renderer-free two-bone, FABRIK, and look-at inverse-kinematics solvers to `@jgengine/core`.
 
 - Shell model animation now routes states and one-shots through the shared animation graph runtime.
