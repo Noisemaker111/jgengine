@@ -516,6 +516,13 @@
 - `RuntimeProfileRow` (type): type RuntimeProfileRow = { userId: string; gameId: string; player: RuntimePlayerRow; updatedAt: number; } — ⚠ undocumented
 - `RuntimeServerRow` (type): type RuntimeServerRow = { entities: RuntimeEntityRow[]; objects: RuntimeObjectRow[]; session: Record<string, unknown>; feeds?: Record<string, unknown[]>; } — ⚠ undocumented
 
+## @jgengine/core/runtime/snapshotBuffer
+
+- `SnapshotBuffer` (type): type SnapshotBuffer<T> = { push(atMs: number, value: T): void; sampleAt(nowMs: number): SnapshotBufferSample<T> | null; snapshot(): SnapshotBufferState<T>; restore(next: SnapshotBufferState<T>): void; retune(config: { delayMs?: number; capacity?: number }): void; } — Handle for a timestamped delayed snapshot buffer.
+- `SnapshotBufferSample` (type): type SnapshotBufferSample<T> = { before: T; after: T; alpha: number; } — A sampled pair of snapshots and interpolation factor.
+- `SnapshotBufferState` (type): type SnapshotBufferState<T> = { delayMs: number; capacity: number; entries: Array<{ atMs: number; value: T }>; } — Serializable snapshot-buffer state.
+- `createSnapshotBuffer` (function): function createSnapshotBuffer<T>(config: { delayMs: number; capacity: number; }): SnapshotBuffer<T> — Stores timestamped snapshots and samples a delayed, interpolatable pair.
+
 ## @jgengine/core/runtime/transport
 
 - `FeedUnsubscribe` (type): type FeedUnsubscribe = () => void — ⚠ undocumented
