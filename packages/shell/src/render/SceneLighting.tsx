@@ -5,11 +5,33 @@ import type {
   BackdropConfig,
   DirectionalLightingConfig,
   LightingConfig,
+  PointLightingConfig,
+  SpotLightingConfig,
 } from "@jgengine/core/game/playableGame";
 
 import { CascadedShadows } from "./CascadedShadows";
 
 const DEFAULT_BACKDROP_FOG_COLOR = "#1a1c22";
+/** Default cap for combined dynamic point and spot lights. */
+export const POINT_LIGHT_BUDGET = 8;
+
+/** @internal Clamp point lights for the runtime budget. */
+export function resolvePointLightBudget(entries: readonly PointLightingConfig[] | undefined): readonly PointLightingConfig[] {
+  if (entries === undefined || entries.length <= POINT_LIGHT_BUDGET) return entries ?? [];
+  if (typeof console !== "undefined" && typeof console.warn === "function") {
+    console.warn(`[jgengine:lighting] ${entries.length} point lights requested — clamped to budget ${POINT_LIGHT_BUDGET}`);
+  }
+  return entries.slice(0, POINT_LIGHT_BUDGET);
+}
+
+function resolveDynamicLights(lighting: LightingConfig): { point: readonly PointLightingConfig[]; spot: readonly SpotLightingConfig[] } {
+  const point = lighting.point ?? [];
+  const spot = lighting.spot ?? [];
+  const budget = Math.max(0, Math.floor(lighting.maxDynamicLights ?? POINT_LIGHT_BUDGET));
+  if (point.length + spot.length <= budget) return { point, spot };
+  if (typeof console !== "undefined" && typeof console.warn === "function") console.warn(`[jgengine:lighting] ${point.length + spot.length} dynamic lights requested — clamped to budget ${budget}`);
+  return { point: point.slice(0, budget), spot: spot.slice(0, Math.max(0, budget - point.length)) };
+}
 
 function usesCascades(entry: DirectionalLightingConfig): boolean {
   return (entry.castShadow ?? false) && (entry.cascades ?? 1) > 1;
@@ -68,6 +90,7 @@ function SingleShadowLight({ entry }: { entry: DirectionalLightingConfig }) {
 }
 
 export function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
+  const dynamic = resolveDynamicLights(lighting);
   return (
     <>
       {lighting.ambient !== undefined ? (
@@ -84,6 +107,20 @@ export function ConfiguredLighting({ lighting }: { lighting: LightingConfig }) {
       ) : null}
       {(lighting.directional ?? []).map((entry, index) => (
         <DirectionalShadowLight key={index} entry={entry} />
+      ))}
+      {dynamic.point.map((entry, index) => (
+        <pointLight
+          key={index}
+          position={[entry.position[0], entry.position[1], entry.position[2]]}
+          intensity={entry.intensity ?? 1}
+          color={entry.color}
+          distance={entry.distance ?? 0}
+          decay={entry.decay ?? 2}
+          castShadow={entry.castShadow ?? false}
+        />
+      ))}
+      {dynamic.spot.map((entry, index) => (
+        <spotLight key={index} position={[entry.position[0], entry.position[1], entry.position[2]]} intensity={entry.intensity ?? 1} color={entry.color} distance={entry.distance ?? 0} decay={entry.decay ?? 2} angle={entry.angle ?? Math.PI / 6} penumbra={entry.penumbra ?? 0} castShadow={entry.castShadow ?? false} target-position={[...(entry.target ?? [0, 0, 0])]} />
       ))}
     </>
   );

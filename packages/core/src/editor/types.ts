@@ -4,6 +4,9 @@ import type { MinimapBakeBounds } from "../world/minimapBake";
 import type { TerraformSnapshot } from "../world/terraform";
 import type { EditorGridLayer } from "./grid";
 import type { EnvironmentSource } from "../render/environment";
+import type { PointLightingConfig } from "../game/playableGame";
+/** Runtime point-light shape reused by authored editor light markers. */
+export type { PointLightingConfig } from "../game/playableGame";
 
 export type { EditorUiDocument, EditorUiPanelLayout, HudResizeAxes, HudPanelTypeDef } from "../ui/hudDocument";
 
@@ -217,6 +220,8 @@ export interface EditorFogConfig {
 export interface EditorEnvironment {
   /** Optional runtime environment map source; absent keeps the procedural gradient. */
   source?: EnvironmentSource;
+  /** Authored local point lights; the runtime clamps these to its bounded light budget. */
+  pointLights?: readonly PointLightingConfig[];
   /** Fixed sky look when `timeOfDay` is off (or no clock is available). */
   preset?: EditorSkyPreset;
   /** Drive sun/sky from the world clock's day fraction instead of the fixed `preset`. */

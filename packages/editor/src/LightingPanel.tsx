@@ -51,6 +51,7 @@ export function LightingPanel({ session }: { session: EditorSession }) {
   const display = readDisplay(env);
   const authored = env !== undefined;
   const source = env?.source;
+  const pointLights = env?.pointLights ?? [];
 
   const commit = (next: EditorEnvironment | undefined, coalesce?: string) => {
     session.dispatch({ type: "setEnvironment", environment: next }, coalesce === undefined ? undefined : { coalesce });
@@ -118,6 +119,34 @@ export function LightingPanel({ session }: { session: EditorSession }) {
           />
           Drive from time of day
         </label>
+      </section>
+
+      <section className="space-y-1.5 border-t border-white/[0.05] pt-2">
+        <div className="flex items-center justify-between">
+          <span className={MICRO_LABEL}>Point lights</span>
+          <button
+            type="button"
+            className={`${CONTROL} px-2 py-1 text-[10px]`}
+            onClick={() => patch({ pointLights: [...pointLights, { position: [0, 3, 0], color: "#ffd6a0", intensity: 2, distance: 12, decay: 2 }] }, "env:pointLights")}
+          >
+            Add
+          </button>
+        </div>
+        {pointLights.length > 8 ? <div className="text-[10px] text-amber-300">Runtime budget: 8 point lights; extras are clamped.</div> : null}
+        {pointLights.map((light, index) => (
+          <div key={index} className="rounded border border-white/[0.06] p-1.5">
+            <div className="mb-1 flex items-center justify-between text-[10px] text-neutral-400">Light {index + 1}<button type="button" className={`${CONTROL} px-1.5 py-0.5 text-[9px]`} onClick={() => patch({ pointLights: pointLights.filter((_, i) => i !== index) }, "env:pointLights")}>Remove</button></div>
+            <div className="grid grid-cols-3 gap-1">
+              {(["x", "y", "z"] as const).map((axis, axisIndex) => (
+                <input key={axis} type="number" className={`w-full px-1 py-1 ${INPUT_CLS}`} value={light.position[axisIndex]} aria-label={`Light ${index + 1} ${axis}`} onChange={(event) => { const position = [...light.position] as [number, number, number]; position[axisIndex] = Number(event.target.value); const next = [...pointLights]; next[index] = { ...light, position }; patch({ pointLights: next }, "env:pointLights"); }} />
+              ))}
+            </div>
+            <div className="mt-1 flex items-center gap-1">
+              <input type="color" value={light.color ?? "#ffffff"} aria-label={`Light ${index + 1} color`} onChange={(event) => { const next = [...pointLights]; next[index] = { ...light, color: event.target.value }; patch({ pointLights: next }, "env:pointLights"); }} />
+              <input type="number" min="0" step="0.1" className={`w-20 px-1 py-1 ${INPUT_CLS}`} value={light.intensity ?? 1} aria-label={`Light ${index + 1} intensity`} onChange={(event) => { const next = [...pointLights]; next[index] = { ...light, intensity: Number(event.target.value) }; patch({ pointLights: next }, "env:pointLights"); }} />
+            </div>
+          </div>
+        ))}
       </section>
 
       <section className="space-y-1.5 border-t border-white/[0.05] pt-2">

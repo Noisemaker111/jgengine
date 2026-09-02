@@ -4,6 +4,7 @@ import { clearanceZonesFrom, DEFAULT_CLEARANCE_KINDS, type ClearanceOptions } fr
 import type { TerraformSnapshot } from "../world/terraform";
 import { editorDocumentBounds } from "./document";
 import type { EditorDocument, EditorEnvironment } from "./types";
+import type { LightingConfig, PointLightingConfig, SpotLightingConfig } from "../game/playableGame";
 
 /**
  * World-authoring convergence (#1018, epic #1006 Phase 4): derive the **coordinate/placement**
@@ -65,6 +66,20 @@ export function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironment
     ...(env.ambientIntensity === undefined ? {} : { ambientIntensity: env.ambientIntensity }),
     ...(env.fog === undefined ? {} : { fog: { ...env.fog } }),
   };
+}
+
+/** Converts authored `light` markers into the runtime lighting contract. */
+export function lightingFromDocument(doc: EditorDocument): LightingConfig | undefined {
+  const points: PointLightingConfig[] = [];
+  const spots: SpotLightingConfig[] = [];
+  for (const marker of doc.markers) {
+    if (marker.kind !== "light" || marker.position === undefined) continue;
+    const meta = marker.meta ?? {};
+    const base = { position: [marker.position.x, marker.position.y, marker.position.z] as [number, number, number], color: typeof meta.color === "string" ? meta.color : "#ffd6a0", intensity: typeof meta.intensity === "number" ? meta.intensity : 2, distance: typeof meta.range === "number" ? meta.range : 12, castShadow: meta.castShadow === true };
+    if (meta.type === "spot") spots.push({ ...base, angle: typeof meta.angle === "number" ? meta.angle : Math.PI / 6 });
+    else points.push(base);
+  }
+  return points.length === 0 && spots.length === 0 ? undefined : { point: points, spot: spots };
 }
 
 /**

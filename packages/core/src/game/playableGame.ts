@@ -23,6 +23,7 @@ import type { GameCameraConfig } from "./cameraConfig";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
 
+
 export type {
   CameraFollowState,
   CameraKeyframe,
@@ -310,10 +311,30 @@ export interface HemisphereLightingConfig {
   intensity?: number;
 }
 
+/** A bounded dynamic point light in world space. */
+export interface PointLightingConfig {
+  color?: string;
+  intensity?: number;
+  position: readonly [number, number, number];
+  distance?: number;
+  decay?: number;
+  castShadow?: boolean;
+}
+/** A bounded dynamic spot light in world space. */
+export interface SpotLightingConfig extends PointLightingConfig {
+  target?: readonly [number, number, number];
+  angle?: number;
+  penumbra?: number;
+}
+
 /** Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied. */
 export interface LightingConfig {
   ambient?: AmbientLightingConfig;
   directional?: readonly DirectionalLightingConfig[];
+  point?: readonly PointLightingConfig[];
+  spot?: readonly SpotLightingConfig[];
+  /** Maximum dynamic point + spot lights mounted by the shell. Default 8. */
+  maxDynamicLights?: number;
   hemisphere?: HemisphereLightingConfig;
 }
 

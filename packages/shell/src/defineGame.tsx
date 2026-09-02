@@ -14,6 +14,7 @@ import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCata
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
 import type { EnvironmentSource } from "@jgengine/core/render/environment";
+import { lightingFromDocument } from "@jgengine/core/editor/environment";
 
 import { EnvironmentScene } from "./environment";
 import { terrainGroundColorSampler } from "./environment/terrainGroundColor";
@@ -123,7 +124,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     worldItem,
     collision,
     movement,
-    lighting,
+    lighting: authoredLighting,
     environmentSource,
     backdrop,
     postProcessing,
@@ -203,7 +204,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     worldItem,
     collision,
     movement,
-    lighting,
+    lighting: authoredLighting ?? (editorLayers === undefined ? undefined : lightingFromDocument(editorLayers) ?? (editorLayers.environment?.pointLights === undefined ? undefined : { point: editorLayers.environment.pointLights })),
     environmentSource: environmentSource ?? (isEnvironmentSource(environment) ? environment : undefined),
     backdrop,
     postProcessing,
