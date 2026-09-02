@@ -7,6 +7,7 @@ import { offline } from "./adapter";
 import type { GameContext } from "./gameContext";
 import type { GameContextContent } from "./gameContext";
 import { createHeadlessRunner } from "./headlessRunner";
+import { createPhysicsWorldBackend } from "../physics/physicsWorldBackend";
 
 const MOVE_SPEED = 4;
 
@@ -51,6 +52,38 @@ function boot() {
 }
 
 describe("createHeadlessRunner", () => {
+  test("physics-backed movement walks across a floor and steps onto a low box", () => {
+    const backend = createPhysicsWorldBackend({
+      capacity: 16,
+      bounds: { min: [-20, -5, -20], max: [20, 20, 20] },
+      gravity: [0, -24, 0],
+      warn: false,
+    });
+    backend.addBody({ shape: { kind: "box", halfExtents: [10, 0.5, 10] }, position: [0, -0.5, 0], kind: "static" });
+    backend.addBody({ shape: { kind: "box", halfExtents: [0.5, 0.15, 0.5] }, position: [0, 0.15, 2], kind: "static" });
+    const game = defineGameDefinition({
+      name: "Headless Physics",
+      multiplayer: offline(),
+      physics: { backend },
+      loop: {
+        onNewPlayer(ctx: GameContext) {
+          ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] });
+        },
+      },
+    });
+    const runner = createHeadlessRunner({ definition: game, content, loop: game.loop, playerMovement: true });
+
+    let maxY = 0;
+    for (let i = 0; i < 90; i += 1) {
+      runner.step(1 / 60, { held: ["moveForward"] });
+      maxY = Math.max(maxY, runner.ctx.scene.entity.get("player")!.position[1]);
+    }
+
+    const position = runner.ctx.scene.entity.get("player")!.position;
+    expect(position[2]).toBeGreaterThan(2.1);
+    expect(maxY).toBeGreaterThan(0.2);
+  });
+
   test("runs a real game loop with no renderer in scope", () => {
     // Booting and ticking must not require a DOM/WebGL surface — this file imports no React/three.
     expect(typeof globalThis.document).toBe("undefined");

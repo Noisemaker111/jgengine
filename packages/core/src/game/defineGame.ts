@@ -17,6 +17,8 @@ import type { TimeConfig } from "../time/simClock";
 import type { SimulationConfig } from "../runtime/simLoop";
 import type { WorldFeature } from "../world/features";
 import { resolveWorldPhysics } from "../world/place";
+import type { PhysicsBackend } from "../physics/physicsBackend";
+import type { CharacterControllerConfig } from "../movement/characterController";
 
 /** Tunes offline whole-world save (`defineGameDefinition({ persist })`). Offline games already autosave to `localStorage` by default — pass this only to tune it (or `persist: false` to opt out). Defaults: continuous `autosave` to `localStorage`, one slot, no version. */
 export interface PersistConfig {
@@ -30,10 +32,14 @@ export interface PersistConfig {
   autosaveMs?: number;
 }
 
-/** World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step. */
+/** World gravity and jump tuning, plus the optional rigid-body backend and character capsule. */
 export interface PhysicsConfig {
   gravity?: number;
   jumpVelocity?: number;
+  /** Physics solver used by the shell movement controller and the context's physics stage. */
+  backend?: PhysicsBackend;
+  /** Capsule dimensions for players using the configured physics backend. */
+  controller?: CharacterControllerConfig;
   /** Opt placed scene objects into projectile raycasts as blocking cover AABBs. Default false — enabling changes where shots land. */
   projectileObstacles?: boolean;
 }

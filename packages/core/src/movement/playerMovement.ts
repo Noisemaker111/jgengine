@@ -3,9 +3,11 @@ import type { MovementCommitFrame, PlayerMovementConfig, VoxelCollisionConfig } 
 import type { GameContext } from "../runtime/gameContext";
 import type { InputFrame } from "../runtime/inputSnapshot";
 import { applyHorizontalImpulses, applyMotionImpulses } from "../runtime/motionIntents";
+import { createCharacterController, type CharacterController, type CharacterControllerConfig } from "./characterController";
 import { groundFieldFor, hasEnvironmentTerrain, sampleSlope, type TerrainField } from "../world/terrain";
 import type { WorldFeature } from "../world/features";
 import type { EntityPosition } from "../scene/entityStore";
+import type { PhysicsBackend } from "../physics/physicsBackend";
 import {
   advancePlayerMotion,
   constrainStepToAxis,
@@ -20,6 +22,7 @@ import {
   type MotionFrameOptions,
   type MovementTuningOverrides,
   type PlayerMotionState,
+  MOVEMENT_TUNING,
 } from "./movementModel";
 import {
   advanceFreeFlight,
@@ -53,6 +56,8 @@ export interface PlayerMovementTuning {
   collision?: VoxelCollisionConfig;
   movement?: PlayerMovementConfig;
   physics?: MovementTuningOverrides;
+  /** Optional physics-backed capsule controller; when present it replaces terrain/AABB walking collision. */
+  controller?: { backend: PhysicsBackend; capsule: CharacterControllerConfig };
   ground: TerrainField;
   hasTerrain: boolean;
 }
@@ -89,6 +94,18 @@ export function resolvePlayerMovementTuning(opts: {
     ...(opts.collision === undefined ? {} : { collision: opts.collision }),
     ...(opts.movement === undefined ? {} : { movement: opts.movement }),
     ...(overrides === undefined ? {} : { physics: overrides }),
+    ...(opts.physics?.backend === undefined
+      ? {}
+      : {
+          controller: {
+            backend: opts.physics.backend,
+            capsule: opts.physics.controller ?? {
+              radius: DEFAULT_OBSTACLE_PLAYER_RADIUS,
+              height: 1.8,
+              stepHeight: DEFAULT_PLAYER_STEP_HEIGHT,
+            },
+          },
+        }),
     ground: groundFieldFor(opts.world),
     hasTerrain: hasEnvironmentTerrain(opts.world),
   };
@@ -100,6 +117,8 @@ interface PlayerMovementState {
   voxelBody: VoxelPlayerBody | null;
   motion: PlayerMotionState | null;
   flight: FreeFlightState | null;
+  controller: CharacterController | null;
+  controllerJumpHeld: boolean;
 }
 
 interface CtxMovementStore {
@@ -124,7 +143,7 @@ function storeFor(ctx: GameContext): CtxMovementStore {
 function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState {
   let state = store.players.get(userId);
   if (state === undefined) {
-    state = { heading: 0, facing: null, voxelBody: null, motion: null, flight: null };
+    state = { heading: 0, facing: null, voxelBody: null, motion: null, flight: null, controller: null, controllerJumpHeld: false };
     store.players.set(userId, state);
   }
   return state;
@@ -353,6 +372,121 @@ export function stepPlayerMovement(
     cam?.setChaseTuning(null);
   }
 
+  if (tuning.controller !== undefined) {
+    let controller = state.controller;
+    if (controller === null) {
+      controller = createCharacterController(tuning.controller.capsule);
+      state.controller = controller;
+      controller.restore({
+        position: [player.position[0], player.position[1], player.position[2]],
+        verticalVelocity: 0,
+        grounded: true,
+        groundNormal: [0, 1, 0],
+        groundBody: null,
+        crouching: false,
+      });
+    }
+
+    const controllerState = controller.state();
+    if (
+      Math.hypot(
+        controllerState.position[0] - player.position[0],
+        controllerState.position[1] - player.position[1],
+        controllerState.position[2] - player.position[2],
+      ) > 1e-6
+    ) {
+      controller.restore({
+        ...controllerState,
+        position: [player.position[0], player.position[1], player.position[2]],
+        grounded: false,
+        groundBody: null,
+      });
+    }
+
+    // Keep the existing input feel and horizontal impulse seam; the capsule owns vertical motion and collision.
+    let horizontal = state.motion;
+    if (horizontal === null) {
+      horizontal = createPlayerMotionState();
+      state.motion = horizontal;
+    }
+    const grounded = controller.state().grounded;
+    horizontal.grounded = grounded;
+    horizontal.verticalVelocity = 0;
+    horizontal.jumpOffset = 0;
+    [horizontal.horizontalVelocityX, horizontal.horizontalVelocityZ] = applyHorizontalImpulses(
+      horizontal.horizontalVelocityX,
+      horizontal.horizontalVelocityZ,
+      motionBatch,
+    );
+    const jumpPressed = intent.jumping && !state.controllerJumpHeld;
+    const horizontalStep = advancePlayerMotion(
+      horizontal,
+      { ...intent, jumping: false },
+      forwardX,
+      forwardZ,
+      walkSpeed,
+      dt,
+      tuning.physics,
+    );
+    horizontal.grounded = grounded;
+    horizontal.verticalVelocity = 0;
+    horizontal.jumpOffset = 0;
+    state.controllerJumpHeld = intent.jumping;
+
+    const current = controller.state();
+    controller.restore({
+      ...current,
+      verticalVelocity: applyMotionImpulses(current.verticalVelocity, motionBatch),
+    });
+    const result = controller.move(tuning.controller.backend, {
+      motion: [horizontalStep.stepX, 0, horizontalStep.stepZ],
+      dt,
+      gravity: tuning.physics?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration,
+      ...(jumpPressed && !intent.crouching
+        ? { jumpVelocity: tuning.physics?.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity }
+        : {}),
+      crouch: intent.crouching,
+    });
+    let nextPosition: [number, number, number] = [
+      controller.state().position[0],
+      controller.state().position[1],
+      controller.state().position[2],
+    ];
+    if (motionBatch !== null && motionBatch.y !== null) {
+      nextPosition[1] = motionBatch.y;
+      controller.restore({ ...controller.state(), position: nextPosition });
+    }
+    if (tuning.movement?.beforeCommit !== undefined) {
+      const frame: MovementCommitFrame = {
+        entityId: playerId,
+        current: player.position,
+        next: nextPosition,
+        dt,
+        ctx,
+      };
+      const replacement = tuning.movement.beforeCommit(frame);
+      if (replacement !== undefined) {
+        nextPosition = [replacement[0], replacement[1], replacement[2]];
+        controller.restore({ ...controller.state(), position: nextPosition });
+      }
+    }
+    horizontal.grounded = result.grounded;
+    ctx.scene.entity.setPose(playerId, {
+      position: nextPosition,
+      rotationY: resolveBodyFacing(
+        state,
+        intent.moving,
+        horizontal.horizontalVelocityX,
+        horizontal.horizontalVelocityZ,
+        player.rotationY,
+        tuning.movement?.turnSpeed,
+        dt,
+      ),
+      dt,
+    });
+    return;
+  }
+
   if (tuning.collision?.voxel === true) {
     let body = state.voxelBody;
     if (body === null) {
@@ -565,4 +699,3 @@ function gatherMovementObstacles(
     Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
   );
 }
-
