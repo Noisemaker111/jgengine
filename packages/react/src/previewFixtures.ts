@@ -3,6 +3,7 @@ import { BarsPreview } from "./barsPreview";
 import { HudThemePreview } from "./hudThemePreview";
 import { IconsPreview } from "./iconsPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
+import { SpriteClipPreview } from "./spriteClipPreview";
 
 /**
  * One entry in the engine preview-fixture registry: a deterministic, engine-level
@@ -49,6 +50,11 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
     name: "StreetGeometryPreview",
     description: "Close-up welded road meshes for turns, unequal crossings, and five-way junctions.",
     component: StreetGeometryPreview,
+  },
+  SpriteClipPreview: {
+    name: "SpriteClipPreview",
+    description: "A procedurally drawn two-frame atlas driven by the core sprite clip player.",
+    component: SpriteClipPreview,
   },
 };
 

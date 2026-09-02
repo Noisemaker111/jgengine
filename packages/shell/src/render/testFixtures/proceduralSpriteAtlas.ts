@@ -11,7 +11,9 @@ type CanvasFixture = {
   toDataURL(): string;
 };
 
-/** Draw the deterministic two-frame atlas used by shell sprite-clip captures and tests. */
+/** Draw the deterministic two-frame atlas used by shell sprite-clip captures and tests.
+ * @internal
+ */
 export function drawProceduralSpriteAtlas(canvas: CanvasFixture): SpriteAtlas {
   canvas.width = 64;
   canvas.height = 32;
