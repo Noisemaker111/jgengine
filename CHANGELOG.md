@@ -19,6 +19,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- WS sessions now issue resume tickets and retain disconnected memberships for a 15-second grace window, allowing reconnects to rejoin without replacing player state.
 - Core sprite atlas adapters and deterministic 2D sprite clip playback primitives.
 - `src/art-direction.md` scaffold and `check-art-direction` gate for created games.
 - Host-authoritative shell sessions now expose each accepted world frame to the local prediction buffer, reconciling and snapping the possessed pose only when drift exceeds its threshold.
