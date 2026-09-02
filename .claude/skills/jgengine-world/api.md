@@ -200,14 +200,14 @@
 - `AnimCondition` (interface): interface AnimCondition — A parameter comparison; every condition on a transition must hold.
 - `AnimEvent` (interface): interface AnimEvent — A named moment inside a clip (foot plant, hit frame, reload point).
 - `AnimGraph` (interface): interface AnimGraph — Serializable animation graph. Clip durations come from the rig at runtime (see {@link AnimGraphClipInfo}).
-- `AnimGraphClipInfo` (type): type AnimGraphClipInfo = Readonly<Record<string, number>> — Per-clip duration in seconds, read from the loaded rig.
+- `AnimGraphClipInfo` (type): type AnimGraphClipInfo = Readonly<Record<string, number | { duration: number; rootTrack?: { times: Float32Array; values: Float32Array } }>> — Per-clip duration in seconds, read from the loaded rig.
 - `AnimGraphOutput` (interface): interface AnimGraphOutput — What one advance asks the rig to show.
 - `AnimGraphRuntime` (interface): interface AnimGraphRuntime — The evaluator handle: arm triggers, advance, inspect, snapshot and restore.
 - `AnimGraphState` (interface): interface AnimGraphState — Serializable evaluator state.
 - `AnimLayer` (interface): interface AnimLayer — A blend layer with its own state machine. Masked layers apply only to bones whose track names start with a prefix.
 - `AnimParamValue` (type): type AnimParamValue = number | boolean — Parameter value a graph reads: floats for blends and comparisons, booleans for gates.
 - `AnimParams` (type): type AnimParams = Readonly<Record<string, AnimParamValue>> — The parameter set a graph evaluates against each advance.
-- `AnimState` (type): type AnimState = | { kind: "clip"; clip: string; speed?: number; loop?: boolean } | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean } | { kind: "blend2D"; params: readonly [string, string]; points: readonly { at: readonly [number, num… — A state plays one clip, or blends clips by one or two parameters.
+- `AnimState` (type): type AnimState = | { kind: "clip"; clip: string; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend2D"; params: readonly [string, string]; … — A state plays one clip, or blends clips by one or two parameters.
 - `AnimTransition` (interface): interface AnimTransition — Edge between states. `from: "*"` matches any state except `to`.
 - `createAnimGraphRuntime` (function): function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime — Headless animation state machine and blend evaluator. It owns every clip's playback time and weight, so the renderer only seeks and weights actions on a mixer, and headless hosts, replays, and tests advance the same graph without three.js. Transitions are data (parameter comparisons and consumed triggers), layers can be masked or additive, and events fire by clip time, including across loop wraps.
 - `stateClipWeights` (function): function stateClipWeights(state: AnimState, params: AnimParams): Record<string, number> — Static clip weights of a state at `params`, before any crossfade.

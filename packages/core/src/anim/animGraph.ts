@@ -5,14 +5,15 @@ export type AnimParams = Readonly<Record<string, AnimParamValue>>;
 
 /** A state plays one clip, or blends clips by one or two parameters. */
 export type AnimState =
-  | { kind: "clip"; clip: string; speed?: number; loop?: boolean }
-  | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean }
+  | { kind: "clip"; clip: string; speed?: number; loop?: boolean; rootMotion?: boolean }
+  | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean; rootMotion?: boolean }
   | {
       kind: "blend2D";
       params: readonly [string, string];
       points: readonly { at: readonly [number, number]; clip: string }[];
       speed?: number;
       loop?: boolean;
+      rootMotion?: boolean;
     };
 
 /** Comparison operators an {@link AnimCondition} supports. */
@@ -66,7 +67,7 @@ export interface AnimGraph {
 }
 
 /** Per-clip duration in seconds, read from the loaded rig. */
-export type AnimGraphClipInfo = Readonly<Record<string, number>>;
+export type AnimGraphClipInfo = Readonly<Record<string, number | { duration: number; rootTrack?: { times: Float32Array; values: Float32Array } }>>;
 
 interface LayerTransitionState {
   to: string;
@@ -100,6 +101,7 @@ export interface AnimClipOutput {
 export interface AnimGraphOutput {
   clips: AnimClipOutput[];
   events: { name: string; clip: string }[];
+  rootDelta?: [number, number, number];
 }
 
 /** The evaluator handle: arm triggers, advance, inspect, snapshot and restore. */
@@ -203,8 +205,34 @@ function stateLoops(state: AnimState): boolean {
 /** Longest clip in a state at these weights; the state's timeline length for exit times and events. */
 function stateDuration(weights: Record<string, number>, clips: AnimGraphClipInfo): number {
   let duration = 0;
-  for (const clip of Object.keys(weights)) duration = Math.max(duration, clips[clip] ?? 0);
+  for (const clip of Object.keys(weights)) duration = Math.max(duration, clipDuration(clips[clip]));
   return duration;
+}
+
+function clipDuration(info: AnimGraphClipInfo[string]): number {
+  return typeof info === "number" ? info : info?.duration ?? 0;
+}
+
+function rootPosition(track: { times: Float32Array; values: Float32Array }, time: number, duration: number, loop: boolean): [number, number, number] {
+  const count = Math.min(track.times.length, Math.floor(track.values.length / 3));
+  if (count === 0) return [0, 0, 0];
+  const first = track.times[0] ?? 0;
+  const last = track.times[count - 1] ?? first;
+  const cycle = loop && duration > 0 ? Math.floor(time / duration) : 0;
+  const local = loop && duration > 0 ? ((time % duration) + duration) % duration : Math.min(Math.max(time, first), last);
+  let i = 0;
+  while (i + 1 < count && (track.times[i + 1] ?? 0) <= local) i += 1;
+  const next = Math.min(i + 1, count - 1);
+  const span = (track.times[next] ?? 0) - (track.times[i] ?? 0);
+  const t = next === i || span <= 0 ? 0 : (local - (track.times[i] ?? 0)) / span;
+  const out: [number, number, number] = [0, 0, 0];
+  for (let axis = 0; axis < 3; axis += 1) {
+    const a = track.values[i * 3 + axis] ?? 0;
+    const b = track.values[next * 3 + axis] ?? a;
+    const cycleOffset = loop && duration > 0 ? ((track.values[(count - 1) * 3 + axis] ?? 0) - (track.values[axis] ?? 0)) * cycle : 0;
+    out[axis] = a + (b - a) * t + cycleOffset;
+  }
+  return out;
 }
 
 function clipTimeFor(time: number, duration: number, loop: boolean): number {
@@ -290,6 +318,7 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
     stateOf: (layerId) => layers[layerId]?.current ?? null,
     advance(dt, params, clips) {
       const output: AnimGraphOutput = { clips: [], events: [] };
+      const rootDelta: [number, number, number] = [0, 0, 0];
       for (const layer of graph.layers) {
         const state = layers[layer.id];
         if (state === undefined) continue;
@@ -305,15 +334,23 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
         const normalized = duration > 0 ? (loop ? (state.time % duration) / duration : Math.min(1, state.time / duration)) : 1;
 
         for (const clip of Object.keys(weights)) {
-          const clipDuration = clips[clip] ?? 0;
+          const duration = clipDuration(clips[clip]);
           collectEvents(
             output.events,
             clip,
-            clipTimeFor(before, clipDuration, loop),
-            clipTimeFor(state.time, clipDuration, loop),
-            clipDuration,
+            clipTimeFor(before, duration, loop),
+            clipTimeFor(state.time, duration, loop),
+            duration,
             loop,
           );
+          if (def.rootMotion) {
+            const info = clips[clip];
+            if (typeof info !== "number" && info?.rootTrack !== undefined) {
+              const from = rootPosition(info.rootTrack, before, duration, loop);
+              const to = rootPosition(info.rootTrack, state.time, duration, loop);
+              for (let axis = 0; axis < 3; axis += 1) rootDelta[axis] += (to[axis] - from[axis]) * weights[clip]! * layerWeight;
+            }
+          }
         }
 
         const transition = state.transition;
@@ -328,7 +365,7 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
           }
           for (const [clip, w] of Object.entries(weights)) {
             merged[clip] = (merged[clip] ?? 0) + w * t;
-            times[clip] = clipTimeFor(state.time, clips[clip] ?? 0, loop);
+            times[clip] = clipTimeFor(state.time, clipDuration(clips[clip]), loop);
           }
           for (const [clip, w] of Object.entries(merged)) {
             if (w <= 0) continue;
@@ -338,7 +375,7 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
         } else {
           for (const [clip, w] of Object.entries(weights)) {
             if (w <= 0) continue;
-            output.clips.push({ clip, weight: w * layerWeight, time: clipTimeFor(state.time, clips[clip] ?? 0, loop), layer: layer.id });
+            output.clips.push({ clip, weight: w * layerWeight, time: clipTimeFor(state.time, clipDuration(clips[clip]), loop), layer: layer.id });
           }
         }
 
@@ -365,6 +402,7 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
         }
       }
       triggers.clear();
+      if (rootDelta[0] !== 0 || rootDelta[1] !== 0 || rootDelta[2] !== 0) output.rootDelta = rootDelta;
       return output;
     },
   };
