@@ -4,6 +4,7 @@ import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from 
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig, ModelMaterialMaps } from "@jgengine/core/game/playableGame";
+import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
@@ -26,16 +27,46 @@ import {
 } from "./modelRender";
 
 export function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
-  const texture = useLoader(THREE.TextureLoader, sprite.url);
+  const texture = useLoader(THREE.TextureLoader, sprite.clip?.atlas.image ?? sprite.url);
+  const map = useMemo(() => texture.clone(), [texture]);
+  const player = useMemo(
+    () => (sprite.clip === undefined ? null : createSpriteClipPlayer(sprite.clip.atlas)),
+    [sprite.clip],
+  );
+  const animation = sprite.clip?.animation;
+
   useEffect(() => {
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.anisotropy = 4;
-    texture.needsUpdate = true;
-  }, [texture]);
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.anisotropy = 4;
+    map.needsUpdate = true;
+    return () => map.dispose();
+  }, [map]);
+
+  useEffect(() => {
+    if (player !== null && animation !== undefined) player.play(animation);
+  }, [player, animation]);
+
+  useFrame((_state, delta) => {
+    if (player === null || sprite.clip === undefined) return;
+    player.advance(delta);
+    const frame = player.frame();
+    if (frame === undefined) return;
+    const [atlasWidth, atlasHeight] = sprite.clip.atlas.size;
+    map.repeat.set(frame.w / atlasWidth, frame.h / atlasHeight);
+    map.offset.set(frame.x / atlasWidth, 1 - (frame.y + frame.h) / atlasHeight);
+    map.needsUpdate = true;
+  });
+
+  useEffect(() => {
+    if (player === null) {
+      map.repeat.set(1, 1);
+      map.offset.set(0, 0);
+    }
+  }, [map, player]);
 
   return (
     <sprite position-y={sprite.y} scale={[sprite.width, sprite.height, 1]}>
-      <spriteMaterial map={texture} transparent alphaTest={0.08} depthWrite={false} />
+      <spriteMaterial map={map} transparent alphaTest={0.08} depthWrite={false} />
     </sprite>
   );
 }
