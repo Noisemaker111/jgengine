@@ -20,6 +20,10 @@ export interface CatalogExtra {
   url: string;
   /** Human-facing label kept only in the source literal; never registered into the catalog. */
   label?: string;
+  dims?: import("@jgengine/core/scene/assetCatalog").ModelDims;
+  space?: import("@jgengine/core/scene/assetSpace").AssetSpace;
+  clips?: readonly string[];
+  collisionMesh?: import("@jgengine/core/scene/collisionMesh").CollisionMeshData;
 }
 
 export interface BuildCatalogOptions {
@@ -82,7 +86,13 @@ export function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog {
   }
 
   for (const extra of options.extras ?? []) {
-    catalog.register(extra.id, { url: extra.url });
+    catalog.register(extra.id, {
+      url: extra.url,
+      ...(extra.dims === undefined ? {} : { dims: extra.dims }),
+      ...(extra.space === undefined ? {} : { space: extra.space }),
+      ...(extra.clips === undefined ? {} : { clips: extra.clips }),
+      ...(extra.collisionMesh === undefined ? {} : { collisionMesh: extra.collisionMesh }),
+    });
   }
 
   if (includeAliases) {

@@ -1024,6 +1024,7 @@
     "./find",
     "./generated-sprites/index",
     "./generated/index",
+    "./importSpec",
     "./index",
     "./indexGen",
     "./manifest",
