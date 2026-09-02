@@ -380,6 +380,7 @@
     "./sensor/freezeMonitor",
     "./sensor/frustumSensor",
     "./sensor/hiddenStateProbe",
+    "./sensor/perception",
     "./sensor/recordingBuffer",
     "./sensor/replayLoop",
     "./sensor/revealQuery",

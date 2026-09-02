@@ -1428,6 +1428,19 @@
 - `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
 - `SensorReading` (interface): interface SensorReading — ⚠ undocumented
 
+## @jgengine/core/sensor/perception
+
+- `PerceptionCandidate` (interface): interface PerceptionCandidate — A candidate target considered by a sight check.
+- `PerceptionConfig` (interface): interface PerceptionConfig — Configuration for sight, hearing, memory decay, and optional occlusion.
+- `PerceptionMemory` (interface): interface PerceptionMemory — A remembered target and its linearly decaying confidence.
+- `PerceptionObserver` (interface): interface PerceptionObserver — The observer pose used for a sight check.
+- `PerceptionPosition` (type): type PerceptionPosition = readonly [number, number, number] — A world position used by perception, in `[x, y, z]` order.
+- `PerceptionService` (interface): interface PerceptionService — Stateful perception API with retuning and save/restore support.
+- `PerceptionSnapshot` (interface): interface PerceptionSnapshot — Serializable state for a perception service.
+- `PerceptionStimulus` (interface): interface PerceptionStimulus — An event that can seed an observer's memory.
+- `PerceptionStimulusKind` (type): type PerceptionStimulusKind = "sight" | "sound" | "damage" — The kinds of stimulus the perception service can retain.
+- `createPerception` (function): function createPerception(initial: PerceptionConfig): PerceptionService — Creates a deterministic sight, sound, and damage perception service with expiring target memory.
+
 ## @jgengine/core/sensor/recordingBuffer
 
 - `RecordingBuffer` (interface): interface RecordingBuffer<T> — ⚠ undocumented
