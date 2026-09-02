@@ -19,6 +19,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- Core perception tracks deterministic sight, hearing, occlusion, and bounded observation memory for AI.
 - WS sessions now issue resume tickets and retain disconnected memberships for a 15-second grace window, allowing reconnects to rejoin without replacing player state.
 - Core sprite atlas adapters and deterministic 2D sprite clip playback primitives.
 - `src/art-direction.md` scaffold and `check-art-direction` gate for created games.
