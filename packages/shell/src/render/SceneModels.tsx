@@ -12,6 +12,7 @@ import { sharedGltfLoader } from "./modelLoad";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
 import { useModelAnimation } from "./useModelAnimation";
+import { useFootIk } from "./useFootIk";
 import { PartMotionRig } from "./PartMotion";
 import { applyMaterialOverride } from "../materialOverride";
 import {
@@ -321,6 +322,7 @@ export function EntityModel({
   }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey]);
 
   useModelAnimation(scene, gltf.animations, model.animation, instanceId);
+  useFootIk(scene, model.ik, ctx, instanceId);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);

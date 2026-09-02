@@ -796,6 +796,7 @@
     "./render/testFixtures/proceduralTileLayer",
     "./render/useDisposable",
     "./render/useEntityRenderCues",
+    "./render/useFootIk",
     "./render/useModelAnimation",
     "./replay/useSessionRecorder",
     "./scatter",
