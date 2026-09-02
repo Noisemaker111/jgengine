@@ -12,6 +12,8 @@ export interface InputFrame {
 }
 
 export interface InputSnapshot {
+  /** Trigger controller vibration for a local user's gamepad when supported. */
+  rumble(userId: string, options: { strong: number; weak: number; ms: number }): Promise<boolean>;
   /** Replaces the held-action set for this frame, rolling the previous held set forward for edge detection (#671). Called by the shell before `onTick` each frame; does not bump `ctx.version()` or notify `ctx.subscribe` listeners — per-frame publishes would storm subscribers. */
   publish(held: readonly string[]): void;
   /** Replaces the normalized pointer-position state for this frame (#293). Same no-notify contract as `publish`. */
@@ -58,6 +60,7 @@ export function createInputSnapshot(): InputSnapshot {
   };
 
   return {
+    rumble: async () => false,
     publish(held) {
       previousHeldSet = heldSet;
       heldList = Object.freeze([...held]);

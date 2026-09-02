@@ -762,6 +762,8 @@
     "./environment/terrainGroundColor",
     "./gameKit",
     "./hotbarActions",
+    "./input/gamepadMerge",
+    "./input/gamepadSource",
     "./input/mouseLook",
     "./inputSink",
     "./map/MapMarkerBeacons",

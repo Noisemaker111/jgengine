@@ -86,6 +86,7 @@ import { AudioSettingsBridge } from "./settings/appliedSettings";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
+import { GamepadSource } from "./input/gamepadSource";
 import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "./CombatPresentation";
@@ -120,6 +121,7 @@ export function Shell3dPresentation({
   touchStyle,
   touchJoystickVariant,
   analogRef,
+  inputBindings,
   orientationGate,
   orientationGateEl,
   coarsePointer,
@@ -161,6 +163,7 @@ export function Shell3dPresentation({
   touchStyle: TouchStyle;
   touchJoystickVariant: TouchJoystickVariant;
   analogRef: MutableRefObject<Readonly<Record<string, number>> | null>;
+  inputBindings: typeof playable.game.input;
   orientationGate: boolean;
   orientationGateEl: React.ReactNode;
   coarsePointer: boolean;
@@ -612,6 +615,12 @@ export function Shell3dPresentation({
                   poster={poster}
                   onPosterSettled={onPosterSettled}
                   authoritativeFrameRef={authoritativeFrameRef}
+                />
+                <GamepadSource
+                  tracker={tracker}
+                  bindings={inputBindings ?? {}}
+                  analogRef={analogRef}
+                  input={ctx.input}
                 />
                 <DevtoolsRendererProbe />
                 {resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
