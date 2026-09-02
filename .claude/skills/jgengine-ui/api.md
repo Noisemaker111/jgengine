@@ -33,6 +33,10 @@
 - `createI18n` (function): function createI18n(options: I18nOptions): I18n — Create a translator over a message catalog: active-locale lookup with a fallback-locale chain, `{param}` interpolation, and `Intl.PluralRules`-based pluralization. Observable (`subscribe`) so React re-renders on `setLocale`; the catalog is caller-owned static data, the locale is the only state.
 - `interpolate` (function): function interpolate(template: string, params?: TParams): string — Replace `{name}` placeholders in `template` with `params[name]`. Unknown placeholders are left intact. Pure and locale-independent.
 
+## @jgengine/core/render/environment
+
+- `EnvironmentSource` (type): type EnvironmentSource = | { kind: "gradient"; sky: string; ground: string; sun?: string; intensity?: number } /** Equirectangular HDR or EXR environment map loaded from `url`. */ | { kind: "hdri"; url: string; rotation?: number; intensity?: number } /** Six faces of a cube environment map, in three… — A declarative source for image-based scene lighting.
+
 ## @jgengine/core/render/lookPreset
 
 - `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look.

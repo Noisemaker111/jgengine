@@ -13,6 +13,7 @@ import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gam
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
+import type { EnvironmentSource } from "@jgengine/core/render/environment";
 
 import { EnvironmentScene } from "./environment";
 import { terrainGroundColorSampler } from "./environment/terrainGroundColor";
@@ -43,6 +44,10 @@ function worldBackdrop(feature: EnvironmentWorldFeature): ComponentType {
   return function WorldBackdrop() {
     return <EnvironmentScene feature={feature} />;
   };
+}
+
+function isEnvironmentSource(value: unknown): value is EnvironmentSource {
+  return typeof value === "object" && value !== null && "kind" in value && ["gradient", "hdri", "cube"].includes((value as { kind?: unknown }).kind as string);
 }
 
 function authoredSceneOverlay(
@@ -119,6 +124,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     collision,
     movement,
     lighting,
+    environmentSource,
     backdrop,
     postProcessing,
     shadows,
@@ -160,7 +166,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
       onDispose: composed?.onDispose?.bind(composed) ?? noop,
     },
     GameUI: GameUI ?? emptyUi,
-    environment:
+    environment: isEnvironmentSource(environment) ? undefined :
       environment ??
       (game.world?.kind === "environment" ? worldBackdrop(game.world) : undefined),
     camera: camera ?? { perspective: "third" },
@@ -198,6 +204,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     collision,
     movement,
     lighting,
+    environmentSource: environmentSource ?? (isEnvironmentSource(environment) ? environment : undefined),
     backdrop,
     postProcessing,
     shadows,

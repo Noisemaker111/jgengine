@@ -206,7 +206,7 @@ export function Shell3dPresentation({
   const world = playable.game.world;
   const biomeBands = world?.kind === "environment" ? world.terrain?.biomeBands : undefined;
   const AutoEnvironment =
-    playable.environment ??
+    (typeof playable.environment === "function" ? playable.environment : undefined) ??
     (world?.kind === "environment"
       ? () => <EnvironmentScene feature={world} />
       : world?.kind === "place"
@@ -494,6 +494,7 @@ export function Shell3dPresentation({
                 {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
                 {cinematicLook ? (
                   <EnvironmentLighting
+                    source={playable.environmentSource}
                     skyColor={lighting?.hemisphere?.skyColor ?? "#87b5e0"}
                     groundColor={lighting?.hemisphere?.groundColor ?? "#3d4a38"}
                     sunDirection={lighting?.directional?.[0]?.position}

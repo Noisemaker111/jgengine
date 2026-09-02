@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
 
-import type { EditorEnvironment, EditorSession, EditorSkyPreset } from "@jgengine/core/editor/index";
+import type { EditorEnvironment, EditorSession, EditorSkyPreset, EnvironmentSource } from "@jgengine/core/editor/index";
 
 import { SliderRow } from "./chromeFields";
 import { BORDER, CONTROL, CONTROL_ACTIVE, FOCUS_RING, INPUT_CLS, MICRO_LABEL, PANEL_BG } from "./shell/theme";
@@ -50,6 +50,7 @@ export function LightingPanel({ session }: { session: EditorSession }) {
   const env = state.document.environment;
   const display = readDisplay(env);
   const authored = env !== undefined;
+  const source = env?.source;
 
   const commit = (next: EditorEnvironment | undefined, coalesce?: string) => {
     session.dispatch({ type: "setEnvironment", environment: next }, coalesce === undefined ? undefined : { coalesce });
@@ -117,6 +118,29 @@ export function LightingPanel({ session }: { session: EditorSession }) {
           />
           Drive from time of day
         </label>
+      </section>
+
+      <section className="space-y-1.5 border-t border-white/[0.05] pt-2">
+        <span className={MICRO_LABEL}>Environment source</span>
+        <select
+          className={`w-full px-2 py-1 ${INPUT_CLS}`}
+          value={source?.kind ?? "gradient"}
+          onChange={(event) => {
+            const kind = event.target.value as EnvironmentSource["kind"];
+            const nextSource: EnvironmentSource = kind === "gradient"
+              ? { kind, sky: "#87b5e0", ground: "#3d4a38" }
+              : kind === "hdri" ? { kind, url: "" } : { kind, urls: ["", "", "", "", "", ""] };
+            patch({ source: nextSource }, "env:source");
+          }}
+        >
+          <option value="gradient">Gradient</option><option value="hdri">HDRI / EXR</option><option value="cube">Cube map</option>
+        </select>
+        {source?.kind === "hdri" ? (
+          <input className={`w-full px-2 py-1 ${INPUT_CLS}`} placeholder="https://…/environment.hdr" value={source.url} onChange={(event) => patch({ source: { ...source, url: event.target.value } }, "env:sourceUrl")} />
+        ) : null}
+        {source?.kind === "cube" ? (
+          <input className={`w-full px-2 py-1 ${INPUT_CLS}`} placeholder=" six face URLs, comma-separated" value={source.urls.join(",")} onChange={(event) => patch({ source: { ...source, urls: event.target.value.split(",").slice(0, 6) as [string, string, string, string, string, string] } }, "env:sourceCube")} />
+        ) : null}
       </section>
 
       <section className="space-y-1.5 border-t border-white/[0.05] pt-2">
