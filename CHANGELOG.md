@@ -42,6 +42,8 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Added renderer-free two-bone, FABRIK, and look-at inverse-kinematics solvers to `@jgengine/core`.
+
 - Shell model animation now routes states and one-shots through the shared animation graph runtime.
 
 - CI now clones the external games repository with `GAMES_CLONE_TOKEN` and runs the game shape, content, front-end, art-direction, and feel gates against it; those gates fail loudly in CI when the checkout is missing while remaining no-ops locally.
