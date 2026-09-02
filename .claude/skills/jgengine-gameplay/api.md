@@ -323,6 +323,7 @@
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
+- `PixelPerfectCameraConfig` (interface): interface PixelPerfectCameraConfig — Pixel-art orthographic camera tuning. `pixelsPerUnit` is the authored pixel density.
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
@@ -679,6 +680,13 @@
 - `PingSystemDeps` (interface): interface PingSystemDeps — ⚠ undocumented
 - `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
 - `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
+
+## @jgengine/core/game/pixelPerfect
+
+- `PixelPerfectFrustum` (interface): interface PixelPerfectFrustum — The orthographic bounds and scale derived from a pixel-perfect camera config.
+- `PixelPerfectViewport` (interface): interface PixelPerfectViewport — Viewport dimensions in device-independent canvas pixels.
+- `pixelPerfectFrustum` (function): function pixelPerfectFrustum(viewport: PixelPerfectViewport, pixelsPerUnit: number, integerScale = false): PixelPerfectFrustum — Computes an orthographic frustum whose world units map to the requested pixel density. Integer scaling chooses the largest whole-number density multiplier available in the viewport.
+- `snapPixelPerfectPosition` (function): function snapPixelPerfectPosition<T extends { x: number; y: number; z: number }>(position: T, pixelsPerUnit: number): T — Snaps a camera position to the authored pixel grid without changing its orientation.
 
 ## @jgengine/core/game/playableGame
 

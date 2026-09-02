@@ -11,6 +11,8 @@ import {
   type RefObject,
   type SetStateAction,
 } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
+import type { OrthographicCamera } from "three";
 
 import {
   contextVerbInput,
@@ -33,6 +35,7 @@ import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { DEFAULT_PICKUP_RADIUS } from "@jgengine/core/game/worldItem";
 import type { PointerConfig } from "@jgengine/core/game/playableGame";
 import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
+import { pixelPerfectFrustum, snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
 import type { GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import {
@@ -99,6 +102,24 @@ import {
 
 const PRIMARY_CLICK_MOVE_THRESHOLD_PX = 6;
 const DEFAULT_BACKGROUND_COLOR = "#14161b";
+
+function PixelPerfectCamera({ pixelsPerUnit, integerScale }: { pixelsPerUnit: number; integerScale?: boolean }) {
+  const camera = useThree((state) => state.camera) as OrthographicCamera;
+  const size = useThree((state) => state.size);
+  useFrame(() => {
+    if (camera.isOrthographicCamera !== true) return;
+    const frustum = pixelPerfectFrustum(size, pixelsPerUnit, integerScale === true);
+    camera.left = frustum.left;
+    camera.right = frustum.right;
+    camera.top = frustum.top;
+    camera.bottom = frustum.bottom;
+    camera.zoom = 1;
+    const snapped = snapPixelPerfectPosition(camera.position, pixelsPerUnit);
+    camera.position.set(snapped.x, snapped.y, snapped.z);
+    camera.updateProjectionMatrix();
+  }, 1);
+  return null;
+}
 
 /** 3D play surface: canvas, world overlays, and shared chrome. @internal */
 export function Shell3dPresentation({
@@ -498,6 +519,9 @@ export function Shell3dPresentation({
                 gl={{ preserveDrawingBuffer: true }}
                 style={{ touchAction: "none" }}
               >
+                {orthographic && playable.camera?.pixelPerfect !== undefined ? (
+                  <PixelPerfectCamera {...playable.camera.pixelPerfect} />
+                ) : null}
                 {backgroundColor !== undefined ? <color attach="background" args={[backgroundColor]} /> : null}
                 {cinematicLook ? (
                   <EnvironmentLighting

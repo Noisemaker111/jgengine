@@ -160,6 +160,7 @@
     "./game/paramLayers",
     "./game/partAnimation",
     "./game/ping",
+    "./game/pixelPerfect",
     "./game/playableGame",
     "./game/progression",
     "./game/quest",

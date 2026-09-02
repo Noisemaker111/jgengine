@@ -30,6 +30,7 @@ between (`--json` for structured output).
 - WS sessions now issue resume tickets and retain disconnected memberships for a 15-second grace window, allowing reconnects to rejoin without replacing player state.
 - Shell entity sprites can play atlas-backed sprite clips while preserving raw texture sprites.
 - Tilemap layers can render atlas-backed textured tiles as one instanced quad mesh with parallax.
+- Core pixel-perfect orthographic frustum and pixel-grid camera snapping are available to shell cameras.
 - Core sprite atlas adapters and deterministic 2D sprite clip playback primitives.
 - `src/art-direction.md` scaffold and `check-art-direction` gate for created games.
 - Host-authoritative shell sessions now expose each accepted world frame to the local prediction buffer, reconciling and snapping the possessed pose only when drift exceeds its threshold.
