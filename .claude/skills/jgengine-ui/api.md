@@ -2859,4 +2859,4 @@
 
 ## @jgengine/shell/worldSync
 
-- `AuthoritativeFrameHandler` (type): type AuthoritativeFrameHandler = (revision: number) => void — ⚠ undocumented
+- `AuthoritativeFrameHandler` (type): type AuthoritativeFrameHandler = (revision: number) => void — Receives the revision of an authoritative world frame after it is applied locally.

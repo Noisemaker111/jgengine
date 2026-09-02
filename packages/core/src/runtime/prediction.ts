@@ -1,9 +1,12 @@
 import type { InputFrame } from "./inputSnapshot";
 
+/** Deterministic state transition used to advance one predicted input frame. */
 export type PredictionStep<S> = (state: S, input: InputFrame, dt: number) => S;
 
+/** One input, tick, and resulting state retained for authoritative replay. */
 export type PredictionRecord<S> = { tick: number; input: InputFrame; state: S; dt: number };
 
+/** Serializable prediction state containing the confirmation baseline and pending input history. */
 export type PredictionSnapshot<S> = {
   confirmedTick: number;
   confirmed: S;
@@ -11,6 +14,7 @@ export type PredictionSnapshot<S> = {
   records: PredictionRecord<S>[];
 };
 
+/** Stateful prediction handle supporting recording, reconciliation, inspection, and restoration. */
 export type PredictionBuffer<S> = {
   record(input: InputFrame, dt?: number, observedState?: S): S;
   reconcile(tick: number, authoritative: S): { error: number; replayed: number; snapped: boolean; state: S };

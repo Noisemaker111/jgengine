@@ -457,10 +457,10 @@
 
 ## @jgengine/core/runtime/prediction
 
-- `PredictionBuffer` (type): type PredictionBuffer<S> = { record(input: InputFrame, dt?: number, observedState?: S): S; reconcile(tick: number, authoritative: S): { error: number; replayed: number; snapped: boolean; state: S }; state(): S; snapshot(): PredictionSnapshot<S>; restore(next: PredictionSnapshot<S>): void; } — ⚠ undocumented
-- `PredictionRecord` (type): type PredictionRecord<S> = { tick: number; input: InputFrame; state: S; dt: number } — ⚠ undocumented
-- `PredictionSnapshot` (type): type PredictionSnapshot<S> = { confirmedTick: number; confirmed: S; predicted: S; records: PredictionRecord<S>[]; } — ⚠ undocumented
-- `PredictionStep` (type): type PredictionStep<S> = (state: S, input: InputFrame, dt: number) => S — ⚠ undocumented
+- `PredictionBuffer` (type): type PredictionBuffer<S> = { record(input: InputFrame, dt?: number, observedState?: S): S; reconcile(tick: number, authoritative: S): { error: number; replayed: number; snapped: boolean; state: S }; state(): S; snapshot(): PredictionSnapshot<S>; restore(next: PredictionSnapshot<S>): void; } — Stateful prediction handle supporting recording, reconciliation, inspection, and restoration.
+- `PredictionRecord` (type): type PredictionRecord<S> = { tick: number; input: InputFrame; state: S; dt: number } — One input, tick, and resulting state retained for authoritative replay.
+- `PredictionSnapshot` (type): type PredictionSnapshot<S> = { confirmedTick: number; confirmed: S; predicted: S; records: PredictionRecord<S>[]; } — Serializable prediction state containing the confirmation baseline and pending input history.
+- `PredictionStep` (type): type PredictionStep<S> = (state: S, input: InputFrame, dt: number) => S — Deterministic state transition used to advance one predicted input frame.
 - `createPredictionBuffer` (function): function createPredictionBuffer<S>(config: { initial: S; step: PredictionStep<S>; maxTicks: number; startTick?: number; dt?: number; /** Error above which a caller should snap its rendered pose to the reconciled result. */ snapThreshold?: number; }): PredictionBuffer<S> — Keeps local input predictions ahead of the last server confirmation. Reconciliation replaces the confirmed state and deterministically replays unconfirmed inputs through the supplied step function. `maxTicks` bounds retained work and memory; dropped inputs are folded into the confirmed baseline.
 
 ## @jgengine/core/runtime/runtimeSave

@@ -4,6 +4,7 @@ import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
 import { createWorldMirror } from "@jgengine/core/runtime/worldMirror";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
 
+/** Receives the revision of an authoritative world frame after it is applied locally. */
 export type AuthoritativeFrameHandler = (revision: number) => void;
 
 /**
