@@ -286,6 +286,7 @@
     "./relation/keyedValues",
     "./relation/thresholds",
     "./render/color",
+    "./render/environment",
     "./render/lookPreset",
     "./render/postProcessing",
     "./rules/predicate",

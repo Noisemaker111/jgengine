@@ -3,6 +3,7 @@ import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
 import type { PostProcessingConfig } from "../render/postProcessing";
+import type { EnvironmentSource } from "../render/environment";
 import type { LookPreset } from "../render/lookPreset";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
@@ -508,7 +509,7 @@ export interface PlayableGame<
   /** Optional canvas-layer VFX component (e.g. traveling projectiles); receives `{ ctx }` (#542) so overlay VFX read live engine state without a separate hook or a module-global workaround. */
   WorldOverlay?: TOverlay;
   /** Replaces the default demo backdrop (ground + grid + rocks) with the game's own scene — ground, sky, structures. Camera, input, HUD, entity rendering, and the loop stay shell-provided; supply your world without forking the shell. When unset and `game.world` is an `environment()` descriptor, the shell auto-renders that world here — no manual wiring needed. */
-  environment?: TWorldOverlay;
+  environment?: TWorldOverlay | EnvironmentSource;
   /** The game's authored scene document (`editor.scene.json`, normalized). When set, `defineGame` always mounts `AuthoredScene` over it (draped paths, scatter, studios, placed catalog props) — any `WorldOverlay` renders alongside it as VFX only — and the embedded editor opens it as its default layers: the zero-wiring path from document to play and edit modes. */
   editorLayers?: EditorDocument;
   /** Game-exported gameplay catalog definitions (schemas + defaults). `GameHost` forwards them to the summoned editor's Data panel; no per-game editor bootstrap needed. */
@@ -598,6 +599,8 @@ export interface PlayableGame<
   look?: LookPreset;
   /** Declarative ambient/directional/hemisphere lighting (#207.5); replaces the shell's hardcoded default lights when present, regardless of world kind. */
   lighting?: LightingConfig;
+  /** Image-based environment source; omit to use the procedural gradient probe. */
+  environmentSource?: EnvironmentSource;
   /** Generic background/sky/fog (#207.6), applied for any world kind including a custom `environment` component. */
   backdrop?: BackdropConfig;
   /** Declarative post-processing chain (AO/bloom/tone-map/grade). When set, the shell mounts an EffectComposer and owns the render; absent leaves the renderer drawing directly (unchanged). */

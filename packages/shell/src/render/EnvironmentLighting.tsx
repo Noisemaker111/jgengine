@@ -1,9 +1,14 @@
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 import * as THREE from "three";
+import { EXRLoader } from "three/examples/jsm/loaders/EXRLoader.js";
+import { RGBELoader } from "three/examples/jsm/loaders/RGBELoader.js";
+import type { EnvironmentSource } from "@jgengine/core/render/environment";
 
 /** @internal Props for shell {@link EnvironmentLighting}. */
 export interface EnvironmentLightingProps {
+  /** Optional authored environment map; absent or `gradient` uses the procedural probe. */
+  source?: EnvironmentSource;
   /** IBL intensity. Default 0.35. */
   intensity?: number;
   /** Upper-hemisphere tint for the procedural sky probe. Default cool daylight. */
@@ -29,6 +34,7 @@ export interface EnvironmentLightingProps {
  * @internal shell-internal default lighting; games never import it.
  */
 export function EnvironmentLighting({
+  source,
   intensity = 0.35,
   skyColor = "#87b5e0",
   groundColor = "#3d4a38",
@@ -40,21 +46,48 @@ export function EnvironmentLighting({
 
   useEffect(() => {
     const pmrem = new THREE.PMREMGenerator(gl);
-    const probe = buildSkyProbeScene({ skyColor, groundColor, sunDirection, sunColor });
-    const target = pmrem.fromScene(probe, 0.04);
+    let target: THREE.WebGLRenderTarget | undefined;
+    let loadedTexture: THREE.Texture | THREE.CubeTexture | undefined;
+    let cancelled = false;
+    const effective = source?.kind === "gradient" ? source : undefined;
+    const apply = (next: THREE.WebGLRenderTarget, rotation?: number) => {
+      if (cancelled) { next.dispose(); return; }
+      target = next;
+      scene.environment = next.texture;
+      if (rotation !== undefined) (scene as THREE.Scene & { environmentRotation?: THREE.Euler }).environmentRotation = new THREE.Euler(0, rotation, 0);
+    };
     const previous = scene.environment;
-    scene.environment = target.texture;
+    const previousRotation = (scene as THREE.Scene & { environmentRotation?: THREE.Euler }).environmentRotation;
+    if (source?.kind === "hdri") {
+      const Loader = /\.exr(?:$|\?)/i.test(source.url) ? EXRLoader : RGBELoader;
+      new Loader().loadAsync(source.url).then((texture) => {
+        loadedTexture = texture;
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        apply(pmrem.fromEquirectangular(texture), source.rotation);
+      }).catch(() => undefined);
+    } else if (source?.kind === "cube") {
+      new THREE.CubeTextureLoader().loadAsync(source.urls).then((texture) => {
+        loadedTexture = texture;
+        apply(pmrem.fromCubemap(texture));
+      }).catch(() => undefined);
+    } else {
+      const probe = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, sunDirection, sunColor: effective?.sun ?? sunColor });
+      apply(pmrem.fromScene(probe, 0.04));
+      disposeScene(probe);
+    }
     const sceneWithIntensity = scene as THREE.Scene & { environmentIntensity?: number };
     const previousIntensity = sceneWithIntensity.environmentIntensity;
-    sceneWithIntensity.environmentIntensity = intensity;
-    disposeScene(probe);
-    pmrem.dispose();
+    sceneWithIntensity.environmentIntensity = source?.intensity ?? intensity;
     return () => {
-      target.dispose();
+      cancelled = true;
+      pmrem.dispose();
+      target?.dispose();
+      loadedTexture?.dispose();
       scene.environment = previous;
+      if (previousRotation !== undefined) (scene as THREE.Scene & { environmentRotation?: THREE.Euler }).environmentRotation = previousRotation;
       if (previousIntensity !== undefined) sceneWithIntensity.environmentIntensity = previousIntensity;
     };
-  }, [gl, scene, intensity, skyColor, groundColor, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
+  }, [gl, scene, source, intensity, skyColor, groundColor, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
 
   return null;
 }

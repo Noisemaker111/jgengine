@@ -1,5 +1,9 @@
 # Credits
 
+## Poly Haven
+
+Environment-map capture examples use free CC0 HDRIs from [Poly Haven](https://polyhaven.com/hdris).
+
 JGengine stands on the shoulders of open work by others.
 This file records that debt and thanks the people whose projects shaped ours.
 
