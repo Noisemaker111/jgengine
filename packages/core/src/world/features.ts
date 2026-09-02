@@ -4,6 +4,7 @@ import type { AvoidZone } from "./geometry";
 import type { TerrainPathProfile } from "./pathTerrain";
 import type { PlaceWorldFeature } from "./place";
 import type { TerraformSnapshot } from "./terraform";
+import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { VolumetricCloudsConfig } from "./volumetricClouds";
 
 export interface WorldBounds {
@@ -573,6 +574,10 @@ export interface PlotsWorldConfig extends WorldGridConfig {
 
 export interface TilemapWorldConfig extends WorldGridConfig {
   map: string;
+  /** Atlas-backed tile rendering; cell glyphs map to atlas frame ids. */
+  tileSet?: { atlas: SpriteAtlas; tiles: Record<string, string> };
+  /** Render ordering key consumed by the shell tile renderer. */
+  sortingLayer?: string;
 }
 
 /**
