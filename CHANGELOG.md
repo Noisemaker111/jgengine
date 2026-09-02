@@ -26,6 +26,7 @@ between (`--json` for structured output).
 - `syncWorldColliders` now keeps terrain and static object colliders synchronized with a physics backend.
 - Core decision graphs provide deterministic selector, sequence, condition, action, and utility runtimes with snapshot/restore.
 - Core behavior descriptors can run registered decision graphs at the interest-scheduler cadence.
+- Core navigation meshes provide deterministic polygon routing, off-mesh links, closest-point queries, and nav raycasts.
 - WS sessions now issue resume tickets and retain disconnected memberships for a 15-second grace window, allowing reconnects to rejoin without replacing player state.
 - Shell entity sprites can play atlas-backed sprite clips while preserving raw texture sprites.
 - Tilemap layers can render atlas-backed textured tiles as one instanced quad mesh with parallax.

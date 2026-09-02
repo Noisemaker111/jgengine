@@ -761,6 +761,17 @@
 - `slopeStepCost` (function): function slopeStepCost(field: { sampleHeight(x: number, z: number): number }, weight = DEFAULT_SLOPE_STEP_WEIGHT): (from: NavPoint, to: NavPoint) => number — `FindPathOptions.stepCost` factory that penalizes steep terrain: cost is `1 + weight * |Δheight| / horizontalDistance`, so with the default weight a 45° slope roughly doubles the step cost.
 - `smoothPath` (function): function smoothPath(grid: NavGrid, points: readonly NavPoint[]): NavPoint[] — Remove waypoints the mover can skip because it has clear line-of-sight past them.
 
+## @jgengine/core/nav/navMesh
+
+- `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
+- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
+- `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
+- `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
+- `buildNavAdjacency` (function): function buildNavAdjacency(mesh: NavMeshData): NavMeshAdjacency[] — Build polygon adjacency from shared edges and explicit off-mesh links.
+- `closestPoint` (function): function closestPoint(mesh: NavMeshData, point: Vec3): Vec3 | null — Return the closest point on the mesh surface, or null for an empty mesh.
+- `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon centers, followed by deterministic visibility string-pulling.
+- `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
+
 ## @jgengine/core/nav/pathFollow
 
 - `HeightSampler` (interface): interface HeightSampler — ⚠ undocumented
@@ -2042,6 +2053,10 @@
 - `MusicTheme` (interface): interface MusicTheme — A through-composed, looping music track. `events` need not be sorted; the director schedules them ahead against a fixed anchor so loops are seamless.
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
 - `NavGrid` (interface): interface NavGrid — ⚠ undocumented
+- `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
+- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
+- `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
+- `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
 - `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
@@ -2336,6 +2351,7 @@
 - `budgetWarning` (function): function budgetWarning(coverage: ScatterCoverage): string — The shared clamp-and-warn clause every scatterable kind appends, worded identically: `""` when under budget, else ` · requested N, capped at M (budget)` when the pre-cap ask is known, or ` · capped at M (budget)` when only the ceiling is (city). This is the "surfaced, never silent" budget signal from #1112.
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `buildJunctionSurface` (function): function buildJunctionSurface(junction: { x: number; z: number }, approaches: readonly JunctionApproach[], sampleHeight: (x: number, z: number) => number, options: JunctionGeometryOptions = {}): RoadRibbon — Weld one triangulated junction surface onto the corner vertices its incident ribbons END at (from {@link trimPathAtJunctions}). Corners are grouped by approach (so unequal widths cannot interleave a neighbour between a mouth pair), ordered around the node, and bridged as follows:
+- `buildNavAdjacency` (function): function buildNavAdjacency(mesh: NavMeshData): NavMeshAdjacency[] — Build polygon adjacency from shared edges and explicit off-mesh links.
 - `buildRoadRibbon` (function): function buildRoadRibbon(path: readonly RoadPoint[], width: number, sampleHeight: (x: number, z: number) => number, options: RoadRibbonOptions = {}): RoadRibbon — Triangulate a road centerline into a ground-draped ribbon mesh: the polyline is subdivided, each vertex is offset half a `width` along the local perpendicular, and every vertex sits at `sampleHeight(x, z) + elevation`. Pure geometry — the shell (or any renderer) turns the result into a mesh, and tests can assert on it directly.
 - `buildTrimmedIntersections` (function): function buildTrimmedIntersections(streets: readonly IntersectionStreet[], junctions: readonly RoadJunctionInput[], sampleHeight: (x: number, z: number) => number, options: JunctionGeometryOptions = {}): TrimmedIntersections — Trim a set of streets against a set of junctions and weld the crossing surfaces in one call — the ergonomic entry the shell/playground consume for meshing.
 - `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. Pass `along` to line road frontage instead of gridding around `position`.
@@ -2348,6 +2364,7 @@
 - `circleFormation` (function): function circleFormation(options: CircleFormationOptions): FormationSlotGenerator — An evenly spaced ring around the destination — a guard cordon, a huddle, or a surround. Slot 0 sits `startAngle` from forward; slots advance evenly around the circle.
 - `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
 - `clearanceZonesFrom` (function): function clearanceZonesFrom(doc: SceneDocumentLike, options: ClearanceOptions = {}): AvoidZone[] — Point-pad clearance **discs** from a document's markers/volumes — the terrain-flatten set (spawns, plots, POIs get a level pad). A marker/volume contributes a disc when it carries `meta.clearance` or its kind is in `kinds`. Paths are *not* included (they render draped, never flattened — see {@link clearanceMasksFrom} for their foliage corridor). Pass `ids`/`kinds` to scope it.
+- `closestPoint` (function): function closestPoint(mesh: NavMeshData, point: Vec3): Vec3 | null — Return the closest point on the mesh surface, or null for an empty mesh.
 - `collectAuthoredTriggers` (function): function collectAuthoredTriggers(document: SceneDocumentLike): AuthoredTrigger[] — Collect every authored trigger on a document's markers and volumes. Pure — no runtime state. Action params use the live {@link registerTriggerAction} registry when present.
 - `combineGravity` (function): function combineGravity(fields: readonly GravityField[]): GravityField — Adds several gravity sources into one field.
 - `command` (function): function command(name: string, input?: unknown): PromptCommand — ⚠ undocumented
@@ -2526,6 +2543,7 @@
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
 - `rain` (function): function rain(config: RainEnvironmentConfig = {}): RainEnvironmentDescriptor — Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `raiseAlert` (function): function raiseAlert(state: SpawnDirectorState, amount: number): SpawnDirectorState — ⚠ undocumented
+- `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
 - `readNamedSockets` (function): function readNamedSockets(root: ModelNode, pattern: RegExp = SOCKET_PATTERN): ModelSocket[] — Depth-first collect every socket-named node's local offset, sorted by descending Y then ascending X so socket indices are stable across loads (top first, left-to-right). Empty when the model tags none — callers then fall back to computed offsets. Pass a custom `pattern` for a bespoke naming convention.
 - `readScatterPalette` (function): function readScatterPalette(meta: Record<string, unknown> | undefined): ScatterPaletteEntry[] — Parses a scatter region's palette from meta: a weighted `palette` array, else a single `item`.
 - `readScatterRules` (function): function readScatterRules(path: ScenePathLike): ScatterRegionRules | null — The path's scatter rules with defaults filled in; null for non-scatter paths.

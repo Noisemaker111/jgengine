@@ -184,6 +184,15 @@ export { constrainToNavGrid } from "./nav/navConstrain";
 export { populateNavGridFromEnvironment } from "./nav/navFromEnvironment";
 export { createNavGrid, findPath, slopeStepCost, type NavGrid, type NavPoint } from "./nav/navGrid";
 export {
+  buildNavAdjacency,
+  closestPoint,
+  raycastNav,
+  type NavMeshAdjacency,
+  type NavMeshData,
+  type NavMeshLink,
+  type NavMeshPath,
+} from "./nav/navMesh";
+export {
   advancePathFollow,
   createPathFollow,
   pathFollowProgress,
