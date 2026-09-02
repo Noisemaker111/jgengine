@@ -308,6 +308,7 @@ export function GamePlayerShell({
     touchSink,
     touchJoystickVariant,
     analogRef,
+    inputBindings: effectiveInput,
     orientationGate,
     orientationGateEl,
     coarsePointer,
