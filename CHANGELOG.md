@@ -40,6 +40,8 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Shell model animation now routes states and one-shots through the shared animation graph runtime.
+
 - CI now clones the external games repository with `GAMES_CLONE_TOKEN` and runs the game shape, content, front-end, art-direction, and feel gates against it; those gates fail loudly in CI when the checkout is missing while remaining no-ops locally.
 
 - `jgengine create` now accepts `--player`, `--ground`, and `--scene` so generated games can choose their model, terrain ground, and empty or starter scene.
