@@ -4,6 +4,7 @@ import type { MusicTheme } from "../audio/music";
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
 import type { PostProcessingConfig } from "../render/postProcessing";
 import type { EnvironmentSource } from "../render/environment";
+import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
@@ -82,6 +83,8 @@ export interface EntitySpriteConfig {
   width: number;
   height: number;
   y: number;
+  /** Optional atlas-backed animation. The atlas image supersedes `url` when present. */
+  clip?: { atlas: SpriteAtlas; animation: string };
 }
 
 export interface WorldItemRenderConfig {
