@@ -4,7 +4,6 @@ import * as THREE from "three";
 
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 import { resolveAnimationConfig } from "@jgengine/core/game/clipRoles";
-import { resolveOneShotClip } from "@jgengine/core/game/modelAnimation";
 import {
   ANIM_PARAMS_KEY,
   createAnimGraphRuntime,
@@ -12,7 +11,7 @@ import {
   type AnimGraphRuntime,
   type AnimParamValue,
 } from "@jgengine/core/anim/animGraph";
-import { LOCOMOTION_SPEED_PARAM } from "@jgengine/core/anim/locomotionGraph";
+import { LOCOMOTION_SPEED_PARAM, locomotionGraph } from "@jgengine/core/anim/locomotionGraph";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 function graphClipNames(graph: AnimGraph): Set<string> {
@@ -154,23 +153,31 @@ export function useModelAnimation(
 
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const animationPausedRef = useRef(false);
-  const stateActionsRef = useRef<{
-    actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>>;
-    active: "idle" | "walk" | "run";
-    lastPos: [number, number, number] | null;
-    smoothedSpeed: number;
-  } | null>(null);
   const graphRef = useRef<GraphPlayback | null>(null);
   const states = animation?.states;
   const oneShots = animation?.oneShots;
-  const graph = animation?.graph;
-  const oneShotPlayRef = useRef<((event: string) => void) | null>(null);
-  const activeOneShotRef = useRef<{ action: THREE.AnimationAction; isDeath: boolean } | null>(null);
+  const graph = useMemo(() => {
+    if (animation?.graph !== undefined) return animation.graph;
+    if (states === undefined) return undefined;
+    const graphOneShots: Record<string, string> = {};
+    for (const [event, spec] of Object.entries(oneShots ?? {})) {
+      const clip = typeof spec === "string" ? spec : spec[0];
+      if (clip !== undefined) graphOneShots[event] = clip;
+    }
+    return locomotionGraph({
+      idle: states.idle,
+      walk: states.walk,
+      ...(states.run === undefined ? {} : { run: states.run }),
+      walkSpeed: states.walkSpeed,
+      runSpeed: states.runSpeed,
+      fadeSec: states.fadeSec,
+      ...(Object.keys(graphOneShots).length === 0 ? {} : { oneShots: graphOneShots }),
+    });
+  }, [animation?.graph, states, oneShots]);
 
   useEffect(() => {
     if (animation === undefined || clips.length === 0) {
       mixerRef.current = null;
-      stateActionsRef.current = null;
       graphRef.current = null;
       return;
     }
@@ -185,75 +192,6 @@ export function useModelAnimation(
         mixer.stopAllAction();
         mixerRef.current = null;
         graphRef.current = null;
-      };
-    }
-    if (states !== undefined) {
-      const clipFor = (name: string) => THREE.AnimationClip.findByName(clips, name) ?? clips[0]!;
-      const actions: Partial<Record<"idle" | "walk" | "run", THREE.AnimationAction>> = {
-        idle: mixer.clipAction(clipFor(states.idle)),
-        walk: mixer.clipAction(clipFor(states.walk)),
-        ...(states.run === undefined ? {} : { run: mixer.clipAction(clipFor(states.run)) }),
-      };
-      for (const action of Object.values(actions)) {
-        action.setLoop(THREE.LoopRepeat, Infinity);
-        action.timeScale = animation.timeScale ?? 1;
-        action.enabled = true;
-      }
-      actions.idle!.play();
-      mixer.update(0);
-      mixerRef.current = mixer;
-      stateActionsRef.current = { actions, active: "idle", lastPos: null, smoothedSpeed: 0 };
-      animationPausedRef.current = false;
-
-      let onOneShotFinished: ((event: { action: THREE.AnimationAction }) => void) | null = null;
-      if (oneShots !== undefined) {
-        const clipNames = new Set<string>();
-        for (const spec of Object.values(oneShots)) {
-          if (typeof spec === "string") clipNames.add(spec);
-          else for (const name of spec) clipNames.add(name);
-        }
-        const oneShotActions = new Map<string, THREE.AnimationAction>();
-        for (const name of clipNames) {
-          const found = THREE.AnimationClip.findByName(clips, name);
-          if (found === null) continue;
-          const oneShotAction = mixer.clipAction(found);
-          oneShotAction.setLoop(THREE.LoopOnce, 1);
-          oneShotAction.enabled = true;
-          oneShotActions.set(name, oneShotAction);
-        }
-        onOneShotFinished = ({ action }) => {
-          const active = activeOneShotRef.current;
-          if (active === null || action !== active.action || active.isDeath) return;
-          const machine = stateActionsRef.current;
-          const back = machine?.actions[machine.active];
-          action.fadeOut(0.15);
-          if (back !== undefined) back.reset().fadeIn(0.15).play();
-          activeOneShotRef.current = null;
-        };
-        mixer.addEventListener("finished", onOneShotFinished);
-        oneShotPlayRef.current = (event: string) => {
-          const active = activeOneShotRef.current;
-          if (active !== null && active.isDeath) return;
-          const clipName = resolveOneShotClip(oneShots, event, Math.random());
-          if (clipName === null) return;
-          const oneShotAction = oneShotActions.get(clipName);
-          if (oneShotAction === undefined) return;
-          const machine = stateActionsRef.current;
-          machine?.actions[machine.active]?.fadeOut(0.1);
-          if (active !== null && active.action !== oneShotAction) active.action.stop();
-          oneShotAction.clampWhenFinished = event === "death";
-          oneShotAction.reset().fadeIn(0.1).play();
-          activeOneShotRef.current = { action: oneShotAction, isDeath: event === "death" };
-        };
-      }
-
-      return () => {
-        if (onOneShotFinished !== null) mixer.removeEventListener("finished", onOneShotFinished);
-        oneShotPlayRef.current = null;
-        activeOneShotRef.current = null;
-        mixer.stopAllAction();
-        mixerRef.current = null;
-        stateActionsRef.current = null;
       };
     }
     const clip =
@@ -292,7 +230,6 @@ export function useModelAnimation(
     const fire = (event: string) => {
       const playback = graphRef.current;
       if (playback !== null) playback.runtime.trigger(event);
-      else oneShotPlayRef.current?.(event);
     };
     const offAnimation = ctx.game.events.on("entity.animation", (event) => {
       if (event.instanceId === instanceId) fire(event.event);
@@ -341,40 +278,6 @@ export function useModelAnimation(
         for (const event of out.events) ctx.game.events.emit("animation.event", { instanceId, name: event.name, clip: event.clip });
       }
       return;
-    }
-    const stateMachine = stateActionsRef.current;
-    if (stateMachine !== null && states !== undefined && instanceId !== undefined && delta > 0 && ctx !== null) {
-      const entity = ctx.scene.entity.get(instanceId);
-      if (entity !== null) {
-        const [x, , z] = entity.position;
-        if (stateMachine.lastPos !== null) {
-          const instantSpeed =
-            Math.hypot(x - stateMachine.lastPos[0], z - stateMachine.lastPos[2]) / delta;
-          stateMachine.smoothedSpeed +=
-            (instantSpeed - stateMachine.smoothedSpeed) * Math.min(1, delta * 12);
-        }
-        stateMachine.lastPos = [x, entity.position[1], z];
-        const walkSpeed = states.walkSpeed ?? 0.5;
-        const runSpeed = states.runSpeed ?? 6;
-        const next: "idle" | "walk" | "run" =
-          stateMachine.smoothedSpeed < walkSpeed
-            ? "idle"
-            : stateMachine.actions.run !== undefined && stateMachine.smoothedSpeed >= runSpeed
-              ? "run"
-              : "walk";
-        if (next !== stateMachine.active) {
-          if (activeOneShotRef.current === null) {
-            const fade = states.fadeSec ?? 0.2;
-            const from = stateMachine.actions[stateMachine.active];
-            const to = stateMachine.actions[next];
-            if (from !== undefined && to !== undefined) {
-              to.reset().fadeIn(fade).play();
-              from.fadeOut(fade);
-            }
-          }
-          stateMachine.active = next;
-        }
-      }
     }
     if (mixerRef.current !== null && !animationPausedRef.current) mixerRef.current.update(delta);
   });
