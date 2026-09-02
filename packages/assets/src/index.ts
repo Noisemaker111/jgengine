@@ -36,6 +36,7 @@ export { generatedIndex, generatedBySource } from "./generated";
 export { generatedSpriteIndex, generatedSpriteBySource } from "./generated-sprites";
 export { readGlbDims } from "./dims";
 export { buildCatalog, entryUrl, type BuildCatalogOptions } from "./catalogs/build";
+export { classifyAssetFile, validateImportSpec, type AssetImportKind, type AssetImportSpec, type ImportSpecValidation } from "./importSpec";
 export { buildSpriteCatalog, type BuildSpriteCatalogOptions } from "./catalogs/buildSprites";
 export { createStarterCatalog } from "./catalogs/starter";
 export {

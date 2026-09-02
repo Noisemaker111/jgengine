@@ -6,6 +6,8 @@
 
 - `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
+- `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
+- `AssetImportSpec` (interface): interface AssetImportSpec — A validated description of files to ingest into a game project.
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
 - `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
 - `AssetProvenance` (interface): interface AssetProvenance — The resolved ownership of one logical asset id — the provisioning contract for that id.
@@ -22,6 +24,7 @@
 - `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `FindOptions` (interface): interface FindOptions — ⚠ undocumented
+- `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description.
 - `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
 - `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role.
 - `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
@@ -53,6 +56,7 @@
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
 - `buildMaterialCatalog` (function): function buildMaterialCatalog(options: BuildMaterialCatalogOptions = {}): MaterialCatalog — A resolvable catalog over every `kind: "material"` source. Ids are source ids (`ambientcg-grass001`) plus the `material/…` aliases; every resolve returns the normalized map URLs under `basePath`, matching what `assets pull` writes into `<dir>/materials/<id>/`.
 - `buildSpriteCatalog` (function): function buildSpriteCatalog(options: BuildSpriteCatalogOptions = {}): AssetCatalog — Resolves individual pulled sprite/icon ids (e.g. `gameicons-icons/sword`) to `{ url }`.
+- `classifyAssetFile` (function): function classifyAssetFile(bytes: Uint8Array, filename: string): AssetImportKind | null — Classify common asset bytes, using magic bytes and JSON sprite-sheet metadata.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `createStarterCatalog` (function): function createStarterCatalog(options: BuildCatalogOptions = {}): AssetCatalog<ModelAssetRef> — Catalog restricted to the curated starter packs (people/props/nature/urban). Prefer this for scaffolds and probes so `asset:person_casual` etc. resolve without pulling the whole library. Full index: {@link buildCatalog}.
@@ -87,6 +91,7 @@
 - `spriteSources` (const): const spriteSources: readonly AssetSource[] — Every `kind: "sprite"` source — a pack of individual 2D icon/UI files, resolvable via `buildSpriteCatalog`.
 - `spriteWiringSnippet` (function): function spriteWiringSnippet(id: string, basePath = "/sprites"): string — Copy-paste wiring for a pulled sprite/icon-pack file: resolve through the sprite catalog.
 - `validateAssetReferences` (function): function validateAssetReferences(references: readonly AssetReference[], options: ValidateAssetReferencesOptions = {}): ValidateAssetReferencesResult — Validate that every {@link AssetReference} resolves against the declared provisioning contract — not by grepping source text, but by resolving each logical id to its committed / provisioned / dangling owner. A `dangling` reference fails with the referencing consumer, the logical id, the (null) resolved path, and the missing provisioning step; a `provisioned` reference passes and contributes its `assets pull <source>` step to `provisioning` (unless `present` is supplied and reports the bytes absent).
+- `validateImportSpec` (function): function validateImportSpec(spec: AssetImportSpec): ImportSpecValidation — Validate the stable, serializable import contract before ingesting files.
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
 
 ## @jgengine/assets/aliases
@@ -169,6 +174,14 @@
 
 - `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
 - `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
+
+## @jgengine/assets/importSpec
+
+- `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
+- `AssetImportSpec` (interface): interface AssetImportSpec — A validated description of files to ingest into a game project.
+- `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description.
+- `classifyAssetFile` (function): function classifyAssetFile(bytes: Uint8Array, filename: string): AssetImportKind | null — Classify common asset bytes, using magic bytes and JSON sprite-sheet metadata.
+- `validateImportSpec` (function): function validateImportSpec(spec: AssetImportSpec): ImportSpecValidation — Validate the stable, serializable import contract before ingesting files.
 
 ## @jgengine/assets/indexGen
 

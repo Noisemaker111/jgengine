@@ -43,6 +43,7 @@ between (`--json` for structured output).
 - Graphics profiles now resolve per-tier render scale, shadow budgets, culling distance, particles, cascades, and post stages; games can override them with `defineGame({ graphics })`.
 - `defineGame({ physics: { backend } })` now adopts a capsule character controller for shell/headless movement and registers the backend simulation after movement, including floor collision and step-up behavior.
 - Added the `physics-probe` dev scene for Rapier crate, ragdoll, and vehicle motion.
+- Assets now expose import-spec validation and magic-byte classification for supported source files.
 
 ### Migrate
 
