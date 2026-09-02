@@ -25,6 +25,7 @@ import { resolveModel, resolveEntityModel, tryResolveCatalogModel } from "../ren
 import { useRenderVisibility } from "../visibility/CullingProvider";
 import { writeEntityPose, writeRenderPose } from "./entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
+import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
 import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "../pointer/pointerService";
 
 const GROUND_SIZE = 160;
@@ -405,14 +406,52 @@ export function WorldView({
   );
 }
 
-export function RemotePlayers({ rows }: { rows: PresencePoseRow[] }) {
+export function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }) {
+  const groups = useRef(new Map<string, THREE.Group>());
+  const buffers = useRef(new Map<string, SnapshotBuffer<PresencePoseRow>>());
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+  useEffect(() => {
+    const active = new Set(rows.map((row) => row.userId));
+    for (const row of rows) {
+      let buffer = buffers.current.get(row.userId);
+      if (buffer === undefined) {
+        buffer = createSnapshotBuffer({ delayMs: presenceInterpolationMs, capacity: 16 });
+        buffers.current.set(row.userId, buffer);
+      } else {
+        buffer.retune({ delayMs: presenceInterpolationMs });
+      }
+      buffer.push(row.lastSeenAt, row);
+    }
+    for (const userId of buffers.current.keys()) {
+      if (!active.has(userId)) buffers.current.delete(userId);
+    }
+  }, [rows, presenceInterpolationMs]);
+  useFrame(({ clock }) => {
+    const now = clock.getElapsedTime() * 1000;
+    for (const [userId, buffer] of buffers.current) {
+      const group = groups.current.get(userId);
+      const sample = buffer.sampleAt(now);
+      if (group === undefined || sample === null) continue;
+      const before = sample.before;
+      const after = sample.after;
+      group.position.set(
+        before.position.x + (after.position.x - before.position.x) * sample.alpha,
+        before.position.y + (after.position.y - before.position.y) * sample.alpha,
+        before.position.z + (after.position.z - before.position.z) * sample.alpha,
+      );
+      group.rotation.y = before.rotationY + (after.rotationY - before.rotationY) * sample.alpha;
+    }
+  });
   return (
     <>
       {rows.map((row) => (
         <group
           key={row.userId}
-          position={[row.position.x, row.position.y, row.position.z]}
-          rotation-y={row.rotationY}
+          ref={(group) => {
+            if (group === null) groups.current.delete(row.userId);
+            else groups.current.set(row.userId, group);
+          }}
         >
           <mesh position-y={0.95}>
             <capsuleGeometry args={[0.35, 1.1, 6, 14]} />
