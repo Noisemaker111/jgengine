@@ -13,6 +13,7 @@ import {
   type ChatRateLimit,
 } from "@jgengine/core/game/chat";
 import type { ResumeTicket } from "@jgengine/core/runtime/transport";
+import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
 
 import {
   createCommandMiddleware,
@@ -21,6 +22,7 @@ import {
   type CommandLimits,
   type HostCommandOp,
 } from "./commandMiddleware";
+import { DEFAULT_COMMAND_LIMITS } from "./commandMiddleware";
 import type { GameHost, HostChangeEvent } from "./host";
 import type { TransportPipeFactory } from "./pipe";
 import {
@@ -53,7 +55,7 @@ export type HostRouterOptions = {
   chatRateLimit?: ChatRateLimit;
   chatHistoryLimit?: number;
   chatMaxBodyLength?: number;
-  /** Per-op rate limits for pose/runCommand/join/browse/voice. Omit (default) for no rate limiting; pass {@link DEFAULT_COMMAND_LIMITS} or a custom {@link CommandLimits} to opt in. */
+  /** Per-op rate limits for pose/runCommand/join/browse/voice. Defaults to {@link DEFAULT_COMMAND_LIMITS}. */
   limits?: CommandLimits;
   /** Per-command authorization hook; defaults to allow-all. */
   authorize?: CommandAuthorize;
@@ -103,6 +105,7 @@ type Connection = {
   queue: Promise<void>;
   queuedMessages: number;
   worldRevisions: Map<string, number | null>;
+  roles: Map<string, SnapshotViewer["role"]>;
 };
 
 type PresenceEntry = PresencePoseState & { appearance?: WsAppearance };
@@ -242,7 +245,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }));
 
   const commandMiddleware = createCommandMiddleware({
-    limits: options.limits,
+    limits: options.limits ?? DEFAULT_COMMAND_LIMITS,
     authorize: options.authorize,
     validate: options.validate,
   });
@@ -385,17 +388,17 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     if (channel === "server") {
       if (host.pullWorld !== undefined) {
         const sinceRevision = connection.worldRevisions.get(serverId) ?? null;
-        const world = await host.pullWorld({ userId: connection.userId, serverId, sinceRevision });
+        const world = await host.pullWorld({ userId: connection.userId, serverId, sinceRevision, role: connection.roles.get(serverId) });
         if (world !== null) {
           connection.worldRevisions.set(serverId, world.revision);
-          const data = await host.getServerView({ userId: connection.userId, serverId });
+          const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId) });
           if (data !== null) {
             send(connection, { v: 1, t: "update", channel, serverId, data: { ...data, serverState: world } });
           }
           return;
         }
       }
-      const data = await host.getServerView({ userId: connection.userId, serverId });
+      const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId) });
       send(connection, { v: 1, t: "update", channel, serverId, data });
     } else if (channel === "player") {
       const data = await host.getPlayerView({ userId: connection.userId, serverId });
@@ -541,6 +544,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }
 
     if (message.t === "pose") {
+      if (connection.roles.get(message.serverId) === "spectator") return;
       await handlePose(connection, message.serverId, message.pose);
       return;
     }
@@ -561,8 +565,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             serverId: message.serverId,
             attributes: message.attributes,
             code: message.code,
+            role: message.role,
           });
           connection.joinedServers.add(result.serverId);
+          connection.roles.set(result.serverId, message.role ?? "player");
           reply(connection, message.id, {
             ...result,
             resumeTicket: ticketFor(userId, result.serverId),
@@ -576,7 +582,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             gameId: message.gameId,
             code: message.code,
           });
-          if (result !== null) connection.joinedServers.add(result.serverId);
+          if (result !== null) {
+            connection.joinedServers.add(result.serverId);
+            connection.roles.set(result.serverId, message.role ?? "player");
+          }
           reply(
             connection,
             message.id,
@@ -600,12 +609,17 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           await host.leaveServer({ userId, serverId: message.serverId });
           clearPendingLeave(userId, message.serverId);
           connection.joinedServers.delete(message.serverId);
+          connection.roles.delete(message.serverId);
           dropPresenceForServer(userId, message.serverId);
           dropVoiceForServer(userId, message.serverId);
           reply(connection, message.id, null);
           return;
         }
         case "runCommand": {
+          if (connection.roles.get(message.serverId) === "spectator") {
+            replyError(connection, message.id, "Spectators cannot run commands");
+            return;
+          }
           if (
             !(await gate(connection, message.id, "runCommand", {
               serverId: message.serverId,
@@ -727,6 +741,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         queue: Promise.resolve(),
         queuedMessages: 0,
         worldRevisions: new Map(),
+        roles: new Map(),
       };
       connections.add(connection);
       return {

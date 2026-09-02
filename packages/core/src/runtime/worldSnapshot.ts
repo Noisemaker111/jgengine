@@ -1,6 +1,10 @@
 /** Who a host→client snapshot is being projected for — the identity a {@link SnapshotModule.project} filters against. */
 export interface SnapshotViewer {
   readonly userId: string;
+  /** A read-only connection role; spectators receive snapshots but cannot mutate the world. */
+  readonly role?: "player" | "spectator";
+  /** Host tick used by {@link SnapshotModule.priority} to throttle low-priority modules. */
+  readonly tick?: number;
 }
 
 /**
@@ -38,6 +42,8 @@ export interface SnapshotModule<T = unknown> {
   project?(data: T, viewer: SnapshotViewer, world: WorldSnapshot): T;
   /** Monotone change counter; unchanged between host commits means this module didn't mutate and need not re-serialize. */
   version?(): number;
+  /** Return the host tick interval for this module; values greater than one omit it on intervening ticks. */
+  priority?(data: T, viewer: SnapshotViewer): number;
 }
 
 /** Full world baseline keyed by {@link SnapshotModule.key} — one entry per opted-in subsystem. */
@@ -59,6 +65,8 @@ export function composeWorldSnapshot(
   const snapshot: WorldSnapshot = {};
   for (const module of modules) {
     const value = raw[module.key];
+    const interval = viewer?.tick === undefined ? 1 : Math.max(1, Math.floor(module.priority?.(value, viewer) ?? 1));
+    if (viewer?.tick !== undefined && interval > 1 && viewer.tick % interval !== 0) continue;
     snapshot[module.key] =
       module.project !== undefined ? module.project(value, viewer, raw) : value;
   }
