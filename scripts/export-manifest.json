@@ -20,6 +20,7 @@
     "./ai/waveRunner",
     "./anim/animGraph",
     "./anim/easing",
+    "./anim/ikSolver",
     "./anim/locomotionGraph",
     "./anim/oscillator",
     "./area/areaEffectField",

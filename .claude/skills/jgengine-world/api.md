@@ -199,6 +199,19 @@
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
 
+## @jgengine/core/anim/ikSolver
+
+- `FabrikOptions` (interface): interface FabrikOptions — Iteration budget and convergence threshold for {@link solveFabrik}.
+- `LookAtInput` (interface): interface LookAtInput — Inputs for {@link lookAt}. Angles are in radians.
+- `MutableVec3` (type): type MutableVec3 = [number, number, number] — A mutable three-dimensional tuple used by allocation-aware solver outputs.
+- `Quat` (type): type Quat = readonly [number, number, number, number] — A quaternion in `(x, y, z, w)` order.
+- `TwoBoneInput` (interface): interface TwoBoneInput — Inputs for {@link solveTwoBone}.
+- `TwoBoneOutput` (interface): interface TwoBoneOutput — Reused output buffers filled by {@link solveTwoBone}.
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — A three-dimensional point or direction represented without a renderer dependency.
+- `lookAt` (function): function lookAt(input: LookAtInput): Quat — Returns a quaternion that points a +Z bone from `from` toward `target`, with optional yaw and pitch limits.
+- `solveFabrik` (function): function solveFabrik(chain: readonly Vec3[], target: Vec3, options: FabrikOptions = {}): MutableVec3[] — Solves a chain with the FABRIK forward-and-backward reaching algorithm. Returned tuples are new values; the input chain is not modified.
+- `solveTwoBone` (function): function solveTwoBone(input: TwoBoneInput, out: TwoBoneOutput): TwoBoneOutput — Solves a two-segment chain analytically, placing the middle and tip joints toward `target` and `pole`. The root remains fixed, and unreachable targets are clamped to the chain's maximum reach.
+
 ## @jgengine/core/anim/locomotionGraph
 
 - `LOCOMOTION_LAYER` (const): const LOCOMOTION_LAYER: "base" — Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`.
