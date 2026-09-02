@@ -530,6 +530,7 @@ const mutationHandlers: MutationHandlers = {
   }),
   setTerrain: (state, command) => ({ ...state, document: { ...state.document, terrain: command.terrain } }),
   setMinimapBake: (state, command) => ({ ...state, document: { ...state.document, minimap: command.minimap } }),
+  setBake: (state, command) => ({ ...state, document: { ...state.document, bakes: [...(state.document.bakes ?? []).filter((bake) => bake.id !== command.bake.id), command.bake] } }),
   setEnvironment: (state, command) => {
     if (command.environment === undefined) {
       const { environment: _removed, ...rest } = state.document;

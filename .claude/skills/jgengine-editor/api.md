@@ -295,6 +295,7 @@
 
 ## @jgengine/core/editor/types
 
+- `EditorBake` (interface): interface EditorBake — A named baked artifact produced by an editor or build tool.
 - `EditorCatalogData` (interface): interface EditorCatalogData — Persisted values for one gameplay data catalog (weapons, waves, economy, …). Schemas are not stored here — they come from the game's `editorCatalogs` export and drive SchemaInspector.
 - `EditorCatalogDefinition` (interface): interface EditorCatalogDefinition — Game-exported catalog definition: a `ParamSchema` plus default entries. Schemas stay in code; entry values merge into `document.catalogs` and are what the editor/RPC edits and saves.
 - `EditorCatalogEntry` (interface): interface EditorCatalogEntry — One row in a gameplay data catalog — id + optional label + a meta bag matching the catalog's `ParamSchema`. Values persist on the scene document; the schema lives in the game export.
@@ -624,6 +625,10 @@
 ## @jgengine/editor/handlers/minimap
 
 - `minimapHandlers` (const): const minimapHandlers: Pick<HandlerTable, "bake_minimap"> — Bake the authored terrain into a stored minimap PNG (#1036). Composes the live viewport's base ground field with the document's sculpt snapshot, rasterizes it top-down via the pure core bake, and stores `{ background, bounds }` on `document.minimap` as an undoable edit — runtime then feeds those straight into the `Minimap`/`WorldMap` props with no re-raster. Needs the mounted viewport's composed sampler, so it is a live-editor-only action, not a headless CLI verb.
+
+## @jgengine/editor/handlers/navmesh
+
+- `navMeshHandlers` (const): const navMeshHandlers: Pick<HandlerTable, "bakeNavMesh"> — Bake caller-provided indexed geometry into a named document navigation mesh.
 
 ## @jgengine/editor/handlers/runtime
 

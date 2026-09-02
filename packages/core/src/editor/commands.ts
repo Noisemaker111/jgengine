@@ -20,6 +20,7 @@ import type { EditorGridCellEdit, EditorGridLayer } from "./grid";
 import type { ParamSchema } from "../scene/sceneKinds";
 import type {
   EditorCatalogEntry,
+  EditorBake,
   EditorDocument,
   EditorEnvironment,
   EditorMarker,
@@ -72,6 +73,7 @@ export type EditorCommand =
   | { type: "blendTerrain"; delta: WeightDelta }
   | { type: "clearTerrain" }
   | { type: "setMinimapBake"; minimap: EditorMinimapBake }
+  | { type: "setBake"; bake: EditorBake }
   /**
    * Replace the scene-document environment/lighting bag. Pass `undefined` to clear authored sky/fog
    * so world.ts fallbacks apply again. The lighting workspace writes the full merged bag so

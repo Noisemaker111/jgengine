@@ -94,6 +94,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   convert_scatter: [req(s("pathId"))],
   generate_streets: [s("volumeId"), v3("center"), n("halfX"), n("halfZ"), s("seed"), s("mode", ["net", "circuit"]), s("kind"), o("params")],
   bake_minimap: [n("padding"), n("resolution"), n("waterLevel")],
+  bakeNavMesh: [req(s("id")), req(val("positions")), req(val("indices")), req(n("agentRadius")), req(n("agentHeight")), req(n("maxSlope")), req(n("maxClimb"))],
   add_foliage: [req(oa("points", [req(n("x")), req(n("z"))])), n("density"), s("item"), s("seed"), n("minSpacing")],
   scatter_summary: [],
   set_parent: [req(sa("ids")), req(sn("parentId"))],

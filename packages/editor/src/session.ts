@@ -155,6 +155,7 @@ export type EditorBridgeRequest =
       params?: Record<string, unknown>;
     }
   | { method: "bake_minimap"; padding?: number; resolution?: number; waterLevel?: number }
+  | { method: "bakeNavMesh"; id: string; positions: number[]; indices: number[]; agentRadius: number; agentHeight: number; maxSlope: number; maxClimb: number }
   | {
       method: "add_foliage";
       points: { x: number; z: number }[];

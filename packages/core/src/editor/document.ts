@@ -10,6 +10,7 @@ import {
 } from "./grid";
 import type {
   EditorCatalogData,
+  EditorBake,
   EditorCatalogDefinition,
   EditorCatalogEntry,
   EditorCollection,
@@ -37,6 +38,10 @@ import type { EnvironmentSource } from "../render/environment";
 /** Copies a baked minimap so a document's PNG + bounds are never shared by reference across rebuilds. */
 function cloneMinimapBake(minimap: EditorMinimapBake): EditorMinimapBake {
   return { background: minimap.background, bounds: { ...minimap.bounds } };
+}
+
+function cloneBakes(bakes: readonly EditorBake[] | undefined): EditorBake[] | undefined {
+  return bakes === undefined ? undefined : bakes.map((bake) => ({ ...bake, data: structuredClone(bake.data) }));
 }
 
 /** Deep-copies scene-document environment/lighting so edits never mutate history snapshots. */
@@ -111,6 +116,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
   ui?: EditorDocument["ui"];
   directives?: EditorDirective[];
   minimap?: EditorMinimapBake;
+  bakes?: EditorBake[];
   environment?: EditorEnvironment;
 } {
   return {
@@ -122,6 +128,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
     ...(doc.ui === undefined ? {} : { ui: doc.ui }),
     ...(doc.directives === undefined ? {} : { directives: doc.directives }),
     ...(doc.minimap === undefined ? {} : { minimap: doc.minimap }),
+    ...(doc.bakes === undefined ? {} : { bakes: cloneBakes(doc.bakes) }),
     ...(doc.environment === undefined ? {} : { environment: doc.environment }),
   };
 }
@@ -207,6 +214,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     ...(ui === undefined ? {} : { ui }),
     ...(directives === undefined ? {} : { directives }),
     ...(doc.minimap === undefined ? {} : { minimap: cloneMinimapBake(doc.minimap) }),
+    ...(doc.bakes === undefined ? {} : { bakes: cloneBakes(doc.bakes) }),
     ...(doc.environment === undefined ? {} : { environment: cloneEnvironment(doc.environment) }),
   };
 }
@@ -275,6 +283,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     ...(ui === undefined ? {} : { ui }),
     ...(directives === undefined ? {} : { directives }),
     ...(resolved.minimap === undefined ? {} : { minimap: cloneMinimapBake(resolved.minimap) }),
+    ...(resolved.bakes === undefined ? {} : { bakes: cloneBakes(resolved.bakes) }),
     ...(resolved.environment === undefined ? {} : { environment: cloneEnvironment(resolved.environment) }),
   };
 }
@@ -1033,6 +1042,19 @@ function decodeMinimapBake(
   };
 }
 
+function decodeBakes(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorBake[] | undefined {
+  if (!Array.isArray(value)) { errors.push({ path, message: "expected an array" }); return undefined; }
+  const bakes: EditorBake[] = [];
+  value.forEach((item, index) => {
+    if (!isPlainObject(item) || (item.kind !== "nav" && item.kind !== "minimap") || typeof item.id !== "string" || item.data === undefined) {
+      errors.push({ path: `${path}[${index}]`, message: 'expected {kind: "nav" | "minimap", id, data}' });
+      return;
+    }
+    bakes.push({ kind: item.kind, id: item.id, data: structuredClone(item.data) });
+  });
+  return bakes;
+}
+
 const SKY_PRESETS: ReadonlySet<string> = new Set(["day", "dusk", "night"]);
 
 /**
@@ -1264,6 +1286,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
     errors.push({ path: "$.terrain", message: "expected an object" });
   }
   const minimap = raw.minimap === undefined ? undefined : decodeMinimapBake(raw.minimap, "$.minimap", errors);
+  const bakes = raw.bakes === undefined ? undefined : decodeBakes(raw.bakes, "$.bakes", errors);
   const environment =
     raw.environment === undefined ? undefined : decodeEnvironment(raw.environment, "$.environment", errors);
   // Placeable object ids form one document-global namespace (selection, parenting, and removal all
@@ -1305,6 +1328,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
       ...(ui === undefined ? {} : { ui }),
       ...(directives === undefined ? {} : { directives }),
       ...(minimap === undefined ? {} : { minimap }),
+      ...(bakes === undefined && minimap === undefined ? {} : { bakes: bakes ?? [{ kind: "minimap", id: "minimap", data: minimap }] }),
       ...(environment === undefined ? {} : { environment }),
     },
   };
