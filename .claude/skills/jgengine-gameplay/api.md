@@ -718,11 +718,13 @@
 - `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — ⚠ undocumented
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
+- `PointLightingConfig` (interface): interface PointLightingConfig — A bounded dynamic point light in world space.
 - `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
 - `PresentationEffectsConfig` (interface): interface PresentationEffectsConfig — Per-channel combat presentation toggles for the 3D shell canvas. Missing keys default to enabled when the parent `presentationEffects` is an object.
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
+- `SpotLightingConfig` (interface): interface SpotLightingConfig extends PointLightingConfig — A bounded dynamic spot light in world space.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TurntableCameraConfig` (interface): interface TurntableCameraConfig — Turntable / showcase rig — slowly auto-orbits a fixed world point (no player input), the way a museum turntable rotates an object on display. A flat, self-describing spelling of `observer`'s point-orbit mode: `target` names the point directly instead of `bind: { kind: "point", position }`. Set `camera.turntable` and the rig is inferred — you don't also write `rig`.
 - `VoxelCollisionConfig` (interface): interface VoxelCollisionConfig — Player-vs-world collision for the first-person controller. Without this the shell keeps the player on flat ground at y=0. With `voxel: true` the shell resolves the player as a box against placed scene objects (each treated as a solid unit cell), so they stand on blocks, fall into holes, and are stopped by walls — the controller a block-building/mining game needs.

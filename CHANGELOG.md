@@ -26,6 +26,7 @@ between (`--json` for structured output).
 - Shared GLTF loader configuration for Draco and KTX2-compressed assets, with CDN defaults and renderer capability detection.
 - Material map overrides now support metalness, emissive, and height maps on standard and physical materials.
 - Presentation and editor documents now accept gradient, HDRI/EXR, and cube-map environment sources.
+- Authored `light` markers now feed bounded point/spot punctual lights with an eight-light default budget and editor warning.
 
 ### Migrate
 

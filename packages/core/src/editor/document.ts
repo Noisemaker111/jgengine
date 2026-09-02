@@ -43,6 +43,7 @@ function cloneMinimapBake(minimap: EditorMinimapBake): EditorMinimapBake {
 function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
   return {
     ...(environment.source === undefined ? {} : { source: cloneEnvironmentSource(environment.source) }),
+    ...(environment.pointLights === undefined ? {} : { pointLights: environment.pointLights.map((light) => ({ ...light, position: [...light.position] as [number, number, number] })) }),
     ...(environment.preset === undefined ? {} : { preset: environment.preset }),
     ...(environment.timeOfDay === undefined ? {} : { timeOfDay: environment.timeOfDay }),
     ...(environment.horizonColor === undefined ? {} : { horizonColor: environment.horizonColor }),
@@ -1068,6 +1069,27 @@ function decodeEnvironment(
     } else {
       errors.push({ path: `${path}.source`, message: 'expected kind "gradient", "hdri", or "cube" with valid fields' });
       failed = true;
+    }
+  }
+  if (value.pointLights !== undefined) {
+    if (!Array.isArray(value.pointLights)) {
+      errors.push({ path: `${path}.pointLights`, message: "expected an array" });
+      failed = true;
+    } else if (value.pointLights.length > 64 || value.pointLights.some((light: unknown) => {
+      if (!isPlainObject(light) || !Array.isArray(light.position) || light.position.length !== 3 || light.position.some((n: unknown) => typeof n !== "number" || !Number.isFinite(n))) return true;
+      return light.intensity !== undefined && (typeof light.intensity !== "number" || !Number.isFinite(light.intensity));
+    })) {
+      errors.push({ path: `${path}.pointLights`, message: "expected point lights with finite positions and intensities" });
+      failed = true;
+    } else {
+      env.pointLights = (value.pointLights as Array<Record<string, unknown>>).map((light) => ({
+        position: [...(light.position as number[])] as [number, number, number],
+        ...(typeof light.color === "string" ? { color: light.color } : {}),
+        ...(typeof light.intensity === "number" ? { intensity: light.intensity } : {}),
+        ...(typeof light.distance === "number" ? { distance: light.distance } : {}),
+        ...(typeof light.decay === "number" ? { decay: light.decay } : {}),
+        ...(typeof light.castShadow === "boolean" ? { castShadow: light.castShadow } : {}),
+      }));
     }
   }
   if (value.preset !== undefined) {

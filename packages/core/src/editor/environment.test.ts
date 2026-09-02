@@ -3,6 +3,7 @@ import { createEmptyEditorDocument } from "./document";
 import {
   environmentContentFromDocument,
   lakebedFromWaterVolumes,
+  lightingFromDocument,
   skyFromDocument,
   terrainBoundsFromDocument,
 } from "./environment";
@@ -38,6 +39,13 @@ describe("terrainBoundsFromDocument", () => {
 });
 
 describe("environmentContentFromDocument", () => {
+  it("converts authored light markers to point and spot runtime entries", () => {
+    const doc: EditorDocument = { ...createEmptyEditorDocument(), markers: [
+      { id: "p", kind: "light", position: { x: 1, y: 2, z: 3 }, meta: { type: "point", intensity: 3 } },
+      { id: "s", kind: "light", position: { x: 4, y: 5, z: 6 }, meta: { type: "spot", range: 20 } },
+    ] };
+    expect(lightingFromDocument(doc)).toEqual({ point: [{ position: [1, 2, 3], color: "#ffd6a0", intensity: 3, distance: 12, castShadow: false }], spot: [{ position: [4, 5, 6], color: "#ffd6a0", intensity: 2, distance: 20, castShadow: false, angle: Math.PI / 6 }] });
+  });
   it("derives clearings from authored spawn/POI kinds", () => {
     const doc = docWith([
       marker("player_spawn", "player_spawn", 0, 0),

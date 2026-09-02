@@ -2179,6 +2179,7 @@
 
 - `BackdropFog` (function): function BackdropFog({ fog }: { fog: BackdropConfig["fog"] }): React.JSX.Element | null — ⚠ undocumented
 - `ConfiguredLighting` (function): function ConfiguredLighting({ lighting }: { lighting: LightingConfig }): React.JSX.Element — ⚠ undocumented
+- `POINT_LIGHT_BUDGET` (const): const POINT_LIGHT_BUDGET: 8 — Default cap for combined dynamic point and spot lights.
 - `syncShadowProjection` (function): function syncShadowProjection(light: DirectionalLight): void — Refresh a directional light's shadow projection after its frustum bounds change. R3F pierced `shadow-camera-*` props write the bounds but never call `updateProjectionMatrix()`, so depth renders with the stale default ~10×10 box and `shadowCameraSize` is silently inert.
 
 ## @jgengine/shell/render/SceneModels

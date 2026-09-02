@@ -39,6 +39,16 @@ export const SCATTER_SCHEMA: ParamSchema = {
   ],
 };
 
+const LIGHT_SCHEMA: ParamSchema = {
+  fields: [
+    { type: "select", key: "type", label: "type", options: [{ value: "point", label: "Point" }, { value: "spot", label: "Spot" }], default: "point" },
+    { type: "color", key: "color", label: "color", default: "#ffd6a0" },
+    { type: "number", key: "intensity", label: "intensity", min: 0, step: 0.1, default: 2 },
+    { type: "number", key: "range", label: "range", min: 0, step: 0.5, default: 12 },
+    { type: "bool", key: "castShadow", label: "cast shadow", default: false },
+  ],
+};
+
 let registered = false;
 
 /** Idempotently registers the engine's built-in environment scene kinds + generators. @internal */
@@ -67,6 +77,7 @@ export function registerBuiltinSceneKinds(): void {
       return describeScatterCoverage(densityCoverage("scatter", area, density));
     },
   });
+  registerSceneKind({ kind: "light", target: "marker", label: "Light", addCategory: "Environment", accent: "#fbbf24", schema: LIGHT_SCHEMA });
 
   registerWaterKind();
   registerGrassKind();
