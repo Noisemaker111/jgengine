@@ -37,6 +37,7 @@ function startStack(options: {
   limits?: CommandLimits;
   authorize?: CommandAuthorize;
   validate?: CommandCatalog;
+  graceMs?: number;
 } = {}): {
   host: GameHost;
   router: HostRouter;
@@ -56,6 +57,7 @@ function startStack(options: {
     limits: options.limits,
     authorize: options.authorize,
     validate: options.validate,
+    graceMs: options.graceMs,
   });
   const backends: WsBackend[] = [];
   return {
@@ -81,11 +83,33 @@ test("loopback: second client joins the first client's server", async () => {
     const alice = stack.connect("alice");
     const joined = await alice.transport.joinServer({ gameId: "test-game" });
     expect(joined.isNew).toBe(true);
+    expect(joined.resumeTicket).toMatchObject({ userId: "alice", serverId: joined.serverId });
+    expect(joined.resumeTicket?.token).toEqual(expect.any(String));
 
     const bob = stack.connect("bob");
     const rejoined = await bob.transport.joinServer({ gameId: "test-game", serverId: joined.serverId });
     expect(rejoined.serverId).toBe(joined.serverId);
     expect(rejoined.isNew).toBe(true);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("loopback: reconnect within the grace window keeps the player entity", async () => {
+  const stack = startStack({ graceMs: 50 });
+  try {
+    const alice = stack.connect("alice");
+    const joined = await alice.transport.joinServer({ gameId: "test-game" });
+    alice.close();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const reconnected = stack.connect("alice");
+    const result = await reconnected.transport.runCommand({
+      serverId: joined.serverId,
+      command: "engine.ping",
+      input: null,
+    });
+    expect(result).toEqual({ ok: true });
+    expect(await stack.host.isMember({ userId: "alice", serverId: joined.serverId })).toBe(true);
   } finally {
     await stack.shutdown();
   }
@@ -369,7 +393,7 @@ test("loopback: createSession without serverId still creates a new server", asyn
 });
 
 test("loopback: disconnect leaves the server and reclaims the slot", async () => {
-  const stack = startStack();
+  const stack = startStack({ graceMs: 0 });
   try {
     const alice = stack.connect("alice");
     const { serverId } = await alice.transport.joinServer({ gameId: "test-game" });

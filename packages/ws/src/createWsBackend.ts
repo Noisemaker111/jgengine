@@ -4,6 +4,7 @@ import type {
   GameRuntimeFeeds,
   GameRuntimeTransport,
   JoinServerResult,
+  ResumeTicket,
   TransportRunCommandResult,
 } from "@jgengine/core/runtime/transport";
 import type { SessionAttributes } from "@jgengine/core/runtime/hostPersistence";
@@ -147,6 +148,8 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const pending = new Map<number, PendingRequest>();
   const subscriptions = new Map<string, Subscription>();
+  const resumeTickets = new Map<string, ResumeTicket>();
+  const joinedGames = new Map<string, string>();
 
   const clearRequestTimer = (request: PendingRequest) => {
     if (request.timer !== null) {
@@ -207,6 +210,13 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       });
     }
   };
+
+  const rejoinServers = () => {
+    for (const [serverId, gameId] of joinedGames) {
+      rawSend({ v: 1, t: "join", id: nextId++, gameId, serverId });
+    }
+  };
+  const helloToken = () => resumeTickets.values().next().value?.token ?? options.token;
 
   const handleMessage = (raw: string) => {
     const message = decodeWsServerMessage(raw);
@@ -300,12 +310,13 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
             t: "hello",
             id: requestId,
             userId: options.userId,
-            token: options.token,
+            token: helloToken(),
           });
           pending.set(id, {
             id,
             resolve: () => {
               reconnectAttempt = 0;
+              rejoinServers();
               resubscribeAll();
               resendPendingRpcs();
               settleResolve();
@@ -384,11 +395,16 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         gameId: args.gameId,
         serverId: args.serverId,
       }));
-      return result as JoinServerResult;
+      const joined = result as JoinServerResult;
+      joinedGames.set(joined.serverId, args.gameId);
+      if (joined.resumeTicket !== undefined) resumeTickets.set(joined.serverId, joined.resumeTicket);
+      return joined;
     },
     async leaveServer(args) {
       poseGates.delete(args.serverId);
       await request((id) => ({ v: 1, t: "leave", id, serverId: args.serverId }));
+      joinedGames.delete(args.serverId);
+      resumeTickets.delete(args.serverId);
     },
     async runCommand(args) {
       const opId = String(nextOpId++);
@@ -568,7 +584,12 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         gameId: args.gameId,
         code: args.code,
       }));
-      return result as JoinServerResult | null;
+      const joined = result as JoinServerResult | null;
+      if (joined !== null) {
+        joinedGames.set(joined.serverId, args.gameId);
+        if (joined.resumeTicket !== undefined) resumeTickets.set(joined.serverId, joined.resumeTicket);
+      }
+      return joined;
     },
     async createSession(args) {
       const result = await request((id) => ({
@@ -578,7 +599,10 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         gameId: args.gameId,
         attributes: args.attributes,
       }));
-      return result as JoinServerResult;
+      const joined = result as JoinServerResult;
+      joinedGames.set(joined.serverId, args.gameId);
+      if (joined.resumeTicket !== undefined) resumeTickets.set(joined.serverId, joined.resumeTicket);
+      return joined;
     },
     close: () => {
       closed = true;

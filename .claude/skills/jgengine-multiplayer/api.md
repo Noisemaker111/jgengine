@@ -433,6 +433,7 @@
 - `CommandRateLimit` (type): type CommandRateLimit = { count: number; perMs: number } — A sliding-window rate limit: at most `count` calls per `perMs` window.
 - `CommandRateLimiter` (type): type CommandRateLimiter = { allow: (connection: object, op: HostCommandOp, atMs: number) => boolean; } — A composable per-connection/per-op sliding-window rate limiter.
 - `DEFAULT_COMMAND_LIMITS` (const): const DEFAULT_COMMAND_LIMITS: CommandLimits — Recommended per-op limits a host can opt into via `limits: DEFAULT_COMMAND_LIMITS`. Rate limiting is off unless `limits` is set.
+- `DEFAULT_GRACE_MS` (const): const DEFAULT_GRACE_MS: 15000 — Default reconnect grace period for hosted socket sessions.
 - `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `GameHost` (type): type GameHost = { joinServer: (args: { userId: string; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; }) => Promise<JoinServerResult>; browseServers: (args: { gameId: string; filter?: MatchFilter; limit?: number; }) => Promise<SessionListing[]>; joinByCode: (args: … — A transport-agnostic authoritative game server host that manages sessions, ticking, and persistence.
 - `GameHostOptions` (type): type GameHostOptions = { runtimes?: GameRuntime[]; persistence: HostPersistence; tickMs?: number; slotsPerServer?: number; now?: () => number; createServerId?: () => string; allowedFeedActions?: readonly string[]; } — Configuration for {@link createGameHost}, including persistence, tick rate, and game runtimes.
@@ -559,6 +560,7 @@
 
 ## @jgengine/ws/hostRouter
 
+- `DEFAULT_GRACE_MS` (const): const DEFAULT_GRACE_MS: 15000 — Default reconnect grace period for hosted socket sessions.
 - `DEFAULT_POSE_RULES` (const): const DEFAULT_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `HostRouter` (type): type HostRouter = { connect: (transport: HostRouterTransport) => HostRouterConnection; rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[]; close: () => void; } — ⚠ undocumented
 - `HostRouterAuthenticate` (type): type HostRouterAuthenticate = (args: { userId: string; token?: string; }) => Promise<string | null> | string | null — ⚠ undocumented

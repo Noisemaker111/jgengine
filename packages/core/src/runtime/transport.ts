@@ -9,9 +9,17 @@ export type WorldSyncFrame =
   | { kind: "baseline"; revision: number; snapshot: WorldSnapshot }
   | { kind: "diff"; revision: number; diff: WorldDiff };
 
+/** A short-lived credential allowing a disconnected client to reclaim one server membership. */
+export type ResumeTicket = {
+  userId: string;
+  serverId: string;
+  token: string;
+};
+
 export type JoinServerResult = {
   serverId: string;
   isNew: boolean;
+  resumeTicket?: ResumeTicket;
 };
 
 export type RunCommandArgs = {

@@ -522,11 +522,12 @@
 - `GameRuntimePlayerView` (type): type GameRuntimePlayerView = { userId: string; gameId: string; playerState: unknown; updatedAt: number; } — ⚠ undocumented
 - `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown | WorldSyncFrame; updatedAt: number; } — ⚠ undocumented
 - `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string }) => Promise<JoinServerResult>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented
-- `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; } — ⚠ undocumented
+- `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; resumeTicket?: ResumeTicket; } — ⚠ undocumented
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
 - `MultiplayerSession` (type): type MultiplayerSession = { gameId: string; userId: string; backend: LiveGameBackend; feedActions: string[]; } — ⚠ undocumented
 - `PresencePoseRow` (type): type PresencePoseRow = { userId: string; /** Set when the host tracks presence per session, so one user can hold two rows. */ sessionId?: string; /** Actor class, e.g. `"player"` / `"agent"` — a host may clamp each differently. */ kind?: string; /** Display name carried on the row, so a nameplate ne… — ⚠ undocumented
 - `PresenceSync` (type): type PresenceSync = { subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe; syncPose: (serverId: string, pose: PlayerPose) => void; } — ⚠ undocumented
+- `ResumeTicket` (type): type ResumeTicket = { userId: string; serverId: string; token: string; } — A short-lived credential allowing a disconnected client to reclaim one server membership.
 - `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented
 - `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
 - `WorldSyncFrame` (type): type WorldSyncFrame = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; revision: number; diff: WorldDiff } — A revision-stamped world baseline or compact diff sent to a server-authoritative client.

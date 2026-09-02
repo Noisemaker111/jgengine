@@ -12,6 +12,7 @@ import {
   DEFAULT_CHAT_RATE_LIMIT,
   type ChatRateLimit,
 } from "@jgengine/core/game/chat";
+import type { ResumeTicket } from "@jgengine/core/runtime/transport";
 
 import {
   createCommandMiddleware,
@@ -59,6 +60,8 @@ export type HostRouterOptions = {
   /** Declared `runCommand` names and input validators. Omit (default) to pass every command through unchanged; set to reject unknown command names and validate declared ones. */
   validate?: CommandCatalog;
   now?: () => number;
+  /** How long a disconnected membership remains reclaimable. Defaults to 15 seconds. */
+  graceMs?: number;
 };
 
 export type HostRouterTransport = {
@@ -89,6 +92,8 @@ export const DEFAULT_POSE_RULES: PoseSyncRules = DEFAULT_POSE_SYNC_RULES;
 
 /** Cap on frames queued behind a connection's in-flight message; beyond this a flood gets rejected instead of piling up unbounded promises. */
 export const MAX_QUEUED_MESSAGES = 64;
+/** Default reconnect grace period for hosted socket sessions. */
+export const DEFAULT_GRACE_MS = 15_000;
 
 type Connection = {
   transport: HostRouterTransport;
@@ -141,6 +146,7 @@ function dropUserFrom<V>(
 export function createHostRouter(options: HostRouterOptions): HostRouter {
   const host = options.host;
   const now = options.now ?? Date.now;
+  const graceMs = options.graceMs ?? DEFAULT_GRACE_MS;
   const poseRules = options.poseRules ?? DEFAULT_POSE_RULES;
   const allowAnonymous = options.allowAnonymous === true;
   const singleSession = options.singleSession !== false;
@@ -150,6 +156,21 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   const connections = new Set<Connection>();
   const sessionsByUserId = new Map<string, Connection>();
+  const resumeTokens = new Map<string, string>();
+  const pendingLeaves = new Map<string, ReturnType<typeof setTimeout>>();
+  const ticketKey = (userId: string, serverId: string) => `${userId}|${serverId}`;
+  const ticketFor = (userId: string, serverId: string): ResumeTicket => {
+    const token = resumeTokens.get(userId) ?? crypto.randomUUID();
+    resumeTokens.set(userId, token);
+    return { userId, serverId, token };
+  };
+  const clearPendingLeave = (userId: string, serverId: string) => {
+    const key = ticketKey(userId, serverId);
+    const timer = pendingLeaves.get(key);
+    if (timer === undefined) return;
+    clearTimeout(timer);
+    pendingLeaves.delete(key);
+  };
   const subscribers = new Map<string, Set<Connection>>();
 
   const subscribersOf = (key: string): readonly Connection[] => {
@@ -487,7 +508,11 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         connection.transport.close();
         return;
       }
-      const userId = await authenticate({ userId: message.userId, token: message.token });
+      const resumeToken = resumeTokens.get(message.userId);
+      const userId =
+        resumeToken !== undefined && message.token === resumeToken
+          ? message.userId
+          : await authenticate({ userId: message.userId, token: message.token });
       if (userId === null) {
         replyError(connection, message.id, "Not authenticated");
         connection.transport.close();
@@ -503,6 +528,14 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         sessionsByUserId.set(userId, connection);
       }
       connection.userId = userId;
+      if (resumeToken !== undefined && message.token === resumeToken) {
+        for (const key of [...pendingLeaves.keys()]) {
+          if (key.startsWith(`${userId}|`)) {
+            const serverId = key.slice(userId.length + 1);
+            clearPendingLeave(userId, serverId);
+          }
+        }
+      }
       reply(connection, message.id, { userId });
       return;
     }
@@ -530,7 +563,10 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             code: message.code,
           });
           connection.joinedServers.add(result.serverId);
-          reply(connection, message.id, result);
+          reply(connection, message.id, {
+            ...result,
+            resumeTicket: ticketFor(userId, result.serverId),
+          });
           return;
         }
         case "joinByCode": {
@@ -541,7 +577,13 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             code: message.code,
           });
           if (result !== null) connection.joinedServers.add(result.serverId);
-          reply(connection, message.id, result);
+          reply(
+            connection,
+            message.id,
+            result === null
+              ? null
+              : { ...result, resumeTicket: ticketFor(userId, result.serverId) },
+          );
           return;
         }
         case "browse": {
@@ -556,6 +598,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         }
         case "leave": {
           await host.leaveServer({ userId, serverId: message.serverId });
+          clearPendingLeave(userId, message.serverId);
           connection.joinedServers.delete(message.serverId);
           dropPresenceForServer(userId, message.serverId);
           dropVoiceForServer(userId, message.serverId);
@@ -662,7 +705,15 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     const servers = [...connection.joinedServers];
     connection.joinedServers.clear();
     for (const serverId of servers) {
-      void host.leaveServer({ userId, serverId }).catch(() => undefined);
+      const key = ticketKey(userId, serverId);
+      clearPendingLeave(userId, serverId);
+      pendingLeaves.set(
+        key,
+        setTimeout(() => {
+          pendingLeaves.delete(key);
+          void host.leaveServer({ userId, serverId }).catch(() => undefined);
+        }, graceMs),
+      );
     }
   };
 
@@ -727,6 +778,8 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     },
     close: () => {
       unsubscribeHost();
+      for (const timer of pendingLeaves.values()) clearTimeout(timer);
+      pendingLeaves.clear();
       connections.clear();
       subscribers.clear();
     },
