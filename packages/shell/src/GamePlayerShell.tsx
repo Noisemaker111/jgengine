@@ -273,7 +273,8 @@ export function GamePlayerShell({
     };
   }, [playable, userId]);
 
-  useShellMultiplayerSync(ctx, multiplayer, playable, serverIdRef, setRemotePlayers);
+  const authoritativeFrameRef = useRef<import("./worldSync").AuthoritativeFrameHandler | null>(null);
+  useShellMultiplayerSync(ctx, multiplayer, playable, serverIdRef, setRemotePlayers, authoritativeFrameRef);
 
   useEffect(() => {
     wrapperRef.current?.focus();
@@ -351,6 +352,7 @@ export function GamePlayerShell({
         posterSettledRef.current = true;
         setPosterFrozen(true);
       }}
+      authoritativeFrameRef={authoritativeFrameRef}
     />
   );
 }

@@ -5,6 +5,8 @@ import { advanceBehaviors } from "../scene/behaviorRuntime";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { createGameContext, type GameContext, type GameContextContent, type GameContextModels } from "./gameContext";
 import { type InputFrame } from "./inputSnapshot";
+import { serverStep } from "../movement/serverStep";
+import { resolvePlayerMovementTuning } from "../movement/playerMovement";
 import { createWorldReplicator, type WorldDiff } from "./worldReplication";
 import type { SnapshotViewer, WorldSnapshot } from "./worldSnapshot";
 
@@ -78,6 +80,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   });
   const members = new Map<string, LoopPlayer>();
   const inputs = new Map<string, InputFrame>();
+  const movementTuning = resolvePlayerMovementTuning({ world: definition.world, physics: definition.physics });
   const inputSeq = new Map<string, number>();
 
   loop.onInit?.(ctx);
@@ -125,6 +128,10 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     tick(dt) {
       ctx.sim.advance(dt, (stepDt) => {
         ctx.sim.runStages("beforeMovement", stepDt);
+        for (const userId of members.keys()) {
+          const frame = inputs.get(userId);
+          if (frame !== undefined) serverStep(ctx, userId, frame, stepDt, movementTuning);
+        }
         ctx.sim.runStages("afterMovement", stepDt);
         loop.onTick?.(ctx, stepDt);
         advanceBehaviors(ctx, stepDt);

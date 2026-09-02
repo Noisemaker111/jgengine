@@ -643,6 +643,10 @@
 - `PoseState` (interface): interface PoseState — ⚠ undocumented
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 
+## @jgengine/core/movement/serverStep
+
+- `serverStep` (function): function serverStep(ctx: GameContext, userId: string, frame: InputFrame, dt: number, tuning?: PlayerMovementTuning): void — Advance one authoritative player's movement using the same controller as the shell.
+
 ## @jgengine/core/movement/solidObstacles
 
 - `ObstacleReach` (interface): interface ObstacleReach — Largest blocking-collider extent in the scene, split so tower height cannot inflate the XZ query.

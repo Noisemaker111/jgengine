@@ -1980,7 +1980,7 @@
 
 ## @jgengine/shell/drivers/FrameDriver
 
-- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, }: { ctx: GameContext; playable: PlayableGame; tracker: ActionStateTracker… — ⚠ undocumented
+- `FrameDriver` (function): function FrameDriver({ ctx, playable, tracker, yawRef, pitchRef, primaryClickRef, pointerAxisRef, analogRef, gateRef, onRuntimeError, multiplayer, serverIdRef, pointerService, pointerAim, pingCommand, poster, onPosterSettled, authoritativeFrameRef, }: { ctx: GameContext; playable: PlayableGame; trac… — ⚠ undocumented
 - `POSTER_SETTLE_SECONDS` (const): const POSTER_SETTLE_SECONDS: 1.6 — ⚠ undocumented
 
 ## @jgengine/shell/drivers/HudOnlyDriver
@@ -2590,7 +2590,7 @@
 
 ## @jgengine/shell/useShellMultiplayerSync
 
-- `useShellMultiplayerSync` (function): function useShellMultiplayerSync(ctx: GameContext | null, multiplayer: ShellMultiplayer | null, playable: PlayableGame, serverIdRef: { current: string | null }, setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>): void — Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
+- `useShellMultiplayerSync` (function): function useShellMultiplayerSync(ctx: GameContext | null, multiplayer: ShellMultiplayer | null, playable: PlayableGame, serverIdRef: { current: string | null }, setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>, authoritativeFrameRef?: { current: AuthoritativeFrameHandler | null }): void — Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 
 ## @jgengine/shell/vfx/ParticleField
 
@@ -2870,3 +2870,7 @@
 - `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
 - `Projectable` (interface): interface Projectable — ⚠ undocumented
 - `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
+
+## @jgengine/shell/worldSync
+
+- `AuthoritativeFrameHandler` (type): type AuthoritativeFrameHandler = (revision: number) => void — Receives the revision of an authoritative world frame after it is applied locally.
