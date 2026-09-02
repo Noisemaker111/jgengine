@@ -107,7 +107,7 @@ const ensureGamesPlugin = (): Plugin => ({
     if (gamesEnsured) return;
     gamesEnsured = true;
     if (existsSync(gamesDir)) return;
-    // On Vercel and in CI, the games repo is not committed — clone it so the site has games.
+    // In CI, the games repo is not committed — clone it so the site has games.
     // Locally this also makes `bun dev` work after a fresh clone without a manual `bun run games:clone`.
     // If the clone fails (offline, no git), we fall back to an empty games list rather than breaking the build.
     console.log("[jgengine-ensure-games] Games/ not found — cloning Noisemaker111/JGengine-games…");

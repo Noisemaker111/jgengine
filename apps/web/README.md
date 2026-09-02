@@ -34,4 +34,4 @@ bun run deploy:cloudflare
 
 The build emits the TanStack Start Worker and static assets under `dist/`. Wrangler follows the generated deployment configuration automatically.
 
-Before changing `jgengine.com`, verify `/`, `/capabilities`, `/games`, and `/play` on the `workers.dev` preview. The domain remains on Vercel until that cutover is approved.
+Before changing `jgengine.com`, verify `/`, `/capabilities`, `/games`, and `/play` on the `workers.dev` preview.
