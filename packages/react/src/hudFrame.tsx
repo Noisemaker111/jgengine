@@ -20,12 +20,14 @@ export function hudFrameStyle(
   shape: HudFrameShape = "rounded",
 ): CSSProperties {
   const base: CSSProperties =
-    variation === "themed"
+      variation === "themed"
       ? {
           background: "var(--jg-frame-bg, rgba(10,12,16,0.62))",
           border: "var(--jg-frame-border, 1px solid rgba(255,255,255,0.10))",
           borderRadius: "var(--jg-frame-radius, 10px)",
           boxShadow: "var(--jg-frame-glow, 0 4px 16px rgba(0,0,0,0.35))",
+          borderImage: "var(--jg-frame-image, none) var(--jg-frame-slice, 0) / var(--jg-frame-scale, 1) var(--jg-frame-fill, stretch)",
+          cursor: "var(--jg-skin-cursor, auto)",
           color: "var(--jg-bar-text, #f4f6fb)",
           fontFamily: "ui-sans-serif, system-ui, -apple-system, sans-serif",
         }

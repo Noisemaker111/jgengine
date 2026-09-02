@@ -18,6 +18,7 @@ describe("previewFixtures registry", () => {
     expect(names).toContain("BarsPreview");
     expect(names).toContain("IconsPreview");
     expect(names).toContain("StreetGeometryPreview");
+    expect(names).toContain("HudSkinPreview");
   });
 
   test("each entry's name matches its registry key and carries a description", () => {

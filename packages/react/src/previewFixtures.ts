@@ -5,6 +5,7 @@ import { IconsPreview } from "./iconsPreview";
 import { StreetGeometryPreview } from "./streetGeometryPreview";
 import { SpriteClipPreview } from "./spriteClipPreview";
 import { TileLayerPreview } from "./tileLayerPreview";
+import { HudSkinPreview } from "./hudSkinPreview";
 
 /**
  * One entry in the engine preview-fixture registry: a deterministic, engine-level
@@ -62,6 +63,7 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
     description: "A procedural 3x3 atlas-backed tile layer preview.",
     component: TileLayerPreview,
   },
+  HudSkinPreview: { name: "HudSkinPreview", description: "Two procedural HUD skins applied to frames, bars, and inventory slots.", component: HudSkinPreview },
 };
 
 /** Sorted list of registered fixture names, for discovery/listing. */

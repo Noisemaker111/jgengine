@@ -19,6 +19,8 @@ between (`--json` for structured output).
 
 ### Added
 
+- Added skin-backed HUD chrome variables, font loading, and the procedural `HudSkinPreview` fixture.
+
 - Core gamepad snapshot model, deadzone/curve resolver, and controller glyph labels.
 - Shell gamepad source polls connected pads, merges analog actions, supports synthetic `?gamepad=1` input, and exposes `ctx.input.rumble`.
 - Core action context stacks layer gameplay, menus, and passthrough overlays with snapshot/restore; shell action tracking now respects the active context.

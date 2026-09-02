@@ -1,4 +1,6 @@
 import { type CSSProperties } from "react";
+import { hudSkinVars, type HudSkin } from "./hudSkin";
+export { hudSkinVars, type HudSkin } from "./hudSkin";
 
 /**
  * `HudTheme` (#1034, #1573): one token object that restyles every shared token-driven building
@@ -116,12 +118,24 @@ export interface HudTheme {
   slot: HudThemeSlot;
   /** Minimap chrome ring color. */
   ring: string;
+  skin?: HudSkin;
 }
 
 /** Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree. */
 export function hudThemeVars(theme: HudTheme): CSSProperties {
   const { palette, surface, status, font, rarity, frame, bar, slot } = theme;
   return {
+    "--jg-frame-image": "none",
+    "--jg-frame-slice": "0",
+    "--jg-frame-scale": "1",
+    "--jg-frame-fill": "stretch",
+    "--jg-slot-image": "none",
+    "--jg-slot-slice": "0",
+    "--jg-slot-scale": "1",
+    "--jg-bar-skin-track": "none",
+    "--jg-bar-skin-fill": "none",
+    "--jg-skin-cursor": "auto",
+    ...hudSkinVars(theme.skin),
     // atomic-bar tokens (same names the bars read — #1033)
     "--jg-health": palette.health,
     "--jg-health-low": palette.healthLow,
@@ -260,6 +274,7 @@ export interface HudThemeOverrides {
   bar?: Partial<HudThemeBar>;
   slot?: Partial<HudThemeSlot>;
   ring?: string;
+  skin?: HudSkin;
 }
 
 /**
@@ -280,6 +295,7 @@ export function hudTheme(overrides: HudThemeOverrides): HudTheme {
     bar: { ...defaultHudTheme.bar, ...overrides.bar },
     slot: { ...defaultHudTheme.slot, ...overrides.slot },
     ring: overrides.ring ?? defaultHudTheme.ring,
+    skin: overrides.skin,
   };
 }
 

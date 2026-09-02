@@ -48,6 +48,8 @@ export * from "./panels";
 export * from "./characterSheet";
 export * from "./talentTree";
 export * from "./hudTheme";
+export * from "./hudSkin";
+export * from "./hudSkinPreview";
 export * from "./hudThemePreview";
 export * from "./hudFrame";
 export * from "./keyHint";
