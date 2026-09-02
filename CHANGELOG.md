@@ -19,6 +19,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- WS ping/pong messages and client RTT sampling on the backend object.
 - Added skin-backed HUD chrome variables, font loading, and the procedural `HudSkinPreview` fixture.
 
 - Core gamepad snapshot model, deadzone/curve resolver, and controller glyph labels.
