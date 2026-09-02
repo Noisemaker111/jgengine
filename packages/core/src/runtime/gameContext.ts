@@ -639,6 +639,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   };
   ctxRef = ctx;
 
+  const physicsBackend = definition.physics?.backend;
+  if (physicsBackend !== undefined) {
+    ctx.sim.addStage({ id: "physics", phase: "afterMovement", run: (dt) => physicsBackend.step(dt) });
+  }
+
   const saveOptions = resolveSaveOptions(definition, options);
   if (saveOptions !== undefined) {
     const saveTarget: RuntimeSaveTarget = {

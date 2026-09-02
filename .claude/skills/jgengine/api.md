@@ -24,7 +24,7 @@
 - `OwnershipDecision` (type): type OwnershipDecision = "expose" | "bake" | "reject" — The boundary's resolution for one object.
 - `OwnershipDiagnostic` (interface): interface OwnershipDiagnostic — One boundary problem found while auditing a set of declarations.
 - `OwnershipVerdict` (interface): interface OwnershipVerdict — The full verdict for one object: its decision plus the flags and diagnostic the editor needs to act on it.
-- `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
+- `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
 - `ProviderCapabilities` (interface): interface ProviderCapabilities — What a provider lets the editor do with one of its objects. Absent flags default to `false`.
 - `RuntimeProvenance` (interface): interface RuntimeProvenance — An object owned entirely by runtime or procedural code with no document entry. Not authorable unless its provider can bake it into schema-valid authored data.
 - `SCENE_OWNERSHIP_MANIFEST_VERSION` (const): const SCENE_OWNERSHIP_MANIFEST_VERSION: 1 — Current {@link SceneOwnershipManifest} schema version.

@@ -419,7 +419,7 @@
 - `LifecycleConfig` (interface): interface LifecycleConfig<TState = unknown> — Declarative start/restart run lifecycle: the state transitions a game's run phase every genre repeats (title screen → live run → live run → title screen again), expressed as pure functions over one typed {@link StoreHandle} slot instead of hand-rolled `commands.define("start"/"restart")` glue that re-derives phase after every mutation. `start`/`restart` receive the store's own value type — the store's `TState`, never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and derives {@link GamePhase} from it via `phaseOf` in one place, so every adopting game gets identical, correct phase-sync for free.
 - `LoopPlayer` (interface): interface LoopPlayer — Identity of a player joining or leaving a hosted world — passed to the multiplayer loop hooks.
 - `PersistConfig` (interface): interface PersistConfig — Tunes offline whole-world save (`defineGameDefinition({ persist })`). Offline games already autosave to `localStorage` by default — pass this only to tune it (or `persist: false` to opt out). Defaults: continuous `autosave` to `localStorage`, one slot, no version.
-- `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
+- `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
 - `defineGameDefinition` (function): function defineGameDefinition<TAssetRef extends ModelAssetRef, TMultiplayer>(config: GameDefinitionConfig<TAssetRef, TMultiplayer>): GameDefinition<TAssetRef, TMultiplayer> — Host-level constructor for a bare `GameDefinition`: fills in `scene` and default `assets`, validates `name`, OR-merges `features` from installed systems, and composes `loop` from `systems` + any classic hooks. Games author through `defineGame` from `@jgengine/shell/defineGame`, which calls this and adds the presentation layer; call this directly only from headless hosts that mount no shell.
 
 ## @jgengine/core/game/defineSystem
@@ -1220,7 +1220,7 @@
 - `Party` (interface): interface Party — ⚠ undocumented
 - `PartyInviteEntry` (interface): interface PartyInviteEntry — ⚠ undocumented
 - `PartyMemberEntry` (interface): interface PartyMemberEntry — ⚠ undocumented
-- `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus scene-object collision opt-ins, for the game's physics step.
+- `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
 - `PingCategory` (type): type PingCategory = string — ⚠ undocumented
 - `PingSystem` (interface): interface PingSystem — ⚠ undocumented
 - `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — ⚠ undocumented
