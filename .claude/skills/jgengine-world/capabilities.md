@@ -664,6 +664,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `buildTrimmedIntersections` (function) · `import { buildTrimmedIntersections } from "@jgengine/core/world"`
 - `trimBandAtJunctions` (function) · `import { trimBandAtJunctions } from "@jgengine/core/world"`
 
+## world-physics-colliders — Synchronize terrain and authored static colliders with a physics backend.
+
+- `syncWorldColliders` (function) · `import { syncWorldColliders } from "@jgengine/core/physics/worldColliders"`
+
 ## world-place — declare the place a game happens in — flat/round/voxel/board ground, surface laws, per-place physics
 
 - `world` (function) · `import { world } from "@jgengine/core/world"`

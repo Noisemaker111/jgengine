@@ -998,6 +998,11 @@
 - `VehicleObstacleClamp` (interface): interface VehicleObstacleClamp — A planar move clamp for a kinematic car: feed {@link clampMove} to a vehicle's `clampMove` hook so an attempted XZ displacement slides along world solids instead of driving through them, and read {@link takeImpact} once per tick for the crash it produced.
 - `createVehicleObstacleClamp` (function): function createVehicleObstacleClamp(options: { /** Solids near the car this tick (already filtered to the relevant, solid set). */ obstacles: () => readonly CollisionObstacle[]; /** Vehicle body radius (units). Default {@link DEFAULT_VEHICLE_RADIUS}. */ radius?: number; /** Current tick dt (seconds)… — Build a slide-along move clamp for a kinematic car (#1051). `obstacles` is sampled fresh each tick — the caller hands back the already-filtered set of solids near the car — and `dt` supplies the current tick length so a blocked move's lost displacement converts to a closing speed. `radius` inflates each obstacle footprint by the car's body radius (default {@link DEFAULT_VEHICLE_RADIUS}).
 
+## @jgengine/core/physics/worldColliders
+
+- `WorldColliderSync` (interface): interface WorldColliderSync — Handle for synchronizing authored static world collision with a physics backend.
+- `syncWorldColliders` (function): function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync — Mirrors static scene-object physical colliders and the context's ground field into a physics backend.
+
 ## @jgengine/core/procedural
 
 - `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
