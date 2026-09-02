@@ -423,6 +423,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `definePatrolOrder` (function) · `import { definePatrolOrder } from "@jgengine/core/world"`
 
+## perception-service — retain sight, sound, and damage observations with range, cone, occlusion, and decay policy
+
+- `createPerception` (function) · `import { createPerception } from "@jgengine/core/sensor/perception"`
+
 ## physics-backend — one interface over interchangeable rigid-body solvers — bodies, joints, raycast, shapecast, snapshot
 
 - `PhysicsBackend` (interface) · `import { PhysicsBackend } from "@jgengine/core/physics/physicsBackend"`
