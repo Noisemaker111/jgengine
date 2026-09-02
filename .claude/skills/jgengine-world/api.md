@@ -375,6 +375,20 @@
 - `controlGroupKey` (function): function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string — The stable bookmark key for a control-group `digit` under `options.keyPrefix` — the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group without going through {@link resolveControlGroupIntent}.
 - `resolveControlGroupIntent` (function): function resolveControlGroupIntent(input: ControlGroupInput, options: ControlGroupOptions = {}): ControlGroupIntent — Resolve a control-group key press into a {@link ControlGroupIntent}: Ctrl+digit binds, a bare digit recalls, and a second recall of the same group within `doubleTapMs` focuses. Pure — the caller applies the intent against the store and its own focus hook, and records the returned recall for the next call.
 
+## @jgengine/core/input/gamepadModel
+
+- `GAMEPAD_GLYPH_SETS` (const): const GAMEPAD_GLYPH_SETS: Record<GamepadGlyphName, GamepadGlyphSet> — Built-in short labels for the common controller families.
+- `GamepadBindings` (type): type GamepadBindings<TAction extends string = string> = ActionCodesMap<TAction, GamepadCode> — Action bindings whose codes identify gamepad buttons or axes.
+- `GamepadCode` (type): type GamepadCode = `pad:${number}` | `padaxis:${number}${"+" | "-"}` — A gamepad button or signed axis binding code.
+- `GamepadDeadzone` (interface): interface GamepadDeadzone — Deadzone policy applied to gamepad axes.
+- `GamepadFrame` (interface): interface GamepadFrame — The digital and analog action state produced by a gamepad frame.
+- `GamepadGlyphName` (type): type GamepadGlyphName = "xbox" | "playstation" | "nintendo" | "generic" — Names of the built-in controller glyph sets.
+- `GamepadGlyphSet` (interface): interface GamepadGlyphSet — Button labels used by one controller family.
+- `GamepadSnapshot` (interface): interface GamepadSnapshot — A serializable gamepad state sampled from the platform input API.
+- `ResolveGamepadFrameOptions` (interface): interface ResolveGamepadFrameOptions — Options for resolving one gamepad snapshot into action state.
+- `gamepadGlyphSets` (const): const gamepadGlyphSets: Record<GamepadGlyphName, GamepadGlyphSet> — Lowercase alias for consumers that prefer data-oriented naming.
+- `resolveGamepadFrame` (function): function resolveGamepadFrame(snapshot: GamepadSnapshot, bindings: GamepadBindings, options: ResolveGamepadFrameOptions): GamepadFrame — Resolve one sampled gamepad into held actions and shaped analog action values.
+
 ## @jgengine/core/input/gestureSurface
 
 - `DEFAULT_GESTURE_TUNING` (const): const DEFAULT_GESTURE_TUNING: GestureSurfaceTuning — ⚠ undocumented

@@ -301,6 +301,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFreeFlightController` (function) · `import { createFreeFlightController } from "@jgengine/core/world"`
 
+## gamepad-input — Resolve sampled gamepad input into actions with deadzones and response curves.
+
+- `resolveGamepadFrame` (function) · `import { resolveGamepadFrame } from "@jgengine/core/input/gamepadModel"`
+
 ## glide — gliding/wingsuit descent control from a launch
 
 - `createGlideModel` (function) · `import { createGlideModel } from "@jgengine/core/world"`

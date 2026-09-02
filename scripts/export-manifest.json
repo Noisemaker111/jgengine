@@ -189,6 +189,7 @@
     "./input/axisInput",
     "./input/bindingOverrides",
     "./input/controlGroups",
+    "./input/gamepadModel",
     "./input/gestureSurface",
     "./input/lookChannel",
     "./input/pointer",

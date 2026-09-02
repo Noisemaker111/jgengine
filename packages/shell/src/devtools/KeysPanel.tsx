@@ -8,15 +8,15 @@ interface KeybindRow {
 
 function flattenCodes(codes: ActionCodes): { codes: string; mode: "press" | "hold" | "toggle" }[] {
   if (Array.isArray(codes)) {
-    return [{ codes: codes.map(bindingLabel).join(" / "), mode: "press" }];
+    return [{ codes: codes.map((code) => bindingLabel(code)).join(" / "), mode: "press" }];
   }
   const modes = codes as { hold?: readonly string[]; toggle?: readonly string[] };
   const result: { codes: string; mode: "press" | "hold" | "toggle" }[] = [];
   if (modes.hold !== undefined && modes.hold.length > 0) {
-    result.push({ codes: modes.hold.map(bindingLabel).join(" / "), mode: "hold" });
+    result.push({ codes: modes.hold.map((code) => bindingLabel(code)).join(" / "), mode: "hold" });
   }
   if (modes.toggle !== undefined && modes.toggle.length > 0) {
-    result.push({ codes: modes.toggle.map(bindingLabel).join(" / "), mode: "toggle" });
+    result.push({ codes: modes.toggle.map((code) => bindingLabel(code)).join(" / "), mode: "toggle" });
   }
   return result;
 }
