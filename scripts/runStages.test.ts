@@ -141,3 +141,39 @@ describe("generated-artifact drift", () => {
     for (const stage of (PLANS.gen ?? []).slice(2)) expect(stage.needs).toEqual(["gen:barrels"]);
   });
 });
+
+
+describe("SDK validation ownership", () => {
+  const externalGameChecks = [
+    "check-module-globals", "check-game-determinism", "check-game-front-end", "check-game-feel",
+    "check-art-direction", "check-game-shape", "check-content-gate", "check-asset-availability",
+  ];
+
+  test("SDK retains every non-game validator and the full plan retains all game validators", () => {
+    const full = PLANS["check-types"]!;
+    const sdk = PLANS["check-types:sdk"]!;
+    for (const name of externalGameChecks) expect(full.some((stage) => stage.name === name)).toBe(true);
+    expect(sdk).toEqual(full.filter((stage) => !externalGameChecks.includes(stage.name)));
+    expect(sdk.map((stage) => stage.name)).toEqual([
+      "ensure-ready", "check-artifacts", "check-skills", "check-skill-api", "check-orphan-ratchet",
+      "check-stateful-ratchet", "check-capabilities", "check-pack-texture-layout", "check-recipes",
+      "check-doc-symbols", "check-hud-tokens", "check-street-rule-parity", "check-types-all",
+    ]);
+  });
+
+  test("SDK reports package failures and still runs remaining independent validators", () => {
+    const stages = PLANS["check-types:sdk"]!;
+    const results = runPlan(stages, (stage) => stage.name !== "check-skills");
+    expect(results.find((result) => result.name === "check-skills")?.state).toBe("failed");
+    expect(results.find((result) => result.name === "check-types-all")?.state).toBe("passed");
+    expect(formatSummary("check-types:sdk", stages, results)).toContain("check-types:sdk failed");
+  });
+
+  test("SDK prerequisite failures remain skipped and never masquerade as successful checks", () => {
+    const stages = PLANS["check-types:sdk"]!;
+    const results = runPlan(stages, (stage) => stage.name !== "ensure-ready");
+    expect(results[0]?.state).toBe("failed");
+    expect(results.slice(1).every((result) => result.state === "skipped")).toBe(true);
+    expect(formatSummary("check-types:sdk", stages, results)).toContain("NOT known-good");
+  });
+});

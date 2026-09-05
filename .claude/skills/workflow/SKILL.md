@@ -38,7 +38,7 @@ Implement the underlying seam and update the owning skill/reference plus generat
 
 ## Verify
 
-Run checks proportional to risk while iterating. Before shipping, run supported generators, then `bun run gate`. Immediately before commit/push, run `bun run ship:preflight`. Use `jgengine-verify` for scene, UI, or gameplay evidence. PRs touching a rendered surface include the ten-category visual scorecard table.
+Run checks proportional to risk while iterating. Before shipping, run supported generators, then `bun run gate`. SDK publication runs `check-types:sdk` and package tests. Full local and main-branch CI gates retain external Games checks; game-quality failures do not gate registry publication. Immediately before commit/push, run `bun run ship:preflight`. Use `jgengine-verify` for scene, UI, or gameplay evidence. PRs touching a rendered surface include the ten-category visual scorecard table.
 
 Inspect `git status`, the full diff, and acceptance criteria before staging. Stage only the intended files and commit once the cohesive change is complete.
 

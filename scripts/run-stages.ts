@@ -85,6 +85,19 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
   },
 ];
 
+// External game content has its own Games gate; SDK publication retains every package validator.
+const EXTERNAL_GAME_CHECKS = new Set([
+  "check-module-globals",
+  "check-game-determinism",
+  "check-game-front-end",
+  "check-game-feel",
+  "check-art-direction",
+  "check-game-shape",
+  "check-content-gate",
+  "check-asset-availability",
+]);
+const CHECK_TYPES_SDK_STAGES = CHECK_TYPES_STAGES.filter((stage) => !EXTERNAL_GAME_CHECKS.has(stage.name));
+
 /**
  * `gate` is the full local verdict. Preflight keeps its old first slot — it is
  * seconds of work and catches lockfile drift before anything expensive — but it
@@ -117,6 +130,7 @@ const GEN_STAGES: readonly Stage[] = [
 export const PLANS: Readonly<Record<string, readonly Stage[]>> = {
   gate: GATE_STAGES,
   "check-types": CHECK_TYPES_STAGES,
+  "check-types:sdk": CHECK_TYPES_SDK_STAGES,
   gen: GEN_STAGES,
 };
 
