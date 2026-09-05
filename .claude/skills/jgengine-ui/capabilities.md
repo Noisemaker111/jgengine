@@ -205,6 +205,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameContextBridge` (function) · `import { GameContextBridge } from "@jgengine/react"`
 
+## heavy-models — models over the per-model triangle budget, for perf probes and smoke assertions
+
+- `heavyModels` (function) · `import { heavyModels } from "@jgengine/shell/render/modelLoad"`
+
 ## heightfield-mesh-update — in-place partial update of a displaced ground plane mesh
 
 - `displaceHeightfieldGeometry` (function) · `import { displaceHeightfieldGeometry } from "@jgengine/shell/terrain"`

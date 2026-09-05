@@ -14,6 +14,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import type { ShellMultiplayer } from "../multiplayer";
 import type { PlayableGame } from "../registry";
+import { heavyModels } from "../render/modelLoad";
 import { collisionDebug } from "./collisionDebug";
 import { readStoredOverrides } from "./devtoolsOverrides";
 import { diagnose } from "./perfDiagnose";
@@ -250,6 +251,7 @@ export function DevtoolsOverlay({
       devtools.probes.register("objects", () => ctx.scene.object.list().length),
       devtools.probes.register("fallbacks", () => fallbackSeamsSnapshot()),
       devtools.probes.register("textureErrors", () => textureErrorsSnapshot()),
+      devtools.probes.register("heavyModels", () => heavyModels()),
     ];
     return () => {
       for (const dispose of disposers) dispose();

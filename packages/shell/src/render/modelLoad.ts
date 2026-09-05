@@ -168,6 +168,77 @@ export function clearModelLoadFallbacks(): void {
   servedFallbacks.length = 0;
 }
 
+/** Per-model triangle ceiling before the loader warns. A prop is a few thousand triangles; a hero rig tens of thousands. */
+export const DEFAULT_MODEL_TRIANGLE_BUDGET = 100_000;
+
+let modelTriangleBudget = DEFAULT_MODEL_TRIANGLE_BUDGET;
+
+/** Retune the per-model triangle budget (a cinematic game may raise it; a mobile target lowers it). Non-finite or non-positive values restore the default. */
+export function setModelTriangleBudget(triangles: number): void {
+  modelTriangleBudget = Number.isFinite(triangles) && triangles > 0 ? triangles : DEFAULT_MODEL_TRIANGLE_BUDGET;
+}
+
+/** Triangles a loaded model contributes per draw, summing every mesh (instanced meshes count once per instance). @internal */
+export function countSceneTriangles(root: THREE.Object3D): number {
+  let total = 0;
+  root.traverse((node) => {
+    const mesh = node as THREE.Mesh & { isMesh?: boolean; isInstancedMesh?: boolean; count?: number };
+    if (mesh.isMesh !== true || mesh.geometry === undefined) return;
+    const geometry = mesh.geometry;
+    const vertices = geometry.index !== null ? geometry.index.count : geometry.attributes.position?.count ?? 0;
+    const instances = mesh.isInstancedMesh === true && typeof mesh.count === "number" ? mesh.count : 1;
+    total += Math.floor(vertices / 3) * instances;
+  });
+  return total;
+}
+
+/** One over-budget model as {@link heavyModels} reports it: the URL the loader fetched, its triangle count, and the budget it exceeded. */
+export interface HeavyModelRecord {
+  url: string;
+  triangles: number;
+  budget: number;
+}
+
+const heavyModelRecords: HeavyModelRecord[] = [];
+const warnedHeavyUrls = new Set<string>();
+
+function warnHeavyModel(record: HeavyModelRecord): void {
+  if (typeof console === "undefined") return;
+  console.warn(
+    `[jgengine] model ${record.url} has ${record.triangles.toLocaleString()} triangles (budget ${record.budget.toLocaleString()}). A game prop should be a few thousand — pick a lighter asset or decimate it.`,
+  );
+}
+
+/**
+ * Record a loaded model's triangle count against the budget: over budget warns once per URL and lands in
+ * {@link heavyModels}; under budget is silent. Split out so the wiring is unit-testable without a GL context.
+ * @internal
+ */
+export function recordModelTriangles(url: string, triangles: number, overrides: { warn?: (record: HeavyModelRecord) => void } = {}): void {
+  if (triangles <= modelTriangleBudget) return;
+  const record = { url, triangles, budget: modelTriangleBudget };
+  heavyModelRecords.push(record);
+  if (warnedHeavyUrls.has(url)) return;
+  warnedHeavyUrls.add(url);
+  (overrides.warn ?? warnHeavyModel)(record);
+}
+
+/**
+ * Every model the shared loader resolved whose triangle count exceeds the budget, in load order. A heavy
+ * prop is invisible in a screenshot and only shows up as a slow frame, so the loader measures each GLB as it
+ * lands and this exposes the verdict for `debug_snapshot` probes and smoke tests to assert against.
+ * @capability heavy-models models over the per-model triangle budget, for perf probes and smoke assertions
+ */
+export function heavyModels(): readonly HeavyModelRecord[] {
+  return heavyModelRecords;
+}
+
+/** Drops the heavy-model list and the once-per-URL warning memory. For tests and between capture runs. @internal */
+export function clearHeavyModels(): void {
+  heavyModelRecords.length = 0;
+  warnedHeavyUrls.clear();
+}
+
 /**
  * A {@link GLTFLoader} whose success path is unchanged but whose failures degrade
  * gracefully: when a load errors, it probes the URL and — for a diagnosed broken
@@ -186,7 +257,10 @@ export class DiagnosticGLTFLoader extends GLTFLoader {
   ): void {
     super.load(
       url,
-      onLoad,
+      (gltf: GLTF) => {
+        recordModelTriangles(url, countSceneTriangles(gltf.scene));
+        onLoad(gltf);
+      },
       onProgress,
       (event: unknown) => {
         if (onError === undefined) return;
