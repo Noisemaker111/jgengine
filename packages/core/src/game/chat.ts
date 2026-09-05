@@ -1,3 +1,4 @@
+import { decideRateWindow } from "../time/rateWindow";
 import type { GameEventMap, GameEvents } from "./events";
 import type { ChatFilter } from "./chatFilter";
 import type { EmotesDeps } from "./social";
@@ -34,12 +35,15 @@ export type ChatSendResult =
 export interface ChatSnapshot {
   messages: Record<string, ChatMessage[]>;
   counter: number;
+  rateWindows?: Record<string, Record<string, number[]>>;
 }
 
 export interface Chat {
   register(def: ChatChannelDef): void;
   channels(): ChatChannelDef[];
+  send(fromUserId: string, body: string): ChatSendResult;
   send(fromUserId: string, channelId: string, body: string): ChatSendResult;
+  recent(options?: { limit?: number; channelId?: string; viewerUserId?: string }): ChatMessage[];
   whisper(fromUserId: string, toUserId: string, body: string): ChatSendResult;
   history(channelId: string, options?: { limit?: number; viewerUserId?: string }): ChatMessage[];
   snapshot(): ChatSnapshot;
@@ -57,9 +61,9 @@ export interface ChatDeps {
   filter?: ChatFilter;
 }
 
-export const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit = { count: 10, perMs: 10_000 };
+export const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit = { count: 1, perMs: 2_000 };
 export const DEFAULT_CHAT_HISTORY_LIMIT = 100;
-export const DEFAULT_CHAT_BODY_LENGTH = 500;
+export const DEFAULT_CHAT_BODY_LENGTH = 240;
 export const DEFAULT_PROXIMITY_CHAT_RADIUS = 20;
 export const WHISPER_CHANNEL_PREFIX = "whisper:";
 
@@ -70,21 +74,24 @@ export function whisperChannelId(a: string, b: string): string {
 
 export interface ChatRateLimiter {
   allow(key: string, atMs: number): boolean;
+  snapshot(): Record<string, number[]>;
+  restore(state: Record<string, number[]>): void;
 }
 
 export function createChatRateLimiter(limit: ChatRateLimit): ChatRateLimiter {
   const windows = new Map<string, number[]>();
   return {
     allow(key, atMs) {
-      const cutoff = atMs - limit.perMs;
-      const stamps = (windows.get(key) ?? []).filter((stamp) => stamp > cutoff);
-      if (stamps.length >= limit.count) {
-        windows.set(key, stamps);
-        return false;
-      }
-      stamps.push(atMs);
-      windows.set(key, stamps);
-      return true;
+      const result = decideRateWindow(windows.get(key) ?? [], atMs, { windowMs: limit.perMs, max: limit.count });
+      windows.set(key, result.timestamps);
+      return result.allowed;
+    },
+    snapshot() {
+      return Object.fromEntries(Array.from(windows, ([key, stamps]) => [key, [...stamps]]));
+    },
+    restore(state) {
+      windows.clear();
+      for (const [key, stamps] of Object.entries(state)) windows.set(key, [...stamps]);
     },
   };
 }
@@ -175,10 +182,9 @@ export function createChat(deps: ChatDeps): Chat {
     body: string,
     def: ChatChannelDef | null,
   ): ChatSendResult {
-    const trimmed = body.trim();
-    if (trimmed.length === 0) return { reason: "empty message" };
-    if (trimmed.length > maxBodyLength) return { reason: "message too long" };
-
+    const validation = validateChatMessage(body, { maxLength: maxBodyLength });
+    if (!validation.ok) return { reason: validation.reason };
+    const trimmed = validation.text;
     let filteredBody = trimmed;
     if (filter !== undefined) {
       const filtered = filter.apply(trimmed);
@@ -219,9 +225,17 @@ export function createChat(deps: ChatDeps): Chat {
     channels() {
       return Array.from(channelDefs.values(), (def) => ({ ...def }));
     },
-    send(fromUserId, channelId, body) {
+    send(fromUserId: string, channelOrBody: string, suppliedBody?: string) {
+      const channelId = suppliedBody === undefined ? "global" : channelOrBody;
+      const body = suppliedBody ?? channelOrBody;
       const def = channelDefs.get(channelId) ?? null;
       return sendResolved(fromUserId, channelId, body, def);
+    },
+    recent(options) {
+      return this.history(options?.channelId ?? "global", {
+        limit: Math.max(0, Math.min(100, Math.floor(options?.limit ?? 50) || 0)),
+        viewerUserId: options?.viewerUserId,
+      });
     },
     whisper(fromUserId, toUserId, body) {
       if (fromUserId === toUserId) return { reason: "cannot whisper yourself" };
@@ -236,14 +250,15 @@ export function createChat(deps: ChatDeps): Chat {
           ? ring
           : ring.filter((message) => !hasBlocked(viewerUserId, message.fromUserId));
       const limit = options?.limit;
-      return limit === undefined ? visible.slice() : visible.slice(-limit);
+      return limit === undefined ? visible.slice() : limit <= 0 ? [] : visible.slice(-limit);
     },
     snapshot() {
       const messages: Record<string, ChatMessage[]> = {};
       for (const [channelId, ring] of messagesByChannel) {
         messages[channelId] = ring.map((message) => ({ ...message }));
       }
-      return { messages, counter };
+      const rateWindows = Object.fromEntries(Array.from(limiters, ([id, limiter]) => [id, limiter.snapshot()]));
+      return { messages, counter, rateWindows };
     },
     hydrate(data) {
       messagesByChannel.clear();
@@ -251,6 +266,24 @@ export function createChat(deps: ChatDeps): Chat {
         messagesByChannel.set(channelId, ring.map((message) => ({ ...message })));
       }
       counter = data.counter;
+      limiters.clear();
+      for (const [channelId, state] of Object.entries(data.rateWindows ?? {})) {
+        limiterFor(channelId, channelDefs.get(channelId)?.rateLimit ?? defaultRateLimit).restore(state);
+      }
     },
   };
+}
+
+/** Sanitized chat text or a displayable validation failure. */
+export type ChatValidation = { ok: true; text: string } | { ok: false; reason: string };
+
+/** Strip control characters and enforce the shared chat message policy before storage or broadcast. */
+export function validateChatMessage(value: unknown, options: { maxLength?: number } = {}): ChatValidation {
+  const maxLength = options.maxLength ?? DEFAULT_CHAT_BODY_LENGTH;
+  if (!Number.isSafeInteger(maxLength) || maxLength < 1) throw new RangeError("Invalid chat length limit");
+  if (typeof value !== "string") return { ok: false, reason: "invalid message" };
+  const text = value.replace(/[\u0000-\u001f\u007f-\u009f]/g, "").trim();
+  if (!text.length) return { ok: false, reason: "empty message" };
+  if (text.length > maxLength) return { ok: false, reason: "message too long" };
+  return { ok: true, text };
 }

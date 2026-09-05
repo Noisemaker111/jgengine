@@ -150,6 +150,7 @@ describe("decidePoseSync", () => {
     for (let i = 0; i < 10; i += 1) {
       now += 10;
       const d = decidePoseSync(state, { position: { x: 100, z: 0 } }, RULES, now);
+      if (!d.changed && !d.refreshKeepAlive) continue;
       state = {
         position: d.position,
         rotationY: d.rotationY,
@@ -216,4 +217,16 @@ describe("pickReusablePresence", () => {
   test("empty rows resolve to undefined", () => {
     expect(pickReusablePresence([])).toBeUndefined();
   });
+});
+
+
+test("pose write interval rejects movement, appearance and rotation until the boundary", () => {
+  const incoming = { position: { x: 1, y: 1, z: 0 }, rotationY: 1, appearance: { skin: "new" } };
+  const rejected = decidePoseSync(CURRENT, incoming, { ...RULES, minIntervalMs: 100 }, 1099);
+  expect(rejected.changed).toBe(false);
+  expect(rejected.refreshKeepAlive).toBe(false);
+  expect(rejected.position).toEqual(CURRENT.position);
+  expect(rejected.rotationY).toBe(CURRENT.rotationY);
+  expect(rejected.appearance).toBeUndefined();
+  expect(decidePoseSync(CURRENT, incoming, { ...RULES, minIntervalMs: 100 }, 1100).changed).toBe(true);
 });

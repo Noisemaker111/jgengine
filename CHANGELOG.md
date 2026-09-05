@@ -17,6 +17,32 @@ between (`--json` for structured output).
 
 ## [Unreleased]
 
+<!--
+Every PR that changes `packages/*/src` records its consumer-facing change here, so
+the next release's notes are complete by construction. Add a bullet under the right
+subhead below. `bun run check-changelog` fails a source PR whose `[Unreleased]` block
+is untouched; pure refactors/tests bypass with `[skip changelog]` in a commit message.
+At publish, rename this heading to the new version and mirror the entries into
+`packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
+-->
+
+## 0.18.1
+
+### Migrate
+
+- **Bump lockstep SDK packages to `^0.18.1`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets}`. CLI `jgengine` is `0.15.1`; `@jgengine/github` is `0.5.1`.
+- Declare `topology: "shared"` on runtime definitions. Shared Convex hosts migrate the bounded legacy roster into indexed membership and per-player session rows; use `getServerCapacity` for stable lobby subscriptions.
+- Put every command's read scope on its definition. Omitted scopes now load the actor and no chunks; explicitly request whole-world reads only where needed. Trusted host mutations can compose writes through `helpers.runCommand`.
+- Handle typed join outcomes (`ok` and `reason`) or use `useServerSession` and `JoinGate`. Pass runtimes to `jgengineCronSpecs`; tick registration requires an actual tick hook.
+- Declare currency precision with `decimals` and remove game-side cent conversions. Public amounts stay in major units and wallet writes round through integer minor units.
+- Replace custom presence, chat, territory and tick batching with `createWorldPresenceStore`, chat helpers, chunk territory, and `forEachOnlinePlayer`. Legacy claim backfills must finish before removing their old schema.
+
+### Added
+
+- Indexed shared membership and capacity rows, bounded neighborhood poses with 100 ms server/client gates, durable rate limits, authenticated diagnostics and bounded retention.
+- Territory footprint planning and atomic placement claims, chat validation and headless chat/join/territory surfaces, elapsed accrual, safe quantities, and player-profile reset through the initializer.
+- An explicit `--patch` release option.
+
 ### Added
 
 - Added smooth interpolation for remote presence player poses.
@@ -99,15 +125,6 @@ between (`--json` for structured output).
 - **`grass()` exposes the clump/lighting knobs its shader already had.** `GrassEnvironmentConfig` gains optional `bladeBend`, `tuftRadius`, `colorVariation`, and `normalLift`, forwarded by the shell's environment renderer — a world descriptor can now author bushy wind-combed scrub instead of the fixed lawn-blade look; defaults unchanged.
 - **`TerrainDetailConfig.sweeps`** — the detail shader's two macro colour sweeps (sun-dried patches, cooler wet pockets) take per-world RGB multipliers instead of hardcoded meadow tints. The old green-leaning "lush pocket" default painted moss onto arid/ashen biomes; defaults are unchanged, so a desert world should set warm/neutral `sweeps` explicitly.
 - **`@jgengine/rapier`** — a Rapier-backed `PhysicsBackend` adapter with native capsules, shapecasts, rotation, CCD, joints, and collision queries.
-
-<!--
-Every PR that changes `packages/*/src` records its consumer-facing change here, so
-the next release's notes are complete by construction. Add a bullet under the right
-subhead below. `bun run check-changelog` fails a source PR whose `[Unreleased]` block
-is untouched; pure refactors/tests bypass with `[skip changelog]` in a commit message.
-At publish, rename this heading to the new version and mirror the entries into
-`packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
--->
 
 ## 0.18.0
 

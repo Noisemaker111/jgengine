@@ -6,6 +6,7 @@ import {
   chunkKeyAt,
   chunkKeyOf,
   chunkKeysInRadius,
+  chunkKeysAround,
   createEmptyChunkRow,
   deleteChunk,
   parseChunkKey,
@@ -50,4 +51,11 @@ test("updateChunk faults in an empty chunk and deleteChunk marks the key for rem
   const removed = deleteChunk(placed, "2,-1");
   expect(removed.chunks["2,-1"]).toBeUndefined();
   expect(removed.dirty.chunks).toEqual(["2,-1"]);
+});
+
+test("chunk neighborhoods cross negative coordinates and reject unbounded inputs", () => {
+  expect(chunkKeysAround([-1, 0, -1], 0)).toEqual(["-1,-1"]);
+  expect(chunkKeysAround([63, 0, 63])).toEqual(["-1,-1", "-1,0", "-1,1", "0,-1", "0,0", "0,1", "1,-1", "1,0", "1,1"]);
+  expect(() => chunkKeysAround([0, 0, 0], Infinity)).toThrow();
+  expect(() => chunkKeysAround([NaN, 0, 0])).toThrow();
 });

@@ -1548,6 +1548,11 @@
 - `VisionTarget` (interface): interface VisionTarget<TId extends string = string> — ⚠ undocumented
 - `VisionWall` (interface): interface VisionWall — Structurally matches `world/walls` `WallSegment` — pass those straight in as occluders.
 
+## @jgengine/core/time/accrueSince
+
+- `Accrual` (interface): interface Accrual — Elapsed duration and the next anchor to persist with accrued effects.
+- `accrueSince` (function): function accrueSince(anchorMs: number, nowMs: number, options: { capMs?: number } = {}): Accrual — Elapsed time since a persisted anchor, capped once; persist anchorMs with the accrued result.
+
 ## @jgengine/core/time/beatClock
 
 - `BeatAccuracyTier` (interface): interface BeatAccuracyTier — ⚠ undocumented
@@ -1588,6 +1593,12 @@
 - `IdleWindowConfig` (interface): interface IdleWindowConfig — ⚠ undocumented
 - `LinearCatchUpInput` (interface): interface LinearCatchUpInput — ⚠ undocumented
 - `SteppedCatchUpResult` (interface): interface SteppedCatchUpResult — ⚠ undocumented
+
+## @jgengine/core/time/rateWindow
+
+- `RateWindowDecision` (interface): interface RateWindowDecision — Admission result, next stored timestamps, and wait before retrying.
+- `RateWindowPolicy` (interface): interface RateWindowPolicy — Maximum accepted operations in a sliding duration.
+- `decideRateWindow` (function): function decideRateWindow(timestamps: readonly number[], nowMs: number, policy: RateWindowPolicy): RateWindowDecision — A sliding rate window; persist timestamps only alongside the accepted operation.
 
 ## @jgengine/core/time/serverTick
 
@@ -3285,7 +3296,7 @@
 
 - `PlacementObstacle` (interface): interface PlacementObstacle — ⚠ undocumented
 - `PlacementRequest` (interface): interface PlacementRequest — ⚠ undocumented
-- `PlacementResult` (type): type PlacementResult = | { status: "ok"; center: Vec2; aabb: Aabb } | { status: "rejected"; reason: "out-of-bounds" } | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number } — ⚠ undocumented
+- `PlacementResult` (type): type PlacementResult = | { status: "ok"; center: Vec2; aabb: Aabb } | { status: "rejected"; reason: "out-of-bounds" } | { status: "rejected"; reason: "territory.blocked" } | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number } — ⚠ undocumented
 - `PlacementRules` (interface): interface PlacementRules — ⚠ undocumented
 - `footprintObstacle` (function): function footprintObstacle(request: PlacementRequest, id?: string): PlacementObstacle — ⚠ undocumented
 - `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
@@ -3671,6 +3682,23 @@
 - `surfaceGridLines` (function): function surfaceGridLines(sampleHeight: HeightSampler, options: SurfaceGridOptions): SurfaceGridLine[] — Builds a surface-following major/minor grid over a region: constant-`x` and constant-`z` lines at `spacing`, each draped onto the terrain so the reference grid climbs sculpted surfaces instead of being occluded by them (the flat `y = 0` grid's core failure). Draping subdivides to `drape.spacing`. Pure math, renderer-agnostic.
 - `surfaceRing` (function): function surfaceRing(sampleHeight: HeightSampler, center: GroundPoint, radius: number, segments = 48, options: DrapeOptions = {}): number[] — A closed circle draped on the surface — the surface-following placement guide ring under a cursor or a selected object. Returns flat `[x, y, z, ...]` world triples forming a loop (last vertex repeats the first). `segments` sets the smoothness of the ring.
 - `terrainContourGuides` (function): function terrainContourGuides(field: Pick<TerrainField, "sampleHeight">, region: GuideRegion, targetLines = 12, resolution = 128): { interval: number; summary: ElevationSummary; contours: ContourLine[] } — Convenience over {@link extractContours} that auto-picks the interval from the field's own relief: summarises the region, chooses a readable interval for `targetLines` bands, and traces the contours — the one call the editor overlay makes to turn a `TerrainField` into ready-to-draw guides. Returns an empty list for flat ground.
+
+## @jgengine/core/world/territory
+
+- `Territory` (type): type Territory = ReturnType<typeof createTerritory> — Snapshot-backed claim, release, owner and starter-grant operations.
+- `TerritoryCell` (type): type TerritoryCell = { x: number; z: number } — Integer cell coordinates used for ownership on the ground plane.
+- `TerritoryPlan` (type): type TerritoryPlan = { ok: true; cells: TerritoryCell[]; cost: number } | { ok: false; reason: "territory.blocked" | "territory.unaffordable" } — Read-only footprint quote or a blocked/insufficient-balance rejection.
+- `TerritoryPolicy` (type): type TerritoryPolicy = { gapCells?: number; cellSize?: number; chunkSize?: number; currency?: string; price?: (ownedCount: number) => number; starterBlock?: number; nowMs?: number; } — Cell size, foreign-owner gap, growth price, currency and starter-grant policy.
+- `TerritoryResult` (type): type TerritoryResult = { ok: true; snapshot: GameRuntimeSnapshot; cost: number } | { ok: false; reason: "territory.blocked" | "territory.unaffordable" } — Atomic claim outcome with the replacement snapshot and total charge.
+- `TerritoryStorage` (interface): interface TerritoryStorage — Host-owned snapshot access used by the territory facade.
+- `claimTerritory` (function): function claimTerritory(snapshot: GameRuntimeSnapshot, userId: string, cells: readonly TerritoryCell[], policy: TerritoryPolicy = {}): TerritoryResult — Atomically buy every unowned footprint cell, leaving the input untouched on failure.
+- `createTerritory` (function): function createTerritory(storage: TerritoryStorage, policy: () => TerritoryPolicy = () => ({})): { snapshot: () => GameRuntimeSnapshot; restore: (snapshot: GameRuntimeSnapshot) => void; ownerOf: (cell: TerritoryCell) => string | null; canUse: (userId: string, cell: TerritoryCell) => boolean; claim(u… — Snapshot-backed territory facade with host-owned storage and live policy.
+- `placeWithTerritory` (function): function placeWithTerritory(snapshot: GameRuntimeSnapshot, userId: string, bounds: Aabb, policy: TerritoryPolicy, place: (snapshot: GameRuntimeSnapshot) => { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string }): { ok: true; snapshot: GameRuntimeSnapshot; cost: number } | { ok: … — Placement transaction: rejected object placement also rolls back territory and its charge.
+- `planFootprintClaims` (function): function planFootprintClaims(snapshot: GameRuntimeSnapshot, userId: string, footprint: readonly TerritoryCell[], policy: TerritoryPolicy = {}): TerritoryPlan — Price and validate a footprint without mutating or charging; reuse for placement previews.
+- `territoryChunkKey` (function): function territoryChunkKey(cell: TerritoryCell, policy: TerritoryPolicy = {}): string — Persisted chunk key containing one territory cell.
+- `territoryChunkKeys` (function): function territoryChunkKeys(cells: readonly TerritoryCell[], policy: TerritoryPolicy = {}): string[] — Exact chunks needed to validate a footprint and its foreign-owner gap.
+- `territoryFootprintCells` (function): function territoryFootprintCells(bounds: Aabb, cellSize = 1): TerritoryCell[] — Cells touched by a placement, excluding cells that only touch its outer edge.
+- `territoryOwnerOf` (function): function territoryOwnerOf(snapshot: GameRuntimeSnapshot, cell: TerritoryCell, policy: TerritoryPolicy = {}): string | null — Owner of a loaded cell; hosts load the target and gap neighborhood before evaluating claims.
 
 ## @jgengine/core/world/vegetation
 

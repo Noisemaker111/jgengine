@@ -23,11 +23,14 @@ export interface PlacementRules {
   bounds?: Aabb;
   obstacles?: readonly PlacementObstacle[];
   snap?: number;
+  /** Authoritative ownership/claim validation for this footprint. */
+  territory?: (aabb: Aabb) => { ok: boolean };
 }
 
 export type PlacementResult =
   | { status: "ok"; center: Vec2; aabb: Aabb }
   | { status: "rejected"; reason: "out-of-bounds" }
+  | { status: "rejected"; reason: "territory.blocked" }
   | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number };
 
 /**
@@ -50,6 +53,7 @@ export function validatePlacement(request: PlacementRequest, rules: PlacementRul
     }
   }
 
+  if (rules.territory && !rules.territory(aabb).ok) return { status: "rejected", reason: "territory.blocked" };
   return { status: "ok", center, aabb };
 }
 

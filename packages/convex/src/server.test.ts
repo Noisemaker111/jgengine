@@ -454,7 +454,7 @@ test("singleton matchmaking refuses a join past capacity instead of sharding the
 
   await expect(
     handlerOf(fns.joinServer)(anonCtx(db), { gameId: "grant-demo", externalId: "bob" }),
-  ).rejects.toThrow("Server is full");
+  ).resolves.toEqual({ ok: false, reason: "full" });
   expect(rows("jgGameServers")).toHaveLength(1);
 });
 
@@ -804,9 +804,9 @@ test("runCommand refuses a write outside the scope it hydrated under", async () 
   );
 });
 
-test("a command declaring no scope still hydrates the whole world", async () => {
+test("a command declaring no scope hydrates only the actor and no chunks", async () => {
   const { db, seed, reads } = makeDb();
-  const { bob } = seedPlaceServer(seed);
+  const { bob, far } = seedPlaceServer(seed);
   seed(
     "jgPlayerProfiles",
     profileDoc({ userId: "alice", gameId: "place-demo", playerState: player("alice", 1) }),
@@ -826,7 +826,8 @@ test("a command declaring no scope still hydrates the whole world", async () => 
       externalId: "alice",
     }),
   ).toEqual({ ok: true });
-  expect(reads.has(bob._id)).toBe(true);
+  expect(reads.has(bob._id)).toBe(false);
+  expect(reads.has(far._id)).toBe(false);
 });
 
 test("joinServer without onNewPlayer hydrates only the joining member", async () => {
@@ -877,4 +878,18 @@ test("leaveServer hydrates only the leaving member", async () => {
 
   expect(reads.has(bob._id)).toBe(false);
   expect(reads.has(far._id)).toBe(false);
+});
+
+test("beforePersist cannot bypass hydrated command scope", async () => {
+  const { db, seed, rows } = makeDb();
+  seedPlaceServer(seed);
+  const fns = createGameServerFunctions({ runtimes: [placeRuntime()], auth: "anonymous" });
+  await expect(fns.helpers.runCommand(anonCtx(db) as JGMutationCtx, {
+    serverId: "srv:place", externalId: "alice", command: "world.place", input: { chunkKey: "0,0" },
+    beforePersist: async (_ctx, loaded) => {
+      loaded.snapshot.chunks["9,9"] = chunkRow("9,9", "overwritten");
+      loaded.snapshot.dirty.chunks.push("9,9");
+    },
+  })).rejects.toThrow("outside its declared scope");
+  expect(rows("jgWorldChunks").find(row => row.chunkKey === "9,9")?.snapshot).toEqual(chunkRow("9,9", "kept"));
 });

@@ -54,3 +54,9 @@ Render seams fall back to placeholders when content is unauthored: default green
 - Generated environments still need deterministic data assertions; authored environments need scene-document assertions.
 - Audio files and licensing belong to `jgengine-assets`; spatial playback policy belongs here.
 
+
+### Territory and placement
+
+Use `world/territory` for chunk-backed ownership: `planFootprintClaims` prices previews, `placeWithTerritory` commits claims and object placement atomically, and `createTerritory` binds host-owned snapshot storage to `ctx.game.territory`. Use `territoryChunkKeys` to load every footprint and gap-neighbor chunk before planning; never interpret an unloaded neighborhood as vacant. Claims persist in `RuntimeChunkRow.territory`; `RuntimePlayerRow.territoryOwnedCount` preserves the price curve and `ownedTerritoryChunkKeys` bounds owner queries. Convex hosts use `loadTerritoryState`/`persistTerritoryState` from `@jgengine/convex/territory` to commit dirty claim chunks/profiles without a shared-server write. Grant `starterBlock` before the first placement verb. Placement previews must show the claim cost and affordability on the placement surface.
+
+Use `chunkKeysAround(position, rings)` for bounded command/presence reads; declare `commands[name].scope(input)` for every hosted command. Missing scopes load only the actor and no chunks. A whole-world command must opt in explicitly with `scope: () => ({})` and justify its read budget.

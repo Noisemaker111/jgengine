@@ -1,4 +1,4 @@
-﻿import { spawnSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 
@@ -13,7 +13,7 @@ export function writeGame(
   name: string,
   variant: TemplateVariant,
   scene?: EditorSceneDoc,
-  options?: { world?: boolean; editor?: boolean; player?: string; ground?: "flat" | "terrain"; sceneMode?: "empty" | "starter" },
+  options?: { shape?: "shared-world-builder"; world?: boolean; editor?: boolean; player?: string; ground?: "flat" | "terrain"; sceneMode?: "empty" | "starter" },
 ): void {
   for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), scene, ...options })) {
     const dest = join(targetDir, file.path);
@@ -82,7 +82,7 @@ export function registerRootGameScript(rootDir: string, id: string, folderName: 
   return true;
 }
 
-const VALUE_FLAGS = new Set(["--pm", "--from-scene", "--player", "--ground", "--scene"]);
+const VALUE_FLAGS = new Set(["--pm", "--shape", "--from-scene", "--player", "--ground", "--scene"]);
 
 function positionalArg(argv: string[]): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
@@ -158,6 +158,8 @@ export function runCreate(argv: string[]): number {
   let folderName: string;
   let id: string;
   try {
+    const shape = flag(argv, "shape");
+    if (shape !== undefined && shape !== "shared-world-builder") throw new Error(`Unknown --shape: ${shape}`);
     const sceneArg = flag(argv, "from-scene");
     const player = flag(argv, "player");
     const ground = flag(argv, "ground") ?? "terrain";
@@ -215,7 +217,7 @@ export function runCreate(argv: string[]): number {
     }
 
     const engineVersion = sdkVersion();
-    writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode });
+    writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape });
     console.log(`created ${displayName} (${variant}) → ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
     if (variant === "standalone") {

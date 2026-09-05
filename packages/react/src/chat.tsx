@@ -1,3 +1,4 @@
+import { StandaloneChatPanel, type StandaloneChatPanelProps } from "./standaloneChatPanel";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import type { ChatMessage, ChatSendResult } from "@jgengine/core/game/chat";
 import type { ChatSync, ChatTransport } from "@jgengine/core/multiplayer/chatContract";
@@ -34,14 +35,17 @@ export function ChatLog({
   limit,
   className,
   messageClassName,
+  ownMessageClassName,
   renderMessage,
 }: {
   channelId: string;
   limit?: number;
   className?: string;
   messageClassName?: string;
+  ownMessageClassName?: string;
   renderMessage?: (message: ChatMessage) => ReactNode;
 }) {
+  const ctx = useGameContext();
   const messages = useChat(channelId, limit === undefined ? undefined : { limit });
   const scrollRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -53,7 +57,8 @@ export function ChatLog({
       {messages.map((message) => (
         <div
           key={message.id}
-          className={messageClassName}
+          className={[messageClassName, message.fromUserId === ctx.player.userId ? ownMessageClassName : undefined].filter(Boolean).join(" ")}
+          data-own-message={message.fromUserId === ctx.player.userId || undefined}
           data-chat-message
           data-from={message.fromUserId}
         >
@@ -92,15 +97,18 @@ export function ChatInput({
 }) {
   const ctx = useGameContext();
   const [value, setValue] = useState("");
+  const [failure, setFailure] = useState<string | null>(null);
   const chat = ctx.game.chat;
   if (chat === undefined) return null;
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const result: ChatSendResult = chat.send(ctx.player.userId, channelId, value);
     if ("reason" in result) {
+      setFailure(result.reason);
       onRejected?.(result.reason);
       return;
     }
+    setFailure(null);
     setValue("");
     onSent?.(result.message);
   }
@@ -109,10 +117,13 @@ export function ChatInput({
       <input
         className={inputClassName}
         type="text"
+        aria-label="Chat message"
+        maxLength={240}
         value={value}
         placeholder={placeholder}
         onChange={(event) => setValue(event.target.value)}
       />
+      {failure !== null && <p role="alert">{failure}</p>}
       <button type="submit" className={buttonClassName} data-chat-send>
         {sendLabel ?? "Send"}
       </button>
@@ -166,7 +177,7 @@ export function ChannelTabs({
   );
 }
 
-export function ChatPanel({
+function ContextChatPanel({
   channels,
   initialChannel,
   limit,
@@ -176,6 +187,9 @@ export function ChatPanel({
   activeTabClassName,
   logClassName,
   messageClassName,
+  ownMessageClassName,
+  defaultExpanded = true,
+  toggleLabel = "Chat",
   inputClassName,
   inputFieldClassName,
   sendButtonClassName,
@@ -188,11 +202,14 @@ export function ChatPanel({
   initialChannel?: string;
   limit?: number;
   className?: string;
+  defaultExpanded?: boolean;
+  toggleLabel?: ReactNode;
   tabsClassName?: string;
   tabClassName?: string;
   activeTabClassName?: string;
   logClassName?: string;
   messageClassName?: string;
+  ownMessageClassName?: string;
   inputClassName?: string;
   inputFieldClassName?: string;
   sendButtonClassName?: string;
@@ -206,9 +223,39 @@ export function ChatPanel({
   const chat = ctx.game.chat;
   const ids = channels ?? chat?.channels().map((def) => def.id) ?? [];
   const [active, setActive] = useState(initialChannel ?? ids[0] ?? "global");
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const focusPending = useRef(false);
+  useEffect(() => {
+    if (chat === undefined) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing || event.key !== "Enter") return;
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, button, [contenteditable]:not([contenteditable=false])")) return;
+      event.preventDefault();
+      focusPending.current = true;
+      setExpanded(true);
+      panelRef.current?.querySelector("input")?.focus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [chat]);
+  useEffect(() => {
+    if (expanded && focusPending.current) {
+      panelRef.current?.querySelector("input")?.focus();
+      focusPending.current = false;
+    }
+  }, [expanded]);
   if (chat === undefined) return null;
   return (
-    <section className={className} data-chat-panel>
+    <section ref={panelRef} className={className} data-chat-panel data-expanded={expanded} onKeyDown={(event) => {
+      if (event.key === "Escape") {
+        (event.target as HTMLElement).blur();
+        event.stopPropagation();
+      }
+    }}>
+      <button type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>{toggleLabel}</button>
+      {expanded && <>
       <ChannelTabs
         channels={ids}
         active={active}
@@ -223,6 +270,7 @@ export function ChatPanel({
         limit={limit}
         className={logClassName}
         messageClassName={messageClassName}
+        ownMessageClassName={ownMessageClassName}
         renderMessage={renderMessage}
       />
       <ChatInput
@@ -233,6 +281,13 @@ export function ChatPanel({
         placeholder={placeholder}
         onRejected={onRejected}
       />
+      </>}
     </section>
   );
+}
+
+
+/** Chat behavior over a game context or externally supplied server messages. */
+export function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>) {
+  return "messages" in props ? <StandaloneChatPanel {...props} /> : <ContextChatPanel {...props} />;
 }

@@ -236,3 +236,13 @@ describe("selectJoinTarget", () => {
     expect(selectJoinTarget([], { userId: "alice", mode: "singleton" })).toEqual({ kind: "create" });
   });
 });
+
+test("shared membership validates larger finite capacities and checks counts without a roster", () => {
+  expect(validateSlotsPerServer(1000, "shared")).toEqual({ ok: true });
+  expect(validateSlotsPerServer(Number.MAX_SAFE_INTEGER, "shared")).toEqual({ ok: true });
+  expect(validateSlotsPerServer(1000).ok).toBe(false);
+  for (const capacity of [NaN, Infinity, 0, 1.5, Number.MAX_SAFE_INTEGER + 1]) expect(validateSlotsPerServer(capacity, "shared").ok).toBe(false);
+  expect(isServerFull(1000, 1000, false)).toBe(true);
+  expect(isServerFull(1000, 1000, true)).toBe(false);
+  expect(isServerFull(999, 1000, false)).toBe(false);
+});

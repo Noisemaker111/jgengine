@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## client-error-reporting — Accept authenticated bounded diagnostics with cooldown and retention sweeps.
+
+- `createClientErrorFunctions` (function) · `import { createClientErrorFunctions } from "@jgengine/convex"`
+
 ## convex-load-server-snapshot — read a hosted server's runtime snapshot inside a host-written Convex mutation
 
 - `loadServerSnapshot` (function) · `import { loadServerSnapshot } from "@jgengine/convex"`
@@ -16,6 +20,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createConvexSaveBackend` (function) · `import { createConvexSaveBackend } from "@jgengine/convex"`
 
+## host-chat-history — Read bounded channel history inside an authorized host query.
+
+- `recentChatMessages` (function) · `import { recentChatMessages } from "@jgengine/convex"`
+
+## host-chat-send — Validate, rate-limit and persist chat inside an authorized host mutation.
+
+- `sendChatMessage` (function) · `import { sendChatMessage } from "@jgengine/convex"`
+
 ## host-join-code-gate — membership-or-code gate for private hosted servers
 
 - `canJoinPrivateServer` (function) · `import { canJoinPrivateServer } from "@jgengine/convex"`
@@ -24,10 +36,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `isListablePublicly` (function) · `import { isListablePublicly } from "@jgengine/convex"`
 
+## host-rate-limit — Enforce indexed per-key request windows inside authoritative mutations.
+
+- `rateLimit` (function) · `import { rateLimit } from "@jgengine/convex"`
+
 ## hosted-world-persistence — Persist hosted authoritative world snapshots in a local file.
 
 - `fileWorldStore` (function) · `import { fileWorldStore } from "@jgengine/node"`
 - `sqlWorldStore` (function) · `import { sqlWorldStore } from "@jgengine/sql"`
+
+## online-player-batches — Schedule bounded active-player or home-game work in separate transactions.
+
+- `forEachOnlinePlayer` (function) · `import { forEachOnlinePlayer } from "@jgengine/convex"`
 
 ## placed-object-rehydrate — rebuild live placed objects, with their state and slot contents, from persisted snapshot rows
 
@@ -36,3 +56,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## placed-object-rows — a placed object's per-instance state and container contents convert to and from the persisted snapshot row a host stores
 
 - `toRuntimeObjectRow` (function) · `import { toRuntimeObjectRow } from "@jgengine/core/multiplayer"`
+
+## territory-host-hydration — Load an actor profile and bounded claim chunks for a host transaction.
+
+- `loadTerritoryState` (function) · `import { loadTerritoryState } from "@jgengine/convex/territory"`
+
+## territory-host-persistence — Persist dirty ownership chunks and profiles without rewriting the shared server.
+
+- `persistTerritoryState` (function) · `import { persistTerritoryState } from "@jgengine/convex/territory"`
+
+## world-presence-store — indexed neighborhood presence with pose throttling and physical expiry Call only after resolving the actor and their world access; browser arguments are not trusted identities.
+
+- `createWorldPresenceStore` (function) · `import { createWorldPresenceStore } from "@jgengine/convex/worldPresence"`

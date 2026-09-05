@@ -1,3 +1,5 @@
+import type { Territory } from "../world/territory";
+import type { CurrencyDefinition } from "../economy/currency";
 import type { CardPile, CardPileConfig } from "../cards/cardPile";
 import type {
   EffectInput,
@@ -129,6 +131,7 @@ export interface GameContextOptions<
   definition: GameDefinition<TAssetRef, TMultiplayer>;
   content: GameContextContent;
   player: { userId: string; isNew: boolean };
+  territory?: Territory;
   now?: () => number;
   occluder?: (from: EntityPosition, to: EntityPosition) => boolean;
   /**
@@ -403,12 +406,12 @@ export interface GameContextLoot {
 }
 
 export interface GameContextEconomy {
-  balance(userId: string, currencyId: string): number;
-  grant(userId: string, currencyId: string, amount: number): void;
+  balance(userId: string, currencyId: string | CurrencyDefinition): number;
+  grant(userId: string, currencyId: string | CurrencyDefinition, amount: number): void;
   /** `options.overdraft` opts this charge into carrying a negative balance (`true` unlimited, `{ max }` capped) — omitted keeps the strict no-debt default. */
-  charge(userId: string, currencyId: string, amount: number, options?: WalletChargeOptions): { reason: string } | null;
+  charge(userId: string, currencyId: string | CurrencyDefinition, amount: number, options?: WalletChargeOptions): { reason: string } | null;
   /** True once `balance(userId, currencyId)` has gone negative under an overdraft-enabled charge. */
-  isOverdrawn(userId: string, currencyId: string): boolean;
+  isOverdrawn(userId: string, currencyId: string | CurrencyDefinition): boolean;
 }
 
 export interface GameContextItemUse {
@@ -481,6 +484,7 @@ export interface GameContext {
    */
   rng: () => number;
   game: {
+    territory?: Territory;
     commands: GameContextCommands;
     events: GameEvents;
     audio: GameAudio;

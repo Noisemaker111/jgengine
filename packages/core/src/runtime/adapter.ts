@@ -146,12 +146,20 @@ export function multiplayerAdapterKind(multiplayer: unknown): string | null {
 }
 
 export type ServersPoolConfig = {
-  maxServers: number;
-  slotsPerServer: number;
   minPlayersToStart?: number;
   adapter: MultiplayerAdapterConfig;
-};
+} & (
+  | { topology: "shared"; maxServers?: number; slotsPerServer?: number }
+  | { topology?: "rooms"; maxServers: number; slotsPerServer: number }
+);
 
+/** Resolve the shared-world pool to one unbounded world; room pools keep explicit capacities. */
 export function servers(config: ServersPoolConfig) {
-  return config;
+  const shared = config.topology === "shared";
+  const maxServers = shared ? 1 : config.maxServers;
+  const slotsPerServer = shared ? Number.MAX_SAFE_INTEGER : config.slotsPerServer;
+  if (!Number.isSafeInteger(maxServers) || maxServers < 1 || !Number.isSafeInteger(slotsPerServer) || slotsPerServer < 1) {
+    throw new RangeError("Server pool capacities must be positive safe integers");
+  }
+  return { ...config, topology: config.topology ?? "rooms", maxServers, slotsPerServer };
 }

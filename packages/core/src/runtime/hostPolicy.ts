@@ -2,7 +2,7 @@ import { normalizeJoinCode } from "../multiplayer/matchmaking";
 import type { GameServerStatus, SessionVisibility } from "./hostPersistence";
 
 /**
- * Hard ceiling on `slotsPerServer` for a single hosted server row.
+ * Room-topology ceiling on `slotsPerServer`; shared membership uses indexed rows instead.
  *
  * A hosted server keeps its whole roster, every member's session state, and the world row in one
  * backing document. On Convex that document caps at 1 MiB with at most 1024 entries in an object, and
@@ -15,11 +15,12 @@ export const JG_MAX_MEMBERS_PER_SERVER = 256;
 /** Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold. */
 export function validateSlotsPerServer(
   slotsPerServer: number,
+  topology: "rooms" | "shared" = "rooms",
 ): { ok: true } | { ok: false; reason: string } {
-  if (!Number.isInteger(slotsPerServer) || slotsPerServer < 1) {
+  if (!Number.isSafeInteger(slotsPerServer) || slotsPerServer < 1) {
     return { ok: false, reason: `slotsPerServer must be a positive integer, got ${slotsPerServer}` };
   }
-  if (slotsPerServer > JG_MAX_MEMBERS_PER_SERVER) {
+  if (topology !== "shared" && slotsPerServer > JG_MAX_MEMBERS_PER_SERVER) {
     return {
       ok: false,
       reason:
@@ -129,12 +130,16 @@ export function isServerMember(memberUserIds: readonly string[], userId: string)
  * True when the server has no free slots for a non-member. Existing members never count as
  * "full" so rejoin/leave cycles keep working.
  */
+export function isServerFull(memberCount: number, slotsPerServer: number, isMember: boolean): boolean;
+export function isServerFull(memberUserIds: readonly string[], slotsPerServer: number, userId: string): boolean;
 export function isServerFull(
-  memberUserIds: readonly string[],
+  members: number | readonly string[],
   slotsPerServer: number,
-  userId: string,
+  member: boolean | string,
 ): boolean {
-  return memberUserIds.length >= slotsPerServer && !memberUserIds.includes(userId);
+  const count = typeof members === "number" ? members : members.length;
+  const isMember = typeof member === "boolean" ? member : typeof members !== "number" && members.includes(member);
+  return count >= slotsPerServer && !isMember;
 }
 
 /**

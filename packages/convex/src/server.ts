@@ -7,6 +7,7 @@ import {
 } from "convex/server";
 import type {
   Auth,
+  FunctionReference,
   DataModelFromSchemaDefinition,
   DocumentByName,
   GenericMutationCtx,
@@ -16,7 +17,7 @@ import type {
 } from "convex/server";
 import type { GenericId } from "convex/values";
 import { ConvexError, v } from "convex/values";
-import type { ChatMessage } from "@jgengine/core/game/chat";
+import { validateChatMessage, type ChatMessage } from "@jgengine/core/game/chat";
 import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
 import type { ChatSendOutcome } from "@jgengine/core/multiplayer/chatContract";
 import {
@@ -37,7 +38,7 @@ import {
 import type { CommandDef, CommandScope } from "@jgengine/core/runtime/commandRunner";
 import { commandScopeEscape, scopeWithActor } from "@jgengine/core/runtime/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
-import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
+import { createGameRuntime, initialPlayerState } from "@jgengine/core/runtime/gameRuntime";
 import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord } from "@jgengine/core/runtime/hostPersistence";
 import {
   buildHydratePlayers,
@@ -60,7 +61,8 @@ import {
 } from "@jgengine/core/runtime/hostPolicy";
 import type { SaveConfig } from "@jgengine/core/runtime/save";
 import type { GameRuntimeSnapshot, RuntimeChunkRow, RuntimePlayerRow, RuntimeServerRow } from "@jgengine/core/runtime/snapshot";
-import { createEmptyServerRow, markAllPlayersDirty } from "@jgengine/core/runtime/snapshot";
+import { createEmptyServerRow } from "@jgengine/core/runtime/snapshot";
+import { chunkKeyAt, parseChunkKey, chunkKeysAround, DEFAULT_CHUNK_SIZE } from "@jgengine/core/runtime/worldChunks";
 import { applyCommandWithOcc, commitIfRevisionMatch } from "./occ";
 
 /** @internal Re-export shared host-policy pure helpers so existing convex imports keep working. */
@@ -90,6 +92,8 @@ export function jgengineTables() {
       modeConfig: v.optional(v.any()),
       visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
       joinCode: v.optional(v.string()),
+      topology: v.optional(v.union(v.literal("shared"), v.literal("rooms"))),
+      memberCount: v.optional(v.number()),
       memberUserIds: v.array(v.string()),
       slotsPerServer: v.number(),
       save: saveConfigValidator,
@@ -106,10 +110,31 @@ export function jgengineTables() {
       .index("by_status", ["status"])
       .index("by_game_status_tick", ["gameId", "status", "tickAnchorMs"])
       .index("by_dirty", ["dirtyAt"]),
+    jgServerCapacity: defineTable({
+      serverId: v.id("jgGameServers"),
+      gameId: v.string(),
+      status: v.union(v.literal("open"), v.literal("running"), v.literal("closed")),
+      mode: v.optional(v.string()),
+      memberCount: v.number(),
+      slotsPerServer: v.number(),
+    }).index("by_server", ["serverId"]),
+    jgServerMembers: defineTable({
+      serverId: v.id("jgGameServers"),
+      userId: v.string(),
+      joinedAt: v.number(),
+    }).index("by_server", ["serverId"]).index("by_server_and_user", ["serverId", "userId"]),
+    jgRateLimits: defineTable({
+      key: v.string(), startedAt: v.number(), count: v.number(), expiresAt: v.number(),
+    }).index("by_key", ["key"]).index("by_expires", ["expiresAt"]),
+    jgClientErrors: defineTable({
+      userId: v.string(), message: v.string(), details: v.optional(v.any()), createdAt: v.number(),
+    }).index("by_created", ["createdAt"]),
     jgPlayerProfiles: defineTable({
       userId: v.string(),
       gameId: v.string(),
       playerState: v.any(),
+      sessionState: v.optional(v.any()),
+      sessionServerId: v.optional(v.id("jgGameServers")),
       revision: v.number(),
       dirtyAt: v.optional(v.number()),
       createdAt: v.number(),
@@ -143,6 +168,10 @@ export function jgengineTables() {
     }).index("by_server_and_action", ["serverId", "action"]),
     jgPoses: defineTable({
       serverId: v.string(),
+      homeGameId: v.optional(v.string()),
+      ownerActorId: v.optional(v.string()),
+      lastWorldSnapshotAt: v.optional(v.number()),
+      chunkKey: v.optional(v.string()),
       userId: v.string(),
       /** One row per live session, so a second tab is a second row rather than a fight over one. */
       sessionId: v.optional(v.string()),
@@ -161,14 +190,22 @@ export function jgengineTables() {
     })
       .index("by_server", ["serverId"])
       .index("by_server_and_user", ["serverId", "userId"])
-      .index("by_updated", ["updatedAt"]),
+      .index("by_server_and_chunk", ["serverId", "chunkKey"])
+      .index("by_server_user_revoked_updated", ["serverId", "userId", "revokedAt", "updatedAt"])
+      .index("by_updated", ["updatedAt"])
+      .index("by_user", ["userId"])
+      .index("by_home_game", ["homeGameId"])
+      .index("by_home_game_revoked_updated", ["homeGameId", "revokedAt", "updatedAt"])
+      .index("by_revoked", ["revokedAt"])
+      .index("by_revoked_updated", ["revokedAt", "updatedAt"]),
     jgChatMessages: defineTable({
       serverId: v.string(),
       channelId: v.string(),
       userId: v.string(),
       body: v.string(),
+      authorName: v.optional(v.string()),
       at: v.number(),
-    }).index("by_server_channel", ["serverId", "channelId"]),
+    }).index("by_server_channel", ["serverId", "channelId", "at"]).index("by_at", ["at"]),
   };
 }
 
@@ -200,7 +237,8 @@ const schemaForTypes = defineSchema(jgengineTables());
 /** Data model of the {@link jgengineTables} schema — the shape a host's own Convex ctx must satisfy to
  * call the exported persistence helpers. */
 export type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes>;
-type JGQueryCtx = GenericQueryCtx<JGDataModel>;
+/** Read-only context accepted by engine host queries. */
+export type JGQueryCtx = GenericQueryCtx<JGDataModel>;
 /** Mutation ctx accepted by {@link loadServerSnapshot} / {@link persistServerSnapshot}. */
 export type JGMutationCtx = GenericMutationCtx<JGDataModel>;
 const query = queryGeneric as QueryBuilder<JGDataModel, "public">;
@@ -239,6 +277,13 @@ export async function resolveActor(
   return null;
 }
 
+async function hasMember(ctx: JGQueryCtx | JGMutationCtx, server: ServerDoc, userId: string): Promise<boolean> {
+  if (server.memberUserIds.includes(userId)) return true;
+  if (server.topology !== "shared") return false;
+  return (await ctx.db.query("jgServerMembers")
+    .withIndex("by_server_and_user", q => q.eq("serverId", server._id).eq("userId", userId)).unique()) !== null;
+}
+
 async function requireServerMember(
   ctx: JGQueryCtx | JGMutationCtx,
   serverId: string,
@@ -246,7 +291,7 @@ async function requireServerMember(
 ): Promise<ServerDoc | null> {
   const server = await ctx.db.get("jgGameServers", serverId as GenericId<"jgGameServers">);
   if (!server) return null;
-  if (!isServerMember(server.memberUserIds, actorUserId)) return null;
+  if (!(await hasMember(ctx, server, actorUserId))) return null;
   return server;
 }
 
@@ -332,6 +377,22 @@ function serverDocToRecord(server: ServerDoc): GameServerRecord {
   };
 }
 
+async function serverCapacity(ctx: JGQueryCtx | JGMutationCtx, server: ServerDoc) {
+  return server.topology === "shared"
+    ? ctx.db.query("jgServerCapacity").withIndex("by_server", q => q.eq("serverId", server._id)).unique()
+    : null;
+}
+
+async function ensureServerCapacity(ctx: JGMutationCtx, server: ServerDoc) {
+  const existing = await serverCapacity(ctx, server);
+  if (existing) return existing;
+  const id = await ctx.db.insert("jgServerCapacity", {
+    serverId: server._id, gameId: server.gameId, status: server.status, mode: server.mode,
+    memberCount: server.memberCount ?? server.memberUserIds.length, slotsPerServer: server.slotsPerServer,
+  });
+  return (await ctx.db.get("jgServerCapacity", id))!;
+}
+
 /**
  * How much of a server to hydrate. Both fields default to "everything", which is a document read per
  * member plus one per chunk — the cost that makes a large shared world unaffordable per mutation.
@@ -361,10 +422,16 @@ export async function loadServerSnapshot(
 ): Promise<GameRuntimeSnapshot> {
   const profiles: Record<string, PlayerProfileRecord | null> = {};
   const memberIds = new Set(server.memberUserIds);
-  const hydrateUserIds =
-    scope?.players === undefined
-      ? server.memberUserIds
-      : scope.players.filter((userId) => memberIds.has(userId));
+  let hydrateUserIds: string[];
+  if (server.topology === "shared") {
+    const requested = scope?.players ?? (await ctx.db.query("jgServerMembers")
+      .withIndex("by_server", q => q.eq("serverId", server._id)).collect()).map(row => row.userId);
+    hydrateUserIds = [];
+    for (const userId of new Set(requested)) if (await hasMember(ctx, server, userId)) hydrateUserIds.push(userId);
+  } else {
+    hydrateUserIds = scope?.players === undefined ? server.memberUserIds : scope.players.filter(userId => memberIds.has(userId));
+  }
+  const sessionPlayers: Record<string, RuntimePlayerRow> = {};
 
   for (const userId of hydrateUserIds) {
     const profile = await ctx.db
@@ -372,6 +439,9 @@ export async function loadServerSnapshot(
       .withIndex("by_user_and_game", (q) => q.eq("userId", userId).eq("gameId", server.gameId))
       .unique();
 
+    if (server.topology === "shared" && profile) {
+      sessionPlayers[userId] = { ...profile.playerState, ...(profile.sessionServerId === server._id ? { session: profile.sessionState ?? {} } : { session: {} }) };
+    }
     profiles[userId] = profile
       ? {
           userId,
@@ -383,7 +453,7 @@ export async function loadServerSnapshot(
       : null;
   }
 
-  const playersByUserId = buildHydratePlayers(serverDocToRecord(server), profiles, hydrateUserIds);
+  const playersByUserId = buildHydratePlayers(server.topology === "shared" ? { ...serverDocToRecord(server), memberUserIds: hydrateUserIds, sessionPlayers } : serverDocToRecord(server), profiles, hydrateUserIds);
 
   const chunksByKey: Record<string, RuntimeChunkRow> = {};
   if (scope?.chunkKeys === undefined) {
@@ -462,7 +532,9 @@ export async function persistServerSnapshot(
   save: SaveConfig,
 ): Promise<boolean> {
   const now = Date.now();
-  const plan = planServerPersist(serverDocToRecord(server), snapshot, save, now);
+  const shared = server.topology === "shared";
+  const record = serverDocToRecord(server);
+  const plan = planServerPersist(shared ? { ...record, memberUserIds: Object.keys(snapshot.players), sessionPlayers: {} } : record, snapshot, save, now);
   if (!plan.changed.any) return false;
 
   if (plan.leaderboard.length > 0) {
@@ -477,6 +549,7 @@ export async function persistServerSnapshot(
 
     const profilePatch = {
       playerState: profile.playerState,
+      ...(shared ? { sessionState: snapshot.players[profile.userId]?.session ?? {}, sessionServerId: server._id } : {}),
       revision: profile.revision,
       updatedAt: profile.updatedAt,
     };
@@ -490,6 +563,19 @@ export async function persistServerSnapshot(
         ...profilePatch,
         createdAt: now,
       });
+    }
+  }
+
+  if (shared) {
+    const persisted = new Set(plan.profiles.map(profile => profile.userId));
+    for (const userId of snapshot.dirty.players) {
+      if (persisted.has(userId)) continue;
+      const player = snapshot.players[userId];
+      if (!player) continue;
+      const existing = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", userId).eq("gameId", server!.gameId)).unique();
+      const patch = { playerState: player, sessionState: player.session, sessionServerId: server._id, revision: snapshot.revision, updatedAt: now };
+      if (existing) await ctx.db.patch(existing._id, patch);
+      else await ctx.db.insert("jgPlayerProfiles", { userId, gameId: server.gameId, createdAt: now, ...patch });
     }
   }
 
@@ -524,9 +610,9 @@ export async function persistServerSnapshot(
     if (existing) await ctx.db.delete(existing._id);
   }
 
-  await ctx.db.patch(server._id, {
+  if (!shared || plan.changed.serverState) await ctx.db.patch(server._id, {
     ...(plan.changed.serverState ? { serverState: plan.server.serverState } : {}),
-    ...(plan.changed.sessionPlayers ? { sessionPlayers: plan.server.sessionPlayers } : {}),
+    ...(!shared && plan.changed.sessionPlayers ? { sessionPlayers: plan.server.sessionPlayers } : {}),
     revision: plan.server.revision,
     dirtyAt: plan.server.dirtyAt,
     updatedAt: plan.server.updatedAt,
@@ -540,16 +626,15 @@ async function flushServerIfDue(
   ctx: JGMutationCtx,
   server: ServerDoc,
   now: number,
-  runtime: GameRuntime,
+  _runtime: GameRuntime,
   loaded?: GameRuntimeSnapshot,
 ): Promise<boolean> {
   if (!shouldAutoSave(server.save as SaveConfig, server.dirtyAt, server.lastSavedAt, now)) {
     return false;
   }
 
-  // Unscoped on purpose: markAllPlayersDirty writes every member, so every member has to be hydrated.
-  const snapshot = loaded ?? (await loadServerSnapshot(ctx, server, runtime));
-  await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
+  if (loaded) await persistServerSnapshot(ctx, server, loaded, server.save as SaveConfig);
+  await ctx.db.patch(server._id, { dirtyAt: undefined, lastSavedAt: now });
   return true;
 }
 
@@ -569,6 +654,9 @@ export type RunCommandArgs = {
    * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world.
    */
   scope?: LoadSnapshotScope;
+  /** Trusted host override after game-specific authorization; never forward a client-supplied actor. */
+  actorUserId?: string;
+  beforePersist?: (ctx: JGMutationCtx, loaded: LoadedServerSnapshot) => Promise<void>;
 };
 
 /** A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot. */
@@ -584,6 +672,7 @@ export type LoadedServerSnapshot = {
  * table writes in one transaction, which a pre-registered mutation cannot do.
  */
 export type GameServerHelpers = {
+  ensureServer: (ctx: JGMutationCtx, gameId: string) => Promise<ServerDoc>;
   loadSnapshot: (
     ctx: JGMutationCtx,
     serverId: string,
@@ -605,6 +694,7 @@ export type GameServerHelpers = {
     save?: SaveConfig,
   ) => Promise<boolean>;
   runCommand: (ctx: JGMutationCtx, args: RunCommandArgs) => Promise<RunCommandOutcome>;
+  resetPlayerProfile: (ctx: JGMutationCtx, serverId: string, userId: string) => Promise<RuntimePlayerRow>;
 };
 
 /** How many running servers one `tickActiveServers` transaction may hydrate, tick, and persist. */
@@ -616,10 +706,9 @@ export const MAX_CHUNKS_PER_QUERY = 64;
 /**
  * Build the hosted-server Convex functions for a set of game runtimes.
  *
- * **Supported world size.** One server is one Convex document holding the world row, the member
- * roster, and every member's session state, and the host rewrites that document whenever the world
- * changes. `slotsPerServer` is therefore capped at {@link JG_MAX_MEMBERS_PER_SERVER} (256) and a
- * larger value throws here, at wiring time, rather than at the write that overflows the document.
+ * Room topology keeps its roster and session map in the server document and caps capacity at
+ * {@link JG_MAX_MEMBERS_PER_SERVER}. Shared topology stores membership, capacity, and per-player
+ * session state separately; player-only commands and roster changes do not rewrite the world row.
  * World geometry that outgrows one row belongs in `jgWorldChunks`, hydrated by key
  * ({@link LoadSnapshotScope}) and read by clients through `getChunks` — not in `serverState`.
  *
@@ -631,15 +720,17 @@ export function createGameServerFunctions(options?: {
   runtimes?: GameRuntime[];
   auth?: JgAuthMode;
   slotsPerServer?: number;
+  topology?: "shared" | "rooms";
   matchmaking?: MatchmakingMode;
   maxServersPerTick?: number;
   allowedFeedActions?: readonly string[];
 }) {
   const mode: JgAuthMode = options?.auth ?? "required";
-  const hostSlotsPerServer = options?.slotsPerServer ?? 16;
-  const slotsCheck = validateSlotsPerServer(hostSlotsPerServer);
+  const shared = options?.topology === "shared" || (options?.topology === undefined && (options?.runtimes?.some(runtime => runtime.topology === "shared") ?? false));
+  const hostSlotsPerServer = shared ? Number.MAX_SAFE_INTEGER : options?.slotsPerServer ?? 16;
+  const slotsCheck = validateSlotsPerServer(hostSlotsPerServer, shared ? "shared" : "rooms");
   if (!slotsCheck.ok) throw new Error(slotsCheck.reason);
-  const matchmaking: MatchmakingMode = options?.matchmaking ?? "auto";
+  const matchmaking: MatchmakingMode = options?.matchmaking ?? (shared ? "singleton" : "auto");
   const maxServersPerTick = Math.max(1, options?.maxServersPerTick ?? DEFAULT_MAX_SERVERS_PER_TICK);
   const feedWriteGate: FeedWriteGate = createFeedWriteGate(options?.allowedFeedActions ?? []);
   const registry = buildRuntimeRegistry(options?.runtimes);
@@ -657,12 +748,10 @@ export function createGameServerFunctions(options?: {
       joinCode: v.optional(v.string()),
       externalId: v.optional(v.string()),
     },
-    returns: v.object({
-      serverId: v.id("jgGameServers"),
-      isNew: v.boolean(),
-    }),
+    returns: v.union(v.object({ ok: v.literal(true), serverId: v.id("jgGameServers"), isNew: v.boolean() }), v.object({ ok: v.literal(false), reason: v.union(v.literal("full"), v.literal("closed"), v.literal("unauthorized")) })),
     handler: async (ctx, args) => {
-      const actorUserId = await requireActor(ctx, args.externalId, mode);
+      const actorUserId = await resolveActor(ctx, args.externalId, mode);
+      if (!actorUserId) return { ok: false as const, reason: "unauthorized" as const };
 
       const now = Date.now();
       const runtime = resolveRuntime(registry, args.gameId);
@@ -673,13 +762,14 @@ export function createGameServerFunctions(options?: {
         args.serverId !== undefined ? await ctx.db.get("jgGameServers", args.serverId) : null;
 
       if (args.serverId !== undefined && !server) {
-        throw new ConvexError("Server not found");
+        return { ok: false as const, reason: "closed" as const };
       }
 
       if (server && server.gameId !== args.gameId) {
-        throw new ConvexError("Server belongs to a different game");
+        return { ok: false as const, reason: "unauthorized" as const };
       }
 
+      if (server?.status === "closed") return { ok: false as const, reason: "closed" as const };
       let mayCreate = true;
       if (!server) {
         const joinable = [];
@@ -687,7 +777,7 @@ export function createGameServerFunctions(options?: {
           const rows = await ctx.db
             .query("jgGameServers")
             .withIndex("by_game_and_status", (q) => q.eq("gameId", args.gameId).eq("status", status))
-            .collect();
+            .take(100);
           joinable.push(...rows);
         }
         // Two concurrent first-joins can both see an empty list here and both insert. Convex's OCC
@@ -699,7 +789,7 @@ export function createGameServerFunctions(options?: {
           mode: matchmaking,
           slotsPerServer,
         });
-        if (target.kind === "refuse") throw new ConvexError(target.reason);
+        if (target.kind === "refuse") return { ok: false as const, reason: "full" as const };
         server = target.kind === "join" ? target.row : null;
         mayCreate = target.kind === "create";
       }
@@ -712,6 +802,8 @@ export function createGameServerFunctions(options?: {
           modeConfig: args.modeConfig,
           visibility: args.visibility ?? "public",
           joinCode: args.joinCode,
+          topology: shared ? "shared" : "rooms",
+          memberCount: 0,
           memberUserIds: [],
           slotsPerServer,
           save,
@@ -737,36 +829,56 @@ export function createGameServerFunctions(options?: {
         server = reconciled;
       }
 
-      if (isServerFull(server.memberUserIds, server.slotsPerServer, actorUserId)) {
-        throw new ConvexError("Server is full");
+      if (!shared && isServerFull(server.memberUserIds, server.slotsPerServer, actorUserId)) {
+        return { ok: false as const, reason: "full" as const };
       }
 
       if (
         isPrivateJoinBlocked({
           visibility: server.visibility,
-          memberUserIds: server.memberUserIds,
+          memberUserIds: await hasMember(ctx, server, actorUserId) ? [actorUserId] : [],
           userId: actorUserId,
           joinCode: server.joinCode,
           suppliedCode: args.joinCode,
         })
       ) {
-        throw new ConvexError("Server is private");
+        return { ok: false as const, reason: "unauthorized" as const };
       }
 
-      const profile = await ctx.db
+      let profile = await ctx.db
         .query("jgPlayerProfiles")
         .withIndex("by_user_and_game", (q) => q.eq("userId", actorUserId).eq("gameId", args.gameId))
         .unique();
 
+      if (shared && server.topology !== "shared") {
+        for (const userId of server.memberUserIds) {
+          const member = await ctx.db.query("jgServerMembers").withIndex("by_server_and_user", q => q.eq("serverId", server!._id).eq("userId", userId)).unique();
+          if (!member) await ctx.db.insert("jgServerMembers", { serverId: server._id, userId, joinedAt: now });
+          const state = (server.sessionPlayers as Record<string, RuntimePlayerRow>)[userId];
+          if (!state) continue;
+          const stored = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", userId).eq("gameId", server!.gameId)).unique();
+          const patch = { sessionState: state.session ?? {}, sessionServerId: server._id };
+          if (stored) await ctx.db.patch(stored._id, patch);
+          else await ctx.db.insert("jgPlayerProfiles", { userId, gameId: server.gameId, playerState: state, revision: server.revision, createdAt: now, updatedAt: now, ...patch });
+        }
+        await ctx.db.patch(server._id, { topology: "shared", memberCount: server.memberUserIds.length, memberUserIds: [], sessionPlayers: {} });
+        server = (await ctx.db.get("jgGameServers", server._id))!;
+        profile = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", actorUserId).eq("gameId", args.gameId)).unique();
+      }
       const isNew = profile === null;
       const memberUserIds = withJoinedMember(server.memberUserIds, actorUserId);
 
-      await ctx.db.patch(server._id, {
-        memberUserIds,
-        status: "running",
-        updatedAt: now,
-        dirtyAt: now,
-      });
+      if (shared) {
+        const capacity = await ensureServerCapacity(ctx, server);
+        const isMember = await hasMember(ctx, server, actorUserId);
+        await ctx.db.patch(capacity._id, {
+          memberCount: capacity.memberCount + (isMember ? 0 : 1), status: "running", slotsPerServer,
+        });
+        if (!isMember) await ctx.db.insert("jgServerMembers", { serverId: server._id, userId: actorUserId, joinedAt: now });
+        if (server.status !== "running") await ctx.db.patch(server._id, { status: "running" });
+      } else {
+        await ctx.db.patch(server._id, { memberUserIds, status: "running", updatedAt: now });
+      }
 
       const refreshed = await ctx.db.get("jgGameServers", server._id);
       if (!refreshed) throw new ConvexError("Server missing after join");
@@ -780,7 +892,7 @@ export function createGameServerFunctions(options?: {
       snapshot = runtime.joinPlayer(snapshot, actorUserId, isNew, now);
       await persistServerSnapshot(ctx, refreshed, snapshot, save);
 
-      return { serverId: refreshed._id, isNew };
+      return { ok: true as const, serverId: refreshed._id, isNew };
     },
   });
 
@@ -809,27 +921,61 @@ export function createGameServerFunctions(options?: {
       const sessionPlayers = { ...(server.sessionPlayers as Record<string, unknown>) };
       delete sessionPlayers[actorUserId];
 
-      await ctx.db.patch(server._id, {
-        memberUserIds,
-        sessionPlayers,
-        updatedAt: now,
-        dirtyAt: now,
-        status: statusAfterLeave(memberUserIds.length, server.status),
-      });
+      if (server.topology === "shared") {
+        const member = await ctx.db.query("jgServerMembers").withIndex("by_server_and_user", q => q.eq("serverId", server._id).eq("userId", actorUserId)).unique();
+        if (member) {
+          const capacity = await ensureServerCapacity(ctx, server);
+          await ctx.db.delete(member._id);
+          await ctx.db.patch(capacity._id, { memberCount: Math.max(0, capacity.memberCount - 1) });
+          const profile = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", actorUserId).eq("gameId", server.gameId)).unique();
+          if (profile?.sessionServerId === server._id) await ctx.db.patch(profile._id, { sessionState: {}, sessionServerId: undefined });
+        }
+      } else {
+        await ctx.db.patch(server._id, { memberUserIds, sessionPlayers, updatedAt: now, status: statusAfterLeave(memberUserIds.length, server.status) });
+      }
 
-      const pose = await ctx.db
+      const poses = await ctx.db
         .query("jgPoses")
         .withIndex("by_server_and_user", (q) =>
           q.eq("serverId", args.serverId).eq("userId", actorUserId),
         )
-        .unique();
-      if (pose) await ctx.db.delete(pose._id);
+        .collect();
+      for (const pose of poses) await ctx.db.delete(pose._id);
 
       return null;
     },
   });
 
   const helpers: GameServerHelpers = {
+    async ensureServer(ctx, gameId) {
+      if (!shared || matchmaking !== "singleton") throw new Error("ensureServer requires a shared singleton host");
+      for (const status of ["running", "open"] as const) {
+        const existing = await ctx.db.query("jgGameServers").withIndex("by_game_and_status", q => q.eq("gameId", gameId).eq("status", status)).first();
+        if (existing) return existing;
+      }
+      const runtime = resolveRuntime(registry, gameId);
+      const now = Date.now();
+      const id = await ctx.db.insert("jgGameServers", {
+        gameId, topology: "shared", status: "running", memberUserIds: [], slotsPerServer: hostSlotsPerServer,
+        save: runtime.save, serverState: defaultServerStateForGame(gameId), sessionPlayers: {}, revision: 0,
+        tickAnchorMs: now, createdAt: now, updatedAt: now,
+      });
+      const server = (await ctx.db.get("jgGameServers", id))!;
+      await ensureServerCapacity(ctx, server);
+      return server;
+    },
+    async resetPlayerProfile(ctx, serverId, userId) {
+      const server = await requireServerMember(ctx, serverId, userId);
+      if (!server) throw new ConvexError("Not a member of this server");
+      const state = initialPlayerState(resolveRuntime(registry, server.gameId), userId);
+      const profile = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", userId).eq("gameId", server!.gameId)).unique();
+      const now = Date.now();
+      const patch = { playerState: state, sessionState: state.session, sessionServerId: server._id, revision: (profile?.revision ?? 0) + 1, updatedAt: now };
+      if (profile) await ctx.db.patch(profile._id, patch);
+      else await ctx.db.insert("jgPlayerProfiles", { userId, gameId: server.gameId, createdAt: now, ...patch });
+      if (server.topology !== "shared") await ctx.db.patch(server._id, { sessionPlayers: { ...server.sessionPlayers, [userId]: state } });
+      return state;
+    },
     async loadSnapshot(ctx, serverId, scope) {
       const server = await ctx.db.get("jgGameServers", serverId as GenericId<"jgGameServers">);
       if (!server) return null;
@@ -843,14 +989,14 @@ export function createGameServerFunctions(options?: {
       return persistServerSnapshot(ctx, server, snapshot, save ?? (server.save as SaveConfig));
     },
     async runCommand(ctx, args): Promise<RunCommandOutcome> {
-      const actorUserId = await requireActor(ctx, args.externalId, mode);
+      const actorUserId = args.actorUserId ?? await requireActor(ctx, args.externalId, mode);
 
       const serverId = args.serverId as GenericId<"jgGameServers">;
       const server = await ctx.db.get("jgGameServers", serverId);
       if (!server) {
         return { ok: false as const, reason: "Server not found" };
       }
-      if (!isServerMember(server.memberUserIds, actorUserId)) {
+      if (!(await hasMember(ctx, server, actorUserId))) {
         return { ok: false as const, reason: "Not a member of this server" };
       }
 
@@ -888,6 +1034,9 @@ export function createGameServerFunctions(options?: {
         return commit;
       }
 
+      await args.beforePersist?.(ctx, { server: latest, runtime, snapshot: result.snapshot });
+      const callbackEscape = commandScopeEscape(scope, result.snapshot.dirty, args.command);
+      if (callbackEscape !== null) throw new ConvexError(callbackEscape);
       await persistServerSnapshot(ctx, latest, result.snapshot, latest.save as SaveConfig);
       return { ok: true as const };
     },
@@ -910,7 +1059,7 @@ export function createGameServerFunctions(options?: {
       v.object({ ok: v.literal(true) }),
       v.object({ ok: v.literal(false), reason: v.string() }),
     ),
-    handler: (ctx, args) => helpers.runCommand(ctx, args),
+    handler: (ctx, args) => helpers.runCommand(ctx, { serverId: args.serverId, command: args.command, input: args.input, externalId: args.externalId }),
   });
 
   const flushSave = mutation({
@@ -925,10 +1074,7 @@ export function createGameServerFunctions(options?: {
       const server = await requireServerMember(ctx, args.serverId, actorUserId);
       if (server === null) return false;
 
-      const runtime = resolveRuntime(registry, server.gameId);
-      // Unscoped on purpose: markAllPlayersDirty writes every member.
-      const snapshot = await loadServerSnapshot(ctx, server, runtime);
-      await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
+      await ctx.db.patch(server._id, { dirtyAt: undefined, lastSavedAt: Date.now() });
       return true;
     },
   });
@@ -992,22 +1138,39 @@ export function createGameServerFunctions(options?: {
         mode: v.optional(v.string()),
         memberCount: v.number(),
         slotsPerServer: v.number(),
-        revision: v.number(),
-        updatedAt: v.number(),
       }),
       v.null(),
     ),
     handler: (ctx, args) =>
-      withMember(ctx, mode, args, null, (server) => ({
+      withMember(ctx, mode, args, null, async (server) => ({
         _id: server._id,
         gameId: server.gameId,
         status: server.status,
         mode: server.mode,
-        memberCount: server.memberUserIds.length,
+        memberCount: (await serverCapacity(ctx, server))?.memberCount ?? server.memberCount ?? server.memberUserIds.length,
         slotsPerServer: server.slotsPerServer,
-        revision: server.revision,
-        updatedAt: server.updatedAt,
       })),
+  });
+
+  const getServerCapacity = query({
+    args: { serverId: v.id("jgGameServers"), externalId: v.optional(v.string()) },
+    returns: v.union(v.object({
+      _id: v.id("jgGameServers"), gameId: v.string(),
+      status: v.union(v.literal("open"), v.literal("running"), v.literal("closed")),
+      mode: v.optional(v.string()), memberCount: v.number(), slotsPerServer: v.number(),
+    }), v.null()),
+    handler: async (ctx, args) => {
+      const actor = await resolveActor(ctx, args.externalId, mode);
+      if (!actor) return null;
+      const capacity = await ctx.db.query("jgServerCapacity").withIndex("by_server", q => q.eq("serverId", args.serverId)).unique();
+      if (capacity) {
+        const member = await ctx.db.query("jgServerMembers").withIndex("by_server_and_user", q => q.eq("serverId", args.serverId).eq("userId", actor)).unique();
+        if (!member) return null;
+        return { _id: capacity.serverId, gameId: capacity.gameId, status: capacity.status, mode: capacity.mode, memberCount: capacity.memberCount, slotsPerServer: capacity.slotsPerServer };
+      }
+      const server = await requireServerMember(ctx, args.serverId, actor);
+      return server ? { _id: server._id, gameId: server.gameId, status: server.status, mode: server.mode, memberCount: server.memberUserIds.length, slotsPerServer: server.slotsPerServer } : null;
+    },
   });
 
   /**
@@ -1167,17 +1330,17 @@ export function createGameServerFunctions(options?: {
         .withIndex("by_game_and_status", (q) => q.eq("gameId", args.gameId).eq("status", "running"))
         .take(Math.min(limit * 4, 200));
 
-      return rows
+      return Promise.all(rows
         .filter((row) => isListablePublicly(row.visibility))
         .slice(0, limit)
-        .map((row) => ({
+        .map(async (row) => ({
           _id: row._id,
           status: row.status,
-          memberCount: row.memberUserIds.length,
+          memberCount: (await serverCapacity(ctx, row))?.memberCount ?? row.memberCount ?? row.memberUserIds.length,
           slotsPerServer: row.slotsPerServer,
           mode: row.mode,
           updatedAt: row.updatedAt,
-        }));
+        })));
     },
   });
 
@@ -1201,7 +1364,7 @@ export function createGameServerFunctions(options?: {
           .take(budget);
 
         for (const server of servers) {
-          if (server.memberUserIds.length === 0) continue;
+          if (((await serverCapacity(ctx, server))?.memberCount ?? server.memberCount ?? server.memberUserIds.length) === 0) continue;
 
           const elapsedMs = now - server.tickAnchorMs;
           if (elapsedMs < JG_RUNTIME_TICK_MS) continue;
@@ -1236,10 +1399,7 @@ export function createGameServerFunctions(options?: {
       let saved = 0;
 
       for (const server of servers) {
-        const runtime = resolveRuntime(registry, server.gameId);
-        // Unscoped on purpose: markAllPlayersDirty writes every member.
-        const snapshot = await loadServerSnapshot(ctx, server, runtime);
-        await persistServerSnapshot(ctx, server, markAllPlayersDirty(snapshot), server.save as SaveConfig);
+        await ctx.db.patch(server._id, { dirtyAt: undefined, lastSavedAt: Date.now() });
         saved += 1;
       }
 
@@ -1254,6 +1414,7 @@ export function createGameServerFunctions(options?: {
     flushSave,
     getServer,
     getServerMeta,
+    getServerCapacity,
     getChunks,
     getPlayerProfile,
     getFeed,
@@ -1406,6 +1567,7 @@ export function createPresenceFunctions(options?: {
   const list = query({
     args: {
       serverId: v.string(),
+      viewerChunkKey: v.optional(v.string()),
       externalId: v.optional(v.string()),
     },
     returns: v.array(
@@ -1421,12 +1583,16 @@ export function createPresenceFunctions(options?: {
       }),
     ),
     handler: async (ctx, args) => {
-      return withMember(ctx, mode, args, [] as PresenceListRow[], async () => {
+      return withMember(ctx, mode, args, [] as PresenceListRow[], async (_server, actorUserId) => {
         const threshold = Date.now() - freshWindowMs;
-        const rows = await ctx.db
-          .query("jgPoses")
-          .withIndex("by_server", (q) => q.eq("serverId", args.serverId))
-          .collect();
+        const own = args.viewerChunkKey === undefined ? await ctx.db.query("jgPoses")
+          .withIndex("by_server_and_user", q => q.eq("serverId", args.serverId).eq("userId", actorUserId)).first() : null;
+        const center = parseChunkKey(args.viewerChunkKey ?? (own ? chunkKeyAt([own.x, own.y, own.z]) : "0,0"));
+        if (!center) return [];
+        const rows = [];
+        for (const chunkKey of chunkKeysAround([center.cx * DEFAULT_CHUNK_SIZE, 0, center.cz * DEFAULT_CHUNK_SIZE], 1)) {
+          rows.push(...await ctx.db.query("jgPoses").withIndex("by_server_and_chunk", q => q.eq("serverId", args.serverId).eq("chunkKey", chunkKey)).take(256));
+        }
 
         return rows
           .filter((row) => row.revokedAt === undefined && row.updatedAt >= threshold)
@@ -1485,6 +1651,9 @@ export function createPresenceFunctions(options?: {
             : rows.find((row) => row.sessionId === args.sessionId);
 
         const rules = rulesFor(args.kind ?? existing?.kind);
+        if (existing && now - existing.updatedAt < (rules.minIntervalMs ?? 100)) {
+          return { pose: { x: existing.x, y: existing.y, z: existing.z, rotationY: existing.rotationY, rotationPitch: existing.rotationPitch }, lastSeenAt: existing.updatedAt, displaced: existing.revokedAt !== undefined };
+        }
         const current: PresencePoseState =
           existing === undefined
             ? spawnPresenceState(
@@ -1533,13 +1702,14 @@ export function createPresenceFunctions(options?: {
         const displaced = existing?.revokedAt !== undefined;
         if (existing) {
           if (decision.changed || decision.refreshKeepAlive || displaced || Object.keys(identity).length > 0) {
-            await ctx.db.patch(existing._id, { ...pose, ...identity, updatedAt: now, revokedAt: undefined });
+            await ctx.db.patch(existing._id, { ...pose, ...identity, chunkKey: chunkKeyAt([pose.x, pose.y, pose.z]), updatedAt: now, revokedAt: undefined });
           }
         } else {
           await ctx.db.insert("jgPoses", {
             serverId: args.serverId,
             userId: actorUserId,
             ...pose,
+            chunkKey: chunkKeyAt([pose.x, pose.y, pose.z]),
             ...identity,
             updatedAt: now,
           });
@@ -1609,6 +1779,117 @@ export function createPresenceFunctions(options?: {
   return { list, sync, leave, reapIdlePresence };
 }
 
+/** One active player delivered to an online-system batch. */
+export type OnlinePlayer = { serverId: string; userId: string; homeGameId?: string };
+
+/**
+ * Scan one bounded presence page and schedule its handler and continuation in separate transactions.
+ * @capability online-player-batches Schedule bounded active-player or home-game work in separate transactions.
+ */
+export async function forEachOnlinePlayer(ctx: JGMutationCtx, options: {
+  batchSize?: number;
+  handler: FunctionReference<"mutation", "internal", { players: OnlinePlayer[]; nowMs: number }>;
+  continuation: FunctionReference<"mutation", "internal", { cursor?: string | null; nowMs?: number }>;
+  cursor?: string | null;
+  nowMs?: number;
+  freshWindowMs?: number;
+  /** Deliver one representative per home game when several agents share a simulation. */
+  groupBy?: "userId" | "homeGameId";
+}): Promise<{ scheduled: number; remaining: boolean }> {
+  const batchSize = options.batchSize ?? 25;
+  if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 256) throw new Error("batchSize must be between 1 and 256");
+  const nowMs = options.nowMs ?? Date.now();
+  const freshWindowMs = options.freshWindowMs ?? 60_000;
+  if (!Number.isFinite(nowMs) || !Number.isFinite(freshWindowMs) || freshWindowMs <= 0 || !Number.isFinite(nowMs - freshWindowMs)) throw new Error("Invalid online-player time window");
+  const page = await ctx.db.query("jgPoses").withIndex("by_updated", q => q.gte("updatedAt", nowMs - freshWindowMs))
+    .paginate({ numItems: batchSize, cursor: options.cursor ?? null });
+  const players: OnlinePlayer[] = [];
+  for (const row of page.page) {
+    if (row.revokedAt !== undefined) continue;
+    const canonical = options.groupBy === "homeGameId" && row.homeGameId
+      ? await ctx.db.query("jgPoses").withIndex("by_home_game_revoked_updated", q => q.eq("homeGameId", row.homeGameId).eq("revokedAt", undefined)).order("desc").first()
+      : await ctx.db.query("jgPoses").withIndex("by_server_user_revoked_updated", q => q.eq("serverId", row.serverId).eq("userId", row.userId).eq("revokedAt", undefined)).order("desc").first();
+    if (canonical?._id === row._id) players.push({ serverId: row.serverId, userId: row.userId, ...(row.homeGameId ? { homeGameId: row.homeGameId } : {}) });
+  }
+  if (players.length) await ctx.scheduler.runAfter(0, options.handler, { players, nowMs });
+  if (!page.isDone) await ctx.scheduler.runAfter(0, options.continuation, { cursor: page.continueCursor, nowMs });
+  return { scheduled: players.length, remaining: !page.isDone };
+}
+
+/**
+ * Consume one request in a fixed rate window; concurrent callers serialize on the indexed key.
+ * @capability host-rate-limit Enforce indexed per-key request windows inside authoritative mutations.
+ */
+export async function rateLimit(ctx: JGMutationCtx, args: { key: string; windowMs: number; max: number; nowMs?: number }): Promise<{ ok: boolean; retryAfterMs: number }> {
+  const now = args.nowMs ?? Date.now();
+  if (!args.key || args.key.length > 512 || !Number.isFinite(now) || !Number.isFinite(args.windowMs) || args.windowMs <= 0 || !Number.isFinite(now + args.windowMs) || !Number.isSafeInteger(args.max) || args.max < 1) throw new Error("Invalid rate limit policy");
+  const row = await ctx.db.query("jgRateLimits").withIndex("by_key", q => q.eq("key", args.key)).unique();
+  if (row && now < row.expiresAt && row.count >= args.max) return { ok: false, retryAfterMs: row.expiresAt - now };
+  const patch = !row || now >= row.expiresAt ? { startedAt: now, expiresAt: now + args.windowMs, count: 1 } : { startedAt: row.startedAt, expiresAt: row.expiresAt, count: row.count + 1 };
+  if (row) await ctx.db.patch(row._id, patch);
+  else await ctx.db.insert("jgRateLimits", { key: args.key, ...patch });
+  return { ok: true, retryAfterMs: 0 };
+}
+
+/**
+ * Write validated chat in a host transaction after the caller resolves its actor and world.
+ * @capability host-chat-send Validate, rate-limit and persist chat inside an authorized host mutation.
+ */
+export async function sendChatMessage(ctx: JGMutationCtx, args: { serverId: string; userId: string; body: string; channelId?: string; authorName?: string; maxBodyLength?: number; minIntervalMs?: number }): Promise<ChatSendOutcome> {
+  const maxBodyLength = args.maxBodyLength ?? 240;
+  if (!Number.isSafeInteger(maxBodyLength) || maxBodyLength < 1 || maxBodyLength > 4096) throw new Error("Invalid chat body limit");
+  if (!(args.channelId ?? "global").trim() || (args.channelId?.length ?? 0) > 256 || (args.authorName?.length ?? 0) > 160) return { ok: false, reason: "invalid_channel_or_author" };
+  const validation = validateChatMessage(args.body, { maxLength: args.maxBodyLength ?? 240 });
+  if (!validation.ok) return validation;
+  const gate = await rateLimit(ctx, { key: JSON.stringify(["chat", args.serverId, args.userId]), windowMs: args.minIntervalMs ?? 2000, max: 1 });
+  if (!gate.ok) return { ok: false, reason: "rate_limited" };
+  await ctx.db.insert("jgChatMessages", { serverId: args.serverId, channelId: args.channelId ?? "global", userId: args.userId, body: validation.text, authorName: args.authorName, at: Date.now() });
+  return { ok: true };
+}
+
+/**
+ * Bounded recent chat for a resolved server; authorization belongs to the calling query.
+ * @capability host-chat-history Read bounded channel history inside an authorized host query.
+ */
+export async function recentChatMessages(ctx: { db: Pick<JGQueryCtx["db"], "query"> }, args: { serverId: string; channelId?: string; limit?: number }) {
+  const limit = args.limit ?? 50;
+  if (!Number.isFinite(limit)) throw new Error("Invalid chat limit");
+  return ctx.db.query("jgChatMessages").withIndex("by_server_channel", q => q.eq("serverId", args.serverId).eq("channelId", args.channelId ?? "global"))
+    .order("desc").take(Math.min(100, Math.max(1, Math.floor(limit))));
+}
+
+/**
+ * Authenticated, bounded client diagnostics and bounded retention sweeps.
+ * @capability client-error-reporting Accept authenticated bounded diagnostics with cooldown and retention sweeps.
+ */
+export function createClientErrorFunctions() {
+  const reportClientError = mutation({
+    args: { message: v.string(), kind: v.optional(v.string()), stack: v.optional(v.string()), componentStack: v.optional(v.string()), url: v.optional(v.string()), pathname: v.optional(v.string()), userAgent: v.optional(v.string()), agentPrompt: v.optional(v.string()) },
+    returns: v.object({ ok: v.boolean(), reason: v.optional(v.string()) }),
+    handler: async (ctx, args) => {
+      const actor = await resolveActor(ctx, undefined, "required");
+      if (!actor) return { ok: false, reason: "unauthorized" };
+      const message = JSON.stringify(args);
+    if (new TextEncoder().encode(message).length > 4096) return { ok: false, reason: "too_long" };
+      const gate = await rateLimit(ctx, { key: `client-error:${actor}`, windowMs: 10_000, max: 1 });
+      if (!gate.ok) return { ok: false, reason: "rate_limited" };
+      await ctx.db.insert("jgClientErrors", { userId: actor, message, createdAt: Date.now() });
+      return { ok: true };
+    },
+  });
+  const pruneClientErrors = internalMutation({ args: {}, handler: async ctx => {
+    const rows = await ctx.db.query("jgClientErrors").withIndex("by_created", q => q.lt("createdAt", Date.now() - 7 * 86_400_000)).take(256);
+    for (const row of rows) await ctx.db.delete(row._id);
+    return { deleted: rows.length, remaining: rows.length === 256 };
+  } });
+  const pruneRateLimits = internalMutation({ args: {}, handler: async ctx => {
+    const rows = await ctx.db.query("jgRateLimits").withIndex("by_expires", q => q.lte("expiresAt", Date.now())).take(256);
+    for (const row of rows) await ctx.db.delete(row._id);
+    return { deleted: rows.length, remaining: rows.length === 256 };
+  } });
+  return { reportClientError, pruneClientErrors, pruneRateLimits };
+}
+
 /** @internal */
 export function createChatFunctions(options?: {
   auth?: JgAuthMode;
@@ -1617,9 +1898,11 @@ export function createChatFunctions(options?: {
   minIntervalMs?: number;
 }) {
   const mode: JgAuthMode = options?.auth ?? "required";
-  const historyLimit = options?.historyLimit ?? 100;
-  const maxBodyLength = options?.maxBodyLength ?? 500;
-  const minIntervalMs = options?.minIntervalMs ?? 300;
+  if (options?.historyLimit !== undefined && (!Number.isSafeInteger(options.historyLimit) || options.historyLimit < 1)) throw new Error("Invalid chat history limit");
+  const historyLimit = Math.min(100, options?.historyLimit ?? 50);
+  const maxBodyLength = options?.maxBodyLength ?? 240;
+  const minIntervalMs = options?.minIntervalMs ?? 2_000;
+  if (!Number.isSafeInteger(maxBodyLength) || maxBodyLength < 1 || maxBodyLength > 4096 || !Number.isFinite(minIntervalMs) || minIntervalMs <= 0) throw new Error("Invalid chat policy");
 
   const messages = query({
     args: {
@@ -1672,29 +1955,8 @@ export function createChatFunctions(options?: {
         return { ok: false, reason: "not a member of this server" };
       }
 
-      const body = args.body.trim();
-      if (body.length === 0) return { ok: false, reason: "empty message" };
-      if (body.length > maxBodyLength) return { ok: false, reason: "message too long" };
-
-      const now = Date.now();
-      const newestByActor = await ctx.db
-        .query("jgChatMessages")
-        .withIndex("by_server_channel", (q) => q.eq("serverId", args.serverId).eq("channelId", args.channelId))
-        .order("desc")
-        .filter((q) => q.eq(q.field("userId"), actorUserId))
-        .first();
-
-      if (newestByActor && now - newestByActor.at < minIntervalMs) {
-        return { ok: false, reason: "sending too fast" };
-      }
-
-      await ctx.db.insert("jgChatMessages", {
-        serverId: args.serverId,
-        channelId: args.channelId,
-        userId: actorUserId,
-        body,
-        at: now,
-      });
+      const outcome = await sendChatMessage(ctx, { serverId: args.serverId, userId: actorUserId, channelId: args.channelId, body: args.body, maxBodyLength, minIntervalMs });
+      if (!outcome.ok) return outcome.reason === "rate_limited" ? { ok: false, reason: "sending too fast" } : outcome;
 
       const recent = await ctx.db
         .query("jgChatMessages")
@@ -1710,15 +1972,20 @@ export function createChatFunctions(options?: {
     },
   });
 
-  return { messages, sendMessage };
+  const pruneChatMessages = internalMutation({ args: {}, handler: async ctx => {
+    const rows = await ctx.db.query("jgChatMessages").withIndex("by_at", q => q.lt("at", Date.now() - 86_400_000)).take(256);
+    for (const row of rows) await ctx.db.delete(row._id);
+    return { deleted: rows.length, remaining: rows.length === 256 };
+  } });
+  return { messages, recent: messages, sendMessage, pruneChatMessages };
 }
 
 export type JgCronSpec = {
   name: string;
   intervalSeconds: number;
-  functionKey: "tickActiveServers" | "flushDirtyServers" | "reapIdlePresence";
+  functionKey: "tickActiveServers" | "flushDirtyServers" | "reapIdlePresence" | "pruneChatMessages" | "pruneClientErrors" | "pruneRateLimits";
   /** Which factory's exports the function lives in, i.e. which `convex/*.ts` file to reach it through. */
-  module: "runtime" | "presence";
+  module: "runtime" | "presence" | "chat" | "clientErrors";
 };
 
 const JG_CRON_SPECS: readonly JgCronSpec[] = [
@@ -1728,6 +1995,21 @@ const JG_CRON_SPECS: readonly JgCronSpec[] = [
 ];
 
 /** @internal */
-export function jgengineCronSpecs(): readonly JgCronSpec[] {
-  return JG_CRON_SPECS;
+export function jgengineCronSpecs(options: {
+  runtimes?: readonly Pick<GameRuntime, "hasTick">[];
+  intervalSeconds?: Partial<Record<JgCronSpec["functionKey"], number>>;
+  chat?: boolean;
+  clientErrors?: boolean;
+} = {}): readonly JgCronSpec[] {
+  const specs = JG_CRON_SPECS.filter(spec => spec.functionKey !== "tickActiveServers" || options.runtimes?.some(runtime => runtime.hasTick));
+  if (options.chat) specs.push({ name: "jg chat prune", intervalSeconds: 3600, functionKey: "pruneChatMessages", module: "chat" });
+  if (options.clientErrors) {
+    specs.push({ name: "jg error prune", intervalSeconds: 3600, functionKey: "pruneClientErrors", module: "clientErrors" });
+    specs.push({ name: "jg rate limit prune", intervalSeconds: 3600, functionKey: "pruneRateLimits", module: "clientErrors" });
+  }
+  return specs.map(spec => {
+    const intervalSeconds = options.intervalSeconds?.[spec.functionKey] ?? spec.intervalSeconds;
+    if (!Number.isFinite(intervalSeconds) || intervalSeconds <= 0) throw new Error("Cron intervalSeconds must be positive");
+    return { ...spec, intervalSeconds };
+  });
 }

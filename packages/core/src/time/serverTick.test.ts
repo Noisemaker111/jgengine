@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { planServerTick, tickRunCount } from "@jgengine/core/time/serverTick";
+import { planServerTick, tickRunCount } from "./serverTick";
 
 const SYSTEMS = [
   { id: "fast", intervalMs: 5_000 },
@@ -57,4 +57,9 @@ describe("planServerTick", () => {
     expect(tickRunCount(plan, "fast")).toBe(3);
     expect(tickRunCount(plan, "slow")).toBe(0);
   });
+});
+
+test("tick plans preserve online player batching and reject unbounded batch sizes", () => {
+  expect(planServerTick([{ id: "income", intervalMs: 1000, scope: "onlinePlayers", batchSize: 25 }], {}, 0).due).toEqual([{ id: "income", runs: 1, scope: "onlinePlayers", batchSize: 25 }]);
+  expect(() => planServerTick([{ id: "income", intervalMs: 1000, batchSize: NaN }], {}, 0)).toThrow();
 });

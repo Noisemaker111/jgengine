@@ -16,6 +16,8 @@ export interface IncomingPose {
 export interface PoseSyncRules {
   /** Speed cap (units/sec) for client-authoritative movement. */
   maxSpeed: number;
+  /** Minimum time between accepted pose writes. Defaults to 100 ms. */
+  minIntervalMs?: number;
   /** Vertical offset clamp above floorY (e.g. peak jump height). */
   maxVerticalOffset: number;
   /** World-floor Y used as the base of the jump band. Defaults to 0. */
@@ -30,6 +32,7 @@ export interface PoseSyncRules {
 /** Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex). */
 export const DEFAULT_POSE_SYNC_RULES: PoseSyncRules = {
   maxSpeed: 12,
+  minIntervalMs: 100,
   maxVerticalOffset: 3,
   minElapsedSec: 0.05,
   maxElapsedSec: 0.5,
@@ -83,6 +86,16 @@ export function decidePoseSync(
   nowMs: number,
   floorY?: number,
 ): PoseSyncDecision {
+  if (current.lastSeenAtMs !== undefined && nowMs - current.lastSeenAtMs < (rules.minIntervalMs ?? 100)) {
+    return {
+      position: { ...current.position },
+      rotationY: current.rotationY,
+      rotationPitch: current.rotationPitch ?? 0,
+      appearance: current.appearance,
+      changed: false,
+      refreshKeepAlive: false,
+    };
+  }
   const rawElapsedSec = Math.max(0, (nowMs - (current.lastSeenAtMs ?? nowMs)) / 1000);
   const elapsedSec = Math.min(rules.maxElapsedSec, rawElapsedSec);
   const maxDist = rules.maxSpeed * elapsedSec;

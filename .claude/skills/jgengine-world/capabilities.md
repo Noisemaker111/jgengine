@@ -509,6 +509,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRapierBackend` (function) · `import { createRapierBackend } from "@jgengine/rapier"`
 
+## rate-window-policy — Evaluate deterministic request windows with retry timing.
+
+- `decideRateWindow` (function) · `import { decideRateWindow } from "@jgengine/core/time/rateWindow"`
+
 ## reputation — faction standing that crosses named reputation tiers
 
 - `tierForStanding` (function) · `import { tierForStanding } from "@jgengine/core/world"`
@@ -649,6 +653,30 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## terrain-raycast — pick a point on a heightfield along a camera/pointer ray
 
 - `raycastHeightField` (function) · `import { raycastHeightField } from "@jgengine/core/world/terrain"`
+
+## territory-cell-chunk — Map ownership cells to persisted world chunks.
+
+- `territoryChunkKey` (function) · `import { territoryChunkKey } from "@jgengine/core/world/territory"`
+
+## territory-footprint — Resolve exactly the ownership cells touched by a placement footprint.
+
+- `territoryFootprintCells` (function) · `import { territoryFootprintCells } from "@jgengine/core/world/territory"`
+
+## territory-owner-query — Read a loaded land cell owner for authoritative placement checks.
+
+- `territoryOwnerOf` (function) · `import { territoryOwnerOf } from "@jgengine/core/world/territory"`
+
+## territory-ownership — Claim, release and query land through host-owned snapshot storage.
+
+- `createTerritory` (function) · `import { createTerritory } from "@jgengine/core/world/territory"`
+
+## territory-placement — Purchase footprint cells atomically with object placement.
+
+- `placeWithTerritory` (function) · `import { placeWithTerritory } from "@jgengine/core/world/territory"`
+
+## territory-read-scope — Load the footprint and foreign-owner gap without scanning the world.
+
+- `territoryChunkKeys` (function) · `import { territoryChunkKeys } from "@jgengine/core/world/territory"`
 
 ## touch-controls — switch the on-screen touch control set when gameplay context changes (enter/exit vehicle, mount, build mode)
 

@@ -38,7 +38,7 @@ export interface PlacementPreview {
   footprint: Footprint;
   aabb: Aabb;
   valid: boolean;
-  reason?: "out-of-bounds" | "overlap" | "no-slot";
+  reason?: "out-of-bounds" | "overlap" | "no-slot" | "territory.blocked";
   snapMode: SnapMode;
   normal: PlacementVec3;
   /** Id of the resolved slot, when the controller is in slot mode and a slot matched. */
@@ -137,6 +137,13 @@ export function createPlacementController(config: PlacementControllerConfig): Pl
       normal: hit.normal,
       ...(slot === null ? { reason: "no-slot" as const } : { slotId: slot.id }),
     };
+    if (slot !== null) {
+      const result = validatePlacement({ center, footprint, quarterTurns }, { ...rules, snap: undefined });
+      if (result.status === "rejected") {
+        next.valid = false;
+        next.reason = result.reason;
+      }
+    }
     preview = next;
     return next;
   }

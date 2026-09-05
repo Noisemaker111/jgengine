@@ -39,6 +39,14 @@ Existing React games keep their entity store and use the focused
 - Layout and skin remain caller-controlled; shared primitives own reusable behavior, not product look.
 - SSR-visible output is hydration-stable; round computed SVG values at the boundary.
 
+## Shared-world interaction rules
+
+- Every rejected verb displays its reason on the triggering surface. Use `useServerSession(transport, gameId)` for join lifecycle. Join failure blocks play with `JoinGate` and retry; returning `{ ok: false }` without feedback is incomplete.
+- The first tutorial verb works within 60 seconds from spawn with starting inventory. Land, power, and slots are granted or purchasable in-context; tutorial locks must not hide prerequisites.
+- Placement previews display claim cost and affordability inline with `TerritoryOverlay`.
+- `ChatPanel` owns collapsed/expanded state, own-message styling, Enter focus and Escape blur; standalone hosts pass `messages`, `userId`, and `onSend` (typed `{ ok, reason }`), while context-backed games use channel props. Use native inputs so shell typing-target suspension applies.
+- Register Tailwind `@source` for consumed package files and inspect `bun run shoot <gameId> --mode ui` captures of join, chat, and placement feedback.
+
 ## Traps
 
 - Do not put environment beautification, authored-scene rendering, or world placement here.

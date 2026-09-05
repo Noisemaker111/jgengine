@@ -239,7 +239,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     }
     const worldFile = fileOf(files, "src/world.ts");
     expect(worldFile).toContain("place(");
-    expect(worldFile).toContain('mode: "terrain"');
+    expect(worldFile).toContain('mode: "flat"');
     expect(worldFile).toContain("x: Infinity");
     expect(worldFile).not.toContain("environment(");
     expect(worldFile).not.toContain("sky(");

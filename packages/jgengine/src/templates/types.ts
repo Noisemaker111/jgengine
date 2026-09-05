@@ -18,6 +18,7 @@ export interface EditorSceneDoc {
 
 export interface TemplateOptions {
   id: string;
+  shape?: "shared-world-builder";
   name: string;
   variant: TemplateVariant;
   engineVersion: string;

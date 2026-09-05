@@ -37,6 +37,8 @@ export type RuntimeInventorySlot = {
 };
 
 export type RuntimePlayerRow = {
+  territoryOwnedCount?: number;
+  ownedTerritoryChunkKeys?: string[];
   userId: string;
   inventories: Record<string, RuntimeInventorySlot[]>;
   economy: Record<string, number>;
@@ -48,6 +50,9 @@ export type RuntimePlayerRow = {
 };
 
 export type RuntimeChunkRow = {
+  /** Cell key to owner id, persisted with its spatial chunk. */
+  territory?: Record<string, string>;
+  territoryReceipts?: Record<string, { claimedAt: number; costPaid: number }>;
   chunkKey: string;
   objects: RuntimeObjectRow[];
   entities: RuntimeEntityRow[];
