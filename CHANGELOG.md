@@ -25,6 +25,8 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- `pickModel` / `resolveModelPlan` warn once in dev when a `ModelPick.fallbackModel` is not in the asset catalog (a typo or an undeclared pack), instead of silently shipping a fallback that can never take over.
+
 - Volumetric clouds no longer cut through distant buildings: the proxy dome writes per-fragment depth at the raymarch's first cloud hit, so geometry between the camera and the cloud slab occludes the clouds instead of the dome radius deciding. `STUDIO_STAGE_POST` ambient occlusion is softer (radius 1.1, intensity 1.5) so tower silhouettes stop streaking.
 
 - Separate SDK publication validation from external Games quality checks while retaining the full local and main-branch gates.

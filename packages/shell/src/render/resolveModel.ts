@@ -1,6 +1,7 @@
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { GameContextModels } from "@jgengine/core/runtime/gameContext";
+import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
 /**
  * The `ModelConfig` a resolved catalog ref renders as. Stamps `animation: "auto"` so any rigged
@@ -105,6 +106,12 @@ export type ModelPick = {
  * @internal
  */
 export function pickModel(assets: AssetCatalog, pick: ModelPick): ModelConfig | undefined {
+  if (pick.fallbackModel !== undefined && !assets.has(pick.fallbackModel)) {
+    warnOnce(
+      `pickModel:fallback:${pick.fallbackModel}`,
+      `[jgengine] fallbackModel "${pick.fallbackModel}" is not in the asset catalog, so it can never stand in for "${pick.model ?? "(none)"}" — fix the id or declare its pack in the catalog sources.`,
+    );
+  }
   for (const id of [pick.model, pick.fallbackModel]) {
     if (id === undefined) continue;
     const resolved = tryResolveCatalogModel(id, assets);
