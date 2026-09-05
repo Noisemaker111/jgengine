@@ -52,6 +52,7 @@ const CHECK_TYPES_STAGES: readonly Stage[] = [
   { name: "ensure-ready", ...bun("scripts/ensure-ready.ts"), rerun: "bun scripts/ensure-ready.ts" },
   ...[
     "check-artifacts",
+    "check-release-set",
     "check-skills",
     "check-skill-api",
     "check-orphan-ratchet",

@@ -23,6 +23,8 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- `@jgengine/navbake` joins the published lockstep set. `@jgengine/editor@0.18.1` depended on it while nothing published it, so `bun install` on the released SDK failed. `check-release-set` (in `gate`, `check-types`, and the publish workflow) now fails when a published package depends on a workspace package outside the publish list or out of dependency order, or when the publish, version-bump, and changelog package lists disagree.
+
 - `pickModel` / `resolveModelPlan` warn once in dev when a `ModelPick.fallbackModel` is not in the asset catalog (a typo or an undeclared pack), instead of silently shipping a fallback that can never take over.
 
 - Volumetric clouds no longer cut through distant buildings: the proxy dome writes per-fragment depth at the raymarch's first cloud hit, so geometry between the camera and the cloud slab occludes the clouds instead of the dome radius deciding. `STUDIO_STAGE_POST` ambient occlusion is softer (radius 1.1, intensity 1.5) so tower silhouettes stop streaking.

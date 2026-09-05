@@ -38,10 +38,11 @@ jobs:
           restore-keys: bun-${{ runner.os }}-
       - run: bun install --frozen-lockfile
       - name: Stage the lockstep changelog into each package
-        run: for p in core rapier ws sql react convex node shell editor assets github jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
+        run: for p in core rapier ws sql navbake react convex node shell editor assets github jgengine; do cp CHANGELOG.md "packages/$p/CHANGELOG.md"; done
       - name: Stage per-package skills
         run: bun run stage-skills
       - run: bun run check-artifacts
+      - run: bun run check-release-set
       - run: bun run build
       - run: bun run check-types:sdk
       - run: bun test packages
@@ -49,7 +50,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          for p in core rapier ws sql react convex node shell editor assets github jgengine; do
+          for p in core rapier ws sql navbake react convex node shell editor assets github jgengine; do
             name=$(node -p "require('./packages/$p/package.json').name")
             version=$(node -p "require('./packages/$p/package.json').version")
             case "$version" in
