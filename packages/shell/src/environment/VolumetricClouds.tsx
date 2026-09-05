@@ -17,7 +17,8 @@ export interface VolumetricCloudsProps {
  * Camera-centered proxy dome radius. Must sit inside the default camera far plane
  * (`CAMERA_FRUSTUM_DEFAULTS.far` = 300) — a bigger sphere is clipped whole and renders nothing. The
  * raymarch works in world space against the absolute cloud slab, so this size only has to cover the
- * screen (camera is always at the dome center), never bound the clouds.
+ * screen (camera is always at the dome center), never bound the clouds; each fragment writes its own
+ * depth at the first cloud hit, so the dome's radius never decides what occludes the clouds.
  */
 const INSIDE_FRUSTUM_DOME_RADIUS = 240;
 
@@ -57,7 +58,17 @@ uniform float uScale;
 uniform float uSpeed;
 uniform float uTime;
 uniform float uSeedOffset;
+uniform mat4 uProjection;
+uniform mat4 uView;
 varying vec3 vJgCloudWorldPos;
+
+// Depth-buffer value of a world point, so the proxy dome tests against the scene at the cloud's
+// own distance instead of the dome's: a tower in front of the slab entry then occludes the cloud.
+float jgCloudDepthAt(vec3 worldPos){
+  vec4 clip = uProjection * uView * vec4(worldPos, 1.0);
+  float ndc = clip.z / max(clip.w, 1e-5);
+  return clamp(ndc * 0.5 + 0.5, 0.0, 0.999999);
+}
 
 float jgCloudHash13(vec3 p){
   p = fract(p * 0.1031 + uSeedOffset * 0.0007);
@@ -142,11 +153,13 @@ void main() {
   vec3 color = vec3(0.0);
   float sunDot = max(dot(rayDir, normalize(uSunDirection)), 0.0);
   float silver = pow(sunDot, 5.0) * uSunScatter;
+  float tHit = -1.0;
 
   for (int i = 0; i < STEPS; i++) {
     vec3 pos = rayOrigin + rayDir * t;
     float dens = jgCloudDensity(pos);
     if (dens > 0.002) {
+      if (tHit < 0.0) tHit = t;
       float light = jgCloudLight(pos);
       float powder = 1.0 - exp(-dens * 3.0);
       vec3 lit = mix(uColor, uSunColor, light) * (0.55 + 0.45 * powder) + uSunColor * silver * 0.5;
@@ -160,7 +173,8 @@ void main() {
   }
 
   float alpha = (1.0 - transmittance) * smoothstep(0.015, 0.22, rayDir.y);
-  if (alpha < 0.01) discard;
+  if (alpha < 0.01 || tHit < 0.0) discard;
+  gl_FragDepthEXT = jgCloudDepthAt(rayOrigin + rayDir * tHit);
   gl_FragColor = vec4(color, alpha);
 }
 `;
@@ -194,6 +208,8 @@ export function VolumetricClouds({ rules, sunDirection }: VolumetricCloudsProps)
         uSpeed: { value: rules.speed },
         uTime: { value: 0 },
         uSeedOffset: { value: hashSeed(rules.seed) },
+        uProjection: { value: new THREE.Matrix4() },
+        uView: { value: new THREE.Matrix4() },
       },
       vertexShader: CLOUD_VERTEX_SHADER,
       fragmentShader: CLOUD_FRAGMENT_SHADER,
@@ -213,6 +229,8 @@ export function VolumetricClouds({ rules, sunDirection }: VolumetricCloudsProps)
     }
     const uniforms = material.uniforms;
     (uniforms.uCameraPos!.value as THREE.Vector3).copy(state.camera.position);
+    (uniforms.uProjection!.value as THREE.Matrix4).copy(state.camera.projectionMatrix);
+    (uniforms.uView!.value as THREE.Matrix4).copy(state.camera.matrixWorldInverse);
     uniforms.uTime!.value = timeRef.current;
   });
 

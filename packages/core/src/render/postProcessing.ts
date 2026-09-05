@@ -101,7 +101,7 @@ export const STUDIO_STAGE_POST: PostProcessingConfig = {
   toneMapping: "aces",
   exposure: 1.05,
   bloom: { strength: 0.28, radius: 0.6, threshold: 0.8 },
-  ao: { radius: 1.4, intensity: 2.2, distanceFalloff: 3, blend: 1 },
+  ao: { radius: 1.1, intensity: 1.5, distanceFalloff: 3, blend: 1 },
   grade: {
     lift: [0.008, 0.008, 0.014],
     gain: [1.05, 1.02, 0.98],
