@@ -43,13 +43,15 @@ describe("loadGameCatalogs", () => {
     expect(loaded.catalogs).toEqual([]);
   });
 
-  test("tower-guard editorCatalogs export decodes with tower schema entries", async () => {
-    const loaded = await loadGameCatalogs("tower-guard");
+  test("loads an exported catalog factory with its schema and entries", async () => {
+    const loaded = await loadGameCatalogs("../packages/editor/testFixtures/catalog-game");
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) throw new Error(`expected load success: ${loaded.errors.map((e) => e.message).join("; ")}`);
-    expect(loaded.catalogs.some((catalog) => catalog.id === "towers")).toBe(true);
-    const towers = loaded.catalogs.find((catalog) => catalog.id === "towers")!;
-    expect(towers.entries.length).toBeGreaterThan(0);
-    expect(towers.schema.fields.some((field) => field.key === "damage")).toBe(true);
+    expect(loaded.catalogs).toEqual([{
+      id: "towers",
+      label: "Towers",
+      schema: { fields: [{ key: "damage", type: "number", default: 1 }] },
+      entries: [{ id: "arrow", label: "Arrow tower", meta: { damage: 8 } }],
+    }]);
   });
 });

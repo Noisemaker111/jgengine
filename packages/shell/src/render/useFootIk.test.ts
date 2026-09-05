@@ -20,7 +20,10 @@ describe("applyFootIk", () => {
     expect(model.url).toContain("kaykit-adventurers");
   });
 
-  test("solves a configured foot chain against the scene raycast", () => {
+  test.each([
+    { name: "reaches a reachable terrain target", target: [0.15, 0.2, 0.1] as const },
+    { name: "clamps an unreachable terrain target to the leg length", target: [0.15, -0.2, 0] as const },
+  ])("$name without stretching either bone", ({ target }) => {
     const scene = new THREE.Object3D();
     const root = new THREE.Object3D();
     root.name = "thigh";
@@ -49,7 +52,7 @@ describe("applyFootIk", () => {
           damageEligible: false,
           blocks: true,
           distance: 0.75,
-          point: [0.15, -0.2, 0],
+          point: target,
           normal: [0.45, 0.89, 0],
         };
       },
@@ -58,7 +61,18 @@ describe("applyFootIk", () => {
 
     expect(grounded).toBe(true);
     expect(input).toMatchObject({ direction: [0, -1, 0], maxDistance: 2, filter: { terrain: true } });
-    expect(tip.getWorldPosition(new THREE.Vector3()).y).toBeCloseTo(-0.2, 3);
+    const rootPosition = root.getWorldPosition(new THREE.Vector3());
+    const midPosition = mid.getWorldPosition(new THREE.Vector3());
+    const tipPosition = tip.getWorldPosition(new THREE.Vector3());
+    const targetPosition = new THREE.Vector3(...target);
+    const direction = targetPosition.clone().sub(rootPosition);
+    const expectedTip = rootPosition.clone().add(direction.clone().normalize().multiplyScalar(Math.min(1, direction.length())));
+    expect(tipPosition.distanceTo(expectedTip)).toBeLessThan(1e-6);
+    expect(rootPosition.toArray()).toEqual([0, 1, 0]);
+    expect(rootPosition.distanceTo(midPosition)).toBeCloseTo(0.5, 6);
+    expect(midPosition.distanceTo(tipPosition)).toBeCloseTo(0.5, 6);
+    expect(mid.position.toArray()).toEqual([0, -0.5, 0]);
+    expect(tip.position.toArray()).toEqual([0, -0.5, 0]);
   });
 
   test("does not mutate a rig when the ray misses", () => {

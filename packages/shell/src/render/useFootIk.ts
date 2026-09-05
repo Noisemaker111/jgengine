@@ -70,7 +70,9 @@ export function applyFootIk(
     aimSegment(root, rootPosition, midPosition, output.mid, weight);
     root.updateMatrixWorld(true);
     const solvedMid = mid.getWorldPosition(new THREE.Vector3());
-    aimSegment(mid, solvedMid, tipPosition, output.tip, weight);
+    // Rotating the root also moves the tip; aim the shin from that updated pose.
+    const currentTip = tip.getWorldPosition(new THREE.Vector3());
+    aimSegment(mid, solvedMid, currentTip, output.tip, weight);
   }
   if (config.lookAt !== undefined && cameraTarget !== undefined) {
     const bone = scene.getObjectByName(config.lookAt.bone);
