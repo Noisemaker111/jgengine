@@ -23,6 +23,7 @@ export const GAME_SKELETON_OPTIONAL_FILES = [
   "world.ts",
   "preview.tsx",
   "scene-ownership.json",
+  "art-direction.md",
   "editorLayers.ts",
   "editorLayers.test.ts",
   "editorCatalogs.ts",

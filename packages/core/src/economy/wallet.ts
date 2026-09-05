@@ -1,3 +1,5 @@
+import { fromMinorUnits, toMinorUnits, type CurrencyDefinition } from "./currency";
+
 export interface WalletState {
   balances: Readonly<Record<string, number>>;
 }
@@ -36,16 +38,18 @@ function assertValidAmount(amount: number): void {
   }
 }
 
-export function balance(state: WalletState, currency: string): number {
-  return state.balances[currency] ?? 0;
+export function balance(state: WalletState, currency: string | CurrencyDefinition): number {
+  return state.balances[typeof currency === "string" ? currency : currency.id] ?? 0;
 }
 
-export function grant(state: WalletState, currency: string, amount: number): WalletState {
+export function grant(state: WalletState, currency: string | CurrencyDefinition, amount: number): WalletState {
   assertValidAmount(amount);
   return {
     balances: {
       ...state.balances,
-      [currency]: balance(state, currency) + amount,
+      [typeof currency === "string" ? currency : currency.id]: typeof currency === "string"
+        ? balance(state, currency) + amount
+        : fromMinorUnits(currency, toMinorUnits(currency, balance(state, currency)) + toMinorUnits(currency, amount)),
     },
   };
 }
@@ -64,13 +68,14 @@ function withinOverdraft(nextBalance: number, overdraft: Overdraft | undefined):
  */
 export function charge(
   state: WalletState,
-  currency: string,
+  currency: string | CurrencyDefinition,
   amount: number,
   options?: ChargeOptions,
 ): ChargeResult {
   assertValidAmount(amount);
   const current = balance(state, currency);
-  const next = current - amount;
+  const next = typeof currency === "string" ? current - amount
+    : fromMinorUnits(currency, toMinorUnits(currency, current) - toMinorUnits(currency, amount));
   if (!withinOverdraft(next, options?.overdraft)) {
     return { status: "rejected", reason: "insufficient-funds" };
   }
@@ -79,14 +84,14 @@ export function charge(
     state: {
       balances: {
         ...state.balances,
-        [currency]: next,
+        [typeof currency === "string" ? currency : currency.id]: next,
       },
     },
   };
 }
 
 /** True once `balance(state, currency)` has gone negative under an overdraft-enabled charge. */
-export function isOverdrawn(state: WalletState, currency: string): boolean {
+export function isOverdrawn(state: WalletState, currency: string | CurrencyDefinition): boolean {
   return balance(state, currency) < 0;
 }
 

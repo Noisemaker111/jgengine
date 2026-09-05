@@ -395,7 +395,7 @@ test("loopback: unknown serverId on join fails closed", async () => {
     const alice = stack.connect("alice");
     await expect(
       alice.transport.joinServer({ gameId: "test-game", serverId: "srv-does-not-exist" }),
-    ).rejects.toThrow("Server not found");
+    ).resolves.toEqual({ ok: false, reason: "closed" });
   } finally {
     await stack.shutdown();
   }
@@ -548,7 +548,7 @@ test("security: anonymous hello rejected without allowAnonymous or authenticate"
   const router = createHostRouter({ host });
   const backend = createWsBackend({ userId: "mallory", pipe: loopbackPipe(router) });
   try {
-    await expect(backend.transport.joinServer({ gameId: "test-game" })).rejects.toThrow();
+    await expect(backend.transport.joinServer({ gameId: "test-game" })).resolves.toEqual({ ok: false, reason: "closed" });
   } finally {
     backend.close();
     router.close();

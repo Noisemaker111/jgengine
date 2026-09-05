@@ -1,4 +1,4 @@
-import { useEffect, type Dispatch, type SetStateAction } from "react";
+import { useEffect, useState, useCallback, type Dispatch, type SetStateAction } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
@@ -16,20 +16,34 @@ export function useShellMultiplayerSync(
   serverIdRef: { current: string | null },
   setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>,
   authoritativeFrameRef?: { current: AuthoritativeFrameHandler | null },
-): void {
+): { status: "joining" | "joined" | "failed"; failureReason: string | null; retry: () => void } {
+  const [status, setStatus] = useState<"joining" | "joined" | "failed">("joining");
+  const [failureReason, setFailureReason] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => setAttempt((value) => value + 1), []);
   useEffect(() => {
     if (ctx === null || multiplayer === null) return;
+    setStatus("joining");
+    setFailureReason(null);
     let disposed = false;
     const cleanups: (() => void)[] = [];
 
     void multiplayer.backend.transport
       .joinServer({ gameId: multiplayer.gameId })
       .then((joined) => {
+        if (!joined.ok) {
+          if (!disposed) {
+            setFailureReason(joined.reason);
+            setStatus("failed");
+          }
+          return;
+        }
         if (disposed) {
           void multiplayer.backend.transport.leaveServer({ serverId: joined.serverId });
           return;
         }
         serverIdRef.current = joined.serverId;
+        setStatus("joined");
 
         if (isServerAuthoritative(playable.game.multiplayer) && multiplayer.backend.feeds !== undefined) {
           cleanups.push(
@@ -112,7 +126,12 @@ export function useShellMultiplayerSync(
           }
         }
       })
-      .catch(() => undefined);
+      .catch((error: unknown) => {
+        if (!disposed) {
+          setFailureReason(error instanceof Error ? error.message : "Connection failed");
+          setStatus("failed");
+        }
+      });
 
     return () => {
       disposed = true;
@@ -124,5 +143,6 @@ export function useShellMultiplayerSync(
         void multiplayer.backend.transport.leaveServer({ serverId }).catch(() => undefined);
       }
     };
-  }, [ctx, multiplayer, playable]);
+  }, [ctx, multiplayer, playable, attempt]);
+  return { status: multiplayer === null ? "joined" : status, failureReason, retry };
 }

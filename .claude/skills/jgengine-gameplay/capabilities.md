@@ -65,6 +65,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `breedOffspring` (function) · `import { breedOffspring } from "@jgengine/core/game/breeding"`
 
+## currency-major-units — convert safe minor-unit integers into currency amounts
+
+- `fromMinorUnits` (function) · `import { fromMinorUnits } from "@jgengine/core/economy/currency"`
+
+## currency-minor-units — round decimal currency into safe integer minor units
+
+- `toMinorUnits` (function) · `import { toMinorUnits } from "@jgengine/core/economy/currency"`
+
+## currency-precision-format — display a currency using its declared decimal precision
+
+- `formatCurrency` (function) · `import { formatCurrency } from "@jgengine/core/economy/currency"`
+
 ## decay-meter — survival meters that drain/refill over game time (hunger, water, oxygen, stamina)
 
 - `createDecayMeterSet` (function) · `import { createDecayMeterSet } from "@jgengine/core/gameplay"`

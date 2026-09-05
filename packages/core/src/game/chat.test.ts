@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createChat, createChatRateLimiter, whisperChannelId, type ChatDeps } from "./chat";
+import { validateChatMessage, createChat, createChatRateLimiter, whisperChannelId, type ChatDeps } from "./chat";
 import { createGameEvents } from "./events";
 
 function sentMessage(result: ReturnType<ReturnType<typeof createChat>["send"]>) {
@@ -78,7 +78,7 @@ describe("chat channels", () => {
 
   test("register adds custom channels with their own limits", () => {
     const { chat } = createTestChat();
-    chat.register({ id: "trade", kind: "global", historyLimit: 2 });
+    chat.register({ id: "trade", kind: "global", historyLimit: 2, rateLimit: { count: 3, perMs: 2000 } });
     chat.send("alice", "trade", "one");
     chat.send("alice", "trade", "two");
     chat.send("alice", "trade", "three");
@@ -157,4 +157,19 @@ describe("createChatRateLimiter", () => {
     expect(limiter.allow("b", 20)).toBe(true);
     expect(limiter.allow("a", 111)).toBe(true);
   });
+});
+
+test("shared chat strips controls, rejects untrusted bodies and enforces the default window after restore", () => {
+  expect(validateChatMessage("  hi\u0000 there\n ")).toEqual({ ok: true, text: "hi there" });
+  for (const value of [null, 12, "\u0000", "x".repeat(241)]) expect(validateChatMessage(value).ok).toBe(false);
+  const { chat, tick } = createTestChat();
+  expect("message" in chat.send("alice", "hello")).toBe(true);
+  const saved = JSON.parse(JSON.stringify(chat.snapshot()));
+  chat.hydrate(saved);
+  expect(chat.send("alice", "again")).toEqual({ reason: "rate limited" });
+  expect("message" in chat.send("bob", "hi")).toBe(true);
+  tick(2000);
+  expect("message" in chat.send("alice", "again")).toBe(true);
+  expect(chat.recent({ limit: 1 }).map(m => m.body)).toEqual(["again"]);
+  expect(chat.recent({ limit: 0 })).toEqual([]);
 });

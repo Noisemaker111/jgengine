@@ -3,6 +3,7 @@ import { anyApi } from "convex/server";
 import type { DefaultFunctionArgs, FunctionReference } from "convex/server";
 import type {
   GameRuntimeFeeds,
+  JoinServerOutcome,
   GameRuntimePlayerView,
   GameRuntimeServerView,
   GameRuntimeTransport,
@@ -12,7 +13,11 @@ import type {
 import type { ChatMessage } from "@jgengine/core/game/chat";
 import type { ChatSendOutcome, ChatSync } from "@jgengine/core/multiplayer/chatContract";
 import { createPoseSyncGate, type PoseSyncTuning } from "@jgengine/core/multiplayer/poseSyncGate";
+import { chunkKeyAt } from "@jgengine/core/runtime/worldChunks";
 import type { LeaderboardScope } from "@jgengine/core/game/leaderboard";
+
+/** Structural client seam avoids requiring the engine and game to share a class instance type. */
+export type ConvexGameClient = Pick<ConvexReactClient, "mutation" | "watchQuery">;
 
 export type ConvexGameTransportConfig = {
   gameId: string;
@@ -32,7 +37,7 @@ export type ConvexGameApi = {
         joinCode?: string;
         externalId?: string;
       },
-      { serverId: string; isNew: boolean }
+      JoinServerOutcome
     >;
     leaveServer: FunctionReference<"mutation", "public", { serverId: string; externalId?: string }, null>;
     runCommand: FunctionReference<
@@ -60,7 +65,7 @@ export type ConvexGameApi = {
     list: FunctionReference<
       "query",
       "public",
-      { serverId: string; externalId?: string },
+      { serverId: string; externalId?: string; viewerChunkKey?: string },
       PresencePoseRow[]
     >;
     sync: FunctionReference<
@@ -122,10 +127,18 @@ export function defaultConvexGameApi(): ConvexGameApi {
 }
 
 export function createConvexGameTransport(
-  client: ConvexReactClient,
-  api: ConvexGameApi,
+  client: ConvexGameClient,
+  api: { runtime: Pick<ConvexGameApi["runtime"], "joinServer" | "leaveServer" | "runCommand"> },
   config: ConvexGameTransportConfig,
 ): GameRuntimeTransport {
+  const joinedServers = new Set<string>();
+  const onPageHide = () => {
+    for (const serverId of joinedServers) {
+      void client.mutation(api.runtime.leaveServer, { serverId, externalId: config.userId }).catch(() => undefined);
+    }
+    joinedServers.clear();
+    globalThis.removeEventListener?.("pagehide", onPageHide);
+  };
   return {
     async joinServer(args) {
       const result = await client.mutation(api.runtime.joinServer, {
@@ -133,11 +146,17 @@ export function createConvexGameTransport(
         serverId: args.serverId,
         externalId: config.userId,
       });
+      if (result.ok) {
+        joinedServers.add(result.serverId);
+        globalThis.addEventListener?.("pagehide", onPageHide);
+      }
       return result;
     },
 
     async leaveServer(args) {
       await client.mutation(api.runtime.leaveServer, { ...args, externalId: config.userId });
+      joinedServers.delete(args.serverId);
+      if (joinedServers.size === 0) globalThis.removeEventListener?.("pagehide", onPageHide);
     },
 
     async runCommand(args) {
@@ -163,7 +182,7 @@ type PlayerProfileQueryResult = {
 } | null;
 
 export function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TView>(
-  client: ConvexReactClient,
+  client: ConvexGameClient,
   query: FunctionReference<"query", "public", TArgs, TResult>,
   args: TArgs,
   toView: (result: TResult) => TView,
@@ -180,7 +199,7 @@ export function watchConvexQuery<TArgs extends DefaultFunctionArgs, TResult, TVi
 }
 
 export function createConvexGameFeeds(
-  client: ConvexReactClient,
+  client: ConvexGameClient,
   api: ConvexGameApi,
   config: ConvexGameTransportConfig,
 ): GameRuntimeFeeds {
@@ -247,7 +266,7 @@ export function createConvexGameFeeds(
 }
 
 const DEFAULT_CONVEX_POSE_TUNING: PoseSyncTuning = {
-  minIntervalMs: 200,
+  minIntervalMs: 100,
   heartbeatMs: 5_000,
   positionEpsilon: 0.01,
   verticalEpsilon: 0.01,
@@ -258,26 +277,58 @@ const DEFAULT_CONVEX_POSE_TUNING: PoseSyncTuning = {
 const KEEP_ALIVE_MS = 10_000;
 
 export function createConvexPresenceSync(
-  client: ConvexReactClient,
+  client: ConvexGameClient,
   api: ConvexGameApi,
   config: ConvexGameTransportConfig,
   tuning?: PoseSyncTuning,
 ): PresenceSync {
-  const gate = createPoseSyncGate(tuning ?? DEFAULT_CONVEX_POSE_TUNING);
+  const gates = new Map<string, ReturnType<typeof createPoseSyncGate>>();
+  const viewerChunks = new Map<string, string>();
+  const refreshers = new Map<string, Set<() => void>>();
   const lastSentAt = new Map<string, number>();
   return {
     subscribe(serverId, onChange) {
-      return watchConvexQuery(
-        client,
-        api.presence.list,
-        { serverId, externalId: config.userId },
-        (rows) => rows,
-        onChange,
-      );
+      let unsubscribe: (() => void) | undefined;
+      const refresh = () => {
+        unsubscribe?.();
+        const viewerChunkKey = viewerChunks.get(serverId);
+        unsubscribe = watchConvexQuery(
+          client, api.presence.list,
+          { serverId, externalId: config.userId, ...(viewerChunkKey === undefined ? {} : { viewerChunkKey }) },
+          (rows) => rows, onChange,
+        );
+      };
+      let listeners = refreshers.get(serverId);
+      if (listeners === undefined) {
+        listeners = new Set();
+        refreshers.set(serverId, listeners);
+      }
+      listeners.add(refresh);
+      refresh();
+      return () => {
+        unsubscribe?.();
+        listeners.delete(refresh);
+        if (listeners.size === 0) {
+          refreshers.delete(serverId);
+          viewerChunks.delete(serverId);
+          gates.delete(serverId);
+          lastSentAt.delete(serverId);
+        }
+      };
     },
 
     syncPose(serverId, pose) {
       const now = Date.now();
+      const viewerChunkKey = chunkKeyAt([pose.x, pose.y, pose.z]);
+      if (viewerChunks.get(serverId) !== viewerChunkKey) {
+        viewerChunks.set(serverId, viewerChunkKey);
+        for (const refresh of refreshers.get(serverId) ?? []) refresh();
+      }
+      let gate = gates.get(serverId);
+      if (gate === undefined) {
+        gate = createPoseSyncGate(tuning ?? DEFAULT_CONVEX_POSE_TUNING);
+        gates.set(serverId, gate);
+      }
       const moved = gate.evaluate(pose, now);
       // The gate drops an unchanged pose, so a standing player would otherwise send nothing at all
       // and the reaper would eventually collect a live session. Keep the row alive without a write.
@@ -296,7 +347,7 @@ export function createConvexPresenceSync(
 }
 
 export function createConvexChatSync(
-  client: ConvexReactClient,
+  client: ConvexGameClient,
   api: ConvexGameApi,
   config: ConvexGameTransportConfig,
   serverId: string,
@@ -325,7 +376,7 @@ export function createConvexChatSync(
 }
 
 export function createConvexFeedWrites(
-  client: ConvexReactClient,
+  client: ConvexGameClient,
   api: ConvexGameApi,
   config: ConvexGameTransportConfig,
 ) {

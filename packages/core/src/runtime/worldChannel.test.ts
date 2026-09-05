@@ -108,6 +108,9 @@ describe("world channel (multi-client host↔client over an in-process loopback)
     linkA.join(true);
     const frame = { held: ["moveForward", "sprint"], pointer: { x: 0.5, y: -0.25, active: true } };
     linkA.input(frame);
+    expect(session.runner().heldInput("alice")).toEqual(frame);
+    expect(session.runner().context().game.players?.input("alice")).toBeNull();
+    session.tick(1 / 60);
 
     expect(session.runner().context().game.players?.input("alice")).toEqual(frame);
     expect(session.runner().heldInput("alice")).toEqual(frame);

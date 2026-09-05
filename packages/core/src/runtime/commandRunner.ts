@@ -12,14 +12,17 @@ export type CommandScope = {
   chunkKeys?: readonly string[];
 };
 
+/** Declarative read scope; actor is resolved before host hydration. */
+export type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" };
+
 export type CommandDef<TInput = unknown> = {
   /**
    * What this command reads and writes, derived from its own input. A host that hydrates through a
    * scope loads only this slice instead of the whole world, and refuses the command if `apply` then
    * dirties a player or chunk the scope did not name — writing an unhydrated chunk would overwrite
-   * the stored one with a blank. Omit it to keep the whole-world default.
+   * the stored one with a blank. Omit it to load only the actor and no chunks; return `{}` to request the whole world.
    */
-  scope?: (input: TInput, actorUserId: string) => CommandScope;
+  scope?: (input: TInput, actorUserId: string) => CommandScopeDefinition;
   /** `nowMs` is the host wall clock, in ms — read it rather than a `now` the client put in `input`. */
   validate: (
     snapshot: import("./snapshot").GameRuntimeSnapshot,
@@ -36,7 +39,7 @@ export type CommandDef<TInput = unknown> = {
 };
 
 /**
- * The scope a command declares for this input, or `undefined` when it declares none (hydrate everything).
+ * The resolved scope, defaulting to the actor and no chunks.
  * Evaluate it before hydration: the actor and the command's own input are both known by then.
  * @internal
  */
@@ -45,8 +48,10 @@ export function resolveCommandScope<TInput>(
   commandName: string,
   input: TInput,
   actorUserId: string,
-): CommandScope | undefined {
-  return commands[commandName]?.scope?.(input, actorUserId);
+): CommandScope {
+  const scope = commands[commandName]?.scope?.(input, actorUserId) ?? { players: "actor", chunkKeys: [] };
+  const { players, ...rest } = scope;
+  return players === undefined ? rest : { ...rest, players: players === "actor" ? [actorUserId] : players };
 }
 
 /**

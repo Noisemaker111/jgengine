@@ -45,3 +45,13 @@ A character kit-bashed from primitives/`ModelPart`s (no skeleton, no clips) anim
 - Do not fuse save semantics with a specific cloud/backend adapter.
 - Targeting, damage, effects, abilities, and loot resolution route to `jgengine-combat`.
 - World movement/input/interaction route to `jgengine-world`; HUD rendering routes to `jgengine-ui`.
+
+## Persistent economies and input
+
+- Declare `CurrencyDefinition.decimals` for per-second income. Use the definition in wallet and `ctx.game.economy` operations; public amounts are major units, arithmetic rounds in integer minor units at each write. Accrue sub-minor income over elapsed time before writing, or choose finer precision.
+- `formatCurrency(definition, value)` shares that precision with display. Currency strings keep the existing wallet behavior; pass the definition to enforce precision.
+- Anchor elapsed production and decay to game creation or a persisted last-run time, never a fixed epoch. `accrueSince(anchorMs, nowMs, { capMs })` returns elapsed time and the next anchor; persist both earnings and that anchor together.
+- Validate purchase counts with `readQuantity(value, { min, max })`; NaN, Infinity, fractions, strings, and out-of-range values reject without coercion.
+- Reset a profile with `initialPlayerState(runtime, userId)` from the same `onNewPlayer` hook used at join; insolvency never deletes a world.
+- `ctx.game.chat.send(userId, text)` targets global chat; `recent({ limit })` returns at most 100 messages. The default is 240 characters and one message per author per channel every two seconds. Rejected messages need visible UI feedback.
+- Hosts reuse `validateChatMessage` and `decideRateWindow`, storing the rate window transactionally with each accepted operation. Preserve chat rate windows when saving/restoring chat state.

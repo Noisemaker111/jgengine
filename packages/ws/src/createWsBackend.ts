@@ -350,6 +350,10 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         },
         onMessage: handleMessage,
         onClose: () => {
+          if (pingTimer !== null) {
+            cancel(pingTimer);
+            pingTimer = null;
+          }
           open = false;
           pipe = null;
           ready = null;
@@ -403,8 +407,13 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
     });
   };
 
+  const onPageHide = () => {
+    for (const serverId of joinedGames.keys()) void transport.leaveServer({ serverId }).catch(() => undefined);
+  };
+  globalThis.addEventListener?.("pagehide", onPageHide);
   const transport: GameRuntimeTransport = {
     async joinServer(args) {
+      try {
       const result = await request((id) => ({
         v: 1,
         t: "join",
@@ -417,7 +426,14 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       joinedGames.set(joined.serverId, args.gameId);
       joinedRoles.set(joined.serverId, args.role ?? "player");
       if (joined.resumeTicket !== undefined) resumeTickets.set(joined.serverId, joined.resumeTicket);
-      return joined;
+      return { ...joined, ok: true as const };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (/full/i.test(message)) return { ok: false, reason: "full" };
+        if (/closed|not found|does not exist/i.test(message)) return { ok: false, reason: "closed" };
+        if (/unauthorized|authenticat|forbidden/i.test(message)) return { ok: false, reason: "unauthorized" };
+        throw error;
+      }
     },
     async leaveServer(args) {
       poseGates.delete(args.serverId);
@@ -630,6 +646,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       return joined;
     },
     close: () => {
+      globalThis.removeEventListener?.("pagehide", onPageHide);
       closed = true;
       wantConnection = false;
       if (pingTimer !== null) {

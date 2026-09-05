@@ -57,9 +57,13 @@ export function makeDb() {
 
   const rowsFor = (table: string): Doc[] => tables.get(table) ?? [];
 
-  function builder(table: string, constraints: Constraint[], desc: boolean) {
+  function builder(table: string, constraints: Constraint[], desc: boolean, indexFields: string[] = []) {
     const resolve = (): Doc[] => {
       const out = rowsFor(table).filter((doc) => matches(doc, constraints));
+      out.sort((a, b) => {
+        for (const field of indexFields) { const order = cmp(a[field], b[field]); if (order) return order; }
+        return cmp(a._creationTime, b._creationTime);
+      });
       return desc ? out.slice().reverse() : out;
     };
     const record = (docs: Doc[]) => {
@@ -67,13 +71,19 @@ export function makeDb() {
       return docs;
     };
     return {
-      withIndex: (_name: string, fn: (q: ReturnType<typeof rangeBuilder>) => unknown) => {
+      withIndex: (name: string, fn: (q: ReturnType<typeof rangeBuilder>) => unknown) => {
         const next: Constraint[] = [];
         fn(rangeBuilder(next));
-        return builder(table, [...constraints, ...next], desc);
+        const fields: Record<string, string[]> = { by_home_game_revoked_updated: ["homeGameId", "revokedAt", "updatedAt"], by_updated: ["updatedAt"], by_created: ["createdAt"], by_at: ["at"], by_expires: ["expiresAt"], by_server_channel: ["serverId", "channelId", "at"], by_server_user_revoked_updated: ["serverId", "userId", "revokedAt", "updatedAt"] };
+        return builder(table, [...constraints, ...next], desc, fields[name] ?? []);
       },
-      order: (dir: "asc" | "desc") => builder(table, constraints, dir === "desc"),
-      filter: () => builder(table, constraints, desc),
+      order: (dir: "asc" | "desc") => builder(table, constraints, dir === "desc", indexFields),
+      filter: () => builder(table, constraints, desc, indexFields),
+      paginate: async ({ numItems, cursor }: { numItems: number; cursor: string | null }) => {
+        const offset = cursor === null ? 0 : Number(cursor), docs = resolve();
+        const page = record(docs.slice(offset, offset + numItems));
+        return { page, isDone: offset + page.length >= docs.length, continueCursor: String(offset + page.length) };
+      },
       collect: async () => record(resolve()),
       take: async (n: number) => record(resolve().slice(0, n)),
       first: async () => record(resolve().slice(0, 1))[0] ?? null,

@@ -7,6 +7,7 @@ import type {
   PresenceActions,
   PresenceFeeds,
   PresenceSession,
+  PresenceResidentRow,
   PresenceTransport,
 } from "@jgengine/core/multiplayer/presenceContract";
 
@@ -24,13 +25,6 @@ export interface ConvexPresenceFunctions {
   tick: FunctionReference<"mutation">;
 }
 
-interface RawPresenceActor {
-  actorExternalId: string;
-}
-
-interface RawResidentActor extends RawPresenceActor {
-  ownerActorId?: string;
-}
 
 /**
  * Wires a game's Convex presence functions into the engine's PresenceTransport
@@ -42,7 +36,7 @@ interface RawResidentActor extends RawPresenceActor {
  * row type (e.g. branding positions into its coordinate space).
  */
 export function createConvexPresenceTransport<
-  TRawRow extends RawPresenceActor,
+  TRawRow extends PresenceResidentRow,
   TRow,
   TLocation,
   TGameId extends string = string,
@@ -53,10 +47,10 @@ export function createConvexPresenceTransport<
   function useFeeds(session: PresenceSession<TGameId> | "skip"): PresenceFeeds<TRow, TLocation> {
     const snapshotRaw = useQuery(
       functions.snapshot,
-      session === "skip" ? "skip" : { homeGameId: session.homeGameId, externalId: session.externalId },
+      session === "skip" ? "skip" : { ...session },
     ) as { myLocation: TLocation | null; online: TRawRow[] } | undefined;
-    const residentsRaw = useQuery(functions.cityResidents, {}) as
-      | (TRawRow & RawResidentActor)[]
+    const residentsRaw = useQuery(functions.cityResidents, session === "skip" ? "skip" : { ...(session.viewerChunkKey === undefined ? {} : { viewerChunkKey: session.viewerChunkKey }) }) as
+      | TRawRow[]
       | undefined;
 
     const onlineRaw = snapshotRaw?.online;

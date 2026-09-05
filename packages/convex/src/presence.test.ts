@@ -121,7 +121,7 @@ test("a second session revokes the first, which learns it was displaced", async 
     displaced: boolean;
   };
   expect(back.displaced).toBe(true);
-  expect(poseRows(rows).find((row) => row.sessionId === "tab-2")?.revokedAt).toBeNumber();
+  expect(poseRows(rows).find((row) => row.sessionId === "tab-2")?.revokedAt).toBeUndefined();
 });
 
 test("leave revokes rather than deletes, so the row stays for the reaper", async () => {

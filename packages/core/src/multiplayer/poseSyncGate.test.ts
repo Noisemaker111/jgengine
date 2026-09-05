@@ -73,3 +73,12 @@ describe("createPoseSyncGate", () => {
     expect(gate.evaluate({ ...withAppearance }, TUNING.minIntervalMs)).toBe(false);
   });
 });
+
+
+test("default pose gate caps moving clients at ten writes per second", () => {
+  const gate = createPoseSyncGate();
+  const pose = { x: 0, y: 0, z: 0, rotationY: 0, rotationPitch: 0 };
+  expect(gate.evaluate(pose, 0)).toBe(true);
+  expect(gate.evaluate({ ...pose, x: 1 }, 99)).toBe(false);
+  expect(gate.evaluate({ ...pose, x: 1 }, 100)).toBe(true);
+});

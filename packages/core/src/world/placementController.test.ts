@@ -145,3 +145,9 @@ describe("placementController slot mode", () => {
     expect(controller.hoveredSlotId()).toBe("c");
   });
 });
+
+test("slot placement enforces territory rules", () => {
+  const controller = createPlacementController({ footprint: { w: 1, d: 1 }, slots: [{ id: "land", center: [0, 0, 0] }], rules: { territory: () => ({ ok: false }) } });
+  expect(controller.hover({ point: [0, 0, 0], normal: [0, 1, 0] }).reason).toBe("territory.blocked");
+  expect(controller.commit()).toBeNull();
+});

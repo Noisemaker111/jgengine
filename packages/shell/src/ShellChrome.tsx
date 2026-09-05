@@ -78,8 +78,8 @@ export function ShellDebugOverlays({
 
 /** Key handler bundle shared by HUD and 3D presentation paths. @internal */
 export type ShellKeyHandlers = {
-  onKeyDown: (event: { code: string; preventDefault: () => void }) => void;
-  onKeyUp: (event: { code: string }) => void;
+  onKeyDown: (event: { code: string; target?: EventTarget | null; preventDefault: () => void }) => void;
+  onKeyUp: (event: { code: string; target?: EventTarget | null }) => void;
   onBlur: () => void;
 };
 
@@ -102,6 +102,12 @@ export function createShellKeyHandlers({
 }): ShellKeyHandlers {
   return {
     onKeyDown: (event) => {
+      const target = event.target as HTMLElement | null | undefined;
+      if (target?.closest?.("input, textarea, select, [contenteditable]:not([contenteditable=false])")) {
+        f2HeldRef.current = false;
+        tracker.reset();
+        return;
+      }
       if (event.code === "F2") {
         event.preventDefault();
         f2HeldRef.current = true;

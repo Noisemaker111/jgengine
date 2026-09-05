@@ -156,7 +156,7 @@ test("reconnect uses exponential backoff and is not subscription-gated", async (
       result: { serverId: "srv-1", isNew: true },
     });
   }
-  await expect(joinPromise).resolves.toEqual({ serverId: "srv-1", isNew: true });
+  await expect(joinPromise).resolves.toEqual({ ok: true, serverId: "srv-1", isNew: true });
 
   pipe.closeLatest();
   expect(delays.at(-1)).toBe(10);

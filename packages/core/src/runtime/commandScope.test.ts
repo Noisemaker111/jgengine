@@ -24,8 +24,8 @@ test("resolveCommandScope reads the scope a command derives from its own input",
     players: ["alice"],
     chunkKeys: ["0,0"],
   });
-  expect(resolveCommandScope(commands, "world.anything", { chunkKey: "0,0" }, "alice")).toBeUndefined();
-  expect(resolveCommandScope(commands, "missing", { chunkKey: "0,0" }, "alice")).toBeUndefined();
+  expect(resolveCommandScope(commands, "world.anything", { chunkKey: "0,0" }, "alice")).toEqual({ players: ["alice"], chunkKeys: [] });
+  expect(resolveCommandScope(commands, "missing", { chunkKey: "0,0" }, "alice")).toEqual({ players: ["alice"], chunkKeys: [] });
 });
 
 test("scopeWithActor keeps the actor hydrated without widening an unscoped roster", () => {
@@ -68,3 +68,7 @@ test("joinScope defaults to the joining member alone when a runtime declares no 
   });
   expect(scoped.joinScope("alice", true)).toEqual({ players: ["alice"] });
 });
+
+ test("actor shorthand resolves before hydration", () => {
+  expect(resolveCommandScope({ place: { scope: () => ({ players: "actor", chunkKeys: ["0,0"] }), validate: () => null, apply: s => s } }, "place", {}, "alice")).toEqual({ players: ["alice"], chunkKeys: ["0,0"] });
+ });

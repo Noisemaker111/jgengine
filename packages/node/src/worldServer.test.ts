@@ -4,6 +4,8 @@ import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { HostedWorldRecord, HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 import type { GameRuntimeServerView } from "@jgengine/core/runtime/transport";
+import { createWorldMirror } from "@jgengine/core/runtime/worldMirror";
+import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
@@ -119,7 +121,16 @@ describe("createWorldGameServer", () => {
     try {
       const { serverId } = await alice.transport.joinServer({ gameId: "shared" });
       const views = channel<GameRuntimeServerView | null>();
-      alice.feeds?.subscribeServer(serverId, (view) => views.push(view));
+      let latestView: GameRuntimeServerView | null = null;
+      const mirror = createWorldMirror({ hydrate(snapshot) {
+        if (latestView !== null) views.push({ ...latestView, serverState: snapshot });
+      } });
+      alice.feeds?.subscribeServer(serverId, (view) => {
+        latestView = view;
+        const frame = view?.serverState as WorldSyncFrame | undefined;
+        if (frame?.kind === "baseline") mirror.applyBaseline(frame.revision, frame.snapshot);
+        else if (frame?.kind === "diff") mirror.applyDiff(frame.diff);
+      });
       await views.next();
       s.tick(1);
       expect(heroX(await views.next())).toBeCloseTo(1);

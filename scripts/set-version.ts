@@ -9,11 +9,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const PACKAGES = ["core", "ws", "sql", "react", "convex", "node", "shell", "editor", "assets", "github", "jgengine"];
+const PACKAGES = ["core", "rapier", "ws", "sql", "react", "convex", "node", "shell", "editor", "assets", "github", "jgengine"];
 const root = fileURLToPath(new URL("..", import.meta.url));
 const args = process.argv.slice(2);
 const check = args.includes("--check");
 const release = args.includes("--release");
+const patchRelease = args.includes("--patch");
 const idIndex = args.indexOf("--id");
 const preId = idIndex >= 0 ? args[idIndex + 1] : "next";
 
@@ -26,7 +27,7 @@ function nextRelease(version: string): string {
   if (!match) throw new Error(`unparseable version: ${version}`);
   const [, major, minor, patch] = match;
   if (version.includes("-")) return `${major}.${minor}.${patch}`;
-  return `${major}.${Number(minor) + 1}.0`;
+  return patchRelease ? `${major}.${minor}.${Number(patch) + 1}` : `${major}.${Number(minor) + 1}.0`;
 }
 
 function nextPrerelease(version: string): string {

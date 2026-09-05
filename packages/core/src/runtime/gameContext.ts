@@ -530,6 +530,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       groundHeightAt: ground.sampleHeight,
     },
     game: {
+      territory: options.territory,
       commands: {
         define: commandRegistry.define,
         has: commandRegistry.has,

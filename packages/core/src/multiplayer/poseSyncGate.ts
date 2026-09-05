@@ -42,7 +42,16 @@ function poseChanged(a: PlayerPose, b: PlayerPose, tuning: PoseSyncTuning): bool
   );
 }
 
-export function createPoseSyncGate(tuning: PoseSyncTuning): PoseSyncGate {
+/** Default ten-hertz client pose gate with a five-second heartbeat. */
+export const DEFAULT_POSE_SYNC_TUNING: PoseSyncTuning = {
+  minIntervalMs: 100,
+  heartbeatMs: 5_000,
+  positionEpsilon: 0.01,
+  verticalEpsilon: 0.01,
+  rotationEpsilon: 0.01,
+};
+
+export function createPoseSyncGate(tuning: PoseSyncTuning = DEFAULT_POSE_SYNC_TUNING): PoseSyncGate {
   let lastSentPose: PlayerPose | null = null;
   let lastSentAt = 0;
 

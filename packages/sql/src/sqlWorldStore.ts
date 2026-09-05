@@ -1,4 +1,4 @@
-import type { HostedWorldRecord, HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
+import type { HostedWorldRecord, HostedWorldStore } from "@jgengine/core/runtime/hostedWorldStore";
 import type { SqlQueryable } from "./sqlPersistence";
 
 /** Create an asynchronous hosted-world store backed by one JSONB row.

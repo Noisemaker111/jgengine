@@ -48,6 +48,7 @@ export type RuntimeWorldContext = RuntimeInitContext & {
 
 export type GameRuntimeDefinition = {
   gameId: string;
+  topology?: "shared" | "rooms";
   save: SaveConfig;
   commands: Record<string, CommandDef>;
   loop?: ServerLoopHooks;
@@ -66,6 +67,7 @@ export type HydrateInput = {
 
 export type GameRuntime = {
   gameId: string;
+  topology?: "shared" | "rooms";
   save: SaveConfig;
   /**
    * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and
@@ -84,7 +86,7 @@ export type GameRuntime = {
   ) => ReturnType<typeof runCommand>;
   /**
    * What a command declares it will touch, evaluated before hydration so a host can load that slice
-   * and nothing else. `undefined` means the command declared no scope — hydrate everything.
+   * and nothing else. Missing scopes load only the actor and no chunks; `{}` explicitly requests all state.
    */
   commandScope: (commandName: string, input: unknown, actorUserId: string) => CommandScope | undefined;
   /** What a join has to hydrate. `undefined` means the whole world, as when `onNewPlayer` is unscoped. */
@@ -107,6 +109,7 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
 
   return {
     gameId: definition.gameId,
+    topology: definition.topology,
     save: definition.save,
     hasTick: loop?.onTick !== undefined,
 
@@ -221,4 +224,13 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
       };
     },
   };
+}
+
+/** Seed a fresh player through the same onNewPlayer hook as joining, without hydrating or modifying a world. */
+export function initialPlayerState(runtime: GameRuntime, userId: string, nowMs: number = Date.now()): RuntimePlayerRow {
+  const snapshot = createRuntimeSnapshot({ gameId: runtime.gameId, serverId: "" });
+  const initialized = runtime.joinPlayer(snapshot, userId, true, nowMs);
+  const player = initialized.players[userId];
+  if (!player) throw new Error(`onNewPlayer removed player "${userId}"`);
+  return structuredClone(player);
 }

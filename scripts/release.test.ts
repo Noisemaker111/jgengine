@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { cutChangelog, lockstepBullet, mirrorEntry, parseSections, sectionLines, splitComment } from "./release";
+import { nextReleaseVersion, cutChangelog, lockstepBullet, mirrorEntry, parseSections, sectionLines, splitComment } from "./release";
 
 const MARKDOWN = `# Changelog
 
@@ -58,4 +58,11 @@ describe("release cut", () => {
     expect(next).toContain("    added: [],");
     expect(() => mirrorEntry(next, "0.18.0", { migrate: [], added: [], changed: [], removed: [] })).toThrow();
   });
+});
+
+test("patch release preserves the minor line and finalizes prereleases", () => {
+  expect(nextReleaseVersion("0.18.0", true)).toBe("0.18.1");
+  expect(nextReleaseVersion("0.18.9", true)).toBe("0.18.10");
+  expect(nextReleaseVersion("0.18.1-rc.2", true)).toBe("0.18.1");
+  expect(nextReleaseVersion("0.18.0")).toBe("0.19.0");
 });

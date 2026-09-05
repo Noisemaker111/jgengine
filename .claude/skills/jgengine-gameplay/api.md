@@ -171,6 +171,9 @@
 - `CurrencyAdjustment` (type): type CurrencyAdjustment = | { success: true; newBalance: number; appliedDelta: number } | { success: false; reason: string } — ⚠ undocumented
 - `CurrencyDefinition` (interface): interface CurrencyDefinition<TCurrencyId extends string = string> — ⚠ undocumented
 - `CurrencyOperation` (type): type CurrencyOperation = "add" | "deduct" — ⚠ undocumented
+- `formatCurrency` (function): function formatCurrency(currency: CurrencyDefinition, value: number): string — Format a major-unit value using the currency's declared precision.
+- `fromMinorUnits` (function): function fromMinorUnits(currency: Pick<CurrencyDefinition, "decimals"> | undefined, value: number): number — Convert stored integer minor units to major units for display or existing balance records.
+- `toMinorUnits` (function): function toMinorUnits(currency: Pick<CurrencyDefinition, "decimals"> | undefined, value: number): number — Convert major units to integer minor units, rounding once at the write boundary.
 
 ## @jgengine/core/economy/listingBook
 
@@ -269,13 +272,13 @@
 - `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
 - `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
 - `WalletState` (interface): interface WalletState — ⚠ undocumented
-- `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
+- `balance` (function): function balance(state: WalletState, currency: string | CurrencyDefinition): number — ⚠ undocumented
 - `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
-- `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
+- `charge` (function): function charge(state: WalletState, currency: string | CurrencyDefinition, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
 - `createEmptyWallet` (function): function createEmptyWallet(): WalletState — Hold per-currency balances with affordability checks and charge/grant operations.
-- `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
-- `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
+- `grant` (function): function grant(state: WalletState, currency: string | CurrencyDefinition, amount: number): WalletState — ⚠ undocumented
+- `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string | CurrencyDefinition): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 
 ## @jgengine/core/game/achievements
 
@@ -343,13 +346,15 @@
 - `ChatRecipients` (type): type ChatRecipients = readonly string[] | "all" — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
 - `ChatSnapshot` (interface): interface ChatSnapshot — ⚠ undocumented
-- `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 500 — ⚠ undocumented
+- `ChatValidation` (type): type ChatValidation = { ok: true; text: string } | { ok: false; reason: string } — Sanitized chat text or a displayable validation failure.
+- `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 240 — ⚠ undocumented
 - `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
 - `DEFAULT_CHAT_RATE_LIMIT` (const): const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit — ⚠ undocumented
 - `DEFAULT_PROXIMITY_CHAT_RADIUS` (const): const DEFAULT_PROXIMITY_CHAT_RADIUS: 20 — ⚠ undocumented
 - `WHISPER_CHANNEL_PREFIX` (const): const WHISPER_CHANNEL_PREFIX: "whisper:" — ⚠ undocumented
 - `createChat` (function): function createChat(deps: ChatDeps): Chat — ⚠ undocumented
 - `createChatRateLimiter` (function): function createChatRateLimiter(limit: ChatRateLimit): ChatRateLimiter — ⚠ undocumented
+- `validateChatMessage` (function): function validateChatMessage(value: unknown, options: { maxLength?: number } = {}): ChatValidation — Strip control characters and enforce the shared chat message policy before storage or broadcast.
 - `whisperChannelId` (function): function whisperChannelId(a: string, b: string): string — ⚠ undocumented
 
 ## @jgengine/core/game/chatFilter
@@ -1084,7 +1089,7 @@
 - `CropTileState` (interface): interface CropTileState — ⚠ undocumented
 - `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
 - `Curve` (type): type Curve = CurveDef & CurveShape — A fully specified progression curve — a {@link CurveDef} growth shape plus optional {@link CurveShape} rounding/clamp.
-- `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 500 — ⚠ undocumented
+- `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 240 — ⚠ undocumented
 - `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
 - `DEFAULT_CHAT_RATE_LIMIT` (const): const DEFAULT_CHAT_RATE_LIMIT: ChatRateLimit — ⚠ undocumented
 - `DEFAULT_FIXED_STAGES` (const): const DEFAULT_FIXED_STAGES: readonly ["input", "movement", "combat", "ai", "activities", "cleanup"] — Default fixed-sim stage order — systems pick a stage; most need only this.
@@ -1415,7 +1420,7 @@
 - `applyBindingOverrides` (function): function applyBindingOverrides<TAction extends string, TCode extends string>(input: ActionCodesMap<TAction, TCode>, overrides: BindingOverrides): ActionCodesMap<TAction, TCode> — Merge player rebinds over a game's authored `input` map. Only actions the game already declares can be overridden; unknown override keys are ignored so a stale localStorage entry can't inject phantom actions.
 - `applySetBonuses` (function): function applySetBonuses(stats: Record<string, number>, bonuses: readonly SetBonus[]): Record<string, number> — Fold a set of active bonuses' additive stats onto a stat map, returning a new map (the input is not mutated).
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
-- `balance` (function): function balance(state: WalletState, currency: string): number — ⚠ undocumented
+- `balance` (function): function balance(state: WalletState, currency: string | CurrencyDefinition): number — ⚠ undocumented
 - `balanceOf` (function): function balanceOf(ledger: ResourceLedger, account: string, currency: string): number — Read a single balance; unknown account/currency pairs read as `0`.
 - `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
@@ -1424,7 +1429,7 @@
 - `candidateViolatesForbid` (function): function candidateViolatesForbid(partial: ItemIdentity, candidate: CandidatePlacement, rules: readonly CompatibilityRule[]): ForbidRule | null — The generic backtracking contract for procedural generation (see #908): given a partial identity and a candidate part, return the first forbid rule the placement would violate, or null if it stays viable. Require rules are ignored here because they may still be satisfied by a later placement.
 - `capAmount` (function): function capAmount(max: number | ((ctx: PolicyContext) => number)): ResourcePolicy — Clamp a transaction's amount to at most `max` (a fixed number or a function of context).
 - `captureProvenance` (function): function captureProvenance(identity: ItemIdentity, activeBonuses: readonly SetBonus[], seed?: number): ItemProvenance — Capture the provenance of a generated item — family, tags, per-slot parts, active bonus ids, and optional seed — as a JSON-safe record.
-- `charge` (function): function charge(state: WalletState, currency: string, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
+- `charge` (function): function charge(state: WalletState, currency: string | CurrencyDefinition, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
 - `chargeAll` (function): function chargeAll(state: WalletState, costs: Readonly<Record<string, number>>, options?: ChargeOptions): ChargeResult — ⚠ undocumented
 - `clampValue` (function): function clampValue(value: number, bounds?: NumericBounds): number — Clamp a scalar to `bounds` (identity when `bounds` is omitted). Pure — touches no record.
 - `clearBindingOverride` (function): function clearBindingOverride(gameId: string, action: string, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
@@ -1533,7 +1538,7 @@
 - `generate` (function): function generate(schema: GenSchema, rng: () => number, options: GenerateOptions = {}): GenOutcome — Run a caller-defined {@link GenSchema} against an injected `rng` into a deterministic, serializable {@link GenResult} with full provenance. Composes weighted/uniform choice, dependent choice, constraints with bounded backtracking, field transforms, and validation reroll over plain data — the generic seam procedural loot, affix, and modular-part rollers assemble on. Identical schema, seed, and pins reproduce an identical result across server/client and save/load.
 - `getRuleEffect` (function): function getRuleEffect(id: string): RuleEffectDefinition | undefined — Look up a declared rule effect, or `undefined` when the id was never registered — lets callers reject unknown effect references in authored content.
 - `getValue` (function): function getValue(record: Record<string, number>, key: string, fallback = 0): number — Current value for `key`, or `fallback` (default `0`) when the record has no entry.
-- `grant` (function): function grant(state: WalletState, currency: string, amount: number): WalletState — ⚠ undocumented
+- `grant` (function): function grant(state: WalletState, currency: string | CurrencyDefinition, amount: number): WalletState — ⚠ undocumented
 - `identityOf` (function): function identityOf(family: string, tags: readonly string[], parts: readonly InstalledPart[]): ItemIdentity — Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
 - `idleRaceSession` (function): function idleRaceSession(): RaceSessionState — The pre-race session on the grid: `idle`, both clocks at zero. Call {@link startRaceCountdown} to light the lights, or hold here until the field is ready.
 - `initDecayMeters` (function): function initDecayMeters(defs: readonly DecayMeterConfig[]): DecayMeterValues — Starting values for `defs` — each meter's `start ?? max`, clamped to its range. Seed a serialized state record with this instead of holding a {@link createDecayMeterSet} closure.
@@ -1542,7 +1547,7 @@
 - `isComplete` (function): function isComplete(def: ModularItemDef, installed: readonly InstalledPart[]): boolean — ⚠ undocumented
 - `isDisabled` (function): function isDisabled(spec: DurabilitySpec, state: DurabilityState): boolean — ⚠ undocumented
 - `isIdentityValid` (function): function isIdentityValid(identity: ItemIdentity, rules: readonly CompatibilityRule[]): boolean — Convenience predicate: true when {@link validateIdentity} finds no violations.
-- `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
+- `isOverdrawn` (function): function isOverdrawn(state: WalletState, currency: string | CurrencyDefinition): boolean — True once `balance(state, currency)` has gone negative under an overdraft-enabled charge.
 - `jobById` (function): function jobById<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): Job<TSpec, TReserve> | null — Look up a job by id, or `null` if absent/terminal.
 - `jobProgress` (function): function jobProgress<TSpec, TReserve>(job: Job<TSpec, TReserve>): number — Fractional progress of a job (0…1); a zero-duration job reads as complete.
 - `lapDurations` (function): function lapDurations(splits: readonly number[], gatesPerLap: number): number[] — Per-lap durations from a cumulative split book with `gatesPerLap` checkpoints per lap — each lap's time is its finish-gate split minus the previous lap's finish. Only complete laps are returned.

@@ -61,17 +61,17 @@ function heroX(store: HostedWorldStore, userId: string): number | undefined {
 }
 
 describe("invokeHostedWorld", () => {
-  test("state accumulates across fresh reconstructions sharing one store", () => {
+  test("state accumulates across fresh reconstructions sharing one store", async () => {
     const g = game();
     const store = memoryWorldStore();
 
-    const join = invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
+    const join = await invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
     expect(join.changed).toBe(true);
     expect(join.revision).toBe(1);
     expect(join.members).toEqual(["alice"]);
     expect(heroX(store, "alice")).toBeCloseTo(0);
 
-    const tick1 = invokeHostedWorld({
+    const tick1 = await invokeHostedWorld({
       game: g,
       store,
       members: join.members,
@@ -81,7 +81,7 @@ describe("invokeHostedWorld", () => {
     expect(tick1.revision).toBe(2);
     expect(heroX(store, "alice")).toBeCloseTo(1);
 
-    const command = invokeHostedWorld({
+    const command = await invokeHostedWorld({
       game: g,
       store,
       members: join.members,
@@ -92,7 +92,7 @@ describe("invokeHostedWorld", () => {
     expect(store.load()?.snapshot["store"]).toContainEqual(["bumped", 3]);
 
     const before = store.load();
-    const tick2 = invokeHostedWorld({
+    const tick2 = await invokeHostedWorld({
       game: g,
       store,
       members: join.members,
@@ -108,12 +108,12 @@ describe("invokeHostedWorld", () => {
     expect(diff.entities.some((e) => e.id === "alice")).toBe(true);
   });
 
-  test("held inputs replay onto a reconstructed session before the op", () => {
+  test("held inputs replay onto a reconstructed session before the op", async () => {
     const g = game();
     const store = memoryWorldStore();
-    const join = invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
+    const join = await invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
 
-    const tick = invokeHostedWorld({
+    const tick = await invokeHostedWorld({
       game: g,
       store,
       members: join.members,
@@ -124,13 +124,13 @@ describe("invokeHostedWorld", () => {
     expect(heroX(store, "alice")).toBeCloseTo(10);
   });
 
-  test("an unchanged invocation neither bumps the revision nor saves", () => {
+  test("an unchanged invocation neither bumps the revision nor saves", async () => {
     const g = game();
     const store = memoryWorldStore();
-    const join = invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
+    const join = await invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
     const savedBefore = store.load();
 
-    const tick = invokeHostedWorld({
+    const tick = await invokeHostedWorld({
       game: g,
       store,
       members: join.members,
@@ -141,13 +141,13 @@ describe("invokeHostedWorld", () => {
     expect(store.load()).toBe(savedBefore);
   });
 
-  test("a reconstructed leave fires onPlayerLeave and despawns the member", () => {
+  test("a reconstructed leave fires onPlayerLeave and despawns the member", async () => {
     const g = game();
     const store = memoryWorldStore();
-    const join = invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
-    invokeHostedWorld({ game: g, store, members: join.members, op: (s) => s.tick(1) });
+    const join = await invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
+    await invokeHostedWorld({ game: g, store, members: join.members, op: (s) => s.tick(1) });
 
-    const leave = invokeHostedWorld({
+    const leave = await invokeHostedWorld({
       game: g,
       store,
       members: join.members,
@@ -158,13 +158,13 @@ describe("invokeHostedWorld", () => {
     expect(heroX(store, "alice")).toBeUndefined();
   });
 
-  test("rejected commands leave the store untouched", () => {
+  test("rejected commands leave the store untouched", async () => {
     const g = game();
     const store = memoryWorldStore();
-    const join = invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
+    const join = await invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
     const savedBefore = store.load();
 
-    const unknown = invokeHostedWorld({
+    const unknown = await invokeHostedWorld({
       game: g,
       store,
       members: join.members,
@@ -175,13 +175,13 @@ describe("invokeHostedWorld", () => {
     expect(store.load()).toBe(savedBefore);
   });
 
-  test("a second player joins an already-reconstructed world without disturbing the first", () => {
+  test("a second player joins an already-reconstructed world without disturbing the first", async () => {
     const g = game();
     const store = memoryWorldStore();
-    const first = invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
-    invokeHostedWorld({ game: g, store, members: first.members, op: (s) => s.tick(2) });
+    const first = await invokeHostedWorld({ game: g, store, op: (s) => s.join("alice", true) });
+    await invokeHostedWorld({ game: g, store, members: first.members, op: (s) => s.tick(2) });
 
-    const second = invokeHostedWorld({
+    const second = await invokeHostedWorld({
       game: g,
       store,
       members: first.members,
@@ -194,7 +194,7 @@ describe("invokeHostedWorld", () => {
 });
 
 describe("createHostedGameServerFunctions", () => {
-  test("returns the full hosted function surface", () => {
+  test("returns the full hosted function surface", async () => {
     const functions = createHostedGameServerFunctions({
       games: { demo: game() },
       auth: "anonymous",

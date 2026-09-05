@@ -8,6 +8,8 @@ import {
 } from "@jgengine/core/runtime/hostedWorldSession";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { GameRuntimeServerView } from "@jgengine/core/runtime/transport";
+import { createWorldMirror } from "@jgengine/core/runtime/worldMirror";
+import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
 import { INPUT_COMMAND } from "@jgengine/core/runtime/hostedGameRunner";
 import { createHostRouter, loopbackPipe } from "./hostRouter";
@@ -102,7 +104,16 @@ describe("createWorldGameHost", () => {
     try {
       const { serverId } = await alice.transport.joinServer({ gameId: "shared" });
       const views = channel<GameRuntimeServerView | null>();
-      alice.feeds?.subscribeServer(serverId, (view) => views.push(view));
+      let latestView: GameRuntimeServerView | null = null;
+      const mirror = createWorldMirror({ hydrate(snapshot) {
+        if (latestView !== null) views.push({ ...latestView, serverState: snapshot });
+      } });
+      alice.feeds?.subscribeServer(serverId, (view) => {
+        latestView = view;
+        const frame = view?.serverState as WorldSyncFrame | undefined;
+        if (frame?.kind === "baseline") mirror.applyBaseline(frame.revision, frame.snapshot);
+        else if (frame?.kind === "diff") mirror.applyDiff(frame.diff);
+      });
 
       const initial = await views.next();
       expect(entityIds(initial)).toContain("alice");
@@ -126,6 +137,8 @@ describe("createWorldGameHost", () => {
       const frame = { held: ["moveForward"], pointer: { x: 0, y: 1, active: true } };
       const result = await alice.transport.runCommand({ serverId, command: INPUT_COMMAND, input: frame });
       expect(result.ok).toBe(true);
+      expect(session.runner().context().game.players?.input("alice")).toBeNull();
+      host.tick(1 / 60);
       expect(session.runner().context().game.players?.input("alice")).toEqual(frame);
     } finally {
       alice.close();

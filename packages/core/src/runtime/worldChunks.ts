@@ -111,3 +111,19 @@ export function deleteChunk(snapshot: GameRuntimeSnapshot, chunkKey: string): Ga
     dirty: { ...snapshot.dirty, server: true, chunks: withChunkDirty(snapshot, chunkKey) },
   };
 }
+
+/** Square chunk neighborhood around a world position, including its own chunk. */
+export function chunkKeysAround(
+  position: readonly [number, number, number],
+  rings = 1,
+  size = DEFAULT_CHUNK_SIZE,
+): string[] {
+  if (!Number.isSafeInteger(rings) || rings < 0 || rings > 128) throw new RangeError("rings must be an integer from 0 to 128");
+  if (!Number.isFinite(size) || size <= 0 || !position.every(Number.isFinite)) throw new RangeError("Invalid chunk position or size");
+  const center = chunkCoordAt(position, size);
+  const keys: string[] = [];
+  for (let cx = center.cx - rings; cx <= center.cx + rings; cx++) {
+    for (let cz = center.cz - rings; cz <= center.cz + rings; cz++) keys.push(chunkKeyOf({ cx, cz }));
+  }
+  return keys;
+}

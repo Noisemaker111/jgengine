@@ -1,3 +1,4 @@
+import { sharedBuilderFiles } from "./templates/sharedBuilder";
 import {
   agentsMd,
   artDirectionMd,
@@ -61,7 +62,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   const sceneDoc = scene ?? (options.sceneMode === "starter" ? undefined : emptyScene);
   const sceneContents = sceneDoc ? `${JSON.stringify(sceneDoc, null, 2)}\n` : editorSceneJson;
   const sceneTest = sceneDoc ? (scene ? editorLayersTestFor(scene) : editorLayersTestFor(emptyScene)) : editorLayersTest;
-  return [
+  const files: TemplateFile[] = [
     { path: "index.html", contents: indexHtml(name) },
     { path: "vite.config.ts", contents: viteConfig(variant) },
     {
@@ -97,4 +98,5 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
       : []),
     { path: "src/game/ui/GameUI.tsx", contents: gameUiTsx(id, name, editor) },
   ];
+  return options.shape === "shared-world-builder" ? sharedBuilderFiles(files, options) : files;
 }

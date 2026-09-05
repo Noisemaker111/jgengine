@@ -53,6 +53,7 @@ import {
   type RuntimeDiagnostic,
 } from "./diagnostics/RuntimeDiagnostics";
 import { EMPTY_RESERVED } from "./shellConstants";
+import { JoinGate } from "./JoinGate";
 import { useShellMultiplayerSync } from "./useShellMultiplayerSync";
 import { ShellHudPresentation } from "./ShellHudPresentation";
 import { Shell3dPresentation } from "./Shell3dPresentation";
@@ -277,7 +278,7 @@ export function GamePlayerShell({
   }, [playable, userId]);
 
   const authoritativeFrameRef = useRef<import("./worldSync").AuthoritativeFrameHandler | null>(null);
-  useShellMultiplayerSync(ctx, multiplayer, playable, serverIdRef, setRemotePlayers, authoritativeFrameRef);
+  const join = useShellMultiplayerSync(ctx, multiplayer, playable, serverIdRef, setRemotePlayers, authoritativeFrameRef);
 
   useEffect(() => {
     wrapperRef.current?.focus();
@@ -290,6 +291,7 @@ export function GamePlayerShell({
   );
 
   if (ctx === null) return <div className="h-full w-full bg-neutral-950" />;
+  if (join.status !== "joined") return <JoinGate {...join} />;
 
   const cameraConfig =
     playable.camera?.followEntityId !== undefined

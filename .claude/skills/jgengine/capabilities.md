@@ -20,6 +20,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameContextModels` (interface) · `import { GameContextModels } from "@jgengine/core/runtime/gameContext"`
 
+## command-quantity — validate bounded whole-item counts at command boundaries
+
+- `readQuantity` (function) · `import { readQuantity } from "@jgengine/core/runtime/commandInput"`
+
 ## default-walk-codes — stock WASD + jump key codes for the shell walk controller
 
 - `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/shell/gameKit"`
@@ -137,6 +141,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `reportTextureLoadError` (function) · `import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors"`
 - `resetTextureErrors` (function) · `import { resetTextureErrors } from "@jgengine/core/devtools/textureErrors"`
 - `textureErrorsSnapshot` (function) · `import { textureErrorsSnapshot } from "@jgengine/core/devtools/textureErrors"`
+
+## runtime — snapshot interpolation
+
+- `createSnapshotBuffer` (function) · `import { createSnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer"`
 
 ## runtime-save — save/load the whole game world through a pluggable backend, autosave or save points
 

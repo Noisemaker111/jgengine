@@ -286,6 +286,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/react"`
 
+## join-gate — block gameplay until joined and show failures with retry
+
+- `JoinGate` (function) · `import { JoinGate } from "@jgengine/shell/JoinGate"`
+
 ## key-hint — keyboard/mouse control hint that hides itself on touch
 
 - `KeyHint` (function) · `import { KeyHint } from "@jgengine/react"`
@@ -499,6 +503,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `SelectionPanel` (function) · `import { SelectionPanel } from "@jgengine/react"`
 
+## server-session — join a multiplayer host with status, retry, and teardown
+
+- `useServerSession` (function) · `import { useServerSession } from "@jgengine/react/useServerSession"`
+
 ## shop-grid-host — drop-in vendor/shop grid over a caller-owned wallet — item cards with icon/price/stock, afford-aware Buy, optional Sell, and a balance readout, token-themed
 
 - `ShopGrid` (function) · `import { ShopGrid } from "@jgengine/react"`
@@ -511,6 +519,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSpriteClipPlayer` (function) · `import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d"`
 - `sortingOrder` (function) · `import { sortingOrder } from "@jgengine/core/render/sprite2d"`
+
+## standalone-chat — render persisted chat with focus controls and visible send failures
+
+- `StandaloneChatPanel` (function) · `import { StandaloneChatPanel } from "@jgengine/react/standaloneChatPanel"`
 
 ## start-screen — headless title/attract overlay the game fills and skins
 
@@ -527,6 +539,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## talent-tree — drop-in skill/talent/upgrade-tree widget — pass `nodes`+`tree` for point-spend or a precomputed `view` for any unlock rule; branch/tier layout, SVG prerequisite edges, learned/available/locked/maxed styling, icon + rank, onLearn
 
 - `TalentTree` (function) · `import { TalentTree } from "@jgengine/react"`
+
+## territory-overlay — show footprint ownership, claim cost, and affordability
+
+- `TerritoryOverlay` (function) · `import { TerritoryOverlay } from "@jgengine/shell/TerritoryOverlay"`
 
 ## timer-readout — live digital mm:ss/m:ss.d timer readout bound to a TimerSet
 

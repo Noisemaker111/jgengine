@@ -26,7 +26,6 @@
   "packages/core/src/editor/streamer.ts#createWorldStreamer",
   "packages/core/src/faction/factions.ts#createFactionGraph",
   "packages/core/src/faction/factions.ts#createFactionRoster",
-  "packages/core/src/game/chat.ts#createChatRateLimiter",
   "packages/core/src/game/chatFilter.ts#createChatFilter",
   "packages/core/src/game/connectedPlayers.ts#createConnectedPlayers",
   "packages/core/src/game/events.ts#createGameEvents",

@@ -6,7 +6,7 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
-- `VERSION` (const): const VERSION: "0.18.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
+- `VERSION` (const): const VERSION: "0.18.1" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/authoring
 
@@ -228,14 +228,14 @@
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).
 - `ChangelogEntry` (interface): interface ChangelogEntry — One release's migrate steps plus added/changed/removed notes (typed mirror of CHANGELOG.md).
-- `VERSION` (const): const VERSION: "0.18.0" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
+- `VERSION` (const): const VERSION: "0.18.1" — Installed `@jgengine/core` semver — compare against {@link CHANGELOG} keys when migrating.
 
 ## @jgengine/core/runtime/adapter
 
 - `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
 - `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative.
 - `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
-- `ServersPoolConfig` (type): type ServersPoolConfig = { maxServers: number; slotsPerServer: number; minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } — ⚠ undocumented
+- `ServersPoolConfig` (type): type ServersPoolConfig = { minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } & ( | { topology: "shared"; maxServers?: number; slotsPerServer?: number } | { topology?: "rooms"; maxServers: number; slotsPerServer: number } ) — ⚠ undocumented
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
 - `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — Convex transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer `convexPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared, host-authoritative world — see `examples/HOSTED.md`.
 - `convexPresence` (function): function convexPresence(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig — Presence-only Convex transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `convex({ ...config, authority: "client" })`.
@@ -248,7 +248,7 @@
 - `offline` (function): function offline(): MultiplayerAdapterConfig — Explicit single-player adapter. Solo games never need this — omitting `multiplayer` in the shell `defineGame` already defaults to offline; pass it only where an adapter value is structurally required.
 - `p2p` (function): function p2p(config?: { topology?: MultiplayerTopology; room?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — Serverless peer-to-peer (WebRTC) session — one peer hosts, friends join by room code.
 - `resolveAuthority` (function): function resolveAuthority(multiplayer: unknown): MultiplayerAuthority | null — Resolved authority for a multiplayer config. - `offline` / missing adapter → `null` (single-player; not multiplayer authority). - unset or `"client"` → `"client"` (presence-only; each client ticks). - `"server"` → host-authoritative shared sim.
-- `servers` (function): function servers(config: ServersPoolConfig): ServersPoolConfig — ⚠ undocumented
+- `servers` (function): function servers(config: ServersPoolConfig): { topology: "shared" | "rooms"; maxServers: number; slotsPerServer: number; minPlayersToStart?: number | undefined; adapter: MultiplayerAdapterConfig; } | { topology: "shared" | "rooms"; maxServers: number; slotsPerServer: number; minPlayersToStart?: numb… — Resolve the shared-world pool to one unbounded world; room pools keep explicit capacities.
 - `socketIo` (function): function socketIo(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — ⚠ undocumented
 - `ws` (function): function ws(config?: { topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — WebSocket transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer `wsPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared, host-authoritative world — see `examples/HOSTED.md`.
 - `wsPresence` (function): function wsPresence(config?: { topology?: MultiplayerTopology; url?: string }): MultiplayerAdapterConfig — Presence-only WebSocket transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `ws({ ...config, authority: "client" })`.
@@ -258,10 +258,16 @@
 - `CameraDirector` (interface): interface CameraDirector — ⚠ undocumented
 - `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick<ChaseCameraConfig, "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw" | "yawResponse"> > — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), or a whole driving-feel overlay (speed→FOV, lead, bank, speed shake, drift-lag) applied only while a vehicle is piloted (#1299).
 
+## @jgengine/core/runtime/commandInput
+
+- `QuantityResult` (type): type QuantityResult = { ok: true; quantity: number } | { ok: false; reason: "invalid-quantity" } — Validated integer quantity or a stable input rejection.
+- `readQuantity` (function): function readQuantity(value: unknown, options: { min?: number; max?: number } = {}): QuantityResult — Read an untrusted whole-item quantity without coercion, truncation, or clamping.
+
 ## @jgengine/core/runtime/commandRunner
 
 - `CommandDef` (type): type CommandDef<TInput = unknown> = { /** * What this command reads and writes, derived from its own input. A host that hydrates through a * scope loads only this slice instead of the whole world, and refuses the command if `apply` then * dirties a player or chunk the scope did not name — writing an… — ⚠ undocumented
 - `CommandScope` (type): type CommandScope = { /** Member ids to hydrate; omit for the whole roster. */ players?: readonly string[]; /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */ chunkKeys?: readonly string[]; } — Which slice of a server has to be hydrated before some work runs against it. Both fields default to "everything", which costs a read per member plus one per chunk — the cost that makes a large shared world unaffordable per mutation. Narrow them when the caller knows what it will touch.
+- `CommandScopeDefinition` (type): type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" } — Declarative read scope; actor is resolved before host hydration.
 - `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
 - `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
 
@@ -335,13 +341,14 @@
 
 ## @jgengine/core/runtime/gameRuntime
 
-- `GameRuntime` (type): type GameRuntime = { gameId: string; save: SaveConfig; /** * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and * persisting a server whose `tick` is a no-op by construction — the difference between a world that * costs a full read/write every second while… — ⚠ undocumented
-- `GameRuntimeDefinition` (type): type GameRuntimeDefinition = { gameId: string; save: SaveConfig; commands: Record<string, CommandDef>; loop?: ServerLoopHooks; } — ⚠ undocumented
+- `GameRuntime` (type): type GameRuntime = { gameId: string; topology?: "shared" | "rooms"; save: SaveConfig; /** * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and * persisting a server whose `tick` is a no-op by construction — the difference between a world that * costs a ful… — ⚠ undocumented
+- `GameRuntimeDefinition` (type): type GameRuntimeDefinition = { gameId: string; topology?: "shared" | "rooms"; save: SaveConfig; commands: Record<string, CommandDef>; loop?: ServerLoopHooks; } — ⚠ undocumented
 - `HydrateInput` (type): type HydrateInput = { gameId: string; serverId: string; serverRow: RuntimeServerRow; playersByUserId: Record<string, RuntimePlayerRow>; chunksByKey: Record<string, RuntimeChunkRow>; revision?: number; /** Host wall clock for `onInit`, in ms. Defaults to `Date.now()`. */ nowMs?: number; } — ⚠ undocumented
 - `RuntimeInitContext` (type): type RuntimeInitContext = { snapshot: GameRuntimeSnapshot; setSnapshot: (snapshot: GameRuntimeSnapshot) => void; /** * Host wall clock at the start of this call, in ms. The host already knows it, so anything keyed to * real time — a UTC date rollover, a `lastTickAt` anchor other code paths read, a s… — ⚠ undocumented
 - `RuntimeLoopContext` (type): type RuntimeLoopContext = RuntimeInitContext & { player: { userId: string; isNew: boolean; }; } — ⚠ undocumented
 - `RuntimeWorldContext` (type): type RuntimeWorldContext = RuntimeInitContext & { playerIds: readonly string[]; } — ⚠ undocumented
 - `ServerLoopHooks` (type): type ServerLoopHooks = { onInit?: (ctx: RuntimeInitContext) => void; onNewPlayer?: (ctx: RuntimeLoopContext) => void; onTick?: (ctx: RuntimeWorldContext, dtSeconds: number) => void; /** * What `onNewPlayer` touches, so a join hydrates that instead of the whole world. Only consulted * when `onNewPlay… — ⚠ undocumented
+- `initialPlayerState` (function): function initialPlayerState(runtime: GameRuntime, userId: string, nowMs: number = Date.now()): RuntimePlayerRow — Seed a fresh player through the same onNewPlayer hook as joining, without hydrating or modifying a world.
 
 ## @jgengine/core/runtime/headlessRunner
 
@@ -375,7 +382,7 @@
 
 ## @jgengine/core/runtime/hostPolicy
 
-- `JG_MAX_MEMBERS_PER_SERVER` (const): const JG_MAX_MEMBERS_PER_SERVER: 256 — Hard ceiling on `slotsPerServer` for a single hosted server row.
+- `JG_MAX_MEMBERS_PER_SERVER` (const): const JG_MAX_MEMBERS_PER_SERVER: 256 — Room-topology ceiling on `slotsPerServer`; shared membership uses indexed rows instead.
 - `JoinCandidate` (type): type JoinCandidate = { memberUserIds: readonly string[]; slotsPerServer: number; visibility?: SessionVisibility | undefined; createdAt: number; } — A row `selectJoinTarget` can choose between — the matchmaking-relevant fields of a server record.
 - `JoinTarget` (type): type JoinTarget<T extends JoinCandidate> = | { kind: "join"; row: T } | { kind: "create" } | { kind: "refuse"; reason: string } — What a join should do with the candidate rows it found.
 - `MatchmakingMode` (type): type MatchmakingMode = "auto" | "singleton" — How auto-match behaves when no `serverId` is supplied.
@@ -383,11 +390,11 @@
 - `isAutoJoinCandidate` (function): function isAutoJoinCandidate(args: { memberUserIds: readonly string[]; slotsPerServer: number; visibility: SessionVisibility | undefined; userId: string; }): boolean — Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity. Private rooms are never auto-picked (join-by-code / direct id only).
 - `isListablePublicly` (function): function isListablePublicly(visibility: SessionVisibility | undefined): boolean — True when a server's `visibility` should surface in public listings / browse results.
 - `isPrivateJoinBlocked` (function): function isPrivateJoinBlocked(args: { visibility: SessionVisibility | undefined; memberUserIds: readonly string[]; userId: string; joinCode: string | undefined; suppliedCode: string | undefined; }): boolean — Whether a private-visibility server blocks this join (non-member without a matching code). Public / undefined visibility never blocks.
-- `isServerFull` (function): function isServerFull(memberUserIds: readonly string[], slotsPerServer: number, userId: string): boolean — True when the server has no free slots for a non-member. Existing members never count as "full" so rejoin/leave cycles keep working.
+- `isServerFull` (function): function isServerFull(memberCount: number, slotsPerServer: number, isMember: boolean): boolean — True when the server has no free slots for a non-member. Existing members never count as "full" so rejoin/leave cycles keep working.
 - `isServerMember` (function): function isServerMember(memberUserIds: readonly string[], userId: string): boolean — Whether `userId` is already on the server's member roster.
 - `selectJoinTarget` (function): function selectJoinTarget<T extends JoinCandidate>(rows: readonly T[], args: { userId: string; mode?: MatchmakingMode; /** Capacity to judge rows against — the host's current option, when it supersedes the stored value. */ slotsPerServer?: number; }): JoinTarget<T> — Resolve an auto-match join against the game's joinable rows under a {@link MatchmakingMode}. Reach for it instead of hand-rolling the "find a room with space, else make one" scan, which is where a singleton world silently shards into per-player copies.
 - `statusAfterLeave` (function): function statusAfterLeave(remainingMemberCount: number, currentStatus: GameServerStatus): GameServerStatus — Status after a leave: empty rooms reopen; non-empty rooms keep their current status.
-- `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number): { ok: true } | { ok: false; reason: string } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
+- `validateSlotsPerServer` (function): function validateSlotsPerServer(slotsPerServer: number, topology: "rooms" | "shared" = "rooms"): { ok: true } | { ok: false; reason: string } — Whether a `slotsPerServer` value is a capacity a single hosted server row can actually hold.
 - `withJoinedMember` (function): function withJoinedMember(memberUserIds: readonly string[], userId: string): string[] — Roster after a successful join: unchanged when already a member, else appended.
 - `withoutMember` (function): function withoutMember(memberUserIds: readonly string[], userId: string): string[] — Roster after a leave: `userId` removed; order of remaining members preserved.
 
@@ -408,6 +415,12 @@
 - `SyncHostedWorldStore` (interface): interface SyncHostedWorldStore — Synchronous store adapter retained for deterministic in-process tests.
 - `asyncMemoryWorldStore` (function): function asyncMemoryWorldStore(seed?: HostedWorldRecord): HostedWorldStore — Async in-process store for callers exercising the production persistence contract.
 - `createHostedWorldSessionAsync` (function): function createHostedWorldSessionAsync<TAssetRef extends ModelAssetRef, TMultiplayer>(options: Omit<HostedWorldSessionOptions<TAssetRef, TMultiplayer>, "store"> & { store: HostedWorldStore }): Promise<HostedWorldSession> — Build a hosted session from an asynchronous persistence backend.
+
+## @jgengine/core/runtime/hostedWorldStore
+
+- `HostedWorldRecord` (interface): interface HostedWorldRecord — One hosted world's persisted authoritative state — the unit a {@link HostedWorldStore} loads and saves.
+- `HostedWorldStore` (interface): interface HostedWorldStore — Narrow persistence seam for a hosted world — the {@link HostedWorldRecord} counterpart of `HostPersistence`. Backends implement it (memory/file/sql/convex); the session never names one. A stateful host loads once and saves on a cadence; a stateless host reconstructs from `load()` each invocation.
+- `SyncHostedWorldStore` (interface): interface SyncHostedWorldStore — Synchronous store adapter retained for deterministic in-process tests.
 
 ## @jgengine/core/runtime/inputRecorder
 
@@ -508,11 +521,11 @@
 
 - `GameRuntimeSnapshot` (type): type GameRuntimeSnapshot = { version: number; gameId: string; serverId: string; server: RuntimeServerRow; players: Record<string, RuntimePlayerRow>; chunks: Record<string, RuntimeChunkRow>; revision: number; dirty: { server: boolean; players: string[]; chunks: string[]; }; } — ⚠ undocumented
 - `RUNTIME_SNAPSHOT_VERSION` (const): const RUNTIME_SNAPSHOT_VERSION: 1 — ⚠ undocumented
-- `RuntimeChunkRow` (type): type RuntimeChunkRow = { chunkKey: string; objects: RuntimeObjectRow[]; entities: RuntimeEntityRow[]; flags?: Record<string, unknown>; } — ⚠ undocumented
+- `RuntimeChunkRow` (type): type RuntimeChunkRow = { /** Cell key to owner id, persisted with its spatial chunk. */ territory?: Record<string, string>; territoryReceipts?: Record<string, { claimedAt: number; costPaid: number }>; chunkKey: string; objects: RuntimeObjectRow[]; entities: RuntimeEntityRow[]; flags?: Record<string,… — ⚠ undocumented
 - `RuntimeEntityRow` (type): type RuntimeEntityRow = { instanceId: string; catalogId: string; position?: [number, number, number]; rotationY?: number; parentSpace?: string; group?: string; stats?: Record<string, { current: number; max: number; min?: number }>; targetInstanceId?: string | null; userId?: string; } — ⚠ undocumented
 - `RuntimeInventorySlot` (type): type RuntimeInventorySlot = { item: string; count: number; slot?: number; } — ⚠ undocumented
 - `RuntimeObjectRow` (type): type RuntimeObjectRow = { instanceId: string; catalogId: string; position: [number, number, number]; rotationY?: number; parentSpace?: string; /** Opaque per-instance state; the persisted name for `SceneObject.state`. */ flags?: Record<string, unknown>; /** Container contents for a catalog `slotInve… — The persisted form of a placed `SceneObject`: identity, placement, per-instance state, and slot contents. Convert with `toRuntimeObjectRow`/`fromRuntimeObjectRow` (`runtime/objectRows`).
-- `RuntimePlayerRow` (type): type RuntimePlayerRow = { userId: string; inventories: Record<string, RuntimeInventorySlot[]>; economy: Record<string, number>; unlocks: string[]; quests?: unknown; social?: unknown; leaderboard?: Record<string, number>; session?: Record<string, unknown>; } — ⚠ undocumented
+- `RuntimePlayerRow` (type): type RuntimePlayerRow = { territoryOwnedCount?: number; ownedTerritoryChunkKeys?: string[]; userId: string; inventories: Record<string, RuntimeInventorySlot[]>; economy: Record<string, number>; unlocks: string[]; quests?: unknown; social?: unknown; leaderboard?: Record<string, number>; session?: Rec… — ⚠ undocumented
 - `RuntimeProfileRow` (type): type RuntimeProfileRow = { userId: string; gameId: string; player: RuntimePlayerRow; updatedAt: number; } — ⚠ undocumented
 - `RuntimeServerRow` (type): type RuntimeServerRow = { entities: RuntimeEntityRow[]; objects: RuntimeObjectRow[]; session: Record<string, unknown>; feeds?: Record<string, unknown[]>; } — ⚠ undocumented
 
@@ -531,7 +544,8 @@
 - `GameRuntimeFeeds` (type): type GameRuntimeFeeds = { subscribeServer: ( serverId: string, onChange: (view: GameRuntimeServerView | null) => void, ) => FeedUnsubscribe; subscribePlayer: ( args: { serverId: string }, onChange: (view: GameRuntimePlayerView | null) => void, ) => FeedUnsubscribe; subscribeFeed: ( args: { serverId:… — ⚠ undocumented
 - `GameRuntimePlayerView` (type): type GameRuntimePlayerView = { userId: string; gameId: string; playerState: unknown; updatedAt: number; } — ⚠ undocumented
 - `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown | WorldSyncFrame; updatedAt: number; } — ⚠ undocumented
-- `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole }) => Promise<JoinServerResult>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented
+- `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole }) => Promise<JoinServerOutcome>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented
+- `JoinServerOutcome` (type): type JoinServerOutcome = | (JoinServerResult & { ok: true }) | { ok: false; reason: "full" | "closed" | "unauthorized" } — Join failures are returned to the caller so the triggering surface can offer retry.
 - `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; resumeTicket?: ResumeTicket; } — ⚠ undocumented
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
 - `MultiplayerRole` (type): type MultiplayerRole = "player" | "spectator" — Connection role used for authoritative world access; spectators are read-only.
@@ -570,6 +584,7 @@
 - `chunkCoordAt` (function): function chunkCoordAt(position: readonly [number, number, number], size: number = DEFAULT_CHUNK_SIZE): ChunkCoord — Chunk coordinates containing a world position at `size` units per cell.
 - `chunkKeyAt` (function): function chunkKeyAt(position: readonly [number, number, number], size: number = DEFAULT_CHUNK_SIZE): string — Chunk key containing a world position at `size` units per cell.
 - `chunkKeyOf` (function): function chunkKeyOf(coord: ChunkCoord): string — Chunk key for a cell — the canonical `"cx,cz"` string a `jgWorldChunks` row is stored under. Games used to invent this mapping each time, which made two systems in one game disagree about which row a position belongs to.
+- `chunkKeysAround` (function): function chunkKeysAround(position: readonly [number, number, number], rings = 1, size = DEFAULT_CHUNK_SIZE): string[] — Square chunk neighborhood around a world position, including its own chunk.
 - `chunkKeysInRadius` (function): function chunkKeysInRadius(center: readonly [number, number, number], radius: number, size: number = DEFAULT_CHUNK_SIZE): string[] — Every chunk key whose cell intersects a radius around a world position — the key list a viewer's bounded hydration or client chunk query asks for, instead of loading a whole world.
 - `createEmptyChunkRow` (function): function createEmptyChunkRow(chunkKey: string): RuntimeChunkRow — An empty chunk row for `chunkKey` — the starting value for a cell nothing has been placed in yet.
 - `deleteChunk` (function): function deleteChunk(snapshot: GameRuntimeSnapshot, chunkKey: string): GameRuntimeSnapshot — Drop a chunk from a snapshot and mark the key dirty so the host deletes its stored row.

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   convex,
+  servers,
   convexPresence,
   isPresenceOnly,
   isServerAuthoritative,
@@ -65,4 +66,10 @@ describe("wsPresence / convexPresence", () => {
       authority: "client",
     });
   });
+});
+
+test("shared server pools default to one world without a room member cap", () => {
+  const pool = servers({ topology: "shared", adapter: { kind: "offline" } });
+  expect(pool.maxServers).toBe(1);
+  expect(pool.slotsPerServer).toBe(Number.MAX_SAFE_INTEGER);
 });

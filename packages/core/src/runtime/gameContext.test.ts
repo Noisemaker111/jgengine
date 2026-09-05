@@ -1575,3 +1575,15 @@ describe("runtime-reported collision meshes", () => {
     expect(shape.offset![1]).toBeCloseTo(0.8, 3);
   });
 });
+
+test("context economy uses a currency definition consistently across grant, balance, charge and debt", () => {
+  const ctx = makeContext();
+  const cash = { id: "cash", name: "Cash", decimals: 3 };
+  for (let tick = 0; tick < 1000; tick++) ctx.game.economy.grant("user_a", cash, 0.005);
+  expect(ctx.game.economy.balance("user_a", cash)).toBe(5);
+  expect(ctx.game.economy.charge("user_a", cash, 4.999)).toBeNull();
+  expect(ctx.game.economy.balance("user_a", cash)).toBe(0.001);
+  expect(ctx.game.economy.charge("user_a", cash, 0.002)).toEqual({ reason: "insufficient-funds" });
+  expect(ctx.game.economy.charge("user_a", cash, 0.002, { overdraft: true })).toBeNull();
+  expect(ctx.game.economy.balance("user_a", cash)).toBe(-0.001);
+});

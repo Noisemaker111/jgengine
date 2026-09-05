@@ -540,8 +540,8 @@
 - `ChatBubble` (interface): interface ChatBubble — ⚠ undocumented
 - `ChatBubblesOptions` (interface): interface ChatBubblesOptions — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
-- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ChatPanel` (function): function ChatPanel({ channels, initialChannel, limit, className, tabsClassName, tabClassName, activeTabClassName, logClassName, messageClassName, inputClassName, inputFieldClassName, sendButtonClassName, placeholder, renderMessage, renderTab, onRejected, }: { channels?: readonly string[]; initialCha… — ⚠ undocumented
+- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; ownMessageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): React.JSX.Element — Chat behavior over a game context or externally supplied server messages.
 - `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
 - `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
@@ -1069,8 +1069,8 @@
 
 - `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
-- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `ChatPanel` (function): function ChatPanel({ channels, initialChannel, limit, className, tabsClassName, tabClassName, activeTabClassName, logClassName, messageClassName, inputClassName, inputFieldClassName, sendButtonClassName, placeholder, renderMessage, renderTab, onRejected, }: { channels?: readonly string[]; initialCha… — ⚠ undocumented
+- `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; ownMessageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
+- `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): React.JSX.Element — Chat behavior over a game context or externally supplied server messages.
 - `chatTransportFromSync` (function): function chatTransportFromSync(sync: ChatSync): ChatTransport — Lifts a callback-style ChatSync (e.g. createWsBackend().chatSyncFor(serverId)) into the hook-shaped ChatTransport contract. Create once per sync — outside render or inside useMemo — so subscriptions survive re-renders.
 
 ## @jgengine/react/chatBubbles
@@ -1646,6 +1646,11 @@
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
 - `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
 
+## @jgengine/react/standaloneChatPanel
+
+- `StandaloneChatPanel` (function): function StandaloneChatPanel<T extends ChatMessage>({ messages, userId, onSend, className, logClassName, inputClassName, inputFieldClassName, messageClassName, ownMessageClassName, style, defaultExpanded = false, collapsedLimit = 3, limit = 50, maxLength = DEFAULT_CHAT_BODY_LENGTH, hotkeysEnabled = … — Headless chat interaction for external message stores. Prefer the ChatPanel entrypoint.
+- `StandaloneChatPanelProps` (interface): interface StandaloneChatPanelProps<T extends ChatMessage = ChatMessage> — Message-store inputs and caller-owned styling for standalone chat.
+
 ## @jgengine/react/startScreen
 
 - `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
@@ -1695,6 +1700,10 @@
 - `DebouncedCommit` (interface): interface DebouncedCommit<T> — Live-mirrored, trailing-debounced commit binding for a single control value.
 - `useDebouncedCommit` (function): function useDebouncedCommit<T>(value: T, commit: (value: T) => void, delayMs = 180): DebouncedCommit<T> — See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the binding identity stays stable except when `value` (the local mirror) changes.
 
+## @jgengine/react/useServerSession
+
+- `useServerSession` (function): function useServerSession(transport: GameRuntimeTransport, gameId: string, preferredServerId?: string): { retry: () => void; serverId: string | null; status: "joining" | "joined" | "failed"; failureReason: string | null; } — Joins a host and exposes a retryable blocking state until membership is confirmed.
+
 ## @jgengine/react/voice
 
 - `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
@@ -1736,6 +1745,15 @@
 - `GameUiPreview` (function): function GameUiPreview({ playable, scenario = defaultUiScenario, }: { playable: PlayableGame; scenario?: UiPreviewScenario; }): React.JSX.Element — ⚠ undocumented
 - `UiPreviewScenario` (type): type UiPreviewScenario = (ctx: GameContext, playable: PlayableGame) => void — ⚠ undocumented
 - `defaultUiScenario` (const): const defaultUiScenario: UiPreviewScenario — ⚠ undocumented
+
+## @jgengine/shell/JoinGate
+
+- `JoinGate` (function): function JoinGate({ status, failureReason, retry, joiningLabel = "Joining world…", failedLabel = "Unable to join", retryLabel = "Retry", className, children, renderJoining, renderFailure }: { status: "joining" | "joined" | "failed"; failureReason?: string | null; retry: () => void; joiningLabel?: Re… — Blocking join feedback; callers may supply their own copy and classes.
+
+## @jgengine/shell/TerritoryOverlay
+
+- `TerritoryOverlay` (function): function TerritoryOverlay({ cells, cost, affordable, formatCost = String, renderCell, className, style }: { cells: readonly TerritoryPreviewCell[]; cost: number; affordable: boolean; formatCost?: (cost: number) => ReactNode; renderCell?: (cell: TerritoryPreviewCell) => ReactNode; className?: string;… — Placement footprint feedback with inline claim cost and affordability.
+- `TerritoryPreviewCell` (type): type TerritoryPreviewCell = { key: string; x: number; z: number; status: "owned" | "claimable" | "blocked" } — A placement footprint cell and its authoritative preview status.
 
 ## @jgengine/shell/audio/AudioComponents
 
@@ -2644,7 +2662,7 @@
 
 ## @jgengine/shell/useShellMultiplayerSync
 
-- `useShellMultiplayerSync` (function): function useShellMultiplayerSync(ctx: GameContext | null, multiplayer: ShellMultiplayer | null, playable: PlayableGame, serverIdRef: { current: string | null }, setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>, authoritativeFrameRef?: { current: AuthoritativeFrameHandler | null }): void — Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
+- `useShellMultiplayerSync` (function): function useShellMultiplayerSync(ctx: GameContext | null, multiplayer: ShellMultiplayer | null, playable: PlayableGame, serverIdRef: { current: string | null }, setRemotePlayers: Dispatch<SetStateAction<PresencePoseRow[]>>, authoritativeFrameRef?: { current: AuthoritativeFrameHandler | null }): { st… — Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 
 ## @jgengine/shell/vfx/ParticleField
 
@@ -2905,7 +2923,7 @@
 
 ## @jgengine/shell/world/WorldScene
 
-- `RemotePlayers` (function): function RemotePlayers({ rows }: { rows: PresencePoseRow[] }): React.JSX.Element — ⚠ undocumented
+- `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): React.JSX.Element — ⚠ undocumented
 - `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined; objectModels… — ⚠ undocumented
 
 ## @jgengine/shell/world/entityPose

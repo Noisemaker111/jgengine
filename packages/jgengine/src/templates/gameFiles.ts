@@ -1271,7 +1271,7 @@ const worldTs = (id: string, ground: "flat" | "terrain" = "terrain") => `import 
 // authored sky the engine renders its default sky.
 export const world = place({
   id: "${id}",
-  ground: { mode: "${ground}", size: { x: Infinity, z: Infinity } },
+  ground: { mode: "${ground === "terrain" ? "flat" : ground}", size: { x: Infinity, z: Infinity } },
   physics: { gravity: -24 },
 });
 `;

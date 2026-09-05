@@ -93,7 +93,7 @@ export function plainText(text: string): string {
 export function lockstepBullet(sdk: string, cli: string, github: string): string {
   return (
     `**Bump lockstep SDK packages to \`^${sdk}\`:** ` +
-    `\`@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}\`. ` +
+    `\`@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets}\`. ` +
     `CLI \`jgengine\` is \`${cli}\`; \`@jgengine/github\` is \`${github}\`.`
   );
 }
@@ -168,6 +168,7 @@ function main(): void {
   const args = process.argv.slice(2);
   const dryRun = args.includes("--dry-run");
   const skipGen = args.includes("--no-gen");
+  const patchRelease = args.includes("--patch");
   const read = (rel: string) => readFileSync(`${root}${rel}`, "utf8");
   const version = (pkg: string) => JSON.parse(read(`packages/${pkg}/package.json`)).version as string;
 
@@ -183,13 +184,13 @@ function main(): void {
   }
 
   if (!dryRun) {
-    const bump = spawnSync("bun", ["scripts/set-version.ts", "--release"], { cwd: root, stdio: "inherit" });
+    const bump = spawnSync("bun", ["scripts/set-version.ts", "--release", ...(patchRelease ? ["--patch"] : [])], { cwd: root, stdio: "inherit" });
     if (bump.status !== 0) process.exit(bump.status ?? 1);
   }
 
-  const sdk = dryRun ? nextMinor(version("core")) : version("core");
-  const cli = dryRun ? nextMinor(version("jgengine")) : version("jgengine");
-  const github = dryRun ? nextMinor(version("github")) : version("github");
+  const sdk = dryRun ? nextReleaseVersion(version("core"), patchRelease) : version("core");
+  const cli = dryRun ? nextReleaseVersion(version("jgengine"), patchRelease) : version("jgengine");
+  const github = dryRun ? nextReleaseVersion(version("github"), patchRelease) : version("github");
   const lockstep = lockstepBullet(sdk, cli, github);
   sections.migrate.unshift(plainText(lockstep));
 
@@ -215,11 +216,12 @@ function main(): void {
   console.log("release: review the diff, then commit and open the release PR.");
 }
 
-function nextMinor(version: string): string {
+/** Compute the version a normal or patch release will publish. */
+export function nextReleaseVersion(version: string, patchRelease = false): string {
   const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?$/.exec(version);
   if (!match) throw new Error(`unparseable version: ${version}`);
   const [, major, minor, patch] = match;
-  return version.includes("-") ? `${major}.${minor}.${patch}` : `${major}.${Number(minor) + 1}.0`;
+  return version.includes("-") ? `${major}.${minor}.${patch}` : patchRelease ? `${major}.${minor}.${Number(patch) + 1}` : `${major}.${Number(minor) + 1}.0`;
 }
 
 if (import.meta.main) main();
