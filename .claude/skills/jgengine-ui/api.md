@@ -2458,7 +2458,7 @@
 - `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
 - `BuildingFacade` (type): type BuildingFacade = "front" | "back" | "left" | "right" | "roof" — ⚠ undocumented
 - `BuildingKitRenderer` (interface): interface BuildingKitRenderer — ⚠ undocumented
-- `BuildingMaterialPalette` (interface): interface BuildingMaterialPalette — ⚠ undocumented
+- `BuildingMaterialPalette` (type): type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>> — Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`).
 - `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented
 - `BuildingPartPlacement` (interface): interface BuildingPartPlacement — ⚠ undocumented
 - `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
@@ -2489,6 +2489,12 @@
 - `getBuildingKit` (function): function getBuildingKit(id: string | undefined): BuildingKit | undefined — The kit registered under `id`, or `undefined` for an unset or unknown name (renders blocks).
 - `listBuildingKits` (function): function listBuildingKits(): string[] — Every registered kit id — the editor's kit picker and diagnostics read this.
 - `registerBuildingKit` (function): function registerBuildingKit(kit: BuildingKit): void — Registers a kit under its own `id`, replacing any kit already registered under that name.
+
+## @jgengine/shell/structures/buildingSurface
+
+- `TexturedBuildingSurface` (type): type TexturedBuildingSurface = BuildingSurfaceMaterial & { maps: BuildingSurfaceMaps } — A surface that names at least one map URL.
+- `surfaceHasMaps` (function): function surfaceHasMaps(surface: BuildingSurfaceMaterial | undefined): surface is TexturedBuildingSurface — True when the surface names at least one map URL, so the batch needs the textured path.
+- `surfaceKey` (function): function surfaceKey(surface: BuildingSurfaceMaterial | undefined): string — A stable key for bucketing instances that share one surface (same colour, maps, tiling, and response).
 
 ## @jgengine/shell/terrain
 

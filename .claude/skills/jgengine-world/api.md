@@ -2772,7 +2772,7 @@
 
 ## @jgengine/core/world/buildings
 
-- `BUILDING_STYLE_PALETTES` (const): const BUILDING_STYLE_PALETTES: Record<BuildingStyle, BuildingPalette> — ⚠ undocumented
+- `BUILDING_STYLE_PALETTES` (const): const BUILDING_STYLE_PALETTES: Record<BuildingStyle, Record<BuildingPartKind, string>> — ⚠ undocumented
 - `BUILDING_STYLE_WALL_TONES` (const): const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> — Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's own `wall`; the rest fan warmer/cooler and lighter/darker around it.
 - `BuildingCellRef` (interface): interface BuildingCellRef — ⚠ undocumented
 - `BuildingConfig` (interface): interface BuildingConfig — ⚠ undocumented
@@ -2781,7 +2781,7 @@
 - `BuildingGridConfig` (interface): interface BuildingGridConfig — ⚠ undocumented
 - `BuildingKitSlot` (interface): interface BuildingKitSlot — ⚠ undocumented
 - `BuildingLot` (interface): interface BuildingLot — ⚠ undocumented
-- `BuildingPalette` (type): type BuildingPalette = Record<BuildingPartKind, string> — ⚠ undocumented
+- `BuildingPalette` (type): type BuildingPalette = Record<BuildingPartKind, BuildingSurface> — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
 - `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented
 - `BuildingPartPlacement` (interface): interface BuildingPartPlacement — ⚠ undocumented
@@ -2789,14 +2789,19 @@
 - `BuildingProbabilities` (interface): interface BuildingProbabilities — ⚠ undocumented
 - `BuildingSeed` (type): type BuildingSeed = number | string — ⚠ undocumented
 - `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
+- `BuildingSurface` (type): type BuildingSurface = string | BuildingSurfaceMaterial — What a building part kind is painted with: a hex colour, or a colour plus tiled PBR maps.
+- `BuildingSurfaceMaps` (interface): interface BuildingSurfaceMaps — URLs of the PBR maps a building surface tiles; `buildMaterialCatalog(...).resolve(id)!.maps` fits directly.
+- `BuildingSurfaceMaterial` (interface): interface BuildingSurfaceMaterial — A textured building surface: a base colour plus optional tiled PBR maps. With `maps`, `color` multiplies the albedo (leave it light to show the map as authored); without, it is the flat colour the part has always had.
 - `BuildingVariantCounts` (interface): interface BuildingVariantCounts — ⚠ undocumented
 - `DEFAULT_BUILDING_CONFIG` (const): const DEFAULT_BUILDING_CONFIG: BuildingConfig — ⚠ undocumented
 - `DEFAULT_BUILDING_STYLE` (const): const DEFAULT_BUILDING_STYLE: BuildingStyle — ⚠ undocumented
 - `GeneratedBuilding` (interface): interface GeneratedBuilding — ⚠ undocumented
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — ⚠ undocumented
+- `buildingSurfaceColor` (function): function buildingSurfaceColor(surface: BuildingSurface | undefined, fallback = "#808080"): string — The flat colour of a surface: the hex itself, or a material's `color`, else `fallback`.
 - `createBuildingConfig` (function): function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig — Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities. Use it to inspect or adjust the resolved shape before generating.
 - `generateBuilding` (function): function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding — Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorative part rolled from `probabilities` and every part tagged with a `kit` slot the renderer binds to a model (see `world/buildingKit`). Deterministic from `seed`.
 - `generateBuildingDistrict` (function): function generateBuildingDistrict(config: BuildingGridConfig): GeneratedBuilding[] — Generate a grid of buildings on lots sized by `lotSize` and separated by `streetWidth`, each with its floor count rolled from `floorRange`.
+- `resolveBuildingSurface` (function): function resolveBuildingSurface(surface: BuildingSurface): BuildingSurfaceMaterial — Normalises a surface to its material form so a renderer reads one shape.
 
 ## @jgengine/core/world/carve
 

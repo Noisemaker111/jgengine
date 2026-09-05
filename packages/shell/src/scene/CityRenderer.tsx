@@ -42,6 +42,7 @@ import {
 import { zoneBand, zoneMetric, type CityTreeSpecies, type CityPieceRole, type CityZoneBand } from "@jgengine/core/world/cityContent";
 import {
   generateBuilding,
+  buildingSurfaceColor,
   resolveBuildingPalette,
   resolveBuildingWallTones,
   type BuildingPalette,
@@ -390,10 +391,10 @@ function unitGeometries() {
 const ROLE_JITTER: Record<CityPieceRole, number> = { wall: 1, roof: 0.5, trim: 0.35, accent: 0.6 };
 
 function roleColor(palette: BuildingPalette, role: CityPieceRole): string {
-  if (role === "wall") return palette.wall;
-  if (role === "roof") return palette.roof;
-  if (role === "trim") return palette.corner;
-  return palette.awning;
+  if (role === "wall") return buildingSurfaceColor(palette.wall);
+  if (role === "roof") return buildingSurfaceColor(palette.roof);
+  if (role === "trim") return buildingSurfaceColor(palette.corner);
+  return buildingSurfaceColor(palette.awning);
 }
 
 interface DetailBuilding {
@@ -651,7 +652,7 @@ function OneCity({ object, context }: { object: SceneKindObject; context: SceneK
       return mesh;
     };
     const plain = new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0.04 });
-    const banded = createCityWindowMaterial({ floorHeight: resolved.rules.floorHeight, windowColor: palette.window });
+    const banded = createCityWindowMaterial({ floorHeight: resolved.rules.floorHeight, windowColor: buildingSurfaceColor(palette.window) });
     const meshes = [
       makeMesh("box", units.box, plain),
       makeMesh("banded", units.box, banded),

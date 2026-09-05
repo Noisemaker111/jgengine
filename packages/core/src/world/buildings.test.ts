@@ -2,11 +2,13 @@ import { describe, expect, test } from "bun:test";
 
 import {
   BUILDING_STYLE_PALETTES,
+  buildingSurfaceColor,
   createBuildingConfig,
   createBuildingGrid,
   generateBuilding,
   generateBuildingDistrict,
   resolveBuildingPalette,
+  resolveBuildingSurface,
 } from "./buildings";
 
 describe("building palettes", () => {
@@ -22,6 +24,17 @@ describe("building palettes", () => {
   test("resolveBuildingPalette rejects unknown styles instead of silently falling back", () => {
     expect(() => resolveBuildingPalette("tents" as never)).toThrow(/Unknown building style "tents"/);
     expect(() => resolveBuildingPalette("aerodrome" as never)).toThrow(/Valid styles:/);
+  });
+
+  test("a palette part may be a textured surface, and colour readers still see a hex", () => {
+    const wall = { color: "#d9cbb0", maps: { color: "/materials/plaster/color.jpg" }, repeat: [2, 1.5] as const };
+    const palette = resolveBuildingPalette("coastal", { wall });
+    expect(palette.wall).toBe(wall);
+    expect(buildingSurfaceColor(palette.wall)).toBe("#d9cbb0");
+    expect(buildingSurfaceColor({ maps: {} }, "#123456")).toBe("#123456");
+    expect(buildingSurfaceColor(undefined, "#abcdef")).toBe("#abcdef");
+    expect(resolveBuildingSurface("#ffffff")).toEqual({ color: "#ffffff" });
+    expect(resolveBuildingSurface(wall)).toBe(wall);
   });
 
   test("every building style palette has a distinct wall color", () => {

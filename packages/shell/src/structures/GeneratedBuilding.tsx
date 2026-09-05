@@ -1,12 +1,20 @@
 import { Suspense, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
-import type { BuildingKitSlot } from "@jgengine/core/world/buildings";
+import {
+  buildingSurfaceColor,
+  resolveBuildingSurface,
+  type BuildingKitSlot,
+  type BuildingSurface,
+  type BuildingSurfaceMaterial,
+} from "@jgengine/core/world/buildings";
 import type { BuildingKit } from "@jgengine/core/world/buildingKit";
 
+import type { MaterialOverrideTextures } from "../materialOverride";
 import { useDisposable } from "../render/useDisposable";
 import { BuildingKitBatch } from "./BuildingKitBatch";
 import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit";
+import { applyBuildingSurface, useBuildingSurfaceTextures } from "./buildingSurface";
 
 export type BuildingFacade = "front" | "back" | "left" | "right" | "roof";
 export type BuildingPartKind =
@@ -39,20 +47,8 @@ export interface GeneratedBuildingData {
   parts: readonly BuildingPartPlacement[];
 }
 
-export interface BuildingMaterialPalette {
-  wall?: string;
-  window?: string;
-  awning?: string;
-  airConditioner?: string;
-  clothesline?: string;
-  storefront?: string;
-  shutter?: string;
-  storeSign?: string;
-  roof?: string;
-  roofProp?: string;
-  guardrail?: string;
-  corner?: string;
-}
+/** Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`). */
+export type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>>;
 
 export interface BuildingKitRenderer {
   renderPart?: (part: BuildingPartPlacement) => ReactNode | undefined;
@@ -97,7 +93,7 @@ export interface InstancedBuildingsProps {
   visibleKinds?: readonly BuildingPartKind[];
 }
 
-const DEFAULT_PALETTE: Required<BuildingMaterialPalette> = {
+const DEFAULT_PALETTE: Record<BuildingPartKind, string> = {
   wall: "#83766a",
   window: "#8ecae6",
   awning: "#c2410c",
@@ -112,8 +108,13 @@ const DEFAULT_PALETTE: Required<BuildingMaterialPalette> = {
   corner: "#6b6258",
 };
 
+function surfaceFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): BuildingSurfaceMaterial {
+  const surface = resolveBuildingSurface(palette?.[kind] ?? DEFAULT_PALETTE[kind]);
+  return surface.color === undefined ? { ...surface, color: DEFAULT_PALETTE[kind] } : surface;
+}
+
 function colorFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): string {
-  return palette?.[kind] ?? DEFAULT_PALETTE[kind];
+  return buildingSurfaceColor(palette?.[kind], DEFAULT_PALETTE[kind]);
 }
 
 function materialFor(part: BuildingPartPlacement, palette: BuildingMaterialPalette | undefined) {
@@ -130,33 +131,35 @@ function materialFor(part: BuildingPartPlacement, palette: BuildingMaterialPalet
   return <meshStandardMaterial color={color} roughness={0.88} metalness={0} />;
 }
 
-function batchMaterialFor(kind: BuildingPartKind, palette: BuildingMaterialPalette | undefined): THREE.Material {
-  const color = colorFor(kind, palette);
-  if (kind === "window" || kind === "storefront") {
-    return new THREE.MeshPhysicalMaterial({ color, roughness: 0.12, metalness: 0, transparent: true, opacity: 0.56 });
-  }
-  if (kind === "storeSign") {
-    return new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6, roughness: 0.5 });
-  }
-  if (kind === "roofProp") {
-    return new THREE.MeshStandardMaterial({ color, roughness: 0.65, metalness: 0.1 });
-  }
-  return new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0 });
+function batchMaterialFor(
+  kind: BuildingPartKind,
+  surface: BuildingSurfaceMaterial,
+  textures?: MaterialOverrideTextures,
+): THREE.Material {
+  const color = surface.color ?? DEFAULT_PALETTE[kind];
+  const base =
+    kind === "window" || kind === "storefront"
+      ? new THREE.MeshPhysicalMaterial({ color, roughness: 0.12, metalness: 0, transparent: true, opacity: 0.56 })
+      : kind === "storeSign"
+        ? new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.6, roughness: 0.5 })
+        : kind === "roofProp"
+          ? new THREE.MeshStandardMaterial({ color, roughness: 0.65, metalness: 0.1 })
+          : new THREE.MeshStandardMaterial({ color, roughness: 0.88, metalness: 0 });
+  return applyBuildingSurface(base, surface, textures);
 }
 
-function BuildingKindBatch({
-  kind,
-  matrices,
-  palette,
-  geometry,
-}: {
+interface BuildingKindBatchProps {
   kind: BuildingPartKind;
   matrices: readonly THREE.Matrix4[];
   palette?: BuildingMaterialPalette;
   geometry: THREE.BoxGeometry;
-}) {
+}
+
+function BuildingKindBatch({ kind, matrices, palette, geometry }: BuildingKindBatchProps) {
+  const surface = useMemo(() => surfaceFor(kind, palette), [kind, palette]);
+  const textures = useBuildingSurfaceTextures(surface);
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  const material = useDisposable(() => batchMaterialFor(kind, palette), [kind, palette]);
+  const material = useDisposable(() => batchMaterialFor(kind, surface, textures), [kind, surface, textures]);
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
