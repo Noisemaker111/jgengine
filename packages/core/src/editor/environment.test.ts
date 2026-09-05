@@ -131,12 +131,15 @@ describe("lakebedFromWaterVolumes", () => {
         preset: "night",
         fog: { near: 50, far: 200, color: "#001122" },
         sunIntensity: 0.2,
+        sunAzimuth: 129,
+        sunElevation: 29,
       },
     };
     expect(skyFromDocument(doc)).toEqual({
       preset: "night",
       fog: { near: 50, far: 200, color: "#001122" },
       sunIntensity: 0.2,
+      sun: { azimuth: 129, elevation: 29 },
     });
     expect(environmentContentFromDocument(doc).sky).toEqual(skyFromDocument(doc));
   });

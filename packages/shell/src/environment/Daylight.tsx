@@ -1,10 +1,12 @@
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
 import { createBiomeFogSampler, createBiomeSkySampler } from "@jgengine/core/world/terrain";
 import { resolveVolumetricClouds, type VolumetricCloudsConfig } from "@jgengine/core/world/volumetricClouds";
+
+import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
 import { daylightStateAt, SKY_PRESET_DAY_FRACTION } from "./daylightCycle";
 import { VolumetricClouds } from "./VolumetricClouds";
@@ -173,6 +175,15 @@ export function SkyDome({
       if (materialRef !== undefined) materialRef.current = null;
     };
   }, [material, materialRef]);
+  const camera = useThree((state) => state.camera);
+  useEffect(() => {
+    const far = (camera as THREE.PerspectiveCamera).far;
+    if (typeof far !== "number" || radius < far) return;
+    warnOnce(
+      "sky-dome-radius",
+      `[jgengine] sky radius ${radius} is at or beyond the camera far plane ${far}; the dome depth-clips to black. Lower sky.radius or raise camera.frustum.far.`,
+    );
+  }, [camera, radius]);
   useFrame((state) => {
     const mesh = meshRef.current;
     if (mesh === null) return;
@@ -184,6 +195,11 @@ export function SkyDome({
       <sphereGeometry args={[radius, 32, 16]} />
     </mesh>
   );
+}
+
+/** Points the dome's sun glow at `position` and keeps the disc lit; called per frame by the time-of-day drivers. */
+function aimSkySun(material: THREE.ShaderMaterial, position: readonly [number, number, number]): void {
+  (material.uniforms.uSunDirection!.value as THREE.Vector3).set(position[0], position[1], position[2]).normalize();
 }
 
 export interface DaylightProps {
@@ -360,6 +376,7 @@ function BiomeDaylight({
     if (skyMaterial !== null) {
       (skyMaterial.uniforms.topColor!.value as THREE.Color).set(skyValue.zenithColor);
       (skyMaterial.uniforms.bottomColor!.value as THREE.Color).set(skyValue.horizonColor);
+      aimSkySun(skyMaterial, base.sunPosition);
     }
     const sun = sunRef.current;
     if (sun !== null) {
@@ -372,7 +389,14 @@ function BiomeDaylight({
 
   return (
     <>
-      <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} {...skyDomeShape(sky)} />
+      <SkyDome
+        topColor={initial.skyTop}
+        horizonColor={initial.skyBottom}
+        sunDirection={initial.sunPosition}
+        sunColor={SUN_COLOR}
+        materialRef={skyMaterialRef}
+        {...skyDomeShape(sky)}
+      />
       {sky.volumetricClouds === undefined ? null : (
         <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} sunDirection={initial.sunPosition} />
       )}
@@ -423,12 +447,20 @@ function DrivenDaylight({
     if (skyMaterial !== null) {
       (skyMaterial.uniforms.topColor!.value as THREE.Color).set(state.skyTop);
       (skyMaterial.uniforms.bottomColor!.value as THREE.Color).set(state.skyBottom);
+      aimSkySun(skyMaterial, state.sunPosition);
     }
   });
 
   return (
     <>
-      <SkyDome topColor={initial.skyTop} horizonColor={initial.skyBottom} materialRef={skyMaterialRef} {...skyDomeShape(sky)} />
+      <SkyDome
+        topColor={initial.skyTop}
+        horizonColor={initial.skyBottom}
+        sunDirection={initial.sunPosition}
+        sunColor={SUN_COLOR}
+        materialRef={skyMaterialRef}
+        {...skyDomeShape(sky)}
+      />
       {sky.volumetricClouds === undefined ? null : (
         <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} sunDirection={initial.sunPosition} />
       )}

@@ -1,5 +1,7 @@
 import { describe, expect, spyOn, test } from "bun:test";
 
+import { resetWarnOnce } from "../devtools/warnOnce";
+
 import {
   biomes,
   building,
@@ -208,6 +210,7 @@ describe("world features", () => {
       radius: 2600,
       hazeStrength: 0.62,
       sunGlowStrength: 0.6,
+      sun: { azimuth: 129, elevation: 29 },
       fog: { color: "#ffb37a", near: 40, far: 220 },
     });
     expect(descriptor).toEqual({
@@ -218,6 +221,7 @@ describe("world features", () => {
       zenithColor: "#1a2b4a",
       sunIntensity: 0.7,
       ambientIntensity: 0.4,
+      sun: { azimuth: 129, elevation: 29 },
       radius: 2600,
       hazeStrength: 0.62,
       sunGlowStrength: 0.6,
@@ -226,6 +230,23 @@ describe("world features", () => {
 
     const world = environment({ sky: descriptor });
     expect(world).toEqual({ kind: "environment", sky: descriptor });
+  });
+
+  test("sky warns once when authored tints ride a time-of-day crossfade", () => {
+    resetWarnOnce();
+    const warn = console.warn;
+    const messages: string[] = [];
+    console.warn = (text: string) => {
+      messages.push(text);
+    };
+    try {
+      sky({ timeOfDay: true, zenithColor: "#3fa4f2" });
+      sky({ timeOfDay: true, horizonColor: "#e3f4ff" });
+      sky({ timeOfDay: false, zenithColor: "#3fa4f2" });
+    } finally {
+      console.warn = warn;
+    }
+    expect(messages.filter((m) => m.includes("noon keyframe"))).toHaveLength(1);
   });
 
   test("terrain carries flatten masks", () => {

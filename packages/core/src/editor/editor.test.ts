@@ -989,6 +989,8 @@ describe("document.environment (#1110 lighting)", () => {
     timeOfDay: true,
     sunIntensity: 0.7,
     ambientIntensity: 0.4,
+    sunAzimuth: 129,
+    sunElevation: 29,
     horizonColor: "#ff8a5c",
     zenithColor: "#1a2b4a",
     fog: { color: "#ffb37a", near: 40, far: 220 },

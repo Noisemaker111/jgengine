@@ -64,6 +64,14 @@ export function skyConfigFromEnvironment(env: EditorEnvironment): SkyEnvironment
     ...(env.zenithColor === undefined ? {} : { zenithColor: env.zenithColor }),
     ...(env.sunIntensity === undefined ? {} : { sunIntensity: env.sunIntensity }),
     ...(env.ambientIntensity === undefined ? {} : { ambientIntensity: env.ambientIntensity }),
+    ...(env.sunAzimuth === undefined && env.sunElevation === undefined
+      ? {}
+      : {
+          sun: {
+            ...(env.sunAzimuth === undefined ? {} : { azimuth: env.sunAzimuth }),
+            ...(env.sunElevation === undefined ? {} : { elevation: env.sunElevation }),
+          },
+        }),
     ...(env.fog === undefined ? {} : { fog: { ...env.fog } }),
   };
 }

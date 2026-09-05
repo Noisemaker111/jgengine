@@ -1,8 +1,12 @@
+import type { SkySunConfig } from "@jgengine/core/world/features";
+
 export interface DaylightCycleConfig {
   horizonColor?: string;
   zenithColor?: string;
   sunIntensity?: number;
   ambientIntensity?: number;
+  /** Fixed sun placement, or the noon placement the day arc swings around. Unset keeps the engine arc. */
+  sun?: SkySunConfig;
 }
 
 export interface DaylightState {
@@ -44,6 +48,35 @@ export const DEFAULT_DAY_SKY_BOTTOM = "#e3f4ff";
 
 const SUN_DISTANCE = 200;
 const SUN_DEPTH_RATIO = 0.4;
+const DEG = Math.PI / 180;
+/** The engine arc's noon height: `atan(1 / SUN_DEPTH_RATIO)`, ~68 degrees. */
+export const DEFAULT_SUN_ELEVATION_DEG = Math.atan2(1, SUN_DEPTH_RATIO) / DEG;
+
+/**
+ * Unit direction toward a sun at compass `azimuth` (0 = -Z, 90 = +X) and `elevation` above the
+ * horizon, both in degrees. Shared by the dome glow, the sky-owned sun light, and the editor.
+ * @internal
+ */
+export function sunDirectionFromBearing(azimuth: number, elevation: number): [number, number, number] {
+  const az = azimuth * DEG;
+  const el = elevation * DEG;
+  const flat = Math.cos(el);
+  return [Math.sin(az) * flat, Math.sin(el), -Math.cos(az) * flat];
+}
+
+/**
+ * Inverse of {@link sunDirectionFromBearing}: the bearing/elevation (degrees) of a world-space
+ * direction such as an authored directional light's position. A zero vector reads as overhead.
+ * @internal
+ */
+export function bearingFromDirection(direction: readonly [number, number, number]): { azimuth: number; elevation: number } {
+  const [x, y, z] = direction;
+  const length = Math.hypot(x, y, z);
+  if (length === 0) return { azimuth: 0, elevation: 90 };
+  const azimuth = ((Math.atan2(x, -z) / DEG) + 360) % 360;
+  const elevation = Math.asin(Math.max(-1, Math.min(1, y / length))) / DEG;
+  return { azimuth, elevation };
+}
 
 export const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> = {
   night: 0,
@@ -150,14 +183,41 @@ export function daylightStateAt(dayFraction: number, config: DaylightCycleConfig
   const skyTop = lerpHexColor(from.skyTop, to.skyTop, localT);
   const skyBottom = lerpHexColor(from.skyBottom, to.skyBottom, localT);
 
-  const angle = (wrapped - 0.25) * 2 * Math.PI;
-  const elevation = Math.sin(angle);
-  const azimuth = Math.cos(angle);
-  const sunPosition: [number, number, number] = [
-    azimuth * SUN_DISTANCE,
-    elevation * SUN_DISTANCE,
-    SUN_DISTANCE * SUN_DEPTH_RATIO,
-  ];
+  const sunPosition = sunPositionAt(wrapped, config.sun);
 
   return { sunPosition, sunIntensity, ambientIntensity, skyTop, skyBottom, background: skyBottom };
+}
+
+/**
+ * Sun position for a wrapped day fraction. Without `sun`, the legacy arc: east at dawn, ~68 degrees
+ * up at noon, west at dusk, tilted 0.4 toward +Z. With `sun`, the arc is rotated so noon lands
+ * exactly on the authored bearing and elevation and the sun still rises 90 degrees before it and
+ * sets 90 degrees after it, so a fixed preset (noon, dusk, night fractions) samples the same arc.
+ */
+function sunPositionAt(wrapped: number, sun: SkySunConfig | undefined): [number, number, number] {
+  const angle = (wrapped - 0.25) * 2 * Math.PI;
+  const along = Math.cos(angle);
+  const up = Math.sin(angle);
+  if (sun === undefined) {
+    return [along * SUN_DISTANCE, up * SUN_DISTANCE, SUN_DISTANCE * SUN_DEPTH_RATIO];
+  }
+  const noon = sunDirectionFromBearing(sun.azimuth ?? 0, sun.elevation ?? DEFAULT_SUN_ELEVATION_DEG);
+  const horizon = normalize([noon[0], 0, noon[2]], [0, 0, -1]);
+  const east: [number, number, number] = [-horizon[2], 0, horizon[0]];
+  const zenith = normalize(cross(east, noon), [0, 1, 0]);
+  const rise = normalize(cross(noon, zenith), east);
+  return [
+    (rise[0] * along + noon[0] * up) * SUN_DISTANCE,
+    (rise[1] * along + noon[1] * up) * SUN_DISTANCE,
+    (rise[2] * along + noon[2] * up) * SUN_DISTANCE,
+  ];
+}
+
+function cross(a: readonly [number, number, number], b: readonly [number, number, number]): [number, number, number] {
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+}
+
+function normalize(v: readonly [number, number, number], fallback: readonly [number, number, number]): [number, number, number] {
+  const length = Math.hypot(v[0], v[1], v[2]);
+  return length < 1e-6 ? [fallback[0], fallback[1], fallback[2]] : [v[0] / length, v[1] / length, v[2] / length];
 }

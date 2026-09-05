@@ -17,7 +17,14 @@ between (`--json` for structured output).
 
 ## [Unreleased]
 
+### Added
+
+- `sky({ sun: { azimuth, elevation } })` places the dome sun and the sky-owned sun light by compass bearing and height; under `timeOfDay` the day arc swings around that noon position. Unset, the shell derives it from the first authored `lighting.directional` light so the dome glow agrees with the shadows. Editor lighting panel gains bearing/height sliders (`sunAzimuth`/`sunElevation` on the scene document).
+- `warnOnce` in `@jgengine/core/devtools/warnOnce`: dev-only, once-per-site console warnings. Used for a `sky.radius` at or past the camera far plane (the dome depth-clips to black) and for `zenithColor`/`horizonColor` under `timeOfDay` (they only set the noon keyframe).
+
 ### Fixed
+
+- Time-of-day and biome-driven sky domes now draw the sun disc and glow, tracking the sun through the day; previously only the fixed-preset dome had one.
 
 - Separate SDK publication validation from external Games quality checks while retaining the full local and main-branch gates.
 
