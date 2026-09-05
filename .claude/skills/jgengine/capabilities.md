@@ -178,6 +178,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineStore` (function) · `import { defineStore } from "@jgengine/shell/gameKit"`
 
+## warn-once — emit a dev-only warning a single time per call site
+
+- `warnOnce` (function) · `import { warnOnce } from "@jgengine/core/devtools/warnOnce"`
+
 ## world-chunk-key — map world positions to persisted chunk keys at a declared cell size
 
 - `chunkKeyOf` (function) · `import { chunkKeyOf } from "@jgengine/core/runtime/worldChunks"`

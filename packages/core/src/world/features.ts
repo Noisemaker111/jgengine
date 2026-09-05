@@ -6,6 +6,7 @@ import type { PlaceWorldFeature } from "./place";
 import type { TerraformSnapshot } from "./terraform";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { VolumetricCloudsConfig } from "./volumetricClouds";
+import { warnOnce } from "../devtools/warnOnce";
 
 export interface WorldBounds {
   w: number;
@@ -316,16 +317,39 @@ export interface OceanEnvironmentConfig {
   color?: string;
 }
 
+/**
+ * Where the sun sits, as a compass bearing and a height above the horizon, both in degrees.
+ * `azimuth` 0 points toward -Z (north), 90 toward +X (east); `elevation` 90 is straight overhead.
+ */
+export interface SkySunConfig {
+  /** Compass bearing of the sun in degrees; 0 = -Z, 90 = +X. Default 0. */
+  azimuth?: number;
+  /** Height above the horizon in degrees; 0 sits on the horizon, 90 is overhead. Default 68. */
+  elevation?: number;
+}
+
 export interface SkyEnvironmentConfig {
   /** Fixed look used when `timeOfDay` is off (or no clock is available); default "day". */
   preset?: "day" | "dusk" | "night";
   /** Drive sun/sky from the world clock's `calendar().dayFraction` instead of the fixed `preset`. */
   timeOfDay?: boolean;
+  /**
+   * Horizon tint at noon. Under `timeOfDay` this only sets the noon keyframe; dawn, dusk, and night
+   * still crossfade through the engine presets, so an authored tint is visible for part of the day.
+   */
   horizonColor?: string;
+  /** Zenith tint at noon; same `timeOfDay` crossfade caveat as `horizonColor`. */
   zenithColor?: string;
   sunIntensity?: number;
   ambientIntensity?: number;
-  /** Sky-dome sphere radius in world units. Enlarge for a playfield sited far from the origin so the viewer never exits the dome. Default 260. */
+  /**
+   * Sun placement for the dome glow and the sky-owned sun light. With a fixed `preset` this is the
+   * sun's exact direction; under `timeOfDay` it is where the sun stands at noon and the day arc
+   * swings around that bearing. Unset with an authored `lighting.directional` light, the shell takes
+   * the first directional light's direction so the dome sun agrees with the shadows.
+   */
+  sun?: SkySunConfig;
+  /** Sky-dome sphere radius in world units. Enlarge for a playfield sited far from the origin so the viewer never exits the dome. Must stay below the camera far plane or the dome depth-clips to black. Default 260. */
   radius?: number;
   /** Horizon haze-band strength: 0 removes the dusty band, ~1 makes it heavy. Default 0.5. */
   hazeStrength?: number;
@@ -728,6 +752,12 @@ export function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironme
 }
 
 export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor {
+  if (config.timeOfDay === true && (config.zenithColor !== undefined || config.horizonColor !== undefined)) {
+    warnOnce(
+      "sky-timeofday-tint",
+      "[jgengine] sky(): zenithColor/horizonColor only set the noon keyframe under timeOfDay; dawn, dusk, and night crossfade through the engine presets. Drop timeOfDay for a fixed tint.",
+    );
+  }
   return withOptional(
     {
       kind: "sky" as const,
@@ -739,6 +769,7 @@ export function sky(config: SkyEnvironmentConfig = {}): SkyEnvironmentDescriptor
       ...(config.zenithColor === undefined ? {} : { zenithColor: config.zenithColor }),
       ...(config.sunIntensity === undefined ? {} : { sunIntensity: config.sunIntensity }),
       ...(config.ambientIntensity === undefined ? {} : { ambientIntensity: config.ambientIntensity }),
+      ...(config.sun === undefined ? {} : { sun: { ...config.sun } }),
       ...(config.radius === undefined ? {} : { radius: config.radius }),
       ...(config.hazeStrength === undefined ? {} : { hazeStrength: config.hazeStrength }),
       ...(config.sunGlowStrength === undefined ? {} : { sunGlowStrength: config.sunGlowStrength }),

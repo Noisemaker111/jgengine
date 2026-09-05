@@ -224,6 +224,10 @@
 - `subscribeUrlChange` (function): function subscribeUrlChange(listener: () => void): () => void — Fires `listener` whenever the query string may have changed out from under a flag — browser back/forward (`popstate`). Manual address-bar edits reload the page, so initial reads cover those; this keeps in-app state honest across history navigation. Returns an unsubscribe.
 - `writeUrlParam` (function): function writeUrlParam(param: string, value: string | null): void — Sets `param` to `value`, or removes it when `value` is null, rewriting the URL in place with `history.replaceState` so the rest of the query and the hash survive and no history entry is pushed. No-ops without a DOM, and skips the write when the URL already matches.
 
+## @jgengine/core/devtools/warnOnce
+
+- `warnOnce` (function): function warnOnce(site: string, message: string): void — Logs a dev-mode `console.warn` once per `site`, and never in a production build. Reach for it where a permissive config would otherwise fail silently — a clipped sky dome, an ignored tint.
+
 ## @jgengine/core/meta/changelog
 
 - `CHANGELOG` (const): const CHANGELOG: Record<string, ChangelogEntry> — Per-version engine changelog keyed by semver string (e.g. `"0.10.0"`).

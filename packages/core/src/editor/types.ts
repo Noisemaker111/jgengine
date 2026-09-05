@@ -237,6 +237,10 @@ export interface EditorEnvironment {
   zenithColor?: string;
   sunIntensity?: number;
   ambientIntensity?: number;
+  /** Sun compass bearing in degrees (0 = -Z, 90 = +X); runtime `SkySunConfig.azimuth`. */
+  sunAzimuth?: number;
+  /** Sun height above the horizon in degrees; runtime `SkySunConfig.elevation`. */
+  sunElevation?: number;
   fog?: EditorFogConfig;
 }
 

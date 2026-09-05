@@ -55,6 +55,8 @@ function cloneEnvironment(environment: EditorEnvironment): EditorEnvironment {
     ...(environment.zenithColor === undefined ? {} : { zenithColor: environment.zenithColor }),
     ...(environment.sunIntensity === undefined ? {} : { sunIntensity: environment.sunIntensity }),
     ...(environment.ambientIntensity === undefined ? {} : { ambientIntensity: environment.ambientIntensity }),
+    ...(environment.sunAzimuth === undefined ? {} : { sunAzimuth: environment.sunAzimuth }),
+    ...(environment.sunElevation === undefined ? {} : { sunElevation: environment.sunElevation }),
     ...(environment.fog === undefined ? {} : { fog: { ...environment.fog } }),
   };
 }
@@ -1143,7 +1145,7 @@ function decodeEnvironment(
       failed = true;
     }
   }
-  for (const key of ["sunIntensity", "ambientIntensity"] as const) {
+  for (const key of ["sunIntensity", "ambientIntensity", "sunAzimuth", "sunElevation"] as const) {
     if (value[key] === undefined) continue;
     if (typeof value[key] === "number" && Number.isFinite(value[key])) env[key] = value[key] as number;
     else {

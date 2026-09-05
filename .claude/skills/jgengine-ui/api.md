@@ -2107,6 +2107,7 @@
 - `DEFAULT_DAY_SKY_BOTTOM` (const): const DEFAULT_DAY_SKY_BOTTOM: "#e3f4ff" — ⚠ undocumented
 - `DEFAULT_DAY_SKY_TOP` (const): const DEFAULT_DAY_SKY_TOP: "#3fa4f2" — ⚠ undocumented
 - `DEFAULT_DAY_SUN_INTENSITY` (const): const DEFAULT_DAY_SUN_INTENSITY: 1 — ⚠ undocumented
+- `DEFAULT_SUN_ELEVATION_DEG` (const): const DEFAULT_SUN_ELEVATION_DEG: number — The engine arc's noon height: `atan(1 / SUN_DEPTH_RATIO)`, ~68 degrees.
 - `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
 - `DaylightState` (interface): interface DaylightState — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented

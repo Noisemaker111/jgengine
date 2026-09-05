@@ -17,6 +17,8 @@ const DISPLAY_DEFAULTS = {
   timeOfDay: false,
   sunIntensity: 1,
   ambientIntensity: 0.45,
+  sunAzimuth: 0,
+  sunElevation: 68,
   fogNear: 80,
   fogFar: 400,
   fogColor: "",
@@ -30,6 +32,8 @@ function readDisplay(env: EditorEnvironment | undefined) {
     timeOfDay: env?.timeOfDay ?? DISPLAY_DEFAULTS.timeOfDay,
     sunIntensity: env?.sunIntensity ?? DISPLAY_DEFAULTS.sunIntensity,
     ambientIntensity: env?.ambientIntensity ?? DISPLAY_DEFAULTS.ambientIntensity,
+    sunAzimuth: env?.sunAzimuth ?? DISPLAY_DEFAULTS.sunAzimuth,
+    sunElevation: env?.sunElevation ?? DISPLAY_DEFAULTS.sunElevation,
     fogNear: env?.fog?.near ?? DISPLAY_DEFAULTS.fogNear,
     fogFar: env?.fog?.far ?? DISPLAY_DEFAULTS.fogFar,
     fogColor: env?.fog?.color ?? DISPLAY_DEFAULTS.fogColor,
@@ -191,6 +195,24 @@ export function LightingPanel({ session }: { session: EditorSession }) {
           step={0.05}
           onChange={(value) => patch({ ambientIntensity: value }, "env:ambient")}
           format={(v) => v.toFixed(2)}
+        />
+        <SliderRow
+          label="bearing"
+          value={display.sunAzimuth}
+          min={0}
+          max={360}
+          step={1}
+          onChange={(value) => patch({ sunAzimuth: value }, "env:sunAzimuth")}
+          format={(v) => `${Math.round(v)}°`}
+        />
+        <SliderRow
+          label="height"
+          value={display.sunElevation}
+          min={0}
+          max={90}
+          step={1}
+          onChange={(value) => patch({ sunElevation: value }, "env:sunElevation")}
+          format={(v) => `${Math.round(v)}°`}
         />
       </section>
 

@@ -70,6 +70,7 @@ import {
 } from "./camera";
 import { CullingProvider } from "./visibility/CullingProvider";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
+import { bearingFromDirection } from "./environment/daylightCycle";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
 import { EnvironmentScene } from "./environment/EnvironmentScene";
 import { PointerProbe } from "./pointer/PointerProbe";
@@ -252,9 +253,17 @@ export function Shell3dPresentation({
   const cinematicLook = (playable.look ?? "cinematic") !== "flat";
   const backdrop = resolvedLook.backdrop;
   const backdropSky = backdrop?.sky !== undefined ? resolveSkyDescriptor(backdrop.sky) : undefined;
-  const effectiveSky = backdropSky ?? worldSky;
-  const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
+  const authoredSky = backdropSky ?? worldSky;
   const lighting = resolvedLook.lighting;
+  const sunFromLighting = lighting?.directional?.[0]?.position;
+  const effectiveSky = useMemo(
+    () =>
+      authoredSky === undefined || authoredSky.sun !== undefined || authoredSky.timeOfDay || sunFromLighting === undefined
+        ? authoredSky
+        : { ...authoredSky, sun: bearingFromDirection(sunFromLighting) },
+    [authoredSky, sunFromLighting],
+  );
+  const backgroundColor = backdrop?.background ?? (effectiveSky === undefined ? DEFAULT_BACKGROUND_COLOR : undefined);
   const orthographic = playable.camera?.projection === "orthographic";
 
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
