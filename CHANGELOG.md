@@ -19,6 +19,8 @@ between (`--json` for structured output).
 
 ### Added
 
+- The built-in Graphics settings tab now exposes render scale plus ambient occlusion, bloom, depth-of-field, and SMAA toggles alongside the quality tier; picking a tier re-applies its defaults. `@jgengine/core/settings/graphicsSettings` (`readGraphicsSettings`, `applyGraphicsQuality`, `GRAPHICS_POST_STAGES`) resolves the stored choices onto the `GraphicsProfile` the shell renders with, and `SETTING_IDS` gains `graphics.renderScale` and `graphics.post.*`. Every game gets the rows in its existing settings menu with no wiring (#1688).
+
 - Building palettes take textured surfaces: a `BuildingPalette` part (and `BuildingKitPart.material`) may be `{ color?, maps?, repeat?, roughness?, metalness? }` with `maps` straight from `buildMaterialCatalog(...).resolve(id)!.maps`, not only a hex colour. Generated facade boxes and kit models tile the PBR maps per slot; unbound kinds keep their flat colour. `buildingSurfaceColor` / `resolveBuildingSurface` read either form.
 
 ### Fixed

@@ -107,7 +107,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --mode <ui|play>    capture mode (default play)
   --size <full|half>  half halves both dimensions (~1/4 the pixels) for cheap
                       mid-loop judge shots — use full (default) for final/PR shots
-  --click "<text>"    click the first visible element containing this text
+  --click "<text>"    click the first visible element containing this text (or, for
+                      icon-only buttons, this aria-label — e.g. "Settings")
   --wait <ms>         pause before the next step
   --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds
   --shot <name|path>  screenshot to shots/<game>-<name>.png for a bare name, or to
@@ -296,12 +297,13 @@ async function measureClickPoint(session: CdpSession, text: string): Promise<{ x
       const nodes = Array.from(document.querySelectorAll("button, [role=button], a, span, div, h1, h2, h3"));
       let best = null;
       for (const node of nodes) {
-        const own = (node.textContent ?? "").trim().toLowerCase();
+        const own = ((node.textContent ?? "").trim() || node.getAttribute("aria-label") || "").toLowerCase();
         if (own === "" || !own.includes(needle)) continue;
-        if (best === null || own.length < best.len) {
+        const interactive = node.matches("button, [role=button], [role=switch], a");
+        if (best === null || own.length < best.len || (own.length === best.len && interactive && !best.interactive)) {
           const rect = node.getBoundingClientRect();
           if (rect.width > 0 && rect.height > 0) {
-            best = { len: own.length, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+            best = { len: own.length, interactive, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
           }
         }
       }

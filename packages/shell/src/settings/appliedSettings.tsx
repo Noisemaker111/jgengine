@@ -3,17 +3,16 @@ import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
 import {
   busVolumeSettingId,
-  DEFAULT_GRAPHICS_QUALITY,
   DEFAULT_MASTER_VOLUME,
   DEFAULT_UI_SCALE,
-  GRAPHICS_QUALITY_DPR,
   SETTING_IDS,
   UI_SCALE_MAX,
   UI_SCALE_MIN,
   type GraphicsQuality,
   type SettingsStore,
 } from "@jgengine/core/settings/settingsModel";
-import { resolveGraphicsProfile, type GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
+import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
+import { readGraphicsSettings, type GraphicsProfileOverrides } from "@jgengine/core/settings/graphicsSettings";
 
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
@@ -61,12 +60,10 @@ export function useSettingsRevision(store: SettingsStore): number {
 export function useGraphicsSettings(
   store: SettingsStore,
   shadowsDefault: boolean,
-  overrides?: Partial<Record<GraphicsQuality, Partial<GraphicsProfile>>>,
+  overrides?: GraphicsProfileOverrides,
 ): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile } {
   useSettingsRevision(store);
-  const rawQuality = store.get(SETTING_IDS.graphicsQuality, DEFAULT_GRAPHICS_QUALITY) as GraphicsQuality;
-  const quality: GraphicsQuality = GRAPHICS_QUALITY_DPR[rawQuality] !== undefined ? rawQuality : "high";
-  const profile = resolveGraphicsProfile(quality, overrides?.[quality]);
+  const { quality, profile } = readGraphicsSettings(store, overrides);
   const rawUiScale = store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE);
   return {
     shadows: store.get(SETTING_IDS.graphicsShadows, shadowsDefault),
