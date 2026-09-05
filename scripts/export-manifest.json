@@ -404,6 +404,7 @@
     "./session/roles",
     "./session/roundState",
     "./settings/graphicsProfile",
+    "./settings/graphicsSettings",
     "./settings/settingsModel",
     "./stats/accumulatorMeter",
     "./stats/eventMeter",

@@ -73,6 +73,21 @@
 - `GraphicsProfile` (interface): interface GraphicsProfile — Serializable renderer budget selected by the player's graphics tier.
 - `resolveGraphicsProfile` (function): function resolveGraphicsProfile(quality: GraphicsQuality, overrides?: Partial<GraphicsProfile>): GraphicsProfile — Resolve one tier and apply game-authored field and post-stage overrides.
 
+## @jgengine/core/settings/graphicsSettings
+
+- `GRAPHICS_POST_STAGES` (const): const GRAPHICS_POST_STAGES: readonly GraphicsPostStage[] — Ordered stage list used to build settings rows.
+- `GRAPHICS_POST_STAGE_LABELS` (const): const GRAPHICS_POST_STAGE_LABELS: Record<GraphicsPostStage, string> — Player-facing labels for each post stage.
+- `GraphicsPostStage` (type): type GraphicsPostStage = keyof GraphicsProfile["postStages"] — The post-processing stages a player can toggle individually on top of the quality tier.
+- `GraphicsProfileOverrides` (type): type GraphicsProfileOverrides = Partial<Record<GraphicsQuality, Partial<GraphicsProfile>>> — Per-tier profile overrides a game authors with `defineGame({ graphics })`.
+- `GraphicsSettingsState` (interface): interface GraphicsSettingsState — The resolved player graphics choice: the tier plus the profile after per-stage and render-scale overrides.
+- `RENDER_SCALE_MAX` (const): const RENDER_SCALE_MAX: 2 — Highest player render scale.
+- `RENDER_SCALE_MIN` (const): const RENDER_SCALE_MIN: 0.5 — Lowest player render scale; the value is the device-pixel-ratio cap handed to the canvas.
+- `RENDER_SCALE_STEP` (const): const RENDER_SCALE_STEP: 0.05 — Render-scale slider increment.
+- `applyGraphicsQuality` (function): function applyGraphicsQuality(store: Pick<SettingsStore, "set">, quality: GraphicsQuality, overrides?: GraphicsProfileOverrides): GraphicsProfile — Select a quality tier and re-apply its render scale and stage defaults, so picking a preset resets the individual overrides instead of leaving stale toggles behind.
+- `graphicsPostStageSettingId` (function): function graphicsPostStageSettingId(stage: GraphicsPostStage): string — Setting id that stores one stage toggle (`graphics.post.<stage>`).
+- `readGraphicsQuality` (function): function readGraphicsQuality(store: Pick<SettingsStore, "get">): GraphicsQuality — The stored quality tier, falling back to the default when the value is missing or unknown.
+- `readGraphicsSettings` (function): function readGraphicsSettings(store: Pick<SettingsStore, "get">, overrides?: GraphicsProfileOverrides): GraphicsSettingsState — Resolve the player's graphics state from a settings store. The tier profile (with the game's overrides) supplies every default; a stored render scale or stage toggle replaces its field.
+
 ## @jgengine/core/settings/settingsModel
 
 - `BUILT_IN_SETTING_CATEGORIES` (const): const BUILT_IN_SETTING_CATEGORIES: readonly BuiltInSettingCategory[] — ⚠ undocumented
@@ -87,7 +102,7 @@
 - `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
 - `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
 - `SETTINGS_STORAGE_PREFIX` (const): const SETTINGS_STORAGE_PREFIX: "jgengine:setting:" — ⚠ undocumented
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; readonly touchJoystick: "controls.touchJoystick"; } — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly graphicsRenderScale: "graphics.renderScale"; readonly graphicsPostAo: "graphics.post.ao"; rea… — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
@@ -192,7 +207,7 @@
 - `RadialSlice` (interface): interface RadialSlice — One wedge of a radial menu — geometry for rendering a slice. Angles are radians from "up" (−Y), clockwise.
 - `RadialVectorOptions` (interface): interface RadialVectorOptions extends RadialArc — Options for {@link radialIndexFromVector}.
 - `ResolvedAction` (interface): interface ResolvedAction — A resolved action view model — availability computed once from cooldown, cost, `disabled`, and any caller reasons. `enabled` is the single truth a renderer gates interaction on; `reasons` is the ordered explanation (cooldown, then unmet costs, then caller reasons, then a generic disable).
-- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly touchStyle: "controls.touchStyle"; readonly touchJoystick: "controls.touchJoystick"; } — ⚠ undocumented
+- `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly graphicsRenderScale: "graphics.renderScale"; readonly graphicsPostAo: "graphics.post.ao"; rea… — ⚠ undocumented
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
 - `ScreenMarkerLayout` (interface): interface ScreenMarkerLayout — Where and how to draw one marker, from {@link layoutScreenMarker}.
 - `ScreenMarkerOptions` (interface): interface ScreenMarkerOptions — Options for {@link layoutScreenMarker}.
@@ -2395,7 +2410,7 @@
 
 - `AudioSettingsBridge` (function): function AudioSettingsBridge({ store, engine, buses, }: { store: SettingsStore; engine: AudioEngine; buses: Record<string, AudioBusDef> | undefined; }): null — ⚠ undocumented
 - `TOUCH_STYLE_AUTO` (const): const TOUCH_STYLE_AUTO: "auto" — Sentinel Controls value meaning "defer to the game's suggested touch skin".
-- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean, overrides?: Partial<Record<GraphicsQuality, Partial<GraphicsProfile>>>): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile } — ⚠ undocumented
+- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean, overrides?: GraphicsProfileOverrides): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile } — ⚠ undocumented
 - `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
 
 ## @jgengine/shell/settings/settingsController

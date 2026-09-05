@@ -462,6 +462,7 @@ export function Shell3dPresentation({
           categories={settingsConfig.categories ?? []}
           hide={hideCategories}
           fovEnabled={fovControlEnabled}
+          graphics={playable.graphics}
           hideBindings={settingsConfig.hideBindings ?? []}
           touchStyle={
             coarsePointer &&

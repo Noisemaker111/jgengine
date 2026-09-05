@@ -4,7 +4,6 @@ import type { AudioBusDef } from "@jgengine/core/audio/audioFalloff";
 import {
   BUILT_IN_SETTING_CATEGORIES,
   busVolumeSettingId,
-  DEFAULT_GRAPHICS_QUALITY,
   DEFAULT_GRAPHICS_SHADOWS,
   DEFAULT_MASTER_VOLUME,
   DEFAULT_UI_SCALE,
@@ -13,11 +12,23 @@ import {
   UI_SCALE_MAX,
   UI_SCALE_MIN,
   type GameSettingDef,
+  type GraphicsQuality,
   type SettingCategory,
   type SettingCategoryDef,
   type SettingOption,
   type SettingValue,
 } from "@jgengine/core/settings/settingsModel";
+import {
+  applyGraphicsQuality,
+  GRAPHICS_POST_STAGE_LABELS,
+  GRAPHICS_POST_STAGES,
+  graphicsPostStageSettingId,
+  readGraphicsSettings,
+  RENDER_SCALE_MAX,
+  RENDER_SCALE_MIN,
+  RENDER_SCALE_STEP,
+  type GraphicsProfileOverrides,
+} from "@jgengine/core/settings/graphicsSettings";
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
   TOUCH_JOYSTICK_VARIANT_OPTIONS,
@@ -53,6 +64,8 @@ export interface SettingsControllerInput {
   categories: readonly SettingCategoryDef[];
   hide: readonly SettingCategory[];
   fovEnabled: boolean;
+  /** The game's per-tier profile overrides (`defineGame({ graphics })`), so tier defaults match what renders. */
+  graphics?: GraphicsProfileOverrides;
   hideBindings: readonly string[];
   /** Show the touch-controls skin selector in Controls (touch device with a dock). */
   touchStyle: boolean;
@@ -116,14 +129,26 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
     ...extrasFor("sound"),
   ];
 
+  const graphics = readGraphicsSettings(store, config.graphics);
   const graphicsRows: SettingsRow[] = [
     {
       id: SETTING_IDS.graphicsQuality,
       label: "Quality",
       kind: "select",
-      value: store.get(SETTING_IDS.graphicsQuality, DEFAULT_GRAPHICS_QUALITY),
+      value: graphics.quality,
       options: GRAPHICS_QUALITY_OPTIONS,
-      set: (value) => store.set(SETTING_IDS.graphicsQuality, value),
+      set: (value) => applyGraphicsQuality(store, String(value) as GraphicsQuality, config.graphics),
+    },
+    {
+      id: SETTING_IDS.graphicsRenderScale,
+      label: "Render scale",
+      kind: "slider",
+      value: graphics.profile.renderScale,
+      min: RENDER_SCALE_MIN,
+      max: RENDER_SCALE_MAX,
+      step: RENDER_SCALE_STEP,
+      format: percent,
+      set: (value) => store.set(SETTING_IDS.graphicsRenderScale, value),
     },
     {
       id: SETTING_IDS.graphicsShadows,
@@ -132,6 +157,15 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
       value: store.get(SETTING_IDS.graphicsShadows, DEFAULT_GRAPHICS_SHADOWS),
       set: (value) => store.set(SETTING_IDS.graphicsShadows, value),
     },
+    ...GRAPHICS_POST_STAGES.map(
+      (stage): SettingsRow => ({
+        id: graphicsPostStageSettingId(stage),
+        label: GRAPHICS_POST_STAGE_LABELS[stage],
+        kind: "toggle",
+        value: graphics.profile.postStages[stage],
+        set: (value) => store.set(graphicsPostStageSettingId(stage), value),
+      }),
+    ),
     {
       id: SETTING_IDS.graphicsUiScale,
       label: "UI scale",

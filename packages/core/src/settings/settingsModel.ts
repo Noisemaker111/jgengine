@@ -85,6 +85,11 @@ export const SETTING_IDS = {
   graphicsQuality: "graphics.quality",
   graphicsShadows: "graphics.shadows",
   graphicsUiScale: "graphics.uiScale",
+  graphicsRenderScale: "graphics.renderScale",
+  graphicsPostAo: "graphics.post.ao",
+  graphicsPostBloom: "graphics.post.bloom",
+  graphicsPostDof: "graphics.post.dof",
+  graphicsPostSmaa: "graphics.post.smaa",
   touchStyle: "controls.touchStyle",
   touchJoystick: "controls.touchJoystick",
 } as const;
