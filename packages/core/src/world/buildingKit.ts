@@ -3,7 +3,7 @@
  * as an instanced asset kit instead of untextured blocks. Pure serializable data — core resolves
  * bindings, the renderer loads them.
  */
-import type { BuildingKitSlot, BuildingPartKind, BuildingVariantCounts, Vec3 } from "./buildings";
+import type { BuildingKitSlot, BuildingPartKind, BuildingSurfaceMaterial, BuildingVariantCounts, Vec3 } from "./buildings";
 
 /**
  * How a kit model's native bounds are mapped onto the slot box `BuildingPartPlacement.scale`
@@ -34,6 +34,8 @@ export interface BuildingKitPart {
   /** Multiplier applied after `fit`. */
   scale?: Vec3;
   tint?: string;
+  /** Tiled PBR maps applied over the model's own materials; `color` tints, `repeat` sets the tiling. */
+  material?: BuildingSurfaceMaterial;
   /**
    * Quarter-turn the model when its long horizontal axis disagrees with the slot's, so a panel
    * authored running along Z still tiles a bay that runs along X. Default true — modular kits do not

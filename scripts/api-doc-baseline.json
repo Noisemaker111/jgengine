@@ -2762,7 +2762,6 @@
   "@jgengine/shell/structures/GeneratedBuilding#BuildingBlockProps",
   "@jgengine/shell/structures/GeneratedBuilding#BuildingFacade",
   "@jgengine/shell/structures/GeneratedBuilding#BuildingKitRenderer",
-  "@jgengine/shell/structures/GeneratedBuilding#BuildingMaterialPalette",
   "@jgengine/shell/structures/GeneratedBuilding#BuildingPartKind",
   "@jgengine/shell/structures/GeneratedBuilding#BuildingPartPlacement",
   "@jgengine/shell/structures/GeneratedBuilding#GeneratedBuilding",

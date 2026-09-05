@@ -165,8 +165,50 @@ export const DEFAULT_BUILDING_CONFIG: BuildingConfig = {
   variants: DEFAULT_VARIANTS,
 };
 
-export type BuildingPalette = Record<BuildingPartKind, string>;
+/** URLs of the PBR maps a building surface tiles; `buildMaterialCatalog(...).resolve(id)!.maps` fits directly. */
+export interface BuildingSurfaceMaps {
+  color?: string;
+  normal?: string;
+  roughness?: string;
+  ao?: string;
+  metalness?: string;
+}
+
+/**
+ * A textured building surface: a base colour plus optional tiled PBR maps. With `maps`, `color`
+ * multiplies the albedo (leave it light to show the map as authored); without, it is the flat
+ * colour the part has always had.
+ */
+export interface BuildingSurfaceMaterial {
+  /** Base colour; the style's colour for that part kind when unset. */
+  color?: string;
+  maps?: BuildingSurfaceMaps;
+  /**
+   * Texture tiles per part slot along [x, y]; a number tiles both. Slots within one building share
+   * a size, so one repeat per kind is uniform there; it drifts across buildings with a different
+   * `bayWidth`. Default 1.
+   */
+  repeat?: number | readonly [number, number];
+  roughness?: number;
+  metalness?: number;
+}
+
+/** What a building part kind is painted with: a hex colour, or a colour plus tiled PBR maps. */
+export type BuildingSurface = string | BuildingSurfaceMaterial;
+
+export type BuildingPalette = Record<BuildingPartKind, BuildingSurface>;
 export type BuildingPaletteOverrides = Partial<BuildingPalette>;
+
+/** The flat colour of a surface: the hex itself, or a material's `color`, else `fallback`. */
+export function buildingSurfaceColor(surface: BuildingSurface | undefined, fallback = "#808080"): string {
+  if (surface === undefined) return fallback;
+  return typeof surface === "string" ? surface : (surface.color ?? fallback);
+}
+
+/** Normalises a surface to its material form so a renderer reads one shape. */
+export function resolveBuildingSurface(surface: BuildingSurface): BuildingSurfaceMaterial {
+  return typeof surface === "string" ? { color: surface } : surface;
+}
 
 export type BuildingStyle =
   | "generic"
@@ -182,7 +224,7 @@ export type BuildingStyle =
 
 export const DEFAULT_BUILDING_STYLE: BuildingStyle = "generic";
 
-export const BUILDING_STYLE_PALETTES: Record<BuildingStyle, BuildingPalette> = {
+export const BUILDING_STYLE_PALETTES: Record<BuildingStyle, Record<BuildingPartKind, string>> = {
   generic: {
     wall: "#83766a",
     window: "#8ecae6",
@@ -351,7 +393,7 @@ export const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]>
 export function resolveBuildingWallTones(style: BuildingStyle = DEFAULT_BUILDING_STYLE): readonly string[] {
   const tones = BUILDING_STYLE_WALL_TONES[style] as readonly string[] | undefined;
   if (tones !== undefined && tones.length > 0) return tones;
-  return [resolveBuildingPalette(style).wall];
+  return [buildingSurfaceColor(resolveBuildingPalette(style).wall)];
 }
 
 /** @internal */

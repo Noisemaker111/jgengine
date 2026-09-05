@@ -852,6 +852,7 @@
     "./structures/TransformGizmo",
     "./structures/buildingKitFit",
     "./structures/buildingKitRegistry",
+    "./structures/buildingSurface",
     "./structures/index",
     "./terrain",
     "./terrain/CarvedTerrain",

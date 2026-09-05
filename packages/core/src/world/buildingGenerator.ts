@@ -8,7 +8,7 @@
  */
 import { registerAssetGenerator, partsBounds, type GeneratedAsset, type GeneratedPart } from "../scene/assetGenerator";
 import type { ParamSchema, ParsedParams } from "../scene/sceneKinds";
-import { BUILDING_STYLE_PALETTES, DEFAULT_BUILDING_CONFIG, generateBuilding, resolveBuildingPalette, type BuildingStyle } from "./buildings";
+import { BUILDING_STYLE_PALETTES, DEFAULT_BUILDING_CONFIG, buildingSurfaceColor, generateBuilding, resolveBuildingPalette, type BuildingStyle } from "./buildings";
 
 /** The generator id a catalog entry / placed marker references. */
 export const BUILDING_GENERATOR_ID = "building";
@@ -51,7 +51,7 @@ export function generateBuildingAsset(params: ParsedParams, seed: string): Gener
     position: part.position,
     size: part.scale,
     rotationY: part.rotationY,
-    color: palette[part.kind],
+    color: buildingSurfaceColor(palette[part.kind]),
   }));
   return { parts, bounds: partsBounds(parts) };
 }
