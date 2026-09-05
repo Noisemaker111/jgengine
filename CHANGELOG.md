@@ -17,6 +17,11 @@ between (`--json` for structured output).
 
 ## [Unreleased]
 
+### Fixed
+
+- Correct foot-IK endpoint recomputation after hip rotation; verify reachable targets and clamping without changing bone lengths.
+- Restore release CI prerequisites and make catalog-loader tests independent of the external Games checkout.
+
 <!--
 Every PR that changes `packages/*/src` records its consumer-facing change here, so
 the next release's notes are complete by construction. Add a bullet under the right
