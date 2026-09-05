@@ -2288,11 +2288,15 @@
 
 ## @jgengine/shell/render/modelLoad
 
+- `DEFAULT_MODEL_TRIANGLE_BUDGET` (const): const DEFAULT_MODEL_TRIANGLE_BUDGET: 100000 — Per-model triangle ceiling before the loader warns. A prop is a few thousand triangles; a hero rig tens of thousands.
+- `HeavyModelRecord` (interface): interface HeavyModelRecord — One over-budget model as {@link heavyModels} reports it: the URL the loader fetched, its triangle count, and the budget it exceeded.
 - `ModelLoaderConfig` (interface): interface ModelLoaderConfig — CDN-backed decoder configuration for compressed model and texture assets.
 - `configureModelLoaders` (function): function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> — Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops.
 - `detectKtx2Support` (function): function detectKtx2Support(renderer: THREE.WebGLRenderer): void — Detects GPU support for the configured KTX2 transcoder after a renderer exists.
+- `heavyModels` (function): function heavyModels(): readonly HeavyModelRecord[] — Every model the shared loader resolved whose triangle count exceeds the budget, in load order. A heavy prop is invisible in a screenshot and only shows up as a slow frame, so the loader measures each GLB as it lands and this exposes the verdict for `debug_snapshot` probes and smoke tests to assert against.
 - `modelLoadFallbacks` (function): function modelLoadFallbacks(): readonly { url: string; message: string }[] — Every model the shared loader diagnosed as broken and replaced with a magenta placeholder, in load order.
 - `modelLoadIdleMs` (function): function modelLoadIdleMs(): number — How long the shared GLB loader has been idle, in ms — `0` while any model is still in flight. A capture host reads this to wait for streaming to finish instead of guessing a settle delay: models that pop in after the shot are why an establishing capture used to come back half-empty until someone hand-tuned `--settle`.
+- `setModelTriangleBudget` (function): function setModelTriangleBudget(triangles: number): void — Retune the per-model triangle budget (a cinematic game may raise it; a mobile target lowers it). Non-finite or non-positive values restore the default.
 
 ## @jgengine/shell/render/modelRender
 

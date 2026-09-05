@@ -21,6 +21,8 @@ between (`--json` for structured output).
 
 - The built-in Graphics settings tab now exposes render scale plus ambient occlusion, bloom, depth-of-field, and SMAA toggles alongside the quality tier; picking a tier re-applies its defaults. `@jgengine/core/settings/graphicsSettings` (`readGraphicsSettings`, `applyGraphicsQuality`, `GRAPHICS_POST_STAGES`) resolves the stored choices onto the `GraphicsProfile` the shell renders with, and `SETTING_IDS` gains `graphics.renderScale` and `graphics.post.*`. Every game gets the rows in its existing settings menu with no wiring (#1688).
 
+- Model triangle budget: the shared GLB loader counts each model's triangles as it lands and warns once per URL when one exceeds `DEFAULT_MODEL_TRIANGLE_BUDGET` (100k; retune with `setModelTriangleBudget`). `heavyModels()` lists the offenders and `debug_snapshot` reports them under `probes.heavyModels`, so a heavy prop shows up in evidence instead of only as a slow frame.
+- `bun run drive <game> --state <name>` boots into a `capture.states` entry the same way `shoot --state` does, so a staged scene can be measured with `--rpc debug_snapshot` or probed instead of clicked together by hand.
 - Building palettes take textured surfaces: a `BuildingPalette` part (and `BuildingKitPart.material`) may be `{ color?, maps?, repeat?, roughness?, metalness? }` with `maps` straight from `buildMaterialCatalog(...).resolve(id)!.maps`, not only a hex colour. Generated facade boxes and kit models tile the PBR maps per slot; unbound kinds keep their flat colour. `buildingSurfaceColor` / `resolveBuildingSurface` read either form.
 
 ### Fixed

@@ -9,7 +9,19 @@ import {
   textureErrorsSnapshot,
 } from "@jgengine/core/devtools/textureErrors";
 
-import { configureModelLoaders, createFallbackModel, handleModelLoadFailure, probeModelUrl, recordManagerLoadError } from "./modelLoad";
+import {
+  DEFAULT_MODEL_TRIANGLE_BUDGET,
+  clearHeavyModels,
+  configureModelLoaders,
+  countSceneTriangles,
+  createFallbackModel,
+  handleModelLoadFailure,
+  heavyModels,
+  probeModelUrl,
+  recordManagerLoadError,
+  recordModelTriangles,
+  setModelTriangleBudget,
+} from "./modelLoad";
 
 function stubResponse(body: Uint8Array, init: { status?: number; contentType?: string; statusText?: string }): Response {
   return new Response(body, {
@@ -203,5 +215,43 @@ describe("handleModelLoadFailure", () => {
     );
     expect(loaded).toBe(false);
     expect(erroredWith).toBe(original);
+  });
+});
+
+describe("model triangle budget", () => {
+  afterEach(() => {
+    clearHeavyModels();
+    setModelTriangleBudget(DEFAULT_MODEL_TRIANGLE_BUDGET);
+  });
+
+  test("countSceneTriangles sums indexed, non-indexed, and instanced meshes", () => {
+    const root = new THREE.Group();
+    root.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1)));
+    root.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1).toNonIndexed()));
+    root.add(new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial(), 3));
+    expect(countSceneTriangles(root)).toBe(12 + 12 + 36);
+  });
+
+  test("a model under budget records nothing", () => {
+    recordModelTriangles("/models/pack/Light.glb", 900, { warn: () => {} });
+    expect(heavyModels()).toEqual([]);
+  });
+
+  test("a model over budget is recorded and warned once per URL", () => {
+    setModelTriangleBudget(1_000);
+    const warned: string[] = [];
+    recordModelTriangles("/models/pack/Heavy.glb", 700_000, { warn: (record) => warned.push(record.url) });
+    recordModelTriangles("/models/pack/Heavy.glb", 700_000, { warn: (record) => warned.push(record.url) });
+    expect(heavyModels()).toEqual([
+      { url: "/models/pack/Heavy.glb", triangles: 700_000, budget: 1_000 },
+      { url: "/models/pack/Heavy.glb", triangles: 700_000, budget: 1_000 },
+    ]);
+    expect(warned).toEqual(["/models/pack/Heavy.glb"]);
+  });
+
+  test("a non-positive budget falls back to the default", () => {
+    setModelTriangleBudget(0);
+    recordModelTriangles("/models/pack/Mid.glb", DEFAULT_MODEL_TRIANGLE_BUDGET, { warn: () => {} });
+    expect(heavyModels()).toEqual([]);
   });
 });

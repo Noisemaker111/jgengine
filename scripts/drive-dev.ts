@@ -90,6 +90,7 @@ type Args = {
   look?: string;
   lookFrom?: string;
   view?: string;
+  state?: string;
   site?: string;
   record?: string;
   recordWidth: number;
@@ -131,6 +132,9 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --view <name>       replay a framing the game declares in capture.views (see
                       shoot --list-views). Distinct from --shot, which names the
                       output file: --view keep-enemy --shot before
+  --state <name>      boot into a capture.states entry (same as shoot --state), then
+                      run the steps — pair with --rpc debug_snapshot to measure a
+                      staged scene instead of clicking it together by hand
   --site <path>       drive a route from the managed apps/web server instead of a game
   --rpc <json>        call the page's agent/editor bridge with this JSON payload.
                       Compose an editor aerial in one call, e.g.
@@ -212,6 +216,7 @@ function parseArgs(argv: string[]): Args {
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === "--mode") args.mode = argv[++index] ?? args.mode;
+    else if (value === "--state") args.state = argv[++index];
     else if (value === "--size") {
       args.size = parseSizeArg(argv[++index]);
     } else if (value === "--timeout") {
@@ -674,6 +679,7 @@ const exitCode = await withBrowserSession(
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       if (args.view !== undefined) url.searchParams.set("view", args.view);
+      if (args.state !== undefined) url.searchParams.set("state", args.state);
       const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
       if (aim !== undefined) {
         for (const [key, value] of Object.entries(lookSearchParams(aim))) url.searchParams.set(key, value);
