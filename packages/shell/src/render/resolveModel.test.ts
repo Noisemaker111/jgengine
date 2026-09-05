@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { resetWarnOnce } from "@jgengine/core/devtools/warnOnce";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import {
@@ -174,6 +175,23 @@ describe("pickModel / resolveModelPlan", () => {
 
   test("returns undefined when neither id is in the catalog (primitive seam)", () => {
     expect(pickModel(assets, { model: "a/b", fallbackModel: "c/d" })).toBeUndefined();
+  });
+
+  test("warns once when fallbackModel names an id the catalog does not have", () => {
+    resetWarnOnce();
+    const warn = console.warn;
+    const messages: string[] = [];
+    console.warn = (text: string) => {
+      messages.push(text);
+    };
+    try {
+      pickModel(assets, { model: "kaykit-adventurers/Rogue", fallbackModel: "dungeon/chest" });
+      pickModel(assets, { model: "kaykit-adventurers/Rogue", fallbackModel: "dungeon/chest" });
+      pickModel(assets, { model: "kaykit-adventurers/Rogue", fallbackModel: "quaternius-modular-scifi/astronautA" });
+    } finally {
+      console.warn = warn;
+    }
+    expect(messages.filter((m) => m.includes('fallbackModel "dungeon/chest"'))).toHaveLength(1);
   });
 
   test("resolveModelPlan omits unresolved keys", () => {
