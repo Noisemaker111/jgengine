@@ -43,11 +43,8 @@ jobs:
         run: bun run stage-skills
       - run: bun run check-artifacts
       - run: bun run build
-      - run: bun run games:clone
-        env:
-          GAMES_CLONE_TOKEN: ${{ secrets.GAMES_CLONE_TOKEN }}
-      - run: bun run check-types
-      - run: bun test packages Games
+      - run: bun run check-types:sdk
+      - run: bun test packages
       - name: Publish unpublished packages in dependency order
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

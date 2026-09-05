@@ -19,6 +19,8 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- Separate SDK publication validation from external Games quality checks while retaining the full local and main-branch gates.
+
 - Correct foot-IK endpoint recomputation after hip rotation; verify reachable targets and clamping without changing bone lengths.
 - Restore release CI prerequisites and make catalog-loader tests independent of the external Games checkout.
 
