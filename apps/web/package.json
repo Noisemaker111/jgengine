@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
-    "deploy:cloudflare": "vite build && wrangler deploy",
+    "build": "bun --cwd=../.. run build && vite build",
+    "deploy:cloudflare": "bun run build && wrangler deploy",
     "check-types": "tsgo --noEmit -p tsconfig.json",
     "start": "wrangler dev"
   },

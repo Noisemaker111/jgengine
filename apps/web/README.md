@@ -8,7 +8,9 @@ The landing page for JGengine and the front door for agents. It runs TanStack St
 
 ## Games on the site
 
-`vite build` runs the existing `games-player` plugin, which builds `apps/dev` into `public/play`. The ignored `Games` checkout must be a real `Noisemaker111/JGengine-games` clone with its dependencies installed:
+`bun --cwd=apps/web run build` builds the SDK packages before Vite builds the site and the `games-player` plugin builds `apps/dev` into `public/play`.
+CI runs this command on cold checkouts for pushes and PRs; deploy uses the same build.
+The ignored `Games` checkout must be a real `Noisemaker111/JGengine-games` clone with its dependencies installed:
 
 ```sh
 bun run games:clone
