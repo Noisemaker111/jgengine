@@ -1,4 +1,4 @@
-import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from "react";
+import { useEffect, type Dispatch, type MutableRefObject, type RefObject, type SetStateAction } from "react";
 
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
@@ -13,6 +13,15 @@ import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { TouchPlaySurface } from "./touch/TouchControlsOverlay";
+
+/**
+ * Marks a HUD-only page ready for capture (`data-jg-capture="ready"`) unless a capture host already
+ * owns the flag. A HUD game has no `<canvas>`, so capture tools that wait for one would time out.
+ * @internal
+ */
+export function markHudCaptureReady(root: { dataset: DOMStringMap }): void {
+  if (root.dataset.jgCapture === undefined) root.dataset.jgCapture = "ready";
+}
 
 /** HUD-only play surface for non-3D shells. @internal */
 export function ShellHudPresentation({
@@ -67,6 +76,17 @@ export function ShellHudPresentation({
   onPointerResumeAudio: () => void;
 }) {
   const GameUI = playable.GameUI;
+  useEffect(() => {
+    // Two frames so the first GameUI paint has landed before tools capture.
+    let second = 0;
+    const first = requestAnimationFrame(() => {
+      second = requestAnimationFrame(() => markHudCaptureReady(document.documentElement));
+    });
+    return () => {
+      cancelAnimationFrame(first);
+      cancelAnimationFrame(second);
+    };
+  }, []);
   const keys = createShellKeyHandlers({
     f2HeldRef,
     tracker,

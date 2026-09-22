@@ -1096,6 +1096,7 @@
     "./recipes/index",
     "./skills",
     "./templates",
+    "./templates/boardFiles",
     "./templates/editorWorkspace",
     "./templates/gameFiles",
     "./templates/names",

@@ -13,7 +13,15 @@ export function writeGame(
   name: string,
   variant: TemplateVariant,
   scene?: EditorSceneDoc,
-  options?: { shape?: "shared-world-builder"; world?: boolean; editor?: boolean; player?: string; ground?: "flat" | "terrain"; sceneMode?: "empty" | "starter" },
+  options?: {
+    shape?: "shared-world-builder";
+    world?: boolean;
+    editor?: boolean;
+    player?: string;
+    ground?: "flat" | "terrain";
+    sceneMode?: "empty" | "starter";
+    dimension?: "2d" | "3d";
+  },
 ): void {
   for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), scene, ...options })) {
     const dest = join(targetDir, file.path);
@@ -84,6 +92,8 @@ export function registerRootGameScript(rootDir: string, id: string, folderName: 
 
 const VALUE_FLAGS = new Set(["--pm", "--shape", "--from-scene", "--player", "--ground", "--scene"]);
 const BOOLEAN_FLAGS = new Set([
+  "--2d",
+  "--3d",
   "--world",
   "--no-world",
   "--no-editor",
@@ -96,6 +106,9 @@ const BOOLEAN_FLAGS = new Set([
 
 const CREATE_USAGE = `usage: jgengine create "<Game Name>" [flags]
 
+  --3d                       a 3D world: terrain, sky, player model, editor scene (default)
+  --2d                       a board game drawn by GameUI: no 3D scene, editor, or models
+                             (grid, card, and tile games); takes none of the 3D flags below
   --player <asset id>        starter player model (default asset:person_casual)
   --ground terrain|flat      starter ground (default terrain)
   --scene empty|starter      empty scene, or the old starter props (default empty)
@@ -204,10 +217,18 @@ export function runCreate(argv: string[]): number {
     const sceneMode = flag(argv, "scene") ?? "empty";
     if (ground !== "flat" && ground !== "terrain") throw new Error(`--ground must be flat or terrain (got ${ground})`);
     if (sceneMode !== "empty" && sceneMode !== "starter") throw new Error(`--scene must be empty or starter (got ${sceneMode})`);
+    const dimension = hasFlag(argv, "2d") ? "2d" : "3d";
+    if (dimension === "2d") {
+      if (hasFlag(argv, "3d")) throw new Error("pick one of --2d or --3d");
+      const threeDOnly = ["player", "ground", "scene", "from-scene", "shape"].filter((name) => flag(argv, name) !== undefined);
+      const threeDSwitches = ["world", "no-world", "no-editor"].filter((name) => hasFlag(argv, name));
+      const clash = [...threeDOnly, ...threeDSwitches];
+      if (clash.length > 0) throw new Error(`--2d has no 3D scene; drop ${clash.map((name) => `--${name}`).join(", ")}`);
+    }
     const scene = sceneArg !== undefined ? readPromotedScene(sceneArg) : undefined;
     // `--world` stays accepted (and is now the default); `--no-world` is the opt-out, matching --no-editor.
-    const world = !hasFlag(argv, "no-world");
-    const editor = !hasFlag(argv, "no-editor");
+    const world = dimension === "3d" && !hasFlag(argv, "no-world");
+    const editor = dimension === "3d" && !hasFlag(argv, "no-editor");
     if (!editor && scene !== undefined) {
       console.error("error: --from-scene needs the editor scaffold — drop --no-editor");
       return 1;
@@ -255,7 +276,7 @@ export function runCreate(argv: string[]): number {
     }
 
     const engineVersion = sdkVersion();
-    writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape });
+    writeGame(targetDir, id, displayName, variant, scene, { world, editor, player, ground, sceneMode, shape, dimension });
     console.log(`created ${displayName} (${variant}) → ${targetDir}`);
     console.log(`  folder ${folderName}  package ${id}  name "${displayName}"`);
     if (variant === "standalone") {

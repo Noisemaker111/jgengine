@@ -1063,7 +1063,7 @@
 - `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/react): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
 - `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
-- `CellGrid` (interface): interface CellGrid<T> { readonly width: number; readonly height: number; readonly cells: readonly (T | null)[] } — ⚠ undocumented
+- `CellGrid` (interface): interface CellGrid<T> — A fixed-size 2D board of cells, row-major from the top-left; `null` is an empty cell. Plain data, so it serializes and restores as-is.
 - `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
 - `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
@@ -1854,8 +1854,17 @@
 
 ## @jgengine/core/puzzle/cellGrid
 
-- `CellGrid` (interface): interface CellGrid<T> { readonly width: number; readonly height: number; readonly cells: readonly (T | null)[] } — ⚠ undocumented
-- `CellRun` (interface): interface CellRun<T> { readonly value: T; readonly cells: readonly {readonly x: number; readonly y: number}[]; readonly direction: "row" | "column" } — ⚠ undocumented
+- `CellGrid` (interface): interface CellGrid<T> — A fixed-size 2D board of cells, row-major from the top-left; `null` is an empty cell. Plain data, so it serializes and restores as-is.
+- `CellRun` (interface): interface CellRun<T> — A straight line of matching cells found by {@link findRuns}.
+- `cellAt` (function): function cellAt<T>(grid: CellGrid<T>, x: number, y: number): T | null — The value at `(x, y)`, or `null` when empty or off the board.
+- `clearRows` (function): function clearRows<T>(grid: CellGrid<T>, rows: readonly number[]): CellGrid<T> — A copy with `rows` removed and the rows above shifted down, refilling empty rows at the top.
+- `collapseColumns` (function): function collapseColumns<T>(grid: CellGrid<T>): CellGrid<T> — A copy where every column's cells fall to the bottom, keeping their order.
+- `createCellGrid` (function): function createCellGrid<T>(width: number, height: number): CellGrid<T> — An empty `width` × `height` board. Every helper here returns a new grid, so a store slot can hold it and undo, replay, and save/restore work without copying.
+- `findRuns` (function): function findRuns<T>(grid: CellGrid<T>, minLength: number, matches: (a: T, b: T) => boolean = (a, b) => a === b): CellRun<T>[] — Horizontal and vertical runs of at least `minLength` cells whose values `matches` (default `===`).
+- `fullRows` (function): function fullRows<T>(grid: CellGrid<T>): number[] — Indices of rows with no empty cell, top to bottom.
+- `inGridBounds` (function): function inGridBounds<T>(grid: CellGrid<T>, x: number, y: number): boolean — Whether `(x, y)` lies on the board.
+- `withCell` (function): function withCell<T>(grid: CellGrid<T>, x: number, y: number, value: T | null): CellGrid<T> — A copy with `(x, y)` set to `value`; off-board writes return the grid unchanged.
+- `withCells` (function): function withCells<T>(grid: CellGrid<T>, entries: readonly { readonly x: number; readonly y: number; readonly value: T | null }[]): CellGrid<T> — A copy with every in-bounds entry written; one allocation for a whole piece or stamp.
 
 ## @jgengine/core/puzzle/fallingPiece
 

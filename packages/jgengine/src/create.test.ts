@@ -111,7 +111,32 @@ describe("runCreate", () => {
     try {
       expect(runCreate([join(parent, "Help Probe"), "--help"])).toBe(0);
       expect(String(log.mock.calls[0]?.[0])).toContain("--ground terrain|flat");
+      expect(String(log.mock.calls[0]?.[0])).toContain("--2d");
       expect(existsSync(join(parent, "Help-Probe"))).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  test("--2d refuses 3D-only flags instead of ignoring them", () => {
+    const parent = scratch();
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(runCreate([join(parent, "Flat Probe"), "--2d", "--ground", "terrain", "--no-install", "--no-skills"])).toBe(1);
+      expect(error.mock.calls.map((call) => String(call[0])).join("\n")).toContain("--2d has no 3D scene; drop --ground");
+      expect(existsSync(join(parent, "Flat-Probe"))).toBe(false);
+    } finally {
+      error.mockRestore();
+    }
+  });
+
+  test("--2d writes a board game without editor or model files", () => {
+    const parent = scratch();
+    const log = spyOn(console, "log").mockImplementation(() => {});
+    try {
+      expect(runCreate([join(parent, "Board Probe"), "--2d", "--standalone", "--no-install", "--no-skills"])).toBe(0);
+      expect(existsSync(join(parent, "Board-Probe", "src", "game", "board.ts"))).toBe(true);
+      expect(existsSync(join(parent, "Board-Probe", "src", "editor.scene.json"))).toBe(false);
     } finally {
       log.mockRestore();
     }

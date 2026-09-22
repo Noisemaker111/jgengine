@@ -1,4 +1,12 @@
 import { sharedBuilderFiles } from "./templates/sharedBuilder";
+import {
+  boardGameConfigTs,
+  boardGameUiTsx,
+  boardLoopTs,
+  boardRulesTest,
+  boardRulesTs,
+  boardWorldTs,
+} from "./templates/boardFiles";
 import { withStarterTerrain } from "./templates/starterTerrain";
 import {
   agentsMd,
@@ -53,10 +61,11 @@ export type {
 /** @internal */
 export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   const { id, name, variant, engineVersion, scene } = options;
-  const editor = options.editor ?? true;
+  const board = options.dimension === "2d";
+  const editor = !board && (options.editor ?? true);
   // Default on: the scaffold's own AGENTS.md calls flat untextured ground a failing result,
   // so shipping proxy geometry by default failed the standard the template hands the agent.
-  const world = options.world ?? true;
+  const world = !board && (options.world ?? true);
   if (!GAME_ID_PATTERN.test(id)) {
     throw new Error(`game id "${id}" must be kebab-case: lowercase letters, digits, dashes, starting with a letter`);
   }
@@ -96,8 +105,18 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
           { path: "src/editorLayers.test.ts", contents: sceneTest },
         ]
       : []),
-    { path: "src/game.config.ts", contents: gameConfigTs(name, { world, editor }) },
-    { path: "src/loop.ts", contents: loopTs(editor) },
+    ...(board
+      ? [
+          { path: "src/game.config.ts", contents: boardGameConfigTs(name) },
+          { path: "src/world.ts", contents: boardWorldTs(id) },
+          { path: "src/loop.ts", contents: boardLoopTs },
+          { path: "src/game/board.ts", contents: boardRulesTs },
+          { path: "src/game/board.test.ts", contents: boardRulesTest },
+        ]
+      : [
+          { path: "src/game.config.ts", contents: gameConfigTs(name, { world, editor }) },
+          { path: "src/loop.ts", contents: loopTs(editor) },
+        ]),
     ...(world
       ? [
           { path: "src/world.ts", contents: worldTs(id, options.ground, editor) },
@@ -105,7 +124,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "src/game/models.ts", contents: gameModelsTs(options.player) },
         ]
       : []),
-    { path: "src/game/ui/GameUI.tsx", contents: gameUiTsx(id, name, editor) },
+    { path: "src/game/ui/GameUI.tsx", contents: board ? boardGameUiTsx(name) : gameUiTsx(id, name, editor) },
   ];
   return options.shape === "shared-world-builder" ? sharedBuilderFiles(files, options) : files;
 }

@@ -35,6 +35,8 @@ export interface TemplateOptions {
   player?: string;
   ground?: "flat" | "terrain";
   sceneMode?: "empty" | "starter";
+  /** `"2d"` scaffolds a board game with no 3D scene, editor document, or models (`create --2d`). Default `"3d"`. */
+  dimension?: "2d" | "3d";
 }
 
 export interface TemplateFile {
