@@ -327,6 +327,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `grounded` (function) · `import { grounded } from "@jgengine/core/world"`
 
+## handling-metrics — measure a vehicle's feel as numbers — 0–100, braking, lateral g, turn-in, sideslip, spin
+
+- `measureHandling` (function) · `import { measureHandling } from "@jgengine/core/physics/handlingProbe"`
+
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
@@ -682,6 +686,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
+
+## vehicle-dynamics — force-based car handling — tires, load transfer, drivetrain, assists — tuned with physical numbers
+
+- `createVehicleDynamics` (function) · `import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics"`
 
 ## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure
 

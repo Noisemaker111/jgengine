@@ -1,0 +1,49 @@
+# Recipe — vehicle feel (feel target → metrics → physical knobs)
+
+**What this wires:** a ground vehicle that feels the way the brief says, from sim to camera, sound and rumble. There is no default car: every vehicle is a set of physical numbers the game picks for its own feel, checked against metrics it writes down first.
+
+## The seams
+
+- **Sim.** `createVehicleDynamics(tuning, { surfaceFriction?, clampMove? })` from `@jgengine/core/physics/vehicleDynamics`. Yaw comes from tire forces, so balance, slides and recovery are outcomes of the numbers, not special cases. It has `snapshot()`/`restore()` for prediction and replay, `retune()` for upgrades and damage, and per-tick modifiers (`driveScale`, `gripScale`, `steerScale`, `brakeScale`, `thrust` for boost).
+- **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight })` returns a `setPose` patch. Pitch and roll come from load transfer.
+- **Camera.** `camera: { rig: "chase", chase: { fov, lead, bank, velocityYaw, yawResponse } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
+- **Sound.** Call `ctx.game.audio.loop(id, sound)` once, then `setLoop` every tick:
+  - Engine: `rate` from `step.rpm`, `gain` from `step.engineLoad`.
+  - Tires: `gain` from how far `max(step.frontSaturation, step.rearSaturation)` exceeds ~0.85.
+- **Rumble.** Call `ctx.input.rumble(userId, { strong, weak, ms })` with the saturation above 1, rate-limited to about 10 Hz. Use rear saturation for strong and front for weak.
+- **Proof.** `measureHandling(() => createVehicleDynamics(tuning), options?)` from `@jgengine/core/physics/handlingProbe` returns deterministic numbers. Assert them in a test.
+
+## Workflow
+
+1. **Write the feel as numbers before tuning.** Turn the brief into target ranges on the `HandlingReport` fields. Some examples:
+   - "Snappy" is `turnIn < 0.2`.
+   - "Planted" is `maxLateralG` close to the tire μ with `stepPeakSideslipDeg < 8`.
+   - "Drifty but safe" is `handbrakePeakSideslipDeg` 40–70 with `spun === false`.
+   - "Keyboard-friendly" is `spun` and `powerSteerSpun` both `false`, including at `cornerSpeed: 40`.
+2. **Put those ranges in a test first**, next to the tuning.
+3. **Start from the real vehicle's physical numbers**: mass, wheelbase, weight split, CoM height, driven axle, torque and gears. Then move one knob at a time using the table below, rerunning the test after each change.
+4. **Drive it.**
+   - In the engine repo: `bun run drive <game> --key KeyW:4000 --probe a --key KeyW+KeyD:1500 --probe b --record <name>`. Chords hold throttle and steer together.
+   - `--record-fps 20` keeps game time at 1:1, because each recorded frame advances at most one 50 ms step.
+   - Tests prove the numbers; the drive proves the camera and sound.
+
+## Symptom → knob
+
+| Symptom | Knob (direction) |
+| --- | --- |
+| Pushes wide, won't turn in | `rollStiffnessFront` ↓, rear `peakGrip` ↓ relative to front, `yawInertiaIndex` ↓, `steering.rate` ↑ |
+| Snaps into oversteer | `rollStiffnessFront` ↑, rear `peakGrip` ↑, `slideGrip` ↑ (gentler breakaway), `assists.stability` ↑ |
+| Spins holding throttle and steer | `assists.tractionControl` ↑ (budgets for cornering grip), `driveFront` ↑, peak torque ↓ |
+| Slides feel uncatchable | `steering.selfAlign` ↑ (caster catches the slide), `slideGrip` ↑, `assists.maxSideslip` ↑ with `stability` ↑ |
+| Too twitchy at speed | `steering.highSpeedAngle` ↓, `steering.rate` ↓, `yawInertiaIndex` ↑ |
+| Sluggish, boat-like | `yawInertiaIndex` ↓, `peakSlipAngle` ↓ (stiffer tire), `comHeight` ↓ |
+| Handbrake does nothing / spins every time | `handbrakeGrip` ↓ / ↑, with `selfAlign` to set how it recovers |
+| No top speed ceiling / wrong ceiling | `aero.dragArea`, power (`maxPower` or torque × gearing); `speedLimit` only for a hard governor |
+| Boost or supersonic above the cap | `modifiers.thrust` (bypasses tires and the governor) |
+
+## Traps
+
+- Hand-editing `yawRate` or heading to "fix" a turn defeats the model. Change a physical knob instead.
+- `speedLimit` fades drive out and never clamps velocity. A car pinned at its cap can still turn, and thrust can carry it past the cap.
+- A slide that looks right on a gamepad can spin on a keyboard. Assert `powerSteerSpun` and `spun` with the default `stepSteer: 1`, which is a held key.
+- For multiplayer, send inputs, not poses. Predict locally with the same tuning, and on a correction call `restore(serverState)` and replay the buffered inputs.

@@ -1,14 +1,28 @@
 import type { AxisInput } from "../input/axisInput";
-import type { KinematicVehicle, KinematicVehicleModifiers, KinematicVehicleStep } from "./kinematicVehicle";
+import type { KinematicVehicleModifiers, KinematicVehicleStep } from "./kinematicVehicle";
 
 /** World-space `[x, y, z]` for a drivable vehicle's resolved pose. */
 export type DrivableVehiclePosition = readonly [number, number, number];
 
+/** The pose fields {@link tickDrivableVehicle} reads from a sim step; `KinematicVehicleStep` and `VehicleDynamicsStep` both carry them. */
+export interface DrivableSimStep {
+  position: readonly [number, number, number];
+  heading: number;
+  bodyPitch: number;
+  bodyRoll: number;
+  airOffset: number;
+}
+
+/** Any ground-vehicle sim {@link tickDrivableVehicle} can drive: `KinematicVehicle` or `VehicleDynamics`. */
+export interface DrivableSim<TModifiers, TStep extends DrivableSimStep> {
+  tick(dt: number, axis: AxisInput, modifiers?: TModifiers): TStep;
+}
+
 /** Options for {@link tickDrivableVehicle} — ground snapping and per-tick tuning modifiers. */
-export interface DrivableVehicleOptions {
+export interface DrivableVehicleOptions<TModifiers = KinematicVehicleModifiers> {
   /** Resamples world-space Y each tick (terrain height, a ramp, a bridge deck); omit to keep the sim's own flat `y`. */
   groundHeight?: (x: number, z: number) => number;
-  modifiers?: KinematicVehicleModifiers;
+  modifiers?: TModifiers;
 }
 
 /** A `setPose`-ready patch — spread straight into `entities.setPose(vehicleId, drive.pose)`. */
@@ -21,24 +35,24 @@ export interface DrivableVehiclePose {
 }
 
 /** {@link tickDrivableVehicle}'s result — the ready-to-apply pose patch plus the raw sim step for HUD/telemetry reads. */
-export interface DrivableVehicleStep {
+export interface DrivableVehicleStep<TStep extends DrivableSimStep = KinematicVehicleStep> {
   pose: DrivableVehiclePose;
-  step: KinematicVehicleStep;
+  step: TStep;
 }
 
 /**
- * Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose
- * for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle
+ * Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or
+ * `VehicleDynamics`) to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle
  * game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not
  * just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera
  * points; this function only steps the sim and shapes the pose patch, nothing else.
  */
-export function tickDrivableVehicle(
-  vehicle: KinematicVehicle,
+export function tickDrivableVehicle<TStep extends DrivableSimStep = KinematicVehicleStep, TModifiers = KinematicVehicleModifiers>(
+  vehicle: DrivableSim<TModifiers, TStep>,
   dt: number,
   axis: AxisInput,
-  options: DrivableVehicleOptions = {},
-): DrivableVehicleStep {
+  options: DrivableVehicleOptions<TModifiers> = {},
+): DrivableVehicleStep<TStep> {
   const step = vehicle.tick(dt, axis, options.modifiers);
   const [x, y, z] = step.position;
   // Ground-snap first, then lift by any hop in progress, so a jumping vehicle still follows the
