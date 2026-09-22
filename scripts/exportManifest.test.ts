@@ -1,7 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+
+import { publishListsFrom } from "./check-release-set";
 import {
   computeExposedSubpaths,
   computeManifest,
@@ -48,8 +50,10 @@ describe.if(built)("published export manifest", () => {
   });
 });
 
-test("published package list is fixed and non-empty", () => {
-  expect(publishedPackages.length).toBe(11);
+test("the manifest tracks exactly the packages the publish workflow ships", () => {
+  const workflow = readFileSync(join(import.meta.dir, "..", ".github", "workflows", "publish.yml"), "utf8");
+  const [shipped] = publishListsFrom(workflow);
+  expect([...publishedPackages].sort()).toEqual([...shipped!].sort());
 });
 
 describe("orphaned dist files are excluded from public subpaths", () => {
