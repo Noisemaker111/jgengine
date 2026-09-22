@@ -83,6 +83,37 @@ export function registerRootGameScript(rootDir: string, id: string, folderName: 
 }
 
 const VALUE_FLAGS = new Set(["--pm", "--shape", "--from-scene", "--player", "--ground", "--scene"]);
+const BOOLEAN_FLAGS = new Set([
+  "--world",
+  "--no-world",
+  "--no-editor",
+  "--in-repo",
+  "--standalone",
+  "--no-install",
+  "--no-skills",
+  "--no-assets",
+]);
+
+const CREATE_USAGE = `usage: jgengine create "<Game Name>" [flags]
+
+  --player <asset id>        starter player model (default asset:person_casual)
+  --ground terrain|flat      starter ground (default terrain)
+  --scene empty|starter      empty scene, or the old starter props (default empty)
+  --from-scene <folder>      promote an authored editor.scene.json into the game
+  --shape shared-world-builder
+  --no-world | --no-editor   drop the world runtime or the editor scene files
+  --in-repo | --standalone   force the variant (auto-detected from the cwd)
+  --no-install | --no-skills | --no-assets
+  --pm bun|npm|pnpm`;
+
+function unknownFlag(argv: string[]): string | undefined {
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]!;
+    if (VALUE_FLAGS.has(arg)) index += 1;
+    else if (arg.startsWith("-") && !BOOLEAN_FLAGS.has(arg)) return arg;
+  }
+  return undefined;
+}
 
 function positionalArg(argv: string[]): string | undefined {
   for (let index = 0; index < argv.length; index += 1) {
@@ -146,11 +177,18 @@ function runAssetsPull(targetDir: string): boolean {
 
 /** @internal */
 export function runCreate(argv: string[]): number {
+  if (argv.includes("--help") || argv.includes("-h")) {
+    console.log(CREATE_USAGE);
+    return 0;
+  }
+  const badFlag = unknownFlag(argv);
+  if (badFlag !== undefined) {
+    console.error(`error: unknown flag ${badFlag}\n\n${CREATE_USAGE}`);
+    return 1;
+  }
   const nameArg = positionalArg(argv);
   if (nameArg === undefined) {
-    console.error(
-      'usage: jgengine create "<Game Name>" [--from-scene <folder>] [--no-world] [--no-editor] [--in-repo|--standalone] [--no-install] [--no-skills] [--no-assets] [--pm bun|npm|pnpm]',
-    );
+    console.error(CREATE_USAGE);
     return 1;
   }
 

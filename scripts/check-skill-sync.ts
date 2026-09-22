@@ -57,9 +57,16 @@ for (const name of skillDirs) {
   totalSkillBytes += bytes(raw);
   if (raw.charCodeAt(0) === 0xfeff) problems.push(`${name}/SKILL.md starts with a UTF-8 BOM`);
   const frontmatter = raw.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "";
-  const description = (frontmatter.match(/^description:\s*>?-?\s*([\s\S]*?)(?=\n\S|$)/m)?.[1] ?? "")
-    .replace(/\n\s+/g, " ")
-    .trim();
+  // Installers (npx skills, Claude Code) parse frontmatter as strict YAML and silently skip a skill that fails.
+  let parsed: unknown;
+  try {
+    parsed = Bun.YAML.parse(frontmatter);
+  } catch (error) {
+    problems.push(`${name}/SKILL.md frontmatter is not valid YAML (${(error as Error).message}); quote values containing ": "`);
+  }
+  const fields = (parsed ?? {}) as Record<string, unknown>;
+  if (parsed !== undefined && fields.name !== name) problems.push(`${name}/SKILL.md frontmatter name must be "${name}"`);
+  const description = (typeof fields.description === "string" ? fields.description : "").trim();
   const descriptionWords = description.split(/\s+/).filter(Boolean).length;
   if (descriptionWords === 0 || descriptionWords > 15) {
     problems.push(`${name} description is ${descriptionWords} words; require 1-15 trigger-oriented words`);

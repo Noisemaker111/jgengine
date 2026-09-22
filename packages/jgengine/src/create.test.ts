@@ -104,6 +104,30 @@ describe("runCreate", () => {
       log.mockRestore();
     }
   });
+
+  test("--help prints usage and writes nothing", () => {
+    const parent = scratch();
+    const log = spyOn(console, "log").mockImplementation(() => {});
+    try {
+      expect(runCreate([join(parent, "Help Probe"), "--help"])).toBe(0);
+      expect(String(log.mock.calls[0]?.[0])).toContain("--ground terrain|flat");
+      expect(existsSync(join(parent, "Help-Probe"))).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  test("rejects an unknown flag instead of scaffolding", () => {
+    const parent = scratch();
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(runCreate([join(parent, "Typo Probe"), "--no-instal"])).toBe(1);
+      expect(String(error.mock.calls[0]?.[0])).toContain("unknown flag --no-instal");
+      expect(existsSync(join(parent, "Typo-Probe"))).toBe(false);
+    } finally {
+      error.mockRestore();
+    }
+  });
 });
 
 describe("readPromotedScene", () => {
