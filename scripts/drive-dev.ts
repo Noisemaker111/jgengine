@@ -111,7 +111,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --click "<text>"    click the first visible element containing this text (or, for
                       icon-only buttons, this aria-label — e.g. "Settings")
   --wait <ms>         pause before the next step
-  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds
+  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds; join codes with
+                      + to hold a chord (KeyW+KeyD:2000 = throttle and steer together)
   --shot <name|path>  screenshot to shots/<game>-<name>.png for a bare name, or to
                       an absolute path written verbatim (like shoot --out; no size
                       suffix). Relative paths are rejected — they ENOENT.
@@ -387,20 +388,26 @@ async function readFrames(session: CdpSession): Promise<number> {
  * frame has rendered under it — otherwise the sim never steps and the player
  * sits exactly at spawn (see {@link holdComplete}).
  */
-async function holdKey(session: CdpSession, code: string, holdMs: number): Promise<void> {
-  const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
+async function sendKeys(session: CdpSession, chord: string, type: "keyDown" | "keyUp"): Promise<void> {
+  for (const code of chord.split("+")) {
+    const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
+    await session.send("Input.dispatchKeyEvent", { type, code, key });
+  }
+}
+
+async function holdKey(session: CdpSession, chord: string, holdMs: number): Promise<void> {
   await focusSurface(session);
   const startFrames = await readFrames(session);
   const start = Date.now();
   const deadlineMs = start + holdMs;
   const hardCapMs = deadlineMs + FRAME_STARVE_GRACE_MS;
-  await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
+  await sendKeys(session, chord, "keyDown");
   for (;;) {
     await new Promise((r) => setTimeout(r, 100));
     const framesElapsed = (await readFrames(session)) - startFrames;
     if (holdComplete({ nowMs: Date.now(), deadlineMs, hardCapMs, framesElapsed })) break;
   }
-  await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
+  await sendKeys(session, chord, "keyUp");
 }
 
 async function rpc(session: CdpSession, json: string): Promise<void> {
@@ -764,11 +771,10 @@ const exitCode = await withBrowserSession(
           if (recorder !== null) {
             // Lockstep hold: the virtual clock guarantees the sim steps under the
             // held key, so no frame-starvation grace dance is needed.
-            const key = step.code.startsWith("Key") ? step.code.slice(3).toLowerCase() : step.code;
             await focusSurface(session);
-            await session.send("Input.dispatchKeyEvent", { type: "keyDown", code: step.code, key });
+            await sendKeys(session, step.code, "keyDown");
             await recorder.advance(step.holdMs);
-            await session.send("Input.dispatchKeyEvent", { type: "keyUp", code: step.code, key });
+            await sendKeys(session, step.code, "keyUp");
           } else {
             await holdKey(session, step.code, step.holdMs);
           }

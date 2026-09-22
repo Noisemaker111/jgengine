@@ -363,7 +363,7 @@
 - `AxisBinding` (interface): interface AxisBinding { positive: readonly string[]; negative?: readonly string[]; pointer?: PointerAxisBinding } — ⚠ undocumented
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
 - `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
-- `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/ste…
+- `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
 - `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
 - `AxisRange` (interface): interface AxisRange { min: number; max: number } — ⚠ undocumented
 - `DRIVE_AXIS_BINDINGS` (const): const DRIVE_AXIS_BINDINGS: AxisBindingMap — ⚠ undocumented
@@ -890,11 +890,13 @@
 
 ## @jgengine/core/physics/drivableVehicle
 
-- `DrivableVehicleOptions` (interface): interface DrivableVehicleOptions — Options for {@link tickDrivableVehicle} — ground snapping and per-tick tuning modifiers.
+- `DrivableSim` (interface): interface DrivableSim<TModifiers, TStep extends DrivableSimStep> — Any ground-vehicle sim {@link tickDrivableVehicle} can drive: `KinematicVehicle` or `VehicleDynamics`.
+- `DrivableSimStep` (interface): interface DrivableSimStep — The pose fields {@link tickDrivableVehicle} reads from a sim step; `KinematicVehicleStep` and `VehicleDynamicsStep` both carry them.
+- `DrivableVehicleOptions` (interface): interface DrivableVehicleOptions<TModifiers = KinematicVehicleModifiers> — Options for {@link tickDrivableVehicle} — ground snapping and per-tick tuning modifiers.
 - `DrivableVehiclePose` (interface): interface DrivableVehiclePose — A `setPose`-ready patch — spread straight into `entities.setPose(vehicleId, drive.pose)`.
 - `DrivableVehiclePosition` (type): type DrivableVehiclePosition = readonly [number, number, number] — World-space `[x, y, z]` for a drivable vehicle's resolved pose.
-- `DrivableVehicleStep` (interface): interface DrivableVehicleStep — {@link tickDrivableVehicle}'s result — the ready-to-apply pose patch plus the raw sim step for HUD/telemetry reads.
-- `tickDrivableVehicle` (function): function tickDrivableVehicle(vehicle: KinematicVehicle, dt: number, axis: AxisInput, options: DrivableVehicleOptions = {}): DrivableVehicleStep — Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points; this function only steps the sim and shapes the pose patch, nothing else.
+- `DrivableVehicleStep` (interface): interface DrivableVehicleStep<TStep extends DrivableSimStep = KinematicVehicleStep> — {@link tickDrivableVehicle}'s result — the ready-to-apply pose patch plus the raw sim step for HUD/telemetry reads.
+- `tickDrivableVehicle` (function): function tickDrivableVehicle<TStep extends DrivableSimStep = KinematicVehicleStep, TModifiers = KinematicVehicleModifiers>(vehicle: DrivableSim<TModifiers, TStep>, dt: number, axis: AxisInput, options: DrivableVehicleOptions<TModifiers> = {}): DrivableVehicleStep<TStep> — Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points; this function only steps the sim and shapes the pose patch, nothing else.
 
 ## @jgengine/core/physics/flightDynamics
 
@@ -939,6 +941,13 @@
 - `pointGravity` (function): function pointGravity(options: PointGravityOptions): GravityField — Radial gravity toward one center, with optional inverse-square falloff for planetary worlds.
 - `uniformGravity` (function): function uniformGravity(vector: GravityVector = [0, -9.81, 0]): GravityField — Constant vector gravity for ordinary worlds, space stations, and sideways-gravity levels.
 
+## @jgengine/core/physics/handlingProbe
+
+- `HandlingProbeOptions` (interface): interface HandlingProbeOptions — Scenario settings for {@link measureHandling}; every field has a default.
+- `HandlingReport` (interface): interface HandlingReport — Deterministic feel metrics, in the units drivers and reviewers use. `Infinity` means the target was never reached.
+- `HandlingSubject` (interface): interface HandlingSubject — The slice of a vehicle sim {@link measureHandling} drives: `VehicleDynamics` and `KinematicVehicle` both fit.
+- `measureHandling` (function): function measureHandling(create: () => HandlingSubject, options: HandlingProbeOptions = {}): HandlingReport — Drives fresh instances from `create` through fixed scenarios (launch, top speed, braking, a slow steer ramp, a step steer, a mid-corner lift-off, a handbrake pull, full throttle with full steer) and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a tuning change shows up as a number moving, not an opinion.
+
 ## @jgengine/core/physics/kinematicVehicle
 
 - `DEFAULT_REVERSE_FORCE_SCALE` (const): const DEFAULT_REVERSE_FORCE_SCALE: 0.48 — Default reverse drive force as a fraction of forward `engineForce` / `engineAccel`.
@@ -949,7 +958,7 @@
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
 - `KinematicVehicleModifiers` (interface): interface KinematicVehicleModifiers — Per-tick multipliers layered over the base tuning — the transient overrides games apply for one frame without rebuilding the vehicle: nitro/boost, a braced-plow bonus, or entering a speed zone or slow field. Each defaults to `1` (no change), so passing nothing leaves the base tuning untouched.
 - `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions { position?: readonly [number, number, number]; heading?: number; surfaceFriction?: (x: number, z: number) => number; dragAt?: (x: number, z: number) => number; clampMove?: (from: readonly [number, number], to: readonly [number, number]) =>… — ⚠ undocumented
-- `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented
+- `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented
 - `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 
@@ -1061,6 +1070,22 @@
 - `WheelState` (interface): interface WheelState { worldX: number; worldY: number; worldZ: number; grounded: boolean; compression: number; steerAngle: number } — ⚠ undocumented
 - `createVehicleBody` (function): function createVehicleBody(world: PhysicsWorld, config: VehicleBodyConfig): VehicleBody — ⚠ undocumented
 - `sampleGripCurve` (function): function sampleGripCurve(curve: GripCurve, slip: number): number — Piecewise-linear tire-grip curve: normalized lateral slip → available grip (0..1). Grip peaks near the breakaway slip then falls off as the tire slides — the shape that separates a planted corner from a drift. Points are read in ascending slip order; ends clamp.
+
+## @jgengine/core/physics/vehicleDynamics
+
+- `VehicleAeroTuning` (interface): interface VehicleAeroTuning — Aero and resistance. Uses air density 1.225 kg/m³.
+- `VehicleAssistTuning` (interface): interface VehicleAssistTuning — Electronic and arcade assists; each is a strength `0..1`, `0`/omitted = off.
+- `VehicleDirectDriveTuning` (interface): interface VehicleDirectDriveTuning — Single-speed drive (electric, kart, arcade ball-car): force capped by power, so top speed comes out of drag.
+- `VehicleDynamics` (interface): interface VehicleDynamics — Force-based planar car: a two-axle ("bicycle") model where yaw comes from tire forces rather than being commanded, so understeer, oversteer, lift-off rotation, trail-braking, power slides and handbrake turns emerge from the numbers instead of from special cases. Deterministic for a given `dt` sequence; ticks are split into fixed substeps. Pairs with `tickDrivableVehicle` for the entity pose and `measureHandling` for asserting feel.
+- `VehicleDynamicsModifiers` (interface): interface VehicleDynamicsModifiers — Per-tick overrides layered over tuning: boost, grip zones, damage. Each scale defaults to `1`.
+- `VehicleDynamicsOptions` (interface): interface VehicleDynamicsOptions — World hooks for one vehicle instance.
+- `VehicleDynamicsState` (interface): interface VehicleDynamicsState — Serializable integrator state: everything {@link VehicleDynamics.restore} needs to resume bit-for-bit.
+- `VehicleDynamicsStep` (interface): interface VehicleDynamicsStep — Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read.
+- `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s), so a feel target maps to a knob a person can reason about: more rear grip or a lower centre of mass for stability, softer tires for forgiveness, more drive to the rear for power oversteer.
+- `VehicleGearboxTuning` (interface): interface VehicleGearboxTuning — Engine and gearbox. Drive force at the wheels = torque · curve(rpm) · gear · finalDrive · efficiency / wheelRadius.
+- `VehicleSteeringTuning` (interface): interface VehicleSteeringTuning — Steering rack: lock, speed-sensitive lock, rack speed, and caster self-alignment.
+- `VehicleTireTuning` (interface): interface VehicleTireTuning — One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve `μ·Fz·sin(C·atan(B·α))` whose `B`/`C` are solved from `peakSlipAngle` and `slideGrip`, so the three numbers read the way a driver feels them: how much grip, how early it peaks, how much is left sliding.
+- `createVehicleDynamics` (function): function createVehicleDynamics(initialTuning: VehicleDynamicsTuning, options: VehicleDynamicsOptions = {}): VehicleDynamics — Creates a {@link VehicleDynamics}.
 
 ## @jgengine/core/physics/vehicleObstacles
 
@@ -2028,7 +2053,7 @@
 - `KinematicPowertrainTuning` (interface): interface KinematicPowertrainTuning — Data-first gearbox and torque-curve tuning for a kinematic ground vehicle.
 - `KinematicSteeringTuning` (interface): interface KinematicSteeringTuning — Bicycle-model steering settings; all angles are radians.
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
-- `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented
+- `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented · used by `tickDrivableVehicle`: Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented
 - `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on grand plots emitted regardless of dial/city size.
 - `LOCK_ACTIONS` (const): const LOCK_ACTIONS: readonly LockAction[] — The five pick actions, in display order (shallow → deep).
@@ -2644,7 +2669,7 @@
 - `terrain` (function): function terrain(config: TerrainEnvironmentConfig = {}): TerrainEnvironmentDescriptor — Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
 - `terrainContourGuides` (function): function terrainContourGuides(field: Pick<TerrainField, "sampleHeight">, region: GuideRegion, targetLines = 12, resolution = 128): { interval: number; summary: ElevationSummary; contours: ContourLine[] } — Convenience over {@link extractContours} that auto-picks the interval from the field's own relief: summarises the region, chooses a readable interval for `targetLines` bands, and traces the contours — the one call the editor overlay makes to turn a `TerrainField` into ready-to-draw guides. Returns an empty list for flat ground.
 - `themeLoopSeconds` (function): function themeLoopSeconds(theme: MusicTheme): number — Loop length of a theme in seconds.
-- `tickDrivableVehicle` (function): function tickDrivableVehicle(vehicle: KinematicVehicle, dt: number, axis: AxisInput, options: DrivableVehicleOptions = {}): DrivableVehicleStep — Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points; this function only steps the sim and shapes the pose patch, nothing else.
+- `tickDrivableVehicle` (function): function tickDrivableVehicle<TStep extends DrivableSimStep = KinematicVehicleStep, TModifiers = KinematicVehicleModifiers>(vehicle: DrivableSim<TModifiers, TStep>, dt: number, axis: AxisInput, options: DrivableVehicleOptions<TModifiers> = {}): DrivableVehicleStep<TStep> — Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for one tick (#533.1) — the throttle/steer/handbrake → sim → `setPose` loop every drivable-vehicle game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera points; this function only steps the sim and shapes the pose patch, nothing else.
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
 - `tilemap` (function): function tilemap(config: TilemapWorldConfig): WorldFeature — Declares a 2D tilemap world from a map string.
 - `toDebrisBodies` (function): function toDebrisBodies(pieces: readonly SupportPiece[], collapsedIds: readonly string[], options: DebrisOptions = {}): AddBodyOptions[] — ⚠ undocumented
