@@ -11,6 +11,7 @@ export const publishedPackages = [
   "rapier",
   "ws",
   "sql",
+  "navbake",
   "react",
   "convex",
   "node",
