@@ -1100,6 +1100,7 @@
     "./templates/gameFiles",
     "./templates/names",
     "./templates/sharedBuilder",
+    "./templates/starterTerrain",
     "./templates/types",
     "./upgrade"
   ]

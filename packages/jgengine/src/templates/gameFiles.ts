@@ -1290,32 +1290,28 @@ export const world = place({
 });
 `;
 
-const TERRAIN_TUNING = (id: string) => `    height: 4,
-    frequency: 0.018,
-    octaves: 4,
-    segments: 192,
-    seed: "${id}",
-    material: "grass",
+const TERRAIN_TUNING = `    material: "grass",
     colors: { low: "#4f7f35", high: "#7d9a4a" },
     // Keeps the detail shader's sand band below the hills; raise it when you add water.
     waterLevel: -40,
     detail: {},`;
 
-const terrainWorldTs = (id: string, editor: boolean) =>
+const terrainWorldTs = (editor: boolean) =>
   editor
     ? `import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
 import { environment, sky, terrain } from "@jgengine/core/world/features";
 
 import { editorLayers } from "./editorLayers";
 
-// Footprint, sculpt, clearings under spawns, and the sky come from editor.scene.json (F2+E);
-// this file only tunes the engine's ground noise and palette.
+// The hills (terrain sculpt), footprint, clearings under spawns, and sky all live in
+// editor.scene.json — reshape them in the editor (F2+E). This file only picks the ground palette.
 const authored = environmentContentFromDocument(editorLayers, { minBounds: { w: 960, d: 960 } });
 
 export const world = environment({
   terrain: terrain({
     bounds: authored.bounds,
-${TERRAIN_TUNING(id)}
+    segments: 192,
+${TERRAIN_TUNING}
   }),
   sky: sky(authored.sky ?? {}),
   ...(authored.sculpt === undefined ? {} : { sculpt: authored.sculpt }),
@@ -1327,14 +1323,14 @@ ${TERRAIN_TUNING(id)}
 export const world = environment({
   terrain: terrain({
     bounds: { w: 960, d: 960 },
-${TERRAIN_TUNING(id)}
+${TERRAIN_TUNING}
   }),
   sky: sky(${JSON.stringify(STARTER_ENVIRONMENT)}),
 });
 `;
 
 const worldTs = (id: string, ground: "flat" | "terrain" = "terrain", editor = true) =>
-  ground === "flat" ? flatWorldTs(id) : terrainWorldTs(id, editor);
+  ground === "flat" ? flatWorldTs(id) : terrainWorldTs(editor);
 
 const editorLoopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import {

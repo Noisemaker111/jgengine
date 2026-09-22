@@ -10,11 +10,12 @@ import {
   packageIdFromFolder,
   parseCreateName,
   type TemplateFile,
+  type TemplateOptions,
 } from "./templates";
 
 function render(
   variant: "standalone" | "in-repo",
-  options?: { world?: boolean; editor?: boolean; player?: string; ground?: "flat" | "terrain"; sceneMode?: "empty" | "starter" },
+  options?: Partial<Pick<TemplateOptions, "world" | "editor" | "player" | "ground" | "sceneMode" | "scene">>,
 ): TemplateFile[] {
   return gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.8.0", ...options });
 }
@@ -257,6 +258,8 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(worldFile).toContain("terrain(");
     expect(worldFile).toContain("environmentContentFromDocument(editorLayers");
     expect(worldFile).toContain("sky(authored.sky");
+    expect(worldFile).toContain("sculpt: authored.sculpt");
+    expect(worldFile).not.toMatch(/seed|frequency|octaves|height:/);
     expect(worldFile).not.toContain("position");
     expect(worldFile).not.toMatch(/center|\[\s*-?\d+\s*,/);
   });
@@ -297,6 +300,29 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(scene.environment?.preset).toBe("day");
       expect(scene.environment?.fog).toBeDefined();
     }
+  });
+
+  test("default 3D scene carries its hills as an editor terrain sculpt", () => {
+    const scene = JSON.parse(fileOf(render("standalone"), "src/editor.scene.json")) as {
+      terrain?: { cols: number; rows: number; cellSize: number; offsets: number[]; surfaces: unknown[] };
+    };
+    const terrain = scene.terrain!;
+    expect(terrain.offsets.length).toBe((terrain.cols + 1) * (terrain.rows + 1));
+    expect(terrain.surfaces.length).toBe(terrain.cols * terrain.rows);
+    expect(Math.max(...terrain.offsets.map(Math.abs))).toBeGreaterThan(1);
+    const centre = (terrain.rows / 2) * (terrain.cols + 1) + terrain.cols / 2;
+    expect(terrain.offsets[centre]).toBe(0);
+    expect(terrain.offsets[0]).toBe(0);
+    expect(fileOf(render("standalone"), "src/editor.scene.json")).toBe(fileOf(render("standalone"), "src/editor.scene.json"));
+  });
+
+  test("flat ground and promoted scenes get no seeded sculpt", () => {
+    const flat = JSON.parse(fileOf(render("standalone", { ground: "flat" }), "src/editor.scene.json")) as { terrain?: unknown };
+    expect(flat.terrain).toBeUndefined();
+    const promoted = JSON.parse(
+      fileOf(render("standalone", { scene: { version: 1, markers: [{ id: "player_spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } }] } }), "src/editor.scene.json"),
+    ) as { terrain?: unknown };
+    expect(promoted.terrain).toBeUndefined();
   });
 
   test("--no-editor terrain world carries its own sky since there is no document", () => {

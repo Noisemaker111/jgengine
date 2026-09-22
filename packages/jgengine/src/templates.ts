@@ -1,4 +1,5 @@
 import { sharedBuilderFiles } from "./templates/sharedBuilder";
+import { withStarterTerrain } from "./templates/starterTerrain";
 import {
   agentsMd,
   artDirectionMd,
@@ -65,7 +66,10 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     environment: STARTER_ENVIRONMENT,
   };
   const sceneDoc = scene ?? (options.sceneMode === "starter" ? undefined : emptyScene);
-  const sceneContents = sceneDoc ? `${JSON.stringify(sceneDoc, null, 2)}\n` : editorSceneJson;
+  const baseSceneContents = sceneDoc ? `${JSON.stringify(sceneDoc, null, 2)}\n` : editorSceneJson;
+  // A promoted --from-scene document keeps whatever ground its author made.
+  const seedsTerrain = world && (options.ground ?? "terrain") === "terrain" && scene === undefined;
+  const sceneContents = seedsTerrain ? withStarterTerrain(baseSceneContents, id) : baseSceneContents;
   const sceneTest = sceneDoc ? (scene ? editorLayersTestFor(scene) : editorLayersTestFor(emptyScene)) : editorLayersTest;
   const files: TemplateFile[] = [
     { path: "index.html", contents: indexHtml(name) },
