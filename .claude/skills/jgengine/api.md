@@ -63,9 +63,9 @@
 
 - `CommandDecodeResult` (type): type CommandDecodeResult<TInput> = | { ok: true; value: TInput } | { ok: false; reason: string } — ⚠ undocumented
 - `CommandDecoder` (type): type CommandDecoder<TInput> = (input: unknown) => CommandDecodeResult<TInput> — Parses raw `unknown` transport input into `TInput`, rejecting anything that doesn't match the command's declared shape. Runs before `validate`/`apply`, so a malformed payload never reaches game logic.
-- `CommandDefinition` (interface): interface CommandDefinition<TState, TInput> — ⚠ undocumented
-- `CommandRegistry` (interface): interface CommandRegistry<TState> — ⚠ undocumented
-- `CommandRejection` (interface): interface CommandRejection — ⚠ undocumented
+- `CommandDefinition` (interface): interface CommandDefinition<TState, TInput> { decode?: CommandDecoder<TInput>; validate?(state: TState, input: TInput): CommandRejection | null; apply(state: TState, input: TInput): TState | void } — ⚠ undocumented
+- `CommandRegistry` (interface): interface CommandRegistry<TState> { define<TInput>(name: string, definition: CommandDefinition<TState, TInput>): void; has(name: string): boolean; names(): string[]; run(state: TState, name: string, input: unknown): CommandResult<TState> } — ⚠ undocumented
+- `CommandRejection` (interface): interface CommandRejection { reason: string } — ⚠ undocumented · used by `validateCommandInput` (@jgengine/ws): Validates a `runCommand` input against a declared catalog.
 - `CommandResult` (type): type CommandResult<TState> = | { status: "applied"; state: TState } | { status: "rejected"; reason: string } | { status: "unknown-command" } — ⚠ undocumented
 - `createCommandRegistry` (function): function createCommandRegistry<TState>(): CommandRegistry<TState> — ⚠ undocumented
 
@@ -84,28 +84,28 @@
 - `DevtoolsControlKind` (type): type DevtoolsControlKind = | "slider" | "toggle" | "color" | "select" | "text" | "vec2" | "vec3" | "vec4" | "interval" | "angle" | "enum" — ⚠ undocumented
 - `DevtoolsLogEntry` (interface): interface DevtoolsLogEntry — A single captured log line with timestamp, level, and formatted message.
 - `DevtoolsLogLevel` (type): type DevtoolsLogLevel = "log" | "info" | "warn" | "error" — Severity level for a captured devtools log entry.
-- `DevtoolsOverrides` (interface): interface DevtoolsOverrides — ⚠ undocumented
+- `DevtoolsOverrides` (interface): interface DevtoolsOverrides { version: number; enabled: string[]; values: Record<string, unknown>; schemas?: Record<string, {kind: DevtoolsControlKind; schemaVersion?: number}> } — ⚠ undocumented
 - `DevtoolsSnapshot` (interface): interface DevtoolsSnapshot — Serializable point-in-time snapshot of devtools state: frame, render, latency, logs, controls, and discovered fields.
 - `DiscoveredEntry` (interface): interface DiscoveredEntry — A control auto-discovered by scanning an object/table, with its binding metadata and current reader.
-- `DiscoverySkip` (interface): interface DiscoverySkip — ⚠ undocumented
+- `DiscoverySkip` (interface): interface DiscoverySkip { readonly path: string; readonly reason: string } — ⚠ undocumented
 - `FrameRecordSample` (interface): interface FrameRecordSample — Per-frame timing input recorded by callers: total frame time, sim time, and optional named phase durations.
 - `FrameStats` (interface): interface FrameStats — Aggregated frame-timing statistics over the recent sampling window, including per-phase breakdown.
 - `LONG_FRAME_MS` (const): const LONG_FRAME_MS: 33.4 — Frame duration in milliseconds above which a frame is recorded as a long-frame spike (~30fps budget).
 - `LatencyStats` (interface): interface LatencyStats — Aggregated latency statistics (last/avg/min/max) over recorded latency samples.
 - `LongFrameEvent` (interface): interface LongFrameEvent — Recorded spike event for a frame that exceeded the long-frame threshold, with culprit attribution.
-- `NormalizedColor` (interface): interface NormalizedColor — ⚠ undocumented
+- `NormalizedColor` (interface): interface NormalizedColor { readonly hex: string; readonly rgb: string; readonly alpha: number; readonly hasAlpha: boolean } — ⚠ undocumented
 - `OVERRIDES_FORMAT_VERSION` (const): const OVERRIDES_FORMAT_VERSION: 1 — ⚠ undocumented
-- `OverrideApplyDiagnostic` (interface): interface OverrideApplyDiagnostic — ⚠ undocumented
+- `OverrideApplyDiagnostic` (interface): interface OverrideApplyDiagnostic { readonly id: string; readonly reason: string } — ⚠ undocumented
 - `OverrideApplyResult` (interface): interface OverrideApplyResult — Outcome of applying a devtools overrides payload: counts of applied and skipped entries plus diagnostics.
 - `PhaseStats` (interface): interface PhaseStats — Timing summary for a single named profiling phase across the sampling window.
 - `RenderSample` (interface): interface RenderSample — Snapshot of renderer resource counts (draw calls, triangles, geometries, textures) for a frame.
-- `ScanFieldMeta` (interface): interface ScanFieldMeta extends TunableOptions — ⚠ undocumented
+- `ScanFieldMeta` (interface): interface ScanFieldMeta extends TunableOptions { kind?: DevtoolsControlKind } — ⚠ undocumented
 - `ScanMeta` (type): type ScanMeta = Readonly<Record<string, ScanFieldMeta>> — ⚠ undocumented
 - `Tunable` (interface): interface Tunable<T> — Typed handle to a registered control, exposing its live value and subscribe/set/reset operations.
 - `TunableAccessor` (interface): interface TunableAccessor — Get/set accessor pair plus initial value used to bind a discovered field to a control.
-- `TunableChoice` (interface): interface TunableChoice<T = unknown> — ⚠ undocumented
+- `TunableChoice` (interface): interface TunableChoice<T = unknown> { readonly value: T; readonly label?: string } — ⚠ undocumented
 - `TunableInterval` (type): type TunableInterval = { min: number; max: number } — ⚠ undocumented
-- `TunableOptions` (interface): interface TunableOptions<T = unknown> — ⚠ undocumented
+- `TunableOptions` (interface): interface TunableOptions<T = unknown> { min?: number; max?: number; step?: number; options?: readonly T[]; choices?: readonly TunableChoice<T>[]; label?: string; group?: string; onChange?: (value: T) => void; kind?: DevtoolsControlKind; unit?: AngleUnit; displayUnit?: AngleUnit… — ⚠ undocumented · used by `createDiscoverModule` (@jgengine/core/devtools/discover): Create the discovery subsystem that scans objects/tables for tunable fields and binds them as controls and probes.
 - `TunableVec2` (type): type TunableVec2 = [number, number] — ⚠ undocumented
 - `TunableVec3` (type): type TunableVec3 = [number, number, number] — ⚠ undocumented
 - `TunableVec4` (type): type TunableVec4 = [number, number, number, number] — ⚠ undocumented
@@ -173,28 +173,28 @@
 
 ## @jgengine/core/devtools/transformTunables
 
-- `TunableTransformResult` (interface): interface TunableTransformResult — ⚠ undocumented
+- `TunableTransformResult` (interface): interface TunableTransformResult { code: string; bound: string[] } — ⚠ undocumented
 
 ## @jgengine/core/devtools/tunableSchema
 
 - `AngleUnit` (type): type AngleUnit = "rad" | "deg" — ⚠ undocumented
 - `CONTROL_SCHEMA_VERSION` (const): const CONTROL_SCHEMA_VERSION: 1 — ⚠ undocumented
 - `DevtoolsControlKind` (type): type DevtoolsControlKind = | "slider" | "toggle" | "color" | "select" | "text" | "vec2" | "vec3" | "vec4" | "interval" | "angle" | "enum" — ⚠ undocumented
-- `DevtoolsOverrides` (interface): interface DevtoolsOverrides — ⚠ undocumented
-- `DiscoverySkip` (interface): interface DiscoverySkip — ⚠ undocumented
+- `DevtoolsOverrides` (interface): interface DevtoolsOverrides { version: number; enabled: string[]; values: Record<string, unknown>; schemas?: Record<string, {kind: DevtoolsControlKind; schemaVersion?: number}> } — ⚠ undocumented
+- `DiscoverySkip` (interface): interface DiscoverySkip { readonly path: string; readonly reason: string } — ⚠ undocumented
 - `MAX_SCAN_DEPTH` (const): const MAX_SCAN_DEPTH: 5 — ⚠ undocumented
 - `MAX_SCAN_TARGETS` (const): const MAX_SCAN_TARGETS: 512 — ⚠ undocumented
 - `MAX_TABLE_ENTRIES` (const): const MAX_TABLE_ENTRIES: 64 — ⚠ undocumented
-- `NormalizedColor` (interface): interface NormalizedColor — ⚠ undocumented
+- `NormalizedColor` (interface): interface NormalizedColor { readonly hex: string; readonly rgb: string; readonly alpha: number; readonly hasAlpha: boolean } — ⚠ undocumented
 - `OVERRIDES_FORMAT_VERSION` (const): const OVERRIDES_FORMAT_VERSION: 1 — ⚠ undocumented
-- `OverrideApplyDiagnostic` (interface): interface OverrideApplyDiagnostic — ⚠ undocumented
-- `OverrideParseResult` (interface): interface OverrideParseResult — ⚠ undocumented
-- `ResolvedAxisBounds` (interface): interface ResolvedAxisBounds — ⚠ undocumented
-- `ScanFieldMeta` (interface): interface ScanFieldMeta extends TunableOptions — ⚠ undocumented
+- `OverrideApplyDiagnostic` (interface): interface OverrideApplyDiagnostic { readonly id: string; readonly reason: string } — ⚠ undocumented
+- `OverrideParseResult` (interface): interface OverrideParseResult { readonly overrides: DevtoolsOverrides | null; readonly diagnostics: readonly string[] } — ⚠ undocumented
+- `ResolvedAxisBounds` (interface): interface ResolvedAxisBounds { readonly labels: readonly string[]; readonly min: readonly number[]; readonly max: readonly number[]; readonly step: readonly number[] } — ⚠ undocumented
+- `ScanFieldMeta` (interface): interface ScanFieldMeta extends TunableOptions { kind?: DevtoolsControlKind } — ⚠ undocumented
 - `ScanMeta` (type): type ScanMeta = Readonly<Record<string, ScanFieldMeta>> — ⚠ undocumented
-- `TunableChoice` (interface): interface TunableChoice<T = unknown> — ⚠ undocumented
+- `TunableChoice` (interface): interface TunableChoice<T = unknown> { readonly value: T; readonly label?: string } — ⚠ undocumented
 - `TunableInterval` (type): type TunableInterval = { min: number; max: number } — ⚠ undocumented
-- `TunableOptions` (interface): interface TunableOptions<T = unknown> — ⚠ undocumented
+- `TunableOptions` (interface): interface TunableOptions<T = unknown> { min?: number; max?: number; step?: number; options?: readonly T[]; choices?: readonly TunableChoice<T>[]; label?: string; group?: string; onChange?: (value: T) => void; kind?: DevtoolsControlKind; unit?: AngleUnit; displayUnit?: AngleUnit… — ⚠ undocumented · used by `createDiscoverModule` (@jgengine/core/devtools/discover): Create the discovery subsystem that scans objects/tables for tunable fields and binds them as controls and probes.
 - `TunableVec2` (type): type TunableVec2 = [number, number] — ⚠ undocumented
 - `TunableVec3` (type): type TunableVec3 = [number, number, number] — ⚠ undocumented
 - `TunableVec4` (type): type TunableVec4 = [number, number, number, number] — ⚠ undocumented
@@ -236,10 +236,10 @@
 
 ## @jgengine/core/runtime/adapter
 
-- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented
+- `MultiplayerAdapterConfig` (type): type MultiplayerAdapterConfig = | { kind: "convex"; topology?: MultiplayerTopology; authority?: MultiplayerAuthority } | { kind: "ws"; topology?: MultiplayerTopology; url?: string; authority?: MultiplayerAuthority } | { kind: "socketio"; topology?: MultiplayerTopology; url?: string; authority?: Mult… — ⚠ undocumented · used by `convex`: Convex transport.
 - `MultiplayerAuthority` (type): type MultiplayerAuthority = "server" | "client" — Where the world simulation is authoritative.
-- `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented
-- `ServersPoolConfig` (type): type ServersPoolConfig = { minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } & ( | { topology: "shared"; maxServers?: number; slotsPerServer?: number } | { topology?: "rooms"; maxServers: number; slotsPerServer: number } ) — ⚠ undocumented
+- `MultiplayerTopology` (type): type MultiplayerTopology = "shared" | "lobbies" | "private" — ⚠ undocumented · used by `convex`: Convex transport.
+- `ServersPoolConfig` (type): type ServersPoolConfig = { minPlayersToStart?: number; adapter: MultiplayerAdapterConfig; } & ( | { topology: "shared"; maxServers?: number; slotsPerServer?: number } | { topology?: "rooms"; maxServers: number; slotsPerServer: number } ) — ⚠ undocumented · used by `servers`: Resolve the shared-world pool to one unbounded world; room pools keep explicit capacities.
 - `adapterOf` (function): function adapterOf(multiplayer: unknown): MultiplayerAdapterConfig | null — ⚠ undocumented
 - `convex` (function): function convex(config?: { topology?: MultiplayerTopology; authority?: MultiplayerAuthority }): MultiplayerAdapterConfig — Convex transport. Omitting `authority` (or passing `"client"`) is **presence-only** — prefer `convexPresence()` to name that intent explicitly. Pass `{ authority: "server" }` for a shared, host-authoritative world — see `examples/HOSTED.md`.
 - `convexPresence` (function): function convexPresence(config?: { topology?: MultiplayerTopology }): MultiplayerAdapterConfig — Presence-only Convex transport — each client runs its own `onTick`; only presence/feeds/chat sync. Sugar for `convex({ ...config, authority: "client" })`.
@@ -259,7 +259,7 @@
 
 ## @jgengine/core/runtime/cameraDirector
 
-- `CameraDirector` (interface): interface CameraDirector — ⚠ undocumented
+- `CameraDirector` (interface): interface CameraDirector { follow(entityId: string | null): void; followedEntityId(): string | null | undefined; setCinematic(config: CinematicCameraConfig | null): void; cinematic(): CinematicCameraConfig | null; setChaseTuning(tuning: ChaseCameraTuning | null): v… — ⚠ undocumented
 - `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick<ChaseCameraConfig, "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw" | "yawResponse"> > — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), or a whole driving-feel overlay (speed→FOV, lead, bank, speed shake, drift-lag) applied only while a vehicle is piloted (#1299).
 
 ## @jgengine/core/runtime/commandInput
@@ -285,30 +285,30 @@
 ## @jgengine/core/runtime/gameContext
 
 - `CatalogEntityRole` (type): type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle" — ⚠ undocumented
-- `FloatTextInput` (interface): interface FloatTextInput — ⚠ undocumented
+- `FloatTextInput` (interface): interface FloatTextInput { instanceId?: string; position?: [number, number, number]; text?: string; kind?: string; amount?: number; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
 - `GameAudio` (interface): interface GameAudio — Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. Retained `loop`/`setLoop`/`stopLoop` add id-keyed loops with live pitch/gain control over `audio.loopStart`/`audio.loopSet`/`audio.loopStop` (#1051).
 - `GameContext` (interface): interface GameContext — The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world.
-- `GameContextCards` (interface): interface GameContextCards — ⚠ undocumented
-- `GameContextCommands` (interface): interface GameContextCommands — ⚠ undocumented
-- `GameContextContent` (interface): interface GameContextContent — ⚠ undocumented
-- `GameContextEconomy` (interface): interface GameContextEconomy — ⚠ undocumented
-- `GameContextEntityEntry` (interface): interface GameContextEntityEntry — ⚠ undocumented
-- `GameContextFeed` (interface): interface GameContextFeed extends Omit<GameFeed, "bind"> — ⚠ undocumented
-- `GameContextItemEntry` (interface): interface GameContextItemEntry — ⚠ undocumented
-- `GameContextItemUse` (interface): interface GameContextItemUse — ⚠ undocumented
-- `GameContextLoot` (interface): interface GameContextLoot — ⚠ undocumented
+- `GameContextCards` (interface): interface GameContextCards { pile(id: string, config?: CardPileConfig): CardPile } — ⚠ undocumented
+- `GameContextCommands` (interface): interface GameContextCommands { define<TInput>(name: string, definition: CommandDefinition<GameContext, TInput>): void; has(name: string): boolean; names(): string[]; run(name: string, input: unknown): CommandResult<GameContext>; runAs(actorUserId: string, name: string,… — ⚠ undocumented
+- `GameContextContent` (interface): interface GameContextContent { itemById?(itemId: string): GameContextItemEntry | null | undefined; entityById?(catalogId: string): GameContextEntityEntry | null | undefined; objectById?(catalogId: string): GameContextObjectEntry | null | undefined } — ⚠ undocumented
+- `GameContextEconomy` (interface): interface GameContextEconomy { balance(userId: string, currencyId: string | CurrencyDefinition): number; grant(userId: string, currencyId: string | CurrencyDefinition, amount: number): void; charge(userId: string, currencyId: string | CurrencyDefinition, amount: number… — ⚠ undocumented
+- `GameContextEntityEntry` (interface): interface GameContextEntityEntry { stats?: StatCatalog; receive?: ReceiveMap; onDeath?: OnDeathSpec; movement?: PoseAllowedStates & {walkSpeed?: number}; role?: CatalogEntityRole; verbs?: readonly ContextVerb[]; colliders?: EntityColliderSet; scale?: number } — ⚠ undocumented · used by `entityEntryFromCatalog` (@jgengine/core/editor): Turns an authored entity row into the runtime {@link GameContextEntityEntry} a spawn consumes: looks up `entityId` in the document's {@link …
+- `GameContextFeed` (interface): interface GameContextFeed extends Omit<GameFeed, "bind"> { bind(action: keyof GameEventMap): () => void } — ⚠ undocumented
+- `GameContextItemEntry` (interface): interface GameContextItemEntry { use?: string; weapon?: Record<string, unknown>; trade?: TradeField; rarity?: string; baseType?: string } — ⚠ undocumented
+- `GameContextItemUse` (interface): interface GameContextItemUse { register(handlers: Record<string, ItemUseHandler<GameContext>>): void; registered(): string[]; can(input: ItemUseInput): ItemUseRejection | null; use(input: ItemUseInput): ItemUseResult<GameContext> } — ⚠ undocumented
+- `GameContextLoot` (interface): interface GameContextLoot { register(def: LootTableDef): void; has(id: string): boolean; roll(id: string, rng?: () => number): Drop[]; grantToPlayer(userId: string, drops: Drop[], source?: string): void } — ⚠ undocumented
 - `GameContextModels` (interface): interface GameContextModels — Per-kind render-model lookup for {@link GameContextOptions.models}; a resolved `ModelConfig` satisfies {@link ModelBodySource} structurally.
-- `GameContextObjectEntry` (interface): interface GameContextObjectEntry — ⚠ undocumented
-- `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — ⚠ undocumented
-- `GameContextRace` (interface): interface GameContextRace — ⚠ undocumented
-- `GameContextTurn` (interface): interface GameContextTurn — ⚠ undocumented
-- `GameContextWorld` (interface): interface GameContextWorld — ⚠ undocumented
-- `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented
+- `GameContextObjectEntry` (interface): interface GameContextObjectEntry { proximityPrompt?: ProximityPrompt; breakable?: false | {baseBreakTime: number}; slotInventory?: InventoryLayout; verbs?: readonly ContextVerb[]; colliders?: EntityColliderSet; halfExtents?: readonly [number, number, number] } — ⚠ undocumented
+- `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> { definition: GameDefinition<TAssetRef, TMultiplayer>; content: GameContextContent; player: {userId: string; isNew: boolean}; territory?: Territory; now?: () => number; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; seed?… — ⚠ undocumented
+- `GameContextRace` (interface): interface GameContextRace { state(id: string, config?: RaceStateConfig): RaceState } — ⚠ undocumented
+- `GameContextTurn` (interface): interface GameContextTurn { loop(id: string, config?: TurnLoopConfig): TurnLoop } — ⚠ undocumented
+- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number } — ⚠ undocumented
+- `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented · used by `resolveHitReaction` (@jgengine/core/combat): Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
 - `MoveTowardCommitOptions` (interface): interface MoveTowardCommitOptions extends MoveTowardOptions — Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn.
-- `SceneEntityContext` (interface): interface SceneEntityContext — ⚠ undocumented
-- `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
-- `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
-- `TelegraphInput` (interface): interface TelegraphInput — ⚠ undocumented
+- `SceneEntityContext` (interface): interface SceneEntityContext { spawn(name: string, options?: SpawnOptions): string; despawn(instanceId: string): boolean; update: EntityStore["update"]; setPose(instanceId: string, pose: EntityPose): boolean; setPoseConstraint: EntityStore["setPoseConstraint"]; get(ins… — ⚠ undocumented
+- `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore { catalog(instanceId: string): GameContextObjectEntry | null; raycast(input: ObjectRaycastInput): ObjectRaycastHit | null; raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[]; setColliders(instanceId: string, colliders: Entit… — ⚠ undocumented
+- `SceneWorldItemContext` (interface): interface SceneWorldItemContext { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
+- `TelegraphInput` (interface): interface TelegraphInput { from: string; shape: TelegraphShape; at: [number, number, number]; dir?: number; windupMs: number; kind?: string; effect?: {effect: string; via?: EffectVia; radius?: number; falloff?: "linear" | "none"; los?: boolean;} } — ⚠ undocumented
 - `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst. The easy path is a named `preset` — `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`, `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color` yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 - `createGameContext` (function): function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>(options: GameContextOptions<TAssetRef, TMultiplayer>): GameContext — ⚠ undocumented
@@ -316,36 +316,36 @@
 ## @jgengine/core/runtime/gameContextTypes
 
 - `CatalogEntityRole` (type): type CatalogEntityRole = "player" | "enemy" | "hostile" | "npc" | "vehicle" — ⚠ undocumented
-- `FloatTextInput` (interface): interface FloatTextInput — ⚠ undocumented
+- `FloatTextInput` (interface): interface FloatTextInput { instanceId?: string; position?: [number, number, number]; text?: string; kind?: string; amount?: number; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
 - `GameAudio` (interface): interface GameAudio — Reachable audio seam on `ctx.game`: `play`, `music`, and `resume` route through the `audio.play`/`audio.music`/`audio.resume` events the shell's audio engine listens on, so game code triggers sound without importing the shell. Retained `loop`/`setLoop`/`stopLoop` add id-keyed loops with live pitch/gain control over `audio.loopStart`/`audio.loopSet`/`audio.loopStop` (#1051).
 - `GameContext` (interface): interface GameContext — The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world.
-- `GameContextCards` (interface): interface GameContextCards — ⚠ undocumented
-- `GameContextCommands` (interface): interface GameContextCommands — ⚠ undocumented
-- `GameContextContent` (interface): interface GameContextContent — ⚠ undocumented
-- `GameContextEconomy` (interface): interface GameContextEconomy — ⚠ undocumented
-- `GameContextEntityEntry` (interface): interface GameContextEntityEntry — ⚠ undocumented
-- `GameContextFeed` (interface): interface GameContextFeed extends Omit<GameFeed, "bind"> — ⚠ undocumented
-- `GameContextItemEntry` (interface): interface GameContextItemEntry — ⚠ undocumented
-- `GameContextItemUse` (interface): interface GameContextItemUse — ⚠ undocumented
-- `GameContextLoot` (interface): interface GameContextLoot — ⚠ undocumented
+- `GameContextCards` (interface): interface GameContextCards { pile(id: string, config?: CardPileConfig): CardPile } — ⚠ undocumented
+- `GameContextCommands` (interface): interface GameContextCommands { define<TInput>(name: string, definition: CommandDefinition<GameContext, TInput>): void; has(name: string): boolean; names(): string[]; run(name: string, input: unknown): CommandResult<GameContext>; runAs(actorUserId: string, name: string,… — ⚠ undocumented
+- `GameContextContent` (interface): interface GameContextContent { itemById?(itemId: string): GameContextItemEntry | null | undefined; entityById?(catalogId: string): GameContextEntityEntry | null | undefined; objectById?(catalogId: string): GameContextObjectEntry | null | undefined } — ⚠ undocumented
+- `GameContextEconomy` (interface): interface GameContextEconomy { balance(userId: string, currencyId: string | CurrencyDefinition): number; grant(userId: string, currencyId: string | CurrencyDefinition, amount: number): void; charge(userId: string, currencyId: string | CurrencyDefinition, amount: number… — ⚠ undocumented
+- `GameContextEntityEntry` (interface): interface GameContextEntityEntry { stats?: StatCatalog; receive?: ReceiveMap; onDeath?: OnDeathSpec; movement?: PoseAllowedStates & {walkSpeed?: number}; role?: CatalogEntityRole; verbs?: readonly ContextVerb[]; colliders?: EntityColliderSet; scale?: number } — ⚠ undocumented · used by `entityEntryFromCatalog` (@jgengine/core/editor): Turns an authored entity row into the runtime {@link GameContextEntityEntry} a spawn consumes: looks up `entityId` in the document's {@link …
+- `GameContextFeed` (interface): interface GameContextFeed extends Omit<GameFeed, "bind"> { bind(action: keyof GameEventMap): () => void } — ⚠ undocumented
+- `GameContextItemEntry` (interface): interface GameContextItemEntry { use?: string; weapon?: Record<string, unknown>; trade?: TradeField; rarity?: string; baseType?: string } — ⚠ undocumented
+- `GameContextItemUse` (interface): interface GameContextItemUse { register(handlers: Record<string, ItemUseHandler<GameContext>>): void; registered(): string[]; can(input: ItemUseInput): ItemUseRejection | null; use(input: ItemUseInput): ItemUseResult<GameContext> } — ⚠ undocumented
+- `GameContextLoot` (interface): interface GameContextLoot { register(def: LootTableDef): void; has(id: string): boolean; roll(id: string, rng?: () => number): Drop[]; grantToPlayer(userId: string, drops: Drop[], source?: string): void } — ⚠ undocumented
 - `GameContextModels` (interface): interface GameContextModels — Per-kind render-model lookup for {@link GameContextOptions.models}; a resolved `ModelConfig` satisfies {@link ModelBodySource} structurally.
-- `GameContextObjectEntry` (interface): interface GameContextObjectEntry — ⚠ undocumented
-- `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — ⚠ undocumented
-- `GameContextRace` (interface): interface GameContextRace — ⚠ undocumented
-- `GameContextTurn` (interface): interface GameContextTurn — ⚠ undocumented
-- `GameContextWorld` (interface): interface GameContextWorld — ⚠ undocumented
-- `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented
+- `GameContextObjectEntry` (interface): interface GameContextObjectEntry { proximityPrompt?: ProximityPrompt; breakable?: false | {baseBreakTime: number}; slotInventory?: InventoryLayout; verbs?: readonly ContextVerb[]; colliders?: EntityColliderSet; halfExtents?: readonly [number, number, number] } — ⚠ undocumented
+- `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> { definition: GameDefinition<TAssetRef, TMultiplayer>; content: GameContextContent; player: {userId: string; isNew: boolean}; territory?: Territory; now?: () => number; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; seed?… — ⚠ undocumented
+- `GameContextRace` (interface): interface GameContextRace { state(id: string, config?: RaceStateConfig): RaceState } — ⚠ undocumented
+- `GameContextTurn` (interface): interface GameContextTurn { loop(id: string, config?: TurnLoopConfig): TurnLoop } — ⚠ undocumented
+- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number } — ⚠ undocumented
+- `HitReactionInput` (interface): interface HitReactionInput { from: string; to: string; config: HitReactionConfig | ImpactPresetName; power?: number } — ⚠ undocumented · used by `resolveHitReaction` (@jgengine/core/combat): Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
 - `MoveTowardCommitOptions` (interface): interface MoveTowardCommitOptions extends MoveTowardOptions — Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn.
-- `SceneEntityContext` (interface): interface SceneEntityContext — ⚠ undocumented
-- `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore — ⚠ undocumented
-- `SceneWorldItemContext` (interface): interface SceneWorldItemContext — ⚠ undocumented
-- `TelegraphInput` (interface): interface TelegraphInput — ⚠ undocumented
+- `SceneEntityContext` (interface): interface SceneEntityContext { spawn(name: string, options?: SpawnOptions): string; despawn(instanceId: string): boolean; update: EntityStore["update"]; setPose(instanceId: string, pose: EntityPose): boolean; setPoseConstraint: EntityStore["setPoseConstraint"]; get(ins… — ⚠ undocumented
+- `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore { catalog(instanceId: string): GameContextObjectEntry | null; raycast(input: ObjectRaycastInput): ObjectRaycastHit | null; raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[]; setColliders(instanceId: string, colliders: Entit… — ⚠ undocumented
+- `SceneWorldItemContext` (interface): interface SceneWorldItemContext { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
+- `TelegraphInput` (interface): interface TelegraphInput { from: string; shape: TelegraphShape; at: [number, number, number]; dir?: number; windupMs: number; kind?: string; effect?: {effect: string; via?: EffectVia; radius?: number; falloff?: "linear" | "none"; los?: boolean;} } — ⚠ undocumented
 - `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst. The easy path is a named `preset` — `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`, `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color` yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
 
 ## @jgengine/core/runtime/gameRuntime
 
-- `GameRuntime` (type): type GameRuntime = { gameId: string; topology?: "shared" | "rooms"; save: SaveConfig; /** * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and * persisting a server whose `tick` is a no-op by construction — the difference between a world that * costs a ful… — ⚠ undocumented
+- `GameRuntime` (type): type GameRuntime = { gameId: string; topology?: "shared" | "rooms"; save: SaveConfig; /** * Whether this runtime declares `loop.onTick`. A host's tick cron reads it to skip hydrating and * persisting a server whose `tick` is a no-op by construction — the difference between a world that * costs a ful… — ⚠ undocumented · used by `initialPlayerState`: Seed a fresh player through the same onNewPlayer hook as joining, without hydrating or modifying a world.
 - `GameRuntimeDefinition` (type): type GameRuntimeDefinition = { gameId: string; topology?: "shared" | "rooms"; save: SaveConfig; commands: Record<string, CommandDef>; loop?: ServerLoopHooks; } — ⚠ undocumented
 - `HydrateInput` (type): type HydrateInput = { gameId: string; serverId: string; serverRow: RuntimeServerRow; playersByUserId: Record<string, RuntimePlayerRow>; chunksByKey: Record<string, RuntimeChunkRow>; revision?: number; /** Host wall clock for `onInit`, in ms. Defaults to `Date.now()`. */ nowMs?: number; } — ⚠ undocumented
 - `RuntimeInitContext` (type): type RuntimeInitContext = { snapshot: GameRuntimeSnapshot; setSnapshot: (snapshot: GameRuntimeSnapshot) => void; /** * Host wall clock at the start of this call, in ms. The host already knows it, so anything keyed to * real time — a UTC date rollover, a `lastTickAt` anchor other code paths read, a s… — ⚠ undocumented
@@ -359,27 +359,27 @@
 - `HeadlessCommandInterface` (interface): interface HeadlessCommandInterface — Canvas-free command/intent surface for {@link HeadlessRunner} — invoke a game's registered UI commands and read the resulting reactive state off `ctx`.
 - `HeadlessInput` (interface): interface HeadlessInput — One step's worth of player intent handed to {@link HeadlessRunner.step} — the held-action set and pointer state the shell would otherwise publish from the browser each frame.
 - `HeadlessRunner` (interface): interface HeadlessRunner — A renderer-free driver for a game loop: builds a {@link GameContext} from a {@link GameDefinition}, runs the init hooks, then advances the simulation one step at a time from injected input. No React, R3F, or three.js — the whole play path (time, input, `onTick`, behaviour nav, optional player movement) runs from `core` primitives alone, so a non-React host (a server tick, a test, a CLI replay) can play a real game and read its world snapshot. The shell's FrameDriver is one such driver bolted to `useFrame`; this is the same step distilled out of the render tree.
-- `HeadlessRunnerOptions` (interface): interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — ⚠ undocumented
+- `HeadlessRunnerOptions` (interface): interface HeadlessRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> { definition: GameDefinition<TAssetRef, TMultiplayer>; content?: GameContextContent; loop?: GameLoop<GameContext>; player?: {userId: string; isNew: boolean}; now?: () => number; maxStepSeconds?: number; playerMovement?: boolean; movement?: … — ⚠ undocumented
 - `createHeadlessRunner` (function): function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplayer>(options: HeadlessRunnerOptions<TAssetRef, TMultiplayer>): HeadlessRunner — ⚠ undocumented
 
 ## @jgengine/core/runtime/hostPersistence
 
 - `FEED_RING_LIMIT` (const): const FEED_RING_LIMIT: 20 — ⚠ undocumented
 - `GameServerRecord` (type): type GameServerRecord = { serverId: string; gameId: string; status: GameServerStatus; mode?: string; modeConfig?: unknown; label?: string; visibility?: SessionVisibility; joinCode?: string; tags?: string[]; memberUserIds: string[]; slotsPerServer: number; save: SaveConfig; serverState: RuntimeServer… — ⚠ undocumented
-- `GameServerStatus` (type): type GameServerStatus = "open" | "running" | "closed" — ⚠ undocumented
-- `HostPersistence` (type): type HostPersistence = { savePlan?: (plan: ServerPersistPlan) => Promise<void>; resetScenario?: (reset: NormalizedScenarioReset) => Promise<void>; loadServer: (serverId: string) => Promise<GameServerRecord | null>; saveServer: (record: GameServerRecord) => Promise<void>; listServers: (gameId: string… — ⚠ undocumented
+- `GameServerStatus` (type): type GameServerStatus = "open" | "running" | "closed" — ⚠ undocumented · used by `statusAfterLeave` (@jgengine/core/runtime/hostPolicy): Status after a leave: empty rooms reopen; non-empty rooms keep their current status.
+- `HostPersistence` (type): type HostPersistence = { savePlan?: (plan: ServerPersistPlan) => Promise<void>; resetScenario?: (reset: NormalizedScenarioReset) => Promise<void>; loadServer: (serverId: string) => Promise<GameServerRecord | null>; saveServer: (record: GameServerRecord) => Promise<void>; listServers: (gameId: string… — ⚠ undocumented · used by `memoryPersistence` (@jgengine/node): Creates an in-memory `HostPersistence` implementation, useful for tests and ephemeral hosts.
 - `LEADERBOARD_PENDING_KEY` (const): const LEADERBOARD_PENDING_KEY: "leaderboardPending" — ⚠ undocumented
 - `LEADERBOARD_TOP_LIMIT` (const): const LEADERBOARD_TOP_LIMIT: 100 — ⚠ undocumented
 - `LeaderboardEntry` (type): type LeaderboardEntry = { userId: string; value: number; } — ⚠ undocumented
 - `LeaderboardIncrement` (type): type LeaderboardIncrement = { userId: string; stat: string; scope: LeaderboardScope; serverId?: string; by: number; } — ⚠ undocumented
-- `LeaderboardRow` (type): type LeaderboardRow = { gameId: string; stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number; updatedAt: number; } — ⚠ undocumented
+- `LeaderboardRow` (type): type LeaderboardRow = { gameId: string; stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number; updatedAt: number; } — ⚠ undocumented · used by `createLeaderboard` (@jgengine/core/game/leaderboard): Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 - `OPEN_SERVER_LISTING_LIMIT` (const): const OPEN_SERVER_LISTING_LIMIT: 20 — ⚠ undocumented
 - `OPEN_SERVER_LISTING_MAX` (const): const OPEN_SERVER_LISTING_MAX: 100 — ⚠ undocumented
 - `PlayerProfileRecord` (type): type PlayerProfileRecord = { userId: string; gameId: string; playerState: RuntimePlayerRow; revision: number; updatedAt: number; } — ⚠ undocumented
 - `ServerListing` (type): type ServerListing = { serverId: string; status: GameServerStatus; memberCount: number; slotsPerServer: number; mode?: string; label?: string; visibility?: SessionVisibility; joinCode?: string; tags?: string[]; updatedAt: number; } — ⚠ undocumented
 - `ServerPersistPlan` (type): type ServerPersistPlan = { server: GameServerRecord; profiles: PlayerProfileRecord[]; chunks: WorldChunkRecord[]; deletedChunks: string[]; leaderboard: LeaderboardIncrement[]; /** * Which fields of the server row the plan actually moved. A store that pays per written field — * or whose subscribers r… — ⚠ undocumented
 - `SessionAttributes` (type): type SessionAttributes = { label?: string; mode?: string; visibility?: SessionVisibility; joinCode?: string; tags?: string[]; } — ⚠ undocumented
-- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
+- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented · used by `isAutoJoinCandidate` (@jgengine/core/runtime/hostPolicy): Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity.
 - `ToServerListingOptions` (type): type ToServerListingOptions = { includeJoinCode?: boolean; } — ⚠ undocumented
 - `WorldChunkRecord` (type): type WorldChunkRecord = { serverId: string; chunkKey: string; snapshot: RuntimeChunkRow; updatedAt: number; } — ⚠ undocumented
 - `isSnapshotClean` (function): function isSnapshotClean(snapshot: GameRuntimeSnapshot): boolean — True when a snapshot carries no unwritten mutation — nothing for a persist to do.
@@ -436,12 +436,12 @@
 ## @jgengine/core/runtime/inputSnapshot
 
 - `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
-- `InputSnapshot` (interface): interface InputSnapshot — ⚠ undocumented
+- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishAnalog(values: Readonly<Record<string, num… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
 - `createInputSnapshot` (function): function createInputSnapshot(): InputSnapshot — ⚠ undocumented
 
 ## @jgengine/core/runtime/motionIntents
 
-- `MotionIntentBatch` (interface): interface MotionIntentBatch — ⚠ undocumented
+- `MotionIntentBatch` (interface): interface MotionIntentBatch { impulses: readonly number[]; horizontalImpulses: readonly (readonly [number, number])[]; verticalVelocity: number | null; y: number | null } — ⚠ undocumented
 - `MotionIntents` (interface): interface MotionIntents — Seam for game code to reach the motion the shell's FrameDriver otherwise owns privately (#162.4). Game code calls `impulse`, `pushHorizontal`, `setVerticalVelocity`, and/or `setY` from `onTick` or commands; the shell calls `takePending()` once per frame, before integrating gravity, to drain what accumulated. `setY` wins over physics for that frame; impulses add to the velocity the driver is about to integrate; a later `setVerticalVelocity` replaces that velocity outright. Horizontal pushes compose with the walk controller (#282.4): they add to its horizontal velocity and decay naturally as it re-blends toward input — knockback, dashes, explosion shoves without raw `setPose` offsets.
 
 ## @jgengine/core/runtime/objectRows
@@ -455,11 +455,11 @@
 
 ## @jgengine/core/runtime/persistenceScope
 
-- `NormalizedScenarioReset` (interface): interface NormalizedScenarioReset — ⚠ undocumented
+- `NormalizedScenarioReset` (interface): interface NormalizedScenarioReset { gameId: string; serverId: string | null; wipeChunks: boolean; wipeServerSession: boolean; resetPlayers: "run" | "none"; runFields: readonly string[] } — ⚠ undocumented
 - `PersistenceScope` (type): type PersistenceScope = "run" | "meta" — ⚠ undocumented
-- `ScenarioReset` (interface): interface ScenarioReset — ⚠ undocumented
-- `ScopeSchema` (interface): interface ScopeSchema — ⚠ undocumented
-- `ScopedState` (interface): interface ScopedState<T = Record<string, unknown>> — ⚠ undocumented
+- `ScenarioReset` (interface): interface ScenarioReset { gameId: string; serverId?: string; wipeChunks?: boolean; wipeServerSession?: boolean; resetPlayers?: PersistenceScope | "none"; runFields?: readonly string[] } — ⚠ undocumented
+- `ScopeSchema` (interface): interface ScopeSchema { run: readonly string[] } — ⚠ undocumented
+- `ScopedState` (interface): interface ScopedState<T = Record<string, unknown>> { meta: Partial<T>; run: Partial<T> } — ⚠ undocumented
 - `applyRunReset` (function): function applyRunReset(profile: PlayerProfileRecord, runFields: readonly string[], now: number): PlayerProfileRecord — ⚠ undocumented
 - `clearRunFields` (function): function clearRunFields(player: RuntimePlayerRow, runFields: readonly string[]): RuntimePlayerRow — ⚠ undocumented
 - `mergeScopes` (function): function mergeScopes<T extends Record<string, unknown>>(scoped: ScopedState<T>): Partial<T> — ⚠ undocumented
@@ -494,7 +494,7 @@
 
 ## @jgengine/core/runtime/save
 
-- `SaveConfig` (type): type SaveConfig = | "none" | { auto: string; scope: SaveScope; } — ⚠ undocumented
+- `SaveConfig` (type): type SaveConfig = | "none" | { auto: string; scope: SaveScope; } — ⚠ undocumented · used by `persistServerSnapshot` (@jgengine/convex): Write a snapshot back: server row, dirty player profiles, dirty chunks, and drained leaderboard increments, all under `save`.
 - `SaveScope` (type): type SaveScope = "player" | "chunks" | "player+chunks" — ⚠ undocumented
 
 ## @jgengine/core/runtime/simContext
@@ -523,13 +523,13 @@
 
 ## @jgengine/core/runtime/snapshot
 
-- `GameRuntimeSnapshot` (type): type GameRuntimeSnapshot = { version: number; gameId: string; serverId: string; server: RuntimeServerRow; players: Record<string, RuntimePlayerRow>; chunks: Record<string, RuntimeChunkRow>; revision: number; dirty: { server: boolean; players: string[]; chunks: string[]; }; } — ⚠ undocumented
+- `GameRuntimeSnapshot` (type): type GameRuntimeSnapshot = { version: number; gameId: string; serverId: string; server: RuntimeServerRow; players: Record<string, RuntimePlayerRow>; chunks: Record<string, RuntimeChunkRow>; revision: number; dirty: { server: boolean; players: string[]; chunks: string[]; }; } — ⚠ undocumented · used by `isSnapshotClean` (@jgengine/core/runtime/hostPersistence): True when a snapshot carries no unwritten mutation — nothing for a persist to do.
 - `RUNTIME_SNAPSHOT_VERSION` (const): const RUNTIME_SNAPSHOT_VERSION: 1 — ⚠ undocumented
-- `RuntimeChunkRow` (type): type RuntimeChunkRow = { /** Cell key to owner id, persisted with its spatial chunk. */ territory?: Record<string, string>; territoryReceipts?: Record<string, { claimedAt: number; costPaid: number }>; chunkKey: string; objects: RuntimeObjectRow[]; entities: RuntimeEntityRow[]; flags?: Record<string,… — ⚠ undocumented
+- `RuntimeChunkRow` (type): type RuntimeChunkRow = { /** Cell key to owner id, persisted with its spatial chunk. */ territory?: Record<string, string>; territoryReceipts?: Record<string, { claimedAt: number; costPaid: number }>; chunkKey: string; objects: RuntimeObjectRow[]; entities: RuntimeEntityRow[]; flags?: Record<string,… — ⚠ undocumented · used by `createEmptyChunkRow` (@jgengine/core/runtime/worldChunks): An empty chunk row for `chunkKey` — the starting value for a cell nothing has been placed in yet.
 - `RuntimeEntityRow` (type): type RuntimeEntityRow = { instanceId: string; catalogId: string; position?: [number, number, number]; rotationY?: number; parentSpace?: string; group?: string; stats?: Record<string, { current: number; max: number; min?: number }>; targetInstanceId?: string | null; userId?: string; } — ⚠ undocumented
 - `RuntimeInventorySlot` (type): type RuntimeInventorySlot = { item: string; count: number; slot?: number; } — ⚠ undocumented
 - `RuntimeObjectRow` (type): type RuntimeObjectRow = { instanceId: string; catalogId: string; position: [number, number, number]; rotationY?: number; parentSpace?: string; /** Opaque per-instance state; the persisted name for `SceneObject.state`. */ flags?: Record<string, unknown>; /** Container contents for a catalog `slotInve… — The persisted form of a placed `SceneObject`: identity, placement, per-instance state, and slot contents. Convert with `toRuntimeObjectRow`/`fromRuntimeObjectRow` (`runtime/objectRows`).
-- `RuntimePlayerRow` (type): type RuntimePlayerRow = { territoryOwnedCount?: number; ownedTerritoryChunkKeys?: string[]; userId: string; inventories: Record<string, RuntimeInventorySlot[]>; economy: Record<string, number>; unlocks: string[]; quests?: unknown; social?: unknown; leaderboard?: Record<string, number>; session?: Rec… — ⚠ undocumented
+- `RuntimePlayerRow` (type): type RuntimePlayerRow = { territoryOwnedCount?: number; ownedTerritoryChunkKeys?: string[]; userId: string; inventories: Record<string, RuntimeInventorySlot[]>; economy: Record<string, number>; unlocks: string[]; quests?: unknown; social?: unknown; leaderboard?: Record<string, number>; session?: Rec… — ⚠ undocumented · used by `initialPlayerState` (@jgengine/core/runtime/gameRuntime): Seed a fresh player through the same onNewPlayer hook as joining, without hydrating or modifying a world.
 - `RuntimeProfileRow` (type): type RuntimeProfileRow = { userId: string; gameId: string; player: RuntimePlayerRow; updatedAt: number; } — ⚠ undocumented
 - `RuntimeServerRow` (type): type RuntimeServerRow = { entities: RuntimeEntityRow[]; objects: RuntimeObjectRow[]; session: Record<string, unknown>; feeds?: Record<string, unknown[]>; } — ⚠ undocumented
 
@@ -548,13 +548,13 @@
 - `GameRuntimeFeeds` (type): type GameRuntimeFeeds = { subscribeServer: ( serverId: string, onChange: (view: GameRuntimeServerView | null) => void, ) => FeedUnsubscribe; subscribePlayer: ( args: { serverId: string }, onChange: (view: GameRuntimePlayerView | null) => void, ) => FeedUnsubscribe; subscribeFeed: ( args: { serverId:… — ⚠ undocumented
 - `GameRuntimePlayerView` (type): type GameRuntimePlayerView = { userId: string; gameId: string; playerState: unknown; updatedAt: number; } — ⚠ undocumented
 - `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown | WorldSyncFrame; updatedAt: number; } — ⚠ undocumented
-- `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole }) => Promise<JoinServerOutcome>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented
+- `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole }) => Promise<JoinServerOutcome>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented · used by `useServerSession` (@jgengine/react/useServerSession): Joins a host and exposes a retryable blocking state until membership is confirmed.
 - `JoinServerOutcome` (type): type JoinServerOutcome = | (JoinServerResult & { ok: true }) | { ok: false; reason: "full" | "closed" | "unauthorized" } — Join failures are returned to the caller so the triggering surface can offer retry.
 - `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; resumeTicket?: ResumeTicket; } — ⚠ undocumented
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
 - `MultiplayerRole` (type): type MultiplayerRole = "player" | "spectator" — Connection role used for authoritative world access; spectators are read-only.
 - `MultiplayerSession` (type): type MultiplayerSession = { gameId: string; userId: string; backend: LiveGameBackend; feedActions: string[]; } — ⚠ undocumented
-- `PresencePoseRow` (type): type PresencePoseRow = { userId: string; /** Set when the host tracks presence per session, so one user can hold two rows. */ sessionId?: string; /** Actor class, e.g. `"player"` / `"agent"` — a host may clamp each differently. */ kind?: string; /** Display name carried on the row, so a nameplate ne… — ⚠ undocumented
+- `PresencePoseRow` (type): type PresencePoseRow = { userId: string; /** Set when the host tracks presence per session, so one user can hold two rows. */ sessionId?: string; /** Actor class, e.g. `"player"` / `"agent"` — a host may clamp each differently. */ kind?: string; /** Display name carried on the row, so a nameplate ne… — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/shell/useShellMultiplayerSync): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 - `PresenceSync` (type): type PresenceSync = { subscribe: (serverId: string, onChange: (rows: PresencePoseRow[]) => void) => FeedUnsubscribe; syncPose: (serverId: string, pose: PlayerPose) => void; } — ⚠ undocumented
 - `ResumeTicket` (type): type ResumeTicket = { userId: string; serverId: string; token: string; } — A short-lived credential allowing a disconnected client to reclaim one server membership.
 - `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented
@@ -620,7 +620,7 @@
 
 ## @jgengine/shell/defineGame
 
-- `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented
+- `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented · used by `defineGame`: The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
 - `defineGame` (function): function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(config: GameConfig<TAssetRef>): PlayableGame — The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, authored scene) into a `PlayableGame` ready for `GameHost`. Defaults to solo/offline multiplayer; `editorLayers` auto-mounts the authored scene document.
 
 ## @jgengine/shell/gameKit
@@ -632,7 +632,7 @@
 - `EditorDocument` (interface): interface EditorDocument — The full authored scene: every marker, volume, path, note, and sculpted terrain for a game.
 - `EditorSummonModule` (interface): interface EditorSummonModule — Structural shape of the module `GameHost`'s `editor` loader resolves — `import("@jgengine/editor")` satisfies it.
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
-- `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented
+- `GameConfig` (type): type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> & PresentationFields — ⚠ undocumented · used by `defineGame`: The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
 - `GameContext` (interface): interface GameContext — The live engine handle a game's loop, systems, commands, and UI read and mutate — entities, objects, the reactive store, opted-in `game.*` subsystems, world queries, and the sim clock. One context = one running world.
 - `GameHost` (function): function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor }: GameHostProps): React.JSX.Element — The one documented mount: resolves multiplayer for the playable and renders the shell. With the `editor` loader prop it also owns the whole editor summon (F2+E, `?mode=editor`, dev save endpoint).
 - `GameHostProps` (interface): interface GameHostProps — Props for {@link GameHost}: the playable, optional multiplayer overrides, and the optional editor loader that enables the engine-owned F2+E summon.

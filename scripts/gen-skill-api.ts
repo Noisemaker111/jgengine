@@ -16,6 +16,8 @@ const GENERATED_HEADER =
 
 interface ModuleRef {
   importPath: string;
+  pkg: string;
+  srcFile: string;
   exports: ApiExport[];
 }
 
@@ -36,7 +38,9 @@ function collectSkillModules(root: string): { skills: SkillModules; undocumented
       const skill = skillForModule(pkg, module.path);
       if (skill === null) continue;
       const importPath = `@jgengine/${pkg}/${module.path}`.replace(/\/index$/, "");
-      skills.get(skill)?.push({ importPath, exports: module.exports });
+      const srcBase = join(root, "packages", pkg, "src", module.path);
+      const srcFile = existsSync(`${srcBase}.tsx`) ? `${srcBase}.tsx` : `${srcBase}.ts`;
+      skills.get(skill)?.push({ importPath, pkg, srcFile, exports: module.exports });
       for (const e of module.exports) {
         if (e.doc === undefined || e.doc === "") undocumented.push(exportKey(importPath, e.name));
       }
@@ -47,14 +51,148 @@ function collectSkillModules(root: string): { skills: SkillModules; undocumented
   return { skills, undocumented };
 }
 
-function renderSkillApi(skill: string, modules: ModuleRef[]): string {
+const MAX_FIELDS_LENGTH = 240;
+const MAX_USER_DOC_LENGTH = 140;
+
+function clip(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
+
+function continuesOnNextLine(current: string, source: string, next: number): boolean {
+  const tail = current.trimEnd();
+  if (tail === "") return false;
+  if (/(?:[:|&]|=>)$/.test(tail)) return true;
+  const following = source.slice(next).trimStart()[0];
+  return following === "|" || following === "&" || following === ".";
+}
+
+/** Top-level members of the interface body that starts at `open` (the index of its `{`). */
+function interfaceMembers(source: string, open: number): string[] {
+  const members: string[] = [];
+  let depth = 0;
+  let current = "";
+  for (let i = open + 1; i < source.length; i++) {
+    const ch = source[i]!;
+    if (ch === "{" || ch === "(" || ch === "[" || (ch === "<" && source[i + 1] !== "=")) depth++;
+    else if (ch === "}" || ch === ")" || ch === "]" || (ch === ">" && source[i - 1] !== "=")) {
+      if (depth === 0 && ch === "}") break;
+      depth--;
+    }
+    if (depth === 0 && ch === "\n" && continuesOnNextLine(current, source, i + 1)) current += " ";
+    else if (depth === 0 && (ch === ";" || ch === "," || ch === "\n")) {
+      members.push(current);
+      current = "";
+    } else current += ch;
+  }
+  members.push(current);
+  return members
+    .map((m) => m.replace(/\s+/g, " ").replace(/([([{<]) /g, "$1").replace(/,? ([)\]}>])/g, "$1").trim())
+    .filter((m) => m !== "");
+}
+
+/** Field lists for every interface declared in a module source, keyed by name. */
+function interfaceFields(srcFile: string): Map<string, string> {
+  const fields = new Map<string, string>();
+  if (!existsSync(srcFile)) return fields;
+  const source = readFileSync(srcFile, "utf8")
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/(^|\s)\/\/.*$/gm, "$1");
+  for (const match of source.matchAll(/\binterface\s+([A-Za-z_$][\w$]*)/g)) {
+    let i = (match.index ?? 0) + match[0].length;
+    let angle = 0;
+    for (; i < source.length; i++) {
+      const ch = source[i]!;
+      if (ch === "<") angle++;
+      else if (ch === ">" && source[i - 1] !== "=") angle--;
+      else if (ch === "{" && angle === 0) break;
+    }
+    if (i >= source.length) continue;
+    const members = interfaceMembers(source, i);
+    fields.set(match[1]!, members.length === 0 ? "{}" : clip(`{ ${members.join("; ")} }`, MAX_FIELDS_LENGTH));
+  }
+  return fields;
+}
+
+interface Consumer {
+  name: string;
+  importPath: string;
+  doc: string;
+}
+
+/**
+ * Documented functions/classes/consts whose signature names a type, so an undocumented options or
+ * result type points at the call that gives it meaning instead of forcing a source read.
+ */
+function buildConsumerIndex(all: readonly ModuleRef[]): (name: string, importPath: string) => Consumer | undefined {
+  const documented: Consumer[] = [];
+  const signatures: string[] = [];
+  for (const module of all) {
+    for (const e of module.exports) {
+      if (e.kind !== "function" && e.kind !== "class" && e.kind !== "const") continue;
+      if (e.doc === undefined || e.doc === "") continue;
+      documented.push({ name: e.name, importPath: module.importPath, doc: e.doc });
+      signatures.push(e.signature);
+    }
+  }
+  return (name, importPath) => {
+    const word = new RegExp(`(^|[^\\w$])${name.replace(/\$/g, "\\$")}([^\\w$]|$)`);
+    let fallback: Consumer | undefined;
+    for (let i = 0; i < documented.length; i++) {
+      const candidate = documented[i]!;
+      if (candidate.name === name || !word.test(signatures[i]!)) continue;
+      if (candidate.importPath === importPath) return candidate;
+      fallback ??= candidate;
+    }
+    return fallback;
+  };
+}
+
+function undocumentedNote(e: ApiExport, module: ModuleRef, consumerOf: ReturnType<typeof buildConsumerIndex>): string {
+  if (e.kind !== "interface" && e.kind !== "type") return "⚠ undocumented";
+  const consumer = consumerOf(e.name, module.importPath);
+  if (consumer === undefined) return "⚠ undocumented";
+  const where = consumer.importPath === module.importPath ? "" : ` (${consumer.importPath})`;
+  const [sentence] = consumer.doc.split(/(?<=\.)\s/);
+  return `⚠ undocumented · used by \`${consumer.name}\`${where}: ${clip(sentence ?? consumer.doc, MAX_USER_DOC_LENGTH)}`;
+}
+
+/** Interface bodies declared anywhere in a package, for exports re-exported through a barrel; ambiguous names map to undefined. */
+function buildPackageFields(all: readonly ModuleRef[]): (pkg: string, name: string) => string | undefined {
+  const byPackage = new Map<string, Map<string, string | undefined>>();
+  const seenFiles = new Set<string>();
+  for (const module of all) {
+    if (seenFiles.has(module.srcFile)) continue;
+    seenFiles.add(module.srcFile);
+    const names = byPackage.get(module.pkg) ?? new Map<string, string | undefined>();
+    byPackage.set(module.pkg, names);
+    for (const [name, body] of interfaceFields(module.srcFile)) {
+      names.set(name, names.has(name) && names.get(name) !== body ? undefined : body);
+    }
+  }
+  return (pkg, name) => byPackage.get(pkg)?.get(name);
+}
+
+function renderSkillApi(
+  skill: string,
+  modules: ModuleRef[],
+  consumerOf: ReturnType<typeof buildConsumerIndex>,
+  packageFields: ReturnType<typeof buildPackageFields>,
+): string {
   const lines: string[] = [GENERATED_HEADER, "", `# ${skill} — exported API surface`, ""];
   for (const module of modules) {
     lines.push(`## ${module.importPath}`);
     lines.push("");
+    let fields: Map<string, string> | undefined;
     for (const e of module.exports) {
-      const doc = e.doc !== undefined && e.doc !== "" ? e.doc : "⚠ undocumented";
-      lines.push(`- \`${e.name}\` (${e.kind}): ${e.signature} — ${doc}`);
+      const documented = e.doc !== undefined && e.doc !== "";
+      let signature = e.signature;
+      if (!documented && e.kind === "interface") {
+        fields ??= interfaceFields(module.srcFile);
+        const body = fields.get(e.name) ?? packageFields(module.pkg, e.name);
+        if (body !== undefined && !signature.endsWith("…")) signature = `${signature} ${body}`;
+      }
+      const doc = documented ? e.doc : undocumentedNote(e, module, consumerOf);
+      lines.push(`- \`${e.name}\` (${e.kind}): ${signature} — ${doc}`);
     }
     lines.push("");
   }
@@ -166,9 +304,12 @@ function main(): void {
   if (check) failures.push(...runOrphanRatchet(root));
 
   const outDir = check ? mkdtempSync(join(tmpdir(), "jg-skill-api-")) : undefined;
+  const allModules = [...skills.values()].flat();
+  const consumerOf = buildConsumerIndex(allModules);
+  const packageFields = buildPackageFields(allModules);
   for (const skill of SKILL_DIRS) {
     const modules = skills.get(skill) ?? [];
-    const content = renderSkillApi(skill, modules);
+    const content = renderSkillApi(skill, modules, consumerOf, packageFields);
     const committedPath = join(root, ".claude", "skills", skill, OUT_NAME);
     if (check) {
       const committed = existsSync(committedPath) ? readFileSync(committedPath, "utf8") : "";

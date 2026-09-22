@@ -7,44 +7,44 @@
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
 - `BehaviourModule` (class): class BehaviourModule — A world-lifetime service with typed sibling access via `this.modules`. Modules awake and start before any behaviour during `world.start()`, subscribe to update dispatch first (their `onUpdate` fires before every behaviour's), and have no disable/destroy — they live as long as the world.
 - `BehaviourModules` (type): type BehaviourModules = RegisterField<"modules", Record<string, BehaviourModule>> — Resolves to the augmented module map when `JGEngineRegister` declares one.
-- `BehaviourWorld` (interface): interface BehaviourWorld — ⚠ undocumented
+- `BehaviourWorld` (interface): interface BehaviourWorld { add(id: string, parentId?: string): void; has(id: string): boolean; parentOf(id: string): string | null; childrenOf(id: string): readonly string[]; setParent(id: string, parentId: string | null): void; attach<T extends Behaviour>(nodeId: … — ⚠ undocumented
 - `JGEngineRegister` (interface): interface JGEngineRegister — Unity-style behaviour lifecycle over a headless id-keyed node tree, ported from vladkrutenyuk/three-start (MIT) and adapted to run without three.js: nodes are plain string ids (use entity instance ids to pair with `entityStore`), and the shell binds render-side hooks separately.
 - `RegisterField` (type): type RegisterField<TKey extends string, TFallback = unknown> = TKey extends keyof JGEngineRegister ? JGEngineRegister[TKey] : TFallback — ⚠ undocumented
 - `createBehaviourWorld` (function): function createBehaviourWorld(): BehaviourWorld — ⚠ undocumented
 
 ## @jgengine/core/board/laneBoard
 
-- `LaneAggregate` (interface): interface LaneAggregate — ⚠ undocumented
-- `LaneBoard` (interface): interface LaneBoard<C> — ⚠ undocumented
-- `LaneBoardConfig` (interface): interface LaneBoardConfig<C> — ⚠ undocumented
-- `LaneBoardState` (interface): interface LaneBoardState<C> — ⚠ undocumented
-- `LaneCells` (interface): interface LaneCells<C> — ⚠ undocumented
-- `LaneOutcome` (interface): interface LaneOutcome — ⚠ undocumented
-- `LanePlaceRejected` (interface): interface LanePlaceRejected — ⚠ undocumented
-- `LanePlaceResult` (interface): interface LanePlaceResult<C> — ⚠ undocumented
+- `LaneAggregate` (interface): interface LaneAggregate { lane: number; side: Side; subtotal: number; total: number; count: number } — ⚠ undocumented
+- `LaneBoard` (interface): interface LaneBoard<C> { state(): LaneBoardState<C>; place(lane: number, side: Side, card: C): LaneResult<C>; remove(lane: number, side: Side, predicate: (card: C, index: number) => boolean): LaneResult<C>; aggregate(lane: number, side: Side): LaneAggregate; outc… — ⚠ undocumented
+- `LaneBoardConfig` (interface): interface LaneBoardConfig<C> { laneCount: number; sides: readonly Side[]; power: (card: C) => number; laneRules?: readonly (LaneRule<C> | null | undefined)[] } — ⚠ undocumented
+- `LaneBoardState` (interface): interface LaneBoardState<C> { readonly lanes: readonly LaneCells<C>[] } — ⚠ undocumented
+- `LaneCells` (interface): interface LaneCells<C> { readonly [side: Side]: readonly C[] } — ⚠ undocumented
+- `LaneOutcome` (interface): interface LaneOutcome { lane: number; totals: Readonly<Record<Side, number>>; winner: Side | null } — ⚠ undocumented
+- `LanePlaceRejected` (interface): interface LanePlaceRejected { status: "rejected"; reason: LaneRejection } — ⚠ undocumented
+- `LanePlaceResult` (interface): interface LanePlaceResult<C> { status: "ok"; state: LaneBoardState<C> } — ⚠ undocumented
 - `LaneRejection` (type): type LaneRejection = "invalid-lane" | "invalid-side" — ⚠ undocumented
 - `LaneResult` (type): type LaneResult<C> = LanePlaceResult<C> | LanePlaceRejected — ⚠ undocumented
-- `LaneRule` (interface): interface LaneRule<C> — ⚠ undocumented
-- `LaneRuleInput` (interface): interface LaneRuleInput<C> — ⚠ undocumented
+- `LaneRule` (interface): interface LaneRule<C> { id: string; apply: (input: LaneRuleInput<C>) => number } — ⚠ undocumented
+- `LaneRuleInput` (interface): interface LaneRuleInput<C> { lane: number; side: Side; cards: readonly C[]; subtotal: number } — ⚠ undocumented
 - `Side` (type): type Side = string — ⚠ undocumented
 
 ## @jgengine/core/board/timelineBoard
 
-- `TimelineBoard` (interface): interface TimelineBoard — ⚠ undocumented
-- `TimelineBoardState` (interface): interface TimelineBoardState — ⚠ undocumented
-- `TimelineFire` (interface): interface TimelineFire — ⚠ undocumented
-- `TimelineSlot` (interface): interface TimelineSlot — ⚠ undocumented
-- `TimelineSlotConfig` (interface): interface TimelineSlotConfig — ⚠ undocumented
-- `TimelineTickResult` (interface): interface TimelineTickResult — ⚠ undocumented
+- `TimelineBoard` (interface): interface TimelineBoard { state(): TimelineBoardState; tick(dtMs: number): readonly TimelineFire[]; setEnabled(slotId: string, enabled: boolean): void; reset(slotId?: string, remainingMs?: number): void } — ⚠ undocumented
+- `TimelineBoardState` (interface): interface TimelineBoardState { readonly slots: readonly TimelineSlot[]; readonly elapsedMs: number } — ⚠ undocumented
+- `TimelineFire` (interface): interface TimelineFire { slotId: string; slotIndex: number; atMs: number } — ⚠ undocumented
+- `TimelineSlot` (interface): interface TimelineSlot { readonly id: string; readonly cooldownMs: number; readonly remainingMs: number; readonly enabled: boolean } — ⚠ undocumented
+- `TimelineSlotConfig` (interface): interface TimelineSlotConfig { id: string; cooldownMs: number; enabled?: boolean; offsetMs?: number } — ⚠ undocumented
+- `TimelineTickResult` (interface): interface TimelineTickResult { state: TimelineBoardState; fires: readonly TimelineFire[] } — ⚠ undocumented
 
 ## @jgengine/core/cards/cardPile
 
-- `CardPile` (interface): interface CardPile — ⚠ undocumented
-- `CardPileConfig` (interface): interface CardPileConfig — ⚠ undocumented
-- `CardPileState` (interface): interface CardPileState — ⚠ undocumented
-- `DrawResult` (interface): interface DrawResult — ⚠ undocumented
-- `PileMoveRejected` (interface): interface PileMoveRejected — ⚠ undocumented
-- `PileMoveResult` (interface): interface PileMoveResult — ⚠ undocumented
+- `CardPile` (interface): interface CardPile { state(): CardPileState; zones(): readonly ZoneName[]; count(zone: ZoneName): number; peek(zone: ZoneName, n?: number): readonly string[]; zoneOf(cardId: string): ZoneName | null; shuffle(zone: ZoneName | undefined, seed: string | number):… — ⚠ undocumented
+- `CardPileConfig` (interface): interface CardPileConfig { zones: readonly ZoneName[]; drawFrom?: ZoneName; discardTo?: ZoneName; handZone?: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; onChange?: () => void } — ⚠ undocumented
+- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/react): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
+- `DrawResult` (interface): interface DrawResult { state: CardPileState; drawn: readonly string[]; reshuffled: boolean } — ⚠ undocumented
+- `PileMoveRejected` (interface): interface PileMoveRejected { status: "rejected"; reason: PileRejection; detail?: string } — ⚠ undocumented
+- `PileMoveResult` (interface): interface PileMoveResult { status: "ok"; state: CardPileState } — ⚠ undocumented
 - `PileRejection` (type): type PileRejection = | "unknown-zone" | "card-not-in-zone" | "hand-limit" | "empty-source" — ⚠ undocumented
 - `PileResult` (type): type PileResult = PileMoveResult | PileMoveRejected — ⚠ undocumented
 - `ZoneName` (type): type ZoneName = string — ⚠ undocumented
@@ -61,23 +61,23 @@
 
 ## @jgengine/core/cards/modifierPipeline
 
-- `Modifier` (interface): interface Modifier<V> — ⚠ undocumented
-- `ModifierPipeline` (interface): interface ModifierPipeline<V> — ⚠ undocumented
-- `PipelineContext` (interface): interface PipelineContext<V> — ⚠ undocumented
-- `PipelineResult` (interface): interface PipelineResult<V> — ⚠ undocumented
-- `TraceStep` (interface): interface TraceStep<V> — ⚠ undocumented
+- `Modifier` (interface): interface Modifier<V> { id: string; source?: string; apply: (value: V, context: PipelineContext<V>) => V } — ⚠ undocumented
+- `ModifierPipeline` (interface): interface ModifierPipeline<V> { add(modifier: Modifier<V>): void; insertAt(index: number, modifier: Modifier<V>): void; remove(id: string): boolean; clear(): void; list(): readonly Modifier<V>[]; run(base: V): PipelineResult<V> } — ⚠ undocumented
+- `PipelineContext` (interface): interface PipelineContext<V> { base: V; index: number; trace: readonly TraceStep<V>[] } — ⚠ undocumented
+- `PipelineResult` (interface): interface PipelineResult<V> { base: V; value: V; trace: readonly TraceStep<V>[] } — ⚠ undocumented
+- `TraceStep` (interface): interface TraceStep<V> { id: string; source?: string; index: number; before: V; after: V; changed: boolean } — ⚠ undocumented
 - `createModifierPipeline` (function): function createModifierPipeline<V>(initial: readonly Modifier<V>[] = [], equals: (a: V, b: V) => boolean = Object.is): ModifierPipeline<V> — ⚠ undocumented
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 
 ## @jgengine/core/crafting/crop
 
-- `ApplyToolResult` (interface): interface ApplyToolResult — ⚠ undocumented
+- `ApplyToolResult` (interface): interface ApplyToolResult { tiles: Map<string, CropTileState>; changed: TileCoord[] } — ⚠ undocumented
 - `CropCatalog` (type): type CropCatalog = (cropId: string) => CropDef | null — ⚠ undocumented
-- `CropDef` (interface): interface CropDef — ⚠ undocumented
-- `CropField` (interface): interface CropField — ⚠ undocumented
-- `CropTileState` (interface): interface CropTileState — ⚠ undocumented
-- `DayTicker` (interface): interface DayTicker — ⚠ undocumented
-- `HarvestResult` (interface): interface HarvestResult — ⚠ undocumented
+- `CropDef` (interface): interface CropDef { id: string; stages: readonly number[]; regrowDays?: number; needsDailyWater?: boolean; harvest?: RecipeItem } — ⚠ undocumented
+- `CropField` (interface): interface CropField { get(coord: TileCoord): CropTileState; till(coord: TileCoord, pattern?: TilePattern): TileCoord[]; plant(coord: TileCoord, cropId: string): boolean; water(coord: TileCoord, pattern?: TilePattern): TileCoord[]; harvest(coord: TileCoord): Re… — ⚠ undocumented
+- `CropTileState` (interface): interface CropTileState { soil: SoilState; watered: boolean; cropId: string | null; stage: number; stageProgress: number; harvestable: boolean } — ⚠ undocumented
+- `DayTicker` (interface): interface DayTicker { tick(currentDay: number): number; day(): number } — ⚠ undocumented
+- `HarvestResult` (interface): interface HarvestResult { state: CropTileState; yield: RecipeItem | null } — ⚠ undocumented
 - `SoilState` (type): type SoilState = "untilled" | "tilled" — ⚠ undocumented
 - `TileCoord` (type): type TileCoord = readonly [number, number] — ⚠ undocumented
 - `TilePattern` (type): type TilePattern = readonly TileCoord[] — ⚠ undocumented
@@ -85,14 +85,14 @@
 ## @jgengine/core/crafting/production
 
 - `ItemCounts` (type): type ItemCounts = Readonly<Record<string, number>> — ⚠ undocumented
-- `PowerConsumer` (interface): interface PowerConsumer — ⚠ undocumented
-- `PowerGridResult` (interface): interface PowerGridResult — ⚠ undocumented
-- `ProductionBuildingConfig` (interface): interface ProductionBuildingConfig — ⚠ undocumented
-- `ProductionBuildingDef` (interface): interface ProductionBuildingDef — ⚠ undocumented
-- `ProductionState` (interface): interface ProductionState — ⚠ undocumented
-- `ProductionTickInput` (interface): interface ProductionTickInput — ⚠ undocumented
-- `TransportItem` (interface): interface TransportItem — ⚠ undocumented
-- `TransportPath` (interface): interface TransportPath — ⚠ undocumented
+- `PowerConsumer` (interface): interface PowerConsumer { id: string; demand: number } — ⚠ undocumented
+- `PowerGridResult` (interface): interface PowerGridResult { powered: ReadonlySet<string>; supply: number; demand: number; deficit: number } — ⚠ undocumented
+- `ProductionBuildingConfig` (interface): interface ProductionBuildingConfig { id: string; inputs?: readonly RecipeItem[]; outputs: readonly RecipeItem[]; rate: number; power?: number; bufferMultiplier?: number } — ⚠ undocumented
+- `ProductionBuildingDef` (interface): interface ProductionBuildingDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; rate: number; power?: number; bufferMultiplier?: number } — ⚠ undocumented
+- `ProductionState` (interface): interface ProductionState { buffer: ItemCounts; output: ItemCounts; progress: number; active: boolean } — ⚠ undocumented · used by `createProductionState`: A production building that converts input items into outputs over time — factory/crafting station.
+- `ProductionTickInput` (interface): interface ProductionTickInput { dt: number; powered?: boolean } — ⚠ undocumented
+- `TransportItem` (interface): interface TransportItem { itemId: string; count: number; position: number } — ⚠ undocumented
+- `TransportPath` (interface): interface TransportPath { length: number; speed: number } — ⚠ undocumented
 - `acceptsInput` (function): function acceptsInput(def: ProductionBuildingDef, state: ProductionState, itemId: string): boolean — ⚠ undocumented
 - `advanceTransport` (function): function advanceTransport(path: TransportPath, items: readonly TransportItem[], dt: number): { items: TransportItem[]; delivered: TransportItem[] } — ⚠ undocumented
 - `createProductionState` (function): function createProductionState(): ProductionState — A production building that converts input items into outputs over time — factory/crafting station.
@@ -105,13 +105,13 @@
 ## @jgengine/core/crafting/recipe
 
 - `CraftCheck` (type): type CraftCheck = { ok: true } | ({ ok: false } & CraftRejection) — ⚠ undocumented
-- `CraftContext` (interface): interface CraftContext — ⚠ undocumented
+- `CraftContext` (interface): interface CraftContext { origin?: Vec2; stations?: readonly StationInstance[]; unlocked?: (id: string) => boolean } — ⚠ undocumented
 - `CraftRejection` (type): type CraftRejection = | { reason: "missing-inputs"; missing: readonly RecipeItem[] } | { reason: "no-station"; station: string } | { reason: "locked"; requires: readonly string[] } | { reason: "no-output-space" } — ⚠ undocumented
 - `CraftResult` (type): type CraftResult = { status: "ok"; state: InventoryState } | ({ status: "rejected" } & CraftRejection) — ⚠ undocumented
-- `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
-- `RecipeGraph` (interface): interface RecipeGraph — ⚠ undocumented
-- `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
-- `StationInstance` (interface): interface StationInstance — ⚠ undocumented
+- `RecipeDef` (interface): interface RecipeDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; seconds?: number; station?: string; stationRange?: number; requires?: readonly string[]; category?: string } — ⚠ undocumented
+- `RecipeGraph` (interface): interface RecipeGraph { all(): readonly RecipeDef[]; get(id: string): RecipeDef | null; producing(itemId: string): RecipeDef[]; using(itemId: string): RecipeDef[]; category(categoryId: string): RecipeDef[] } — ⚠ undocumented
+- `RecipeItem` (interface): interface RecipeItem { itemId: string; count: number } — ⚠ undocumented
+- `StationInstance` (interface): interface StationInstance { catalogId: string; position: Vec2 } — ⚠ undocumented
 - `canCraft` (function): function canCraft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftCheck — ⚠ undocumented
 - `craft` (function): function craft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftResult — ⚠ undocumented
 - `craftSeconds` (function): function craftSeconds(recipe: RecipeDef): number — ⚠ undocumented
@@ -122,26 +122,26 @@
 
 ## @jgengine/core/data/dataSource
 
-- `DataSource` (interface): interface DataSource<T> — ⚠ undocumented
-- `DataSourceClock` (interface): interface DataSourceClock — ⚠ undocumented
-- `DataSourceOptions` (interface): interface DataSourceOptions — ⚠ undocumented
-- `DataSourceState` (interface): interface DataSourceState<T> — ⚠ undocumented
+- `DataSource` (interface): interface DataSource<T> { getState(): DataSourceState<T>; subscribe(listener: (state: DataSourceState<T>) => void): () => void; refresh(options?: RefreshOptions): Promise<void>; startPolling(intervalMs?: number): void; stopPolling(): void; dispose(): void } — ⚠ undocumented
+- `DataSourceClock` (interface): interface DataSourceClock { setInterval(handler: () => void, intervalMs: number): unknown; clearInterval(handle: unknown): void } — ⚠ undocumented
+- `DataSourceOptions` (interface): interface DataSourceOptions { intervalMs?: number; clock?: DataSourceClock } — ⚠ undocumented
+- `DataSourceState` (interface): interface DataSourceState<T> { readonly status: DataSourceStatus; readonly data: T | undefined; readonly error: Error | undefined } — ⚠ undocumented
 - `DataSourceStatus` (type): type DataSourceStatus = "idle" | "loading" | "ready" | "error" — ⚠ undocumented
-- `RefreshOptions` (interface): interface RefreshOptions — ⚠ undocumented
+- `RefreshOptions` (interface): interface RefreshOptions { force?: boolean } — ⚠ undocumented
 - `createDataSource` (function): function createDataSource<T>(load: (signal: AbortSignal) => Promise<T>, options: DataSourceOptions = {}): DataSource<T> — ⚠ undocumented
 
 ## @jgengine/core/data/devProxy
 
 - `DEFAULT_DEV_PROXY_PREFIX` (const): const DEFAULT_DEV_PROXY_PREFIX: "/proxy" — ⚠ undocumented
-- `DevProxyTable` (interface): interface DevProxyTable — ⚠ undocumented
-- `ProxiedUrlOptions` (interface): interface ProxiedUrlOptions — ⚠ undocumented
+- `DevProxyTable` (interface): interface DevProxyTable { readonly [routeName: string]: string } — ⚠ undocumented
+- `ProxiedUrlOptions` (interface): interface ProxiedUrlOptions { dev?: boolean; table?: DevProxyTable; prefix?: string } — ⚠ undocumented
 - `parseDevProxyTable` (function): function parseDevProxyTable(raw: string | undefined): DevProxyTable — ⚠ undocumented
 - `proxiedUrl` (function): function proxiedUrl(target: string, options: ProxiedUrlOptions = {}): string — ⚠ undocumented
 
 ## @jgengine/core/data/fetchJson
 
 - `FetchImpl` (type): type FetchImpl = typeof fetch — ⚠ undocumented
-- `FetchJsonOptions` (interface): interface FetchJsonOptions — ⚠ undocumented
+- `FetchJsonOptions` (interface): interface FetchJsonOptions { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal; fetchImpl?: FetchImpl } — ⚠ undocumented
 - `HttpStatusError` (class): class HttpStatusError extends Error — ⚠ undocumented
 - `JsonParseError` (class): class JsonParseError extends Error — ⚠ undocumented
 - `fetchJson` (function): function fetchJson<T>(url: string, options: FetchJsonOptions = {}): Promise<T> — ⚠ undocumented
@@ -169,7 +169,7 @@
 ## @jgengine/core/economy/currency
 
 - `CurrencyAdjustment` (type): type CurrencyAdjustment = | { success: true; newBalance: number; appliedDelta: number } | { success: false; reason: string } — ⚠ undocumented
-- `CurrencyDefinition` (interface): interface CurrencyDefinition<TCurrencyId extends string = string> — ⚠ undocumented
+- `CurrencyDefinition` (interface): interface CurrencyDefinition<TCurrencyId extends string = string> { id: TCurrencyId; name: string; decimals?: number; symbol?: string; unit?: string } — ⚠ undocumented · used by `formatCurrency`: Format a major-unit value using the currency's declared precision.
 - `CurrencyOperation` (type): type CurrencyOperation = "add" | "deduct" — ⚠ undocumented
 - `formatCurrency` (function): function formatCurrency(currency: CurrencyDefinition, value: number): string — Format a major-unit value using the currency's declared precision.
 - `fromMinorUnits` (function): function fromMinorUnits(currency: Pick<CurrencyDefinition, "decimals"> | undefined, value: number): number — Convert stored integer minor units to major units for display or existing balance records.
@@ -232,7 +232,7 @@
 ## @jgengine/core/economy/sharedWallet
 
 - `BookChargeResult` (type): type BookChargeResult = | { status: "ok"; book: WalletBook } | { status: "rejected"; reason: "insufficient-funds" } — ⚠ undocumented
-- `WalletBook` (interface): interface WalletBook — ⚠ undocumented
+- `WalletBook` (interface): interface WalletBook { scopes: Readonly<Record<string, WalletState>>; contributions: Readonly<Record<string, Readonly<Record<string, Readonly<Record<string, number>>>>>> } — ⚠ undocumented
 - `WalletScope` (type): type WalletScope = | { kind: "user"; userId: string } | { kind: "group"; groupId: string } — ⚠ undocumented
 
 ## @jgengine/core/economy/shopStock
@@ -251,10 +251,10 @@
 ## @jgengine/core/economy/techTree
 
 - `TechCheck` (type): type TechCheck = { ok: true } | ({ ok: false } & TechRejection) — ⚠ undocumented
-- `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
+- `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef { requires?: readonly string[]; cost?: Readonly<Record<string, number>>; grants?: readonly string[]; recipe?: string } — ⚠ undocumented
 - `TechRejection` (type): type TechRejection = | { reason: "unknown-node" } | { reason: "already-unlocked" } | { reason: "missing-prerequisites"; missing: readonly string[] } — ⚠ undocumented
 - `TechState` (type): type TechState = UnlockState — ⚠ undocumented
-- `TechTree` (interface): interface TechTree — ⚠ undocumented
+- `TechTree` (interface): interface TechTree { has(userId: string, id: string): boolean; canUnlock(userId: string, id: string): TechCheck; unlock(userId: string, id: string): TechCheck; available(userId: string): TechNodeDef[]; recipes(userId: string): string[]; list(userId: string): … — ⚠ undocumented
 
 ## @jgengine/core/economy/unlockPoints
 
@@ -271,7 +271,7 @@
 - `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
 - `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
 - `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
-- `WalletState` (interface): interface WalletState — ⚠ undocumented
+- `WalletState` (interface): interface WalletState { balances: Readonly<Record<string, number>> } — ⚠ undocumented · used by `canAfford`: True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `balance` (function): function balance(state: WalletState, currency: string | CurrencyDefinition): number — ⚠ undocumented
 - `canAfford` (function): function canAfford(state: WalletState, costs: Readonly<Record<string, number>>): boolean — True when every currency in `costs` has at least that much balance (a pure, non-mutating check).
 - `charge` (function): function charge(state: WalletState, currency: string | CurrencyDefinition, amount: number, options?: ChargeOptions): ChargeResult — Deduct `amount`, rejecting when it would leave the balance negative unless `options.overdraft` opts into carrying debt (`true` unlimited, `{ max }` capped) — the strict same-tick affordability check stays the default with `options` omitted.
@@ -312,7 +312,7 @@
 ## @jgengine/core/game/cameraConfig
 
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
-- `CameraFollowState` (interface): interface CameraFollowState — ⚠ undocumented
+- `CameraFollowState` (interface): interface CameraFollowState { entityId: string; target: {x: number; y: number; z: number}; camera: {x: number; y: number; z: number}; distance: number } — ⚠ undocumented
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraProjection` (type): type CameraProjection = "perspective" | "orthographic" — Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective".
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
@@ -320,7 +320,7 @@
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
-- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
+- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; viewmodel?: boolean } — ⚠ undocumented
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
@@ -336,16 +336,16 @@
 
 ## @jgengine/core/game/chat
 
-- `Chat` (interface): interface Chat — ⚠ undocumented
-- `ChatChannelDef` (interface): interface ChatChannelDef — ⚠ undocumented
+- `Chat` (interface): interface Chat { register(def: ChatChannelDef): void; channels(): ChatChannelDef[]; send(fromUserId: string, body: string): ChatSendResult; send(fromUserId: string, channelId: string, body: string): ChatSendResult; recent(options?: {limit?: number; channe… — ⚠ undocumented
+- `ChatChannelDef` (interface): interface ChatChannelDef { id: string; kind: ChatChannelKind; radius?: number; historyLimit?: number; rateLimit?: ChatRateLimit } — ⚠ undocumented
 - `ChatChannelKind` (type): type ChatChannelKind = "global" | "party" | "proximity" — ⚠ undocumented
-- `ChatDeps` (interface): interface ChatDeps — ⚠ undocumented
-- `ChatMessage` (interface): interface ChatMessage — ⚠ undocumented
-- `ChatRateLimit` (interface): interface ChatRateLimit — ⚠ undocumented
-- `ChatRateLimiter` (interface): interface ChatRateLimiter — ⚠ undocumented
+- `ChatDeps` (interface): interface ChatDeps { events: GameEvents; now?: () => number; party?: {membersOf(userId: string): string[]}; proximity?: EmotesDeps; blockedBy?: (userId: string) => readonly string[]; maxBodyLength?: number; defaultRateLimit?: ChatRateLimit; filter?: ChatFilte… — ⚠ undocumented
+- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; body: string; at: number } — ⚠ undocumented · used by `createConvexChatTransport` (@jgengine/convex): Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent h…
+- `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
+- `ChatRateLimiter` (interface): interface ChatRateLimiter { allow(key: string, atMs: number): boolean; snapshot(): Record<string, number[]>; restore(state: Record<string, number[]>): void } — ⚠ undocumented
 - `ChatRecipients` (type): type ChatRecipients = readonly string[] | "all" — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
-- `ChatSnapshot` (interface): interface ChatSnapshot — ⚠ undocumented
+- `ChatSnapshot` (interface): interface ChatSnapshot { messages: Record<string, ChatMessage[]>; counter: number; rateWindows?: Record<string, Record<string, number[]>> } — ⚠ undocumented
 - `ChatValidation` (type): type ChatValidation = { ok: true; text: string } | { ok: false; reason: string } — Sanitized chat text or a displayable validation failure.
 - `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 240 — ⚠ undocumented
 - `DEFAULT_CHAT_HISTORY_LIMIT` (const): const DEFAULT_CHAT_HISTORY_LIMIT: 100 — ⚠ undocumented
@@ -359,9 +359,9 @@
 
 ## @jgengine/core/game/chatFilter
 
-- `ChatFilter` (interface): interface ChatFilter — ⚠ undocumented
-- `ChatFilterConfig` (interface): interface ChatFilterConfig — ⚠ undocumented
-- `ChatFilterResult` (interface): interface ChatFilterResult — ⚠ undocumented
+- `ChatFilter` (interface): interface ChatFilter { apply(body: string): ChatFilterResult } — ⚠ undocumented
+- `ChatFilterConfig` (interface): interface ChatFilterConfig { blockedWords: readonly string[]; mode?: "mask" | "reject"; mask?: string } — ⚠ undocumented
+- `ChatFilterResult` (interface): interface ChatFilterResult { ok: boolean; body: string; matched: readonly string[] } — ⚠ undocumented
 - `createChatFilter` (function): function createChatFilter(config: ChatFilterConfig): ChatFilter — ⚠ undocumented
 - `normalizeChatText` (function): function normalizeChatText(text: string): string — ⚠ undocumented
 
@@ -400,11 +400,11 @@
 
 ## @jgengine/core/game/cosmetics
 
-- `CosmeticLoadoutDef` (interface): interface CosmeticLoadoutDef — ⚠ undocumented
-- `Cosmetics` (interface): interface Cosmetics — ⚠ undocumented
-- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
-- `CosmeticsDeps` (interface): interface CosmeticsDeps — ⚠ undocumented
-- `CosmeticsEvents` (interface): interface CosmeticsEvents — ⚠ undocumented
+- `CosmeticLoadoutDef` (interface): interface CosmeticLoadoutDef { slots: Record<string, string> } — ⚠ undocumented
+- `Cosmetics` (interface): interface Cosmetics { register(defs: Record<string, CosmeticLoadoutDef>): void; has(loadoutId: string): boolean; apply(userId: string, loadoutId: string): {reason: string} | null; equip(userId: string, slot: string, cosmeticId: string | null): void; get(userId… — ⚠ undocumented · used by `createCosmetics`: Equip cosmetic skins and customizations by slot, independent of gameplay stats.
+- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent { userId: string; slots: Record<string, string> } — ⚠ undocumented
+- `CosmeticsDeps` (interface): interface CosmeticsDeps { events?: CosmeticsEvents } — ⚠ undocumented · used by `createCosmetics`: Equip cosmetic skins and customizations by slot, independent of gameplay stats.
+- `CosmeticsEvents` (interface): interface CosmeticsEvents { emit(name: "cosmetics.changed", payload: CosmeticsChangedEvent): void } — ⚠ undocumented
 - `createCosmetics` (function): function createCosmetics(deps: CosmeticsDeps = {}): Cosmetics — Equip cosmetic skins and customizations by slot, independent of gameplay stats.
 
 ## @jgengine/core/game/credits
@@ -473,51 +473,51 @@
 - `AudioLoopStartEvent` (interface): interface AudioLoopStartEvent — Start (or idempotently keep) the retained, id-keyed audio loop `id` from catalog `sound`, optionally anchored at world `at`. Restarting with the same `sound` does not restart the source (no click); a different `sound` replaces it. Drives RPM-pitched engine loops and slip-scaled tire squeal (#1051).
 - `AudioLoopStopEvent` (interface): interface AudioLoopStopEvent — Stop and dispose the retained loop `id`; an unknown `id` is ignored (#1051).
 - `AudioMusicEvent` (interface): interface AudioMusicEvent — Crossfade the procedural soundtrack to `theme` (null fades out), optionally transposing the incoming theme by `transpose` semitones.
-- `AudioPlayEvent` (interface): interface AudioPlayEvent — ⚠ undocumented
+- `AudioPlayEvent` (interface): interface AudioPlayEvent { sound: string; at?: readonly [number, number, number] } — ⚠ undocumented
 - `AudioResumeEvent` (type): type AudioResumeEvent = Record<string, never> — Request that the shell's audio engine resume its (browser-gesture-suspended) context; carries no payload.
-- `ChatMessageEvent` (interface): interface ChatMessageEvent — ⚠ undocumented
-- `CombatHitReactionEvent` (interface): interface CombatHitReactionEvent — ⚠ undocumented
-- `CombatTelegraphCancelledEvent` (interface): interface CombatTelegraphCancelledEvent — ⚠ undocumented
-- `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
+- `ChatMessageEvent` (interface): interface ChatMessageEvent { id: string; channelId: string; fromUserId: string; body: string; at: number; recipients?: readonly string[] } — ⚠ undocumented
+- `CombatHitReactionEvent` (interface): interface CombatHitReactionEvent { instanceId?: string; position: [number, number, number]; hitstopMs: number; shake?: CameraShake; trauma?: number } — ⚠ undocumented
+- `CombatTelegraphCancelledEvent` (interface): interface CombatTelegraphCancelledEvent { id: number } — ⚠ undocumented
+- `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent { id: number; shape: TelegraphShape; position: [number, number, number]; dir?: number; windupMs: number; kind: string } — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
-- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent — ⚠ undocumented
+- `CosmeticsChangedEvent` (interface): interface CosmeticsChangedEvent { userId: string; slots: Record<string, string> } — ⚠ undocumented
 - `DeathReason` (type): type DeathReason = | { kind: "player_kill"; killerUserId: string; via?: { item?: string } } | { kind: "environment"; source: string } | { kind: "self"; source: string } — Why an entity died — who or what gets credit, for drop/command rules and the `entity.died` event.
-- `EmotePlayedEvent` (interface): interface EmotePlayedEvent — ⚠ undocumented
+- `EmotePlayedEvent` (interface): interface EmotePlayedEvent { from: string; emoteId: string; at: readonly [number, number, number]; recipients: readonly string[] } — ⚠ undocumented
 - `EntityAnimationEvent` (interface): interface EntityAnimationEvent — Request that an entity's rig play a one-shot animation clip bound to `event` in its `animation.oneShots` (e.g. an "attack" swing); the shell resolves the clip and plays it once over the locomotion state. With an `animation.graph`, `event` arms the trigger of that name.
-- `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
-- `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
-- `FormChangedEvent` (interface): interface FormChangedEvent — ⚠ undocumented
+- `EntityDiedEvent` (interface): interface EntityDiedEvent { instanceId: string; catalogId: string; userId?: string; displayName?: string; reason: DeathReason; position: [number, number, number]; serverId?: string } — ⚠ undocumented
+- `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent { instanceId?: string; position: [number, number, number]; text: string; kind: string; amount?: number; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
+- `FormChangedEvent` (interface): interface FormChangedEvent { instanceId: string; formId: string | null } — ⚠ undocumented
 - `GameEventHandler` (type): type GameEventHandler<TPayload> = (payload: TPayload) => void — ⚠ undocumented
-- `GameEventMap` (interface): interface GameEventMap — ⚠ undocumented
-- `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
-- `InventoryAddedEvent` (interface): interface InventoryAddedEvent — ⚠ undocumented
+- `GameEventMap` (interface): interface GameEventMap { "entity.died": EntityDiedEvent; "entity.floatText": EntityFloatTextEvent; "combat.telegraph": CombatTelegraphEvent; "combat.vfx": CombatVfxEvent; "combat.vfxInstance": CombatVfxInstanceEvent; "combat.telegraphCancelled": CombatTelegraphCa… — ⚠ undocumented · used by `createGameEvents`: A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
+- `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> { on<TName extends keyof TMap>(name: TName, handler: GameEventHandler<TMap[TName]>): () => void; subscribe<TName extends keyof TMap>(name: TName, handler: GameEventHandler<TMap[TName]>): () => void; emit<TName extends keyof TMap>(name: TNam… — ⚠ undocumented · used by `createGameEvents`: A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
+- `InventoryAddedEvent` (interface): interface InventoryAddedEvent { userId: string; item: string; count: number; source?: string } — ⚠ undocumented
 - `LootDrop` (interface): interface LootDrop — One granted reward: an inventory `item` id or a `currency` id, plus how many. Named because every consumer of `loot.granted` needs it — a toast renderer, a loot log, a session summary — and each one that re-declares the shape inline is a cast the compiler cannot check.
-- `LootGrantedEvent` (interface): interface LootGrantedEvent — ⚠ undocumented
-- `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent — ⚠ undocumented
-- `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent — ⚠ undocumented
-- `QuestAcceptedEvent` (interface): interface QuestAcceptedEvent — ⚠ undocumented
-- `QuestCompletedEvent` (interface): interface QuestCompletedEvent — ⚠ undocumented
-- `QuestUpdatedEvent` (interface): interface QuestUpdatedEvent — ⚠ undocumented
+- `LootGrantedEvent` (interface): interface LootGrantedEvent { userId: string; drops: LootDrop[]; source?: string } — ⚠ undocumented
+- `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent { userId: string; entityId: string; previousEntityId: string } — ⚠ undocumented
+- `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent { from: string; origin: [number, number, number]; at: [number, number, number]; effect: string; hit: boolean; ballistic: boolean } — ⚠ undocumented
+- `QuestAcceptedEvent` (interface): interface QuestAcceptedEvent { userId: string; questId: string } — ⚠ undocumented
+- `QuestCompletedEvent` (interface): interface QuestCompletedEvent { userId: string; questId: string } — ⚠ undocumented
+- `QuestUpdatedEvent` (interface): interface QuestUpdatedEvent { userId: string; questId: string; objectiveId?: string; progress?: number } — ⚠ undocumented
 - `RetainedVfxKind` (type): type RetainedVfxKind = string — The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch. `"beam"` is the first shipped retained renderer.
-- `SocialFriendAddedEvent` (interface): interface SocialFriendAddedEvent — ⚠ undocumented
-- `SocialPartyJoinedEvent` (interface): interface SocialPartyJoinedEvent — ⚠ undocumented
-- `SocialPartyLeftEvent` (interface): interface SocialPartyLeftEvent — ⚠ undocumented
-- `SocialWorldAcceptedEvent` (interface): interface SocialWorldAcceptedEvent — ⚠ undocumented
-- `SocialWorldInvitedEvent` (interface): interface SocialWorldInvitedEvent — ⚠ undocumented
-- `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
+- `SocialFriendAddedEvent` (interface): interface SocialFriendAddedEvent { userId: string; friendUserId: string } — ⚠ undocumented
+- `SocialPartyJoinedEvent` (interface): interface SocialPartyJoinedEvent { userId: string; partyId: string } — ⚠ undocumented
+- `SocialPartyLeftEvent` (interface): interface SocialPartyLeftEvent { userId: string; partyId: string } — ⚠ undocumented
+- `SocialWorldAcceptedEvent` (interface): interface SocialWorldAcceptedEvent { inviteId: string; userId: string; fromUserId: string; serverId: string; joinCode?: string } — ⚠ undocumented
+- `SocialWorldInvitedEvent` (interface): interface SocialWorldInvitedEvent { inviteId: string; fromUserId: string; toUserId: string; serverId: string; joinCode?: string } — ⚠ undocumented
+- `StatLevelUpEvent` (interface): interface StatLevelUpEvent { userId: string; stat: string; level: number } — ⚠ undocumented
 - `VfxKind` (type): type VfxKind = "projectile" | "beam" | "nova" | "glow" | "spark" — The visual archetype of a spell/ability effect burst: a traveling bolt, a connecting beam, an expanding ground nova, a soft aura glow, or a scattering impact spark.
 - `VfxRef` (type): type VfxRef = string | readonly [number, number, number] — An endpoint of a retained VFX instance: either an entity instance id (a renderer resolves and follows its live pose each frame) or a fixed `[x, y, z]` world point. Kept serializable so the effect replicates as plain data.
-- `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent — ⚠ undocumented
-- `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent — ⚠ undocumented
+- `WorldItemDroppedEvent` (interface): interface WorldItemDroppedEvent { instanceId: string; itemId: string; rarity: string; count: number; position: [number, number, number]; source?: string } — ⚠ undocumented
+- `WorldItemPickedUpEvent` (interface): interface WorldItemPickedUpEvent { instanceId: string; userId: string; itemId: string; rarity: string; count: number } — ⚠ undocumented
 - `createGameEvents` (function): function createGameEvents<TMap extends GameEventMap = GameEventMap>(): GameEvents<TMap> — A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
 - `lootDropsOf` (function): function lootDropsOf(data: unknown): readonly LootDrop[] — Read the drops out of a `loot.granted` payload that arrived as `unknown` — a `FeedEntry.data`, a replicated event, a persisted log row. Returns `[]` for anything that is not shaped like a loot grant, so a renderer never has to guard the payload itself: `entry.data as { drops?: ... }` is the cast four separate call sites were writing, and the one that omitted the `| undefined` would have thrown on a payload-less entry.
 
 ## @jgengine/core/game/feed
 
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `crea…
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
-- `GameFeed` (interface): interface GameFeed — ⚠ undocumented
-- `GameFeedOptions` (interface): interface GameFeedOptions — ⚠ undocumented
+- `GameFeed` (interface): interface GameFeed { bind<TName extends keyof GameEventMap>(action: TName, events: GameEvents): () => void; push(action: string, entry: unknown): void; recent(action: string, options?: {limit?: number}): FeedEntry[]; subscribe(action: string, listener: (entry… — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
+- `GameFeedOptions` (interface): interface GameFeedOptions { limit?: number } — ⚠ undocumented · used by `createGameFeed`: A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
 - `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
 - `appendFeed` (function): function appendFeed<T extends TimedFeedEntry>(list: readonly T[], entry: T, options?: FeedWindow): T[] — Append `entry` to a flat, serializable feed list, then bound it by age (`ttl`, relative to the appended entry's `at`) and/or count (`limit`, newest kept). Works on the game's own flat entry shape — anything with an `at` stamp — so `{ id, text, tone, at }`-style notice lists and event logs drop into serialized state with no `{ at, data }` envelope. Returns a new array.
 - `appendFeedEntry` (function): function appendFeedEntry<T>(buffer: readonly FeedEntry<T>[], entry: FeedEntry<T>, limit: number): FeedEntry<T>[] — ⚠ undocumented
@@ -544,10 +544,10 @@
 ## @jgengine/core/game/leaderboard
 
 - `IncrementResult` (type): type IncrementResult = { status: "ok"; value: number } | { status: "rejected"; reason: "not-tracked" } — ⚠ undocumented
-- `Leaderboard` (interface): interface Leaderboard — ⚠ undocumented
-- `LeaderboardRow` (interface): interface LeaderboardRow — ⚠ undocumented
+- `Leaderboard` (interface): interface Leaderboard { track(def: LeaderboardTrackDef): void; tracked(): {stat: string; scope: LeaderboardScope}[]; increment(userId: string, stat: string, options: {scope: LeaderboardScope; serverId?: string; by?: number}): IncrementResult; getTop(stat: string… — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
+- `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
-- `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef — ⚠ undocumented
+- `LeaderboardTrackDef` (interface): interface LeaderboardTrackDef { stat?: string; currency?: string; scope: LeaderboardScope } — ⚠ undocumented
 - `createLeaderboard` (function): function createLeaderboard(sink?: { onIncrement?(row: LeaderboardRow): void }): Leaderboard — Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 
 ## @jgengine/core/game/leaderboardRank
@@ -561,31 +561,31 @@
 
 ## @jgengine/core/game/levelSequence
 
-- `CurrentLevel` (interface): interface CurrentLevel<TLevelConfig> — ⚠ undocumented
-- `LevelDescriptor` (interface): interface LevelDescriptor<TLevelConfig> — ⚠ undocumented
+- `CurrentLevel` (interface): interface CurrentLevel<TLevelConfig> { id: string; index: number; config: TLevelConfig; attempt: number } — ⚠ undocumented
+- `LevelDescriptor` (interface): interface LevelDescriptor<TLevelConfig> { id: string; config: TLevelConfig } — ⚠ undocumented
 - `LevelRecord` (interface): interface LevelRecord — Persisted per-level outcome: whether it has ever been cleared and the best star rating achieved.
-- `LevelSequence` (interface): interface LevelSequence<TLevelConfig> — ⚠ undocumented
-- `LevelSequenceConfig` (interface): interface LevelSequenceConfig<TLevelConfig> — ⚠ undocumented
-- `LevelSequenceProgress` (interface): interface LevelSequenceProgress — ⚠ undocumented
+- `LevelSequence` (interface): interface LevelSequence<TLevelConfig> { current(): CurrentLevel<TLevelConfig> | null; status(): LevelSequenceStatus; start(): void; clear(stars?: LevelStars): void; fail(): "retry" | "failed"; retry(): boolean; advance(): boolean; select(level: string): boolean; isUnlocked(leve… — ⚠ undocumented · used by `createLevelSequence`: A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `adv…
+- `LevelSequenceConfig` (interface): interface LevelSequenceConfig<TLevelConfig> { levels: readonly LevelDescriptor<TLevelConfig>[]; retriesPerLevel?: number; key?: string; storage?: KeyValueStorage | null } — ⚠ undocumented · used by `createLevelSequence`: A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `adv…
+- `LevelSequenceProgress` (interface): interface LevelSequenceProgress { index: number; total: number; cleared: readonly string[] } — ⚠ undocumented
 - `LevelSequenceStatus` (type): type LevelSequenceStatus = "idle" | "playing" | "cleared" | "failed" | "complete" — ⚠ undocumented
 - `LevelStars` (type): type LevelStars = 0 | 1 | 2 | 3 — A level's star rating, 0 (cleared, no stars) to 3.
 - `createLevelSequence` (function): function createLevelSequence<TLevelConfig>(config: LevelSequenceConfig<TLevelConfig>): LevelSequence<TLevelConfig> — A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `advance`)* → `complete` happy path, with `fail`/`retry` handling per-level attempts. Mirrors the reducer style of `game/race.ts` and `ai/spawnDirector.ts` — no I/O, no timers, just state transitions driven by the caller.
 
 ## @jgengine/core/game/loadout
 
-- `LoadoutDef` (interface): interface LoadoutDef — ⚠ undocumented
-- `LoadoutDeps` (interface): interface LoadoutDeps — ⚠ undocumented
-- `LoadoutInventoryTransaction` (interface): interface LoadoutInventoryTransaction — ⚠ undocumented
-- `LoadoutItemEntry` (interface): interface LoadoutItemEntry — ⚠ undocumented
-- `Loadouts` (interface): interface Loadouts — ⚠ undocumented
+- `LoadoutDef` (interface): interface LoadoutDef { inventories?: Record<string, LoadoutItemEntry[]>; stats?: Record<string, {current: number; max?: number; min?: number}>; economy?: Record<string, number>; unlocks?: string[] } — ⚠ undocumented
+- `LoadoutDeps` (interface): interface LoadoutDeps { inventory: {begin(userId: string): LoadoutInventoryTransaction}; stats: {seed(userId: string, statId: string, pool: {current: number; max?: number; min?: number}): void}; economy: {grant(userId: string, currencyId: string, amount: number)… — ⚠ undocumented · used by `createLoadouts`: Save, name, and swap equipment loadouts.
+- `LoadoutInventoryTransaction` (interface): interface LoadoutInventoryTransaction { put(inventoryId: string, itemId: string, count: number, slot?: number): {reason: string} | null; commit(): void } — ⚠ undocumented
+- `LoadoutItemEntry` (interface): interface LoadoutItemEntry { item: string; count: number; slot?: number } — ⚠ undocumented
+- `Loadouts` (interface): interface Loadouts { register(defs: Record<string, LoadoutDef>): void; has(loadoutId: string): boolean; applyLoadout(userId: string, loadoutId: string): {reason: string} | null } — ⚠ undocumented · used by `createLoadouts`: Save, name, and swap equipment loadouts.
 - `createLoadouts` (function): function createLoadouts(deps: LoadoutDeps): Loadouts — Save, name, and swap equipment loadouts.
 
 ## @jgengine/core/game/lootFilter
 
-- `LootFilterCondition` (interface): interface LootFilterCondition — ⚠ undocumented
-- `LootFilterItem` (interface): interface LootFilterItem — ⚠ undocumented
-- `LootFilterOverride` (interface): interface LootFilterOverride — ⚠ undocumented
-- `LootFilterRule` (interface): interface LootFilterRule — ⚠ undocumented
+- `LootFilterCondition` (interface): interface LootFilterCondition { rarity?: string | readonly string[]; baseType?: string | readonly string[]; minAffixTier?: number; maxAffixTier?: number } — ⚠ undocumented
+- `LootFilterItem` (interface): interface LootFilterItem { rarity: string; baseType: string; affixTier?: number } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
+- `LootFilterOverride` (interface): interface LootFilterOverride { hidden?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
+- `LootFilterRule` (interface): interface LootFilterRule { id: string; when: LootFilterCondition; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 
@@ -611,7 +611,7 @@
 
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
-- `LootRegistry` (interface): interface LootRegistry — ⚠ undocumented
+- `LootRegistry` (interface): interface LootRegistry { register(def: LootTableDef): void; has(id: string): boolean; roll(id: string, rng?: () => number): Drop[] } — ⚠ undocumented · used by `createLootRegistry`: Register named loot tables and roll weighted randomized drops from them.
 - `LootRegistryOptions` (interface): interface LootRegistryOptions — Options for {@link createLootRegistry} — inject a default RNG so bare `roll(id)` uses the world stream.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
@@ -674,15 +674,15 @@
 
 - `DEFAULT_PING_CATEGORIES` (const): const DEFAULT_PING_CATEGORIES: Record<PingCategory, PingCategoryDef> — Content-agnostic default ping wheel: enemy / loot / location / danger.
 - `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
-- `PingCategory` (type): type PingCategory = string — ⚠ undocumented
-- `PingCategoryDef` (interface): interface PingCategoryDef — ⚠ undocumented
-- `PingClassifyDeps` (interface): interface PingClassifyDeps — ⚠ undocumented
-- `PingClassifyOptions` (interface): interface PingClassifyOptions — ⚠ undocumented
-- `PingFeedSink` (interface): interface PingFeedSink — ⚠ undocumented
-- `PingParty` (interface): interface PingParty — ⚠ undocumented
-- `PingPayload` (interface): interface PingPayload — ⚠ undocumented
-- `PingSystem` (interface): interface PingSystem — ⚠ undocumented
-- `PingSystemDeps` (interface): interface PingSystemDeps — ⚠ undocumented
+- `PingCategory` (type): type PingCategory = string — ⚠ undocumented · used by `DEFAULT_PING_CATEGORIES`: Content-agnostic default ping wheel: enemy / loot / location / danger.
+- `PingCategoryDef` (interface): interface PingCategoryDef { id: PingCategory; markerKind: string; label: string; callout: string } — ⚠ undocumented · used by `DEFAULT_PING_CATEGORIES`: Content-agnostic default ping wheel: enemy / loot / location / danger.
+- `PingClassifyDeps` (interface): interface PingClassifyDeps { roleOf?(entityId: string): string | null | undefined; categoryOf?(objectId: string): PingCategory | null | undefined } — ⚠ undocumented · used by `classifyPing`: Classify what a pointer/aim ray hit into a ping category.
+- `PingClassifyOptions` (interface): interface PingClassifyOptions { hostileRoles?: readonly string[]; enemyCategory?: PingCategory; lootCategory?: PingCategory; locationCategory?: PingCategory; dangerCategory?: PingCategory } — ⚠ undocumented · used by `classifyPing`: Classify what a pointer/aim ray hit into a ping category.
+- `PingFeedSink` (interface): interface PingFeedSink { push(action: string, entry: unknown): void } — ⚠ undocumented
+- `PingParty` (interface): interface PingParty { membersOf(userId: string): string[] } — ⚠ undocumented
+- `PingPayload` (interface): interface PingPayload { id: string; from: string; category: PingCategory; position: MarkerPosition; entityId: string | null; objectId: string | null; at: number; callout: string; recipients: readonly string[] } — ⚠ undocumented
+- `PingSystem` (interface): interface PingSystem { classify(hit: PointerHit): PingCategory; buildPayload(from: string, hit: PointerHit, category?: PingCategory): PingPayload; broadcast(payload: PingPayload): MapMarker; ping(from: string, hit: PointerHit, category?: PingCategory): PingPayl… — ⚠ undocumented · used by `createPingSystem`: Contextual ping/marker communication between teammates, classified by what was pinged.
+- `PingSystemDeps` (interface): interface PingSystemDeps { markers: MarkerSet; feed: PingFeedSink; party?: PingParty; categories?: Record<PingCategory, PingCategoryDef>; now?(): number; ttlMs?: number; feedAction?: string; classify?: PingClassifyDeps; classifyOptions?: PingClassifyOptions } — ⚠ undocumented · used by `createPingSystem`: Contextual ping/marker communication between teammates, classified by what was pinged.
 - `classifyPing` (function): function classifyPing(hit: PointerHit, deps: PingClassifyDeps = {}, options: PingClassifyOptions = {}): PingCategory — Classify what a pointer/aim ray hit into a ping category. Entity hits resolve by catalog role (hostile → enemy, else location); object hits by an optional catalog category tag; open ground is a location ping.
 - `createPingSystem` (function): function createPingSystem(deps: PingSystemDeps): PingSystem — Contextual ping/marker communication between teammates, classified by what was pinged.
 
@@ -695,11 +695,11 @@
 
 ## @jgengine/core/game/playableGame
 
-- `AmbientLightingConfig` (interface): interface AmbientLightingConfig — ⚠ undocumented
+- `AmbientLightingConfig` (interface): interface AmbientLightingConfig { color?: string; intensity?: number } — ⚠ undocumented
 - `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
-- `BackdropFogConfig` (interface): interface BackdropFogConfig — ⚠ undocumented
+- `BackdropFogConfig` (interface): interface BackdropFogConfig { color?: string; near?: number; far?: number; density?: number } — ⚠ undocumented
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
-- `CameraFollowState` (interface): interface CameraFollowState — ⚠ undocumented
+- `CameraFollowState` (interface): interface CameraFollowState { entityId: string; target: {x: number; y: number; z: number}; camera: {x: number; y: number; z: number}; distance: number } — ⚠ undocumented
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraProjection` (type): type CameraProjection = "perspective" | "orthographic" — Canvas camera projection. "orthographic" renders a flat 2D-style view (side-scrollers, falling-block puzzles) — pair with `rig: "sideScroll"`; default "perspective".
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
@@ -707,14 +707,14 @@
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
 - `ChaseView` (type): type ChaseView = "chase" | "cockpit" | "hood" | "rear" — Fixed interior view for the chase rig (#27).
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
-- `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
-- `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
-- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
+- `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig { color?: string; intensity?: number; position: readonly [number, number, number]; castShadow?: boolean; shadowMapSize?: number; shadowCameraSize?: number; cascades?: number; shadowMaxFar?: number; shadowBias?: number; shadowNormalBias?: nu… — ⚠ undocumented
+- `EntitySpriteConfig` (interface): interface EntitySpriteConfig { url: string; width: number; height: number; y: number; clip?: {atlas: SpriteAtlas; animation: string} } — ⚠ undocumented
+- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; viewmodel?: boolean } — ⚠ undocumented
 - `FlightConfig` (interface): interface FlightConfig — Free-flight families moved into the walk controller so one seam covers ground + air — creative/spectator/noclip/hover are weightless, aircraft/rotorcraft stay on `flightDynamics`.
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
 - `GameCaptureConfig` (interface): interface GameCaptureConfig — How a game makes itself screenshottable: the commands that reach live play or a named screen, the framings worth re-capturing, and the progress metrics a bot playtest samples. Declaring these once is what lets a capture host reproduce a view instead of re-deriving it by hand every run.
 - `GameCaptureView` (interface): interface GameCaptureView — How a screenshot host reaches live gameplay in this game — the data behind `shoot --mode play`.
-- `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig — ⚠ undocumented
+- `HemisphereLightingConfig` (interface): interface HemisphereLightingConfig { skyColor?: string; groundColor?: string; intensity?: number } — ⚠ undocumented
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
 - `LightingConfig` (interface): interface LightingConfig — Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied.
@@ -722,19 +722,19 @@
 - `ModelAnimationConfig` (interface): interface ModelAnimationConfig — Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses.
 - `ModelAnimationStates` (interface): interface ModelAnimationStates — Movement-state clip set for `ModelAnimationConfig.states`: the shell reads the entity's live speed each frame and crossfades between these clips, so a walking mob animates without any game-side driver.
 - `ModelAttachment` (interface): interface ModelAttachment — Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame.
-- `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
+- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; shadows?: "cast" | "receive" | "both" | "none"; animation… — ⚠ undocumented · used by `PartMotionRig` (@jgengine/shell/render/PartMotion): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph.
 - `ModelPart` (interface): interface ModelPart — Static child model stacked at a fixed local offset under its parent's transform — no bone/rig resolution, unlike `ModelAttachment`. Assembles a compound entity (e.g. a modular castle wall + tower + roof) from several single-mesh kit pieces.
 - `ModelRimLight` (interface): interface ModelRimLight — Fresnel rim-light term added on top of a model's lighting — see {@link ModelMaterialOverride.rim}.
 - `MovementCommitFrame` (interface): interface MovementCommitFrame — One frame's movement resolution handed to `PlayerMovementConfig.beforeCommit`.
-- `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
+- `ObjectStyle` (interface): interface ObjectStyle { color?: string; opacity?: number; hidden?: boolean } — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
-- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — ⚠ undocumented
+- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> { game: GameDefinition; content: GameContextContent; loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">; GameUI: TUi; presentation?: "3d" | "hud"; WorldOverlay?: TOverlay; environment… — ⚠ undocumented · used by `defineGame` (@jgengine/shell/defineGame): The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
 - `PointLightingConfig` (interface): interface PointLightingConfig — A bounded dynamic point light in world space.
-- `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
+- `PointerConfig` (interface): interface PointerConfig { moveCommand?: string; select?: boolean; selectFilter?: (entityId: string) => boolean; orderCommand?: string; contextMenu?: boolean; aim?: boolean; grabWorldItems?: boolean; pingCommand?: string; secondaryCommand?: string } — ⚠ undocumented
 - `PresentationEffectsConfig` (interface): interface PresentationEffectsConfig — Per-channel combat presentation toggles for the 3D shell canvas. Missing keys default to enabled when the parent `presentationEffects` is an object.
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
@@ -743,7 +743,7 @@
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TurntableCameraConfig` (interface): interface TurntableCameraConfig — Turntable / showcase rig — slowly auto-orbits a fixed world point (no player input), the way a museum turntable rotates an object on display. A flat, self-describing spelling of `observer`'s point-orbit mode: `target` names the point directly instead of `bind: { kind: "point", position }`. Set `camera.turntable` and the rig is inferred — you don't also write `rig`.
 - `VoxelCollisionConfig` (interface): interface VoxelCollisionConfig — Player-vs-world collision for the first-person controller. Without this the shell keeps the player on flat ground at y=0. With `voxel: true` the shell resolves the player as a box against placed scene objects (each treated as a solid unit cell), so they stand on blocks, fall into holes, and are stopped by walls — the controller a block-building/mining game needs.
-- `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
+- `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig { rarityStyle?: Record<string, RarityStyle>; filter?: readonly LootFilterRule[]; pickupRadius?: number; beamHeight?: number; autoPickup?: boolean | {radius?: number} } — ⚠ undocumented · used by `WorldItems` (@jgengine/shell/world/WorldItems): Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
 - `worldHealthBarAllowsRole` (function): function worldHealthBarAllowsRole(roles: readonly CatalogEntityRole[] | undefined, role: CatalogEntityRole | undefined): boolean — ⚠ undocumented
 
@@ -762,18 +762,18 @@
 
 ## @jgengine/core/game/quest
 
-- `QuestAcceptOptions` (interface): interface QuestAcceptOptions — ⚠ undocumented
-- `QuestDef` (interface): interface QuestDef — ⚠ undocumented
-- `QuestEvaluator` (interface): interface QuestEvaluator — ⚠ undocumented
-- `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
-- `QuestJournal` (interface): interface QuestJournal — ⚠ undocumented
-- `QuestJournalDeps` (interface): interface QuestJournalDeps — ⚠ undocumented
-- `QuestObjective` (interface): interface QuestObjective — ⚠ undocumented
-- `QuestObjectiveProgress` (interface): interface QuestObjectiveProgress — ⚠ undocumented
-- `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
+- `QuestAcceptOptions` (interface): interface QuestAcceptOptions { hasUnlock?(id: string): boolean } — ⚠ undocumented
+- `QuestDef` (interface): interface QuestDef { id: string; title: string; description?: string; giver?: string; turnIn?: string; requires?: string[]; objectives: QuestObjective[]; rewards?: QuestRewards } — ⚠ undocumented · used by `describeTrackedQuest`: Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title…
+- `QuestEvaluator` (interface): interface QuestEvaluator { has(questId: string): boolean; get(questId: string): QuestDef | null; canAccept(state: readonly QuestSnapshotEntry[], questId: string, options?: QuestAcceptOptions): {reason: string} | null; accept(state: readonly QuestSnapshotEntry[], qu… — ⚠ undocumented
+- `QuestInstance` (interface): interface QuestInstance { questId: string; status: QuestStatus; objectives: QuestObjectiveProgress[] } — ⚠ undocumented · used by `describeTrackedQuest`: Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title…
+- `QuestJournal` (interface): interface QuestJournal { register(catalog: readonly QuestDef[] | Record<string, QuestDef>): void; has(questId: string): boolean; canAccept(userId: string, questId: string): {reason: string} | null; accept(userId: string, questId: string): {reason: string} | null;… — ⚠ undocumented · used by `createQuestJournal`: Track accepted quests and their per-objective progress, granting rewards on completion.
+- `QuestJournalDeps` (interface): interface QuestJournalDeps { events: GameEvents; rewards: {grantXp(userId: string, amount: number): void; grantEconomy(userId: string, currencyId: string, amount: number): void; grantItem(userId: string, inventoryId: string, itemId: string, count: number): {reason: s… — ⚠ undocumented · used by `createQuestJournal`: Track accepted quests and their per-objective progress, granting rewards on completion.
+- `QuestObjective` (interface): interface QuestObjective { id: string; kind: "kill" | "collect" | string; target?: string; item?: string; count: number; partyShare?: {radius: number; credit: "all" | "tagger"} } — ⚠ undocumented · used by `defaultObjectiveLabel`: Default objective label: a readable "verb count noun" from a {@link QuestObjective}.
+- `QuestObjectiveProgress` (interface): interface QuestObjectiveProgress { id: string; kind: string; count: number; progress: number; complete: boolean } — ⚠ undocumented
+- `QuestRewards` (interface): interface QuestRewards { xp?: {amount: number}; economy?: Record<string, number>; items?: {item: string; count: number; inventory: string}[]; unlocks?: string[]; quests?: string[] } — ⚠ undocumented
 - `QuestSnapshotEntry` (type): type QuestSnapshotEntry = { questId: string; status: QuestStatus; progress: Record<string, number>; } — ⚠ undocumented
 - `QuestStatus` (type): type QuestStatus = "active" | "completed" — ⚠ undocumented
-- `QuestTurnIn` (interface): interface QuestTurnIn — ⚠ undocumented
+- `QuestTurnIn` (interface): interface QuestTurnIn { state: QuestSnapshotEntry[]; rewards: QuestRewards | null } — ⚠ undocumented
 - `TrackedObjectiveView` (interface): interface TrackedObjectiveView — One objective as a tracker/HUD reads it — label + progress toward its count.
 - `TrackedQuestView` (interface): interface TrackedQuestView — A quest as a tracker/HUD reads it — title, status, and per-objective progress.
 - `applyQuestRewards` (function): function applyQuestRewards(rewards: QuestRewards, appliers: { grantXp?(amount: number): void; grantEconomy?(currencyId: string, amount: number): void; grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void; grantUnlock?(unlockId: string): void; }): { reason:… — ⚠ undocumented
@@ -784,24 +784,24 @@
 
 ## @jgengine/core/game/race
 
-- `Checkpoint` (interface): interface Checkpoint — ⚠ undocumented
+- `Checkpoint` (interface): interface Checkpoint { id: string; center: readonly [number, number, number]; half: readonly [number, number, number] } — ⚠ undocumented
 - `LapTimer` (interface): interface LapTimer — Wall-clock lap timer complementing {@link RaceState}: feed it `tick(dt)` each frame and call `completeLap()` when the race emits a player `lap.completed` event. It accumulates the current lap, carries best/last, banks splits, and `penalize()` folds a time penalty into the running lap — the timing bookkeeping every racer reimplemented on top of the position-only race state.
 - `LapTimerSnapshot` (interface): interface LapTimerSnapshot — Wall-clock lap timing: the current/last/best/total split-book every racing HUD reads.
 - `PlacementOptions` (interface): interface PlacementOptions — Options for {@link racePlacements} / {@link placementOf} / {@link raceOutcomeOf}.
 - `RaceCountdownOptions` (interface): interface RaceCountdownOptions — Options for {@link startRaceCountdown}.
 - `RaceEvent` (type): type RaceEvent = | { type: "checkpoint.hit"; racerId: string; checkpoint: number; lap: number; time: number; /** Set when the hit is a fork-route checkpoint (`checkpoint` is then the fork's `afterIndex`). */ fork?: { forkId: string; routeId: string; index: number }; } | { type: "fork.taken"; racerId… — ⚠ undocumented
 - `RaceFork` (interface): interface RaceFork — An alternate-route section (#286.3): after passing mainline checkpoint `afterIndex`, a racer commits to whichever route's first checkpoint they hit, runs its checkpoints in order, and rejoins at mainline `afterIndex + 1`. Every completed route contributes exactly one checkpoint of `progress` regardless of length, and each hit records a split — so route time accounting comes for free.
-- `RaceForkRoute` (interface): interface RaceForkRoute — ⚠ undocumented
+- `RaceForkRoute` (interface): interface RaceForkRoute { id: string; checkpoints: readonly Checkpoint[] } — ⚠ undocumented
 - `RaceOutcome` (type): type RaceOutcome = "win" | "lose" — Whether a racer won or lost, derived from where they placed against the winning-places cutoff.
 - `RacePhase` (type): type RacePhase = "idle" | "countdown" | "racing" | "finished" — The lifecycle every race runs through before, during, and after the clock: `idle` on the grid, `countdown` on the lights, `racing` once they go green, `finished` at the flag. A pure value driven by the transition functions below — it carries no track, racer, or lap data, so it composes with {@link RaceState} (position/laps) and {@link LapTimer} (wall-clock) rather than duplicating them.
 - `RacePlacement` (interface): interface RacePlacement — A racer's finishing position (`place`, 1-based) in a finish order, and the {@link RaceOutcome} it earns.
 - `RaceSessionState` (interface): interface RaceSessionState — Immutable lifecycle snapshot: the current {@link RacePhase} plus the two clocks it owns.
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
-- `RaceStateConfig` (interface): interface RaceStateConfig — ⚠ undocumented
-- `RaceTrack` (interface): interface RaceTrack — ⚠ undocumented
-- `RaceTrackConfig` (interface): interface RaceTrackConfig — ⚠ undocumented
-- `RaceWinCondition` (type): type RaceWinCondition = (standings: readonly RacerProgress[], track: RaceTrack) => readonly string[] | null — ⚠ undocumented
-- `RacerProgress` (interface): interface RacerProgress — ⚠ undocumented
+- `RaceStateConfig` (interface): interface RaceStateConfig { track: RaceTrack; win?: RaceWinCondition } — ⚠ undocumented · used by `createRaceState`: A checkpoint race state machine — laps, forks, live standings, splits, and pluggable win conditions.
+- `RaceTrack` (interface): interface RaceTrack { readonly checkpoints: readonly Checkpoint[]; readonly laps: number; readonly forks: readonly RaceFork[] } — ⚠ undocumented · used by `raceTrack`: A race track is an ordered ring of checkpoint trigger volumes plus a lap count.
+- `RaceTrackConfig` (interface): interface RaceTrackConfig { checkpoints: readonly Checkpoint[]; laps?: number; forks?: readonly RaceFork[] } — ⚠ undocumented · used by `raceTrack`: A race track is an ordered ring of checkpoint trigger volumes plus a lap count.
+- `RaceWinCondition` (type): type RaceWinCondition = (standings: readonly RacerProgress[], track: RaceTrack) => readonly string[] | null — ⚠ undocumented · used by `everyoneFinishes`: Every non-eliminated racer must finish.
+- `RacerProgress` (interface): interface RacerProgress { racerId: string; lap: number; nextCheckpoint: number; lastCheckpoint: number; progress: number; position: number; finished: boolean; finishTime: number | null; eliminated: boolean; splits: readonly number[]; routesTaken: Readonly<Record<s… — ⚠ undocumented
 - `createLapTimer` (function): function createLapTimer(): LapTimer — Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded.
 - `createRaceState` (function): function createRaceState(config: RaceStateConfig): RaceState — A checkpoint race state machine — laps, forks, live standings, splits, and pluggable win conditions.
 - `everyoneFinishes` (function): function everyoneFinishes(): RaceWinCondition — Every non-eliminated racer must finish.
@@ -822,11 +822,11 @@
 
 ## @jgengine/core/game/recordBook
 
-- `RecordBook` (interface): interface RecordBook<K extends string> — ⚠ undocumented
-- `RecordBookConfig` (interface): interface RecordBookConfig<K extends string> — ⚠ undocumented
+- `RecordBook` (interface): interface RecordBook<K extends string> { best(): Readonly<Partial<Record<K, number>>>; bestOf(field: K): number | null; submit(run: Readonly<Partial<Record<K, number>>>): RecordSubmission<K>; clear(): void } — ⚠ undocumented · used by `createRecordBook`: A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a stru…
+- `RecordBookConfig` (interface): interface RecordBookConfig<K extends string> { readonly key: string; readonly fields: Readonly<Record<K, RecordDirection>>; readonly storage?: RecordStorage | null } — ⚠ undocumented · used by `createRecordBook`: A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a stru…
 - `RecordDirection` (type): type RecordDirection = "lower" | "higher" — ⚠ undocumented
 - `RecordStorage` (type): type RecordStorage = KeyValueStorage — The structural storage backend a record book persists through — an alias of the shared {@link KeyValueStorage} seam (browser `localStorage`, a test stub, or `null`).
-- `RecordSubmission` (interface): interface RecordSubmission<K extends string> — ⚠ undocumented
+- `RecordSubmission` (interface): interface RecordSubmission<K extends string> { readonly improved: readonly K[]; readonly best: Readonly<Partial<Record<K, number>>> } — ⚠ undocumented
 - `createRecordBook` (function): function createRecordBook<K extends string>(config: RecordBookConfig<K>): RecordBook<K> — A personal-best record book: named numeric fields each racing toward "lower" (times) or "higher" (scores, streaks), persisted through a structural key-value storage (pass `localStorage` in a browser, a stub in tests, or `null` for in-memory only). Corrupt or unavailable storage degrades to an empty book — a record write never throws into a game tick.
 
 ## @jgengine/core/game/ruleSelection
@@ -841,11 +841,11 @@
 
 ## @jgengine/core/game/runDraft
 
-- `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
-- `RunDraftConfig` (interface): interface RunDraftConfig<TStat extends string = string, TData = unknown> — ⚠ undocumented
-- `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
-- `RunModifierPick` (interface): interface RunModifierPick — ⚠ undocumented
-- `RunModifierStack` (interface): interface RunModifierStack<TStat extends string = string, TData = unknown> — ⚠ undocumented
+- `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> { present(count: number, rng?: () => number): RunModifierOffer<TStat, TData>[]; choose(offerId: string): boolean; stack(): RunModifierStack<TStat, TData> } — ⚠ undocumented · used by `createRunDraft`: A roguelike run built from stacking drafted modifier picks that reshape the run.
+- `RunDraftConfig` (interface): interface RunDraftConfig<TStat extends string = string, TData = unknown> { offers: readonly RunModifierOffer<TStat, TData>[]; rng?: () => number } — ⚠ undocumented · used by `createRunDraft`: A roguelike run built from stacking drafted modifier picks that reshape the run.
+- `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> { id: string; weight: number; maxStacks?: number; label?: string; stats?: StatModifierSet<TStat>; data?: TData } — ⚠ undocumented
+- `RunModifierPick` (interface): interface RunModifierPick { id: string; stacks: number } — ⚠ undocumented
+- `RunModifierStack` (interface): interface RunModifierStack<TStat extends string = string, TData = unknown> { add(offerId: string): boolean; count(offerId: string): number; atMax(offerId: string): boolean; picks(): RunModifierPick[]; offer(offerId: string): RunModifierOffer<TStat, TData> | null; total(stat: TStat): StatModifier; apply(stats: Stat… — ⚠ undocumented
 - `createRunDraft` (function): function createRunDraft<TStat extends string = string, TData = unknown>(config: RunDraftConfig<TStat, TData>): RunDraft<TStat, TData> — A roguelike run built from stacking drafted modifier picks that reshape the run.
 - `createRunModifierStack` (function): function createRunModifierStack<TStat extends string = string, TData = unknown>(offers: readonly RunModifierOffer<TStat, TData>[]): RunModifierStack<TStat, TData> — ⚠ undocumented
 
@@ -881,35 +881,35 @@
 ## @jgengine/core/game/social
 
 - `DEFAULT_EMOTE_RADIUS` (const): const DEFAULT_EMOTE_RADIUS: 20 — ⚠ undocumented
-- `EmoteBroadcastResult` (interface): interface EmoteBroadcastResult — ⚠ undocumented
-- `EmoteEntityLookup` (interface): interface EmoteEntityLookup — ⚠ undocumented
-- `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup — ⚠ undocumented
-- `Emotes` (interface): interface Emotes — ⚠ undocumented
-- `EmotesDeps` (interface): interface EmotesDeps — ⚠ undocumented
-- `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
-- `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
-- `Friends` (interface): interface Friends — ⚠ undocumented
-- `FriendsSnapshot` (interface): interface FriendsSnapshot — ⚠ undocumented
-- `Party` (interface): interface Party — ⚠ undocumented
-- `PartyConfig` (interface): interface PartyConfig — ⚠ undocumented
-- `PartyInviteEntry` (interface): interface PartyInviteEntry — ⚠ undocumented
-- `PartyMemberEntry` (interface): interface PartyMemberEntry — ⚠ undocumented
+- `EmoteBroadcastResult` (interface): interface EmoteBroadcastResult { from: string; emoteId: string; at: readonly [number, number, number]; recipients: readonly string[] } — ⚠ undocumented
+- `EmoteEntityLookup` (interface): interface EmoteEntityLookup { get(id: string): {position: readonly [number, number, number]; role: string} | null } — ⚠ undocumented
+- `EmoteSpatialLookup` (interface): interface EmoteSpatialLookup { inRadius(center: readonly [number, number, number], radius: number, filter?: (id: string) => boolean): readonly string[] } — ⚠ undocumented
+- `Emotes` (interface): interface Emotes { play(fromUserId: string, emoteId: string, radius?: number): EmoteBroadcastResult | {reason: string} } — ⚠ undocumented
+- `EmotesDeps` (interface): interface EmotesDeps { entities: EmoteEntityLookup; spatial: EmoteSpatialLookup } — ⚠ undocumented
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented
+- `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
+- `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
+- `FriendsSnapshot` (interface): interface FriendsSnapshot { friends: string[]; blocked: string[] } — ⚠ undocumented
+- `Party` (interface): interface Party { register(config: PartyConfig): void; canInvite(fromUserId: string, toUserId: string): {reason: string} | null; invite(fromUserId: string, toUserId: string): {inviteId: string} | {reason: string}; accept(userId: string, inviteId: string): … — ⚠ undocumented
+- `PartyConfig` (interface): interface PartyConfig { maxMembers: number; inviteTtlMs?: number } — ⚠ undocumented
+- `PartyInviteEntry` (interface): interface PartyInviteEntry { inviteId: string; fromUserId: string; createdAt: number } — ⚠ undocumented
+- `PartyMemberEntry` (interface): interface PartyMemberEntry { userId: string; role: PartyRole } — ⚠ undocumented
 - `PartyRole` (type): type PartyRole = "leader" | "member" — ⚠ undocumented
-- `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
-- `Social` (interface): interface Social — ⚠ undocumented
-- `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
+- `PresenceInfo` (interface): interface PresenceInfo { online: boolean; serverId?: string; zoneId?: string; instanceId?: string } — ⚠ undocumented
+- `Social` (interface): interface Social { friends: Friends; party: Party; presence: {get(userId: string): PresenceInfo}; emotes: Emotes; worldInvites: WorldInvites; snapshot(): SocialSnapshot; hydrate(data: SocialSnapshot): void } — ⚠ undocumented · used by `createSocial`: Emotes and lightweight social interactions between nearby players.
+- `SocialDeps` (interface): interface SocialDeps { events: GameEvents; presence?: (userId: string) => PresenceInfo; now?: () => number; emotes?: EmotesDeps; worldInviteTtlMs?: number } — ⚠ undocumented · used by `createSocial`: Emotes and lightweight social interactions between nearby players.
 - `SocialPartySnapshot` (interface): interface SocialPartySnapshot — One party's replicated membership — id, current leader, and ordered member ids.
 - `SocialSnapshot` (interface): interface SocialSnapshot — Full friends/party/world-invite state as one serializable baseline — the host→client replication payload behind the `social` snapshot module. Presence and emotes are derived from live deps, not stored.
-- `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
-- `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
-- `WorldInvites` (interface): interface WorldInvites — ⚠ undocumented
+- `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget { id: string; fromUserId: string; toUserId: string; createdAt: number } — ⚠ undocumented
+- `WorldInviteTarget` (interface): interface WorldInviteTarget { serverId: string; joinCode?: string } — ⚠ undocumented
+- `WorldInvites` (interface): interface WorldInvites { canInvite(fromUserId: string, toUserId: string): {reason: string} | null; invite(fromUserId: string, toUserId: string, target: WorldInviteTarget): {inviteId: string} | {reason: string}; accept(userId: string, inviteId: string): {target: W… — ⚠ undocumented
 - `createSocial` (function): function createSocial(deps: SocialDeps): Social — Emotes and lightweight social interactions between nearby players.
 
 ## @jgengine/core/game/spawnPoints
 
-- `RespawnTarget` (interface): interface RespawnTarget — ⚠ undocumented
-- `SpawnPointPose` (interface): interface SpawnPointPose — ⚠ undocumented
-- `SpawnPoints` (interface): interface SpawnPoints — ⚠ undocumented
+- `RespawnTarget` (interface): interface RespawnTarget { setPose(id: string, pose: EntityPose): boolean } — ⚠ undocumented
+- `SpawnPointPose` (interface): interface SpawnPointPose { x: number; y: number; z: number; rotationY?: number } — ⚠ undocumented
+- `SpawnPoints` (interface): interface SpawnPoints { record(id: string, pose: SpawnPointPose): void; get(id: string): SpawnPointPose | undefined; list(): readonly (SpawnPointPose & {id: string})[]; respawn(entities: RespawnTarget, entityId: string, spawnId: string): boolean } — ⚠ undocumented · used by `createSpawnPoints`: Register spawn locations and choose where entities spawn or respawn.
 - `createSpawnPoints` (function): function createSpawnPoints(): SpawnPoints — Register spawn locations and choose where entities spawn or respawn.
 
 ## @jgengine/core/game/systemRuntime
@@ -936,14 +936,14 @@
 
 ## @jgengine/core/game/talents
 
-- `ResolvedTalents` (interface): interface ResolvedTalents<TStat extends string = string> — ⚠ undocumented
+- `ResolvedTalents` (interface): interface ResolvedTalents<TStat extends string = string> { stats: StatModifierSet<TStat>; abilities: readonly string[] } — ⚠ undocumented
 - `TalentAllocateReason` (type): type TalentAllocateReason = "unknown-node" | "max-rank" | "no-points" | "requires" | "branch-points" — ⚠ undocumented
 - `TalentAllocateResult` (type): type TalentAllocateResult = { ok: true } | { ok: false; reason: TalentAllocateReason } — ⚠ undocumented
-- `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
+- `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> { id: string; branch?: string; maxRank: number; requires?: readonly TalentRequirement[]; requiresPointsInBranch?: number; modifiersPerRank?: StatModifierSet<TStat>; grantsAbilities?: readonly string[] } — ⚠ undocumented · used by `talentTreeView` (@jgengine/core/game/talentTreeView): Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
 - `TalentRequirement` (type): type TalentRequirement = string | { nodeId: string; rank: number } — ⚠ undocumented
-- `TalentSnapshot` (interface): interface TalentSnapshot — ⚠ undocumented
-- `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
-- `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> — ⚠ undocumented
+- `TalentSnapshot` (interface): interface TalentSnapshot { points: number; ranks: Record<string, number> } — ⚠ undocumented
+- `TalentTree` (interface): interface TalentTree<TStat extends string = string> { rank(nodeId: string): number; pointsAvailable(): number; pointsSpent(): number; pointsInBranch(branch: string): number; grantPoints(amount: number): void; canAllocate(nodeId: string): TalentAllocateResult; allocate(nodeId: string): Talent… — ⚠ undocumented · used by `talentTreeView` (@jgengine/core/game/talentTreeView): Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
+- `TalentTreeConfig` (interface): interface TalentTreeConfig<TStat extends string = string> { nodes: readonly TalentNodeDef<TStat>[]; points?: number } — ⚠ undocumented
 - `createTalentTree` (function): function createTalentTree<TStat extends string = string>(config: TalentTreeConfig<TStat>): TalentTree<TStat> — ⚠ undocumented
 
 ## @jgengine/core/game/toasts
@@ -957,15 +957,15 @@
 
 ## @jgengine/core/game/trade
 
-- `TradeField` (interface): interface TradeField — ⚠ undocumented
-- `TradeInventory` (interface): interface TradeInventory — ⚠ undocumented
-- `TradeOutcome` (interface): interface TradeOutcome — ⚠ undocumented
-- `TradeParty` (interface): interface TradeParty — ⚠ undocumented
-- `TradeRejection` (interface): interface TradeRejection — ⚠ undocumented
+- `TradeField` (interface): interface TradeField { buy?: Record<string, number>; sell?: Record<string, number>; shops?: string[] } — ⚠ undocumented
+- `TradeInventory` (interface): interface TradeInventory { put(inventoryId: string, itemId: string, count: number): TradeRejection | null; take(inventoryId: string, itemId: string, count: number): TradeRejection | null; count(inventoryId: string, itemId: string): number } — ⚠ undocumented
+- `TradeOutcome` (interface): interface TradeOutcome { itemId: string; count: number; currency: Record<string, number> } — ⚠ undocumented
+- `TradeParty` (interface): interface TradeParty { shop: string; inventoryId: string } — ⚠ undocumented
+- `TradeRejection` (interface): interface TradeRejection { reason: string } — ⚠ undocumented
 - `TradeResolution` (type): type TradeResolution = | { status: "ok"; outcome: TradeOutcome } | { status: "rejected"; reason: string } — ⚠ undocumented
-- `TradeSystem` (interface): interface TradeSystem — ⚠ undocumented
-- `TradeSystemDeps` (interface): interface TradeSystemDeps — ⚠ undocumented
-- `TradeWallet` (interface): interface TradeWallet — ⚠ undocumented
+- `TradeSystem` (interface): interface TradeSystem { canBuy(itemId: string, shopId: string, count?: number): string | null; canSell(itemId: string, count?: number): string | null; buy(itemId: string, count: number | undefined, party: TradeParty): TradeRejection | null; sell(itemId: string, … — ⚠ undocumented
+- `TradeSystemDeps` (interface): interface TradeSystemDeps { resolveTrade(itemId: string): TradeField | null | undefined; wallet: TradeWallet; inventory: TradeInventory } — ⚠ undocumented
+- `TradeWallet` (interface): interface TradeWallet { canAfford(costs: Record<string, number>): string | null; charge(costs: Record<string, number>): void; grant(gains: Record<string, number>): void } — ⚠ undocumented
 
 ## @jgengine/core/game/tribe
 
@@ -989,10 +989,10 @@
 
 ## @jgengine/core/game/unlocks
 
-- `UnlockCatalog` (interface): interface UnlockCatalog — ⚠ undocumented
-- `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
+- `UnlockCatalog` (interface): interface UnlockCatalog { has(unlockId: string): boolean; tree(categoryId: string): UnlockDef[] } — ⚠ undocumented · used by `createUnlockCatalog`: A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
+- `UnlockDef` (interface): interface UnlockDef { id: string; category?: string } — ⚠ undocumented · used by `createUnlockCatalog`: A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `UnlockState` (type): type UnlockState = readonly string[] — ⚠ undocumented
-- `Unlocks` (interface): interface Unlocks — ⚠ undocumented
+- `Unlocks` (interface): interface Unlocks { has(userId: string, unlockId: string): boolean; grant(userId: string, unlockId: string): void; list(userId: string): string[]; tree(categoryId: string): UnlockDef[]; snapshot(userId: string): string[]; hydrate(userId: string, ids: string[… — ⚠ undocumented
 - `createUnlockCatalog` (function): function createUnlockCatalog(defs: readonly UnlockDef[] = []): UnlockCatalog — A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `createUnlocks` (function): function createUnlocks(defs: UnlockDef[] = []): Unlocks — ⚠ undocumented
 - `grantUnlock` (function): function grantUnlock(granted: UnlockState, unlockId: string): string[] — ⚠ undocumented
@@ -1015,16 +1015,16 @@
 - `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
 - `DEFAULT_RARITY` (const): const DEFAULT_RARITY: "common" — ⚠ undocumented
 - `DEFAULT_SCATTER` (const): const DEFAULT_SCATTER: ScatterOptions — ⚠ undocumented
-- `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
-- `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions — ⚠ undocumented
-- `ResolvedDeathDrops` (interface): interface ResolvedDeathDrops — ⚠ undocumented
-- `ScatterOptions` (interface): interface ScatterOptions — ⚠ undocumented
+- `RarityStyle` (interface): interface RarityStyle { color?: string; beam?: boolean; label?: string } — ⚠ undocumented
+- `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions { mode: "grant" | "world"; origin: EntityPosition; resolveRarity(itemId: string): string; resolveBaseType?(itemId: string): string; scatter?: ScatterOptions; rng?(): number; source?: string } — ⚠ undocumented
+- `ResolvedDeathDrops` (interface): interface ResolvedDeathDrops { worldSpawns: WorldItemSpawnInput[]; grants: Drop[] } — ⚠ undocumented
+- `ScatterOptions` (interface): interface ScatterOptions { radius: number; minRadius?: number; height?: number } — ⚠ undocumented
 - `WORLD_ITEM_ENTITY_NAME` (const): const WORLD_ITEM_ENTITY_NAME: "world_item" — Scene-entity catalog name every dropped-item instance spawns under (see the three buckets: worldItem is an entity, never an inventory item or object).
-- `WorldItemPresentation` (interface): interface WorldItemPresentation — ⚠ undocumented
-- `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
-- `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput — ⚠ undocumented
-- `WorldItemStore` (interface): interface WorldItemStore — ⚠ undocumented
-- `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps — ⚠ undocumented
+- `WorldItemPresentation` (interface): interface WorldItemPresentation { hidden: boolean; color?: string; beam: boolean; label?: string } — ⚠ undocumented
+- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/react): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `WorldItemSpawnInput` (interface): interface WorldItemSpawnInput { itemId: string; position: EntityPosition; rarity?: string; baseType?: string; count?: number; affixTier?: number; source?: string } — ⚠ undocumented
+- `WorldItemStore` (interface): interface WorldItemStore { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
+- `WorldItemStoreDeps` (interface): interface WorldItemStoreDeps { spawnEntity(position: EntityPosition): string; despawnEntity(instanceId: string): boolean; resolvePosition(instanceId: string): EntityPosition | undefined; now?(): number } — ⚠ undocumented
 
 ## @jgengine/core/gameplay
 
@@ -1036,40 +1036,40 @@
 - `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void } — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
 - `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
 - `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
 - `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
-- `AffixPool` (interface): interface AffixPool — ⚠ undocumented
+- `AffixPool` (interface): interface AffixPool { id: string; affixes: readonly AffixDef[] } — ⚠ undocumented
 - `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
 - `Auction` (interface): interface Auction — One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes.
 - `AuctionSettlement` (type): type AuctionSettlement = | { status: "sold"; auction: Auction; winnerId: string; price: number; houseCut: number; sellerProceeds: number; } | { status: "returned"; auction: Auction } — How one closed auction resolved during {@link AuctionBook.settleExpired}.
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
-- `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
-- `AxisInput` (interface): interface AxisInput — ⚠ undocumented
+- `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
+- `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/ste…
 - `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
 - `BehaviorConfig` (type): type BehaviorConfig = Record<string, unknown> — Per-behavior configuration stored on an item as plain data (e.g. charge time, projectile id). Kept opaque here so no game noun leaks into item core.
 - `BehaviorState` (type): type BehaviorState = Record<string, unknown> — A single behavior's mutable, serializable runtime state (e.g. current charge, rounds queued). Composed state is a map of these keyed by behavior id.
 - `Behaviour` (class): class Behaviour — Subclass and override the lifecycle hooks. A behaviour only joins the per-frame update dispatch if it actually overrides `onUpdate` (prototype-identity check at each activation), so hook-only behaviours cost nothing per frame.
 - `BehaviourModule` (class): class BehaviourModule — A world-lifetime service with typed sibling access via `this.modules`. Modules awake and start before any behaviour during `world.start()`, subscribe to update dispatch first (their `onUpdate` fires before every behaviour's), and have no disable/destroy — they live as long as the world.
-- `BehaviourWorld` (interface): interface BehaviourWorld — ⚠ undocumented
+- `BehaviourWorld` (interface): interface BehaviourWorld { add(id: string, parentId?: string): void; has(id: string): boolean; parentOf(id: string): string | null; childrenOf(id: string): readonly string[]; setParent(id: string, parentId: string | null): void; attach<T extends Behaviour>(nodeId: … — ⚠ undocumented
 - `BindingOverrides` (type): type BindingOverrides = Record<string, ActionCodes> — Player-rebound keys, keyed by action name. Values mirror an `ActionCodes` entry so hold/toggle/repeat semantics survive a rebind — the settings menu only swaps which physical codes drive the action.
 - `CAMERA_FRUSTUM_DEFAULTS` (const): const CAMERA_FRUSTUM_DEFAULTS: { readonly fov: 55; readonly near: 0.1; readonly far: 300; readonly zoom: 50; } — ⚠ undocumented
 - `CameraKeyframe` (interface): interface CameraKeyframe — One stop on a scripted camera path (#29).
 - `CameraRigKind` (type): type CameraRigKind = | "orbit" | "first" | "topDown" | "rts" | "shoulder" | "lockOn" | "chase" | "observer" | "turntable" | "sideScroll" | "inspection" | "none" — Which camera rig the shell mounts. Every rig accepts `followEntityId: null` (avatar-less games — city-builders, card games, auto-battlers — still get a camera). Rigs are tuned through their config block below, never by writing camera positions from `onTick`. - `orbit` — third-person chase (the historical default; `perspective: "third"`). - `first` — pointer-lock mouse-look (`perspective: "first"`). - `topDown` — fixed height/pitch/yaw with decoupled follow (ARPG iso, top-down). - `rts` — free-pan / edge-scroll / rotate / zoom, optional follow. - `shoulder` — over-the-shoulder with ADS transition + shoulder swap. - `lockOn` — yaw bound to the player→target vector; move axis becomes strafe. - `chase` — speed-reactive vehicle chase (speed→FOV, spring arm, shake) + cockpit/hood/rear views. - `observer` — detached spectator/photo cam bound to any entity or fixed point; never reads player input. - `turntable` — slow auto-orbit of a fixed point: a rotating display stand for a scene. The friendly, flat spelling of `observer`'s point-orbit mode; providing `camera.turntable` selects it without an explicit `rig`. - `sideScroll` — fixed lateral follow (2.5D platformer/beat-'em-up side view); reads no player input. - `inspection` — model-viewer / editor rig (#207.7, #866): middle-drag pan, right-drag orbit, scroll zoom toward a configurable anchor; orbits a fixed point, reads no player/entity input. - `none` — no camera rig is mounted; use for HUD-only presentations or a game that manages its own camera.
 - `CancelResult` (type): type CancelResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve>; readonly refund: TReserve | null; } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link cancelJob}, carrying the removed job and its computed refund.
 - `CandidatePlacement` (interface): interface CandidatePlacement — A part proposed for a slot during generation, before it is committed to an identity. Used by the backtracking contract to test a placement in isolation.
-- `CardPile` (interface): interface CardPile — ⚠ undocumented
-- `CardPileState` (interface): interface CardPileState — ⚠ undocumented
+- `CardPile` (interface): interface CardPile { state(): CardPileState; zones(): readonly ZoneName[]; count(zone: ZoneName): number; peek(zone: ZoneName, n?: number): readonly string[]; zoneOf(cardId: string): ZoneName | null; shuffle(zone: ZoneName | undefined, seed: string | number):… — ⚠ undocumented
+- `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/react): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
 - `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
-- `CellGrid` (interface): interface CellGrid<T> — ⚠ undocumented
+- `CellGrid` (interface): interface CellGrid<T> { readonly width: number; readonly height: number; readonly cells: readonly (T | null)[] } — ⚠ undocumented
 - `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
 - `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
 - `ChaseCameraConfig` (interface): interface ChaseCameraConfig — Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views.
-- `Chat` (interface): interface Chat — ⚠ undocumented
-- `ChatMessage` (interface): interface ChatMessage — ⚠ undocumented
-- `ChatRateLimit` (interface): interface ChatRateLimit — ⚠ undocumented
+- `Chat` (interface): interface Chat { register(def: ChatChannelDef): void; channels(): ChatChannelDef[]; send(fromUserId: string, body: string): ChatSendResult; send(fromUserId: string, channelId: string, body: string): ChatSendResult; recent(options?: {limit?: number; channe… — ⚠ undocumented
+- `ChatMessage` (interface): interface ChatMessage { id: string; channelId: string; fromUserId: string; body: string; at: number } — ⚠ undocumented · used by `createConvexChatTransport` (@jgengine/convex): Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent h…
+- `ChatRateLimit` (interface): interface ChatRateLimit { count: number; perMs: number } — ⚠ undocumented
 - `ChatSendResult` (type): type ChatSendResult = | { message: ChatMessage; recipients: ChatRecipients } | { reason: string } — ⚠ undocumented
 - `CinematicCameraConfig` (interface): interface CinematicCameraConfig — Scripted keyframe / path player (#29). When set it overrides the active rig.
 - `Codex` (interface): interface Codex<TMeta = unknown> — A codex/bestiary of defined entries with per-player discovery tracking.
@@ -1077,7 +1077,7 @@
 - `CodexEntryView` (interface): interface CodexEntryView<TMeta = unknown> extends CodexEntryDef<TMeta> — A definition plus its discovery state — what UI renders.
 - `CodexOptions` (interface): interface CodexOptions<TMeta = unknown> — Options for {@link createCodex}.
 - `CodexSnapshot` (interface): interface CodexSnapshot — Serializable discovery state — a save blob.
-- `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent — ⚠ undocumented
+- `CombatTelegraphEvent` (interface): interface CombatTelegraphEvent { id: number; shape: TelegraphShape; position: [number, number, number]; dir?: number; windupMs: number; kind: string } — ⚠ undocumented
 - `CombatVfxEvent` (interface): interface CombatVfxEvent — A transient sprite-particle effect the shell renders once and expires — one burst of `kind`, tinted `color`, anchored at `from` (and `to` for travel/beam effects).
 - `CombatVfxInstanceEvent` (interface): interface CombatVfxInstanceEvent — The lifecycle op a {@link VfxInstanceStore} emits to its renderer sink. `upsert`/`update` carry the full merged {@link VfxInstanceState} (the renderer applies it directly, no merge); `stop` carries the id plus a fade duration. This is the payload of the `combat.vfxInstance` game event when the store is wired to the event bus.
 - `CompatibilityRule` (type): type CompatibilityRule = RequireRule | ForbidRule — A cross-slot compatibility rule constraining which part/tag/family combinations a modular item may hold.
@@ -1085,8 +1085,8 @@
 - `ComposedUse` (interface): interface ComposedUse<TWorld> — A resolved, ordered composition of behaviors for one item. Dispatch is transactional: `apply` commits the folded world only if every behavior in the chain succeeds, otherwise it returns the original world and state plus the first error.
 - `CompositionResult` (type): type CompositionResult<TWorld> = | { status: "ok"; composed: ComposedUse<TWorld> } | { status: "error"; reason: "unknown-behavior"; id: string } | { status: "error"; reason: "duplicate-behavior"; id: string } | { status: "error"; reason: "missing-capability"; id: string; capability: string } | { sta… — The outcome of composing an item's behavior refs: either a ready {@link ComposedUse} or a structured error naming the offending behavior.
 - `ConstraintViolation` (interface): interface ConstraintViolation — One failed {@link CompatibilityRule}, carrying the rule id, its kind, and a human-readable message for UI or generator diagnostics.
-- `CropDef` (interface): interface CropDef — ⚠ undocumented
-- `CropTileState` (interface): interface CropTileState — ⚠ undocumented
+- `CropDef` (interface): interface CropDef { id: string; stages: readonly number[]; regrowDays?: number; needsDailyWater?: boolean; harvest?: RecipeItem } — ⚠ undocumented
+- `CropTileState` (interface): interface CropTileState { soil: SoilState; watered: boolean; cropId: string | null; stage: number; stageProgress: number; harvestable: boolean } — ⚠ undocumented
 - `CrossThresholdsOptions` (interface): interface CrossThresholdsOptions — Exact-boundary and dead-band policy for {@link crossThresholds}.
 - `Curve` (type): type Curve = CurveDef & CurveShape — A fully specified progression curve — a {@link CurveDef} growth shape plus optional {@link CurveShape} rounding/clamp.
 - `DEFAULT_CHAT_BODY_LENGTH` (const): const DEFAULT_CHAT_BODY_LENGTH: 240 — ⚠ undocumented
@@ -1100,8 +1100,8 @@
 - `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
 - `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. This is the whole serialized form — it drops straight into a `defineGame` state record and round-trips through save/load and multiplayer sync with no closure to rebuild.
 - `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
-- `DeliveryEntry` (interface): interface DeliveryEntry — ⚠ undocumented
-- `DeliveryQueue` (interface): interface DeliveryQueue — ⚠ undocumented
+- `DeliveryEntry` (interface): interface DeliveryEntry { id: string; userId: string; inventoryId: string; items: readonly ItemStack[]; deliverAt: number } — ⚠ undocumented
+- `DeliveryQueue` (interface): interface DeliveryQueue { schedule(entry: ScheduledDelivery & {id?: string}): DeliveryEntry; due(now: number): readonly DeliveryEntry[]; claimDue(now: number): readonly DeliveryEntry[]; pending(userId?: string): readonly DeliveryEntry[]; cancel(id: string): boolea… — ⚠ undocumented
 - `DialogueGraph` (interface): interface DialogueGraph — A serializable branching conversation: a start node id and the nodes it can reach.
 - `DialogueGraphChoice` (interface): interface DialogueGraphChoice — One selectable response on a conversation node — the text a player clicks and the node it advances to. `kind` is a free style tag the presenter interprets; the model never reads it (no genre baked in).
 - `DialogueGraphNode` (interface): interface DialogueGraphNode — One conversation node: who is speaking, the line they say, and the branches out of it. `speaker`/`speakerKind`/`portrait` are opaque display data — the model never interprets them.
@@ -1109,35 +1109,35 @@
 - `DialogueGraphView` (interface): interface DialogueGraphView — The render-ready snapshot of a conversation at one node — everything a view needs to draw speaker, line, and choice buttons, with no traversal logic in the component.
 - `DialogueRun` (interface): interface DialogueRun — An observable walk through a {@link DialogueGraph}: current view, choose to advance, serialize.
 - `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
-- `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig — ⚠ undocumented
+- `DirectionalLightingConfig` (interface): interface DirectionalLightingConfig { color?: string; intensity?: number; position: readonly [number, number, number]; castShadow?: boolean; shadowMapSize?: number; shadowCameraSize?: number; cascades?: number; shadowMaxFar?: number; shadowBias?: number; shadowNormalBias?: nu… — ⚠ undocumented
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
-- `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
-- `DurabilityState` (interface): interface DurabilityState — ⚠ undocumented
+- `DurabilitySpec` (interface): interface DurabilitySpec { max: number; wearPerUse?: number; wearPerHit?: number; disableAtZero?: boolean; repair?: RepairSpec } — ⚠ undocumented
+- `DurabilityState` (interface): interface DurabilityState { current: number; max: number } — ⚠ undocumented · used by `applyWear`: Apply wear to an item, tracking breakage and repair eligibility.
 - `EffectRef` (interface): interface EffectRef — A reference to an effect the game knows how to apply — id plus JSON-safe params, no closures.
 - `EnqueueOptions` (interface): interface EnqueueOptions — Optional per-enqueue overrides.
 - `EnqueueResult` (type): type EnqueueResult<TSpec, TReserve = undefined> = | { readonly ok: true; readonly state: WorkQueueState<TSpec, TReserve>; readonly job: Job<TSpec, TReserve> } | { readonly ok: false; readonly state: WorkQueueState<TSpec, TReserve>; readonly reason: string } — Outcome of {@link enqueue}. On rejection the state is returned unchanged.
-- `EntityDiedEvent` (interface): interface EntityDiedEvent — ⚠ undocumented
-- `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent — ⚠ undocumented
-- `EntitySpriteConfig` (interface): interface EntitySpriteConfig — ⚠ undocumented
+- `EntityDiedEvent` (interface): interface EntityDiedEvent { instanceId: string; catalogId: string; userId?: string; displayName?: string; reason: DeathReason; position: [number, number, number]; serverId?: string } — ⚠ undocumented
+- `EntityFloatTextEvent` (interface): interface EntityFloatTextEvent { instanceId?: string; position: [number, number, number]; text: string; kind: string; amount?: number; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
+- `EntitySpriteConfig` (interface): interface EntitySpriteConfig { url: string; width: number; height: number; y: number; clip?: {atlas: SpriteAtlas; animation: string} } — ⚠ undocumented
 - `EventTicker` (interface): interface EventTicker — A live, observable event/kill-feed ticker.
 - `EventTickerEntry` (interface): interface EventTickerEntry extends TimedFeedEntry — A stored ticker entry — an {@link EventTickerInput} stamped with an id and clock time.
 - `EventTickerInput` (interface): interface EventTickerInput — One event pushed onto the ticker. `kind` and `icon` are free strings the game owns and the model never interprets — they only ride through to the renderer so a game can color, icon, and group each entry however it likes ("kill", "assist", "info", …).
 - `EventTickerOptions` (interface): interface EventTickerOptions — Options for {@link createEventTicker}.
 - `EventTickerSnapshot` (interface): interface EventTickerSnapshot — Serializable state of the ticker, for save/restore.
 - `EventTickerView` (interface): interface EventTickerView extends EventTickerEntry — A live ticker entry as handed to the renderer: the stored entry plus a `fade` value `0..1` (age / `ttlMs`) — `0` for a fresh entry, approaching `1` as it nears expiry — so the UI can drop opacity as an entry ages out. `fade` is always `0` when no `ttlMs` is configured.
-- `FeedEntry` (interface): interface FeedEntry<T = unknown> — ⚠ undocumented
+- `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `crea…
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
-- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig — ⚠ undocumented
+- `FirstPersonCameraConfig` (interface): interface FirstPersonCameraConfig { eyeHeight?: number; sensitivity?: number; maxPitch?: number; reticle?: boolean; viewmodel?: boolean } — ⚠ undocumented
 - `ForbidRule` (interface): interface ForbidRule — A rule that forbids a combination — e.g. "an incendiary barrel cannot pair with a cryo core". A forbid rule can never become satisfiable by adding more parts, so it is the check a backtracking generator runs on each candidate.
-- `FriendEntry` (interface): interface FriendEntry — ⚠ undocumented
-- `FriendRequestEntry` (interface): interface FriendRequestEntry — ⚠ undocumented
-- `Friends` (interface): interface Friends — ⚠ undocumented
+- `FriendEntry` (interface): interface FriendEntry { userId: string; online: boolean } — ⚠ undocumented
+- `FriendRequestEntry` (interface): interface FriendRequestEntry { requestId: string; fromUserId: string } — ⚠ undocumented
+- `Friends` (interface): interface Friends { canRequest(fromUserId: string, toUserId: string): {reason: string} | null; request(fromUserId: string, toUserId: string): {requestId: string} | {reason: string}; accept(userId: string, requestId: string): {reason: string} | null; decline(… — ⚠ undocumented
 - `GameCameraConfig` (interface): interface GameCameraConfig — Camera tuning for the shell's rig stack: pick the rig via `rig`, then tune it through its matching config block. All fields optional — the default is the third-person orbit rig.
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.
 - `GameDefinitionConfig` (type): type GameDefinitionConfig<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> = Omit<GameDefinition<TAssetRef, TMultiplayer>, "scene" | "assets" | "lifecycle"> & { assets?: AssetCatalog<TAssetRef>; /** * The game's run-phase story — a {@link LifecycleConfig} or the `"always-live… — Input to {@link defineGameDefinition} — a `GameDefinition` with `scene` derived and `assets` optional.
-- `GameEventMap` (interface): interface GameEventMap — ⚠ undocumented
-- `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> — ⚠ undocumented
+- `GameEventMap` (interface): interface GameEventMap { "entity.died": EntityDiedEvent; "entity.floatText": EntityFloatTextEvent; "combat.telegraph": CombatTelegraphEvent; "combat.vfx": CombatVfxEvent; "combat.vfxInstance": CombatVfxInstanceEvent; "combat.telegraphCancelled": CombatTelegraphCa… — ⚠ undocumented · used by `createGameEvents`: A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
+- `GameEvents` (interface): interface GameEvents<TMap extends GameEventMap = GameEventMap> { on<TName extends keyof TMap>(name: TName, handler: GameEventHandler<TMap[TName]>): () => void; subscribe<TName extends keyof TMap>(name: TName, handler: GameEventHandler<TMap[TName]>): () => void; emit<TName extends keyof TMap>(name: TNam… — ⚠ undocumented · used by `createGameEvents`: A typed publish/subscribe bus for gameplay events that systems and HUDs subscribe to.
 - `GameLifecycle` (type): type GameLifecycle<TState = unknown> = LifecycleConfig<TState> | "always-live" — How a game declares its run-phase story to {@link defineGameDefinition}. Every game states this explicitly so the shell never has to guess — a silent game used to default to `"playing"`, which painted the touch dock over title/menu/results screens (#1337, Vice Isle #1329).
 - `GameLoop` (interface): interface GameLoop<TContext = unknown> — Lifecycle hooks a game implements to drive init, per-tick simulation, and player join/leave.
 - `GamePhase` (type): type GamePhase = "menu" | "playing" | "paused" | "ended" — Canonical run phase every game moves through. `menu` (title/main menu), `playing` (live), `paused` (mid-run pause), `ended` (win/lose/results). Touch controls are shown only while `playing`; menus and results never paint the touch dock over themselves.
@@ -1158,40 +1158,40 @@
 - `IdentityQuery` (interface): interface IdentityQuery — A predicate over an {@link ItemIdentity}, expressed as data so a whole rule set round-trips through JSON. An empty query matches every identity; each present field narrows the match and all present fields must hold (AND).
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
-- `InstalledPart` (interface): interface InstalledPart — ⚠ undocumented
+- `InstalledPart` (interface): interface InstalledPart { slotId: string; part: PartDef } — ⚠ undocumented · used by `identityOf`: Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
 - `InventoryDeclaration` (interface): interface InventoryDeclaration — Shape of one named inventory a game declares — slot count, accepted item types, HUD binding.
 - `InventorySlot` (type): type InventorySlot = { itemId: string; count: number } | null — ⚠ undocumented
-- `InventoryState` (interface): interface InventoryState — ⚠ undocumented
+- `InventoryState` (interface): interface InventoryState { slots: InventorySlot[] } — ⚠ undocumented · used by `countItem` (@jgengine/core/inventory/inventoryModel): Total quantity of `itemId` summed across every stack in the inventory.
 - `ItemIdentity` (interface): interface ItemIdentity — The declarative identity of a built modular item: a caller-named family, its provenance tags, and the parts occupying its slots. This is the "what an item is" layer above the raw stat rollup in ./modularItem — a plain, serializable value with no game noun baked in ("gun", "manufacturer", "potion" are all caller data in `family`/`tags`).
 - `ItemProvenance` (interface): interface ItemProvenance — The serializable record of how an item was generated: its family, tags, per-slot part selection, applied set-bonus ids, and the deterministic seed. Enough for UI provenance display and byte-exact regeneration.
-- `ItemUseHandler` (interface): interface ItemUseHandler<TState> — ⚠ undocumented
-- `ItemUseInput` (interface): interface ItemUseInput — ⚠ undocumented
+- `ItemUseHandler` (interface): interface ItemUseHandler<TState> { can?(state: TState, input: ItemUseInput): ItemUseRejection | null; apply(state: TState, input: ItemUseInput): ItemUseResult<TState> } — ⚠ undocumented
+- `ItemUseInput` (interface): interface ItemUseInput { from: string; itemId: string; inventoryId?: string; aim?: Aim } — ⚠ undocumented
 - `Job` (interface): interface Job<TSpec, TReserve = undefined> — One unit of timed work. Plain serializable data (given serializable `TSpec`/`TReserve`).
 - `JobId` (type): type JobId = string — Generic timed work queue — a pure-data model for discrete jobs that reserve inputs, advance over game time, can be paused/cancelled, and emit an output on completion. It backs unit training, crafting jobs, construction, research, respawns, downloads, and fabrication without any of them re-implementing the reservation → progress → completion → output-routing loop.
 - `JobOrdering` (type): type JobOrdering<TSpec, TReserve = undefined> = ( a: Job<TSpec, TReserve>, b: Job<TSpec, TReserve>, ) => number — Comparator over jobs; negative means the first job runs sooner.
 - `JobStatus` (type): type JobStatus = "queued" | "active" | "paused" — Lifecycle phase of a single queued job. Terminal jobs are removed from state.
 - `JobValidation` (interface): interface JobValidation — Result of pre-enqueue validation (population caps, prerequisites, affordability).
 - `KeyValueStorage` (interface): interface KeyValueStorage — Structural, DOM-free storage backend: the browser `localStorage` satisfies it, as does a test stub or `null`. The one storage seam core primitives target so persistence code never needs the DOM `Storage` lib.
-- `LaneRule` (interface): interface LaneRule<C> — ⚠ undocumented
+- `LaneRule` (interface): interface LaneRule<C> { id: string; apply: (input: LaneRuleInput<C>) => number } — ⚠ undocumented
 - `LayerConflict` (interface): interface LayerConflict — A single conflict surfaced by {@link validateLayers}.
 - `LayerOps` (type): type LayerOps = Readonly<Record<string, ParamOp | readonly ParamOp[]>> — Per-parameter ops contributed by one layer — a single op or an ordered list folded in sequence.
 - `LayerRegistry` (interface): interface LayerRegistry — Registered lookup of {@link ParamLayer}s by stable id, resolving serialized selections and unknowns.
 - `LayerSelection` (type): type LayerSelection = readonly string[] — A serializable, ordered reference to layers by stable id — what a save file or session setup stores.
-- `LeaderboardRow` (interface): interface LeaderboardRow — ⚠ undocumented
+- `LeaderboardRow` (interface): interface LeaderboardRow { stat: string; scope: LeaderboardScope; serverId?: string; userId: string; value: number } — ⚠ undocumented · used by `createLeaderboard`: Ranked score tracking across global, server, and per-profile scopes, with top-N queries and per-profile lookups.
 - `LeaderboardScope` (type): type LeaderboardScope = "global" | "server" | "profile" — ⚠ undocumented
 - `LedgerEvent` (interface): interface LedgerEvent — Lifecycle signal emitted by {@link advanceLedger}.
 - `LedgerEventKind` (type): type LedgerEventKind = "started" | "fired" | "skipped" | "depleted" | "ended" — The kinds of lifecycle signal {@link advanceLedger} can emit for a rule.
 - `LevelProgress` (interface): interface LevelProgress — Result of resolving a level+xp pair: the settled `level`, leftover `xp` into the current level, the `xpMax` threshold for the next level, and how many `levelsGained` this resolution produced.
-- `LevelSequence` (interface): interface LevelSequence<TLevelConfig> — ⚠ undocumented
+- `LevelSequence` (interface): interface LevelSequence<TLevelConfig> { current(): CurrentLevel<TLevelConfig> | null; status(): LevelSequenceStatus; start(): void; clear(stars?: LevelStars): void; fail(): "retry" | "failed"; retry(): boolean; advance(): boolean; select(level: string): boolean; isUnlocked(leve… — ⚠ undocumented · used by `createLevelSequence`: A pure, deterministic level campaign: an ordered list of levels, each with its own opaque config, played through a `start` → (`clear` → `adv…
 - `LevelingConfig` (interface): interface LevelingConfig — Configuration for a {@link leveling} track: the `xpForLevel` {@link Curve}, the `maxLevel` cap, and optional `startLevel`, stat ids (`xpStat`/`levelStat`, default `"xp"`/`"level"`), and `thresholdMode` — `"perLevel"` (each level costs its own curve value) or `"cumulative"` (curve gives the total xp to reach a level).
 - `LevelingTrack` (interface): interface LevelingTrack — A resolved leveling track: the immutable `maxLevel`/`startLevel`, the `xpForLevel` threshold lookup, a pure `resolve`, and `grantXp` which writes back through a {@link LevelingStatAccess} and fires `onLevelUp` once for every reached level in ascending order.
 - `LifecycleConfig` (interface): interface LifecycleConfig<TState = unknown> — Declarative start/restart run lifecycle: the state transitions a game's run phase every genre repeats (title screen → live run → live run → title screen again), expressed as pure functions over one typed {@link StoreHandle} slot instead of hand-rolled `commands.define("start"/"restart")` glue that re-derives phase after every mutation. `start`/`restart` receive the store's own value type — the store's `TState`, never `ctx.game.store.get(key) as T` — and return the next value; the runtime writes it back and derives {@link GamePhase} from it via `phaseOf` in one place, so every adopting game gets identical, correct phase-sync for free.
 - `LightingConfig` (interface): interface LightingConfig — Declarative lighting replacing the shell's hardcoded ambient/directional default (#207.5); mounts regardless of world kind, only when supplied.
 - `Listing` (interface): interface Listing — One active post in a {@link ListingBook}: an item stack a seller offered at a fixed price until it expires.
-- `LoadoutDef` (interface): interface LoadoutDef — ⚠ undocumented
+- `LoadoutDef` (interface): interface LoadoutDef { inventories?: Record<string, LoadoutItemEntry[]>; stats?: Record<string, {current: number; max?: number; min?: number}>; economy?: Record<string, number>; unlocks?: string[] } — ⚠ undocumented
 - `LockOnCameraConfig` (interface): interface LockOnCameraConfig — Lock-on / strafe rig (#26) — yaw bound to player→target, move axis becomes strafe.
 - `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
-- `LootFilterRule` (interface): interface LootFilterRule — ⚠ undocumented
+- `LootFilterRule` (interface): interface LootFilterRule { id: string; when: LootFilterCondition; hide?: boolean; color?: string; beam?: boolean; label?: string } — ⚠ undocumented · used by `evaluateLootFilter`: First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match.
 - `LootModifier` (interface): interface LootModifier<TCtx = unknown> — A registered, id-tagged loot policy applied to one stage. `plan` transforms eligibility, weights, and roll counts before rolling (luck, difficulty, gating); `drops` post-processes the rolled drops (quantity multipliers, dedupe, caps). Neither hook mutates table definitions, and the id is recorded in provenance so a resolved drop can be traced back to the policies that shaped it.
 - `LootPipeline` (interface): interface LootPipeline<TCtx = unknown> — A resolved, reusable loot pipeline. Call {@link LootPipeline.resolve} with a per-drop context and RNG.
 - `LootPipelineDef` (interface): interface LootPipelineDef<TCtx = unknown> — A named, ordered loot-resolution pipeline: the stages to run plus result-shaping policy (duplicate stacking, a total drop cap). Serializable except for its stage gate/modifier functions, mirroring how {@link LootTableDef} entries may carry a `generate` function.
@@ -1205,13 +1205,13 @@
 - `LootStageStatus` (type): type LootStageStatus = "rolled" | "skipped" | "empty" | "replaced" | "fell-through" — The disposition of a stage after resolution — did it roll, get gated, fall through, override, or find nothing.
 - `LootStageTrace` (interface): interface LootStageTrace — Per-stage record of what happened during resolution, for debugging and replay auditing.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
-- `ModelConfig` (interface): interface ModelConfig — ⚠ undocumented
+- `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; shadows?: "cast" | "receive" | "both" | "none"; animation… — ⚠ undocumented · used by `PartMotionRig` (@jgengine/shell/render/PartMotion): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph.
-- `ModularItemDef` (interface): interface ModularItemDef — ⚠ undocumented
+- `ModularItemDef` (interface): interface ModularItemDef { id: string; baseStats: Record<string, number>; slots: readonly MountSlotDef[] } — ⚠ undocumented
 - `Moodle` (interface): interface Moodle — One survival moodle (status icon) — severity, source, and label for HUD chips.
 - `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.
-- `MountSlotDef` (interface): interface MountSlotDef — ⚠ undocumented
+- `MountSlotDef` (interface): interface MountSlotDef { id: string; accepts: string | readonly string[]; required?: boolean } — ⚠ undocumented · used by `slotAccepts`: Attach parts into an item's mount slots and resolve the combined stats.
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
 - `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.
@@ -1220,7 +1220,7 @@
 - `NotificationInput` (interface): interface NotificationInput<TMeta = unknown> — Fields accepted by {@link NotificationStore.push}.
 - `NotificationStore` (interface): interface NotificationStore<TMeta = unknown> — Serializable, observable log of persistent notifications with read tracking.
 - `NumericBounds` (interface): interface NumericBounds — Optional inclusive `[min, max]` clamp applied after a write. Omit an edge for unbounded.
-- `ObjectStyle` (interface): interface ObjectStyle — ⚠ undocumented
+- `ObjectStyle` (interface): interface ObjectStyle { color?: string; opacity?: number; hidden?: boolean } — ⚠ undocumented
 - `ObserverCameraConfig` (interface): interface ObserverCameraConfig — Detached spectator/photo cam (#120) — binds to any entity or fixed point, never reads player input.
 - `Overdraft` (type): type Overdraft = boolean | { max: number } — Opt-in debt affordance for {@link charge}/{@link chargeAll}: `true` allows the balance to go arbitrarily negative, a number caps how far into the red it may go (the charge is rejected once `balance - amount` would fall below `-max`). Omitted (the default) keeps the strict no-debt rule.
 - `PING_FEED_ACTION` (const): const PING_FEED_ACTION: "party.ping" — ⚠ undocumented
@@ -1231,18 +1231,18 @@
 - `ParamLayer` (interface): interface ParamLayer — A named, serializable bundle of parameter transforms with a stable id and precedence. `label` is an optional display name that may intentionally differ from the applied ops (e.g. a tier shown as "Mayhem 4" whose real multipliers are data). Higher `priority` applies later — on top — and ties break by the layer's index in the active list, so ordering is deterministic.
 - `ParamOp` (type): type ParamOp = | { readonly kind: "set"; readonly value: number } | { readonly kind: "add"; readonly value: number } | { readonly kind: "multiply"; readonly value: number } | { readonly kind: "clamp"; readonly min?: number; readonly max?: number } | { readonly kind: "curve"; readonly curve: Curve } — A single transform applied to one numeric parameter. `set` overrides, `add`/`multiply` accumulate, `clamp` bounds, and `curve` remaps the running value through a {@link Curve} (the same curve primitive progression tracks use), so a caller can reshape a value non-linearly mid-stack.
 - `ParamSnapshot` (interface): interface ParamSnapshot — A resolved effective-parameter snapshot: final `values` plus the ordered op trace per parameter.
-- `PartDef` (interface): interface PartDef — ⚠ undocumented
-- `Party` (interface): interface Party — ⚠ undocumented
-- `PartyInviteEntry` (interface): interface PartyInviteEntry — ⚠ undocumented
-- `PartyMemberEntry` (interface): interface PartyMemberEntry — ⚠ undocumented
+- `PartDef` (interface): interface PartDef { id: string; category: string; stats?: Record<string, number>; multipliers?: Record<string, number> } — ⚠ undocumented
+- `Party` (interface): interface Party { register(config: PartyConfig): void; canInvite(fromUserId: string, toUserId: string): {reason: string} | null; invite(fromUserId: string, toUserId: string): {inviteId: string} | {reason: string}; accept(userId: string, inviteId: string): … — ⚠ undocumented
+- `PartyInviteEntry` (interface): interface PartyInviteEntry { inviteId: string; fromUserId: string; createdAt: number } — ⚠ undocumented
+- `PartyMemberEntry` (interface): interface PartyMemberEntry { userId: string; role: PartyRole } — ⚠ undocumented
 - `PhysicsConfig` (interface): interface PhysicsConfig — World gravity and jump tuning, plus the optional rigid-body backend and character capsule.
-- `PingCategory` (type): type PingCategory = string — ⚠ undocumented
-- `PingSystem` (interface): interface PingSystem — ⚠ undocumented
-- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> — ⚠ undocumented
-- `PointerAxisState` (interface): interface PointerAxisState — ⚠ undocumented
-- `PointerConfig` (interface): interface PointerConfig — ⚠ undocumented
+- `PingCategory` (type): type PingCategory = string — ⚠ undocumented · used by `DEFAULT_PING_CATEGORIES`: Content-agnostic default ping wheel: enemy / loot / location / danger.
+- `PingSystem` (interface): interface PingSystem { classify(hit: PointerHit): PingCategory; buildPayload(from: string, hit: PointerHit, category?: PingCategory): PingPayload; broadcast(payload: PingPayload): MapMarker; ping(from: string, hit: PointerHit, category?: PingCategory): PingPayl… — ⚠ undocumented · used by `createPingSystem`: Contextual ping/marker communication between teammates, classified by what was pinged.
+- `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> { game: GameDefinition; content: GameContextContent; loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">; GameUI: TUi; presentation?: "3d" | "hud"; WorldOverlay?: TOverlay; environment… — ⚠ undocumented · used by `defineGame` (@jgengine/shell/defineGame): The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
+- `PointerAxisState` (interface): interface PointerAxisState { x: number; y: number; active: boolean } — ⚠ undocumented · used by `normalizePointerToAxis`: Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
+- `PointerConfig` (interface): interface PointerConfig { moveCommand?: string; select?: boolean; selectFilter?: (entityId: string) => boolean; orderCommand?: string; contextMenu?: boolean; aim?: boolean; grabWorldItems?: boolean; pingCommand?: string; secondaryCommand?: string } — ⚠ undocumented
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
-- `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
+- `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented · used by `aimToPoint`: Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `PolicyContext` (interface): interface PolicyContext — Read-only context handed to every {@link ResourcePolicy} for a transaction.
 - `PolicyRead` (type): type PolicyRead = string | ((ctx: PolicyContext) => number) — Reader over policy context: a `vars` key or a function of the context.
 - `Precision` (interface): interface Precision — Deterministic rounding applied to every transaction amount before it touches balances.
@@ -1250,16 +1250,16 @@
 - `PredicateFacts` (type): type PredicateFacts = Record<string, unknown> — Plain, serializable bag of facts a predicate reads by dot path.
 - `PredicatePath` (type): type PredicatePath = string — Dot path into a fact bag, e.g. `"hit.crit"` or `"attacker.team"`.
 - `PredicateValue` (type): type PredicateValue = string | number | boolean | null — A declarative, serializable predicate AST evaluated against a plain fact bag. Predicates carry no closures, so they survive save/load and stay deterministic — the reusable condition seam that event-conditioned rules, quests, perks, and reactive AI gate on instead of hand-rolled callbacks.
-- `PresenceInfo` (interface): interface PresenceInfo — ⚠ undocumented
+- `PresenceInfo` (interface): interface PresenceInfo { online: boolean; serverId?: string; zoneId?: string; instanceId?: string } — ⚠ undocumented
 - `PriceStats` (interface): interface PriceStats — Aggregated market stats for one item over the retained samples.
-- `QuestDef` (interface): interface QuestDef — ⚠ undocumented
-- `QuestInstance` (interface): interface QuestInstance — ⚠ undocumented
-- `QuestRewards` (interface): interface QuestRewards — ⚠ undocumented
+- `QuestDef` (interface): interface QuestDef { id: string; title: string; description?: string; giver?: string; turnIn?: string; requires?: string[]; objectives: QuestObjective[]; rewards?: QuestRewards } — ⚠ undocumented · used by `describeTrackedQuest`: Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title…
+- `QuestInstance` (interface): interface QuestInstance { questId: string; status: QuestStatus; objectives: QuestObjectiveProgress[] } — ⚠ undocumented · used by `describeTrackedQuest`: Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title…
+- `QuestRewards` (interface): interface QuestRewards { xp?: {amount: number}; economy?: Record<string, number>; items?: {item: string; count: number; inventory: string}[]; unlocks?: string[]; quests?: string[] } — ⚠ undocumented
 - `RaceState` (class): class RaceState — Race state machine (issue #87). Drive it each tick with `update(now, positions)` — `now` is game time (`ctx.time`), `positions` maps each racer to a world point tested against the ordered checkpoint volumes. It emits `checkpoint.hit` / `lap.completed` / `position.changed` / `race.finished`, keeps cumulative split times for PB deltas, resolves a pluggable win condition (first-past-post, round-cut, derby last-standing), and `resetToCheckpoint` hands back a respawn pose at the racer's last checkpoint. `removeRacer` drops a racer mid-race and `reset` returns the whole instance to its pre-race state for reuse.
 - `RankLeaderboardOptions` (interface): interface RankLeaderboardOptions — Options for {@link rankLeaderboard}. All optional.
 - `RankableRow` (interface): interface RankableRow — A single input score to rank. Accepts the raw shape produced by {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a minimal `{ userId, value }` pair with an optional display `label` the game owns.
 - `RankedEntry` (interface): interface RankedEntry — One render-ready row of the ranked table produced by {@link rankLeaderboard}.
-- `RarityStyle` (interface): interface RarityStyle — ⚠ undocumented
+- `RarityStyle` (interface): interface RarityStyle { color?: string; beam?: boolean; label?: string } — ⚠ undocumented
 - `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
 - `RebindActionConfig` (interface): interface RebindActionConfig — One rebindable action as declared to {@link createRebindSession}. The `id` and `label` are FREE strings the session never interprets — the game owns their meaning and display text. `defaultCodes` is the authored binding the session resets back to.
 - `RebindConflict` (interface): interface RebindConflict — A group of actions bound to the same normalized code — the conflict this session detects.
@@ -1269,21 +1269,21 @@
 - `RebindSessionConfig` (type): type RebindSessionConfig = RebindSessionActionsConfig | RebindSessionMapConfig — Config for {@link createRebindSession}: an explicit action list, or an {@link ActionCodesMap} + labels.
 - `RebindSessionMapConfig` (interface): interface RebindSessionMapConfig extends RebindSessionCommon — Declare actions from an authored {@link ActionCodesMap}, labelled by `labels` (falling back to the id).
 - `RebindSessionSnapshot` (interface): interface RebindSessionSnapshot — Serializable session state for save/restore.
-- `RecipeDef` (interface): interface RecipeDef — ⚠ undocumented
-- `RecipeItem` (interface): interface RecipeItem — ⚠ undocumented
+- `RecipeDef` (interface): interface RecipeDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; seconds?: number; station?: string; stationRange?: number; requires?: readonly string[]; category?: string } — ⚠ undocumented
+- `RecipeItem` (interface): interface RecipeItem { itemId: string; count: number } — ⚠ undocumented
 - `RequireRule` (interface): interface RequireRule — A rule that requires a second condition to hold whenever the first matches — e.g. "a scoped rifle requires a stock". Checked at completeness time, not during incremental placement, because the `then` side may be satisfied by a part chosen later in a generation pass.
 - `ResourceCost` (type): type ResourceCost = Readonly<Record<string, number>> — Resource costs keyed by currency/resource id.
 - `ResourceLedger` (interface): interface ResourceLedger — Fully serializable scheduled-transaction state: clock, balances, rule definitions, and cursors.
 - `ResourcePolicy` (type): type ResourcePolicy = ( txn: ResourceTransaction, ctx: PolicyContext, ) => readonly ResourceTransaction[] — A composable transform over one transaction. Return the transactions to keep: `[]` rejects it, `[txn]` passes/transforms it, and multiple entries split it.
 - `ResourceTransaction` (interface): interface ResourceTransaction — One resource movement produced by a due cycle, before it is applied to balances.
 - `RetainedVfxKind` (type): type RetainedVfxKind = string — The archetype of a retained (long-lived, updatable) VFX effect — an open string, not a closed union, so a renderer registers new kinds (beam, tether, zone, target line, looping emitter) without a central branch. `"beam"` is the first shipped retained renderer.
-- `Ring` (interface): interface Ring — ⚠ undocumented
-- `RingConfig` (interface): interface RingConfig — ⚠ undocumented
-- `RingPhase` (interface): interface RingPhase — ⚠ undocumented
-- `RoleSpec` (interface): interface RoleSpec — ⚠ undocumented
+- `Ring` (interface): interface Ring { at(time: number): RingSample; isOutside(time: number, position: RingPoint): boolean; distanceOutside(time: number, position: RingPoint): number; damageOutside(time: number, dt: number, positions: Iterable<{id: string; position: RingPoint}… — ⚠ undocumented
+- `RingConfig` (interface): interface RingConfig { center: RingPoint; phases: readonly RingPhase[] } — ⚠ undocumented
+- `RingPhase` (interface): interface RingPhase { startTime: number; shrinkDuration: number; fromRadius: number; toRadius: number; damagePerSecond: number; center?: RingPoint } — ⚠ undocumented
+- `RoleSpec` (interface): interface RoleSpec { id: string; count?: number; ratio?: number } — ⚠ undocumented
 - `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented
-- `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> — ⚠ undocumented
-- `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
+- `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> { phases: Record<TPhase, number>; teams: readonly string[] | readonly RoundTeam[]; phaseOrder?: readonly TPhase[]; winCondition?: (state: RoundSnapshot<TPhase>) => string | null; maxRounds?: number; winReward?: number; lossBonus?: LossBonus… — ⚠ undocumented
+- `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean } — ⚠ undocumented
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `RuleCursor` (interface): interface RuleCursor — Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition.
 - `RuleDef` (interface): interface RuleDef<TPayload = unknown> — A selectable rule over a tagged pool. `tags` classify it for include/exclude filtering and for `requires`/`conflicts` matching (which match either another rule's id or one of its tags). `layers` are the parameter layers this rule contributes when active; `payload` is opaque caller data.
@@ -1293,8 +1293,8 @@
 - `RuleRegistry` (interface): interface RuleRegistry<TPayload = unknown> — Registered pool of {@link RuleDef}s — the install seam games register mutators/modes/events into.
 - `RuleSelection` (interface): interface RuleSelection<TPayload = unknown> — The result of a selection — the chosen rules and their ids (a serializable {@link LayerSelection}-style list).
 - `RuleSelectionConfig` (interface): interface RuleSelectionConfig — Deterministic selection inputs — plain serializable data a host can persist and replay.
-- `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> — ⚠ undocumented
-- `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> — ⚠ undocumented
+- `RunDraft` (interface): interface RunDraft<TStat extends string = string, TData = unknown> { present(count: number, rng?: () => number): RunModifierOffer<TStat, TData>[]; choose(offerId: string): boolean; stack(): RunModifierStack<TStat, TData> } — ⚠ undocumented · used by `createRunDraft`: A roguelike run built from stacking drafted modifier picks that reshape the run.
+- `RunModifierOffer` (interface): interface RunModifierOffer<TStat extends string = string, TData = unknown> { id: string; weight: number; maxStacks?: number; label?: string; stats?: StatModifierSet<TStat>; data?: TData } — ⚠ undocumented
 - `SaleRecord` (interface): interface SaleRecord — One completed sale recorded into a {@link PriceHistory}.
 - `SaveBackend` (interface): interface SaveBackend — The one async storage seam a save store persists through. Every backend satisfies this same three-method shape — the browser's `localStorage` (offline), an in-memory map (tests/SSR), or a database/Convex/HTTP endpoint (cloud) — so a game switches offline saves for cloud saves by swapping the backend and changing nothing else. Keys are opaque namespaced strings; values are already-serialized strings, so a backend never needs to know the save shape.
 - `SaveSlotMeta` (interface): interface SaveSlotMeta — One entry in a {@link SaveSlots} index: a save/profile slot's *display* metadata, not its payload. The real save data lives in a `createSaveStore` slot; this record is only what a save-select menu renders — an id, an optional player-facing `name`, whether the slot is `empty`, when it was last written (`savedAt`), and a free-string `meta` bag the game fills with whatever the menu should show (level, playtime, location, chapter, a thumbnail ref, …). `meta` keys are opaque to this model — it never reads or branches on them.
@@ -1304,7 +1304,7 @@
 - `SaveSlotsSnapshot` (interface): interface SaveSlotsSnapshot — Serializable state of a {@link SaveSlots} index, for save/restore.
 - `SaveStatus` (type): type SaveStatus = "idle" | "loading" | "saving" | "saved" | "error" — Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` means the backend rejected a read or write.
 - `SaveStore` (interface): interface SaveStore<T> — A pluggable-backend game save with autosave, named slots, and versioned migration. `value()`/`patch()` hold the live state; `load()` hydrates it from the backend; `save()` (or autosave) writes it back. Backend failures surface as `"error"` status and through `onError` — a save never throws into a tick.
-- `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
+- `ScheduledDelivery` (interface): interface ScheduledDelivery { userId: string; inventoryId: string; items: readonly ItemStack[]; deliverAt: number } — ⚠ undocumented
 - `ScheduledRule` (interface): interface ScheduledRule — A serializable recurring resource flow. Every field is plain JSON so the whole {@link ResourceLedger} round-trips through `structuredClone`/`JSON`. Dynamic, context-aware behaviour (providers, tax curves, affordability caps) lives in the runtime {@link ResourcePolicy} pipeline, never in this data.
 - `SerializedBehaviorState` (type): type SerializedBehaviorState = Record<string, BehaviorState> — A serialized snapshot of every behavior's state on one item, keyed by behavior id. Round-trips through JSON so it can live in a saved game.
 - `SetBonus` (interface): interface SetBonus — A match/set bonus: extra stats granted when enough parts (or a tag) of a given kind are present — e.g. "3 Blackwood parts grant +recoil control". Counting is declarative (`countBy`/`value`) so the whole catalog is data.
@@ -1321,8 +1321,8 @@
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
 - `SideScrollCameraConfig` (interface): interface SideScrollCameraConfig — Fixed lateral 2.5D follow (side-on platformer cam): the camera sits perpendicular to the travel axis, tracks the followed entity, and never reads player look input.
 - `SlotGrid` (type): type SlotGrid<T> = readonly Slot<T>[] — ⚠ undocumented
-- `Social` (interface): interface Social — ⚠ undocumented
-- `SocialDeps` (interface): interface SocialDeps — ⚠ undocumented
+- `Social` (interface): interface Social { friends: Friends; party: Party; presence: {get(userId: string): PresenceInfo}; emotes: Emotes; worldInvites: WorldInvites; snapshot(): SocialSnapshot; hydrate(data: SocialSnapshot): void } — ⚠ undocumented · used by `createSocial`: Emotes and lightweight social interactions between nearby players.
+- `SocialDeps` (interface): interface SocialDeps { events: GameEvents; presence?: (userId: string) => PresenceInfo; now?: () => number; emotes?: EmotesDeps; worldInviteTtlMs?: number } — ⚠ undocumented · used by `createSocial`: Emotes and lightweight social interactions between nearby players.
 - `StackPolicy` (type): type StackPolicy = "refresh" | "stack" | "independent" | "ignore" — How a repeated application of the same rule's effect on the same target combines with a live one: `refresh` re-arms the timer at one stack, `stack` adds a stack up to `maxStacks` and re-arms, `independent` keeps each application as its own instance with its own expiry, `ignore` drops the new application while one is already active.
 - `StatContribution` (interface): interface StatContribution — One folded contribution to a value, retained so a sheet can explain "why is this value 42?" — every step carries the source that produced it.
 - `StatContributionStep` (interface): interface StatContributionStep extends StatContribution — One line of a provenance trace: a contribution plus the running total after it folds in.
@@ -1332,7 +1332,7 @@
 - `StatGraph` (interface): interface StatGraph — A compiled, immutable stat-graph schema that mints per-entity {@link StatSheet}s from base values or saved state.
 - `StatGraphDef` (interface): interface StatGraphDef — The full schema of a stat graph: its named inputs and caller-authored derived formulas.
 - `StatInputDef` (interface): interface StatInputDef — A game-owned named input value. The engine ships no attribute vocabulary — ids, bounds, defaults, and metadata are entirely caller data, so the same graph can model STR/AGI/INT, SPECIAL scores, skills, difficulty knobs, or anything else.
-- `StatLevelUpEvent` (interface): interface StatLevelUpEvent — ⚠ undocumented
+- `StatLevelUpEvent` (interface): interface StatLevelUpEvent { userId: string; stat: string; level: number } — ⚠ undocumented
 - `StatModEntry` (type): type StatModEntry = StatContribution | readonly StatContribution[] — A modifier entry targeting one stat: a single contribution or an ordered list.
 - `StatOp` (type): type StatOp = "add" | "mul" | "override" | "clampMin" | "clampMax" — How a single contribution folds into a running value.
 - `StatSheet` (interface): interface StatSheet — A live per-entity instance of a {@link StatGraph}: mutable base values and modifier sources over a shared schema.
@@ -1343,16 +1343,16 @@
 - `TOUCH_STYLES` (const): const TOUCH_STYLES: readonly TouchStyle[] — Every touch skin id, in menu order.
 - `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
 - `TalentEdgeView` (interface): interface TalentEdgeView — One prerequisite edge into a node — the source node, the rank it demands, and whether that is met.
-- `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> — ⚠ undocumented
+- `TalentNodeDef` (interface): interface TalentNodeDef<TStat extends string = string> { id: string; branch?: string; maxRank: number; requires?: readonly TalentRequirement[]; requiresPointsInBranch?: number; modifiersPerRank?: StatModifierSet<TStat>; grantsAbilities?: readonly string[] } — ⚠ undocumented · used by `talentTreeView`: Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
 - `TalentNodeState` (type): type TalentNodeState = "locked" | "available" | "learned" | "maxed" — Render state of a talent node, derived from its rank and prerequisite satisfaction. - `locked` — rank 0 and at least one prerequisite unmet; cannot be trained yet. - `available` — rank 0, every prerequisite met; ready to take a first point. - `learned` — at least one rank invested, but below `maxRank`. - `maxed` — fully invested (`rank === maxRank`).
 - `TalentNodeStatus` (interface): interface TalentNodeStatus — Per-node status a game supplies to build a view from *any* unlock rule — not just point-spend. A game computes these from whatever it wants (a currency threshold, a level, a quest flag, a skill-point pool, nothing at all) so the same widget renders a buy-with-points talent tree, a money-gated upgrade tree, or a condition-unlocked ability web without changing the renderer.
 - `TalentNodeView` (interface): interface TalentNodeView — A per-node view for rendering: grid placement (tier/branch), rank, state, and inbound prerequisite edges.
 - `TalentPointTotals` (interface): interface TalentPointTotals — Optional overall point totals for the view header; omit (or 0) for trees that spend no point currency.
-- `TalentTree` (interface): interface TalentTree<TStat extends string = string> — ⚠ undocumented
+- `TalentTree` (interface): interface TalentTree<TStat extends string = string> { rank(nodeId: string): number; pointsAvailable(): number; pointsSpent(): number; pointsInBranch(branch: string): number; grantPoints(amount: number): void; canAllocate(nodeId: string): TalentAllocateResult; allocate(nodeId: string): Talent… — ⚠ undocumented · used by `talentTreeView`: Project the existing talent model (`createTalentTree`) into a flat, serializable render view: every node placed by branch + prerequisite-dep…
 - `TalentTreeView` (interface): interface TalentTreeView — A whole-tree render view: placed nodes plus branch/tier extents and point totals.
 - `TargetRole` (type): type TargetRole = "subject" | "object" | "source" | "owner" — Role slots an event exposes; a target selector resolves one of these to a concrete id.
 - `TargetSelector` (type): type TargetSelector = | { readonly role: TargetRole } | { readonly path: string } | { readonly literal: string } — How a rule picks the id its effect lands on: a fixed event role, a dot path into the event facts, or a literal id. Data-only so it saves with the rule.
-- `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef — ⚠ undocumented
+- `TechNodeDef` (interface): interface TechNodeDef extends UnlockDef { requires?: readonly string[]; cost?: Readonly<Record<string, number>>; grants?: readonly string[]; recipe?: string } — ⚠ undocumented
 - `ThresholdBand` (interface): interface ThresholdBand — A `{ min, factor }` band for {@link thresholdScale}; the highest band whose `min` is met wins.
 - `ThresholdBoundary` (interface): interface ThresholdBoundary<Id = string> — A labelled cut point on the value axis. `Id` is caller-owned (string, enum, or a policy object).
 - `ThresholdCrossing` (interface): interface ThresholdCrossing<Id = string> — A single boundary transition between a `before` and `after` value.
@@ -1363,12 +1363,12 @@
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
 - `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
-- `TouchButton` (interface): interface TouchButton — ⚠ undocumented
+- `TouchButton` (interface): interface TouchButton { action: string; label: string; icon: string | false | null; kind: TouchButtonKind; shape: TouchButtonShape; anchor: TouchAnchor | null; image: string | null } — ⚠ undocumented
 - `TouchButtonShape` (type): type TouchButtonShape = "circle" | "square" | "pedal" | "lever" | "trigger" | "wheel" | "tab" — Physical silhouette a touch button wears. The capture layer draws each as its own shape — a `pedal` reads as a foot pedal, a `lever` as a pull handle, a `trigger` as a firing paddle — so a control looks like the thing it does instead of a labelled circle. `circle`/`square` are the neutral fallbacks.
 - `TouchControlsConfig` (interface): interface TouchControlsConfig — Game-authored refinement of the derived touch scheme on `defineGame({ touch })` — gestures, curated buttons, hidden actions, cluster layout, skin, and per-context `modes`.
 - `TouchControlsModeConfig` (type): type TouchControlsModeConfig = Omit<TouchControlsConfig, "modes"> — One named control context's touch config — the same shape as the base config, minus nested modes.
-- `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
-- `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
+- `TouchJoystick` (interface): interface TouchJoystick { up: string | null; down: string | null; left: string | null; right: string | null } — ⚠ undocumented
+- `TouchScheme` (interface): interface TouchScheme { joystick: TouchJoystick | null; buttons: readonly TouchButton[]; gestures: TouchGestureBindings | null; look: boolean; lookSensitivity: number; layout: ResolvedTouchLayout; style: TouchStyle } — ⚠ undocumented · used by `deriveTouchScheme`: Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
 - `TrackedObjectiveView` (interface): interface TrackedObjectiveView — One objective as a tracker/HUD reads it — label + progress toward its count.
 - `TrackedQuestView` (interface): interface TrackedQuestView — A quest as a tracker/HUD reads it — title, status, and per-objective progress.
@@ -1377,12 +1377,12 @@
 - `TriggeredRule` (interface): interface TriggeredRule — A declarative subscription from an event to an effect. Everything here is serializable content — the runtime reads it, it never embeds behavior. `effect` names an effect the game resolves; core only routes and gates.
 - `TriggeredRuleEngine` (interface): interface TriggeredRuleEngine — A running set of triggered rules with gating, timed lifetimes, stacking, cleanup, and save/load.
 - `TriggeredRuleState` (interface): interface TriggeredRuleState — Serializable runtime state — everything that changes future triggers. Rules travel with it.
-- `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
+- `TurnLoop` (interface): interface TurnLoop<TAction = unknown> { readonly commit: CommitController<TAction>; state(): TurnState; order(): readonly string[]; active(): string | null; phase(): string | null; round(): number; setOrder(order: readonly string[], keepActive?: boolean): TurnState; addParticip… — ⚠ undocumented
 - `UnitReservation` (interface): interface UnitReservation — Reservation stored on a training job — the inputs to charge and refund.
 - `UnitSpawnOrder` (interface): interface UnitSpawnOrder — Completion payload: everything a spawn/rally adapter needs, and nothing it doesn't.
 - `UnitTrainingOptions` (interface): interface UnitTrainingOptions — Config knobs for {@link unitTrainingConfig}.
 - `UnitTrainingSpec` (interface): interface UnitTrainingSpec — What the caller asks the queue to build.
-- `UnlockDef` (interface): interface UnlockDef — ⚠ undocumented
+- `UnlockDef` (interface): interface UnlockDef { id: string; category?: string } — ⚠ undocumented · used by `createUnlockCatalog`: A catalog of unlockable content gated behind conditions the player earns, tracking what is unlocked.
 - `UseBehaviorContext` (interface): interface UseBehaviorContext<TWorld> — The context handed to each behavior hook: the shared folded `world`, this behavior's own `config` and `state` slice, and the triggering use input.
 - `UseBehaviorDef` (interface): interface UseBehaviorDef<TWorld> — A registered behavior implementation. The combat/game side registers these (charge, thrown-reload, projectile-replacement, …); the item core only ever stores a {@link UseBehaviorRef} to one by id. Hooks are the lifecycle: `init` builds serializable state, `can` gates, `apply` folds the world.
 - `UseBehaviorOutcome` (interface): interface UseBehaviorOutcome<TWorld> — The result of applying one behavior: the (possibly advanced) world, this behavior's updated state, an optional error that aborts the chain, and an optional `stop` that ends the chain after a successful apply.
@@ -1401,10 +1401,10 @@
 - `WorkQueueConfig` (interface): interface WorkQueueConfig<TSpec, TReserve = undefined, TOutput = undefined> — Injected policy for a queue. Never serialized — pass the same config to every {@link enqueue}/{@link tick}/{@link cancelJob} call for a given queue.
 - `WorkQueueEvent` (type): type WorkQueueEvent<TSpec, TReserve = undefined, TOutput = undefined> = | { readonly type: "started"; readonly job: Job<TSpec, TReserve> } | { readonly type: "completed"; readonly job: Job<TSpec, TReserve>; readonly output: TOutput } — Typed lifecycle event emitted from {@link tick}.
 - `WorkQueueState` (interface): interface WorkQueueState<TSpec, TReserve = undefined> — Serializable queue state. Holds only non-terminal jobs, so it stays bounded.
-- `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget — ⚠ undocumented
-- `WorldInviteTarget` (interface): interface WorldInviteTarget — ⚠ undocumented
-- `WorldItemRecord` (interface): interface WorldItemRecord — ⚠ undocumented
-- `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig — ⚠ undocumented
+- `WorldInvite` (interface): interface WorldInvite extends WorldInviteTarget { id: string; fromUserId: string; toUserId: string; createdAt: number } — ⚠ undocumented
+- `WorldInviteTarget` (interface): interface WorldInviteTarget { serverId: string; joinCode?: string } — ⚠ undocumented
+- `WorldItemRecord` (interface): interface WorldItemRecord { instanceId: string; itemId: string; rarity: string; baseType: string; count: number; affixTier?: number; source?: string; droppedAt: number } — ⚠ undocumented · used by `useNearestWorldItem` (@jgengine/react): Nearest ground item within `radius` of the local player — drives a pickup prompt/highlight.
+- `WorldItemRenderConfig` (interface): interface WorldItemRenderConfig { rarityStyle?: Record<string, RarityStyle>; filter?: readonly LootFilterRule[]; pickupRadius?: number; beamHeight?: number; autoPickup?: boolean | {radius?: number} } — ⚠ undocumented · used by `WorldItems` (@jgengine/shell/world/WorldItems): Rarity→beam/color/label render binding + loot-filter overlay (#32/#33) for every dropped `worldItem`.
 - `WorldOverlayProps` (interface): interface WorldOverlayProps — Props handed to a `WorldOverlay` component (#542): explicit `ctx` access so canvas-layer VFX read live engine state directly, without an extra hook or a module-global workaround.
 - `activeJobs` (function): function activeJobs<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>): Job<TSpec, TReserve>[] — Jobs currently progressing.
 - `activeSetBonuses` (function): function activeSetBonuses(identity: ItemIdentity, bonuses: readonly SetBonus[]): SetBonus[] — Select the set bonuses whose membership count meets their threshold, in the order they were declared.
@@ -1650,15 +1650,15 @@
 
 ## @jgengine/core/inventory/inventoryModel
 
-- `InventoryLayout` (interface): interface InventoryLayout — ⚠ undocumented
-- `InventorySet` (interface): interface InventorySet<TId extends string> — ⚠ undocumented
+- `InventoryLayout` (interface): interface InventoryLayout { slots: number; accepts?: string | readonly string[] } — ⚠ undocumented · used by `createEmptyInventory`: A bag of stackable items supporting add, remove, count, and move — the base inventory model.
+- `InventorySet` (interface): interface InventorySet<TId extends string> { put(id: TId, itemId: string, count: number, options?: {slot?: number}): PutResult; take(id: TId, itemId: string, count: number): TakeResult; move(fromId: TId, fromSlot: number, toId: TId, toSlot?: number): MoveResult; count(id: TId, itemI… — ⚠ undocumented · used by `createInventorySet`: Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count.
 - `InventorySlot` (type): type InventorySlot = { itemId: string; count: number } | null — ⚠ undocumented
-- `InventoryState` (interface): interface InventoryState — ⚠ undocumented
-- `ItemTraits` (interface): interface ItemTraits — ⚠ undocumented
-- `MoveResult` (type): type MoveResult = | { status: "ok"; from: InventoryState; to: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" } — ⚠ undocumented
-- `PutResult` (type): type PutResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" } — ⚠ undocumented
+- `InventoryState` (interface): interface InventoryState { slots: InventorySlot[] } — ⚠ undocumented · used by `countItem`: Total quantity of `itemId` summed across every stack in the inventory.
+- `ItemTraits` (interface): interface ItemTraits { stackLimit(itemId: string): number; kind?(itemId: string): string | null } — ⚠ undocumented · used by `createInventorySet`: Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count.
+- `MoveResult` (type): type MoveResult = | { status: "ok"; from: InventoryState; to: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "wrong-kind" | "no-space" } — ⚠ undocumented · used by `moveItem`: Move the stack at `fromSlot` to `toSlot` (or auto-stack when omitted) — swapping, merging with remainder, or relocating across two inventori…
+- `PutResult` (type): type PutResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" } — ⚠ undocumented · used by `putItem`: Add `count` of `itemId` — into a specific `options.slot`, or auto-stacked across free/partial slots.
 - `SplitResult` (type): type SplitResult = | { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "invalid-slot" | "empty-slot" | "invalid-amount" | "no-space" | "slot-occupied" } — Outcome of {@link splitStack}: the new state, or a rejection reason.
-- `TakeResult` (type): type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" } — ⚠ undocumented
+- `TakeResult` (type): type TakeResult = { status: "ok"; state: InventoryState } | { status: "rejected"; reason: "insufficient" } — ⚠ undocumented · used by `takeItem`: Remove `count` of `itemId`, draining from the last matching stacks first.
 - `countItem` (function): function countItem(state: InventoryState, itemId: string): number — Total quantity of `itemId` summed across every stack in the inventory.
 - `createEmptyInventory` (function): function createEmptyInventory(layout: InventoryLayout): InventoryState — A bag of stackable items supporting add, remove, count, and move — the base inventory model.
 - `createInventorySet` (function): function createInventorySet<TId extends string>(layouts: Record<TId, InventoryLayout>, traits: ItemTraits): InventorySet<TId> — Build a keyed set of named inventories from their `layouts`, sharing one `traits` table — the stateful façade over put/take/move/count.
@@ -1671,14 +1671,14 @@
 ## @jgengine/core/inventory/shapedGrid
 
 - `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
-- `Footprint` (type): type Footprint = readonly Cell[] — ⚠ undocumented
-- `GridAdjacencyQuery` (interface): interface GridAdjacencyQuery — ⚠ undocumented
-- `Placement` (interface): interface Placement<T> — ⚠ undocumented
+- `Footprint` (type): type Footprint = readonly Cell[] — ⚠ undocumented · used by `rotatedFootprint` (@jgengine/core/scene/assetSpace): The axis-aligned footprint extent after rotating a rectangular {@link Footprint} by `headingDegrees` — footprint-aware placement: a 90-degre…
+- `GridAdjacencyQuery` (interface): interface GridAdjacencyQuery { cellsOf(id: string): readonly Cell[]; neighborsOf(id: string): readonly string[]; touching(idA: string, idB: string): boolean; adjacentCells(cells: readonly Cell[]): readonly Cell[] } — ⚠ undocumented
+- `Placement` (interface): interface Placement<T> { id: string; value: T; footprint: Footprint; origin: Cell; rotation: Rotation } — ⚠ undocumented
 - `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented
-- `ShapedGrid` (interface): interface ShapedGrid<T> — ⚠ undocumented
-- `ShapedItem` (interface): interface ShapedItem<T> — ⚠ undocumented
-- `ShapedPlaceResult` (interface): interface ShapedPlaceResult<T> — ⚠ undocumented
-- `ShapedRejected` (interface): interface ShapedRejected — ⚠ undocumented
+- `ShapedGrid` (interface): interface ShapedGrid<T> { readonly width: number; readonly height: number; readonly placements: readonly Placement<T>[] } — ⚠ undocumented
+- `ShapedItem` (interface): interface ShapedItem<T> { id: string; value: T; footprint: Footprint } — ⚠ undocumented
+- `ShapedPlaceResult` (interface): interface ShapedPlaceResult<T> { status: "ok"; grid: ShapedGrid<T> } — ⚠ undocumented
+- `ShapedRejected` (interface): interface ShapedRejected { status: "rejected"; reason: ShapedRejection; detail?: string } — ⚠ undocumented
 - `ShapedRejection` (type): type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id" — ⚠ undocumented
 - `ShapedResult` (type): type ShapedResult<T> = ShapedPlaceResult<T> | ShapedRejected — ⚠ undocumented
 
@@ -1690,14 +1690,14 @@
 
 ## @jgengine/core/inventory/storageTier
 
-- `ConsolationPolicy` (interface): interface ConsolationPolicy — ⚠ undocumented
-- `ContainerSnapshot` (interface): interface ContainerSnapshot — ⚠ undocumented
-- `DeathPartition` (interface): interface DeathPartition — ⚠ undocumented
-- `DeliveryEntry` (interface): interface DeliveryEntry — ⚠ undocumented
-- `DeliveryQueue` (interface): interface DeliveryQueue — ⚠ undocumented
-- `InsurancePolicy` (interface): interface InsurancePolicy — ⚠ undocumented
-- `ItemStack` (interface): interface ItemStack — ⚠ undocumented
-- `ScheduledDelivery` (interface): interface ScheduledDelivery — ⚠ undocumented
+- `ConsolationPolicy` (interface): interface ConsolationPolicy { loadoutId: string; when?: "always" | "if-carried-empty" } — ⚠ undocumented
+- `ContainerSnapshot` (interface): interface ContainerSnapshot { inventoryId: string; tier: StorageTier; items: readonly ItemStack[] } — ⚠ undocumented
+- `DeathPartition` (interface): interface DeathPartition { kept: readonly ItemStack[]; lost: readonly ItemStack[] } — ⚠ undocumented
+- `DeliveryEntry` (interface): interface DeliveryEntry { id: string; userId: string; inventoryId: string; items: readonly ItemStack[]; deliverAt: number } — ⚠ undocumented
+- `DeliveryQueue` (interface): interface DeliveryQueue { schedule(entry: ScheduledDelivery & {id?: string}): DeliveryEntry; due(now: number): readonly DeliveryEntry[]; claimDue(now: number): readonly DeliveryEntry[]; pending(userId?: string): readonly DeliveryEntry[]; cancel(id: string): boolea… — ⚠ undocumented
+- `InsurancePolicy` (interface): interface InsurancePolicy { isInsured(itemId: string): boolean; returnInventoryId: string; delaySeconds: number | [number, number] } — ⚠ undocumented
+- `ItemStack` (interface): interface ItemStack { itemId: string; count: number } — ⚠ undocumented
+- `ScheduledDelivery` (interface): interface ScheduledDelivery { userId: string; inventoryId: string; items: readonly ItemStack[]; deliverAt: number } — ⚠ undocumented
 - `StorageTier` (type): type StorageTier = "carried" | "banked" — ⚠ undocumented
 - `createDeliveryQueue` (function): function createDeliveryQueue(): DeliveryQueue — ⚠ undocumented
 - `insureLost` (function): function insureLost(lost: readonly ItemStack[], policy: InsurancePolicy, userId: string, now: number, rng?: () => number): ScheduledDelivery | null — ⚠ undocumented
@@ -1707,27 +1707,27 @@
 
 ## @jgengine/core/item/affix
 
-- `AffixDef` (interface): interface AffixDef — ⚠ undocumented
+- `AffixDef` (interface): interface AffixDef { id: string; stat: string; op?: AffixOp; roll: number | [number, number]; weight: number; namePart?: {position: "prefix" | "suffix"; text: string} } — ⚠ undocumented
 - `AffixOp` (type): type AffixOp = "add" | "mul" — ⚠ undocumented
-- `AffixPool` (interface): interface AffixPool — ⚠ undocumented
-- `AffixRoller` (interface): interface AffixRoller — ⚠ undocumented
-- `ItemBaseDef` (interface): interface ItemBaseDef — ⚠ undocumented
-- `RarityTier` (interface): interface RarityTier — ⚠ undocumented
-- `RolledAffix` (interface): interface RolledAffix — ⚠ undocumented
-- `RolledItem` (interface): interface RolledItem — ⚠ undocumented
-- `RollerConfig` (interface): interface RollerConfig — ⚠ undocumented
+- `AffixPool` (interface): interface AffixPool { id: string; affixes: readonly AffixDef[] } — ⚠ undocumented
+- `AffixRoller` (interface): interface AffixRoller { rollRarity(rng: () => number): RarityTier; roll(base: ItemBaseDef, rarityId: string, rng: () => number): RolledItem; rollRandom(base: ItemBaseDef, rng: () => number): RolledItem } — ⚠ undocumented
+- `ItemBaseDef` (interface): interface ItemBaseDef { id: string; name: string; baseStats: Record<string, number>; pools: readonly string[] } — ⚠ undocumented
+- `RarityTier` (interface): interface RarityTier { id: string; weight: number; affixCount: number | [number, number]; statScale?: number; namePart?: string; pools?: readonly string[] } — ⚠ undocumented
+- `RolledAffix` (interface): interface RolledAffix { id: string; stat: string; op: AffixOp; value: number } — ⚠ undocumented
+- `RolledItem` (interface): interface RolledItem { baseId: string; rarity: string; name: string; affixes: readonly RolledAffix[]; stats: Record<string, number> } — ⚠ undocumented
+- `RollerConfig` (interface): interface RollerConfig { pools: readonly AffixPool[]; rarities: readonly RarityTier[] } — ⚠ undocumented
 - `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
 - `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 
 ## @jgengine/core/item/durability
 
-- `DurabilitySpec` (interface): interface DurabilitySpec — ⚠ undocumented
-- `DurabilityState` (interface): interface DurabilityState — ⚠ undocumented
-- `DurabilityTracker` (interface): interface DurabilityTracker — ⚠ undocumented
-- `RepairCost` (interface): interface RepairCost — ⚠ undocumented
-- `RepairMaterial` (interface): interface RepairMaterial — ⚠ undocumented
-- `RepairQuote` (interface): interface RepairQuote — ⚠ undocumented
-- `RepairSpec` (interface): interface RepairSpec — ⚠ undocumented
+- `DurabilitySpec` (interface): interface DurabilitySpec { max: number; wearPerUse?: number; wearPerHit?: number; disableAtZero?: boolean; repair?: RepairSpec } — ⚠ undocumented
+- `DurabilityState` (interface): interface DurabilityState { current: number; max: number } — ⚠ undocumented · used by `applyWear`: Apply wear to an item, tracking breakage and repair eligibility.
+- `DurabilityTracker` (interface): interface DurabilityTracker { init(instanceId: string, spec: DurabilitySpec): DurabilityState; get(instanceId: string): DurabilityState | null; set(instanceId: string, state: DurabilityState): void; wear(instanceId: string, spec: DurabilitySpec, kind: WearKind, times?… — ⚠ undocumented
+- `RepairCost` (interface): interface RepairCost { item: string; count: number } — ⚠ undocumented
+- `RepairMaterial` (interface): interface RepairMaterial { item: string; perPoint: number } — ⚠ undocumented
+- `RepairQuote` (interface): interface RepairQuote { materials: readonly RepairCost[]; restored: number; state: DurabilityState } — ⚠ undocumented
+- `RepairSpec` (interface): interface RepairSpec { materials: readonly RepairMaterial[]; station?: string; qualityLossPerRepair?: number } — ⚠ undocumented
 - `WearKind` (type): type WearKind = "use" | "hit" — ⚠ undocumented
 - `applyWear` (function): function applyWear(state: DurabilityState, amount: number): DurabilityState — Apply wear to an item, tracking breakage and repair eligibility.
 - `canRepairAt` (function): function canRepairAt(spec: DurabilitySpec, stationId?: string): boolean — ⚠ undocumented
@@ -1789,11 +1789,11 @@
 ## @jgengine/core/item/modularItem
 
 - `InstallResult` (type): type InstallResult = | { status: "ok"; installed: readonly InstalledPart[] } | { status: "rejected"; reason: "unknown-slot" | "wrong-category" | "slot-occupied" } — ⚠ undocumented
-- `InstalledPart` (interface): interface InstalledPart — ⚠ undocumented
-- `ModularItem` (interface): interface ModularItem — ⚠ undocumented
-- `ModularItemDef` (interface): interface ModularItemDef — ⚠ undocumented
-- `MountSlotDef` (interface): interface MountSlotDef — ⚠ undocumented
-- `PartDef` (interface): interface PartDef — ⚠ undocumented
+- `InstalledPart` (interface): interface InstalledPart { slotId: string; part: PartDef } — ⚠ undocumented · used by `identityOf` (@jgengine/core/gameplay): Assemble an {@link ItemIdentity} from a family, tags, and installed parts.
+- `ModularItem` (interface): interface ModularItem { readonly def: ModularItemDef; parts(): readonly InstalledPart[]; install(slotId: string, part: PartDef): InstallResult; uninstall(slotId: string): readonly InstalledPart[]; partInSlot(slotId: string): PartDef | null; effectiveStats(): Rec… — ⚠ undocumented
+- `ModularItemDef` (interface): interface ModularItemDef { id: string; baseStats: Record<string, number>; slots: readonly MountSlotDef[] } — ⚠ undocumented
+- `MountSlotDef` (interface): interface MountSlotDef { id: string; accepts: string | readonly string[]; required?: boolean } — ⚠ undocumented · used by `slotAccepts`: Attach parts into an item's mount slots and resolve the combined stats.
+- `PartDef` (interface): interface PartDef { id: string; category: string; stats?: Record<string, number>; multipliers?: Record<string, number> } — ⚠ undocumented
 - `computeEffectiveStats` (function): function computeEffectiveStats(def: ModularItemDef, installed: readonly InstalledPart[]): Record<string, number> — ⚠ undocumented
 - `createModularItem` (function): function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem — ⚠ undocumented
 - `install` (function): function install(def: ModularItemDef, installed: readonly InstalledPart[], slotId: string, part: PartDef): InstallResult — ⚠ undocumented
@@ -1806,11 +1806,11 @@
 
 ## @jgengine/core/item/use
 
-- `ItemUse` (interface): interface ItemUse<TState> — ⚠ undocumented
-- `ItemUseHandler` (interface): interface ItemUseHandler<TState> — ⚠ undocumented
-- `ItemUseInput` (interface): interface ItemUseInput — ⚠ undocumented
-- `ItemUseRejection` (interface): interface ItemUseRejection — ⚠ undocumented
-- `ItemUseResult` (interface): interface ItemUseResult<TState> — ⚠ undocumented
+- `ItemUse` (interface): interface ItemUse<TState> { register(handlers: Record<string, ItemUseHandler<TState>>): void; registered(): string[]; can(state: TState, input: ItemUseInput): ItemUseRejection | null; use(state: TState, input: ItemUseInput): ItemUseResult<TState> } — ⚠ undocumented · used by `createItemUse`: Use or consume items, applying their effects and per-item cooldowns.
+- `ItemUseHandler` (interface): interface ItemUseHandler<TState> { can?(state: TState, input: ItemUseInput): ItemUseRejection | null; apply(state: TState, input: ItemUseInput): ItemUseResult<TState> } — ⚠ undocumented
+- `ItemUseInput` (interface): interface ItemUseInput { from: string; itemId: string; inventoryId?: string; aim?: Aim } — ⚠ undocumented
+- `ItemUseRejection` (interface): interface ItemUseRejection { reason: string } — ⚠ undocumented
+- `ItemUseResult` (interface): interface ItemUseResult<TState> { state: TState; error?: string } — ⚠ undocumented
 - `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — Use or consume items, applying their effects and per-item cooldowns.
 
 ## @jgengine/core/item/useBehavior
@@ -1830,8 +1830,8 @@
 
 ## @jgengine/core/item/weapon
 
-- `WeaponEntry` (interface): interface WeaponEntry — ⚠ undocumented
-- `WeaponStats` (interface): interface WeaponStats — ⚠ undocumented
+- `WeaponEntry` (interface): interface WeaponEntry { weapon?: Record<string, unknown> } — ⚠ undocumented · used by `createWeaponStats`: Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
+- `WeaponStats` (interface): interface WeaponStats { getStat(itemId: string, stat: string): number | null } — ⚠ undocumented · used by `createWeaponStats`: Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `createWeaponStats` (function): function createWeaponStats(resolveEntry: (itemId: string) => WeaponEntry | null | undefined): WeaponStats — Resolve per-weapon stat values — damage, fire rate, spread — for combat math.
 - `getWeaponStat` (function): function getWeaponStat(entry: WeaponEntry | null | undefined, stat: string): number | null — ⚠ undocumented
 
@@ -1854,13 +1854,13 @@
 
 ## @jgengine/core/puzzle/cellGrid
 
-- `CellGrid` (interface): interface CellGrid<T> — ⚠ undocumented
-- `CellRun` (interface): interface CellRun<T> — ⚠ undocumented
+- `CellGrid` (interface): interface CellGrid<T> { readonly width: number; readonly height: number; readonly cells: readonly (T | null)[] } — ⚠ undocumented
+- `CellRun` (interface): interface CellRun<T> { readonly value: T; readonly cells: readonly {readonly x: number; readonly y: number}[]; readonly direction: "row" | "column" } — ⚠ undocumented
 
 ## @jgengine/core/puzzle/fallingPiece
 
-- `FallingPiece` (interface): interface FallingPiece<TShape extends string = string> — ⚠ undocumented
-- `LockDelayState` (interface): interface LockDelayState — ⚠ undocumented
+- `FallingPiece` (interface): interface FallingPiece<TShape extends string = string> { readonly shape: TShape; readonly rotation: number; readonly x: number; readonly y: number } — ⚠ undocumented
+- `LockDelayState` (interface): interface LockDelayState { readonly delaySeconds: number; readonly elapsed: number } — ⚠ undocumented
 - `ShapeTable` (type): type ShapeTable<TShape extends string = string> = Record< TShape, readonly (readonly (readonly [number, number])[])[] > — ⚠ undocumented
 
 ## @jgengine/core/puzzle/nonogram
@@ -1872,9 +1872,9 @@
 
 ## @jgengine/core/random/nameGen
 
-- `NameGenerator` (interface): interface NameGenerator — ⚠ undocumented
-- `NameGeneratorOptions` (interface): interface NameGeneratorOptions — ⚠ undocumented
-- `SyllableBank` (interface): interface SyllableBank — ⚠ undocumented
+- `NameGenerator` (interface): interface NameGenerator { name(): string } — ⚠ undocumented · used by `createNameGenerator`: Generate procedural names from templates and word banks with an injected random source.
+- `NameGeneratorOptions` (interface): interface NameGeneratorOptions { rng: () => number; syllables: SyllableBank; minSyllables?: number; maxSyllables?: number; capitalize?: boolean } — ⚠ undocumented · used by `createNameGenerator`: Generate procedural names from templates and word banks with an injected random source.
+- `SyllableBank` (interface): interface SyllableBank { onset?: readonly string[]; nucleus: readonly string[]; coda?: readonly string[] } — ⚠ undocumented
 - `createNameGenerator` (function): function createNameGenerator(options: NameGeneratorOptions): NameGenerator — Generate procedural names from templates and word banks with an injected random source.
 - `fillTemplate` (function): function fillTemplate(template: string, vars: Record<string, () => string> | Record<string, string>): string — ⚠ undocumented
 - `pickFrom` (function): function pickFrom(rng: () => number, bank: readonly string[]): string — ⚠ undocumented
@@ -1962,51 +1962,51 @@
 ## @jgengine/core/session/contestedChannel
 
 - `ContestReaction` (type): type ContestReaction = "pause" | "decay" — ⚠ undocumented
-- `ContestedChannel` (interface): interface ContestedChannel — ⚠ undocumented
-- `ContestedChannelConfig` (interface): interface ContestedChannelConfig — ⚠ undocumented
-- `ContestedEvent` (interface): interface ContestedEvent — ⚠ undocumented
+- `ContestedChannel` (interface): interface ContestedChannel { start(team: string): ContestedEvent | null; tick(dt: number, occupants?: Record<string, number>): ContestedEvent[]; damage(reason?: string): ContestedEvent | null; reset(): void; progress(): number; phase(): ContestedPhase; owner(): strin… — ⚠ undocumented
+- `ContestedChannelConfig` (interface): interface ContestedChannelConfig { duration: number; interruptOnDamage?: boolean; resetOnInterrupt?: boolean; favorability?: Record<string, number>; ratePerOccupant?: boolean; contested?: ContestReaction; decayRate?: number } — ⚠ undocumented
+- `ContestedEvent` (interface): interface ContestedEvent { kind: ContestedEventKind; owner: string | null; progress: number; reason?: string } — ⚠ undocumented
 - `ContestedEventKind` (type): type ContestedEventKind = "start" | "tick" | "contested" | "paused" | "complete" | "interrupted" — ⚠ undocumented
 - `ContestedPhase` (type): type ContestedPhase = "idle" | "active" | "paused" | "contested" | "complete" | "interrupted" — ⚠ undocumented
-- `ContestedSnapshot` (interface): interface ContestedSnapshot — ⚠ undocumented
+- `ContestedSnapshot` (interface): interface ContestedSnapshot { phase: ContestedPhase; progress: number; owner: string | null; remaining: number } — ⚠ undocumented
 
 ## @jgengine/core/session/extraction
 
-- `DeathResult` (interface): interface DeathResult — ⚠ undocumented
-- `ExtractPoint` (interface): interface ExtractPoint — ⚠ undocumented
-- `ExtractionAttempt` (interface): interface ExtractionAttempt — ⚠ undocumented
-- `ExtractionResult` (interface): interface ExtractionResult — ⚠ undocumented
-- `RaidPlayerSnapshot` (interface): interface RaidPlayerSnapshot — ⚠ undocumented
-- `RaidSession` (interface): interface RaidSession — ⚠ undocumented
-- `RaidSessionConfig` (interface): interface RaidSessionConfig — ⚠ undocumented
+- `DeathResult` (interface): interface DeathResult { userId: string; kept: readonly ItemStack[]; lost: readonly ItemStack[]; scheduled: DeliveryEntry | null; consolationLoadoutId: string | null } — ⚠ undocumented
+- `ExtractPoint` (interface): interface ExtractPoint { id: string; center: RingPoint; radius: number; holdSeconds: number; favorability?: Record<string, number>; interruptOnDamage?: boolean } — ⚠ undocumented
+- `ExtractionAttempt` (interface): interface ExtractionAttempt { extractId: string; channel: ContestedChannel } — ⚠ undocumented
+- `ExtractionResult` (interface): interface ExtractionResult { userId: string; extractId: string; banked: readonly ItemStack[] } — ⚠ undocumented
+- `RaidPlayerSnapshot` (interface): interface RaidPlayerSnapshot { status: RaidStatus; extractId: string | null; progress: number; remaining: number } — ⚠ undocumented
+- `RaidSession` (interface): interface RaidSession { beginExtract(userId: string, extractId: string, position: RingPoint, team?: string): ContestedEvent | null; tickExtract(userId: string, dt: number, occupants?: Record<string, number>): ContestedEvent[]; damage(userId: string, reason?: str… — ⚠ undocumented
+- `RaidSessionConfig` (interface): interface RaidSessionConfig { extracts: readonly ExtractPoint[]; insurance?: InsurancePolicy; consolation?: ConsolationPolicy } — ⚠ undocumented
 - `RaidStatus` (type): type RaidStatus = "in-raid" | "extracting" | "extracted" | "dead" — ⚠ undocumented
 
 ## @jgengine/core/session/ring
 
-- `Ring` (interface): interface Ring — ⚠ undocumented
-- `RingConfig` (interface): interface RingConfig — ⚠ undocumented
-- `RingHit` (interface): interface RingHit — ⚠ undocumented
-- `RingPhase` (interface): interface RingPhase — ⚠ undocumented
+- `Ring` (interface): interface Ring { at(time: number): RingSample; isOutside(time: number, position: RingPoint): boolean; distanceOutside(time: number, position: RingPoint): number; damageOutside(time: number, dt: number, positions: Iterable<{id: string; position: RingPoint}… — ⚠ undocumented
+- `RingConfig` (interface): interface RingConfig { center: RingPoint; phases: readonly RingPhase[] } — ⚠ undocumented
+- `RingHit` (interface): interface RingHit { id: string; damage: number; distanceOutside: number } — ⚠ undocumented
+- `RingPhase` (interface): interface RingPhase { startTime: number; shrinkDuration: number; fromRadius: number; toRadius: number; damagePerSecond: number; center?: RingPoint } — ⚠ undocumented
 - `RingPoint` (type): type RingPoint = [number, number] — ⚠ undocumented
-- `RingSample` (interface): interface RingSample — ⚠ undocumented
+- `RingSample` (interface): interface RingSample { center: RingPoint; radius: number; damagePerSecond: number; phase: number; shrinking: boolean } — ⚠ undocumented
 - `createRing` (function): function createRing(config: RingConfig): Ring — ⚠ undocumented
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 
 ## @jgengine/core/session/roles
 
-- `RoleSpec` (interface): interface RoleSpec — ⚠ undocumented
+- `RoleSpec` (interface): interface RoleSpec { id: string; count?: number; ratio?: number } — ⚠ undocumented
 
 ## @jgengine/core/session/roundState
 
-- `LossBonusRule` (interface): interface LossBonusRule — ⚠ undocumented
+- `LossBonusRule` (interface): interface LossBonusRule { base: number; step: number; max: number } — ⚠ undocumented
 - `PhaseEndHook` (type): type PhaseEndHook<TPhase extends string = RoundPhase> = ( endingPhase: TPhase, nextPhase: TPhase, round: number, ) => void — ⚠ undocumented
-- `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> — ⚠ undocumented
-- `RoundEconomy` (interface): interface RoundEconomy — ⚠ undocumented
-- `RoundEvent` (interface): interface RoundEvent<TPhase extends string = RoundPhase> — ⚠ undocumented
+- `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> { phases: Record<TPhase, number>; teams: readonly string[] | readonly RoundTeam[]; phaseOrder?: readonly TPhase[]; winCondition?: (state: RoundSnapshot<TPhase>) => string | null; maxRounds?: number; winReward?: number; lossBonus?: LossBonus… — ⚠ undocumented
+- `RoundEconomy` (interface): interface RoundEconomy { team: string; reward: number; won: boolean; lossStreak: number } — ⚠ undocumented
+- `RoundEvent` (interface): interface RoundEvent<TPhase extends string = RoundPhase> { kind: RoundEventKind; round: number; phase?: TPhase; nextPhase?: TPhase; winner?: string; economy?: RoundEconomy[] } — ⚠ undocumented
 - `RoundEventKind` (type): type RoundEventKind = | "phase.start" | "phase.end" | "round.win" | "round.economy" | "match.end" — ⚠ undocumented
 - `RoundPhase` (type): type RoundPhase = string — ⚠ undocumented
 - `RoundPhaseDurations` (interface): interface RoundPhaseDurations — Default phase-duration shape for the built-in buy/live/end cycle; pass a wider `Record<string, number>` when using a custom `phaseOrder`.
-- `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> — ⚠ undocumented
-- `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> — ⚠ undocumented
+- `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean } — ⚠ undocumented
+- `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> { tick(dt: number): RoundEvent<TPhase>[]; concludeRound(winner: string): RoundEvent<TPhase>[]; evaluate(): RoundEvent<TPhase>[]; onPhaseEnd(hook: PhaseEndHook<TPhase>): () => void; phase(): TPhase; round(): number; timeLeft(): number; score… — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
 
 ## @jgengine/core/store/defineKeyedStore
@@ -2021,12 +2021,12 @@
 
 ## @jgengine/core/survival/decayMeter
 
-- `DecayMeterConfig` (interface): interface DecayMeterConfig — ⚠ undocumented
+- `DecayMeterConfig` (interface): interface DecayMeterConfig { id: string; max: number; min?: number; start?: number; rate: number; thresholds?: readonly MeterThreshold[] } — ⚠ undocumented · used by `createDecayMeterSet`: Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina.
 - `DecayMeterSet` (interface): interface DecayMeterSet — Set of named survival meters (hunger/thirst/…) that drain and refill over game time.
-- `DecayMeterState` (interface): interface DecayMeterState — ⚠ undocumented
+- `DecayMeterState` (interface): interface DecayMeterState { id: string; value: number; max: number; min: number; fraction: number } — ⚠ undocumented · used by `decayMeterSnapshot`: Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
 - `DecayMeterValues` (type): type DecayMeterValues = Record<string, number> — Plain-data meter values: `meter id → current value`. This is the whole serialized form — it drops straight into a `defineGame` state record and round-trips through save/load and multiplayer sync with no closure to rebuild.
 - `DecayModifier` (type): type DecayModifier = number | Record<string, number> — Rate multiplier for {@link decayMeters}: one scalar applied to every meter (a member's metabolism, a game-mode harshness dial) or a per-meter record (cold biome → warmth only). `1` / omitted leaves the base rates unscaled.
-- `MeterThreshold` (interface): interface MeterThreshold — ⚠ undocumented
+- `MeterThreshold` (interface): interface MeterThreshold { id: string; label: string; at: number; when: "below" | "above"; severity?: MoodleSeverity; icon?: string } — ⚠ undocumented
 - `createDecayMeterSet` (function): function createDecayMeterSet(configs: readonly DecayMeterConfig[]): DecayMeterSet — Named decay meters — hunger, thirst, oxygen, sanity, warmth, stamina. Each drains (or recovers) on game-time `dt` at a configurable rate, refills from consumables or actions, and raises moodle statuses at thresholds. Rate modifiers let the environment drive them (colder → faster warmth loss; toxic biome → oxygen drops), so a game reads an environment field then calls `setRateModifier`.
 - `decayMeterMoodles` (function): function decayMeterMoodles(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Moodle[] — Moodles for every crossed threshold, worst-first per meter in declared order.
 - `decayMeterSnapshot` (function): function decayMeterSnapshot(values: DecayMeterValues, defs: readonly DecayMeterConfig[]): Record<string, DecayMeterState> — Numeric state for every meter, keyed by id — the pure counterpart to {@link DecayMeterSet.snapshot}.
@@ -2042,97 +2042,97 @@
 - `MoodleSeverity` (type): type MoodleSeverity = "good" | "neutral" | "warning" | "critical" — ⚠ undocumented
 - `MoodleSource` (type): type MoodleSource = "meter" | "ailment" | "buff" — ⚠ undocumented
 - `MoodleStack` (interface): interface MoodleStack — Ordered stack of active moodles derived from meters/ailments/buffs.
-- `TimedMoodleInput` (interface): interface TimedMoodleInput — ⚠ undocumented
+- `TimedMoodleInput` (interface): interface TimedMoodleInput { id: string; label: string; severity?: MoodleSeverity; icon?: string; note?: string; stacks?: number; duration?: number } — ⚠ undocumented
 - `createMoodleStack` (function): function createMoodleStack(): MoodleStack — A stateful holder for timed status moodles (food buffs, temporary shelter, warmth). Meters and multi-region health derive their own moodles on read; combine all three through `stackMoodles(stack.list(), meterMoodles, ailmentMoodles)` for one display.
 - `stackMoodles` (function): function stackMoodles(...groups: readonly (readonly Moodle[])[]): Moodle[] — Merge any number of moodle groups into one stack — meters, ailments, and buffs share this display. Same-id moodles fold together (stacks add, worst severity wins); the result is ordered worst-first so the HUD reads critical statuses at a glance.
 
 ## @jgengine/core/survival/regionHealth
 
-- `AilmentConfig` (interface): interface AilmentConfig — ⚠ undocumented
-- `AilmentInstance` (interface): interface AilmentInstance — ⚠ undocumented
-- `DamageResult` (interface): interface DamageResult — ⚠ undocumented
-- `HealthRegionConfig` (interface): interface HealthRegionConfig — ⚠ undocumented
+- `AilmentConfig` (interface): interface AilmentConfig { id: string; label: string; region?: string; severity?: MoodleSeverity; icon?: string; drainPerSecond?: number; stacking?: boolean; treatedBy?: readonly string[] } — ⚠ undocumented
+- `AilmentInstance` (interface): interface AilmentInstance { id: string; stacks: number } — ⚠ undocumented
+- `DamageResult` (interface): interface DamageResult { region: RegionHealthState; applied: number; dead: boolean } — ⚠ undocumented
+- `HealthRegionConfig` (interface): interface HealthRegionConfig { id: string; label: string; max: number; vital?: boolean; vulnerability?: number } — ⚠ undocumented
 - `MultiRegionHealth` (interface): interface MultiRegionHealth — Per-limb / per-region health track with treat/damage/heal APIs.
-- `MultiRegionHealthConfig` (interface): interface MultiRegionHealthConfig — ⚠ undocumented
-- `RegionHealthState` (interface): interface RegionHealthState — ⚠ undocumented
-- `TreatResult` (interface): interface TreatResult — ⚠ undocumented
+- `MultiRegionHealthConfig` (interface): interface MultiRegionHealthConfig { regions: readonly HealthRegionConfig[]; ailments?: Record<string, AilmentConfig> } — ⚠ undocumented · used by `createMultiRegionHealth`: Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
+- `RegionHealthState` (interface): interface RegionHealthState { id: string; label: string; current: number; max: number; fraction: number; vital: boolean } — ⚠ undocumented
+- `TreatResult` (interface): interface TreatResult { treated: readonly string[] } — ⚠ undocumented
 - `createMultiRegionHealth` (function): function createMultiRegionHealth(config: MultiRegionHealthConfig): MultiRegionHealth — Per-region/limb health tracked separately, so each body part takes and heals damage on its own.
 
 ## @jgengine/core/tactics/fallingGrid
 
-- `FallingGrid` (interface): interface FallingGrid<TCell> — ⚠ undocumented
+- `FallingGrid` (interface): interface FallingGrid<TCell> { readonly cols: number; readonly rows: number; occupied(col: number, row: number): boolean; cellAt(col: number, row: number): TCell | null; setCell(col: number, row: number, value: TCell): void; clearCell(col: number, row: number): void; c… — ⚠ undocumented
 - `FallingGridCell` (type): type FallingGridCell = readonly [number, number] — ⚠ undocumented
-- `FallingGridConfig` (interface): interface FallingGridConfig — ⚠ undocumented
-- `FallingGridSnapshot` (interface): interface FallingGridSnapshot<TCell> — ⚠ undocumented
-- `GravityIntervalConfig` (interface): interface GravityIntervalConfig — ⚠ undocumented
+- `FallingGridConfig` (interface): interface FallingGridConfig { cols: number; rows: number; lockDelayMs?: number } — ⚠ undocumented
+- `FallingGridSnapshot` (interface): interface FallingGridSnapshot<TCell> { cols: number; rows: number; cells: readonly (TCell | null)[] } — ⚠ undocumented
+- `GravityIntervalConfig` (interface): interface GravityIntervalConfig { baseMs?: number; perLevel?: number; minMs?: number } — ⚠ undocumented
 - `LockState` (interface): interface LockState — Elapsed grounded time for the lock-delay state machine. `null` means airborne / not timing.
 
 ## @jgengine/core/tactics/predictiveQuery
 
-- `ArcPredictInput` (interface): interface ArcPredictInput — ⚠ undocumented
-- `AreaPredictInput` (interface): interface AreaPredictInput extends AreaTargetInput — ⚠ undocumented
-- `PredictedTarget` (interface): interface PredictedTarget — ⚠ undocumented
-- `PredictiveDeps` (interface): interface PredictiveDeps — ⚠ undocumented
-- `TilePredictInput` (interface): interface TilePredictInput — ⚠ undocumented
+- `ArcPredictInput` (interface): interface ArcPredictInput { from: string; aim: Aim; radius: number; halfAngleDeg?: number; effect?: string; requireReceive?: boolean } — ⚠ undocumented
+- `AreaPredictInput` (interface): interface AreaPredictInput extends AreaTargetInput { effect?: string; requireReceive?: boolean } — ⚠ undocumented
+- `PredictedTarget` (interface): interface PredictedTarget { instanceId: string; scale: number } — ⚠ undocumented
+- `PredictiveDeps` (interface): interface PredictiveDeps { spatial: CombatSpatialDeps; queryArc(options: QueryArcOptions): string[]; canReceive?(instanceId: string, effect: string): string | null } — ⚠ undocumented
+- `TilePredictInput` (interface): interface TilePredictInput { at: EntityPosition; radius: number; originTile: Tile; tileSize: number } — ⚠ undocumented
 
 ## @jgengine/core/tactics/snapshot
 
 - `Snapshot` (type): type Snapshot = Record<string, unknown> — ⚠ undocumented
-- `SnapshotSlice` (interface): interface SnapshotSlice<T = unknown> — ⚠ undocumented
-- `SnapshotStore` (interface): interface SnapshotStore — ⚠ undocumented
+- `SnapshotSlice` (interface): interface SnapshotSlice<T = unknown> { capture(): T; restore(state: T): void } — ⚠ undocumented
+- `SnapshotStore` (interface): interface SnapshotStore { register<T>(id: string, slice: SnapshotSlice<T>): void; unregister(id: string): void; capture(): Snapshot; restore(snapshot: Snapshot): void; push(): Snapshot; pop(): boolean; peek(): Snapshot | null; depth(): number; clear(): void } — ⚠ undocumented
 
 ## @jgengine/core/tactics/surface
 
-- `SurfaceCell` (interface): interface SurfaceCell — ⚠ undocumented
-- `SurfaceCellKind` (interface): interface SurfaceCellKind — ⚠ undocumented
+- `SurfaceCell` (interface): interface SurfaceCell { tile: Tile; kinds: SurfaceCellKind[] } — ⚠ undocumented
+- `SurfaceCellKind` (interface): interface SurfaceCellKind { surface: string; remaining: number | null } — ⚠ undocumented
 - `SurfaceEvent` (type): type SurfaceEvent = | { kind: "apply"; tile: Tile; surface: string } | { kind: "react"; tile: Tile; consumed: readonly [string, string]; produced: string | null } | { kind: "expire"; tile: Tile; surface: string } — ⚠ undocumented
-- `SurfaceKindDef` (interface): interface SurfaceKindDef — ⚠ undocumented
-- `SurfaceLayer` (interface): interface SurfaceLayer — ⚠ undocumented
-- `SurfaceLayerConfig` (interface): interface SurfaceLayerConfig — ⚠ undocumented
+- `SurfaceKindDef` (interface): interface SurfaceKindDef { id: string; duration?: number } — ⚠ undocumented
+- `SurfaceLayer` (interface): interface SurfaceLayer { apply(tile: Tile, surface: string, patch?: SurfacePatch): SurfaceEvent[]; has(tile: Tile, surface: string): boolean; kindsAt(tile: Tile): string[]; remove(tile: Tile, surface: string): void; clearTile(tile: Tile): void; clear(): void; tic… — ⚠ undocumented
+- `SurfaceLayerConfig` (interface): interface SurfaceLayerConfig { kinds: readonly SurfaceKindDef[]; reactions?: readonly SurfaceReaction[] } — ⚠ undocumented
 - `SurfaceLayerSnapshot` (type): type SurfaceLayerSnapshot = Record<string, Record<string, number | null>> — ⚠ undocumented
-- `SurfacePatch` (interface): interface SurfacePatch — ⚠ undocumented
-- `SurfaceReaction` (interface): interface SurfaceReaction — ⚠ undocumented
+- `SurfacePatch` (interface): interface SurfacePatch { duration?: number } — ⚠ undocumented
+- `SurfaceReaction` (interface): interface SurfaceReaction { when: readonly [string, string]; result: string | null } — ⚠ undocumented
 
 ## @jgengine/core/tactics/tacticalGrid
 
-- `PushCollision` (interface): interface PushCollision — ⚠ undocumented
-- `PushMove` (interface): interface PushMove — ⚠ undocumented
+- `PushCollision` (interface): interface PushCollision { mover: string; into: string | PushObstacle; at: Tile } — ⚠ undocumented
+- `PushMove` (interface): interface PushMove { id: string; from: Tile; to: Tile } — ⚠ undocumented
 - `PushObstacle` (type): type PushObstacle = "wall" | "edge" — ⚠ undocumented
-- `PushOptions` (interface): interface PushOptions — ⚠ undocumented
-- `PushResult` (interface): interface PushResult — ⚠ undocumented
-- `ReachableOptions` (interface): interface ReachableOptions — ⚠ undocumented
-- `ReachableTile` (interface): interface ReachableTile — ⚠ undocumented
-- `TacticalGrid` (interface): interface TacticalGrid — ⚠ undocumented
-- `TacticalGridConfig` (interface): interface TacticalGridConfig — ⚠ undocumented
-- `TacticalGridSnapshot` (interface): interface TacticalGridSnapshot — ⚠ undocumented
+- `PushOptions` (interface): interface PushOptions { distance?: number; chain?: boolean } — ⚠ undocumented
+- `PushResult` (interface): interface PushResult { moves: PushMove[]; collisions: PushCollision[] } — ⚠ undocumented
+- `ReachableOptions` (interface): interface ReachableOptions { passThrough?: readonly string[]; diagonal?: boolean } — ⚠ undocumented
+- `ReachableTile` (interface): interface ReachableTile { tile: Tile; cost: number } — ⚠ undocumented
+- `TacticalGrid` (interface): interface TacticalGrid { readonly width: number; readonly height: number; inBounds(tile: Tile): boolean; isBlocked(tile: Tile): boolean; setBlocked(tile: Tile, blocked: boolean): void; occupantAt(tile: Tile): string | null; tileOf(id: string): Tile | null; place(… — ⚠ undocumented
+- `TacticalGridConfig` (interface): interface TacticalGridConfig { width: number; height: number; blocked?: readonly Tile[]; diagonal?: boolean; world?: TacticalGridWorldConfig } — ⚠ undocumented
+- `TacticalGridSnapshot` (interface): interface TacticalGridSnapshot { blocked: string[]; occupants: Record<string, string> } — ⚠ undocumented
 - `TacticalGridWorldConfig` (interface): interface TacticalGridWorldConfig — Maps abstract `[col, row]` tiles onto world-space `[x, z]`, mirroring `navGrid`'s bounds+cellSize convention.
 - `Tile` (type): type Tile = readonly [number, number] — ⚠ undocumented
 
 ## @jgengine/core/turn/commit
 
-- `CommitController` (interface): interface CommitController<TAction> — ⚠ undocumented
-- `CommitControllerConfig` (interface): interface CommitControllerConfig — ⚠ undocumented
+- `CommitController` (interface): interface CommitController<TAction> { readonly mode: CommitMode; submit(participant: string, action: TAction): CommitOutcome<TAction>; expected(participants: readonly string[]): void; hasSubmitted(participant: string): boolean; allReady(): boolean; pending(): SubmittedAction<… — ⚠ undocumented
+- `CommitControllerConfig` (interface): interface CommitControllerConfig { mode: CommitMode; participants?: readonly string[] } — ⚠ undocumented
 - `CommitMode` (type): type CommitMode = "immediate" | "simultaneous" | "resealable" — ⚠ undocumented
-- `CommitOutcome` (interface): interface CommitOutcome<TAction> — ⚠ undocumented
-- `SubmittedAction` (interface): interface SubmittedAction<TAction> — ⚠ undocumented
+- `CommitOutcome` (interface): interface CommitOutcome<TAction> { status: "committed" | "sealed" | "pending" | "rejected"; committed: SubmittedAction<TAction>[]; reason?: string } — ⚠ undocumented
+- `SubmittedAction` (interface): interface SubmittedAction<TAction> { participant: string; action: TAction } — ⚠ undocumented
 - `createCommitController` (function): function createCommitController<TAction>(config: CommitControllerConfig): CommitController<TAction> — ⚠ undocumented
 
 ## @jgengine/core/turn/intent
 
-- `DeclaredIntent` (interface): interface DeclaredIntent<TKind extends string = string> — ⚠ undocumented
-- `IntentBoard` (interface): interface IntentBoard<TKind extends string = string> — ⚠ undocumented
+- `DeclaredIntent` (interface): interface DeclaredIntent<TKind extends string = string> { kind: TKind; magnitude?: number; targetId?: string; note?: string } — ⚠ undocumented
+- `IntentBoard` (interface): interface IntentBoard<TKind extends string = string> { declare(participantId: string, intent: DeclaredIntent<TKind>): void; peek(participantId: string): DeclaredIntent<TKind> | null; all(): readonly [string, DeclaredIntent<TKind>][]; consume(participantId: string): DeclaredIntent<TKind> | nul… — ⚠ undocumented
 - `createIntentBoard` (function): function createIntentBoard<TKind extends string = string>(): IntentBoard<TKind> — ⚠ undocumented
 
 ## @jgengine/core/turn/turnLoop
 
-- `CommitController` (interface): interface CommitController<TAction> — ⚠ undocumented
+- `CommitController` (interface): interface CommitController<TAction> { readonly mode: CommitMode; submit(participant: string, action: TAction): CommitOutcome<TAction>; expected(participants: readonly string[]): void; hasSubmitted(participant: string): boolean; allReady(): boolean; pending(): SubmittedAction<… — ⚠ undocumented
 - `CommitMode` (type): type CommitMode = "immediate" | "simultaneous" | "resealable" — ⚠ undocumented
-- `PoolConfig` (interface): interface PoolConfig — ⚠ undocumented
-- `PoolState` (interface): interface PoolState — ⚠ undocumented
-- `TurnLoop` (interface): interface TurnLoop<TAction = unknown> — ⚠ undocumented
-- `TurnLoopConfig` (interface): interface TurnLoopConfig — ⚠ undocumented
-- `TurnLoopSnapshot` (interface): interface TurnLoopSnapshot — ⚠ undocumented
-- `TurnState` (interface): interface TurnState — ⚠ undocumented
+- `PoolConfig` (interface): interface PoolConfig { id: string; max: number; start?: number } — ⚠ undocumented
+- `PoolState` (interface): interface PoolState { id: string; current: number; max: number } — ⚠ undocumented
+- `TurnLoop` (interface): interface TurnLoop<TAction = unknown> { readonly commit: CommitController<TAction>; state(): TurnState; order(): readonly string[]; active(): string | null; phase(): string | null; round(): number; setOrder(order: readonly string[], keepActive?: boolean): TurnState; addParticip… — ⚠ undocumented
+- `TurnLoopConfig` (interface): interface TurnLoopConfig { order: readonly string[]; phases?: readonly string[]; pools?: readonly PoolConfig[]; commit?: {mode: CommitMode}; onTurnStart?(participantId: string): void; onTurnEnd?(participantId: string): void } — ⚠ undocumented
+- `TurnLoopSnapshot` (interface): interface TurnLoopSnapshot { round: number; order: string[]; activeIndex: number; phaseIndex: number; pools: Record<string, Record<string, number>> } — ⚠ undocumented
+- `TurnState` (interface): interface TurnState { round: number; order: readonly string[]; activeIndex: number; active: string | null; phaseIndex: number; phase: string | null } — ⚠ undocumented
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
 
 ## @jgengine/core/work/jobQueue

@@ -4,11 +4,11 @@
 
 ## @jgengine/core/ai/crowd
 
-- `CrowdField` (interface): interface CrowdField — ⚠ undocumented
-- `FlowField` (interface): interface FlowField — ⚠ undocumented
-- `FlowFieldOptions` (interface): interface FlowFieldOptions — ⚠ undocumented
-- `Poi` (interface): interface Poi — ⚠ undocumented
-- `SelectPoiOptions` (interface): interface SelectPoiOptions — ⚠ undocumented
+- `CrowdField` (interface): interface CrowdField { enter(point: NavPoint): void; leave(point: NavPoint): void; count(point: NavPoint): number; cellCount(col: number, row: number): number; penalty(weight?: number): (col: number, row: number) => number; reset(): void } — ⚠ undocumented
+- `FlowField` (interface): interface FlowField { readonly cols: number; readonly rows: number; cost(col: number, row: number): number; reachable(point: NavPoint): boolean; direction(point: NavPoint): NavPoint; next(point: NavPoint): NavPoint | null } — ⚠ undocumented
+- `FlowFieldOptions` (interface): interface FlowFieldOptions { clearance?: number; congestion?: (col: number, row: number) => number } — ⚠ undocumented
+- `Poi` (interface): interface Poi { id: string; point: NavPoint; appeal?: number; capacity?: number } — ⚠ undocumented
+- `SelectPoiOptions` (interface): interface SelectPoiOptions { roll: number; occupancy?: (id: string) => number; distanceBias?: number; distance?: (from: NavPoint, poi: Poi) => number } — ⚠ undocumented
 - `VisitorLoop` (interface): interface VisitorLoop — Handle returned by {@link createVisitorLoop}: per-agent seek/travel/dwell/depart state machine.
 - `VisitorLoopOptions` (interface): interface VisitorLoopOptions — Config for {@link createVisitorLoop}: the POI catalog, dwell duration, and exit point every agent shares.
 - `VisitorPhase` (type): type VisitorPhase = "seeking" | "traveling" | "dwelling" | "departing" | "done" — A many-agent visitor's current step of the seek→travel→arrive→dwell→depart loop.
@@ -57,16 +57,16 @@
 
 ## @jgengine/core/ai/flock
 
-- `FlockAgent` (interface): interface FlockAgent — ⚠ undocumented
-- `FlockConfig` (interface): interface FlockConfig — ⚠ undocumented
-- `FlockStepAgent` (interface): interface FlockStepAgent — ⚠ undocumented
+- `FlockAgent` (interface): interface FlockAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
+- `FlockConfig` (interface): interface FlockConfig { maxSpeed: number; accel?: number; separationRadius: number; separationWeight?: number; neighborRadius: number; cohesionWeight?: number; alignmentWeight?: number; seekWeight?: number; stragglerRadius?: number; stragglerBoost?: number } — ⚠ undocumented
+- `FlockStepAgent` (interface): interface FlockStepAgent { position: FlockVec3; velocity: FlockVec3 } — ⚠ undocumented
 - `FlockVec3` (type): type FlockVec3 = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/core/ai/groupAssist
 
-- `AssistMember` (interface): interface AssistMember — ⚠ undocumented
-- `AssistNetwork` (interface): interface AssistNetwork — ⚠ undocumented
-- `AssistNetworkConfig` (interface): interface AssistNetworkConfig — ⚠ undocumented
+- `AssistMember` (interface): interface AssistMember { id: string; groupId: string; table: ThreatTable } — ⚠ undocumented
+- `AssistNetwork` (interface): interface AssistNetwork { register(member: AssistMember): void; remove(memberId: string): void; memberIds(groupId?: string): string[]; assistersOf(memberId: string): string[]; addThreat(memberId: string, sourceId: string, amount: number): string[] } — ⚠ undocumented
+- `AssistNetworkConfig` (interface): interface AssistNetworkConfig { radius?: number; shareFraction?: number; distanceBetween?: (a: string, b: string) => number } — ⚠ undocumented
 
 ## @jgengine/core/ai/heatSystem
 
@@ -95,28 +95,28 @@
 
 ## @jgengine/core/ai/jobBoard
 
-- `Job` (interface): interface Job — ⚠ undocumented
-- `JobBoard` (interface): interface JobBoard — ⚠ undocumented
-- `JobDef` (interface): interface JobDef — ⚠ undocumented
+- `Job` (interface): interface Job { id: string; station: NavPoint; work: number; priority: number; arriveRadius: number; repeat: boolean; worker: string | null } — ⚠ undocumented · used by `activeJobs` (@jgengine/core/gameplay): Jobs currently progressing.
+- `JobBoard` (interface): interface JobBoard { post(job: JobDef): string; cancel(jobId: string): boolean; assign(workerId: string, jobId: string): boolean; claim(workerId: string): string | null; release(workerId: string): void; advance(workerId: string, dt: number, ctx: JobTickContex… — ⚠ undocumented
+- `JobDef` (interface): interface JobDef { id?: string; station: NavPoint; work: number; priority?: number; arriveRadius?: number; repeat?: boolean } — ⚠ undocumented
 - `JobPhase` (type): type JobPhase = "idle" | "travelling" | "working" | "done" — ⚠ undocumented
-- `JobReport` (interface): interface JobReport — ⚠ undocumented
-- `JobTickContext` (interface): interface JobTickContext — ⚠ undocumented
-- `WorkerState` (interface): interface WorkerState — ⚠ undocumented
+- `JobReport` (interface): interface JobReport { jobId: string; workerId: string; cycle: number } — ⚠ undocumented
+- `JobTickContext` (interface): interface JobTickContext { distanceToStation: number } — ⚠ undocumented
+- `WorkerState` (interface): interface WorkerState { jobId: string | null; phase: JobPhase; worked: number; cycles: number } — ⚠ undocumented
 
 ## @jgengine/core/ai/laneSelect
 
-- `LaneCandidate` (interface): interface LaneCandidate<TId extends string = string> — ⚠ undocumented
-- `PickLaneOptions` (interface): interface PickLaneOptions<TId extends string = string> — ⚠ undocumented
+- `LaneCandidate` (interface): interface LaneCandidate<TId extends string = string> { id: TId; cost: number } — ⚠ undocumented
+- `PickLaneOptions` (interface): interface PickLaneOptions<TId extends string = string> { current?: TId | null; stickiness?: number; tieEpsilon?: number; rng?: () => number } — ⚠ undocumented
 
 ## @jgengine/core/ai/mobBrain
 
 - `MobBrain` (interface): interface MobBrain — The wander → aggro → chase → engage → leash-evade loop every MMO-shaped game hand-rolls, composed over `ai/threat`. The brain decides intent; the game executes it (`moveToward`, ground-snap, facing, swings) and routes damage into `addThreat`. Pack aggro is game-side: call `addThreat` on nearby packmates' brains when one aggros.
-- `MobBrainConfig` (interface): interface MobBrainConfig — ⚠ undocumented
-- `MobBrainDeps` (interface): interface MobBrainDeps — ⚠ undocumented
+- `MobBrainConfig` (interface): interface MobBrainConfig { aggroRadius: number; attackRange: number; leashDistance: number; wander?: MobWanderConfig | false; evadeSpeedScale?: number; stickiness?: number; homeArriveRadius?: number; threat?: ThreatTableConfig } — ⚠ undocumented
+- `MobBrainDeps` (interface): interface MobBrainDeps { home: MobVec3; position(): MobVec3 | null; targetPosition(targetId: string): MobVec3 | null; candidates(): readonly string[]; rng?: () => number } — ⚠ undocumented
 - `MobBrainMode` (type): type MobBrainMode = "idle" | "wander" | "chase" | "engage" | "evade" — ⚠ undocumented
-- `MobBrainStep` (interface): interface MobBrainStep — ⚠ undocumented
+- `MobBrainStep` (interface): interface MobBrainStep { mode: MobBrainMode; targetId: string | null; moveTo: MobVec3 | null; speedScale: number; inAttackRange: boolean; arrivedHome: boolean } — ⚠ undocumented
 - `MobVec3` (type): type MobVec3 = readonly [number, number, number] — ⚠ undocumented
-- `MobWanderConfig` (interface): interface MobWanderConfig — ⚠ undocumented
+- `MobWanderConfig` (interface): interface MobWanderConfig { radius: number; intervalSeconds?: number; speedScale?: number; arriveRadius?: number } — ⚠ undocumented
 
 ## @jgengine/core/ai/mobBrainGraph
 
@@ -145,16 +145,16 @@
 
 ## @jgengine/core/ai/spawnDirector
 
-- `DirectorContext` (interface): interface DirectorContext — ⚠ undocumented
-- `DirectorStep` (interface): interface DirectorStep — ⚠ undocumented
-- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — ⚠ undocumented
-- `SpawnDirectorState` (interface): interface SpawnDirectorState — ⚠ undocumented
-- `SpawnEntry` (interface): interface SpawnEntry — ⚠ undocumented
+- `DirectorContext` (interface): interface DirectorContext { alive: number; players?: number; playerPositions?: readonly NavPoint[] } — ⚠ undocumented
+- `DirectorStep` (interface): interface DirectorStep { state: SpawnDirectorState; spawns: SpawnRequest[] } — ⚠ undocumented
+- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
+- `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented
+- `SpawnEntry` (interface): interface SpawnEntry { id: string; cost: number; weight?: number; minWave?: number } — ⚠ undocumented
 - `SpawnPointBiasStrength` (type): type SpawnPointBiasStrength = "subtle" | "moderate" | "strong" — How strongly `distanceBias` weights candidates by distance from `avoid` — a named intent, not a weighting exponent.
 - `SpawnPointDistanceBias` (type): type SpawnPointDistanceBias = "near" | "far" | "none" — Preference for picking a spawn point relative to `avoid` positions: closer, farther, or unweighted.
 - `SpawnPointSelectionOptions` (interface): interface SpawnPointSelectionOptions — Semantic options for selecting a spawn point without exposing weighting internals.
-- `SpawnRequest` (interface): interface SpawnRequest — ⚠ undocumented
-- `WaveManifest` (interface): interface WaveManifest — ⚠ undocumented
+- `SpawnRequest` (interface): interface SpawnRequest { entryId: string; cost: number; wave: number; point?: NavPoint; laneId?: number } — ⚠ undocumented
+- `WaveManifest` (interface): interface WaveManifest { budget: number; entries: readonly SpawnEntry[]; duration?: number; budgetPerSecond?: number } — ⚠ undocumented
 - `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
 - `advanceWave` (function): function advanceWave(config: SpawnDirectorConfig, state: SpawnDirectorState): SpawnDirectorState — ⚠ undocumented
 - `createSpawnDirectorState` (function): function createSpawnDirectorState(config: SpawnDirectorConfig): SpawnDirectorState — ⚠ undocumented
@@ -186,10 +186,10 @@
 
 ## @jgengine/core/ai/threat
 
-- `HighestThreatOptions` (interface): interface HighestThreatOptions — ⚠ undocumented
-- `ThreatEntry` (interface): interface ThreatEntry — ⚠ undocumented
-- `ThreatTable` (interface): interface ThreatTable — ⚠ undocumented
-- `ThreatTableConfig` (interface): interface ThreatTableConfig — ⚠ undocumented
+- `HighestThreatOptions` (interface): interface HighestThreatOptions { current?: string | null; stickiness?: number } — ⚠ undocumented
+- `ThreatEntry` (interface): interface ThreatEntry { sourceId: string; threat: number } — ⚠ undocumented
+- `ThreatTable` (interface): interface ThreatTable { add(sourceId: string, amount: number): number; set(sourceId: string, amount: number): void; threatOf(sourceId: string): number; decay(dt: number): void; highest(options?: HighestThreatOptions): string | null; ranked(): ThreatEntry[]; taun… — ⚠ undocumented
+- `ThreatTableConfig` (interface): interface ThreatTableConfig { decayPerSecond?: number; max?: number; forgetBelow?: number } — ⚠ undocumented
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
 
 ## @jgengine/core/ai/waveRunner
@@ -269,11 +269,11 @@
 
 ## @jgengine/core/audio/audioFalloff
 
-- `AudioBusDef` (interface): interface AudioBusDef — ⚠ undocumented
+- `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented
 - `AudioBusId` (type): type AudioBusId = string — ⚠ undocumented
-- `AudioFalloffConfig` (interface): interface AudioFalloffConfig — ⚠ undocumented
+- `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
 - `FalloffCurve` (type): type FalloffCurve = "linear" | "inverse" | "none" — ⚠ undocumented
-- `SoundDef` (interface): interface SoundDef — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistance?: number; rollo… — ⚠ undocumented
 - `computeFalloffGain` (function): function computeFalloffGain(distance: number, config: AudioFalloffConfig = {}): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
@@ -319,21 +319,21 @@
 
 ## @jgengine/core/faction/factions
 
-- `FactionDef` (interface): interface FactionDef — ⚠ undocumented
-- `FactionGraph` (interface): interface FactionGraph — ⚠ undocumented
-- `FactionGraphConfig` (interface): interface FactionGraphConfig — ⚠ undocumented
+- `FactionDef` (interface): interface FactionDef { id: string; relations?: Readonly<Record<string, FactionRelation>>; towardSelf?: FactionRelation; towardOthers?: FactionRelation } — ⚠ undocumented
+- `FactionGraph` (interface): interface FactionGraph { relationBetween(observer: string | null | undefined, other: string | null | undefined): FactionRelation; isHostile(observer: string | null | undefined, other: string | null | undefined): boolean; isFriendly(observer: string | null | undef… — ⚠ undocumented
+- `FactionGraphConfig` (interface): interface FactionGraphConfig { factions: readonly FactionDef[]; symmetric?: boolean; unaligned?: FactionRelation } — ⚠ undocumented
 - `FactionRelation` (type): type FactionRelation = "hostile" | "neutral" | "friendly" — ⚠ undocumented
-- `FactionRoster` (interface): interface FactionRoster — ⚠ undocumented
+- `FactionRoster` (interface): interface FactionRoster { assign(entityId: string, factionId: string | null): void; factionOf(entityId: string): string | null; relationBetweenEntities(observer: string, other: string): FactionRelation; isHostile(observer: string, other: string): boolean; isFriend… — ⚠ undocumented
 - `createFactionGraph` (function): function createFactionGraph(config: FactionGraphConfig): FactionGraph — ⚠ undocumented
 - `createFactionRoster` (function): function createFactionRoster(graph: FactionGraph): FactionRoster — ⚠ undocumented
 
 ## @jgengine/core/faction/reputation
 
 - `DEFAULT_REPUTATION_TIERS` (const): const DEFAULT_REPUTATION_TIERS: readonly ReputationTier[] — ⚠ undocumented
-- `EffectiveRelationInput` (interface): interface EffectiveRelationInput — ⚠ undocumented
-- `ReputationLedger` (interface): interface ReputationLedger — ⚠ undocumented
-- `ReputationLedgerConfig` (interface): interface ReputationLedgerConfig — ⚠ undocumented
-- `ReputationTier` (interface): interface ReputationTier — ⚠ undocumented
+- `EffectiveRelationInput` (interface): interface EffectiveRelationInput { base: FactionRelation; ledger: ReputationLedger; actorId: string; factionId: string } — ⚠ undocumented
+- `ReputationLedger` (interface): interface ReputationLedger { standing(actorId: string, factionId: string): number; hasStanding(actorId: string, factionId: string): boolean; gain(actorId: string, factionId: string, amount: number): number; set(actorId: string, factionId: string, standing: number): n… — ⚠ undocumented
+- `ReputationLedgerConfig` (interface): interface ReputationLedgerConfig { tiers?: readonly ReputationTier[]; initial?: Readonly<Record<string, number>>; min?: number; max?: number } — ⚠ undocumented
+- `ReputationTier` (interface): interface ReputationTier { id: string; min: number; relation: FactionRelation } — ⚠ undocumented · used by `tierForStanding`: Map a faction standing value to its named reputation tier.
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
 - `tierForStanding` (function): function tierForStanding(tiers: readonly ReputationTier[], standing: number): ReputationTier — Map a faction standing value to its named reputation tier.
@@ -343,12 +343,12 @@
 - `ActionBinding` (interface): interface ActionBinding<TCode extends string = string> — Action-binding model: games bind semantic actions ("jump", "interact") to physical control codes; capture layers resolve raw events through this map so gameplay code never sees keycodes. Control codes are plain strings, so the same model serves keyboard codes, mouse buttons, touch controls, or gamepad inputs.
 - `ActionBindingConfig` (type): type ActionBindingConfig<TCode extends string = string> = ActionBinding<TCode>[] | ActionBindingModes<TCode> — ⚠ undocumented
 - `ActionBindingMap` (type): type ActionBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBinding<TCode> > — ⚠ undocumented
-- `ActionBindingModes` (interface): interface ActionBindingModes<TCode extends string = string> — ⚠ undocumented
+- `ActionBindingModes` (interface): interface ActionBindingModes<TCode extends string = string> { hold?: ActionBinding<TCode>[]; toggle?: ActionBinding<TCode>[] } — ⚠ undocumented
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> — ⚠ undocumented
-- `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput — ⚠ undocumented
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void } — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
+- `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput { pressed: boolean; down: boolean; repeatMs: number | undefined; lastFiredAt: number | null; now: number } — ⚠ undocumented
 
 ## @jgengine/core/input/actionContexts
 
@@ -360,15 +360,15 @@
 ## @jgengine/core/input/axisInput
 
 - `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
-- `AxisBinding` (interface): interface AxisBinding — ⚠ undocumented
+- `AxisBinding` (interface): interface AxisBinding { positive: readonly string[]; negative?: readonly string[]; pointer?: PointerAxisBinding } — ⚠ undocumented
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
-- `AxisChannelConfig` (interface): interface AxisChannelConfig — ⚠ undocumented
-- `AxisInput` (interface): interface AxisInput — ⚠ undocumented
+- `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
+- `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a {@link KinematicVehicle} to a scene entity's pose for one tick (#533.1) — the throttle/ste…
 - `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
-- `AxisRange` (interface): interface AxisRange — ⚠ undocumented
+- `AxisRange` (interface): interface AxisRange { min: number; max: number } — ⚠ undocumented
 - `DRIVE_AXIS_BINDINGS` (const): const DRIVE_AXIS_BINDINGS: AxisBindingMap — ⚠ undocumented
 - `GenericAxisChannel` (interface): interface GenericAxisChannel<TAxes extends string> — The held-key-ramping analog channel for any axis schema (#282.7) — drones (pitch/roll/strafe), boats, mechs — not just the four car axes `AxisChannel` hardcodes. Same semantics: keys ramp, `setAnalog` overrides, a binding's `pointer` source takes over while a pointer is active.
-- `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> — ⚠ undocumented
+- `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> { bindings: Record<TAxes, AxisBinding>; ranges?: Partial<Record<TAxes, AxisRange>>; smoothing?: number } — ⚠ undocumented
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
 
 ## @jgengine/core/input/bindingOverrides
@@ -407,26 +407,26 @@
 ## @jgengine/core/input/gestureSurface
 
 - `DEFAULT_GESTURE_TUNING` (const): const DEFAULT_GESTURE_TUNING: GestureSurfaceTuning — ⚠ undocumented
-- `GestureSurfaceTracker` (interface): interface GestureSurfaceTracker — ⚠ undocumented
-- `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning — ⚠ undocumented
+- `GestureSurfaceTracker` (interface): interface GestureSurfaceTracker { begin(x: number, y: number, nowMs: number): void; move(x: number, y: number): readonly string[]; end(x: number, y: number, nowMs: number): readonly string[]; cancel(): void; isActive(): boolean } — ⚠ undocumented
+- `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning { tapMoveThresholdPx: number; tapMaxMs: number; swipeMinPx: number; swipeMinVelocity: number; dragStepPx: number } — ⚠ undocumented
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
 
 ## @jgengine/core/input/lookChannel
 
-- `LookChannel` (interface): interface LookChannel — ⚠ undocumented
-- `LookChannelOptions` (interface): interface LookChannelOptions — ⚠ undocumented
+- `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number } — ⚠ undocumented
+- `LookChannelOptions` (interface): interface LookChannelOptions { sensitivity: number; maxVerticalOffset?: number } — ⚠ undocumented
 - `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
 - `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
 
 ## @jgengine/core/input/pointer
 
 - `DragCapture` (interface): interface DragCapture — Renderer-agnostic drag-capture / pull-vector state machine for slingshot-style aiming, drawback abilities, and similar gestures.
-- `DragCaptureConfig` (interface): interface DragCaptureConfig — ⚠ undocumented
+- `DragCaptureConfig` (interface): interface DragCaptureConfig { maxPull?: number; grabRadius?: number } — ⚠ undocumented
 - `DragResult` (type): type DragResult = DragState — ⚠ undocumented
 - `DragState` (interface): interface DragState — Snapshot of an in-progress or just-released drag: origin/current cursor points plus the clamped pull vector.
 - `PointerButton` (type): type PointerButton = "primary" | "secondary" | "middle" — ⚠ undocumented
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
-- `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented
+- `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented · used by `aimToPoint`: Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `aimToPoint` (function): function aimToPoint(origin: PointerVec3, point: PointerVec3): Aim — Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `createDragCapture` (function): function createDragCapture(config: DragCaptureConfig = {}): DragCapture — ⚠ undocumented
 - `groundOf` (function): function groundOf(hit: PointerHit): readonly [number, number] — Project a pointer hit onto the XZ plane for navmesh routing (`findPath` takes `[x, z]`).
@@ -435,8 +435,8 @@
 ## @jgengine/core/input/pointerAxis
 
 - `PointerAxisBinding` (interface): interface PointerAxisBinding — Maps one pointer axis onto an analog axis target — the pointer-backed counterpart of an `AxisBinding`'s key lists.
-- `PointerAxisState` (interface): interface PointerAxisState — ⚠ undocumented
-- `PointerSurfaceRect` (interface): interface PointerSurfaceRect — ⚠ undocumented
+- `PointerAxisState` (interface): interface PointerAxisState { x: number; y: number; active: boolean } — ⚠ undocumented · used by `normalizePointerToAxis`: Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
+- `PointerSurfaceRect` (interface): interface PointerSurfaceRect { left: number; top: number; width: number; height: number } — ⚠ undocumented · used by `normalizePointerToAxis`: Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `normalizePointerToAxis` (function): function normalizePointerToAxis(clientX: number, clientY: number, rect: PointerSurfaceRect): PointerAxisState — Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
 - `pointerAxisValue` (function): function pointerAxisValue(binding: PointerAxisBinding, state: PointerAxisState | null | undefined): number | null — Resolve a pointer binding against the current pointer state: `null` when no pointer is active (callers fall back to their digital target), otherwise the deadzone/curve-shaped value in `[-1, 1]`.
 
@@ -460,7 +460,7 @@
 ## @jgengine/core/input/touchGestures
 
 - `TouchGestureEnd` (type): type TouchGestureEnd = "tap" | "hold-end" | null — ⚠ undocumented
-- `TouchGestureTracker` (interface): interface TouchGestureTracker — ⚠ undocumented
+- `TouchGestureTracker` (interface): interface TouchGestureTracker { begin(x: number, y: number, nowMs: number): void; move(x: number, y: number): {dx: number; dy: number} | null; beginHold(): boolean; end(nowMs: number): TouchGestureEnd; cancel(): TouchGestureEnd; isActive(): boolean; isHolding(): boolean… — ⚠ undocumented
 - `TouchGestureTuning` (interface): interface TouchGestureTuning — Single-finger gesture disambiguation for touch look controls: one touch stream drives look-drag, tap, and long-press-hold without fighting. Movement past the tap threshold commits the gesture to "look" and cancels tap/hold; a still finger that lifts quickly is a tap; a still finger held past the long-press delay is a hold. Timestamps are injected so the state machine stays pure; the capture layer owns timers and touch identifiers.
 - `createTouchGestureTracker` (function): function createTouchGestureTracker(tuning: TouchGestureTuning): TouchGestureTracker — ⚠ undocumented
 
@@ -468,7 +468,7 @@
 
 - `DEFAULT_TOUCH_JOYSTICK_VARIANT` (const): const DEFAULT_TOUCH_JOYSTICK_VARIANT: TouchJoystickVariant — Variant used when the player has not picked one.
 - `DEFAULT_TOUCH_STYLE` (const): const DEFAULT_TOUCH_STYLE: TouchStyle — Skin used when neither the game nor the player picks one.
-- `DeriveTouchSchemeOptions` (interface): interface DeriveTouchSchemeOptions — ⚠ undocumented
+- `DeriveTouchSchemeOptions` (interface): interface DeriveTouchSchemeOptions { reserved: ReadonlySet<string>; firstPerson: boolean; config?: TouchControlsConfig | false; mode?: string | null } — ⚠ undocumented · used by `deriveTouchScheme`: Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `ResolvedTouchLayout` (interface): interface ResolvedTouchLayout — The dock zone each cluster resolved to, after applying game config over the bottom-layout defaults.
 - `TOUCH_CODE_PREFIX` (const): const TOUCH_CODE_PREFIX: "touch:" — ⚠ undocumented
 - `TOUCH_JOYSTICK_VARIANTS` (const): const TOUCH_JOYSTICK_VARIANTS: readonly TouchJoystickVariant[] — Every joystick variant id, in menu order.
@@ -476,19 +476,19 @@
 - `TOUCH_STYLES` (const): const TOUCH_STYLES: readonly TouchStyle[] — Every touch skin id, in menu order.
 - `TOUCH_STYLE_OPTIONS` (const): const TOUCH_STYLE_OPTIONS: readonly { value: TouchStyle; label: string }[] — Touch skins as `{ value, label }` rows for the Settings → Controls selector.
 - `TouchAnchor` (type): type TouchAnchor = | "bottom-left" | "bottom-center" | "bottom-right" | "left" | "right" | "top-left" | "top-center" | "top-right" — Screen zone a touch cluster or button docks to. The four corners plus the mid `left`/`right` rails (vertical stacks, MMO-style hotbars) and the `bottom-center` / `top-center` strips let controls use the whole viewport instead of piling into one bottom bar.
-- `TouchButton` (interface): interface TouchButton — ⚠ undocumented
+- `TouchButton` (interface): interface TouchButton { action: string; label: string; icon: string | false | null; kind: TouchButtonKind; shape: TouchButtonShape; anchor: TouchAnchor | null; image: string | null } — ⚠ undocumented
 - `TouchButtonKind` (type): type TouchButtonKind = "primary" | "utility" — ⚠ undocumented
 - `TouchButtonShape` (type): type TouchButtonShape = "circle" | "square" | "pedal" | "lever" | "trigger" | "wheel" | "tab" — Physical silhouette a touch button wears. The capture layer draws each as its own shape — a `pedal` reads as a foot pedal, a `lever` as a pull handle, a `trigger` as a firing paddle — so a control looks like the thing it does instead of a labelled circle. `circle`/`square` are the neutral fallbacks.
-- `TouchButtonSpec` (interface): interface TouchButtonSpec — ⚠ undocumented
+- `TouchButtonSpec` (interface): interface TouchButtonSpec { action: string; label?: string; icon?: string | false; kind?: TouchButtonKind; shape?: TouchButtonShape; anchor?: TouchAnchor; image?: string } — ⚠ undocumented
 - `TouchControlsConfig` (interface): interface TouchControlsConfig — Game-authored refinement of the derived touch scheme on `defineGame({ touch })` — gestures, curated buttons, hidden actions, cluster layout, skin, and per-context `modes`.
 - `TouchControlsModeConfig` (type): type TouchControlsModeConfig = Omit<TouchControlsConfig, "modes"> — One named control context's touch config — the same shape as the base config, minus nested modes.
-- `TouchDragBinding` (interface): interface TouchDragBinding — ⚠ undocumented
-- `TouchGestureBindings` (interface): interface TouchGestureBindings — ⚠ undocumented
-- `TouchJoystick` (interface): interface TouchJoystick — ⚠ undocumented
+- `TouchDragBinding` (interface): interface TouchDragBinding { left?: string; right?: string; up?: string; down?: string; stepPx?: number } — ⚠ undocumented
+- `TouchGestureBindings` (interface): interface TouchGestureBindings { tap?: string; swipeUp?: string; swipeDown?: string; swipeLeft?: string; swipeRight?: string; drag?: TouchDragBinding } — ⚠ undocumented
+- `TouchJoystick` (interface): interface TouchJoystick { up: string | null; down: string | null; left: string | null; right: string | null } — ⚠ undocumented
 - `TouchJoystickVariant` (type): type TouchJoystickVariant = "fixed" | "floating" — How the movement joystick behaves — the two shipped variants, player-selectable in Settings → Controls. `fixed` is the classic always-visible stick in its dock corner; `floating` keeps the corner as an empty capture zone and spawns the stick centered under wherever the thumb lands, so the hand never has to find a fixed target mid-play.
 - `TouchLayoutConfig` (interface): interface TouchLayoutConfig — Where each touch cluster docks; unset falls back to the classic bottom layout.
 - `TouchMovementConfig` (interface): interface TouchMovementConfig — Restricts the virtual joystick to one axis — a `horizontal` zone reads as a steering control, freeing throttle/brake to become pedal buttons.
-- `TouchScheme` (interface): interface TouchScheme — ⚠ undocumented
+- `TouchScheme` (interface): interface TouchScheme { joystick: TouchJoystick | null; buttons: readonly TouchButton[]; gestures: TouchGestureBindings | null; look: boolean; lookSensitivity: number; layout: ResolvedTouchLayout; style: TouchStyle } — ⚠ undocumented · used by `deriveTouchScheme`: Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `TouchStyle` (type): type TouchStyle = "glass" | "arcade" | "mechanical" | "minimal" — Player-selectable skin for the whole touch layer. A style is a material + geometry preset (not just colours), chosen in Settings → Controls and persisted; `glass` is the translucent default, the rest are opt-in looks.
 - `deriveTouchScheme` (function): function deriveTouchScheme(input: ActionCodesMap | undefined, { reserved, firstPerson, config: rawConfig, mode }: DeriveTouchSchemeOptions): TouchScheme | null — Null means "render no touch controls" — either the game opted out or there is nothing to synthesize.
 - `touchActionLabel` (function): function touchActionLabel(action: string): string — ⚠ undocumented
@@ -499,8 +499,8 @@
 
 ## @jgengine/core/interaction/contextMenu
 
-- `BuildContextMenuInput` (interface): interface BuildContextMenuInput — ⚠ undocumented
-- `ContextMenu` (interface): interface ContextMenu — ⚠ undocumented
+- `BuildContextMenuInput` (interface): interface BuildContextMenuInput { kind: ContextTargetKind; targetId: string; verbs: readonly ContextVerb[] | undefined; point?: readonly [number, number, number] } — ⚠ undocumented · used by `buildContextMenu`: Assemble a menu from a target's catalog verbs; null when the target lists none.
+- `ContextMenu` (interface): interface ContextMenu { kind: ContextTargetKind; targetId: string; point?: readonly [number, number, number]; verbs: readonly ContextVerb[] } — ⚠ undocumented · used by `buildContextMenu`: Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `ContextTargetKind` (type): type ContextTargetKind = "entity" | "object" — ⚠ undocumented
 - `ContextVerb` (interface): interface ContextVerb — One right-click verb: a label plus the command it dispatches (walk-then-act supported by args).
 - `buildContextMenu` (function): function buildContextMenu(input: BuildContextMenuInput): ContextMenu | null — Assemble a menu from a target's catalog verbs; null when the target lists none.
@@ -532,14 +532,14 @@
 
 ## @jgengine/core/interaction/proximityPrompt
 
-- `GaugePromptDisplay` (interface): interface GaugePromptDisplay — ⚠ undocumented
-- `KeybindPromptDisplay` (interface): interface KeybindPromptDisplay — ⚠ undocumented
-- `LabelPromptDisplay` (interface): interface LabelPromptDisplay — ⚠ undocumented
-- `PositionedPrompt` (interface): interface PositionedPrompt — ⚠ undocumented
-- `PromptCommand` (interface): interface PromptCommand — ⚠ undocumented
-- `PromptPoint` (interface): interface PromptPoint — ⚠ undocumented
-- `ProximityPrompt` (interface): interface ProximityPrompt — ⚠ undocumented
-- `ProximityPromptConfig` (interface): interface ProximityPromptConfig — ⚠ undocumented
+- `GaugePromptDisplay` (interface): interface GaugePromptDisplay { kind: "gauge"; gaugeId: string } — ⚠ undocumented
+- `KeybindPromptDisplay` (interface): interface KeybindPromptDisplay { kind: "keybind"; actionId: string; label?: string } — ⚠ undocumented
+- `LabelPromptDisplay` (interface): interface LabelPromptDisplay { kind: "label"; text: string } — ⚠ undocumented
+- `PositionedPrompt` (interface): interface PositionedPrompt { id: string; position: PromptPoint; priority?: number; prompt: ProximityPrompt } — ⚠ undocumented · used by `resolveActivePrompt`: Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal…
+- `PromptCommand` (interface): interface PromptCommand { name: string; input: unknown } — ⚠ undocumented
+- `PromptPoint` (interface): interface PromptPoint { x: number; z: number } — ⚠ undocumented · used by `resolveActivePrompt`: Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal…
+- `ProximityPrompt` (interface): interface ProximityPrompt { radius: number; display: ProximityPromptDisplay; invoke: PromptCommand | null } — ⚠ undocumented
+- `ProximityPromptConfig` (interface): interface ProximityPromptConfig { radius: number; display: ProximityPromptDisplay; invoke?: PromptCommand | null } — ⚠ undocumented
 - `ProximityPromptDisplay` (type): type ProximityPromptDisplay = KeybindPromptDisplay | GaugePromptDisplay | LabelPromptDisplay — ⚠ undocumented
 - `command` (function): function command(name: string, input?: unknown): PromptCommand — ⚠ undocumented
 - `gauge` (function): function gauge(gaugeId: string): GaugePromptDisplay — ⚠ undocumented
@@ -553,18 +553,18 @@
 
 ## @jgengine/core/interaction/qte
 
-- `QteInputEvent` (interface): interface QteInputEvent — ⚠ undocumented
-- `QteOutcome` (type): type QteOutcome = | { status: "success" } | { status: "fail"; atStep: string; reason: "missed-window" | "wrong-action" | "too-early" } — ⚠ undocumented
-- `QteStep` (interface): interface QteStep — ⚠ undocumented
+- `QteInputEvent` (interface): interface QteInputEvent { action: string; at: number } — ⚠ undocumented · used by `evaluateQteSequence`: Evaluate a quick-time-event input sequence against timed hit windows.
+- `QteOutcome` (type): type QteOutcome = | { status: "success" } | { status: "fail"; atStep: string; reason: "missed-window" | "wrong-action" | "too-early" } — ⚠ undocumented · used by `evaluateQteSequence`: Evaluate a quick-time-event input sequence against timed hit windows.
+- `QteStep` (interface): interface QteStep { id: string; action: string; windowStart: number; windowEnd: number } — ⚠ undocumented · used by `evaluateQteSequence`: Evaluate a quick-time-event input sequence against timed hit windows.
 - `evaluateQteSequence` (function): function evaluateQteSequence(steps: readonly QteStep[], inputs: readonly QteInputEvent[]): QteOutcome — Evaluate a quick-time-event input sequence against timed hit windows.
 - `pendingQteStep` (function): function pendingQteStep(steps: readonly QteStep[], elapsedSeconds: number): QteStep | null — ⚠ undocumented
 - `qteProgress` (function): function qteProgress(steps: readonly QteStep[], elapsedSeconds: number): number — ⚠ undocumented
 
 ## @jgengine/core/interaction/skillCheck
 
-- `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
-- `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
-- `SkillCheckZone` (interface): interface SkillCheckZone — ⚠ undocumented
+- `SkillCheckConfig` (interface): interface SkillCheckConfig { trackWidth: number; zone: SkillCheckZone; markerPeriod: number; window: number; zoneDriftPerSecond?: number } — ⚠ undocumented · used by `skillCheckZoneAt`: A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
+- `SkillCheckResult` (interface): interface SkillCheckResult { success: boolean; timedOut: boolean; markerPosition: number; zone: SkillCheckZone } — ⚠ undocumented
+- `SkillCheckZone` (interface): interface SkillCheckZone { start: number; end: number } — ⚠ undocumented · used by `skillCheckZoneAt`: A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 - `evaluateSkillCheck` (function): function evaluateSkillCheck(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckResult — ⚠ undocumented
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
@@ -572,7 +572,7 @@
 ## @jgengine/core/movement/avatarGait
 
 - `DEFAULT_GAIT_TUNING` (const): const DEFAULT_GAIT_TUNING: GaitTuning — ⚠ undocumented
-- `GaitTuning` (interface): interface GaitTuning — ⚠ undocumented
+- `GaitTuning` (interface): interface GaitTuning { stridesPerUnit: number; bobAmplitude: number; swayAmplitude: number; fullIntensitySpeed: number } — ⚠ undocumented · used by `gaitBobOffset`: Vertical hop per footfall — two peaks per stride cycle.
 - `advanceGaitPhase` (function): function advanceGaitPhase(phase: number, speedUnitsPerSec: number, dtSec: number, tuning: GaitTuning = DEFAULT_GAIT_TUNING): number — ⚠ undocumented
 - `gaitBobOffset` (function): function gaitBobOffset(phase: number, speedUnitsPerSec: number, tuning: GaitTuning = DEFAULT_GAIT_TUNING): number — Vertical hop per footfall — two peaks per stride cycle.
 - `gaitSwayAngle` (function): function gaitSwayAngle(phase: number, speedUnitsPerSec: number, tuning: GaitTuning = DEFAULT_GAIT_TUNING): number — Signed side-to-side lean alternating with each footfall.
@@ -598,11 +598,11 @@
 
 ## @jgengine/core/movement/dash
 
-- `DashBurst` (interface): interface DashBurst — ⚠ undocumented
-- `DashConfig` (interface): interface DashConfig — ⚠ undocumented
-- `DashDirection` (interface): interface DashDirection — ⚠ undocumented
+- `DashBurst` (interface): interface DashBurst { direction: DashDirection; durationMs: number; distance: number } — ⚠ undocumented
+- `DashConfig` (interface): interface DashConfig { distance: number; durationMs: number; iframes: {fromMs: number; toMs: number}; staminaCost: number; staminaMax: number; staminaRegenPerSecond: number; cooldownMs: number } — ⚠ undocumented
+- `DashDirection` (interface): interface DashDirection { x: number; z: number } — ⚠ undocumented
 - `DashRejection` (type): type DashRejection = { reason: "no-stamina" | "cooldown" | "dashing" } — ⚠ undocumented
-- `DashState` (interface): interface DashState — ⚠ undocumented
+- `DashState` (interface): interface DashState { tryDash(direction: DashDirection, nowMs: number): DashRejection | DashBurst; tick(dtSeconds: number, nowMs: number): void; stamina(): number; staminaFraction(): number; isDashing(nowMs: number): boolean; isInvulnerable(nowMs: number): boo… — ⚠ undocumented
 
 ## @jgengine/core/movement/formation
 
@@ -643,28 +643,28 @@
 
 ## @jgengine/core/movement/glideModel
 
-- `GlideInput` (interface): interface GlideInput — ⚠ undocumented
+- `GlideInput` (interface): interface GlideInput { yaw?: number; throttle?: number; control?: number } — ⚠ undocumented
 - `GlideModel` (interface): interface GlideModel — A kinematic glider (#282.6) — the walk-controller-compatible sibling of `physics/traversal`'s rigid-body `Glide`, with the yaw and powered-climb authority that one lacks. External flows — `physics/flowTube` corridors, `world/windZones` schedules — compose per tick through `externalVelocity`, and turbulence degrades control through the `control` scalar.
-- `GlideModelConfig` (interface): interface GlideModelConfig — ⚠ undocumented
-- `GlideStep` (interface): interface GlideStep — ⚠ undocumented
+- `GlideModelConfig` (interface): interface GlideModelConfig { gravityScale?: number; gravity?: number; thrustAccel?: number; forwardSpeed?: number; yawRate?: number; climbAccel?: number; maxFallSpeed?: number; control?: number } — ⚠ undocumented · used by `createGlideModel`: Gliding/wingsuit descent control — lift, drag, and steering from a launch.
+- `GlideStep` (interface): interface GlideStep { position: GlideVec3; velocity: GlideVec3; heading: number } — ⚠ undocumented
 - `GlideVec3` (type): type GlideVec3 = readonly [number, number, number] — ⚠ undocumented
 - `createGlideModel` (function): function createGlideModel(config: GlideModelConfig = {}): GlideModel — Gliding/wingsuit descent control — lift, drag, and steering from a launch.
 
 ## @jgengine/core/movement/grappleSwing
 
 - `GrappleSwing` (interface): interface GrappleSwing — A rope-swing constraint for kinematic controllers (#282.5) — the walk-controller-compatible sibling of `physics/traversal`'s rigid-body `Grapple`. Fire at an anchor, feed each frame's integrated position/velocity through `step`, and commit what comes back (via `beforeCommit` or `setPose`): positions beyond the rope clamp to its sphere and velocity loses its outward radial component, which is exactly a pendulum swing.
-- `GrappleSwingConfig` (interface): interface GrappleSwingConfig — ⚠ undocumented
-- `GrappleSwingState` (interface): interface GrappleSwingState — ⚠ undocumented
-- `GrappleSwingStep` (interface): interface GrappleSwingStep — ⚠ undocumented
+- `GrappleSwingConfig` (interface): interface GrappleSwingConfig { reelSpeed?: number; minLength?: number; stiffness?: number; damping?: number } — ⚠ undocumented · used by `createGrappleSwing`: Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
+- `GrappleSwingState` (interface): interface GrappleSwingState { attached: boolean; anchor: SwingVec3 | null; ropeLength: number } — ⚠ undocumented
+- `GrappleSwingStep` (interface): interface GrappleSwingStep { position: SwingVec3; velocity: SwingVec3 } — ⚠ undocumented
 - `SwingVec3` (type): type SwingVec3 = readonly [number, number, number] — ⚠ undocumented
 - `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
 
 ## @jgengine/core/movement/leaderTrail
 
 - `LeaderTrail` (interface): interface LeaderTrail — A live breadcrumb trail recorded from a moving leader, with followers placed by arc-length behind the head — conga lines, convoys, duckling chains, snake bodies. Call `record` with the leader's position every tick; read `followerAt(i)` for the pose `spacing * (i + 1)` behind.
-- `LeaderTrailConfig` (interface): interface LeaderTrailConfig — ⚠ undocumented
+- `LeaderTrailConfig` (interface): interface LeaderTrailConfig { spacing: number; maxFollowers?: number; sampleDistance?: number } — ⚠ undocumented · used by `createLeaderTrail`: A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `TrailPoint` (type): type TrailPoint = readonly [number, number, number] — ⚠ undocumented
-- `TrailPose` (interface): interface TrailPose — ⚠ undocumented
+- `TrailPose` (interface): interface TrailPose { position: TrailPoint; heading: number } — ⚠ undocumented
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 
 ## @jgengine/core/movement/movementModel
@@ -677,7 +677,7 @@
 - `MovementFrameStep` (interface): interface MovementFrameStep — Horizontal step (world units) the avatar should commit this frame.
 - `MovementIntent` (interface): interface MovementIntent — Frame-independent description of what the player is asking the avatar to do. `forward`/`right` are in the range -1..1 in the avatar's local frame; the controller rotates them into world space against the camera each frame.
 - `MovementKey` (type): type MovementKey = "w" | "a" | "s" | "d" | "shift" | "control" | "c" | "space" — Movement core (pure model).
-- `MovementKeysState` (type): type MovementKeysState = Record<MovementKey, boolean> — ⚠ undocumented
+- `MovementKeysState` (type): type MovementKeysState = Record<MovementKey, boolean> — ⚠ undocumented · used by `resolveFreeFlightIntent` (@jgengine/core/movement/freeFlight): Translate held keys + analog into a free-flight intent.
 - `MovementTuningOverrides` (interface): interface MovementTuningOverrides — Per-game overrides for the gravity/jump feel, sourced from `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
 - `PlayerMotionState` (interface): interface PlayerMotionState — Mutable kinematic state carried between frames by the controller. Kept here so the velocity / jump / gravity integration is a pure function testable without a renderer — the controller just owns the ref.
 
@@ -695,11 +695,11 @@
 - `AimMode` (type): type AimMode = "hip" | "ads" — ⚠ undocumented
 - `MovementPose` (type): type MovementPose = "standing" | "crouch" | "prone" | "running" — ⚠ undocumented
 - `POSE_HITBOX` (const): const POSE_HITBOX: Record<MovementPose, PoseHitbox> — ⚠ undocumented
-- `PoseAllowedStates` (interface): interface PoseAllowedStates — ⚠ undocumented
-- `PoseHitbox` (interface): interface PoseHitbox — ⚠ undocumented
-- `PoseRejection` (interface): interface PoseRejection — ⚠ undocumented
-- `PoseSnapshot` (interface): interface PoseSnapshot — ⚠ undocumented
-- `PoseState` (interface): interface PoseState — ⚠ undocumented
+- `PoseAllowedStates` (interface): interface PoseAllowedStates { poses?: readonly MovementPose[]; aim?: readonly AimMode[] } — ⚠ undocumented · used by `createPoseState`: Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
+- `PoseHitbox` (interface): interface PoseHitbox { height: number; eyeHeight: number; speedMultiplier: number } — ⚠ undocumented
+- `PoseRejection` (interface): interface PoseRejection { reason: string } — ⚠ undocumented
+- `PoseSnapshot` (interface): interface PoseSnapshot { poses: Record<string, MovementPose>; aims: Record<string, AimMode> } — ⚠ undocumented
+- `PoseState` (interface): interface PoseState { getPose(instanceId: string): MovementPose; setPose(instanceId: string, pose: MovementPose): PoseRejection | null; getAim(instanceId: string): AimMode; setAim(instanceId: string, mode: AimMode): PoseRejection | null; clear(instanceId: stri… — ⚠ undocumented · used by `createPoseState`: Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 - `createPoseState` (function): function createPoseState(resolveAllowed: (instanceId: string) => PoseAllowedStates | null | undefined): PoseState — Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
 
 ## @jgengine/core/movement/serverStep
@@ -731,7 +731,7 @@
 
 - `DEFAULT_VOXEL_DIMS` (const): const DEFAULT_VOXEL_DIMS: VoxelPlayerDims — ⚠ undocumented
 - `GroundHeightQuery` (type): type GroundHeightQuery = (x: number, z: number) => number — Samples the terrain floor height at a point; unset means flat ground plays no part in support.
-- `SolidQuery` (type): type SolidQuery = (x: number, y: number, z: number) => boolean — ⚠ undocumented
+- `SolidQuery` (type): type SolidQuery = (x: number, y: number, z: number) => boolean — ⚠ undocumented · used by `advanceVoxelPlayer`: Advance one frame of voxel-collided player kinematics.
 - `VoxelPlayerBody` (interface): interface VoxelPlayerBody — Mutable kinematic state carried between frames by the voxel controller.
 - `VoxelPlayerDims` (interface): interface VoxelPlayerDims — Footprint + height of the player box, in world units.
 - `advanceVoxelPlayer` (function): function advanceVoxelPlayer(body: VoxelPlayerBody, intent: MovementIntent, forwardX: number, forwardZ: number, baseSpeed: number, rawDeltaSeconds: number, isSolid: SolidQuery, dims: VoxelPlayerDims = DEFAULT_VOXEL_DIMS, tuning?: MovementTuningOverrides, groundHeight?: GroundHeightQuery): void — Advance one frame of voxel-collided player kinematics. Mutates `body` (position, velocity, grounded) in place.
@@ -739,31 +739,31 @@
 
 ## @jgengine/core/nav/corridors
 
-- `CorridorEdge` (interface): interface CorridorEdge — ⚠ undocumented
+- `CorridorEdge` (interface): interface CorridorEdge { points: readonly CorridorPoint[]; width: number } — ⚠ undocumented
 - `CorridorField` (interface): interface CorridorField — Organic corridor/path collision (#284.9): a distance-to-polyline width clamp over an edge graph — cave tunnels, river channels, winding roads. Grid/navmesh/voxel collision can't express a smooth ribbon; this can. Pure math over authored centerlines.
 - `CorridorPoint` (type): type CorridorPoint = readonly [number, number] — ⚠ undocumented
-- `CorridorSample` (interface): interface CorridorSample — ⚠ undocumented
+- `CorridorSample` (interface): interface CorridorSample { distance: number; closest: CorridorPoint; edgeIndex: number } — ⚠ undocumented
 - `createCorridorField` (function): function createCorridorField(edges: readonly CorridorEdge[]): CorridorField — ⚠ undocumented
 
 ## @jgengine/core/nav/navConstrain
 
-- `NavConstrainEntity` (interface): interface NavConstrainEntity — ⚠ undocumented
-- `NavConstrainOptions` (interface): interface NavConstrainOptions — ⚠ undocumented
-- `NavConstrainProposed` (interface): interface NavConstrainProposed — ⚠ undocumented
+- `NavConstrainEntity` (interface): interface NavConstrainEntity { position: EntityPosition } — ⚠ undocumented
+- `NavConstrainOptions` (interface): interface NavConstrainOptions { y?: (point: NavPoint) => number } — ⚠ undocumented
+- `NavConstrainProposed` (interface): interface NavConstrainProposed { position: EntityPosition; rotationY: number; grounded: boolean } — ⚠ undocumented
 - `constrainToNavGrid` (function): function constrainToNavGrid(grid: NavGrid, options?: NavConstrainOptions): (proposed: NavConstrainProposed, entity: NavConstrainEntity) => NavConstrainProposed | null — ⚠ undocumented
 
 ## @jgengine/core/nav/navFromEnvironment
 
-- `NavObstacleGrid` (interface): interface NavObstacleGrid — ⚠ undocumented
+- `NavObstacleGrid` (interface): interface NavObstacleGrid { blockAabb(aabb: Aabb): void } — ⚠ undocumented · used by `populateNavGridFromEnvironment`: Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`.
 - `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
 
 ## @jgengine/core/nav/navGrid
 
-- `FindPathOptions` (interface): interface FindPathOptions — ⚠ undocumented
-- `NavCell` (interface): interface NavCell — ⚠ undocumented
-- `NavGrid` (interface): interface NavGrid — ⚠ undocumented
-- `NavGridConfig` (interface): interface NavGridConfig — ⚠ undocumented
-- `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented
+- `FindPathOptions` (interface): interface FindPathOptions { smooth?: boolean; clearance?: number; stepCost?: (from: NavPoint, to: NavPoint) => number } — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
+- `NavCell` (interface): interface NavCell { col: number; row: number } — ⚠ undocumented
+- `NavGrid` (interface): interface NavGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly bounds: Aabb; readonly diagonal: boolean; isWalkable(col: number, row: number): boolean; setWalkable(col: number, row: number, walkable: boolean): void; blo… — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
+- `NavGridConfig` (interface): interface NavGridConfig { bounds: Aabb; cellSize: number; diagonal?: boolean } — ⚠ undocumented
+- `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `findPath` (function): function findPath(grid: NavGrid, from: NavPoint, to: NavPoint, options: FindPathOptions = {}): NavPoint[] | null — A* over the walkable grid. Returns a polyline of world-space `[x, z]` waypoints from `from` to `to`, or `null` when no route exists. Blocked start/goal snap to the nearest walkable cell so a click on an obstacle still routes to its edge.
 - `slopeStepCost` (function): function slopeStepCost(field: { sampleHeight(x: number, z: number): number }, weight = DEFAULT_SLOPE_STEP_WEIGHT): (from: NavPoint, to: NavPoint) => number — `FindPathOptions.stepCost` factory that penalizes steep terrain: cost is `1 + weight * |Δheight| / horizontalDistance`, so with the default weight a 45° slope roughly doubles the step cost.
@@ -782,12 +782,12 @@
 
 ## @jgengine/core/nav/pathFollow
 
-- `HeightSampler` (interface): interface HeightSampler — ⚠ undocumented
-- `PathFollowConfig` (interface): interface PathFollowConfig — ⚠ undocumented
+- `HeightSampler` (interface): interface HeightSampler { sampleHeight(x: number, z: number): number } — ⚠ undocumented · used by `drapePolyline` (@jgengine/core/world): Drapes an XZ polyline onto the surface: subdivides each span to at most `spacing` and lifts every vertex to `sampleHeight + offset`, returni…
+- `PathFollowConfig` (interface): interface PathFollowConfig { waypoints: readonly Waypoint[]; speed: number; loop?: boolean } — ⚠ undocumented · used by `advancePathFollow`: Advance a path-follower by `speed * dt` along its authored polyline.
 - `PathFollowProgress` (interface): interface PathFollowProgress — Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}.
-- `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
+- `PathFollowState` (interface): interface PathFollowState { position: Waypoint; target: number; heading: number; done: boolean; distanceTravelled: number } — ⚠ undocumented · used by `advancePathFollow`: Advance a path-follower by `speed * dt` along its authored polyline.
 - `PathProgress` (type): type PathProgress = | { readonly kind: "normalized"; readonly value: number } /** World-distance travelled from the first waypoint (looping paths wrap; clamped otherwise). */ | { readonly kind: "distance"; readonly value: number } /** Segment `index` (0-based) plus `fraction` `0..1` along that segme… — Semantic seek target for {@link pathFollowSeek} — the caller-facing progress vocabulary a stateful path behavior restores from, so a follower can start at a distributed phase or resume a serialized route without knowing waypoint internals. `direction` (forward heading) falls out of the resulting {@link PathFollowState.heading}, so it is an output rather than a seek input.
-- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented
+- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented · used by `useWaypoints` (@jgengine/react): Subscribe to a {@link WaypointTracker} and re-render on every change, returning its current waypoints.
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `pathFollowProgress` (function): function pathFollowProgress(config: PathFollowConfig, state: PathFollowState): PathFollowProgress — Read a follower's current progress in every semantic form — the inverse of {@link pathFollowSeek}, for editor/debug inspection and progress HUDs. Pure and allocation-light.
@@ -797,23 +797,23 @@
 
 ## @jgengine/core/nav/railGraph
 
-- `RailEdge` (interface): interface RailEdge — ⚠ undocumented
+- `RailEdge` (interface): interface RailEdge { id: string; from: string; to: string; via?: readonly Waypoint[] } — ⚠ undocumented
 - `RailGraph` (interface): interface RailGraph — A directed graph of track segments with junction switch-throw semantics — the topological seam `nav/navGrid`'s walkable cells can't express. Each node with several out-edges is a switch whose thrown edge decides where traffic exits; riders (`createRailRider`) run along edge polylines and take the thrown edge at every junction.
-- `RailGraphConfig` (interface): interface RailGraphConfig — ⚠ undocumented
-- `RailNode` (interface): interface RailNode — ⚠ undocumented
-- `RailRider` (interface): interface RailRider — ⚠ undocumented
-- `RailRiderConfig` (interface): interface RailRiderConfig — ⚠ undocumented
-- `RailRiderPose` (interface): interface RailRiderPose — ⚠ undocumented
-- `ResolvedRailEdge` (interface): interface ResolvedRailEdge — ⚠ undocumented
+- `RailGraphConfig` (interface): interface RailGraphConfig { nodes: readonly RailNode[]; edges: readonly RailEdge[] } — ⚠ undocumented
+- `RailNode` (interface): interface RailNode { id: string; at: Waypoint } — ⚠ undocumented
+- `RailRider` (interface): interface RailRider { advance(dt: number): RailRiderPose; pose(): RailRiderPose; setSpeed(speed: number): void; place(edgeId: string, s?: number): void } — ⚠ undocumented
+- `RailRiderConfig` (interface): interface RailRiderConfig { edgeId: string; s?: number; speed: number } — ⚠ undocumented
+- `RailRiderPose` (interface): interface RailRiderPose { position: Waypoint; heading: number; edgeId: string; s: number; atDeadEnd: boolean } — ⚠ undocumented
+- `ResolvedRailEdge` (interface): interface ResolvedRailEdge { id: string; from: string; to: string; points: readonly Waypoint[]; length: number } — ⚠ undocumented
 - `createRailGraph` (function): function createRailGraph(config: RailGraphConfig): RailGraph — ⚠ undocumented
 - `createRailRider` (function): function createRailRider(graph: RailGraph, config: RailRiderConfig): RailRider — ⚠ undocumented
 
 ## @jgengine/core/nav/timetable
 
 - `RouteTimetable` (interface): interface RouteTimetable — A deterministic mover over an authored route: position is a pure function of absolute time, so a forecast preview (`poseAt(t + 30)`) and the live mover can never disagree — the seam `nav/pathFollow`'s dt-incremental state can't offer. Trains, ferries, patrol shuttles, crushers: anything on a timetable.
-- `RouteTimetableConfig` (interface): interface RouteTimetableConfig — ⚠ undocumented
-- `TimetablePose` (interface): interface TimetablePose — ⚠ undocumented
-- `TimetableStop` (interface): interface TimetableStop — ⚠ undocumented
+- `RouteTimetableConfig` (interface): interface RouteTimetableConfig { waypoints: readonly (Waypoint | TimetableStop)[]; speed: number; loop?: boolean; dwellSeconds?: number; offsetSeconds?: number } — ⚠ undocumented
+- `TimetablePose` (interface): interface TimetablePose { position: Waypoint; heading: number; segment: number; dwelling: boolean } — ⚠ undocumented
+- `TimetableStop` (interface): interface TimetableStop { at: Waypoint; dwellSeconds?: number } — ⚠ undocumented
 - `createRouteTimetable` (function): function createRouteTimetable(config: RouteTimetableConfig): RouteTimetable — ⚠ undocumented
 
 ## @jgengine/core/orders/orderKinds
@@ -862,30 +862,30 @@
 
 ## @jgengine/core/physics/ballisticSweep
 
-- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented
-- `BallisticSweepHit` (interface): interface BallisticSweepHit — ⚠ undocumented
-- `BallisticSweepOptions` (interface): interface BallisticSweepOptions — ⚠ undocumented
+- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
+- `BallisticSweepHit` (interface): interface BallisticSweepHit { point: [number, number, number]; time: number } — ⚠ undocumented
+- `BallisticSweepOptions` (interface): interface BallisticSweepOptions { step?: number; radius?: number } — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
 - `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
 
 ## @jgengine/core/physics/buoyancy
 
 - `BuoyantBody` (class): class BuoyantBody — Floats a {@link PhysicsWorld} body on a CPU {@link WaterSurface}: each hull sample point pushes the body up by its submerged depth (Archimedes, coarse), with vertical and horizontal water drag so the hull settles at the waterline and rides the Gerstner waves. Passing an {@link AxisInput} drives it as a boat — throttle thrusts along the heading, steer yaws, a keel bleeds sideways slip. Call `update(dt, time, input?)` before the shared `world.step(dt)`.
-- `BuoyantBodyConfig` (interface): interface BuoyantBodyConfig — ⚠ undocumented
+- `BuoyantBodyConfig` (interface): interface BuoyantBodyConfig { body: number; water: WaterSurface; heading?: number; hullPoints?: readonly (readonly [number, number])[]; hullDepth?: number; buoyancy?: number; verticalDrag?: number; linearDrag?: number; engineAccel?: number; reverseAccel?: number; topS… — ⚠ undocumented
 - `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
 
 ## @jgengine/core/physics/carryable
 
 - `Carryable` (class): class Carryable — A grabbed physics object following a moving hold point through a spring constraint (the pick — a raycast — is the caller's/shell's job; core owns the constraint). Supports shared multi-owner carry (the follow point is the average of owners' hold points), an encumbrance read, and drop/throw. Reuses `PhysicsWorld.springJoint` to a world anchor moved each frame.
-- `CarryableConfig` (interface): interface CarryableConfig — ⚠ undocumented
+- `CarryableConfig` (interface): interface CarryableConfig { followStiffness?: number; followDamping?: number; maxForce?: number; carryCapacity?: number } — ⚠ undocumented
 - `carrySpeedMultiplier` (function): function carrySpeedMultiplier(mass: number, carryCapacity: number, owners: number): number — Movement multiplier (1 = unhindered, →0 = crushed) for a body of `mass` carried by `owners`. Pure — the HUD/movement kit reads it to slow a laden hauler (Lethal Company) and to gate items that need 2+ people (R.E.P.O.).
 
 ## @jgengine/core/physics/damageZones
 
 - `DamageModel` (class): class DamageModel — Coarse crash-damage model (issue #86 — stages, not soft-body). Each zone accumulates contact impulse fed from G3's `onCollision` `CollisionEvent`; crossing a threshold bumps the zone to the next discrete stage (the caller swaps the visual/collider), an optional `detachStage` ejects a part as debris once, and a total-impulse `disableAt` flips the whole body to a disabled state. `absorb` returns a transition only when something actually changed, so it doubles as the event source for HUD/feed.
-- `DamageModelConfig` (interface): interface DamageModelConfig — ⚠ undocumented
-- `DamageTransition` (interface): interface DamageTransition — ⚠ undocumented
-- `DamageZoneDef` (interface): interface DamageZoneDef — ⚠ undocumented
-- `DamageZoneState` (interface): interface DamageZoneState — ⚠ undocumented
+- `DamageModelConfig` (interface): interface DamageModelConfig { zones: readonly DamageZoneDef[]; disableAt?: number; onStage?: (transition: DamageTransition) => void; onDetach?: (zoneId: string, accumulated: number) => void } — ⚠ undocumented
+- `DamageTransition` (interface): interface DamageTransition { zone: string; stage: number; previousStage: number; detached: boolean; disabled: boolean; accumulated: number; total: number } — ⚠ undocumented
+- `DamageZoneDef` (interface): interface DamageZoneDef { id: string; thresholds: readonly number[]; detachStage?: number } — ⚠ undocumented
+- `DamageZoneState` (interface): interface DamageZoneState { id: string; accumulated: number; stage: number; detached: boolean } — ⚠ undocumented
 - `createDamageModel` (function): function createDamageModel(config: DamageModelConfig): DamageModel — ⚠ undocumented
 
 ## @jgengine/core/physics/drivableVehicle
@@ -912,21 +912,21 @@
 ## @jgengine/core/physics/flowTube
 
 - `FlowTube` (interface): interface FlowTube — An axial corridor of directional flow with radial core falloff and a spool scalar — fan tunnels, updraft shafts, river narrows, thruster wash. Pure math: sample `velocityAt(point, spool)` and add it to whatever integrator moves the body (walk controller drift, `BuoyantBody`, a custom sim).
-- `FlowTubeConfig` (interface): interface FlowTubeConfig — ⚠ undocumented
-- `FlowVec3` (type): type FlowVec3 = readonly [number, number, number] — ⚠ undocumented
+- `FlowTubeConfig` (interface): interface FlowTubeConfig { from: FlowVec3; to: FlowVec3; radius: number; strength: number; falloff?: number; capFalloff?: number } — ⚠ undocumented
+- `FlowVec3` (type): type FlowVec3 = readonly [number, number, number] — ⚠ undocumented · used by `combineFlowVelocity`: Sum several tubes' flow at one point — each entry carries its own spool.
 - `combineFlowVelocity` (function): function combineFlowVelocity(tubes: readonly (FlowTube | { tube: FlowTube; spool: number })[], point: FlowVec3): FlowVec3 — Sum several tubes' flow at one point — each entry carries its own spool.
 - `createFlowTube` (function): function createFlowTube(config: FlowTubeConfig): FlowTube — ⚠ undocumented
 
 ## @jgengine/core/physics/forceVolume
 
-- `ForceMode` (type): type ForceMode = "impulse" | "velocity" | "accelerate" — ⚠ undocumented
+- `ForceMode` (type): type ForceMode = "impulse" | "velocity" | "accelerate" — ⚠ undocumented · used by `applyVolumeForce`: One tick's force math for a body outside `PhysicsWorld` — apply the returned velocity in any custom integrator.
 - `ForceVolume` (class): class ForceVolume — A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`), conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only on entry by tracking membership between ticks.
-- `ForceVolumeConfig` (interface): interface ForceVolumeConfig — ⚠ undocumented
+- `ForceVolumeConfig` (interface): interface ForceVolumeConfig { bounds: PhysicsBounds; force: readonly [number, number, number]; mode?: ForceMode; once?: boolean } — ⚠ undocumented
 - `PlatformCarry` (class): class PlatformCarry — Carries bodies standing on a moving platform by composing their transform with the platform's per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The platform is a body the game repositions each frame; riders are detected by overlap on its top face.
-- `PlatformCarryConfig` (interface): interface PlatformCarryConfig — ⚠ undocumented
+- `PlatformCarryConfig` (interface): interface PlatformCarryConfig { contactTolerance?: number } — ⚠ undocumented
 - `VolumeTrigger` (interface): interface VolumeTrigger<TId> — The enter-once membership tracking from `ForceVolume`, freed from `PhysicsWorld`'s body indices (#286.8): feed any integrator's `{ id, position }` list each tick and act on the edges — apply `applyVolumeForce` on `entered` for a boost pad, on `inside` for a fan.
-- `VolumeTriggerConfig` (interface): interface VolumeTriggerConfig — ⚠ undocumented
-- `VolumeTriggerStep` (interface): interface VolumeTriggerStep<TId> — ⚠ undocumented
+- `VolumeTriggerConfig` (interface): interface VolumeTriggerConfig { bounds: PhysicsBounds } — ⚠ undocumented
+- `VolumeTriggerStep` (interface): interface VolumeTriggerStep<TId> { entered: readonly TId[]; inside: readonly TId[]; exited: readonly TId[] } — ⚠ undocumented
 - `applyVolumeForce` (function): function applyVolumeForce(velocity: readonly [number, number, number], force: readonly [number, number, number], mode: ForceMode, dt: number): readonly [number, number, number] — One tick's force math for a body outside `PhysicsWorld` — apply the returned velocity in any custom integrator.
 - `createVolumeTrigger` (function): function createVolumeTrigger<TId = string>(config: VolumeTriggerConfig): VolumeTrigger<TId> — ⚠ undocumented
 
@@ -948,9 +948,9 @@
 - `KinematicSteeringTuning` (interface): interface KinematicSteeringTuning — Bicycle-model steering settings; all angles are radians.
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
 - `KinematicVehicleModifiers` (interface): interface KinematicVehicleModifiers — Per-tick multipliers layered over the base tuning — the transient overrides games apply for one frame without rebuilding the vehicle: nitro/boost, a braced-plow bonus, or entering a speed zone or slow field. Each defaults to `1` (no change), so passing nothing leaves the base tuning untouched.
-- `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions — ⚠ undocumented
-- `KinematicVehicleStep` (interface): interface KinematicVehicleStep — ⚠ undocumented
-- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
+- `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions { position?: readonly [number, number, number]; heading?: number; surfaceFriction?: (x: number, z: number) => number; dragAt?: (x: number, z: number) => number; clampMove?: (from: readonly [number, number], to: readonly [number, number]) =>… — ⚠ undocumented
+- `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented
+- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented
 - `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
 
 ## @jgengine/core/physics/physicsBackend
@@ -986,21 +986,21 @@
 ## @jgengine/core/physics/physicsWorld
 
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
-- `BodyCommonOptions` (interface): interface BodyCommonOptions — ⚠ undocumented
-- `BoxBodyOptions` (interface): interface BoxBodyOptions extends BodyCommonOptions — ⚠ undocumented
+- `BodyCommonOptions` (interface): interface BodyCommonOptions { position: readonly [number, number, number]; velocity?: readonly [number, number, number]; mass?: number; static?: boolean; asleep?: boolean } — ⚠ undocumented
+- `BoxBodyOptions` (interface): interface BoxBodyOptions extends BodyCommonOptions { shape?: "box"; halfExtents: readonly [number, number, number] } — ⚠ undocumented
 - `CollisionEvent` (interface): interface CollisionEvent — A contact reported to `onCollision`. The object is reused each call — read/copy, never retain.
 - `JOINT_DISTANCE` (const): const JOINT_DISTANCE: 2 — ⚠ undocumented
 - `JOINT_FIXED` (const): const JOINT_FIXED: 0 — ⚠ undocumented
 - `JOINT_HINGE` (const): const JOINT_HINGE: 1 — ⚠ undocumented
 - `JOINT_SPRING` (const): const JOINT_SPRING: 3 — ⚠ undocumented
 - `JointKind` (type): type JointKind = "hinge" | "distance" | "spring" | "fixed" — Hard bilateral: `fixed` pins the shared anchor (3-DOF), `hinge` pins only the plane perpendicular to `axis` (free along the axis — translational cylindrical), `distance` holds a fixed separation. `spring` is a soft PD drive toward `restLength`.
-- `JointOptions` (interface): interface JointOptions — ⚠ undocumented
+- `JointOptions` (interface): interface JointOptions { bodyA: number; bodyB?: number; anchorA?: readonly [number, number, number]; anchorB?: readonly [number, number, number]; restLength?: number; stiffness?: number; damping?: number; maxImpulse?: number; axis?: readonly [number, number, numb… — ⚠ undocumented
 - `MAX_BROADPHASE_CELLS` (const): const MAX_BROADPHASE_CELLS: 1000000 — Cap on `nx*ny*nz` broadphase cells — guards a huge-bounds/tiny-cellSize config from hanging `step()`.
-- `PhysicsBounds` (interface): interface PhysicsBounds — ⚠ undocumented
+- `PhysicsBounds` (interface): interface PhysicsBounds { min: readonly [number, number, number]; max: readonly [number, number, number] } — ⚠ undocumented
 - `PhysicsPrecision` (type): type PhysicsPrecision = "low" | "standard" | "high" — Simulation fidelity intent: `low` (cheap — many bodies, loose stacks, forgiving sleep), `standard` (default), `high` (tight stacks, accurate joints, worth the extra solver work). Sets the solver knobs below to a matched preset; an individual knob left explicit always wins over the preset.
-- `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
+- `PhysicsStats` (interface): interface PhysicsStats { count: number; awake: number; sleeping: number; contacts: number; pairs: number; substeps: number; stepMs: number } — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
-- `PhysicsWorldConfig` (interface): interface PhysicsWorldConfig — ⚠ undocumented
+- `PhysicsWorldConfig` (interface): interface PhysicsWorldConfig { capacity: number; bounds: PhysicsBounds; gravity?: number; precision?: PhysicsPrecision; fixedDt?: number; maxSubsteps?: number; restitution?: number; restitutionThreshold?: number; friction?: number; linearDamping?: number; sleepLinearVe… — ⚠ undocumented
 - `SHAPE_BOX` (const): const SHAPE_BOX: 0 — ⚠ undocumented
 - `SHAPE_SPHERE` (const): const SHAPE_SPHERE: 1 — ⚠ undocumented
 - `SphereBodyOptions` (interface): interface SphereBodyOptions extends BodyCommonOptions — The radius fills all three half-extent columns, so broadphase and bounds see the sphere's enclosing AABB.
@@ -1023,42 +1023,42 @@
 ## @jgengine/core/physics/ragdoll
 
 - `Ragdoll` (class): class Ragdoll — A jointed multi-body character — floppy by default, or active-ragdoll when a balance motor is configured. Bones are `PhysicsWorld` bodies; links are joints on the joint API. `balance(dt, mx, mz)` drives the root toward its target height (staying upright) and pushes it by the move vector.
-- `RagdollBalanceConfig` (interface): interface RagdollBalanceConfig — ⚠ undocumented
-- `RagdollBoneSpec` (interface): interface RagdollBoneSpec — ⚠ undocumented
-- `RagdollConfig` (interface): interface RagdollConfig — ⚠ undocumented
-- `RagdollLinkSpec` (interface): interface RagdollLinkSpec — ⚠ undocumented
+- `RagdollBalanceConfig` (interface): interface RagdollBalanceConfig { root: string; targetHeight: number; strength?: number; moveForce?: number } — ⚠ undocumented
+- `RagdollBoneSpec` (interface): interface RagdollBoneSpec { name: string; position: readonly [number, number, number]; halfExtents: readonly [number, number, number]; mass?: number } — ⚠ undocumented
+- `RagdollConfig` (interface): interface RagdollConfig { bones: RagdollBoneSpec[]; links: RagdollLinkSpec[]; balance?: RagdollBalanceConfig } — ⚠ undocumented
+- `RagdollLinkSpec` (interface): interface RagdollLinkSpec { a: string; b: string; kind?: "hinge" | "distance"; anchor?: readonly [number, number, number] } — ⚠ undocumented
 - `createRagdoll` (function): function createRagdoll(world: PhysicsWorld, config: RagdollConfig): Ragdoll — ⚠ undocumented
 
 ## @jgengine/core/physics/spatialGrid
 
 - `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
-- `SpatialGridConfig` (interface): interface SpatialGridConfig — ⚠ undocumented
+- `SpatialGridConfig` (interface): interface SpatialGridConfig { bounds: PhysicsBounds; cellSize: number; capacity: number } — ⚠ undocumented
 
 ## @jgengine/core/physics/structure
 
-- `CollapseEvent` (interface): interface CollapseEvent — ⚠ undocumented
-- `DebrisConfig` (interface): interface DebrisConfig — ⚠ undocumented
-- `StructureEdgeSpec` (interface): interface StructureEdgeSpec — ⚠ undocumented
+- `CollapseEvent` (interface): interface CollapseEvent { fell: readonly string[]; collapsed: boolean } — ⚠ undocumented
+- `DebrisConfig` (interface): interface DebrisConfig { impulse?: number; origin?: readonly [number, number, number] } — ⚠ undocumented
+- `StructureEdgeSpec` (interface): interface StructureEdgeSpec { a: string; b: string; strength?: number } — ⚠ undocumented
 - `StructureGraph` (class): class StructureGraph — A structural-integrity graph over a building — nodes are pieces (walls, beams, floors), edges are load-bearing connections, some nodes are anchored foundations. `damage`/`damageEdge` wear pieces and connections down; when a piece shatters or an edge severs, the graph recomputes which pieces still reach an anchor and hands back every newly-disconnected piece as one `CollapseEvent`. Feed that to `toDebris` to sink the fallen pieces into a `PhysicsWorld` as rigid bodies ("The Finals" smooth destruction, Rainbow Six walls). Coarse by design: it replicates the collapse event, not per fragment.
-- `StructureMaterial` (interface): interface StructureMaterial — ⚠ undocumented
+- `StructureMaterial` (interface): interface StructureMaterial { id: string; strength: number; mass?: number } — ⚠ undocumented
 - `StructureMaterialTable` (type): type StructureMaterialTable = Readonly<Record<string, StructureMaterial>> — ⚠ undocumented
-- `StructureNodeSpec` (interface): interface StructureNodeSpec — ⚠ undocumented
+- `StructureNodeSpec` (interface): interface StructureNodeSpec { id: string; position: readonly [number, number, number]; halfExtents: readonly [number, number, number]; mass?: number; integrity?: number; material?: string; anchor?: boolean } — ⚠ undocumented
 
 ## @jgengine/core/physics/traversal
 
 - `Glide` (class): class Glide — A reduced-gravity, forward-thrust glide over a physics body — wingsuit / glider / paraglider (Enshrouded, Grounded). Call `apply(dt, steerX, steerZ)` each frame *before* `world.step`: it feeds back most of the gravity the sim is about to apply (leaving `gravityScale` of it), pushes the body along the steer vector by `thrust`, and clamps descent to `maxFallSpeed`. Stop calling it to fall normally again — no attach/detach state to leak.
-- `GlideConfig` (interface): interface GlideConfig — ⚠ undocumented
+- `GlideConfig` (interface): interface GlideConfig { gravityScale?: number; thrust?: number; maxFallSpeed?: number } — ⚠ undocumented
 - `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
-- `GrappleConfig` (interface): interface GrappleConfig — ⚠ undocumented
+- `GrappleConfig` (interface): interface GrappleConfig { reelSpeed?: number; minLength?: number; maxLength?: number; elastic?: boolean; stiffness?: number; damping?: number } — ⚠ undocumented
 
 ## @jgengine/core/physics/vehicleBody
 
 - `DEFAULT_GRIP_CURVE` (const): const DEFAULT_GRIP_CURVE: GripCurve — ⚠ undocumented
-- `GripCurve` (interface): interface GripCurve — ⚠ undocumented
+- `GripCurve` (interface): interface GripCurve { points: readonly (readonly [number, number])[] } — ⚠ undocumented · used by `sampleGripCurve`: Piecewise-linear tire-grip curve: normalized lateral slip → available grip (0..1).
 - `VehicleBody` (class): class VehicleBody — Arcade vehicle over the {@link PhysicsWorld} rigid-body sim. The chassis is a single box body driven by an {@link AxisInput}: per-wheel suspension is a spring-damper held with G3's `springJoint` against the sampled ground, drive/brake push along the heading, and a tire-grip curve bleeds lateral velocity (cornering, and drift under handbrake). Because the chassis is a physics body it still collides — that contact feeds crash damage. Call `update(dt, input)` before the shared `world.step(dt)`.
-- `VehicleBodyConfig` (interface): interface VehicleBodyConfig — ⚠ undocumented
-- `WheelSpec` (interface): interface WheelSpec — ⚠ undocumented
-- `WheelState` (interface): interface WheelState — ⚠ undocumented
+- `VehicleBodyConfig` (interface): interface VehicleBodyConfig { position: readonly [number, number, number]; heading?: number; chassisHalfExtents?: readonly [number, number, number]; mass?: number; wheels?: readonly WheelSpec[]; engineAccel?: number; brakeAccel?: number; topSpeed?: number; reverseSpee… — ⚠ undocumented
+- `WheelSpec` (interface): interface WheelSpec { offset: readonly [number, number, number]; radius?: number; restLength?: number; steered?: boolean; powered?: boolean; handbrakeLocks?: boolean } — ⚠ undocumented
+- `WheelState` (interface): interface WheelState { worldX: number; worldY: number; worldZ: number; grounded: boolean; compression: number; steerAngle: number } — ⚠ undocumented
 - `createVehicleBody` (function): function createVehicleBody(world: PhysicsWorld, config: VehicleBodyConfig): VehicleBody — ⚠ undocumented
 - `sampleGripCurve` (function): function sampleGripCurve(curve: GripCurve, slip: number): number — Piecewise-linear tire-grip curve: normalized lateral slip → available grip (0..1). Grip peaks near the breakaway slip then falls off as the tire slides — the shape that separates a planted corner from a drift. Points are read in ascending slip order; ends clamp.
 
@@ -1086,10 +1086,10 @@
 
 ## @jgengine/core/scene/assetCatalog
 
-- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
+- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> { register(id: string, asset: TMeta): void; resolve(id: string): TMeta | null; has(id: string): boolean; ids(): readonly string[] } — ⚠ undocumented · used by `buildCatalog` (@jgengine/assets): Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
 - `AssetRef` (type): type AssetRef = ModelAssetRef | GeneratorAssetRef — A catalog entry: a static GLB model, or a parametric generator.
 - `GeneratorAssetRef` (interface): interface GeneratorAssetRef — A catalog entry backed by a registered {@link registerAssetGenerator} instead of a GLB URL — a slider-driven parametric prop (bookcase, building). `defaults` seeds a fresh placement's params. Placed instances persist `{ assetId, params, seed }` in the scene and re-resolve at runtime.
-- `ModelAssetRef` (interface): interface ModelAssetRef — ⚠ undocumented
+- `ModelAssetRef` (interface): interface ModelAssetRef { url: string; dims?: ModelDims; collisionMesh?: CollisionMeshData; space?: AssetSpace; clips?: readonly string[] } — ⚠ undocumented · used by `createHostedWorldSessionAsync` (@jgengine/core/runtime/hostedWorldSession): Build a hosted session from an asynchronous persistence backend.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 
@@ -1156,9 +1156,9 @@
 
 ## @jgengine/core/scene/autoTarget
 
-- `AutoTargetDeps` (interface): interface AutoTargetDeps — ⚠ undocumented
+- `AutoTargetDeps` (interface): interface AutoTargetDeps { candidates: (fromId: string) => readonly string[]; distance: (fromId: string, toId: string) => number | null; strength?: (toId: string) => number; progress?: (toId: string) => number; rng?: () => number } — ⚠ undocumented
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
-- `AutoTargeter` (interface): interface AutoTargeter — ⚠ undocumented
+- `AutoTargeter` (interface): interface AutoTargeter { policy(): AutoTargetPolicy; setPolicy(policy: AutoTargetPolicy): void; pick(fromId: string): string | null } — ⚠ undocumented
 - `createAutoTargeter` (function): function createAutoTargeter(policy: AutoTargetPolicy, deps: AutoTargetDeps): AutoTargeter — ⚠ undocumented
 - `selectAutoTarget` (function): function selectAutoTarget(policy: AutoTargetPolicy, fromId: string, deps: AutoTargetDeps): string | null — ⚠ undocumented
 
@@ -1179,10 +1179,10 @@
 
 - `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior | DecisionGraphBehavior — ⚠ undocumented
 - `DecisionGraphBehavior` (interface): interface DecisionGraphBehavior — Decision graph behavior descriptor using a named registered action set.
-- `PatrolBehavior` (interface): interface PatrolBehavior — ⚠ undocumented
-- `PlayerBehavior` (interface): interface PlayerBehavior — ⚠ undocumented
-- `PromptableBehavior` (interface): interface PromptableBehavior — ⚠ undocumented
-- `WanderBehavior` (interface): interface WanderBehavior — ⚠ undocumented
+- `PatrolBehavior` (interface): interface PatrolBehavior { kind: "patrol"; waypoints: readonly Waypoint[]; speed: number; loop: boolean; startProgress?: PathProgress; groundClamp?: boolean } — ⚠ undocumented
+- `PlayerBehavior` (interface): interface PlayerBehavior { kind: "player" } — ⚠ undocumented
+- `PromptableBehavior` (interface): interface PromptableBehavior { kind: "promptable"; prompt: ProximityPrompt } — ⚠ undocumented
+- `WanderBehavior` (interface): interface WanderBehavior { kind: "wander"; radius: number } — ⚠ undocumented
 - `patrol` (function): function patrol({ waypoints, speed, loop = true, startProgress, groundClamp, }: { waypoints: readonly Waypoint[]; speed: number; loop?: boolean; startProgress?: PathProgress; groundClamp?: boolean; }): PatrolBehavior — ⚠ undocumented
 - `player` (function): function player(): PlayerBehavior — ⚠ undocumented
 - `promptable` (function): function promptable(prompt: ProximityPrompt): PromptableBehavior — ⚠ undocumented
@@ -1204,23 +1204,23 @@
 
 ## @jgengine/core/scene/captureCheck
 
-- `CaptureCheckInput` (interface): interface CaptureCheckInput — ⚠ undocumented
+- `CaptureCheckInput` (interface): interface CaptureCheckInput { hpFraction: number; catchPower: number; difficulty?: number } — ⚠ undocumented
 - `captureChance` (function): function captureChance(input: CaptureCheckInput): number — ⚠ undocumented
 - `rollCapture` (function): function rollCapture(input: CaptureCheckInput, rng?: () => number): boolean — ⚠ undocumented
 
 ## @jgengine/core/scene/colliders
 
-- `ColliderDef` (interface): interface ColliderDef — ⚠ undocumented
+- `ColliderDef` (interface): interface ColliderDef { name: string; purpose: ColliderPurpose; shape: ColliderShape; damageEligible?: boolean; blocks?: boolean } — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
 - `ColliderShape` (type): type ColliderShape = | { kind: "sphere"; radius: number; offset?: EntityPosition } | { kind: "aabb"; halfExtents: EntityPosition; offset?: EntityPosition } | { kind: "mesh"; /** Prepared triangle mesh in model space — engine-derived from an opted-in catalog asset, never hand-authored. */ mesh: Prepa… — Collision geometry in entity-local space. `sphere` and `aabb` are analytic; `mesh` carries a prepared triangle mesh so opted-in concave models raycast their real surface while bounds and broadphase keep reading the conservative `halfExtents`.
 - `DEFAULT_ENTITY_BODY_HALF_EXTENTS` (const): const DEFAULT_ENTITY_BODY_HALF_EXTENTS: EntityPosition — Matches the shell's fallback actor capsule (~0.7m wide, feet at y=0 to head at ~1.8m).
 - `DEFAULT_ENTITY_BODY_OFFSET` (const): const DEFAULT_ENTITY_BODY_OFFSET: EntityPosition — Entity-local center of the default body hitbox (half its height above the feet).
 - `DEFAULT_ENTITY_HIT_RADIUS` (const): const DEFAULT_ENTITY_HIT_RADIUS: 0.5 — ⚠ undocumented
 - `DEFAULT_OBJECT_HALF_EXTENTS` (const): const DEFAULT_OBJECT_HALF_EXTENTS: EntityPosition — ⚠ undocumented
-- `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
+- `EntityColliderSet` (interface): interface EntityColliderSet { body?: ColliderDef; hitboxes?: readonly ColliderDef[] } — ⚠ undocumented · used by `eyeHeightFromColliders` (@jgengine/core/combat): Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown.
 - `MeasuredBounds` (interface): interface MeasuredBounds — Entity-local AABB of what the renderer actually mounted for a kind — the runtime counterpart to index-measured `dims`. Reported through `ctx.scene.entity.reportBounds` / `ctx.scene.object.reportBounds` (the shell does this automatically for custom `renderEntity`/`renderObject` content and models without index dims) so collider resolution can wrap the real rendered shape instead of a fixed-size guess.
 - `ModelBodySource` (interface): interface ModelBodySource — The render-config subset collider fitting reads — structurally satisfied by a resolved `ModelConfig`, so the shell can hand its render config straight to the fitting math without a conversion step.
-- `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
+- `ResolvedCollider` (interface): interface ResolvedCollider { name: string; purpose: ColliderPurpose; shape: ColliderShape; damageEligible: boolean; blocks: boolean } — ⚠ undocumented
 
 ## @jgengine/core/scene/collisionMesh
 
@@ -1259,17 +1259,17 @@
 ## @jgengine/core/scene/entityStore
 
 - `EntityBlackboard` (interface): interface EntityBlackboard — Per-entity scratch and cooldown timers, auto-cleared on despawn (#533.8) — the home for AI state (next-shot-at, alert level) that would otherwise be smuggled through the serializable `meta` or a hand-pruned module-level map. Keys share one namespace per entity: `arm`/`ready`/`remaining` store a deadline under a key, `get`/`set` store arbitrary scratch.
-- `EntityMovement` (interface): interface EntityMovement — ⚠ undocumented
-- `EntityPose` (interface): interface EntityPose — ⚠ undocumented
-- `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented
+- `EntityMovement` (interface): interface EntityMovement { walkSpeed?: number; frozen?: boolean } — ⚠ undocumented
+- `EntityPose` (interface): interface EntityPose { position: SpawnPositionInput; rotationY?: number; rotationX?: number; rotationZ?: number; dt?: number } — ⚠ undocumented
+- `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented · used by `resolveSourceWalkerStep` (@jgengine/core/movement/solidObstacles): {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare {@link SolidObstacleSource} and a caller-owned {@link Obst…
 - `EntityRole` (type): type EntityRole = "player" | "npc" | "prop" — ⚠ undocumented
-- `EntityStore` (interface): interface EntityStore<TMeta = unknown> — ⚠ undocumented
+- `EntityStore` (interface): interface EntityStore<TMeta = unknown> { spawn(name: string, options?: SpawnOptions<TMeta>): string; despawn(id: string): boolean; update(id: string, patch: EntityUpdatePatch<TMeta>): boolean; setPose(id: string, pose: EntityPose): boolean; setPoseConstraint(id: string, constrai… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 - `EntityUpdatePatch` (type): type EntityUpdatePatch<TMeta = unknown> = Partial< Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "meta"> > & { /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not deriv… — ⚠ undocumented
 - `PoseConstraint` (type): type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void — Return a replacement position to constrain the step, or nothing to accept it.
-- `PoseConstraintFrame` (interface): interface PoseConstraintFrame — ⚠ undocumented
-- `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> — ⚠ undocumented
-- `SpawnOptions` (interface): interface SpawnOptions<TMeta = unknown> — ⚠ undocumented
-- `SpawnPose` (interface): interface SpawnPose — ⚠ undocumented
+- `PoseConstraintFrame` (interface): interface PoseConstraintFrame { entityId: string; current: EntityPosition; next: EntityPosition; dt?: number } — ⚠ undocumented
+- `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> { id: string; name: string; position: EntityPosition; rotationY: number; rotationX: number; rotationZ: number; velocity: EntityPosition; role: EntityRole; movement: EntityMovement; behaviors: readonly BehaviorDescriptor[]; hidden?: boolean;… — ⚠ undocumented · used by `entityMetaOf`: Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type che…
+- `SpawnOptions` (interface): interface SpawnOptions<TMeta = unknown> { id?: string; position?: SpawnPositionInput; rotationY?: number; rotationX?: number; rotationZ?: number; role?: EntityRole; movement?: EntityMovement; behaviors?: readonly BehaviorDescriptor[]; hidden?: boolean; meta?: TMeta; onExisting?: … — ⚠ undocumented
+- `SpawnPose` (interface): interface SpawnPose { position: EntityPosition; rotationY: number } — ⚠ undocumented
 - `SpawnPositionInput` (type): type SpawnPositionInput = EntityPosition | { x: number; y: number; z: number } — ⚠ undocumented
 - `createEntityStore` (function): function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> — ⚠ undocumented
 - `entityMetaOf` (function): function entityMetaOf<T>(entity: SceneEntity<unknown>, isMeta: (value: unknown) => value is T): T | null — Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type checker.
@@ -1282,13 +1282,13 @@
 
 ## @jgengine/core/scene/form
 
-- `FormChangedEvent` (interface): interface FormChangedEvent — ⚠ undocumented
-- `FormDef` (interface): interface FormDef — ⚠ undocumented
-- `FormEntities` (interface): interface FormEntities — ⚠ undocumented
-- `FormEvents` (interface): interface FormEvents — ⚠ undocumented
-- `FormTime` (interface): interface FormTime — ⚠ undocumented
-- `Forms` (interface): interface Forms — ⚠ undocumented
-- `FormsDeps` (interface): interface FormsDeps — ⚠ undocumented
+- `FormChangedEvent` (interface): interface FormChangedEvent { instanceId: string; formId: string | null } — ⚠ undocumented
+- `FormDef` (interface): interface FormDef { id: string; movement?: EntityMovement; abilities?: readonly string[]; model?: string } — ⚠ undocumented
+- `FormEntities` (interface): interface FormEntities { get(id: string): SceneEntity | null; update(id: string, patch: {movement?: EntityMovement; name?: string}): boolean } — ⚠ undocumented
+- `FormEvents` (interface): interface FormEvents { emit(name: "form.changed", payload: FormChangedEvent): void } — ⚠ undocumented
+- `FormTime` (interface): interface FormTime { after(seconds: number, callback: () => void): () => void } — ⚠ undocumented
+- `Forms` (interface): interface Forms { register(defs: readonly FormDef[]): void; get(formId: string): FormDef | null; abilities(instanceId: string): readonly string[] | null; active(instanceId: string): string | null; shapeshift(instanceId: string, formId: string, durationSeco… — ⚠ undocumented
+- `FormsDeps` (interface): interface FormsDeps { entities: FormEntities; time: FormTime; events?: FormEvents } — ⚠ undocumented
 - `createForms` (function): function createForms(deps: FormsDeps): Forms — ⚠ undocumented
 
 ## @jgengine/core/scene/modelSockets
@@ -1302,63 +1302,63 @@
 
 - `MountController` (class): class MountController — Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to route that rider's {@link import("../physics/vehicleBody").AxisInput}-driven input at the mount's movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
 - `MountKind` (type): type MountKind = "ground" | "boat" | "flying" | "swimming" — ⚠ undocumented
-- `MountKit` (interface): interface MountKit — ⚠ undocumented
+- `MountKit` (interface): interface MountKit { kind: MountKind; moveSpeed?: number; turnSpeed?: number } — ⚠ undocumented
 - `MountResult` (type): type MountResult = { ok: true; seat: MountSeat } | { ok: false; reason: string } — ⚠ undocumented
-- `MountSeat` (interface): interface MountSeat — ⚠ undocumented
-- `Occupant` (interface): interface Occupant — ⚠ undocumented
-- `RideableConfig` (interface): interface RideableConfig — ⚠ undocumented
-- `SeatRef` (interface): interface SeatRef — ⚠ undocumented
+- `MountSeat` (interface): interface MountSeat { id: string; offset: readonly [number, number, number]; control?: boolean } — ⚠ undocumented
+- `Occupant` (interface): interface Occupant { riderId: string; seatId: string } — ⚠ undocumented
+- `RideableConfig` (interface): interface RideableConfig { id: string; kit: MountKit; seats?: readonly MountSeat[] } — ⚠ undocumented
+- `SeatRef` (interface): interface SeatRef { mountId: string; seatId: string } — ⚠ undocumented
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 
 ## @jgengine/core/scene/movementSpeed
 
-- `MovementSpeedConfig` (interface): interface MovementSpeedConfig — ⚠ undocumented
-- `MovementSpeedDeps` (interface): interface MovementSpeedDeps — ⚠ undocumented
-- `MovementSpeedModifiers` (interface): interface MovementSpeedModifiers — ⚠ undocumented
+- `MovementSpeedConfig` (interface): interface MovementSpeedConfig { baseSpeed: number; multiplierStat?: string; flatBonusStat?: string } — ⚠ undocumented · used by `applyStatDrivenSpeed`: Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`.
+- `MovementSpeedDeps` (interface): interface MovementSpeedDeps { stats: {get(instanceId: string, statId: string): StatValue | null}; entities: {get(id: string): {movement?: {walkSpeed?: number}} | null; update(id: string, patch: {movement: {walkSpeed: number}}): boolean;} } — ⚠ undocumented · used by `applyStatDrivenSpeed`: Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`.
+- `MovementSpeedModifiers` (interface): interface MovementSpeedModifiers { multiplier?: number; flatBonus?: number } — ⚠ undocumented · used by `deriveWalkSpeed`: `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative.
 - `applyStatDrivenSpeed` (function): function applyStatDrivenSpeed(deps: MovementSpeedDeps, instanceId: string, config: MovementSpeedConfig): boolean — Recomputes `movement.walkSpeed` for an entity from its stats and writes it back via `deps.entities.update`. Either stat id is optional; an omitted or unresolved stat contributes its neutral value (multiplier 1, flat bonus 0) rather than failing. Returns false only when the entity itself doesn't exist.
 - `deriveWalkSpeed` (function): function deriveWalkSpeed(base: number, modifiers: MovementSpeedModifiers): number — `base * (multiplier ?? 1) + (flatBonus ?? 0)`, clamped to never go negative.
 
 ## @jgengine/core/scene/objectQuery
 
 - `ObjectQueryBroadphase` (interface): interface ObjectQueryBroadphase — Optional broadphase for large object sets — typically `ObjectStore.inBox`.
-- `ObjectRaycastHit` (interface): interface ObjectRaycastHit — ⚠ undocumented
-- `ObjectRaycastInput` (interface): interface ObjectRaycastInput — ⚠ undocumented
+- `ObjectRaycastHit` (interface): interface ObjectRaycastHit { instanceId: string; catalogId: string; distance: number; point: EntityPosition; normal: EntityPosition } — ⚠ undocumented
+- `ObjectRaycastInput` (interface): interface ObjectRaycastInput { origin: EntityPosition; direction: EntityPosition; maxDistance: number; halfExtents?: EntityPosition; filter?: (object: SceneObject) => boolean } — ⚠ undocumented
 - `ObjectRaycastSource` (type): type ObjectRaycastSource = readonly SceneObject[] | ObjectQueryBroadphase — ⚠ undocumented
 - `intersectAabb` (function): function intersectAabb(origin: EntityPosition, direction: EntityPosition, min: EntityPosition, max: EntityPosition, maxDistance: number): { distance: number; normal: EntityPosition } | null — ⚠ undocumented
 - `normalizeDirection` (function): function normalizeDirection(direction: EntityPosition): EntityPosition — ⚠ undocumented
 
 ## @jgengine/core/scene/objectStore
 
-- `ObjectListFilter` (interface): interface ObjectListFilter — ⚠ undocumented
-- `ObjectStore` (interface): interface ObjectStore — ⚠ undocumented
-- `ObjectVisual` (interface): interface ObjectVisual — ⚠ undocumented
-- `PlaceOptions` (interface): interface PlaceOptions — ⚠ undocumented
-- `SceneObject` (interface): interface SceneObject — ⚠ undocumented
+- `ObjectListFilter` (interface): interface ObjectListFilter { parentSpace?: string } — ⚠ undocumented
+- `ObjectStore` (interface): interface ObjectStore { place(catalogId: string, x: number, y: number, z: number, options?: PlaceOptions): string; remove(instanceId: string): boolean; move(instanceId: string, x: number, y: number, z: number): boolean; rotate(instanceId: string, rotationY: numb… — ⚠ undocumented
+- `ObjectVisual` (interface): interface ObjectVisual { scale?: number | readonly [number, number, number]; color?: string; opacity?: number } — ⚠ undocumented
+- `PlaceOptions` (interface): interface PlaceOptions { instanceId?: string; parentSpace?: string; rotation?: number; visual?: ObjectVisual; state?: Record<string, unknown>; slots?: InventoryState; animation?: ModelAnimationConfig | "auto" | "none"; onExisting?: "throw" | "replace" | "keep" } — ⚠ undocumented
+- `SceneObject` (interface): interface SceneObject { instanceId: string; catalogId: string; position: EntityPosition; rotationY: number; parentSpace?: string; visual?: ObjectVisual; animation?: ModelAnimationConfig | "auto" | "none"; state?: Record<string, unknown>; slots?: InventoryState } — ⚠ undocumented · used by `fromRuntimeObjectRow` (@jgengine/core/runtime/objectRows): Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
 - `createObjectStore` (function): function createObjectStore(): ObjectStore — ⚠ undocumented
 - `objectVisualScale` (function): function objectVisualScale(visual: ObjectVisual | undefined): readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/core/scene/paintLayer
 
-- `PaintLayer` (interface): interface PaintLayer — ⚠ undocumented
-- `PaintStroke` (interface): interface PaintStroke — ⚠ undocumented
+- `PaintLayer` (interface): interface PaintLayer { paint(instanceId: string, stroke: PaintStroke): void; strokes(instanceId: string): readonly PaintStroke[]; paintedIds(): readonly string[]; clear(instanceId?: string): void; version(instanceId: string): number; subscribe(listener: () => v… — ⚠ undocumented
+- `PaintStroke` (interface): interface PaintStroke { u: number; v: number; radius: number; color: string } — ⚠ undocumented
 - `createPaintLayer` (function): function createPaintLayer(): PaintLayer — ⚠ undocumented
 
 ## @jgengine/core/scene/possession
 
-- `Possession` (interface): interface Possession — ⚠ undocumented
-- `PossessionDeps` (interface): interface PossessionDeps — ⚠ undocumented
-- `PossessionEntities` (interface): interface PossessionEntities — ⚠ undocumented
-- `PossessionEvents` (interface): interface PossessionEvents — ⚠ undocumented
-- `PossessionSnapshot` (interface): interface PossessionSnapshot — ⚠ undocumented
-- `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent — ⚠ undocumented
+- `Possession` (interface): interface Possession { own(userId: string, entityId: string): void; disown(userId: string, entityId: string): void; owns(userId: string, entityId: string): boolean; listOwned(userId: string): readonly string[]; active(userId: string): string; possess(userId: st… — ⚠ undocumented
+- `PossessionDeps` (interface): interface PossessionDeps { entities: PossessionEntities; events?: PossessionEvents } — ⚠ undocumented
+- `PossessionEntities` (interface): interface PossessionEntities { get(id: string): SceneEntity | null; update(id: string, patch: {role?: SceneEntity["role"]}): boolean } — ⚠ undocumented
+- `PossessionEvents` (interface): interface PossessionEvents { emit(name: "possession.swapped", payload: PossessionSwappedEvent): void } — ⚠ undocumented
+- `PossessionSnapshot` (interface): interface PossessionSnapshot { owned: Record<string, readonly string[]>; active: Record<string, string> } — ⚠ undocumented
+- `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent { userId: string; entityId: string; previousEntityId: string } — ⚠ undocumented
 - `createPossession` (function): function createPossession(deps: PossessionDeps): Possession — ⚠ undocumented
 
 ## @jgengine/core/scene/roster
 
-- `Roster` (interface): interface Roster — ⚠ undocumented
-- `RosterCaptureOptions` (interface): interface RosterCaptureOptions — ⚠ undocumented
-- `RosterDeps` (interface): interface RosterDeps — ⚠ undocumented
-- `RosterEntry` (interface): interface RosterEntry — ⚠ undocumented
+- `Roster` (interface): interface Roster { capture(userId: string, catalogId: string, options?: RosterCaptureOptions): RosterEntry; release(userId: string, entryId: string): boolean; has(userId: string, entryId: string): boolean; get(userId: string, entryId: string): RosterEntry |… — ⚠ undocumented
+- `RosterCaptureOptions` (interface): interface RosterCaptureOptions { id?: string; capturedAt?: number } — ⚠ undocumented
+- `RosterDeps` (interface): interface RosterDeps { now?: () => number } — ⚠ undocumented
+- `RosterEntry` (interface): interface RosterEntry { id: string; catalogId: string; capturedAt: number; equipped: boolean } — ⚠ undocumented
 - `createRoster` (function): function createRoster(deps: RosterDeps = {}): Roster — ⚠ undocumented
 
 ## @jgengine/core/scene/sceneKinds
@@ -1392,25 +1392,25 @@
 
 ## @jgengine/core/scene/sceneRaycast
 
-- `SceneEntityQuerySource` (interface): interface SceneEntityQuerySource — ⚠ undocumented
-- `SceneObjectQuerySource` (interface): interface SceneObjectQuerySource — ⚠ undocumented
-- `SceneRaycastApi` (interface): interface SceneRaycastApi — ⚠ undocumented
-- `SceneRaycastDeps` (interface): interface SceneRaycastDeps — ⚠ undocumented
-- `SceneRaycastFilter` (interface): interface SceneRaycastFilter — ⚠ undocumented
-- `SceneRaycastHit` (interface): interface SceneRaycastHit — ⚠ undocumented
-- `SceneRaycastInput` (interface): interface SceneRaycastInput — ⚠ undocumented
+- `SceneEntityQuerySource` (interface): interface SceneEntityQuerySource { list(): readonly {id: string; position: EntityPosition; rotationY: number; name?: string}[]; collidersOf?(instanceId: string): EntityColliderSet | null | undefined; inRadius?(center: EntityPosition, radius: number): readonly string[]; get… — ⚠ undocumented
+- `SceneObjectQuerySource` (interface): interface SceneObjectQuerySource { list(): readonly SceneObject[]; inBox?(min: EntityPosition, max: EntityPosition): readonly SceneObject[]; collidersOf?(instanceId: string): EntityColliderSet | null | undefined; halfExtentsOf?(catalogId: string): EntityPosition | null | u… — ⚠ undocumented
+- `SceneRaycastApi` (interface): interface SceneRaycastApi { raycast(input: SceneRaycastInput): SceneRaycastHit | null; raycastAll(input: SceneRaycastInput): SceneRaycastHit[] } — ⚠ undocumented
+- `SceneRaycastDeps` (interface): interface SceneRaycastDeps { entities?: SceneEntityQuerySource; objects?: SceneObjectQuerySource; terrain?: TerrainRaycastSource; walls?: readonly WallSegment[] } — ⚠ undocumented
+- `SceneRaycastFilter` (interface): interface SceneRaycastFilter { entities?: boolean; objects?: boolean; terrain?: boolean; walls?: boolean } — ⚠ undocumented
+- `SceneRaycastHit` (interface): interface SceneRaycastHit { targetKind: SceneRaycastTargetKind; instanceId: string; catalogId?: string; colliderName: string; purpose: ColliderPurpose; damageEligible: boolean; blocks: boolean; distance: number; point: EntityPosition; normal: EntityPosition } — ⚠ undocumented · used by `firstImpact`: First impact: nearest hit that blocks, or nearest hit if none block.
+- `SceneRaycastInput` (interface): interface SceneRaycastInput { origin: EntityPosition; direction: EntityPosition; maxDistance: number; excludeInstanceIds?: ReadonlySet<string> | readonly string[]; filter?: SceneRaycastFilter; accept?: (hit: SceneRaycastHit) => boolean } — ⚠ undocumented
 - `SceneRaycastTargetKind` (type): type SceneRaycastTargetKind = "entity" | "object" | "terrain" | "wall" — ⚠ undocumented
-- `TerrainRaycastSource` (interface): interface TerrainRaycastSource — ⚠ undocumented
-- `WallSegment` (interface): interface WallSegment — ⚠ undocumented
+- `TerrainRaycastSource` (interface): interface TerrainRaycastSource { sampleHeight(x: number, z: number): number } — ⚠ undocumented
+- `WallSegment` (interface): interface WallSegment { id: string; a: readonly [number, number]; b: readonly [number, number]; yCenter?: number; halfHeight?: number; thickness?: number } — ⚠ undocumented
 - `createSceneRaycast` (function): function createSceneRaycast(deps: SceneRaycastDeps): SceneRaycastApi — ⚠ undocumented
 - `firstImpact` (function): function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null — First impact: nearest hit that blocks, or nearest hit if none block.
 - `hitsUntilBlocked` (function): function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] — Hits up to and including the first blocking collider (damage hitboxes before a wall stay).
 
 ## @jgengine/core/scene/selection
 
-- `ScreenPoint` (interface): interface ScreenPoint — ⚠ undocumented
-- `ScreenRect` (interface): interface ScreenRect — ⚠ undocumented
-- `SelectionSet` (interface): interface SelectionSet — ⚠ undocumented
+- `ScreenPoint` (interface): interface ScreenPoint { id: string; x: number; y: number } — ⚠ undocumented · used by `selectWithinRect`: Ids of the projected candidates whose screen point falls inside the marquee.
+- `ScreenRect` (interface): interface ScreenRect { minX: number; minY: number; maxX: number; maxY: number } — ⚠ undocumented · used by `isMarquee`: True when the drag is large enough to be a marquee rather than a click.
+- `SelectionSet` (interface): interface SelectionSet { add(id: string): void; remove(id: string): void; toggle(id: string): void; has(id: string): boolean; replace(ids: Iterable<string>): void; clear(): void; list(): string[]; size(): number } — ⚠ undocumented · used by `createSelectionSet`: An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `createSelectionSet` (function): function createSelectionSet(initial?: Iterable<string>): SelectionSet — An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
 - `isMarquee` (function): function isMarquee(rect: ScreenRect, thresholdPx = 4): boolean — True when the drag is large enough to be a marquee rather than a click.
 - `rectContainsPoint` (function): function rectContainsPoint(rect: ScreenRect, x: number, y: number): boolean — ⚠ undocumented
@@ -1440,30 +1440,30 @@
 
 ## @jgengine/core/scene/spatial
 
-- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
-- `MoveTowardOptions` (interface): interface MoveTowardOptions — ⚠ undocumented
-- `QueryArcOptions` (interface): interface QueryArcOptions — ⚠ undocumented
-- `SpatialApi` (interface): interface SpatialApi — ⚠ undocumented
-- `SpatialApiOptions` (interface): interface SpatialApiOptions — ⚠ undocumented
-- `SpatialGridOptions` (interface): interface SpatialGridOptions — ⚠ undocumented
+- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented · used by `aimToPoint` (@jgengine/core/input/pointer): Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
+- `MoveTowardOptions` (interface): interface MoveTowardOptions { speed: number; stopDistance?: number; dt: number; avoidSolids?: boolean } — ⚠ undocumented
+- `QueryArcOptions` (interface): interface QueryArcOptions { from: string; aim: Aim; radius: number; halfAngleDeg?: number } — ⚠ undocumented
+- `SpatialApi` (interface): interface SpatialApi { distance(aInstanceId: string, bInstanceId: string): number | null; inRadius(center: EntityPosition | string, radius: number, filter?: (instanceId: string) => boolean): string[]; hasLineOfSight(fromInstanceId: string, toInstanceId: string)… — ⚠ undocumented
+- `SpatialApiOptions` (interface): interface SpatialApiOptions { resolvePosition: (instanceId: string) => EntityPosition | undefined; candidates: () => readonly string[]; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; grid?: SpatialGridOptions | false; getVersion?: () => number; reso… — ⚠ undocumented
+- `SpatialGridOptions` (interface): interface SpatialGridOptions { cellSize: number } — ⚠ undocumented
 - `createSpatialApi` (function): function createSpatialApi(options: SpatialApiOptions): SpatialApi — ⚠ undocumented
 - `distanceBetween` (function): function distanceBetween(a: EntityPosition, b: EntityPosition): number — ⚠ undocumented
 
 ## @jgengine/core/scene/stationClaim
 
 - `ClaimResult` (type): type ClaimResult = | { ok: true; station: Station } | { ok: false; reason: "unknown_vehicle" | "unknown_facet" | "station_taken" | "vehicle_full" } — ⚠ undocumented
-- `SharedVehicleConfig` (interface): interface SharedVehicleConfig — ⚠ undocumented
-- `Station` (interface): interface Station — ⚠ undocumented
+- `SharedVehicleConfig` (interface): interface SharedVehicleConfig { id: string; kit: MountKit; stations: readonly Station[] } — ⚠ undocumented
+- `Station` (interface): interface Station { id: string; facet: string; offset: readonly [number, number, number]; control?: boolean } — ⚠ undocumented
 - `StationClaim` (class): class StationClaim — ⚠ undocumented
 - `createStationClaim` (function): function createStationClaim(controller?: MountController): StationClaim — ⚠ undocumented
 
 ## @jgengine/core/scene/targeting
 
-- `CycleTargetOptions` (interface): interface CycleTargetOptions — ⚠ undocumented
+- `CycleTargetOptions` (interface): interface CycleTargetOptions { filter?: TargetFilter; direction?: "next" | "prev"; maxDistance?: number } — ⚠ undocumented
 - `TargetFilter` (type): type TargetFilter = TargetRelation | "any" — ⚠ undocumented
 - `TargetRelation` (type): type TargetRelation = "hostile" | "friendly" — ⚠ undocumented
-- `Targeting` (interface): interface Targeting — ⚠ undocumented
-- `TargetingOptions` (interface): interface TargetingOptions — ⚠ undocumented
+- `Targeting` (interface): interface Targeting { setTarget(fromId: string, toId: string | null): void; getTarget(fromId: string): string | null; cycleTarget(fromId: string, options?: CycleTargetOptions): string | null; clearAll(instanceId: string): void } — ⚠ undocumented
+- `TargetingOptions` (interface): interface TargetingOptions { candidates: () => string[]; classify?: (fromId: string, toId: string) => TargetRelation; orderBy?: (a: string, b: string) => number; distance?: (fromId: string, toId: string) => number | null } — ⚠ undocumented
 - `createTargeting` (function): function createTargeting(options: TargetingOptions): Targeting — ⚠ undocumented
 
 ## @jgengine/core/scene/vehicleSeat
@@ -1481,31 +1481,31 @@
 ## @jgengine/core/sensor/concealment
 
 - `ColorHex` (type): type ColorHex = string — ⚠ undocumented
-- `ConcealmentSample` (interface): interface ConcealmentSample — ⚠ undocumented
-- `ConcealmentSensor` (interface): interface ConcealmentSensor — ⚠ undocumented
-- `ConcealmentTarget` (interface): interface ConcealmentTarget — ⚠ undocumented
+- `ConcealmentSample` (interface): interface ConcealmentSample { id: string; score: number; concealed: boolean; dwellSeconds: number } — ⚠ undocumented
+- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void } — ⚠ undocumented
+- `ConcealmentTarget` (interface): interface ConcealmentTarget { id: string; entityColors: readonly ColorHex[]; backgroundColors: readonly ColorHex[] } — ⚠ undocumented
 
 ## @jgengine/core/sensor/freezeMonitor
 
-- `FreezeMonitor` (interface): interface FreezeMonitor — ⚠ undocumented
-- `FreezeSubject` (interface): interface FreezeSubject — ⚠ undocumented
-- `FreezeViolation` (interface): interface FreezeViolation — ⚠ undocumented
+- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void } — ⚠ undocumented
+- `FreezeSubject` (interface): interface FreezeSubject { id: string; groundSpeed: number } — ⚠ undocumented
+- `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
 
 ## @jgengine/core/sensor/frustumSensor
 
-- `FramingConfig` (interface): interface FramingConfig — ⚠ undocumented
-- `FrustumCamera` (interface): interface FrustumCamera — ⚠ undocumented
-- `FrustumProjection` (interface): interface FrustumProjection — ⚠ undocumented
-- `FrustumSample` (interface): interface FrustumSample — ⚠ undocumented
-- `FrustumSensor` (interface): interface FrustumSensor — ⚠ undocumented
-- `FrustumTarget` (interface): interface FrustumTarget — ⚠ undocumented
+- `FramingConfig` (interface): interface FramingConfig { idealDistance?: number; centerWeight?: number; sizeWeight?: number } — ⚠ undocumented
+- `FrustumCamera` (interface): interface FrustumCamera { position: EntityPosition; lookAt: EntityPosition; fovDeg?: number; aspect?: number; near?: number; far?: number } — ⚠ undocumented
+- `FrustumProjection` (interface): interface FrustumProjection { inView: boolean; distance: number; screenX: number; screenY: number } — ⚠ undocumented
+- `FrustumSample` (interface): interface FrustumSample { id: string; inView: boolean; distance: number; screenX: number; screenY: number; framing: number; dwellSeconds: number } — ⚠ undocumented
+- `FrustumSensor` (interface): interface FrustumSensor { tick(camera: FrustumCamera, targets: readonly FrustumTarget[], dt: number): FrustumSample[]; reset(id?: string): void } — ⚠ undocumented
+- `FrustumTarget` (interface): interface FrustumTarget { id: string; position: EntityPosition; radius?: number } — ⚠ undocumented
 
 ## @jgengine/core/sensor/hiddenStateProbe
 
-- `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
+- `HiddenStateSource` (interface): interface HiddenStateSource { id: string; position: EntityPosition; variables: Readonly<Record<string, HiddenStateValue>> } — ⚠ undocumented · used by `useHiddenStateProbe` (@jgengine/shell/vision/HiddenStateProbeHud): Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 - `HiddenStateValue` (type): type HiddenStateValue = number | string | boolean — ⚠ undocumented
-- `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
-- `SensorReading` (interface): interface SensorReading — ⚠ undocumented
+- `SensorProbeOptions` (interface): interface SensorProbeOptions { range: number; variableId: string; falloff?: "linear" | "none" } — ⚠ undocumented · used by `useHiddenStateProbe` (@jgengine/shell/vision/HiddenStateProbeHud): Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
+- `SensorReading` (interface): interface SensorReading { sourceId: string; variableId: string; value: HiddenStateValue; strength: number; distance: number } — ⚠ undocumented · used by `useHiddenStateProbe` (@jgengine/shell/vision/HiddenStateProbeHud): Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 
 ## @jgengine/core/sensor/perception
 
@@ -1522,30 +1522,30 @@
 
 ## @jgengine/core/sensor/recordingBuffer
 
-- `RecordingBuffer` (interface): interface RecordingBuffer<T> — ⚠ undocumented
-- `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
-- `RecordingFrame` (interface): interface RecordingFrame<T> — ⚠ undocumented
-- `RecordingPair` (interface): interface RecordingPair<T> — ⚠ undocumented
+- `RecordingBuffer` (interface): interface RecordingBuffer<T> { append(t: number, data: T): void; seek(t: number): RecordingFrame<T> | null; seekPair(t: number): RecordingPair<T>; range(fromT: number, toT: number): RecordingFrame<T>[]; clear(): void; duration(): number; frames(): readonly RecordingFra… — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/shell/replay/useSessionRecorder): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `RecordingBufferOptions` (interface): interface RecordingBufferOptions { maxDurationSeconds?: number; maxFrames?: number } — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/shell/replay/useSessionRecorder): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `RecordingFrame` (interface): interface RecordingFrame<T> { t: number; data: T } — ⚠ undocumented
+- `RecordingPair` (interface): interface RecordingPair<T> { before: RecordingFrame<T> | null; after: RecordingFrame<T> | null } — ⚠ undocumented
 
 ## @jgengine/core/sensor/replayLoop
 
-- `RecordedPoseLike` (interface): interface RecordedPoseLike — ⚠ undocumented
-- `ReplayEntityDeps` (interface): interface ReplayEntityDeps — ⚠ undocumented
+- `RecordedPoseLike` (interface): interface RecordedPoseLike { position: readonly [number, number, number]; rotationY?: number } — ⚠ undocumented
+- `ReplayEntityDeps` (interface): interface ReplayEntityDeps { has(id: string): boolean; spawn(id: string): void; setPose(id: string, pose: {position: readonly [number, number, number]; rotationY?: number; dt?: number}): unknown; despawn(id: string): unknown } — ⚠ undocumented
 - `ReplayLoop` (interface): interface ReplayLoop<T> — Replays a finished `RecordingBuffer` on a loop — modulo-time seek, frame interpolation, and spawn grace, the pieces every ghost-lap/echo feature hand-rolled (#286.4). `sample(t)` is a pure function of absolute time; `null` means "the ghost isn't on track right now".
-- `ReplayLoopOptions` (interface): interface ReplayLoopOptions<T> — ⚠ undocumented
+- `ReplayLoopOptions` (interface): interface ReplayLoopOptions<T> { interpolate?: (before: T, after: T, alpha: number) => T; spawnGraceSeconds?: number } — ⚠ undocumented
 
 ## @jgengine/core/sensor/revealQuery
 
-- `RevealHit` (interface): interface RevealHit — ⚠ undocumented
-- `RevealQuery` (interface): interface RevealQuery — ⚠ undocumented
-- `RevealQueryOptions` (interface): interface RevealQueryOptions — ⚠ undocumented
+- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene.
+- `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
+- `RevealQueryOptions` (interface): interface RevealQueryOptions { resolvePosition: (instanceId: string) => EntityPosition | undefined; resolveTags: (instanceId: string) => readonly string[]; candidates: () => string[] } — ⚠ undocumented
 
 ## @jgengine/core/sensor/visionCone
 
 - `VisionCone` (interface): interface VisionCone — The guard-sight primitive every stealth game hand-rolled: an angle+range cone on the XZ plane whose sight lines are blocked by 2D wall segments (`world/walls` segments fit structurally). Pure math — feed entity positions and heading each tick.
-- `VisionConeConfig` (interface): interface VisionConeConfig — ⚠ undocumented
+- `VisionConeConfig` (interface): interface VisionConeConfig { range: number; angle: number } — ⚠ undocumented
 - `VisionPoint` (type): type VisionPoint = readonly [number, number] — ⚠ undocumented
-- `VisionTarget` (interface): interface VisionTarget<TId extends string = string> — ⚠ undocumented
+- `VisionTarget` (interface): interface VisionTarget<TId extends string = string> { id: TId; at: VisionPoint } — ⚠ undocumented
 - `VisionWall` (interface): interface VisionWall — Structurally matches `world/walls` `WallSegment` — pass those straight in as occluders.
 
 ## @jgengine/core/time/accrueSince
@@ -1555,18 +1555,18 @@
 
 ## @jgengine/core/time/beatClock
 
-- `BeatAccuracyTier` (interface): interface BeatAccuracyTier — ⚠ undocumented
-- `BeatClock` (interface): interface BeatClock — ⚠ undocumented
-- `BeatClockConfig` (interface): interface BeatClockConfig — ⚠ undocumented
-- `BeatInputBuffer` (interface): interface BeatInputBuffer<T> — ⚠ undocumented
-- `BeatJudgement` (interface): interface BeatJudgement — ⚠ undocumented
-- `BeatSnapshot` (interface): interface BeatSnapshot — ⚠ undocumented
-- `BufferedAction` (interface): interface BufferedAction<T> — ⚠ undocumented
+- `BeatAccuracyTier` (interface): interface BeatAccuracyTier { id: string; windowSec: number } — ⚠ undocumented
+- `BeatClock` (interface): interface BeatClock { advance(gameDt: number): BeatSnapshot; snapshot(): BeatSnapshot; now(): number; beatDurationSec(): number; bpm(): number } — ⚠ undocumented
+- `BeatClockConfig` (interface): interface BeatClockConfig { bpm: number; beatsPerBar?: number } — ⚠ undocumented
+- `BeatInputBuffer` (interface): interface BeatInputBuffer<T> { buffer(action: T, nowSec: number): number; advance(nowSec: number): T[]; pendingCount(): number; clear(): void } — ⚠ undocumented
+- `BeatJudgement` (interface): interface BeatJudgement { tier: string; deltaSec: number } — ⚠ undocumented
+- `BeatSnapshot` (interface): interface BeatSnapshot { beat: number; beatIndex: number; bar: number; beatInBar: number; phase: number } — ⚠ undocumented
+- `BufferedAction` (interface): interface BufferedAction<T> { action: T; bufferedAtSec: number; fireAtSec: number } — ⚠ undocumented
 - `DEFAULT_BEAT_TIERS` (const): const DEFAULT_BEAT_TIERS: readonly BeatAccuracyTier[] — ⚠ undocumented
 
 ## @jgengine/core/time/calendarClock
 
-- `GameTime` (interface): interface GameTime — ⚠ undocumented
+- `GameTime` (interface): interface GameTime { year: number; month: number; monthName: string; monthNameFull: string; dayOfMonth: number; hour: number; minute: number; second: number; formattedDate: string; formattedDateFull: string; formattedTime: string; formatted: string } — ⚠ undocumented
 
 ## @jgengine/core/time/dayNightCycle
 
@@ -1588,11 +1588,11 @@
 
 ## @jgengine/core/time/idleProgress
 
-- `ExponentialCatchUpInput` (interface): interface ExponentialCatchUpInput — ⚠ undocumented
-- `IdleWindow` (interface): interface IdleWindow — ⚠ undocumented
-- `IdleWindowConfig` (interface): interface IdleWindowConfig — ⚠ undocumented
-- `LinearCatchUpInput` (interface): interface LinearCatchUpInput — ⚠ undocumented
-- `SteppedCatchUpResult` (interface): interface SteppedCatchUpResult — ⚠ undocumented
+- `ExponentialCatchUpInput` (interface): interface ExponentialCatchUpInput { current: number; factorPerSecond: number; min?: number; max?: number } — ⚠ undocumented
+- `IdleWindow` (interface): interface IdleWindow { elapsedSeconds: number; effectiveSeconds: number; capped: boolean } — ⚠ undocumented
+- `IdleWindowConfig` (interface): interface IdleWindowConfig { maxSeconds?: number; efficiency?: number } — ⚠ undocumented
+- `LinearCatchUpInput` (interface): interface LinearCatchUpInput { current: number; ratePerSecond: number; min?: number; max?: number } — ⚠ undocumented
+- `SteppedCatchUpResult` (interface): interface SteppedCatchUpResult { steps: number; remainderSeconds: number } — ⚠ undocumented
 
 ## @jgengine/core/time/rateWindow
 
@@ -1602,31 +1602,31 @@
 
 ## @jgengine/core/time/serverTick
 
-- `PlanServerTickOptions` (type): type PlanServerTickOptions = { /** Cap catch-up runs per system per heartbeat to avoid spiral-of-death. Default 3. */ maxCatchUp?: number; } — ⚠ undocumented
-- `ServerTickPlan` (interface): interface ServerTickPlan<TSystemId extends string = string> — ⚠ undocumented
+- `PlanServerTickOptions` (type): type PlanServerTickOptions = { /** Cap catch-up runs per system per heartbeat to avoid spiral-of-death. Default 3. */ maxCatchUp?: number; } — ⚠ undocumented · used by `planServerTick`: Decides which systems a heartbeat should run.
+- `ServerTickPlan` (interface): interface ServerTickPlan<TSystemId extends string = string> { due: TickSystemRun<TSystemId>[]; anchors: TickAnchors } — ⚠ undocumented · used by `planServerTick`: Decides which systems a heartbeat should run.
 - `TickAnchors` (type): type TickAnchors = Record<string, number> — Last-run timestamp per system id.
-- `TickSystemDefinition` (interface): interface TickSystemDefinition<TSystemId extends string = string> — ⚠ undocumented
+- `TickSystemDefinition` (interface): interface TickSystemDefinition<TSystemId extends string = string> { id: TSystemId; intervalMs: number; scope?: "onlinePlayers" | "allServers"; batchSize?: number } — ⚠ undocumented · used by `planServerTick`: Decides which systems a heartbeat should run.
 - `TickSystemRun` (interface): interface TickSystemRun<TSystemId extends string = string> — One due system and how many times this heartbeat owes it.
 - `planServerTick` (function): function planServerTick<TSystemId extends string>(systems: readonly TickSystemDefinition<TSystemId>[], anchors: TickAnchors, now: number, options?: PlanServerTickOptions): ServerTickPlan<TSystemId> — Decides which systems a heartbeat should run. A system with no anchor runs immediately. When wall time stalls past multiple intervals the system's `runs` climbs (bounded by maxCatchUp), and the returned anchor moves by that many intervals — so a host that ignores `runs` loses the catch-up work. Excess lag past the bound resyncs the anchor to `now`. Returned anchors carry only systems present in the pipeline, so removed systems clean up.
 - `tickRunCount` (function): function tickRunCount<TSystemId extends string>(plan: ServerTickPlan<TSystemId>, id: TSystemId): number — Times this plan owes `id`, or 0 when it is not due. Saves a host a lookup over {@link ServerTickPlan.due}.
 
 ## @jgengine/core/time/simClock
 
-- `CalendarTime` (interface): interface CalendarTime — ⚠ undocumented
-- `ClockSnapshot` (interface): interface ClockSnapshot — ⚠ undocumented
-- `SimClock` (interface): interface SimClock — ⚠ undocumented
-- `SimClockOptions` (interface): interface SimClockOptions — ⚠ undocumented
-- `TimeConfig` (interface): interface TimeConfig — ⚠ undocumented
+- `CalendarTime` (interface): interface CalendarTime { totalSeconds: number; day: number; hour: number; minute: number; second: number; dayFraction: number; year: number; dayOfYear: number; yearFraction: number; season?: string } — ⚠ undocumented
+- `ClockSnapshot` (interface): interface ClockSnapshot { now: number; paused: boolean; speed: number; playSpeed: number; timescale: number; scale: number; speeds: readonly number[]; calendar: CalendarTime } — ⚠ undocumented
+- `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; toggle(): void; setSpeed(multi… — ⚠ undocumented
+- `SimClockOptions` (interface): interface SimClockOptions { config?: TimeConfig; onChange?: () => void } — ⚠ undocumented
+- `TimeConfig` (interface): interface TimeConfig { scale?: number; speeds?: readonly number[]; dayLength?: number; start?: number; startPaused?: boolean; daysPerYear?: number; seasons?: readonly string[] } — ⚠ undocumented
 - `createSimClock` (function): function createSimClock(options: SimClockOptions = {}): SimClock — ⚠ undocumented
 
 ## @jgengine/core/time/stateSchedule
 
-- `ClearWindowScan` (interface): interface ClearWindowScan — ⚠ undocumented
-- `SchedulePhase` (interface): interface SchedulePhase<T> — ⚠ undocumented
-- `ScheduleSample` (interface): interface ScheduleSample<T> — ⚠ undocumented
-- `ScheduleWindow` (interface): interface ScheduleWindow — ⚠ undocumented
+- `ClearWindowScan` (interface): interface ClearWindowScan { fromSeconds: number; horizonSeconds: number; stepSeconds: number; minDurationSeconds?: number } — ⚠ undocumented · used by `nextClearWindow`: Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window.
+- `SchedulePhase` (interface): interface SchedulePhase<T> { state: T; durationSeconds: number } — ⚠ undocumented
+- `ScheduleSample` (interface): interface ScheduleSample<T> { state: T; index: number; elapsedSeconds: number; remainingSeconds: number; fraction: number } — ⚠ undocumented
+- `ScheduleWindow` (interface): interface ScheduleWindow { start: number; end: number } — ⚠ undocumented · used by `nextClearWindow`: Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window.
 - `StateSchedule` (interface): interface StateSchedule<T> — A deterministic timeline of states — position-in-schedule is a pure function of absolute time, so a forecast preview and the live state can never disagree. One primitive behind zoned weather shifts, hazard cycles, and timetabled machinery: `stateAt`/`sampleAt` for the live state, `nextTransitionAt` for countdowns, `windowsOf`/`nextWindow` for "when is it safe" forecasts.
-- `StateScheduleConfig` (interface): interface StateScheduleConfig<T> — ⚠ undocumented
+- `StateScheduleConfig` (interface): interface StateScheduleConfig<T> { phases: readonly SchedulePhase<T>[]; loop?: boolean; offsetSeconds?: number } — ⚠ undocumented
 - `createStateSchedule` (function): function createStateSchedule<T>(config: StateScheduleConfig<T>): StateSchedule<T> — ⚠ undocumented
 - `nextClearWindow` (function): function nextClearWindow(isClear: (t: number) => boolean, scan: ClearWindowScan): ScheduleWindow | null — Forward-scan any predicate-of-time — a timetable mover's "is the crossing clear at `t`" — for the next open window. Sampling-based: pick `stepSeconds` at or below half the shortest gap that matters.
 
@@ -1694,13 +1694,13 @@
 
 ## @jgengine/core/visibility/assetStreaming
 
-- `AssetLoadResult` (interface): interface AssetLoadResult — ⚠ undocumented
+- `AssetLoadResult` (interface): interface AssetLoadResult { readonly bytes?: number; readonly value?: unknown } — ⚠ undocumented
 - `AssetLoadState` (type): type AssetLoadState = "queued" | "loading" | "loaded" | "unloaded" | "error" — ⚠ undocumented
-- `AssetRecord` (interface): interface AssetRecord — ⚠ undocumented
-- `AssetStreamingOptions` (interface): interface AssetStreamingOptions — ⚠ undocumented
-- `AssetStreamingSystem` (interface): interface AssetStreamingSystem — ⚠ undocumented
-- `CancelSignal` (interface): interface CancelSignal — ⚠ undocumented
-- `StreamingStats` (interface): interface StreamingStats — ⚠ undocumented
+- `AssetRecord` (interface): interface AssetRecord { readonly id: string; state: AssetLoadState; bytes: number; priority: number; refCount: number; pinned: boolean; lastActiveMs: number; value: unknown } — ⚠ undocumented
+- `AssetStreamingOptions` (interface): interface AssetStreamingOptions { readonly load: (assetId: string, signal: CancelSignal) => Promise<AssetLoadResult>; readonly unload?: (assetId: string) => void; readonly settings?: Partial<StreamingSettings>; readonly now?: () => number } — ⚠ undocumented
+- `AssetStreamingSystem` (interface): interface AssetStreamingSystem { request(assetId: string, priority?: number): void; retain(assetId: string): void; release(assetId: string): void; pin(assetId: string): void; unpin(assetId: string): void; markActive(assetId: string): void; tick(dt: number): void; cancel(… — ⚠ undocumented
+- `CancelSignal` (interface): interface CancelSignal { readonly cancelled: boolean } — ⚠ undocumented
+- `StreamingStats` (interface): interface StreamingStats { queued: number; loading: number; loaded: number; unloaded: number; errored: number; inFlight: number; cancelled: number; bytes: number } — ⚠ undocumented
 - `createAssetStreamingSystem` (function): function createAssetStreamingSystem(options: AssetStreamingOptions): AssetStreamingSystem — ⚠ undocumented
 
 ## @jgengine/core/visibility/bounds
@@ -1709,7 +1709,7 @@
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `DEFAULT_BOUNDS` (const): const DEFAULT_BOUNDS: BoundsSpec — Conservative default: a unit sphere. Objects without explicit bounds cull as a small volume, never a point.
 - `RenderBounds` (interface): interface RenderBounds — World-space bounds a culler tests against. Kept as flat scalars (not tuples) so the hot culling path reads them without allocating. Carries both a bounding sphere (cheap broad reject) and a tight AABB (precise reject) — the standard "engine bounds" the frustum, distance, and spatial-index tests all consume.
-- `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented
+- `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 
 ## @jgengine/core/visibility/camera
 
@@ -1737,14 +1737,14 @@
 ## @jgengine/core/visibility/frustum
 
 - `CameraView` (type): type CameraView = PerspectiveView | OrthographicView — ⚠ undocumented
-- `Frustum` (interface): interface Frustum — ⚠ undocumented
+- `Frustum` (interface): interface Frustum { readonly planes: Float64Array; readonly corners: Float64Array; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } — ⚠ undocumented
 - `OrthographicView` (interface): interface OrthographicView — 2D / orthographic camera (top-down, side-scroller, minimap).
 - `PerspectiveView` (interface): interface PerspectiveView — 3D perspective camera (the default game camera).
 
 ## @jgengine/core/visibility/occlusion
 
-- `AxisOccluderOptions` (interface): interface AxisOccluderOptions — ⚠ undocumented
-- `OcclusionInput` (interface): interface OcclusionInput — ⚠ undocumented
+- `AxisOccluderOptions` (interface): interface AxisOccluderOptions { enabled?: boolean; minOccluderRadius?: number } — ⚠ undocumented · used by `createAxisAlignedOcclusionTester`: A deliberately conservative bounding-volume occlusion tester.
+- `OcclusionInput` (interface): interface OcclusionInput { readonly camera: CameraView; readonly bounds: RenderBounds; readonly occluders: Iterable<RenderBounds> } — ⚠ undocumented
 - `OcclusionTester` (interface): interface OcclusionTester — Optional occlusion stage. Kept behind a feature flag and disabled by default: a fragile occlusion test that wrongly hides a visible object is worse than no occlusion at all. Any tester here MUST be conservative — it may return false (visible) for a truly hidden object, but must never return true (hidden) for an object the player can actually see.
 - `createAxisAlignedOcclusionTester` (function): function createAxisAlignedOcclusionTester(options: AxisOccluderOptions = {}): OcclusionTester — A deliberately conservative bounding-volume occlusion tester. It hides an object only when a single large occluder's AABB fully contains the object's AABB on every axis AND sits strictly nearer the camera on the dominant view axis — the object is then provably in the occluder's shadow. Full containment (not just the two perpendicular axes) makes it stricter than it needs to be, which is the safe direction: it never hides a partially-visible object.
 - `noOcclusion` (const): const noOcclusion: OcclusionTester — The safe default: never occludes anything.
@@ -1755,44 +1755,44 @@
 - `DEFAULT_CULLING_SETTINGS` (const): const DEFAULT_CULLING_SETTINGS: CullingSettings — ⚠ undocumented
 - `DEFAULT_STREAMING_SETTINGS` (const): const DEFAULT_STREAMING_SETTINGS: StreamingSettings — ⚠ undocumented
 - `ObjectVisibilityOverrides` (interface): interface ObjectVisibilityOverrides — Per-object visibility/streaming overrides. Also the shape used at the layer, scene, and global-override levels — resolution merges object → layer → scene → global-override, so a game can, say, mark a whole "hud" layer alwaysVisible without touching each object.
-- `ResolvedOverrides` (interface): interface ResolvedOverrides — ⚠ undocumented
-- `StreamingSettings` (interface): interface StreamingSettings — ⚠ undocumented
+- `ResolvedOverrides` (interface): interface ResolvedOverrides { alwaysVisible: boolean; neverUnload: boolean; minRenderDistance: number | undefined; maxRenderDistance: number | undefined; preloadMargin: number | undefined; cullingDisabled: boolean; streamingDisabled: boolean; classification: "static" … — ⚠ undocumented · used by `resolveOverrides`: Merge override layers by precedence: earlier arguments win.
+- `StreamingSettings` (interface): interface StreamingSettings { readonly enabled: boolean; readonly preloadMargin: number; readonly unloadGraceSeconds: number; readonly maxLoadsPerFrame: number; readonly maxUnloadsPerFrame: number; readonly keepResidentBytes: number } — ⚠ undocumented
 - `mergeCullingSettings` (function): function mergeCullingSettings(base: CullingSettings, patch: Partial<CullingSettings>): CullingSettings — ⚠ undocumented
 - `mergeStreamingSettings` (function): function mergeStreamingSettings(base: StreamingSettings, patch: Partial<StreamingSettings>): StreamingSettings — ⚠ undocumented
 - `resolveOverrides` (function): function resolveOverrides(...layers: readonly (ObjectVisibilityOverrides | undefined)[]): ResolvedOverrides — Merge override layers by precedence: earlier arguments win. Pass object, then layer, then scene, then global.
 
 ## @jgengine/core/visibility/simulationCulling
 
-- `SimulationCuller` (interface): interface SimulationCuller — ⚠ undocumented
+- `SimulationCuller` (interface): interface SimulationCuller { enabled(): boolean; setEnabled(value: boolean): void; step(id: string, distance: number, dt: number): SimulationDecision; forget(id: string): void; clear(): void } — ⚠ undocumented
 - `SimulationCullingOptions` (interface): interface SimulationCullingOptions — Simulation culling is a SEPARATE, opt-in system from render culling. Render culling only decides what is drawn; this decides whether a low-priority off-screen entity updates this tick. It is disabled by default and never throttles a protected entity — physics-critical, networking-critical, audio-critical, scripted, or explicitly-active entities always update. Gameplay correctness must never depend on an entity being on-screen, so opt in only where skipping updates is provably safe.
-- `SimulationDecision` (interface): interface SimulationDecision — ⚠ undocumented
+- `SimulationDecision` (interface): interface SimulationDecision { update: boolean; elapsed: number } — ⚠ undocumented
 - `createSimulationCuller` (function): function createSimulationCuller(options: SimulationCullingOptions = {}): SimulationCuller — ⚠ undocumented
 
 ## @jgengine/core/visibility/spatialIndex
 
 - `SpatialIndex` (interface): interface SpatialIndex — A uniform 3D spatial hash the renderer and streaming system query for potentially-visible objects instead of scanning the whole scene. Objects are keyed by their world AABB into every overlapping cell; a moving object only rewrites the cells that actually changed. Static objects are inserted once and never touched again. Oversized objects (huge terrain chunks, world bounds) are held separately so they are always considered.
-- `SpatialIndexOptions` (interface): interface SpatialIndexOptions — ⚠ undocumented
+- `SpatialIndexOptions` (interface): interface SpatialIndexOptions { readonly cellSize?: number; readonly maxCellSpan?: number } — ⚠ undocumented
 - `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — ⚠ undocumented
 
 ## @jgengine/core/visibility/visibilitySystem
 
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
-- `VisibilityDebugSnapshot` (interface): interface VisibilityDebugSnapshot — ⚠ undocumented
-- `VisibilityResult` (interface): interface VisibilityResult — ⚠ undocumented
-- `VisibilitySystem` (interface): interface VisibilitySystem — ⚠ undocumented
-- `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions — ⚠ undocumented
+- `VisibilityDebugSnapshot` (interface): interface VisibilityDebugSnapshot { cameras: {id: string; kind: CameraKind; corners: number[]; preloadMargin: number}[]; bounds: {id: string; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number; visible: boolean}[]; partitions: {key: string; c… — ⚠ undocumented
+- `VisibilityResult` (interface): interface VisibilityResult { readonly visible: ReadonlySet<string>; readonly preload: ReadonlySet<string>; readonly stats: VisibilityStats } — ⚠ undocumented
+- `VisibilitySystem` (interface): interface VisibilitySystem { update(): VisibilityResult; isVisible(id: string): boolean; isPreloaded(id: string): boolean; boundsOf(id: string): RenderBounds | undefined; settings(): CullingSettings; setSettings(patch: Partial<CullingSettings>): void; stats(): Visibi… — ⚠ undocumented
+- `VisibilitySystemOptions` (interface): interface VisibilitySystemOptions { readonly renderables: () => Iterable<Renderable>; readonly cameras: () => readonly CameraVisibilityContext[]; readonly settings?: Partial<CullingSettings>; readonly sceneOverrides?: ObjectVisibilityOverrides; readonly globalOverrides?: Ob… — ⚠ undocumented
 - `createVisibilitySystem` (function): function createVisibilitySystem(options: VisibilitySystemOptions): VisibilitySystem — ⚠ undocumented
 
 ## @jgengine/core/world
 
 - `ANNOTATION_FEED_ACTION` (const): const ANNOTATION_FEED_ACTION: "map.annotation" — Feed action shared drawings ride by default (pair with the party feed, like pings).
-- `Aabb` (interface): interface Aabb — ⚠ undocumented
+- `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `polygonBounds`: Axis-aligned bounds of a polygon, or null if it has no points.
 - `AcquisitionEnvelope` (type): type AcquisitionEnvelope = number | ((selfId: string, candidateId: string) => number) — Composable target acquisition: the "which enemy do I lock onto?" decision split into the independent concerns every aggro system tangles together — a bounded candidate provider, an eligibility filter, a per-pair acquisition envelope (dynamic range), a perception/LOS gate, scoring, deterministic tie-break, and retention hysteresis. This owns *policy*; threat, brains, and movement stay separate. Feed `candidates` a spatial-index query, never a full-world scan.
 - `AcquisitionPolicy` (interface): interface AcquisitionPolicy — A fully composed acquisition policy. Every concern is an independent, injectable seam; the only required pieces are the bounded `candidates` provider and the `distance` metric. Omit the rest to fall back to the thin default — a static/unbounded range, everything eligible and perceptible, nearest-wins scoring, id tie-break, no hysteresis — which matches a plain proximity aggro radius.
 - `AcquisitionResult` (interface): interface AcquisitionResult — Outcome of one acquisition pass.
 - `AcquisitionRetention` (interface): interface AcquisitionRetention — Retention hysteresis that keeps an already-held target from flickering under churn.
 - `AddBodyOptions` (type): type AddBodyOptions = BoxBodyOptions | SphereBodyOptions — ⚠ undocumented
-- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented
+- `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented · used by `aimToPoint` (@jgengine/core/input/pointer): Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `AircraftAxis` (type): type AircraftAxis = "pitch" | "roll" | "yaw" | "throttle" | "collective" | "airbrake" | "afterburner" | "vectoring" — Axes an aircraft can bind — which actions drive each flight control.
 - `AircraftDynamics` (interface): interface AircraftDynamics — Stateful six-degree-of-freedom aircraft simulation.
 - `AircraftKind` (type): type AircraftKind = "fixedWing" | "rotorcraft" | "vtol" — Supported aerodynamic/propulsion families.
@@ -1816,19 +1816,19 @@
 - `AreaStackPolicy` (type): type AreaStackPolicy<P> = (memberships: readonly AreaMembership<P>[]) => AreaMembership<P>[] — Reduce one receiver's overlapping memberships to the subset that applies under a stacking rule.
 - `AreaStepInput` (interface): interface AreaStepInput — Per-tick inputs the field needs to reconcile membership without scanning the world.
 - `AssetAnchor` (type): type AssetAnchor = "center" | "corner" | { readonly x: number; readonly z: number } — Where a model's pivot sits within its footprint: `center` (origin at the footprint center), `corner` (origin at the min-X/min-Z corner), or a normalized `{ x, z }` fraction in `[-0.5, 0.5]`.
-- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> — ⚠ undocumented
+- `AssetCatalog` (interface): interface AssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef> { register(id: string, asset: TMeta): void; resolve(id: string): TMeta | null; has(id: string): boolean; ids(): readonly string[] } — ⚠ undocumented · used by `buildCatalog` (@jgengine/assets): Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `AssetSpaceIssue` (interface): interface AssetSpaceIssue — One problem found by {@link validateAssetSpace}: which metadata field and why it is invalid.
 - `AttackMoveOrderPayload` (interface): interface AttackMoveOrderPayload — Payload for an attack-move: advance toward `point`, engaging hostiles encountered en route.
-- `AudioBusDef` (interface): interface AudioBusDef — ⚠ undocumented
-- `AudioFalloffConfig` (interface): interface AudioFalloffConfig — ⚠ undocumented
+- `AudioBusDef` (interface): interface AudioBusDef { id: AudioBusId; gain?: number } — ⚠ undocumented
+- `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
 - `AuthoredTrigger` (interface): interface AuthoredTrigger — One resolved trigger binding from a document object.
 - `AuthoredTriggerRuntime` (interface): interface AuthoredTriggerRuntime — Runtime handle that watches authored triggers against moving actors each tick.
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
-- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented
-- `BallisticSweepHit` (interface): interface BallisticSweepHit — ⚠ undocumented
+- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
+- `BallisticSweepHit` (interface): interface BallisticSweepHit { point: [number, number, number]; time: number } — ⚠ undocumented
 - `BandTrimOptions` (interface): interface BandTrimOptions extends JunctionGeometryOptions — Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance.
 - `BehaviorAction` (type): type BehaviorAction = DecisionAction<BehaviorActionContext> — Callback used by a registered decision graph behavior action.
 - `BehaviorActionContext` (interface): interface BehaviorActionContext — Context supplied to a registered decision graph action.
@@ -1845,10 +1845,10 @@
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented
-- `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `BuildingIndex` (interface): interface BuildingIndex { readonly buildings: readonly GeneratedBuilding[]; at(point: Vec2): GeneratedBuilding | undefined; within(area: Aabb): GeneratedBuilding[]; nearest(point: Vec2): BuildingHit | undefined; isInside(point: Vec2): boolean; blockers(margin?: nu… — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
-- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
+- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented · used by `BUILDING_STYLE_WALL_TONES` (@jgengine/core/world/buildings): Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block…
 - `CITY_BUILDING_BUDGET` (const): const CITY_BUILDING_BUDGET: 2600 — Max buildings a single `city` district generates — the block/parcel pipeline's bounded lot cap.
 - `CITY_DEFAULTS` (const): const CITY_DEFAULTS: CityRules — City defaults: a zoned mixed metropolis — towers downtown, slabs mid-ring, houses at the edge.
 - `CITY_FILLER_CLASSES` (const): const CITY_FILLER_CLASSES: readonly CityFillerClass[] — All filler classes, for validation and interior-pass allow-lists.
@@ -1906,13 +1906,13 @@
 - `CityZoneBand` (type): type CityZoneBand = "core" | "mid" | "edge" — Zone band a lot falls in: dense core, middle ring, or the district edge.
 - `CityZoneMixes` (interface): interface CityZoneMixes — Weighted building-class mix per zone band; the radial profile decides which band a lot falls in.
 - `CityZoneProfile` (type): type CityZoneProfile = "core-out" | "inverted" | "uniform" — How the radial zone metric maps to bands.
-- `ClockSnapshot` (interface): interface ClockSnapshot — ⚠ undocumented
-- `CollapseEvent` (interface): interface CollapseEvent — ⚠ undocumented
+- `ClockSnapshot` (interface): interface ClockSnapshot { now: number; paused: boolean; speed: number; playSpeed: number; timescale: number; scale: number; speeds: readonly number[]; calendar: CalendarTime } — ⚠ undocumented
+- `CollapseEvent` (interface): interface CollapseEvent { fell: readonly string[]; collapsed: boolean } — ⚠ undocumented
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
 - `CollisionEvent` (interface): interface CollisionEvent — A contact reported to `onCollision`. The object is reused each call — read/copy, never retain.
 - `CollisionObstacle` (interface): interface CollisionObstacle — A placed scene object the walking player collides against as a circle-vs-AABB obstacle.
-- `ConcealmentSensor` (interface): interface ConcealmentSensor — ⚠ undocumented
-- `ContextMenu` (interface): interface ContextMenu — ⚠ undocumented
+- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void } — ⚠ undocumented
+- `ContextMenu` (interface): interface ContextMenu { kind: ContextTargetKind; targetId: string; point?: readonly [number, number, number]; verbs: readonly ContextVerb[] } — ⚠ undocumented · used by `buildContextMenu`: Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `ContextVerb` (interface): interface ContextVerb — One right-click verb: a label plus the command it dispatches (walk-then-act supported by args).
 - `ContourLine` (interface): interface ContourLine — A single iso-elevation contour traced across a region as a flat list of XZ line segments.
 - `ContourOptions` (interface): interface ContourOptions — Shaping for {@link extractContours}: region, vertical spacing, emphasis cadence, and sample budget.
@@ -1941,35 +1941,35 @@
 - `DayNightSnapshot` (interface): interface DayNightSnapshot — Serializable day-night position — accumulated clock offset, pause state, and speed — for save/load.
 - `DecisionGraphBehavior` (interface): interface DecisionGraphBehavior — Decision graph behavior descriptor using a named registered action set.
 - `DrapeOptions` (interface): interface DrapeOptions — Shaping for surface draping: subdivision spacing and a lift to keep the line off the ground.
-- `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
+- `EditableTerrain` (interface): interface EditableTerrain extends TerrainField { readonly cols: number; readonly rows: number; readonly cellSize: number; apply(edit: TerraformEdit): number; applyRecording(edit: TerraformEdit, record: TerraformDeltaRecorder): number; editDelta(edit: TerraformEdit): TerraformDelta; appl… — ⚠ undocumented · used by `beginSurfaceStroke`: Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta.
 - `ElevationReadout` (interface): interface ElevationReadout — Measurable elevation readout at a single world point — the cursor/hover feedback value.
 - `ElevationSummary` (interface): interface ElevationSummary — Aggregate elevation statistics over a region — the selection min/max/mean and legend range.
 - `EmittedCue` (interface): interface EmittedCue<Payload = unknown> — A cue plus the resolved firing context passed to {@link SequenceDirector.onCue} listeners.
 - `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
 - `EmptyOrderPayload` (type): type EmptyOrderPayload = Record<string, never> — Payload for stop/hold orders — no data; the verb is the intent.
-- `EnclosedFootprint` (interface): interface EnclosedFootprint — ⚠ undocumented
+- `EnclosedFootprint` (interface): interface EnclosedFootprint { polygon: readonly Vec2[]; aabb: Aabb; area: number; perimeter: number; closed: boolean } — ⚠ undocumented
 - `EngagementKindConfig` (interface): interface EngagementKindConfig extends OrderKindConfig — Move + engagement config carrying the default radii the payload may override.
 - `EngagementOrderState` (interface): interface EngagementOrderState — Live intent an attack-move/targeted order writes into `Order.state`; the game reads it to run the actual attack. Serializable.
-- `EntityColliderSet` (interface): interface EntityColliderSet — ⚠ undocumented
-- `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented
-- `EnvironmentField` (interface): interface EnvironmentField — ⚠ undocumented
-- `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature — ⚠ undocumented
-- `FactionDef` (interface): interface FactionDef — ⚠ undocumented
+- `EntityColliderSet` (interface): interface EntityColliderSet { body?: ColliderDef; hitboxes?: readonly ColliderDef[] } — ⚠ undocumented · used by `eyeHeightFromColliders` (@jgengine/core/combat): Eye height derived from a collider set: 90% of the tallest hitbox top, or the humanoid default when unknown.
+- `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented · used by `resolveSourceWalkerStep` (@jgengine/core/movement/solidObstacles): {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare {@link SolidObstacleSource} and a caller-owned {@link Obst…
+- `EnvironmentField` (interface): interface EnvironmentField { sample(x: number, z: number, time: number, y?: number): EnvironmentSample; temperature(x: number, z: number, time: number, y?: number): number; wetness(x: number, z: number, time: number): number; lightExposure(x: number, z: number, time:… — ⚠ undocumented · used by `createEnvironmentField`: A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time.
+- `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature { kind: "environment"; terrain?: TerrainEnvironmentDescriptor; islands?: readonly TerrainIslandDescriptor[]; sky?: SkyEnvironmentDescriptor; weather?: readonly WeatherEnvironmentDescriptor[]; vegetation?: readonly VegetationEnvironmentDescr… — ⚠ undocumented · used by `environment`: Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `FactionDef` (interface): interface FactionDef { id: string; relations?: Readonly<Record<string, FactionRelation>>; towardSelf?: FactionRelation; towardOthers?: FactionRelation } — ⚠ undocumented
 - `FallbackPolicy` (type): type FallbackPolicy<P extends SamplePoint = SamplePoint> = | "none" | "last-candidate" | { readonly point: P } — What to return when the attempt budget is exhausted. `"none"` yields no point (honest failure); `"last-candidate"` returns the final rejected draw (post-projection); `{ point }` returns a caller fixed fallback (a hand-placed safe spot). Explicit, so a caller never mistakes a fallback for a hit.
 - `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
 - `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
 - `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
-- `FireGrid` (interface): interface FireGrid — ⚠ undocumented
+- `FireGrid` (interface): interface FireGrid { readonly cols: number; readonly rows: number; step(dt: number, options?: FireStepOptions): void; igniteCell(col: number, row: number): void; ignite(x: number, z: number): boolean; cell(col: number, row: number): FireCell; cellAt(x: number… — ⚠ undocumented
 - `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
 - `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
 - `FlightControlInput` (interface): interface FlightControlInput — Normalized pilot inputs for one flight-simulation tick.
 - `FlightControlRates` (interface): interface FlightControlRates — Angular authority, response, damping, and self-leveling configuration.
 - `FlightVector` (type): type FlightVector = readonly [number, number, number] — Three-dimensional world-space vector used by the flight model.
-- `FogCells` (interface): interface FogCells — ⚠ undocumented
+- `FogCells` (interface): interface FogCells { cols: number; rows: number; minX: number; minZ: number; cellSize: number; revealed: readonly boolean[]; revealedCount: number } — ⚠ undocumented
 - `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
 - `ForceVolume` (class): class ForceVolume — A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`), conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only on entry by tracking membership between ticks.
 - `FormationSlotGenerator` (type): type FormationSlotGenerator = (count: number) => Vec2[] — Produces `count` slot offsets in the group's local frame — `[right, forward]` where `+forward` points where the group faces. Index order is the slot order; a generator must be pure (same `count` → same offsets) so placement stays deterministic. Sample generators below cover common shapes; games pass their own for anything else (crowds, convoys, sports positions) with no engine edit.
-- `FramingConfig` (interface): interface FramingConfig — ⚠ undocumented
+- `FramingConfig` (interface): interface FramingConfig { idealDistance?: number; centerWeight?: number; sizeWeight?: number } — ⚠ undocumented
 - `FreeFlightBindings` (interface): interface FreeFlightBindings — Per-axis bindings for free-flight — which actions drive each flight axis. Positive is forward/right/up.
 - `FreeFlightController` (interface): interface FreeFlightController — Stateful handle for any free-flight actor with snapshot/restore/retune.
 - `FreeFlightIntent` (interface): interface FreeFlightIntent — Intent for one free-flight tick — forward/right from WASD/analog, vertical from jump/crouch.
@@ -1977,13 +1977,13 @@
 - `FreeFlightState` (interface): interface FreeFlightState — Velocity state for a free-flight actor — serializable and ownable by the caller.
 - `FreeFlightStep` (interface): interface FreeFlightStep — World displacement produced by one free-flight tick.
 - `FreeFlightTuning` (interface): interface FreeFlightTuning — Data-first tuning for one free-flight profile.
-- `FreezeMonitor` (interface): interface FreezeMonitor — ⚠ undocumented
-- `FreezeViolation` (interface): interface FreezeViolation — ⚠ undocumented
-- `Frustum` (interface): interface Frustum — ⚠ undocumented
-- `FrustumProjection` (interface): interface FrustumProjection — ⚠ undocumented
-- `FrustumSample` (interface): interface FrustumSample — ⚠ undocumented
-- `FrustumSensor` (interface): interface FrustumSensor — ⚠ undocumented
-- `FrustumTarget` (interface): interface FrustumTarget — ⚠ undocumented
+- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void } — ⚠ undocumented
+- `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
+- `Frustum` (interface): interface Frustum { readonly planes: Float64Array; readonly corners: Float64Array; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } — ⚠ undocumented
+- `FrustumProjection` (interface): interface FrustumProjection { inView: boolean; distance: number; screenX: number; screenY: number } — ⚠ undocumented
+- `FrustumSample` (interface): interface FrustumSample { id: string; inView: boolean; distance: number; screenX: number; screenY: number; framing: number; dwellSeconds: number } — ⚠ undocumented
+- `FrustumSensor` (interface): interface FrustumSensor { tick(camera: FrustumCamera, targets: readonly FrustumTarget[], dt: number): FrustumSample[]; reset(id?: string): void } — ⚠ undocumented
+- `FrustumTarget` (interface): interface FrustumTarget { id: string; position: EntityPosition; radius?: number } — ⚠ undocumented
 - `GRASS_SCHEMA` (const): const GRASS_SCHEMA: ParamSchema — The grass parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `GROUND_DECAL_LAYERS` (const): const GROUND_DECAL_LAYERS: { readonly road: 0.06; readonly junction: 0.06; readonly marking: 0.11; readonly glow: 0.14; } — The single owning table of ground-decal Y offsets, in world units above the sampled terrain.
 - `GeneratedAsset` (interface): interface GeneratedAsset — A resolved generator asset: its parts plus the overall local-space bounds (min/max corners).
@@ -1991,10 +1991,10 @@
 - `GeneratedPart` (interface): interface GeneratedPart — One generated primitive part — a box/panel placed in the asset's local space.
 - `Glide` (class): class Glide — A reduced-gravity, forward-thrust glide over a physics body — wingsuit / glider / paraglider (Enshrouded, Grounded). Call `apply(dt, steerX, steerZ)` each frame *before* `world.step`: it feeds back most of the gravity the sim is about to apply (leaving `gravityScale` of it), pushes the body along the steer vector by `thrust`, and clamps descent to `maxFallSpeed`. Stop calling it to fall normally again — no attach/detach state to leak.
 - `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
-- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift"> — ⚠ undocumented
+- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift"> — ⚠ undocumented · used by `grass`: Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
 - `GravityField` (interface): interface GravityField — Position-dependent gravity source used by movement and vehicle simulations.
 - `GravityVector` (type): type GravityVector = readonly [number, number, number] — Three-dimensional acceleration vector sampled from a gravity field.
-- `GripCurve` (interface): interface GripCurve — ⚠ undocumented
+- `GripCurve` (interface): interface GripCurve { points: readonly (readonly [number, number])[] } — ⚠ undocumented · used by `sampleGripCurve`: Piecewise-linear tire-grip curve: normalized lateral slip → available grip (0..1).
 - `GroundConfig` (type): type GroundConfig = FlatGround | RoundGround | VoxelGround | BoardGround — The substrate of a place, discriminated by `mode` — TS rejects a `radius` on `flat` and `x`/`z` on `round`.
 - `GroundGenerator` (interface): interface GroundGenerator — Serializable algorithm parameters for a procedural ground generator. Never a genre kit.
 - `GroundMode` (type): type GroundMode = "flat" | "round" | "voxel" | "board" — Canonical ground modes after normalization (`stage` → `board`).
@@ -2007,7 +2007,7 @@
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
 - `HeatState` (interface): interface HeatState — Serializable heat-system state — round-trips through `createHeatState`/`advanceHeat` each tick.
 - `HeightSampler` (type): type HeightSampler = (x: number, z: number) => number — A height sampler over the ground: world elevation at any `x`/`z`.
-- `HiddenStateSource` (interface): interface HiddenStateSource — ⚠ undocumented
+- `HiddenStateSource` (interface): interface HiddenStateSource { id: string; position: EntityPosition; variables: Readonly<Record<string, HiddenStateValue>> } — ⚠ undocumented · used by `useHiddenStateProbe` (@jgengine/shell/vision/HiddenStateProbeHud): Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 - `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
 - `InterestCensus` (interface): interface InterestCensus — Aggregate counts of active vs dormant gates — the metric the issue asks a scheduler to expose.
 - `InterestCensusAccumulator` (interface): interface InterestCensusAccumulator — A running census accumulator; call `record` inside the caller's existing tick loop (no extra pass).
@@ -2018,9 +2018,9 @@
 - `InterestState` (type): type InterestState = "active" | "dormant" — Interest scheduling: the scale primitive that lets far-away agents sleep instead of running acquisition and pathing every frame. A per-agent gate decides — from proximity to the nearest interest source plus explicit wake signals — whether this tick does expensive work, at what cadence, with hysteresis so it never thrashes at the boundary and deterministic staggering so a thousand siblings do not all wake on the same frame. State is a plain serializable object; the caller drives it from a bounded spatial query, never a full-world scan.
 - `InterestTier` (interface): interface InterestTier — A distance-keyed cadence tier: nearer agents tick faster, farther-but-awake agents tick slower.
 - `IntersectionStreet` (interface): interface IntersectionStreet — One street to trim + mesh through {@link buildTrimmedIntersections}.
-- `Job` (interface): interface Job — ⚠ undocumented
-- `JobDef` (interface): interface JobDef — ⚠ undocumented
-- `JobReport` (interface): interface JobReport — ⚠ undocumented
+- `Job` (interface): interface Job — ⚠ undocumented · used by `activeJobs` (@jgengine/core/gameplay): Jobs currently progressing.
+- `JobDef` (interface): interface JobDef { id?: string; station: NavPoint; work: number; priority?: number; arriveRadius?: number; repeat?: boolean } — ⚠ undocumented
+- `JobReport` (interface): interface JobReport { jobId: string; workerId: string; cycle: number } — ⚠ undocumented
 - `JunctionApproach` (interface): interface JunctionApproach — One approach feeding {@link buildJunctionSurface}: the exact draped corner vertices a ribbon ends at.
 - `JunctionGeometryOptions` (interface): interface JunctionGeometryOptions — Tunables shared by {@link trimPathAtJunctions}, {@link buildJunctionSurface}, and {@link buildTrimmedIntersections}.
 - `KinematicChassisTuning` (interface): interface KinematicChassisTuning — Mass-and-force chassis layer (#1051); when present it supersedes `engineAccel`/`brakeAccel` with force/mass dynamics. Drive/brake become forces divided by `massKg`, a per-tick tire friction budget (`tireGrip` * grip curve * surface * downforce * m * g) is split lateral-first then longitudinal so hard slides and launches saturate, and `comHeight`/`trackWidth` set weight-transfer washout and body lean. Coasting decelerates from physical road load, not a per-vehicle constant: rolling resistance `μ_rr · m · g` always, plus engine braking `ENGINE_BRAKE_FRACTION · engineForce` routed through the current gear (so it strengthens as the car downshifts) whenever the throttle is lifted and a `powertrain` is configured. All fields are required; omit the whole block for the legacy model.
@@ -2028,8 +2028,8 @@
 - `KinematicPowertrainTuning` (interface): interface KinematicPowertrainTuning — Data-first gearbox and torque-curve tuning for a kinematic ground vehicle.
 - `KinematicSteeringTuning` (interface): interface KinematicSteeringTuning — Bicycle-model steering settings; all angles are radians.
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
-- `KinematicVehicleStep` (interface): interface KinematicVehicleStep — ⚠ undocumented
-- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning — ⚠ undocumented
+- `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented
+- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented
 - `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on grand plots emitted regardless of dial/city size.
 - `LOCK_ACTIONS` (const): const LOCK_ACTIONS: readonly LockAction[] — The five pick actions, in display order (shallow → deep).
 - `LineFormationOptions` (interface): interface LineFormationOptions — Options for {@link lineFormation}.
@@ -2041,16 +2041,16 @@
 - `LockTierSpec` (interface): interface LockTierSpec — Difficulty dials for one lock: board size, forgiveness band, gates, fog window, traps.
 - `MOVEMENT_TUNING` (const): const MOVEMENT_TUNING: { readonly standEyeHeight: 1.7; readonly crouchEyeHeight: 1.15; readonly walkSpeedMultiplier: 1.75; readonly runSpeedMultiplier: 2.25; readonly crouchSpeedMultiplier: 0.45; readonly backpedalSpeedMultiplier: 0.65; readonly groundAcceleration: 26; readonly airAcceleration: 12; … — Kinematics + feel tuning for the first-person controller. Centralised here so movement feel lives in one place rather than scattered through the renderer.
 - `MagnitudeOf` (type): type MagnitudeOf<P> = (membership: AreaMembership<P>) => number — Read a comparable magnitude from a membership (e.g. buff strength, damage per tick).
-- `MapCellStates` (interface): interface MapCellStates — ⚠ undocumented
+- `MapCellStates` (interface): interface MapCellStates { id: string; origin: MapXZ; cellSize: number; cells: readonly {col: number; row: number; tone: MapLayerTone; opacity?: number}[] } — ⚠ undocumented
 - `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
 - `MapNote` (interface): interface MapNote — A text note pinned at a world point.
-- `MapRoute` (interface): interface MapRoute — ⚠ undocumented
+- `MapRoute` (interface): interface MapRoute { id: string; points: readonly MapXZ[]; tone?: MapLayerTone; forecast?: boolean; width?: number; closed?: boolean } — ⚠ undocumented
 - `MapShapeAnnotation` (interface): interface MapShapeAnnotation — A drawn area annotation (circle/rect/polygon), reusing the map-zone shape vocabulary.
 - `MapStroke` (interface): interface MapStroke — A freehand drawn line on the map — a world-XZ polyline.
-- `MapZone` (interface): interface MapZone — ⚠ undocumented
+- `MapZone` (interface): interface MapZone { id: string; shape: MapZoneShape; tone?: MapLayerTone; opacity?: number; forecast?: boolean; label?: string } — ⚠ undocumented
 - `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
-- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — ⚠ undocumented
+- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> { add(marker: MarkerInput<TMeta>): string; remove(id: string): boolean; get(id: string): MapMarker<TMeta> | null; list(): readonly MapMarker<TMeta>[]; query(query: MarkerQuery): MapMarker<TMeta>[]; prune(now: number): number; clear(): void;… — ⚠ undocumented · used by `useLiveMarkers` (@jgengine/react): A self-ticking {@link MarkerSet} kept in sync with the live scene: on a heartbeat (default 100ms, and once immediately) it clears the set an…
 - `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
 - `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
 - `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
@@ -2061,8 +2061,8 @@
 - `MinimapBakePalette` (interface): interface MinimapBakePalette — The height→color ramp and water color used by the bake.
 - `MinimapBakeSource` (interface): interface MinimapBakeSource — The authored world a bake reads — a height sampler, its bounds, and optional zones/water.
 - `MinimapBakeZone` (interface): interface MinimapBakeZone — One biome/region tint painted over the terrain shade where the ground falls inside its polygon.
-- `MinimapView` (interface): interface MinimapView — ⚠ undocumented
-- `ModelAssetRef` (interface): interface ModelAssetRef — ⚠ undocumented
+- `MinimapView` (interface): interface MinimapView { center: WorldXZ; worldRadius: number; size: number; rotate?: number } — ⚠ undocumented · used by `projectToMinimap`: Project a world XZ (or XYZ) point into minimap pixel space.
+- `ModelAssetRef` (interface): interface ModelAssetRef { url: string; dims?: ModelDims; collisionMesh?: CollisionMeshData; space?: AssetSpace; clips?: readonly string[] } — ⚠ undocumented · used by `createHostedWorldSessionAsync` (@jgengine/core/runtime/hostedWorldSession): Build a hosted session from an asynchronous persistence backend.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `ModelNode` (interface): interface ModelNode — Generic named-socket reader for loaded 3D models. Walks a node tree (any object with `.name`, `.position`, and `.children` — structurally satisfied by `THREE.Object3D`) and collects the local offsets of nodes whose name marks an attachment point. Genre-agnostic: wire anchors on a pylon, muzzle/hand mounts on a character, hardpoints on a ship, seat/decal slots on furniture — anything an artist tags with an empty in the GLB. Pure data (no three.js import), so it lives in core.
 - `MountController` (class): class MountController — Mount / rideable control-transfer (issue #83). Registers rideables (each with one or more seats — a control seat drives, the rest ride) and tracks who is on what. It owns no camera or physics: game code reads `cameraTarget(riderId)` to point the follow camera at the mount, and `driveTarget(riderId)` to route that rider's {@link import("../physics/vehicleBody").AxisInput}-driven input at the mount's movement kit — the same seam a horse, a truck, or a shared multi-seat ship all plug into.
@@ -2071,20 +2071,20 @@
 - `MusicInstrument` (type): type MusicInstrument = | "strings" | "flute" | "harp" | "horn" | "choir" | "bell" | "timpani" | "bass" | "stacc" | "pad" | "lute" | "dulcimer" | "frameDrum" | "warDrum" | "reed" | "pipe" | "squareLead" | "woodBlock" | "tinyBell" | "piano" | "shaker" | "brassStab" | "cymSwell" | "oboe" — Named synthesised instrument. Each maps to a voice in the shell's instrument library (`@jgengine/shell/audio/musicVoices`); an unknown name falls back to a plain sine voice so a theme is never silent.
 - `MusicTheme` (interface): interface MusicTheme — A through-composed, looping music track. `events` need not be sorted; the director schedules them ahead against a fixed anchor so loops are seamless.
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
-- `NavGrid` (interface): interface NavGrid — ⚠ undocumented
+- `NavGrid` (interface): interface NavGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly bounds: Aabb; readonly diagonal: boolean; isWalkable(col: number, row: number): boolean; setWalkable(col: number, row: number, walkable: boolean): void; blo… — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
 - `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
 - `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
 - `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
-- `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented
+- `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
 - `NoteEvent` (interface): interface NoteEvent — One scheduled note in a theme, positioned on the loop's quarter-note grid.
 - `ObjectSlotRejection` (type): type ObjectSlotRejection = | "unknown-object" | "no-slot-inventory" | "unknown-inventory" | "no-space" | "wrong-kind" | "slot-occupied" | "invalid-slot" | "insufficient" — Why an object slot mutation was refused — the instance, its catalog entry, the player inventory, or the declared `accepts`/capacity.
 - `ObjectSlotResult` (type): type ObjectSlotResult = { status: "ok" } | { status: "rejected"; reason: ObjectSlotRejection } — Outcome of an object slot mutation: applied, or refused with a reason and no state change on either side.
 - `ObjectSlotTransfer` (interface): interface ObjectSlotTransfer — Which player inventory a transfer moves between, and what it moves.
-- `ObjectVisual` (interface): interface ObjectVisual — ⚠ undocumented
-- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented
+- `ObjectVisual` (interface): interface ObjectVisual { scale?: number | readonly [number, number, number]; color?: string; opacity?: number } — ⚠ undocumented
+- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
 - `Order` (interface): interface Order<TPayload = unknown> — One issued order. Fully serializable: `kind` is a registry key (not a closure), `payload` is the caller's plain data, and `state` is the kind's own plain progress scratch (e.g. a patrol waypoint index) written during `start`/`update`. Never holds functions, so the whole queue round-trips through `JSON`/`structuredClone`.
 - `OrderCancelReason` (type): type OrderCancelReason = "replaced" | "preempted" | "requested" | "invalid" | "failed" | "cleared" — Why an order left the queue without completing. `replaced`/`preempted` come from a newer order taking over; `requested` from explicit `cancelActive`; `invalid` when the kind's `start` rejects; `failed` when `update` reports failure; `cleared` from a full `clear`/`cancelAll`.
 - `OrderEvent` (interface): interface OrderEvent — A lifecycle event emitted synchronously as orders move through the queue.
@@ -2109,9 +2109,9 @@
 - `OrderVec3` (type): type OrderVec3 = readonly [number, number, number] — Composable entity orders: a serializable command queue with lifecycle, preemption, and pluggable order kinds (#912). Player- or AI-issued intent ("move here", "attack that", "patrol this route") becomes reusable data instead of a hard-coded RTS verb kit. The queue owns issue -> activate -> tick -> complete/cancel lifecycle and deterministic preemption policy; each order KIND owns what "running" means, composed over narrow world adapters. Engine code never branches on `move`, `attack`, or any game verb -- kinds are looked up by string in a registry, so a game adds a verb by registering data.
 - `POLE_LINE_SCHEMA` (const): const POLE_LINE_SCHEMA: ParamSchema — The pole-line parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `POSE_HITBOX` (const): const POSE_HITBOX: Record<MovementPose, PoseHitbox> — ⚠ undocumented
-- `PadEnvironmentDescriptor` (type): type PadEnvironmentDescriptor = { kind: "pad" } & Required< Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color"> > & Pick<PadEnvironmentConfig, "rotationY" | "elevation"> — ⚠ undocumented
+- `PadEnvironmentDescriptor` (type): type PadEnvironmentDescriptor = { kind: "pad" } & Required< Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color"> > & Pick<PadEnvironmentConfig, "rotationY" | "elevation"> — ⚠ undocumented · used by `padFlattenMasks` (@jgengine/core/world/features): Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it.
 - `PadSize` (type): type PadSize = readonly [number, number] | { radius: number } — ⚠ undocumented
-- `PaintStroke` (interface): interface PaintStroke — ⚠ undocumented
+- `PaintStroke` (interface): interface PaintStroke { u: number; v: number; radius: number; color: string } — ⚠ undocumented
 - `ParamField` (type): type ParamField = | RangeParamField | NumberParamField | BoolParamField | SelectParamField | ColorParamField | TextParamField | SeedParamField | WeightedListParamField | ActionParamField — One row in a kind's parameter schema — the union the generic inspector knows how to render.
 - `ParamPreset` (interface): interface ParamPreset — A named slider/weight bundle for a kind — a saved set of field values the inspector (or the `apply_preset` verb) writes into an object's `meta` in one patch, ready to tweak afterwards. Presets are plain data on the schema, so kinds ship archetypes and games can override the registration with their own.
 - `ParamSchema` (interface): interface ParamSchema — A kind's full parameter surface: an ordered list of fields the inspector renders top-to-bottom.
@@ -2119,57 +2119,57 @@
 - `ParticleBuffers` (interface): interface ParticleBuffers — Read-only packed buffers of the live particles, laid out for a renderer to upload directly (Structure-of-Arrays, no per-particle objects). Only the first `count` entries are live; the arrays themselves are reused every frame.
 - `ParticleSnapshot` (interface): interface ParticleSnapshot — Serializable simulation state for save/restore and deterministic replay.
 - `ParticleSystem` (interface): interface ParticleSystem — A live, dt-driven particle simulation.
-- `PathFollowConfig` (interface): interface PathFollowConfig — ⚠ undocumented
+- `PathFollowConfig` (interface): interface PathFollowConfig { waypoints: readonly Waypoint[]; speed: number; loop?: boolean } — ⚠ undocumented · used by `advancePathFollow`: Advance a path-follower by `speed * dt` along its authored polyline.
 - `PathFollowProgress` (interface): interface PathFollowProgress — Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}.
-- `PathFollowState` (interface): interface PathFollowState — ⚠ undocumented
+- `PathFollowState` (interface): interface PathFollowState { position: Waypoint; target: number; heading: number; done: boolean; distanceTravelled: number } — ⚠ undocumented · used by `advancePathFollow`: Advance a path-follower by `speed * dt` along its authored polyline.
 - `PathHeightPolicy` (type): type PathHeightPolicy = | { readonly kind: "sample" } | { readonly kind: "fixed"; readonly height: number } | { readonly kind: "grade"; readonly start: number; readonly end: number } — Where a path corridor drives its centerline height: - `sample` — follow the base terrain under the centerline, so the corridor drapes level across its width while still tracking the hills the path crosses (the natural policy for a road or trail). - `fixed` — hold one constant height for the whole corridor (a level causeway, runway, or dam crest). - `grade` — interpolate linearly from `start` to `end` height along the path's arc length, a constant-slope ramp between two anchors (a switchback, a graded rail bed, an accessibility ramp).
 - `PathProgress` (type): type PathProgress = | { readonly kind: "normalized"; readonly value: number } /** World-distance travelled from the first waypoint (looping paths wrap; clamped otherwise). */ | { readonly kind: "distance"; readonly value: number } /** Segment `index` (0-based) plus `fraction` `0..1` along that segme… — Semantic seek target for {@link pathFollowSeek} — the caller-facing progress vocabulary a stateful path behavior restores from, so a follower can start at a distributed phase or resume a serialized route without knowing waypoint internals. `direction` (forward heading) falls out of the resulting {@link PathFollowState.heading}, so it is an output rather than a seek input.
 - `PathRetaining` (interface): interface PathRetaining — Retaining behavior for a path corridor's shoulders. A wall rises only where the corridor already cuts or fills into the surrounding ground by at least `threshold` — gentle stretches stay open — so a road through a canyon gets held banks while the same profile on flat ground does not. The wall fades in smoothly across `taper` above the threshold so it never steps on or off between adjacent samples.
 - `PatrolOrderPayload` (interface): interface PatrolOrderPayload — Payload for a patrol: walk a waypoint route, optionally looping forever.
 - `PatrolOrderState` (interface): interface PatrolOrderState — Serializable patrol progress.
-- `PhysicsStats` (interface): interface PhysicsStats — ⚠ undocumented
+- `PhysicsStats` (interface): interface PhysicsStats { count: number; awake: number; sleeping: number; contacts: number; pairs: number; substeps: number; stepMs: number } — ⚠ undocumented
 - `PhysicsWorld` (class): class PhysicsWorld — ⚠ undocumented
 - `PlaceAssetResult` (interface): interface PlaceAssetResult — Shared place-asset verb: one resolved payload for editor `place_asset` and in-game build-mode commits. Convert with {@link toStructureInput} / {@link toEditorMarker}.
 - `PlaceConfig` (interface): interface PlaceConfig — Input to {@link world}: place identity, substrate, and the laws of this place.
 - `PlaceWorldFeature` (interface): interface PlaceWorldFeature — A declared place — the `world()` result carried on `GameDefinition.world`.
-- `PlacedStructure` (interface): interface PlacedStructure — ⚠ undocumented
-- `PlacementCommit` (interface): interface PlacementCommit — ⚠ undocumented
-- `PlacementController` (interface): interface PlacementController — ⚠ undocumented
-- `PlacementPreview` (interface): interface PlacementPreview — ⚠ undocumented
+- `PlacedStructure` (interface): interface PlacedStructure { id: string; catalogId: string; position: StructureVec3; rotationY: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented
+- `PlacementCommit` (interface): interface PlacementCommit { center: Vec2; y: number; rotationY: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; slotId?: string } — ⚠ undocumented · used by `placeAssetFromCommit`: Bridge a {@link PlacementCommit} into the shared place-asset verb.
+- `PlacementController` (interface): interface PlacementController { hover(hit: PlacementHit): PlacementPreview; current(): PlacementPreview | null; rotate(steps?: number): PlacementPreview | null; setSnapMode(mode: SnapMode): PlacementPreview | null; cycleSnapMode(): SnapMode; setFootprint(footprint: Foot… — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
+- `PlacementPreview` (interface): interface PlacementPreview { center: Vec2; y: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; valid: boolean; reason?: "out-of-bounds" | "overlap" | "no-slot" | "territory.blocked"; snapMode: SnapMode; normal: PlacementVec3; slotId?: string } — ⚠ undocumented
 - `PlacementRotationPolicy` (type): type PlacementRotationPolicy = | { readonly mode: "locked"; readonly degrees?: number } | { readonly mode: "snap"; readonly snapDegrees: number } | { readonly mode: "free" } — A per-asset/per-tool rotation constraint, authored as data instead of hardcoded in build code: `locked` pins every placement to one heading, `snap` quantizes to an increment (15, 45, …), and `free` allows any heading. Serializable — this is the shape stored on a catalog entry or a tool.
-- `PlacementRules` (interface): interface PlacementRules — ⚠ undocumented
+- `PlacementRules` (interface): interface PlacementRules { bounds?: Aabb; obstacles?: readonly PlacementObstacle[]; snap?: number; territory?: (aabb: Aabb) => {ok: boolean} } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
 - `PlatformCarry` (class): class PlatformCarry — Carries bodies standing on a moving platform by composing their transform with the platform's per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The platform is a body the game repositions each frame; riders are detected by overlap on its top face.
 - `Point3` (type): type Point3 = readonly [number, number, number] — Deterministic spatial sampling — draw one or many positions from a geometric region under explicit constraints, with an injected RNG, bounded attempts, and a structured pass/fail result.
 - `PointGravityOptions` (interface): interface PointGravityOptions — Center, strength, and falloff for radial gravity.
-- `PositionedPrompt` (interface): interface PositionedPrompt — ⚠ undocumented
+- `PositionedPrompt` (interface): interface PositionedPrompt { id: string; position: PromptPoint; priority?: number; prompt: ProximityPrompt } — ⚠ undocumented · used by `resolveActivePrompt`: Nearest prompt strictly within its radius wins; a higher-priority prompt in range beats any lower-priority one regardless of distance; equal…
 - `PositionedPromptPatch` (type): type PositionedPromptPatch = Partial<Omit<PositionedPrompt, "id">> — A partial edit applied to an already-registered {@link PositionedPrompt} by {@link PromptRegistry.update}. Any subset of the mutable fields — everything but the stable `id` — may be supplied; omitted fields keep their prior value.
 - `PromptRegistry` (interface): interface PromptRegistry — A live, observable set of interaction prompts that OWNS the registered {@link PositionedPrompt}s and tracks which one is active for a player. It is a thin stateful layer over {@link resolveActivePrompt}: registration/order lives here, the nearest-within-radius / higher-priority selection stays in the pure resolver. {@link resolve} is the per-frame hot path — call it as the player moves; subscribers fire only when the active prompt actually CHANGES.
 - `PromptRegistrySnapshot` (interface): interface PromptRegistrySnapshot — The serializable shape {@link PromptRegistry.snapshot} returns and {@link PromptRegistry.restore} consumes: the full set of positioned prompts (in registration order) plus the id of the prompt that was active when the snapshot was taken. Prompt display/command payloads are free strings and ids — keep them serializable and this round-trips through a save cleanly.
-- `ProximityPrompt` (interface): interface ProximityPrompt — ⚠ undocumented
-- `QteStep` (interface): interface QteStep — ⚠ undocumented
+- `ProximityPrompt` (interface): interface ProximityPrompt { radius: number; display: ProximityPromptDisplay; invoke: PromptCommand | null } — ⚠ undocumented
+- `QteStep` (interface): interface QteStep { id: string; action: string; windowStart: number; windowEnd: number } — ⚠ undocumented · used by `evaluateQteSequence`: Evaluate a quick-time-event input sequence against timed hit windows.
 - `RadialDistribution` (type): type RadialDistribution = "area" | "radial" — Fill policy for a circle/ring: `"area"` = area-uniform (even density); `"radial"` = radius-uniform (clumps toward center).
-- `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented
+- `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented · used by `rain`: Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
 - `RecallBookmarkOptions` (interface): interface RecallBookmarkOptions — Caller hooks for {@link recallSelectionBookmark} — kept out of the store so focus and validity stay genre-owned.
-- `RecordingBuffer` (interface): interface RecordingBuffer<T> — ⚠ undocumented
-- `RecordingBufferOptions` (interface): interface RecordingBufferOptions — ⚠ undocumented
-- `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField — ⚠ undocumented
+- `RecordingBuffer` (interface): interface RecordingBuffer<T> { append(t: number, data: T): void; seek(t: number): RecordingFrame<T> | null; seekPair(t: number): RecordingPair<T>; range(fromT: number, toT: number): RecordingFrame<T>[]; clear(): void; duration(): number; frames(): readonly RecordingFra… — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/shell/replay/useSessionRecorder): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `RecordingBufferOptions` (interface): interface RecordingBufferOptions { maxDurationSeconds?: number; maxFrames?: number } — ⚠ undocumented · used by `useSessionRecorder` (@jgengine/shell/replay/useSessionRecorder): Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
+- `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField { sampleRegion(x: number, z: number): RegionSample<T>; readonly regions: readonly RegionDef<T>[]; readonly seaLevel: number; readonly seed: number } — ⚠ undocumented · used by `scatterItems`: Deterministically place opaque items across `area`, grounded on a region field.
 - `Renderable` (interface): interface Renderable — A scene object the visibility system considers. A normal game object already carries a position and a version counter, so it becomes cullable automatically — no separate "cullable" component. Everything else is optional override.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `ResolvedCityLot` (interface): interface ResolvedCityLot — One plot enriched with its zone/class/floors/massing — the renderer instances `pieces` at `center`.
-- `ResolvedCollider` (interface): interface ResolvedCollider — ⚠ undocumented
+- `ResolvedCollider` (interface): interface ResolvedCollider { name: string; purpose: ColliderPurpose; shape: ColliderShape; damageEligible: boolean; blocks: boolean } — ⚠ undocumented
 - `ResolvedGround` (type): type ResolvedGround = FlatGround | RoundGround | VoxelGround | ResolvedBoardGround — A place's ground after `world()` normalization.
 - `ResolvedPoleLine` (interface): interface ResolvedPoleLine — The renderable payload the resolver returns and the shell renderer consumes.
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
-- `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
-- `RevealHit` (interface): interface RevealHit — ⚠ undocumented
-- `RevealQuery` (interface): interface RevealQuery — ⚠ undocumented
+- `ResolvedWeather` (interface): interface ResolvedWeather { grip: number; visibility: number; structureDamage: number; chill: number; ignition: number; spread: number } — ⚠ undocumented
+- `RevealHit` (interface): interface RevealHit { instanceId: string; distance: number; tags: readonly string[] } — ⚠ undocumented · used by `useRevealHits` (@jgengine/shell/vision/RevealVision): Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene.
+- `RevealQuery` (interface): interface RevealQuery { inRadius(center: EntityPosition | string, radius: number, tags: readonly string[]): RevealHit[] } — ⚠ undocumented
 - `RoadCut` (interface): interface RoadCut — One trim of a ribbon end back to a junction boundary — the seam the welded surface attaches to.
 - `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. */ sidewalk: { width: number; color: string } | false; } — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
 - `RoadJunctionInput` (interface): interface RoadJunctionInput — The minimal junction shape this geometry needs — a node position plus its outgoing arms. Matches the structural subset of `StreetJunction` (streetGenerator) so a network's `junctions` can be fed straight in. Arm `angle` follows the generator convention `atan2(dx, dz)`, i.e. the outward unit direction of an arm is `[sin(angle), cos(angle)]`.
 - `RoadSurfaceOptions` (interface): interface RoadSurfaceOptions — Grip levels and blend width for {@link roadSurfaceSampler}; each field is optional and defaulted.
-- `RoofPlan` (interface): interface RoofPlan — ⚠ undocumented
-- `RosterEntry` (interface): interface RosterEntry — ⚠ undocumented
+- `RoofPlan` (interface): interface RoofPlan { style: RoofStyle; ridge: readonly [Vec2, Vec2]; apexHeight: number; eaveHeight: number; faces: readonly (readonly WallVec3[])[] } — ⚠ undocumented
+- `RosterEntry` (interface): interface RosterEntry { id: string; catalogId: string; capturedAt: number; equipped: boolean } — ⚠ undocumented
 - `RoundGround` (interface): interface RoundGround — A planet/sphere you play on the outside of. Sized by `radius` only.
 - `RoundGroundSize` (interface): interface RoundGroundSize — Size of a `round` ground: the planet/sphere radius in world units. Nothing else.
 - `SCATTER_COVERAGE_SPECS` (const): const SCATTER_COVERAGE_SPECS: Record<ScatterCoverageKind, ScatterCoverageSpec> — The coverage spec per scatterable kind — the single source for its unit + budget.
@@ -2191,16 +2191,16 @@
 - `ScatterCoverage` (interface): interface ScatterCoverage — A resolved coverage readout: how many instances an authored patch WANTS (`requested`, when it can be computed cheaply from geometry × density), how many it will actually place after the budget clamp (`count`), the `budget` ceiling, and whether the request hit it (`capped`). `requested` is `null` for kinds whose pre-cap ask is not knowable without running the generator (city, where the count comes from the resolved street fabric).
 - `ScatterCoverageKind` (type): type ScatterCoverageKind = "grass_field" | "scatter" | "city" — The shared "how much stuff grows here" contract for scatterable scene kinds (`grass_field` / `scatter` / `city`). Every scatterable kind fills an authored AREA with instances at a DENSITY, and every kind caps the placed count at a bounded BUDGET so a huge or dense request can never generate unbounded work. Before this module each kind hand-rolled its own readout and clamp story (grass silently capped in the renderer, scatter never capped, city had no budget note); this is the one place that
 - `ScatterCoverageSpec` (interface): interface ScatterCoverageSpec — Per-kind coverage descriptor: the unit noun, whether density is per-m², and the placement budget.
-- `ScatterInstance` (interface): interface ScatterInstance — ⚠ undocumented
-- `ScatterPoint` (interface): interface ScatterPoint — ⚠ undocumented
+- `ScatterInstance` (interface): interface ScatterInstance — ⚠ undocumented · used by `resolveScatter`: Every scatter region's placements across a document, grounded on `terrain` when provided.
+- `ScatterPoint` (interface): interface ScatterPoint { x: number; z: number; index: number } — ⚠ undocumented
 - `ScatterTerrain` (interface): interface ScatterTerrain — Ground sampler a scatter resolve reads height/normal from (the sculpt terrain or the game's ground).
-- `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> — ⚠ undocumented
+- `SceneEntity` (interface): interface SceneEntity<TMeta = unknown> { id: string; name: string; position: EntityPosition; rotationY: number; rotationX: number; rotationZ: number; velocity: EntityPosition; role: EntityRole; movement: EntityMovement; behaviors: readonly BehaviorDescriptor[]; hidden?: boolean;… — ⚠ undocumented · used by `entityMetaOf`: Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type che…
 - `SceneKindObject` (interface): interface SceneKindObject — The raw document object a resolver receives — shape shared by markers, volumes, and paths.
 - `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
-- `SceneObject` (interface): interface SceneObject — ⚠ undocumented
+- `SceneObject` (interface): interface SceneObject { instanceId: string; catalogId: string; position: EntityPosition; rotationY: number; parentSpace?: string; visual?: ObjectVisual; animation?: ModelAnimationConfig | "auto" | "none"; state?: Record<string, unknown>; slots?: InventoryState } — ⚠ undocumented · used by `fromRuntimeObjectRow` (@jgengine/core/runtime/objectRows): Inverse of {@link toRuntimeObjectRow}: rebuild the live placed object a host persisted.
 - `SceneObjectSlots` (interface): interface SceneObjectSlots — Per-instance container contents for placed objects whose catalog entry declares `slotInventory` — the engine side of "install a GPU into a rack", "put an item in a chest". Contents live on `SceneObject.slots`, so they replicate and save with the object rather than needing a game-owned table keyed by `instanceId`, and every mutation is validated against the declared `accepts` and stack limits.
-- `SceneRaycastApi` (interface): interface SceneRaycastApi — ⚠ undocumented
-- `SceneRaycastHit` (interface): interface SceneRaycastHit — ⚠ undocumented
+- `SceneRaycastApi` (interface): interface SceneRaycastApi { raycast(input: SceneRaycastInput): SceneRaycastHit | null; raycastAll(input: SceneRaycastInput): SceneRaycastHit[] } — ⚠ undocumented
+- `SceneRaycastHit` (interface): interface SceneRaycastHit { targetKind: SceneRaycastTargetKind; instanceId: string; catalogId?: string; colliderName: string; purpose: ColliderPurpose; damageEligible: boolean; blocks: boolean; distance: number; point: EntityPosition; normal: EntityPosition } — ⚠ undocumented · used by `firstImpact`: First impact: nearest hit that blocks, or nearest hit if none block.
 - `ScreenEffect` (interface): interface ScreenEffect — A live effect in the current composite: its label, color, region, and the eased opacity `0..1` to draw *right now*. These objects are pooled and reused across {@link ScreenEffectsController.composite} calls — read them, don't retain.
 - `ScreenEffectEasing` (type): type ScreenEffectEasing = "linear" | "easeIn" | "easeOut" | "easeInOut" — How a transient effect's intensity curves from peak to zero over its life.
 - `ScreenEffectShape` (type): type ScreenEffectShape = "full" | "vignette" — The screen region an effect tints. `"full"` grades the whole frame (a flash); `"vignette"` grades only the edges, leaving the center clear (a directional or ambient border tint). Purely a shape hint for the renderer — no genre meaning.
@@ -2208,13 +2208,13 @@
 - `ScreenEffectsController` (interface): interface ScreenEffectsController — A live, clock-driven screen-feedback controller.
 - `ScreenEffectsOptions` (interface): interface ScreenEffectsOptions — Options for {@link createScreenEffects}.
 - `ScreenEffectsSnapshot` (interface): interface ScreenEffectsSnapshot — Serializable state of every active effect, for save/restore and replay.
-- `ScreenRect` (interface): interface ScreenRect — ⚠ undocumented
+- `ScreenRect` (interface): interface ScreenRect { minX: number; minY: number; maxX: number; maxY: number } — ⚠ undocumented · used by `isMarquee`: True when the drag is large enough to be a marquee rather than a click.
 - `SelectionBookmarkSnapshot` (interface): interface SelectionBookmarkSnapshot — The serializable shape of a {@link SelectionBookmarks} store: each key maps to its ordered, deduplicated id list. Plain data — safe to persist in a save file or replicate over the wire, and the exact input {@link createSelectionBookmarks} restores.
 - `SelectionBookmarks` (interface): interface SelectionBookmarks — A generic, keyed store of saved id sets ("bookmarks") over stable string ids — the reusable layer under RTS control groups, camera bookmarks, saved squads, editor selection presets, and accessibility recall. It owns storage only: binding, recall, enumeration, pruning, and serialization. It never touches the active {@link SelectionSet} or the camera — replacement/merge and focus stay caller hooks (see {@link recallSelectionBookmark}) so one store serves any genre, input scheme, or focus policy.
 - `SelectionPruneResult` (interface): interface SelectionPruneResult — Outcome of a {@link SelectionBookmarks.prune} pass — what the validity predicate removed.
-- `SelectionSet` (interface): interface SelectionSet — ⚠ undocumented
-- `SensorProbeOptions` (interface): interface SensorProbeOptions — ⚠ undocumented
-- `SensorReading` (interface): interface SensorReading — ⚠ undocumented
+- `SelectionSet` (interface): interface SelectionSet { add(id: string): void; remove(id: string): void; toggle(id: string): void; has(id: string): boolean; replace(ids: Iterable<string>): void; clear(): void; list(): string[]; size(): number } — ⚠ undocumented · used by `createSelectionSet`: An ordered, deduplicated set of selected instance ids for RTS unit-command routing.
+- `SensorProbeOptions` (interface): interface SensorProbeOptions { range: number; variableId: string; falloff?: "linear" | "none" } — ⚠ undocumented · used by `useHiddenStateProbe` (@jgengine/shell/vision/HiddenStateProbeHud): Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
+- `SensorReading` (interface): interface SensorReading { sourceId: string; variableId: string; value: HiddenStateValue; strength: number; distance: number } — ⚠ undocumented · used by `useHiddenStateProbe` (@jgengine/shell/vision/HiddenStateProbeHud): Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 - `SequenceCue` (interface): interface SequenceCue<Payload = unknown> — One scheduled beat of a cutscene: a typed cue that fires when the playhead reaches `atMs`.
 - `SequenceDirector` (interface): interface SequenceDirector<Payload = unknown> — A data-driven cutscene: an ordered timeline of typed cues that fire on a single injected clock. See {@link createSequenceDirector}.
 - `SequenceDirectorOptions` (interface): interface SequenceDirectorOptions<Payload = unknown> — Options for {@link createSequenceDirector}.
@@ -2222,28 +2222,28 @@
 - `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
 - `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
 - `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
-- `SimClock` (interface): interface SimClock — ⚠ undocumented
-- `SkillCheckConfig` (interface): interface SkillCheckConfig — ⚠ undocumented
-- `SkillCheckResult` (interface): interface SkillCheckResult — ⚠ undocumented
+- `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; toggle(): void; setSpeed(multi… — ⚠ undocumented
+- `SkillCheckConfig` (interface): interface SkillCheckConfig { trackWidth: number; zone: SkillCheckZone; markerPeriod: number; window: number; zoneDriftPerSecond?: number } — ⚠ undocumented · used by `skillCheckZoneAt`: A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
+- `SkillCheckResult` (interface): interface SkillCheckResult { success: boolean; timedOut: boolean; markerPosition: number; zone: SkillCheckZone } — ⚠ undocumented
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented
 - `SlotAssignmentOptions` (interface): interface SlotAssignmentOptions — Tuning for {@link assignFormationSlots}' stable, low-churn matching.
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
-- `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented
+- `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
-- `SoundDef` (interface): interface SoundDef — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistance?: number; rollo… — ⚠ undocumented
 - `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
-- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig — ⚠ undocumented
-- `SpawnDirectorState` (interface): interface SpawnDirectorState — ⚠ undocumented
-- `SpawnEntry` (interface): interface SpawnEntry — ⚠ undocumented
-- `SpawnRequest` (interface): interface SpawnRequest — ⚠ undocumented
+- `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
+- `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented
+- `SpawnEntry` (interface): interface SpawnEntry { id: string; cost: number; weight?: number; minWave?: number } — ⚠ undocumented
+- `SpawnRequest` (interface): interface SpawnRequest { entryId: string; cost: number; wave: number; point?: NavPoint; laneId?: number } — ⚠ undocumented
 - `StatCatalog` (type): type StatCatalog = Record<string, { max: number; min?: number; current?: number }> — ⚠ undocumented
 - `StatValue` (interface): interface StatValue extends StatPool — Native entity-stat name retained as a compatibility bridge to the portable pool model.
 - `Station` (interface): interface Station — ⚠ undocumented
 - `StoredScreenEffect` (interface): interface StoredScreenEffect — A persisted effect record (all spec fields resolved plus its start time and id).
 - `StratifiedOptions` (interface): interface StratifiedOptions — Inputs for {@link sampleStratified}: a grid over `area` with one jittered point per cell.
 - `StructureGraph` (class): class StructureGraph — A structural-integrity graph over a building — nodes are pieces (walls, beams, floors), edges are load-bearing connections, some nodes are anchored foundations. `damage`/`damageEdge` wear pieces and connections down; when a piece shatters or an edge severs, the graph recomputes which pieces still reach an anchor and hands back every newly-disconnected piece as one `CollapseEvent`. Feed that to `toDebris` to sink the fallen pieces into a `PhysicsWorld` as rigid bodies ("The Finals" smooth destruction, Rainbow Six walls). Coarse by design: it replicates the collapse event, not per fragment.
-- `StructureMaterial` (interface): interface StructureMaterial — ⚠ undocumented
-- `SupportResult` (interface): interface SupportResult — ⚠ undocumented
+- `StructureMaterial` (interface): interface StructureMaterial { id: string; strength: number; mass?: number } — ⚠ undocumented
+- `SupportResult` (interface): interface SupportResult { supported: readonly string[]; unsupported: readonly string[]; distance: Readonly<Record<string, number>> } — ⚠ undocumented
 - `SurfaceDelta` (interface): interface SurfaceDelta — A compact record of the surface-material cells a paint stroke touched: parallel `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint undo history small.
 - `SurfaceGridLine` (interface): interface SurfaceGridLine — One draped grid line from {@link surfaceGridLines}: its axis, emphasis, and draped vertices.
 - `SurfaceGridOptions` (interface): interface SurfaceGridOptions — Shaping for {@link surfaceGridLines}: region, spacing, emphasis cadence, and draping.
@@ -2258,23 +2258,23 @@
 - `TerraformFalloff` (type): type TerraformFalloff = "smooth" | "linear" | "none" — How a brush's strength fades from its center to its rim.
 - `TerraformMode` (type): type TerraformMode = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" | "paint" — A sculpt operation kind: heightfield brushes plus the surface-paint brush.
 - `TerraformShape` (type): type TerraformShape = "circle" | "square" — A brush footprint: a round disc or an axis-aligned square.
-- `TerraformSnapshot` (interface): interface TerraformSnapshot — ⚠ undocumented
+- `TerraformSnapshot` (interface): interface TerraformSnapshot { bounds: Aabb; cellSize: number; cols: number; rows: number; offsets: readonly number[]; surfaces: readonly (string | null)[]; layers?: readonly TerrainMaterialLayer[]; weights?: readonly number[] } — ⚠ undocumented · used by `applyDeltaToSnapshot`: Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
 - `TerraformStroke` (interface): interface TerraformStroke — Accumulates a whole drag — many brush stamps — into one compact {@link TerraformDelta}. Keeps each vertex's first `before` and latest `after`, so undo replays the stroke as a single step even though the pointer fired dozens of moves.
 - `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
 - `TerrainDetailConfig` (interface): interface TerrainDetailConfig — Procedural detail-surface layer for terrain: a noise-driven shader that keeps the biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock, sand, and snow over it by slope, height, and waterline — turning a flat vertex-colour surface into varied, textured-reading ground with no image assets.
 - `TerrainDetailMaterialConfig` (interface): interface TerrainDetailMaterialConfig — Real PBR texture applied over the ground surface — the seam that lets a game put a `buildMaterialCatalog` material on terrain. Blends with, never replaces, the procedural detail shader: color/roughness/ao tile the maps by world position, `strength` fades them over the existing vertex-colour + noise look.
-- `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented
+- `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented · used by `terrain`: Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
-- `TerrainFlattenMask` (interface): interface TerrainFlattenMask — ⚠ undocumented
+- `TerrainFlattenMask` (interface): interface TerrainFlattenMask { center: EnvironmentVec2; radius: number; height?: number; falloff?: number } — ⚠ undocumented · used by `padFlattenMasks` (@jgengine/core/world/features): Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it.
 - `TerrainMaterialLayer` (interface): interface TerrainMaterialLayer — One material layer in a terrain's reorderable stack: a palette `surface` id (drives the base color) plus its render parameters. Array order is the stack order — lower index paints under higher. `roughness`/`tiling`/`triplanar`/`tint`/`opacity` are carried as data so a runtime game reads them straight off the snapshot.
 - `TerrainMaterialRegion` (type): type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion — A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given), `polyline` ribbons for roads/rivers, and rotatable `rect` districts all paint fully inside their core and blend back across `falloff`; later regions in the list win overlaps.
-- `TerrainPalette` (interface): interface TerrainPalette — ⚠ undocumented
+- `TerrainPalette` (interface): interface TerrainPalette { low: string; high: string; waterline: string } — ⚠ undocumented
 - `TerrainPathProfile` (interface): interface TerrainPathProfile — A serializable path-driven terrain modifier. The `points` centerline reshapes the heightfield across a corridor of `width`, feathering back to the surrounding ground across `shoulder`. `height` sets the centerline target (sample / fixed / grade); `depth` carves a channel below it (deepest at the centerline, easing to zero at the core edge — rivers and trenches); `retaining` raises walls where the cut/fill exceeds a threshold; `maxCut`/`maxFill` cap how far the ground may move from its base height. All fields are plain data (numbers, string enums, point arrays) so a profile round-trips through the scene document and evaluates identically at author time and runtime.
 - `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
 - `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
 - `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
 - `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
-- `ThreatTable` (interface): interface ThreatTable — ⚠ undocumented
+- `ThreatTable` (interface): interface ThreatTable { add(sourceId: string, amount: number): number; set(sourceId: string, amount: number): void; threatOf(sourceId: string): number; decay(dt: number): void; highest(options?: HighestThreatOptions): string | null; ranked(): ThreatEntry[]; taun… — ⚠ undocumented
 - `TimerDirection` (type): type TimerDirection = "down" | "up" — A serializable set of named countdown / countup timers evaluated against an injected clock. One primitive covers round timers, respawn clocks, and ability cooldown/charge — they are the same mechanic (elapsed vs. duration on a clock), so `id` and any labels are free strings the engine never interprets.
 - `TimerExpiryListener` (type): type TimerExpiryListener = (id: string) => void — Listener notified when a timer newly expires. Receives the timer id.
 - `TimerRead` (interface): interface TimerRead — A single timer's resolved state for one read. All fields are plain numbers so a HUD can render without touching the model. For a looping timer the values describe the current cycle; `expired` is only ever `true` for a finished non-looping timer (loops signal completion through {@link TimerSet.poll}).
@@ -2297,7 +2297,7 @@
 - `VISIBILITY_HIDDEN` (const): const VISIBILITY_HIDDEN: 0 — Numeric code for a cell no group member has seen, or has fully forgotten.
 - `VISIBILITY_OBSERVED` (const): const VISIBILITY_OBSERVED: 2 — Numeric code for a cell a group currently observes.
 - `VISIBILITY_REMEMBERED` (const): const VISIBILITY_REMEMBERED: 1 — Numeric code for a cell seen before but not currently in view (last-known).
-- `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented
+- `Vec3` (type): type Vec3 = EntityPosition — ⚠ undocumented · used by `catenaryCurve`: True hyperbolic catenary between two anchors — the shape a uniform cable actually takes under gravity.
 - `VehicleImpact` (interface): interface VehicleImpact — A single blocked-move event a car can react to (#1051): crash damage, screen shake, a metal-crunch cue. Reported once, when a move is first vetoed, then consumed by {@link VehicleObstacleClamp.takeImpact}.
 - `VehicleObstacleClamp` (interface): interface VehicleObstacleClamp — A planar move clamp for a kinematic car: feed {@link clampMove} to a vehicle's `clampMove` hook so an attempted XZ displacement slides along world solids instead of driving through them, and read {@link takeImpact} once per tick for the crash it produced.
 - `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
@@ -2310,24 +2310,24 @@
 - `VisibilityGroupState` (interface): interface VisibilityGroupState — Sparse serialized knowledge for one group — only non-hidden cells are stored.
 - `VisibilityMemory` (type): type VisibilityMemory = | { readonly kind: "permanent" } | { readonly kind: "none" } | { readonly kind: "decay"; readonly updates: number } — How a cell decays after a group stops observing it — the terrain-memory policy. `permanent` keeps last-known terrain forever (RTS explored map); `none` drops it straight back to hidden the moment it leaves view (pure line-of-sight stealth); `decay` remembers it for `updates` observe cycles, then hides it. Day/night, height, sensor, and stealth rules are NOT encoded here — the caller bakes those into which cells it reports as observed each update.
 - `VisibilityState` (type): type VisibilityState = "hidden" | "remembered" | "observed" — One viewer group's knowledge of a cell: never/forgotten, last-known, or live.
-- `VisibilitySystem` (interface): interface VisibilitySystem — ⚠ undocumented
+- `VisibilitySystem` (interface): interface VisibilitySystem { update(): VisibilityResult; isVisible(id: string): boolean; isPreloaded(id: string): boolean; boundsOf(id: string): RenderBounds | undefined; settings(): CullingSettings; setSettings(patch: Partial<CullingSettings>): void; stats(): Visibi… — ⚠ undocumented
 - `VolumeDistribution` (type): type VolumeDistribution = "volume" | "radial" — Fill policy for a sphere/shell: `"volume"` = volume-uniform (even density); `"radial"` = radius-uniform.
 - `VolumetricCloudsConfig` (interface): interface VolumetricCloudsConfig — Volumetric cloud layer config for `sky()` — a raymarched cloud slab mounted from the environment `sky` seam. Pure config + defaulting here; the raymarch shader lives in the `shell` renderer (`environment/VolumetricClouds.tsx`), mounted alongside `SkyDome` whenever a sky descriptor carries this field. Off by default — omit `volumetricClouds` on `sky({...})` and no layer mounts.
 - `VolumetricCloudsRules` (interface): interface VolumetricCloudsRules — Fully-defaulted volumetric cloud params, resolved from a `VolumetricCloudsConfig`.
 - `VoxelFace` (type): type VoxelFace = "px" | "nx" | "py" | "ny" | "pz" | "nz" — ⚠ undocumented
 - `VoxelGround` (interface): interface VoxelGround — A procedural volume of blocks. `size` is the generator domain; `generator` is algorithm params only.
 - `VoxelGroundSize` (interface): interface VoxelGroundSize — Size of a `voxel` ground: the generator's domain per axis; axes may be `Infinity` for streaming volumes.
-- `VoxelMaterial` (interface): interface VoxelMaterial — ⚠ undocumented
+- `VoxelMaterial` (interface): interface VoxelMaterial { id: number; name: string; strength: number; drop?: string } — ⚠ undocumented
 - `VoxelVolume` (class): class VoxelVolume — A runtime-editable dense voxel grid — the carve/deposit op behind destructible dig worlds (Deep Rock Galactic tunnels, Astroneer terrain). Cells hold a material id (0 = empty); `carve` clears a sphere of solid cells that a tool is strong enough to break and returns how many it removed (feed that to a loot roll), `deposit` fills a sphere with a material. World↔cell mapping is `origin`+`scale`.
 - `WATER_SCHEMA` (const): const WATER_SCHEMA: ParamSchema — The water parameter schema — drives the inspector and `meta` parse via the studio seam.
 - `WaterRules` (interface): interface WaterRules — Fully-defaulted water surface params parsed from a volume's `meta`.
-- `WaterSurface` (interface): interface WaterSurface — ⚠ undocumented
-- `WaveManifest` (interface): interface WaveManifest — ⚠ undocumented
+- `WaterSurface` (interface): interface WaterSurface { readonly level: number; readonly waves: readonly GerstnerWave[]; height(x: number, z: number, time: number): number; normal(x: number, z: number, time: number): WaterNormal; displace(x: number, z: number, time: number): readonly [number, … — ⚠ undocumented
+- `WaveManifest` (interface): interface WaveManifest { budget: number; entries: readonly SpawnEntry[]; duration?: number; budgetPerSecond?: number } — ⚠ undocumented
 - `WaveRunner` (interface): interface WaveRunner — A live, observable, serializable wave/spawn runner over a seeded spawn director.
 - `WaveRunnerConfig` (interface): interface WaveRunnerConfig extends SpawnDirectorConfig — Configuration for {@link createWaveRunner}: the full {@link SpawnDirectorConfig} (escalating waves, budgets, seed, spawn points) plus an optional {@link WaveSpawnSink}. The runner owns the director state — you never pass a `SpawnDirectorState` here.
 - `WaveSpawnSink` (type): type WaveSpawnSink = (request: SpawnRequest) => void — A callback the wave runner hands each {@link SpawnRequest} the underlying spawn director emits. The runner never instantiates entities itself — it forwards the request (a free-string `entryId` "kind", cost, wave, optional point/lane) to the game, which decides what to build. Keeps the runner genre-agnostic.
 - `WaveView` (interface): interface WaveView — A pooled, per-frame readout of the current wave — the "brain behind WAVE 3". Reused across {@link WaveRunner.view} calls (never per-frame allocated), so read it and render it, don't retain it.
-- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented
+- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented · used by `useWaypoints` (@jgengine/react): Subscribe to a {@link WaypointTracker} and re-render on every change, returning its current waypoints.
 - `WaypointEntry` (interface): interface WaypointEntry — A single player-placed waypoint. World-XZ only — serializable and renderer-free.
 - `WaypointGuidance` (interface): interface WaypointGuidance — Direction/range to the tracked waypoint, for an on-screen guide arrow.
 - `WaypointSnapshot` (interface): interface WaypointSnapshot — Whole serializable state of a {@link WaypointStore} — drop into a save blob.
@@ -2335,15 +2335,15 @@
 - `WaypointStoreDeps` (interface): interface WaypointStoreDeps — Construction options for {@link createWaypointStore}.
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
 - `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — ⚠ undocumented
-- `WeatherState` (interface): interface WeatherState — ⚠ undocumented
+- `WeatherState` (interface): interface WeatherState { kind: WeatherKind; intensity: number; wind?: WindVector } — ⚠ undocumented
 - `WedgeFormationOptions` (interface): interface WedgeFormationOptions — Options for {@link wedgeFormation}.
 - `WeightedParamEntry` (interface): interface WeightedParamEntry — One weighted entry in a `weightedList` param — an item id and its relative spawn weight.
 - `WeightedRegionEntry` (interface): interface WeightedRegionEntry<P extends SamplePoint = SamplePoint> — A weighted member of a {@link weightedRegion} composite.
-- `WindField` (interface): interface WindField — ⚠ undocumented
+- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number } — ⚠ undocumented
 - `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
-- `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
+- `WorldGridCell` (interface): interface WorldGridCell { x: number; z: number; height?: number; color?: string } — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
-- `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented
+- `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented · used by `compassBearing`: Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another.
 - `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
 - `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. Instances that are paused or disabled through {@link behaviorControl} retain their state and are skipped. The shell/host call this each frame; a game never does.
 - `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
@@ -2706,14 +2706,14 @@
 
 ## @jgengine/core/world/buildPermissions
 
-- `BuildActor` (interface): interface BuildActor — ⚠ undocumented
+- `BuildActor` (interface): interface BuildActor { userId: string; guildId?: string } — ⚠ undocumented
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
 - `ContributionGoal` (type): type ContributionGoal = Readonly<Record<string, number>> — ⚠ undocumented
-- `ContributionPool` (interface): interface ContributionPool — ⚠ undocumented
-- `ContributionResult` (interface): interface ContributionResult — ⚠ undocumented
-- `PlotPermissionConfig` (interface): interface PlotPermissionConfig — ⚠ undocumented
-- `PlotPermissionSnapshot` (interface): interface PlotPermissionSnapshot — ⚠ undocumented
-- `PlotPermissions` (interface): interface PlotPermissions — ⚠ undocumented
+- `ContributionPool` (interface): interface ContributionPool { contribute(userId: string, resource: string, amount: number): ContributionResult; totals(): Readonly<Record<string, number>>; remaining(): Readonly<Record<string, number>>; byContributor(userId: string): Readonly<Record<string, number>>; … — ⚠ undocumented
+- `ContributionResult` (interface): interface ContributionResult { accepted: number; overflow: number; complete: boolean } — ⚠ undocumented
+- `PlotPermissionConfig` (interface): interface PlotPermissionConfig { plotId: string; ownerId: string; guildId?: string; roles?: Readonly<Record<string, BuildRole>>; guildRole?: BuildRole } — ⚠ undocumented
+- `PlotPermissionSnapshot` (interface): interface PlotPermissionSnapshot { plotId: string; ownerId: string; guildId?: string; roles: Readonly<Record<string, BuildRole>>; guildRole?: BuildRole } — ⚠ undocumented
+- `PlotPermissions` (interface): interface PlotPermissions { roleOf(actor: BuildActor): BuildRole | null; canEdit(actor: BuildActor): boolean; canView(actor: BuildActor): boolean; grant(userId: string, role: BuildRole): void; revoke(userId: string): void; setGuild(guildId: string | null, role?: Bui… — ⚠ undocumented
 - `createContributionPool` (function): function createContributionPool(goal: ContributionGoal): ContributionPool — ⚠ undocumented
 - `createPlotPermissions` (function): function createPlotPermissions(config: PlotPermissionConfig): PlotPermissions — ⚠ undocumented
 
@@ -2744,8 +2744,8 @@
 
 ## @jgengine/core/world/buildingIndex
 
-- `BuildingHit` (interface): interface BuildingHit — ⚠ undocumented
-- `BuildingIndex` (interface): interface BuildingIndex — ⚠ undocumented
+- `BuildingHit` (interface): interface BuildingHit { building: GeneratedBuilding; distance: number } — ⚠ undocumented
+- `BuildingIndex` (interface): interface BuildingIndex { readonly buildings: readonly GeneratedBuilding[]; at(point: Vec2): GeneratedBuilding | undefined; within(area: Aabb): GeneratedBuilding[]; nearest(point: Vec2): BuildingHit | undefined; isInside(point: Vec2): boolean; blockers(margin?: nu… — ⚠ undocumented
 - `buildingIndex` (function): function buildingIndex(buildings: readonly GeneratedBuilding[]): BuildingIndex — ⚠ undocumented
 
 ## @jgengine/core/world/buildingKit
@@ -2774,29 +2774,29 @@
 
 - `BUILDING_STYLE_PALETTES` (const): const BUILDING_STYLE_PALETTES: Record<BuildingStyle, Record<BuildingPartKind, string>> — ⚠ undocumented
 - `BUILDING_STYLE_WALL_TONES` (const): const BUILDING_STYLE_WALL_TONES: Record<BuildingStyle, readonly string[]> — Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block stays one palette. Index 0 is the palette's own `wall`; the rest fan warmer/cooler and lighter/darker around it.
-- `BuildingCellRef` (interface): interface BuildingCellRef — ⚠ undocumented
-- `BuildingConfig` (interface): interface BuildingConfig — ⚠ undocumented
-- `BuildingConfigInput` (type): type BuildingConfigInput = Partial< Omit<BuildingConfig, "probabilities" | "variants"> > & { probabilities?: Partial<BuildingProbabilities>; variants?: Partial<BuildingVariantCounts>; } — ⚠ undocumented
+- `BuildingCellRef` (interface): interface BuildingCellRef { facade: BuildingFacade; level: number; bay: number } — ⚠ undocumented
+- `BuildingConfig` (interface): interface BuildingConfig { id: string; seed: BuildingSeed; center: Vec2; floors: number; baysWide: number; baysDeep: number; bayWidth: number; floorHeight: number; facadeDepth: number; roofOverhang: number; probabilities: BuildingProbabilities; variants: BuildingVa… — ⚠ undocumented · used by `createBuildingConfig`: Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities.
+- `BuildingConfigInput` (type): type BuildingConfigInput = Partial< Omit<BuildingConfig, "probabilities" | "variants"> > & { probabilities?: Partial<BuildingProbabilities>; variants?: Partial<BuildingVariantCounts>; } — ⚠ undocumented · used by `createBuildingConfig`: Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities.
 - `BuildingFacade` (type): type BuildingFacade = "front" | "back" | "left" | "right" | "roof" — ⚠ undocumented
-- `BuildingGridConfig` (interface): interface BuildingGridConfig — ⚠ undocumented
-- `BuildingKitSlot` (interface): interface BuildingKitSlot — ⚠ undocumented
-- `BuildingLot` (interface): interface BuildingLot — ⚠ undocumented
+- `BuildingGridConfig` (interface): interface BuildingGridConfig { rows: number; columns: number; origin?: Vec2; lotSize?: Footprint; streetWidth?: number; seed?: BuildingSeed; idPrefix?: string; base?: BuildingConfigInput; floorRange?: readonly [number, number] } — ⚠ undocumented · used by `generateBuildingDistrict`: Generate a grid of buildings on lots sized by `lotSize` and separated by `streetWidth`, each with its floor count rolled from `floorRange`.
+- `BuildingKitSlot` (interface): interface BuildingKitSlot { key: string; variant: number } — ⚠ undocumented · used by `resolveBuildingKitPart` (@jgengine/core/world/buildingKit): Resolves one generated part against a kit.
+- `BuildingLot` (interface): interface BuildingLot { id: string; center: Vec2; footprint: Footprint; quarterTurns: number; config: BuildingConfig } — ⚠ undocumented
 - `BuildingPalette` (type): type BuildingPalette = Record<BuildingPartKind, BuildingSurface> — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
-- `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented
-- `BuildingPartPlacement` (interface): interface BuildingPartPlacement — ⚠ undocumented
+- `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented · used by `resolveBuildingKitPart` (@jgengine/core/world/buildingKit): Resolves one generated part against a kit.
+- `BuildingPartPlacement` (interface): interface BuildingPartPlacement { id: string; buildingId: string; kind: BuildingPartKind; facade: BuildingFacade; position: Vec3; rotationY: number; scale: Vec3; kit: BuildingKitSlot; cell?: BuildingCellRef; tags?: readonly BuildingPartTag[] } — ⚠ undocumented
 - `BuildingPartTag` (type): type BuildingPartTag = "ground" | "upper" | "open" | "closed" | "decor" | "structure" — ⚠ undocumented
-- `BuildingProbabilities` (interface): interface BuildingProbabilities — ⚠ undocumented
+- `BuildingProbabilities` (interface): interface BuildingProbabilities { window: number; openStore: number; awning: number; airConditioner: number; clothesline: number; storeSign: number; roofProp: number } — ⚠ undocumented
 - `BuildingSeed` (type): type BuildingSeed = number | string — ⚠ undocumented
-- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented
+- `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented · used by `BUILDING_STYLE_WALL_TONES`: Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block…
 - `BuildingSurface` (type): type BuildingSurface = string | BuildingSurfaceMaterial — What a building part kind is painted with: a hex colour, or a colour plus tiled PBR maps.
 - `BuildingSurfaceMaps` (interface): interface BuildingSurfaceMaps — URLs of the PBR maps a building surface tiles; `buildMaterialCatalog(...).resolve(id)!.maps` fits directly.
 - `BuildingSurfaceMaterial` (interface): interface BuildingSurfaceMaterial — A textured building surface: a base colour plus optional tiled PBR maps. With `maps`, `color` multiplies the albedo (leave it light to show the map as authored); without, it is the flat colour the part has always had.
-- `BuildingVariantCounts` (interface): interface BuildingVariantCounts — ⚠ undocumented
+- `BuildingVariantCounts` (interface): interface BuildingVariantCounts { wall: number; window: number; awning: number; airConditioner: number; clothesline: number; storefront: number; shutter: number; storeSign: number; roofProp: number } — ⚠ undocumented · used by `buildingKitVariantCounts` (@jgengine/core/world/buildingKit): The variant counts a kit actually supplies, shaped for `BuildingConfigInput.variants`.
 - `DEFAULT_BUILDING_CONFIG` (const): const DEFAULT_BUILDING_CONFIG: BuildingConfig — ⚠ undocumented
 - `DEFAULT_BUILDING_STYLE` (const): const DEFAULT_BUILDING_STYLE: BuildingStyle — ⚠ undocumented
-- `GeneratedBuilding` (interface): interface GeneratedBuilding — ⚠ undocumented
-- `Vec3` (type): type Vec3 = readonly [number, number, number] — ⚠ undocumented
+- `GeneratedBuilding` (interface): interface GeneratedBuilding { id: string; seed: BuildingSeed; center: Vec2; footprint: Footprint; floors: number; floorHeight: number; bounds: Aabb; parts: readonly BuildingPartPlacement[]; rotationY?: number } — ⚠ undocumented · used by `generateBuilding`: Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorat…
+- `Vec3` (type): type Vec3 = readonly [number, number, number] — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 - `buildingSurfaceColor` (function): function buildingSurfaceColor(surface: BuildingSurface | undefined, fallback = "#808080"): string — The flat colour of a surface: the hex itself, or a material's `color`, else `fallback`.
 - `createBuildingConfig` (function): function createBuildingConfig(input: BuildingConfigInput = {}): BuildingConfig — Fill a partial building description out to a complete {@link BuildingConfig}, clamping counts and probabilities. Use it to inspect or adjust the resolved shape before generating.
 - `generateBuilding` (function): function generateBuilding(input: BuildingConfigInput = {}): GeneratedBuilding — Generate one building as a flat list of placed facade parts: bays × floors per facade, a ground row, corners, and a roof, with every decorative part rolled from `probabilities` and every part tagged with a `kit` slot the renderer binds to a model (see `world/buildingKit`). Deterministic from `seed`.
@@ -2806,15 +2806,15 @@
 ## @jgengine/core/world/carve
 
 - `CarvableField` (class): class CarvableField implements TerrainField — A `TerrainField` you can write craters and mounds into at runtime — the height-field side of destructible terrain (Helldivers 2 explosion craters, engineer-deposited berms). Wraps a base field and layers smooth radial deformations on top, so `sampleHeight` (and therefore ground-snap, collision, and the shell's terrain mesh) all read the deformed surface. `carve` digs a bowl, `deposit` raises a mound.
-- `CarveOp` (interface): interface CarveOp — ⚠ undocumented
-- `CraterOp` (interface): interface CraterOp — ⚠ undocumented
-- `DepositOp` (interface): interface DepositOp — ⚠ undocumented
+- `CarveOp` (interface): interface CarveOp { center: readonly [number, number, number]; radius: number; toolStrength?: number } — ⚠ undocumented
+- `CraterOp` (interface): interface CraterOp { x: number; z: number; radius: number; depth: number } — ⚠ undocumented
+- `DepositOp` (interface): interface DepositOp { center: readonly [number, number, number]; radius: number; material: number } — ⚠ undocumented
 - `EMPTY_VOXEL` (const): const EMPTY_VOXEL: 0 — ⚠ undocumented
-- `MoundOp` (interface): interface MoundOp — ⚠ undocumented
-- `VoxelMaterial` (interface): interface VoxelMaterial — ⚠ undocumented
+- `MoundOp` (interface): interface MoundOp { x: number; z: number; radius: number; height: number } — ⚠ undocumented
+- `VoxelMaterial` (interface): interface VoxelMaterial { id: number; name: string; strength: number; drop?: string } — ⚠ undocumented
 - `VoxelMaterialTable` (type): type VoxelMaterialTable = Readonly<Record<number, VoxelMaterial>> — ⚠ undocumented
 - `VoxelVolume` (class): class VoxelVolume — A runtime-editable dense voxel grid — the carve/deposit op behind destructible dig worlds (Deep Rock Galactic tunnels, Astroneer terrain). Cells hold a material id (0 = empty); `carve` clears a sphere of solid cells that a tool is strong enough to break and returns how many it removed (feed that to a loot roll), `deposit` fills a sphere with a material. World↔cell mapping is `origin`+`scale`.
-- `VoxelVolumeConfig` (interface): interface VoxelVolumeConfig — ⚠ undocumented
+- `VoxelVolumeConfig` (interface): interface VoxelVolumeConfig { dims: readonly [number, number, number]; origin?: readonly [number, number, number]; scale?: number; fill?: number; materials?: VoxelMaterialTable } — ⚠ undocumented
 - `carvableTerrain` (function): function carvableTerrain(base: TerrainField): CarvableField — ⚠ undocumented
 
 ## @jgengine/core/world/catenary
@@ -2825,9 +2825,9 @@
 
 ## @jgengine/core/world/cellStates
 
-- `CellRef` (interface): interface CellRef — ⚠ undocumented
+- `CellRef` (interface): interface CellRef { col: number; row: number } — ⚠ undocumented
 - `CellStateGrid` (interface): interface CellStateGrid<TState extends string> — A uniform world grid whose cells step through a discrete state ladder — pristine → cracked → burning → ruined — driven by whatever world events the game routes in (#284.8). Pure storage plus ladder mechanics; the game decides *when* to escalate, the grid guarantees ordered, clamped steps and cheap queries. `version()` bumps on every change for dirty-checked rendering.
-- `CellStateGridConfig` (interface): interface CellStateGridConfig<TState extends string> — ⚠ undocumented
+- `CellStateGridConfig` (interface): interface CellStateGridConfig<TState extends string> { cols: number; rows: number; states: readonly TState[]; origin?: readonly [number, number]; cellSize?: number } — ⚠ undocumented
 - `createCellStateGrid` (function): function createCellStateGrid<TState extends string>(config: CellStateGridConfig<TState>): CellStateGrid<TState> — ⚠ undocumented
 
 ## @jgengine/core/world/cityBlocks
@@ -2963,14 +2963,14 @@
 
 ## @jgengine/core/world/connectors
 
-- `ConnectorPieceDef` (interface): interface ConnectorPieceDef — ⚠ undocumented
+- `ConnectorPieceDef` (interface): interface ConnectorPieceDef { kind: string; sockets: readonly ConnectorSocket[] } — ⚠ undocumented
 - `ConnectorRegistry` (type): type ConnectorRegistry = (kind: string) => ConnectorPieceDef | null — ⚠ undocumented
-- `ConnectorSocket` (interface): interface ConnectorSocket — ⚠ undocumented
+- `ConnectorSocket` (interface): interface ConnectorSocket { id: string; type: string; offset: ConnectorVec3; accepts?: readonly string[] } — ⚠ undocumented
 - `ConnectorVec3` (type): type ConnectorVec3 = readonly [number, number, number] — ⚠ undocumented
-- `PlacedPiece` (interface): interface PlacedPiece — ⚠ undocumented
-- `SnapOptions` (interface): interface SnapOptions — ⚠ undocumented
-- `SnapResult` (interface): interface SnapResult — ⚠ undocumented
-- `WorldSocket` (interface): interface WorldSocket — ⚠ undocumented
+- `PlacedPiece` (interface): interface PlacedPiece { id: string; kind: string; position: ConnectorVec3; rotationY: number } — ⚠ undocumented
+- `SnapOptions` (interface): interface SnapOptions { snapDistance?: number; rotationY?: number } — ⚠ undocumented
+- `SnapResult` (interface): interface SnapResult { socketId: string; targetPieceId: string; targetSocketId: string; position: ConnectorVec3; rotationY: number; distance: number } — ⚠ undocumented
+- `WorldSocket` (interface): interface WorldSocket { pieceId: string; socket: ConnectorSocket; position: ConnectorVec3 } — ⚠ undocumented
 - `collectWorldSockets` (function): function collectWorldSockets(registry: ConnectorRegistry, pieces: readonly PlacedPiece[]): WorldSocket[] — ⚠ undocumented
 - `snapToNearest` (function): function snapToNearest(registry: ConnectorRegistry, placed: readonly PlacedPiece[], movingDef: ConnectorPieceDef, cursor: ConnectorVec3, options: SnapOptions = {}): SnapResult | null — ⚠ undocumented
 - `socketWorldPosition` (function): function socketWorldPosition(socket: ConnectorSocket, origin: ConnectorVec3, rotationY: number): ConnectorVec3 — ⚠ undocumented
@@ -2979,9 +2979,9 @@
 
 ## @jgengine/core/world/envField
 
-- `EnvironmentField` (interface): interface EnvironmentField — ⚠ undocumented
-- `EnvironmentFieldConfig` (interface): interface EnvironmentFieldConfig — ⚠ undocumented
-- `EnvironmentSample` (interface): interface EnvironmentSample — ⚠ undocumented
+- `EnvironmentField` (interface): interface EnvironmentField { sample(x: number, z: number, time: number, y?: number): EnvironmentSample; temperature(x: number, z: number, time: number, y?: number): number; wetness(x: number, z: number, time: number): number; lightExposure(x: number, z: number, time:… — ⚠ undocumented · used by `createEnvironmentField`: A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time.
+- `EnvironmentFieldConfig` (interface): interface EnvironmentFieldConfig { dayLength?: number; baseTemperature?: number; nightDrop?: number; altitudeLapse?: number; seaLevel?: number; terrain?: TerrainField; rain?: ScalarField; occluders?: ShadeProvider; heatSources?: readonly HeatSource[]; ambientFloor?: number… — ⚠ undocumented · used by `createEnvironmentField`: A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time.
+- `EnvironmentSample` (interface): interface EnvironmentSample { temperature: number; wetness: number; lightExposure: number; ambientLight: number; sheltered: boolean } — ⚠ undocumented
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
 - `OccluderRect` (interface): interface OccluderRect — A sky-occluding footprint — a roof, dense canopy, a cave mouth. `shade` 0..1 = fraction of sky blocked.
 - `ScalarField` (type): type ScalarField = number | ((x: number, z: number, time: number) => number) — ⚠ undocumented
@@ -2990,16 +2990,16 @@
 
 ## @jgengine/core/world/environmentSummary
 
-- `EnvironmentCounts` (interface): interface EnvironmentCounts — ⚠ undocumented
-- `EnvironmentSummary` (interface): interface EnvironmentSummary — ⚠ undocumented
-- `IslandSummary` (interface): interface IslandSummary extends TerrainSummary — ⚠ undocumented
+- `EnvironmentCounts` (interface): interface EnvironmentCounts { terrain: number; islands: number; structureGroups: number; buildings: number; buildingParts: number; vegetationFields: number; waterBodies: number; weatherSystems: number; roads: number } — ⚠ undocumented
+- `EnvironmentSummary` (interface): interface EnvironmentSummary { terrain?: TerrainSummary; islands: readonly IslandSummary[]; structures: readonly StructureSummary[]; vegetation: readonly VegetationSummary[]; water: readonly WaterSummary[]; weather: readonly WeatherSummary[]; roads: readonly RoadSummar… — ⚠ undocumented
+- `IslandSummary` (interface): interface IslandSummary extends TerrainSummary { origin: readonly [number, number] } — ⚠ undocumented
 - `RoadSummary` (interface): interface RoadSummary — One road descriptor's resolved footprint: vertex count, width, and total centerline length.
-- `StructureSummary` (interface): interface StructureSummary — ⚠ undocumented
-- `TerrainHeightStats` (interface): interface TerrainHeightStats — ⚠ undocumented
-- `TerrainSummary` (interface): interface TerrainSummary — ⚠ undocumented
-- `VegetationSummary` (interface): interface VegetationSummary — ⚠ undocumented
-- `WaterSummary` (interface): interface WaterSummary — ⚠ undocumented
-- `WeatherSummary` (interface): interface WeatherSummary — ⚠ undocumented
+- `StructureSummary` (interface): interface StructureSummary { style: BuildingStyle; palette: BuildingPalette; requested: number; buildings: number; parts: number; bounds: Aabb } — ⚠ undocumented
+- `TerrainHeightStats` (interface): interface TerrainHeightStats { min: number; max: number; mean: number; finite: boolean } — ⚠ undocumented
+- `TerrainSummary` (interface): interface TerrainSummary { bounds: WorldBounds; height: TerrainHeightStats; palette: TerrainPalette; waterLevel?: number } — ⚠ undocumented
+- `VegetationSummary` (interface): interface VegetationSummary { area: EnvironmentArea; density: number } — ⚠ undocumented
+- `WaterSummary` (interface): interface WaterSummary { level: number; bounds: WorldBounds } — ⚠ undocumented
+- `WeatherSummary` (interface): interface WeatherSummary { kind: "rain" | "snow"; area: EnvironmentArea; density: number } — ⚠ undocumented
 - `resolveStructureBuildings` (function): function resolveStructureBuildings(descriptor: BuildingEnvironmentDescriptor): GeneratedBuilding[] — ⚠ undocumented
 - `summarizeEnvironment` (function): function summarizeEnvironment(feature: EnvironmentWorldFeature): EnvironmentSummary — ⚠ undocumented
 
@@ -3017,57 +3017,57 @@
 - `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
 - `BiomeFog` (interface): interface BiomeFog — Per-band fog override cross-faded along z by `createBiomeFogSampler`; unset fields fall through to the base sky fog.
 - `BiomeSky` (interface): interface BiomeSky — Per-band sky/light override cross-faded along z by `createBiomeSkySampler`; unset fields fall through to the base sky.
-- `BiomesWorldConfig` (interface): interface BiomesWorldConfig extends WorldGridConfig — ⚠ undocumented
-- `BuildingEnvironmentConfig` (interface): interface BuildingEnvironmentConfig — ⚠ undocumented
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented
+- `BiomesWorldConfig` (interface): interface BiomesWorldConfig extends WorldGridConfig { map: string; zones: string; bounds?: WorldBounds } — ⚠ undocumented · used by `biomes`: Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
+- `BuildingEnvironmentConfig` (interface): interface BuildingEnvironmentConfig { count?: number; position?: EnvironmentVec2; footprint?: WorldBounds; stories?: readonly [number, number]; storyHeight?: number; spacing?: number; style?: BuildingStyle; palette?: BuildingPaletteOverrides; seed?: string; along?: BuildingFr… — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
 - `BuildingFrontageConfig` (interface): interface BuildingFrontageConfig — Street-aware placement for `building()`: instead of a grid scattered around `position`, lots are stepped along each road's frontage, offset by a consistent setback (a curb + sidewalk strip), and turned so every building FRONT faces its road. `footprint` (`w` = frontage width, `d` = depth) and `spacing` (along-road gap) are shared with the grid mode. Deterministic and bounded by `maxLots`.
 - `BuildingFrontageRoad` (interface): interface BuildingFrontageRoad — One road a `building({ along })` frontage lines with buildings: centerline + full width.
-- `EnvironmentArea` (interface): interface EnvironmentArea extends WorldBounds — ⚠ undocumented
+- `EnvironmentArea` (interface): interface EnvironmentArea extends WorldBounds { h?: number; position?: EnvironmentVec2 } — ⚠ undocumented
 - `EnvironmentDescriptorList` (type): type EnvironmentDescriptorList<T> = T | readonly T[] — ⚠ undocumented
 - `EnvironmentVec2` (type): type EnvironmentVec2 = readonly [number, number] — ⚠ undocumented
-- `EnvironmentWorldConfig` (interface): interface EnvironmentWorldConfig — ⚠ undocumented
-- `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature — ⚠ undocumented
-- `GrassEnvironmentConfig` (interface): interface GrassEnvironmentConfig — ⚠ undocumented
-- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift"> — ⚠ undocumented
-- `OceanEnvironmentConfig` (interface): interface OceanEnvironmentConfig — ⚠ undocumented
-- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented
-- `PadEnvironmentConfig` (interface): interface PadEnvironmentConfig — ⚠ undocumented
-- `PadEnvironmentDescriptor` (type): type PadEnvironmentDescriptor = { kind: "pad" } & Required< Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color"> > & Pick<PadEnvironmentConfig, "rotationY" | "elevation"> — ⚠ undocumented
+- `EnvironmentWorldConfig` (interface): interface EnvironmentWorldConfig { terrain?: TerrainEnvironmentDescriptor; islands?: readonly TerrainIslandDescriptor[]; sky?: SkyEnvironmentDescriptor; weather?: EnvironmentDescriptorList<WeatherEnvironmentDescriptor>; vegetation?: EnvironmentDescriptorList<VegetationEnvi… — ⚠ undocumented · used by `environment`: Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `EnvironmentWorldFeature` (interface): interface EnvironmentWorldFeature { kind: "environment"; terrain?: TerrainEnvironmentDescriptor; islands?: readonly TerrainIslandDescriptor[]; sky?: SkyEnvironmentDescriptor; weather?: readonly WeatherEnvironmentDescriptor[]; vegetation?: readonly VegetationEnvironmentDescr… — ⚠ undocumented · used by `environment`: Composes an `environment()` feature from terrain, sky, weather, vegetation, water, structures, roads, and pads.
+- `GrassEnvironmentConfig` (interface): interface GrassEnvironmentConfig { area?: EnvironmentArea; position?: EnvironmentVec2; density?: number; bladeHeight?: readonly [number, number]; bladeWidth?: number; windStrength?: number; colors?: readonly string[]; seed?: string; bladeBend?: readonly [number, number]; t… — ⚠ undocumented · used by `grass`: Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
+- `GrassEnvironmentDescriptor` (type): type GrassEnvironmentDescriptor = { kind: "grass" } & Required< Pick<GrassEnvironmentConfig, "area" | "density" | "bladeHeight" | "bladeWidth" | "windStrength" | "colors"> > & Pick<GrassEnvironmentConfig, "seed" | "bladeBend" | "tuftRadius" | "colorVariation" | "normalLift"> — ⚠ undocumented · used by `grass`: Declares a grass vegetation patch for `environment()` — area, blade sizing, density, and colors.
+- `OceanEnvironmentConfig` (interface): interface OceanEnvironmentConfig { bounds?: WorldBounds; position?: EnvironmentVec2; level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; color?: string } — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
+- `OceanEnvironmentDescriptor` (type): type OceanEnvironmentDescriptor = { kind: "ocean" } & Required< Pick<OceanEnvironmentConfig, "bounds" | "level" | "waveHeight" | "waveScale" | "waveSpeed" | "color"> > & Pick<OceanEnvironmentConfig, "position" | "levelAt"> — ⚠ undocumented · used by `ocean`: Declares an ocean water body for `environment()` — bounds, level, and wave tuning.
+- `PadEnvironmentConfig` (interface): interface PadEnvironmentConfig { center: EnvironmentVec2; size: PadSize; height?: number; elevation?: number; color?: string; rotationY?: number } — ⚠ undocumented
+- `PadEnvironmentDescriptor` (type): type PadEnvironmentDescriptor = { kind: "pad" } & Required< Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color"> > & Pick<PadEnvironmentConfig, "rotationY" | "elevation"> — ⚠ undocumented · used by `padFlattenMasks`: Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it.
 - `PadSize` (type): type PadSize = readonly [number, number] | { radius: number } — ⚠ undocumented
-- `PlotsWorldConfig` (interface): interface PlotsWorldConfig extends WorldGridConfig — ⚠ undocumented
-- `RainEnvironmentConfig` (interface): interface RainEnvironmentConfig — ⚠ undocumented
-- `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented
+- `PlotsWorldConfig` (interface): interface PlotsWorldConfig extends WorldGridConfig { city?: string; interiors?: string } — ⚠ undocumented · used by `plots`: Declares a subdivided-plots world — farming, base-building, and other parcel-based layouts.
+- `RainEnvironmentConfig` (interface): interface RainEnvironmentConfig { area?: EnvironmentArea; position?: EnvironmentVec2; density?: number; speed?: number; dropLength?: number; wind?: EnvironmentVec2; color?: string; width?: number; opacity?: number } — ⚠ undocumented · used by `rain`: Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
+- `RainEnvironmentDescriptor` (type): type RainEnvironmentDescriptor = { kind: "rain" } & Required< Pick<RainEnvironmentConfig, "area" | "density" | "speed" | "dropLength" | "wind" | "color" | "width" | "opacity"> > — ⚠ undocumented · used by `rain`: Declares a rainfall weather effect for `environment()` — area, density, speed, wind, and drop width/opacity.
 - `RoadEnvironmentConfig` (interface): interface RoadEnvironmentConfig — Config for {@link road}: a flat asphalt ribbon draped over the terrain along a centerline.
 - `RoadEnvironmentDescriptor` (type): type RoadEnvironmentDescriptor = { kind: "road" } & Required< Pick<RoadEnvironmentConfig, "path" | "width" | "color" | "markings" | "markingColor" | "elevation"> > & { /** Resolved sidewalk band, or `false` when the road has none. */ sidewalk: { width: number; color: string } | false; } — Resolved road descriptor produced by {@link road} and rendered by the shell environment scene.
-- `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig — ⚠ undocumented
+- `SkyEnvironmentConfig` (interface): interface SkyEnvironmentConfig { preset?: "day" | "dusk" | "night"; timeOfDay?: boolean; horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig; radius?: number; hazeStrength?: number; sunGlowStrength?: number; g… — ⚠ undocumented · used by `CINEMATIC_SKY` (@jgengine/core/render/lookPreset): A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill.
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented
 - `SkySunConfig` (interface): interface SkySunConfig — Where the sun sits, as a compass bearing and a height above the horizon, both in degrees. `azimuth` 0 points toward -Z (north), 90 toward +X (east); `elevation` 90 is straight overhead.
-- `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig — ⚠ undocumented
-- `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented
+- `SnowEnvironmentConfig` (interface): interface SnowEnvironmentConfig { area?: EnvironmentArea; position?: EnvironmentVec2; density?: number; speed?: number; flakeSize?: number; drift?: number; wind?: EnvironmentVec2; color?: string; opacity?: number } — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
+- `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `StructureEnvironmentDescriptor` (type): type StructureEnvironmentDescriptor = BuildingEnvironmentDescriptor — ⚠ undocumented
 - `TerrainCircleRegion` (interface): interface TerrainCircleRegion extends TerrainRegionStyle — A circular palette zone painted over the base terrain palette — snow caps, ash wastes, spawn circles.
-- `TerrainColors` (interface): interface TerrainColors — ⚠ undocumented
+- `TerrainColors` (interface): interface TerrainColors { low?: string; high?: string; waterline?: string } — ⚠ undocumented
 - `TerrainDetailConfig` (interface): interface TerrainDetailConfig — Procedural detail-surface layer for terrain: a noise-driven shader that keeps the biome-tinted base ground (from `colors`/`biomeBands`) and blends distinct rock, sand, and snow over it by slope, height, and waterline — turning a flat vertex-colour surface into varied, textured-reading ground with no image assets.
 - `TerrainDetailMaterialConfig` (interface): interface TerrainDetailMaterialConfig — Real PBR texture applied over the ground surface — the seam that lets a game put a `buildMaterialCatalog` material on terrain. Blends with, never replaces, the procedural detail shader: color/roughness/ao tile the maps by world position, `strength` fades them over the existing vertex-colour + noise look.
-- `TerrainEnvironmentConfig` (interface): interface TerrainEnvironmentConfig — ⚠ undocumented
-- `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented
-- `TerrainFlattenMask` (interface): interface TerrainFlattenMask — ⚠ undocumented
+- `TerrainEnvironmentConfig` (interface): interface TerrainEnvironmentConfig { bounds?: WorldBounds; height?: number; heightMap?: string; heightField?: (x: number, z: number) => number; material?: TerrainMaterial; colors?: TerrainColors; materialRegions?: readonly TerrainMaterialRegion[]; biomeBands?: readonly Biome… — ⚠ undocumented · used by `terrain`: Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
+- `TerrainEnvironmentDescriptor` (type): type TerrainEnvironmentDescriptor = { kind: "terrain" } & Required< Pick<TerrainEnvironmentConfig, "bounds" | "height"> > & Omit<TerrainEnvironmentConfig, "bounds" | "height"> — ⚠ undocumented · used by `terrain`: Declares a heightfield terrain patch for `environment()` — bounds, noise, materials, and flatten masks.
+- `TerrainFlattenMask` (interface): interface TerrainFlattenMask { center: EnvironmentVec2; radius: number; height?: number; falloff?: number } — ⚠ undocumented · used by `padFlattenMasks`: Derives implicit `TerrainFlattenMask`s carving each pad's footprint into the terrain beneath it.
 - `TerrainIslandConfig` (interface): interface TerrainIslandConfig extends TerrainEnvironmentConfig — A bounded terrain patch floating at its own altitude — sky islands, arena platforms, split landmasses with void between.
 - `TerrainIslandDescriptor` (type): type TerrainIslandDescriptor = Omit<TerrainEnvironmentDescriptor, "kind"> & { kind: "island"; origin: EnvironmentVec2; } — ⚠ undocumented
-- `TerrainMaterial` (type): type TerrainMaterial = "grass" | "sand" | "snow" | "rock" | "ash" | "highland" | "slate" — ⚠ undocumented
+- `TerrainMaterial` (type): type TerrainMaterial = "grass" | "sand" | "snow" | "rock" | "ash" | "highland" | "slate" — ⚠ undocumented · used by `TERRAIN_MATERIALS` (@jgengine/editor): The default terrain paint palette (surface id → color) shared by the panel and the mesh.
 - `TerrainMaterialMaps` (interface): interface TerrainMaterialMaps — PBR map URLs for a real ground texture — the same shape `buildMaterialCatalog({ basePath }).resolve(id)!.maps` from `@jgengine/assets` returns. Kept dependency-free here so `core` never imports the assets package; any URLs (pulled maps, a CDN, a data URI) satisfy it.
 - `TerrainMaterialRegion` (type): type TerrainMaterialRegion = TerrainCircleRegion | TerrainPolylineRegion | TerrainRectRegion — A palette zone painted over the base terrain palette. Circle (the default when no `shape` is given), `polyline` ribbons for roads/rivers, and rotatable `rect` districts all paint fully inside their core and blend back across `falloff`; later regions in the list win overlaps.
 - `TerrainPolylineRegion` (interface): interface TerrainPolylineRegion extends TerrainRegionStyle — A ribbon palette zone following a centerline — roads and rivers, instead of chaining overlapping circles.
 - `TerrainRectRegion` (interface): interface TerrainRectRegion extends TerrainRegionStyle — A rectangular palette zone, optionally rotated about the world y axis — plazas, fields, districts.
 - `TerrainRegionStyle` (interface): interface TerrainRegionStyle — Palette and blend fields shared by every `TerrainMaterialRegion` shape.
-- `TilemapWorldConfig` (interface): interface TilemapWorldConfig extends WorldGridConfig — ⚠ undocumented
+- `TilemapWorldConfig` (interface): interface TilemapWorldConfig extends WorldGridConfig { map: string; tileSet?: {atlas: SpriteAtlas; tiles: Record<string, string>}; sortingLayer?: string } — ⚠ undocumented · used by `tilemap`: Declares a 2D tilemap world from a map string.
 - `VegetationEnvironmentDescriptor` (type): type VegetationEnvironmentDescriptor = GrassEnvironmentDescriptor — ⚠ undocumented
-- `VoxelWorldConfig` (interface): interface VoxelWorldConfig extends WorldGridConfig — ⚠ undocumented
+- `VoxelWorldConfig` (interface): interface VoxelWorldConfig extends WorldGridConfig { seed: string; generate?: string; streaming?: {radius: number} } — ⚠ undocumented · used by `voxel`: Declares a voxel-grid world for block-based games.
 - `WaterEnvironmentDescriptor` (type): type WaterEnvironmentDescriptor = OceanEnvironmentDescriptor — ⚠ undocumented
 - `WeatherEnvironmentDescriptor` (type): type WeatherEnvironmentDescriptor = RainEnvironmentDescriptor | SnowEnvironmentDescriptor — ⚠ undocumented
-- `WorldBounds` (interface): interface WorldBounds — ⚠ undocumented
+- `WorldBounds` (interface): interface WorldBounds { w: number; d: number } — ⚠ undocumented · used by `terrainBoundsFromDocument` (@jgengine/core/editor): The origin-centered terrain footprint that covers every authored object in a document, padded and floored to `minBounds`.
 - `WorldFeature` (type): type WorldFeature = | PlaceWorldFeature | ({ kind: "biomes" } & BiomesWorldConfig) | ({ kind: "voxel" } & VoxelWorldConfig) | ({ kind: "plots" } & PlotsWorldConfig) | ({ kind: "tilemap" } & TilemapWorldConfig) | EnvironmentWorldFeature | { kind: "flat" } — A declared world shape passed to `defineGame`. The preferred model is the place feature from `world()` (`@jgengine/core/world/place`): substrate + laws, with all dressing authored in the editor. The remaining members — biomes, voxel grid, plots, tilemap, environment, flat — are the legacy code-declared shapes kept for existing games.
-- `WorldGridCell` (interface): interface WorldGridCell — ⚠ undocumented
+- `WorldGridCell` (interface): interface WorldGridCell { x: number; z: number; height?: number; color?: string } — ⚠ undocumented
 - `WorldGridConfig` (interface): interface WorldGridConfig — Shared by `biomes()`/`voxel()`/`plots()`/`tilemap()` so the shell can render their declared content as instanced boxes without a hand-written renderer.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `building` (function): function building(config: BuildingEnvironmentConfig = {}): BuildingEnvironmentDescriptor — Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style. Pass `along` to line road frontage instead of gridding around `position`.
@@ -3089,9 +3089,9 @@
 
 ## @jgengine/core/world/fog
 
-- `FogBounds` (interface): interface FogBounds — ⚠ undocumented
-- `FogCells` (interface): interface FogCells — ⚠ undocumented
-- `FogConfig` (interface): interface FogConfig — ⚠ undocumented
+- `FogBounds` (interface): interface FogBounds { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented
+- `FogCells` (interface): interface FogCells { cols: number; rows: number; minX: number; minZ: number; cellSize: number; revealed: readonly boolean[]; revealedCount: number } — ⚠ undocumented
+- `FogConfig` (interface): interface FogConfig { bounds: FogBounds; cellSize: number; revealed?: readonly number[] } — ⚠ undocumented
 - `FogField` (interface): interface FogField — Reveal-on-event fog of war over a fixed grid. Walking (`revealAlong`) and digging/acting (`reveal`) clear cells; once revealed a cell stays revealed. Pure and renderer-free — the shell/react map draws `cells()`.
 - `createFogField` (function): function createFogField(config: FogConfig): FogField — ⚠ undocumented
 
@@ -3109,14 +3109,14 @@
 
 ## @jgengine/core/world/geometry
 
-- `Aabb` (interface): interface Aabb — ⚠ undocumented
+- `Aabb` (interface): interface Aabb { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `polygonBounds` (@jgengine/core/world): Axis-aligned bounds of a polygon, or null if it has no points.
 - `AvoidCorridor` (interface): interface AvoidCorridor — A clearance *corridor* along a polyline (a path/road): scatter is repelled within `halfWidth` of the centerline, feathered over the outer band. Clean straight edges — unlike approximating a corridor with a scalloped chain of discs.
 - `AvoidMasks` (interface): interface AvoidMasks — A clearance region: point discs (spawns/plots) plus centerline corridors (paths).
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `Ellipse` (interface): interface Ellipse — An axis-aligned ellipse: `center` with semi-axes `radiusX` and `radiusY`.
-- `Footprint` (interface): interface Footprint — ⚠ undocumented
-- `MoveOptions` (interface): interface MoveOptions — ⚠ undocumented
-- `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented
+- `Footprint` (interface): interface Footprint { w: number; d: number } — ⚠ undocumented · used by `rotatedFootprint` (@jgengine/core/scene/assetSpace): The axis-aligned footprint extent after rotating a rectangular {@link Footprint} by `headingDegrees` — footprint-aware placement: a 90-degre…
+- `MoveOptions` (interface): interface MoveOptions { bounds?: Aabb; radius?: number } — ⚠ undocumented
+- `Vec2` (type): type Vec2 = readonly [number, number] — ⚠ undocumented · used by `assignFormationSlots` (@jgengine/core/movement/formation): Match `members` to `slots` by a deterministic greedy nearest assignment: every (member, slot) pair is ranked by squared travel distance (min…
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D point/vector as an `[x, y, z]` tuple — the engine's zero-allocation spatial primitive.
 
 ## @jgengine/core/world/grassKind
@@ -3129,7 +3129,7 @@
 
 ## @jgengine/core/world/gridInstances
 
-- `GridInstanceTransform` (interface): interface GridInstanceTransform — ⚠ undocumented
+- `GridInstanceTransform` (interface): interface GridInstanceTransform { position: readonly [number, number, number]; scale: readonly [number, number, number]; color: string } — ⚠ undocumented
 - `resolveGridCells` (function): function resolveGridCells(config: WorldGridConfig | GridWorldFeature): readonly WorldGridCell[] — ⚠ undocumented
 - `resolveGridInstances` (function): function resolveGridInstances(config: WorldGridConfig | GridWorldFeature): readonly GridInstanceTransform[] — ⚠ undocumented
 
@@ -3139,19 +3139,19 @@
 
 ## @jgengine/core/world/interiors
 
-- `EntityLocation` (interface): interface EntityLocation — ⚠ undocumented
-- `Exterior` (interface): interface Exterior — ⚠ undocumented
-- `Interior` (interface): interface Interior — ⚠ undocumented
-- `Interiors` (interface): interface Interiors — ⚠ undocumented
-- `InteriorsConfig` (interface): interface InteriorsConfig — ⚠ undocumented
+- `EntityLocation` (interface): interface EntityLocation { space: SpaceRef; position: Vec2 } — ⚠ undocumented
+- `Exterior` (interface): interface Exterior { bounds?: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
+- `Interior` (interface): interface Interior { id: string; origin: Vec2; rotation?: number; bounds: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
+- `Interiors` (interface): interface Interiors { move(location: EntityLocation, delta: Vec2): EntityLocation; enter(location: EntityLocation, id: string): EntityLocation | null; leave(location: EntityLocation): EntityLocation | null; toInterior(id: string, exterior: Vec2): Vec2 | null; … — ⚠ undocumented
+- `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented
 - `SpaceRef` (type): type SpaceRef = { kind: "exterior" } | { kind: "interior"; id: string } — ⚠ undocumented
 - `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — ⚠ undocumented
 
 ## @jgengine/core/world/lod
 
-- `LodBand` (interface): interface LodBand — ⚠ undocumented
-- `LodScheduler` (interface): interface LodScheduler — ⚠ undocumented
-- `LodSchedulerConfig` (interface): interface LodSchedulerConfig — ⚠ undocumented
+- `LodBand` (interface): interface LodBand { maxDistance: number; interval: number } — ⚠ undocumented
+- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number } — ⚠ undocumented
+- `LodSchedulerConfig` (interface): interface LodSchedulerConfig { bands: readonly LodBand[]; beyondInterval?: number | null; stagger?: boolean } — ⚠ undocumented
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 
 ## @jgengine/core/world/mapAnnotations
@@ -3167,12 +3167,12 @@
 ## @jgengine/core/world/mapLayers
 
 - `MAP_LAYER_TONE_COLORS` (const): const MAP_LAYER_TONE_COLORS: Record<MapLayerTone, string> — ⚠ undocumented
-- `MapCellStates` (interface): interface MapCellStates — ⚠ undocumented
+- `MapCellStates` (interface): interface MapCellStates { id: string; origin: MapXZ; cellSize: number; cells: readonly {col: number; row: number; tone: MapLayerTone; opacity?: number}[] } — ⚠ undocumented
 - `MapLayerTone` (type): type MapLayerTone = "danger" | "warning" | "info" | "safe" | "neutral" — ⚠ undocumented
-- `MapRoute` (interface): interface MapRoute — ⚠ undocumented
+- `MapRoute` (interface): interface MapRoute { id: string; points: readonly MapXZ[]; tone?: MapLayerTone; forecast?: boolean; width?: number; closed?: boolean } — ⚠ undocumented
 - `MapXZ` (type): type MapXZ = readonly [number, number] — ⚠ undocumented
-- `MapZone` (interface): interface MapZone — ⚠ undocumented
-- `MapZoneShape` (type): type MapZoneShape = | { kind: "circle"; center: MapXZ; radius: number } | { kind: "rect"; center: MapXZ; w: number; d: number; rotate?: number } | { kind: "polygon"; points: readonly MapXZ[] } — ⚠ undocumented
+- `MapZone` (interface): interface MapZone { id: string; shape: MapZoneShape; tone?: MapLayerTone; opacity?: number; forecast?: boolean; label?: string } — ⚠ undocumented
+- `MapZoneShape` (type): type MapZoneShape = | { kind: "circle"; center: MapXZ; radius: number } | { kind: "rect"; center: MapXZ; w: number; d: number; rotate?: number } | { kind: "polygon"; points: readonly MapXZ[] } — ⚠ undocumented · used by `pointInMapZone`: Renderer-free overlay data for map surfaces (#285.1-2): zones with live + forecast states, route polylines, and per-cell status heatmaps.
 - `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented
 - `pointInMapZone` (function): function pointInMapZone(zone: MapZoneShape, x: number, z: number): boolean — Renderer-free overlay data for map surfaces (#285.1-2): zones with live + forecast states, route polylines, and per-cell status heatmaps. `@jgengine/react/map`'s `Minimap`/`WorldMap` take these straight in; `pointInMapZone` answers gameplay queries against the same data, so the HUD and the rules can never disagree about where the storm is.
 
@@ -3181,11 +3181,11 @@
 - `DEFAULT_MARKER_KINDS` (const): const DEFAULT_MARKER_KINDS: Record<string, MarkerKindStyle> — ⚠ undocumented
 - `MapMarker` (interface): interface MapMarker<TMeta = unknown> extends MarkerView<TMeta> — A marker owned by {@link MarkerSet}, including its lifecycle and query fields.
 - `MarkerCollection` (type): type MarkerCollection<TMarker extends MarkerView = MarkerView> = | readonly TMarker[] | MarkerSource<TMarker> | MarkerSet — Marker data accepted by portable consumers: static views, an external source, or a native set.
-- `MarkerInput` (interface): interface MarkerInput<TMeta = unknown> — ⚠ undocumented
+- `MarkerInput` (interface): interface MarkerInput<TMeta = unknown> { id?: string; kind: string; position: MarkerPosition; label?: string; heading?: number; owner?: string; createdAt?: number; expiresAt?: number; meta?: TMeta } — ⚠ undocumented
 - `MarkerKindStyle` (interface): interface MarkerKindStyle — Visual descriptor for a marker kind. Games supply their own palette; the engine ships `DEFAULT_MARKER_KINDS` as a content-agnostic starting set that the react minimap/compass read for colors and glyphs.
 - `MarkerPosition` (type): type MarkerPosition = readonly [number, number, number] — ⚠ undocumented
-- `MarkerQuery` (interface): interface MarkerQuery — ⚠ undocumented
-- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> — ⚠ undocumented
+- `MarkerQuery` (interface): interface MarkerQuery { kind?: string; owner?: string; near?: MarkerPosition; radius?: number } — ⚠ undocumented
+- `MarkerSet` (interface): interface MarkerSet<TMeta = unknown> { add(marker: MarkerInput<TMeta>): string; remove(id: string): boolean; get(id: string): MapMarker<TMeta> | null; list(): readonly MapMarker<TMeta>[]; query(query: MarkerQuery): MapMarker<TMeta>[]; prune(now: number): number; clear(): void;… — ⚠ undocumented · used by `useLiveMarkers` (@jgengine/react): A self-ticking {@link MarkerSet} kept in sync with the live scene: on a heartbeat (default 100ms, and once immediately) it clears the set an…
 - `MarkerSource` (interface): interface MarkerSource<TMarker extends MarkerView = MarkerView> — Observable marker snapshots owned by an external project. `getSnapshot` must return the same array identity until the source changes and calls its subscribers, matching React's external-store contract.
 - `MarkerSourceOptions` (interface): interface MarkerSourceOptions<TEntity, TMarker extends MarkerView = MarkerView> — Configuration for projecting a caller-owned collection into display-only markers.
 - `MarkerView` (interface): interface MarkerView<TMeta = unknown> — Small, display-only marker shape consumed by map renderers. Existing games can project their own entities to this view without adopting marker lifecycle storage or duplicating them into a {@link MarkerSet}.
@@ -3211,9 +3211,9 @@
 ## @jgengine/core/world/minimap
 
 - `Cardinal` (type): type Cardinal = "N" | "NE" | "E" | "SE" | "S" | "SW" | "W" | "NW" — ⚠ undocumented
-- `MinimapPoint` (interface): interface MinimapPoint — ⚠ undocumented
-- `MinimapView` (interface): interface MinimapView — ⚠ undocumented
-- `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented
+- `MinimapPoint` (interface): interface MinimapPoint { x: number; y: number; distance: number; inside: boolean } — ⚠ undocumented · used by `clampToMinimapEdge`: Clamp a projected point to the minimap edge, preserving direction (edge markers).
+- `MinimapView` (interface): interface MinimapView { center: WorldXZ; worldRadius: number; size: number; rotate?: number } — ⚠ undocumented · used by `projectToMinimap`: Project a world XZ (or XYZ) point into minimap pixel space.
+- `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented · used by `compassBearing`: Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another.
 - `bearingToCardinal` (function): function bearingToCardinal(bearing: number): Cardinal — ⚠ undocumented
 - `clampToMinimapEdge` (function): function clampToMinimapEdge(point: MinimapPoint, size: number): { x: number; y: number } — Clamp a projected point to the minimap edge, preserving direction (edge markers).
 - `compassBearing` (function): function compassBearing(from: WorldXZ, to: WorldXZ): number — Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another. Feeds both the minimap direction and the compass strip.
@@ -3290,30 +3290,30 @@
 
 ## @jgengine/core/world/placedStructureStore
 
-- `AddStructureInput` (interface): interface AddStructureInput — ⚠ undocumented
-- `PlacedStructure` (interface): interface PlacedStructure — ⚠ undocumented
-- `PlacedStructureSnapshot` (interface): interface PlacedStructureSnapshot — ⚠ undocumented
-- `PlacedStructureStore` (interface): interface PlacedStructureStore — ⚠ undocumented
-- `StructureFilter` (interface): interface StructureFilter — ⚠ undocumented
+- `AddStructureInput` (interface): interface AddStructureInput { id?: string; catalogId: string; position: StructureVec3; rotationY?: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented · used by `toStructureInput` (@jgengine/core/world): Game-state form: feed {@link createPlacedStructureStore}.add.
+- `PlacedStructure` (interface): interface PlacedStructure { id: string; catalogId: string; position: StructureVec3; rotationY: number; plotId?: string; data?: Readonly<Record<string, unknown>> } — ⚠ undocumented
+- `PlacedStructureSnapshot` (interface): interface PlacedStructureSnapshot { structures: readonly PlacedStructure[] } — ⚠ undocumented
+- `PlacedStructureStore` (interface): interface PlacedStructureStore { add(input: AddStructureInput): PlacedStructure; move(id: string, position: StructureVec3): boolean; rotate(id: string, rotationY: number): boolean; remove(id: string): boolean; get(id: string): PlacedStructure | null; list(filter?: Struct… — ⚠ undocumented
+- `StructureFilter` (interface): interface StructureFilter { plotId?: string; catalogId?: string } — ⚠ undocumented
 - `StructureVec3` (type): type StructureVec3 = readonly [number, number, number] — ⚠ undocumented
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 
 ## @jgengine/core/world/placement
 
-- `PlacementObstacle` (interface): interface PlacementObstacle — ⚠ undocumented
-- `PlacementRequest` (interface): interface PlacementRequest — ⚠ undocumented
-- `PlacementResult` (type): type PlacementResult = | { status: "ok"; center: Vec2; aabb: Aabb } | { status: "rejected"; reason: "out-of-bounds" } | { status: "rejected"; reason: "territory.blocked" } | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number } — ⚠ undocumented
-- `PlacementRules` (interface): interface PlacementRules — ⚠ undocumented
+- `PlacementObstacle` (interface): interface PlacementObstacle { aabb: Aabb; id?: string } — ⚠ undocumented · used by `footprintObstacles` (@jgengine/core/world): Bridges live reservations into `world/placement`'s `PlacementRules.obstacles` so `validatePlacement`/`createPlacementController` see the gri…
+- `PlacementRequest` (interface): interface PlacementRequest { center: Vec2; footprint: Footprint; quarterTurns?: number } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `PlacementResult` (type): type PlacementResult = | { status: "ok"; center: Vec2; aabb: Aabb } | { status: "rejected"; reason: "out-of-bounds" } | { status: "rejected"; reason: "territory.blocked" } | { status: "rejected"; reason: "overlap"; obstacle: PlacementObstacle; index: number } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
+- `PlacementRules` (interface): interface PlacementRules { bounds?: Aabb; obstacles?: readonly PlacementObstacle[]; snap?: number; territory?: (aabb: Aabb) => {ok: boolean} } — ⚠ undocumented · used by `validatePlacement`: Footprint validity: bounds + obstacle overlap after optional grid snap.
 - `footprintObstacle` (function): function footprintObstacle(request: PlacementRequest, id?: string): PlacementObstacle — ⚠ undocumented
 - `validatePlacement` (function): function validatePlacement(request: PlacementRequest, rules: PlacementRules = {}): PlacementResult — Footprint validity: bounds + obstacle overlap after optional grid snap.
 
 ## @jgengine/core/world/placementController
 
-- `PlacementCommit` (interface): interface PlacementCommit — ⚠ undocumented
-- `PlacementController` (interface): interface PlacementController — ⚠ undocumented
-- `PlacementControllerConfig` (interface): interface PlacementControllerConfig — ⚠ undocumented
-- `PlacementHit` (interface): interface PlacementHit — ⚠ undocumented
-- `PlacementPreview` (interface): interface PlacementPreview — ⚠ undocumented
+- `PlacementCommit` (interface): interface PlacementCommit { center: Vec2; y: number; rotationY: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; slotId?: string } — ⚠ undocumented · used by `placeAssetFromCommit` (@jgengine/core/world): Bridge a {@link PlacementCommit} into the shared place-asset verb.
+- `PlacementController` (interface): interface PlacementController { hover(hit: PlacementHit): PlacementPreview; current(): PlacementPreview | null; rotate(steps?: number): PlacementPreview | null; setSnapMode(mode: SnapMode): PlacementPreview | null; cycleSnapMode(): SnapMode; setFootprint(footprint: Foot… — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
+- `PlacementControllerConfig` (interface): interface PlacementControllerConfig { footprint: Footprint; rules?: PlacementRules; snapMode?: SnapMode; grid?: number; quarterTurns?: number; slots?: readonly PlacementSlot[]; slotRadius?: number } — ⚠ undocumented · used by `createPlacementController`: Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit.
+- `PlacementHit` (interface): interface PlacementHit { point: PlacementVec3; normal: PlacementVec3 } — ⚠ undocumented
+- `PlacementPreview` (interface): interface PlacementPreview { center: Vec2; y: number; quarterTurns: number; footprint: Footprint; aabb: Aabb; valid: boolean; reason?: "out-of-bounds" | "overlap" | "no-slot" | "territory.blocked"; snapMode: SnapMode; normal: PlacementVec3; slotId?: string } — ⚠ undocumented
 - `PlacementSlot` (interface): interface PlacementSlot — A fixed buildable slot the placement controller snaps to instead of grid/free positioning.
 - `PlacementVec3` (type): type PlacementVec3 = readonly [number, number, number] — ⚠ undocumented
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
@@ -3352,10 +3352,10 @@
 
 ## @jgengine/core/world/realm
 
-- `ComposedRealm` (interface): interface ComposedRealm — ⚠ undocumented
+- `ComposedRealm` (interface): interface ComposedRealm { params: RealmEnvironmentParams; weather: WeatherState; spawnTable: Record<string, number>; aesthetics: readonly string[]; cards: readonly RealmCard[]; environmentField(extra?: Omit<EnvironmentFieldConfig, "baseTemperature" | "nightDrop" |… — ⚠ undocumented · used by `composeRealm`: Assemble a played realm instance at runtime from a deck of modifier cards — the Nightingale "realm card" model.
 - `DEFAULT_REALM_ENVIRONMENT` (const): const DEFAULT_REALM_ENVIRONMENT: RealmEnvironmentParams — ⚠ undocumented
-- `RealmBase` (interface): interface RealmBase — ⚠ undocumented
-- `RealmCard` (interface): interface RealmCard — ⚠ undocumented
+- `RealmBase` (interface): interface RealmBase { environment?: Partial<RealmEnvironmentParams>; weather?: WeatherState; spawn?: Record<string, number> } — ⚠ undocumented · used by `composeRealm`: Assemble a played realm instance at runtime from a deck of modifier cards — the Nightingale "realm card" model.
+- `RealmCard` (interface): interface RealmCard { id: string; kind: "major" | "minor"; environment?: Partial<RealmEnvironmentParams>; weather?: Partial<WeatherState>; spawn?: SpawnTableOverride; aesthetic?: string } — ⚠ undocumented · used by `composeRealm`: Assemble a played realm instance at runtime from a deck of modifier cards — the Nightingale "realm card" model.
 - `RealmEnvironmentParams` (interface): interface RealmEnvironmentParams — The recomposable environment parameters a realm card can override.
 - `SpawnTableOverride` (interface): interface SpawnTableOverride — Spawn-table edits a card layers on: replace weights, add/scale, or remove ids.
 - `composeRealm` (function): function composeRealm(base: RealmBase, cards: readonly RealmCard[]): ComposedRealm — Assemble a played realm instance at runtime from a deck of modifier cards — the Nightingale "realm card" model. A major card is the biome base; minor cards layer weather, day length, and spawn edits. The result recomposes both the environment (into a sampleable field via `environmentField()`) and the spawn table, and it depends on the weather hooks in this group (#92) to turn its `weather` into gameplay modifiers. Cards apply in array order; sort your deck (majors first) before composing.
@@ -3364,10 +3364,10 @@
 
 - `ColorInput` (type): type ColorInput = string | Rgb — ⚠ undocumented
 - `RegionDef` (interface): interface RegionDef<T = unknown> — A content-agnostic region. The engine blends `height` and the visual/physical knobs (`tint`, `water`, `fog`, `speedMultiplier`, …) across region borders and selects the dominant region by nearest center in `selector` space. `data` is an opaque payload the engine never inspects — games hang their own content off it (spawn tables, prop palettes, structure ids, names, …).
-- `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField — ⚠ undocumented
-- `RegionFieldConfig` (interface): interface RegionFieldConfig<T = unknown> — ⚠ undocumented
-- `RegionHeight` (interface): interface RegionHeight — ⚠ undocumented
-- `RegionSample` (interface): interface RegionSample<T = unknown> — ⚠ undocumented
+- `RegionField` (interface): interface RegionField<T = unknown> extends TerrainField { sampleRegion(x: number, z: number): RegionSample<T>; readonly regions: readonly RegionDef<T>[]; readonly seaLevel: number; readonly seed: number } — ⚠ undocumented · used by `scatterItems` (@jgengine/core/world): Deterministically place opaque items across `area`, grounded on a region field.
+- `RegionFieldConfig` (interface): interface RegionFieldConfig<T = unknown> { regions: readonly RegionDef<T>[]; seed?: number; bounds?: WorldBounds; seaLevel?: number; selectorFrequencies?: readonly number[]; axisWeights?: readonly number[]; sharpness?: number; warp?: number } — ⚠ undocumented
+- `RegionHeight` (interface): interface RegionHeight { baseHeight: number; amplitude: number; frequency: number; octaves?: number; lacunarity?: number; persistence?: number; ridged?: boolean } — ⚠ undocumented
+- `RegionSample` (interface): interface RegionSample<T = unknown> { region: RegionDef<T>; weight: number; selector: readonly number[]; tint: Rgb; steepTint: Rgb; water: Rgb | null; fog: Rgb | null; fogDensity: number; speedMultiplier: number; data: T | undefined } — ⚠ undocumented · used by `scatterItems` (@jgengine/core/world): Deterministically place opaque items across `area`, grounded on a region field.
 - `Rgb` (type): type Rgb = readonly [number, number, number] — ⚠ undocumented
 - `createRegionField` (function): function createRegionField<T = unknown>(config: RegionFieldConfig<T>): RegionField<T> — ⚠ undocumented
 - `isRegionField` (function): function isRegionField(field: TerrainField): field is RegionField — ⚠ undocumented
@@ -3421,9 +3421,9 @@
 
 ## @jgengine/core/world/scatter
 
-- `ScatterArea` (interface): interface ScatterArea — ⚠ undocumented
-- `ScatterConfig` (interface): interface ScatterConfig — ⚠ undocumented
-- `ScatterPoint` (interface): interface ScatterPoint — ⚠ undocumented
+- `ScatterArea` (interface): interface ScatterArea { w: number; d: number; center?: Vec2 } — ⚠ undocumented
+- `ScatterConfig` (interface): interface ScatterConfig { area: ScatterArea | Aabb; count?: number; density?: number; seed?: string | number; minDistance?: number; avoid?: readonly Aabb[]; avoidMargin?: number; jitter?: number; maxAttempts?: number } — ⚠ undocumented
+- `ScatterPoint` (interface): interface ScatterPoint { x: number; z: number; index: number } — ⚠ undocumented
 - `scatter` (function): function scatter(config: ScatterConfig): ScatterPoint[] — ⚠ undocumented
 - `scatterAabb` (function): function scatterAabb(area: ScatterArea | Aabb): Aabb — ⚠ undocumented
 
@@ -3444,7 +3444,7 @@
 
 ## @jgengine/core/world/scatterItems
 
-- `ScatterInstance` (interface): interface ScatterInstance — ⚠ undocumented
+- `ScatterInstance` (interface): interface ScatterInstance { id: string; item: string; x: number; z: number; y: number; scale: number; rotation: number; regionId: string } — ⚠ undocumented · used by `scatterItems`: Deterministically place opaque items across `area`, grounded on a region field.
 - `ScatterLayer` (interface): interface ScatterLayer — One placeable class. `item` is an opaque id the caller maps to a mesh/entity.
 - `pickWeighted` (function): function pickWeighted<T>(entries: readonly { value: T; weight: number }[], roll: number): T | null — Weighted pick from opaque entries; `roll` in [0, 1). Returns null when empty.
 - `scatterItems` (function): function scatterItems<T>(field: RegionField<T>, area: Aabb, layersFor: (sample: RegionSample<T>) => readonly ScatterLayer[], options: { cell?: number; max?: number; saltKey?: number } = {}): ScatterInstance[] — Deterministically place opaque items across `area`, grounded on a region field. For each grid cell it asks `layersFor` which items may appear in that region and rolls one against their densities. The engine never interprets `item` — a game maps it to a mesh or entity. Content scatter (region-driven density) as opposed to `scatter` in `./scatter`, which is renderer-free geometric point distribution.
@@ -3595,24 +3595,24 @@
 
 ## @jgengine/core/world/support
 
-- `DebrisOptions` (interface): interface DebrisOptions — ⚠ undocumented
-- `SupportConfig` (interface): interface SupportConfig — ⚠ undocumented
-- `SupportLink` (interface): interface SupportLink — ⚠ undocumented
-- `SupportPiece` (interface): interface SupportPiece — ⚠ undocumented
-- `SupportResult` (interface): interface SupportResult — ⚠ undocumented
+- `DebrisOptions` (interface): interface DebrisOptions { scatter?: number; seed?: number } — ⚠ undocumented
+- `SupportConfig` (interface): interface SupportConfig { maxDistance?: number } — ⚠ undocumented
+- `SupportLink` (interface): interface SupportLink { a: string; b: string } — ⚠ undocumented
+- `SupportPiece` (interface): interface SupportPiece { id: string; grounded?: boolean; position?: ConnectorVec3; halfExtents?: ConnectorVec3; mass?: number } — ⚠ undocumented
+- `SupportResult` (interface): interface SupportResult { supported: readonly string[]; unsupported: readonly string[]; distance: Readonly<Record<string, number>> } — ⚠ undocumented
 - `solveSupport` (function): function solveSupport(pieces: readonly SupportPiece[], links: readonly SupportLink[], config: SupportConfig = {}): SupportResult — ⚠ undocumented
 - `toDebrisBodies` (function): function toDebrisBodies(pieces: readonly SupportPiece[], collapsedIds: readonly string[], options: DebrisOptions = {}): AddBodyOptions[] — ⚠ undocumented
 
 ## @jgengine/core/world/terraform
 
 - `BlendStroke` (interface): interface BlendStroke — Accumulates a whole blend-paint drag into one compact {@link WeightDelta}. Keeps each weight slot's first `before` and latest `after`, so undo replays the blend as a single step.
-- `EditableTerrain` (interface): interface EditableTerrain extends TerrainField — ⚠ undocumented
-- `EditableTerrainConfig` (interface): interface EditableTerrainConfig — ⚠ undocumented
+- `EditableTerrain` (interface): interface EditableTerrain extends TerrainField { readonly cols: number; readonly rows: number; readonly cellSize: number; apply(edit: TerraformEdit): number; applyRecording(edit: TerraformEdit, record: TerraformDeltaRecorder): number; editDelta(edit: TerraformEdit): TerraformDelta; appl… — ⚠ undocumented · used by `beginSurfaceStroke`: Opens a paint-stroke recorder over `terrain`; stamp paint edits into it, then read one net delta.
+- `EditableTerrainConfig` (interface): interface EditableTerrainConfig { bounds: Aabb; base?: TerrainField; cellSize?: number } — ⚠ undocumented · used by `createTerrainSnapshot`: A fresh, unedited terrain snapshot sized to `bounds`/`cellSize` — the seed for a new sculpt document.
 - `SurfaceDelta` (interface): interface SurfaceDelta — A compact record of the surface-material cells a paint stroke touched: parallel `indices`/`before`/`after` arrays into the per-cell surface grid. One per stroke keeps paint undo history small.
 - `SurfaceDeltaRecorder` (type): type SurfaceDeltaRecorder = (index: number, before: string | null, after: string | null) => void — Reports each changed cell during a recorded paint: grid index, prior surface id, new surface id.
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
-- `TerraformBrush` (interface): interface TerraformBrush — ⚠ undocumented
-- `TerraformBrushConfig` (interface): interface TerraformBrushConfig — ⚠ undocumented
+- `TerraformBrush` (interface): interface TerraformBrush { raise(center: Vec2): number; lower(center: Vec2): number; flatten(center: Vec2, target?: number): number; paint(center: Vec2, surface?: string): number; setRadius(radius: number): void; setStrength(strength: number): void; config(): Requi… — ⚠ undocumented
+- `TerraformBrushConfig` (interface): interface TerraformBrushConfig { radius?: number; strength?: number; falloff?: TerraformFalloff; surface?: string } — ⚠ undocumented
 - `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
 - `TerraformDeltaRecorder` (type): type TerraformDeltaRecorder = (index: number, before: number, after: number) => void — Reports each changed vertex during a recorded edit: grid index, prior offset, new offset.
 - `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
@@ -3620,7 +3620,7 @@
 - `TerraformHeightLimit` (interface): interface TerraformHeightLimit — Clamp bounds applied to the resulting terrain height after a heightfield edit.
 - `TerraformMode` (type): type TerraformMode = "raise" | "lower" | "smooth" | "flatten" | "noise" | "ramp" | "paint" — A sculpt operation kind: heightfield brushes plus the surface-paint brush.
 - `TerraformShape` (type): type TerraformShape = "circle" | "square" — A brush footprint: a round disc or an axis-aligned square.
-- `TerraformSnapshot` (interface): interface TerraformSnapshot — ⚠ undocumented
+- `TerraformSnapshot` (interface): interface TerraformSnapshot { bounds: Aabb; cellSize: number; cols: number; rows: number; offsets: readonly number[]; surfaces: readonly (string | null)[]; layers?: readonly TerrainMaterialLayer[]; weights?: readonly number[] } — ⚠ undocumented · used by `applyDeltaToSnapshot`: Returns a new snapshot with a delta's `after` offsets applied (copy-on-write — inputs untouched).
 - `TerraformStroke` (interface): interface TerraformStroke — Accumulates a whole drag — many brush stamps — into one compact {@link TerraformDelta}. Keeps each vertex's first `before` and latest `after`, so undo replays the stroke as a single step even though the pointer fired dozens of moves.
 - `TerrainMaterialLayer` (interface): interface TerrainMaterialLayer — One material layer in a terrain's reorderable stack: a palette `surface` id (drives the base color) plus its render parameters. Array order is the stack order — lower index paints under higher. `roughness`/`tiling`/`triplanar`/`tint`/`opacity` are carried as data so a runtime game reads them straight off the snapshot.
 - `TerrainSurfaceRule` (interface): interface TerrainSurfaceRule — A height/slope predicate for auto-painting a surface layer (e.g. rock on steep slopes, snow up high).
@@ -3642,29 +3642,29 @@
 ## @jgengine/core/world/terrain
 
 - `ARENA_WATER_LEVEL` (const): const ARENA_WATER_LEVEL: -0.9 — ⚠ undocumented
-- `ArenaFieldConfig` (interface): interface ArenaFieldConfig — ⚠ undocumented
+- `ArenaFieldConfig` (interface): interface ArenaFieldConfig { seed?: string | number; bounds?: WorldBounds } — ⚠ undocumented
 - `BiomeFogValue` (interface): interface BiomeFogValue — A concrete fog look — the shape `createBiomeFogSampler` resolves per z from a band's `fog` over the base fog.
 - `BiomeSkyValue` (interface): interface BiomeSkyValue — A concrete sky look — the shape `createBiomeSkySampler` resolves per z from a band's `sky` over the base sky.
 - `DEFAULT_MAX_WALK_SLOPE` (const): const DEFAULT_MAX_WALK_SLOPE: 0.6 — ⚠ undocumented
 - `DEFAULT_TERRAIN_MATERIAL` (const): const DEFAULT_TERRAIN_MATERIAL: TerrainMaterial — ⚠ undocumented
 - `FLAT_FIELD` (const): const FLAT_FIELD: TerrainField — ⚠ undocumented
 - `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
-- `GroundSnapEntityStore` (interface): interface GroundSnapEntityStore — ⚠ undocumented
-- `GroundSnapTarget` (interface): interface GroundSnapTarget — ⚠ undocumented
+- `GroundSnapEntityStore` (interface): interface GroundSnapEntityStore { get(id: string): GroundSnapTarget | null; setPose(id: string, pose: {position?: readonly [number, number, number]}): boolean } — ⚠ undocumented
+- `GroundSnapTarget` (interface): interface GroundSnapTarget { position: readonly [number, number, number] } — ⚠ undocumented
 - `HeightFieldRayBounds` (interface): interface HeightFieldRayBounds — XZ region a {@link raycastHeightField} march is clipped to.
 - `HeightFieldRayHit` (interface): interface HeightFieldRayHit — Where a {@link raycastHeightField} march crossed the surface.
 - `HeightFieldRaycastOptions` (interface): interface HeightFieldRaycastOptions — Tuning for {@link raycastHeightField}: march resolution and refinement depth.
-- `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig — ⚠ undocumented
+- `HeightMapFieldConfig` (interface): interface HeightMapFieldConfig { columns: number; rows: number; samples: ArrayLike<number>; bounds?: WorldBounds; heightScale?: number; baseHeight?: number; waterLevel?: number } — ⚠ undocumented
 - `ISLAND_VOID_HEIGHT` (const): const ISLAND_VOID_HEIGHT: -256 — Ground height between islands when no base terrain exists — deep enough to read as a fall into the void, finite so physics stays sane.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ResolvedTerrainDetail` (type): type ResolvedTerrainDetail = Required<Omit<TerrainDetailConfig, "waterLevel" | "material" | "sweeps">> & { waterLevel: number; material?: ResolvedTerrainDetailMaterial; sweeps: { dry: readonly [number, number, number]; wet: readonly [number, number, number] }; } — A {@link TerrainDetailConfig} with every field resolved to a concrete value — the shape the shell's detail material consumes.
 - `ResolvedTerrainDetailMaterial` (interface): interface ResolvedTerrainDetailMaterial — A resolved {@link TerrainDetailMaterialConfig} — `repeat`/`strength` filled with defaults, `maps` passed through.
-- `RollingFieldConfig` (interface): interface RollingFieldConfig — ⚠ undocumented
+- `RollingFieldConfig` (interface): interface RollingFieldConfig { seed?: string | number; amplitude?: number; frequency?: number; bounds?: WorldBounds } — ⚠ undocumented
 - `TERRAIN_MATERIAL_PALETTES` (const): const TERRAIN_MATERIAL_PALETTES: Record<TerrainMaterial, TerrainPalette> — ⚠ undocumented
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
-- `TerrainPalette` (interface): interface TerrainPalette — ⚠ undocumented
-- `TerrainSlopeSample` (interface): interface TerrainSlopeSample — ⚠ undocumented
+- `TerrainPalette` (interface): interface TerrainPalette { low: string; high: string; waterline: string } — ⚠ undocumented
+- `TerrainSlopeSample` (interface): interface TerrainSlopeSample { downhill: readonly [number, number]; steepness: number } — ⚠ undocumented
 - `applyPathProfiles` (function): function applyPathProfiles(field: TerrainField, profiles: readonly TerrainPathProfile[]): TerrainField — Composes authored path profiles onto a field — the shared seam that turns a scene road/river/ramp path into flattened, graded, carved, or retained ground. Applies after `flatten` masks in `resolveTerrainField` so a corridor grades over already-leveled pads; call it directly to layer profiles onto any field a game builds by hand. Returns the field unchanged when no profile is given.
 - `raycastHeightField` (function): function raycastHeightField(sampleHeight: (x: number, z: number) => number, origin: readonly [number, number, number], direction: readonly [number, number, number], options: HeightFieldRaycastOptions): HeightFieldRayHit | null — Intersects a ray with a `sampleHeight` field by fixed-step raymarching plus bisection — the O(steps) editor/gameplay picking seam that replaces brute-force triangle raycasts against a tessellated ground mesh (tens of thousands of triangle tests per pick on a sculpt-sized grid). The ray is clipped to `bounds` on XZ first, marched at `step`, and the first above→below crossing is bisected. An origin already under the surface hits immediately at entry. Returns null when the clipped ray never crosses the surface.
 
@@ -3738,34 +3738,34 @@
 
 - `VOXEL_FACES` (const): const VOXEL_FACES: readonly VoxelFace[] — ⚠ undocumented
 - `VOXEL_FACE_NORMALS` (const): const VOXEL_FACE_NORMALS: Record<VoxelFace, VoxelCoord> — ⚠ undocumented
-- `VoxelBounds` (interface): interface VoxelBounds — ⚠ undocumented
-- `VoxelCell` (interface): interface VoxelCell<T extends string = string> — ⚠ undocumented
+- `VoxelBounds` (interface): interface VoxelBounds { min: VoxelCoord; max: VoxelCoord } — ⚠ undocumented
+- `VoxelCell` (interface): interface VoxelCell<T extends string = string> { x: number; y: number; z: number; type: T } — ⚠ undocumented
 - `VoxelCoord` (type): type VoxelCoord = readonly [number, number, number] — ⚠ undocumented
 - `VoxelFace` (type): type VoxelFace = "px" | "nx" | "py" | "ny" | "pz" | "nz" — ⚠ undocumented
-- `VoxelField` (interface): interface VoxelField<T extends string = string> — ⚠ undocumented
-- `VoxelFieldConfig` (interface): interface VoxelFieldConfig — ⚠ undocumented
-- `VoxelFieldSummary` (interface): interface VoxelFieldSummary<T extends string = string> — ⚠ undocumented
-- `VoxelHit` (interface): interface VoxelHit<T extends string = string> — ⚠ undocumented
+- `VoxelField` (interface): interface VoxelField<T extends string = string> { set(x: number, y: number, z: number, type: T): boolean; remove(x: number, y: number, z: number): boolean; get(x: number, y: number, z: number): T | null; has(x: number, y: number, z: number): boolean; fill(min: VoxelCoord, max: VoxelCoord… — ⚠ undocumented
+- `VoxelFieldConfig` (interface): interface VoxelFieldConfig { chunkSize?: number } — ⚠ undocumented
+- `VoxelFieldSummary` (interface): interface VoxelFieldSummary<T extends string = string> { blocks: number; types: Record<T, number>; bounds: VoxelBounds | null } — ⚠ undocumented
+- `VoxelHit` (interface): interface VoxelHit<T extends string = string> { x: number; y: number; z: number; type: T; face: VoxelFace; adjacent: VoxelCoord; distance: number } — ⚠ undocumented
 - `createVoxelField` (function): function createVoxelField<T extends string = string>(config?: VoxelFieldConfig): VoxelField<T> — ⚠ undocumented
 
 ## @jgengine/core/world/walls
 
-- `EnclosedFootprint` (interface): interface EnclosedFootprint — ⚠ undocumented
+- `EnclosedFootprint` (interface): interface EnclosedFootprint { polygon: readonly Vec2[]; aabb: Aabb; area: number; perimeter: number; closed: boolean } — ⚠ undocumented
 - `PaintTarget` (type): type PaintTarget = "floor" | "wall" — ⚠ undocumented
-- `RoofConfig` (interface): interface RoofConfig — ⚠ undocumented
-- `RoofPlan` (interface): interface RoofPlan — ⚠ undocumented
+- `RoofConfig` (interface): interface RoofConfig { style?: RoofStyle; eaveHeight?: number; pitch?: number; overhang?: number } — ⚠ undocumented
+- `RoofPlan` (interface): interface RoofPlan { style: RoofStyle; ridge: readonly [Vec2, Vec2]; apexHeight: number; eaveHeight: number; faces: readonly (readonly WallVec3[])[] } — ⚠ undocumented
 - `RoofStyle` (type): type RoofStyle = "hip" | "gable" | "flat" — ⚠ undocumented
-- `SurfacePaintStore` (interface): interface SurfacePaintStore — ⚠ undocumented
-- `WallDrawTool` (interface): interface WallDrawTool — ⚠ undocumented
-- `WallSegment` (interface): interface WallSegment — ⚠ undocumented
+- `SurfacePaintStore` (interface): interface SurfacePaintStore { paint(target: PaintTarget, key: string, surface: string): void; clear(target: PaintTarget, key: string): void; get(target: PaintTarget, key: string): string | null; entries(target: PaintTarget): readonly (readonly [string, string])[]; sna… — ⚠ undocumented
+- `WallDrawTool` (interface): interface WallDrawTool { addPoint(point: Vec2, snap?: number): Vec2; undo(): void; close(): void; clear(): void; points(): readonly Vec2[]; segments(): WallSegment[]; isClosed(): boolean; footprint(): EnclosedFootprint | null; roof(config?: RoofConfig): RoofPlan … — ⚠ undocumented
+- `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/core/world/water
 
-- `GerstnerWave` (interface): interface GerstnerWave — ⚠ undocumented
+- `GerstnerWave` (interface): interface GerstnerWave { direction: readonly [number, number]; wavelength: number; amplitude: number; steepness: number; speed: number } — ⚠ undocumented
 - `WaterNormal` (type): type WaterNormal = readonly [number, number, number] — ⚠ undocumented
-- `WaterSurface` (interface): interface WaterSurface — ⚠ undocumented
-- `WaterSurfaceConfig` (interface): interface WaterSurfaceConfig — ⚠ undocumented
+- `WaterSurface` (interface): interface WaterSurface { readonly level: number; readonly waves: readonly GerstnerWave[]; height(x: number, z: number, time: number): number; normal(x: number, z: number, time: number): WaterNormal; displace(x: number, z: number, time: number): readonly [number, … — ⚠ undocumented
+- `WaterSurfaceConfig` (interface): interface WaterSurfaceConfig { level?: number; levelAt?: (time: number) => number; waveHeight?: number; waveScale?: number; waveSpeed?: number; waves?: number; choppiness?: number } — ⚠ undocumented
 - `synthesizeWaves` (function): function synthesizeWaves(config: WaterSurfaceConfig = {}): GerstnerWave[] — ⚠ undocumented
 - `waterSurface` (function): function waterSurface(config: WaterSurfaceConfig = {}): WaterSurface — ⚠ undocumented
 - `waterSurfaceFromDescriptor` (function): function waterSurfaceFromDescriptor(descriptor: OceanEnvironmentDescriptor, waves?: number): WaterSurface — ⚠ undocumented
@@ -3789,34 +3789,34 @@
 
 ## @jgengine/core/world/weather
 
-- `FireCell` (interface): interface FireCell — ⚠ undocumented
+- `FireCell` (interface): interface FireCell { fuel: number; heat: number; state: FireCellState } — ⚠ undocumented
 - `FireCellState` (type): type FireCellState = "unburnt" | "burning" | "burnt" — ⚠ undocumented
-- `FireGrid` (interface): interface FireGrid — ⚠ undocumented
-- `FireGridConfig` (interface): interface FireGridConfig — ⚠ undocumented
-- `FireStepOptions` (interface): interface FireStepOptions — ⚠ undocumented
-- `ResolvedWeather` (interface): interface ResolvedWeather — ⚠ undocumented
+- `FireGrid` (interface): interface FireGrid { readonly cols: number; readonly rows: number; step(dt: number, options?: FireStepOptions): void; igniteCell(col: number, row: number): void; ignite(x: number, z: number): boolean; cell(col: number, row: number): FireCell; cellAt(x: number… — ⚠ undocumented
+- `FireGridConfig` (interface): interface FireGridConfig { cols: number; rows: number; cellSize: number; origin?: readonly [number, number]; fuelAt?: (col: number, row: number) => number; ignitionThreshold?: number; spreadRate?: number; burnRate?: number; wind?: WindVector; windBias?: number } — ⚠ undocumented
+- `FireStepOptions` (interface): interface FireStepOptions { spread?: number; wetnessAt?: (col: number, row: number) => number } — ⚠ undocumented
+- `ResolvedWeather` (interface): interface ResolvedWeather { grip: number; visibility: number; structureDamage: number; chill: number; ignition: number; spread: number } — ⚠ undocumented
 - `WeatherKind` (type): type WeatherKind = string — ⚠ undocumented
 - `WeatherKindOf` (type): type WeatherKindOf<TTable extends WeatherModifierTable> = Extract<keyof TTable, string> — ⚠ undocumented
-- `WeatherModifier` (interface): interface WeatherModifier — ⚠ undocumented
+- `WeatherModifier` (interface): interface WeatherModifier { grip?: number; visibility?: number; structureDamage?: number; chill?: number; ignition?: number; spread?: number } — ⚠ undocumented
 - `WeatherModifierTable` (type): type WeatherModifierTable<K extends string = string> = Record<K, WeatherModifier> — ⚠ undocumented
-- `WeatherState` (interface): interface WeatherState — ⚠ undocumented
+- `WeatherState` (interface): interface WeatherState { kind: WeatherKind; intensity: number; wind?: WindVector } — ⚠ undocumented
 - `createFireGrid` (function): function createFireGrid(config: FireGridConfig): FireGrid — ⚠ undocumented
 - `resolveWeather` (function): function resolveWeather<TTable extends WeatherModifierTable>(state: WeatherState, table: TTable): ResolvedWeather — ⚠ undocumented
 
 ## @jgengine/core/world/wind
 
-- `WindField` (interface): interface WindField — ⚠ undocumented
-- `WindFieldConfig` (interface): interface WindFieldConfig — ⚠ undocumented
+- `WindField` (interface): interface WindField { readonly direction: WindVector; readonly speed: number; at(time: number): WindVector; atPoint(x: number, z: number, time: number): WindVector; strengthAt(x: number, z: number, time: number): number } — ⚠ undocumented
+- `WindFieldConfig` (interface): interface WindFieldConfig { direction?: WindVector; speed?: number; gust?: number; gustFrequency?: number; turbulence?: number; seed?: string | number } — ⚠ undocumented
 - `WindVector` (type): type WindVector = readonly [number, number] — ⚠ undocumented
 - `windField` (function): function windField(config: WindFieldConfig = {}): WindField — ⚠ undocumented
 
 ## @jgengine/core/world/windZones
 
-- `WindShiftForecast` (interface): interface WindShiftForecast — ⚠ undocumented
-- `WindZoneConfig` (interface): interface WindZoneConfig — ⚠ undocumented
-- `WindZoneState` (interface): interface WindZoneState — ⚠ undocumented
+- `WindShiftForecast` (interface): interface WindShiftForecast { zoneId: string; at: number; inSeconds: number; next: WindZoneState } — ⚠ undocumented
+- `WindZoneConfig` (interface): interface WindZoneConfig { id: string; center: readonly [number, number]; radius: number; phases: readonly SchedulePhase<WindZoneState>[]; offsetSeconds?: number } — ⚠ undocumented
+- `WindZoneState` (interface): interface WindZoneState { direction: WindVector; speed: number; label?: string } — ⚠ undocumented
 - `WindZones` (interface): interface WindZones — Named, discrete wind zones over an ambient field — each zone runs a deterministic `StateSchedule` of wind states, so games get scheduled shifts with advance announcement (`forecastShift` drives the "gale in 12s" countdown) instead of one continuous field.
-- `WindZonesConfig` (interface): interface WindZonesConfig — ⚠ undocumented
+- `WindZonesConfig` (interface): interface WindZonesConfig { zones: readonly WindZoneConfig[]; ambient?: WindField } — ⚠ undocumented
 - `createWindZones` (function): function createWindZones(config: WindZonesConfig): WindZones — ⚠ undocumented
 
 ## @jgengine/rapier

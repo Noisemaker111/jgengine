@@ -33,8 +33,8 @@ An audit is not completion for a build/improve request. Finish when the slice is
 
 Before content, write a first-hour balance sheet: starting cash, time to first income, net income per hour at starting hardware and at ten times that hardware, bill cadence versus income, and the insolvency recovery path. Insolvency resets the affected player or changes their options; it never deletes the world. Express clicks and event rewards as a fraction of the designed income rate, never an unrelated flat payout.
 
-Declare currency `decimals` for income paid per second. Anchor time-based decay to `game.createdAt` or a persisted per-instance creation time, never a fixed wall-clock epoch. Test fractional income over real tick cadences before tuning prices.
+Currency precision, elapsed-time anchoring, and reset mechanics are implemented per `jgengine-gameplay` "Persistent economies and input"; test fractional income over real tick cadences before tuning prices.
 
 The first-60-seconds gate requires the first tutorial verb to be executable from spawn with starting inventory. Grant dependencies such as land, power, and slots or let players buy them in-context; the tutorial cannot lock the surface needed to complete itself. Placement previews show cost and affordability inline.
 
-For a persistent shared-world builder, compose neighborhood presence, declared command read scopes, membership storage, online-player batched ticks, territory, chat, and join retry UI through their engine owners. Verify capacity and first-player onboarding before scaling the content catalog.
+For a persistent shared-world builder, verify capacity and first-player onboarding before scaling the content catalog; presence, command read scopes, territory, chat, and join retry UI come from their owners in `jgengine-world`, `jgengine-ui`, and `jgengine-multiplayer`.

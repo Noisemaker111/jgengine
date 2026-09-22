@@ -99,17 +99,17 @@
 - `GRAPHICS_QUALITY_DPR` (const): const GRAPHICS_QUALITY_DPR: Record<GraphicsQuality, number> — Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
 - `GRAPHICS_QUALITY_OPTIONS` (const): const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] — ⚠ undocumented
 - `GameSettingDef` (interface): interface GameSettingDef — Extra setting a game appends to a built-in category via `defineGame({ settings: { extra } })`.
-- `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
-- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
+- `GameSettingsConfig` (interface): interface GameSettingsConfig { variant?: SettingsVariant; surface?: SettingsSurface | false; extra?: readonly GameSettingDef[]; categories?: readonly SettingCategoryDef[]; hide?: readonly SettingCategory[]; actions?: readonly SettingsActionDef[]; hideBindings?: readonl… — ⚠ undocumented
+- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented · used by `GRAPHICS_QUALITY_DPR`: Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
 - `SETTINGS_STORAGE_PREFIX` (const): const SETTINGS_STORAGE_PREFIX: "jgengine:setting:" — ⚠ undocumented
 - `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly graphicsRenderScale: "graphics.renderScale"; readonly graphicsPostAo: "graphics.post.ao"; rea… — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
-- `SettingOption` (interface): interface SettingOption — ⚠ undocumented
-- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented
+- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/react): Read + write one persisted setting; re-renders when the value changes anywhere.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
-- `SettingsStore` (interface): interface SettingsStore — ⚠ undocumented
+- `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
 - `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
 - `UI_SCALE_MAX` (const): const UI_SCALE_MAX: 1.5 — ⚠ undocumented
@@ -153,19 +153,19 @@
 - `GRAPHICS_QUALITY_OPTIONS` (const): const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] — ⚠ undocumented
 - `GameLayoutMode` (type): type GameLayoutMode = "desktop-wide" | "desktop-compact" | "mobile-landscape" | "mobile-portrait" — The explicit composition mode a game renders for — not a scaled desktop layout.
 - `GameSettingDef` (interface): interface GameSettingDef — Extra setting a game appends to a built-in category via `defineGame({ settings: { extra } })`.
-- `GameSettingsConfig` (interface): interface GameSettingsConfig — ⚠ undocumented
+- `GameSettingsConfig` (interface): interface GameSettingsConfig { variant?: SettingsVariant; surface?: SettingsSurface | false; extra?: readonly GameSettingDef[]; categories?: readonly SettingCategoryDef[]; hide?: readonly SettingCategory[]; actions?: readonly SettingsActionDef[]; hideBindings?: readonl… — ⚠ undocumented
 - `GameViewportLayout` (interface): interface GameViewportLayout — The shared live geometry the engine allocates once and every UI subsystem reads.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
-- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented
+- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented · used by `GRAPHICS_QUALITY_DPR`: Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
 - `GridFocusOptions` (interface): interface GridFocusOptions — Options for {@link moveGridFocus}.
 - `HUD_ANCHOR_FRACTIONS` (const): const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }> — ⚠ undocumented
-- `HudAnchor` (type): type HudAnchor = | "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right" — ⚠ undocumented
-- `HudLayoutStore` (interface): interface HudLayoutStore — ⚠ undocumented
-- `HudPlacement` (interface): interface HudPlacement — ⚠ undocumented
+- `HudAnchor` (type): type HudAnchor = | "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right" — ⚠ undocumented · used by `HudPanel` (@jgengine/shell/gameKit): A HUD block that lives in one of the nine anchor regions.
+- `HudLayoutStore` (interface): interface HudLayoutStore { getState(): HudLayoutState; subscribe(listener: (state: HudLayoutState) => void): () => void; register(id: string, placement: HudPlacement, options?: {width?: number; height?: number; visible?: boolean; type?: string}): void; move(id: str… — ⚠ undocumented · used by `HudCanvas` (@jgengine/shell/gameKit): Full-viewport HUD surface.
+- `HudPlacement` (interface): interface HudPlacement { anchor: HudAnchor; dx: number; dy: number } — ⚠ undocumented
 - `HudPlatform` (type): type HudPlatform = "web" | "mobile" — Where a game is meant to be played. `"web"` alone keeps today's desktop-first HUD; adding `"mobile"` turns on design-resolution fit scaling on compact displays.
 - `HudPriority` (type): type HudPriority = "critical" | "secondary" | "tertiary" — Gameplay-importance tier of a HUD element.
 - `HudResizeAxes` (type): type HudResizeAxes = "none" | "x" | "y" | "both" — Which axes a panel type may grow when resized in canvas mode. Resize is semantic — content reflows (longer track, more rows) — never a CSS scale of the whole panel.
-- `HudSize` (interface): interface HudSize — ⚠ undocumented
+- `HudSize` (interface): interface HudSize { width: number; height: number } — ⚠ undocumented · used by `hudScaleForViewport`: The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped.
 - `HudViewportConfig` (interface): interface HudViewportConfig extends HudFitConfig — Per-game HUD viewport declaration carried on `PlayableGame.hudFit`; `mobile` overrides the fit on compact displays so the owner can tune the phone layout separately.
 - `I18n` (interface): interface I18n — Runtime translator over a message {@link Catalog} — active locale, lookup with fallback, interpolation, and pluralization.
 - `I18nOptions` (interface): interface I18nOptions — Configuration for {@link createI18n}.
@@ -220,10 +220,10 @@
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
-- `SettingOption` (interface): interface SettingOption — ⚠ undocumented
-- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented
+- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented
+- `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/react): Read + write one persisted setting; re-renders when the value changes anywhere.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
-- `SettingsStore` (interface): interface SettingsStore — ⚠ undocumented
+- `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
 - `SettingsSurface` (type): type SettingsSurface = "quick" — `quick` shows compact on-screen volume/graphics buttons; `false` (default) mounts no engine trigger — open the menu from your own UI with `<SettingsTrigger>` or `useSettings().open()`.
 - `SettingsVariant` (type): type SettingsVariant = "panel" | "sheet" | "sidebar" | "fullscreen" — The four themed settings layouts, chosen with `defineGame({ settings: { variant } })`. All read the game's `--jg-*` theme tokens.
 - `StoredObjectiveBanner` (interface): interface StoredObjectiveBanner — A persisted banner record — all announcement fields resolved, plus id and schedule.
@@ -380,14 +380,14 @@
 ## @jgengine/core/ui/hudLayout
 
 - `HUD_ANCHOR_FRACTIONS` (const): const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }> — ⚠ undocumented
-- `HudAnchor` (type): type HudAnchor = | "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right" — ⚠ undocumented
-- `HudLayoutOptions` (interface): interface HudLayoutOptions — ⚠ undocumented
-- `HudLayoutState` (interface): interface HudLayoutState — ⚠ undocumented
-- `HudLayoutStore` (interface): interface HudLayoutStore — ⚠ undocumented
-- `HudPanelState` (interface): interface HudPanelState — ⚠ undocumented
-- `HudPlacement` (interface): interface HudPlacement — ⚠ undocumented
-- `HudRect` (interface): interface HudRect — ⚠ undocumented
-- `HudSize` (interface): interface HudSize — ⚠ undocumented
+- `HudAnchor` (type): type HudAnchor = | "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right" — ⚠ undocumented · used by `HudPanel` (@jgengine/shell/gameKit): A HUD block that lives in one of the nine anchor regions.
+- `HudLayoutOptions` (interface): interface HudLayoutOptions { snap?: number; locked?: boolean; onDocumentPatch?: (id: string, panel: import("./hudDocument").EditorUiPanelLayout) => void } — ⚠ undocumented
+- `HudLayoutState` (interface): interface HudLayoutState { panels: Record<string, HudPanelState>; locked: boolean; editing: boolean } — ⚠ undocumented
+- `HudLayoutStore` (interface): interface HudLayoutStore { getState(): HudLayoutState; subscribe(listener: (state: HudLayoutState) => void): () => void; register(id: string, placement: HudPlacement, options?: {width?: number; height?: number; visible?: boolean; type?: string}): void; move(id: str… — ⚠ undocumented · used by `HudCanvas` (@jgengine/shell/gameKit): Full-viewport HUD surface.
+- `HudPanelState` (interface): interface HudPanelState { id: string; placement: HudPlacement; z: number; moved: boolean; width?: number; height?: number; visible: boolean; type?: string } — ⚠ undocumented
+- `HudPlacement` (interface): interface HudPlacement { anchor: HudAnchor; dx: number; dy: number } — ⚠ undocumented
+- `HudRect` (interface): interface HudRect { x: number; y: number; width: number; height: number } — ⚠ undocumented · used by `overflowingPanels` (@jgengine/core/ui): Every panel rect that escapes the viewport — the data behind the HUD overflow gate.
+- `HudSize` (interface): interface HudSize { width: number; height: number } — ⚠ undocumented · used by `hudScaleForViewport` (@jgengine/core/ui): The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped.
 
 ## @jgengine/core/ui/hudScale
 
@@ -395,7 +395,7 @@
 - `DEFAULT_HUD_MAX_SCALE` (const): const DEFAULT_HUD_MAX_SCALE: 1 — ⚠ undocumented
 - `DEFAULT_HUD_MIN_SCALE` (const): const DEFAULT_HUD_MIN_SCALE: 0.4 — ⚠ undocumented
 - `HudFitConfig` (interface): interface HudFitConfig — Design-resolution fit for the HUD surface. The game authors its UI against `designSize`; on smaller viewports the whole HUD scales down by the limiting axis ratio, clamped to `[minScale, maxScale]`, so panels keep their layout and simply shrink instead of overflowing.
-- `HudOverflow` (interface): interface HudOverflow — ⚠ undocumented
+- `HudOverflow` (interface): interface HudOverflow { id: string; left: number; top: number; right: number; bottom: number } — ⚠ undocumented · used by `overflowingPanels`: Every panel rect that escapes the viewport — the data behind the HUD overflow gate.
 - `HudPlatform` (type): type HudPlatform = "web" | "mobile" — Where a game is meant to be played. `"web"` alone keeps today's desktop-first HUD; adding `"mobile"` turns on design-resolution fit scaling on compact displays.
 - `HudViewportConfig` (interface): interface HudViewportConfig extends HudFitConfig — Per-game HUD viewport declaration carried on `PlayableGame.hudFit`; `mobile` overrides the fit on compact displays so the owner can tune the phone layout separately.
 - `hudScaleForViewport` (function): function hudScaleForViewport(fit: Required<HudFitConfig>, viewport: HudSize): number — The one scaling rule for every display: the ratio of the live viewport to the authored design size along the limiting axis, clamped. 1 on a viewport at or above design size; smoothly below 1 down to `minScale` on phones.
@@ -519,7 +519,7 @@
 
 ## @jgengine/react
 
-- `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
+- `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions { intervalMs?: number } — ⚠ undocumented · used by `useEventMeter`: Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline…
 - `AccessibilityProvider` (function): function AccessibilityProvider({ store, children, className, style, }: { store: AccessibilityStore; children: ReactNode; className?: string; style?: CSSProperties; }): ReactNode — Apply accessibility preferences to a subtree: exposes `--jg-text-scale` for text to scale off, sets `data-reduced-motion` / `data-high-contrast` / `data-colorblind` / `data-captions` for CSS to respond to, and wraps the tree in the selected colorblind `feColorMatrix` filter. Reads a `createAccessibilityStore` and re-renders on change; provides the state to `useAccessibility`.
 - `AchievementGallery` (function): function AchievementGallery({ achievements, title = "Achievements", maskSecrets = true, renderIcon, columns = 2, emptyLabel = "No achievements yet.", className, style, }: AchievementGalleryProps): ReactNode — Achievement/trophy gallery — a responsive grid of cards showing unlocked vs. locked state, a progress bar for counter achievements, and a header summary of completion and score. Secret+locked entries mask their name/description. Feed it `useAchievements(tracker)`.
 - `AchievementGalleryProps` (interface): interface AchievementGalleryProps — Props for {@link AchievementGallery}.
@@ -540,8 +540,8 @@
 - `BarShape` (type): type BarShape = "rect" | "pill" | "skew" | "chamfer" — Trough shape language — `rect` (default), `pill` (fully round), `skew` (parallelogram, upright label), or `chamfer` (cut corners). Matches a game's skin without hand-rolling a local bar.
 - `BarTokens` (interface): interface BarTokens — Atomic, purpose-named vitals — one component per readout (`HealthBar`, `ShieldBar`, …), never a `tone`-switched umbrella and never a bundled combo. Every bar reads the same shared CSS custom properties (`--jg-health`, `--jg-shield`, `--jg-xp`, plus frame/shape tokens). Default token colors are scaffolding only: games own layout, framing, and art direction, and must set tokens (or replace the markup) so the HUD is unique to the pitch — the engine ships parts, not a face.
 - `BarsPreview` (function): function BarsPreview({ className }: { className?: string }): React.JSX.Element — Renders the atomic bar matrix twice under different token blocks to prove global re-theming.
-- `BetterAuthSessionState` (interface): interface BetterAuthSessionState — ⚠ undocumented
-- `BetterAuthUserShape` (interface): interface BetterAuthUserShape — ⚠ undocumented
+- `BetterAuthSessionState` (interface): interface BetterAuthSessionState { data: {user: BetterAuthUserShape} | null | undefined; isPending: boolean } — ⚠ undocumented
+- `BetterAuthUserShape` (interface): interface BetterAuthUserShape { id: string; name?: string | null; email?: string | null; image?: string | null } — ⚠ undocumented
 - `BossBar` (function): function BossBar(props: AtomicBarProps & { name?: string }): React.JSX.Element — A wide encounter/boss health bar with the boss name at the start.
 - `CameraShakeMeter` (function): function CameraShakeMeter({ controller, animate = false, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. A shell component applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
 - `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
@@ -552,13 +552,13 @@
 - `ChannelTabs` (function): function ChannelTabs({ channels, active, onSelect, className, tabClassName, activeTabClassName, renderTab, }: { channels?: readonly string[]; active: string; onSelect: (channelId: string) => void; className?: string; tabClassName?: string; activeTabClassName?: string; renderTab?: (channelId: string,… — ⚠ undocumented
 - `CharacterSheet` (function): function CharacterSheet({ slots, stats, name, subtitle, portrait, header, title = "Character", variation = "themed", slotSize, onSlotActivate, className, style, }: CharacterSheetProps): ReactNode — Drop-in character sheet: a {@link HudFrame} wrapping an optional name/subtitle/portrait header, the equip-slot {@link Paperdoll}, and the derived-stat {@link StatList}. The game supplies slots, stats, header content, and the activation callback, and owns the window that toggles it (this component does not manage its own open/close). Pure composition over existing primitives and HudTheme tokens.
 - `CharacterSheetProps` (interface): interface CharacterSheetProps — Props for {@link CharacterSheet}.
-- `ChatBubble` (interface): interface ChatBubble — ⚠ undocumented
-- `ChatBubblesOptions` (interface): interface ChatBubblesOptions — ⚠ undocumented
+- `ChatBubble` (interface): interface ChatBubble { id: string; fromUserId: string; body: string; at: number } — ⚠ undocumented
+- `ChatBubblesOptions` (interface): interface ChatBubblesOptions { channelId?: string; ttlMs?: number; limit?: number } — ⚠ undocumented
 - `ChatInput` (function): function ChatInput({ channelId, className, inputClassName, buttonClassName, placeholder, sendLabel, onSent, onRejected, }: { channelId: string; className?: string; inputClassName?: string; buttonClassName?: string; placeholder?: string; sendLabel?: ReactNode; onSent?: (message: ChatMessage) => void;… — ⚠ undocumented
 - `ChatLog` (function): function ChatLog({ channelId, limit, className, messageClassName, ownMessageClassName, renderMessage, }: { channelId: string; limit?: number; className?: string; messageClassName?: string; ownMessageClassName?: string; renderMessage?: (message: ChatMessage) => ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `ChatPanel` (function): function ChatPanel<T extends ChatMessage = ChatMessage>(props: Parameters<typeof ContextChatPanel>[0] | StandaloneChatPanelProps<T>): React.JSX.Element — Chat behavior over a game context or externally supplied server messages.
-- `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
-- `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
+- `ClerkUserShape` (interface): interface ClerkUserShape { id: string; fullName?: string | null; username?: string | null; imageUrl?: string | null; primaryEmailAddress?: {emailAddress: string} | null; createdAt?: Date | null; lastSignInAt?: Date | null } — ⚠ undocumented
+- `ClerkUserState` (interface): interface ClerkUserState { isLoaded: boolean; isSignedIn: boolean | undefined; user: ClerkUserShape | null | undefined } — ⚠ undocumented
 - `Clock` (function): function Clock({ format = "24h", showDay = true, controls = false, style, className, }: { format?: "24h" | "12h"; showDay?: boolean; controls?: boolean; style?: CSSProperties; className?: string; }): React.JSX.Element — A time-of-day clock reading the sim calendar — `Day N · HH:MM`, 24h or 12h. `controls` adds pause + the game's speed multipliers as clickable pills (the "fast-forward" bar), off by default so a game opts into letting the player scrub time.
 - `CoachMark` (function): function CoachMark({ view, positionStyle, onNext, onSkip, nextLabel = "Next", doneLabel = "Got it", skipLabel = "Skip tour", theme, className, style, }: CoachMarkProps): ReactNode — A single coach-mark callout — title, body, an "N of M" counter, a Next/Got-it button, and a Skip-tour link. Presentation-only; position it with `positionStyle` or drop it into {@link CoachMarkHost}. Reskin via {@link CoachMarkTheme}.
 - `CoachMarkHost` (function): function CoachMarkHost({ sequence, resolveAnchor, showBackdrop = true, onComplete, nextLabel, doneLabel, skipLabel, theme, className, style, }: CoachMarkHostProps): ReactNode — Full-screen coach-mark host: watches a sequence, positions the current step's callout beside its anchored element (or centered when unanchored) via `getBoundingClientRect`, and draws an optional dimmed backdrop with a spotlight cutout around the anchor. Next advances, Skip ends the tour — both persist so hints never re-show. Reskin with {@link CoachMarkTheme}.
@@ -573,7 +573,7 @@
 - `ComboMeterHudProps` (interface): interface ComboMeterHudProps — Props for {@link ComboMeterHud}.
 - `ComboMeterTheme` (interface): interface ComboMeterTheme — Reskin tokens for {@link ComboMeterHud}.
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
-- `CompassProps` (interface): interface CompassProps — ⚠ undocumented
+- `CompassProps` (interface): interface CompassProps { facingYaw: number; center?: WorldXZ; markers?: MarkerCollection; width?: number; fov?: number; kindStyles?: Record<string, MarkerKindStyle>; className?: string } — ⚠ undocumented · used by `Compass`: Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an …
 - `ConfirmDialog` (function): function ConfirmDialog({ title, body, confirmLabel = "Confirm", cancelLabel = "Cancel", onConfirm, onCancel, danger = false, width = 360, className, style, }: ConfirmDialogProps): ReactNode — A generic two-button confirmation dialog — title, optional body, and Cancel / Confirm buttons over a `HudTheme`-token-driven {@link HudFrame}. Presentation-only: wire `onConfirm`/`onCancel` to a modal stack's `resolve` (typically inside a {@link ModalHost} render callback) and reskin via `HudTheme` tokens or `danger` for a destructive action. It interprets nothing — the game supplies the copy.
 - `ConfirmDialogProps` (interface): interface ConfirmDialogProps — Props for {@link ConfirmDialog}.
 - `ControlHint` (interface): interface ControlHint — One row of a control legend. Name the game action(s) whose bound key(s) to show (`action`) so the glyphs come straight from the keybind map — never re-typed — or give literal `keys` for controls that live outside the map (`"Mouse"`, `"LMB"`). `label` says what the control does.
@@ -592,21 +592,21 @@
 - `DebouncedCommit` (interface): interface DebouncedCommit<T> — Live-mirrored, trailing-debounced commit binding for a single control value.
 - `DefaultEquipSlotId` (type): type DefaultEquipSlotId = | "head" | "chest" | "hands" | "legs" | "feet" | "mainHand" | "offHand" | "ring1" | "ring2" | "trinket" — Slot ids used by {@link defaultEquipLayout}'s convenience arrangement.
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
-- `DialogueCheck` (interface): interface DialogueCheck — ⚠ undocumented
-- `DialogueChoice` (interface): interface DialogueChoice — ⚠ undocumented
-- `DialogueDef` (interface): interface DialogueDef — ⚠ undocumented
+- `DialogueCheck` (interface): interface DialogueCheck { label?: string; modifier: number; dc: number; advantage?: CheckAdvantage } — ⚠ undocumented
+- `DialogueChoice` (interface): interface DialogueChoice { label: string; invoke: {command: string; args?: unknown} | null; check?: DialogueCheck; onSuccess?: {command: string; args?: unknown} | null; onFailure?: {command: string; args?: unknown} | null } — ⚠ undocumented · used by `runDialogueChoice`: Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), ru…
+- `DialogueDef` (interface): interface DialogueDef { id: string; lines: readonly DialogueLine[] } — ⚠ undocumented
 - `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
 - `DialogueView` (function): function DialogueView({ run, renderPortrait, onChoose, onClose, closeLabel = "Close", theme, className, style, speakerClassName, textClassName, choicesClassName, choiceClassName, }: DialogueViewProps): ReactNode — A drop-in branching-conversation view over a {@link DialogueRun}: renders the current node's speaker name (+ an optional portrait slot), the line, and a list of clickable response choices that advance the conversation — the game passes its dialogue graph and gets working node traversal and choice state with no hand-rolled walk. A choice with a destination advances the run; a terminal choice (or the Close control on a choiceless node) fires `onClose`. Speaker/choice `kind` are free strings surfaced as `data-*` attributes for the game to style; the view never interprets them. HudTheme-skinned via `--jg-*` tokens; reskin further with {@link DialogueViewTheme}.
 - `DialogueViewProps` (interface): interface DialogueViewProps — Props for {@link DialogueView}.
 - `DialogueViewTheme` (interface): interface DialogueViewTheme — Reskin tokens for {@link DialogueView}. Each defaults to a HudTheme `--jg-*` token.
-- `DisplayProfile` (interface): interface DisplayProfile — ⚠ undocumented
+- `DisplayProfile` (interface): interface DisplayProfile { coarsePointer: boolean; compact: boolean; portrait: boolean } — ⚠ undocumented
 - `DomEventTarget` (interface): interface DomEventTarget — Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements).
 - `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `DragLayer` (interface): interface DragLayer<T> — ⚠ undocumented
-- `DragPayload` (interface): interface DragPayload<T> — ⚠ undocumented
-- `DragState` (interface): interface DragState<T> — ⚠ undocumented
+- `DragLayer` (interface): interface DragLayer<T> { state: DragState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(target: s… — ⚠ undocumented
+- `DragPayload` (interface): interface DragPayload<T> { id: string; value: T; rotation: Rotation } — ⚠ undocumented
+- `DragState` (interface): interface DragState<T> { payload: DragPayload<T> | null; point: {x: number; y: number}; origin: {x: number; y: number}; overTarget: string | null; overCell: Cell | null } — ⚠ undocumented
 - `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
-- `DropInfo` (interface): interface DropInfo<T> — ⚠ undocumented
+- `DropInfo` (interface): interface DropInfo<T> { payload: DragPayload<T>; target: string | null; cell: Cell | null; point: {x: number; y: number} } — ⚠ undocumented
 - `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `EmoteWheel` (function): function EmoteWheel({ emotes, radius, open = true, className, emoteClassName, onPlayed, onRejected, renderEmote, }: { emotes: readonly string[]; radius?: number; open?: boolean; className?: string; emoteClassName?: string; onPlayed?: (emoteId: string) => void; onRejected?: (reason: string) => void; … — ⚠ undocumented
 - `EntityFrameEntry` (interface): interface EntityFrameEntry — The minimum an entry must carry; games extend it with their own display data.
@@ -622,7 +622,7 @@
 - `EquipSlotPosition` (type): type EquipSlotPosition = "left" | "right" | "bottom" — Character-sheet / paperdoll composition (#1033 follow-up): a drop-in `<CharacterSheet>` that arranges caller-supplied equip slots as a paperdoll around a portrait and lists derived stats, all inside a {@link HudFrame}. It reuses the atomic slot rendering ({@link EquipmentSlots}) and the shared `--jg-slot-*` / `--jg-accent` HudTheme tokens (#1034) — the game owns which slots and which stats matter (both are props), the skin, and the window that toggles it open/closed. No genre list is baked in; {@link defaultEquipLayout} is a convenience arrangement the game can override wholesale.
 - `EquipmentSlots` (function): function EquipmentSlots(props: SlotGridProps): React.JSX.Element — Worn-gear slots (head/chest/hands/…): one atomic grid, painted icons, themed from tokens.
 - `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
-- `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> — ⚠ undocumented
+- `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> { on<K extends keyof TEventMap>(eventName: K, listener: (payload: TEventMap[K]) => void): () => void } — ⚠ undocumented
 - `ExperienceBar` (const): const ExperienceBar: (props: AtomicBarProps) => React.JSX.Element — Level progress / experience.
 - `FastTravelMenu` (function): function FastTravelMenu<TMeta = unknown>({ network, from, onTravel, currentId, title = "Fast Travel", emptyLabel = "No destinations discovered yet.", onClose, className, style, }: FastTravelMenuProps<TMeta>): ReactNode — Fast-travel menu — the discovered-destinations list players pick from: points grouped by region, distance-sorted from `from`, each showing icon, name, and distance, with a header counting discovered vs. total. Selecting a row calls `onTravel`; the current location is flagged and not travelable. Bind it to a `createFastTravelNetwork`.
 - `FastTravelMenuProps` (interface): interface FastTravelMenuProps<TMeta = unknown> — Props for {@link FastTravelMenu}.
@@ -647,7 +647,7 @@
 - `Hotbar` (function): function Hotbar({ inventoryId, activeSlot, keys, slotSize = 46, itemIcon, style, className, }: { inventoryId: string; activeSlot?: number; keys?: readonly string[]; slotSize?: number; /** Caller-supplied item id → icon registry; return null/undefined to fall back to the default glyph. */ itemIcon?: … — A numbered hotbar bound to an inventory — painted iconed slots (a `GameIcon` glyph over a school-keyed gradient with a count badge, #1035), an active-slot highlight, and a keycap per slot. Place it and pass the `inventoryId`; `activeSlot` highlights the equipped one. Supply `itemIcon` to map your item ids to your own glyphs — the default resolves a `GameIcon` from the item id.
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
-- `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
+- `HudEditChord` (interface): interface HudEditChord { hold: string; press: string } — ⚠ undocumented · used by `HudCanvas`: Full-viewport HUD surface.
 - `HudFrame` (function): function HudFrame({ variation = "glass", shape = "rounded", title, aside, padding, width, interactive, className, style, children, }: HudFrameProps): ReactNode — Optional framed panel primitive — a single `<div data-hud-frame>` with a `glass`, `plate`, `retro`, or `themed` skin, optional `title`/`aside` header, and caller `style` merged last. Shared building block for demos and token-themed widgets; games own product chrome and art direction (see AGENTS.md).
 - `HudFrameProps` (interface): interface HudFrameProps — Props for {@link HudFrame}.
 - `HudFrameShape` (type): type HudFrameShape = "rounded" | "circle" | "square" — Frame corner shape — `rounded` (the variation's default radius), `circle` (fully round), or `square` (no radius).
@@ -671,14 +671,14 @@
 - `HudThemeSlot` (interface): interface HudThemeSlot — Action/inventory slot tokens.
 - `HudThemeStatus` (interface): interface HudThemeStatus — Semantic status colors — outcome, threat, and relationship coloring.
 - `HudThemeSurface` (interface): interface HudThemeSurface — Chrome surfaces, edges, and text — what panels, overlays, and menus are built out of.
-- `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
+- `HudViewportContextValue` (interface): interface HudViewportContextValue { fitEnabled: boolean; config: HudViewportConfig | undefined; userScale: number } — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `I18nProvider` (function): function I18nProvider({ i18n, children }: { i18n: I18n; children: ReactNode }): ReactNode — Provide an {@link I18n} instance to the tree so `useT`/`useLocale` can read it.
 - `IconSchool` (type): type IconSchool = | "fire" | "frost" | "arcane" | "nature" | "holy" | "tech" | "shadow" | "steel" | "neutral" — `IconTreatment` (#1035): a procedural painted-icon face — a glyph over a school-keyed radial gradient, with a vignette inset shadow, a top gloss highlight, and optional count/keycap badges. Turns the engine's flat white `GameIcon` glyphs (and game-icons.net SVGs) into painted ability / item icons that read as AAA slots, not debug UI. Theme-aware: the frame reads the `--jg-slot-*` and `--jg-accent` `HudTheme` tokens (#1034), so a theme change re-skins every treated icon.
 - `IconTreatment` (function): function IconTreatment({ icon, glyph, school = "neutral", size = 44, count, keycap, active = false, className, style, }: IconTreatmentProps): React.JSX.Element — A painted icon face — gradient + vignette + gloss behind a glyph, with count/keycap badges.
 - `IconTreatmentProps` (interface): interface IconTreatmentProps — Props for {@link IconTreatment}.
 - `IconsPreview` (function): function IconsPreview({ className }: { className?: string }): React.JSX.Element — Renders the school-gradient row and a treated-icon hotbar — the deterministic #1035 fixture.
-- `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
+- `IdentitySource` (interface): interface IdentitySource { session: AuthSession | null; isLoading: boolean; signOut?: () => void } — ⚠ undocumented
 - `InteractionPrompt` (function): function InteractionPrompt({ registry, playerPosition, theme, accentFor, keyFor, gaugeProgress, anchor = "bottom-center", zIndex = 40, className, style, }: InteractionPromptProps): ReactNode — A screen-anchored "Press E to …" interaction callout that renders the active prompt of a {@link PromptRegistry}. It subscribes to the registry and — when given `playerPosition` — re-resolves as the hero moves, showing the nearest in-range interactable and switching to a closer/higher-priority one as they cross radii. Each display kind renders as itself: a `keybind` shows a key cap plus its label ("Press [E] Open"), a `gauge` shows a hold bar filling with `gaugeProgress`, and a `label` shows plain text. Presentation only — the registry never branches on a prompt's meaning; the game colors each via `accentFor` and maps action ids to key glyphs via `keyFor`. HudTheme-skinnable through `--jg-accent` and {@link InteractionPromptTheme}.
 - `InteractionPromptAnchor` (type): type InteractionPromptAnchor = "bottom-center" | "top-center" | "center" — Where the callout sits over the scene.
 - `InteractionPromptProps` (interface): interface InteractionPromptProps — Props for {@link InteractionPrompt}.
@@ -702,7 +702,7 @@
 - `LeavePartyButton` (function): function LeavePartyButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `ManaBar` (const): const ManaBar: (props: AtomicBarProps) => React.JSX.Element — Spell/energy resource pool.
-- `MapBounds` (interface): interface MapBounds — ⚠ undocumented
+- `MapBounds` (interface): interface MapBounds { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented
 - `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
 - `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
 - `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
@@ -714,7 +714,7 @@
 - `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
 - `MinimapPanel` (function): function MinimapPanel({ zoneLabel, clock, showCompass = true, compassProps, headerClassName, zoneLabelClassName, clockClassName, compassClassName, children, ...minimapProps }: MinimapPanelProps): ReactNode — Composed circular-minimap chrome: optional zone-label + clock header above the `Minimap`, optional `Compass` strip below. Purely a wiring layer over the existing primitives — the game supplies the zone name and clock text, this only places them; omit either slot and the header disappears.
 - `MinimapPanelProps` (interface): interface MinimapPanelProps extends MinimapProps — Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots.
-- `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
+- `MinimapProps` (interface): interface MinimapProps { markers: MarkerCollection; center: WorldXZ; worldRadius: number; fog?: FogField; size?: number; facingYaw?: number; rotate?: boolean; kindStyles?: Record<string, MarkerKindStyle>; background?: string; mapBounds?: MapBounds; routes?: reado… — ⚠ undocumented · used by `Minimap`: Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow.
 - `MinimapTrack` (function): function MinimapTrack({ spans = [], pips = [], width = "100%", height = 12, railColor = "rgba(255,255,255,0.10)", className, style, children, }: MinimapTrackProps): ReactNode — Horizontal linear track minimap — a rounded progress rail with colored zone `spans` and gate/exit/player `pips` positioned by 0..1 fraction. The structural counterpart to the radial {@link Minimap} for corridor/route games: fractions are supplied by the caller (via core `trackFraction`), so it reads no store and stays presentation-only, sharing chrome with the radial minimap.
 - `MinimapTrackPip` (interface): interface MinimapTrackPip — A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player).
 - `MinimapTrackProps` (interface): interface MinimapTrackProps — Props for {@link MinimapTrack}.
@@ -765,7 +765,7 @@
 - `RadialMenuOption` (interface): interface RadialMenuOption — One selectable entry on a radial/quick menu (weapon or emote wheel).
 - `RadialMenuProps` (interface): interface RadialMenuProps — Props for {@link RadialMenu}.
 - `Rank` (type): type Rank = "A" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10" | "J" | "Q" | "K" — A playing-card rank, ace through king.
-- `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> — ⚠ undocumented
+- `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> { getState(): TState; subscribe(listener: (state: TState) => void): () => void } — ⚠ undocumented
 - `RegionRecord` (interface): interface RegionRecord extends LayoutRegion — A region registration: the full `LayoutRegion` plus the live element (dev outlining), rect measured by the shell/react side.
 - `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `RotateDeviceScreen` (function): function RotateDeviceScreen({ title = "Turn your device", description, requiredOrientation = "landscape", accent = "var(--jg-accent, #8ea2ff)", icon, className, style, }: { /** Short headline. */ title?: string; /** One concise explanatory line. Defaults from `requiredOrientation`. */ description?: … — Full-viewport, non-dismissible rotate-device gate shown when a game requires an orientation the device isn't in.
@@ -832,15 +832,15 @@
 - `ToastStack` (function): function ToastStack({ action, limit = 4, className, renderToast, }: { action: string; limit?: number; className?: string; renderToast?: (entry: FeedEntry, index: number) => ReactNode; }): React.JSX.Element | null — Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `createToastQueue`. Reach for this when the message source is already an engine event bound onto `ctx.game.feed` (kill feed, quest updates, loot log); reach for a `createToastQueue` when the game raises ad-hoc messages that need their own TTL independent of the feed's ring buffer.
 - `Trans` (function): function Trans({ k, params }: { k: string; params?: TParams }): ReactNode — Render a translated message inline: `<Trans k="hud.score" params={{ value }} />`.
 - `UseActionBarOptions` (interface): interface UseActionBarOptions — Options for {@link useActionBar}.
-- `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
+- `UseAxisChannelResult` (interface): interface UseAxisChannelResult { channel: AxisChannel; isDown: (code: string) => boolean } — ⚠ undocumented · used by `useAxisChannel`: Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `UsePanelsOptions` (interface): interface UsePanelsOptions — Options for {@link usePanels}.
 - `UseSelectionViewOptions` (interface): interface UseSelectionViewOptions — Options for {@link useSelectionView}.
-- `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
+- `UseVoiceOptions` (interface): interface UseVoiceOptions { transport?: VoiceTransport; channelId?: string; mode?: PushToTalkMode; resolveRoutes?: () => readonly VoiceRoute[]; getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream> } — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
 - `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `ViewportMetrics` (interface): interface ViewportMetrics — Live viewport rectangles: the layout viewport and the visible `visualViewport`.
 - `VitalBar` (function): function VitalBar({ vital, width = 120, showLabel = true, className, style, }: { vital: EntityVital; width?: number; showLabel?: boolean; className?: string; style?: CSSProperties; }): React.JSX.Element — A compact current/max vital meter for an entity summary; tone maps to a colour ramp. Reuse it as the vital row inside {@link EntitySummary} or any custom entity panel.
 - `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `VoiceState` (interface): interface VoiceState — ⚠ undocumented
+- `VoiceState` (interface): interface VoiceState { supported: boolean; micStream: MediaStream | null; micError: string | null; requestMic(): Promise<boolean>; transmitting: boolean; status: PushToTalkStatus; mode: PushToTalkMode; setMode(mode: PushToTalkMode): void; muted: boolean; setMut… — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
 - `WaveBanner` (function): function WaveBanner({ wave, label = "Wave", subtitle, style, className, }: { wave: number | string; label?: string; subtitle?: ReactNode; style?: CSSProperties; className?: string; }): React.JSX.Element — A wave / round banner — a bold centered pill for "WAVE 3" style callouts, with an optional subtitle (enemies remaining, timer). Pure display: pass the current `wave` and whatever subtitle you track.
 - `WaveHud` (function): function WaveHud({ runner, theme, variation = "plate", width = 260, className, style }: WaveHudProps): ReactNode — A drop-in wave/spawn HUD panel over a {@link WaveRunner}: a big "WAVE N" label, a wave-progress bar (the shared {@link ExperienceBar}), and the live spawned / total, budget, and alert readouts — the visible face of "the brain behind WAVE 3". It subscribes to the runner and re-renders on change; the game drives the runner's clock. Reskin with {@link WaveHudTheme} and the shared HudTheme bar tokens. When the final wave finishes it shows a "WAVES CLEARED" state. Presentation only: the schedule, budget, and RNG live in the core model, and spawn `kind`s are never read.
 - `WaveHudProps` (interface): interface WaveHudProps — Props for {@link WaveHud}.
@@ -853,10 +853,10 @@
 - `WeaponSlots` (function): function WeaponSlots(props: SlotGridProps): React.JSX.Element — Weapon loadout slots.
 - `Window` (function): function Window({ title, ariaLabel, closable = true, onClose, x, y, onMove, z, width, variation, shape, className, style, bodyStyle, children, }: { title: ReactNode; ariaLabel?: string; closable?: boolean; onClose?: () => void; /** Initial (uncontrolled) or current (controlled, with `onMove`) x posi… — A single standalone window — title bar, close button, and title-bar drag over {@link HudFrame} chrome — usable without the {@link usePanels} manager for a one-off dialog. Position is uncontrolled (seeded by `x`/`y`) unless both `x`/`y` and `onMove` are supplied, in which case the caller owns placement. Accessible: `role="dialog"` with an `aria-label` and a focusable close button.
 - `WorldBrowser` (function): function WorldBrowser({ listings, onJoin, className, rowClassName, joinClassName, emptyState, renderListing, }: { listings: readonly SessionListing[]; onJoin: (listing: SessionListing) => void; className?: string; rowClassName?: string; joinClassName?: string; emptyState?: ReactNode; renderListing?:… — ⚠ undocumented
-- `WorldBrowserState` (interface): interface WorldBrowserState — ⚠ undocumented
+- `WorldBrowserState` (interface): interface WorldBrowserState { listings: SessionListing[]; loading: boolean; error: string | null; refresh(): void } — ⚠ undocumented · used by `useWorldBrowser`: Polls a host-supplied session fetcher (e.g.
 - `WorldInviteToast` (function): function WorldInviteToast({ className, acceptClassName, declineClassName, onAccepted, renderInvite, }: { className?: string; acceptClassName?: string; declineClassName?: string; onAccepted: (target: WorldInviteTarget) => void; renderInvite?: (invite: WorldInvite) => ReactNode; }): React.JSX.Element … — ⚠ undocumented
 - `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`. Framed panel wrapper over {@link WorldMapSurface}.
-- `WorldMapProps` (interface): interface WorldMapProps — ⚠ undocumented
+- `WorldMapProps` (interface): interface WorldMapProps { markers: MarkerCollection; bounds: MapBounds; player?: WorldXZ; facingYaw?: number; fog?: FogField; background?: string; width?: number; height?: number; kindStyles?: Record<string, MarkerKindStyle>; routes?: readonly MapRoute[]; zones?: … — ⚠ undocumented · used by `WorldMap`: Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the play…
 - `WorldMapSurface` (function): function WorldMapSurface({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, canvasWidth, canvasHeight, viewport = IDENTITY_VIEWPORT, style, }: WorldMapSurfaceProps): ReactNode — The bare top-down map `<svg>` shared by {@link WorldMap} (framed panel) and {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map layers, markers with labels, and the player arrow, drawn under an optional viewport transform. Rectangular linear projection over the world `bounds`.
 - `WorldMapSurfaceProps` (interface): interface WorldMapSurfaceProps — Props for {@link WorldMapSurface}.
 - `abilityKitNeedsHeartbeat` (function): function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: number): boolean — ⚠ undocumented
@@ -1090,8 +1090,8 @@
 
 ## @jgengine/react/chatBubbles
 
-- `ChatBubble` (interface): interface ChatBubble — ⚠ undocumented
-- `ChatBubblesOptions` (interface): interface ChatBubblesOptions — ⚠ undocumented
+- `ChatBubble` (interface): interface ChatBubble { id: string; fromUserId: string; body: string; at: number } — ⚠ undocumented
+- `ChatBubblesOptions` (interface): interface ChatBubblesOptions { channelId?: string; ttlMs?: number; limit?: number } — ⚠ undocumented
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
 - `useEntityChatBubble` (function): function useEntityChatBubble(instanceId: string, options?: ChatBubblesOptions): ChatBubble | null — ⚠ undocumented
@@ -1123,9 +1123,9 @@
 - `CurrencyPill` (function): function CurrencyPill({ currencyId, className }: { currencyId: string; className?: string }): React.JSX.Element — ⚠ undocumented
 - `DeathScreen` (function): function DeathScreen({ statId = "health", open, className, children, }: { statId?: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
-- `DialogueCheck` (interface): interface DialogueCheck — ⚠ undocumented
-- `DialogueChoice` (interface): interface DialogueChoice — ⚠ undocumented
-- `DialogueDef` (interface): interface DialogueDef — ⚠ undocumented
+- `DialogueCheck` (interface): interface DialogueCheck { label?: string; modifier: number; dc: number; advantage?: CheckAdvantage } — ⚠ undocumented
+- `DialogueChoice` (interface): interface DialogueChoice { label: string; invoke: {command: string; args?: unknown} | null; check?: DialogueCheck; onSuccess?: {command: string; args?: unknown} | null; onFailure?: {command: string; args?: unknown} | null } — ⚠ undocumented · used by `runDialogueChoice`: Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), ru…
+- `DialogueDef` (interface): interface DialogueDef { id: string; lines: readonly DialogueLine[] } — ⚠ undocumented
 - `DialogueLine` (type): type DialogueLine = { speaker: string; text: string } | { choices: readonly DialogueChoice[] } — ⚠ undocumented
 - `KeybindRow` (function): function KeybindRow({ action, keys, className, }: { action: string; keys: readonly string[]; className?: string; }): React.JSX.Element — ⚠ undocumented
 - `LevelUpFlash` (function): function LevelUpFlash({ stat, durationMs = 1600, className, children, renderFlash, }: { stat?: string; durationMs?: number; className?: string; children?: ReactNode; renderFlash?: (event: StatLevelUpEvent) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -1168,23 +1168,23 @@
 
 ## @jgengine/react/display
 
-- `DisplayProfile` (interface): interface DisplayProfile — ⚠ undocumented
+- `DisplayProfile` (interface): interface DisplayProfile { coarsePointer: boolean; compact: boolean; portrait: boolean } — ⚠ undocumented
 
 ## @jgengine/react/dragLayer
 
 - `DragGhost` (function): function DragGhost<T>({ layer, className, style, children, }: { layer: DragLayer<T>; className?: string; style?: CSSProperties; children?: (payload: DragPayload<T>) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
-- `DragLayer` (interface): interface DragLayer<T> — ⚠ undocumented
-- `DragPayload` (interface): interface DragPayload<T> — ⚠ undocumented
-- `DragState` (interface): interface DragState<T> — ⚠ undocumented
+- `DragLayer` (interface): interface DragLayer<T> { state: DragState<T>; dragging: boolean; pointRef: RefObject<{x: number; y: number}>; beginDrag(payload: {id: string; value: T; rotation?: Rotation}, event: ReactPointerEvent): void; rotate(quarterTurns?: number): void; setTarget(target: s… — ⚠ undocumented
+- `DragPayload` (interface): interface DragPayload<T> { id: string; value: T; rotation: Rotation } — ⚠ undocumented
+- `DragState` (interface): interface DragState<T> { payload: DragPayload<T> | null; point: {x: number; y: number}; origin: {x: number; y: number}; overTarget: string | null; overCell: Cell | null } — ⚠ undocumented
 - `DraggableCard` (function): function DraggableCard<T>({ id, value, layer, className, children, onRotate, }: { id: string; value: T; layer: DragLayer<T>; className?: string; children?: ReactNode; onRotate?: boolean; }): React.JSX.Element — ⚠ undocumented
-- `DropInfo` (interface): interface DropInfo<T> — ⚠ undocumented
+- `DropInfo` (interface): interface DropInfo<T> { payload: DragPayload<T>; target: string | null; cell: Cell | null; point: {x: number; y: number} } — ⚠ undocumented
 - `DropZone` (function): function DropZone<T>({ id, layer, className, activeClassName, cellSize, children, }: { id: string; layer: DragLayer<T>; className?: string; activeClassName?: string; cellSize?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
 
 ## @jgengine/react/engineStore
 
-- `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> — ⚠ undocumented
-- `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> — ⚠ undocumented
+- `EventfulEngineStore` (interface): interface EventfulEngineStore<TEventMap extends object> { on<K extends keyof TEventMap>(eventName: K, listener: (payload: TEventMap[K]) => void): () => void } — ⚠ undocumented
+- `ReadableEngineStore` (interface): interface ReadableEngineStore<TState> { getState(): TState; subscribe(listener: (state: TState) => void): () => void } — ⚠ undocumented
 
 ## @jgengine/react/entityFrames
 
@@ -1213,14 +1213,14 @@
 
 ## @jgengine/react/fogOverlay
 
-- `FogCellRect` (interface): interface FogCellRect — ⚠ undocumented
-- `FogPaintSurface` (interface): interface FogPaintSurface — ⚠ undocumented
+- `FogCellRect` (interface): interface FogCellRect { x: number; y: number; width: number; height: number } — ⚠ undocumented
+- `FogPaintSurface` (interface): interface FogPaintSurface { fillStyle: string | CanvasGradient | CanvasPattern; fillRect(x: number, y: number, width: number, height: number): void; clearRect(x: number, y: number, width: number, height: number): void } — ⚠ undocumented
 
 ## @jgengine/react/gameIcons
 
 - `GAME_ICON_NAMES` (const): const GAME_ICON_NAMES: readonly ["sword", "dagger", "axe", "hammer", "bow", "arrow", "staff", "wand", "spear", "crossbow", "gun", "bomb", "shield", "helmet", "chestplate", "boots", "gauntlet", "ring", "amulet", "cloak", "backpack", "torch", "potionRed", "potionBlue", "scroll", "tome", "meat", "bread… — ⚠ undocumented
 - `GameIcon` (function): function GameIcon({ name, size = 24, color, className, }: { name: GameIconName; size?: number; color?: string; className?: string; }): React.JSX.Element — ⚠ undocumented
-- `GameIconName` (type): type GameIconName = (typeof GAME_ICON_NAMES)[number] — ⚠ undocumented
+- `GameIconName` (type): type GameIconName = (typeof GAME_ICON_NAMES)[number] — ⚠ undocumented · used by `iconForAction`: Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
 - `iconForAction` (function): function iconForAction(action: string): GameIconName | null — Control glyph for a semantic action name (`hardDrop`, `sprint`, `shiftLeft`), or null when no rule matches.
 - `iconForItemId` (function): function iconForItemId(itemId: string): GameIconName | null — ⚠ undocumented
 - `isGameIconName` (function): function isGameIconName(value: string): value is GameIconName — ⚠ undocumented
@@ -1241,12 +1241,12 @@
 
 ## @jgengine/react/hooks
 
-- `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions — ⚠ undocumented
+- `AbilitySlotBindingOptions` (interface): interface AbilitySlotBindingOptions { intervalMs?: number } — ⚠ undocumented · used by `useEventMeter`: Bind a `createEventMeter` (`@jgengine/core/stats/eventMeter`) heat/streak gauge to a component — the react-render half of the ult/adrenaline…
 - `DomEventTarget` (interface): interface DomEventTarget — Minimal add/removeEventListener surface accepted by useDomEvent (window, document, elements).
 - `EventMeterView` (interface): interface EventMeterView — A rendered snapshot of an {@link EventMeter}: current value, fill fraction, active tier, and ready-to-consume flag.
 - `InventoryGridBinding` (interface): interface InventoryGridBinding — Live slots plus `move`/`split` actions bound to `inventoryId`, routed through the notifying `inventory.move`/`inventory.split` commands so React re-renders.
-- `UseAxisChannelResult` (interface): interface UseAxisChannelResult — ⚠ undocumented
-- `WorldBrowserState` (interface): interface WorldBrowserState — ⚠ undocumented
+- `UseAxisChannelResult` (interface): interface UseAxisChannelResult { channel: AxisChannel; isDown: (code: string) => boolean } — ⚠ undocumented · used by `useAxisChannel`: Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
+- `WorldBrowserState` (interface): interface WorldBrowserState { listings: SessionListing[]; loading: boolean; error: string | null; refresh(): void } — ⚠ undocumented · used by `useWorldBrowser`: Polls a host-supplied session fetcher (e.g.
 - `abilityKitNeedsHeartbeat` (function): function abilityKitNeedsHeartbeat(kit: AbilityKit, resourceAvailable?: number): boolean — ⚠ undocumented
 - `createHeldKeyTracker` (function): function createHeldKeyTracker(target: HeldKeyEventTarget): { isDown: (code: string) => boolean; dispose: () => void; } — ⚠ undocumented
 - `eventMeterNeedsHeartbeat` (function): function eventMeterNeedsHeartbeat(meter: EventMeter, previous: EventMeterView | null): boolean — True when `meter`'s value/fraction/tier/ready diverge from `previous` — the re-render check `useEventMeter` polls on its heartbeat.
@@ -1316,7 +1316,7 @@
 
 - `HudCanvas` (function): function HudCanvas({ layout, editChord, compactScale, showDuring, className, style, children, }: { layout: HudLayoutStore; editChord?: HudEditChord | false; /** Zoom applied to the whole HUD on compact displays. Default 0.85. */ compactScale?: number; /** Opt-in play-phase gate: render the HUD only … — Full-viewport HUD surface. Panels declared with `HudPanel` flow into nine anchor regions and stack automatically with a gap — no per-panel pixel offsets, no manual clearance for sibling panels, the touch-control dock (`--jg-hud-dock-clearance`), or device safe areas. On compact displays the whole surface scales down and each panel applies its `compact` behavior.
 - `HudCompactMode` (type): type HudCompactMode = "keep" | "chip" | "hide" — How a panel behaves on compact (phone-scale) displays. `keep` stays visible at the global compact scale, `chip` collapses to a small tap-to-expand pill, `hide` unmounts entirely.
-- `HudEditChord` (interface): interface HudEditChord — ⚠ undocumented
+- `HudEditChord` (interface): interface HudEditChord { hold: string; press: string } — ⚠ undocumented · used by `HudCanvas`: Full-viewport HUD surface.
 - `HudPanel` (function): function HudPanel({ id, anchor = "top-left", order, compact: compactMode = "keep", chip, interactive, inset, locked, showDuring, priority, mobileBehavior, allowOverlapWith, collisionGroup, region = true, width, height, type, className, style, children, }: { id: string; anchor?: HudAnchor; /** Stack … — A HUD block that lives in one of the nine anchor regions. Panels sharing a region stack outward from the screen edge in ascending `order`. On fine pointers panels stay draggable through the edit chord; a dragged panel leaves the flow and keeps its custom placement. On compact displays custom placements are ignored and the `compact` behavior applies.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
 - `useHudLayout` (function): function useHudLayout(options?: { storageKey?: string; snap?: number; locked?: boolean; /** * Scene-document `ui` section — source of truth for panel placement/size. * When provided, hydrates the layout store (and wins over legacy localStorage). */ documentUi?: EditorUiDocument; /** * When true (def… — Layout state for `HudCanvas` — panel placements, edit-mode drag/resize, and per-game persistence.
@@ -1367,7 +1367,7 @@
 
 ## @jgengine/react/hudViewport
 
-- `HudViewportContextValue` (interface): interface HudViewportContextValue — ⚠ undocumented
+- `HudViewportContextValue` (interface): interface HudViewportContextValue { fitEnabled: boolean; config: HudViewportConfig | undefined; userScale: number } — ⚠ undocumented
 - `HudViewportProvider` (function): function HudViewportProvider({ platforms, config, userScale, children, }: { platforms: readonly HudPlatform[] | undefined; config: HudViewportConfig | undefined; userScale?: number; children?: ReactNode; }): React.JSX.Element — Mounted by the shell around `GameUI` so every `HudCanvas` inside the game picks up the game's `platforms`/`hudFit` declaration and the player's UI scale setting without any game-side wiring.
 - `useHudViewport` (function): function useHudViewport(): HudViewportContextValue | null — ⚠ undocumented
 
@@ -1396,12 +1396,12 @@
 
 ## @jgengine/react/identity
 
-- `BetterAuthSessionState` (interface): interface BetterAuthSessionState — ⚠ undocumented
-- `BetterAuthUserShape` (interface): interface BetterAuthUserShape — ⚠ undocumented
-- `ClerkUserShape` (interface): interface ClerkUserShape — ⚠ undocumented
-- `ClerkUserState` (interface): interface ClerkUserState — ⚠ undocumented
+- `BetterAuthSessionState` (interface): interface BetterAuthSessionState { data: {user: BetterAuthUserShape} | null | undefined; isPending: boolean } — ⚠ undocumented
+- `BetterAuthUserShape` (interface): interface BetterAuthUserShape { id: string; name?: string | null; email?: string | null; image?: string | null } — ⚠ undocumented
+- `ClerkUserShape` (interface): interface ClerkUserShape { id: string; fullName?: string | null; username?: string | null; imageUrl?: string | null; primaryEmailAddress?: {emailAddress: string} | null; createdAt?: Date | null; lastSignInAt?: Date | null } — ⚠ undocumented
+- `ClerkUserState` (interface): interface ClerkUserState { isLoaded: boolean; isSignedIn: boolean | undefined; user: ClerkUserShape | null | undefined } — ⚠ undocumented
 - `GameIdentityProvider` (function): function GameIdentityProvider({ source, children, }: { source: IdentitySource; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `IdentitySource` (interface): interface IdentitySource — ⚠ undocumented
+- `IdentitySource` (interface): interface IdentitySource { session: AuthSession | null; isLoading: boolean; signOut?: () => void } — ⚠ undocumented
 - `RequireSession` (function): function RequireSession({ fallback, loading, children, }: { fallback?: ReactNode; loading?: ReactNode; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `SignOutButton` (function): function SignOutButton({ className, children, }: { className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
 - `UserBadge` (function): function UserBadge({ className, avatarClassName, nameClassName, renderBadge, }: { className?: string; avatarClassName?: string; nameClassName?: string; renderBadge?: (session: AuthSession) => ReactNode; }): React.JSX.Element | null — ⚠ undocumented
@@ -1454,10 +1454,10 @@
 ## @jgengine/react/map
 
 - `Compass` (function): function Compass({ facingYaw, center, markers, width = 340, fov = (Math.PI * 2) / 3, kindStyles = DEFAULT_MARKER_KINDS, className, }: CompassProps): ReactNode — Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an external source, or a native `MarkerSet`.
-- `CompassProps` (interface): interface CompassProps — ⚠ undocumented
+- `CompassProps` (interface): interface CompassProps { facingYaw: number; center?: WorldXZ; markers?: MarkerCollection; width?: number; fov?: number; kindStyles?: Record<string, MarkerKindStyle>; className?: string } — ⚠ undocumented · used by `Compass`: Horizontal compass strip centered on the player's facing direction, with the eight cardinals and optional marker pips from static views, an …
 - `FullscreenMap` (function): function FullscreenMap({ open = true, bounds, contentWidth = 900, minScale = 0.5, maxScale = 8, title = "Map", onClose, onWorldClick, tool = "pan", onStrokeComplete, drawTone = "info", drawWidth = 3, children, overlayClassName, overlayStyle, ...surfaceProps }: FullscreenMapProps): ReactNode — Fullscreen pan/zoom world-map overlay — the enlarged "press M" map. Wheel to zoom (toward the cursor), drag to pan, and click to place (wire `onWorldClick` to a waypoint/annotation store). Switch `tool` to `"draw"` to freehand-draw strokes committed to `onStrokeComplete` (wire to `createAnnotationLayer`). Reuses {@link WorldMapSurface} for rendering, so terrain bake, fog, routes, zones, markers, and the player arrow all appear; a drag never fires `onWorldClick`. Compose a {@link MapLegend} or tool palette via `children`.
 - `FullscreenMapProps` (interface): interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> — Props for {@link FullscreenMap}.
-- `MapBounds` (interface): interface MapBounds — ⚠ undocumented
+- `MapBounds` (interface): interface MapBounds { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented
 - `MapLegend` (function): function MapLegend({ kinds, labels, kindStyles = DEFAULT_MARKER_KINDS, title = "Legend", className, style, }: MapLegendProps): ReactNode — Marker-kind key for a map/minimap — glyph + color swatch per kind, labelled. Reads the same `kindStyles` the map renders with, so the legend can never drift from the pins.
 - `MapLegendProps` (interface): interface MapLegendProps — Props for {@link MapLegend}.
 - `MapViewport` (interface): interface MapViewport — Pan/zoom transform applied to a {@link WorldMapSurface}'s content group.
@@ -1467,7 +1467,7 @@
 - `MinimapChromeProps` (interface): interface MinimapChromeProps — Props for `MinimapChrome`.
 - `MinimapPanel` (function): function MinimapPanel({ zoneLabel, clock, showCompass = true, compassProps, headerClassName, zoneLabelClassName, clockClassName, compassClassName, children, ...minimapProps }: MinimapPanelProps): ReactNode — Composed circular-minimap chrome: optional zone-label + clock header above the `Minimap`, optional `Compass` strip below. Purely a wiring layer over the existing primitives — the game supplies the zone name and clock text, this only places them; omit either slot and the header disappears.
 - `MinimapPanelProps` (interface): interface MinimapPanelProps extends MinimapProps — Props for `MinimapPanel` — all `MinimapProps` plus the zone-label/clock header and compass slots.
-- `MinimapProps` (interface): interface MinimapProps — ⚠ undocumented
+- `MinimapProps` (interface): interface MinimapProps { markers: MarkerCollection; center: WorldXZ; worldRadius: number; fog?: FogField; size?: number; facingYaw?: number; rotate?: boolean; kindStyles?: Record<string, MarkerKindStyle>; background?: string; mapBounds?: MapBounds; routes?: reado… — ⚠ undocumented · used by `Minimap`: Framed circular minimap: optional baked terrain background, reveal-on-event fog overlay, categorized marker icons, and a facing arrow.
 - `MinimapTrack` (function): function MinimapTrack({ spans = [], pips = [], width = "100%", height = 12, railColor = "rgba(255,255,255,0.10)", className, style, children, }: MinimapTrackProps): ReactNode — Horizontal linear track minimap — a rounded progress rail with colored zone `spans` and gate/exit/player `pips` positioned by 0..1 fraction. The structural counterpart to the radial {@link Minimap} for corridor/route games: fractions are supplied by the caller (via core `trackFraction`), so it reads no store and stays presentation-only, sharing chrome with the radial minimap.
 - `MinimapTrackPip` (interface): interface MinimapTrackPip — A point marker on the {@link MinimapTrack} rail at a 0..1 fraction (e.g. a gate, the exit, or the player).
 - `MinimapTrackProps` (interface): interface MinimapTrackProps — Props for {@link MinimapTrack}.
@@ -1475,7 +1475,7 @@
 - `WaypointArrow` (function): function WaypointArrow({ relative, distance, label, formatDistance = (value) => `${Math.round(value)}m`, size = 44, color = "#f59e0b", className, style, }: WaypointArrowProps): ReactNode — On-screen guide arrow to the tracked waypoint — a HUD compass needle rotated by the facing-relative bearing, with an optional label and distance readout. Pair with `WaypointStore.guidance(playerXZ, facingYaw)`.
 - `WaypointArrowProps` (interface): interface WaypointArrowProps — Props for {@link WaypointArrow}.
 - `WorldMap` (function): function WorldMap({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, className, title = "World Map", onClose, }: WorldMapProps): ReactNode — Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the player. Rectangular linear projection over the supplied world `bounds`. Framed panel wrapper over {@link WorldMapSurface}.
-- `WorldMapProps` (interface): interface WorldMapProps — ⚠ undocumented
+- `WorldMapProps` (interface): interface WorldMapProps { markers: MarkerCollection; bounds: MapBounds; player?: WorldXZ; facingYaw?: number; fog?: FogField; background?: string; width?: number; height?: number; kindStyles?: Record<string, MarkerKindStyle>; routes?: readonly MapRoute[]; zones?: … — ⚠ undocumented · used by `WorldMap`: Full-bounds top-down world map (the "press M" overlay): baked terrain background, reveal-on-event fog, all markers with labels, and the play…
 - `WorldMapSurface` (function): function WorldMapSurface({ markers, bounds, player, facingYaw = 0, fog, background, width = 520, height, kindStyles = DEFAULT_MARKER_KINDS, routes, zones, cellStates, onWorldClick, canvasWidth, canvasHeight, viewport = IDENTITY_VIEWPORT, style, }: WorldMapSurfaceProps): ReactNode — The bare top-down map `<svg>` shared by {@link WorldMap} (framed panel) and {@link FullscreenMap} (pan/zoom overlay): baked terrain background, fog, map layers, markers with labels, and the player arrow, drawn under an optional viewport transform. Rectangular linear projection over the world `bounds`.
 - `WorldMapSurfaceProps` (interface): interface WorldMapSurfaceProps — Props for {@link WorldMapSurface}.
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
@@ -1724,9 +1724,9 @@
 - `MicToggle` (function): function MicToggle({ voice, className, mutedLabel, unmutedLabel, }: { voice: VoiceState; className?: string; mutedLabel?: ReactNode; unmutedLabel?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PushToTalkButton` (function): function PushToTalkButton({ voice, className, children, }: { voice: VoiceState; className?: string; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `SpeakingIndicator` (function): function SpeakingIndicator({ voice, userId, className, threshold = 0.01, children, }: { voice: VoiceState; userId: string; className?: string; threshold?: number; children?: ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `UseVoiceOptions` (interface): interface UseVoiceOptions — ⚠ undocumented
+- `UseVoiceOptions` (interface): interface UseVoiceOptions { transport?: VoiceTransport; channelId?: string; mode?: PushToTalkMode; resolveRoutes?: () => readonly VoiceRoute[]; getUserMedia?: (constraints: MediaStreamConstraints) => Promise<MediaStream> } — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
 - `VoiceRoster` (function): function VoiceRoster({ voice, className, participantClassName, renderParticipant, }: { voice: VoiceState; className?: string; participantClassName?: string; renderParticipant?: (participant: VoiceParticipant, gain: number) => ReactNode; }): React.JSX.Element — ⚠ undocumented
-- `VoiceState` (interface): interface VoiceState — ⚠ undocumented
+- `VoiceState` (interface): interface VoiceState { supported: boolean; micStream: MediaStream | null; micError: string | null; requestMic(): Promise<boolean>; transmitting: boolean; status: PushToTalkStatus; mode: PushToTalkMode; setMode(mode: PushToTalkMode): void; muted: boolean; setMut… — ⚠ undocumented · used by `useVoice`: Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam.
 - `useVoice` (function): function useVoice(options?: UseVoiceOptions): VoiceState — Mic capture + push-to-talk + channel roster over the VoiceTransport signaling seam. Transmission gates the captured tracks' `enabled` flag; the media plane that actually moves audio bytes (WebRTC/SFU) stays behind the transport, host-supplied. Call once per voice channel and hand the returned state to the voice components.
 
 ## @jgengine/react/waveHud
@@ -1778,11 +1778,11 @@
 
 ## @jgengine/shell/audio/audioEngine
 
-- `AudioEmitterHandle` (interface): interface AudioEmitterHandle — ⚠ undocumented
-- `AudioEngine` (interface): interface AudioEngine — ⚠ undocumented
-- `AudioSceneConfig` (interface): interface AudioSceneConfig — ⚠ undocumented
+- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; stop(): void } — ⚠ undocumented
+- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; playOneShot(soundId: string, position?: Vec3): void; playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null; playMusic(themeId: string | null, options?: CrossfadeOptions): v… — ⚠ undocumented
+- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string } — ⚠ undocumented
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
-- `Vec3` (interface): interface Vec3 — ⚠ undocumented
+- `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 - `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — ⚠ undocumented
 
 ## @jgengine/shell/audio/loopParams
@@ -1817,22 +1817,22 @@
 - `CAMERA_TRANSPARENT_USERDATA` (const): const CAMERA_TRANSPARENT_USERDATA: { readonly jgCameraTransparent: true } — userData applied to the group wrapping author `WorldOverlay` decor so the spring-arm ignores it by default.
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
 - `CameraOccluder` (interface): interface CameraOccluder — Camera spring-arm occlusion filtering.
-- `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
+- `CameraShakeChannel` (interface): interface CameraShakeChannel { shake(amplitude: number, decayPerSecond?: number): void; step(dt: number): void; sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset; trauma(): number } — ⚠ undocumented · used by `defaultCameraShakeChannel`: Process-wide default channel.
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
 - `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
 - `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
-- `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
+- `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; director?: CameraDirector; viewmodel?: Compo… — ⚠ undocumented
 - `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
-- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
+- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps> } — ⚠ undocumented
 - `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
-- `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
+- `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps { config?: InspectionCameraConfig } — ⚠ undocumented · used by `GameInspectionCamera`: Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurab…
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
-- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — ⚠ undocumented
+- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps { yawRef: MutableRefObject<number>; pitchRef?: MutableRefObject<number>; config?: Partial<OrbitCameraConfig>; followEntityId?: string; resolveFollowTarget?: (entity: SceneEntity) => Vec3; onDragChange?: (dragging: boolean) => void; onCamera… — ⚠ undocumented
 - `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
-- `PlayerFovState` (interface): interface PlayerFovState — ⚠ undocumented
+- `PlayerFovState` (interface): interface PlayerFovState { fov: number; bounds: PlayerFovBounds; enabled: boolean; persist: boolean; setFov: (value: number) => void; compose: (poseFov: number, mode?: "relative" | "absolute") => number } — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
 - `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
@@ -1847,37 +1847,37 @@
 ## @jgengine/shell/camera/GameCameraRig
 
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
-- `GameCameraRigProps` (interface): interface GameCameraRigProps — ⚠ undocumented
+- `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; director?: CameraDirector; viewmodel?: Compo… — ⚠ undocumented
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
 
 - `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
-- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps — ⚠ undocumented
+- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps> } — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 
 ## @jgengine/shell/camera/GameInspectionCamera
 
 - `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
-- `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps — ⚠ undocumented
+- `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps { config?: InspectionCameraConfig } — ⚠ undocumented · used by `GameInspectionCamera`: Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurab…
 
 ## @jgengine/shell/camera/GameOrbitCamera
 
 - `CameraFollowListener` (type): type CameraFollowListener = (state: CameraFollowState) => void — ⚠ undocumented
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
-- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps — ⚠ undocumented
+- `GameOrbitCameraProps` (interface): interface GameOrbitCameraProps { yawRef: MutableRefObject<number>; pitchRef?: MutableRefObject<number>; config?: Partial<OrbitCameraConfig>; followEntityId?: string; resolveFollowTarget?: (entity: SceneEntity) => Vec3; onDragChange?: (dragging: boolean) => void; onCamera… — ⚠ undocumented
 - `seedOrbitCameraTarget` (function): function seedOrbitCameraTarget(camera: Camera, target: Vector3, distance: number, height: number): void — Seed orbit target before controls mount (demo spawn at origin).
 
 ## @jgengine/shell/camera/PlayerFov
 
 - `PlayerFovProvider` (function): function PlayerFovProvider({ config, orthographic, children, }: { config?: GameCameraConfig; orthographic: boolean; children: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
-- `PlayerFovState` (interface): interface PlayerFovState — ⚠ undocumented
+- `PlayerFovState` (interface): interface PlayerFovState { fov: number; bounds: PlayerFovBounds; enabled: boolean; persist: boolean; setFov: (value: number) => void; compose: (poseFov: number, mode?: "relative" | "absolute") => number } — ⚠ undocumented
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
 ## @jgengine/shell/camera/cameraBlendMath
 
-- `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
+- `CameraBlendScratch` (interface): interface CameraBlendScratch { fromPos: Vector3; fromQuat: Quaternion; toPos: Vector3; toQuat: Quaternion; fov: number; elapsed: number; duration: number } — ⚠ undocumented
 
 ## @jgengine/shell/camera/cameraCollision
 
@@ -1889,12 +1889,12 @@
 
 - `CAMERA_POST_FRAME_PRIORITY` (const): const CAMERA_POST_FRAME_PRIORITY: number — ⚠ undocumented
 - `CAMERA_RIG_FRAME_PRIORITY` (const): const CAMERA_RIG_FRAME_PRIORITY: -1 — ⚠ undocumented
-- `CameraBlendScratch` (interface): interface CameraBlendScratch — ⚠ undocumented
+- `CameraBlendScratch` (interface): interface CameraBlendScratch { fromPos: Vector3; fromQuat: Quaternion; toPos: Vector3; toQuat: Quaternion; fov: number; elapsed: number; duration: number } — ⚠ undocumented
 - `ChaseRig` (function): function ChaseRig(props: RigProps): null — ⚠ undocumented
 - `CinematicRig` (function): function CinematicRig(props: RigProps & { onComplete?: () => void }): null — ⚠ undocumented
 - `LockOnRig` (function): function LockOnRig(props: RigProps): null — ⚠ undocumented
 - `ObserverRig` (function): function ObserverRig(props: RigProps): null — Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / photo-mode / kill-cam rig. Distinct from every other rig, which drives from mouse/keys.
-- `RigProps` (interface): interface RigProps — ⚠ undocumented
+- `RigProps` (interface): interface RigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; followEntityId?: string | null; absoluteFov?: boolean } — ⚠ undocumented · used by `ObserverRig`: Detached spectator/photo cam (#120): binds to any entity or fixed point and auto-orbits it, reading no player input at all — the van CCTV / …
 - `RtsRig` (function): function RtsRig(props: RigProps & { panKeysEnabled?: boolean }): null — ⚠ undocumented
 - `ShoulderRig` (function): function ShoulderRig(props: RigProps): null — ⚠ undocumented
 - `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
@@ -1906,26 +1906,26 @@
 - `PLAYER_FOV_MAX` (const): const PLAYER_FOV_MAX: 120 — ⚠ undocumented
 - `PLAYER_FOV_MIN` (const): const PLAYER_FOV_MIN: 40 — ⚠ undocumented
 - `PLAYER_FOV_STORAGE_KEY` (const): const PLAYER_FOV_STORAGE_KEY: "jgengine:player-fov" — ⚠ undocumented
-- `PlayerFovBounds` (interface): interface PlayerFovBounds — ⚠ undocumented
+- `PlayerFovBounds` (interface): interface PlayerFovBounds { min: number; max: number; defaultFov: number } — ⚠ undocumented
 
 ## @jgengine/shell/camera/inspectionCameraMath
 
 - `InspectionCameraConfig` (interface): interface InspectionCameraConfig — Model-viewer / inspection rig (#207.7) — orbit + pan + anchored zoom around a fixed point, never reads player input.
 - `InspectionZoomAnchor` (type): type InspectionZoomAnchor = "target" | "cursor" | "center" — How scroll-zoom re-anchors the view for the inspection rig (#207.7): - `target` — dolly toward the orbit target (classic OrbitControls behavior). - `cursor` — dolly toward the point under the pointer. - `center` — dolly toward the viewport center; equivalent to `target` for an OrbitControls-driven rig, since the camera always faces `target` and that point already projects to the exact center of the viewport.
-- `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig — ⚠ undocumented
+- `ResolvedInspectionCameraConfig` (interface): interface ResolvedInspectionCameraConfig { anchor: InspectionZoomAnchor; target: Vec3; initialDistance: number; initialPosition: Vec3 | null; minDistance: number; maxDistance: number; minPolarAngle: number; maxPolarAngle: number; pan: boolean; rotateSpeed: number; zoomSpeed: numbe… — ⚠ undocumented
 
 ## @jgengine/shell/camera/orbitCameraMath
 
-- `CameraFollowState` (interface): interface CameraFollowState — ⚠ undocumented
+- `CameraFollowState` (interface): interface CameraFollowState { entityId: string; target: Vec3; camera: Vec3; distance: number } — ⚠ undocumented
 - `DEFAULT_ORBIT_CAMERA` (const): const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig — ⚠ undocumented
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `ORBIT_CAMERA_FRAME_PRIORITY` (const): const ORBIT_CAMERA_FRAME_PRIORITY: -1 — Orbit follow reads the latest entity pose after GAME_SIM_FRAME_PRIORITY.
-- `OrbitCameraConfig` (interface): interface OrbitCameraConfig — ⚠ undocumented
+- `OrbitCameraConfig` (interface): interface OrbitCameraConfig { minDistance?: number; maxDistance?: number; targetHeight?: number; initialDistance?: number; initialHeight?: number; initialYaw?: number; initialPitch?: number; pitchClamp?: readonly [number, number]; targetOffset?: Partial<Vec3>; followL… — ⚠ undocumented
 - `OrbitCollisionConfig` (interface): interface OrbitCollisionConfig — Spring-arm occlusion config for the orbit rig.
-- `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState — ⚠ undocumented
+- `OrbitFollowRuntimeState` (interface): interface OrbitFollowRuntimeState { target: Vec3; camera: Vec3; lockedDistance: number | null } — ⚠ undocumented
 - `ResolvedOrbitCameraConfig` (interface): interface ResolvedOrbitCameraConfig — Fully resolved shell config after merging with DEFAULT_ORBIT_CAMERA.
 - `ResolvedOrbitCollision` (interface): interface ResolvedOrbitCollision — An {@link OrbitCollisionConfig} with every field resolved to a concrete value.
-- `Vec3` (interface): interface Vec3 — ⚠ undocumented
+- `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 
 ## @jgengine/shell/camera/rigMath
 
@@ -1933,28 +1933,28 @@
 - `CALIBRATED_TRAUMA_SHAKE_FREQUENCY` (const): const CALIBRATED_TRAUMA_SHAKE_FREQUENCY: 32 — Calibrated shake noise frequency (Hz) for `traumaShake`.
 - `CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET: 0.55 — Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`.
 - `CALIBRATED_TRAUMA_SHAKE_MAX_ROLL` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL: 0.1 — Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`.
-- `CameraPose` (interface): interface CameraPose — ⚠ undocumented
-- `CinematicSample` (interface): interface CinematicSample — ⚠ undocumented
-- `DirectorCameraValues` (interface): interface DirectorCameraValues — ⚠ undocumented
-- `ResolvedChase` (interface): interface ResolvedChase — ⚠ undocumented
-- `ResolvedDirectedCamera` (interface): interface ResolvedDirectedCamera — ⚠ undocumented
-- `ResolvedObserver` (interface): interface ResolvedObserver — ⚠ undocumented
-- `ResolvedShoulder` (interface): interface ResolvedShoulder — ⚠ undocumented
-- `ResolvedSideScroll` (interface): interface ResolvedSideScroll — ⚠ undocumented
-- `ResolvedTopDown` (interface): interface ResolvedTopDown — ⚠ undocumented
-- `ShakeOffset` (interface): interface ShakeOffset — ⚠ undocumented
-- `StaticCameraValues` (interface): interface StaticCameraValues — ⚠ undocumented
-- `TraumaState` (interface): interface TraumaState — ⚠ undocumented
+- `CameraPose` (interface): interface CameraPose { position: Vec3; lookAt: Vec3; fov: number } — ⚠ undocumented
+- `CinematicSample` (interface): interface CinematicSample { pose: CameraPose; done: boolean } — ⚠ undocumented
+- `DirectorCameraValues` (interface): interface DirectorCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig | null } — ⚠ undocumented
+- `ResolvedChase` (interface): interface ResolvedChase { distance: number; height: number; lookHeight: number; springDamping: number; shakePerSpeed: number; leadTime: number; leadMax: number; bankPerYawRate: number; bankMax: number; bankDamping: number; velocityYawBlend: number; velocityYawMinS… — ⚠ undocumented
+- `ResolvedDirectedCamera` (interface): interface ResolvedDirectedCamera { followEntityId: string | null | undefined; cinematic: CinematicCameraConfig | undefined } — ⚠ undocumented
+- `ResolvedObserver` (interface): interface ResolvedObserver { distance: number; height: number; lookHeight: number; orbitSpeed: number } — ⚠ undocumented
+- `ResolvedShoulder` (interface): interface ResolvedShoulder { shoulderOffset: number; heightOffset: number; distance: number; fov: number } — ⚠ undocumented
+- `ResolvedSideScroll` (interface): interface ResolvedSideScroll { axis: "x" | "z"; distance: number; height: number; lookHeight: number; followSmoothing: number } — ⚠ undocumented
+- `ResolvedTopDown` (interface): interface ResolvedTopDown { height: number; pitch: number; yaw: number; offset: Vec3; followSmoothing: number } — ⚠ undocumented
+- `ShakeOffset` (interface): interface ShakeOffset { x: number; y: number; roll: number } — ⚠ undocumented
+- `StaticCameraValues` (interface): interface StaticCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig } — ⚠ undocumented
+- `TraumaState` (interface): interface TraumaState { trauma: number; time: number } — ⚠ undocumented
 
 ## @jgengine/shell/camera/shakeChannel
 
-- `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
+- `CameraShakeChannel` (interface): interface CameraShakeChannel { shake(amplitude: number, decayPerSecond?: number): void; step(dt: number): void; sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset; trauma(): number } — ⚠ undocumented · used by `defaultCameraShakeChannel`: Process-wide default channel.
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
 
 ## @jgengine/shell/camera/shakeChannelMath
 
-- `CameraShakeChannel` (interface): interface CameraShakeChannel — ⚠ undocumented
+- `CameraShakeChannel` (interface): interface CameraShakeChannel { shake(amplitude: number, decayPerSecond?: number): void; step(dt: number): void; sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset; trauma(): number } — ⚠ undocumented · used by `defaultCameraShakeChannel` (@jgengine/shell/camera): Process-wide default channel.
 
 ## @jgengine/shell/commandSink
 
@@ -1995,14 +1995,14 @@
 
 ## @jgengine/shell/devtools/collisionDebug
 
-- `AimProbeConfig` (interface): interface AimProbeConfig — ⚠ undocumented
+- `AimProbeConfig` (interface): interface AimProbeConfig { from: string; aim: Aim; originPolicy?: ShotOriginPolicy; maxDistance?: number } — ⚠ undocumented
 - `COLLISION_DEBUG_LAYERS` (const): const COLLISION_DEBUG_LAYERS: readonly CollisionDebugLayer[] — ⚠ undocumented
-- `CollisionDebugController` (interface): interface CollisionDebugController — ⚠ undocumented
+- `CollisionDebugController` (interface): interface CollisionDebugController { getState(): CollisionDebugState; subscribe(listener: CollisionDebugListener): () => void; setLayer(layer: CollisionDebugLayer, on: boolean): void; toggleLayer(layer: CollisionDebugLayer): void; setLayers(partial: Partial<CollisionDebugLay… — ⚠ undocumented
 - `CollisionDebugLayer` (type): type CollisionDebugLayer = | "hitboxes" | "bodies" | "projectiles" | "muzzles" | "aimLaser" — ⚠ undocumented
 - `CollisionDebugLayers` (type): type CollisionDebugLayers = Record<CollisionDebugLayer, boolean> — ⚠ undocumented
 - `CollisionDebugListener` (type): type CollisionDebugListener = () => void — ⚠ undocumented
-- `CollisionDebugState` (interface): interface CollisionDebugState — ⚠ undocumented
-- `ProjectileDebugTrace` (interface): interface ProjectileDebugTrace — ⚠ undocumented
+- `CollisionDebugState` (interface): interface CollisionDebugState { layers: CollisionDebugLayers; aimProbe: AimProbeConfig | null; projectileTraces: readonly ProjectileDebugTrace[]; maxProjectileTraces: number; projectileTraceLifeMs: number } — ⚠ undocumented
+- `ProjectileDebugTrace` (interface): interface ProjectileDebugTrace { id: number; origin: EntityPosition; at: EntityPosition; hit: boolean; bornMs: number } — ⚠ undocumented
 - `collisionDebug` (const): const collisionDebug: CollisionDebugController — ⚠ undocumented
 
 ## @jgengine/shell/devtools/collisionDebugMath
@@ -2012,11 +2012,11 @@
 - `AIM_MISS_COLOR` (const): const AIM_MISS_COLOR: "#94a3b8" — ⚠ undocumented
 - `AIM_SOLID_COLOR` (const): const AIM_SOLID_COLOR: "#fbbf24" — ⚠ undocumented
 - `AimEndpointKind` (type): type AimEndpointKind = "damage" | "solid" | "miss" — ⚠ undocumented
-- `AimLaserDebug` (interface): interface AimLaserDebug — ⚠ undocumented
+- `AimLaserDebug` (interface): interface AimLaserDebug { origin: EntityPosition; direction: EntityPosition; end: EntityPosition; maxDistance: number; kind: AimEndpointKind; nearest: SceneRaycastHit | null; firstImpact: SceneRaycastHit | null; queryCount: number } — ⚠ undocumented
 - `BODY_WIRE_COLOR` (const): const BODY_WIRE_COLOR: "#38bdf8" — ⚠ undocumented
-- `CollectDebugShapesInput` (interface): interface CollectDebugShapesInput — ⚠ undocumented
-- `ComputeAimLaserInput` (interface): interface ComputeAimLaserInput — ⚠ undocumented
-- `DebugShapeEntry` (interface): interface DebugShapeEntry — ⚠ undocumented
+- `CollectDebugShapesInput` (interface): interface CollectDebugShapesInput { layers: CollisionDebugLayers; entities: readonly {id: string; position: EntityPosition; rotationY: number; name?: string;}[]; objects?: readonly {instanceId: string; catalogId: string; position: EntityPosition; rotationY: number;}[]; enti… — ⚠ undocumented
+- `ComputeAimLaserInput` (interface): interface ComputeAimLaserInput { layers: CollisionDebugLayers; sceneRaycast: SceneRaycastApi; positionOf(instanceId: string): EntityPosition | undefined; rotationYOf?(instanceId: string): number | undefined; collidersOf?(instanceId: string): EntityColliderSet | null | un… — ⚠ undocumented
+- `DebugShapeEntry` (interface): interface DebugShapeEntry { key: string; targetKind: "entity" | "object"; instanceId: string; catalogId?: string; name: string; purpose: ColliderPurpose; damageEligible: boolean; blocks: boolean; position: EntityPosition; rotationY: number; shape: | {kind: "sphere";… — ⚠ undocumented
 - `HITBOX_WIRE_COLOR` (const): const HITBOX_WIRE_COLOR: "#f472b6" — ⚠ undocumented
 - `PROJECTILE_PATH_COLOR` (const): const PROJECTILE_PATH_COLOR: "#fde68a" — ⚠ undocumented
 
@@ -2039,7 +2039,7 @@
 - `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): React.JSX.Element | null — ⚠ undocumented
 - `ErrorReportActions` (function): function ErrorReportActions({ report, issueTitle }: { report: string; issueTitle: string }): React.JSX.Element — "Copy error" + "File issue" buttons for any error surface. `report` is the full text to copy / prefill.
 - `GameUiErrorBoundary` (class): class GameUiErrorBoundary extends Component< { children: ReactNode; onRuntimeError: (error: unknown, phase: string, componentStack?: string) => void }, { failed: boolean } > — ⚠ undocumented
-- `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic — ⚠ undocumented
+- `RuntimeDiagnostic` (interface): interface RuntimeDiagnostic { id: number; phase: string; message: string; stack?: string; componentStack?: string; capturedAt: string } — ⚠ undocumented
 - `errorReportContext` (function): function errorReportContext(): string — Standalone error footer text (page, browser, engine) shared by every error surface.
 - `logRuntimeError` (function): function logRuntimeError(error: unknown, phase: string, componentStack?: string): Omit<RuntimeDiagnostic, "id"> — ⚠ undocumented
 
@@ -2056,32 +2056,32 @@
 
 - `DayNightSky` (function): function DayNightSky({ cycle, radius, hazeStrength, sunGlowStrength, lights = true, keyLightIntensity = 1.1, ambientIntensity = 0.6, }: DayNightSkyProps): React.JSX.Element — Binds a {@link DayNightCycle} to the engine's existing `SkyDome` shader and a pair of lights: each frame it reads `cycle.sample()` and writes the blended tint into the dome's top/horizon/sun uniforms while the sun's arc comes from the shared `daylightStateAt` geometry. This is the turnkey presentation seam — a game mounts this one component in its scene and gets a moving, color-graded day-night sky from the serializable model, with no hand-rolled per-frame lerp and no new renderer. The cycle's `phase`/color values are free-form and never interpreted here.
 - `DayNightSkyProps` (interface): interface DayNightSkyProps — Props for {@link DayNightSky}: the cycle to bind plus optional dome shape and light-strength knobs.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
-- `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig } — ⚠ undocumented
+- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; ambient?: {skyColor?: string; groundColor?: string; intensi… — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; ambientIntensity: number; skyTop: string; skyBottom: string; background: string } — ⚠ undocumented
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
-- `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
+- `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps { feature: EnvironmentWorldFeature } — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
+- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
+- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; hazeStrength?: number; cloudiness?: number; sunGlow… — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
+- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
 - `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
 
 ## @jgengine/shell/environment
 
 - `DayNightSky` (function): function DayNightSky({ cycle, radius, hazeStrength, sunGlowStrength, lights = true, keyLightIntensity = 1.1, ambientIntensity = 0.6, }: DayNightSkyProps): React.JSX.Element — Binds a {@link DayNightCycle} to the engine's existing `SkyDome` shader and a pair of lights: each frame it reads `cycle.sample()` and writes the blended tint into the dome's top/horizon/sun uniforms while the sun's arc comes from the shared `daylightStateAt` geometry. This is the turnkey presentation seam — a game mounts this one component in its scene and gets a moving, color-graded day-night sky from the serializable model, with no hand-rolled per-frame lerp and no new renderer. The cycle's `phase`/color values are free-form and never interpreted here.
 - `DayNightSkyProps` (interface): interface DayNightSkyProps — Props for {@link DayNightSky}: the cycle to bind plus optional dome shape and light-strength knobs.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
-- `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig } — ⚠ undocumented
+- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; ambient?: {skyColor?: string; groundColor?: string; intensi… — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; ambientIntensity: number; skyTop: string; skyBottom: string; background: string } — ⚠ undocumented
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
-- `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
+- `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps { feature: EnvironmentWorldFeature } — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
-- `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
+- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
+- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; hazeStrength?: number; cloudiness?: number; sunGlow… — ⚠ undocumented
 - `SkyLightOwnership` (type): type SkyLightOwnership = "authored" | "sky-default" — Policy for composing sky backdrops with `PlayableGame.lighting`: - authored lighting present → sky renders dome + fog only; lights stay game-owned - no authored lighting → sky may emit its default sun/hemisphere with the dome Time-of-day never rewrites configured lights; it only drives sky colors/fog (and sky-owned lights when the game did not author lighting).
-- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
+- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
 - `VolumetricCloudsProps` (interface): interface VolumetricCloudsProps — Props for {@link VolumetricClouds} — fully-resolved cloud rules plus the shared sun direction.
 
 ## @jgengine/shell/environment/DayNightSky
@@ -2091,20 +2091,20 @@
 
 ## @jgengine/shell/environment/Daylight
 
-- `DaylightProps` (interface): interface DaylightProps — ⚠ undocumented
-- `SkyDaylightProps` (interface): interface SkyDaylightProps — ⚠ undocumented
-- `SkyDomeProps` (interface): interface SkyDomeProps — ⚠ undocumented
-- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps — ⚠ undocumented
+- `DaylightProps` (interface): interface DaylightProps { sky?: SkyDomeProps | false; fog?: {color?: string; near?: number; far?: number} | false; sun?: {position?: readonly [number, number, number]; intensity?: number; color?: string}; ambient?: {skyColor?: string; groundColor?: string; intensi… — ⚠ undocumented
+- `SkyDaylightProps` (interface): interface SkyDaylightProps { sky: SkyEnvironmentDescriptor; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
+- `SkyDomeProps` (interface): interface SkyDomeProps { topColor?: string; horizonColor?: string; radius?: number; offset?: number; exponent?: number; sunDirection?: readonly [number, number, number]; sunColor?: string; sunIntensity?: number; hazeStrength?: number; cloudiness?: number; sunGlow… — ⚠ undocumented
+- `TimeOfDayDaylightProps` (interface): interface TimeOfDayDaylightProps { sky: SkyEnvironmentDescriptor; clock?: {calendar(): {dayFraction: number}}; lights?: boolean; bands?: readonly BiomeBand[] } — ⚠ undocumented
 
 ## @jgengine/shell/environment/EnvironmentScene
 
 - `EnvironmentScene` (function): function EnvironmentScene({ feature }: EnvironmentSceneProps): React.JSX.Element — ⚠ undocumented
-- `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps — ⚠ undocumented
+- `EnvironmentSceneProps` (interface): interface EnvironmentSceneProps { feature: EnvironmentWorldFeature } — ⚠ undocumented
 
 ## @jgengine/shell/environment/GroundPad
 
 - `GroundPad` (function): function GroundPad({ pad, field }: GroundPadProps): React.JSX.Element — ⚠ undocumented
-- `GroundPadProps` (interface): interface GroundPadProps — ⚠ undocumented
+- `GroundPadProps` (interface): interface GroundPadProps { pad: PadEnvironmentDescriptor; field: TerrainField } — ⚠ undocumented
 
 ## @jgengine/shell/environment/RoadRibbons
 
@@ -2123,8 +2123,8 @@
 - `DEFAULT_DAY_SKY_TOP` (const): const DEFAULT_DAY_SKY_TOP: "#3fa4f2" — ⚠ undocumented
 - `DEFAULT_DAY_SUN_INTENSITY` (const): const DEFAULT_DAY_SUN_INTENSITY: 1 — ⚠ undocumented
 - `DEFAULT_SUN_ELEVATION_DEG` (const): const DEFAULT_SUN_ELEVATION_DEG: number — The engine arc's noon height: `atan(1 / SUN_DEPTH_RATIO)`, ~68 degrees.
-- `DaylightCycleConfig` (interface): interface DaylightCycleConfig — ⚠ undocumented
-- `DaylightState` (interface): interface DaylightState — ⚠ undocumented
+- `DaylightCycleConfig` (interface): interface DaylightCycleConfig { horizonColor?: string; zenithColor?: string; sunIntensity?: number; ambientIntensity?: number; sun?: SkySunConfig } — ⚠ undocumented
+- `DaylightState` (interface): interface DaylightState { sunPosition: [number, number, number]; sunIntensity: number; ambientIntensity: number; skyTop: string; skyBottom: string; background: string } — ⚠ undocumented
 - `SKY_PRESET_DAY_FRACTION` (const): const SKY_PRESET_DAY_FRACTION: Record<"day" | "dusk" | "night", number> — ⚠ undocumented
 
 ## @jgengine/shell/environment/groundPadMath
@@ -2150,8 +2150,8 @@
 
 ## @jgengine/shell/input/mouseLook
 
-- `MouseLookAim` (interface): interface MouseLookAim — ⚠ undocumented
-- `MouseLookOptions` (interface): interface MouseLookOptions — ⚠ undocumented
+- `MouseLookAim` (interface): interface MouseLookAim { yaw: number; pitch: number } — ⚠ undocumented
+- `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
 - `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
 
@@ -2161,35 +2161,35 @@
 
 ## @jgengine/shell/map
 
-- `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions — ⚠ undocumented
-- `BakedMap` (interface): interface BakedMap — ⚠ undocumented
-- `MapBakeBounds` (interface): interface MapBakeBounds — ⚠ undocumented
+- `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions { resolution?: number; landLow?: readonly [number, number, number]; landHigh?: readonly [number, number, number]; water?: readonly [number, number, number] } — ⚠ undocumented · used by `bakeTerrainMap`: Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background.
+- `BakedMap` (interface): interface BakedMap { url: string; bounds: MapBakeBounds } — ⚠ undocumented · used by `bakeTerrainMap`: Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background.
+- `MapBakeBounds` (interface): interface MapBakeBounds { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `bakeTerrainMap`: Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background.
 - `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): React.JSX.Element — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
-- `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps — ⚠ undocumented
+- `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps { markers: MarkerCollection; kindStyles?: Record<string, MarkerKindStyle>; height?: number } — ⚠ undocumented · used by `MapMarkerBeacons`: World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind…
 - `bakeTerrainMap` (function): function bakeTerrainMap(field: TerrainField, bounds: MapBakeBounds, options: BakeTerrainMapOptions = {}): BakedMap | null — Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background. Runs in the browser via a 2D canvas; renderer-side, so it lives in the shell.
 
 ## @jgengine/shell/map/MapMarkerBeacons
 
 - `MapMarkerBeacons` (function): function MapMarkerBeacons({ markers, kindStyles, height = 5 }: MapMarkerBeaconsProps): React.JSX.Element — World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind. Wire it through `PlayableGame.WorldOverlay`.
-- `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps — ⚠ undocumented
+- `MapMarkerBeaconsProps` (interface): interface MapMarkerBeaconsProps { markers: MarkerCollection; kindStyles?: Record<string, MarkerKindStyle>; height?: number } — ⚠ undocumented · used by `MapMarkerBeacons`: World-space beacons for map markers (the visible in-world side of a ping): a floating diamond over a soft light beam, colored by marker kind…
 
 ## @jgengine/shell/map/terrainMap
 
-- `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions — ⚠ undocumented
-- `BakedMap` (interface): interface BakedMap — ⚠ undocumented
-- `MapBakeBounds` (interface): interface MapBakeBounds — ⚠ undocumented
+- `BakeTerrainMapOptions` (interface): interface BakeTerrainMapOptions { resolution?: number; landLow?: readonly [number, number, number]; landHigh?: readonly [number, number, number]; water?: readonly [number, number, number] } — ⚠ undocumented · used by `bakeTerrainMap`: Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background.
+- `BakedMap` (interface): interface BakedMap { url: string; bounds: MapBakeBounds } — ⚠ undocumented · used by `bakeTerrainMap`: Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background.
+- `MapBakeBounds` (interface): interface MapBakeBounds { minX: number; minZ: number; maxX: number; maxZ: number } — ⚠ undocumented · used by `bakeTerrainMap`: Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background.
 - `bakeTerrainMap` (function): function bakeTerrainMap(field: TerrainField, bounds: MapBakeBounds, options: BakeTerrainMapOptions = {}): BakedMap | null — Bake a top-down image of a `TerrainField` (or `RegionField`) over `bounds` for the react `Minimap` / `WorldMap` background. Runs in the browser via a 2D canvas; renderer-side, so it lives in the shell.
 
 ## @jgengine/shell/materialOverride
 
-- `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions — ⚠ undocumented
+- `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions { clone?: boolean; textures?: MaterialOverrideTextures } — ⚠ undocumented
 - `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
 
 ## @jgengine/shell/multiplayer
 
 - `DEFAULT_FEED_ACTIONS` (const): const DEFAULT_FEED_ACTIONS: string[] — ⚠ undocumented
 - `ResolveShellMultiplayerArgs` (type): type ResolveShellMultiplayerArgs = { game: GameDefinition; gameId: string; url?: string; userId?: string; force?: boolean; feedActions?: string[]; } — ⚠ undocumented
-- `ShellMultiplayer` (type): type ShellMultiplayer = MultiplayerSession — ⚠ undocumented
+- `ShellMultiplayer` (type): type ShellMultiplayer = MultiplayerSession — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/shell/useShellMultiplayerSync): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
 - `randomPlayerId` (function): function randomPlayerId(): string — ⚠ undocumented
 - `resolvePeerShellMultiplayer` (function): function resolvePeerShellMultiplayer(args: { gameId: string; role: "host" | "join"; room?: string; userId?: string; feedActions?: string[]; }): Promise<ShellMultiplayer & { close: () => void }> — ⚠ undocumented
 - `resolveShellMultiplayer` (function): function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): ShellMultiplayer | null — ⚠ undocumented
@@ -2208,7 +2208,7 @@
 - `POINTER_ENTITY_KEY` (const): const POINTER_ENTITY_KEY: "jgEntityId" — ⚠ undocumented
 - `POINTER_OBJECT_KEY` (const): const POINTER_OBJECT_KEY: "jgObjectId" — ⚠ undocumented
 - `PointerHitFilter` (type): type PointerHitFilter = (object: THREE.Object3D) => boolean — ⚠ undocumented
-- `PointerService` (interface): interface PointerService — ⚠ undocumented
+- `PointerService` (interface): interface PointerService { worldHit(): PointerHit | null; worldHitCenter(): PointerHit | null; screenOf(world: PointerVec3): {x: number; y: number} | null; hasCursor(): boolean; bind(deps: PointerDeps | null): void; setCursor(ndcX: number, ndcY: number, present: bo… — ⚠ undocumented
 - `createPointerService` (function): function createPointerService(): PointerService — ⚠ undocumented
 
 ## @jgengine/shell/postfx/PostProcessing
@@ -2300,15 +2300,15 @@
 
 ## @jgengine/shell/render/modelRender
 
-- `MaterialCache` (interface): interface MaterialCache — ⚠ undocumented
+- `MaterialCache` (interface): interface MaterialCache { materials: THREE.MeshStandardMaterial[]; seedColor: THREE.Color } — ⚠ undocumented
 - `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`.
 - `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — ⚠ undocumented
-- `PaintCanvas` (interface): interface PaintCanvas — ⚠ undocumented
+- `PaintCanvas` (interface): interface PaintCanvas { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; texture: THREE.CanvasTexture } — ⚠ undocumented
 
 ## @jgengine/shell/render/resolveModel
 
 - `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
-- `ModelResolveContext` (interface): interface ModelResolveContext — ⚠ undocumented
+- `ModelResolveContext` (interface): interface ModelResolveContext { seam: "entityModels" | "objectModels" | "scatterModels"; key: string } — ⚠ undocumented
 
 ## @jgengine/shell/render/sceneCapture
 
@@ -2342,7 +2342,7 @@
 
 ## @jgengine/shell/replay/useSessionRecorder
 
-- `RecordedPose` (interface): interface RecordedPose — ⚠ undocumented
+- `RecordedPose` (interface): interface RecordedPose { position: EntityPosition; rotationY: number } — ⚠ undocumented · used by `useSessionRecorder`: Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffe…
 - `useSessionRecorder` (function): function useSessionRecorder(entityId: string, options?: RecordingBufferOptions): RecordingBuffer<RecordedPose> — Session-recording buffer (#120) for replay / photo mode / kill-cam: records an entity's pose on game-time every frame into a `RecordingBuffer`, which a game can then `seek()` to scrub, drive an observer cam ghost, or export a kill-cam clip. Recording rides on `ctx.time.now()`, so pause/fast-forward scrub the recording exactly like the live sim.
 
 ## @jgengine/shell/scatter
@@ -2408,7 +2408,7 @@
 ## @jgengine/shell/settings/SettingsRuntime
 
 - `SettingsRuntime` (function): function SettingsRuntime({ variant, surface, actions, children, ...input }: SettingsRuntimeProps): React.JSX.Element — ⚠ undocumented
-- `SettingsRuntimeProps` (interface): interface SettingsRuntimeProps extends SettingsControllerInput — ⚠ undocumented
+- `SettingsRuntimeProps` (interface): interface SettingsRuntimeProps extends SettingsControllerInput { variant: SettingsVariant; surface: SettingsSurface | false; actions: readonly SettingsActionView[]; children: ReactNode } — ⚠ undocumented
 
 ## @jgengine/shell/settings/appliedSettings
 
@@ -2422,7 +2422,7 @@
 - `SettingsActionView` (interface): interface SettingsActionView — A resolved game-state action — `run` is already bound to the game context and closes the menu.
 - `SettingsCategoryView` (interface): interface SettingsCategoryView — A settings menu category with its rows and keybinds, ready to render.
 - `SettingsController` (interface): interface SettingsController — The live settings controller — every category/row/keybind/action plus open-state. Render it any way you like or drive the engine menu.
-- `SettingsControllerInput` (interface): interface SettingsControllerInput — ⚠ undocumented
+- `SettingsControllerInput` (interface): interface SettingsControllerInput { input: ActionCodesMap; buses: Record<string, AudioBusDef> | undefined; extra: readonly GameSettingDef[]; categories: readonly SettingCategoryDef[]; hide: readonly SettingCategory[]; fovEnabled: boolean; graphics?: GraphicsProfileOverrides… — ⚠ undocumented
 - `SettingsKeybindRow` (interface): interface SettingsKeybindRow — One rebindable action row rendered in the controls settings category.
 - `SettingsRow` (interface): interface SettingsRow — One editable setting rendered in a settings menu category.
 - `useSettingsCategories` (function): function useSettingsCategories(config: SettingsControllerInput): SettingsCategoryView[] — ⚠ undocumented
@@ -2440,14 +2440,14 @@
 ## @jgengine/shell/structures
 
 - `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
+- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
 - `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
-- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
+- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps { building: GeneratedBuildingData; palette?: BuildingMaterialPalette; partRenderer?: BuildingKitRenderer; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
+- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
 - `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
+- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
+- `PlacementGhostProps` (interface): interface PlacementGhostProps { preview: PlacementPreview | null; height?: number; validColor?: string; invalidColor?: string } — ⚠ undocumented · used by `PlacementGhost`: Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
@@ -2457,14 +2457,14 @@
 ## @jgengine/shell/structures
 
 - `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
+- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
 - `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
-- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
+- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps { building: GeneratedBuildingData; palette?: BuildingMaterialPalette; partRenderer?: BuildingKitRenderer; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
+- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
 - `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
+- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
+- `PlacementGhostProps` (interface): interface PlacementGhostProps { preview: PlacementPreview | null; height?: number; validColor?: string; invalidColor?: string } — ⚠ undocumented · used by `PlacementGhost`: Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 - `TransformGizmo` (const): const TransformGizmo: React.MemoExoticComponent<({ position, rotationY, mode, snapMode, gridSize, space, rotationSnap, scaleSnap, lift, size, groundSnap, onDraggingChange, onRelease, }: TransformGizmoProps) => React.JSX.Element> — Runtime selection/move gizmo shared by games and the editor. Wraps TransformControls; callers own selection and commit side-effects.
 - `TransformGizmoMode` (type): type TransformGizmoMode = "translate" | "rotate" | "scale" — Active TransformControls mode for the runtime selection gizmo.
 - `TransformGizmoPose` (interface): interface TransformGizmoPose — Pose reported by {@link TransformGizmo} when the user releases a drag.
@@ -2474,23 +2474,23 @@
 ## @jgengine/shell/structures/GeneratedBuilding
 
 - `BuildingBlock` (function): function BuildingBlock({ part, palette }: BuildingBlockProps): React.JSX.Element — ⚠ undocumented
-- `BuildingBlockProps` (interface): interface BuildingBlockProps — ⚠ undocumented
+- `BuildingBlockProps` (interface): interface BuildingBlockProps { part: BuildingPartPlacement; palette?: BuildingMaterialPalette } — ⚠ undocumented
 - `BuildingFacade` (type): type BuildingFacade = "front" | "back" | "left" | "right" | "roof" — ⚠ undocumented
-- `BuildingKitRenderer` (interface): interface BuildingKitRenderer — ⚠ undocumented
+- `BuildingKitRenderer` (interface): interface BuildingKitRenderer { renderPart?: (part: BuildingPartPlacement) => ReactNode | undefined } — ⚠ undocumented
 - `BuildingMaterialPalette` (type): type BuildingMaterialPalette = Partial<Record<BuildingPartKind, BuildingSurface>> — Per part kind: a hex colour, or a colour plus tiled PBR maps (`BuildingSurfaceMaterial`).
-- `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented
-- `BuildingPartPlacement` (interface): interface BuildingPartPlacement — ⚠ undocumented
+- `BuildingPartKind` (type): type BuildingPartKind = | "wall" | "window" | "awning" | "airConditioner" | "clothesline" | "storefront" | "shutter" | "storeSign" | "roof" | "roofProp" | "guardrail" | "corner" — ⚠ undocumented · used by `resolveBuildingKitPart` (@jgengine/core/world/buildingKit): Resolves one generated part against a kit.
+- `BuildingPartPlacement` (interface): interface BuildingPartPlacement { id: string; kind: BuildingPartKind; facade: BuildingFacade; position: readonly [number, number, number]; rotationY: number; scale: readonly [number, number, number]; kit?: BuildingKitSlot } — ⚠ undocumented
 - `GeneratedBuilding` (function): function GeneratedBuilding({ building, palette, partRenderer, kit, resolveModelUrl, visibleKinds, }: GeneratedBuildingProps): React.JSX.Element — ⚠ undocumented
-- `GeneratedBuildingData` (interface): interface GeneratedBuildingData — ⚠ undocumented
-- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps — ⚠ undocumented
-- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement — ⚠ undocumented
+- `GeneratedBuildingData` (interface): interface GeneratedBuildingData { id: string; parts: readonly BuildingPartPlacement[] } — ⚠ undocumented
+- `GeneratedBuildingProps` (interface): interface GeneratedBuildingProps { building: GeneratedBuildingData; palette?: BuildingMaterialPalette; partRenderer?: BuildingKitRenderer; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
+- `InstancedBuildingPlacement` (interface): interface InstancedBuildingPlacement { building: GeneratedBuildingData; position?: readonly [number, number, number]; rotationY?: number; pivot?: readonly [number, number] } — ⚠ undocumented
 - `InstancedBuildings` (function): function InstancedBuildings({ buildings, palette, kit, resolveModelUrl, visibleKinds, }: InstancedBuildingsProps): React.JSX.Element | null — ⚠ undocumented
-- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps — ⚠ undocumented
+- `InstancedBuildingsProps` (interface): interface InstancedBuildingsProps { buildings: readonly InstancedBuildingPlacement[]; palette?: BuildingMaterialPalette; kit?: BuildingKit; resolveModelUrl?: (model: string) => string; visibleKinds?: readonly BuildingPartKind[] } — ⚠ undocumented
 
 ## @jgengine/shell/structures/PlacementGhost
 
 - `PlacementGhost` (function): function PlacementGhost({ preview, height = 1, validColor = "#34d399", invalidColor = "#f87171", }: PlacementGhostProps): React.JSX.Element | null — Cursor-following build ghost: valid/invalid tint from a placement controller preview.
-- `PlacementGhostProps` (interface): interface PlacementGhostProps — ⚠ undocumented
+- `PlacementGhostProps` (interface): interface PlacementGhostProps { preview: PlacementPreview | null; height?: number; validColor?: string; invalidColor?: string } — ⚠ undocumented · used by `PlacementGhost`: Cursor-following build ghost: valid/invalid tint from a placement controller preview.
 
 ## @jgengine/shell/structures/TransformGizmo
 
@@ -2518,88 +2518,88 @@
 ## @jgengine/shell/terrain
 
 - `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
-- `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
+- `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { field: TerrainField; size?: FieldGroundOptions["size"]; segments?: FieldGroundOptions["segments"]; center?: FieldGroundOptions["center"]; colors?: FieldGroundOptions["colors"]; heightRange?: FieldGroundOptions["heightRange"]; paletteAt?: … — ⚠ undocumented · used by `CarvedTerrain`: Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
-- `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
-- `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
+- `EditableGroundProps` (interface): interface EditableGroundProps { terrain: Pick<EditableTerrain, "sampleHeight" | "surfaceAt">; bounds: Aabb; segments?: number; version?: number; baseColor?: string; surfaceColors?: Record<string, string> } — ⚠ undocumented
+- `FieldGroundOptions` (interface): interface FieldGroundOptions { size?: TerrainArea; segments?: number | readonly [x: number, z: number]; center?: readonly [x: number, z: number]; colors?: TerrainVertexColorOptions; heightRange?: readonly [min: number, max: number]; paletteAt?: TerrainPaletteSampler; s… — ⚠ undocumented
 - `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
-- `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
+- `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions { count?: number; area?: TerrainArea; seed?: TerrainSeed; segments?: number; height?: GrassRange; width?: GrassRange; bend?: GrassRange; tuftBlades?: number; tuftRadius?: number; edgeFeather?: number; exclude?: readonly GrassExclusion[]; he… — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
-- `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
-- `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
+- `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { count?: number; density?: number; budget?: number; area?: TerrainArea; seed?: GrassBladeGeometryOptions["seed"]; segments?: number; bladeHeight?: GrassRange; bladeWidth?: GrassRange; bladeBend?: GrassRange; tuftBlades?: number; tuftRadius… — ⚠ undocumented
+- `GrassMaterialHandle` (interface): interface GrassMaterialHandle { material: THREE.MeshStandardMaterial; uniforms: GrassShaderUniforms } — ⚠ undocumented
+- `GrassMaterialOptions` (interface): interface GrassMaterialOptions { colorBase?: THREE.ColorRepresentation; colorTip?: THREE.ColorRepresentation; colorGround?: THREE.ColorRepresentation; colorVariation?: number; wind?: GrassWindOptions | false; distanceFade?: GrassDistanceFadeOptions | false; normalLift?: … — ⚠ undocumented
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
-- `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
-- `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
+- `GrassShaderUniforms` (interface): interface GrassShaderUniforms { uTime: THREE.IUniform<number>; uWindDirection: THREE.IUniform<THREE.Vector2>; uWindStrength: THREE.IUniform<number>; uWindSpeed: THREE.IUniform<number>; uWindGustScale: THREE.IUniform<number>; uWindFlutter: THREE.IUniform<number>; uColorB… — ⚠ undocumented
+- `GrassWindOptions` (interface): interface GrassWindOptions { direction?: readonly [x: number, z: number]; strength?: number; speed?: number; gustScale?: number; flutter?: number; layered?: boolean } — ⚠ undocumented
 - `HeightfieldColorFn` (type): type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void — Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`.
 - `HeightfieldDisplaceOptions` (interface): interface HeightfieldDisplaceOptions — Options for {@link displaceHeightfieldGeometry}.
 - `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
-- `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
-- `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions — ⚠ undocumented
-- `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments — ⚠ undocumented
-- `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize — ⚠ undocumented
+- `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { terrain?: ProceduralTerrainConfig; colors?: TerrainVertexColorOptions; roughness?: number; metalness?: number } — ⚠ undocumented
+- `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig { size?: TerrainArea; segments?: number | readonly [x: number, z: number]; seed?: TerrainSeed; height?: number; moundScale?: number; octaves?: number; ridged?: boolean; baseOffset?: number } — ⚠ undocumented
+- `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions { count: number; area: TerrainArea; seed: TerrainSeed; segments: number; height: readonly [min: number, max: number]; width: readonly [min: number, max: number]; bend: readonly [min: number, max: number]; tuftBlades: number; tuftRadius: num… — ⚠ undocumented
+- `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments { x: number; z: number } — ⚠ undocumented
+- `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize { width: number; depth: number } — ⚠ undocumented
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
-- `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
+- `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps { center: readonly [number, number] | null; y?: number; radius: number; mode: TerraformMode } — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
-- `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
+- `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions { low?: THREE.ColorRepresentation; high?: THREE.ColorRepresentation; waterline?: THREE.ColorRepresentation; waterlineHeight?: number } — ⚠ undocumented
 - `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
 
 ## @jgengine/shell/terrain
 
 - `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
-- `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
+- `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { field: TerrainField; size?: FieldGroundOptions["size"]; segments?: FieldGroundOptions["segments"]; center?: FieldGroundOptions["center"]; colors?: FieldGroundOptions["colors"]; heightRange?: FieldGroundOptions["heightRange"]; paletteAt?: … — ⚠ undocumented · used by `CarvedTerrain`: Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
-- `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
-- `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
+- `EditableGroundProps` (interface): interface EditableGroundProps { terrain: Pick<EditableTerrain, "sampleHeight" | "surfaceAt">; bounds: Aabb; segments?: number; version?: number; baseColor?: string; surfaceColors?: Record<string, string> } — ⚠ undocumented
+- `FieldGroundOptions` (interface): interface FieldGroundOptions { size?: TerrainArea; segments?: number | readonly [x: number, z: number]; center?: readonly [x: number, z: number]; colors?: TerrainVertexColorOptions; heightRange?: readonly [min: number, max: number]; paletteAt?: TerrainPaletteSampler; s… — ⚠ undocumented
 - `FractalNoiseConfig` (interface): interface FractalNoiseConfig — Octave settings for {@link fractalNoise}: frequency, layering, and optional ridged shaping.
-- `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
+- `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions { count?: number; area?: TerrainArea; seed?: TerrainSeed; segments?: number; height?: GrassRange; width?: GrassRange; bend?: GrassRange; tuftBlades?: number; tuftRadius?: number; edgeFeather?: number; exclude?: readonly GrassExclusion[]; he… — ⚠ undocumented
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
-- `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
-- `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
+- `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { count?: number; density?: number; budget?: number; area?: TerrainArea; seed?: GrassBladeGeometryOptions["seed"]; segments?: number; bladeHeight?: GrassRange; bladeWidth?: GrassRange; bladeBend?: GrassRange; tuftBlades?: number; tuftRadius… — ⚠ undocumented
+- `GrassMaterialHandle` (interface): interface GrassMaterialHandle { material: THREE.MeshStandardMaterial; uniforms: GrassShaderUniforms } — ⚠ undocumented
+- `GrassMaterialOptions` (interface): interface GrassMaterialOptions { colorBase?: THREE.ColorRepresentation; colorTip?: THREE.ColorRepresentation; colorGround?: THREE.ColorRepresentation; colorVariation?: number; wind?: GrassWindOptions | false; distanceFade?: GrassDistanceFadeOptions | false; normalLift?: … — ⚠ undocumented
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
-- `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
-- `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
+- `GrassShaderUniforms` (interface): interface GrassShaderUniforms { uTime: THREE.IUniform<number>; uWindDirection: THREE.IUniform<THREE.Vector2>; uWindStrength: THREE.IUniform<number>; uWindSpeed: THREE.IUniform<number>; uWindGustScale: THREE.IUniform<number>; uWindFlutter: THREE.IUniform<number>; uColorB… — ⚠ undocumented
+- `GrassWindOptions` (interface): interface GrassWindOptions { direction?: readonly [x: number, z: number]; strength?: number; speed?: number; gustScale?: number; flutter?: number; layered?: boolean } — ⚠ undocumented
 - `HeightfieldColorFn` (type): type HeightfieldColorFn = (x: number, z: number, height: number, out: THREE.Color) => void — Per-vertex color hook for {@link displaceHeightfieldGeometry}; write the tone into `out`.
 - `HeightfieldDisplaceOptions` (interface): interface HeightfieldDisplaceOptions — Options for {@link displaceHeightfieldGeometry}.
 - `HeightfieldRect` (interface): interface HeightfieldRect — XZ rectangle in world units — matches the shape of a terraform snapshot's `bounds`.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
-- `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
-- `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
-- `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions — ⚠ undocumented
-- `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments — ⚠ undocumented
-- `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize — ⚠ undocumented
+- `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { terrain?: ProceduralTerrainConfig; colors?: TerrainVertexColorOptions; roughness?: number; metalness?: number } — ⚠ undocumented
+- `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig { size?: TerrainArea; segments?: number | readonly [x: number, z: number]; seed?: TerrainSeed; height?: number; moundScale?: number; octaves?: number; ridged?: boolean; baseOffset?: number } — ⚠ undocumented
+- `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions { count: number; area: TerrainArea; seed: TerrainSeed; segments: number; height: readonly [min: number, max: number]; width: readonly [min: number, max: number]; bend: readonly [min: number, max: number]; tuftBlades: number; tuftRadius: num… — ⚠ undocumented
+- `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments { x: number; z: number } — ⚠ undocumented
+- `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize { width: number; depth: number } — ⚠ undocumented
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
-- `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
+- `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps { center: readonly [number, number] | null; y?: number; radius: number; mode: TerraformMode } — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
 - `TerrainField` (interface): interface TerrainField — A sampleable ground surface: height and normal at any x/z, with optional bounds and water level.
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainNormal` (type): type TerrainNormal = readonly [number, number, number] — A surface normal vector at a terrain sample point.
 - `TerrainSeed` (type): type TerrainSeed = number | string — ⚠ undocumented
 - `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
-- `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
+- `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions { low?: THREE.ColorRepresentation; high?: THREE.ColorRepresentation; waterline?: THREE.ColorRepresentation; waterlineHeight?: number } — ⚠ undocumented
 - `displaceHeightfieldGeometry` (function): function displaceHeightfieldGeometry(geometry: THREE.BufferGeometry, sampleHeight: (x: number, z: number) => number, options: HeightfieldDisplaceOptions): void — Re-samples a `PlaneGeometry(width, depth, segments, segments).rotateX(-π/2)` heightfield mesh from a `sampleHeight` field in place: vertex Y, optional vertex color, grid central-difference normals, and an analytically maintained bounding sphere. With a dirty `region`, the work is O(region vertices) — heights/colors update inside the covering vertex window, normals inside the window plus a one-vertex ring — never a whole-mesh `computeVertexNormals`/`computeBoundingSphere` pass, which is what keeps per-frame brush stamps inside the editor's frame budget. The bounding sphere derives from the fixed plane extents plus a running height range kept on `geometry.userData`; partial passes only expand it, a full pass resets it exactly.
 
 ## @jgengine/shell/terrain/CarvedTerrain
 
 - `CarvedTerrain` (function): function CarvedTerrain({ field, size, segments, center, colors, heightRange, paletteAt, roughness = 0.95, metalness = 0, surfaceMaterial, receiveShadow = true, epoch = 0, ...meshProps }: CarvedTerrainProps): React.JSX.Element — Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain. Because the geometry samples `field.sampleHeight`, a `CarvableField.carve(...)` shows as a real bowl once `epoch` changes. Pair with `InstancedBodies` to see debris resting in the crater it blasted.
-- `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
+- `CarvedTerrainProps` (interface): interface CarvedTerrainProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { field: TerrainField; size?: FieldGroundOptions["size"]; segments?: FieldGroundOptions["segments"]; center?: FieldGroundOptions["center"]; colors?: FieldGroundOptions["colors"]; heightRange?: FieldGroundOptions["heightRange"]; paletteAt?: … — ⚠ undocumented · used by `CarvedTerrain`: Renders a `TerrainField` as a deformed ground mesh — the crater/mound view for destructible terrain.
 
 ## @jgengine/shell/terrain/EditableGround
 
 - `EditableGround` (function): function EditableGround({ terrain, bounds, segments = 96, version = 0, baseColor = "#3f6b3a", surfaceColors = DEFAULT_SURFACE_COLORS, }: EditableGroundProps): React.JSX.Element — ⚠ undocumented
-- `EditableGroundProps` (interface): interface EditableGroundProps — ⚠ undocumented
+- `EditableGroundProps` (interface): interface EditableGroundProps { terrain: Pick<EditableTerrain, "sampleHeight" | "surfaceAt">; bounds: Aabb; segments?: number; version?: number; baseColor?: string; surfaceColors?: Record<string, string> } — ⚠ undocumented
 
 ## @jgengine/shell/terrain/GrassField
 
@@ -2607,17 +2607,17 @@
 - `DEFAULT_GRASS_DENSITY` (const): const DEFAULT_GRASS_DENSITY: 4 — Blades per square meter — matches `@jgengine/core/world/vegetation`'s `VEGETATION_DEFAULTS.density`, so an editor-placed grass volume and a bare `<GrassField>` agree on what "4" means.
 - `GRASS_TUFT_BLADES` (const): const GRASS_TUFT_BLADES: 5 — Blades baked into each tuft instance — one instance reads as a clump, not a lone blade.
 - `GrassField` (function): function GrassField({ count = DEFAULT_GRASS_COUNT, density = DEFAULT_GRASS_DENSITY, budget, area = 40, seed = 1, segments = 4, bladeHeight, bladeWidth, bladeBend, tuftBlades = GRASS_TUFT_BLADES, tuftRadius, edgeFeather, exclude, heightAt, colorBase, colorTip, colorGround, colorVariation, wind, dista… — ⚠ undocumented
-- `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
+- `GrassFieldProps` (interface): interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { count?: number; density?: number; budget?: number; area?: TerrainArea; seed?: GrassBladeGeometryOptions["seed"]; segments?: number; bladeHeight?: GrassRange; bladeWidth?: GrassRange; bladeBend?: GrassRange; tuftBlades?: number; tuftRadius… — ⚠ undocumented
 
 ## @jgengine/shell/terrain/ProceduralGround
 
 - `ProceduralGround` (function): function ProceduralGround({ terrain, colors, roughness = 0.94, metalness = 0, receiveShadow = true, ...meshProps }: ProceduralGroundProps): React.JSX.Element — ⚠ undocumented
-- `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
+- `ProceduralGroundProps` (interface): interface ProceduralGroundProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { terrain?: ProceduralTerrainConfig; colors?: TerrainVertexColorOptions; roughness?: number; metalness?: number } — ⚠ undocumented
 
 ## @jgengine/shell/terrain/TerraformBrushCursor
 
 - `TerraformBrushCursor` (function): function TerraformBrushCursor({ center, y = 0.05, radius, mode }: TerraformBrushCursorProps): React.JSX.Element | null — ⚠ undocumented
-- `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps — ⚠ undocumented
+- `TerraformBrushCursorProps` (interface): interface TerraformBrushCursorProps { center: readonly [number, number] | null; y?: number; radius: number; mode: TerraformMode } — ⚠ undocumented
 
 ## @jgengine/shell/terrain/grassBudget
 
@@ -2627,20 +2627,20 @@
 ## @jgengine/shell/terrain/grassGeometry
 
 - `GRASS_TUFT_BLADES` (const): const GRASS_TUFT_BLADES: 5 — Blades baked into each tuft instance — one instance reads as a clump, not a lone blade.
-- `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions — ⚠ undocumented
+- `GrassBladeGeometryOptions` (interface): interface GrassBladeGeometryOptions { count?: number; area?: TerrainArea; seed?: TerrainSeed; segments?: number; height?: GrassRange; width?: GrassRange; bend?: GrassRange; tuftBlades?: number; tuftRadius?: number; edgeFeather?: number; exclude?: readonly GrassExclusion[]; he… — ⚠ undocumented
 - `GrassExclusion` (interface): interface GrassExclusion — A rectangle (patch-local XZ) the grass bake keeps clear — soil patches, water, plazas.
 - `GrassRange` (type): type GrassRange = number | readonly [min: number, max: number] — ⚠ undocumented
-- `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions — ⚠ undocumented
+- `ResolvedGrassBladeGeometryOptions` (interface): interface ResolvedGrassBladeGeometryOptions { count: number; area: TerrainArea; seed: TerrainSeed; segments: number; height: readonly [min: number, max: number]; width: readonly [min: number, max: number]; bend: readonly [min: number, max: number]; tuftBlades: number; tuftRadius: num… — ⚠ undocumented
 
 ## @jgengine/shell/terrain/grassMaterial
 
 - `DEFAULT_GRASS_DISTANCE_FADE` (const): const DEFAULT_GRASS_DISTANCE_FADE: Required<GrassDistanceFadeOptions> — Default camera-distance fade band: tufts start thinning at 55 m and are gone by 150 m so the meadow reads deep.
 - `DEFAULT_GRASS_WIND` (const): const DEFAULT_GRASS_WIND: Required<GrassWindOptions> — ⚠ undocumented
 - `GrassDistanceFadeOptions` (interface): interface GrassDistanceFadeOptions — Camera-distance fade band: tufts thin out between `start` and `end` meters, so the instance budget spends where the camera lives.
-- `GrassMaterialHandle` (interface): interface GrassMaterialHandle — ⚠ undocumented
-- `GrassMaterialOptions` (interface): interface GrassMaterialOptions — ⚠ undocumented
-- `GrassShaderUniforms` (interface): interface GrassShaderUniforms — ⚠ undocumented
-- `GrassWindOptions` (interface): interface GrassWindOptions — ⚠ undocumented
+- `GrassMaterialHandle` (interface): interface GrassMaterialHandle { material: THREE.MeshStandardMaterial; uniforms: GrassShaderUniforms } — ⚠ undocumented
+- `GrassMaterialOptions` (interface): interface GrassMaterialOptions { colorBase?: THREE.ColorRepresentation; colorTip?: THREE.ColorRepresentation; colorGround?: THREE.ColorRepresentation; colorVariation?: number; wind?: GrassWindOptions | false; distanceFade?: GrassDistanceFadeOptions | false; normalLift?: … — ⚠ undocumented
+- `GrassShaderUniforms` (interface): interface GrassShaderUniforms { uTime: THREE.IUniform<number>; uWindDirection: THREE.IUniform<THREE.Vector2>; uWindStrength: THREE.IUniform<number>; uWindSpeed: THREE.IUniform<number>; uWindGustScale: THREE.IUniform<number>; uWindFlutter: THREE.IUniform<number>; uColorB… — ⚠ undocumented
+- `GrassWindOptions` (interface): interface GrassWindOptions { direction?: readonly [x: number, z: number]; strength?: number; speed?: number; gustScale?: number; flutter?: number; layered?: boolean } — ⚠ undocumented
 
 ## @jgengine/shell/terrain/heightfieldGeometry
 
@@ -2664,15 +2664,15 @@
 
 ## @jgengine/shell/terrain/terrainMath
 
-- `FieldGroundOptions` (interface): interface FieldGroundOptions — ⚠ undocumented
-- `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig — ⚠ undocumented
-- `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments — ⚠ undocumented
-- `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize — ⚠ undocumented
+- `FieldGroundOptions` (interface): interface FieldGroundOptions { size?: TerrainArea; segments?: number | readonly [x: number, z: number]; center?: readonly [x: number, z: number]; colors?: TerrainVertexColorOptions; heightRange?: readonly [min: number, max: number]; paletteAt?: TerrainPaletteSampler; s… — ⚠ undocumented
+- `ProceduralTerrainConfig` (interface): interface ProceduralTerrainConfig { size?: TerrainArea; segments?: number | readonly [x: number, z: number]; seed?: TerrainSeed; height?: number; moundScale?: number; octaves?: number; ridged?: boolean; baseOffset?: number } — ⚠ undocumented
+- `ResolvedTerrainSegments` (interface): interface ResolvedTerrainSegments { x: number; z: number } — ⚠ undocumented
+- `ResolvedTerrainSize` (interface): interface ResolvedTerrainSize { width: number; depth: number } — ⚠ undocumented
 - `TerrainArea` (type): type TerrainArea = number | readonly [width: number, depth: number] — ⚠ undocumented
 - `TerrainHeightSampler` (type): type TerrainHeightSampler = (x: number, z: number) => number — ⚠ undocumented
 - `TerrainPaletteSampler` (type): type TerrainPaletteSampler = (x: number, z: number) => { low: string; high: string; waterline?: string } — Per-position palette override for multi-biome ground coloring — `createTerrainPaletteSampler` from `@jgengine/core/world/terrain` returns exactly this shape.
 - `TerrainSurfaceColorOptions` (interface): interface TerrainSurfaceColorOptions — Slope/noise surface shading laid over the height lerp so untextured ground reads like terrain instead of a smooth two-tone gradient. All knobs are optional with sane defaults; every field is a pure function of vertex position (+ `seed`), so the coloring is stable across rebuilds and tests.
-- `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions — ⚠ undocumented
+- `TerrainVertexColorOptions` (interface): interface TerrainVertexColorOptions { low?: THREE.ColorRepresentation; high?: THREE.ColorRepresentation; waterline?: THREE.ColorRepresentation; waterlineHeight?: number } — ⚠ undocumented
 
 ## @jgengine/shell/touch/OrientationHint
 
@@ -2680,7 +2680,7 @@
 
 ## @jgengine/shell/touch/TouchControlsOverlay
 
-- `TouchCodeSink` (interface): interface TouchCodeSink — ⚠ undocumented
+- `TouchCodeSink` (interface): interface TouchCodeSink { onCodeDown(code: string): void; onCodeUp(code: string): void; onAnalog?(values: Readonly<Record<string, number>> | null): void } — ⚠ undocumented
 - `TouchControlsDock` (function): function TouchControlsDock({ scheme, sink, style, scale = 1, joystickVariant = "floating", }: { scheme: TouchScheme; sink: TouchCodeSink; /** Player-selected skin; falls back to the scheme's game default. */ style?: TouchStyle; scale?: number; /** Player-selected joystick behavior (Settings → Contro… — ⚠ undocumented
 - `TouchPlaySurface` (function): function TouchPlaySurface({ scheme, sink, yawRef, pitchRef, maxPitch, onPrimaryTap, }: { scheme: TouchScheme; sink: TouchCodeSink; yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; maxPitch: number; onPrimaryTap: () => void; }): React.JSX.Element — ⚠ undocumented
 - `primaryButtonOffsets` (function): function primaryButtonOffsets(count: number, scale = 1): { right: number; bottom: number }[] | null — Thumb-arc placement for primary buttons around the bottom-right corner: up to three on an inner ring, the rest on an outer ring. Null means too many buttons for an arc — the dock falls back to a wrapping grid.
@@ -2708,7 +2708,7 @@
 
 ## @jgengine/shell/vision/FrustumSensorHud
 
-- `FrustumSensorProbeOptions` (interface): interface FrustumSensorProbeOptions extends FramingConfig — ⚠ undocumented
+- `FrustumSensorProbeOptions` (interface): interface FrustumSensorProbeOptions extends FramingConfig { subjectIds: readonly string[]; subjectRadius?: number } — ⚠ undocumented · used by `FrustumSensorReadout`: Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a…
 - `FrustumSensorReadout` (function): function FrustumSensorReadout(props: FrustumSensorProbeOptions & { wrapperClassName?: string; className?: string }): React.JSX.Element — Renders inside the Canvas (needs the live camera via `useFrame`/`useThree`) but portals a real HTML readout via drei's `Html fullscreen` — a photo-mode "is this subject framed" HUD.
 - `frustumSampleDisplayEqual` (function): function frustumSampleDisplayEqual(a: FrustumSample | null, b: FrustumSample | null): boolean — ⚠ undocumented
 - `useFrustumSensor` (function): function useFrustumSensor(options: FrustumSensorProbeOptions): FrustumSample | null — ⚠ undocumented
@@ -2716,16 +2716,16 @@
 ## @jgengine/shell/vision/HiddenStateProbeHud
 
 - `SensorReadoutMeter` (function): function SensorReadoutMeter({ label, reading, className }: SensorReadoutMeterProps): React.JSX.Element — A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
-- `SensorReadoutMeterProps` (interface): interface SensorReadoutMeterProps — ⚠ undocumented
+- `SensorReadoutMeterProps` (interface): interface SensorReadoutMeterProps { label: string; reading: ReturnType<typeof probeHiddenState>; className?: string } — ⚠ undocumented · used by `SensorReadoutMeter`: A handheld-sensor readout: needle strength bar + the raw reading, or a "no signal" idle state.
 - `useHiddenStateProbe` (function): function useHiddenStateProbe(origin: EntityPosition, sources: readonly HiddenStateSource[], options: SensorProbeOptions): SensorReading | null — Reads a hidden zone/entity state variable in range (EMF / thermometer / geiger style sensor verb, #116).
 
 ## @jgengine/shell/vision/RevealVision
 
 - `RevealHighlights` (function): function RevealHighlights(props: RevealHighlightsProps): React.JSX.Element | null — Screen-space reveal effect (#115) — highlights tagged entities through occluders (Dark Sight / detective-vision / wallhack style). Renders with `depthTest: false` so the highlight draws over any wall standing between the origin and the revealed entity, rather than the usual depth-sorted scene.
-- `RevealHighlightsProps` (interface): interface RevealHighlightsProps extends RevealVisionOptions — ⚠ undocumented
+- `RevealHighlightsProps` (interface): interface RevealHighlightsProps extends RevealVisionOptions { enabled: boolean; color?: string } — ⚠ undocumented · used by `RevealHighlights`: Screen-space reveal effect (#115) — highlights tagged entities through occluders (Dark Sight / detective-vision / wallhack style).
 - `RevealScreenTint` (function): function RevealScreenTint({ enabled, color = "rgba(56, 189, 248, 0.16)", className }: RevealScreenTintProps): React.JSX.Element | null — Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
-- `RevealScreenTintProps` (interface): interface RevealScreenTintProps — ⚠ undocumented
-- `RevealVisionOptions` (interface): interface RevealVisionOptions — ⚠ undocumented
+- `RevealScreenTintProps` (interface): interface RevealScreenTintProps { enabled: boolean; color?: string; className?: string } — ⚠ undocumented · used by `RevealScreenTint`: Full-screen desaturating tint that reads as "vision mode is on" (Dark Sight / thermal / detective vision).
+- `RevealVisionOptions` (interface): interface RevealVisionOptions { originEntityId?: string; radius: number; tags: readonly string[]; resolveTags: (entity: SceneEntity) => readonly string[] } — ⚠ undocumented · used by `useRevealHits`: Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene.
 - `useRevealHits` (function): function useRevealHits(options: RevealVisionOptions): readonly RevealHit[] — Occlusion-ignoring tagged-entity radius query (#115), bound to the live scene.
 
 ## @jgengine/shell/vision/frustumSampleEqual
@@ -2739,20 +2739,20 @@
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
 - `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
-- `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
-- `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
-- `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
-- `OceanFoamConfig` (interface): interface OceanFoamConfig — ⚠ undocumented
-- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms — ⚠ undocumented
-- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
+- `OceanColorConfig` (interface): interface OceanColorConfig { shallow?: THREE.ColorRepresentation; deep?: THREE.ColorRepresentation; crest?: THREE.ColorRepresentation; foam?: THREE.ColorRepresentation; opacity?: number; fresnelStrength?: number; horizonBlend?: number; depthRange?: number; sparkle?: … — ⚠ undocumented
+- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; amplitude?: number; speed?: number; direction?: OceanWaveDirection; choppiness?: number; steepness?: number; timeScale?: number; waveScale?: number; color?:… — ⚠ undocumented
+- `OceanDirectionVector` (interface): interface OceanDirectionVector { x: number; z: number } — ⚠ undocumented
+- `OceanFoamConfig` (interface): interface OceanFoamConfig { crestThreshold?: number; softness?: number; intensity?: number; coverage?: number; shoreWidth?: number } — ⚠ undocumented
+- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uCrestColor: {value: THREE.Colo… — ⚠ undocumented
+- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { config?: OceanConfig; depthAt?: (x: number, z: number) => number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
 - `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
-- `OceanWaveConfig` (interface): interface OceanWaveConfig — ⚠ undocumented
+- `OceanWaveConfig` (interface): interface OceanWaveConfig { amplitude?: number; wavelength?: number; speed?: number; direction?: OceanWaveDirection; steepness?: number } — ⚠ undocumented
 - `OceanWaveDirection` (type): type OceanWaveDirection = number | OceanDirectionVector — ⚠ undocumented
-- `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig — ⚠ undocumented
-- `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig — ⚠ undocumented
-- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig — ⚠ undocumented
+- `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; amplitude: number; speed: number; direction: OceanDirectionVector; choppiness: number; steepness: number; timeScale: number; waveScale: number; color: ResolvedO… — ⚠ undocumented
+- `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
+- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig { amplitude: number; wavelength: number; speed: number; direction: OceanDirectionVector; steepness: number } — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
 - `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
 
@@ -2763,27 +2763,27 @@
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
 - `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
-- `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
-- `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
-- `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
-- `OceanFoamConfig` (interface): interface OceanFoamConfig — ⚠ undocumented
-- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms — ⚠ undocumented
-- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
+- `OceanColorConfig` (interface): interface OceanColorConfig { shallow?: THREE.ColorRepresentation; deep?: THREE.ColorRepresentation; crest?: THREE.ColorRepresentation; foam?: THREE.ColorRepresentation; opacity?: number; fresnelStrength?: number; horizonBlend?: number; depthRange?: number; sparkle?: … — ⚠ undocumented
+- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; amplitude?: number; speed?: number; direction?: OceanWaveDirection; choppiness?: number; steepness?: number; timeScale?: number; waveScale?: number; color?:… — ⚠ undocumented
+- `OceanDirectionVector` (interface): interface OceanDirectionVector { x: number; z: number } — ⚠ undocumented
+- `OceanFoamConfig` (interface): interface OceanFoamConfig { crestThreshold?: number; softness?: number; intensity?: number; coverage?: number; shoreWidth?: number } — ⚠ undocumented
+- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uCrestColor: {value: THREE.Colo… — ⚠ undocumented
+- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { config?: OceanConfig; depthAt?: (x: number, z: number) => number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
 - `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
-- `OceanWaveConfig` (interface): interface OceanWaveConfig — ⚠ undocumented
+- `OceanWaveConfig` (interface): interface OceanWaveConfig { amplitude?: number; wavelength?: number; speed?: number; direction?: OceanWaveDirection; steepness?: number } — ⚠ undocumented
 - `OceanWaveDirection` (type): type OceanWaveDirection = number | OceanDirectionVector — ⚠ undocumented
-- `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig — ⚠ undocumented
-- `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig — ⚠ undocumented
-- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig — ⚠ undocumented
+- `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; amplitude: number; speed: number; direction: OceanDirectionVector; choppiness: number; steepness: number; timeScale: number; waveScale: number; color: ResolvedO… — ⚠ undocumented
+- `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
+- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig { amplitude: number; wavelength: number; speed: number; direction: OceanDirectionVector; steepness: number } — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
 - `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
 
 ## @jgengine/shell/water/Ocean
 
 - `Ocean` (function): function Ocean({ config, depthAt, ...meshProps }: OceanProps): React.JSX.Element — ⚠ undocumented
-- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> — ⚠ undocumented
+- `OceanProps` (interface): interface OceanProps extends Omit<ThreeElements["mesh"], "args" | "children" | "geometry" | "material"> { config?: OceanConfig; depthAt?: (x: number, z: number) => number } — ⚠ undocumented
 
 ## @jgengine/shell/water/OceanConfig
 
@@ -2791,21 +2791,21 @@
 - `DEFAULT_OCEAN_WAVE_SCALE` (const): const DEFAULT_OCEAN_WAVE_SCALE: 18 — Shared with `@jgengine/core/world/water` — primary wavelength in world units.
 - `MAX_OCEAN_WAVES` (const): const MAX_OCEAN_WAVES: 6 — ⚠ undocumented
 - `OCEAN_QUALITY_PRESETS` (const): const OCEAN_QUALITY_PRESETS: Record<OceanQualityPreset, { size: number; resolution: number }> — ⚠ undocumented
-- `OceanColorConfig` (interface): interface OceanColorConfig — ⚠ undocumented
-- `OceanConfig` (interface): interface OceanConfig — ⚠ undocumented
-- `OceanDirectionVector` (interface): interface OceanDirectionVector — ⚠ undocumented
-- `OceanFoamConfig` (interface): interface OceanFoamConfig — ⚠ undocumented
+- `OceanColorConfig` (interface): interface OceanColorConfig { shallow?: THREE.ColorRepresentation; deep?: THREE.ColorRepresentation; crest?: THREE.ColorRepresentation; foam?: THREE.ColorRepresentation; opacity?: number; fresnelStrength?: number; horizonBlend?: number; depthRange?: number; sparkle?: … — ⚠ undocumented
+- `OceanConfig` (interface): interface OceanConfig { quality?: OceanQualityPreset; size?: number; depth?: number; resolution?: number; amplitude?: number; speed?: number; direction?: OceanWaveDirection; choppiness?: number; steepness?: number; timeScale?: number; waveScale?: number; color?:… — ⚠ undocumented
+- `OceanDirectionVector` (interface): interface OceanDirectionVector { x: number; z: number } — ⚠ undocumented
+- `OceanFoamConfig` (interface): interface OceanFoamConfig { crestThreshold?: number; softness?: number; intensity?: number; coverage?: number; shoreWidth?: number } — ⚠ undocumented
 - `OceanQualityPreset` (type): type OceanQualityPreset = "low" | "medium" | "high" | "ultra" — ⚠ undocumented
-- `OceanWaveConfig` (interface): interface OceanWaveConfig — ⚠ undocumented
+- `OceanWaveConfig` (interface): interface OceanWaveConfig { amplitude?: number; wavelength?: number; speed?: number; direction?: OceanWaveDirection; steepness?: number } — ⚠ undocumented
 - `OceanWaveDirection` (type): type OceanWaveDirection = number | OceanDirectionVector — ⚠ undocumented
-- `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig — ⚠ undocumented
-- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig — ⚠ undocumented
-- `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig — ⚠ undocumented
-- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig — ⚠ undocumented
+- `ResolvedOceanColorConfig` (interface): interface ResolvedOceanColorConfig { shallow: THREE.ColorRepresentation; deep: THREE.ColorRepresentation; crest: THREE.ColorRepresentation; foam: THREE.ColorRepresentation; opacity: number; fresnelStrength: number; horizonBlend: number; depthRange: number; sparkle: number } — ⚠ undocumented
+- `ResolvedOceanConfig` (interface): interface ResolvedOceanConfig { quality: OceanQualityPreset; size: number; depth: number; resolution: number; amplitude: number; speed: number; direction: OceanDirectionVector; choppiness: number; steepness: number; timeScale: number; waveScale: number; color: ResolvedO… — ⚠ undocumented
+- `ResolvedOceanFoamConfig` (interface): interface ResolvedOceanFoamConfig { crestThreshold: number; softness: number; intensity: number; coverage: number; shoreWidth: number } — ⚠ undocumented
+- `ResolvedOceanWaveConfig` (interface): interface ResolvedOceanWaveConfig { amplitude: number; wavelength: number; speed: number; direction: OceanDirectionVector; steepness: number } — ⚠ undocumented
 
 ## @jgengine/shell/water/OceanMaterial
 
-- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms — ⚠ undocumented
+- `OceanMaterialUniforms` (interface): interface OceanMaterialUniforms { uTime: {value: number}; uWaveDirections: {value: THREE.Vector2[]}; uWaveParams: {value: THREE.Vector4[]}; uChoppiness: {value: number}; uShallowColor: {value: THREE.Color}; uDeepColor: {value: THREE.Color}; uCrestColor: {value: THREE.Colo… — ⚠ undocumented
 - `OceanShaderMaterial` (type): type OceanShaderMaterial = THREE.ShaderMaterial & { uniforms: OceanMaterialUniforms } — ⚠ undocumented
 - `createOceanMaterial` (function): function createOceanMaterial(config: ResolvedOceanConfig): OceanShaderMaterial — ⚠ undocumented
 - `syncOceanMaterial` (function): function syncOceanMaterial(material: OceanShaderMaterial, config: ResolvedOceanConfig, elapsedSeconds: number): void — ⚠ undocumented
@@ -2820,18 +2820,18 @@
 - `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, seed = 51407, renderOrd… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
 - `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
 - `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
-- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps — ⚠ undocumented
+- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps { grid: FireGrid; cellSize: number; origin?: readonly [number, number]; heightAt?: (x: number, z: number) => number; flameHeight?: number; burningColor?: THREE.ColorRepresentation; emberColor?: THREE.ColorRepresentation } — ⚠ undocumented
 - `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
-- `LightningStrikeProps` (interface): interface LightningStrikeProps — ⚠ undocumented
+- `LightningStrikeProps` (interface): interface LightningStrikeProps { origin: WeatherVector; target: WeatherVector; strikeKey?: string | number; seed?: number; visible?: boolean; duration?: number; color?: THREE.ColorRepresentation; glow?: number; branches?: number; jaggedness?: number; impactLight?: number… — ⚠ undocumented
 - `RainField` (function): function RainField({ count = DEFAULT_RAIN_COUNT, density = DEFAULT_RAIN_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 22, length = 1.35, width = 0.018, opacity = 0.48, color = DEFAULT_RAIN_COLOR, lightning, timeScale, seed = 11939, renderOrder … — ⚠ undocumented
-- `RainFieldProps` (interface): interface RainFieldProps — ⚠ undocumented
+- `RainFieldProps` (interface): interface RainFieldProps { count?: number; density?: number; budget?: number; volume?: WeatherVector; wind?: WeatherVector; origin?: WeatherVector; followCamera?: boolean; speed?: number; length?: number; width?: number; opacity?: number; color?: THREE.ColorReprese… — ⚠ undocumented
 - `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, seed = 72931, renderOrder = 11, frustumC… — ⚠ undocumented
-- `SnowFieldProps` (interface): interface SnowFieldProps — ⚠ undocumented
+- `SnowFieldProps` (interface): interface SnowFieldProps { count?: number; density?: number; budget?: number; volume?: WeatherVector; wind?: WeatherVector; origin?: WeatherVector; followCamera?: boolean; speed?: number; size?: number; sway?: number; opacity?: number; color?: THREE.ColorRepresenta… — ⚠ undocumented
 - `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, dust, dustAlways = false, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
-- `WeatherLayerProps` (interface): interface WeatherLayerProps — ⚠ undocumented
-- `WeatherUniformOptions` (interface): interface WeatherUniformOptions — ⚠ undocumented
-- `WeatherUniformSet` (interface): interface WeatherUniformSet — ⚠ undocumented
+- `WeatherLayerProps` (interface): interface WeatherLayerProps { mode?: WeatherLayerMode; intensity?: number; wind?: WeatherVector; lightning?: number; timeScale?: number; rain?: Omit<RainFieldProps, "wind" | "lightning" | "timeScale"> | false; snow?: Omit<SnowFieldProps, "wind" | "timeScale"> | false;… — ⚠ undocumented
+- `WeatherUniformOptions` (interface): interface WeatherUniformOptions { wind?: WeatherVector; lightning?: number; timeScale?: number } — ⚠ undocumented
+- `WeatherUniformSet` (interface): interface WeatherUniformSet { time: THREE.IUniform<number>; wind: THREE.IUniform<THREE.Vector3>; lightning: THREE.IUniform<number> } — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/shell/weather/DustField
@@ -2842,28 +2842,28 @@
 ## @jgengine/shell/weather/FireSpreadLayer
 
 - `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
-- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps — ⚠ undocumented
+- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps { grid: FireGrid; cellSize: number; origin?: readonly [number, number]; heightAt?: (x: number, z: number) => number; flameHeight?: number; burningColor?: THREE.ColorRepresentation; emberColor?: THREE.ColorRepresentation } — ⚠ undocumented
 
 ## @jgengine/shell/weather/LightningStrike
 
 - `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
-- `LightningStrikeProps` (interface): interface LightningStrikeProps — ⚠ undocumented
+- `LightningStrikeProps` (interface): interface LightningStrikeProps { origin: WeatherVector; target: WeatherVector; strikeKey?: string | number; seed?: number; visible?: boolean; duration?: number; color?: THREE.ColorRepresentation; glow?: number; branches?: number; jaggedness?: number; impactLight?: number… — ⚠ undocumented
 
 ## @jgengine/shell/weather/RainField
 
 - `RainField` (function): function RainField({ count = DEFAULT_RAIN_COUNT, density = DEFAULT_RAIN_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 22, length = 1.35, width = 0.018, opacity = 0.48, color = DEFAULT_RAIN_COLOR, lightning, timeScale, seed = 11939, renderOrder … — ⚠ undocumented
-- `RainFieldProps` (interface): interface RainFieldProps — ⚠ undocumented
+- `RainFieldProps` (interface): interface RainFieldProps { count?: number; density?: number; budget?: number; volume?: WeatherVector; wind?: WeatherVector; origin?: WeatherVector; followCamera?: boolean; speed?: number; length?: number; width?: number; opacity?: number; color?: THREE.ColorReprese… — ⚠ undocumented
 
 ## @jgengine/shell/weather/SnowField
 
 - `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, seed = 72931, renderOrder = 11, frustumC… — ⚠ undocumented
-- `SnowFieldProps` (interface): interface SnowFieldProps — ⚠ undocumented
+- `SnowFieldProps` (interface): interface SnowFieldProps { count?: number; density?: number; budget?: number; volume?: WeatherVector; wind?: WeatherVector; origin?: WeatherVector; followCamera?: boolean; speed?: number; size?: number; sway?: number; opacity?: number; color?: THREE.ColorRepresenta… — ⚠ undocumented
 
 ## @jgengine/shell/weather/WeatherLayer
 
 - `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, dust, dustAlways = false, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
-- `WeatherLayerProps` (interface): interface WeatherLayerProps — ⚠ undocumented
+- `WeatherLayerProps` (interface): interface WeatherLayerProps { mode?: WeatherLayerMode; intensity?: number; wind?: WeatherVector; lightning?: number; timeScale?: number; rain?: Omit<RainFieldProps, "wind" | "lightning" | "timeScale"> | false; snow?: Omit<SnowFieldProps, "wind" | "timeScale"> | false;… — ⚠ undocumented
 
 ## @jgengine/shell/weather/weatherMath
 
@@ -2873,12 +2873,12 @@
 - `DEFAULT_RAIN_DENSITY` (const): const DEFAULT_RAIN_DENSITY: 0.45 — ⚠ undocumented
 - `DEFAULT_SNOW_COUNT` (const): const DEFAULT_SNOW_COUNT: 1500 — ⚠ undocumented
 - `DEFAULT_SNOW_DENSITY` (const): const DEFAULT_SNOW_DENSITY: 0.5 — ⚠ undocumented
-- `WeatherSeedAttributes` (interface): interface WeatherSeedAttributes — ⚠ undocumented
+- `WeatherSeedAttributes` (interface): interface WeatherSeedAttributes { spawn: Float32Array; drift: Float32Array } — ⚠ undocumented
 
 ## @jgengine/shell/weather/weatherUniforms
 
-- `WeatherUniformOptions` (interface): interface WeatherUniformOptions — ⚠ undocumented
-- `WeatherUniformSet` (interface): interface WeatherUniformSet — ⚠ undocumented
+- `WeatherUniformOptions` (interface): interface WeatherUniformOptions { wind?: WeatherVector; lightning?: number; timeScale?: number } — ⚠ undocumented
+- `WeatherUniformSet` (interface): interface WeatherUniformSet { time: THREE.IUniform<number>; wind: THREE.IUniform<THREE.Vector3>; lightning: THREE.IUniform<number> } — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/shell/world/DataObjects
@@ -2889,23 +2889,23 @@
 ## @jgengine/shell/world/GridWorldScene
 
 - `GridWorldScene` (function): function GridWorldScene({ feature }: GridWorldSceneProps): React.JSX.Element | null — Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, colored boxes built from each feature's declared `cells`, following the same direct-buffer pattern as `InstancedBodies`.
-- `GridWorldSceneProps` (interface): interface GridWorldSceneProps — ⚠ undocumented
+- `GridWorldSceneProps` (interface): interface GridWorldSceneProps { feature: WorldFeature } — ⚠ undocumented · used by `GridWorldScene`: Data-driven renderer for the `biomes()`/`voxel()`/`plots()`/`tilemap()` world-feature kinds (#207.1): one `InstancedMesh` of extruded, color…
 
 ## @jgengine/shell/world/InstancedBodies
 
 - `InstancedBodies` (function): function InstancedBodies({ world, debugTint = false, baseColors, epoch = 0 }: InstancedBodiesProps): React.JSX.Element — Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch. Transforms are written directly into `instanceMatrix.array` each frame (bodies never touch the per-entity React path). Reusable by any game: hand it a physics world and go.
-- `InstancedBodiesProps` (interface): interface InstancedBodiesProps — ⚠ undocumented
+- `InstancedBodiesProps` (interface): interface InstancedBodiesProps { world: PhysicsWorld; debugTint?: boolean; baseColors?: Float32Array; epoch?: number } — ⚠ undocumented · used by `InstancedBodies`: Renders a PhysicsWorld's box bodies as a single InstancedMesh — one draw call per batch.
 
 ## @jgengine/shell/world/InstancedJoints
 
 - `InstancedJoints` (function): function InstancedJoints({ world, color = "#f5c542" }: InstancedJointsProps): React.JSX.Element — Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch. Endpoints are streamed each frame from `world.readJointSegments`; pair with `InstancedBodies` to see the constraint structure over the bodies.
-- `InstancedJointsProps` (interface): interface InstancedJointsProps — ⚠ undocumented
+- `InstancedJointsProps` (interface): interface InstancedJointsProps { world: PhysicsWorld; color?: THREE.ColorRepresentation } — ⚠ undocumented · used by `InstancedJoints`: Debug overlay drawing a PhysicsWorld's joints (suspension, ragdoll links, carry tethers) as one LineSegments batch.
 
 ## @jgengine/shell/world/SpriteBatch
 
 - `SpriteBatch` (function): function SpriteBatch({ url, columns = 1, rows = 1, capacity = DEFAULT_CAPACITY, instances, plane = "xy", billboard = false, pixelated = true, alphaTest = DEFAULT_ALPHA_TEST, opacity = 1, }: SpriteBatchProps): React.JSX.Element — Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch. Each instance picks its atlas frame via a per-instance UV offset attribute patched into the material's vertex shader, so platformer/puzzle-grid presentation never needs one draw call per sprite. Transforms and UV offsets are written directly into the mesh's typed arrays each frame from a plain instance list (bodies never touch the per-entity React path).
-- `SpriteBatchInstance` (interface): interface SpriteBatchInstance — ⚠ undocumented
-- `SpriteBatchProps` (interface): interface SpriteBatchProps — ⚠ undocumented
+- `SpriteBatchInstance` (interface): interface SpriteBatchInstance { x: number; y: number; z?: number; frame?: number; scale?: number; rotation?: number } — ⚠ undocumented
+- `SpriteBatchProps` (interface): interface SpriteBatchProps { url: string; columns?: number; rows?: number; capacity?: number; instances: () => readonly SpriteBatchInstance[]; plane?: "xy" | "xz"; billboard?: boolean; pixelated?: boolean; alphaTest?: number; opacity?: number } — ⚠ undocumented · used by `SpriteBatch`: Renders a sprite sheet / tile atlas as a single InstancedMesh — one draw call for the whole batch.
 
 ## @jgengine/shell/world/TileLayerRenderer
 
@@ -2925,7 +2925,7 @@
 - `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
 - `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample { x: number; y: number; percent: number } — ⚠ undocumented
 - `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, occlude = false, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from … — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, occlude = false, tickMs = 120, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
@@ -2954,13 +2954,13 @@
 
 ## @jgengine/shell/world/entityPose
 
-- `PoseSource` (interface): interface PoseSource — ⚠ undocumented
-- `PoseWritable` (interface): interface PoseWritable — ⚠ undocumented
+- `PoseSource` (interface): interface PoseSource { position: readonly [number, number, number]; rotationY: number } — ⚠ undocumented
+- `PoseWritable` (interface): interface PoseWritable { position: {set(x: number, y: number, z: number): void}; rotation: {y: number} } — ⚠ undocumented
 
 ## @jgengine/shell/world/floatTextStyle
 
-- `FloatTextInfo` (interface): interface FloatTextInfo — ⚠ undocumented
-- `FloatTextStyle` (interface): interface FloatTextStyle — ⚠ undocumented
+- `FloatTextInfo` (interface): interface FloatTextInfo { kind: string; hitType?: string; element?: string; crit?: boolean; scale?: number } — ⚠ undocumented
+- `FloatTextStyle` (interface): interface FloatTextStyle { color: string; fontSizePx: number; fontWeight: number; glow: string } — ⚠ undocumented
 
 ## @jgengine/shell/world/pingPulse
 
@@ -2976,8 +2976,8 @@
 ## @jgengine/shell/world/worldBarSamples
 
 - `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
-- `Projectable` (interface): interface Projectable — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample — ⚠ undocumented
+- `Projectable` (interface): interface Projectable { set(x: number, y: number, z: number): this; project(camera: {matrixWorldInverse: unknown; projectionMatrix: unknown}): this; x: number; y: number; z: number } — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample { x: number; y: number; percent: number } — ⚠ undocumented
 
 ## @jgengine/shell/worldSync
 

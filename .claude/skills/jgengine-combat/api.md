@@ -4,26 +4,26 @@
 
 ## @jgengine/core/combat
 
-- `AbilityKit` (interface): interface AbilityKit — ⚠ undocumented
-- `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot — ⚠ undocumented
+- `AbilityKit` (interface): interface AbilityKit { slots(): readonly string[]; config(slotId: string): AbilitySlotConfig | null; state(slotId: string, resourceAvailable?: number): AbilitySlotSnapshot | null; snapshot(resourceAvailable?: number): AbilitySlotSnapshot[]; canCast(slotId: stri… — ⚠ undocumented · used by `createAbilityKit`: A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
+- `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot { id: string; state: AbilitySlotState; castType: AbilityCastType; resourceCost: number; charges: number; chargesMax: number; cooldownRemainingMs: number; cooldownFraction: number; groupRemainingMs: number; justCast: boolean; ready: boolean … — ⚠ undocumented · used by `actionFromAbilitySlot` (@jgengine/react): Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) — the data/renderer/chrome split for an RTS…
 - `AbilitySlotState` (type): type AbilitySlotState = "ready" | "cooldown" | "no-resource" | "just-cast" — ⚠ undocumented
 - `AllocationOutcome` (interface): interface AllocationOutcome — The serializable result of an allocation pass — immediate `grants` plus any deferred `pools`.
 - `AllocationRequest` (interface): interface AllocationRequest — The inputs one allocation pass consumes. `allocationSeed` governs distribution decisions (ordering, round-robin rotation, remainder splits, reservation) while the separate optional `generationSeed` seeds per-recipient `instanced` generation — keeping join order from perturbing other players' rolls. Provide `results` for pre-rolled policies, `generate` for `instanced`, `assignment` for `assigned`, and `claim` for `claimed`.
-- `AnimationClip` (interface): interface AnimationClip — ⚠ undocumented
+- `AnimationClip` (interface): interface AnimationClip { id: string; frames: number; fps: number; ranges: readonly FrameRange[]; loop?: boolean } — ⚠ undocumented · used by `useModelAnimation` (@jgengine/shell/render/useModelAnimation): The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselve…
 - `AntiOneShotConfig` (interface): interface AntiOneShotConfig — Caller data for the anti-one-shot composition: "cannot cross lethal while above X, leave Y, then recover for Z".
 - `AntiOneShotPolicy` (interface): interface AntiOneShotPolicy — The anti-one-shot policy: an interceptor plus its serializable recovery-immunity state.
 - `BUILTIN_COMPLETION_PREDICATES` (const): const BUILTIN_COMPLETION_PREDICATES: Readonly<Record<string, CompletionPredicate>> — Built-in completion predicates covering the common encounter gates: `immediate` (leaf marker), `manual`/`flag` (external event via a caller flag), `timer` (phase seconds), `cleared` (tagged entity count drained), `metric` (threshold on a live value), `event` (cumulative event count), and `quorum` (at least N of nested predicates met). Merge your own over these through {@link EncounterConfig.predicates}.
 - `BUILTIN_SPAWN_PROVIDERS` (const): const BUILTIN_SPAWN_PROVIDERS: Readonly<Record<string, SpawnProvider>> — Built-in spawn providers. `points` reads a named authored scene point list from context and cycles it to emit `count` requests, keeping coordinates in the scene rather than the sequence. `list` echoes literal requests authored in `params.requests`. Merge your own catalog- or director-backed providers through {@link EncounterConfig.spawnProviders}.
-- `BuildupProc` (interface): interface BuildupProc — ⚠ undocumented
+- `BuildupProc` (interface): interface BuildupProc { status: string; durationMs: number } — ⚠ undocumented
 - `CheckAdvantage` (type): type CheckAdvantage = "advantage" | "disadvantage" | "normal" — ⚠ undocumented
-- `CheckResult` (interface): interface CheckResult — ⚠ undocumented
+- `CheckResult` (interface): interface CheckResult { rolls: readonly number[]; roll: number; total: number; success: boolean; critical: "success" | "failure" | null } — ⚠ undocumented · used by `rollCheck`: Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 - `ClaimOutcome` (interface): interface ClaimOutcome — The outcome of a claim attempt — the updated pool and the grants owed (empty when the claim is refused).
 - `ClaimablePool` (interface): interface ClaimablePool — A serializable pool of results left open for later claiming — first-come contested drops or a `reservedFor` personal reward. Tracks `eligible` claimants, optional `expiresAtMs`, and the authoritative `claimedBy` winner so reconnect and duplicate-claim attempts resolve idempotently.
 - `ComboMeter` (interface): interface ComboMeter — A live, observable combo/multiplier meter — an integer hit chain with a decay window, free-string tier thresholds, a derived multiplier, and peak tracking.
 - `ComboMeterConfig` (interface): interface ComboMeterConfig — Options for {@link createComboMeter}.
 - `ComboMeterSnapshot` (interface): interface ComboMeterSnapshot — Serializable state for save/restore — clock-agnostic (stores time left, not an absolute deadline).
 - `ComboMeterView` (interface): interface ComboMeterView — A pooled, read-only snapshot of the live meter for a renderer to draw each frame. Reused across {@link ComboMeter.view} calls and overwritten on the next one — read it, do not retain it. For a save, use {@link ComboMeter.snapshot}.
-- `ComboStep` (interface): interface ComboStep — ⚠ undocumented
+- `ComboStep` (interface): interface ComboStep { id: string; clip: string; cancelInto?: readonly string[]; cancelPhases?: readonly FramePhase[]; stance?: string } — ⚠ undocumented
 - `ComboTier` (interface): interface ComboTier — One tier threshold in a {@link ComboMeter}. Tiers gate on the integer combo `count` (not a filled fraction), and `id` is a free string the game owns and styles ("good", "great", "savage", …) — the model never interprets it.
 - `CompletionPredicate` (type): type CompletionPredicate = ( params: Readonly<Record<string, unknown>>, ctx: PredicateContext, ) => boolean — A completion predicate: pure and deterministic, returns true when the node it gates is finished. Registered under a `kind` and reused across phases with different `params`.
 - `CrossingDirection` (type): type CrossingDirection = "falling" | "rising" — The direction a crossing moved: `falling` = value decreased past the mark, `rising` = increased past it.
@@ -55,12 +55,12 @@
 - `EncounterState` (interface): interface EncounterState<TData = unknown> — Full serializable encounter state: the working phase tree (including any injected phases), a per-node runtime map, the active path from root to the deepest open node, accumulated time, and whether the sequence has finished. Round-trips through JSON with no behavioral change; the registries live in {@link EncounterConfig}, not here.
 - `EncounterStep` (interface): interface EncounterStep<TData = unknown> — Result of a step: the (mutated, returned) state and the events emitted this step.
 - `EntityRenderCues` (interface): interface EntityRenderCues — Per-entity render cues: the motion/animation signal a custom `renderEntity` or first-person viewmodel component needs to drive gait, muzzle flash, reload poses, and hit reactions — without diffing the parent group's position itself or reading a game-side module map for attack timing.
-- `EventMeter` (interface): interface EventMeter — ⚠ undocumented
-- `EventMeterFeedResult` (interface): interface EventMeterFeedResult — ⚠ undocumented
+- `EventMeter` (interface): interface EventMeter { value(): number; fraction(): number; tier(): string | null; ready(): boolean; feed(tag: string, scale?: number): EventMeterFeedResult; consume(): boolean; drain(amount: number): void; reset(): void; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createEventMeter`: A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shoot…
+- `EventMeterFeedResult` (interface): interface EventMeterFeedResult { tag: string; reset: boolean; amount: number; value: number; fraction: number; fired: boolean; ready: boolean; overflow: number; tier: string | null; tierChanged: boolean } — ⚠ undocumented
 - `FireCadence` (interface): interface FireCadence — A minimal minimum-interval rate gate for a repeated action — weapon fire, ability spam, any "no faster than N per second" rule. Deterministic and serializable: its whole state is the elapsed time since the last action, exposed via {@link FireCadence.elapsedMs}.
 - `FireCadenceConfig` (interface): interface FireCadenceConfig — Tuning for {@link createFireCadence}: the minimum interval between actions and whether it starts ready.
-- `FrameRange` (interface): interface FrameRange — ⚠ undocumented
-- `HitReactionConfig` (interface): interface HitReactionConfig — ⚠ undocumented
+- `FrameRange` (interface): interface FrameRange { phase: FramePhase; from: number; to: number } — ⚠ undocumented
+- `HitReactionConfig` (interface): interface HitReactionConfig { hitstopMs: number; knockback: number; vertical?: number; shake?: CameraShake; trauma?: number; timescale?: number } — ⚠ undocumented · used by `resolveHitReaction`: Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
 - `ImmunityWindow` (interface): interface ImmunityWindow — A per-target timed immunity policy: an interceptor plus grant/query/serialize controls, toggled by transitions.
 - `InterceptContext` (interface): interface InterceptContext — Read-only context an interceptor may consult — deterministic clock and optional health lookup for HP-relative policies.
 - `InterceptDecision` (type): type InterceptDecision = | { kind: "pass" } | { kind: "transform"; amount: number; note?: string } | { kind: "clamp"; max: number; note?: string } | { kind: "redirect"; target: string; note?: string } | { kind: "split"; parts: readonly PendingDamage[]; note?: string } | { kind: "defer"; note?: strin… — What an interceptor decides to do with the pending application it was handed. `split` parts continue at the NEXT interceptor (never re-entering the splitter), which is what keeps the pipeline bounded and recursion-free.
@@ -71,9 +71,9 @@
 - `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
 - `MagazineSnapshot` (interface): interface MagazineSnapshot — Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve.
 - `MatchupOutputs` (interface): interface MatchupOutputs — The independent, typed outputs a channel-vs-trait matchup can scale. Every field is an optional multiplier that defaults to `1` (identity), so a matchup entry names only the axes it bends. `impact` scales the direct hit, `applyChance` the odds a status lands, `magnitude` and `duration` the applied status itself, and `extra` carries any further caller-defined scalar (knockback, stagger, heat) the engine forwards without interpreting.
-- `MeterAddResult` (interface): interface MeterAddResult — ⚠ undocumented
+- `MeterAddResult` (interface): interface MeterAddResult { value: number; fired: boolean; overflow: number; tier: string | null; tierChanged: boolean } — ⚠ undocumented
 - `ObjectRaycastHit` (interface): interface ObjectRaycastHit — ⚠ undocumented
-- `OnDeathSpec` (interface): interface OnDeathSpec — ⚠ undocumented
+- `OnDeathSpec` (interface): interface OnDeathSpec { drops?: string | OnDeathDropRule[]; command?: string | OnDeathCommandRule; dropMode?: DropMode; scatter?: ScatterOptions } — ⚠ undocumented
 - `PendingDamage` (interface): interface PendingDamage — Ordered, inspectable damage-resolution interception (#931).
 - `PhaseCompletionRef` (interface): interface PhaseCompletionRef — Reference to a registered completion predicate: a `kind` naming the evaluator plus opaque `params` the evaluator reads. The sequence core never interprets `params`; the predicate registered under `kind` does.
 - `PhaseInjectAt` (type): type PhaseInjectAt = | { before: string } | { after: string } | { childOf: string; index?: number } — Where to insert an injected phase, relative to an existing node by id.
@@ -81,7 +81,7 @@
 - `PhaseSpawnRef` (interface): interface PhaseSpawnRef — Reference to a registered spawn provider invoked when a phase is entered: a `kind` naming the provider plus opaque `params`. Spawning is one optional node adapter — a phase without `spawn` simply emits no spawn requests.
 - `PhaseStatus` (type): type PhaseStatus = "pending" | "active" | "complete" — Lifecycle status of one phase in an encounter sequence: waiting to run, currently running, or finished. Groups and leaves share the same three states.
 - `PredicateContext` (interface): interface PredicateContext — Evaluation context a completion predicate receives for the node under test.
-- `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps — ⚠ undocumented
+- `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps { effects: EffectSystem; spatial: CombatSpatialDeps; getStat(itemId: string, stat: string): number | null; raycast?: Raycast; sceneRaycast?: SceneRaycastApi; objects?: ProjectileObjectsDeps; entityCollidersOf?(instanceId: string): EntityCol… — ⚠ undocumented · used by `createProjectileSystem`: Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
 - `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
 - `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
 - `ReceivedDamageResult` (interface): interface ReceivedDamageResult — The full, provenance-rich outcome of running received modifiers over one hit.
@@ -90,7 +90,7 @@
 - `RenderCueTuning` (interface): interface RenderCueTuning — Tuning knobs for `advanceMotionCues` / `useEntityRenderCues`; every field has a default, override only what a weapon/rig's feel needs to differ.
 - `ResolvedMatchup` (interface): interface ResolvedMatchup — Fully-resolved matchup outputs (every axis populated) plus the contributions that produced them.
 - `ResolvedShot` (interface): interface ResolvedShot — A shot's resolved firing geometry in world space: `origin` is the point the projectile/ray starts from and `direction` is its normalized aim vector, both computed by {@link resolveShot} from the shooter's position, facing, and the chosen origin policy.
-- `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
+- `ResourcePool` (interface): interface ResourcePool { current(): number; max(): number; setMax(value: number): void; fraction(): number; canSpend(amount: number): boolean; spend(amount: number): boolean; gain(amount: number): number; set(value: number): void; tick(dtSeconds: number): void; i… — ⚠ undocumented · used by `createResourcePool`: A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
 - `RewardClaimSpec` (interface): interface RewardClaimSpec — How a `claimed` allocation exposes its pool: open first-come (`first`) or `reserved` to one recipient.
 - `RewardGrant` (interface): interface RewardGrant — An authoritative, serializable award of one result stack to one recipient — carries `via` (the policy that produced it) and `private` (replication scope) so provenance and visibility survive save/load and viewer projection. Applying a grant twice with the same identity is the caller's idempotency contract; this seam only decides who is owed what.
 - `RewardPolicyKind` (type): type RewardPolicyKind = "instanced" | "shared" | "copy" | "roundRobin" | "assigned" | "claimed" — The distribution policies allocation ships — each a distinct answer to "who gets this result".
@@ -106,7 +106,7 @@
 - `StatPoolChange` (interface): interface StatPoolChange — Inspectable result of a bounded pool change.
 - `StatPoolInput` (interface): interface StatPoolInput — Input used to create a normalized pool. `current` defaults to `max`; `min` defaults to zero.
 - `StatPoolPatch` (interface): interface StatPoolPatch — Partial update applied without mutating the previous pool.
-- `Stats` (interface): interface Stats<TStat extends string> — ⚠ undocumented
+- `Stats` (interface): interface Stats<TStat extends string> { setBase(stat: TStat, value: number): void; getBase(stat: TStat): number; addSource(sourceId: string, modifiers: StatModifierSet<TStat>, options?: {expiresAtMs?: number}): void; removeSource(sourceId: string): void; hasSource(sourceId: str… — ⚠ undocumented · used by `createStats`: A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
 - `StatsSnapshot` (interface): interface StatsSnapshot<TStat extends string> — Complete plain-data state for a {@link Stats} runtime.
 - `StatusApplicationOutcome` (interface): interface StatusApplicationOutcome — The result of one status application: the outcome, the resulting instance (if any), and the roll.
 - `StatusApplicationSpec` (interface): interface StatusApplicationSpec — A serializable, effect-agnostic description of a status a hit tries to apply: an opaque `status` id the game routes to its own effect/DoT pipeline, a base landing `chance`, and the duration/ticks/magnitude/attribution/stacking data the resolver needs. The engine never interprets `status` — it is a reference, not a built-in condition.
@@ -116,7 +116,7 @@
 - `StatusInstance` (interface): interface StatusInstance — A live status carried by a target — the serializable, replicable state a status application mutates.
 - `StatusStackPolicy` (type): type StatusStackPolicy = | { kind: "refresh" } | { kind: "stack"; max?: number; add?: number } | { kind: "replace" } | { kind: "ignore" } — How a fresh application behaves when the target already carries the status. - `refresh` — reset duration, hold the existing stack count. - `stack` — add `add` stacks (default 1) up to `max`, and refresh duration. - `replace` — overwrite duration and magnitude, stacks reset to 1. - `ignore` — leave the existing instance untouched (first application wins).
 - `TargetTraitId` (type): type TargetTraitId = string — Caller-owned id for a target trait — `"armored"`, `"fleshy"`, `"wet"`, `"boss"`. Traits are the receiver-side facets a matchup scores a channel against.
-- `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
+- `TelegraphConfig` (interface): interface TelegraphConfig { shape: TelegraphShape; at: EntityPosition; dir?: number; windupMs?: number; turns?: number; kind?: string } — ⚠ undocumented
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
 - `ThresholdCrossing` (interface): interface ThresholdCrossing — One emitted crossing: which threshold, which way, and the value span that produced it.
 - `ThresholdCrossingConfig` (interface): interface ThresholdCrossingConfig — Caller configuration for a threshold tracker.
@@ -207,28 +207,28 @@
 - `AbilityCastResult` (type): type AbilityCastResult = | { ok: true; slot: AbilitySlotSnapshot } | { ok: false; reason: AbilityCastReason; slot: AbilitySlotSnapshot | null } — ⚠ undocumented
 - `AbilityCastType` (type): type AbilityCastType = "instant" | "projectile" | "channel" | "targeted" — ⚠ undocumented
 - `AbilityCooldownGroup` (interface): interface AbilityCooldownGroup — A cooldown shared across every member slot: casting any member starts it, and no member can cast while it runs. One group that every slot joins is an MMO global cooldown.
-- `AbilityKit` (interface): interface AbilityKit — ⚠ undocumented
-- `AbilityKitOptions` (interface): interface AbilityKitOptions — ⚠ undocumented
+- `AbilityKit` (interface): interface AbilityKit { slots(): readonly string[]; config(slotId: string): AbilitySlotConfig | null; state(slotId: string, resourceAvailable?: number): AbilitySlotSnapshot | null; snapshot(resourceAvailable?: number): AbilitySlotSnapshot[]; canCast(slotId: stri… — ⚠ undocumented · used by `createAbilityKit`: A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
+- `AbilityKitOptions` (interface): interface AbilityKitOptions { groups?: readonly AbilityCooldownGroup[]; resource?: AbilityResource } — ⚠ undocumented · used by `createAbilityKit`: A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
 - `AbilityResource` (interface): interface AbilityResource — A spendable resource pool (mana, energy, rage) bound to an ability kit. When bound, `cast` deducts a slot's `resourceCost` on success and `state`/`snapshot`/`canCast` reflect affordability without a per-call `resourceAvailable` argument — the cast path actually spends instead of only gating (#357).
-- `AbilitySlotConfig` (interface): interface AbilitySlotConfig — ⚠ undocumented
-- `AbilitySlotRetune` (interface): interface AbilitySlotRetune — ⚠ undocumented
-- `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot — ⚠ undocumented
+- `AbilitySlotConfig` (interface): interface AbilitySlotConfig { id: string; cooldownMs: number; chargesMax?: number; resourceCost?: number; castType?: AbilityCastType; flashMs?: number; groups?: readonly string[] } — ⚠ undocumented · used by `createAbilityKit`: A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
+- `AbilitySlotRetune` (interface): interface AbilitySlotRetune { cooldownMs?: number; resourceCost?: number } — ⚠ undocumented
+- `AbilitySlotSnapshot` (interface): interface AbilitySlotSnapshot { id: string; state: AbilitySlotState; castType: AbilityCastType; resourceCost: number; charges: number; chargesMax: number; cooldownRemainingMs: number; cooldownFraction: number; groupRemainingMs: number; justCast: boolean; ready: boolean … — ⚠ undocumented · used by `actionFromAbilitySlot` (@jgengine/react): Composable React renderers over the headless action view model (`@jgengine/core/ui/actionModel`) — the data/renderer/chrome split for an RTS…
 - `AbilitySlotState` (type): type AbilitySlotState = "ready" | "cooldown" | "no-resource" | "just-cast" — ⚠ undocumented
 - `createAbilityKit` (function): function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit — A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
 
 ## @jgengine/core/combat/animationState
 
-- `AnimationClip` (interface): interface AnimationClip — ⚠ undocumented
-- `AnimationSnapshot` (interface): interface AnimationSnapshot — ⚠ undocumented
-- `AnimationState` (interface): interface AnimationState — ⚠ undocumented
-- `AnimationStateConfig` (interface): interface AnimationStateConfig — ⚠ undocumented
-- `AnimationTickResult` (interface): interface AnimationTickResult — ⚠ undocumented
+- `AnimationClip` (interface): interface AnimationClip { id: string; frames: number; fps: number; ranges: readonly FrameRange[]; loop?: boolean } — ⚠ undocumented · used by `useModelAnimation` (@jgengine/shell/render/useModelAnimation): The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselve…
+- `AnimationSnapshot` (interface): interface AnimationSnapshot { clipId: string; frame: number; elapsedMs: number } — ⚠ undocumented
+- `AnimationState` (interface): interface AnimationState { play(clipId: string): void; stop(): void; tick(dtSeconds: number): AnimationTickResult; current(): AnimationSnapshot | null; phases(): readonly FramePhase[]; inPhase(phase: FramePhase): boolean; isActive(): boolean; canCancel(): boolean; … — ⚠ undocumented · used by `createComboRunner` (@jgengine/core/combat): Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
+- `AnimationStateConfig` (interface): interface AnimationStateConfig { clips: readonly AnimationClip[] } — ⚠ undocumented
+- `AnimationTickResult` (interface): interface AnimationTickResult { clipId: string | null; frame: number; entered: readonly FramePhase[]; exited: readonly FramePhase[]; completed: boolean } — ⚠ undocumented
 - `FramePhase` (type): type FramePhase = "windup" | "active" | "recovery" | "cancel" — ⚠ undocumented
-- `FrameRange` (interface): interface FrameRange — ⚠ undocumented
+- `FrameRange` (interface): interface FrameRange { phase: FramePhase; from: number; to: number } — ⚠ undocumented
 
 ## @jgengine/core/combat/attackTags
 
-- `AttackMeta` (interface): interface AttackMeta — ⚠ undocumented
+- `AttackMeta` (interface): interface AttackMeta { tags: readonly AttackTag[]; effect?: string; power?: number } — ⚠ undocumented
 - `AttackTag` (type): type AttackTag = | "unblockable" | "thrust" | "sweep" | "grab" | "overhead" | "ranged" | "aerial" — ⚠ undocumented
 - `CounterMove` (type): type CounterMove = "mikiri" | "deflect" | "sidestep" — ⚠ undocumented
 - `attackMeta` (function): function attackMeta(tags: readonly AttackTag[], extra?: Omit<AttackMeta, "tags">): AttackMeta — ⚠ undocumented
@@ -241,18 +241,18 @@
 
 ## @jgengine/core/combat/breakMeters
 
-- `BuildupMeter` (interface): interface BuildupMeter — ⚠ undocumented
-- `BuildupMeterConfig` (interface): interface BuildupMeterConfig — ⚠ undocumented
-- `BuildupProc` (interface): interface BuildupProc — ⚠ undocumented
-- `StaggerMeter` (interface): interface StaggerMeter — ⚠ undocumented
-- `StaggerMeterConfig` (interface): interface StaggerMeterConfig — ⚠ undocumented
+- `BuildupMeter` (interface): interface BuildupMeter { add(amount: number): BuildupProc | null; value(): number; fraction(): number; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createBuildupMeter`: Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
+- `BuildupMeterConfig` (interface): interface BuildupMeterConfig { status: string; max: number; durationMs: number; decayPerSecond?: number; decayDelayMs?: number } — ⚠ undocumented · used by `createBuildupMeter`: Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
+- `BuildupProc` (interface): interface BuildupProc { status: string; durationMs: number } — ⚠ undocumented
+- `StaggerMeter` (interface): interface StaggerMeter { add(amount: number): boolean; broke(): boolean; value(): number; fraction(): number; recover(): void; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createStaggerMeter`: Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
+- `StaggerMeterConfig` (interface): interface StaggerMeterConfig { max: number; decayPerSecond?: number; decayDelayMs?: number } — ⚠ undocumented · used by `createStaggerMeter`: Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
 - `createBuildupMeter` (function): function createBuildupMeter(config: BuildupMeterConfig): BuildupMeter — Accumulate an ailment buildup — bleed, freeze, poison — that procs a status once it fills, then decays.
 - `createStaggerMeter` (function): function createStaggerMeter(config: StaggerMeterConfig): StaggerMeter — Build a stagger/poise gauge from landed hits toward a break threshold that staggers the target.
 
 ## @jgengine/core/combat/castRunner
 
-- `CastBarSnapshot` (interface): interface CastBarSnapshot — ⚠ undocumented
-- `CastConfig` (interface): interface CastConfig — ⚠ undocumented
+- `CastBarSnapshot` (interface): interface CastBarSnapshot { abilityId: string; castTimeMs: number; elapsedMs: number; remainingMs: number; fraction: number } — ⚠ undocumented
+- `CastConfig` (interface): interface CastConfig { abilityId: string; castTimeMs: number; moveTolerance?: number; moveDeadzone?: number } — ⚠ undocumented
 - `CastEvent` (type): type CastEvent = | { kind: "completed"; abilityId: string } | { kind: "interrupted"; abilityId: string; reason: CastInterruptReason } — ⚠ undocumented
 - `CastInterruptReason` (type): type CastInterruptReason = "moved" | "cancelled" | "replaced" — ⚠ undocumented
 - `CastRunner` (interface): interface CastRunner — Per-entity cast-time state machine — begin, tick with game-time `dt` plus how far the caster moved, and act on the returned event. The runner owns timing and move-interruption only; the caller spends resources, starts cooldowns, and executes the ability when `completed` fires (compose with `abilityKit` — check readiness before `begin`, `cast` on completion).
@@ -269,18 +269,18 @@
 
 ## @jgengine/core/combat/comboPoints
 
-- `ComboPoints` (interface): interface ComboPoints — ⚠ undocumented
-- `ComboPointsConfig` (interface): interface ComboPointsConfig — ⚠ undocumented
+- `ComboPoints` (interface): interface ComboPoints { points(): number; gain(amount?: number): number; spend(amount: number): boolean; spendAll(): number; tick(dtSeconds: number): void; expiresIn(): number | null; clear(): void; snapshot(): ComboPointsSnapshot; restore(state: ComboPointsSnap… — ⚠ undocumented · used by `createComboPoints`: Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
+- `ComboPointsConfig` (interface): interface ComboPointsConfig { max: number; expireAfterSeconds?: number } — ⚠ undocumented · used by `createComboPoints`: Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
 - `ComboPointsSnapshot` (interface): interface ComboPointsSnapshot — Complete serializable state for {@link ComboPoints}; `remaining: null` means no expiry is running.
 - `createComboPoints` (function): function createComboPoints(config: ComboPointsConfig): ComboPoints — Build and spend finisher points — the combo-point economy behind rogue-style builders and spenders.
 
 ## @jgengine/core/combat/comboString
 
-- `AdvanceComboInput` (interface): interface AdvanceComboInput — ⚠ undocumented
+- `AdvanceComboInput` (interface): interface AdvanceComboInput { combo: ComboString; currentStepId: string | null; requestedStepId: string; phases: readonly FramePhase[]; stance?: string } — ⚠ undocumented
 - `AdvanceComboResult` (type): type AdvanceComboResult = | { accepted: true; step: ComboStep } | { accepted: false; reason: "unknown-step" | "not-chainable" | "wrong-stance" | "window-closed" } — ⚠ undocumented
-- `ComboRunner` (interface): interface ComboRunner — ⚠ undocumented
-- `ComboStep` (interface): interface ComboStep — ⚠ undocumented
-- `ComboString` (interface): interface ComboString — ⚠ undocumented
+- `ComboRunner` (interface): interface ComboRunner { currentStep(): string | null; request(stepId: string, stance?: string): AdvanceComboResult; reset(): void } — ⚠ undocumented · used by `createComboRunner`: Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
+- `ComboStep` (interface): interface ComboStep { id: string; clip: string; cancelInto?: readonly string[]; cancelPhases?: readonly FramePhase[]; stance?: string } — ⚠ undocumented
+- `ComboString` (interface): interface ComboString { id: string; entry: string; steps: readonly ComboStep[] } — ⚠ undocumented · used by `createComboRunner`: Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
 - `advanceCombo` (function): function advanceCombo(input: AdvanceComboInput): AdvanceComboResult — ⚠ undocumented
 - `createComboRunner` (function): function createComboRunner(combo: ComboString, anim: AnimationState): ComboRunner — Advance a chained melee string from timed inputs, tracking the current step and its cancel/continue windows.
 - `stepById` (function): function stepById(combo: ComboString, stepId: string): ComboStep | null — ⚠ undocumented
@@ -323,17 +323,17 @@
 
 ## @jgengine/core/combat/death
 
-- `DeathIdentity` (interface): interface DeathIdentity — ⚠ undocumented
+- `DeathIdentity` (interface): interface DeathIdentity { catalogId: string; userId?: string; displayName?: string; position: [number, number, number] } — ⚠ undocumented
 - `DeathReasonKind` (type): type DeathReasonKind = DeathReason["kind"] — ⚠ undocumented
 - `DeathResolution` (type): type DeathResolution = | { status: "resolved"; drops: Drop[]; ranCommand: string | null } | { status: "rejected"; reason: string } — ⚠ undocumented
-- `DeathSystem` (interface): interface DeathSystem — ⚠ undocumented
-- `DeathSystemDeps` (interface): interface DeathSystemDeps — ⚠ undocumented
+- `DeathSystem` (interface): interface DeathSystem { resolveDeath(instanceId: string, reason: DeathReason): DeathResolution; revive(instanceId: string): boolean } — ⚠ undocumented · used by `createDeathSystem`: Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
+- `DeathSystemDeps` (interface): interface DeathSystemDeps { resolveOnDeath(instanceId: string): OnDeathSpec | null | undefined; resolveIdentity(instanceId: string): DeathIdentity | null; loot: {roll(tableId: string): Drop[]}; events: GameEvents; runCommand?(name: string, args: unknown): void; desp… — ⚠ undocumented · used by `createDeathSystem`: Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `DropMode` (type): type DropMode = "grant" | "world" — ⚠ undocumented
-- `EffectDeathContext` (interface): interface EffectDeathContext — ⚠ undocumented
-- `NormalizedOnDeath` (interface): interface NormalizedOnDeath — ⚠ undocumented
-- `OnDeathCommandRule` (interface): interface OnDeathCommandRule — ⚠ undocumented
-- `OnDeathDropRule` (interface): interface OnDeathDropRule — ⚠ undocumented
-- `OnDeathSpec` (interface): interface OnDeathSpec — ⚠ undocumented
+- `EffectDeathContext` (interface): interface EffectDeathContext { from: string; via?: EffectVia; userIdOf?(instanceId: string): string | undefined } — ⚠ undocumented
+- `NormalizedOnDeath` (interface): interface NormalizedOnDeath { drops: OnDeathDropRule[]; command: OnDeathCommandRule | null; dropMode: DropMode; scatter?: ScatterOptions } — ⚠ undocumented
+- `OnDeathCommandRule` (interface): interface OnDeathCommandRule { name: string; args?: unknown; when?: {reason: DeathReasonKind} } — ⚠ undocumented
+- `OnDeathDropRule` (interface): interface OnDeathDropRule { table: string; when?: {reason: DeathReasonKind} } — ⚠ undocumented
+- `OnDeathSpec` (interface): interface OnDeathSpec { drops?: string | OnDeathDropRule[]; command?: string | OnDeathCommandRule; dropMode?: DropMode; scatter?: ScatterOptions } — ⚠ undocumented
 - `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `deathReasonFromEffect` (function): function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason — ⚠ undocumented
 - `normalizeOnDeath` (function): function normalizeOnDeath(spec: OnDeathSpec | null | undefined): NormalizedOnDeath — ⚠ undocumented
@@ -347,9 +347,9 @@
 - `DefenseKind` (type): type DefenseKind = "parry" | "block" | "dodge" — ⚠ undocumented
 - `DefenseOutcome` (type): type DefenseOutcome = "parry" | "block" | "iframe" | "hit" — ⚠ undocumented
 - `DefenseResolution` (interface): interface DefenseResolution — Result of resolving an incoming hit against a defensive window: `outcome` is the graded defense (`"parry"`/`"block"`/`"iframe"`/`"hit"`) and `perfect` is true when the input landed inside the tight just-frame at the window's start rather than its wider active span.
-- `DefensiveWindow` (interface): interface DefensiveWindow — ⚠ undocumented
-- `DefensiveWindowConfig` (interface): interface DefensiveWindowConfig — ⚠ undocumented
-- `ResolveDefenseInput` (interface): interface ResolveDefenseInput — ⚠ undocumented
+- `DefensiveWindow` (interface): interface DefensiveWindow { open(nowMs: number): void; close(): void; isOpen(nowMs: number): boolean; evaluate(nowMs: number, attack: AttackMeta): DefenseResolution; isInvulnerable(nowMs: number): boolean } — ⚠ undocumented · used by `createDefensiveWindow`: Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
+- `DefensiveWindowConfig` (interface): interface DefensiveWindowConfig { kind: DefenseKind; startupMs?: number; activeMs: number; recoveryMs?: number; iframes?: {fromMs: number; toMs: number} } — ⚠ undocumented · used by `createDefensiveWindow`: Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
+- `ResolveDefenseInput` (interface): interface ResolveDefenseInput { config: DefensiveWindowConfig; elapsedMs: number; attack: AttackMeta } — ⚠ undocumented
 - `createDefensiveWindow` (function): function createDefensiveWindow(config: DefensiveWindowConfig): DefensiveWindow — Open a timed defensive window — block, parry, or i-frames — and test incoming hits against it.
 - `iframeActiveAt` (function): function iframeActiveAt(config: DefensiveWindowConfig, elapsedMs: number): boolean — ⚠ undocumented
 - `resolveDefense` (function): function resolveDefense(input: ResolveDefenseInput): DefenseResolution — ⚠ undocumented
@@ -365,30 +365,30 @@
 
 ## @jgengine/core/combat/downed
 
-- `DownedConfig` (interface): interface DownedConfig — ⚠ undocumented
-- `DownedEntry` (interface): interface DownedEntry — ⚠ undocumented
-- `DownedEvent` (interface): interface DownedEvent — ⚠ undocumented
+- `DownedConfig` (interface): interface DownedConfig { bleedoutSeconds: number; reviveSeconds?: number; reviveHealthFraction?: number; banner?: {expireSeconds: number} } — ⚠ undocumented · used by `createDownedState`: A downed/bleed-out state that ticks toward death and that teammates can revive before the timer runs out.
+- `DownedEntry` (interface): interface DownedEntry { phase: DownedPhase; bleedoutRemaining: number; reviveProgress: number; bannerRemaining: number | null } — ⚠ undocumented
+- `DownedEvent` (interface): interface DownedEvent { kind: DownedEventKind; instanceId: string; reason?: string; reviveHealthFraction?: number } — ⚠ undocumented
 - `DownedEventKind` (type): type DownedEventKind = | "downed" | "revived" | "reviving" | "died" | "banner.created" | "banner.expired" | "respawned" — ⚠ undocumented
 - `DownedPhase` (type): type DownedPhase = "alive" | "downed" | "dead" — ⚠ undocumented
-- `DownedState` (interface): interface DownedState — ⚠ undocumented
+- `DownedState` (interface): interface DownedState { down(instanceId: string): DownedEvent | null; revive(instanceId: string, dt: number): DownedEvent | null; interruptRevive(instanceId: string): void; finish(instanceId: string, reason?: string): DownedEvent | null; tick(dt: number): Downed… — ⚠ undocumented · used by `createDownedState`: A downed/bleed-out state that ticks toward death and that teammates can revive before the timer runs out.
 - `createDownedState` (function): function createDownedState(config: DownedConfig): DownedState — A downed/bleed-out state that ticks toward death and that teammates can revive before the timer runs out.
 
 ## @jgengine/core/combat/effects
 
-- `AppliedPoolDelta` (interface): interface AppliedPoolDelta — ⚠ undocumented
-- `AreaEffectInput` (interface): interface AreaEffectInput — ⚠ undocumented
-- `AreaTarget` (interface): interface AreaTarget — ⚠ undocumented
-- `AreaTargetInput` (interface): interface AreaTargetInput — ⚠ undocumented
-- `CombatSpatialDeps` (interface): interface CombatSpatialDeps — ⚠ undocumented
+- `AppliedPoolDelta` (interface): interface AppliedPoolDelta { statId: string; delta: number } — ⚠ undocumented
+- `AreaEffectInput` (interface): interface AreaEffectInput { from: string; effect: string; via?: EffectVia; at: EntityPosition; radius: number; falloff?: "linear" | "none"; los?: boolean } — ⚠ undocumented
+- `AreaTarget` (interface): interface AreaTarget { instanceId: string; scale: number } — ⚠ undocumented
+- `AreaTargetInput` (interface): interface AreaTargetInput { at: EntityPosition; radius: number; falloff?: "linear" | "none"; los?: boolean } — ⚠ undocumented
+- `CombatSpatialDeps` (interface): interface CombatSpatialDeps { inRadius(center: EntityPosition, radius: number): string[]; hasLineOfSight(from: EntityPosition | string, to: string): boolean; positionOf(instanceId: string): EntityPosition | undefined } — ⚠ undocumented
 - `EffectInput` (type): type EffectInput = SingleTargetEffectInput | AreaEffectInput — ⚠ undocumented
-- `EffectResult` (interface): interface EffectResult — ⚠ undocumented
-- `EffectSystem` (interface): interface EffectSystem — ⚠ undocumented
-- `EffectSystemDeps` (interface): interface EffectSystemDeps — ⚠ undocumented
-- `EffectVia` (interface): interface EffectVia — ⚠ undocumented
-- `LethalContext` (interface): interface LethalContext — ⚠ undocumented
+- `EffectResult` (interface): interface EffectResult { instanceId: string; effect: string; applied: AppliedPoolDelta[]; lethal: boolean; slain?: SlainIdentity } — ⚠ undocumented
+- `EffectSystem` (interface): interface EffectSystem { canReceive(instanceId: string, effect: string, magnitude?: number): string | null; preview(input: SingleTargetEffectInput): number; applyEffect(input: EffectInput): EffectResult[] } — ⚠ undocumented · used by `createEffectSystem`: Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal co…
+- `EffectSystemDeps` (interface): interface EffectSystemDeps { resolveReceive(instanceId: string): ReceiveMap | null | undefined; statPools?: StatPoolAccess; resolveStats?(instanceId: string): Record<string, StatPool> | undefined; getStat(itemId: string, stat: string): number | null; spatial: CombatS… — ⚠ undocumented · used by `createEffectSystem`: Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal co…
+- `EffectVia` (interface): interface EffectVia { item?: string; amount?: number } — ⚠ undocumented
+- `LethalContext` (interface): interface LethalContext { from: string; via?: EffectVia; effect: string } — ⚠ undocumented
 - `ReceiveMap` (type): type ReceiveMap = Record<string, ReceiveRule> — ⚠ undocumented
-- `ReceiveRule` (interface): interface ReceiveRule — ⚠ undocumented
-- `SingleTargetEffectInput` (interface): interface SingleTargetEffectInput — ⚠ undocumented
+- `ReceiveRule` (interface): interface ReceiveRule { order: string[]; modifiers?: Record<string, number> } — ⚠ undocumented
+- `SingleTargetEffectInput` (interface): interface SingleTargetEffectInput { from: string; to: string; effect: string; via?: EffectVia } — ⚠ undocumented
 - `SlainIdentity` (interface): interface SlainIdentity — Identity of an entity slain by a lethal effect, captured before the death system despawns it. Serializable and genre-agnostic: `catalogId` is the slain entity's spawn kind/name (the same value the `entity.died` event carries), `name` an optional human-readable label for kill feeds, and `userId` the owning player when the slain unit was player-controlled. The slain entity's instance id is already {@link EffectResult.instanceId}.
 - `createEffectSystem` (function): function createEffectSystem(deps: EffectSystemDeps): EffectSystem — Resolve direct or area resource effects through caller-owned stat pools, including ordered absorption, restoration, modifiers, and lethal context.
 - `resolveAreaTargets` (function): function resolveAreaTargets(spatial: CombatSpatialDeps, input: AreaTargetInput, accept?: (instanceId: string) => boolean): AreaTarget[] — ⚠ undocumented
@@ -425,10 +425,10 @@
 
 ## @jgengine/core/combat/hitReaction
 
-- `CameraShake` (interface): interface CameraShake — ⚠ undocumented
-- `HitReaction` (interface): interface HitReaction — ⚠ undocumented
-- `HitReactionConfig` (interface): interface HitReactionConfig — ⚠ undocumented
-- `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented
+- `CameraShake` (interface): interface CameraShake { amplitude: number; decay: number } — ⚠ undocumented
+- `HitReaction` (interface): interface HitReaction { hitstopMs: number; impulse: [number, number, number]; shake: CameraShake | null; trauma: number | null; timescale: number | null } — ⚠ undocumented · used by `resolveHitReaction`: Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
+- `HitReactionConfig` (interface): interface HitReactionConfig { hitstopMs: number; knockback: number; vertical?: number; shake?: CameraShake; trauma?: number; timescale?: number } — ⚠ undocumented · used by `resolveHitReaction`: Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
+- `HitReactionInput` (interface): interface HitReactionInput { attackerPos: EntityPosition; targetPos: EntityPosition; power?: number } — ⚠ undocumented · used by `resolveHitReaction`: Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
 - `ImpactPreset` (interface): interface ImpactPreset — A calibrated `resolveHitReaction` config for a named impact event — hitstop + trauma so feel works with zero tuning.
 - `ImpactPresetName` (type): type ImpactPresetName = keyof typeof impactPresets — A named key into {@link impactPresets} (`"pickup" | "jumpLand" | "enemyKilled" | "playerHit" | "explosion"`).
 - `applyImpulse` (function): function applyImpulse(position: EntityPosition, impulse: [number, number, number]): EntityPosition — ⚠ undocumented
@@ -445,15 +445,15 @@
 
 ## @jgengine/core/combat/projectiles
 
-- `EntityRaycastHit` (interface): interface EntityRaycastHit — ⚠ undocumented
-- `ObjectRaycastHit` (interface): interface ObjectRaycastHit — ⚠ undocumented
+- `EntityRaycastHit` (interface): interface EntityRaycastHit { kind: "entity"; instanceId: string; distance: number; at: EntityPosition; colliderName?: string; damageEligible?: boolean; blocks?: boolean } — ⚠ undocumented
+- `ObjectRaycastHit` (interface): interface ObjectRaycastHit { kind: "object"; instanceId: string; catalogId: string; distance: number; at: EntityPosition; colliderName?: string; damageEligible?: boolean; blocks?: boolean } — ⚠ undocumented
 - `ProjectileHit` (type): type ProjectileHit = | { kind: "entity"; instanceId: string; distance: number; colliderName?: string; damageEligible?: boolean; } | { kind: "object"; instanceId: string; catalogId: string; distance: number; colliderName?: string; damageEligible?: boolean; } — ⚠ undocumented
-- `ProjectileObjectsDeps` (interface): interface ProjectileObjectsDeps — ⚠ undocumented
-- `ProjectilePrediction` (interface): interface ProjectilePrediction — ⚠ undocumented
-- `ProjectileSettleReport` (interface): interface ProjectileSettleReport — ⚠ undocumented
-- `ProjectileShotInput` (interface): interface ProjectileShotInput — ⚠ undocumented
-- `ProjectileSystem` (interface): interface ProjectileSystem — ⚠ undocumented
-- `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps — ⚠ undocumented
+- `ProjectileObjectsDeps` (interface): interface ProjectileObjectsDeps { list(): readonly {instanceId: string; catalogId: string; position: readonly [number, number, number]; rotationY?: number;}[]; inBox?(min: EntityPosition, max: EntityPosition): readonly {instanceId: string; catalogId: string; position: rea… — ⚠ undocumented
+- `ProjectilePrediction` (interface): interface ProjectilePrediction { hits: ProjectileHit[]; blocked?: boolean; origin?: EntityPosition; direction?: EntityPosition; firstImpact?: ProjectileHit | null } — ⚠ undocumented
+- `ProjectileSettleReport` (interface): interface ProjectileSettleReport { from: string; origin: EntityPosition; at: EntityPosition; effect: string; hit: boolean; ballistic: boolean } — ⚠ undocumented
+- `ProjectileShotInput` (interface): interface ProjectileShotInput { from: string; via: EffectVia; aim: Aim; effect: string; originPolicy?: ShotOriginPolicy } — ⚠ undocumented
+- `ProjectileSystem` (interface): interface ProjectileSystem { willHitProjectile(input: ProjectileShotInput): ProjectilePrediction; fireProjectile(input: ProjectileShotInput): string; settleProjectile(shotId: string): SettleResult } — ⚠ undocumented · used by `createProjectileSystem`: Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
+- `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps { effects: EffectSystem; spatial: CombatSpatialDeps; getStat(itemId: string, stat: string): number | null; raycast?: Raycast; sceneRaycast?: SceneRaycastApi; objects?: ProjectileObjectsDeps; entityCollidersOf?(instanceId: string): EntityCol… — ⚠ undocumented · used by `createProjectileSystem`: Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
 - `Raycast` (type): type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[] — ⚠ undocumented
 - `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
 - `SettleResult` (type): type SettleResult = | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[]; origin?: [number, number, number]; } | { status: "rejected"; shotId: string; reason: string } — ⚠ undocumented
@@ -496,8 +496,8 @@
 ## @jgengine/core/combat/resistance
 
 - `ResistVerdict` (type): type ResistVerdict = "immune" | "resist" | "normal" | "vulnerable" — ⚠ undocumented
-- `ResistanceMatrix` (interface): interface ResistanceMatrix<TCategory extends string = string, TProperty extends string = string> — ⚠ undocumented
-- `ResistanceResult` (interface): interface ResistanceResult — ⚠ undocumented
+- `ResistanceMatrix` (interface): interface ResistanceMatrix<TCategory extends string = string, TProperty extends string = string> { categories: Partial<Record<TCategory, Partial<Record<TProperty, ResistVerdict>>>>; categoryIds?: readonly TCategory[]; propertyIds?: readonly TProperty[]; multipliers?: Partial<Record<ResistVerdict, number>>; default?: ResistVerdict; unkn… — ⚠ undocumented
+- `ResistanceResult` (interface): interface ResistanceResult { verdict: ResistVerdict; multiplier: number; immune: boolean } — ⚠ undocumented
 - `UnknownResistanceCategoryError` (class): class UnknownResistanceCategoryError extends Error — ⚠ undocumented
 - `UnknownResistancePropertyError` (class): class UnknownResistancePropertyError extends Error — ⚠ undocumented
 - `resistanceScale` (function): function resistanceScale<TCategory extends string = string, TProperty extends string = string>(matrix: ResistanceMatrix<TCategory, TProperty>, category: TCategory | string, targetProperties: readonly (TProperty | string)[]): number — ⚠ undocumented
@@ -505,8 +505,8 @@
 
 ## @jgengine/core/combat/resourcePool
 
-- `ResourcePool` (interface): interface ResourcePool — ⚠ undocumented
-- `ResourcePoolConfig` (interface): interface ResourcePoolConfig — ⚠ undocumented
+- `ResourcePool` (interface): interface ResourcePool { current(): number; max(): number; setMax(value: number): void; fraction(): number; canSpend(amount: number): boolean; spend(amount: number): boolean; gain(amount: number): number; set(value: number): void; tick(dtSeconds: number): void; i… — ⚠ undocumented · used by `createResourcePool`: A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
+- `ResourcePoolConfig` (interface): interface ResourcePoolConfig { max: number; initial?: number; regenPerSecond?: number; decayPerSecond?: number } — ⚠ undocumented · used by `createResourcePool`: A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
 - `ResourcePoolRetune` (interface): interface ResourcePoolRetune — Runtime tuning patch for {@link ResourcePool.retune} — omitted fields keep their current value.
 - `ResourcePoolSnapshot` (interface): interface ResourcePoolSnapshot — Complete serializable state for a {@link ResourcePool}.
 - `createResourcePool` (function): function createResourcePool(config: ResourcePoolConfig): ResourcePool — A regenerating resource pool — mana, stamina, energy — that actions spend from and that refills over time.
@@ -531,7 +531,7 @@
 
 - `DEFAULT_EYE_HEIGHT` (const): const DEFAULT_EYE_HEIGHT: number — Shot-origin and first-person camera eye height above an entity's position: 90% of the default 1.8m hitbox top.
 - `ResolvedShot` (interface): interface ResolvedShot — A shot's resolved firing geometry in world space: `origin` is the point the projectile/ray starts from and `direction` is its normalized aim vector, both computed by {@link resolveShot} from the shooter's position, facing, and the chosen origin policy.
-- `ShotOriginDeps` (interface): interface ShotOriginDeps — ⚠ undocumented
+- `ShotOriginDeps` (interface): interface ShotOriginDeps { positionOf(instanceId: string): EntityPosition | undefined; rotationYOf?(instanceId: string): number | undefined; collidersOf?(instanceId: string): EntityColliderSet | null | undefined } — ⚠ undocumented · used by `convergeShot`: Resolves a `converge` shot with scene knowledge: fires from the gun muzzle but bends the direction so the shot passes through the aim point …
 - `ShotOriginPolicy` (type): type ShotOriginPolicy = | { kind: "converge"; muzzle?: EntityPosition; height?: number } | { kind: "eye"; height?: number } | { kind: "legacy" } | { kind: "entity" } | { kind: "entityOffset"; offset: EntityPosition } | { kind: "muzzle"; offset?: EntityPosition } | { kind: "camera"; origin: EntityPos… — How a shot's world-space origin (and optional direction) is resolved before prediction/settlement. - `converge` — the shot leaves the gun `muzzle` yet still passes through whatever the shooter's sightline (crosshair) covers: origin is the muzzle offset, direction is bent from the muzzle to the eye ray's aim point. The projectile system's default for a free `{ yaw, pitch }` aim, so a bullet visibly comes from the barrel without missing the reticle. Needs a scene raycast to find the aim point (`convergeShot`); a bare `resolveShot` degrades to a straight muzzle ray. Passes an explicit `{ origin, direction }` aim through untouched. - `eye` — `aim.origin` when present, else the shooter's entity position raised to eye height; the shot traces the shooter's sightline, so what the crosshair covers is what gets hit. - `legacy` — `aim.origin` when present, else the shooter's raw entity position (feet). - `entity` — always the shooter's entity position. - `entityOffset` / `muzzle` — entity-local offset rotated by the shooter's yaw (muzzle on a weapon model). - `camera` — explicit camera/reticle world origin (and optional direction override). - `world` — absolute world origin.
 - `aimDirection` (function): function aimDirection(aim: Aim): EntityPosition | null — ⚠ undocumented
 - `aimSpreadDeg` (function): function aimSpreadDeg(aim: Aim): number — ⚠ undocumented
@@ -561,10 +561,10 @@
 
 ## @jgengine/core/combat/telegraph
 
-- `HazardCycleConfig` (interface): interface HazardCycleConfig — ⚠ undocumented
-- `HazardCycleSample` (interface): interface HazardCycleSample — ⚠ undocumented
+- `HazardCycleConfig` (interface): interface HazardCycleConfig { windupMs: number; activeMs: number; cooldownMs?: number; offsetMs?: number } — ⚠ undocumented
+- `HazardCycleSample` (interface): interface HazardCycleSample { phase: HazardPhase; fraction: number; remainingMs: number; cycleIndex: number } — ⚠ undocumented
 - `HazardPhase` (type): type HazardPhase = "windup" | "active" | "cooldown" — ⚠ undocumented
-- `TelegraphConfig` (interface): interface TelegraphConfig — ⚠ undocumented
+- `TelegraphConfig` (interface): interface TelegraphConfig { shape: TelegraphShape; at: EntityPosition; dir?: number; windupMs?: number; turns?: number; kind?: string } — ⚠ undocumented
 - `TelegraphShape` (type): type TelegraphShape = | { kind: "circle"; radius: number } | { kind: "ring"; radius: number; innerRadius: number } | { kind: "cone"; radius: number; angle: number } | { kind: "line"; length: number; width: number } — ⚠ undocumented
 
 ## @jgengine/core/combat/thresholdCrossings
@@ -600,26 +600,26 @@
 
 ## @jgengine/core/stats/accumulatorMeter
 
-- `AccumulatorMeter` (interface): interface AccumulatorMeter — ⚠ undocumented
-- `AccumulatorMeterConfig` (interface): interface AccumulatorMeterConfig — ⚠ undocumented
-- `MeterAddResult` (interface): interface MeterAddResult — ⚠ undocumented
+- `AccumulatorMeter` (interface): interface AccumulatorMeter { value(): number; fraction(): number; tier(): string | null; broke(): boolean; add(amount: number): MeterAddResult; drain(amount: number): void; reset(): void; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createAccumulatorMeter`: A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and c…
+- `AccumulatorMeterConfig` (interface): interface AccumulatorMeterConfig { max: number; mode?: MeterMode; decayPerSecond?: number; decayDelayMs?: number; tiers?: readonly MeterTier[] } — ⚠ undocumented · used by `createAccumulatorMeter`: A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and c…
+- `MeterAddResult` (interface): interface MeterAddResult { value: number; fired: boolean; overflow: number; tier: string | null; tierChanged: boolean } — ⚠ undocumented
 - `MeterMode` (type): type MeterMode = "hold" | "reset" — ⚠ undocumented
-- `MeterTier` (interface): interface MeterTier — ⚠ undocumented
+- `MeterTier` (interface): interface MeterTier { id: string; at: number } — ⚠ undocumented · used by `tierAt`: The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createE…
 - `createAccumulatorMeter` (function): function createAccumulatorMeter(config: AccumulatorMeterConfig): AccumulatorMeter — A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and combo meters.
 - `tierAt` (function): function tierAt(value: number, tiers: readonly MeterTier[]): string | null — The highest tier id whose `at` threshold `value` has reached, or `null` below every tier — the pure lookup `createAccumulatorMeter`/`createEventMeter` call on every `add`/`tick`.
 
 ## @jgengine/core/stats/eventMeter
 
-- `EventMeter` (interface): interface EventMeter — ⚠ undocumented
-- `EventMeterConfig` (interface): interface EventMeterConfig — ⚠ undocumented
-- `EventMeterFeedResult` (interface): interface EventMeterFeedResult — ⚠ undocumented
+- `EventMeter` (interface): interface EventMeter { value(): number; fraction(): number; tier(): string | null; ready(): boolean; feed(tag: string, scale?: number): EventMeterFeedResult; consume(): boolean; drain(amount: number): void; reset(): void; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createEventMeter`: A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shoot…
+- `EventMeterConfig` (interface): interface EventMeterConfig { max: number; mode?: MeterMode; decayPerSecond?: number; decayDelayMs?: number; tiers?: readonly MeterTier[]; gains: Record<string, number>; resets?: readonly string[] } — ⚠ undocumented · used by `createEventMeter`: A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shoot…
+- `EventMeterFeedResult` (interface): interface EventMeterFeedResult { tag: string; reset: boolean; amount: number; value: number; fraction: number; fired: boolean; ready: boolean; overflow: number; tier: string | null; tierChanged: boolean } — ⚠ undocumented
 - `createEventMeter` (function): function createEventMeter(config: EventMeterConfig): EventMeter — A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shooters and fighters hand-roll.
 
 ## @jgengine/core/stats/rollCheck
 
 - `CheckAdvantage` (type): type CheckAdvantage = "advantage" | "disadvantage" | "normal" — ⚠ undocumented
-- `CheckInput` (interface): interface CheckInput — ⚠ undocumented
-- `CheckResult` (interface): interface CheckResult — ⚠ undocumented
+- `CheckInput` (interface): interface CheckInput { modifier: number; dc: number; advantage?: CheckAdvantage; diceSides?: number } — ⚠ undocumented · used by `rollCheck`: Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
+- `CheckResult` (interface): interface CheckResult { rolls: readonly number[]; roll: number; total: number; success: boolean; critical: "success" | "failure" | null } — ⚠ undocumented · used by `rollCheck`: Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 - `rollCheck` (function): function rollCheck(input: CheckInput, rng?: () => number): CheckResult — Resolve a tabletop-style pass/fail roll against a target number with modifiers and crit/fumble bands.
 
 ## @jgengine/core/stats/spawnLevelStats
@@ -637,10 +637,10 @@
 
 ## @jgengine/core/stats/statModifiers
 
-- `CreateStatsOptions` (interface): interface CreateStatsOptions — ⚠ undocumented
-- `StatModifier` (interface): interface StatModifier — ⚠ undocumented
-- `StatModifierSet` (type): type StatModifierSet<TStat extends string> = Partial<Record<TStat, StatModifier>> — ⚠ undocumented
-- `Stats` (interface): interface Stats<TStat extends string> — ⚠ undocumented
+- `CreateStatsOptions` (interface): interface CreateStatsOptions { now?: () => number } — ⚠ undocumented · used by `createStats`: A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
+- `StatModifier` (interface): interface StatModifier { add?: number; multiply?: number } — ⚠ undocumented
+- `StatModifierSet` (type): type StatModifierSet<TStat extends string> = Partial<Record<TStat, StatModifier>> — ⚠ undocumented · used by `statModifierContributions` (@jgengine/core/gameplay): Bridge the shared {@link StatModifierSet} shape (add/multiply, used by talents, items, and buffs) into stat-graph contributions, so a ranked…
+- `Stats` (interface): interface Stats<TStat extends string> { setBase(stat: TStat, value: number): void; getBase(stat: TStat): number; addSource(sourceId: string, modifiers: StatModifierSet<TStat>, options?: {expiresAtMs?: number}): void; removeSource(sourceId: string): void; hasSource(sourceId: str… — ⚠ undocumented · used by `createStats`: A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
 - `StatsSnapshot` (interface): interface StatsSnapshot<TStat extends string> — Complete plain-data state for a {@link Stats} runtime.
 - `createStats` (function): function createStats<TStat extends string>(base: Record<TStat, number>, options?: CreateStatsOptions): Stats<TStat> — A stat block whose base values take stacking, timed buffs and debuffs, resolving the modified value on read.
 
