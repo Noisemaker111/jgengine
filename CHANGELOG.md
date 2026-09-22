@@ -27,6 +27,8 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- `jgengine create --scene starter` placed its props and goal behind the spawn, so the first frame showed empty ground and W walked away from the goal. The starter scene now sits ahead of the default +Z facing.
+- A standalone game's `bun run desktop` failed with `jgengine: command not found` because the CLI is not a dependency; the script now runs `npx jgengine desktop`.
 - `@jgengine/navbake` joins the published lockstep set. `@jgengine/editor@0.18.1` depended on it while nothing published it, so `bun install` on the released SDK failed. `check-release-set` (in `gate`, `check-types`, and the publish workflow) now fails when a published package depends on a workspace package outside the publish list or out of dependency order, or when the publish, version-bump, and changelog package lists disagree.
 - Publish has been red since that change because a CLI packaging test still hardcoded the old publish list, so navbake never reached npm and `npx jgengine create` scaffolds failed to install. The test now defers the order to `check-release-set`.
 - `jgengine-verify` was silently skipped by the skills installer for every new game: its `description` held an unquoted `: `, which is invalid YAML. `check-skills` now parses frontmatter as YAML and requires `name` to match the folder.

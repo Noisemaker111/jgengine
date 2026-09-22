@@ -85,7 +85,7 @@ const standalonePackageJson = (id: string, engineVersion: string) => `${JSON.str
     scripts: {
       dev: "vite",
       build: "vite build",
-      desktop: "jgengine desktop",
+      desktop: "npx jgengine desktop",
       preview: "vite preview",
       shoot: "node scripts/shoot.mjs",
       drive: "node scripts/drive.mjs",
@@ -1100,26 +1100,27 @@ export { editorLayers } from "./editorLayers";
 `;
 
 // Starter scene document: the authored spawn plus a few placed catalog props, so the very first
-// `bun dev` already renders editor-owned content and F2+E opens a non-empty document.
+// `bun dev` already renders editor-owned content and F2+E opens a non-empty document. Content sits
+// at +Z of the spawn because rotationY 0 faces +Z: the follow camera frames it and W walks to the goal.
 const editorSceneJson = `{
   "version": 1,
   "markers": [
     {
       "id": "player_spawn",
       "kind": "player_spawn",
-      "position": { "x": 0, "y": 0, "z": 8 },
+      "position": { "x": 0, "y": 0, "z": -8 },
       "label": "Player spawn",
       "color": "#22d3ee"
     },
-    { "id": "crate_1", "kind": "prop", "position": { "x": 3, "y": 0, "z": -4 }, "rotationY": 0.4, "label": "Crate", "catalogId": "crate" },
-    { "id": "crate_2", "kind": "prop", "position": { "x": 4.4, "y": 0, "z": -2.8 }, "rotationY": 1.2, "label": "Crate", "catalogId": "crate" },
-    { "id": "tree_1", "kind": "prop", "position": { "x": -8, "y": 0, "z": -10 }, "label": "Tree", "catalogId": "tree" },
-    { "id": "tree_2", "kind": "prop", "position": { "x": 10, "y": 0, "z": -14 }, "rotationY": 2.1, "label": "Tree", "catalogId": "tree" },
-    { "id": "tree_3", "kind": "prop", "position": { "x": -12, "y": 0, "z": 4 }, "rotationY": 4.2, "label": "Tree", "catalogId": "tree" },
+    { "id": "crate_1", "kind": "prop", "position": { "x": -3, "y": 0, "z": 4 }, "rotationY": 0.4, "label": "Crate", "catalogId": "crate" },
+    { "id": "crate_2", "kind": "prop", "position": { "x": -4.4, "y": 0, "z": 2.8 }, "rotationY": 1.2, "label": "Crate", "catalogId": "crate" },
+    { "id": "tree_1", "kind": "prop", "position": { "x": 8, "y": 0, "z": 10 }, "label": "Tree", "catalogId": "tree" },
+    { "id": "tree_2", "kind": "prop", "position": { "x": -10, "y": 0, "z": 14 }, "rotationY": 2.1, "label": "Tree", "catalogId": "tree" },
+    { "id": "tree_3", "kind": "prop", "position": { "x": 12, "y": 0, "z": -4 }, "rotationY": 4.2, "label": "Tree", "catalogId": "tree" },
     {
       "id": "goal",
       "kind": "goal",
-      "position": { "x": 0, "y": 0, "z": -18 },
+      "position": { "x": 0, "y": 0, "z": 18 },
       "label": "Goal — walk here to win",
       "color": "#22c55e",
       "meta": { "on": "enter", "action": "win", "message": "You reached the goal — you win!", "triggerRadius": 3 }
