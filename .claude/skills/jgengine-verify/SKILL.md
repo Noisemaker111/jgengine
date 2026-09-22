@@ -1,6 +1,6 @@
 ---
 name: jgengine-verify
-description: Before claiming a change works, looks right, or ships, prove it: screenshots, gameplay, scene data.
+description: "Before claiming a change works, looks right, or ships, prove it: screenshots, gameplay, scene data."
 ---
 
 # JGengine verification

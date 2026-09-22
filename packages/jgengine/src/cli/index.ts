@@ -39,7 +39,7 @@ usage: jgengine <command> [...args]
   create "<Game Name>"  scaffold playable base + install agent skills into the project
                         folder My-Game-Name; name → game.config / HUD / title
                         --from-scene <folder> promotes an authored editor.scene.json into the game
-                        [--in-repo|--standalone] [--no-install] [--no-skills] [--pm bun|npm|pnpm]
+                        --player/--ground/--scene pick the starting look · create --help for all flags
   desktop [dir]         ship a Windows NSIS installer (local project or --url https://…)
                         [--url] [--name] [--id] [--version] [--icon] [--out] [--dry-run]
                         [--allow-remote] (required for --url hosts outside jgengine.com)

@@ -28,6 +28,9 @@ between (`--json` for structured output).
 ### Fixed
 
 - `@jgengine/navbake` joins the published lockstep set. `@jgengine/editor@0.18.1` depended on it while nothing published it, so `bun install` on the released SDK failed. `check-release-set` (in `gate`, `check-types`, and the publish workflow) now fails when a published package depends on a workspace package outside the publish list or out of dependency order, or when the publish, version-bump, and changelog package lists disagree.
+- Publish has been red since that change because a CLI packaging test still hardcoded the old publish list, so navbake never reached npm and `npx jgengine create` scaffolds failed to install. The test now defers the order to `check-release-set`.
+- `jgengine-verify` was silently skipped by the skills installer for every new game: its `description` held an unquoted `: `, which is invalid YAML. `check-skills` now parses frontmatter as YAML and requires `name` to match the folder.
+- `jgengine create --help` printed usage instead of scaffolding a game named after the first argument, and `create` rejects unknown flags rather than ignoring them. The usage lists `--player`, `--ground`, and `--scene`.
 
 - `pickModel` / `resolveModelPlan` warn once in dev when a `ModelPick.fallbackModel` is not in the asset catalog (a typo or an undeclared pack), instead of silently shipping a fallback that can never take over.
 
