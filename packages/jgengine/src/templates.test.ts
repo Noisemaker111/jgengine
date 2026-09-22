@@ -116,8 +116,23 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       const pkg = JSON.parse(fileOf(render(variant), "package.json")) as {
         scripts?: Record<string, string>;
       };
-      expect(pkg.scripts?.desktop).toBe("jgengine desktop");
+      expect(pkg.scripts?.desktop).toBe(variant === "standalone" ? "npx jgengine desktop" : "jgengine desktop");
       expect(pkg.scripts?.build).toBe("vite build");
+    });
+
+    test(`${variant}: every bare script binary is a declared dependency`, () => {
+      const pkg = JSON.parse(fileOf(render(variant), "package.json")) as {
+        scripts: Record<string, string>;
+        dependencies: Record<string, string>;
+        devDependencies: Record<string, string>;
+      };
+      const declared = new Set([...Object.keys(pkg.dependencies), ...Object.keys(pkg.devDependencies)]);
+      const ambient = new Set(["node", "npx", "bun", "tsc", "tsgo"]);
+      for (const script of Object.values(pkg.scripts)) {
+        const bin = script.split(" ")[0]!;
+        if (ambient.has(bin) || (variant === "in-repo" && bin === "jgengine")) continue;
+        expect(declared.has(bin)).toBe(true);
+      }
     });
 
     test(`${variant}: ships a dependency-free WebGL screenshot script wired to a shoot command`, () => {
@@ -265,6 +280,20 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(fileOf(files, "src/game/ui/GameUI.tsx")).not.toContain("outcome");
     // No editor summon → no editor dep → drop its @source so Tailwind isn't pointed at a missing package.
     expect(fileOf(files, "src/index.css")).not.toContain("@jgengine/editor");
+  });
+
+  test("starter scene puts its goal and props ahead of the spawn's default +Z facing", () => {
+    const files = render("standalone", { sceneMode: "starter" });
+    const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as {
+      markers: { kind: string; position: { z: number }; rotationY?: number; catalogId?: string }[];
+    };
+    const spawn = scene.markers.find((marker) => marker.kind === "player_spawn");
+    const goal = scene.markers.find((marker) => marker.kind === "goal");
+    expect(spawn?.rotationY ?? 0).toBe(0);
+    expect(goal!.position.z).toBeGreaterThan(spawn!.position.z);
+    const props = scene.markers.filter((marker) => marker.catalogId !== undefined);
+    const ahead = props.filter((marker) => marker.position.z > spawn!.position.z);
+    expect(ahead.length).toBeGreaterThan(props.length / 2);
   });
 
   test("scene, ground, and player options customize generated files", () => {
