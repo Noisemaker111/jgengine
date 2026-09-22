@@ -23,7 +23,7 @@ between (`--json` for structured output).
 
 ### Changed
 
-- `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `src/world.ts` builds an `environment()` world with rolling detail-shaded terrain, and reads its footprint, sculpt, clearings and sky from `editor.scene.json` through `environmentContentFromDocument`. The scene seeds a bright `day` sky with a sun bearing and distance fog. `--ground flat` keeps the old `place()` slab (#1762).
+- `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `editor.scene.json` seeds rolling hills as a terrain sculpt (deterministic per game id, flat around the spawn) and a bright `day` sky with a sun bearing and distance fog; `src/world.ts` renders them through `environment()` and `environmentContentFromDocument` and holds only the detail-shaded ground palette. Reshape the hills in the editor. `--ground flat` keeps the old `place()` slab (#1762).
 
 ### Added
 

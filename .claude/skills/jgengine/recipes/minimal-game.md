@@ -45,6 +45,9 @@ spatial place. When the game *is* a place, declare only substrate + laws with `w
 `@jgengine/core/world/place` (e.g. `{ id, ground: { mode: "flat", size: { x: Infinity, z: Infinity } }, physics: { gravity: -24 } }`,
 or `mode: "board"` for 2D). Never seed, sky, or vegetation in `world` — the engine renders its
 default sky until you author one in the editor, and foliage is editor scatter over the ground.
+A created 3D game instead ships hills as a terrain sculpt in `editor.scene.json` and a `world.ts`
+that consumes it with `environment({ sculpt })` via `environmentContentFromDocument`; the file
+holds only the ground palette. Reshape the hills in the editor, not in code.
 
 
 ```ts
