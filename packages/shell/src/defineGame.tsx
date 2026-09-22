@@ -7,14 +7,14 @@ import {
   type GameLoop,
 } from "@jgengine/core/game/defineGame";
 import { syncLifecyclePhase } from "@jgengine/core/game/gamePhase";
-import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import type { BackdropConfig, WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
 import type { EnvironmentSource } from "@jgengine/core/render/environment";
-import { lightingFromDocument } from "@jgengine/core/editor/environment";
+import { lightingFromDocument, skyFromDocument } from "@jgengine/core/editor/environment";
 import { resolveGameLook } from "@jgengine/core/render/lookPreset";
 
 import { EnvironmentScene } from "./environment";
@@ -46,6 +46,19 @@ function worldBackdrop(feature: EnvironmentWorldFeature): ComponentType {
   return function WorldBackdrop() {
     return <EnvironmentScene feature={feature} />;
   };
+}
+
+/**
+ * The scene document's authored sky fills `backdrop.sky` when the game did not set one, so editor
+ * lighting-workspace edits render in `place()` worlds too. A document environment carrying only
+ * point lights yields no sky fields and leaves the world's sky alone.
+ * @internal
+ */
+export function withDocumentSky(backdrop: BackdropConfig | undefined, doc: EditorDocument | undefined): BackdropConfig | undefined {
+  if (backdrop?.sky !== undefined || doc === undefined) return backdrop;
+  const sky = skyFromDocument(doc);
+  if (sky === undefined || Object.keys(sky).length === 0) return backdrop;
+  return { ...backdrop, sky };
 }
 
 function isEnvironmentSource(value: unknown): value is EnvironmentSource {
@@ -149,7 +162,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
   const resolvedLook = resolveGameLook({
     look,
     lighting: authoredLighting,
-    backdrop,
+    backdrop: withDocumentSky(backdrop, editorLayers),
     postProcessing,
     hasWorldSky: editorLayers?.environment?.preset !== undefined,
   });

@@ -253,18 +253,12 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(paths).toContain(extra);
     }
     const worldFile = fileOf(files, "src/world.ts");
-    expect(worldFile).toContain("place(");
-    expect(worldFile).toContain('mode: "flat"');
-    expect(worldFile).toContain("x: Infinity");
-    expect(worldFile).not.toContain("environment(");
-    expect(worldFile).not.toContain("sky(");
-    expect(worldFile).not.toContain("grass(");
-    expect(worldFile).not.toContain("seed");
-    const config = fileOf(files, "src/game.config.ts");
-    expect(config).toContain("world,");
-    expect(config).not.toContain("physics,");
-    expect(config).toContain("entityModels,");
-    expect(config).toContain("objectModels,");
+    expect(worldFile).toContain("environment(");
+    expect(worldFile).toContain("terrain(");
+    expect(worldFile).toContain("environmentContentFromDocument(editorLayers");
+    expect(worldFile).toContain("sky(authored.sky");
+    expect(worldFile).not.toContain("position");
+    expect(worldFile).not.toMatch(/center|\[\s*-?\d+\s*,/);
   });
 
   test("--no-editor: drops the scene document and all editor wiring", () => {
@@ -294,6 +288,28 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const props = scene.markers.filter((marker) => marker.catalogId !== undefined);
     const ahead = props.filter((marker) => marker.position.z > spawn!.position.z);
     expect(ahead.length).toBeGreaterThan(props.length / 2);
+  });
+
+  test("default 3D scene seeds a bright sky the terrain world reads from the document", () => {
+    for (const sceneMode of ["empty", "starter"] as const) {
+      const files = render("standalone", { sceneMode });
+      const scene = JSON.parse(fileOf(files, "src/editor.scene.json")) as { environment?: { preset?: string; fog?: unknown } };
+      expect(scene.environment?.preset).toBe("day");
+      expect(scene.environment?.fog).toBeDefined();
+    }
+  });
+
+  test("--no-editor terrain world carries its own sky since there is no document", () => {
+    const worldFile = fileOf(render("standalone", { editor: false }), "src/world.ts");
+    expect(worldFile).toContain("terrain(");
+    expect(worldFile).toContain('sky({"preset":"day"');
+    expect(worldFile).not.toContain("editorLayers");
+  });
+
+  test("--ground flat keeps the infinite place() slab", () => {
+    const worldFile = fileOf(render("standalone", { ground: "flat" }), "src/world.ts");
+    expect(worldFile).toContain("place(");
+    expect(worldFile).not.toContain("environment(");
   });
 
   test("scene, ground, and player options customize generated files", () => {

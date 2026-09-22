@@ -1102,6 +1102,19 @@ export { editorLayers } from "./editorLayers";
 // Starter scene document: the authored spawn plus a few placed catalog props, so the very first
 // `bun dev` already renders editor-owned content and F2+E opens a non-empty document. Content sits
 // at +Z of the spawn because rotationY 0 faces +Z: the follow camera frames it and W walks to the goal.
+/**
+ * Seeded sky for a new 3D scene: the `day` preset honors intensities and custom tints, so the first
+ * frame reads bright. Retune in the editor lighting workspace (F2+E), which rewrites this block.
+ */
+export const STARTER_ENVIRONMENT = {
+  preset: "day",
+  zenithColor: "#2c6cc6",
+  horizonColor: "#cfe4f5",
+  sunAzimuth: 140,
+  sunElevation: 40,
+  fog: { color: "#cfe4f5", near: 90, far: 460 },
+} as const;
+
 const editorSceneJson = `{
   "version": 1,
   "markers": [
@@ -1125,7 +1138,8 @@ const editorSceneJson = `{
       "color": "#22c55e",
       "meta": { "on": "enter", "action": "win", "message": "You reached the goal — you win!", "triggerRadius": 3 }
     }
-  ]
+  ],
+  "environment": ${JSON.stringify(STARTER_ENVIRONMENT)}
 }
 `;
 
@@ -1265,17 +1279,62 @@ ${fields.join("\n")}
 `;
 };
 
-const worldTs = (id: string, ground: "flat" | "terrain" = "terrain") => `import { world as place } from "@jgengine/core/world/place";
+const flatWorldTs = (id: string) => `import { world as place } from "@jgengine/core/world/place";
 
 // The world is the place you play in: substrate + laws. Dress the place — sky look, foliage,
-// props, sculpt — in the editor (F2+E), which writes editor.scene.json; never here. With no
-// authored sky the engine renders its default sky.
+// props, sculpt — in the editor (F2+E), which writes editor.scene.json; never here.
 export const world = place({
   id: "${id}",
-  ground: { mode: "${ground === "terrain" ? "flat" : ground}", size: { x: Infinity, z: Infinity } },
+  ground: { mode: "flat", size: { x: Infinity, z: Infinity } },
   physics: { gravity: -24 },
 });
 `;
+
+const TERRAIN_TUNING = (id: string) => `    height: 4,
+    frequency: 0.018,
+    octaves: 4,
+    segments: 192,
+    seed: "${id}",
+    material: "grass",
+    colors: { low: "#4f7f35", high: "#7d9a4a" },
+    // Keeps the detail shader's sand band below the hills; raise it when you add water.
+    waterLevel: -40,
+    detail: {},`;
+
+const terrainWorldTs = (id: string, editor: boolean) =>
+  editor
+    ? `import { environmentContentFromDocument } from "@jgengine/core/editor/environment";
+import { environment, sky, terrain } from "@jgengine/core/world/features";
+
+import { editorLayers } from "./editorLayers";
+
+// Footprint, sculpt, clearings under spawns, and the sky come from editor.scene.json (F2+E);
+// this file only tunes the engine's ground noise and palette.
+const authored = environmentContentFromDocument(editorLayers, { minBounds: { w: 960, d: 960 } });
+
+export const world = environment({
+  terrain: terrain({
+    bounds: authored.bounds,
+${TERRAIN_TUNING(id)}
+  }),
+  sky: sky(authored.sky ?? {}),
+  ...(authored.sculpt === undefined ? {} : { sculpt: authored.sculpt }),
+  clearings: authored.clearings,
+});
+`
+    : `import { environment, sky, terrain } from "@jgengine/core/world/features";
+
+export const world = environment({
+  terrain: terrain({
+    bounds: { w: 960, d: 960 },
+${TERRAIN_TUNING(id)}
+  }),
+  sky: sky(${JSON.stringify(STARTER_ENVIRONMENT)}),
+});
+`;
+
+const worldTs = (id: string, ground: "flat" | "terrain" = "terrain", editor = true) =>
+  ground === "flat" ? flatWorldTs(id) : terrainWorldTs(id, editor);
 
 const editorLoopTs = `import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import {
