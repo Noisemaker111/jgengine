@@ -589,6 +589,10 @@
     "./sqlPersistence",
     "./sqlWorldStore"
   ],
+  "@jgengine/navbake": [
+    ".",
+    "./index"
+  ],
   "@jgengine/react": [
     ".",
     "./accessibility",
@@ -816,8 +820,6 @@
     "./render/modelRender",
     "./render/resolveModel",
     "./render/sceneCapture",
-    "./render/testFixtures/proceduralSpriteAtlas",
-    "./render/testFixtures/proceduralTileLayer",
     "./render/useDisposable",
     "./render/useEntityRenderCues",
     "./render/useFootIk",
