@@ -8,6 +8,7 @@ import {
   editorLayersTestFor,
   editorLayersTs,
   editorSceneJson,
+  STARTER_ENVIRONMENT,
   gameAssetsTs,
   gameConfigTs,
   gameModelsTs,
@@ -58,7 +59,11 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
   if (!GAME_ID_PATTERN.test(id)) {
     throw new Error(`game id "${id}" must be kebab-case: lowercase letters, digits, dashes, starting with a letter`);
   }
-  const emptyScene: EditorSceneDoc = { version: 1, markers: [{ id: "player_spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } }] };
+  const emptyScene: EditorSceneDoc = {
+    version: 1,
+    markers: [{ id: "player_spawn", kind: "player_spawn", position: { x: 0, y: 0, z: 0 } }],
+    environment: STARTER_ENVIRONMENT,
+  };
   const sceneDoc = scene ?? (options.sceneMode === "starter" ? undefined : emptyScene);
   const sceneContents = sceneDoc ? `${JSON.stringify(sceneDoc, null, 2)}\n` : editorSceneJson;
   const sceneTest = sceneDoc ? (scene ? editorLayersTestFor(scene) : editorLayersTestFor(emptyScene)) : editorLayersTest;
@@ -91,7 +96,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "src/loop.ts", contents: loopTs(editor) },
     ...(world
       ? [
-          { path: "src/world.ts", contents: worldTs(id, options.ground) },
+          { path: "src/world.ts", contents: worldTs(id, options.ground, editor) },
           { path: "src/game/assets.ts", contents: gameAssetsTs },
     { path: "src/game/models.ts", contents: gameModelsTs(options.player) },
         ]

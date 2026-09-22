@@ -17,6 +17,14 @@ between (`--json` for structured output).
 
 ## [Unreleased]
 
+### Migrate
+
+- The default third-person orbit camera sits lower and closer (`initialDistance` 9 → 7, `initialHeight` 5.5 → 3.2), so the horizon and sky are in frame. To keep the old framing, set `camera: { initialDistance: 9, initialHeight: 5.5 }` in `defineGame`.
+
+### Changed
+
+- `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `src/world.ts` builds an `environment()` world with rolling detail-shaded terrain, and reads its footprint, sculpt, clearings and sky from `editor.scene.json` through `environmentContentFromDocument`. The scene seeds a bright `day` sky with a sun bearing and distance fog. `--ground flat` keeps the old `place()` slab (#1762).
+
 ### Added
 
 - The built-in Graphics settings tab now exposes render scale plus ambient occlusion, bloom, depth-of-field, and SMAA toggles alongside the quality tier; picking a tier re-applies its defaults. `@jgengine/core/settings/graphicsSettings` (`readGraphicsSettings`, `applyGraphicsQuality`, `GRAPHICS_POST_STAGES`) resolves the stored choices onto the `GraphicsProfile` the shell renders with, and `SETTING_IDS` gains `graphics.renderScale` and `graphics.post.*`. Every game gets the rows in its existing settings menu with no wiring (#1688).
@@ -27,6 +35,7 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- A sky authored in the scene document (`editor.scene.json` `environment`, written by the editor lighting workspace) now renders in `place()` worlds. `defineGame` never passed `skyFromDocument(editorLayers)` to the renderer, so those edits were silently dropped. A game's own `backdrop.sky` still wins, and a document holding only point lights leaves the world sky alone (#1762).
 - `jgengine create --scene starter` placed its props and goal behind the spawn, so the first frame showed empty ground and W walked away from the goal. The starter scene now sits ahead of the default +Z facing.
 - A standalone game's `bun run desktop` failed with `jgengine: command not found` because the CLI is not a dependency; the script now runs `npx jgengine desktop`.
 - `@jgengine/navbake` joins the published lockstep set. `@jgengine/editor@0.18.1` depended on it while nothing published it, so `bun install` on the released SDK failed. `check-release-set` (in `gate`, `check-types`, and the publish workflow) now fails when a published package depends on a workspace package outside the publish list or out of dependency order, or when the publish, version-bump, and changelog package lists disagree.
