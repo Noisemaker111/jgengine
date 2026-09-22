@@ -40,6 +40,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `totalLoad` (function) · `import { totalLoad } from "@jgengine/core/inventory/encumbrance"`
 
+## cell-grid — immutable 2D board of cells with row clears, gravity collapse, and match runs
+
+- `createCellGrid` (function) · `import { createCellGrid } from "@jgengine/core/puzzle/cellGrid"`
+
 ## clip-roles — map a rigged asset's pack-specific clip name to its semantic animation role
 
 - `classifyClip` (function) · `import { classifyClip } from "@jgengine/core/game/clipRoles"`

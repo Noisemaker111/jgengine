@@ -27,6 +27,9 @@ between (`--json` for structured output).
 
 ### Added
 
+- `jgengine create --2d` scaffolds a board game with no 3D scene, editor document, or models: a `board` world, `presentation: "hud"`, a store slot holding a `CellGrid`, arrow/WASD/Space bound to commands with held-key repeat, and a GameUI that draws the grid. `--3d` names the default. 3D-only flags (`--player`, `--ground`, `--scene`, `--from-scene`, `--shape`, `--no-world`, `--no-editor`) are refused with `--2d` instead of ignored.
+- `@jgengine/core/puzzle/cellGrid` is documented public API (`cell-grid` capability): an immutable 2D board with `withCell`/`withCells`, `fullRows`/`clearRows`, `collapseColumns`, and `findRuns`. It was importable but tagged internal, so agents never found it.
+- HUD-only games (`presentation: "hud"`) set `data-jg-capture="ready"` after their first painted frame unless a capture host owns the flag, so `shoot` and `drive` no longer time out waiting for a `<canvas>` that never exists.
 - The built-in Graphics settings tab now exposes render scale plus ambient occlusion, bloom, depth-of-field, and SMAA toggles alongside the quality tier; picking a tier re-applies its defaults. `@jgengine/core/settings/graphicsSettings` (`readGraphicsSettings`, `applyGraphicsQuality`, `GRAPHICS_POST_STAGES`) resolves the stored choices onto the `GraphicsProfile` the shell renders with, and `SETTING_IDS` gains `graphics.renderScale` and `graphics.post.*`. Every game gets the rows in its existing settings menu with no wiring (#1688).
 
 - Model triangle budget: the shared GLB loader counts each model's triangles as it lands and warns once per URL when one exceeds `DEFAULT_MODEL_TRIANGLE_BUDGET` (100k; retune with `setModelTriangleBudget`). `heavyModels()` lists the offenders and `debug_snapshot` reports them under `probes.heavyModels`, so a heavy prop shows up in evidence instead of only as a slow frame.

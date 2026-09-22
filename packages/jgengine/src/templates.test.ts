@@ -15,7 +15,7 @@ import {
 
 function render(
   variant: "standalone" | "in-repo",
-  options?: Partial<Pick<TemplateOptions, "world" | "editor" | "player" | "ground" | "sceneMode" | "scene">>,
+  options?: Partial<Pick<TemplateOptions, "world" | "editor" | "player" | "ground" | "sceneMode" | "scene" | "dimension">>,
 ): TemplateFile[] {
   return gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.8.0", ...options });
 }
@@ -336,6 +336,30 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     const worldFile = fileOf(render("standalone", { ground: "flat" }), "src/world.ts");
     expect(worldFile).toContain("place(");
     expect(worldFile).not.toContain("environment(");
+  });
+
+  test("--2d scaffolds a board game with no 3D scene, editor document, or models", () => {
+    const files = render("standalone", { dimension: "2d" });
+    const paths = files.map((file) => file.path);
+    for (const path of ["src/world.ts", "src/loop.ts", "src/game/board.ts", "src/game/board.test.ts", "src/game/ui/GameUI.tsx"]) {
+      expect(paths).toContain(path);
+    }
+    for (const path of ["src/editor.scene.json", "src/editorLayers.ts", "src/game/models.ts", "src/game/assets.ts"]) {
+      expect(paths).not.toContain(path);
+    }
+    for (const path of paths) {
+      const [root, top] = path.split("/");
+      if (root === "src" && top !== undefined && !path.slice(4).includes("/")) expect(isAllowedGameSrcEntry(top)).toBe(true);
+    }
+    const config = fileOf(files, "src/game.config.ts");
+    expect(config).toContain('presentation: "hud"');
+    expect(config).not.toContain("DEFAULT_WALK_CODES");
+    expect(fileOf(files, "src/world.ts")).toContain('mode: "board"');
+    expect(fileOf(files, "src/game/board.ts")).toContain("@jgengine/core/puzzle/cellGrid");
+    const loop = fileOf(files, "src/loop.ts");
+    for (const action of ["left", "right", "up", "down"]) expect(config).toContain(`${action}: { hold:`);
+    expect(config).toContain("place: [");
+    expect(loop).toContain('commands.define("place"');
   });
 
   test("scene, ground, and player options customize generated files", () => {
