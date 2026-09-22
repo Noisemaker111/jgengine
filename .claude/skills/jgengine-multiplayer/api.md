@@ -6,7 +6,7 @@
 
 - `ConvexBackend` (type): type ConvexBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = LiveGameBackend<TPresenceRow, TPresenceLocation, TGameId> & { leaderboard: ConvexLeaderboardReads; } — ⚠ undocumented
 - `ConvexBackendOptions` (type): type ConvexBackendOptions<TRawPresenceRow extends { actorExternalId: string }, TPresenceRow> = { client: ConvexReactClient; gameId: string; userId: string; api?: ConvexGameApi; poseTuning?: PoseSyncTuning; presence?: { functions: ConvexPresenceFunctions; mapRow: (row: TRawPresenceRow) => TPresenceRo… — ⚠ undocumented
-- `ConvexChatFunctions` (interface): interface ConvexChatFunctions — ⚠ undocumented
+- `ConvexChatFunctions` (interface): interface ConvexChatFunctions { messages: FunctionReference<"query">; sendMessage: FunctionReference<"mutation"> } — ⚠ undocumented · used by `createConvexChatTransport`: Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent h…
 - `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; }, JoinServerOutcome >; leaveServer: FunctionReference<"mutation", "public", { serverI… — ⚠ undocumented
 - `ConvexGameClient` (type): type ConvexGameClient = Pick<ConvexReactClient, "mutation" | "watchQuery"> — Structural client seam avoids requiring the engine and game to share a class instance type.
 - `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
@@ -67,7 +67,7 @@
 
 ## @jgengine/convex/convexChatTransport
 
-- `ConvexChatFunctions` (interface): interface ConvexChatFunctions — ⚠ undocumented
+- `ConvexChatFunctions` (interface): interface ConvexChatFunctions { messages: FunctionReference<"query">; sendMessage: FunctionReference<"mutation"> } — ⚠ undocumented · used by `createConvexChatTransport`: Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent h…
 - `createConvexChatTransport` (function): function createConvexChatTransport<TRawRow = ChatMessage>(functions: ConvexChatFunctions, options?: { mapRow?: (row: TRawRow) => ChatMessage; extraArgs?: Record<string, unknown>; }): ChatTransport — Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent history, newest last) and one send mutation. mapRow converts backend rows into ChatMessage (defaults to structural passthrough); extraArgs is spread into both calls for games that scope chat by server or world.
 
 ## @jgengine/convex/convexPresenceTransport
@@ -166,32 +166,32 @@
 
 ## @jgengine/core/multiplayer
 
-- `AuthSession` (interface): interface AuthSession — ⚠ undocumented
-- `BoardSnapshot` (interface): interface BoardSnapshot — ⚠ undocumented
-- `ChatActions` (interface): interface ChatActions — ⚠ undocumented
-- `ChatSendOutcome` (interface): interface ChatSendOutcome — ⚠ undocumented
+- `AuthSession` (interface): interface AuthSession { userId: string; displayName?: string; avatarUrl?: string; email?: string; isNew?: boolean } — ⚠ undocumented
+- `BoardSnapshot` (interface): interface BoardSnapshot { ownerId: string; units: readonly SnapshotUnit[]; stats: Readonly<Record<string, number>>; seed: number; capturedAt: number } — ⚠ undocumented
+- `ChatActions` (interface): interface ChatActions { sendMessage(args: ChatSendArgs): Promise<ChatSendOutcome> } — ⚠ undocumented
+- `ChatSendOutcome` (interface): interface ChatSendOutcome { ok: boolean; reason?: string } — ⚠ undocumented · used by `sendChatMessage` (@jgengine/convex): Write validated chat in a host transaction after the caller resolves its actor and world.
 - `ChatSync` (interface): interface ChatSync — Callback seam for backends that cannot host React hooks (e.g. the ws client): subscribe delivers the channel's recent history on every change; send resolves with the host's verdict.
 - `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
-- `EnsurePresenceResult` (interface): interface EnsurePresenceResult — ⚠ undocumented
+- `EnsurePresenceResult` (interface): interface EnsurePresenceResult { presenceId: string; position: PresencePosition; rotationY: number } — ⚠ undocumented
 - `FeedWriteGate` (type): type FeedWriteGate = { allowedActions: readonly string[]; } — ⚠ undocumented
-- `MatchFilter` (interface): interface MatchFilter — ⚠ undocumented
-- `PlayerIdentity` (interface): interface PlayerIdentity — ⚠ undocumented
-- `PlayerPose` (interface): interface PlayerPose — ⚠ undocumented
-- `PoseSyncRules` (interface): interface PoseSyncRules — ⚠ undocumented
-- `PoseSyncTuning` (interface): interface PoseSyncTuning — ⚠ undocumented
-- `PresenceActions` (interface): interface PresenceActions<TGameId extends string = string> — ⚠ undocumented
-- `PresenceFeeds` (interface): interface PresenceFeeds<TRow, TLocation> — ⚠ undocumented
-- `PresencePoseState` (interface): interface PresencePoseState — ⚠ undocumented
-- `PresenceSession` (interface): interface PresenceSession<TGameId extends string = string> — ⚠ undocumented
+- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
+- `PlayerIdentity` (interface): interface PlayerIdentity { userId: string; isNew: boolean } — ⚠ undocumented
+- `PlayerPose` (interface): interface PlayerPose { x: number; y: number; z: number; rotationY: number; rotationPitch: number; appearance?: Record<string, string> } — ⚠ undocumented
+- `PoseSyncRules` (interface): interface PoseSyncRules { maxSpeed: number; minIntervalMs?: number; maxVerticalOffset: number; floorY?: number; minElapsedSec: number; maxElapsedSec: number; keepAliveRefreshMs: number } — ⚠ undocumented · used by `DEFAULT_POSE_SYNC_RULES` (@jgengine/core/multiplayer/presenceModel): Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
+- `PoseSyncTuning` (interface): interface PoseSyncTuning { minIntervalMs: number; heartbeatMs: number; positionEpsilon: number; verticalEpsilon: number; rotationEpsilon: number } — ⚠ undocumented · used by `DEFAULT_POSE_SYNC_TUNING` (@jgengine/core/multiplayer/poseSyncGate): Default ten-hertz client pose gate with a five-second heartbeat.
+- `PresenceActions` (interface): interface PresenceActions<TGameId extends string = string> { ensurePresence(args: EnsurePresenceArgs<TGameId>): Promise<EnsurePresenceResult | null>; leavePresence(args: LeavePresenceArgs<TGameId>): Promise<{left: boolean}>; syncPose(pose: PresencePose): void } — ⚠ undocumented
+- `PresenceFeeds` (interface): interface PresenceFeeds<TRow, TLocation> { myPresenceLocation: TLocation | null | undefined; onlinePresences: readonly TRow[] | undefined; dormantPresences: readonly TRow[] | undefined } — ⚠ undocumented
+- `PresencePoseState` (interface): interface PresencePoseState { position: {x: number; y: number; z: number}; rotationY: number; rotationPitch?: number; lastSeenAtMs?: number; appearance?: Record<string, string> } — ⚠ undocumented
+- `PresenceSession` (interface): interface PresenceSession<TGameId extends string = string> { homeGameId: TGameId; externalId: string; viewerChunkKey?: string } — ⚠ undocumented
 - `PresenceTransport` (interface): interface PresenceTransport<TRow, TLocation, TGameId extends string = string> — Backend seam for multiplayer presence. Feeds are reactive data and change identity whenever any player's pose updates; actions MUST be identity-stable for the lifetime of a mounted session so join/leave lifecycle effects can depend on them without re-running per pose tick. The use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends.
 - `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
 - `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
 - `ReplicationPolicy` (interface): interface ReplicationPolicy — Host-side interest/privacy policy — how the authoritative world projects to each viewer over the wire. Unset (the default) means every client receives the whole world, exactly as before. Enabling a field changes only what each client *sees*, never how the host simulates: the game plays identically. The core replication modules read this to attach a {@link SnapshotModule.project} without the engine growing a per-feature branch.
-- `SessionListing` (interface): interface SessionListing — ⚠ undocumented
-- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
-- `Vec3` (interface): interface Vec3 — ⚠ undocumented
-- `VoiceParticipant` (interface): interface VoiceParticipant — ⚠ undocumented
-- `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
+- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string; mode?: string; joinCode?: string; tags?: readonly string[]; updatedAt: number } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
+- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented · used by `isAutoJoinCandidate` (@jgengine/core/runtime/hostPolicy): Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity.
+- `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
+- `VoiceParticipant` (interface): interface VoiceParticipant { userId: string; streamId?: string } — ⚠ undocumented
+- `VoiceRoute` (interface): interface VoiceRoute { fromUserId: string; channelId: string; gain: number } — ⚠ undocumented
 - `VoiceTransport` (interface): interface VoiceTransport — Signaling seam for voice: who is in a channel and which media stream descriptor they published. The media plane (WebRTC, SFU, or anything else that moves audio bytes) stays behind this seam, host-supplied — the engine never touches it. subscribers delivers the channel roster on every change, starting with the current roster.
 - `browseSessions` (function): function browseSessions(listings: readonly SessionListing[], filter: MatchFilter = {}, options: BrowseOptions = {}): SessionListing[] — ⚠ undocumented
 - `createFeedWriteGate` (function): function createFeedWriteGate(allowedActions: readonly string[] = []): FeedWriteGate — ⚠ undocumented
@@ -209,22 +209,22 @@
 
 ## @jgengine/core/multiplayer/chatContract
 
-- `ChatActions` (interface): interface ChatActions — ⚠ undocumented
-- `ChatSendArgs` (interface): interface ChatSendArgs — ⚠ undocumented
-- `ChatSendOutcome` (interface): interface ChatSendOutcome — ⚠ undocumented
+- `ChatActions` (interface): interface ChatActions { sendMessage(args: ChatSendArgs): Promise<ChatSendOutcome> } — ⚠ undocumented
+- `ChatSendArgs` (interface): interface ChatSendArgs { channelId: string; body: string } — ⚠ undocumented
+- `ChatSendOutcome` (interface): interface ChatSendOutcome { ok: boolean; reason?: string } — ⚠ undocumented · used by `sendChatMessage` (@jgengine/convex): Write validated chat in a host transaction after the caller resolves its actor and world.
 - `ChatSync` (interface): interface ChatSync — Callback seam for backends that cannot host React hooks (e.g. the ws client): subscribe delivers the channel's recent history on every change; send resolves with the host's verdict.
 - `ChatTransport` (interface): interface ChatTransport — Backend seam for remote text chat, mirroring PresenceTransport: the use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends. useMessages returns undefined while the subscription is loading and the channel's recent history once live.
 - `createLocalChatTransport` (function): function createLocalChatTransport(options?: { userId?: string; historyLimit?: number; now?: () => number; }): { transport: ChatTransport; sync: ChatSync; actions: ChatActions; } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/combatSnapshot
 
-- `BoardSnapshot` (interface): interface BoardSnapshot — ⚠ undocumented
-- `CombatRules` (interface): interface CombatRules — ⚠ undocumented
+- `BoardSnapshot` (interface): interface BoardSnapshot { ownerId: string; units: readonly SnapshotUnit[]; stats: Readonly<Record<string, number>>; seed: number; capturedAt: number } — ⚠ undocumented
+- `CombatRules` (interface): interface CombatRules { attackStat: string; healthStat: string; maxRounds?: number; critChance?: number; critMultiplier?: number } — ⚠ undocumented
 - `CombatSide` (type): type CombatSide = "a" | "b" | "draw" — ⚠ undocumented
-- `ReplayBlow` (interface): interface ReplayBlow — ⚠ undocumented
-- `ReplayResult` (interface): interface ReplayResult — ⚠ undocumented
-- `SerializeBoardArgs` (interface): interface SerializeBoardArgs — ⚠ undocumented
-- `SnapshotUnit` (interface): interface SnapshotUnit — ⚠ undocumented
+- `ReplayBlow` (interface): interface ReplayBlow { round: number; attacker: CombatSide; attackerUnit: string; defenderUnit: string; damage: number; crit: boolean; defenderHealthAfter: number } — ⚠ undocumented
+- `ReplayResult` (interface): interface ReplayResult { winner: CombatSide; rounds: number; blows: readonly ReplayBlow[]; survivorsA: readonly string[]; survivorsB: readonly string[] } — ⚠ undocumented
+- `SerializeBoardArgs` (interface): interface SerializeBoardArgs { ownerId: string; units: readonly SnapshotUnit[]; stats?: Readonly<Record<string, number>>; seed?: number; capturedAt?: number } — ⚠ undocumented
+- `SnapshotUnit` (interface): interface SnapshotUnit { id: string; stats: Readonly<Record<string, number>> } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/feedWriteGate
 
@@ -234,27 +234,27 @@
 
 ## @jgengine/core/multiplayer/identity
 
-- `AuthSession` (interface): interface AuthSession — ⚠ undocumented
-- `PlayerIdentity` (interface): interface PlayerIdentity — ⚠ undocumented
+- `AuthSession` (interface): interface AuthSession { userId: string; displayName?: string; avatarUrl?: string; email?: string; isNew?: boolean } — ⚠ undocumented
+- `PlayerIdentity` (interface): interface PlayerIdentity { userId: string; isNew: boolean } — ⚠ undocumented
 - `resolveGuestSession` (function): function resolveGuestSession(seed?: string): AuthSession — ⚠ undocumented
 - `sessionPlayer` (function): function sessionPlayer(session: AuthSession): PlayerIdentity — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/lagCompensation
 
-- `HitscanHit` (interface): interface HitscanHit — ⚠ undocumented
-- `HitscanRay` (interface): interface HitscanRay — ⚠ undocumented
-- `HitscanTarget` (interface): interface HitscanTarget — ⚠ undocumented
-- `PositionHistoryConfig` (interface): interface PositionHistoryConfig — ⚠ undocumented
-- `PositionSample` (interface): interface PositionSample extends Vec3 — ⚠ undocumented
-- `Vec3` (interface): interface Vec3 — ⚠ undocumented
+- `HitscanHit` (interface): interface HitscanHit { entityId: string; distance: number; point: Vec3 } — ⚠ undocumented
+- `HitscanRay` (interface): interface HitscanRay { origin: Vec3; direction: Vec3; maxDistance?: number } — ⚠ undocumented
+- `HitscanTarget` (interface): interface HitscanTarget { entityId: string; radius: number } — ⚠ undocumented
+- `PositionHistoryConfig` (interface): interface PositionHistoryConfig { historyMs: number; maxSamples?: number } — ⚠ undocumented
+- `PositionSample` (interface): interface PositionSample extends Vec3 { t: number } — ⚠ undocumented
+- `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
 
 ## @jgengine/core/multiplayer/matchmaking
 
-- `BrowseOptions` (interface): interface BrowseOptions — ⚠ undocumented
-- `MatchFilter` (interface): interface MatchFilter — ⚠ undocumented
-- `SessionListing` (interface): interface SessionListing — ⚠ undocumented
+- `BrowseOptions` (interface): interface BrowseOptions { limit?: number } — ⚠ undocumented
+- `MatchFilter` (interface): interface MatchFilter { mode?: string; tags?: readonly string[]; query?: string; notFull?: boolean; status?: readonly SessionStatus[]; includePrivate?: boolean } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
+- `SessionListing` (interface): interface SessionListing { serverId: string; gameId: string; status: SessionStatus; visibility: SessionVisibility; memberCount: number; slotsPerServer: number; label?: string; mode?: string; joinCode?: string; tags?: readonly string[]; updatedAt: number } — ⚠ undocumented · used by `useWorldBrowser` (@jgengine/react): Polls a host-supplied session fetcher (e.g.
 - `SessionStatus` (type): type SessionStatus = "open" | "running" | "closed" — ⚠ undocumented
-- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented
+- `SessionVisibility` (type): type SessionVisibility = "public" | "private" — ⚠ undocumented · used by `isAutoJoinCandidate` (@jgengine/core/runtime/hostPolicy): Auto-match candidate when no `serverId` is supplied: already a member, or a public room with free capacity.
 - `browseSessions` (function): function browseSessions(listings: readonly SessionListing[], filter: MatchFilter = {}, options: BrowseOptions = {}): SessionListing[] — ⚠ undocumented
 - `findByJoinCode` (function): function findByJoinCode(listings: readonly SessionListing[], code: string): SessionListing | null — ⚠ undocumented
 - `generateJoinCode` (function): function generateJoinCode(random: () => number, length = 6): string — ⚠ undocumented
@@ -266,49 +266,49 @@
 ## @jgengine/core/multiplayer/poseSyncGate
 
 - `DEFAULT_POSE_SYNC_TUNING` (const): const DEFAULT_POSE_SYNC_TUNING: PoseSyncTuning — Default ten-hertz client pose gate with a five-second heartbeat.
-- `PlayerPose` (interface): interface PlayerPose — ⚠ undocumented
-- `PoseSyncGate` (interface): interface PoseSyncGate — ⚠ undocumented
-- `PoseSyncTuning` (interface): interface PoseSyncTuning — ⚠ undocumented
+- `PlayerPose` (interface): interface PlayerPose { x: number; y: number; z: number; rotationY: number; rotationPitch: number; appearance?: Record<string, string> } — ⚠ undocumented
+- `PoseSyncGate` (interface): interface PoseSyncGate { evaluate(pose: PlayerPose, nowMs: number): boolean } — ⚠ undocumented
+- `PoseSyncTuning` (interface): interface PoseSyncTuning { minIntervalMs: number; heartbeatMs: number; positionEpsilon: number; verticalEpsilon: number; rotationEpsilon: number } — ⚠ undocumented · used by `DEFAULT_POSE_SYNC_TUNING`: Default ten-hertz client pose gate with a five-second heartbeat.
 - `createPoseSyncGate` (function): function createPoseSyncGate(tuning: PoseSyncTuning = DEFAULT_POSE_SYNC_TUNING): PoseSyncGate — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/presenceContract
 
-- `EnsurePresenceArgs` (interface): interface EnsurePresenceArgs<TGameId extends string = string> — ⚠ undocumented
-- `EnsurePresenceResult` (interface): interface EnsurePresenceResult — ⚠ undocumented
-- `LeavePresenceArgs` (interface): interface LeavePresenceArgs<TGameId extends string = string> — ⚠ undocumented
-- `PresenceActions` (interface): interface PresenceActions<TGameId extends string = string> — ⚠ undocumented
-- `PresenceFeeds` (interface): interface PresenceFeeds<TRow, TLocation> — ⚠ undocumented
-- `PresencePose` (interface): interface PresencePose — ⚠ undocumented
-- `PresencePosition` (interface): interface PresencePosition — ⚠ undocumented
+- `EnsurePresenceArgs` (interface): interface EnsurePresenceArgs<TGameId extends string = string> { gameId: TGameId; externalId: string } — ⚠ undocumented
+- `EnsurePresenceResult` (interface): interface EnsurePresenceResult { presenceId: string; position: PresencePosition; rotationY: number } — ⚠ undocumented
+- `LeavePresenceArgs` (interface): interface LeavePresenceArgs<TGameId extends string = string> { gameId: TGameId; externalId: string } — ⚠ undocumented
+- `PresenceActions` (interface): interface PresenceActions<TGameId extends string = string> { ensurePresence(args: EnsurePresenceArgs<TGameId>): Promise<EnsurePresenceResult | null>; leavePresence(args: LeavePresenceArgs<TGameId>): Promise<{left: boolean}>; syncPose(pose: PresencePose): void } — ⚠ undocumented
+- `PresenceFeeds` (interface): interface PresenceFeeds<TRow, TLocation> { myPresenceLocation: TLocation | null | undefined; onlinePresences: readonly TRow[] | undefined; dormantPresences: readonly TRow[] | undefined } — ⚠ undocumented
+- `PresencePose` (interface): interface PresencePose { position: {x: number; y?: number; z: number}; rotationY?: number; rotationPitch?: number; externalId?: string } — ⚠ undocumented
+- `PresencePosition` (interface): interface PresencePosition { x: number; y: number; z: number } — ⚠ undocumented
 - `PresenceResidentRow` (interface): interface PresenceResidentRow — Resident identity used to suppress offline actors while their owner is online.
-- `PresenceSession` (interface): interface PresenceSession<TGameId extends string = string> — ⚠ undocumented
+- `PresenceSession` (interface): interface PresenceSession<TGameId extends string = string> { homeGameId: TGameId; externalId: string; viewerChunkKey?: string } — ⚠ undocumented
 - `PresenceTransport` (interface): interface PresenceTransport<TRow, TLocation, TGameId extends string = string> — Backend seam for multiplayer presence. Feeds are reactive data and change identity whenever any player's pose updates; actions MUST be identity-stable for the lifetime of a mounted session so join/leave lifecycle effects can depend on them without re-running per pose tick. The use* members are called as React hooks by consumers, so a mounted transport must never change identity — remount the subtree to switch backends.
 - `createLocalPresenceTransport` (function): function createLocalPresenceTransport<TRow, TLocation, TGameId extends string = string>(): { transport: PresenceTransport<TRow, TLocation, TGameId>; actions: PresenceActions<TGameId>; } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/presenceModel
 
-- `ActivePresenceResolution` (interface): interface ActivePresenceResolution<T> — ⚠ undocumented
+- `ActivePresenceResolution` (interface): interface ActivePresenceResolution<T> { active: T | null; extras: T[] } — ⚠ undocumented
 - `DEFAULT_POSE_SYNC_RULES` (const): const DEFAULT_POSE_SYNC_RULES: PoseSyncRules — Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
 - `DEFAULT_SPAWN_ORIGIN` (const): const DEFAULT_SPAWN_ORIGIN: { readonly x: 0; readonly y: 0; readonly z: 0; } — ⚠ undocumented
-- `IncomingPose` (interface): interface IncomingPose — ⚠ undocumented
-- `PoseSyncDecision` (interface): interface PoseSyncDecision — ⚠ undocumented
-- `PoseSyncRules` (interface): interface PoseSyncRules — ⚠ undocumented
-- `PresencePoseState` (interface): interface PresencePoseState — ⚠ undocumented
+- `IncomingPose` (interface): interface IncomingPose { position: {x: number; z: number; y?: number}; rotationY?: number; rotationPitch?: number; appearance?: Record<string, string> } — ⚠ undocumented
+- `PoseSyncDecision` (interface): interface PoseSyncDecision { position: {x: number; y: number; z: number}; rotationY: number; rotationPitch: number; appearance?: Record<string, string>; changed: boolean; refreshKeepAlive: boolean } — ⚠ undocumented
+- `PoseSyncRules` (interface): interface PoseSyncRules { maxSpeed: number; minIntervalMs?: number; maxVerticalOffset: number; floorY?: number; minElapsedSec: number; maxElapsedSec: number; keepAliveRefreshMs: number } — ⚠ undocumented · used by `DEFAULT_POSE_SYNC_RULES`: Canonical client-authoritative pose-sync tuning shared by every host transport (WS, Convex).
+- `PresencePoseState` (interface): interface PresencePoseState { position: {x: number; y: number; z: number}; rotationY: number; rotationPitch?: number; lastSeenAtMs?: number; appearance?: Record<string, string> } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/simultaneousCommit
 
 - `CommitPhase` (type): type CommitPhase = "collecting" | "revealed" — ⚠ undocumented
-- `CommitRoundConfig` (interface): interface CommitRoundConfig — ⚠ undocumented
+- `CommitRoundConfig` (interface): interface CommitRoundConfig { participants: readonly string[]; allowReseal?: boolean } — ⚠ undocumented
 - `SealResult` (type): type SealResult = | { ok: true; allSealed: boolean } | { ok: false; reason: "unknown_participant" | "already_sealed" | "already_revealed" } — ⚠ undocumented
-- `SealedCommit` (interface): interface SealedCommit<TAction> — ⚠ undocumented
+- `SealedCommit` (interface): interface SealedCommit<TAction> { playerId: string; action: TAction; sealedAt: number } — ⚠ undocumented
 
 ## @jgengine/core/multiplayer/voiceContract
 
-- `PushToTalk` (interface): interface PushToTalk — ⚠ undocumented
+- `PushToTalk` (interface): interface PushToTalk { mode(): PushToTalkMode; setMode(mode: PushToTalkMode): void; keyDown(): void; keyUp(): void; muted(): boolean; setMuted(muted: boolean): void; status(): PushToTalkStatus; transmitting(): boolean } — ⚠ undocumented
 - `PushToTalkMode` (type): type PushToTalkMode = "hold" | "toggle" | "openMic" — ⚠ undocumented
 - `PushToTalkStatus` (type): type PushToTalkStatus = "idle" | "keyed" | "open" — ⚠ undocumented
-- `VoiceParticipant` (interface): interface VoiceParticipant — ⚠ undocumented
-- `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
+- `VoiceParticipant` (interface): interface VoiceParticipant { userId: string; streamId?: string } — ⚠ undocumented
+- `VoiceRoute` (interface): interface VoiceRoute { fromUserId: string; channelId: string; gain: number } — ⚠ undocumented
 - `VoiceTransport` (interface): interface VoiceTransport — Signaling seam for voice: who is in a channel and which media stream descriptor they published. The media plane (WebRTC, SFU, or anything else that moves audio bytes) stays behind this seam, host-supplied — the engine never touches it. subscribers delivers the channel roster on every change, starting with the current roster.
 - `createLocalVoiceTransport` (function): function createLocalVoiceTransport(options?: { userId?: string }): { transport: VoiceTransport; participants(channelId: string): readonly VoiceParticipant[]; } — ⚠ undocumented
 - `createPushToTalk` (function): function createPushToTalk(config?: { mode?: PushToTalkMode; onChange?: (transmitting: boolean) => void; }): PushToTalk — ⚠ undocumented
@@ -442,7 +442,7 @@
 - `SqlPool` (type): type SqlPool = SqlQueryable & { connect: () => Promise<SqlPoolClient>; } — ⚠ undocumented
 - `SqlPoolClient` (type): type SqlPoolClient = SqlQueryable & { release: () => void; } — ⚠ undocumented
 - `SqlQueryResult` (type): type SqlQueryResult = { rows: Record<string, unknown>[] } — ⚠ undocumented
-- `SqlQueryable` (type): type SqlQueryable = { query: (text: string, params?: unknown[]) => Promise<SqlQueryResult>; } — ⚠ undocumented
+- `SqlQueryable` (type): type SqlQueryable = { query: (text: string, params?: unknown[]) => Promise<SqlQueryResult>; } — ⚠ undocumented · used by `sqlWorldStore`: Create an asynchronous hosted-world store backed by one JSONB row.
 - `ensureSchema` (function): function ensureSchema(pool: SqlQueryable): Promise<void> — ⚠ undocumented
 - `sqlPersistence` (function): function sqlPersistence(pool: SqlPool, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 - `sqlWorldStore` (function): function sqlWorldStore(pool: SqlQueryable, worldId: string): HostedWorldStore — Create an asynchronous hosted-world store backed by one JSONB row.
@@ -452,7 +452,7 @@
 - `SqlPool` (type): type SqlPool = SqlQueryable & { connect: () => Promise<SqlPoolClient>; } — ⚠ undocumented
 - `SqlPoolClient` (type): type SqlPoolClient = SqlQueryable & { release: () => void; } — ⚠ undocumented
 - `SqlQueryResult` (type): type SqlQueryResult = { rows: Record<string, unknown>[] } — ⚠ undocumented
-- `SqlQueryable` (type): type SqlQueryable = { query: (text: string, params?: unknown[]) => Promise<SqlQueryResult>; } — ⚠ undocumented
+- `SqlQueryable` (type): type SqlQueryable = { query: (text: string, params?: unknown[]) => Promise<SqlQueryResult>; } — ⚠ undocumented · used by `sqlWorldStore` (@jgengine/sql): Create an asynchronous hosted-world store backed by one JSONB row.
 - `ensureSchema` (function): function ensureSchema(pool: SqlQueryable): Promise<void> — ⚠ undocumented
 - `sqlPersistence` (function): function sqlPersistence(pool: SqlPool, now: () => number = Date.now): HostPersistence — ⚠ undocumented
 
@@ -510,12 +510,12 @@
 - `TransportPipe` (type): type TransportPipe = { send: (data: string) => void; close: () => void; } — ⚠ undocumented
 - `TransportPipeFactory` (type): type TransportPipeFactory = (handlers: TransportPipeHandlers) => TransportPipe — ⚠ undocumented
 - `TransportPipeHandlers` (type): type TransportPipeHandlers = { onOpen: () => void; onMessage: (data: string) => void; onClose: () => void; } — ⚠ undocumented
-- `VoiceChannelDef` (interface): interface VoiceChannelDef — ⚠ undocumented
+- `VoiceChannelDef` (interface): interface VoiceChannelDef { id: VoiceChannelId; positional: boolean; falloff?: AudioFalloffConfig; gain?: number } — ⚠ undocumented
 - `VoiceChannelId` (type): type VoiceChannelId = string — ⚠ undocumented
-- `VoiceChannelRouter` (interface): interface VoiceChannelRouter — ⚠ undocumented
+- `VoiceChannelRouter` (interface): interface VoiceChannelRouter { registerChannel(def: VoiceChannelDef): void; join(userId: VoiceMemberId, channelId: VoiceChannelId): void; leave(userId: VoiceMemberId, channelId: VoiceChannelId): void; leaveAll(userId: VoiceMemberId): void; updatePosition(userId: VoiceM… — ⚠ undocumented
 - `VoiceMemberId` (type): type VoiceMemberId = string — ⚠ undocumented
-- `VoicePosition` (interface): interface VoicePosition — ⚠ undocumented
-- `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
+- `VoicePosition` (interface): interface VoicePosition { x: number; y: number; z: number } — ⚠ undocumented
+- `VoiceRoute` (interface): interface VoiceRoute { fromUserId: VoiceMemberId; channelId: VoiceChannelId; gain: number } — ⚠ undocumented
 - `WS_PROTOCOL_VERSION` (const): const WS_PROTOCOL_VERSION: 1 — ⚠ undocumented
 - `WorldGameHost` (interface): interface WorldGameHost extends GameHost — A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change.
 - `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.
@@ -682,12 +682,12 @@
 
 ## @jgengine/ws/voiceChannel
 
-- `VoiceChannelDef` (interface): interface VoiceChannelDef — ⚠ undocumented
+- `VoiceChannelDef` (interface): interface VoiceChannelDef { id: VoiceChannelId; positional: boolean; falloff?: AudioFalloffConfig; gain?: number } — ⚠ undocumented
 - `VoiceChannelId` (type): type VoiceChannelId = string — ⚠ undocumented
-- `VoiceChannelRouter` (interface): interface VoiceChannelRouter — ⚠ undocumented
+- `VoiceChannelRouter` (interface): interface VoiceChannelRouter { registerChannel(def: VoiceChannelDef): void; join(userId: VoiceMemberId, channelId: VoiceChannelId): void; leave(userId: VoiceMemberId, channelId: VoiceChannelId): void; leaveAll(userId: VoiceMemberId): void; updatePosition(userId: VoiceM… — ⚠ undocumented
 - `VoiceMemberId` (type): type VoiceMemberId = string — ⚠ undocumented
-- `VoicePosition` (interface): interface VoicePosition — ⚠ undocumented
-- `VoiceRoute` (interface): interface VoiceRoute — ⚠ undocumented
+- `VoicePosition` (interface): interface VoicePosition { x: number; y: number; z: number } — ⚠ undocumented
+- `VoiceRoute` (interface): interface VoiceRoute { fromUserId: VoiceMemberId; channelId: VoiceChannelId; gain: number } — ⚠ undocumented
 - `computeVoiceGain` (function): function computeVoiceGain(def: VoiceChannelDef, distance: number | null): number — ⚠ undocumented
 - `createVoiceChannelRouter` (function): function createVoiceChannelRouter(channels?: readonly VoiceChannelDef[]): VoiceChannelRouter — ⚠ undocumented
 

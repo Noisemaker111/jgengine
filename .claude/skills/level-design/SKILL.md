@@ -11,7 +11,7 @@ Own the spatial realization of game design: player metrics, topology, routes, la
 
 All authorable world content belongs in `editor.scene.json`, changed through the editor GUI or RPC/CLI. Never hand-edit the document or keep geometry, paths, spawns, zones, objectives, terrain, foliage, encounters, or coordinate arrays in code. File an editor `[FEATURE]` issue before any fallback.
 
-For a greenfield build, read [references/application-playbook.md](references/application-playbook.md) and produce its greenfield contract (promise, pillars, anti-pillars, core decision, and falsifier) before writing code. Audits may read only the playbook's audit sections. Read [references/live-editor-loop.md](references/live-editor-loop.md) whenever live captures, an editor-agent handoff, or iterative scene improvement is involved. Read [references/field-guide.md](references/field-guide.md) for metric families, topology, pacing, genre lenses, accessibility, and research.
+For a greenfield build, read [references/application-playbook.md](references/application-playbook.md) §1 and produce its metric sheet, topology graph, beat sheet, and encounter cards before art; §3–5 hold the templates. Audits may read only the playbook's audit sections. Read [references/live-editor-loop.md](references/live-editor-loop.md) when a separate editor agent or live editor session applies the changes, or when repairing an existing scene from captures. Read [references/field-guide.md](references/field-guide.md) for metric families, topology, pacing, genre lenses, accessibility, and research.
 
 ## Choose the mode
 

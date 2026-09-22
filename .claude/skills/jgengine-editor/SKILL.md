@@ -17,7 +17,7 @@ Every editor-visible object has an explicit provenance — `authored`, `generate
 
 ## Headless fast path
 
-Inspect, mutate, and persist a game's scene in single commands — no GUI session and no reference reading needed for basic authoring:
+Inspect, mutate, and persist a game's scene in single commands — no GUI session and no reference reading needed for basic authoring (monorepo):
 
 ```sh
 bun packages/editor/src/mcp/cli.ts --game <id> --tools                     # verb inventory with descriptions
@@ -27,6 +27,8 @@ bun packages/editor/src/mcp/cli.ts --game <id> \
 ```
 
 Repeat `--rpc` to batch several mutations on one session; `--save` then writes the document back to `Games/<id>/src/editor.scene.json` in the same format as the GUI's Ctrl+S, and a failed RPC aborts the batch before anything is saved.
+
+That CLI exists only in the monorepo. In a created project the same verbs run on the live page through the agent bridge: `bun run drive --rpc '{"method":"editor_summon"}' --rpc '<verb json>' --rpc '{"method":"save_scene"}'`.
 
 ## Canonical workflow
 

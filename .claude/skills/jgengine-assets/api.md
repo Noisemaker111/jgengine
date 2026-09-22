@@ -4,53 +4,53 @@
 
 ## @jgengine/assets
 
-- `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
+- `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases`: Semantic keys → live catalog ids.
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
 - `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
 - `AssetImportSpec` (interface): interface AssetImportSpec — A validated description of files to ingest into a game project.
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
-- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
+- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `AssetProvenance` (interface): interface AssetProvenance — The resolved ownership of one logical asset id — the provisioning contract for that id.
 - `AssetProvenanceKind` (type): type AssetProvenanceKind = "committed" | "provisioned" | "dangling" — How an asset id's bytes reach a clean checkout: - `committed` — resolves to a self-hosted / remote URL carried in the shipped index (a {@link SingleAsset}); no pull step, available immediately. - `provisioned` — a pack {@link IndexEntry}; the id is declared but its GLB is fetched on demand by `assets pull <source>` into the consumer's served dir. - `dangling` — nothing in the index, singles, or aliases owns the id, so no provisioning step exists and it can never resolve on a clean clone.
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
 - `AssetReference` (interface): interface AssetReference — A logical asset id referenced by some consumer (a game, scene, or config), for validation.
-- `AssetSource` (interface): interface AssetSource — ⚠ undocumented
+- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; mirror?: string; unpulled?: string } — ⚠ undocumented · used by `ambientcgSources`: Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
-- `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
+- `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; sources?: readonly string[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
 - `BuildMaterialCatalogOptions` (interface): interface BuildMaterialCatalogOptions — Options for `buildMaterialCatalog`.
 - `BuildSpriteCatalogOptions` (interface): interface BuildSpriteCatalogOptions — Options for `buildSpriteCatalog`.
 - `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
 - `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
-- `FindOptions` (interface): interface FindOptions — ⚠ undocumented
+- `FindOptions` (interface): interface FindOptions { kind?: AssetKind; limit?: number } — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description.
-- `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
+- `IndexEntry` (interface): interface IndexEntry { id: string; source: string; categories: readonly string[]; file: string; dims?: ModelDims; collisionMesh?: CollisionMeshData; clips?: readonly string[]; space?: AssetSpace } — ⚠ undocumented · used by `entryForSpriteFile`: Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role.
 - `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
 - `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
 - `MaterialMaps` (interface): interface MaterialMaps — URLs of one material's PBR maps; `ao`/`displacement` files may be absent from a rare pack.
 - `MaterialRef` (interface): interface MaterialRef — A resolved material: identity, attribution, and its normalized map URLs.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
-- `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
-- `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
-- `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
+- `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
+- `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
+- `RankedMatch` (interface): interface RankedMatch { match: AssetMatch; score: number } — ⚠ undocumented · used by `rankAssets`: Rank every catalog entry — models, packs, HUD components, icons — against one query.
 - `ReferenceValidation` (interface): interface ReferenceValidation — The verdict for one {@link AssetReference}.
-- `RegistryCatalog` (interface): interface RegistryCatalog — ⚠ undocumented
-- `RegistryComponent` (interface): interface RegistryComponent — ⚠ undocumented
+- `RegistryCatalog` (interface): interface RegistryCatalog { homepage: string; components: readonly RegistryComponent[]; icons: readonly string[] } — ⚠ undocumented
+- `RegistryComponent` (interface): interface RegistryComponent { name: string; title: string; description: string } — ⚠ undocumented · used by `componentWiringSnippet`: Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `ReindexSpritesResult` (interface): interface ReindexSpritesResult — Per-source and total counts returned by `reindexSprites`.
 - `ResolveProvenanceOptions` (interface): interface ResolveProvenanceOptions — Override the data {@link resolveProvenance} resolves against; every field defaults to the shipped catalog.
 - `STARTER_ASSETS` (const): const STARTER_ASSETS: readonly StarterAsset[] — Flat list of every curated starter asset across themes.
 - `STARTER_PACKS` (const): const STARTER_PACKS: Readonly<Record<StarterTheme, readonly StarterAsset[]>> — Theme → assets table for browse/docs (`STARTER_PACKS.people`, …).
 - `STARTER_SOURCE_PACKS` (const): const STARTER_SOURCE_PACKS: readonly string[] — Source pack ids a game must pull so every starter asset URL resolves on disk.
 - `STARTER_THEMES` (const): const STARTER_THEMES: readonly StarterTheme[] — Ordered starter theme ids: people, props, nature, urban.
-- `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
-- `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
+- `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented
+- `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
 - `StarterAsset` (interface): interface StarterAsset — One curated starter model: short id, theme, live catalog target, license, suggested height.
 - `StarterTheme` (type): type StarterTheme = "people" | "props" | "nature" | "urban" — Curated drop-in starter themes for new games. Each entry maps a short semantic id (also registered as `asset:<id>`) to a live catalog GLB that is already measured (dims/anchor flow from the generated index via the alias target). Games wire them as `entityModels: { guest: "asset:person_casual" }`. Never Kenney — Quaternius / KayKit only.
 - `ValidateAssetReferencesOptions` (interface): interface ValidateAssetReferencesOptions extends ResolveProvenanceOptions — Options for {@link validateAssetReferences}: the resolution data plus an optional on-disk `present` check.
 - `ValidateAssetReferencesResult` (interface): interface ValidateAssetReferencesResult — The aggregate result of validating a set of references against the provisioning contract.
-- `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
+- `VerifyResult` (interface): interface VerifyResult { ok: boolean; errors: string[] } — ⚠ undocumented
 - `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
 - `ambientcgSources` (const): const ambientcgSources: readonly AssetSource[] — Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
@@ -100,7 +100,7 @@
 
 ## @jgengine/assets/catalogs/build
 
-- `BuildCatalogOptions` (interface): interface BuildCatalogOptions — ⚠ undocumented
+- `BuildCatalogOptions` (interface): interface BuildCatalogOptions { basePath?: string; sources?: readonly string[]; includeAliases?: boolean; includeSingles?: boolean; extras?: readonly CatalogExtra[] } — ⚠ undocumented · used by `buildCatalog`: Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases.
 - `CatalogExtra` (interface): interface CatalogExtra — A durable, hand-or-tool authored catalog entry that is not part of the generated pack index, singles, or aliases — the shape the editor writes into a promoted game's `src/game/assets.ts` when an asset is imported. `label` is human-facing only and is intentionally not registered into the catalog (it mirrors how a single asset's author/license live only in the source literal), so at runtime an extra resolves to exactly `{ url }`.
 - `buildCatalog` (function): function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog — Builds a game's asset catalog from the generated CC0 pack index plus singles, extras, and aliases. Registration order is packs → singles → {@link BuildCatalogOptions.extras | extras} → aliases: packs and singles come first, extras override them last-writer-wins, and aliases resolve last so they can target an extra. See {@link BuildCatalogOptions} for filtering and opt-outs.
 - `entryUrl` (function): function entryUrl(basePath: string, entry: IndexEntry): string — ⚠ undocumented
@@ -144,9 +144,9 @@
 ## @jgengine/assets/download
 
 - `DEFAULT_RELEASE_BASE` (const): const DEFAULT_RELEASE_BASE: "https://github.com/Noisemaker111/jgengine/releases/download/packs" — Default asset mirror: this repo's own GitHub Releases, reachable from every cloud sandbox without network-policy changes (github.com is on the default allowlist). Assets live on the rolling `packs` release, one flat zip per pack named `<provider>-<packId>.zip`, kept in sync with the source catalog by `.github/workflows/mirror-assets.yml` — adding a catalog entry is the whole publishing step. Override the chain with `--mirror` / `JGENGINE_ASSETS_MIRROR`, or disable this hop with `JGENGINE_ASSETS_NO_DEFAULT_MIRROR=1`.
-- `DownloadPackOptions` (interface): interface DownloadPackOptions — ⚠ undocumented
-- `DownloadPackResult` (interface): interface DownloadPackResult — ⚠ undocumented
-- `ExtractedGlb` (interface): interface ExtractedGlb — ⚠ undocumented
+- `DownloadPackOptions` (interface): interface DownloadPackOptions { mirrorBase?: string; fetchImpl?: FetchLike } — ⚠ undocumented
+- `DownloadPackResult` (interface): interface DownloadPackResult { archive: Uint8Array; url: string; attempted: readonly string[] } — ⚠ undocumented
+- `ExtractedGlb` (interface): interface ExtractedGlb { file: string; bytes: Uint8Array } — ⚠ undocumented
 - `ExtractedPack` (interface): interface ExtractedPack — What `extractGlbs` pulls out of a pack archive: the models plus the textures they reference.
 - `ExtractedPackImage` (interface): interface ExtractedPackImage — An image a pack's models reference, shipped flat beside the `.glb` files.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
@@ -159,9 +159,9 @@
 ## @jgengine/assets/find
 
 - `AssetKind` (type): type AssetKind = "model" | "pack" | "material" | "component" | "icon" | "sprite" | "spritePack" — ⚠ undocumented
-- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented
-- `FindOptions` (interface): interface FindOptions — ⚠ undocumented
-- `RankedMatch` (interface): interface RankedMatch — ⚠ undocumented
+- `AssetMatch` (type): type AssetMatch = | { kind: "model"; id: string; source: string; file?: string; via: "index" | "alias" | "single" } | { kind: "pack"; source: string; title: string; categories: readonly string[] } | { kind: "material"; id: string; title: string; categories: readonly string[] } | { kind: "component";… — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `FindOptions` (interface): interface FindOptions { kind?: AssetKind; limit?: number } — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `RankedMatch` (interface): interface RankedMatch { match: AssetMatch; score: number } — ⚠ undocumented · used by `rankAssets`: Rank every catalog entry — models, packs, HUD components, icons — against one query.
 - `findAssets` (function): function findAssets(query: string, options: FindOptions = {}): AssetMatch[] — The ranked matches for a query — models, packs, HUD components, and icons in one list.
 - `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
 
@@ -185,7 +185,7 @@
 
 ## @jgengine/assets/indexGen
 
-- `ReindexResult` (interface): interface ReindexResult — ⚠ undocumented
+- `ReindexResult` (interface): interface ReindexResult { perSource: {source: string; count: number}[]; total: number } — ⚠ undocumented
 - `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims, collisionMesh?: CollisionMeshData, clips?: readonly string[]): IndexEntry — ⚠ undocumented
 - `indexSourceDir` (function): function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] — ⚠ undocumented
 - `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
@@ -193,18 +193,18 @@
 
 ## @jgengine/assets/manifest
 
-- `AssetAlias` (interface): interface AssetAlias — ⚠ undocumented
+- `AssetAlias` (interface): interface AssetAlias { key: string; target: string } — ⚠ undocumented · used by `aliases` (@jgengine/assets): Semantic keys → live catalog ids.
 - `AssetDownload` (type): type AssetDownload = PinnedDownload | ScrapeDownload — ⚠ undocumented
 - `AssetProvider` (type): type AssetProvider = | "quaternius" | "kaykit" | "polypizza" | "itch" | "ambientcg" | "gameicons" | "custom" — ⚠ undocumented
-- `AssetSource` (interface): interface AssetSource — ⚠ undocumented
+- `AssetSource` (interface): interface AssetSource { id: string; kind?: AssetSourceKind; provider: AssetProvider; title: string; license: string; author: string; categories: readonly string[]; download: AssetDownload; homepage?: string; mirror?: string; unpulled?: string } — ⚠ undocumented · used by `ambientcgSources` (@jgengine/assets): Every ambientCG material source, generated per family (`ambientcg-grass001` … ).
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
-- `IndexEntry` (interface): interface IndexEntry — ⚠ undocumented
+- `IndexEntry` (interface): interface IndexEntry { id: string; source: string; categories: readonly string[]; file: string; dims?: ModelDims; collisionMesh?: CollisionMeshData; clips?: readonly string[]; space?: AssetSpace } — ⚠ undocumented · used by `entryForSpriteFile` (@jgengine/assets): Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
-- `PinnedDownload` (interface): interface PinnedDownload — ⚠ undocumented
-- `ScrapeDownload` (interface): interface ScrapeDownload — ⚠ undocumented
-- `SingleAsset` (interface): interface SingleAsset — ⚠ undocumented
+- `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
+- `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented
+- `SingleAsset` (interface): interface SingleAsset { id: string; url: string; license: string; author: string; categories: readonly string[] } — ⚠ undocumented
 - `isScrapeDownload` (function): function isScrapeDownload(download: AssetDownload): download is ScrapeDownload — ⚠ undocumented
 
 ## @jgengine/assets/materials
@@ -243,8 +243,8 @@
 
 ## @jgengine/assets/registry
 
-- `RegistryCatalog` (interface): interface RegistryCatalog — ⚠ undocumented
-- `RegistryComponent` (interface): interface RegistryComponent — ⚠ undocumented
+- `RegistryCatalog` (interface): interface RegistryCatalog { homepage: string; components: readonly RegistryComponent[]; icons: readonly string[] } — ⚠ undocumented
+- `RegistryComponent` (interface): interface RegistryComponent { name: string; title: string; description: string } — ⚠ undocumented · used by `componentWiringSnippet` (@jgengine/assets): Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `componentInstallUrl` (function): function componentInstallUrl(name: string): string — The `shadcn add` URL for a HUD component, e.g. `https://jgengine.com/r/vital-bar.json`.
 - `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
 
@@ -254,7 +254,7 @@
 
 ## @jgengine/assets/snippet
 
-- `ModelSnippetOptions` (interface): interface ModelSnippetOptions — ⚠ undocumented
+- `ModelSnippetOptions` (interface): interface ModelSnippetOptions { basePath?: string; seam?: "objectModels" | "entityModels" } — ⚠ undocumented · used by `modelWiringSnippet`: Copy-paste wiring for a pulled GLB id: resolve through the catalog, drop into a model seam.
 - `componentWiringSnippet` (function): function componentWiringSnippet(component: RegistryComponent): string — Copy-paste wiring for a HUD component: the `shadcn add` command plus import + usage.
 - `iconWiringSnippet` (function): function iconWiringSnippet(name: string): string — Copy-paste wiring for a HUD glyph from the registry `game-icon` catalog.
 - `materialWiringSnippet` (function): function materialWiringSnippet(id: string, basePath = "/materials"): string — Copy-paste wiring for a pulled PBR material: resolve the map URLs through the material catalog, then apply them onto terrain or a model.
@@ -300,7 +300,7 @@
 
 ## @jgengine/assets/verify
 
-- `VerifyInput` (interface): interface VerifyInput — ⚠ undocumented
-- `VerifyResult` (interface): interface VerifyResult — ⚠ undocumented
+- `VerifyInput` (interface): interface VerifyInput { sources: readonly AssetSource[]; singles: readonly SingleAsset[]; aliases: readonly AssetAlias[]; index: readonly IndexEntry[]; materialAliases?: readonly AssetAlias[] } — ⚠ undocumented
+- `VerifyResult` (interface): interface VerifyResult { ok: boolean; errors: string[] } — ⚠ undocumented
 - `verifyData` (function): function verifyData(input: VerifyInput): VerifyResult — ⚠ undocumented
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
