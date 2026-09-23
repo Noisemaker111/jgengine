@@ -81,3 +81,22 @@ describe("createGlideModel — externalVelocity", () => {
     expect(afterA).toEqual(afterB);
   });
 });
+
+describe("glide model snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const glider = createGlideModel({ climbAccel: 6 });
+    glider.launch([0, 50, 0], 0.4, 10);
+    for (let i = 0; i < 20; i += 1) glider.step(1 / 60, { yaw: 0.5 });
+    const saved = glider.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      const out = [];
+      for (let i = 0; i < 30; i += 1) out.push(glider.step(1 / 60, { yaw: -0.3, throttle: 0.6, control: 0.8 }, [0.5, 0, -0.2]));
+      return out;
+    };
+    const a = play();
+    expect(saved).toEqual(frozen);
+    glider.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

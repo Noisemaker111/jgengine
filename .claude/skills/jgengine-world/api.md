@@ -1891,15 +1891,18 @@
 
 ## @jgengine/core/visibility/simulationCulling
 
-- `SimulationCuller` (interface): interface SimulationCuller { enabled(): boolean; setEnabled(value: boolean): void; step(id: string, distance: number, dt: number): SimulationDecision; forget(id: string): void; clear(): void } — ⚠ undocumented
+- `SimulationCuller` (interface): interface SimulationCuller { enabled(): boolean; setEnabled(value: boolean): void; step(id: string, distance: number, dt: number): SimulationDecision; forget(id: string): void; clear(): void; snapshot(): SimulationCullerState; restore(next: SimulationCullerState): vo… — ⚠ undocumented
+- `SimulationCullerState` (interface): interface SimulationCullerState — Plain JSON state of a {@link SimulationCuller}: the enabled flag and each id's throttle accumulator.
 - `SimulationCullingOptions` (interface): interface SimulationCullingOptions — Simulation culling is a SEPARATE, opt-in system from render culling. Render culling only decides what is drawn; this decides whether a low-priority off-screen entity updates this tick. It is disabled by default and never throttles a protected entity — physics-critical, networking-critical, audio-critical, scripted, or explicitly-active entities always update. Gameplay correctness must never depend on an entity being on-screen, so opt in only where skipping updates is provably safe.
 - `SimulationDecision` (interface): interface SimulationDecision { update: boolean; elapsed: number } — ⚠ undocumented
 - `createSimulationCuller` (function): function createSimulationCuller(options: SimulationCullingOptions = {}): SimulationCuller — ⚠ undocumented
 
 ## @jgengine/core/visibility/spatialIndex
 
+- `SpatialCellRange` (interface): interface SpatialCellRange — Integer cell bounds an object covers, inclusive on both ends.
 - `SpatialIndex` (interface): interface SpatialIndex — A uniform 3D spatial hash the renderer and streaming system query for potentially-visible objects instead of scanning the whole scene. Objects are keyed by their world AABB into every overlapping cell; a moving object only rewrites the cells that actually changed. Static objects are inserted once and never touched again. Oversized objects (huge terrain chunks, world bounds) are held separately so they are always considered.
 - `SpatialIndexOptions` (interface): interface SpatialIndexOptions { readonly cellSize?: number; readonly maxCellSpan?: number } — ⚠ undocumented
+- `SpatialIndexState` (interface): interface SpatialIndexState — Plain JSON state of a {@link SpatialIndex}. Cells and their ids keep insertion order, so a restored index returns query results in the same order.
 - `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — ⚠ undocumented
 
 ## @jgengine/core/visibility/visibilitySystem
@@ -3279,8 +3282,9 @@
 ## @jgengine/core/world/lod
 
 - `LodBand` (interface): interface LodBand { maxDistance: number; interval: number } — ⚠ undocumented
-- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number } — ⚠ undocumented
+- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number; snapshot(): LodSchedulerState; restore(next: LodSchedulerState): void } — ⚠ undocumented
 - `LodSchedulerConfig` (interface): interface LodSchedulerConfig { bands: readonly LodBand[]; beyondInterval?: number | null; stagger?: boolean } — ⚠ undocumented
+- `LodSchedulerState` (interface): interface LodSchedulerState — Plain JSON state of a {@link LodScheduler}: each id's accumulated seconds.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 
 ## @jgengine/core/world/mapAnnotations

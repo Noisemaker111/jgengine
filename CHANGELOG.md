@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `snapshot()`/`restore(next)` on `createGlideModel`, `createLodScheduler`, `createSimulationCuller` and `createSpatialIndex`, and `restore(state)` on `createGrappleSwing`, so gliding, rope swings, LOD throttling and the spatial hash save, load and replay bit-exactly (#1775).
 - `snapshot()`/`restore(next)` on `createThreatTable`, `createAssistNetwork`, `createReputationLedger`, `createConcealmentSensor`, `createFreezeMonitor` and `createRecordingBuffer`, so AI aggro, faction standing and sensor dwell save, load and replay bit-exactly (#1775).
 - `snapshot()`/`restore(next)` on `createFootprintGrid`, `createWallDrawTool` and `createTerraformBrush`, so build-grid claims, wall drafts and brush settings save, load and replay bit-exactly (#1775).
 - `createInputBuffer` (`@jgengine/core/input/inputBuffer`): buffered presses, coyote time, hold duration and double tap, with `snapshot`/`restore`. The walk controller uses it for `movement.feel.jumpBufferMs` (a jump pressed just before landing fires on landing) and `movement.feel.coyoteMs` (a jump just after walking off a ledge still fires). Both default to 0, so walking is unchanged until a game sets them (#1686, #1772).
