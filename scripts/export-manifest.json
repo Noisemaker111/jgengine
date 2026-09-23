@@ -266,6 +266,7 @@
     "./orders/orderKinds",
     "./orders/orderQueue",
     "./physics/ballisticSweep",
+    "./physics/boatDynamics",
     "./physics/buoyancy",
     "./physics/carryable",
     "./physics/damageZones",

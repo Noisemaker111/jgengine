@@ -136,6 +136,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
 
+## boat-dynamics — force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust
+
+- `createBoatDynamics` (function) · `import { createBoatDynamics } from "@jgengine/core/physics/boatDynamics"`
+
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
