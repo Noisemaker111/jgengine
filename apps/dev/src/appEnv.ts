@@ -45,6 +45,11 @@ export const LOOK_FROM = urlParams.get("lookFrom");
  * spawn at the override without any mutation to `editor.scene.json`; absent/malformed → no override.
  */
 export const SPAWN = urlParams.get("spawn");
+/**
+ * `?style=<look>` renders the game with another look preset, replacing its authored post chain, so
+ * the same scene can be compared across art styles without editing the game.
+ */
+export const STYLE = urlParams.get("style");
 /** `?view=<name>` replays a framing the game declares in `capture.views`. */
 export const VIEW = urlParams.get("view");
 installSpawnOverride(parseSpawnOverride(SPAWN));

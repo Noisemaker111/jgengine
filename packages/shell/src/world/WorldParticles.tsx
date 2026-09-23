@@ -8,7 +8,7 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { ParticleField } from "../vfx/ParticleField";
 
-const QUALITY_POOL_CAP: Record<GraphicsQuality, number> = { low: 128, medium: 256, high: 512 };
+const QUALITY_POOL_CAP: Record<GraphicsQuality, number> = { low: 128, medium: 256, high: 512, ultra: 1024 };
 
 /**
  * The per-effect particle pool a graphics tier allows: the requested `max`

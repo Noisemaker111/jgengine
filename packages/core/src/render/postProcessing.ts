@@ -57,6 +57,36 @@ export interface DofConfig {
   maxBlur?: number;
 }
 
+/** Ink outlines traced from depth and surface-normal edges — silhouettes plus interior creases. */
+export interface OutlineConfig {
+  /** Line colour (CSS). Default near-black "#101014". */
+  color?: string;
+  /** Line thickness in render pixels. Default 1. */
+  thickness?: number;
+  /** Line opacity, 0..1. Default 1. */
+  opacity?: number;
+  /** Relative depth jump that counts as a silhouette edge. Lower draws more lines. Default 0.08. */
+  depthThreshold?: number;
+  /** Normal difference (1 − cos angle) that counts as a crease. Lower draws more lines. Default 0.35. */
+  normalThreshold?: number;
+  /** Distance in world units at which lines have faded out, so far scenery stays clean. Default 160. */
+  fadeDistance?: number;
+}
+
+/**
+ * Art-style stage that turns the same models and lighting into a different look without
+ * touching materials: ink outlines (comic / Borderlands), cel bands (cartoon), pixelation (retro).
+ * Runs after tone mapping, before the grade.
+ */
+export interface StylizeConfig {
+  /** Ink outlines. Omitted or `false` draws none. */
+  outline?: OutlineConfig | false;
+  /** Quantize brightness into this many cel-shading bands, keeping hue. 0 or omitted is off; 3–6 reads as cartoon. */
+  bands?: number;
+  /** Snap the frame to blocks of this many render pixels for a retro look. 0, 1 or omitted is off. */
+  pixelSize?: number;
+}
+
 /**
  * Edge antialiasing for the post chain. SMAA runs in linear-sRGB before the output
  * tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling.
@@ -89,6 +119,8 @@ export interface PostProcessingConfig {
   /** Depth-of-field / bokeh. Heavier stage — omit or `false` to skip. Default off (omitted). */
   dof?: DofConfig | false;
   grade?: GradeConfig | false;
+  /** Art-style stage: outlines, cel bands, pixelation. Default off (omitted). */
+  stylize?: StylizeConfig | false;
 }
 
 /**
