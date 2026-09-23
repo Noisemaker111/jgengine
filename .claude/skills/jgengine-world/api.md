@@ -347,7 +347,7 @@
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void } — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void } — ⚠ undocumented · used by `stepGamepadPoll` (@jgengine/shell/input/gamepadPoll): One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish…
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput { pressed: boolean; down: boolean; repeatMs: number | undefined; lastFiredAt: number | null; now: number } — ⚠ undocumented
 
 ## @jgengine/core/input/actionContexts
@@ -404,17 +404,21 @@
 
 ## @jgengine/core/input/gamepadModel
 
+- `DEFAULT_GAMEPAD_DEADZONE` (const): const DEFAULT_GAMEPAD_DEADZONE: GamepadDeadzone — Shell default stick deadzone.
 - `GAMEPAD_GLYPH_SETS` (const): const GAMEPAD_GLYPH_SETS: Record<GamepadGlyphName, GamepadGlyphSet> — Built-in short labels for the common controller families.
 - `GamepadBindings` (type): type GamepadBindings<TAction extends string = string> = ActionCodesMap<TAction, GamepadCode> — Action bindings whose codes identify gamepad buttons or axes.
 - `GamepadCode` (type): type GamepadCode = `pad:${number}` | `padaxis:${number}${"+" | "-"}` — A gamepad button or signed axis binding code.
 - `GamepadDeadzone` (interface): interface GamepadDeadzone — Deadzone policy applied to gamepad axes.
+- `GamepadFeelConfig` (interface): interface GamepadFeelConfig — Game-level pad feel read by the shell's gamepad poll. A number `deadzone` is the axial inner deadzone with a `0.95` outer edge.
 - `GamepadFrame` (interface): interface GamepadFrame — The digital and analog action state produced by a gamepad frame.
 - `GamepadGlyphName` (type): type GamepadGlyphName = "xbox" | "playstation" | "nintendo" | "generic" — Names of the built-in controller glyph sets.
 - `GamepadGlyphSet` (interface): interface GamepadGlyphSet — Button labels used by one controller family.
+- `GamepadSample` (interface): interface GamepadSample — Read-only view of one sampled gamepad. The browser `Gamepad` satisfies it structurally, so a poll loop can resolve `navigator.getGamepads()` entries without copying them.
 - `GamepadSnapshot` (interface): interface GamepadSnapshot — A serializable gamepad state sampled from the platform input API.
 - `ResolveGamepadFrameOptions` (interface): interface ResolveGamepadFrameOptions — Options for resolving one gamepad snapshot into action state.
+- `gamepadFeelOptions` (function): function gamepadFeelOptions(config: GamepadFeelConfig | undefined): ResolveGamepadFrameOptions — Resolve a {@link GamepadFeelConfig} into the options {@link resolveGamepadFrame} takes.
 - `gamepadGlyphSets` (const): const gamepadGlyphSets: Record<GamepadGlyphName, GamepadGlyphSet> — Lowercase alias for consumers that prefer data-oriented naming.
-- `resolveGamepadFrame` (function): function resolveGamepadFrame(snapshot: GamepadSnapshot, bindings: GamepadBindings, options: ResolveGamepadFrameOptions): GamepadFrame — Resolve one sampled gamepad into held actions and shaped analog action values.
+- `resolveGamepadFrame` (function): function resolveGamepadFrame(snapshot: GamepadSample, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, out: GamepadFrame = { held: [], analog: {} }): GamepadFrame — Resolve one sampled gamepad into held actions and shaped analog action values. Sticks go through the deadzone and curve; analog buttons (triggers) through `triggerDeadzone` and the same curve. Pass `out` to reuse a frame across polls; it is cleared and returned.
 
 ## @jgengine/core/input/gestureSurface
 

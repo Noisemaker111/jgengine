@@ -660,6 +660,7 @@ export function Shell3dPresentation({
                   bindings={inputBindings ?? {}}
                   analogRef={analogRef}
                   input={ctx.input}
+                  feel={playable.gamepad}
                 />
                 <DevtoolsRendererProbe />
                 {resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (

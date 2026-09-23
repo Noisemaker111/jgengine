@@ -1,0 +1,45 @@
+import { describe, expect, test } from "bun:test";
+
+import { createActionStateTracker, toActionStateBindingMap } from "@jgengine/core/input/actionBindings";
+import { gamepadFeelOptions, type GamepadSample } from "@jgengine/core/input/gamepadModel";
+
+import { emptyGamepadPoll, gamepadCodes, stepGamepadPoll } from "./gamepadPoll";
+
+const input = { steerRight: ["KeyD", "padaxis:0+"], throttle: ["KeyW", "pad:7"], jump: ["Space"] };
+const pad = (axis: number, trigger: number): GamepadSample => ({
+  axes: [axis],
+  buttons: [...Array.from({ length: 7 }, () => ({ pressed: false, value: 0 })), { pressed: trigger > 0, value: trigger }],
+  connected: true,
+});
+
+describe("stepGamepadPoll", () => {
+  test("keeps only pad codes and presses/releases tracker actions on change", () => {
+    const bindings = gamepadCodes(input);
+    expect(bindings).toEqual({ steerRight: ["padaxis:0+"], throttle: ["pad:7"] });
+    const tracker = createActionStateTracker(toActionStateBindingMap(input));
+    const poll = emptyGamepadPoll();
+    const options = gamepadFeelOptions({ deadzone: 0, triggerDeadzone: 0.1 });
+    const analog = stepGamepadPoll(poll, [pad(0.5, 0.55)], bindings, options, tracker, null);
+    expect(tracker.isDown("steerRight")).toBe(true);
+    expect(tracker.isDown("throttle")).toBe(true);
+    expect(analog?.steerRight).toBeCloseTo(0.5 / 0.95, 5);
+    expect(analog?.throttle).toBeCloseTo(0.5, 5);
+    expect(stepGamepadPoll(poll, [pad(0, 0.05)], bindings, options, tracker, analog)).toBeNull();
+    expect(tracker.isDown("steerRight")).toBe(false);
+    expect(tracker.isDown("throttle")).toBe(false);
+  });
+
+  test("merges over another source's analog map and drops pad values once released", () => {
+    const bindings = gamepadCodes(input);
+    const tracker = createActionStateTracker(toActionStateBindingMap(input));
+    const poll = emptyGamepadPoll();
+    const options = gamepadFeelOptions({ deadzone: 0 });
+    const touch = { moveForward: 0.4, steerRight: 0.2 };
+    const first = stepGamepadPoll(poll, [pad(0.95, 0)], bindings, options, tracker, touch);
+    expect(first).toEqual({ moveForward: 0.4, steerRight: 1 });
+    const second = stepGamepadPoll(poll, [pad(0, 0)], bindings, options, tracker, first);
+    expect(second).toEqual({ moveForward: 0.4, steerRight: 0.2 });
+    expect(second).toBe(first);
+    expect(stepGamepadPoll(poll, [null], bindings, options, tracker, null)).toBeNull();
+  });
+});

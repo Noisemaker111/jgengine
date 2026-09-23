@@ -6,6 +6,7 @@ import type { PostProcessingConfig } from "../render/postProcessing";
 import type { EnvironmentSource } from "../render/environment";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
+import type { GamepadFeelConfig } from "../input/gamepadModel";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GraphicsProfile } from "../settings/graphicsProfile";
@@ -594,6 +595,8 @@ export interface PlayableGame<
   pointer?: PointerConfig;
   /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */
   touch?: TouchControlsConfig | false;
+  /** Gamepad stick deadzone, response curve and trigger deadzone the shell's pad poll applies before publishing analog values. Unset keeps the shell defaults (axial `0.12`/`0.95`, linear). */
+  gamepad?: GamepadFeelConfig;
   /** Phone orientation contract. Legacy `"landscape"`/`"portrait"` stays advisory (a dismissible rotate hint). The object form `{ mobile: "landscape-required" }` is strict — the shell shows an engine-owned rotate screen and blocks gameplay until the device is turned. See `GameOrientation`. */
   orientation?: GameOrientation;
   /** Where the game is meant to be played. Default `["web", "mobile"]` — design-resolution HUD fit is on for every game: `HudCanvas` auto-scales from `hudFit.designSize` down to the live viewport, so the desktop layout shrinks to fit a phone instead of overflowing it. Declare `["web"]` to opt a desktop-only game out (compact displays fall back to the legacy fixed 0.85 zoom). */
