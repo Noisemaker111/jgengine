@@ -136,6 +136,22 @@ export interface VehicleAirTuning {
   maxRate?: number;
 }
 
+/**
+ * Single-track lean for motorcycles, bicycles and scooters. Steer input asks for a lean angle; the front wheel
+ * then takes whatever angle a balanced turn at that lean needs (curvature = g·tan(lean) / v²), with a brief
+ * countersteer as the lean starts. Tire grip still limits the turn, so over-leaning on a low-grip surface slides.
+ */
+export interface VehicleLeanTuning {
+  /** Largest lean the rider asks for at full steer, rad (0.7 ≈ 40° road bike … 0.95 ≈ 55° race bike). */
+  maxLean: number;
+  /** How fast the bike can change lean, rad/s (2 heavy tourer … 5 light sport bike). */
+  leanRate: number;
+  /** Seconds of opposite bar per rad/s of lean change — the countersteer that starts a lean (default `0.012`, about 3° of bar on a quick sport bike). */
+  countersteer?: number;
+  /** Below this speed the bar steers directly, like walking a bike (default `3` m/s). */
+  directSteerBelow?: number;
+}
+
 /** Jumps from the ground and in the air. */
 export interface VehicleJumpTuning {
   /** Upward velocity a jump adds, m/s. */
@@ -209,6 +225,8 @@ export interface VehicleDynamicsTuning {
   air?: VehicleAirTuning;
   /** Enables {@link VehicleDynamics.jump}; needs `suspension`. */
   jump?: VehicleJumpTuning;
+  /** Single-track lean (motorcycle); omit for a four-wheeled car. `trackWidth` then only sets the render width. */
+  lean?: VehicleLeanTuning;
 }
 
 /** Air-control input, each `-1..1`: `pitch > 0` noses down, `yaw > 0` turns like `steer > 0`, `roll > 0` drops the left side. */
@@ -267,6 +285,10 @@ export interface VehicleDynamicsState {
   /** Per-corner spring compression, m, in order front-left, front-right, rear-left, rear-right. */
   compression: [number, number, number, number];
   airborne: boolean;
+  /** The lean the rider is asking for, rad, positive right; it sets the turn the bar steers for. */
+  lean: number;
+  /** The rider's bar correction on top of the balanced-turn angle, rad. */
+  leanTrim: number;
   /** Jumps used since last on the ground. */
   jumpsUsed: number;
   /** Seconds since leaving the ground (`0` while grounded). */
@@ -318,6 +340,12 @@ export interface VehicleDynamicsStep {
   landingSpeed: number;
   /** Per-corner spring load, N (front-left, front-right, rear-left, rear-right); all `0` without `suspension`. */
   wheelLoads: readonly [number, number, number, number];
+  /** Balance lean the bike actually shows, `atan(lateral g)`, rad, positive leaning right; `0` without a `lean` block. */
+  lean: number;
+  /** Acceleration has taken all the load off the front axle. */
+  wheelie: boolean;
+  /** Braking has taken all the load off the rear axle. */
+  stoppie: boolean;
 }
 
 /**
@@ -465,6 +493,9 @@ export function createVehicleDynamics(
       airborne: state.airborne,
       landingSpeed: telemetry.landingSpeed,
       wheelLoads: telemetry.wheelLoads,
+      lean: tuning.lean === undefined ? 0 : balanceLean(state.lateralAccel),
+      wheelie: telemetry.wheelie,
+      stoppie: telemetry.stoppie,
     };
   }
 
@@ -506,7 +537,29 @@ export function createVehicleDynamics(
     const sideslipNow = Math.abs(u) > 1 ? Math.atan2(v, Math.abs(u)) : 0;
     // Caster: the wheels trail the velocity, so at `selfAlign` they steer into a slide by that share of β.
     const align = (steering.selfAlign ?? 0) * -sideslipNow * Math.sign(u || 1);
-    const target = Math.max(-steering.maxAngle, Math.min(steering.maxAngle, -steerInput * lock + align));
+    let target = Math.max(-steering.maxAngle, Math.min(steering.maxAngle, -steerInput * lock + align));
+    const leanTuning = t.lean;
+    if (leanTuning !== undefined) {
+      // A rider cannot hold more lean than the tires can balance: tan(lean) is the lateral g it needs.
+      const gripLean = Math.atan(t.front.peakGrip * surface * (modifiers?.gripScale ?? 1));
+      const wanted = steerInput * Math.min(leanTuning.maxLean, gripLean);
+      const leanStep = Math.max(0, leanTuning.leanRate) * h;
+      const leanChange = Math.max(-leanStep, Math.min(leanStep, wanted - state.lean));
+      state.lean += leanChange;
+      const speed = Math.abs(u);
+      const direct = leanTuning.directSteerBelow ?? 3;
+      // Balanced turn: the lean sets the yaw rate the bike should hold (g·tan(lean)/v). The bar is that turn's
+      // geometric angle plus a trim the rider feeds back from the yaw error, which covers the tire slip.
+      const wantedYaw = (-GRAVITY * Math.tan(state.lean)) / Math.max(speed, 1) * Math.sign(u || 1);
+      if (speed >= direct) state.leanTrim += (wantedYaw - r) * 3 * h;
+      else state.leanTrim = 0;
+      const trimLimit = Math.min(steering.maxAngle, t.front.peakSlipAngle * 1.5);
+      state.leanTrim = Math.max(-trimLimit, Math.min(trimLimit, state.leanTrim));
+      const geometric = Math.atan((L * wantedYaw) / Math.max(speed, 1));
+      const counter = h > 0 ? ((leanTuning.countersteer ?? 0.012) * leanChange) / h : 0;
+      const blend = Math.min(1, speed / Math.max(0.1, direct));
+      target = Math.max(-steering.maxAngle, Math.min(steering.maxAngle, (geometric + state.leanTrim + counter) * blend + -steerInput * steering.maxAngle * (1 - blend) + align));
+    }
     const toward = target - state.steerAngle;
     const returning = Math.sign(toward) !== Math.sign(state.steerAngle) && state.steerAngle !== 0;
     const rate = returning ? (steering.returnRate ?? steering.rate) : steering.rate;
@@ -530,9 +583,14 @@ export function createVehicleDynamics(
     let slopeLat = 0;
     if (suspension === undefined) {
       const transferLong = (m * state.longitudinalAccel * t.comHeight) / L;
-      loadFront = Math.max(0, weight * (b / L) - transferLong + downforce * downFront);
-      loadRear = Math.max(0, weight * (a / L) + transferLong + downforce * (1 - downFront));
-      const transferLat = (m * Math.abs(state.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
+      const rawFront = weight * (b / L) - transferLong + downforce * downFront;
+      const rawRear = weight * (a / L) + transferLong + downforce * (1 - downFront);
+      if (rawFront <= 0) out.wheelie = true;
+      if (rawRear <= 0) out.stoppie = true;
+      loadFront = Math.max(0, rawFront);
+      loadRear = Math.max(0, rawRear);
+      // A single-track vehicle leans instead of shifting load across an axle.
+      const transferLat = t.lean !== undefined ? 0 : (m * Math.abs(state.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
       transferFront = transferLat * rsf;
       transferRear = transferLat * (1 - rsf);
     } else {
@@ -723,7 +781,7 @@ export function createVehicleDynamics(
     if (suspension === undefined) {
       const rollK = t.rollStiffness ?? (m * GRAVITY * t.comHeight) / 0.05;
       const pitchK = t.pitchStiffness ?? (m * GRAVITY * t.comHeight) / 0.035;
-      state.bodyRoll = (m * state.lateralAccel * t.comHeight) / rollK;
+      state.bodyRoll = t.lean !== undefined ? -balanceLean(state.lateralAccel) : (m * state.lateralAccel * t.comHeight) / rollK;
       state.bodyPitch = (-m * state.longitudinalAccel * t.comHeight) / pitchK;
     } else {
       if (!grounded && t.air !== undefined) steerInAir(t.air, input, modifiers?.air, h);
@@ -823,6 +881,10 @@ export function createVehicleDynamics(
     state.rollRate += (rollMoment / rollInertia) * h;
     state.bodyPitch += state.pitchRate * h;
     state.bodyRoll += state.rollRate * h;
+    if (t.lean !== undefined) {
+      state.bodyRoll = -balanceLean(state.lateralAccel);
+      state.rollRate = 0;
+    }
     if (state.airborne && grounded) out.landingSpeed = Math.max(out.landingSpeed, -state.vy);
     state.airborne = !grounded;
     if (!grounded) state.airTime += h;
@@ -947,6 +1009,8 @@ interface Telemetry {
   airborne: boolean;
   landingSpeed: number;
   wheelLoads: readonly [number, number, number, number];
+  wheelie: boolean;
+  stoppie: boolean;
 }
 
 function emptyTelemetry(): Telemetry {
@@ -967,6 +1031,8 @@ function emptyTelemetry(): Telemetry {
     airborne: false,
     landingSpeed: 0,
     wheelLoads: [0, 0, 0, 0],
+    wheelie: false,
+    stoppie: false,
   };
 }
 
@@ -1053,9 +1119,16 @@ function freshState(
     rollRate: 0,
     compression: [0, 0, 0, 0],
     airborne: false,
+    lean: 0,
+    leanTrim: 0,
     jumpsUsed: 0,
     airTime: 0,
   };
+}
+
+/** The lean that balances a lateral acceleration: a bike leans until gravity's moment matches the corner's. */
+function balanceLean(lateralAccel: number): number {
+  return Math.atan(lateralAccel / GRAVITY);
 }
 
 function clampUnit(value: number): number {

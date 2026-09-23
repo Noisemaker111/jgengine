@@ -136,6 +136,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
 
+## boat-dynamics — force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust
+
+- `createBoatDynamics` (function) · `import { createBoatDynamics } from "@jgengine/core/physics/boatDynamics"`
+
 ## body-bind — mirror sim-body snapshots onto scene entities each tick, no per-body setPose
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
@@ -374,6 +378,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
 
 - `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/input/rebindSession"`
+
+## lean-metrics — measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in
+
+- `measureLean` (function) · `import { measureLean } from "@jgengine/core/physics/handlingProbe"`
 
 ## limb-health — per-body-part/region health tracked separately
 
@@ -706,6 +714,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
+
+## vehicle-backend-link — collide a vehicle sim with a physics backend — shove props, stop at walls, slide along them
+
+- `createVehicleBackendLink` (function) · `import { createVehicleBackendLink } from "@jgengine/core/physics/vehicleBackendLink"`
 
 ## vehicle-dynamics — force-based car handling — tires, load transfer, drivetrain, assists — tuned with physical numbers
 

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { AxisInput } from "../input/axisInput";
 import { tickDrivableVehicle } from "./drivableVehicle";
-import { measureAir, measureCourse, measureHandling, measureRide } from "./handlingProbe";
+import { measureAir, measureCourse, measureHandling, measureLean, measureRide } from "./handlingProbe";
 import {
   createVehicleDynamics,
   type VehicleDynamicsTuning,
@@ -468,5 +468,87 @@ describe("measureCourse and recovery", () => {
   test("caster and stability catch a handbrake slide that spins a bare RWD car", () => {
     expect(measureHandling(() => createVehicleDynamics(forgivingStreet)).handbrakeRecoverySeconds).toBeLessThan(2);
     expect(measureHandling(() => createVehicleDynamics(gripRwd)).handbrakeRecoverySeconds).toBe(Number.POSITIVE_INFINITY);
+  });
+});
+
+const sportBike: VehicleDynamicsTuning = {
+  massKg: 260,
+  wheelbase: 1.42,
+  frontWeight: 0.5,
+  comHeight: 0.62,
+  trackWidth: 0.2,
+  front: { peakGrip: 1.2, peakSlipAngle: 0.09, slideGrip: 0.7 },
+  driveFront: 0,
+  powertrain: { kind: "direct", maxForce: 4200, maxPower: 110000 },
+  brakeForce: 3200,
+  brakeFront: 0.75,
+  steering: { maxAngle: 0.5, highSpeedAngle: 0.5, highSpeedAt: 30, rate: 3 },
+  lean: { maxLean: 0.85, leanRate: 5 },
+  assists: { abs: 1, tractionControl: 0.5 },
+  aero: { dragArea: 0.35 },
+};
+
+describe("createVehicleDynamics — lean (motorcycles)", () => {
+  test("a bike leans into a held steer, tips the other way first, and the lean matches its lateral g", () => {
+    const report = measureLean(() => createVehicleDynamics(sportBike));
+    expect(report.steadyLeanDeg).toBeGreaterThan(25);
+    expect(report.steadyLeanDeg).toBeLessThan(Math.atan(1.2) * (180 / Math.PI) + 1);
+    expect(report.counterLeanDeg).toBeGreaterThan(1);
+    const bike = createVehicleDynamics(sportBike);
+    let step = bike.tick(DT, axis({}));
+    for (let i = 0; i < 600 && step.forwardSpeed < 20; i += 1) step = bike.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 120; i += 1) step = bike.tick(DT, axis({ throttle: 0.3, steer: 1 }));
+    expect(step.yawRate).toBeLessThan(0);
+    expect(step.lean).toBeCloseTo(Math.atan(step.lateralAccel / 9.81), 6);
+    expect(step.bodyRoll).toBeCloseTo(-step.lean, 6);
+  });
+
+  test("lean rate sets how fast a bike tips in", () => {
+    const sport = measureLean(() => createVehicleDynamics(sportBike));
+    const tourer = measureLean(() => createVehicleDynamics({ ...sportBike, massKg: 380, lean: { maxLean: 0.85, leanRate: 1.5 } }));
+    expect(tourer.timeToLean).toBeGreaterThan(sport.timeToLean + 0.2);
+  });
+
+  test("a bike stays upright and stable through the handling scenarios", () => {
+    const report = measureHandling(() => createVehicleDynamics(sportBike));
+    expect(report.spun).toBe(false);
+    expect(report.powerSteerSpun).toBe(false);
+    expect(report.zeroTo100).toBeLessThan(4);
+  });
+
+  test("at walking pace the bar steers directly", () => {
+    const bike = createVehicleDynamics(sportBike);
+    let step = bike.tick(DT, axis({}));
+    for (let i = 0; i < 600 && step.forwardSpeed < 1.5; i += 1) step = bike.tick(DT, axis({ throttle: 0.2 }));
+    for (let i = 0; i < 30; i += 1) step = bike.tick(DT, axis({ throttle: 0.1, steer: 1 }));
+    expect(step.yawRate).toBeLessThan(-0.3);
+  });
+
+  test("hard launch lifts the front and hard front braking lifts the rear", () => {
+    const hooligan: VehicleDynamicsTuning = { ...sportBike, wheelbase: 1.35, comHeight: 0.8, assists: {}, powertrain: { kind: "direct", maxForce: 5200, maxPower: 150000 } };
+    const launch = createVehicleDynamics(hooligan);
+    let wheelie = false;
+    for (let i = 0; i < 90; i += 1) wheelie ||= launch.tick(DT, axis({ throttle: 1 })).wheelie;
+    expect(wheelie).toBe(true);
+    const stop = createVehicleDynamics({ ...hooligan, brakeForce: 6000, brakeFront: 1 });
+    let step = stop.tick(DT, axis({}));
+    for (let i = 0; i < 600 && step.forwardSpeed < 25; i += 1) step = stop.tick(DT, axis({ throttle: 0.6 }));
+    let stoppie = false;
+    for (let i = 0; i < 60; i += 1) stoppie ||= stop.tick(DT, axis({ brake: 1 })).stoppie;
+    expect(stoppie).toBe(true);
+  });
+
+  test("snapshot/restore resumes a leaning bike bit-for-bit", () => {
+    const reference = createVehicleDynamics(sportBike);
+    const replica = createVehicleDynamics(sportBike);
+    const inputs = Array.from({ length: 300 }, (_, i) => axis({ throttle: i < 120 ? 1 : 0.4, steer: i > 120 ? Math.sin(i / 20) : 0 }));
+    let saved = reference.snapshot();
+    for (let i = 0; i < inputs.length; i += 1) {
+      if (i === 150) saved = reference.snapshot();
+      reference.tick(DT, inputs[i]!);
+    }
+    replica.restore(saved);
+    for (let i = 150; i < inputs.length; i += 1) replica.tick(DT, inputs[i]!);
+    expect(replica.snapshot()).toEqual(reference.snapshot());
   });
 });

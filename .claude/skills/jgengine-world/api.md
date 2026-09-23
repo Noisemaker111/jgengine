@@ -695,11 +695,14 @@
 
 ## @jgengine/core/movement/playerMovement
 
+- `PlayerMovementSnapshot` (interface): interface PlayerMovementSnapshot — One player's serializable movement state: heading, facing, velocities, jump latch and controller capsule. The entity pose lives in the entity store.
 - `PlayerMovementTuning` (interface): interface PlayerMovementTuning — The resolved, per-world movement configuration {@link stepPlayerMovement} integrates against — the same inputs the shell FrameDriver used to read piecemeal, gathered into one struct so single-player and host movement run identical math.
 - `forgetPlayerMovement` (function): function forgetPlayerMovement(ctx: GameContext, userId: string): void — Drop a player's retained movement state (heading + kinematic body) — call on leave so a rejoin starts fresh instead of resuming stale velocity.
 - `playerMovementHeading` (function): function playerMovementHeading(ctx: GameContext, userId: string): number — One player's current heading (radians), integrated by {@link stepPlayerMovement} — the shell reads it back into its camera/aim yaw.
 - `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
 - `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig; movement?: PlayerMovementConfig; physics?: PhysicsConfig; world?: WorldFeature; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
+- `restorePlayerMovement` (function): function restorePlayerMovement(ctx: GameContext, userId: string, snapshot: PlayerMovementSnapshot): void — Put a player's movement state back to a {@link snapshotPlayerMovement} copy, so the next {@link stepPlayerMovement} replays from there.
+- `snapshotPlayerMovement` (function): function snapshotPlayerMovement(ctx: GameContext, userId: string): PlayerMovementSnapshot | null — Copy one player's movement state for prediction, rollback or a save; `null` when the player has not moved yet.
 - `stepPlayerMovement` (function): function stepPlayerMovement(ctx: GameContext, userId: string, input: InputFrame, dt: number, tuning: PlayerMovementTuning, heading?: number, pitch?: number): void — Integrate one player's movement for a tick from their held-input frame and commit the pose — the single genre-agnostic controller both the shell (its local player) and a host (each connected player in `onTick`) call, so single-player and server-authoritative movement are identical. Reads the player's controlled entity, terrain, scene solids, and pending motion impulses; writes the entity pose via `setPose`. Retains heading + kinematic body per `userId` on the `ctx`. Pass `heading` to override the internally-integrated yaw (the shell owns yaw for its camera); omit it and the controller turns from the frame's `turnLeft`/`turnRight` actions. Pass `pitch` for 6DOF spectator flight when `alignWithLook` is set.
 
 ## @jgengine/core/movement/poseState
@@ -879,6 +882,16 @@
 - `BallisticSweepOptions` (interface): interface BallisticSweepOptions { step?: number; radius?: number } — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
 - `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
 
+## @jgengine/core/physics/boatDynamics
+
+- `BoatDynamics` (interface): interface BoatDynamics — A force-based powered hull on the same tick/snapshot/retune contract as `VehicleDynamics`.
+- `BoatOptions` (interface): interface BoatOptions — World hooks for a boat instance.
+- `BoatState` (interface): interface BoatState — Serializable boat state.
+- `BoatSteering` (type): type BoatSteering = | { kind: "rudder"; /** Rudder area, m². */ area: number; /** Largest rudder angle, rad (default `0.6`). */ maxAngle?: number; /** Share of prop thrust that washes over the rudder as flow, `0..1` (default `0.5`) — steering at low speed. */ propWash?: number; } | { kind: "outboard… — How the boat turns: a rudder needs water flowing past it; an outboard swings its own thrust.
+- `BoatStep` (interface): interface BoatStep — One boat tick: pose plus the telemetry wake, spray and engine sound read.
+- `BoatTuning` (interface): interface BoatTuning — A powered hull in physical units. Drag rises toward hull speed (`√(g·L)·1.34`) and then falls away once the hull planes, the keel resists sliding sideways, and the prop's thrust fades as the boat approaches the prop's speed.
+- `createBoatDynamics` (function): function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {}): BoatDynamics — Creates a {@link BoatDynamics}: throttle drives the prop, brake reverses it, steer swings the rudder or outboard. A rudder boat barely turns at rest unless the prop is washing over it; an outboard turns at rest because it swings the thrust itself. Deterministic for a given `dt` sequence.
+
 ## @jgengine/core/physics/buoyancy
 
 - `BuoyantBody` (class): class BuoyantBody — Floats a {@link PhysicsWorld} body on a CPU {@link WaterSurface}: each hull sample point pushes the body up by its submerged depth (Archimedes, coarse), with vertical and horizontal water drag so the hull settles at the waterline and rides the Gerstner waves. Passing an {@link AxisInput} drives it as a boat — throttle thrusts along the heading, steer yaws, a keel bleeds sideways slip. Call `update(dt, time, input?)` before the shared `world.step(dt)`.
@@ -964,11 +977,14 @@
 - `HandlingProbeOptions` (interface): interface HandlingProbeOptions — Scenario settings for {@link measureHandling}; every field has a default.
 - `HandlingReport` (interface): interface HandlingReport — Deterministic feel metrics, in the units drivers and reviewers use. `Infinity` means the target was never reached.
 - `HandlingSubject` (interface): interface HandlingSubject — The slice of a vehicle sim {@link measureHandling} drives: `VehicleDynamics` and `KinematicVehicle` both fit.
+- `LeanReport` (interface): interface LeanReport — Deterministic lean metrics for a motorcycle or bicycle.
+- `LeanSubject` (interface): interface LeanSubject — The slice of a single-track sim {@link measureLean} drives; a `VehicleDynamics` with a `lean` block fits.
 - `RideReport` (interface): interface RideReport — Deterministic ride metrics for a sprung vehicle.
 - `RideSubject` (interface): interface RideSubject — The slice of a sprung vehicle sim {@link measureRide} drives; a `VehicleDynamics` with `suspension` fits.
 - `measureAir` (function): function measureAir(create: () => AirSubject, options: { dt?: number } = {}): AirReport — Jumps a fresh vehicle from rest and holds full air input on each axis, reporting jump height and timing, double-jump height, and how fast the body rotates in the air.
 - `measureCourse` (function): function measureCourse(create: () => CourseSubject, options: CourseProbeOptions): CourseReport — Drives a fresh vehicle from `create` through a steer ramp, a skidpad and a slalom with simple deterministic drivers, and reports understeer gradient, skidpad g and the fastest clean slalom.
 - `measureHandling` (function): function measureHandling(create: () => HandlingSubject, options: HandlingProbeOptions = {}): HandlingReport — Drives fresh instances from `create` through fixed scenarios (launch, top speed, braking, a slow steer ramp, a step steer, a mid-corner lift-off, a handbrake pull, full throttle with full steer) and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a tuning change shows up as a number moving, not an opinion.
+- `measureLean` (function): function measureLean(create: () => LeanSubject, options: { dt?: number; speed?: number } = {}): LeanReport — Brings a fresh bike to `speed` and holds full steer, reporting how far and how fast it leans and how much it tips the other way first.
 - `measureRide` (function): function measureRide(create: () => RideSubject, options: { dt?: number } = {}): RideReport — Drives fresh sprung vehicles from `create` through a vertical kick, a hard stop, a steady corner and a launch-and-land, and reports how the body moves: how fast it settles, how much it dives and rolls, and whether a landing bounces.
 
 ## @jgengine/core/physics/kinematicVehicle
@@ -1084,6 +1100,14 @@
 - `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
 - `GrappleConfig` (interface): interface GrappleConfig { reelSpeed?: number; minLength?: number; maxLength?: number; elastic?: boolean; stiffness?: number; damping?: number } — ⚠ undocumented
 
+## @jgengine/core/physics/vehicleBackendLink
+
+- `VehicleBackendLink` (interface): interface VehicleBackendLink — A vehicle sim's presence in a physics backend: a kinematic chassis that shoves props, and a wall-aware move clamp.
+- `VehicleBackendLinkOptions` (interface): interface VehicleBackendLinkOptions — Options for {@link createVehicleBackendLink}.
+- `VehicleLinkHit` (interface): interface VehicleLinkHit — A wall the last clamped move ran into.
+- `VehicleLinkPose` (interface): interface VehicleLinkPose — The pose fields {@link VehicleBackendLink.sync} reads; any vehicle step (`VehicleDynamicsStep`, `KinematicVehicleStep`) fits.
+- `createVehicleBackendLink` (function): function createVehicleBackendLink(backend: PhysicsBackend, options: VehicleBackendLinkOptions): VehicleBackendLink — Puts a vehicle sim (`createVehicleDynamics`, `createKinematicVehicle`) into a {@link PhysicsBackend} world without handing its handling to the rigid-body solver: the sim still owns grip and balance, while a kinematic chassis box follows it so Rapier or `PhysicsWorld` props get shoved, and `clampMove` sweeps that box so walls and parked cars stop it and it slides along them.
+
 ## @jgengine/core/physics/vehicleBody
 
 - `DEFAULT_GRIP_CURVE` (const): const DEFAULT_GRIP_CURVE: GripCurve — ⚠ undocumented
@@ -1110,6 +1134,7 @@
 - `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s), so a feel target maps to a knob a person can reason about: more rear grip or a lower centre of mass for stability, softer tires for forgiveness, more drive to the rear for power oversteer.
 - `VehicleGearboxTuning` (interface): interface VehicleGearboxTuning — Engine and gearbox. Drive force at the wheels = torque · curve(rpm) · gear · finalDrive · efficiency / wheelRadius.
 - `VehicleJumpTuning` (interface): interface VehicleJumpTuning — Jumps from the ground and in the air.
+- `VehicleLeanTuning` (interface): interface VehicleLeanTuning — Single-track lean for motorcycles, bicycles and scooters. Steer input asks for a lean angle; the front wheel then takes whatever angle a balanced turn at that lean needs (curvature = g·tan(lean) / v²), with a brief countersteer as the lean starts. Tire grip still limits the turn, so over-leaning on a low-grip surface slides.
 - `VehicleSteeringTuning` (interface): interface VehicleSteeringTuning — Steering rack: lock, speed-sensitive lock, rack speed, and caster self-alignment.
 - `VehicleSuspensionTuning` (interface): interface VehicleSuspensionTuning — Four sprung corners. With this block the chassis heaves, pitches and rolls on real springs, axle loads come from spring forces instead of a filtered estimate, slopes pull the car downhill, and the car can leave the ground and land. Omit it for the flat-ground model.
 - `VehicleTireTuning` (interface): interface VehicleTireTuning — One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve `μ·Fz·sin(C·atan(B·α))` whose `B`/`C` are solved from `peakSlipAngle` and `slideGrip`, so the three numbers read the way a driver feels them: how much grip, how early it peaks, how much is left sliding.

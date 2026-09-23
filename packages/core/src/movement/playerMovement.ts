@@ -3,7 +3,12 @@ import type { MovementCommitFrame, PlayerMovementConfig, VoxelCollisionConfig } 
 import type { GameContext } from "../runtime/gameContext";
 import type { InputFrame } from "../runtime/inputSnapshot";
 import { applyHorizontalImpulses, applyMotionImpulses } from "../runtime/motionIntents";
-import { createCharacterController, type CharacterController, type CharacterControllerConfig } from "./characterController";
+import {
+  createCharacterController,
+  type CharacterController,
+  type CharacterControllerConfig,
+  type CharacterControllerState,
+} from "./characterController";
 import { groundFieldFor, hasEnvironmentTerrain, sampleSlope, type TerrainField } from "../world/terrain";
 import type { WorldFeature } from "../world/features";
 import type { EntityPosition } from "../scene/entityStore";
@@ -128,6 +133,8 @@ interface PlayerMovementState {
   flight: FreeFlightState | null;
   controller: CharacterController | null;
   controllerJumpHeld: boolean;
+  /** Controller state restored before the capsule exists; applied when it is created. */
+  pendingController: CharacterControllerState | null;
 }
 
 interface CtxMovementStore {
@@ -152,7 +159,16 @@ function storeFor(ctx: GameContext): CtxMovementStore {
 function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState {
   let state = store.players.get(userId);
   if (state === undefined) {
-    state = { heading: 0, facing: null, voxelBody: null, motion: null, flight: null, controller: null, controllerJumpHeld: false };
+    state = {
+      heading: 0,
+      facing: null,
+      voxelBody: null,
+      motion: null,
+      flight: null,
+      controller: null,
+      controllerJumpHeld: false,
+      pendingController: null,
+    };
     store.players.set(userId, state);
   }
   return state;
@@ -161,6 +177,56 @@ function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState 
 /** One player's current heading (radians), integrated by {@link stepPlayerMovement} — the shell reads it back into its camera/aim yaw. */
 export function playerMovementHeading(ctx: GameContext, userId: string): number {
   return stores.get(ctx)?.players.get(userId)?.heading ?? 0;
+}
+
+/** One player's serializable movement state: heading, facing, velocities, jump latch and controller capsule. The entity pose lives in the entity store. */
+export interface PlayerMovementSnapshot {
+  heading: number;
+  facing: number | null;
+  voxelBody: VoxelPlayerBody | null;
+  motion: PlayerMotionState | null;
+  flight: FreeFlightState | null;
+  controller: CharacterControllerState | null;
+  controllerJumpHeld: boolean;
+}
+
+function copyController(state: CharacterControllerState): CharacterControllerState {
+  return { ...state, position: [...state.position], groundNormal: [...state.groundNormal] };
+}
+
+/** Copy one player's movement state for prediction, rollback or a save; `null` when the player has not moved yet. */
+export function snapshotPlayerMovement(ctx: GameContext, userId: string): PlayerMovementSnapshot | null {
+  const state = stores.get(ctx)?.players.get(userId);
+  if (state === undefined) return null;
+  const controller = state.controller?.snapshot() ?? state.pendingController;
+  return {
+    heading: state.heading,
+    facing: state.facing,
+    voxelBody: state.voxelBody === null ? null : { ...state.voxelBody },
+    motion: state.motion === null ? null : { ...state.motion },
+    flight: state.flight === null ? null : { ...state.flight },
+    controller: controller === null ? null : copyController(controller),
+    controllerJumpHeld: state.controllerJumpHeld,
+  };
+}
+
+/** Put a player's movement state back to a {@link snapshotPlayerMovement} copy, so the next {@link stepPlayerMovement} replays from there. */
+export function restorePlayerMovement(ctx: GameContext, userId: string, snapshot: PlayerMovementSnapshot): void {
+  const state = stateFor(storeFor(ctx), userId);
+  state.heading = snapshot.heading;
+  state.facing = snapshot.facing;
+  state.voxelBody = snapshot.voxelBody === null ? null : { ...snapshot.voxelBody };
+  state.motion = snapshot.motion === null ? null : { ...snapshot.motion };
+  state.flight = snapshot.flight === null ? null : { ...snapshot.flight };
+  state.controllerJumpHeld = snapshot.controllerJumpHeld;
+  const controller = snapshot.controller === null ? null : copyController(snapshot.controller);
+  if (state.controller !== null && controller !== null) {
+    state.controller.restore(controller);
+    state.pendingController = null;
+  } else {
+    if (controller === null) state.controller = null;
+    state.pendingController = controller;
+  }
 }
 
 /** Drop a player's retained movement state (heading + kinematic body) — call on leave so a rejoin starts fresh instead of resuming stale velocity. */
@@ -386,14 +452,17 @@ export function stepPlayerMovement(
     if (controller === null) {
       controller = createCharacterController(tuning.controller.capsule);
       state.controller = controller;
-      controller.restore({
-        position: [player.position[0], player.position[1], player.position[2]],
-        verticalVelocity: 0,
-        grounded: true,
-        groundNormal: [0, 1, 0],
-        groundBody: null,
-        crouching: false,
-      });
+      controller.restore(
+        state.pendingController ?? {
+          position: [player.position[0], player.position[1], player.position[2]],
+          verticalVelocity: 0,
+          grounded: true,
+          groundNormal: [0, 1, 0],
+          groundBody: null,
+          crouching: false,
+        },
+      );
+      state.pendingController = null;
     }
 
     const controllerState = controller.state();
