@@ -236,6 +236,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `vfxPresets` (const) · `import { vfxPresets } from "@jgengine/core/combat"`
 
+## weapon-handling — recoil patterns with camera kick and recovery, spread bloom, stance multipliers and ADS as serializable state
+
+- `createWeaponHandling` (function) · `import { createWeaponHandling } from "@jgengine/core/combat/weaponHandling"`
+
+## weapon-metrics — measure a weapon's feel as numbers — first and tenth shot spread, climb, reset time, ADS time, time-to-kill
+
+- `measureWeapon` (function) · `import { measureWeapon } from "@jgengine/core/combat/weaponHandling"`
+
 ## weapon-runtime — compose cadence, magazine, a caller-owned raycast, and portable damage resolution into a fire controller
 
 - `createWeaponRuntime` (function) · `import { createWeaponRuntime } from "@jgengine/core/combat"`

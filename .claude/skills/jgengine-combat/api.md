@@ -598,6 +598,20 @@
 - `createFireCadence` (function): function createFireCadence(config: FireCadenceConfig): FireCadence — Build a {@link FireCadence} rate gate. Reach for this instead of hand-tracking a `lastFiredAt` timestamp and comparing against a fire interval per game.
 - `createWeaponRuntime` (function): function createWeaponRuntime<TAim, THit>(config: WeaponRuntimeConfig<TAim, THit>): WeaponRuntime<TAim, THit> — Compose a portable weapon fire controller from the existing generic primitives — a {@link FireCadence} gate, an optional {@link Magazine}, a caller-provided raycast, and portable {@link resolveDamageHit} damage resolution. No `GameContext`, entity store, renderer, or default weapon is involved; the caller owns aiming, its raycaster, and all presentation, and the result carries full damage provenance for authority to apply and replicate.
 
+## @jgengine/core/combat/weaponHandling
+
+- `WeaponHandling` (interface): interface WeaponHandling — The player-to-weapon relationship as state: recoil that climbs and recovers, spread that blooms and settles, and an aim-down-sights blend. Cadence, ammo and hits stay in `weaponFire`/`magazine`; this owns how the weapon feels between them. First-person, third-person and over-the-shoulder presentations read the same frame.
+- `WeaponHandlingFrame` (interface): interface WeaponHandlingFrame — Live handling readout: the offsets to add to aim and camera, current spread and ADS blend.
+- `WeaponHandlingState` (interface): interface WeaponHandlingState — Serializable handling state.
+- `WeaponHandlingTuning` (interface): interface WeaponHandlingTuning — Tuning for {@link createWeaponHandling}. Every number is an angle in radians or a time in seconds, so two weapons differ by numbers a person can reason about: a controllable rifle climbs a little and recovers fast; a shotgun kicks hard and blooms wide.
+- `WeaponRecoilTuning` (interface): interface WeaponRecoilTuning — Recoil per shot, in radians of aim. `pitch > 0` climbs the muzzle, `yaw > 0` pulls right.
+- `WeaponReport` (interface): interface WeaponReport — Deterministic weapon-feel metrics from {@link measureWeapon}.
+- `WeaponShot` (interface): interface WeaponShot — What one shot did: the cone to sample and the kick it applied.
+- `WeaponSpreadTuning` (interface): interface WeaponSpreadTuning — Cone of fire, as a half-angle in radians.
+- `WeaponStance` (interface): interface WeaponStance — Stance and aim for one tick.
+- `createWeaponHandling` (function): function createWeaponHandling(initial: WeaponHandlingTuning, options: { random?: () => number } = {}): WeaponHandling — Creates a {@link WeaponHandling}. Pass `random` (e.g. `ctx.rng` or `seededRng(seed)`) for the random recoil cone; without it the cone is skipped, so the result stays deterministic either way.
+- `measureWeapon` (function): function measureWeapon(create: () => WeaponHandling, options: { interval: number; burst?: number; damage?: number; targetHealth?: number; dt?: number }): WeaponReport — Fires a held burst through a fresh handling instance at a fixed interval and reports spread growth, climb, reset time, ADS time and time-to-kill.
+
 ## @jgengine/core/stats/accumulatorMeter
 
 - `AccumulatorMeter` (interface): interface AccumulatorMeter { value(): number; fraction(): number; tier(): string | null; broke(): boolean; add(amount: number): MeterAddResult; drain(amount: number): void; reset(): void; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createAccumulatorMeter`: A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and c…
