@@ -1,3 +1,5 @@
+import type { InputBuffer } from "../input/inputBuffer";
+
 /**
  * Movement core (pure model).
  *
@@ -147,6 +149,10 @@ export interface PlayerMotionState {
   jumpOffset: number;
   grounded: boolean;
   jumpHeld: boolean;
+  /** Integrated time, ms; the clock jump buffering and coyote time read. */
+  clockMs: number;
+  /** `clockMs` of the last grounded frame; `null` after a jump spends it. */
+  groundedAtMs: number | null;
 }
 
 /** @internal */
@@ -158,6 +164,8 @@ export function createPlayerMotionState(): PlayerMotionState {
     jumpOffset: 0,
     grounded: true,
     jumpHeld: false,
+    clockMs: 0,
+    groundedAtMs: 0,
   };
 }
 
@@ -186,6 +194,10 @@ export interface MovementTuningOverrides {
   runSpeedMultiplier?: number;
   /** Crouch speed as a multiple of walk speed (default 0.45). */
   crouchSpeedMultiplier?: number;
+  /** A jump pressed up to this many ms before landing still fires on landing (default 0). Needs {@link MotionFrameOptions.buffer}. */
+  jumpBufferMs?: number;
+  /** A jump pressed up to this many ms after walking off a ledge still fires (default 0). */
+  coyoteMs?: number;
 }
 
 /**
@@ -198,6 +210,8 @@ export interface MotionFrameOptions {
   speedScale?: number;
   /** Suppress gravity/jump integration and hold the avatar afloat this frame (e.g. swimming). Default false. */
   floating?: boolean;
+  /** Buffers jump presses for `jumpBufferMs`. Without it a jump fires only on the press frame. */
+  buffer?: InputBuffer;
 }
 
 /**
@@ -276,9 +290,28 @@ export function advancePlayerMotion(
 
   const floating = options?.floating === true;
   const jumpPressed = intent.jumping;
-  if (jumpPressed && !motion.jumpHeld && motion.grounded && !intent.crouching && !floating) {
+  const now = (motion.clockMs ?? 0) + deltaSeconds * 1000;
+  motion.clockMs = now;
+  if (motion.grounded) motion.groundedAtMs = now;
+  const coyoteMs = tuning?.coyoteMs ?? 0;
+  const groundedAtMs = motion.groundedAtMs ?? null;
+  const canJump =
+    !intent.crouching &&
+    !floating &&
+    (motion.grounded ||
+      (coyoteMs > 0 && motion.verticalVelocity <= 0 && groundedAtMs !== null && now - groundedAtMs <= coyoteMs));
+  const pressEdge = jumpPressed && !motion.jumpHeld;
+  const buffer = options?.buffer;
+  if (buffer !== undefined) {
+    if (pressEdge) buffer.press("jump", now);
+    else if (!jumpPressed && motion.jumpHeld) buffer.release("jump", now);
+  }
+  const jump =
+    canJump && (buffer === undefined ? pressEdge : buffer.consume("jump", now, tuning?.jumpBufferMs ?? 0));
+  if (jump) {
     motion.verticalVelocity = jumpVelocity;
     motion.grounded = false;
+    motion.groundedAtMs = null;
   }
   motion.jumpHeld = jumpPressed;
 

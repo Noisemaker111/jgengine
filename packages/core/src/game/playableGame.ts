@@ -402,6 +402,10 @@ export interface MovementFeelConfig {
   runMultiplier?: number;
   /** Crouch speed as a multiple of walk speed (default 0.45). */
   crouchMultiplier?: number;
+  /** A jump pressed up to this many ms before landing fires on landing (default 0). Kinematic walk only; the capsule and voxel controllers jump on the press frame. */
+  jumpBufferMs?: number;
+  /** A jump pressed up to this many ms after walking off a ledge still fires (default 0). Kinematic walk only, like `jumpBufferMs`. */
+  coyoteMs?: number;
 }
 
 /** Movement-control levers for the shell-driven local player walk controller. */
