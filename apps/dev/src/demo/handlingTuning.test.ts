@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { measureAir, measureHandling } from "@jgengine/core/physics/handlingProbe";
+import { measureAir, measureCourse, measureHandling } from "@jgengine/core/physics/handlingProbe";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
 
 import { handlingDemoGround, handlingDemoTuning } from "./handlingTuning";
@@ -51,5 +51,13 @@ describe("handling demo car", () => {
     expect(air.jumpApexHeight).toBeLessThan(1.9);
     expect(air.airPitchRate).toBeLessThanOrEqual(2.5 + 1e-9);
     expect(air.airPitchRate).toBeGreaterThan(1);
+  });
+
+  test("is mildly understeering, catches handbrake slides quickly and weaves a slalom", () => {
+    const course = measureCourse(() => createVehicleDynamics(handlingDemoTuning), { wheelbase: handlingDemoTuning.wheelbase });
+    expect(course.understeerGradient).toBeGreaterThan(0);
+    expect(course.understeerGradient).toBeLessThan(1);
+    expect(course.slalomSpeed).toBeGreaterThanOrEqual(10);
+    expect(report.handbrakeRecoverySeconds).toBeLessThan(1.5);
   });
 });
