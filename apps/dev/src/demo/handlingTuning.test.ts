@@ -61,3 +61,16 @@ describe("handling demo car", () => {
     expect(report.handbrakeRecoverySeconds).toBeLessThan(1.5);
   });
 });
+
+describe("handling demo bike", () => {
+  test("leans into corners, tips in quickly and stays upright on held keys", async () => {
+    const { handlingDemoBike } = await import("./handlingTuning");
+    const { measureLean } = await import("@jgengine/core/physics/handlingProbe");
+    const lean = measureLean(() => createVehicleDynamics(handlingDemoBike));
+    expect(lean.steadyLeanDeg).toBeGreaterThan(25);
+    expect(lean.timeToLean).toBeLessThan(1);
+    const report = measureHandling(() => createVehicleDynamics(handlingDemoBike));
+    expect(report.spun).toBe(false);
+    expect(report.powerSteerSpun).toBe(false);
+  });
+});

@@ -548,3 +548,48 @@ export function measureCourse(create: () => CourseSubject, options: CourseProbeO
 
   return { understeerGradient, skidpadG, slalomSpeed };
 }
+
+/** The slice of a single-track sim {@link measureLean} drives; a `VehicleDynamics` with a `lean` block fits. */
+export interface LeanSubject {
+  tick(dt: number, input: AxisInput): { forwardSpeed: number; lean: number };
+}
+
+/** Deterministic lean metrics for a motorcycle or bicycle. */
+export interface LeanReport {
+  /** Lean held after 2 s of full steer at `speed`, degrees. */
+  steadyLeanDeg: number;
+  /** Seconds from full steer until the lean first reaches 90% of that steady lean. */
+  timeToLean: number;
+  /** Largest lean the wrong way in the first 0.4 s — the countersteer tip-in, degrees (`0` if none). */
+  counterLeanDeg: number;
+}
+
+/**
+ * Brings a fresh bike to `speed` and holds full steer, reporting how far and how fast it leans and how much it
+ * tips the other way first.
+ * @capability lean-metrics measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in
+ */
+export function measureLean(create: () => LeanSubject, options: { dt?: number; speed?: number } = {}): LeanReport {
+  const dt = options.dt ?? 1 / 60;
+  const speed = options.speed ?? 20;
+  const bike = create();
+  let current = launchTo(bike as unknown as HandlingSubject, speed, dt);
+  const leans: number[] = [];
+  for (let i = 0; i < Math.ceil(2 / dt); i += 1) {
+    const hold = holdSpeed(speed, current);
+    const step = bike.tick(dt, input(hold.throttle, hold.brake, 1));
+    current = step.forwardSpeed;
+    leans.push(step.lean);
+  }
+  const steady = leans[leans.length - 1] ?? 0;
+  const index = leans.findIndex((lean) => Math.sign(lean) === Math.sign(steady) && Math.abs(lean) >= Math.abs(steady) * 0.9);
+  let counter = 0;
+  for (let i = 0; i < Math.min(leans.length, Math.ceil(0.4 / dt)); i += 1) {
+    if (Math.sign(leans[i]!) === -Math.sign(steady)) counter = Math.max(counter, Math.abs(leans[i]!));
+  }
+  return {
+    steadyLeanDeg: Math.abs(steady) * RAD_TO_DEG,
+    timeToLean: index < 0 ? Number.POSITIVE_INFINITY : (index + 1) * dt,
+    counterLeanDeg: counter * RAD_TO_DEG,
+  };
+}

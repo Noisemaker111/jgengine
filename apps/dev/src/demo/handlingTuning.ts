@@ -55,3 +55,34 @@ export const handlingDemoRamp = {
   width: RAMP_HALF_WIDTH * 2,
   pitch: Math.atan2(RAMP_HEIGHT, RAMP_LENGTH),
 };
+
+// A light sport bike for the same course: lean replaces a second track, and the rider's lean sets the turn.
+export const handlingDemoBike: VehicleDynamicsTuning = {
+  massKg: 260,
+  wheelbase: 1.42,
+  frontWeight: 0.5,
+  comHeight: 0.62,
+  trackWidth: 0.2,
+  front: { peakGrip: 1.2, peakSlipAngle: 0.09, slideGrip: 0.72 },
+  driveFront: 0,
+  powertrain: {
+    kind: "gearbox",
+    peakTorque: 110,
+    torqueCurve: { points: [[0, 0.5], [0.6, 1], [0.9, 0.95], [1, 0.8]] },
+    idleRpm: 1300,
+    redlineRpm: 13000,
+    shiftUpRpm: 12500,
+    shiftDownRpm: 6000,
+    shiftSeconds: 0.08,
+    gears: [2.6, 1.9, 1.55, 1.3, 1.15, 1.05],
+    reverseGear: 0,
+    finalDrive: 6.5,
+    wheelRadius: 0.31,
+  },
+  brakeForce: 3200,
+  brakeFront: 0.75,
+  steering: { maxAngle: 0.5, highSpeedAngle: 0.5, highSpeedAt: 30, rate: 3 },
+  lean: { maxLean: 0.85, leanRate: 4 },
+  assists: { abs: 1, tractionControl: 0.6 },
+  aero: { dragArea: 0.35 },
+};
