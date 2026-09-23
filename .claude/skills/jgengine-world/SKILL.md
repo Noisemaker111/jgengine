@@ -16,6 +16,7 @@ For a *connected* walkthrough that wires several primitives into a running loop,
 - [recipes/commanding-entities.md](recipes/commanding-entities.md) — select → order → tick → resolve: direct command over a group of entities (the command loop behind squad control, base-defense, herding, autobattle, or a mutating game's real-time phase).
 - [recipes/building-kit.md](recipes/building-kit.md) — bind the facade generator's part slots to real models: one massing, swappable art per style, blocks where the kit is silent.
 - [recipes/vehicle-feel.md](recipes/vehicle-feel.md) — feel target → handling metrics → physical knobs for a ground vehicle, plus the camera, sound and rumble hooks that hang off its telemetry.
+- [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, with the symptom → knob table for how it flies.
 
 ## Canonical workflows
 
