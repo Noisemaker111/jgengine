@@ -5,6 +5,7 @@ import type { AxisBinding } from "@jgengine/core/input/axisInput";
 import { analogAxes, createAxisShaper, type AxisShaper } from "@jgengine/core/input/axisShaper";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
+import { createFeedbackMixer, type FeedbackMixer } from "@jgengine/core/vfx/feedbackMixer";
 import { createVehicleDynamics, type VehicleDynamics, type VehicleDynamicsStep } from "@jgengine/core/physics/vehicleDynamics";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
@@ -42,9 +43,29 @@ function createDriveShaper(): AxisShaper<DriveAxis> {
 
 const CONES: readonly (readonly [number, number])[] = Array.from({ length: 14 }, (_, i) => [(i % 2 === 0 ? 3.5 : -3.5), 30 + i * 18]);
 
+type FeedbackSignal = "rpm" | "load" | "scrub" | "slip" | "front" | "rear" | "landing";
+type FeedbackTarget = "engineRate" | "engineGain" | "tireGain" | "tireRate" | "rumbleStrong" | "rumbleWeak";
+
+function createCarFeedback(): FeedbackMixer<FeedbackSignal, FeedbackTarget> {
+  return createFeedbackMixer<FeedbackSignal, FeedbackTarget>({
+    routes: [
+      { signal: "rpm", target: "engineRate", curve: [[0, 0], [3000, 1], [9000, 3]] },
+      { signal: "load", target: "engineGain", curve: [[0, 0.25], [1, 0.8]], attack: 8, release: 4 },
+      { signal: "scrub", target: "tireGain", curve: [[0.85, 0], [1.25, 1]], attack: 20, release: 5 },
+      { signal: "slip", target: "tireRate", curve: [[0, 0.85], [0.5, 1.35]] },
+      { signal: "rear", target: "rumbleStrong", curve: [[0.85, 0], [1.85, 1]] },
+      { signal: "landing", target: "rumbleStrong", curve: [[1.5, 0], [8, 1]] },
+      { signal: "front", target: "rumbleWeak", curve: [[0.85, 0], [1.85, 1]] },
+    ],
+    combine: { rumbleStrong: "max" },
+    events: [{ id: "landing", signal: "landing", threshold: 1.5, cooldown: 0.3 }],
+  });
+}
+
 interface HandlingRun {
   car: VehicleDynamics;
   shaper: AxisShaper<DriveAxis>;
+  feedback: FeedbackMixer<FeedbackSignal, FeedbackTarget>;
   last: VehicleDynamicsStep | null;
   rumbleCooldown: number;
 }
@@ -52,7 +73,7 @@ interface HandlingRun {
 let run: HandlingRun | null = null;
 
 function ensureRun(): HandlingRun {
-  run ??= { car: createVehicleDynamics(tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), last: null, rumbleCooldown: 0 };
+  run ??= { car: createVehicleDynamics(tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), last: null, rumbleCooldown: 0 };
   return run;
 }
 
@@ -83,22 +104,26 @@ function onTick(ctx: GameContext, dt: number): void {
 
   const step = drive.step;
   const at = drive.pose.position;
+  const moving = Math.min(1, Math.abs(step.forwardSpeed) / 4);
+  const out = state.feedback.update(dt, {
+    rpm: step.rpm,
+    load: step.engineLoad,
+    scrub: Math.max(step.frontSaturation, step.rearSaturation) * moving,
+    slip: Math.abs(step.sideslip),
+    front: step.frontSaturation,
+    rear: step.rearSaturation,
+    landing: step.landingSpeed,
+  });
   ctx.game.audio.loop("engine", "engine", { at });
   ctx.game.audio.loop("tires", "tires", { at });
-  ctx.game.audio.setLoop("engine", { rate: step.rpm / 3000, gain: 0.25 + 0.55 * step.engineLoad, at });
-  const scrub = Math.max(0, Math.max(step.frontSaturation, step.rearSaturation) - 0.85);
-  const moving = Math.min(1, Math.abs(step.forwardSpeed) / 4);
-  ctx.game.audio.setLoop("tires", { rate: 0.85 + Math.min(0.5, Math.abs(step.sideslip)), gain: Math.min(1, scrub * 2.5) * moving, at });
-
-  if (step.landingSpeed > 1.5) {
-    ctx.game.audio.play("thud", at);
-    void ctx.input.rumble(id, { strong: Math.min(1, step.landingSpeed / 8), weak: 0.3, ms: 180 });
-  }
+  ctx.game.audio.setLoop("engine", { rate: out.engineRate, gain: out.engineGain, at });
+  ctx.game.audio.setLoop("tires", { rate: out.tireRate, gain: out.tireGain, at });
+  if (state.feedback.fired("landing")) ctx.game.audio.play("thud", at);
 
   state.rumbleCooldown -= dt;
-  if (state.rumbleCooldown <= 0 && (scrub > 0.15 || step.wheelspin)) {
+  if (state.rumbleCooldown <= 0 && (out.rumbleStrong > 0.05 || out.rumbleWeak > 0.05)) {
     state.rumbleCooldown = 0.1;
-    void ctx.input.rumble(id, { strong: Math.min(1, step.rearSaturation - 0.85), weak: Math.min(1, step.frontSaturation - 0.85), ms: 110 });
+    void ctx.input.rumble(id, { strong: out.rumbleStrong, weak: out.rumbleWeak, ms: 110 });
   }
 }
 
@@ -291,6 +316,8 @@ const game = defineGame({
         heading: step.heading,
         yawRate: step.yawRate,
         steerDeg: (step.steerAngle * 180) / Math.PI,
+        engineRate: run?.feedback.value().engineRate ?? 0,
+        tireGain: run?.feedback.value().tireGain ?? 0,
         lateralG: step.lateralAccel / 9.81,
         sideslipDeg: (step.sideslip * 180) / Math.PI,
         gear: step.gear,
