@@ -426,6 +426,13 @@
 - `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning { tapMoveThresholdPx: number; tapMaxMs: number; swipeMinPx: number; swipeMinVelocity: number; dragStepPx: number } — ⚠ undocumented
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
 
+## @jgengine/core/input/inputBuffer
+
+- `BufferedAction` (interface): interface BufferedAction — One action's press history inside an {@link InputBuffer}.
+- `InputBuffer` (interface): interface InputBuffer — Remembers recent action presses so a press slightly early (a jump before landing) still counts. Times are caller-supplied ms, so it runs the same on a client, a host or in a replay.
+- `InputBufferSnapshot` (interface): interface InputBufferSnapshot — Serializable state for an {@link InputBuffer}.
+- `createInputBuffer` (function): function createInputBuffer(options: { windowMs: number }): InputBuffer — Creates an input buffer for jump buffering, coyote time, hold duration and double taps.
+
 ## @jgengine/core/input/lookChannel
 
 - `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number; snap… — ⚠ undocumented
