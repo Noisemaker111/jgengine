@@ -1,4 +1,5 @@
 import type { AxisInput } from "../input/axisInput";
+import type { AircraftVector, RigidAircraft, RigidAircraftInput, RigidAircraftStep } from "./aircraftDynamics";
 
 /** The slice of a vehicle sim {@link measureHandling} drives: `VehicleDynamics` and `KinematicVehicle` both fit. */
 export interface HandlingSubject {
@@ -592,4 +593,216 @@ export function measureLean(create: () => LeanSubject, options: { dt?: number; s
     timeToLean: index < 0 ? Number.POSITIVE_INFINITY : (index + 1) * dt,
     counterLeanDeg: counter * RAD_TO_DEG,
   };
+}
+
+/** Where {@link measureFlight} spawns each fresh aircraft: level, heading `0` (forward `+z`). */
+export interface FlightSpawn {
+  position: AircraftVector;
+  velocity: AircraftVector;
+}
+
+/** Scenario settings for {@link measureFlight}. */
+export interface FlightProbeOptions {
+  /** Fixed tick, s (default `1/60`). */
+  dt?: number;
+  /** Entry airspeed for the fixed-wing tests, m/s (default `60`). */
+  cruiseSpeed?: number;
+  /** Spawn altitude, m (default `1000`, or `50` for a rotorcraft). */
+  altitude?: number;
+  /** Collective that hovers a rotorcraft (default weight over rotor `maxThrust`). */
+  hoverCollective?: number;
+}
+
+/**
+ * Deterministic flight metrics. Fields that don't apply to the aircraft are `NaN`: turn and stall need wings,
+ * hover drift needs a rotor.
+ */
+export interface FlightReport {
+  /** Peak roll rate under full roll input from cruise (or a hover), deg/s. */
+  rollRateDeg: number;
+  /** Best turn rate held at full throttle without losing altitude or speed, deg/s. */
+  sustainedTurnRateDeg: number;
+  /** Slowest airspeed that still holds altitude at idle, wings level, m/s. */
+  stallSpeed: number;
+  /** Steady climb at full throttle holding cruise speed (full collective from a hover for a rotorcraft), m/s. */
+  climbRate: number;
+  /** Seconds from idle to 90% of full thrust after the throttle (and collective) go to full. */
+  throttleResponse: number;
+  /** Horizontal drift after 10 s hands-off at hover collective, m. */
+  hoverDriftMeters: number;
+}
+
+function flightInput(throttle: number, pitch: number, roll: number, collective = 0): RigidAircraftInput {
+  return { throttle, pitch: Math.max(-1, Math.min(1, pitch)), roll: Math.max(-1, Math.min(1, roll)), yaw: 0, collective };
+}
+
+function wrapPi(angle: number): number {
+  let a = angle;
+  while (a > Math.PI) a -= 2 * Math.PI;
+  while (a < -Math.PI) a += 2 * Math.PI;
+  return a;
+}
+
+/** A PI loop on vertical speed toward a target altitude, with pitch-rate damping; returns the pitch command. */
+function createAltitudeHold(targetY: number): (step: RigidAircraftStep, dt: number) => number {
+  let integral = 0;
+  return (step, dt) => {
+    const climbTarget = Math.max(-5, Math.min(5, 0.2 * (targetY - step.position[1])));
+    const error = climbTarget - step.velocity[1];
+    integral = Math.max(-1, Math.min(1, integral + 0.03 * error * dt));
+    return integral + 0.05 * error - 0.3 * step.pitchRate;
+  };
+}
+
+function bankHold(step: RigidAircraftStep, target: number): number {
+  return 2 * wrapPi(target - step.bank) - 0.5 * step.rollRate;
+}
+
+/**
+ * Flies fresh aircraft from `create` through fixed scenarios with simple deterministic autopilots: a full-aileron
+ * roll, banked turns at full throttle, an idle deceleration holding altitude, a full-throttle climb at cruise
+ * speed, a throttle step from idle, and a hands-off hover. `create` gets a spawn to pass straight into
+ * `createRigidAircraft`. Deterministic, so a tuning change shows up as a number moving.
+ * @capability flight-metrics measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
+ */
+export function measureFlight(create: (spawn: FlightSpawn) => RigidAircraft, options: FlightProbeOptions = {}): FlightReport {
+  const dt = options.dt ?? 1 / 60;
+  const cruise = options.cruiseSpeed ?? 60;
+  const probe = create({ position: [0, 0, 0], velocity: [0, 0, 0] });
+  const tuning = probe.tuning();
+  const rotor = tuning.rotor;
+  const steps = (seconds: number) => Math.ceil(seconds / dt);
+
+  if (rotor !== undefined) {
+    const altitude = options.altitude ?? 50;
+    const collective = options.hoverCollective ?? Math.min(1, (tuning.massKg * 9.81) / rotor.maxThrust);
+    const hovering = () => {
+      const aircraft = create({ position: [0, altitude, 0], velocity: [0, 0, 0] });
+      aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+      return aircraft;
+    };
+
+    let rollRate = 0;
+    {
+      const aircraft = hovering();
+      for (let i = 0; i < steps(2); i += 1) rollRate = Math.max(rollRate, Math.abs(aircraft.tick(dt, flightInput(1, 0, 1, collective)).rollRate));
+    }
+    let climbRate = 0;
+    {
+      const aircraft = hovering();
+      for (let i = 0; i < steps(5); i += 1) climbRate = aircraft.tick(dt, flightInput(1, 0, 0, 1)).velocity[1];
+    }
+    let drift = 0;
+    {
+      const aircraft = hovering();
+      let step = aircraft.tick(dt, flightInput(1, 0, 0, collective));
+      for (let i = 1; i < steps(10); i += 1) step = aircraft.tick(dt, flightInput(1, 0, 0, collective));
+      drift = Math.hypot(step.position[0], step.position[2]);
+    }
+    const response = throttleStep(() => {
+      const aircraft = create({ position: [0, altitude, 0], velocity: [0, 0, 0] });
+      aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 0 });
+      return aircraft;
+    }, (step) => (step.rotor?.speed ?? 0) ** 2, collective, dt);
+    return {
+      rollRateDeg: rollRate * RAD_TO_DEG,
+      sustainedTurnRateDeg: Number.NaN,
+      stallSpeed: Number.NaN,
+      climbRate,
+      throttleResponse: response,
+      hoverDriftMeters: drift,
+    };
+  }
+
+  const altitude = options.altitude ?? 1000;
+  const cruising = () => create({ position: [0, altitude, 0], velocity: [0, 0, cruise] });
+
+  let rollRate = 0;
+  {
+    const aircraft = cruising();
+    for (let i = 0; i < steps(3); i += 1) rollRate = Math.max(rollRate, Math.abs(aircraft.tick(dt, flightInput(0.5, 0, 1)).rollRate));
+  }
+
+  let sustained = 0;
+  for (let bankDeg = 10; bankDeg <= 85; bankDeg += 5) {
+    const aircraft = cruising();
+    const hold = createAltitudeHold(altitude);
+    const bank = bankDeg / RAD_TO_DEG;
+    let step = aircraft.tick(dt, flightInput(1, 0, 0));
+    let speedAt20 = 0;
+    let headingAt20 = 0;
+    let turned = 0;
+    let failed = false;
+    for (let i = 1; i < steps(30); i += 1) {
+      const previous = step.heading;
+      step = aircraft.tick(dt, flightInput(1, hold(step, dt), bankHold(step, bank)));
+      turned += wrapPi(step.heading - previous);
+      if (i === steps(20)) {
+        speedAt20 = step.airspeed;
+        headingAt20 = turned;
+      }
+      if (step.stalled || Math.abs(step.position[1] - altitude) > 60) failed = true;
+    }
+    if (failed || step.airspeed < speedAt20 - 2) continue;
+    sustained = Math.max(sustained, Math.abs(turned - headingAt20) / 10);
+  }
+
+  let stallSpeed = Number.NaN;
+  {
+    const aircraft = cruising();
+    const hold = createAltitudeHold(altitude);
+    let step = aircraft.tick(dt, flightInput(0, 0, 0));
+    for (let i = 0; i < steps(120); i += 1) {
+      step = aircraft.tick(dt, flightInput(0, hold(step, dt), bankHold(step, 0)));
+      if (step.stalled || step.velocity[1] < -3) {
+        stallSpeed = step.airspeed;
+        break;
+      }
+    }
+  }
+
+  let climbRate = 0;
+  {
+    const aircraft = cruising();
+    let integral = 0;
+    let step = aircraft.tick(dt, flightInput(1, 0, 0));
+    let sum = 0;
+    for (let i = 1; i < steps(30); i += 1) {
+      // Speed above cruise pitches the nose up (trading it for climb); an attitude loop flies that pitch.
+      const error = step.airspeed - cruise;
+      integral = Math.max(-0.3, Math.min(0.6, integral + 0.005 * error * dt));
+      const pitchTarget = Math.max(-0.3, Math.min(0.8, integral + 0.02 * error));
+      step = aircraft.tick(dt, flightInput(1, 3 * (pitchTarget - step.pitch) - 0.5 * step.pitchRate, bankHold(step, 0)));
+      if (i >= steps(25)) sum += step.velocity[1];
+    }
+    climbRate = sum / (steps(30) - steps(25));
+  }
+
+  const response =
+    tuning.engine === undefined
+      ? Number.NaN
+      : throttleStep(() => {
+          const aircraft = cruising();
+          aircraft.restore({ ...aircraft.snapshot(), spool: 0 });
+          return aircraft;
+        }, (step) => step.thrust, 0, dt);
+
+  return {
+    rollRateDeg: rollRate * RAD_TO_DEG,
+    sustainedTurnRateDeg: sustained * RAD_TO_DEG,
+    stallSpeed,
+    climbRate,
+    throttleResponse: response,
+    hoverDriftMeters: Number.NaN,
+  };
+}
+
+function throttleStep(create: () => RigidAircraft, thrustOf: (step: RigidAircraftStep) => number, collective: number, dt: number): number {
+  const trace: number[] = [];
+  const aircraft = create();
+  for (let i = 0; i < Math.ceil(20 / dt); i += 1) trace.push(thrustOf(aircraft.tick(dt, flightInput(1, 0, 0, collective))));
+  const final = trace[trace.length - 1] ?? 0;
+  if (final <= 0) return Number.POSITIVE_INFINITY;
+  const index = trace.findIndex((thrust) => thrust >= final * 0.9);
+  return index < 0 ? Number.POSITIVE_INFINITY : (index + 1) * dt;
 }

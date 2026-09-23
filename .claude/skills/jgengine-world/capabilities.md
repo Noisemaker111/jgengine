@@ -289,6 +289,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAircraftDynamics` (function) · `import { createAircraftDynamics } from "@jgengine/core/world"`
 
+## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
+
+- `measureFlight` (function) · `import { measureFlight } from "@jgengine/core/physics/handlingProbe"`
+
 ## follow-trail — trailing follower/snake formation that chases a leader
 
 - `createLeaderTrail` (function) · `import { createLeaderTrail } from "@jgengine/core/world"`

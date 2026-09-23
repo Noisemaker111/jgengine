@@ -31,8 +31,12 @@
 
 ## Workflow
 
-1. **Write the feel as numbers.** Roll rate in deg/s, loop time, stall speed, the g it pulls at full stick, whether it holds level hands-off.
-2. **Put them in a test** next to the tuning, flying the sim with fixed inputs.
+1. **Write the feel as numbers** on the `FlightReport` fields. Some examples:
+   - "Nimble aerobatic" is `rollRateDeg > 300` and `sustainedTurnRateDeg > 18`.
+   - "Heavy transport" is `rollRateDeg` 40–80 and `stallSpeed` 50–70.
+   - "Responsive jet" is `throttleResponse < 2`.
+   - "Easy hover" is `hoverDriftMeters < 5` with the game's assists on.
+2. **Put them in a test** next to the tuning: `measureFlight((spawn) => createRigidAircraft(tuning, spawn), { cruiseSpeed })` from `@jgengine/core/physics/handlingProbe`. It flies deterministic autopilots through a full-aileron roll, full-throttle banked turns, an idle deceleration, a speed-held climb, a throttle step and a hands-off hover. Fields that don't apply are `NaN`: turn and stall need wings, hover drift needs a rotor.
 3. **Start from the real aircraft**: mass, wing area, span, tail arm, thrust. Inertia is roughly `m·(span/4)²` for roll and `m·(length/4)²` for pitch and yaw.
 4. **Trim it.** With the wing on the centre of mass, set wing `incidence` to the cruise lift coefficient over the lift slope, `W / (½ρV²·S·a)`, and leave the tail at `0`. It then flies level hands-off at that speed.
 5. **Drive it**: `bun run drive flight --key KeyR+KeyS:10500 --key KeyD:1500 --record <name> --record-fps 20`, or `bun run drive flight-heli --key KeyR:1500 --wait 3000 --key KeyE:3500 --record <name> --record-fps 20` for the helicopter, or `bun run drive flight-rocket --key KeyR:400 --wait 12000 --record <name> --record-fps 20` for the two-stage rocket.

@@ -11,6 +11,7 @@ import {
   type RigidAircraftStep,
   type RigidAircraftTuning,
 } from "./aircraftDynamics";
+import { measureFlight } from "./handlingProbe";
 
 const DT = 1 / 60;
 const DEG = 180 / Math.PI;
@@ -478,5 +479,46 @@ describe("createRigidAircraft assists", () => {
     const b = fly(aircraft, 3, hover({ yaw: 0 }));
     expect(b.position).toEqual(a.position);
     expect(b.command).toEqual(a.command);
+  });
+});
+
+describe("measureFlight", () => {
+  const jetReport = measureFlight((spawn) => createRigidAircraft(jet, spawn), { cruiseSpeed: 180 });
+
+  test("reports a jet's feel in human units", () => {
+    expect(jetReport.rollRateDeg).toBeGreaterThan(150);
+    expect(jetReport.rollRateDeg).toBeLessThan(300);
+    expect(jetReport.sustainedTurnRateDeg).toBeGreaterThan(8);
+    expect(jetReport.sustainedTurnRateDeg).toBeLessThan(30);
+    expect(jetReport.stallSpeed).toBeGreaterThan(40);
+    expect(jetReport.stallSpeed).toBeLessThan(100);
+    expect(jetReport.climbRate).toBeGreaterThan(20);
+    expect(jetReport.throttleResponse).toBeCloseTo(Math.log(10) / 1.5, 1);
+    expect(jetReport.hoverDriftMeters).toBeNaN();
+  });
+
+  test("moves the right way when the airframe changes", () => {
+    const heavy = measureFlight((spawn) => createRigidAircraft({ ...jet, massKg: 13000 }, spawn), { cruiseSpeed: 180 });
+    expect(heavy.sustainedTurnRateDeg).toBeLessThan(jetReport.sustainedTurnRateDeg);
+    expect(heavy.stallSpeed).toBeGreaterThan(jetReport.stallSpeed);
+    expect(heavy.climbRate).toBeLessThan(jetReport.climbRate);
+    const quick = measureFlight((spawn) => createRigidAircraft({ ...jet, engine: { maxThrust: 80000, spoolRate: 4 } }, spawn), { cruiseSpeed: 180 });
+    expect(quick.throttleResponse).toBeLessThan(jetReport.throttleResponse / 2);
+  });
+
+  test("is deterministic", () => {
+    expect(measureFlight((spawn) => createRigidAircraft(jet, spawn), { cruiseSpeed: 180 })).toEqual(jetReport);
+  });
+
+  test("measures hover drift, and hover hold shrinks it", () => {
+    const loose = measureFlight((spawn) => createRigidAircraft(helicopter, spawn));
+    const held = measureFlight((spawn) => createRigidAircraft({ ...helicopter, assists: { sas: { pitch: 1, roll: 1, yaw: 1 }, hoverHold: 1 } }, spawn));
+    expect(loose.hoverDriftMeters).toBeGreaterThan(8);
+    expect(held.hoverDriftMeters).toBeLessThan(loose.hoverDriftMeters / 2);
+    expect(loose.climbRate).toBeGreaterThan(3);
+    expect(loose.rollRateDeg).toBeGreaterThan(20);
+    expect(loose.throttleResponse).toBeCloseTo(-Math.log(1 - Math.sqrt(0.9)) / 0.5, 1);
+    expect(loose.stallSpeed).toBeNaN();
+    expect(loose.sustainedTurnRateDeg).toBeNaN();
   });
 });

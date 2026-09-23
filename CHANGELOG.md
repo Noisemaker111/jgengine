@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `measureFlight` (`@jgengine/core/physics/handlingProbe`) flies a `createRigidAircraft` through deterministic autopilot scenarios. It reports roll rate (deg/s), sustained turn rate, stall speed, climb rate, time to 90% throttle response and hands-off hover drift, so a flight feel target can be a test.
 - `RigidAircraftTuning.assists`: flight assists on the same actuators as the pilot, so full stick stays the pilot's.
   - `sas` per axis (`0..1`) damps rates and holds attitude or heading hands-off with a learned trim. On a helicopter it holds heading against rotor torque.
   - `autoLevel`, `maxAngleOfAttack` and `maxG` limiters, and `hoverHold` for helicopters.
