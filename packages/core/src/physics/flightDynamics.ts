@@ -82,6 +82,16 @@ export interface AircraftStep {
   gForce: number;
 }
 
+/** Serializable integrator state of an {@link AircraftDynamics}: what `restore` needs to resume bit-for-bit. */
+export interface AircraftDynamicsState {
+  position: FlightVector;
+  velocity: FlightVector;
+  rotation: FlightVector;
+  angular: FlightVector;
+  rotor: number;
+  lastVerticalSpeed: number;
+}
+
 /** Stateful six-degree-of-freedom aircraft simulation. */
 export interface AircraftDynamics {
   tick(dt: number, input: FlightControlInput): AircraftStep;
@@ -89,6 +99,10 @@ export interface AircraftDynamics {
   velocity(): FlightVector;
   resetTo(position: FlightVector, rotation?: FlightVector): void;
   setVelocity(velocity: FlightVector): void;
+  /** Swap tuning in place (damage, upgrades, a live tuning panel) without losing pose or momentum. */
+  retune(next: AircraftTuning): void;
+  snapshot(): AircraftDynamicsState;
+  restore(state: AircraftDynamicsState): void;
 }
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
@@ -126,15 +140,16 @@ function wrapAngle(value: number): number {
 /** Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
  * @capability flight-dynamics simulate fixed-wing, helicopter, and VTOL aircraft
  */
-export function createAircraftDynamics(tuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics {
+export function createAircraftDynamics(initialTuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics {
+  let tuning = initialTuning;
   let position: [number, number, number] = [...(options.position ?? [0, 0, 0])];
   let velocity: [number, number, number] = [...(options.velocity ?? [0, 0, 0])];
   let rotation: [number, number, number] = [...(options.rotation ?? [0, 0, 0])];
   let angular: [number, number, number] = [0, 0, 0];
   let rotor = 0;
   let lastVerticalSpeed = velocity[1];
-  const gravity = Math.abs(tuning.gravity ?? 9.81);
-  const gravityField = options.gravityField ?? uniformGravity([0, -gravity, 0]);
+  let gravity = Math.abs(tuning.gravity ?? 9.81);
+  let gravityField = options.gravityField ?? uniformGravity([0, -gravity, 0]);
   const windAt = options.wind ?? (() => [0, 0, 0]);
   const groundAt = options.groundHeight ?? (() => 0);
 
@@ -254,6 +269,27 @@ export function createAircraftDynamics(tuning: AircraftTuning, options: Aircraft
     setVelocity(nextVelocity) {
       velocity = [...nextVelocity];
       lastVerticalSpeed = velocity[1];
+    },
+    retune(next) {
+      tuning = next;
+      gravity = Math.abs(next.gravity ?? 9.81);
+      gravityField = options.gravityField ?? uniformGravity([0, -gravity, 0]);
+    },
+    snapshot: () => ({
+      position: [...position],
+      velocity: [...velocity],
+      rotation: [...rotation],
+      angular: [...angular],
+      rotor,
+      lastVerticalSpeed,
+    }),
+    restore(state) {
+      position = [...state.position];
+      velocity = [...state.velocity];
+      rotation = [...state.rotation];
+      angular = [...state.angular];
+      rotor = state.rotor;
+      lastVerticalSpeed = state.lastVerticalSpeed;
     },
   };
 }

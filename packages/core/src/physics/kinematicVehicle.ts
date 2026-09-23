@@ -39,7 +39,10 @@ export interface KinematicVehicleTuning {
   hopGravity?: number;
   /** Optional higher-fidelity powertrain. Omit to preserve the direct arcade acceleration model. */
   powertrain?: KinematicPowertrainTuning;
-  /** Optional bicycle-model steering with speed-sensitive lock and smoothed rack response. */
+  /**
+   * Optional bicycle-model steering with speed-sensitive lock and smoothed rack response.
+   * @deprecated Heading here is still commanded from steer, so it can't produce real understeer or oversteer. Use `createVehicleDynamics` (`physics/vehicleDynamics`) when handling matters.
+   */
   steering?: KinematicSteeringTuning;
   /** Optional aerodynamic drag/downforce and electronic driver assists. */
   dynamics?: KinematicDynamicsTuning;
@@ -48,6 +51,7 @@ export interface KinematicVehicleTuning {
    * with force/mass dynamics — a tire friction budget, lateral weight transfer, and engine braking — so
    * vehicles of different mass, drive/brake force, and center-of-gravity drive measurably differently.
    * Omit to preserve the direct arcade acceleration model exactly.
+   * @deprecated The friction budget clamps lateral speed while heading keeps turning at the commanded rate, so a held steer at speed spins the car. Use `createVehicleDynamics` (`physics/vehicleDynamics`), whose yaw comes from tire forces.
    */
   chassis?: KinematicChassisTuning;
   /** Per-axis bindings for this vehicle — which actions drive throttle/brake/steer/handbrake. Unlisted axes keep car defaults (W/S/A/D/Space). */
@@ -197,6 +201,26 @@ export interface KinematicVehicleStep {
   airborne: boolean;
 }
 
+/** Serializable integrator state of a {@link KinematicVehicle}: what `restore` needs to resume bit-for-bit. */
+export interface KinematicVehicleState {
+  x: number;
+  y: number;
+  z: number;
+  heading: number;
+  vx: number;
+  vz: number;
+  gearIndex: number;
+  rpm: number;
+  shiftRemaining: number;
+  steerAngle: number;
+  yawRate: number;
+  previousForwardSpeed: number;
+  bodyPitch: number;
+  bodyRoll: number;
+  airOffset: number;
+  verticalVelocity: number;
+}
+
 /**
  * The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed,
  * throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels,
@@ -222,6 +246,8 @@ export interface KinematicVehicle {
    * would. For a change that lasts a single tick, pass {@link KinematicVehicleModifiers} instead.
    */
   retune(next: KinematicVehicleTuning): void;
+  snapshot(): KinematicVehicleState;
+  restore(state: KinematicVehicleState): void;
   resetTo(position: readonly [number, number, number], heading: number): void;
 }
 
@@ -559,6 +585,16 @@ export function createKinematicVehicle(
     },
     retune(next) {
       tuning = next;
+    },
+    snapshot: () => ({
+      x, y, z, heading, vx, vz, gearIndex, rpm, shiftRemaining, steerAngle, yawRate,
+      previousForwardSpeed, bodyPitch, bodyRoll, airOffset, verticalVelocity,
+    }),
+    restore(state) {
+      ({
+        x, y, z, heading, vx, vz, gearIndex, rpm, shiftRemaining, steerAngle, yawRate,
+        previousForwardSpeed, bodyPitch, bodyRoll, airOffset, verticalVelocity,
+      } = state);
     },
     resetTo(position, nextHeading) {
       x = position[0];

@@ -30,6 +30,11 @@ describe("findStatefulPrimitives", () => {
     ]);
   });
 
+  test("a default parameter like \`options = {}\` does not hide the body", () => {
+    const source = `export interface Thing {\n  tick(dt: number): void;\n  count(): number;\n}\nexport function createThing(options: { start?: number } = {}): Thing {\n  let n = options.start ?? 0;\n  return { tick: () => { n++; }, count: () => n };\n}\n`;
+    expect(scan(source)).toEqual(["createThing"]);
+  });
+
   test("a state-out method alone is not enough — the state must come back in", () => {
     expect(
       scan(`export interface Thing {\n  tick(dt: number): void;\n  snapshot(): number;\n}\n${STATEFUL_BODY}`),
