@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics";
 
-import { flightDemoPlane, flightDemoSpawn } from "./flightTuning";
+import { flightDemoHelicopter, flightDemoHover, flightDemoPlane, flightDemoSpawn } from "./flightTuning";
 
 const DT = 1 / 60;
 
@@ -36,5 +36,24 @@ describe("flight demo plane", () => {
 
   test("rolls a full turn in under two seconds", () => {
     expect(fly(2, { throttle: 0.35, pitch: 0, roll: 1, yaw: 0 }).rolled).toBeGreaterThan(2 * Math.PI);
+  });
+});
+
+describe("flight demo helicopter", () => {
+  function hover(pedal: number, seconds: number) {
+    const heli = createRigidAircraft(flightDemoHelicopter, { position: [0, 40, 0] });
+    heli.restore({ ...heli.snapshot(), rotorSpeed: 1 });
+    let step = heli.tick(DT, { throttle: 1, collective: flightDemoHover.collective, pitch: 0, roll: 0, yaw: pedal });
+    for (let i = 0; i < Math.round(seconds / DT); i += 1) step = heli.tick(DT, { throttle: 1, collective: flightDemoHover.collective, pitch: 0, roll: 0, yaw: pedal });
+    return step;
+  }
+
+  test("hovers on its hover collective", () => {
+    expect(Math.abs(hover(flightDemoHover.pedal, 2).velocity[1])).toBeLessThan(0.3);
+  });
+
+  test("needs pedal to hold heading", () => {
+    expect(Math.abs(hover(0, 2).heading)).toBeGreaterThan(0.5);
+    expect(Math.abs(hover(flightDemoHover.pedal, 2).heading)).toBeLessThan(0.15);
   });
 });

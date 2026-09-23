@@ -899,6 +899,7 @@
 - `AircraftEngineTuning` (interface): interface AircraftEngineTuning — A thrust source fixed to the body.
 - `AircraftGearTuning` (interface): interface AircraftGearTuning — Wheels or skids: what the body rests on when it touches the ground.
 - `AircraftQuaternion` (type): type AircraftQuaternion = readonly [number, number, number, number] — Unit quaternion `[x, y, z, w]` taking body-frame vectors to world space.
+- `AircraftRotorTuning` (interface): interface AircraftRotorTuning — A main rotor. Collective sets blade pitch, throttle sets rotor speed, and cyclic (the pitch and roll channels) tilts the disc. Its drag torque yaws the body the other way unless a tail rotor, a second rotor or a pedal input cancels it.
 - `AircraftSurface` (interface): interface AircraftSurface — One lifting surface: a wing panel, a tailplane, a fin, a canard. Its lift acts at `at`, so the moments that pitch, roll and yaw the body come from where the surfaces sit, not from commanded rates.
 - `AircraftVector` (type): type AircraftVector = readonly [number, number, number] — Body-frame or world-frame vector, m or N. The body frame is `[left, up, forward]` about the centre of mass.
 - `RigidAircraft` (interface): interface RigidAircraft — A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`.
