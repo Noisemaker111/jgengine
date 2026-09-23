@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { createInputBuffer } from "../input/inputBuffer";
+
 import {
   advancePlayerMotion,
   constrainStepToAxis,
@@ -411,5 +413,81 @@ describe("advancePlayerMotion — feel overrides", () => {
     const sprint = { ...createEmptyMovementKeys(), w: true, shift: true };
     const sprinting = resolveMovementIntent(sprint, true);
     expect(steadySpeed(sprinting, { runSpeedMultiplier: 3 })).toBeCloseTo(steadySpeed(sprinting) * (3 / MOVEMENT_TUNING.runSpeedMultiplier), 3);
+  });
+});
+
+describe("advancePlayerMotion — jump buffer and coyote time", () => {
+  function airborneAfterJump(tuning: Parameters<typeof advancePlayerMotion>[6], buffer = createInputBuffer({ windowMs: 0 })) {
+    const motion = createPlayerMotionState();
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    return { motion, buffer };
+  }
+
+  function landingFrame(motion: PlayerMotionState, tuning: Parameters<typeof advancePlayerMotion>[6], buffer: ReturnType<typeof createInputBuffer>, pressAtFramesBeforeLanding: number): boolean {
+    const probe = { ...motion };
+    let framesToLand = 0;
+    while (!probe.grounded) {
+      advancePlayerMotion(probe, idleIntent(), 0, -1, 2.5, DT, tuning);
+      framesToLand += 1;
+    }
+    for (let frame = 1; frame < framesToLand; frame += 1) {
+      const pressing = frame === framesToLand - pressAtFramesBeforeLanding;
+      advancePlayerMotion(motion, pressing ? jumpIntent() : idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    }
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    return motion.verticalVelocity > 0;
+  }
+
+  test("default: a press just before landing is lost", () => {
+    const { motion, buffer } = airborneAfterJump(undefined);
+    expect(landingFrame(motion, undefined, buffer, 3)).toBe(false);
+  });
+
+  test("jumpBufferMs: a press just before landing jumps on landing", () => {
+    const tuning = { jumpBufferMs: 100 };
+    const { motion, buffer } = airborneAfterJump(tuning);
+    expect(landingFrame(motion, tuning, buffer, 3)).toBe(true);
+  });
+
+  test("jumpBufferMs: a press older than the window is dropped", () => {
+    const tuning = { jumpBufferMs: 100 };
+    const { motion, buffer } = airborneAfterJump(tuning);
+    expect(landingFrame(motion, tuning, buffer, 12)).toBe(false);
+  });
+
+  function walkOffLedge(tuning: Parameters<typeof advancePlayerMotion>[6], framesAfter: number): boolean {
+    const motion = createPlayerMotionState();
+    const buffer = createInputBuffer({ windowMs: 0 });
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    motion.grounded = false;
+    motion.jumpOffset = 5;
+    for (let frame = 0; frame < framesAfter; frame += 1) {
+      advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    }
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    return motion.verticalVelocity > 0;
+  }
+
+  test("default: no jump after walking off a ledge", () => {
+    expect(walkOffLedge(undefined, 2)).toBe(false);
+  });
+
+  test("coyoteMs: a late press after leaving the ledge still jumps, once", () => {
+    const tuning = { coyoteMs: 100 };
+    expect(walkOffLedge(tuning, 3)).toBe(true);
+    expect(walkOffLedge(tuning, 10)).toBe(false);
+  });
+
+  test("coyoteMs does not grant a second jump in the air", () => {
+    const tuning = { coyoteMs: 150 };
+    const { motion, buffer } = airborneAfterJump(tuning);
+    for (let frame = 0; frame < 20; frame += 1) {
+      advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    }
+    const before = motion.verticalVelocity;
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    expect(motion.verticalVelocity).toBeLessThan(before);
   });
 });

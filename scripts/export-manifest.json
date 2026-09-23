@@ -197,6 +197,7 @@
     "./input/controlGroups",
     "./input/gamepadModel",
     "./input/gestureSurface",
+    "./input/inputBuffer",
     "./input/lookChannel",
     "./input/pointer",
     "./input/pointerAxis",
