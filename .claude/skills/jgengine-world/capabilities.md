@@ -355,6 +355,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
 
+## input-buffer — buffer early presses, coyote time, hold duration and double tap for responsive controls
+
+- `createInputBuffer` (function) · `import { createInputBuffer } from "@jgengine/core/input/inputBuffer"`
+
 ## interaction-prompt — observable nearest-interactable prompt registry over the proximity-prompt resolver — register/resolve/active with priority+range and change-notified snapshot/restore
 
 - `createPromptRegistry` (function) · `import { createPromptRegistry } from "@jgengine/core/world"`
