@@ -890,6 +890,25 @@
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 
+## @jgengine/core/physics/aircraftDynamics
+
+- `AircraftControlChannel` (interface): interface AircraftControlChannel — One control channel's actuator: how far the surfaces move and how fast.
+- `AircraftEngineTuning` (interface): interface AircraftEngineTuning — A thrust source fixed to the body.
+- `AircraftGearTuning` (interface): interface AircraftGearTuning — Wheels or skids: what the body rests on when it touches the ground.
+- `AircraftQuaternion` (type): type AircraftQuaternion = readonly [number, number, number, number] — Unit quaternion `[x, y, z, w]` taking body-frame vectors to world space.
+- `AircraftSurface` (interface): interface AircraftSurface — One lifting surface: a wing panel, a tailplane, a fin, a canard. Its lift acts at `at`, so the moments that pitch, roll and yaw the body come from where the surfaces sit, not from commanded rates.
+- `AircraftVector` (type): type AircraftVector = readonly [number, number, number] — Body-frame or world-frame vector, m or N. The body frame is `[left, up, forward]` about the centre of mass.
+- `RigidAircraft` (interface): interface RigidAircraft — A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`.
+- `RigidAircraftInput` (interface): interface RigidAircraftInput — Pilot input for one tick.
+- `RigidAircraftModifiers` (interface): interface RigidAircraftModifiers — Per-tick overrides layered over tuning: damage, icing, boost, gusts. Each scale defaults to `1`.
+- `RigidAircraftOptions` (interface): interface RigidAircraftOptions — World hooks for one aircraft instance.
+- `RigidAircraftState` (interface): interface RigidAircraftState — Serializable integrator state: everything `restore` needs to resume bit-for-bit.
+- `RigidAircraftStep` (interface): interface RigidAircraftStep — One aircraft tick: pose plus the telemetry HUDs, camera, sound and probes read.
+- `RigidAircraftTuning` (interface): interface RigidAircraftTuning — A rigid aircraft in physical units. There is no aircraft type: a jet, a glider and a paper plane differ only in these numbers. Rotation comes from surface forces acting on the inertia tensor, so loops, rolls, stalls and weathervaning are outcomes, not special cases.
+- `aircraftAttitudeQuaternion` (function): function aircraftAttitudeQuaternion(heading: number, pitch: number, bank: number): AircraftQuaternion — Quaternion from heading, nose-up pitch and right bank, rad — the inverse of a step's `heading`/`pitch`/`bank`. Matches three.js `Euler(-pitch, heading, bank, "YXZ")`.
+- `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
+- `createRigidAircraft` (function): function createRigidAircraft(initial: RigidAircraftTuning, options: RigidAircraftOptions = {}): RigidAircraft — Creates a {@link RigidAircraft}: a quaternion rigid body with a diagonal inertia tensor, pushed by lifting surfaces, fuselage drag, an engine and gravity. Controls deflect surfaces through rate-limited actuators; nothing commands a rotation rate, so a jet loops when its tail can push the nose around and a glider stalls when it runs out of speed. Fixed internal substeps make it deterministic for a given `dt` sequence.
+
 ## @jgengine/core/physics/ballisticSweep
 
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
@@ -3204,6 +3223,7 @@
 - `AdjacentCell` (interface): interface AdjacentCell — One occupied neighbor cell reported by {@link boundaryNeighbors}.
 - `FootprintGrid` (interface): interface FootprintGrid — Handle returned by {@link createFootprintGrid}.
 - `FootprintGridOptions` (interface): interface FootprintGridOptions — Config for {@link createFootprintGrid}.
+- `FootprintGridState` (interface): interface FootprintGridState — Plain JSON state of a {@link FootprintGrid}: live reservations in claim order.
 - `FootprintReservation` (interface): interface FootprintReservation — A live claim on a {@link FootprintGrid}: which cells `id` (a `kind` tag for adjacency checks) holds.
 - `GridCell` (interface): interface GridCell — One integer cell address on a {@link FootprintGrid}.
 - `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
@@ -3246,10 +3266,10 @@
 - `EntityLocation` (interface): interface EntityLocation { space: SpaceRef; position: Vec2 } — ⚠ undocumented
 - `Exterior` (interface): interface Exterior { bounds?: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
 - `Interior` (interface): interface Interior { id: string; origin: Vec2; rotation?: number; bounds: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
-- `Interiors` (interface): interface Interiors { move(location: EntityLocation, delta: Vec2): EntityLocation; enter(location: EntityLocation, id: string): EntityLocation | null; leave(location: EntityLocation): EntityLocation | null; toInterior(id: string, exterior: Vec2): Vec2 | null; … — ⚠ undocumented
-- `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented
+- `Interiors` (interface): interface Interiors { move(location: EntityLocation, delta: Vec2): EntityLocation; enter(location: EntityLocation, id: string): EntityLocation | null; leave(location: EntityLocation): EntityLocation | null; toInterior(id: string, exterior: Vec2): Vec2 | null; … — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
+- `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 - `SpaceRef` (type): type SpaceRef = { kind: "exterior" } | { kind: "interior"; id: string } — ⚠ undocumented
-- `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — ⚠ undocumented
+- `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 
 ## @jgengine/core/world/lod
 
@@ -3717,6 +3737,7 @@
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `TerraformBrush` (interface): interface TerraformBrush { raise(center: Vec2): number; lower(center: Vec2): number; flatten(center: Vec2, target?: number): number; paint(center: Vec2, surface?: string): number; setRadius(radius: number): void; setStrength(strength: number): void; config(): Requi… — ⚠ undocumented
 - `TerraformBrushConfig` (interface): interface TerraformBrushConfig { radius?: number; strength?: number; falloff?: TerraformFalloff; surface?: string } — ⚠ undocumented
+- `TerraformBrushState` (interface): interface TerraformBrushState — Plain JSON state of a {@link TerraformBrush}.
 - `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
 - `TerraformDeltaRecorder` (type): type TerraformDeltaRecorder = (index: number, before: number, after: number) => void — Reports each changed vertex during a recorded edit: grid index, prior offset, new offset.
 - `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
@@ -3861,6 +3882,7 @@
 - `RoofStyle` (type): type RoofStyle = "hip" | "gable" | "flat" — ⚠ undocumented
 - `SurfacePaintStore` (interface): interface SurfacePaintStore { paint(target: PaintTarget, key: string, surface: string): void; clear(target: PaintTarget, key: string): void; get(target: PaintTarget, key: string): string | null; entries(target: PaintTarget): readonly (readonly [string, string])[]; sna… — ⚠ undocumented
 - `WallDrawTool` (interface): interface WallDrawTool { addPoint(point: Vec2, snap?: number): Vec2; undo(): void; close(): void; clear(): void; points(): readonly Vec2[]; segments(): WallSegment[]; isClosed(): boolean; footprint(): EnclosedFootprint | null; roof(config?: RoofConfig): RoofPlan … — ⚠ undocumented
+- `WallDrawToolState` (interface): interface WallDrawToolState — Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed.
 - `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
 

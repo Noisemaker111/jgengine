@@ -561,6 +561,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureRide` (function) · `import { measureRide } from "@jgengine/core/physics/handlingProbe"`
 
+## rigid-aircraft — force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls
+
+- `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics"`
+
 ## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
 
 - `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
