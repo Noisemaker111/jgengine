@@ -76,6 +76,7 @@
     "./combat/thresholdCrossings",
     "./combat/vfxPresets",
     "./combat/weaponFire",
+    "./combat/weaponHandling",
     "./commands/commandRegistry",
     "./crafting/crop",
     "./crafting/production",

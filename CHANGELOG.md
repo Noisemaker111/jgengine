@@ -29,6 +29,11 @@ between (`--json` for structured output).
 ### Added
 
 - `measureCourse` (`@jgengine/core/physics/handlingProbe`): understeer gradient (deg/g), skidpad g at a set radius, and the fastest clean slalom, from simple deterministic drivers. `measureHandling` adds `handbrakeRecoverySeconds`.
+- `createWeaponHandling` (`@jgengine/core/combat/weaponHandling`): weapon feel as serializable state.
+  - Recoil: a per-shot `pattern` or flat `pitch`, a random cone from an injected `random`, a `cameraShare` split between view punch and aim, `recoverRate`/`recoverDelay`, and `adsScale`.
+  - Spread: `base`, `perShot` bloom, `max`, recovery, and stance/ADS multipliers.
+  - ADS time, plus `snapshot`/`restore`/`retune`/`reset`.
+  - `measureWeapon` reports first and tenth shot spread, burst climb, reset time, ADS time and time-to-kill.
 - `createFeedbackMixer` (`@jgengine/core/vfx/feedbackMixer`): declares how sim telemetry drives presentation. Routes map a signal through a piecewise `curve` with `attack`/`release` smoothing onto a named target, targets combine by `sum` or `max` over a `base`, and threshold `events` with cooldowns fire one-shots. No allocation per update, with `snapshot`/`restore`/`retune`/`reset`. `sampleFeedbackCurve` exposes the curve.
 - `PlayerMovementConfig.feel` (`MovementFeelConfig`): `groundAcceleration`, `airAcceleration`, `groundFriction` (response rates, 1/s), `runMultiplier` and `crouchMultiplier` for the built-in walk controller and the voxel controller. They were hard-coded before, so every game walked the same. Omitted fields keep today's defaults.
 - `createAxisShaper` (`@jgengine/core/input/axisShaper`): per-axis response shaping between `ctx.input.axis(...)` and a sim. Keys and sticks get separate profiles (deadzone, saturation, curve, rise/fall/return rates), plus an optional `scale(signal)` callback for speed-sensitive steering, with `snapshot`/`restore`/`retune`. `analogAxes(bindings, ctx.input.analog())` picks the profile per frame, and `shapeAxisValue` exposes the deadzone and curve math. The `handling` dev demo uses it for keyboard steering that eases in and self-centres.
