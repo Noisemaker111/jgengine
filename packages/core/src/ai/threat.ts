@@ -14,6 +14,13 @@ export interface HighestThreatOptions {
   stickiness?: number;
 }
 
+/** Plain JSON state of a {@link ThreatTable}; `entries` keeps insertion order, which breaks ties in `highest`. */
+export interface ThreatTableState {
+  entries: [sourceId: string, threat: number][];
+  forcedSource: string | null;
+  forcedRemaining: number;
+}
+
 export interface ThreatTable {
   add(sourceId: string, amount: number): number;
   set(sourceId: string, amount: number): void;
@@ -26,6 +33,8 @@ export interface ThreatTable {
   remove(sourceId: string): void;
   clear(): void;
   size(): number;
+  snapshot(): ThreatTableState;
+  restore(next: ThreatTableState): void;
 }
 
 const DEFAULT_FORGET_BELOW = 0;
@@ -124,6 +133,15 @@ export function createThreatTable(config: ThreatTableConfig = {}): ThreatTable {
     },
     size() {
       return table.size;
+    },
+    snapshot() {
+      return { entries: [...table], forcedSource, forcedRemaining };
+    },
+    restore(next) {
+      table.clear();
+      for (const [sourceId, threat] of next.entries) table.set(sourceId, threat);
+      forcedSource = next.forcedSource;
+      forcedRemaining = next.forcedRemaining;
     },
   };
 }

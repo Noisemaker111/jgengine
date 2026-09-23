@@ -27,6 +27,9 @@ export interface RecordingBuffer<T> {
   clear(): void;
   duration(): number;
   frames(): readonly RecordingFrame<T>[];
+  /** Copies the frame list; each frame's `data` is shared, since the buffer never mutates it. */
+  snapshot(): RecordingFrame<T>[];
+  restore(next: readonly RecordingFrame<T>[]): void;
 }
 
 function evict<T>(frames: RecordingFrame<T>[], options: RecordingBufferOptions): void {
@@ -95,6 +98,13 @@ export function createRecordingBuffer<T>(options: RecordingBufferOptions = {}): 
     },
     frames() {
       return frames;
+    },
+    snapshot() {
+      return frames.map((frame) => ({ t: frame.t, data: frame.data }));
+    },
+    restore(next) {
+      frames.length = 0;
+      for (const frame of next) frames.push({ t: frame.t, data: frame.data });
     },
   };
 }

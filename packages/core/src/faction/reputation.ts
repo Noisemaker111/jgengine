@@ -37,6 +37,11 @@ export interface ReputationLedgerConfig {
   max?: number;
 }
 
+/** Plain JSON standings of a {@link ReputationLedger}: stored values only, `initial` stays config. */
+export interface ReputationLedgerState {
+  records: Record<string, Record<string, number>>;
+}
+
 export interface ReputationLedger {
   standing(actorId: string, factionId: string): number;
   hasStanding(actorId: string, factionId: string): boolean;
@@ -46,6 +51,8 @@ export interface ReputationLedger {
   relation(actorId: string, factionId: string): FactionRelation;
   standings(actorId: string): Record<string, number>;
   reset(actorId: string, factionId?: string): void;
+  snapshot(): ReputationLedgerState;
+  restore(next: ReputationLedgerState): void;
 }
 
 export function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger {
@@ -102,6 +109,15 @@ export function createReputationLedger(config: ReputationLedgerConfig = {}): Rep
     reset(actorId, factionId) {
       if (factionId === undefined) records.delete(actorId);
       else records.get(actorId)?.delete(factionId);
+    },
+    snapshot() {
+      const out: Record<string, Record<string, number>> = {};
+      for (const [actorId, row] of records) out[actorId] = Object.fromEntries(row);
+      return { records: out };
+    },
+    restore(next) {
+      records.clear();
+      for (const [actorId, row] of Object.entries(next.records)) records.set(actorId, new Map(Object.entries(row)));
     },
   };
 }
