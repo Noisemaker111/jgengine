@@ -31,6 +31,7 @@ export type {
   CameraKeyframe,
   CameraProjection,
   CameraRigKind,
+  CameraWeaponView,
   CameraShakeConfig,
   ChaseCameraConfig,
   ChaseView,

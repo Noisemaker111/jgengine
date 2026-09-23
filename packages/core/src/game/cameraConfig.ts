@@ -1,8 +1,17 @@
+import type { WeaponHandlingFrame } from "../combat/weaponHandling";
+import type { WeaponPresentationTuning } from "../combat/weaponPresentation";
+
 export interface CameraFollowState {
   entityId: string;
   target: { x: number; y: number; z: number };
   camera: { x: number; y: number; z: number };
   distance: number;
+}
+
+/** What a camera rig reads about the held weapon each frame; see `GameCameraConfig.weapon`. */
+export interface CameraWeaponView {
+  handling: WeaponHandlingFrame;
+  presentation?: WeaponPresentationTuning;
 }
 
 export interface FirstPersonCameraConfig {
@@ -373,6 +382,13 @@ export interface GameCameraConfig {
   followEntityId?: string | null;
   /** Fired each frame after cameraFollow lock is applied. */
   onCameraFollow?: (state: CameraFollowState) => void;
+  /**
+   * The followed entity's held weapon, read every frame by the `first` and `shoulder` rigs. Return the
+   * weapon's `createWeaponHandling` frame and its presentation tuning, or `null` for none. First person
+   * poses the viewmodel from it (offset, ADS pose, viewmodel FOV, sway, bob, kick) and adds the recoil to
+   * the look; over-the-shoulder takes its ADS blend from `adsProgress` and adds the same recoil.
+   */
+  weapon?: (entityId: string) => CameraWeaponView | null;
   rotateSpeed?: number;
   zoomSpeed?: number;
   dampingFactor?: number;
