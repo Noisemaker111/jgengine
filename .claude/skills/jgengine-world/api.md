@@ -696,6 +696,13 @@
 - `MovementTuningOverrides` (interface): interface MovementTuningOverrides — Per-game overrides for the gravity/jump feel, sourced from `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
 - `PlayerMotionState` (interface): interface PlayerMotionState — Mutable kinematic state carried between frames by the controller. Kept here so the velocity / jump / gravity integration is a pure function testable without a renderer — the controller just owns the ref.
 
+## @jgengine/core/movement/movementProbe
+
+- `MovementProbeOptions` (interface): interface MovementProbeOptions — Scenario settings for {@link measureMovement}; every field has a default.
+- `MovementProbeSubject` (interface): interface MovementProbeSubject — The walk character {@link measureMovement} drives: the same fields a game passes to `defineGame`.
+- `MovementReport` (interface): interface MovementReport — Deterministic walk-feel metrics. `Infinity` means the target was never reached.
+- `measureMovement` (function): function measureMovement(subject: MovementProbeSubject = {}, options: MovementProbeOptions = {}): MovementReport — Drives a walk character through fixed scenarios (standing start, release to stop, reversal, a standing jump, a strafed jump) on the same integrator `stepPlayerMovement` uses, and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a feel change shows up as a number moving. Collision, terrain and swimming are out of scope; it measures flat ground.
+
 ## @jgengine/core/movement/playerMovement
 
 - `PlayerMovementSnapshot` (interface): interface PlayerMovementSnapshot — One player's serializable movement state: heading, facing, velocities, jump latch and controller capsule. The entity pose lives in the entity store.
