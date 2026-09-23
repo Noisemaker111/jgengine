@@ -75,6 +75,38 @@ export interface AircraftGearTuning {
 }
 
 /**
+ * A main rotor. Collective sets blade pitch, throttle sets rotor speed, and cyclic (the pitch and roll channels) tilts
+ * the disc. Its drag torque yaws the body the other way unless a tail rotor, a second rotor or a pedal input cancels it.
+ */
+export interface AircraftRotorTuning {
+  /** Thrust at full collective and full rotor speed, out of ground effect and in a hover, N. */
+  maxThrust: number;
+  /** Blade radius, m. Sets the disc area, so the induced velocity behind translational lift, and the ground-effect height. */
+  radius: number;
+  /** Hub position relative to the centre of mass, body frame m (default `[0, 1.5, 0]`). A hub above the centre of mass turns disc tilt into pitch and roll moments. */
+  at?: AircraftVector;
+  /** Rotor speed response to throttle, 1/s (default `0.5`): rotors spin up slowly. */
+  spoolRate?: number;
+  /**
+   * Drag torque on the body at full collective and full rotor speed, N·m, scaling with collective and rotor speed².
+   * Positive yaws the nose left (a rotor turning counter-clockwise seen from above); negative yaws it right.
+   */
+  torque: number;
+  /** Disc tilt at full cyclic, rad (default `0.15`); the pitch and roll actuators set how fast it gets there. */
+  cyclic?: number;
+  /** Extra thrust once the rotor moves into clean air, as a share of thrust (default `0.2`): translational lift. */
+  translationalLift?: number;
+  /** Pitch and roll damping from the disc, N·m per rad/s (default `0`). */
+  damping?: number;
+  /**
+   * Tail rotor: sideways thrust at full yaw input and full rotor speed, N, acting at `at` (body frame m). Neutral pedal
+   * gives no thrust, so holding heading takes a yaw input that matches the main rotor torque. `sideDamping`, N per m/s
+   * of sideways air through it (default `maxThrust / 10`), is the yaw damping a spinning tail rotor adds.
+   */
+  tail?: { maxThrust: number; at: AircraftVector; sideDamping?: number };
+}
+
+/**
  * A rigid aircraft in physical units. There is no aircraft type: a jet, a glider and a paper plane differ only in these
  * numbers. Rotation comes from surface forces acting on the inertia tensor, so loops, rolls, stalls and weathervaning
  * are outcomes, not special cases.
@@ -86,6 +118,7 @@ export interface RigidAircraftTuning {
   inertia: { pitch: number; yaw: number; roll: number };
   surfaces: readonly AircraftSurface[];
   engine?: AircraftEngineTuning;
+  rotor?: AircraftRotorTuning;
   /** Actuators per channel; each channel defaults to `{ maxDeflection: 0.35, rate: 2 }`. */
   controls?: { pitch?: AircraftControlChannel; roll?: AircraftControlChannel; yaw?: AircraftControlChannel };
   /** Fuselage drag coefficient × frontal area, m² (default `0`). */
@@ -108,6 +141,8 @@ export interface RigidAircraftInput {
   yaw: number;
   /** Wheel brake, `0..1`. */
   brake?: number;
+  /** Rotor collective, `0..1` (default `0`). */
+  collective?: number;
 }
 
 /** Per-tick overrides layered over tuning: damage, icing, boost, gusts. Each scale defaults to `1`. */
@@ -159,6 +194,8 @@ export interface RigidAircraftState {
   yawDeflection: number;
   /** Engine output as a share of `maxThrust`, `0..1`. */
   spool: number;
+  /** Rotor speed as a share of its rated speed, `0..1`. */
+  rotorSpeed: number;
   time: number;
 }
 
@@ -194,6 +231,19 @@ export interface RigidAircraftStep {
   /** Current actuator deflection per channel, rad. */
   deflection: { pitch: number; roll: number; yaw: number };
   grounded: boolean;
+  /** Rotor telemetry; absent without a `rotor` block. */
+  rotor?: {
+    /** Rotor speed, share of rated, `0..1`. */
+    speed: number;
+    /** Main rotor thrust, N. */
+    thrust: number;
+    /** Drag torque on the body, N·m, positive nose left. */
+    torque: number;
+    /** Thrust multiplier from ground effect, `≥ 1`. */
+    groundEffect: number;
+    /** Thrust multiplier from translational lift, `≥ 1`. */
+    translationalLift: number;
+  };
 }
 
 /** A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`. */
@@ -327,6 +377,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
   const state: RigidAircraftState = fresh(options.position ?? [0, 0, 0], options.orientation ?? aircraftHeadingQuaternion(options.heading ?? 0));
   if (options.velocity !== undefined) [state.vx, state.vy, state.vz] = options.velocity;
   const telemetry = { airspeed: 0, alpha: 0, sideslip: 0, gLoad: 1, stallFraction: 0, stalled: false, thrust: 0, grounded: false };
+  const rotorTelemetry = { thrust: 0, torque: 0, groundEffect: 1, translationalLift: 1 };
 
   function largestSurface(list: readonly PreparedSurface[]): number {
     let best = -1;
@@ -355,6 +406,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       rollDeflection: 0,
       yawDeflection: 0,
       spool: 0,
+      rotorSpeed: 0,
       time: 0,
     };
   }
@@ -441,7 +493,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         Math.atan2(-un, uf) + s.incidence + s.kPitch * state.pitchDeflection + s.kRoll * state.rollDeflection + s.kYaw * state.yawDeflection,
       );
       const { cl, stalled } = liftCoefficient(alpha, s.slope, s.stall, s.postStall);
-      if (stalled > 0.5) {
+      // Below ~1 m/s of local flow the angle of attack is noise, not a stall.
+      if (stalled > 0.5 && speed2 > 1) {
         stalledArea += s.area;
         if (i === largest) largestStalled = true;
       }
@@ -493,6 +546,66 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
         my += az * tx - ax * tz;
         mz += ax * ty - ay * tx;
       }
+    }
+
+    const rotor = t.rotor;
+    if (rotor !== undefined) {
+      state.rotorSpeed += (throttle - state.rotorSpeed) * (1 - Math.exp(-(rotor.spoolRate ?? 0.5) * h));
+      const [hx, hy, hz] = rotor.at ?? [0, 1.5, 0];
+      const cyclic = rotor.cyclic ?? 0.15;
+      const tiltPitch = (state.pitchDeflection / (pitchCh?.maxDeflection ?? 0.35)) * cyclic;
+      const tiltRoll = (state.rollDeflection / (rollCh?.maxDeflection ?? 0.35)) * cyclic;
+      // Nose-up cyclic tilts the disc back (−forward), right cyclic tilts it right (−left).
+      let dx = -Math.sin(tiltRoll);
+      let dz = -Math.sin(tiltPitch);
+      let dy = Math.sqrt(Math.max(0, 1 - dx * dx - dz * dz));
+      const collective = clamp01(input.collective ?? 0);
+      const rpm2 = state.rotorSpeed * state.rotorSpeed;
+      const nominal = rotor.maxThrust * collective * rpm2;
+      const disc = Math.PI * rotor.radius * rotor.radius;
+      // Momentum theory: hover induced velocity v_i = √(T / 2ρA). Clean air arriving at about v_i adds translational
+      // lift; climbing through the disc at w cuts thrust by roughly w / 2v_i, which damps vertical motion.
+      const induced = Math.sqrt(Math.max(nominal, rotor.maxThrust * 0.05) / (2 * rho * disc));
+      const hubVx = bx + (wy * hz - wz * hy);
+      const hubVy = by + (wz * hx - wx * hz);
+      const hubVz = bz + (wx * hy - wy * hx);
+      const edgewise = Math.hypot(hubVx, hubVz);
+      const translational = 1 + (rotor.translationalLift ?? 0.2) * (1 - Math.exp(-((edgewise / induced) ** 2)));
+      const inflow = Math.max(0.2, Math.min(1.5, 1 - hubVy / (2 * induced)));
+      toWorld(hx, hy, hz);
+      const clearance = Math.max(rotor.radius / 2, state.y + out[1]! - groundAt(state.x, state.z));
+      // Cheeseman–Bennett: T_IGE / T_OGE = 1 / (1 − (R / 4z)²).
+      const groundEffect = 1 / (1 - (rotor.radius / (4 * clearance)) ** 2);
+      const rotorThrust = nominal * translational * inflow * groundEffect;
+      dx *= rotorThrust;
+      dy *= rotorThrust;
+      dz *= rotorThrust;
+      fx += dx;
+      fy += dy;
+      fz += dz;
+      mx += hy * dz - hz * dy;
+      my += hz * dx - hx * dz;
+      mz += hx * dy - hy * dx;
+      const torque = rotor.torque * collective * rpm2;
+      my += torque;
+      const damping = rotor.damping ?? 0;
+      mx -= damping * wx;
+      mz -= damping * wz;
+      if (rotor.tail !== undefined) {
+        const [, ty, tz] = rotor.tail.at;
+        const side = bx + (wy * tz - wz * ty);
+        const tailThrust =
+          rotor.tail.maxThrust * rpm2 * (state.yawDeflection / (yawCh?.maxDeflection ?? 0.35)) -
+          (rotor.tail.sideDamping ?? rotor.tail.maxThrust / 10) * state.rotorSpeed * side;
+        fx += tailThrust;
+        // A sideways force along +left at the tail: moment = at × (F, 0, 0).
+        my += tz * tailThrust;
+        mz -= ty * tailThrust;
+      }
+      rotorTelemetry.thrust = rotorThrust;
+      rotorTelemetry.torque = torque;
+      rotorTelemetry.groundEffect = groundEffect;
+      rotorTelemetry.translationalLift = translational;
     }
 
     toWorld(fx, fy, fz);
@@ -621,6 +734,17 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       thrust: telemetry.thrust,
       deflection: { pitch: state.pitchDeflection, roll: state.rollDeflection, yaw: state.yawDeflection },
       grounded: telemetry.grounded,
+      ...(tuning.rotor === undefined
+        ? {}
+        : {
+            rotor: {
+              speed: state.rotorSpeed,
+              thrust: rotorTelemetry.thrust,
+              torque: rotorTelemetry.torque,
+              groundEffect: rotorTelemetry.groundEffect,
+              translationalLift: rotorTelemetry.translationalLift,
+            },
+          }),
     };
   }
 

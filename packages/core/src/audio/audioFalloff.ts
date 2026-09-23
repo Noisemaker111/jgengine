@@ -32,6 +32,8 @@ export interface SoundDef {
   /** Positional emitters attenuate by distance from the listener; non-positional sounds (UI, music) play at flat gain. Default true. */
   positional?: boolean;
   falloff?: AudioFalloffConfig;
+  /** Doppler strength for retained loops: 1 is physical, 0 or absent is off. Emitter velocity comes from `setLoop({ velocity })`, listener velocity from the camera. */
+  doppler?: number;
   /** Web Audio spatial panning configuration. When present, the shell uses a PannerNode. */
   spatial?: {
     panning: "hrtf" | "equalpower";

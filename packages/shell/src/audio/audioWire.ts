@@ -3,7 +3,15 @@ import type { AudioEmitterHandle, AudioEngine, Vec3 } from "./audioEngine";
 type AudioPlayPayload = { sound: string; at?: readonly [number, number, number] };
 type AudioMusicPayload = { theme: string | null; transpose?: number };
 type AudioLoopStartPayload = { id: string; sound: string; at?: readonly [number, number, number] };
-type AudioLoopSetPayload = { id: string; rate?: number; gain?: number; at?: readonly [number, number, number] };
+type AudioLoopSetPayload = {
+  id: string;
+  rate?: number;
+  gain?: number;
+  at?: readonly [number, number, number];
+  velocity?: readonly [number, number, number];
+  lowpass?: number;
+  highpass?: number;
+};
 type AudioLoopStopPayload = { id: string };
 
 /** Minimal event bus the shell wires to the audio engine, including retained id-keyed loops (#1051). @internal */
@@ -51,13 +59,16 @@ export function attachAudioEventWire(
     const handle = audioEngine.playLoop(sound, toVec(at));
     if (handle !== null) loops.set(id, { sound, handle });
   });
-  const offLoopSet = events.on("audio.loopSet", ({ id, rate, gain, at }) => {
+  const offLoopSet = events.on("audio.loopSet", ({ id, rate, gain, at, velocity, lowpass, highpass }) => {
     const entry = loops.get(id);
     // Unknown id: a live update may race a stop — silently drop it.
     if (entry === undefined) return;
     if (rate !== undefined) entry.handle.setRate(rate);
     if (gain !== undefined) entry.handle.setGain(gain);
     if (at !== undefined) entry.handle.setPosition({ x: at[0], y: at[1], z: at[2] });
+    if (velocity !== undefined) entry.handle.setVelocity({ x: velocity[0], y: velocity[1], z: velocity[2] });
+    if (lowpass !== undefined) entry.handle.setLowpass(lowpass);
+    if (highpass !== undefined) entry.handle.setHighpass(highpass);
   });
   const offLoopStop = events.on("audio.loopStop", ({ id }) => {
     const entry = loops.get(id);

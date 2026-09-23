@@ -189,3 +189,106 @@ describe("createRigidAircraft", () => {
     expect(step.bank).toBeCloseTo(-0.7, 9);
   });
 });
+
+// A light single-rotor helicopter: the main rotor turns counter-clockwise seen from above, so its torque yaws the nose left.
+const helicopter: RigidAircraftTuning = {
+  massKg: 1450,
+  inertia: { pitch: 4000, yaw: 4500, roll: 1500 },
+  surfaces: [{ at: [0, 0.5, -6.5], normal: [1, 0, 0], area: 1, liftSlope: 3 }],
+  rotor: { maxThrust: 25000, radius: 5.1, at: [0, 1.5, 0], torque: 10000, damping: 3000, tail: { maxThrust: 2500, at: [0, 0, -7.5] } },
+  dragArea: 1.5,
+  gear: { height: 1 },
+};
+const HOVER_COLLECTIVE = 0.57;
+const TRIM_PEDAL = (10000 * HOVER_COLLECTIVE) / (2500 * 7.5);
+
+function spunUp(tuning: RigidAircraftTuning, position: readonly [number, number, number], velocity: readonly [number, number, number] = [0, 0, 0]): RigidAircraft {
+  const aircraft = createRigidAircraft(tuning, { position, velocity });
+  aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 });
+  return aircraft;
+}
+
+function hover(partial: Partial<RigidAircraftInput> = {}): RigidAircraftInput {
+  return { throttle: 1, collective: HOVER_COLLECTIVE, pitch: 0, roll: 0, yaw: TRIM_PEDAL, ...partial };
+}
+
+describe("createRigidAircraft rotor", () => {
+  test("hover collective carries the weight out of ground effect", () => {
+    const step = fly(spunUp(helicopter, [0, 50, 0]), 2, hover());
+    expect(step.rotor!.thrust).toBeCloseTo(helicopter.massKg * 9.81, -2);
+    expect(Math.abs(step.velocity[1])).toBeLessThan(0.2);
+    expect(step.rotor!.groundEffect).toBeCloseTo(1, 2);
+  });
+
+  test("rotor torque swings the nose left unless the tail rotor cancels it", () => {
+    const free = fly(spunUp(helicopter, [0, 50, 0]), 2, hover({ yaw: 0 }));
+    expect(free.yawRate).toBeLessThan(0);
+    expect(Math.abs(free.heading) * DEG).toBeGreaterThan(30);
+    const trimmed = fly(spunUp(helicopter, [0, 50, 0]), 2, hover());
+    expect(Math.abs(trimmed.heading) * DEG).toBeLessThan(8);
+    const reversed = fly(spunUp({ ...helicopter, rotor: { ...helicopter.rotor!, torque: -10000 } }, [0, 50, 0]), 2, hover({ yaw: 0 }));
+    expect(reversed.yawRate).toBeGreaterThan(0);
+  });
+
+  test("ground effect adds thrust near the ground and fades by a rotor diameter", () => {
+    const low = spunUp(helicopter, [0, 1.2, 0]).tick(DT, hover());
+    const high = spunUp(helicopter, [0, 12, 0]).tick(DT, hover());
+    expect(low.rotor!.groundEffect).toBeGreaterThan(1.05);
+    expect(high.rotor!.groundEffect).toBeLessThan(1.02);
+    expect(low.rotor!.thrust).toBeGreaterThan(high.rotor!.thrust);
+    expect(fly(spunUp(helicopter, [0, 1.2, 0]), 1, hover()).velocity[1]).toBeGreaterThan(0.3);
+  });
+
+  test("translational lift: clean air through the disc adds thrust at the same collective", () => {
+    const still = spunUp(helicopter, [0, 50, 0]).tick(DT, hover());
+    const moving = spunUp(helicopter, [0, 50, 0], [0, 0, 20]).tick(DT, hover());
+    expect(moving.rotor!.translationalLift).toBeGreaterThan(1.15);
+    expect(moving.rotor!.thrust).toBeGreaterThan(still.rotor!.thrust * 1.1);
+  });
+
+  test("climbing through the disc cuts thrust, so vertical motion damps out", () => {
+    const climbing = spunUp(helicopter, [0, 50, 0], [0, 5, 0]).tick(DT, hover());
+    const still = spunUp(helicopter, [0, 50, 0]).tick(DT, hover());
+    expect(climbing.rotor!.thrust).toBeLessThan(still.rotor!.thrust * 0.8);
+  });
+
+  test("the rotor spools up at its rate and gives no thrust at rest", () => {
+    const aircraft = createRigidAircraft(helicopter, { position: [0, 1, 0] });
+    const parked = aircraft.tick(DT, hover({ throttle: 0 }));
+    expect(parked.rotor!.speed).toBe(0);
+    expect(parked.rotor!.thrust).toBe(0);
+    const spooling = fly(aircraft, 2, hover());
+    expect(spooling.rotor!.speed).toBeCloseTo(1 - Math.exp(-1), 1);
+    expect(spooling.grounded).toBe(true);
+  });
+
+  test("forward cyclic tilts the disc: nose down and the helicopter moves off forward", () => {
+    const aircraft = spunUp(helicopter, [0, 50, 0]);
+    fly(aircraft, 1, hover({ pitch: -0.5 }));
+    const step = fly(aircraft, 2, hover());
+    expect(step.pitch).toBeLessThan(-0.05);
+    expect(step.velocity[2]).toBeGreaterThan(1);
+  });
+
+  test("rotor speed is part of the snapshot and replays bit-for-bit", () => {
+    const aircraft = createRigidAircraft(helicopter, { position: [0, 1, 0] });
+    fly(aircraft, 1.5, hover());
+    const saved = aircraft.snapshot();
+    expect(saved.rotorSpeed).toBeGreaterThan(0.4);
+    const a = fly(aircraft, 2, hover({ collective: 0.8, roll: 0.3 }));
+    aircraft.restore(saved);
+    const b = fly(aircraft, 2, hover({ collective: 0.8, roll: 0.3 }));
+    expect(b.position).toEqual(a.position);
+    expect(b.rotor).toEqual(a.rotor);
+  });
+
+  test("a body without a rotor block reports no rotor telemetry", () => {
+    expect(airborne().tick(DT, input({})).rotor).toBeUndefined();
+  });
+});
+
+test("a parked aircraft in still air is not stalled", () => {
+  const parked = fly(createRigidAircraft(helicopter, { position: [0, 1, 0] }), 1, hover({ throttle: 0, collective: 0 }));
+  expect(parked.stalled).toBe(false);
+  expect(parked.stallFraction).toBe(0);
+});
