@@ -153,6 +153,12 @@ export interface PlayerMotionState {
   clockMs: number;
   /** `clockMs` of the last grounded frame; `null` after a jump spends it. */
   groundedAtMs: number | null;
+  /** `clockMs` of the last landing; `null` before the first. */
+  landedAtMs: number | null;
+  /** Rising from the player's own jump, so releasing jump may cut it. */
+  jumpRising: boolean;
+  /** Ended the last frame in the air. */
+  wasAirborne: boolean;
 }
 
 /** @internal */
@@ -166,6 +172,9 @@ export function createPlayerMotionState(): PlayerMotionState {
     jumpHeld: false,
     clockMs: 0,
     groundedAtMs: 0,
+    landedAtMs: null,
+    jumpRising: false,
+    wasAirborne: false,
   };
 }
 
@@ -198,6 +207,18 @@ export interface MovementTuningOverrides {
   jumpBufferMs?: number;
   /** A jump pressed up to this many ms after walking off a ledge still fires (default 0). */
   coyoteMs?: number;
+  /** Rising speed kept when jump is released early, 0..1 (default 1: no cut). Lower makes a tap a hop. */
+  jumpCutFactor?: number;
+  /** Gravity multiplier near the peak, while vertical speed is under {@link MovementTuningOverrides.apexSpeed} (default 1). */
+  apexGravityScale?: number;
+  /** Vertical speed under which the apex gravity scale applies, m/s (default 1.5). */
+  apexSpeed?: number;
+  /** Gravity multiplier while falling (default 1). Above 1 drops faster than it rose. */
+  fallGravityScale?: number;
+  /** After landing, jumps wait and walk speed ramps back from {@link MovementTuningOverrides.landingSpeedScale} over this many ms (default 0). */
+  landingRecoveryMs?: number;
+  /** Walk speed share right after landing when `landingRecoveryMs` is set (default 0.5). */
+  landingSpeedScale?: number;
 }
 
 /**
@@ -236,7 +257,20 @@ export function advancePlayerMotion(
   options?: MotionFrameOptions,
 ): MovementFrameStep {
   const deltaSeconds = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
-  const targetSpeed = resolveTargetSpeed(intent, baseSpeed, tuning) * (options?.speedScale ?? 1);
+  const now = (motion.clockMs ?? 0) + deltaSeconds * 1000;
+  motion.clockMs = now;
+  if (motion.grounded && motion.wasAirborne) motion.landedAtMs = now;
+  const airborneAtStart = !motion.grounded;
+  const landingRecoveryMs = tuning?.landingRecoveryMs ?? 0;
+  const landedAtMs = motion.landedAtMs ?? null;
+  const recovery =
+    landingRecoveryMs > 0 && motion.grounded && landedAtMs !== null && now - landedAtMs < landingRecoveryMs
+      ? (now - landedAtMs) / landingRecoveryMs
+      : 1;
+  const landingSpeedScale = tuning?.landingSpeedScale ?? 0.5;
+  const recoverySpeedScale = landingSpeedScale + (1 - landingSpeedScale) * recovery;
+  const targetSpeed =
+    resolveTargetSpeed(intent, baseSpeed, tuning) * (options?.speedScale ?? 1) * recoverySpeedScale;
   const gravityAcceleration = tuning?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration;
   const jumpVelocity = tuning?.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity;
 
@@ -290,14 +324,13 @@ export function advancePlayerMotion(
 
   const floating = options?.floating === true;
   const jumpPressed = intent.jumping;
-  const now = (motion.clockMs ?? 0) + deltaSeconds * 1000;
-  motion.clockMs = now;
   if (motion.grounded) motion.groundedAtMs = now;
   const coyoteMs = tuning?.coyoteMs ?? 0;
   const groundedAtMs = motion.groundedAtMs ?? null;
   const canJump =
     !intent.crouching &&
     !floating &&
+    recovery >= 1 &&
     (motion.grounded ||
       (coyoteMs > 0 && motion.verticalVelocity <= 0 && groundedAtMs !== null && now - groundedAtMs <= coyoteMs));
   const pressEdge = jumpPressed && !motion.jumpHeld;
@@ -312,6 +345,10 @@ export function advancePlayerMotion(
     motion.verticalVelocity = jumpVelocity;
     motion.grounded = false;
     motion.groundedAtMs = null;
+    motion.jumpRising = true;
+  } else if (motion.jumpRising && !jumpPressed && motion.jumpHeld && motion.verticalVelocity > 0) {
+    motion.verticalVelocity *= Math.max(0, Math.min(1, tuning?.jumpCutFactor ?? 1));
+    motion.jumpRising = false;
   }
   motion.jumpHeld = jumpPressed;
 
@@ -319,8 +356,17 @@ export function advancePlayerMotion(
     motion.verticalVelocity = 0;
     motion.jumpOffset = 0;
     motion.grounded = true;
+    motion.jumpRising = false;
   } else if (!motion.grounded || motion.verticalVelocity > 0) {
-    motion.verticalVelocity -= gravityAcceleration * deltaSeconds;
+    const apexSpeed = tuning?.apexSpeed ?? 1.5;
+    const gravityScale =
+      Math.abs(motion.verticalVelocity) < apexSpeed
+        ? (tuning?.apexGravityScale ?? 1)
+        : motion.verticalVelocity < 0
+          ? (tuning?.fallGravityScale ?? 1)
+          : 1;
+    motion.verticalVelocity -= gravityAcceleration * gravityScale * deltaSeconds;
+    if (motion.verticalVelocity <= 0) motion.jumpRising = false;
     motion.jumpOffset += motion.verticalVelocity * deltaSeconds;
     if (motion.jumpOffset <= 0) {
       motion.jumpOffset = 0;
@@ -328,6 +374,8 @@ export function advancePlayerMotion(
       motion.grounded = true;
     }
   }
+  if (airborneAtStart && motion.grounded) motion.landedAtMs = now;
+  motion.wasAirborne = !motion.grounded;
 
   return {
     stepX: motion.horizontalVelocityX * deltaSeconds,

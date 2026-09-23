@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- Jump shape on `movement.feel`: `jumpCutFactor` (releasing jump early cuts the rise, so a tap hops), `apexGravityScale`/`apexSpeed` (hang at the peak), `fallGravityScale` (drop faster than you rose) and `landingRecoveryMs`/`landingSpeedScale` (a short slowdown and jump lockout after landing). All default to no change. `measureMovement` adds `tapJumpHeight`. Dev runner demos `walk-floaty` and `walk-weighty` differ only in these fields (#1772).
 - `RigidAircraftTuning.rotor` turns `createRigidAircraft` into a helicopter: `input.collective` sets thrust, throttle spools the rotor, cyclic tilts the disc, and rotor drag torque yaws the body unless the `tail` rotor (pedal) cancels it. Thrust adds translational lift, drops while climbing through the disc, and grows in ground effect. The step reports `rotor` speed, thrust, torque, ground effect and translational lift. Dev runner demo: `bun run drive flight-heli`.
 - `snapshot()`/`restore(next)` on `createGlideModel`, `createLodScheduler`, `createSimulationCuller` and `createSpatialIndex`, and `restore(state)` on `createGrappleSwing`, so gliding, rope swings, LOD throttling and the spatial hash save, load and replay bit-exactly (#1775).
 - `snapshot()`/`restore(next)` on `createThreatTable`, `createAssistNetwork`, `createReputationLedger`, `createConcealmentSensor`, `createFreezeMonitor` and `createRecordingBuffer`, so AI aggro, faction standing and sensor dwell save, load and replay bit-exactly (#1775).
