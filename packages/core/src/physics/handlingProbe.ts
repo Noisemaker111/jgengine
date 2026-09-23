@@ -224,3 +224,103 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
     powerSteerSpun,
   };
 }
+
+/** The slice of a sprung vehicle sim {@link measureRide} drives; a `VehicleDynamics` with `suspension` fits. */
+export interface RideSubject {
+  tick(
+    dt: number,
+    input: AxisInput,
+  ): {
+    position: readonly [number, number, number];
+    forwardSpeed: number;
+    bodyPitch: number;
+    bodyRoll: number;
+    lateralAccel: number;
+    airborne: boolean;
+  };
+  applyImpulse(dvx: number, dvz: number, dvy?: number): void;
+}
+
+/** Deterministic ride metrics for a sprung vehicle. */
+export interface RideReport {
+  /** Seconds after a 1 m/s upward kick until the body stays within 5 mm of its rest height. */
+  settleSeconds: number;
+  /** Largest drop below rest height after that kick, divided by the largest rise above it. */
+  heaveOvershoot: number;
+  /** Peak nose-down pitch under full braking from 25 m/s, degrees. */
+  brakeDiveDeg: number;
+  /** Body roll per g of lateral acceleration in a steady half-lock corner at 20 m/s, degrees/g. */
+  rollGradient: number;
+  /** Times the car leaves the ground again after landing from a 4 m/s vertical launch. */
+  landingBounces: number;
+}
+
+/**
+ * Drives fresh sprung vehicles from `create` through a vertical kick, a hard stop, a steady corner and a
+ * launch-and-land, and reports how the body moves: how fast it settles, how much it dives and rolls, and
+ * whether a landing bounces.
+ * @capability ride-metrics measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce
+ */
+export function measureRide(create: () => RideSubject, options: { dt?: number } = {}): RideReport {
+  const dt = options.dt ?? 1 / 60;
+  const neutral = input(0, 0, 0);
+
+  let settleSeconds = Number.POSITIVE_INFINITY;
+  let heaveOvershoot = 0;
+  {
+    const car = create();
+    const rest = car.tick(dt, neutral).position[1];
+    car.applyImpulse(0, 0, 1);
+    let lastOutside = 0;
+    let rise = 0;
+    let drop = 0;
+    const ticks = Math.ceil(6 / dt);
+    for (let i = 1; i <= ticks; i += 1) {
+      const offset = car.tick(dt, neutral).position[1] - rest;
+      rise = Math.max(rise, offset);
+      drop = Math.max(drop, -offset);
+      if (Math.abs(offset) > 0.005) lastOutside = i;
+    }
+    if (lastOutside < ticks) settleSeconds = lastOutside * dt;
+    heaveOvershoot = rise > 0 ? drop / rise : 0;
+  }
+
+  let brakeDiveDeg = 0;
+  {
+    const car = create();
+    let speed = 0;
+    for (let i = 0; i < Math.ceil(30 / dt) && speed < 25; i += 1) speed = car.tick(dt, input(1, 0, 0)).forwardSpeed;
+    for (let i = 0; i < Math.ceil(1.5 / dt); i += 1) brakeDiveDeg = Math.max(brakeDiveDeg, car.tick(dt, input(0, 1, 0)).bodyPitch * RAD_TO_DEG);
+  }
+
+  let rollGradient = 0;
+  {
+    const car = create();
+    let speed = 0;
+    for (let i = 0; i < Math.ceil(30 / dt) && speed < 20; i += 1) speed = car.tick(dt, input(1, 0, 0)).forwardSpeed;
+    let step = car.tick(dt, neutral);
+    for (let i = 0; i < Math.ceil(2.5 / dt); i += 1) {
+      const hold = holdSpeed(20, step.forwardSpeed);
+      step = car.tick(dt, input(hold.throttle, hold.brake, 0.5));
+    }
+    const g = Math.abs(step.lateralAccel) / 9.81;
+    rollGradient = g > 0.05 ? (Math.abs(step.bodyRoll) * RAD_TO_DEG) / g : 0;
+  }
+
+  let landingBounces = 0;
+  {
+    const car = create();
+    car.tick(dt, neutral);
+    car.applyImpulse(0, 0, 4);
+    let wasAirborne = false;
+    let landed = false;
+    for (let i = 0; i < Math.ceil(4 / dt); i += 1) {
+      const airborne = car.tick(dt, neutral).airborne;
+      if (wasAirborne && !airborne) landed = true;
+      else if (landed && !wasAirborne && airborne) landingBounces += 1;
+      wasAirborne = airborne;
+    }
+  }
+
+  return { settleSeconds, heaveOvershoot, brakeDiveDeg, rollGradient, landingBounces };
+}

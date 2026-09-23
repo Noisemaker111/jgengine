@@ -12,7 +12,7 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
-import { handlingDemoTuning as tuning } from "./handlingTuning";
+import { handlingDemoGround, handlingDemoRamp, handlingDemoTuning as tuning } from "./handlingTuning";
 
 const CAR = "car";
 
@@ -36,7 +36,7 @@ interface HandlingRun {
 let run: HandlingRun | null = null;
 
 function ensureRun(): HandlingRun {
-  run ??= { car: createVehicleDynamics(tuning), last: null, rumbleCooldown: 0 };
+  run ??= { car: createVehicleDynamics(tuning, { groundHeight: handlingDemoGround }), last: null, rumbleCooldown: 0 };
   return run;
 }
 
@@ -55,7 +55,7 @@ function onTick(ctx: GameContext, dt: number): void {
   if (ctx.scene.entity.get(id) === null) return;
   const state = ensureRun();
   const axis = ctx.input.axis(bindings, { throttle: pedal, brake: pedal, handbrake: pedal });
-  const drive = tickDrivableVehicle(state.car, dt, axis);
+  const drive = tickDrivableVehicle(state.car, dt, axis, { groundHeight: handlingDemoGround });
   state.last = drive.step;
   ctx.scene.entity.setPose(id, drive.pose);
 
@@ -67,6 +67,11 @@ function onTick(ctx: GameContext, dt: number): void {
   const scrub = Math.max(0, Math.max(step.frontSaturation, step.rearSaturation) - 0.85);
   const moving = Math.min(1, Math.abs(step.forwardSpeed) / 4);
   ctx.game.audio.setLoop("tires", { rate: 0.85 + Math.min(0.5, Math.abs(step.sideslip)), gain: Math.min(1, scrub * 2.5) * moving, at });
+
+  if (step.landingSpeed > 1.5) {
+    ctx.game.audio.play("thud", at);
+    void ctx.input.rumble(id, { strong: Math.min(1, step.landingSpeed / 8), weak: 0.3, ms: 180 });
+  }
 
   state.rumbleCooldown -= dt;
   if (state.rumbleCooldown <= 0 && (scrub > 0.15 || step.wheelspin)) {
@@ -142,6 +147,15 @@ function Course(_props: WorldOverlayProps) {
       <mesh position={[0, 0.02, -40]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <circleGeometry args={[34, 64]} />
         <meshStandardMaterial color="#4b5563" roughness={0.9} polygonOffset polygonOffsetFactor={-1} />
+      </mesh>
+      <mesh
+        position={[handlingDemoRamp.center[0], handlingDemoRamp.center[1] - 0.05, handlingDemoRamp.center[2]]}
+        rotation={[-handlingDemoRamp.pitch, 0, 0]}
+        castShadow
+        receiveShadow
+      >
+        <boxGeometry args={[handlingDemoRamp.width, 0.1, handlingDemoRamp.length]} />
+        <meshStandardMaterial color="#eab308" roughness={0.8} />
       </mesh>
       {CONES.map(([x, z]) => (
         <mesh key={`${x}:${z}`} position={[x, 0.35, z]} castShadow>
@@ -219,6 +233,17 @@ const game = defineGame({
           ],
         },
       },
+      thud: {
+        id: "thud",
+        bus: "sfx",
+        synth: {
+          gain: 0.8,
+          voices: [
+            { kind: "noise", duration: 0.25, filterFreq: 220, filterType: "lowpass" },
+            { kind: "tone", wave: "sine", freq: 70, slideTo: 40, duration: 0.3 },
+          ],
+        },
+      },
       tires: {
         id: "tires",
         bus: "sfx",
@@ -237,6 +262,8 @@ const game = defineGame({
       return {
         x: step.position[0],
         z: step.position[2],
+        y: step.position[1],
+        airborne: step.airborne ? 1 : 0,
         speed: step.forwardSpeed,
         heading: step.heading,
         yawRate: step.yawRate,
