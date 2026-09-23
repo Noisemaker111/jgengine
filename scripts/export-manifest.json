@@ -462,6 +462,7 @@
     "./ui/tooltipModel",
     "./vfx/cameraShake",
     "./vfx/damageDirection",
+    "./vfx/feedbackMixer",
     "./vfx/particleDirector",
     "./vfx/particles",
     "./vfx/screenEffects",
