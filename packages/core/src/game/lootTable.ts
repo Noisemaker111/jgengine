@@ -42,6 +42,17 @@ export interface LootRegistry {
   register(def: LootTableDef): void;
   has(id: string): boolean;
   roll(id: string, rng?: () => number): Drop[];
+  /** Registered tables in registration order; plain JSON unless an entry uses `generate`. */
+  snapshot(): LootTableDef[];
+  /** Replaces every registered table with `next`, validating each. */
+  restore(next: readonly LootTableDef[]): void;
+}
+
+function copyDef(def: LootTableDef): LootTableDef {
+  return {
+    ...def,
+    entries: def.entries.map((entry) => ({ ...entry, count: typeof entry.count === "number" ? entry.count : [entry.count[0], entry.count[1]] })),
+  };
 }
 
 function assertValidEntry(entry: LootEntry, mode: "weighted" | "independent"): void {
@@ -144,6 +155,14 @@ export function createLootRegistry(options: LootRegistryOptions = {}): LootRegis
         }
       }
       return drops;
+    },
+    snapshot() {
+      return [...tables.values()].map(copyDef);
+    },
+    restore(next) {
+      for (const def of next) assertValidDef(def);
+      tables.clear();
+      for (const def of next) tables.set(def.id, copyDef(def));
     },
   };
 }

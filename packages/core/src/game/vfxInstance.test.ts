@@ -113,3 +113,29 @@ describe("retained vfx instance lifecycle", () => {
     expect(store.get(id)?.params).toEqual({ width: 1 });
   });
 });
+
+describe("vfx instance store snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    let clock = 0;
+    const ops: CombatVfxInstanceEvent[] = [];
+    const store = createVfxInstanceStore({ now: () => clock, onOp: (op) => ops.push(op) });
+    store.upsert({ kind: "beam", color: 0xff0000, from: "a", to: "b", params: { width: 2 }, ttlMs: 500 });
+    clock = 100;
+    store.upsert({ kind: "zone", color: 0x00ff00, radius: 3 });
+    const saved = store.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      clock = 200;
+      store.update("vfx-0", { params: { width: 4 } });
+      const minted = store.upsert({ kind: "beam", color: 1 });
+      clock = 800;
+      return [minted, store.tick(), store.list()];
+    };
+    const a = play();
+    expect(saved).toEqual(frozen);
+    ops.length = 0;
+    store.restore(saved);
+    expect(ops.map((op) => op.op)).toEqual(["stop", "stop", "upsert", "upsert"]);
+    expect(play()).toEqual(a);
+  });
+});

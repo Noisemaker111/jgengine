@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `snapshot()`/`restore(next)` on `createLootRegistry`, `createToastQueue`, `createVfxInstanceStore`, `createRoundState` and `createLookChannel`, and `restore(state)` on `createDragCapture`, so loot tables, toasts, retained VFX, match rounds and look/drag input save, load and replay bit-exactly. `RoundSnapshot` gains `pendingWinner` (#1775).
 - Graphics settings a player can feel: an Ultra tier, a frame-rate limit (V-Sync or 30/60/120/144 cap), texture filtering (anisotropy, now applied to every loaded texture), and an FPS counter. `GraphicsProfile` gains `anisotropy`; a game that overrides tiers with `defineGame({ graphics })` can set it per tier.
 - `postProcessing.stylize` (`outline`, `bands`, `pixelSize`) and two new looks, `look: "comic"` (ink outlines + cel bands, Borderlands-style) and `look: "retro"` (pixelated, posterized). Same models, different art style.
 - `PhysicsBackend.applyForce(handle, force, point?)` and `applyTorque(handle, torque)` act over the next step, and `BodyDesc.linearDamping`/`angularDamping` set damping per body. Both are implemented on `PhysicsWorld` (translation only) and Rapier, and covered by the conformance suite. `createVehicleBackendLink` (`@jgengine/core/physics/vehicleBackendLink`) collides a vehicle sim with a backend world: a kinematic chassis shoves props, `clampMove` stops the car at walls and slides it along them, and `lastHit()` reports the impact.
