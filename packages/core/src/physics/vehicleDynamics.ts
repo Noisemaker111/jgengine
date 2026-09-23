@@ -88,6 +88,10 @@ export interface VehicleAssistTuning {
   stability?: number;
   /** Sideslip in rad that `stability` allows before it intervenes (default `0.2`, ≈11°). */
   maxSideslip?: number;
+  /** Anti-wheelie: caps drive below the acceleration that lifts the front (`g·b/h`); reports as `tractionLimited`. */
+  antiWheelie?: number;
+  /** Anti-stoppie: caps braking below the deceleration that lifts the rear (`g·a/h`); reports as `absActive`. */
+  antiStoppie?: number;
 }
 
 /** Aero and resistance. Uses air density 1.225 kg/m³. */
@@ -679,6 +683,33 @@ export function createVehicleDynamics(
         out.traction = true;
       }
     }
+    // Pitch-over limits: the front lifts once m·ax·h exceeds its static moment (weight·b plus aero), the rear
+    // under braking once it exceeds weight·a. Springs overshoot that static limit as the body pitches, so a
+    // sprung vehicle also backs off in proportion to how light the axle already is.
+    const antiWheelie = assists?.antiWheelie ?? 0;
+    const driveSum = longFront + longRear;
+    if (antiWheelie > 0 && driveSum > 0 && u >= 0) {
+      const lightFront = suspension === undefined ? 1 : clamp01(loadFront / (0.3 * weight * (b / L)));
+      const liftDrive = ((weight * b + downforce * downFront * L) / t.comHeight) * (1 - 0.15 * antiWheelie) * lightFront;
+      if (driveSum > liftDrive) {
+        const scale = (liftDrive + (driveSum - liftDrive) * (1 - antiWheelie)) / driveSum;
+        longFront *= scale;
+        longRear *= scale;
+        out.traction = true;
+      }
+    }
+    const antiStoppie = assists?.antiStoppie ?? 0;
+    const brakeSum = brakeF + brakeR;
+    if (antiStoppie > 0 && brakeSum > 0) {
+      const lightRear = suspension === undefined ? 1 : clamp01(loadRear / (0.3 * weight * (a / L)));
+      const liftBrake = ((weight * a + downforce * (1 - downFront) * L) / t.comHeight) * (1 - 0.15 * antiStoppie) * lightRear;
+      if (brakeSum > liftBrake) {
+        const scale = (liftBrake + (brakeSum - liftBrake) * (1 - antiStoppie)) / brakeSum;
+        brakeF *= scale;
+        brakeR *= scale;
+        out.abs = true;
+      }
+    }
     const direction = Math.sign(u) || 1;
     // A locked rear (handbrake) drags at sliding friction and gives up most of its cornering force.
     const hbDrag = handbrake * capRear * rearTire.slideGrip * 0.9;
@@ -777,7 +808,9 @@ export function createVehicleDynamics(
     const accelLong = h > 0 ? du + r * v : 0;
     const accelLat = h > 0 ? dv - r * u : 0;
     state.longitudinalAccel += (accelLong - state.longitudinalAccel) * response;
-    state.lateralAccel += (accelLat - state.lateralAccel) * response;
+    // The rider's lean is the displayed roll, so it keeps the roll lag springs would otherwise supply.
+    const responseLat = t.lean !== undefined ? 1 - Math.exp(-(t.suspensionResponse ?? 8) * h) : response;
+    state.lateralAccel += (accelLat - state.lateralAccel) * responseLat;
     if (suspension === undefined) {
       const rollK = t.rollStiffness ?? (m * GRAVITY * t.comHeight) / 0.05;
       const pitchK = t.pitchStiffness ?? (m * GRAVITY * t.comHeight) / 0.035;
@@ -803,12 +836,14 @@ export function createVehicleDynamics(
     const half = Math.max(0.15, t.trackWidth / 2);
     const [fx, fz] = forwardOf(state.heading);
     const sags = staticSags(t, suspension);
+    // A leaning single-track vehicle rolls about its tire contacts, so its lean never compresses one side's springs.
+    const roll = t.lean !== undefined ? 0 : state.bodyRoll;
     for (let i = 0; i < 4; i += 1) {
       const along = i < 2 ? a : -b;
       const lat = i % 2 === 0 ? -half : half;
       const px = state.x + fx * along - fz * lat;
       const pz = state.z + fz * along + fx * lat;
-      const attach = state.y - Math.sin(state.bodyPitch) * along + Math.sin(state.bodyRoll) * lat;
+      const attach = state.y - Math.sin(state.bodyPitch) * along + Math.sin(roll) * lat;
       const c = groundAt(px, pz) + suspension.rideHeight + sags[i]! - attach;
       const rate = h > 0 ? (c - state.compression[i]!) / h : 0;
       state.compression[i] = c;
@@ -821,7 +856,7 @@ export function createVehicleDynamics(
       }
       corner[i] = Math.max(0, force);
     }
-    const antiRoll = suspension.antiRoll ?? 0;
+    const antiRoll = t.lean !== undefined ? 0 : (suspension.antiRoll ?? 0);
     if (antiRoll > 0) {
       for (let axle = 0; axle < 2; axle += 1) {
         const left = axle * 2;

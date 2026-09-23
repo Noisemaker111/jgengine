@@ -538,6 +538,86 @@ describe("createVehicleDynamics — lean (motorcycles)", () => {
     expect(stoppie).toBe(true);
   });
 
+  test("anti-wheelie and anti-stoppie keep both wheels down on the same hooligan bike", () => {
+    const hooligan: VehicleDynamicsTuning = {
+      ...sportBike,
+      wheelbase: 1.35,
+      comHeight: 0.8,
+      assists: { antiWheelie: 1, antiStoppie: 1 },
+      powertrain: { kind: "direct", maxForce: 5200, maxPower: 150000 },
+    };
+    const launch = createVehicleDynamics(hooligan);
+    let wheelie = false;
+    let traction = false;
+    let step = launch.tick(DT, axis({}));
+    for (let i = 0; i < 90; i += 1) {
+      step = launch.tick(DT, axis({ throttle: 1 }));
+      wheelie ||= step.wheelie;
+      traction ||= step.tractionLimited;
+    }
+    expect(wheelie).toBe(false);
+    expect(traction).toBe(true);
+    // The cap sits just under the lift limit, g·b/h, so the launch gives up little.
+    expect(step.longitudinalAccel).toBeGreaterThan(0.8 * 9.81 * (1.35 * 0.5) / 0.8);
+    const stop = createVehicleDynamics({ ...hooligan, brakeForce: 6000, brakeFront: 1 });
+    step = stop.tick(DT, axis({}));
+    for (let i = 0; i < 600 && step.forwardSpeed < 25; i += 1) step = stop.tick(DT, axis({ throttle: 0.6 }));
+    let stoppie = false;
+    for (let i = 0; i < 60; i += 1) stoppie ||= stop.tick(DT, axis({ brake: 1 })).stoppie;
+    expect(stoppie).toBe(false);
+  });
+
+  test("with springs, the assists read the light axle and stop the body pitching over", () => {
+    const sprung: VehicleDynamicsTuning = {
+      ...sportBike,
+      wheelbase: 1.35,
+      comHeight: 0.8,
+      powertrain: { kind: "direct", maxForce: 5200, maxPower: 150000 },
+      brakeForce: 6000,
+      brakeFront: 1,
+      suspension: { springRate: 9000, damperRate: 900, travel: 0.12, rideHeight: 0.35, antiRoll: 0 },
+    };
+    function lifts(assists: VehicleDynamicsTuning["assists"]) {
+      const bike = createVehicleDynamics({ ...sprung, assists }, { groundHeight: () => 0 });
+      for (let i = 0; i < 60; i += 1) bike.tick(DT, axis({}));
+      let front = 0;
+      let rear = 0;
+      let step = bike.tick(DT, axis({}));
+      for (let i = 0; i < 180; i += 1) {
+        step = bike.tick(DT, axis({ throttle: 1 }));
+        if (step.wheelLoads![0] + step.wheelLoads![1] <= 0) front += 1;
+      }
+      for (let i = 0; i < 120 && step.forwardSpeed > 1; i += 1) {
+        step = bike.tick(DT, axis({ brake: 1 }));
+        if (step.wheelLoads![2] + step.wheelLoads![3] <= 0) rear += 1;
+      }
+      return { front, rear };
+    }
+    const bare = lifts({});
+    expect(bare.front).toBeGreaterThan(10);
+    expect(bare.rear).toBeGreaterThan(5);
+    expect(lifts({ antiWheelie: 1, antiStoppie: 1 })).toEqual({ front: 0, rear: 0 });
+  });
+
+  test("springs do not read the lean as body roll: a sprung bike leans like a rigid one", () => {
+    const sprung: VehicleDynamicsTuning = {
+      ...sportBike,
+      suspension: { springRate: 9000, damperRate: 900, travel: 0.12, rideHeight: 0.35, antiRoll: 0 },
+    };
+    const rigid = measureLean(() => createVehicleDynamics(sportBike));
+    const onSprings = measureLean(() => createVehicleDynamics(sprung));
+    expect(Math.abs(onSprings.steadyLeanDeg - rigid.steadyLeanDeg)).toBeLessThan(3);
+    expect(Math.abs(onSprings.timeToLean - rigid.timeToLean)).toBeLessThan(0.1);
+    expect(onSprings.counterLeanDeg).toBeLessThan(rigid.counterLeanDeg + 3);
+    const bike = createVehicleDynamics(sprung);
+    let step = bike.tick(DT, axis({}));
+    for (let i = 0; i < 240; i += 1) step = bike.tick(DT, axis({ throttle: 0.6 }));
+    for (let i = 0; i < 180; i += 1) {
+      step = bike.tick(DT, axis({ throttle: 0.3, steer: 1 }));
+      expect(step.airborne).toBe(false);
+    }
+  });
+
   test("snapshot/restore resumes a leaning bike bit-for-bit", () => {
     const reference = createVehicleDynamics(sportBike);
     const replica = createVehicleDynamics(sportBike);
