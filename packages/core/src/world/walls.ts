@@ -220,6 +220,12 @@ export function createSurfacePaint(): SurfacePaintStore {
   };
 }
 
+/** Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed. */
+export interface WallDrawToolState {
+  points: Vec2[];
+  closed: boolean;
+}
+
 export interface WallDrawTool {
   addPoint(point: Vec2, snap?: number): Vec2;
   undo(): void;
@@ -230,6 +236,8 @@ export interface WallDrawTool {
   isClosed(): boolean;
   footprint(): EnclosedFootprint | null;
   roof(config?: RoofConfig): RoofPlan | null;
+  snapshot(): WallDrawToolState;
+  restore(next: WallDrawToolState): void;
 }
 
 function snapPoint(point: Vec2, grid: number): Vec2 {
@@ -282,6 +290,13 @@ export function createWallDrawTool(config: { snap?: number; closeTolerance?: num
     roof(roofConfig) {
       const fp = this.footprint();
       return fp === null ? null : autoRoof(fp, roofConfig);
+    },
+    snapshot() {
+      return { points: pts.map((point): Vec2 => [point[0], point[1]]), closed };
+    },
+    restore(next) {
+      pts = next.points.map((point): Vec2 => [point[0], point[1]]);
+      closed = next.closed;
     },
   };
 }

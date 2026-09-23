@@ -267,6 +267,7 @@
     "./nav/timetable",
     "./orders/orderKinds",
     "./orders/orderQueue",
+    "./physics/aircraftDynamics",
     "./physics/ballisticSweep",
     "./physics/boatDynamics",
     "./physics/buoyancy",
