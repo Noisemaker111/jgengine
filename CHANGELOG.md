@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `RigidAircraftTuning.rotor` turns `createRigidAircraft` into a helicopter: `input.collective` sets thrust, throttle spools the rotor, cyclic tilts the disc, and rotor drag torque yaws the body unless the `tail` rotor (pedal) cancels it. Thrust adds translational lift, drops while climbing through the disc, and grows in ground effect. The step reports `rotor` speed, thrust, torque, ground effect and translational lift. Dev runner demo: `bun run drive flight-heli`.
 - `snapshot()`/`restore(next)` on `createGlideModel`, `createLodScheduler`, `createSimulationCuller` and `createSpatialIndex`, and `restore(state)` on `createGrappleSwing`, so gliding, rope swings, LOD throttling and the spatial hash save, load and replay bit-exactly (#1775).
 - `snapshot()`/`restore(next)` on `createThreatTable`, `createAssistNetwork`, `createReputationLedger`, `createConcealmentSensor`, `createFreezeMonitor` and `createRecordingBuffer`, so AI aggro, faction standing and sensor dwell save, load and replay bit-exactly (#1775).
 - `snapshot()`/`restore(next)` on `createFootprintGrid`, `createWallDrawTool` and `createTerraformBrush`, so build-grid claims, wall drafts and brush settings save, load and replay bit-exactly (#1775).
