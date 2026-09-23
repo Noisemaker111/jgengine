@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `snapshot()`/`restore(next)` on `createLootRegistry`, `createToastQueue`, `createVfxInstanceStore`, `createRoundState` and `createLookChannel`, and `restore(state)` on `createDragCapture`, so loot tables, toasts, retained VFX, match rounds and look/drag input save, load and replay bit-exactly. `RoundSnapshot` gains `pendingWinner` (#1775).
 - `measureMovement` (`@jgengine/core/movement/movementProbe`) reports a walking character's feel from the same `movement.feel` and `physics` fields a game sets: time to top speed, stop distance, turn-around time, jump height, apex and air time, and air-control reach. Deterministic, for tests (#1772).
 - Graphics settings a player can feel: an Ultra tier, a frame-rate limit (V-Sync or 30/60/120/144 cap), texture filtering (anisotropy, now applied to every loaded texture), and an FPS counter. `GraphicsProfile` gains `anisotropy`; a game that overrides tiers with `defineGame({ graphics })` can set it per tier.
 - `postProcessing.stylize` (`outline`, `bands`, `pixelSize`) and two new looks, `look: "comic"` (ink outlines + cel bands, Borderlands-style) and `look: "retro"` (pixelated, posterized). Same models, different art style.

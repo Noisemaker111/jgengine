@@ -178,3 +178,33 @@ describe("lootTable", () => {
     ]);
   });
 });
+
+describe("loot registry snapshot", () => {
+  function seeded(seed: number): () => number {
+    let s = seed;
+    return () => {
+      s = (s * 1664525 + 1013904223) % 4294967296;
+      return s / 4294967296;
+    };
+  }
+
+  test("snapshot and restore replay bit-exactly", () => {
+    const registry = createLootRegistry({ rng: seeded(1) });
+    registry.register({ id: "chest", rolls: 3, entries: [{ item: "gem", count: [1, 3], weight: 2 }, { currency: "gold", count: 10, weight: 5 }] });
+    registry.register({ id: "boss", mode: "independent", entries: [{ item: "crown", count: 1, chance: 0.5 }] });
+    const saved = registry.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = (target: ReturnType<typeof createLootRegistry>) => {
+      const rng = seeded(42);
+      return [target.roll("chest", rng), target.roll("boss", rng), target.roll("chest", rng)];
+    };
+    const a = play(registry);
+    registry.register({ id: "extra", entries: [{ item: "rock", count: 1, weight: 1 }] });
+    expect(saved).toEqual(frozen);
+    const fresh = createLootRegistry({ rng: seeded(1) });
+    fresh.restore(frozen);
+    expect(play(fresh)).toEqual(a);
+    registry.restore(saved);
+    expect(registry.has("extra")).toBe(false);
+  });
+});

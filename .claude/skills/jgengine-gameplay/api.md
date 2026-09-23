@@ -611,7 +611,7 @@
 
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `LootEntry` (interface): interface LootEntry — One possible drop in a {@link LootTableDef} — an item, currency, or generated item, its count range, and its odds.
-- `LootRegistry` (interface): interface LootRegistry { register(def: LootTableDef): void; has(id: string): boolean; roll(id: string, rng?: () => number): Drop[] } — ⚠ undocumented · used by `createLootRegistry`: Register named loot tables and roll weighted randomized drops from them.
+- `LootRegistry` (interface): interface LootRegistry { register(def: LootTableDef): void; has(id: string): boolean; roll(id: string, rng?: () => number): Drop[]; snapshot(): LootTableDef[]; restore(next: readonly LootTableDef[]): void } — ⚠ undocumented · used by `createLootRegistry`: Register named loot tables and roll weighted randomized drops from them.
 - `LootRegistryOptions` (interface): interface LootRegistryOptions — Options for {@link createLootRegistry} — inject a default RNG so bare `roll(id)` uses the world stream.
 - `LootTableDef` (interface): interface LootTableDef — A named, validated loot table — its roll count, weighted-vs-independent mode, and candidate entries.
 - `createLootRegistry` (function): function createLootRegistry(options: LootRegistryOptions = {}): LootRegistry — Register named loot tables and roll weighted randomized drops from them.
@@ -952,6 +952,7 @@
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `ToastQueue` (interface): interface ToastQueue<T = string> — Stateful transient-toast list with a size cap and time-to-live eviction.
 - `ToastQueueOptions` (interface): interface ToastQueueOptions — Options for {@link createToastQueue}.
+- `ToastQueueState` (interface): interface ToastQueueState<T = string> — Plain JSON state of a {@link ToastQueue}: live toasts plus the id counter.
 - `appendToast` (function): function appendToast<T>(toasts: readonly Toast<T>[], toast: Toast<T>, cap: number): readonly Toast<T>[] — Append `toast`, keeping only the newest `cap` entries.
 - `createToastQueue` (function): function createToastQueue<T = string>(options: ToastQueueOptions = {}): ToastQueue<T> — A capped, self-expiring toast queue — the append-with-limit plus TTL-prune list every HUD hand-rolled on top of a plain array. Feed it game time: `push` raises a message, `prune(now)` drops expired ones, `list()` is what the HUD renders. Unlike the append-only event feed, toasts evict themselves.
 - `pruneToasts` (function): function pruneToasts<T>(toasts: readonly Toast<T>[], now: number): readonly Toast<T>[] — Drop every toast whose `expiresAt` is at or before `now`. Returns the same array when nothing expired.
@@ -1009,6 +1010,7 @@
 - `VfxInstanceStopOptions` (interface): interface VfxInstanceStopOptions — Options for {@link VfxInstanceStore.stop}.
 - `VfxInstanceStore` (interface): interface VfxInstanceStore — A headless registry of retained VFX instances: create/replace, partially update, and stop long-lived effects addressed by stable id, independent of any renderer. It owns the authoritative serializable state and exposes inspection counts; wire {@link VfxInstanceStoreOptions.onOp} to a renderer (via the `combat.vfxInstance` event) to drive visuals.
 - `VfxInstanceStoreOptions` (interface): interface VfxInstanceStoreOptions — Options for {@link createVfxInstanceStore}.
+- `VfxInstanceStoreState` (interface): interface VfxInstanceStoreState — Plain JSON state of a {@link VfxInstanceStore}.
 - `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 
 ## @jgengine/core/game/worldItem
@@ -1284,7 +1286,7 @@
 - `RoleSpec` (interface): interface RoleSpec { id: string; count?: number; ratio?: number } — ⚠ undocumented
 - `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> { phases: Record<TPhase, number>; teams: readonly string[] | readonly RoundTeam[]; phaseOrder?: readonly TPhase[]; winCondition?: (state: RoundSnapshot<TPhase>) => string | null; maxRounds?: number; winReward?: number; lossBonus?: LossBonus… — ⚠ undocumented
-- `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean } — ⚠ undocumented
+- `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean; pendingWinner: string | null } — ⚠ undocumented
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `RuleCursor` (interface): interface RuleCursor — Mutable per-rule progress, kept separate from the immutable {@link ScheduledRule} definition.
 - `RuleDef` (interface): interface RuleDef<TPayload = unknown> — A selectable rule over a tagged pool. `tags` classify it for include/exclude filtering and for `requires`/`conflicts` matching (which match either another rule's id or one of its tags). `layers` are the parameter layers this rule contributes when active; `payload` is opaque caller data.
@@ -2015,7 +2017,7 @@
 - `RoundEventKind` (type): type RoundEventKind = | "phase.start" | "phase.end" | "round.win" | "round.economy" | "match.end" — ⚠ undocumented
 - `RoundPhase` (type): type RoundPhase = string — ⚠ undocumented
 - `RoundPhaseDurations` (interface): interface RoundPhaseDurations — Default phase-duration shape for the built-in buy/live/end cycle; pass a wider `Record<string, number>` when using a custom `phaseOrder`.
-- `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean } — ⚠ undocumented
+- `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean; pendingWinner: string | null } — ⚠ undocumented
 - `RoundState` (interface): interface RoundState<TPhase extends string = RoundPhase> { tick(dt: number): RoundEvent<TPhase>[]; concludeRound(winner: string): RoundEvent<TPhase>[]; evaluate(): RoundEvent<TPhase>[]; onPhaseEnd(hook: PhaseEndHook<TPhase>): () => void; phase(): TPhase; round(): number; timeLeft(): number; score… — ⚠ undocumented
 - `RoundTeam` (interface): interface RoundTeam — A team entry with an optional role tag (e.g. "attacker", "defender") retrievable via `RoundState.roleOf`.
 
