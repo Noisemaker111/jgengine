@@ -257,6 +257,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DIFFICULTY_TIERS` (const) · `import { DIFFICULTY_TIERS } from "@jgengine/core/ai/difficulty"`
 
+## doppler-pitch — pitch a moving sound up as it approaches and down as it passes, from listener and emitter velocity
+
+- `dopplerRate` (function) · `import { dopplerRate } from "@jgengine/core/audio/doppler"`
+
 ## elevation-readout — cursor height and delta-from-reference feedback
 
 - `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
@@ -264,6 +268,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## elevation-summary — selection min/max/mean and relief over a region
 
 - `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/world"`
+
+## engine-layers — layered engine audio: rpm-keyed samples crossfaded, with on-load and off-load sets picked by engine load
+
+- `createEngineLayers` (function) · `import { createEngineLayers } from "@jgengine/core/audio/engineLayers"`
 
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 

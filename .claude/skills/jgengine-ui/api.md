@@ -1791,7 +1791,7 @@
 
 ## @jgengine/shell/audio/audioEngine
 
-- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; stop(): void } — ⚠ undocumented
+- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Vec3): void; stop(): void } — ⚠ undocumented
 - `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; playOneShot(soundId: string, position?: Vec3): void; playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null; playMusic(themeId: string | null, options?: CrossfadeOptions): v… — ⚠ undocumented
 - `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string } — ⚠ undocumented
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
@@ -1800,7 +1800,9 @@
 
 ## @jgengine/shell/audio/loopParams
 
+- `MAX_LOOP_CUTOFF` (const): const MAX_LOOP_CUTOFF: 22050 — Highest live filter cutoff, Hz; the engine also caps it at the context's Nyquist frequency.
 - `MAX_LOOP_RATE` (const): const MAX_LOOP_RATE: 4 — Highest live playback-rate multiplier (two octaves above authored pitch).
+- `MIN_LOOP_CUTOFF` (const): const MIN_LOOP_CUTOFF: 10 — Lowest live filter cutoff, Hz.
 - `MIN_LOOP_RATE` (const): const MIN_LOOP_RATE: 0.25 — Pure clamps for retained-loop live control (#1051). Kept dependency-free so the playback-rate/gain windows are one testable source of truth the audio engine reads.
 
 ## @jgengine/shell/audio/musicDirector

@@ -2,10 +2,27 @@ import { afterEach, describe, expect, test } from "bun:test";
 
 import { createAudioEngine } from "./audioEngine";
 
-type Param = { value: number; setValueAtTime: () => void; linearRampToValueAtTime: () => void; exponentialRampToValueAtTime: () => void };
+type Param = {
+  value: number;
+  target: number | null;
+  setValueAtTime: () => void;
+  setTargetAtTime: (value: number) => void;
+  linearRampToValueAtTime: () => void;
+  exponentialRampToValueAtTime: () => void;
+};
 
 function param(value = 0): Param {
-  return { value, setValueAtTime: () => undefined, linearRampToValueAtTime: () => undefined, exponentialRampToValueAtTime: () => undefined };
+  const result: Param = {
+    value,
+    target: null,
+    setValueAtTime: () => undefined,
+    setTargetAtTime: (next) => {
+      result.target = next;
+    },
+    linearRampToValueAtTime: () => undefined,
+    exponentialRampToValueAtTime: () => undefined,
+  };
+  return result;
 }
 
 function graphContext() {
@@ -53,6 +70,7 @@ function graphContext() {
     createGain: () => node("gain"), createPanner: () => node("panner"), createOscillator: () => node("oscillator"),
     createBuffer: (_channels: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
     createBufferSource: () => node("bufferSource"), createBiquadFilter: () => node("filter"),
+    decodeAudioData: async () => ({ duration: 1 }),
     resume: async () => undefined, close: async () => undefined,
   };
   return { context, nodes, listener };
@@ -79,6 +97,67 @@ describe("createAudioEngine spatial graph", () => {
     const panner = mock.nodes.find((entry) => entry.kind === "panner");
     expect(panner).toBeDefined();
     expect((panner as any).position).toEqual([-2, 0, -4]);
+    engine.dispose();
+  });
+});
+
+describe("createAudioEngine retained loop filter and doppler", () => {
+  const realFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  async function loopHarness(doppler?: number) {
+    const mock = graphContext();
+    class MockAudioContext { constructor() { return mock.context as any; } }
+    (globalThis as any).window = { AudioContext: MockAudioContext };
+    globalThis.fetch = (async () => ({ arrayBuffer: async () => new ArrayBuffer(8) })) as any;
+    const engine = createAudioEngine({ sounds: {
+      engine: { id: "engine", bus: "sfx", url: "engine.ogg", loop: true, ...(doppler === undefined ? {} : { doppler }) },
+    } });
+    engine.setListenerPose({ position: { x: 0, y: 0, z: 0 }, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } });
+    const handle = engine.playLoop("engine", { x: 0, y: 0, z: -100 })!;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const source = mock.nodes.find((n) => n.kind === "bufferSource") as any;
+    const filters = mock.nodes.filter((n) => n.kind === "filter") as any[];
+    return { engine, handle, source, filters };
+  }
+
+  test("routes a loop through lowpass then highpass and ramps live cutoffs, clamped to Nyquist", async () => {
+    const { engine, handle, filters } = await loopHarness();
+    expect(filters.map((f) => f.type)).toEqual(["lowpass", "highpass"]);
+    expect(filters[0].frequency.value).toBe(4000);
+    expect(filters[1].frequency.value).toBe(10);
+    handle.setLowpass(900);
+    handle.setHighpass(120);
+    expect(filters[0].frequency.target).toBe(900);
+    expect(filters[1].frequency.target).toBe(120);
+    engine.dispose();
+  });
+
+  test("pitches a doppler loop by the emitter's closing speed and leaves others alone", async () => {
+    const shifted = await loopHarness(1);
+    shifted.handle.setRate(1.5);
+    shifted.handle.setVelocity({ x: 0, y: 0, z: 34.3 });
+    expect(shifted.source.playbackRate.target).toBeCloseTo(1.5 * (343 / (343 - 34.3)), 6);
+    shifted.engine.dispose();
+
+    const plain = await loopHarness();
+    plain.handle.setRate(1.5);
+    plain.handle.setVelocity({ x: 0, y: 0, z: 34.3 });
+    expect(plain.source.playbackRate.target).toBe(1.5);
+    plain.engine.dispose();
+  });
+
+  test("listener velocity toward the emitter pitches a doppler loop up", async () => {
+    const { engine, source } = await loopHarness(1);
+    engine.setListenerPose({
+      position: { x: 0, y: 0, z: 0 },
+      forward: { x: 0, y: 0, z: -1 },
+      up: { x: 0, y: 1, z: 0 },
+      velocity: { x: 0, y: 0, z: -34.3 },
+    });
+    expect(source.playbackRate.target).toBeCloseTo(1.1, 6);
     engine.dispose();
   });
 });

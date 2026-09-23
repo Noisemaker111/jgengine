@@ -29,12 +29,18 @@ function fakeHandle() {
     rate: [] as number[],
     gain: [] as number[],
     pos: [] as { x: number; y: number; z: number }[],
+    lowpass: [] as number[],
+    highpass: [] as number[],
+    velocity: [] as { x: number; y: number; z: number }[],
     stopped: 0,
   };
   const handle: AudioEmitterHandle = {
     setPosition: (p) => calls.pos.push(p),
     setRate: (r) => calls.rate.push(r),
     setGain: (g) => calls.gain.push(g),
+    setLowpass: (hz) => calls.lowpass.push(hz),
+    setHighpass: (hz) => calls.highpass.push(hz),
+    setVelocity: (v) => calls.velocity.push(v),
     stop: () => {
       calls.stopped += 1;
     },
@@ -130,6 +136,13 @@ describe("attachAudioEventWire", () => {
     bus.emit("audio.loopSet", { id: "engine", rate: 3 });
     expect(created[0]?.calls.rate).toEqual([2, 3]);
     expect(created[0]?.calls.gain).toEqual([0.5]);
+    expect(created[0]?.calls.lowpass).toEqual([]);
+
+    bus.emit("audio.loopSet", { id: "engine", lowpass: 900, highpass: 80, velocity: [0, 0, 30] });
+    expect(created[0]?.calls.lowpass).toEqual([900]);
+    expect(created[0]?.calls.highpass).toEqual([80]);
+    expect(created[0]?.calls.velocity).toEqual([{ x: 0, y: 0, z: 30 }]);
+    expect(created[0]?.calls.rate).toEqual([2, 3]);
 
     bus.emit("audio.loopStop", { id: "engine" });
     expect(created[0]?.calls.stopped).toBe(1);
