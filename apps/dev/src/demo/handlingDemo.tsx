@@ -12,6 +12,7 @@ import {
   type VehicleDynamicsStep,
   type VehicleDynamicsTuning,
 } from "@jgengine/core/physics/vehicleDynamics";
+import { nextChaseView } from "@jgengine/core/runtime/cameraDirector";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -115,6 +116,10 @@ function onTick(ctx: GameContext, dt: number): void {
   state.last = drive.step;
   ctx.scene.entity.setPose(id, drive.pose);
   if (ctx.input.justPressed("jump")) state.car.jump();
+  if (ctx.input.justPressed("cycleView")) {
+    const tuning = ctx.camera.chaseTuning();
+    ctx.camera.setChaseTuning({ ...tuning, view: nextChaseView(tuning?.view ?? "chase") });
+  }
 
   const step = drive.step;
   const at = drive.pose.position;
@@ -132,7 +137,10 @@ function onTick(ctx: GameContext, dt: number): void {
   ctx.game.audio.loop("tires", "tires", { at });
   ctx.game.audio.setLoop("engine", { rate: out.engineRate, gain: out.engineGain, at });
   ctx.game.audio.setLoop("tires", { rate: out.tireRate, gain: out.tireGain, at });
-  if (state.feedback.fired("landing")) ctx.game.audio.play("thud", at);
+  if (state.feedback.fired("landing")) {
+    ctx.game.audio.play("thud", at);
+    ctx.camera.kickFov(-Math.min(8, step.landingSpeed));
+  }
 
   state.rumbleCooldown -= dt;
   if (state.rumbleCooldown <= 0 && (out.rumbleStrong > 0.05 || out.rumbleWeak > 0.05)) {
@@ -281,7 +289,7 @@ function Telemetry() {
       <div className="tabular-nums">lat {(step.lateralAccel / 9.81).toFixed(2)} g · slip {((step.sideslip * 180) / Math.PI).toFixed(0)}°{vehicle.kind === "bike" ? ` · lean ${Math.abs((step.lean * 180) / Math.PI).toFixed(0)}°` : ""}</div>
       <div className="mt-1 flex items-center gap-2">front {bar(step.frontSaturation)}</div>
       <div className="flex items-center gap-2">rear&nbsp; {bar(step.rearSaturation)}</div>
-      <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump</div>
+      <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump · C look back · V view</div>
     </div>
   );
 }
@@ -304,6 +312,8 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
       steerRight: ["KeyD", "ArrowRight"],
       handbrake: ["Space"],
       jump: ["KeyJ"],
+      lookBack: ["KeyC"],
+      cycleView: ["KeyV"],
     },
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: resetRun },
     camera: {
@@ -318,6 +328,10 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
         bank: { perYawRate: 0.05, max: 0.06 },
         velocityYaw: { blend: 0.35, minSpeed: 5, response: 7 },
         yawResponse: 9,
+        distanceBySpeed: { extra: choice.kind === "bike" ? 1 : 1.5, speedForMax: 60 },
+        pitchFollow: { blend: 0.8, response: 3 },
+        fovKick: { decay: 6, max: 10 },
+        lookBackAction: "lookBack",
       },
     },
     audio: {

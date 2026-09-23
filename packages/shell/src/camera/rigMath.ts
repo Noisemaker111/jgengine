@@ -341,6 +341,23 @@ export interface ResolvedChase {
   velocityYawResponse: number;
   /** Exponential smoothing rate the anchor yaw follows the body's facing with (#1370). `Infinity` restores the legacy rigid follow. */
   yawResponse: number;
+  fovBase: number;
+  fovMax: number;
+  fovSpeedForMax: number;
+  /** Exponential FOV smoothing rate; `Infinity` applies the curve unsmoothed. */
+  fovResponse: number;
+  distanceExtra: number;
+  distanceSpeedForMax: number;
+  /** Fraction of body pitch the boom follows; 0 keeps a level boom. */
+  pitchBlend: number;
+  pitchMax: number;
+  pitchResponse: number;
+  fovKickDecay: number;
+  fovKickMax: number;
+  lookBackAction: string | null;
+  collision: boolean;
+  collisionRadius: number;
+  collisionMinDistance: number;
 }
 
 /**
@@ -352,6 +369,9 @@ const DEFAULT_CHASE_YAW_RESPONSE = 5;
 
 /** @internal */
 export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedChase {
+  const fovSpeedForMax = config?.fov?.speedForMax ?? 24;
+  const collision = config?.collision ?? true;
+  const collisionBlock = typeof collision === "object" ? collision : undefined;
   return {
     distance: config?.distance ?? 6,
     height: config?.height ?? 2.6,
@@ -367,6 +387,21 @@ export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedCha
     velocityYawMinSpeed: config?.velocityYaw?.minSpeed ?? 4,
     velocityYawResponse: config?.velocityYaw?.response ?? 6,
     yawResponse: config?.yawResponse ?? DEFAULT_CHASE_YAW_RESPONSE,
+    fovBase: config?.fov?.base ?? 55,
+    fovMax: config?.fov?.max ?? 78,
+    fovSpeedForMax,
+    fovResponse: config?.fov?.response ?? 6,
+    distanceExtra: config?.distanceBySpeed?.extra ?? 0,
+    distanceSpeedForMax: config?.distanceBySpeed?.speedForMax ?? fovSpeedForMax,
+    pitchBlend: config?.pitchFollow === undefined ? 0 : config.pitchFollow.blend ?? 1,
+    pitchMax: config?.pitchFollow?.max ?? 0.6,
+    pitchResponse: config?.pitchFollow?.response ?? 5,
+    fovKickDecay: config?.fovKick?.decay ?? 7,
+    fovKickMax: config?.fovKick?.max ?? 20,
+    lookBackAction: config?.lookBackAction ?? null,
+    collision: collision !== false,
+    collisionRadius: collisionBlock?.radius ?? 0.3,
+    collisionMinDistance: collisionBlock?.minDistance ?? 0.8,
   };
 }
 
@@ -374,9 +409,17 @@ export function resolveChase(config: ChaseCameraConfig | undefined): ResolvedCha
  * @internal
  */
 export function leadFollowPoint(follow: Vec3, previous: Vec3, dt: number, resolved: ResolvedChase): Vec3 {
-  if (resolved.leadTime <= 0 || dt <= 0) return follow;
-  let leadX = ((follow.x - previous.x) / dt) * resolved.leadTime;
-  let leadZ = ((follow.z - previous.z) / dt) * resolved.leadTime;
+  if (dt <= 0) return follow;
+  return leadFromVelocity(follow, { x: (follow.x - previous.x) / dt, y: 0, z: (follow.z - previous.z) / dt }, resolved);
+}
+
+/** Velocity-lead the follow point along a known planar velocity, clamped to `leadMax`.
+ * @internal
+ */
+export function leadFromVelocity(follow: Vec3, velocity: Vec3, resolved: ResolvedChase): Vec3 {
+  if (resolved.leadTime <= 0) return follow;
+  let leadX = velocity.x * resolved.leadTime;
+  let leadZ = velocity.z * resolved.leadTime;
   const magnitude = Math.hypot(leadX, leadZ);
   if (magnitude > resolved.leadMax) {
     leadX *= resolved.leadMax / magnitude;
@@ -435,28 +478,178 @@ export function observerPose(subject: Vec3, angle: number, resolved: ResolvedObs
   };
 }
 
-/** Desired chase-camera position behind a vehicle facing `yaw` (before spring smoothing).
+/** Desired chase-camera position behind a vehicle facing `yaw` (before spring smoothing). `pitch` (nose-up positive) tilts the boom around the vehicle's right axis.
  * @internal
  */
-export function chaseDesiredPosition(follow: Vec3, yaw: number, resolved: ResolvedChase): Vec3 {
-  const back = forwardVector(yaw);
+export function chaseDesiredPosition(follow: Vec3, yaw: number, resolved: ResolvedChase, pitch = 0, distance = resolved.distance): Vec3 {
+  const offset = chaseBoomOffset(yaw, pitch, distance, resolved.height);
+  return { x: follow.x + offset.x, y: follow.y + offset.y, z: follow.z + offset.z };
+}
+
+/** Camera offset from the follow point for a boom `distance` back and `height` up, tilted by `pitch` (nose-up positive).
+ * @internal
+ */
+export function chaseBoomOffset(yaw: number, pitch: number, distance: number, height: number): Vec3 {
+  const forward = forwardVector(yaw);
+  const cos = Math.cos(pitch);
+  const sin = Math.sin(pitch);
+  const along = -distance * cos - height * sin;
+  return { x: forward.x * along, y: -distance * sin + height * cos, z: forward.z * along };
+}
+
+/** Look point ahead of / above a chased vehicle, tilted by `pitch` like the boom.
+ * @internal
+ */
+export function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase, pitch = 0): Vec3 {
+  const forward = forwardVector(yaw);
+  const cos = Math.cos(pitch);
+  const sin = Math.sin(pitch);
+  const along = 2 * cos - resolved.lookHeight * sin;
   return {
-    x: follow.x - back.x * resolved.distance,
-    y: follow.y + resolved.height,
-    z: follow.z - back.z * resolved.distance,
+    x: follow.x + forward.x * along,
+    y: follow.y + 2 * sin + resolved.lookHeight * cos,
+    z: follow.z + forward.z * along,
   };
 }
 
-/** Look point ahead of / above a chased vehicle.
+/** Mutable per-rig chase state; {@link stepChase} advances it in place. */
+export interface ChaseRigState {
+  /** Smoothed camera offset from the led follow point; springing the offset, not the world position, keeps the boom length at any constant speed. */
+  offset: Vec3 | null;
+  anchorYaw: number | null;
+  lastYaw: number | null;
+  lastFollow: Vec3 | null;
+  roll: number;
+  pitch: number;
+  fov: number | null;
+  kick: number;
+  lookingBack: boolean;
+}
+
+/** @internal */
+export function createChaseRigState(): ChaseRigState {
+  return { offset: null, anchorYaw: null, lastYaw: null, lastFollow: null, roll: 0, pitch: 0, fov: null, kick: 0, lookingBack: false };
+}
+
+/** What the chase rig reads from its target each frame. */
+export interface ChaseSample {
+  follow: Vec3;
+  /** Body heading (radians). */
+  yaw: number;
+  /** Body `rotationX` (three.js convention: positive = nose down). */
+  bodyPitch: number;
+  /** Sim velocity when the entity publishes one; `null` falls back to the frame-to-frame position delta. */
+  velocity: Vec3 | null;
+  lookBack: boolean;
+  /** FOV impulse (degrees) queued since the last frame. */
+  fovKick: number;
+}
+
+/** One frame of chase output from {@link stepChase}. */
+export interface ChaseStepResult {
+  pose: CameraPose;
+  /** Camera roll to apply after the pose, radians. */
+  roll: number;
+  /** Forward chase yaw to report to the shell; unaffected by look-back. */
+  anchorYaw: number;
+  /** Planar speed used for FOV, distance and shake. */
+  speed: number;
+}
+
+/** Pulls a desired camera position in toward `pivot` when something blocks the boom. */
+export type ChaseBoomClamp = (pivot: Vec3, desired: Vec3) => Vec3;
+
+/**
+ * One frame of the chase rig: speed from sim velocity, smoothed FOV plus decaying kicks, drift-lag
+ * anchor yaw, pitch follow, distance by speed, look-back, and a boom spring that eases the offset
+ * from the target rather than its world position, so the camera holds its distance at speed.
  * @internal
  */
-export function chaseLookAt(follow: Vec3, yaw: number, resolved: ResolvedChase): Vec3 {
-  const forward = forwardVector(yaw);
+export function stepChase(
+  state: ChaseRigState,
+  sample: ChaseSample,
+  resolved: ResolvedChase,
+  dt: number,
+  clampBoom?: ChaseBoomClamp,
+): ChaseStepResult {
+  const { follow, yaw } = sample;
+  const last = state.lastFollow ?? follow;
+  const velocity: Vec3 =
+    sample.velocity ?? (dt > 0 ? { x: (follow.x - last.x) / dt, y: 0, z: (follow.z - last.z) / dt } : { x: 0, y: 0, z: 0 });
+  state.lastFollow = follow;
+  const speed = Math.hypot(velocity.x, velocity.z);
+
+  const lastYaw = state.lastYaw ?? yaw;
+  state.lastYaw = yaw;
+  state.roll = bankRollStep(state.roll, yaw, lastYaw, dt, resolved);
+
+  const targetFov = speedToFov(speed, { base: resolved.fovBase, max: resolved.fovMax, speedForMax: resolved.fovSpeedForMax });
+  state.fov =
+    state.fov === null || !Number.isFinite(resolved.fovResponse)
+      ? targetFov
+      : state.fov + (targetFov - state.fov) * smoothBlend(dt, resolved.fovResponse);
+  state.kick = clamp(state.kick * Math.exp(-resolved.fovKickDecay * dt) + sample.fovKick, -resolved.fovKickMax, resolved.fovKickMax);
+
+  let targetYaw = yaw;
+  let response = resolved.yawResponse;
+  if (resolved.velocityYawBlend > 0) {
+    targetYaw = velocityYawTarget(yaw, velocity, resolved);
+    response = resolved.velocityYawResponse;
+  }
+  const anchorYaw = Number.isFinite(response)
+    ? smoothYaw(state.anchorYaw ?? targetYaw, targetYaw, response, dt)
+    : targetYaw;
+  state.anchorYaw = anchorYaw;
+
+  const pitchTarget = clamp(-sample.bodyPitch * resolved.pitchBlend, -resolved.pitchMax, resolved.pitchMax);
+  state.pitch =
+    resolved.pitchBlend <= 0 ? 0 : state.pitch + (pitchTarget - state.pitch) * smoothBlend(dt, resolved.pitchResponse);
+
+  const snap = state.offset === null || sample.lookBack !== state.lookingBack;
+  state.lookingBack = sample.lookBack;
+  const boomYaw = sample.lookBack ? anchorYaw + Math.PI : anchorYaw;
+  const boomPitch = sample.lookBack ? -state.pitch : state.pitch;
+  const extra = resolved.distanceSpeedForMax > 0 ? resolved.distanceExtra * clamp(speed / resolved.distanceSpeedForMax, 0, 1) : 0;
+
+  const led = sample.lookBack ? follow : leadFromVelocity(follow, velocity, resolved);
+  const desiredOffset = chaseBoomOffset(boomYaw, boomPitch, resolved.distance + extra, resolved.height);
+  let offset = snap || state.offset === null ? desiredOffset : springArmStep(state.offset, desiredOffset, resolved.springDamping, dt);
+  if (clampBoom !== undefined) {
+    const up = chaseLookAt(led, boomYaw, resolved, boomPitch);
+    const pivot: Vec3 = { x: led.x, y: up.y, z: led.z };
+    const wanted: Vec3 = { x: led.x + offset.x, y: led.y + offset.y, z: led.z + offset.z };
+    const allowed = clampBoom(pivot, wanted);
+    offset = { x: allowed.x - led.x, y: allowed.y - led.y, z: allowed.z - led.z };
+  }
+  state.offset = offset;
+
   return {
-    x: follow.x + forward.x * 2,
-    y: follow.y + resolved.lookHeight,
-    z: follow.z + forward.z * 2,
+    pose: {
+      position: { x: led.x + offset.x, y: led.y + offset.y, z: led.z + offset.z },
+      lookAt: chaseLookAt(led, boomYaw, resolved, boomPitch),
+      fov: state.fov + state.kick,
+    },
+    roll: sample.lookBack ? -state.roll : state.roll,
+    anchorYaw,
+    speed,
   };
+}
+
+/**
+ * Where a blocked boom should put the camera: `hitDistance` along the pivot→desired ray, less
+ * `radius`, but never nearer the pivot than `minDistance`. `null` hit returns `desired` unchanged.
+ * @internal
+ */
+export function clampBoomToHit(pivot: Vec3, desired: Vec3, hitDistance: number | null, radius: number, minDistance: number): Vec3 {
+  if (hitDistance === null) return desired;
+  const dx = desired.x - pivot.x;
+  const dy = desired.y - pivot.y;
+  const dz = desired.z - pivot.z;
+  const length = Math.hypot(dx, dy, dz);
+  if (length <= 1e-6) return desired;
+  const allowed = clamp(hitDistance - radius, Math.min(minDistance, length), length);
+  const scale = allowed / length;
+  return { x: pivot.x + dx * scale, y: pivot.y + dy * scale, z: pivot.z + dz * scale };
 }
 
 /**

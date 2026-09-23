@@ -1947,6 +1947,10 @@
 - `CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET: 0.55 — Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`.
 - `CALIBRATED_TRAUMA_SHAKE_MAX_ROLL` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL: 0.1 — Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`.
 - `CameraPose` (interface): interface CameraPose { position: Vec3; lookAt: Vec3; fov: number } — ⚠ undocumented
+- `ChaseBoomClamp` (type): type ChaseBoomClamp = (pivot: Vec3, desired: Vec3) => Vec3 — Pulls a desired camera position in toward `pivot` when something blocks the boom.
+- `ChaseRigState` (interface): interface ChaseRigState — Mutable per-rig chase state; {@link stepChase} advances it in place.
+- `ChaseSample` (interface): interface ChaseSample — What the chase rig reads from its target each frame.
+- `ChaseStepResult` (interface): interface ChaseStepResult — One frame of chase output from {@link stepChase}.
 - `CinematicSample` (interface): interface CinematicSample { pose: CameraPose; done: boolean } — ⚠ undocumented
 - `DirectorCameraValues` (interface): interface DirectorCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig | null } — ⚠ undocumented
 - `ResolvedChase` (interface): interface ResolvedChase { distance: number; height: number; lookHeight: number; springDamping: number; shakePerSpeed: number; leadTime: number; leadMax: number; bankPerYawRate: number; bankMax: number; bankDamping: number; velocityYawBlend: number; velocityYawMinS… — ⚠ undocumented
