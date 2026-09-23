@@ -275,10 +275,27 @@
 - `AudioBusId` (type): type AudioBusId = string — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
 - `FalloffCurve` (type): type FalloffCurve = "linear" | "inverse" | "none" — ⚠ undocumented
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistance?: number; rollo… — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistan… — ⚠ undocumented
 - `computeFalloffGain` (function): function computeFalloffGain(distance: number, config: AudioFalloffConfig = {}): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
+
+## @jgengine/core/audio/doppler
+
+- `DopplerOptions` (interface): interface DopplerOptions — Options for {@link dopplerRate}.
+- `SPEED_OF_SOUND` (const): const SPEED_OF_SOUND: 343 — Speed of sound in air at 20 °C, metres per second — the default for {@link dopplerRate}.
+- `dopplerRate` (function): function dopplerRate(listenerPosition: Vec3Tuple, listenerVelocity: Vec3Tuple, emitterPosition: Vec3Tuple, emitterVelocity: Vec3Tuple, options: DopplerOptions = {}): number — Doppler pitch multiplier for an emitter heard by a listener: `(c + vListener) / (c - vEmitter)`, where each speed is the component along the line between them, positive when closing. Multiply a loop's playback rate by it. Pure and allocation-free.
+
+## @jgengine/core/audio/engineLayers
+
+- `EngineLayer` (interface): interface EngineLayer — One recorded engine sample, keyed by the rpm it was recorded at.
+- `EngineLayerMix` (interface): interface EngineLayerMix — One layer's live mix.
+- `EngineLayers` (interface): interface EngineLayers — A layered engine loop: N rpm-keyed samples crossfaded by rpm, with on- and off-load sets picked by engine load.
+- `EngineLayersAudio` (interface): interface EngineLayersAudio — The part of `ctx.game.audio` {@link EngineLayers} drives.
+- `EngineLayersConfig` (interface): interface EngineLayersConfig — Config for {@link createEngineLayers}.
+- `EngineLayersPlayOptions` (interface): interface EngineLayersPlayOptions — Per-tick parameters {@link EngineLayers.play} forwards to every layer's loop.
+- `EngineLayersState` (interface): interface EngineLayersState — Serializable {@link EngineLayers} state.
+- `createEngineLayers` (function): function createEngineLayers(initial: EngineLayersConfig): EngineLayers — Layered engine sound: each set of rpm-keyed samples is equal-power crossfaded between the two samples bracketing the current rpm and pitched by `rpm / layer.rpm`; the on- and off-load sets are equal-power crossfaded by smoothed `engineLoad`. A config with only one load set plays it at every load. `play` drives `ctx.game.audio` directly, so a game needs no per-layer glue.
 
 ## @jgengine/core/audio/music
 
@@ -2361,7 +2378,7 @@
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistance?: number; rollo… — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistan… — ⚠ undocumented
 - `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
 - `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented
