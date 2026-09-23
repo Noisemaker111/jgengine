@@ -42,6 +42,8 @@ export interface HandlingReport {
   liftOffYawGain: number;
   /** Peak |sideslip| from a 0.6 s steer-plus-handbrake pull, degrees. */
   handbrakePeakSideslipDeg: number;
+  /** Seconds after releasing that pull, with no input, until sideslip stays under 5° for 0.3 s; `Infinity` if it never does within 3 s. */
+  handbrakeRecoverySeconds: number;
   /** Peak |sideslip| holding full throttle and full steer for 2 s from 12 m/s — the keyboard player's corner, degrees. */
   powerSteerPeakSideslipDeg: number;
   /** The full-throttle full-steer hold ended with sideslip over 60°. */
@@ -185,13 +187,24 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
   }
 
   let handbrakePeakSideslipDeg = 0;
+  let handbrakeRecoverySeconds = Number.POSITIVE_INFINITY;
   {
     const car = create();
     launchTo(car, 20, dt);
-    for (let i = 0; i < Math.ceil(1.5 / dt); i += 1) {
-      const pulling = i * dt < 0.6;
+    const pullTicks = Math.ceil(0.6 / dt);
+    let settledSince = -1;
+    for (let i = 0; i < pullTicks + Math.ceil(3 / dt); i += 1) {
+      const pulling = i < pullTicks;
       const step = car.tick(dt, input(0, 0, pulling ? 1 : 0, pulling ? 1 : 0));
-      handbrakePeakSideslipDeg = Math.max(handbrakePeakSideslipDeg, sideslipOf(step) * RAD_TO_DEG);
+      const slip = sideslipOf(step) * RAD_TO_DEG;
+      if (i * dt < 1.5) handbrakePeakSideslipDeg = Math.max(handbrakePeakSideslipDeg, slip);
+      if (pulling) continue;
+      if (slip >= 5) settledSince = -1;
+      else if (settledSince < 0) settledSince = i;
+      if (settledSince >= 0 && (i - settledSince) * dt >= 0.3) {
+        handbrakeRecoverySeconds = (settledSince - pullTicks) * dt;
+        break;
+      }
     }
   }
 
@@ -220,6 +233,7 @@ export function measureHandling(create: () => HandlingSubject, options: Handling
     spun,
     liftOffYawGain,
     handbrakePeakSideslipDeg,
+    handbrakeRecoverySeconds,
     powerSteerPeakSideslipDeg,
     powerSteerSpun,
   };
@@ -400,4 +414,137 @@ export function measureAir(create: () => AirSubject, options: { dt?: number } = 
     airYawRate: rateAfter({ pitch: 0, yaw: 1, roll: 0 }, "yawRate"),
     airRollRate: rateAfter({ pitch: 0, yaw: 0, roll: 1 }, "rollRate"),
   };
+}
+
+/** A vehicle sim {@link measureCourse} can drive along a line: a {@link HandlingSubject} that also reports its pose and front-wheel angle. */
+export interface CourseSubject {
+  tick(dt: number, input: AxisInput): { forwardSpeed: number; lateralSpeed: number; yawRate: number; steerAngle: number };
+  velocity(): readonly [number, number];
+  pose(): { position: readonly [number, number, number]; heading: number };
+}
+
+/** Settings for {@link measureCourse}; every field but `wheelbase` has a default. */
+export interface CourseProbeOptions {
+  /** Wheelbase, m — needed to separate geometric steer from understeer. */
+  wheelbase: number;
+  dt?: number;
+  /** Skidpad radius, m (default `30`). */
+  skidpadRadius?: number;
+  /** Distance between slalom cones, m (default `18`). */
+  slalomSpacing?: number;
+  /** How far the weaving line swings either side of the cones, m (default `3.5`). */
+  slalomOffset?: number;
+}
+
+/** Deterministic driven-course metrics. */
+export interface CourseReport {
+  /**
+   * Understeer gradient, degrees of extra front-wheel angle per g of lateral acceleration, from a slow steer
+   * ramp at 20 m/s between 0.1 and 0.4 g. Positive understeers, negative oversteers, near 0 is neutral.
+   */
+  understeerGradient: number;
+  /** Highest lateral acceleration held on a circle of `skidpadRadius`, g. */
+  skidpadG: number;
+  /**
+   * Fastest entry speed at which a pure-pursuit driver weaves 8 centre-line cones, passing each on the
+   * correct side with at least 1.2 m of clearance and without sliding past 30°, m/s (`0` if none).
+   */
+  slalomSpeed: number;
+}
+
+function wrapAngle(angle: number): number {
+  let a = angle;
+  while (a > Math.PI) a -= 2 * Math.PI;
+  while (a < -Math.PI) a += 2 * Math.PI;
+  return a;
+}
+
+/**
+ * Drives a fresh vehicle from `create` through a steer ramp, a skidpad and a slalom with simple
+ * deterministic drivers, and reports understeer gradient, skidpad g and the fastest clean slalom.
+ * @capability course-metrics measure a vehicle on driven tests — understeer gradient, skidpad g, slalom speed
+ */
+export function measureCourse(create: () => CourseSubject, options: CourseProbeOptions): CourseReport {
+  const dt = options.dt ?? 1 / 60;
+  const wheelbase = options.wheelbase;
+  const radius = options.skidpadRadius ?? 30;
+  const spacing = options.slalomSpacing ?? 18;
+  const offset = options.slalomOffset ?? 3.5;
+
+  let understeerGradient = Number.NaN;
+  {
+    const car = create();
+    let speed = launchTo(car, 20, dt);
+    let sum = 0;
+    let count = 0;
+    for (let i = 0; i < Math.ceil(8 / dt); i += 1) {
+      const steer = Math.min(1, (i * dt) / 8) * 0.5;
+      const hold = holdSpeed(20, speed);
+      const step = car.tick(dt, input(hold.throttle, hold.brake, steer));
+      speed = step.forwardSpeed;
+      const lateralG = Math.abs(step.yawRate * speed) / 9.81;
+      if (lateralG < 0.1 || lateralG > 0.4 || speed < 5 || sideslipOf(step) > 4 / RAD_TO_DEG) continue;
+      const geometric = Math.atan((wheelbase * Math.abs(step.yawRate)) / speed);
+      sum += ((Math.abs(step.steerAngle) - geometric) * RAD_TO_DEG) / lateralG;
+      count += 1;
+    }
+    if (count > 0) understeerGradient = sum / count;
+  }
+
+  let skidpadG = 0;
+  {
+    const car = create();
+    let speed = launchTo(car, 8, dt);
+    let target = 8;
+    let steer = 0;
+    for (let i = 0; i < Math.ceil(60 / dt); i += 1) {
+      target += 0.25 * dt;
+      const hold = holdSpeed(target, speed);
+      const step = car.tick(dt, input(hold.throttle, hold.brake, steer));
+      speed = step.forwardSpeed;
+      const wanted = speed / radius;
+      const actual = -step.yawRate;
+      steer = Math.max(0, Math.min(1, steer + 1.5 * (wanted - actual) * dt));
+      const holding = Math.abs(actual - wanted) < wanted * 0.03 && sideslipOf(step) < 12 / RAD_TO_DEG;
+      if (i * dt > 3 && holding) skidpadG = Math.max(skidpadG, (speed * speed) / radius / 9.81);
+      if (steer >= 1 && actual < wanted * 0.9) break;
+      if (sideslipOf(step) > 45 / RAD_TO_DEG) break;
+    }
+  }
+
+  let slalomSpeed = 0;
+  const lineX = (z: number) => offset * Math.sin((Math.PI * z) / spacing);
+  const cleanRun = (entry: number): boolean => {
+    const car = create();
+    let speed = launchTo(car, entry, dt);
+    const start = car.pose().position;
+    let cone = 0;
+    for (let i = 0; i < Math.ceil(30 / dt); i += 1) {
+      const pose = car.pose();
+      const z = pose.position[2] - start[2];
+      const coneZ = spacing * (cone + 0.5);
+      if (z >= coneZ) {
+        const side = Math.sign(lineX(coneZ));
+        if ((pose.position[0] - start[0]) * side < 1.2) return false;
+        cone += 1;
+        if (cone === 8) return true;
+      }
+      const lookahead = Math.max(5, speed * 0.35);
+      const tx = start[0] + lineX(z + lookahead);
+      const tz = pose.position[2] + lookahead;
+      const bearing = Math.atan2(tx - pose.position[0], tz - pose.position[2]);
+      const error = wrapAngle(bearing - pose.heading);
+      const hold = holdSpeed(entry, speed);
+      const step = car.tick(dt, input(hold.throttle, hold.brake, Math.max(-1, Math.min(1, -error * 3))));
+      speed = step.forwardSpeed;
+      if (sideslipOf(step) > 30 / RAD_TO_DEG) return false;
+    }
+    return false;
+  };
+  for (let entry = 8; entry <= 40; entry += 1) {
+    if (!cleanRun(entry)) break;
+    slalomSpeed = entry;
+  }
+
+  return { understeerGradient, skidpadG, slalomSpeed };
 }
