@@ -34,6 +34,8 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 
 Choose input intent, controller/motor, collision/navigation, and camera as separate seams. Commands express game intent; world systems resolve motion. Interaction targets come from bounded spatial/sensor queries, not full-world scans.
 
+Walk feel is data, not code. `movement.feel` sets `groundAcceleration`, `airAcceleration` and `groundFriction` (response rates, 1/s) plus `runMultiplier` and `crouchMultiplier`, and `physics` sets `gravity` and `jumpVelocity`. A floaty platformer and a weighty shooter differ only in these numbers.
+
 ### Stateful placed objects
 
 Per-instance state belongs on the placement, not in a game-owned map keyed by `instanceId`. Set `SceneObject.state` (opaque) through `ctx.scene.object.setState`/`patchState`; declare `slotInventory` on the catalog entry and mutate contents through `ctx.scene.object.slots`, which enforces the declared capacity and `accepts`. Both replicate and save with the object through the always-on `objects` snapshot module, and `toRuntimeObjectRow`/`fromRuntimeObjectRow` (`@jgengine/core/multiplayer`) convert to and from the host's persisted rows.

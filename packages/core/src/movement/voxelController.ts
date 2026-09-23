@@ -154,6 +154,7 @@ function targetHorizontalVelocity(
   forwardX: number,
   forwardZ: number,
   baseSpeed: number,
+  tuning?: MovementTuningOverrides,
 ): { x: number; z: number } {
   if (!intent.moving) return { x: 0, z: 0 };
   let fx = forwardX;
@@ -174,9 +175,9 @@ function targetHorizontalVelocity(
   const magSq = vx * vx + vz * vz;
   if (magSq < 1e-6) return { x: 0, z: 0 };
   const speedMultiplier = intent.crouching
-    ? MOVEMENT_TUNING.crouchSpeedMultiplier
+    ? (tuning?.crouchSpeedMultiplier ?? MOVEMENT_TUNING.crouchSpeedMultiplier)
     : intent.running
-      ? MOVEMENT_TUNING.runSpeedMultiplier
+      ? (tuning?.runSpeedMultiplier ?? MOVEMENT_TUNING.runSpeedMultiplier)
       : 1;
   const targetSpeed = baseSpeed * MOVEMENT_TUNING.walkSpeedMultiplier * speedMultiplier;
   const scale = targetSpeed / Math.sqrt(magSq);
@@ -251,15 +252,15 @@ export function advanceVoxelPlayer(
   const gravityAcceleration = tuning?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration;
   const jumpVelocity = tuning?.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity;
 
-  const target = targetHorizontalVelocity(intent, forwardX, forwardZ, baseSpeed);
+  const target = targetHorizontalVelocity(intent, forwardX, forwardZ, baseSpeed, tuning);
   const acceleration = body.grounded
-    ? MOVEMENT_TUNING.groundAcceleration
-    : MOVEMENT_TUNING.airAcceleration;
+    ? (tuning?.groundAcceleration ?? MOVEMENT_TUNING.groundAcceleration)
+    : (tuning?.airAcceleration ?? MOVEMENT_TUNING.airAcceleration);
   const accelerationBlend = 1 - Math.exp(-acceleration * dt);
   body.velocityX += (target.x - body.velocityX) * accelerationBlend;
   body.velocityZ += (target.z - body.velocityZ) * accelerationBlend;
   if (!intent.moving && body.grounded) {
-    const friction = Math.exp(-MOVEMENT_TUNING.groundFriction * dt);
+    const friction = Math.exp(-(tuning?.groundFriction ?? MOVEMENT_TUNING.groundFriction) * dt);
     body.velocityX *= friction;
     body.velocityZ *= friction;
   }

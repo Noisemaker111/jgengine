@@ -88,8 +88,17 @@ export function resolvePlayerMovementTuning(opts: {
 }): PlayerMovementTuning {
   const physics = resolvePhysicsTuning(opts.physics);
   const backpedal = opts.movement?.backpedalMult;
+  const feel = opts.movement?.feel;
+  const feelOverrides: MovementTuningOverrides = {
+    ...(backpedal === undefined ? {} : { backpedalSpeedMultiplier: backpedal }),
+    ...(feel?.groundAcceleration === undefined ? {} : { groundAcceleration: feel.groundAcceleration }),
+    ...(feel?.airAcceleration === undefined ? {} : { airAcceleration: feel.airAcceleration }),
+    ...(feel?.groundFriction === undefined ? {} : { groundFriction: feel.groundFriction }),
+    ...(feel?.runMultiplier === undefined ? {} : { runSpeedMultiplier: feel.runMultiplier }),
+    ...(feel?.crouchMultiplier === undefined ? {} : { crouchSpeedMultiplier: feel.crouchMultiplier }),
+  };
   const overrides =
-    backpedal === undefined ? physics : { ...(physics ?? {}), backpedalSpeedMultiplier: backpedal };
+    Object.keys(feelOverrides).length === 0 ? physics : { ...(physics ?? {}), ...feelOverrides };
   return {
     ...(opts.collision === undefined ? {} : { collision: opts.collision }),
     ...(opts.movement === undefined ? {} : { movement: opts.movement }),
