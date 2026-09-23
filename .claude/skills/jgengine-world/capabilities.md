@@ -285,10 +285,6 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFeedbackMixer` (function) · `import { createFeedbackMixer } from "@jgengine/core/vfx/feedbackMixer"`
 
-## flight-dynamics — simulate fixed-wing, helicopter, and VTOL aircraft
-
-- `createAircraftDynamics` (function) · `import { createAircraftDynamics } from "@jgengine/core/world"`
-
 ## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
 
 - `measureFlight` (function) · `import { measureFlight } from "@jgengine/core/physics/handlingProbe"`

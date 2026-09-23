@@ -19,6 +19,14 @@ between (`--json` for structured output).
 
 ### Migrate
 
+- `createAircraftDynamics` and `AircraftTuning` (`physics/flightDynamics`) are deprecated. They command rotation from rates with pitch clamped, so aircraft can't loop, and mass and stall are fixed. Move to `createRigidAircraft` (`@jgengine/core/physics/aircraftDynamics`):
+  - `mass` → `massKg`, plus an `inertia` tensor (roughly `m·(span/4)²` for roll and `m·(length/4)²` for pitch and yaw).
+  - `fixedWing`: `lift`/`stallSpeed` → left and right wing `surfaces` (area, `liftSlope`, `stallAngle`, trim `incidence`), a tailplane and a fin; `controls.pitch/roll/yaw` → `control` authority on those surfaces plus `controls.<channel>.rate`; `maxThrust` → `engine.maxThrust`; `drag`/`maxSpeed` → `dragArea` and surface `cd0` (top speed is where thrust meets drag); `sideDrag` → the fin.
+  - `rotorcraft`: `hoverThrust` → `rotor.maxThrust`, `rotorResponse` → `rotor.spoolRate`, `groundEffectHeight` → `rotor.radius`; add `rotor.torque` and a `rotor.tail`, and pass `input.collective`.
+  - `vtol` has no one-block equivalent: combine `rotor`, `surfaces` and `engine`, or keep the deprecated model for now.
+  - `controls.stability` → `assists.autoLevel` or `assists.sas`; `afterburner` → `modifiers.thrustScale`; `airbrake` → `modifiers.dragScale`; `groundClearance` → `gear.height`.
+  - Euler `rotation` → step `heading`/`pitch`/`bank` and `orientation`; spawn with `aircraftAttitudeQuaternion(heading, pitch, bank)`.
+  - Tune against `measureFlight` with the `jgengine-world` recipe `flight-feel.md`.
 - `KinematicVehicleTuning.chassis` and `.steering` are deprecated. Their heading is still commanded from steer, so a held steer at speed spins the car. For handling that matters, move to `createVehicleDynamics` (`@jgengine/core/physics/vehicleDynamics`). Map `massKg`/`engineForce`/`brakeForce`/`tireGrip`/`comHeight`/`trackWidth` to `massKg`, `powertrain: { kind: "direct", maxForce, maxPower }` or a gearbox, `brakeForce`, `front.peakGrip`, `comHeight` and `trackWidth`. Map `steering.wheelbase`/`maxAngle`/`highSpeedAngle`/`highSpeedAt` to the same `steering` fields plus a rack `rate`. Then tune against `measureHandling` with the `jgengine-world` recipe `vehicle-feel.md`. Plain `kinematicVehicle`, without those blocks, stays for karts, top-down and bumper cars.
 - The default third-person orbit camera sits lower and closer (`initialDistance` 9 → 7, `initialHeight` 5.5 → 3.2), so the horizon and sky are in frame. To keep the old framing, set `camera: { initialDistance: 9, initialHeight: 5.5 }` in `defineGame`.
 
