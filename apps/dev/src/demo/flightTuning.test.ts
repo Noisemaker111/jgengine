@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { aircraftAttitudeQuaternion, createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics";
+import { measureFlight } from "@jgengine/core/physics/handlingProbe";
 
 import { flightDemoBooster, flightDemoHelicopter, flightDemoHelicopterAssists, flightDemoHover, flightDemoPlaneAssists, flightDemoPlane, flightDemoSpawn, flightDemoUpperStage } from "./flightTuning";
 
@@ -97,5 +98,22 @@ describe("flight demo rocket", () => {
     for (let i = 0; i < Math.round(8 / DT); i += 1) step = rocket.tick(DT, input);
     expect(step.position[1]).toBeGreaterThan(1200);
     expect(step.pitch).toBeGreaterThan(0.8);
+  });
+});
+
+describe("flight demo feel targets", () => {
+  test("the plane flies like an aerobatic monoplane", () => {
+    const report = measureFlight((spawn) => createRigidAircraft(flightDemoPlane, spawn), { cruiseSpeed: 80 });
+    expect(report.rollRateDeg).toBeGreaterThan(300);
+    expect(report.sustainedTurnRateDeg).toBeGreaterThan(18);
+    expect(report.stallSpeed).toBeLessThan(35);
+    expect(report.throttleResponse).toBeLessThan(1);
+  });
+
+  test("the helicopter drifts hands-off unless its assists are on", () => {
+    const loose = measureFlight((spawn) => createRigidAircraft(flightDemoHelicopter, spawn), { hoverCollective: flightDemoHover.collective });
+    const held = measureFlight((spawn) => createRigidAircraft({ ...flightDemoHelicopter, assists: flightDemoHelicopterAssists }, spawn), { hoverCollective: flightDemoHover.collective });
+    expect(loose.hoverDriftMeters).toBeGreaterThan(8);
+    expect(held.hoverDriftMeters).toBeLessThan(5);
   });
 });
