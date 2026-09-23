@@ -13,6 +13,7 @@ import {
 } from "@jgengine/core/settings/settingsModel";
 import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import { readGraphicsSettings, type GraphicsProfileOverrides } from "@jgengine/core/settings/graphicsSettings";
+import { readFrameRateLimit } from "@jgengine/core/settings/frameRateLimit";
 
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
@@ -57,11 +58,23 @@ export function useSettingsRevision(store: SettingsStore): number {
   return useSyncExternalStore(subscribe, getVersion, getVersion);
 }
 
+/** The player's graphics choices as the shell applies them. */
+export interface AppliedGraphicsSettings {
+  shadows: boolean;
+  dpr: number;
+  uiScale: number;
+  quality: GraphicsQuality;
+  profile: GraphicsProfile;
+  /** Frames-per-second cap; 0 renders every display refresh. */
+  frameRateLimit: number;
+  showFps: boolean;
+}
+
 export function useGraphicsSettings(
   store: SettingsStore,
   shadowsDefault: boolean,
   overrides?: GraphicsProfileOverrides,
-): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile } {
+): AppliedGraphicsSettings {
   useSettingsRevision(store);
   const { quality, profile } = readGraphicsSettings(store, overrides);
   const rawUiScale = store.get(SETTING_IDS.graphicsUiScale, DEFAULT_UI_SCALE);
@@ -71,6 +84,8 @@ export function useGraphicsSettings(
     uiScale: Math.min(UI_SCALE_MAX, Math.max(UI_SCALE_MIN, rawUiScale)),
     quality,
     profile,
+    frameRateLimit: readFrameRateLimit(store),
+    showFps: store.get(SETTING_IDS.graphicsShowFps, false),
   };
 }
 

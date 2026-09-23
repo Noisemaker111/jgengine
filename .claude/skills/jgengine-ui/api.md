@@ -41,10 +41,13 @@
 
 - `CINEMATIC_POST_PROCESSING` (const): const CINEMATIC_POST_PROCESSING: PostProcessingConfig — Tuned tone-map + bloom + gentle SSAO + vignette/grade stack — the shipped-game post look.
 - `CINEMATIC_SKY` (const): const CINEMATIC_SKY: SkyEnvironmentConfig — A static day sky: a real dome plus the shell's view-following shadow-casting sun and hemisphere fill.
+- `COMIC_POST_PROCESSING` (const): const COMIC_POST_PROCESSING: PostProcessingConfig — Ink outlines, four cel bands and a punchy grade — a hand-inked comic look on any model.
 - `GameLookInput` (interface): interface GameLookInput — Explicit graphics knobs a game may set; the preset only fills the ones left undefined.
-- `LookPreset` (type): type LookPreset = "neutral" | "photoreal" | "toon" | "cinematic" | "flat" — Named look preset composing the existing lighting/sky/fog/post knobs into one field. `"neutral"` (the default when unset) keeps presentation unstyled; `"cinematic"` draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
+- `LOOK_PRESETS` (const): const LOOK_PRESETS: readonly LookPreset[] — Every look preset name, for pickers and validating a preset read from a URL or file.
+- `LookPreset` (type): type LookPreset = "neutral" | "photoreal" | "toon" | "comic" | "retro" | "cinematic" | "flat" — Named look preset composing the existing lighting/sky/fog/post knobs into one field. `"neutral"` (the default when unset) keeps presentation unstyled; `"cinematic"` draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style); `"retro"` pixelates and posterizes the frame. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
 - `NEUTRAL_POST_PROCESSING` (const): const NEUTRAL_POST_PROCESSING: PostProcessingConfig — Unstyled baseline: a stable linear presentation with no genre-specific grading.
 - `PHOTOREAL_POST_PROCESSING` (const): const PHOTOREAL_POST_PROCESSING: PostProcessingConfig — High-contrast physically based presentation for authored HDR environments.
+- `RETRO_POST_PROCESSING` (const): const RETRO_POST_PROCESSING: PostProcessingConfig — Chunky pixels and posterized colour with no smoothing — a low-resolution retro look.
 - `ResolvedGameLook` (interface): interface ResolvedGameLook — Concrete lighting/backdrop/post the shell renders after the preset has filled unset knobs.
 - `TOON_POST_PROCESSING` (const): const TOON_POST_PROCESSING: PostProcessingConfig — Clean graphic presentation; toon materials remain game-owned while this sets the grade.
 - `resolveGameLook` (function): function resolveGameLook(input: GameLookInput): ResolvedGameLook — Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`; `"flat"` passes the explicit knobs through untouched. Anything the game authored wins — the preset only fills unset knobs, and it never adds a sky when the world already owns one (so the sky's tuned sun/hemisphere serve as the lighting rig).
@@ -55,9 +58,11 @@
 - `BloomConfig` (interface): interface BloomConfig — UnrealBloom stage — soft HDR glow around bright pixels (sun, glints, emissive).
 - `DofConfig` (interface): interface DofConfig — Depth-of-field (bokeh) stage — throws the fore/background out of focus around a focus distance.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
+- `OutlineConfig` (interface): interface OutlineConfig — Ink outlines traced from depth and surface-normal edges — silhouettes plus interior creases.
 - `PostAaMode` (type): type PostAaMode = "smaa" | "msaa" | false — Edge antialiasing for the post chain. SMAA runs in linear-sRGB before the output tone-map and cleans alpha-tested foliage/particles that MSAA samples alone leave crawling. `"msaa"` keeps only the render-target multisample resolve; `false` disables AA stages.
 - `PostProcessingConfig` (interface): interface PostProcessingConfig — Declarative post-processing chain (RenderPass → AO → Bloom → SMAA → tone-map output → Grade). Present on a game means the shell mounts an `EffectComposer` and owns the render; absent means the renderer draws directly (unchanged). Each stage is a config object, `false` to skip, or omitted for its default. Pure data — no three.js types leak into core.
 - `STUDIO_STAGE_POST` (const): const STUDIO_STAGE_POST: PostProcessingConfig — A cinematic "product shot" post preset — the full chain on (contact-AO, soft bloom, a warm film grade with vignette + a touch of grain + chromatic aberration). Meant for a `StudioStage` where a single parametric asset is framed on a backdrop, so every studio reads shipped, not intern-tier. DoF is left off by default (it needs a per-scene focus distance); set `dof` to enable it.
+- `StylizeConfig` (interface): interface StylizeConfig — Art-style stage that turns the same models and lighting into a different look without touching materials: ink outlines (comic / Borderlands), cel bands (cartoon), pixelation (retro). Runs after tone mapping, before the grade.
 - `ToneMappingMode` (type): type ToneMappingMode = "aces" | "agx" | "reinhard" | "cineon" | "linear" | "none" — Renderer tone-mapping curve applied by the post chain's output stage.
 
 ## @jgengine/core/render/sprite2d
@@ -67,6 +72,13 @@
 - `createSpriteClipPlayer` (function): function createSpriteClipPlayer(atlas: SpriteAtlas): { play(name: string): void; advance(dt: number): void; frame: () => { x: number; y: number; w: number; h: number; pivot?: [number, number] | undefined; } | undefined; snapshot: () => { animation: string; frameIndex: number; elapsed: number; done: … — Create a renderer-independent sprite animation player.
 - `sortingOrder` (function): function sortingOrder(layers: readonly string[], layer: string, offset = 0): number — Resolve a layer name and local offset into a stable render order.
 
+## @jgengine/core/settings/frameRateLimit
+
+- `FRAME_RATE_LIMIT_DISPLAY` (const): const FRAME_RATE_LIMIT_DISPLAY: "display" — Stored value for "render every display refresh" — the browser's vsync-locked rate.
+- `FRAME_RATE_LIMIT_OPTIONS` (const): const FRAME_RATE_LIMIT_OPTIONS: readonly SettingOption[] — Frame-rate limit choices. Browsers always present on the display's vsync, so the uncapped option runs at the monitor's refresh rate; the numeric caps skip refreshes to save GPU and battery.
+- `paceFrame` (function): function paceFrame(now: number, anchor: number, fps: number): number | null — Frame pacing for a capped render loop driven by display refreshes. Returns the new frame anchor when a frame should render at `now`, or `null` to skip this refresh. The anchor keeps the remainder so a 60 cap on a 144 Hz display averages 60 instead of drifting to 48.
+- `readFrameRateLimit` (function): function readFrameRateLimit(store: Pick<SettingsStore, "get">): number — The player's frame-rate cap in frames per second, or 0 for the display rate.
+
 ## @jgengine/core/settings/graphicsProfile
 
 - `DEFAULT_GRAPHICS_PROFILES` (const): const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile> — Conservative defaults that preserve the existing high-quality shell behavior.
@@ -75,6 +87,7 @@
 
 ## @jgengine/core/settings/graphicsSettings
 
+- `ANISOTROPY_OPTIONS` (const): const ANISOTROPY_OPTIONS: readonly { value: string; label: string }[] — Texture-filtering choices offered to the player; the value is the anisotropy sample count.
 - `GRAPHICS_POST_STAGES` (const): const GRAPHICS_POST_STAGES: readonly GraphicsPostStage[] — Ordered stage list used to build settings rows.
 - `GRAPHICS_POST_STAGE_LABELS` (const): const GRAPHICS_POST_STAGE_LABELS: Record<GraphicsPostStage, string> — Player-facing labels for each post stage.
 - `GraphicsPostStage` (type): type GraphicsPostStage = keyof GraphicsProfile["postStages"] — The post-processing stages a player can toggle individually on top of the quality tier.
@@ -83,7 +96,7 @@
 - `RENDER_SCALE_MAX` (const): const RENDER_SCALE_MAX: 2 — Highest player render scale.
 - `RENDER_SCALE_MIN` (const): const RENDER_SCALE_MIN: 0.5 — Lowest player render scale; the value is the device-pixel-ratio cap handed to the canvas.
 - `RENDER_SCALE_STEP` (const): const RENDER_SCALE_STEP: 0.05 — Render-scale slider increment.
-- `applyGraphicsQuality` (function): function applyGraphicsQuality(store: Pick<SettingsStore, "set">, quality: GraphicsQuality, overrides?: GraphicsProfileOverrides): GraphicsProfile — Select a quality tier and re-apply its render scale and stage defaults, so picking a preset resets the individual overrides instead of leaving stale toggles behind.
+- `applyGraphicsQuality` (function): function applyGraphicsQuality(store: Pick<SettingsStore, "set">, quality: GraphicsQuality, overrides?: GraphicsProfileOverrides): GraphicsProfile — Select a quality tier and re-apply its render scale, texture filtering and stage defaults, so picking a preset resets the individual overrides instead of leaving stale toggles behind.
 - `graphicsPostStageSettingId` (function): function graphicsPostStageSettingId(stage: GraphicsPostStage): string — Setting id that stores one stage toggle (`graphics.post.<stage>`).
 - `readGraphicsQuality` (function): function readGraphicsQuality(store: Pick<SettingsStore, "get">): GraphicsQuality — The stored quality tier, falling back to the default when the value is missing or unknown.
 - `readGraphicsSettings` (function): function readGraphicsSettings(store: Pick<SettingsStore, "get">, overrides?: GraphicsProfileOverrides): GraphicsSettingsState — Resolve the player's graphics state from a settings store. The tier profile (with the game's overrides) supplies every default; a stored render scale or stage toggle replaces its field.
@@ -100,13 +113,13 @@
 - `GRAPHICS_QUALITY_OPTIONS` (const): const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] — ⚠ undocumented
 - `GameSettingDef` (interface): interface GameSettingDef — Extra setting a game appends to a built-in category via `defineGame({ settings: { extra } })`.
 - `GameSettingsConfig` (interface): interface GameSettingsConfig { variant?: SettingsVariant; surface?: SettingsSurface | false; extra?: readonly GameSettingDef[]; categories?: readonly SettingCategoryDef[]; hide?: readonly SettingCategory[]; actions?: readonly SettingsActionDef[]; hideBindings?: readonl… — ⚠ undocumented
-- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented · used by `GRAPHICS_QUALITY_DPR`: Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
+- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" | "ultra" — ⚠ undocumented · used by `GRAPHICS_QUALITY_DPR`: Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
 - `SETTINGS_STORAGE_PREFIX` (const): const SETTINGS_STORAGE_PREFIX: "jgengine:setting:" — ⚠ undocumented
 - `SETTING_IDS` (const): const SETTING_IDS: { readonly masterVolume: "sound.master"; readonly graphicsQuality: "graphics.quality"; readonly graphicsShadows: "graphics.shadows"; readonly graphicsUiScale: "graphics.uiScale"; readonly graphicsRenderScale: "graphics.renderScale"; readonly graphicsPostAo: "graphics.post.ao"; rea… — ⚠ undocumented
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
-- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented
+- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `FRAME_RATE_LIMIT_OPTIONS` (@jgengine/core/settings/frameRateLimit): Frame-rate limit choices.
 - `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/react): Read + write one persisted setting; re-renders when the value changes anywhere.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
@@ -156,7 +169,7 @@
 - `GameSettingsConfig` (interface): interface GameSettingsConfig { variant?: SettingsVariant; surface?: SettingsSurface | false; extra?: readonly GameSettingDef[]; categories?: readonly SettingCategoryDef[]; hide?: readonly SettingCategory[]; actions?: readonly SettingsActionDef[]; hideBindings?: readonl… — ⚠ undocumented
 - `GameViewportLayout` (interface): interface GameViewportLayout — The shared live geometry the engine allocates once and every UI subsystem reads.
 - `GradeConfig` (interface): interface GradeConfig — Final colour-grade stage: lift/gain/gamma, saturation, vignette, film grain — applied in display space after tone mapping.
-- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" — ⚠ undocumented · used by `GRAPHICS_QUALITY_DPR`: Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
+- `GraphicsQuality` (type): type GraphicsQuality = "low" | "medium" | "high" | "ultra" — ⚠ undocumented · used by `GRAPHICS_QUALITY_DPR`: Device-pixel-ratio ceiling per quality tier — the shell's `Canvas` dpr cap.
 - `GridFocusOptions` (interface): interface GridFocusOptions — Options for {@link moveGridFocus}.
 - `HUD_ANCHOR_FRACTIONS` (const): const HUD_ANCHOR_FRACTIONS: Record<HudAnchor, { fx: number; fy: number }> — ⚠ undocumented
 - `HudAnchor` (type): type HudAnchor = | "top-left" | "top" | "top-right" | "left" | "center" | "right" | "bottom-left" | "bottom" | "bottom-right" — ⚠ undocumented · used by `HudPanel` (@jgengine/shell/gameKit): A HUD block that lives in one of the nine anchor regions.
@@ -176,7 +189,7 @@
 - `LayoutRect` (interface): interface LayoutRect — Axis-aligned rectangle in CSS pixels (origin top-left). Structurally compatible with a `DOMRect`'s edge fields.
 - `LayoutRegion` (interface): interface LayoutRegion — A physical rectangle a UI subsystem occupies, published to the shared registry.
 - `Locale` (type): type Locale = string — A locale tag (e.g. `"en"`, `"es"`, `"ja"`) — a key into a {@link Catalog}.
-- `LookPreset` (type): type LookPreset = "neutral" | "photoreal" | "toon" | "cinematic" | "flat" — Named look preset composing the existing lighting/sky/fog/post knobs into one field. `"neutral"` (the default when unset) keeps presentation unstyled; `"cinematic"` draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
+- `LookPreset` (type): type LookPreset = "neutral" | "photoreal" | "toon" | "comic" | "retro" | "cinematic" | "flat" — Named look preset composing the existing lighting/sky/fog/post knobs into one field. `"neutral"` (the default when unset) keeps presentation unstyled; `"cinematic"` draws a scene lit like a shipped game — a real day sky with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post stack. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style); `"retro"` pixelates and posterizes the frame. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773). The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
 - `MODAL_CANCEL` (const): const MODAL_CANCEL: "cancel" — Conventional cancel/dismiss result (also the default auto-dismiss and pop result).
 - `MODAL_CONFIRM` (const): const MODAL_CONFIRM: "confirm" — Conventional confirm result for a two-button dialog — a shared string, not model behavior.
 - `Messages` (type): type Messages = Readonly<Record<string, string>> — Flat message table for one locale: key → template string with `{param}` slots.
@@ -220,7 +233,7 @@
 - `SettingCategory` (type): type SettingCategory = BuiltInSettingCategory | (string & {}) — Built-in category ids keep autocomplete; any other string makes a fresh category.
 - `SettingCategoryDef` (interface): interface SettingCategoryDef — Declares or relabels/reorders a category tab; use it for a custom category or to reshape the built-ins.
 - `SettingKind` (type): type SettingKind = "slider" | "toggle" | "select" — ⚠ undocumented
-- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented
+- `SettingOption` (interface): interface SettingOption { value: string; label: string } — ⚠ undocumented · used by `FRAME_RATE_LIMIT_OPTIONS` (@jgengine/core/settings/frameRateLimit): Frame-rate limit choices.
 - `SettingValue` (type): type SettingValue = number | boolean | string — ⚠ undocumented · used by `useSetting` (@jgengine/react): Read + write one persisted setting; re-renders when the value changes anywhere.
 - `SettingsActionDef` (interface): interface SettingsActionDef — A game-state action (Restart, Quit to menu, …) shown as rows in the first "Game" settings tab — never a floating button or a rebindable key.
 - `SettingsStore` (interface): interface SettingsStore { get<T extends SettingValue>(id: string, fallback: T): T; set(id: string, value: SettingValue): void; subscribe(listener: () => void): () => void } — ⚠ undocumented · used by `createSettingsStore`: Reactive, localStorage-backed settings store shared by the shell wiring and React hooks.
@@ -2034,6 +2047,10 @@
 
 - `diagnose` (function): function diagnose(frame: NonNullable<ReturnType<typeof devtools.frame.stats>>, longs: readonly LongFrameEvent[]): string | null — ⚠ undocumented
 
+## @jgengine/shell/diagnostics/FpsCounter
+
+- `FrameTally` (interface): interface FrameTally — Mutable frame tally shared between the in-Canvas probe and the DOM readout.
+
 ## @jgengine/shell/diagnostics/RuntimeDiagnostics
 
 - `DiagnosticOverlay` (function): function DiagnosticOverlay({ diagnostics, gameName }: { diagnostics: RuntimeDiagnostic[]; gameName: string }): React.JSX.Element | null — ⚠ undocumented
@@ -2213,7 +2230,7 @@
 
 ## @jgengine/shell/postfx/PostProcessing
 
-- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
+- `PostProcessing` (function): function PostProcessing({ config, quality = "high", stages }: { config: PostProcessingConfig; quality?: GraphicsQuality; stages?: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean } }): null — Mounts an `EffectComposer` inside the shell Canvas and takes over rendering (priority-1 `useFrame`, which disables R3F auto-render) to run the configured post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Stylize → Grade. Rendered only when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
 
 ## @jgengine/shell/postfx/ScreenEffectsOverlay
 
@@ -2230,6 +2247,10 @@
 - `hidePostfxOverlays` (function): function hidePostfxOverlays(scene: THREE.Object3D, out: THREE.Object3D[]): void — Hide every currently visible marked object under `scene`, recording what was hidden into `out` (cleared first, no allocation on the hot path) so {@link restorePostfxOverlays} can undo exactly that set.
 - `isPostfxOverlay` (function): function isPostfxOverlay(object: { userData?: Record<string, unknown> }): boolean — True when the object opted out of postfx scene prepasses via {@link POSTFX_OVERLAY_USERDATA}.
 - `restorePostfxOverlays` (function): function restorePostfxOverlays(hidden: THREE.Object3D[]): void — Restore visibility for the objects hidden by {@link hidePostfxOverlays} and clear the list.
+
+## @jgengine/shell/postfx/stylizePass
+
+- `StylizePass` (class): class StylizePass extends Pass — Art-style post pass: ink outlines from a normal+depth prepass, cel luminance bands, and pixelation. Runs on the display-space frame after `OutputPass`. The prepass renders only when outlines are on, and reuses the frame's shadow maps instead of re-rendering them.
 
 ## @jgengine/shell/registry
 
@@ -2412,9 +2433,10 @@
 
 ## @jgengine/shell/settings/appliedSettings
 
+- `AppliedGraphicsSettings` (interface): interface AppliedGraphicsSettings — The player's graphics choices as the shell applies them.
 - `AudioSettingsBridge` (function): function AudioSettingsBridge({ store, engine, buses, }: { store: SettingsStore; engine: AudioEngine; buses: Record<string, AudioBusDef> | undefined; }): null — ⚠ undocumented
 - `TOUCH_STYLE_AUTO` (const): const TOUCH_STYLE_AUTO: "auto" — Sentinel Controls value meaning "defer to the game's suggested touch skin".
-- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean, overrides?: GraphicsProfileOverrides): { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile } — ⚠ undocumented
+- `useGraphicsSettings` (function): function useGraphicsSettings(store: SettingsStore, shadowsDefault: boolean, overrides?: GraphicsProfileOverrides): AppliedGraphicsSettings — ⚠ undocumented
 - `useSettingsRevision` (function): function useSettingsRevision(store: SettingsStore): number — ⚠ undocumented
 
 ## @jgengine/shell/settings/settingsController

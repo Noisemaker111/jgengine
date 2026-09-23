@@ -88,6 +88,7 @@ type Args = {
   run?: string[];
   settle?: number;
   spawn?: string;
+  style?: string;
   look?: string;
   lookFrom?: string;
   view?: string;
@@ -121,6 +122,9 @@ const HELP = `bun run shoot [game] [options]
   --spawn <x,y,z>     override the authored player spawn for this shot only (adds a
                       ?spawn= overlay like --cam/?cam=); never mutates editor.scene.json.
                       Accepts x,y,z or x,y,z,yaw (yaw radians)
+  --style <look>      render this shot with a different look preset (?style=): neutral,
+                      photoreal, cinematic, toon, comic, retro or flat. Replaces the
+                      game's own post chain so art styles compare on the same scene.
   --look <x,z | x,y,z | @marker:<id> | @entity:<id>>
                       pin a detached camera on a world point for this capture:
                       the vantage the shot actually wants, independent of the
@@ -228,6 +232,7 @@ function parseArgs(argv: string[]): Args {
       args.run = list.length > 0 ? list : args.run;
     } else if (value === "--settle") args.settle = Number(argv[++index]);
     else if (value === "--spawn") args.spawn = argv[++index];
+    else if (value === "--style") args.style = argv[++index];
     else if (value === "--look") args.look = argv[++index];
     else if (value === "--look-from") args.lookFrom = argv[++index];
     else if (value === "--view") {
@@ -332,6 +337,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.run !== undefined && args.run.length > 0) url.searchParams.set("run", args.run.join(","));
   if (args.settle !== undefined && Number.isFinite(args.settle)) url.searchParams.set("settle", String(args.settle));
   if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
+  if (args.style !== undefined && args.style.length > 0) url.searchParams.set("style", args.style);
   if (args.view !== undefined) url.searchParams.set("view", args.view);
   const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });
   if (aim !== undefined) {

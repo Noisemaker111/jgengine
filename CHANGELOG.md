@@ -28,6 +28,9 @@ between (`--json` for structured output).
 
 ### Added
 
+- Graphics settings a player can feel: an Ultra tier, a frame-rate limit (V-Sync or 30/60/120/144 cap), texture filtering (anisotropy, now applied to every loaded texture), and an FPS counter. `GraphicsProfile` gains `anisotropy`; a game that overrides tiers with `defineGame({ graphics })` can set it per tier.
+- `postProcessing.stylize` (`outline`, `bands`, `pixelSize`) and two new looks, `look: "comic"` (ink outlines + cel bands, Borderlands-style) and `look: "retro"` (pixelated, posterized). Same models, different art style.
+
 - `measureCourse` (`@jgengine/core/physics/handlingProbe`): understeer gradient (deg/g), skidpad g at a set radius, and the fastest clean slalom, from simple deterministic drivers. `measureHandling` adds `handbrakeRecoverySeconds`.
 - `createWeaponHandling` (`@jgengine/core/combat/weaponHandling`): weapon feel as serializable state.
   - Recoil: a per-shot `pattern` or flat `pitch`, a random cone from an injected `random`, a `cameraShare` split between view punch and aim, `recoverRate`/`recoverDelay`, and `adsScale`.

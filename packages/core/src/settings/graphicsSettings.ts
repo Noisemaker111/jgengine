@@ -33,6 +33,22 @@ export const RENDER_SCALE_MAX = 2;
 /** Render-scale slider increment. */
 export const RENDER_SCALE_STEP = 0.05;
 
+/** Texture-filtering choices offered to the player; the value is the anisotropy sample count. */
+export const ANISOTROPY_OPTIONS: readonly { value: string; label: string }[] = [
+  { value: "1", label: "Off" },
+  { value: "2", label: "2x" },
+  { value: "4", label: "4x" },
+  { value: "8", label: "8x" },
+  { value: "16", label: "16x" },
+];
+
+const ANISOTROPY_VALUES: readonly GraphicsProfile["anisotropy"][] = [1, 2, 4, 8, 16];
+
+function toAnisotropy(raw: unknown, fallback: GraphicsProfile["anisotropy"]): GraphicsProfile["anisotropy"] {
+  const value = Number(raw);
+  return ANISOTROPY_VALUES.find((option) => option === value) ?? fallback;
+}
+
 /** Per-tier profile overrides a game authors with `defineGame({ graphics })`. */
 export type GraphicsProfileOverrides = Partial<Record<GraphicsQuality, Partial<GraphicsProfile>>>;
 
@@ -77,13 +93,14 @@ export function readGraphicsSettings(
     profile: {
       ...tier,
       renderScale: clampRenderScale(store.get(SETTING_IDS.graphicsRenderScale, tier.renderScale)),
+      anisotropy: toAnisotropy(store.get(SETTING_IDS.graphicsAnisotropy, String(tier.anisotropy)), tier.anisotropy),
       postStages,
     },
   };
 }
 
 /**
- * Select a quality tier and re-apply its render scale and stage defaults, so picking a preset
+ * Select a quality tier and re-apply its render scale, texture filtering and stage defaults, so picking a preset
  * resets the individual overrides instead of leaving stale toggles behind.
  */
 export function applyGraphicsQuality(
@@ -94,6 +111,7 @@ export function applyGraphicsQuality(
   const tier = resolveGraphicsProfile(quality, overrides?.[quality]);
   store.set(SETTING_IDS.graphicsQuality, quality);
   store.set(SETTING_IDS.graphicsRenderScale, tier.renderScale);
+  store.set(SETTING_IDS.graphicsAnisotropy, String(tier.anisotropy));
   for (const stage of GRAPHICS_POST_STAGES) {
     store.set(graphicsPostStageSettingId(stage), tier.postStages[stage]);
   }

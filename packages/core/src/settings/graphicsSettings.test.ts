@@ -28,7 +28,7 @@ describe("graphicsSettings", () => {
 
   test("unknown stored quality falls back to the default", () => {
     const store = createSettingsStore(memStorage());
-    store.set(SETTING_IDS.graphicsQuality, "ultra");
+    store.set(SETTING_IDS.graphicsQuality, "extreme");
     expect(readGraphicsQuality(store)).toBe("high");
   });
 
@@ -66,5 +66,15 @@ describe("graphicsSettings", () => {
     expect(state.quality).toBe("low");
     expect(state.profile).toEqual(DEFAULT_GRAPHICS_PROFILES.low);
     expect(store.get(graphicsPostStageSettingId("dof"), true)).toBe(false);
+  });
+
+  test("a stored texture-filtering choice overrides the tier and a tier pick resets it", () => {
+    const store = createSettingsStore(memStorage());
+    store.set(SETTING_IDS.graphicsAnisotropy, "16");
+    expect(readGraphicsSettings(store).profile.anisotropy).toBe(16);
+    store.set(SETTING_IDS.graphicsAnisotropy, "3");
+    expect(readGraphicsSettings(store).profile.anisotropy).toBe(DEFAULT_GRAPHICS_PROFILES.high.anisotropy);
+    applyGraphicsQuality(store, "ultra");
+    expect(readGraphicsSettings(store).profile).toEqual(DEFAULT_GRAPHICS_PROFILES.ultra);
   });
 });

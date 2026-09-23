@@ -19,6 +19,7 @@ import {
   type SettingValue,
 } from "@jgengine/core/settings/settingsModel";
 import {
+  ANISOTROPY_OPTIONS,
   applyGraphicsQuality,
   GRAPHICS_POST_STAGE_LABELS,
   GRAPHICS_POST_STAGES,
@@ -29,6 +30,7 @@ import {
   RENDER_SCALE_STEP,
   type GraphicsProfileOverrides,
 } from "@jgengine/core/settings/graphicsSettings";
+import { FRAME_RATE_LIMIT_DISPLAY, FRAME_RATE_LIMIT_OPTIONS } from "@jgengine/core/settings/frameRateLimit";
 import {
   DEFAULT_TOUCH_JOYSTICK_VARIANT,
   TOUCH_JOYSTICK_VARIANT_OPTIONS,
@@ -151,6 +153,22 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
       set: (value) => store.set(SETTING_IDS.graphicsRenderScale, value),
     },
     {
+      id: SETTING_IDS.graphicsFrameRateLimit,
+      label: "Frame rate limit",
+      kind: "select",
+      value: store.get(SETTING_IDS.graphicsFrameRateLimit, FRAME_RATE_LIMIT_DISPLAY),
+      options: FRAME_RATE_LIMIT_OPTIONS,
+      set: (value) => store.set(SETTING_IDS.graphicsFrameRateLimit, String(value)),
+    },
+    {
+      id: SETTING_IDS.graphicsAnisotropy,
+      label: "Texture filtering",
+      kind: "select",
+      value: String(graphics.profile.anisotropy),
+      options: ANISOTROPY_OPTIONS,
+      set: (value) => store.set(SETTING_IDS.graphicsAnisotropy, String(value)),
+    },
+    {
       id: SETTING_IDS.graphicsShadows,
       label: "Shadows",
       kind: "toggle",
@@ -176,6 +194,13 @@ export function useSettingsCategories(config: SettingsControllerInput): Settings
       step: 0.05,
       format: percent,
       set: (value) => store.set(SETTING_IDS.graphicsUiScale, value),
+    },
+    {
+      id: SETTING_IDS.graphicsShowFps,
+      label: "Show FPS",
+      kind: "toggle",
+      value: store.get(SETTING_IDS.graphicsShowFps, false),
+      set: (value) => store.set(SETTING_IDS.graphicsShowFps, value),
     },
     ...extrasFor("graphics"),
   ];

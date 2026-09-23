@@ -90,16 +90,20 @@ export const SETTING_IDS = {
   graphicsPostBloom: "graphics.post.bloom",
   graphicsPostDof: "graphics.post.dof",
   graphicsPostSmaa: "graphics.post.smaa",
+  graphicsFrameRateLimit: "graphics.frameRateLimit",
+  graphicsAnisotropy: "graphics.anisotropy",
+  graphicsShowFps: "graphics.showFps",
   touchStyle: "controls.touchStyle",
   touchJoystick: "controls.touchJoystick",
 } as const;
 
-export type GraphicsQuality = "low" | "medium" | "high";
+export type GraphicsQuality = "low" | "medium" | "high" | "ultra";
 
 export const GRAPHICS_QUALITY_OPTIONS: readonly SettingOption[] = [
   { value: "low", label: "Low" },
   { value: "medium", label: "Medium" },
   { value: "high", label: "High" },
+  { value: "ultra", label: "Ultra" },
 ];
 
 export const DEFAULT_MASTER_VOLUME = 1;
@@ -116,6 +120,7 @@ export const GRAPHICS_QUALITY_DPR: Record<GraphicsQuality, number> = {
   low: 1,
   medium: 1.5,
   high: 2,
+  ultra: 2,
 };
 
 export function busVolumeSettingId(busId: string): string {

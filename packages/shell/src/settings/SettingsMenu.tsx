@@ -134,7 +134,7 @@ function SelectRow({ row }: { row: SettingsRow }) {
     <RowShell
       label={row.label}
       control={
-        <div className="flex shrink-0 gap-1 rounded-lg p-1" style={{ background: surfaceDeep }}>
+        <div className="flex flex-wrap justify-end gap-1 rounded-lg p-1" style={{ background: surfaceDeep }}>
           {options.map((option) => {
             const selected = option.value === current;
             return (

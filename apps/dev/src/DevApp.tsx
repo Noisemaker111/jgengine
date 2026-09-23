@@ -10,6 +10,7 @@ import {
   type ShellMultiplayer,
 } from "@jgengine/shell/multiplayer";
 import type { PlayableGame } from "@jgengine/shell/registry";
+import { LOOK_PRESETS, type LookPreset } from "@jgengine/core/render/lookPreset";
 
 import {
   CONVEX_URL,
@@ -22,6 +23,7 @@ import {
   SPAWN,
   STAGE,
   STATE_PARAM,
+  STYLE,
   WS_URL,
   applyCaptureView,
   resolvedRun,
@@ -121,7 +123,14 @@ export function DevApp({ gameId }: { gameId: string }) {
           applyCaptureView(view.overrides);
           document.documentElement.dataset.jgView = view.name;
         }
-        setPlayable(withCameraPreset(loaded, await loadLookMarkers(gameId)));
+        if (STYLE !== null && !LOOK_PRESETS.includes(STYLE as LookPreset)) {
+          const message = `Unknown ?style="${STYLE}" — known looks: ${LOOK_PRESETS.join(", ")}`;
+          setCaptureStatus("error", message);
+          setLoadError(message);
+          return;
+        }
+        const styled = STYLE === null ? loaded : { ...loaded, look: STYLE as LookPreset, postProcessing: undefined };
+        setPlayable(withCameraPreset(styled, await loadLookMarkers(gameId)));
       })
       .catch((error: unknown) => {
         const message = formatLoadError(error);
