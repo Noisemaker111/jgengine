@@ -63,3 +63,19 @@ describe("createFreezeMonitor", () => {
     expect(after).toEqual([]);
   });
 });
+
+describe("freeze monitor snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const monitor = createFreezeMonitor({ graceSeconds: 0.3 });
+    const frozen = new Set(["a", "b"]);
+    const subjects = [{ id: "a", groundSpeed: 2 }, { id: "b", groundSpeed: 0.5 }, { id: "c", groundSpeed: 3 }];
+    monitor.tick(subjects, frozen, 0.2);
+    const saved = monitor.snapshot();
+    const copy = JSON.parse(JSON.stringify(saved));
+    const play = () => [monitor.tick(subjects, frozen, 0.2), monitor.tick(subjects.slice(1), frozen, 0.2)];
+    const a = play();
+    expect(saved).toEqual(copy);
+    monitor.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});
