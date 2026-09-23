@@ -41,6 +41,8 @@ interface BodyRecord {
   half: [number, number, number];
   kinematicVelocity: [number, number, number];
   kinematicTarget: [number, number, number] | null;
+  linearDamping: number;
+  force: [number, number, number];
 }
 
 interface JointRecord {
@@ -59,6 +61,7 @@ interface SavedBody {
   position: [number, number, number];
   velocity: [number, number, number];
   sleeping: boolean;
+  linearDamping?: number;
 }
 
 /** Serializable backend state: every live body and joint, with handles preserved. */
@@ -217,6 +220,8 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
       half,
       kinematicVelocity: [0, 0, 0],
       kinematicTarget: null,
+      linearDamping: desc.linearDamping ?? 0,
+      force: [0, 0, 0],
     });
     handleOfIndex.set(index, handle);
     masses.set(handle, desc.mass ?? 1);
@@ -336,6 +341,16 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
         world.velZ[i]! + impulse[2] * invMass,
       );
     },
+    applyForce(handle, force) {
+      const rec = record(handle);
+      if (rec.kind !== "dynamic") return;
+      rec.force[0] += force[0];
+      rec.force[1] += force[1];
+      rec.force[2] += force[2];
+    },
+    applyTorque(handle) {
+      record(handle);
+    },
     setKinematicTarget(handle, position) {
       const rec = record(handle);
       rec.kinematicTarget = [position[0], position[1], position[2]];
@@ -372,6 +387,23 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
         rec.kinematicVelocity[2] = (target[2] - world.posZ[i]!) / dt;
         world.setPosition(i, target[0], target[1], target[2]);
         rec.kinematicTarget = null;
+      }
+      for (const rec of records.values()) {
+        if (rec.kind !== "dynamic") continue;
+        const f = rec.force;
+        const i = rec.index;
+        if (f[0] !== 0 || f[1] !== 0 || f[2] !== 0) {
+          const scale = world.invMass[i]! * dt;
+          world.setVelocity(i, world.velX[i]! + f[0] * scale, world.velY[i]! + f[1] * scale, world.velZ[i]! + f[2] * scale);
+          world.wake(i);
+          f[0] = 0;
+          f[1] = 0;
+          f[2] = 0;
+        }
+        if (rec.linearDamping > 0) {
+          const keep = Math.max(0, 1 - rec.linearDamping * dt);
+          world.setVelocity(i, world.velX[i]! * keep, world.velY[i]! * keep, world.velZ[i]! * keep);
+        }
       }
       world.step(dt);
     },
@@ -516,6 +548,7 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
           position: [world.posX[i]!, world.posY[i]!, world.posZ[i]!],
           velocity: [world.velX[i]!, world.velY[i]!, world.velZ[i]!],
           sleeping: world.isSleeping(i),
+          ...(rec.linearDamping > 0 ? { linearDamping: rec.linearDamping } : {}),
         });
       }
       return {
@@ -546,6 +579,7 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
             layers: body.layers,
             mask: body.mask,
             userData: body.userData,
+            ...(body.linearDamping === undefined ? {} : { linearDamping: body.linearDamping }),
           },
           body.sleeping,
         );

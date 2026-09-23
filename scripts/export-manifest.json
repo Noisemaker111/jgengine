@@ -285,6 +285,7 @@
     "./physics/spatialGrid",
     "./physics/structure",
     "./physics/traversal",
+    "./physics/vehicleBackendLink",
     "./physics/vehicleBody",
     "./physics/vehicleDynamics",
     "./physics/vehicleObstacles",

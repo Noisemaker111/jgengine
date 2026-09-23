@@ -137,6 +137,41 @@ export function runPhysicsBackendConformance(create: () => PhysicsBackend, harne
     expect(later).not.toBe(crate);
   });
 
+  test("applyForce accelerates at F/m for one step and then stops acting", () => {
+    const backend = create();
+    const held = backend.addBody({ shape: { kind: "sphere", radius: 0.5 }, position: [0, 20, 0], mass: 2 });
+    const once = backend.addBody({ shape: { kind: "sphere", radius: 0.5 }, position: [10, 20, 0], mass: 2 });
+    backend.applyForce(once, [4, 0, 0]);
+    for (let i = 0; i < 60; i += 1) {
+      backend.applyForce(held, [4, 0, 0]);
+      backend.step(1 / 60);
+    }
+    expect(backend.body(held)!.velocity[0]).toBeGreaterThan(1.6);
+    expect(backend.body(held)!.velocity[0]).toBeLessThan(2.2);
+    expect(backend.body(once)!.velocity[0]).toBeGreaterThan(0.02);
+    expect(backend.body(once)!.velocity[0]).toBeLessThan(0.05);
+  });
+
+  test("linear damping bleeds a body's speed faster than an undamped twin", () => {
+    const backend = create();
+    const damped = backend.addBody({ shape: { kind: "sphere", radius: 0.5 }, position: [0, 30, 0], velocity: [10, 0, 0], linearDamping: 1.5 });
+    const free = backend.addBody({ shape: { kind: "sphere", radius: 0.5 }, position: [0, 30, 20], velocity: [10, 0, 0] });
+    settle(backend, 1);
+    expect(backend.body(damped)!.velocity[0]).toBeLessThan(backend.body(free)!.velocity[0] * 0.5);
+  });
+
+  test("applyTorque spins a body on rotation backends and is harmless elsewhere", () => {
+    const backend = create();
+    const wheel = backend.addBody({ shape: { kind: "box", halfExtents: [0.5, 0.5, 0.5] }, position: [0, 30, 0] });
+    for (let i = 0; i < 30; i += 1) {
+      backend.applyTorque(wheel, [0, 2, 0]);
+      backend.step(1 / 60);
+    }
+    const spin = backend.body(wheel)!.angularVelocity[1];
+    if (backend.capabilities.rotation) expect(spin).toBeGreaterThan(0.1);
+    else expect(spin).toBe(0);
+  });
+
   test("capabilities describe the backend", () => {
     const backend = create();
     expect(backend.capabilities.shapes.length).toBeGreaterThan(1);

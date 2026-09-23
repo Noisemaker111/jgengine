@@ -28,3 +28,5 @@ a capsule collide-and-slide controller that works on any backend.
 ## Non-goals
 
 Replacing movement controllers with full rigid-body characters by default.
+
+Bodies take forces as well as impulses: `applyForce`/`applyTorque` act over the next `step`, and `linearDamping`/`angularDamping` are per body. Vehicle sims stay outside the solver. `vehicleBackendLink` gives them a kinematic chassis in the backend world, so handling stays deterministic and tunable while props and walls still interact.

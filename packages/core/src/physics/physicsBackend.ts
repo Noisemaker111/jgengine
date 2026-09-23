@@ -40,6 +40,10 @@ export interface BodyDesc {
   mask?: number;
   /** Continuous collision detection for fast small bodies (bullets, thrown props). */
   ccd?: boolean;
+  /** Per-second linear velocity damping on this body (air drag, water); default `0`. */
+  linearDamping?: number;
+  /** Per-second angular velocity damping on this body; default `0`. Ignored by rotation-free backends. */
+  angularDamping?: number;
   asleep?: boolean;
   userData?: unknown;
 }
@@ -170,6 +174,14 @@ export interface PhysicsBackend {
   setVelocity(handle: BodyHandle, velocity: PhysicsVec3): void;
   setAngularVelocity(handle: BodyHandle, angularVelocity: PhysicsVec3): void;
   applyImpulse(handle: BodyHandle, impulse: PhysicsVec3, point?: PhysicsVec3): void;
+  /**
+   * Apply a world-space force, N, over the next {@link step} only (thrust, wind, buoyancy, a tow rope). Call it
+   * every tick the force should act. A `point` off the centre of mass also applies torque on rotation backends.
+   * Pending forces are not part of a snapshot.
+   */
+  applyForce(handle: BodyHandle, force: PhysicsVec3, point?: PhysicsVec3): void;
+  /** Apply a world-space torque, N·m, over the next {@link step} only; a no-op on rotation-free backends. */
+  applyTorque(handle: BodyHandle, torque: PhysicsVec3): void;
   /** Move a kinematic body so the solver sees its velocity over the next step (platforms, doors, hands). */
   setKinematicTarget(handle: BodyHandle, position: PhysicsVec3, rotation?: PhysicsQuat): void;
   wake(handle: BodyHandle): void;

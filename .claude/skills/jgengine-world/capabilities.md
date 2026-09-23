@@ -707,6 +707,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `setTouchControlsMode` (function) · `import { setTouchControlsMode } from "@jgengine/core/input/touchControlsMode"`
 - `touchButtonShape` (function) · `import { touchButtonShape } from "@jgengine/core/input/touchScheme"`
 
+## vehicle-backend-link — collide a vehicle sim with a physics backend — shove props, stop at walls, slide along them
+
+- `createVehicleBackendLink` (function) · `import { createVehicleBackendLink } from "@jgengine/core/physics/vehicleBackendLink"`
+
 ## vehicle-dynamics — force-based car handling — tires, load transfer, drivetrain, assists — tuned with physical numbers
 
 - `createVehicleDynamics` (function) · `import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics"`

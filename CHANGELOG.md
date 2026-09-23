@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `PhysicsBackend.applyForce(handle, force, point?)` and `applyTorque(handle, torque)` act over the next step, and `BodyDesc.linearDamping`/`angularDamping` set damping per body. Both are implemented on `PhysicsWorld` (translation only) and Rapier, and covered by the conformance suite. `createVehicleBackendLink` (`@jgengine/core/physics/vehicleBackendLink`) collides a vehicle sim with a backend world: a kinematic chassis shoves props, `clampMove` stops the car at walls and slides it along them, and `lastHit()` reports the impact.
 - `measureCourse` (`@jgengine/core/physics/handlingProbe`): understeer gradient (deg/g), skidpad g at a set radius, and the fastest clean slalom, from simple deterministic drivers. `measureHandling` adds `handbrakeRecoverySeconds`.
 - `createWeaponHandling` (`@jgengine/core/combat/weaponHandling`): weapon feel as serializable state.
   - Recoil: a per-shot `pattern` or flat `pitch`, a random cone from an injected `random`, a `cameraShare` split between view punch and aim, `recoverRate`/`recoverDelay`, and `adsScale`.
@@ -52,6 +53,7 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- `@jgengine/rapier`: a body created with `mass` now weighs exactly that. It used to add `mass` on top of the collider's density-derived mass, so a 2 kg sphere of radius 0.5 weighed 2.52 kg, and every force, impulse and joint on a massed body was off by the collider's volume.
 - `createVehicleDynamics` with `suspension` spawned and reset level even on a slope. The wheels started buried, so the springs fired the car into the air and it tumbled. It now fits pitch, roll and height to the terrain under its four wheels.
 - A sky authored in the scene document (`editor.scene.json` `environment`, written by the editor lighting workspace) now renders in `place()` worlds. `defineGame` never passed `skyFromDocument(editorLayers)` to the renderer, so those edits were silently dropped. A game's own `backdrop.sky` still wins, and a document holding only point lights leaves the world sky alone (#1762).
 - `jgengine create --scene starter` placed its props and goal behind the spawn, so the first frame showed empty ground and W walked away from the goal. The starter scene now sits ahead of the default +Z facing.
