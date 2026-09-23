@@ -124,6 +124,64 @@ export interface AircraftRotorTuning {
   tail?: { maxThrust: number; at: AircraftVector; sideDamping?: number };
 }
 
+/** What an assist sees each substep, derived from the integrator state so it replays deterministically. */
+export interface AircraftAssistContext {
+  /** Substep, s. */
+  dt: number;
+  airspeed: number;
+  angleOfAttack: number;
+  heading: number;
+  pitch: number;
+  bank: number;
+  /** Body rates, rad/s: positive nose up, nose right, right roll. */
+  pitchRate: number;
+  yawRate: number;
+  rollRate: number;
+  /** World velocity, m/s. */
+  velocity: AircraftVector;
+  /** Horizontal velocity in the heading frame, m/s: `forward` along the nose, `right` to the right. */
+  forward: number;
+  right: number;
+  /** Load factor estimate from pitch rate and attitude, g. */
+  gLoad: number;
+  heightAboveGround: number;
+  /** The pilot's input this tick. */
+  pilot: RigidAircraftInput;
+}
+
+/** Control commands, `-1..1`, that drive the actuators after the assists. */
+export interface AircraftAssistCommand {
+  pitch: number;
+  roll: number;
+  yaw: number;
+}
+
+/**
+ * Flight assists. Each one moves the same actuators the pilot does, so a stronger assist still flies within the
+ * airframe's authority. Strengths are `0..1`; an axis the pilot is deflecting gets less help the further the stick is
+ * pushed, so full stick is always the pilot's.
+ */
+export interface AircraftAssistTuning {
+  /**
+   * Stability augmentation per axis, `0..1`: opposes body rate and, while that axis is hands-off, holds the attitude
+   * or heading it had when the pilot let go, learning the trim it needs. On a helicopter, `yaw` holds heading against
+   * rotor torque. Where `autoLevel` or `hoverHold` flies pitch and roll, SAS only damps their rates.
+   */
+  sas?: { pitch?: number; roll?: number; yaw?: number };
+  /** Body rate at which SAS asks for full control, rad/s (default `0.5`); lower is firmer. */
+  sasRate?: number;
+  /** Hands-off, flies the wings level and the nose to the horizon, `0..1`. */
+  autoLevel?: number;
+  /** Largest angle of attack the pitch command may ask for, rad. */
+  maxAngleOfAttack?: number;
+  /** Largest load factor the pitch command may ask for, g. */
+  maxG?: number;
+  /** Hands-off cyclic flies the helicopter to a stop over the ground, `0..1`: velocity to attitude to rate. */
+  hoverHold?: number;
+  /** Runs after the built-in assists and returns the command the actuators get; replace or blend any policy here. */
+  policy?: (context: AircraftAssistContext, command: AircraftAssistCommand) => AircraftAssistCommand;
+}
+
 /**
  * A rigid aircraft in physical units. There is no aircraft type: a jet, a glider and a paper plane differ only in these
  * numbers. Rotation comes from surface forces acting on the inertia tensor, so loops, rolls, stalls and weathervaning
@@ -138,6 +196,7 @@ export interface RigidAircraftTuning {
   engine?: AircraftEngineTuning;
   rotor?: AircraftRotorTuning;
   motor?: AircraftMotorTuning;
+  assists?: AircraftAssistTuning;
   /** Actuators per channel; each channel defaults to `{ maxDeflection: 0.35, rate: 2 }`. */
   controls?: { pitch?: AircraftControlChannel; roll?: AircraftControlChannel; yaw?: AircraftControlChannel };
   /** Fuselage drag coefficient × frontal area, m² (default `0`). */
@@ -219,6 +278,17 @@ export interface RigidAircraftState {
   burnTime: number;
   /** Propellant left, kg. */
   propellantKg: number;
+  /** SAS hold per axis: body-angle change since that axis went hands-off, rad. */
+  holdPitch: number;
+  holdRoll: number;
+  holdYaw: number;
+  /** SAS trim per axis: the steady command it learned to hold against (rotor torque, an out-of-trim wing), rad/s. */
+  trimPitch: number;
+  trimRoll: number;
+  trimYaw: number;
+  /** Hover hold: world drift since the cyclic went hands-off, m. */
+  driftX: number;
+  driftZ: number;
   time: number;
 }
 
@@ -256,6 +326,10 @@ export interface RigidAircraftStep {
   grounded: boolean;
   /** Total mass including propellant, kg. */
   massKg: number;
+  /** The command the actuators got after assists, `-1..1`; equals the pilot's input without assists. */
+  command: AircraftAssistCommand;
+  /** The AoA or g limiter cut the pitch command this tick. */
+  limited: boolean;
   /** Motor telemetry; absent without a `motor` block. */
   motor?: {
     /** Motor thrust this tick, N. */
@@ -413,6 +487,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
   const telemetry = { airspeed: 0, alpha: 0, sideslip: 0, gLoad: 1, stallFraction: 0, stalled: false, thrust: 0, grounded: false };
   const rotorTelemetry = { thrust: 0, torque: 0, groundEffect: 1, translationalLift: 1 };
   const motorTelemetry = { thrust: 0 };
+  const lastCommand: AircraftAssistCommand = { pitch: 0, roll: 0, yaw: 0 };
+  let limited = false;
 
   function largestSurface(list: readonly PreparedSurface[]): number {
     let best = -1;
@@ -444,6 +520,14 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       rotorSpeed: 0,
       burnTime: 0,
       propellantKg: tuning.motor?.propellantKg ?? 0,
+      holdPitch: 0,
+      holdRoll: 0,
+      holdYaw: 0,
+      trimPitch: 0,
+      trimRoll: 0,
+      trimYaw: 0,
+      driftX: 0,
+      driftZ: 0,
       time: 0,
     };
   }
@@ -481,9 +565,6 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     const pitchCh = controls?.pitch;
     const rollCh = controls?.roll;
     const yawCh = controls?.yaw;
-    state.pitchDeflection = slew(state.pitchDeflection, clamp1(input.pitch) * (pitchCh?.maxDeflection ?? 0.35), pitchCh?.rate ?? 2, h);
-    state.rollDeflection = slew(state.rollDeflection, clamp1(input.roll) * (rollCh?.maxDeflection ?? 0.35), rollCh?.rate ?? 2, h);
-    state.yawDeflection = slew(state.yawDeflection, clamp1(input.yaw) * (yawCh?.maxDeflection ?? 0.35), yawCh?.rate ?? 2, h);
     const engine = t.engine;
     const throttle = Math.max(0, Math.min(1, input.throttle));
     state.spool += (throttle - state.spool) * (1 - Math.exp(-(engine?.spoolRate ?? 1.5) * h));
@@ -501,6 +582,13 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     const bx = out[0]!;
     const by = out[1]!;
     const bz = out[2]!;
+    const command = t.assists === undefined ? pilotCommand(input) : assist(t.assists, input, h, bx, by, bz);
+    lastCommand.pitch = command.pitch;
+    lastCommand.roll = command.roll;
+    lastCommand.yaw = command.yaw;
+    state.pitchDeflection = slew(state.pitchDeflection, command.pitch * (pitchCh?.maxDeflection ?? 0.35), pitchCh?.rate ?? 2, h);
+    state.rollDeflection = slew(state.rollDeflection, command.roll * (rollCh?.maxDeflection ?? 0.35), rollCh?.rate ?? 2, h);
+    state.yawDeflection = slew(state.yawDeflection, command.yaw * (yawCh?.maxDeflection ?? 0.35), yawCh?.rate ?? 2, h);
     const rho = densityAt(state.y);
     const { wx, wy, wz } = state;
     const liftScale = modifiers?.liftScale ?? 1;
@@ -760,6 +848,122 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     state.time += h;
   }
 
+  function pilotCommand(input: RigidAircraftInput): AircraftAssistCommand {
+    limited = false;
+    return { pitch: clamp1(input.pitch), roll: clamp1(input.roll), yaw: clamp1(input.yaw) };
+  }
+
+  function assist(a: AircraftAssistTuning, input: RigidAircraftInput, h: number, bx: number, by: number, bz: number): AircraftAssistCommand {
+    const pilot = pilotCommand(input);
+    const attitude = attitudeOf(state);
+    const q = -state.wx;
+    const r = -state.wy;
+    const p = state.wz;
+    const airspeed = Math.hypot(bx, by, bz);
+    const alpha = airspeed > 1 ? Math.atan2(-by, bz) : 0;
+    const g0 = 9.81;
+    const gLoad = (airspeed * q) / g0 + Math.cos(attitude.pitch) * Math.cos(attitude.bank);
+    const hands = { pitch: 1 - Math.abs(pilot.pitch), roll: 1 - Math.abs(pilot.roll), yaw: 1 - Math.abs(pilot.yaw) };
+    const command = { ...pilot };
+
+    const level = a.autoLevel ?? 0;
+    const hover = a.hoverHold ?? 0;
+    const sas = a.sas;
+    if (sas !== undefined) {
+      const full = Math.max(1e-3, a.sasRate ?? 0.5);
+      const holdsAttitude = level === 0 && hover === 0;
+      // Hands-off, SAS is a PID on body angle: rate (D), angle since release (P) and a learned trim (I).
+      const axis = (strength: number | undefined, stick: number, handsFree: number, rate: number, hold: number, trim: number, holds: boolean) => {
+        const k = strength ?? 0;
+        const active = Math.abs(stick) > 0.05;
+        const nextHold = active || !holds ? 0 : hold + rate * h;
+        const nextTrim = active || !holds || k === 0 ? trim : trim + nextHold * 0.5 * h;
+        return { hold: nextHold, trim: nextTrim, command: -(k * handsFree * (rate + nextHold + nextTrim)) / full };
+      };
+      const pitchAxis = axis(sas.pitch, pilot.pitch, hands.pitch, q, state.holdPitch, state.trimPitch, holdsAttitude);
+      const rollAxis = axis(sas.roll, pilot.roll, hands.roll, p, state.holdRoll, state.trimRoll, holdsAttitude);
+      const yawAxis = axis(sas.yaw, pilot.yaw, hands.yaw, r, state.holdYaw, state.trimYaw, true);
+      state.holdPitch = pitchAxis.hold;
+      state.trimPitch = pitchAxis.trim;
+      state.holdRoll = rollAxis.hold;
+      state.trimRoll = rollAxis.trim;
+      state.holdYaw = yawAxis.hold;
+      state.trimYaw = yawAxis.trim;
+      command.pitch += pitchAxis.command;
+      command.roll += rollAxis.command;
+      command.yaw += yawAxis.command;
+    }
+
+    if (level > 0) {
+      command.roll -= (level * hands.roll * (attitude.bank + 0.5 * p)) / 0.5;
+      command.pitch -= (level * hands.pitch * (attitude.pitch + 0.5 * q)) / 0.5;
+    }
+
+    const hfx = Math.sin(attitude.heading);
+    const hfz = Math.cos(attitude.heading);
+    const forward = state.vx * hfx + state.vz * hfz;
+    const right = -state.vx * hfz + state.vz * hfx;
+    if (hover > 0) {
+      const cyclicFree = Math.abs(pilot.pitch) <= 0.05 && Math.abs(pilot.roll) <= 0.05;
+      state.driftX = cyclicFree ? state.driftX + state.vx * h : 0;
+      state.driftZ = cyclicFree ? state.driftZ + state.vz * h : 0;
+      const driftForward = state.driftX * hfx + state.driftZ * hfz;
+      const driftRight = -state.driftX * hfz + state.driftZ * hfx;
+      // Position → velocity → attitude → rate: tilt against drift plus distance moved, capped at 0.25 rad.
+      const pitchTarget = Math.max(-0.25, Math.min(0.25, 0.05 * (forward + 0.3 * driftForward)));
+      const bankTarget = Math.max(-0.25, Math.min(0.25, -0.05 * (right + 0.3 * driftRight)));
+      command.pitch += hover * hands.pitch * (4 * (pitchTarget - attitude.pitch) - q);
+      command.roll += hover * hands.roll * (4 * (bankTarget - attitude.bank) - p);
+    }
+
+    limited = false;
+    if (a.maxAngleOfAttack !== undefined && airspeed > 1) {
+      // Lead the limit by where the pitch rate is taking the angle of attack.
+      const predicted = alpha + 0.1 * q;
+      const ceiling = (a.maxAngleOfAttack - predicted) / 0.1;
+      const floor = (-a.maxAngleOfAttack - predicted) / 0.1;
+      if (command.pitch > ceiling || command.pitch < floor) limited = true;
+      command.pitch = Math.max(floor, Math.min(ceiling, command.pitch));
+    }
+    if (a.maxG !== undefined) {
+      const ceiling = a.maxG - gLoad;
+      if (command.pitch > ceiling) {
+        command.pitch = ceiling;
+        limited = true;
+      }
+    }
+
+    if (a.policy !== undefined) {
+      const out = a.policy(
+        {
+          dt: h,
+          airspeed,
+          angleOfAttack: alpha,
+          heading: attitude.heading,
+          pitch: attitude.pitch,
+          bank: attitude.bank,
+          pitchRate: q,
+          yawRate: r,
+          rollRate: p,
+          velocity: [state.vx, state.vy, state.vz],
+          forward,
+          right,
+          gLoad,
+          heightAboveGround: state.y - groundAt(state.x, state.z),
+          pilot: input,
+        },
+        command,
+      );
+      command.pitch = out.pitch;
+      command.roll = out.roll;
+      command.yaw = out.yaw;
+    }
+    command.pitch = clamp1(command.pitch);
+    command.roll = clamp1(command.roll);
+    command.yaw = clamp1(command.yaw);
+    return command;
+  }
+
   function integrateOrientation(h: number): void {
     const { qx, qy, qz, qw, wx, wy, wz } = state;
     // q̇ = ½ q ⊗ (ω, 0) with ω in the body frame.
@@ -809,6 +1013,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       deflection: { pitch: state.pitchDeflection, roll: state.rollDeflection, yaw: state.yawDeflection },
       grounded: telemetry.grounded,
       massKg: tuning.massKg + (tuning.motor === undefined ? 0 : state.propellantKg),
+      command: { ...lastCommand },
+      limited,
       ...(tuning.motor === undefined
         ? {}
         : {

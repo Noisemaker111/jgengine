@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { aircraftAttitudeQuaternion, createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics";
 
-import { flightDemoBooster, flightDemoHelicopter, flightDemoHover, flightDemoPlane, flightDemoSpawn, flightDemoUpperStage } from "./flightTuning";
+import { flightDemoBooster, flightDemoHelicopter, flightDemoHelicopterAssists, flightDemoHover, flightDemoPlaneAssists, flightDemoPlane, flightDemoSpawn, flightDemoUpperStage } from "./flightTuning";
 
 const DT = 1 / 60;
 
@@ -39,6 +39,15 @@ describe("flight demo plane", () => {
   });
 });
 
+describe("flight demo plane assists", () => {
+  test("level a banked plane hands-off", () => {
+    const plane = createRigidAircraft({ ...flightDemoPlane, assists: flightDemoPlaneAssists }, { ...flightDemoSpawn, orientation: aircraftAttitudeQuaternion(0, 0, 1) });
+    let step = plane.tick(DT, { throttle: 0.35, pitch: 0, roll: 0, yaw: 0 });
+    for (let i = 0; i < Math.round(5 / DT); i += 1) step = plane.tick(DT, { throttle: 0.35, pitch: 0, roll: 0, yaw: 0 });
+    expect(Math.abs(step.bank)).toBeLessThan(0.05);
+  });
+});
+
 describe("flight demo helicopter", () => {
   function hover(pedal: number, seconds: number) {
     const heli = createRigidAircraft(flightDemoHelicopter, { position: [0, 40, 0] });
@@ -50,6 +59,15 @@ describe("flight demo helicopter", () => {
 
   test("hovers on its hover collective", () => {
     expect(Math.abs(hover(flightDemoHover.pedal, 2).velocity[1])).toBeLessThan(0.3);
+  });
+
+  test("with assists on it holds heading and position with the pedals and cyclic hands-off", () => {
+    const heli = createRigidAircraft({ ...flightDemoHelicopter, assists: flightDemoHelicopterAssists }, { position: [0, 40, 0] });
+    heli.restore({ ...heli.snapshot(), rotorSpeed: 1 });
+    let step = heli.tick(DT, { throttle: 1, collective: flightDemoHover.collective, pitch: 0, roll: 0, yaw: 0 });
+    for (let i = 0; i < Math.round(8 / DT); i += 1) step = heli.tick(DT, { throttle: 1, collective: flightDemoHover.collective, pitch: 0, roll: 0, yaw: 0 });
+    expect(Math.abs(step.heading)).toBeLessThan(0.1);
+    expect(Math.hypot(step.velocity[0], step.velocity[2])).toBeLessThan(0.5);
   });
 
   test("needs pedal to hold heading", () => {

@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test";
 
 import {
   aircraftAttitudeQuaternion,
+  type AircraftAssistCommand,
+  type AircraftAssistContext,
   createRigidAircraft,
   type RigidAircraft,
   type RigidAircraftInput,
@@ -388,5 +390,93 @@ describe("createRigidAircraft motor", () => {
     const b = fly(aircraft, 2, burn({ pitch: 0.4, yaw: -0.2 }));
     expect(b.position).toEqual(a.position);
     expect(b.motor).toEqual(a.motor);
+  });
+});
+
+describe("createRigidAircraft assists", () => {
+  const strongTail: RigidAircraftTuning = { ...jet, surfaces: jet.surfaces.map((s, i) => (i === 2 ? { ...s, control: { pitch: 1.5 } } : s)) };
+
+  function hoverFor(tuning: RigidAircraftTuning, seconds: number) {
+    return fly(spunUp(tuning, [0, 50, 0]), seconds, hover({ yaw: 0 }));
+  }
+
+  test("yaw SAS holds a helicopter's heading against rotor torque with no pedal", () => {
+    const free = hoverFor(helicopter, 10);
+    const held = hoverFor({ ...helicopter, assists: { sas: { yaw: 1 } } }, 10);
+    expect(Math.abs(free.heading) * DEG).toBeGreaterThan(60);
+    expect(Math.abs(held.heading) * DEG).toBeLessThan(5);
+    expect(held.command.yaw).toBeGreaterThan(0.2);
+  });
+
+  test("hover hold stops the drift that the tail rotor pushes it into", () => {
+    const loose = hoverFor({ ...helicopter, assists: { sas: { yaw: 1 } } }, 10);
+    const held = hoverFor({ ...helicopter, assists: { sas: { pitch: 1, roll: 1, yaw: 1 }, hoverHold: 1 } }, 10);
+    expect(Math.hypot(loose.velocity[0], loose.velocity[2])).toBeGreaterThan(2);
+    expect(Math.hypot(held.velocity[0], held.velocity[2])).toBeLessThan(0.5);
+    expect(Math.hypot(held.position[0], held.position[2])).toBeLessThan(8);
+  });
+
+  test("auto-level rolls the wings level hands-off", () => {
+    const banked = (assists?: RigidAircraftTuning["assists"]) =>
+      fly(createRigidAircraft({ ...jet, assists }, { position: [0, 2000, 0], velocity: [0, 0, 180], orientation: aircraftAttitudeQuaternion(0, 0.1, 1) }), 5, input({}));
+    expect(Math.abs(banked().bank) * DEG).toBeGreaterThan(30);
+    const levelled = banked({ autoLevel: 1 });
+    expect(Math.abs(levelled.bank) * DEG).toBeLessThan(2);
+    expect(Math.abs(levelled.pitch) * DEG).toBeLessThan(2);
+  });
+
+  test("the AoA limiter keeps full back-stick under its limit", () => {
+    const pull = (tuning: RigidAircraftTuning) => {
+      let peak = 0;
+      let limited = false;
+      fly(createRigidAircraft(tuning, { position: [0, 2000, 0], velocity: [0, 0, 200] }), 10, input({ throttle: 1, pitch: 1 }), (s) => {
+        peak = Math.max(peak, s.angleOfAttack);
+        limited ||= s.limited;
+      });
+      return { peak, limited };
+    };
+    expect(pull(strongTail).peak).toBeGreaterThan(0.3);
+    const capped = pull({ ...strongTail, assists: { maxAngleOfAttack: 0.2 } });
+    expect(capped.peak).toBeLessThan(0.2);
+    expect(capped.peak).toBeGreaterThan(0.15);
+    expect(capped.limited).toBe(true);
+  });
+
+  test("the g limiter caps the pull", () => {
+    let peak = 0;
+    fly(createRigidAircraft({ ...strongTail, assists: { maxG: 4 } }, { position: [0, 2000, 0], velocity: [0, 0, 200] }), 10, input({ throttle: 1, pitch: 1 }), (s) => {
+      peak = Math.max(peak, s.gLoad);
+    });
+    expect(peak).toBeLessThan(4.2);
+    expect(peak).toBeGreaterThan(3.5);
+  });
+
+  test("full stick is the pilot's: SAS doesn't slow a full-aileron roll", () => {
+    const rate = (assists?: RigidAircraftTuning["assists"]) => fly(createRigidAircraft({ ...jet, assists }, { position: [0, 2000, 0], velocity: [0, 0, 180] }), 1.5, input({ roll: 1 })).rollRate;
+    expect(rate({ sas: { roll: 1, pitch: 1, yaw: 1 } })).toBeCloseTo(rate(), 1);
+  });
+
+  test("a policy callback sees the flight state and has the last word", () => {
+    let seen = 0;
+    const policy = (context: AircraftAssistContext, command: AircraftAssistCommand): AircraftAssistCommand => {
+      seen = context.airspeed;
+      return { ...command, pitch: 1 };
+    };
+    const step = fly(createRigidAircraft({ ...jet, assists: { policy } }, { position: [0, 2000, 0], velocity: [0, 0, 180] }), 1, input({}));
+    expect(seen).toBeGreaterThan(150);
+    expect(step.command.pitch).toBe(1);
+    expect(step.pitchRate).toBeGreaterThan(0.1);
+  });
+
+  test("assist state is part of the snapshot and replays bit-for-bit", () => {
+    const aircraft = spunUp({ ...helicopter, assists: { sas: { pitch: 1, roll: 1, yaw: 1 }, hoverHold: 1 } }, [0, 50, 0]);
+    fly(aircraft, 3, hover({ yaw: 0 }));
+    const saved = aircraft.snapshot();
+    expect(saved.trimYaw).not.toBe(0);
+    const a = fly(aircraft, 3, hover({ yaw: 0 }));
+    aircraft.restore(saved);
+    const b = fly(aircraft, 3, hover({ yaw: 0 }));
+    expect(b.position).toEqual(a.position);
+    expect(b.command).toEqual(a.command);
   });
 });

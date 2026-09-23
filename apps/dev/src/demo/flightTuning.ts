@@ -1,4 +1,4 @@
-import type { RigidAircraftTuning } from "@jgengine/core/physics/aircraftDynamics";
+import type { AircraftAssistTuning, RigidAircraftTuning } from "@jgengine/core/physics/aircraftDynamics";
 
 // A 950 kg aerobatic monoplane: a short-coupled tail and big ailerons, so it loops in about ten seconds
 // and rolls at a few hundred degrees a second. Wing incidence trims it level near 80 m/s at a third throttle.
@@ -69,3 +69,9 @@ export const flightDemoBooster: RigidAircraftTuning = {
   dragArea: 0.12,
   gear: { height: 4, maxPitch: Math.PI / 2 },
 };
+
+/** What T switches on in the demo: light SAS, auto-level and a 6 g limit for the plane. */
+export const flightDemoPlaneAssists: AircraftAssistTuning = { sas: { pitch: 0.5, roll: 0.5, yaw: 0.5 }, autoLevel: 0.6, maxG: 6 };
+
+/** Full SAS with heading hold and hover hold for the helicopter. */
+export const flightDemoHelicopterAssists: AircraftAssistTuning = { sas: { pitch: 1, roll: 1, yaw: 1 }, hoverHold: 1 };
