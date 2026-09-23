@@ -37,10 +37,8 @@ import type { PointerConfig } from "@jgengine/core/game/playableGame";
 import { CAMERA_FRUSTUM_DEFAULTS } from "@jgengine/core/game/playableGame";
 import { pixelPerfectFrustum, snapPixelPerfectPosition } from "@jgengine/core/game/pixelPerfect";
 import type { GameSettingsConfig } from "@jgengine/core/settings/settingsModel";
-import type { GraphicsProfile } from "@jgengine/core/settings/graphicsProfile";
 import {
   BUILT_IN_SETTING_CATEGORIES,
-  type GraphicsQuality,
   type SettingsStore,
 } from "@jgengine/core/settings/settingsModel";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
@@ -86,7 +84,10 @@ import type { AuthoritativeFrameHandler } from "./worldSync";
 import { TouchControlsDock, TouchPlaySurface, touchDockClearance, type TouchCodeSink } from "./touch/TouchControlsOverlay";
 import { SettingsRuntime } from "./settings/SettingsRuntime";
 import { SettingsChrome } from "./settings/SettingsChrome";
-import { AudioSettingsBridge } from "./settings/appliedSettings";
+import { AudioSettingsBridge, type AppliedGraphicsSettings } from "./settings/appliedSettings";
+import { TextureFiltering } from "./render/TextureFiltering";
+import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
+import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
@@ -190,7 +191,7 @@ export function Shell3dPresentation({
   orientationGateEl: React.ReactNode;
   coarsePointer: boolean;
   compact: boolean;
-  graphics: { shadows: boolean; dpr: number; uiScale: number; quality: GraphicsQuality; profile: GraphicsProfile };
+  graphics: AppliedGraphicsSettings;
   settingsStore: SettingsStore;
   bindingOverrides: BindingOverrides;
   rebindAction: (action: string, code: string) => void;
@@ -210,6 +211,7 @@ export function Shell3dPresentation({
 }) {
   const GameUI = playable.GameUI;
   const ktx2SupportDetected = useRef(false);
+  const frameTally = useRef<FrameTally>({ frames: 0 }).current;
   const WorldOverlay = playable.WorldOverlay;
   const pointerService = useMemo(() => createPointerService(), []);
   const selection = useMemo(() => createSelectionSet(), [playable]);
@@ -509,7 +511,7 @@ export function Shell3dPresentation({
                   ktx2SupportDetected.current = true;
                   detectKtx2Support(gl);
                 }}
-                frameloop={poster && posterFrozen ? "demand" : "always"}
+                frameloop={poster && posterFrozen ? "demand" : graphics.frameRateLimit > 0 && !poster ? "never" : "always"}
                 orthographic={orthographic}
                 camera={
                   orthographic
@@ -526,9 +528,12 @@ export function Shell3dPresentation({
                 }
                 shadows={graphics.shadows}
                 dpr={[Math.min(1, graphics.dpr), graphics.dpr]}
-                gl={{ preserveDrawingBuffer: true }}
+                gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance" }}
                 style={{ touchAction: "none" }}
               >
+                <TextureFiltering anisotropy={graphics.profile.anisotropy} />
+                {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
+                {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}
                 {orthographic && playable.camera?.pixelPerfect !== undefined ? (
                   <PixelPerfectCamera {...playable.camera.pixelPerfect} />
                 ) : null}
@@ -661,6 +666,7 @@ export function Shell3dPresentation({
                   <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} />
                 ) : null}
               </Canvas>
+              {graphics.showFps && !poster ? <FpsCounter tally={frameTally} /> : null}
               {!poster &&
               !orientationGate &&
               coarsePointer &&

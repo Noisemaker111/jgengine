@@ -7,6 +7,8 @@ export interface GraphicsProfile {
   cascades: 1 | 2 | 3 | 4;
   drawDistance: number;
   particleCap: number;
+  /** Anisotropic texture filtering samples; clamped to the GPU maximum. 1 is plain trilinear. */
+  anisotropy: 1 | 2 | 4 | 8 | 16;
   postStages: { ao: boolean; bloom: boolean; dof: boolean; smaa: boolean };
 }
 
@@ -18,6 +20,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     cascades: 1,
     drawDistance: 120,
     particleCap: 128,
+    anisotropy: 2,
     postStages: { ao: false, bloom: true, dof: false, smaa: true },
   },
   medium: {
@@ -26,6 +29,7 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     cascades: 2,
     drawDistance: 240,
     particleCap: 256,
+    anisotropy: 4,
     postStages: { ao: true, bloom: true, dof: true, smaa: true },
   },
   high: {
@@ -34,6 +38,16 @@ export const DEFAULT_GRAPHICS_PROFILES: Record<GraphicsQuality, GraphicsProfile>
     cascades: 4,
     drawDistance: 400,
     particleCap: 512,
+    anisotropy: 8,
+    postStages: { ao: true, bloom: true, dof: true, smaa: true },
+  },
+  ultra: {
+    renderScale: 2,
+    shadowMapSize: 4096,
+    cascades: 4,
+    drawDistance: 800,
+    particleCap: 1024,
+    anisotropy: 16,
     postStages: { ao: true, bloom: true, dof: true, smaa: true },
   },
 };

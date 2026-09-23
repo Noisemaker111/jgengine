@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 
-import { CINEMATIC_POST_PROCESSING, CINEMATIC_SKY, NEUTRAL_POST_PROCESSING, PHOTOREAL_POST_PROCESSING, TOON_POST_PROCESSING, resolveGameLook } from "./lookPreset";
+import { CINEMATIC_POST_PROCESSING, COMIC_POST_PROCESSING, RETRO_POST_PROCESSING, CINEMATIC_SKY, NEUTRAL_POST_PROCESSING, PHOTOREAL_POST_PROCESSING, TOON_POST_PROCESSING, resolveGameLook } from "./lookPreset";
 
 describe("resolveGameLook", () => {
   it("defaults to neutral without injecting a stylistic rig", () => {
@@ -23,6 +23,13 @@ describe("resolveGameLook", () => {
   it("selects the neutral and toon profiles exactly", () => {
     expect(resolveGameLook({ look: "neutral" }).postProcessing).toEqual(NEUTRAL_POST_PROCESSING);
     expect(resolveGameLook({ look: "toon" }).postProcessing).toEqual(TOON_POST_PROCESSING);
+  });
+
+  it("comic and retro select their stylized chains and a sky", () => {
+    const comic = resolveGameLook({ look: "comic" });
+    expect(comic.postProcessing).toEqual(COMIC_POST_PROCESSING);
+    expect(comic.backdrop?.sky).toEqual(CINEMATIC_SKY);
+    expect(resolveGameLook({ look: "retro" }).postProcessing).toEqual(RETRO_POST_PROCESSING);
   });
 
   it('flat opts out — passes explicit knobs through untouched and adds nothing', () => {

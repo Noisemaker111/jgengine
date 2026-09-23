@@ -56,7 +56,7 @@ function QuickSelect({ row }: { row: SettingsRow }) {
   return (
     <div className="flex items-center justify-between gap-2 text-xs text-neutral-300">
       <span className="truncate">{row.label}</span>
-      <div className="flex shrink-0 gap-1 rounded-md bg-neutral-950/60 p-0.5 ring-1 ring-white/10">
+      <div className="flex flex-wrap justify-end gap-1 rounded-md bg-neutral-950/60 p-0.5 ring-1 ring-white/10">
         {options.map((option) => {
           const selected = option.value === current;
           return (

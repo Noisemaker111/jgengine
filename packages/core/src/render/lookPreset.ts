@@ -7,12 +7,16 @@ import type { PostProcessingConfig } from "./postProcessing";
  * `"neutral"` (the default when unset) keeps presentation unstyled; `"cinematic"` draws a scene lit like a shipped game — a real day sky
  * with a view-following shadow-casting sun + hemisphere fill, a network-free image-based-lighting
  * environment so PBR surfaces catch soft reflections, and a tuned tone-map/bloom/AO/vignette post
- * stack. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773).
+ * stack. `"comic"` adds ink outlines and cel bands over a saturated grade (Borderlands-style);
+ * `"retro"` pixelates and posterizes the frame. `"flat"` opts out of the sky/IBL/post rig to the bare ambient+directional default (pre-#773).
  * The upgraded default primitive materials — tuned roughness/metalness plus subtle procedural surface
  * detail so un-modeled boxes/capsules stop reading as flat plastic — apply under both presets.
  * @capability default-look one field that lights a scene like a shipped game (opt out with "flat")
  */
-export type LookPreset = "neutral" | "photoreal" | "toon" | "cinematic" | "flat";
+export type LookPreset = "neutral" | "photoreal" | "toon" | "comic" | "retro" | "cinematic" | "flat";
+
+/** Every look preset name, for pickers and validating a preset read from a URL or file. */
+export const LOOK_PRESETS: readonly LookPreset[] = ["neutral", "photoreal", "cinematic", "toon", "comic", "retro", "flat"];
 
 /** Explicit graphics knobs a game may set; the preset only fills the ones left undefined. */
 export interface GameLookInput {
@@ -66,6 +70,35 @@ export const TOON_POST_PROCESSING: PostProcessingConfig = {
   grade: { saturation: 1.18, gamma: 1, vignette: 0, grain: 0 },
 };
 
+/** Ink outlines, four cel bands and a punchy grade — a hand-inked comic look on any model. */
+export const COMIC_POST_PROCESSING: PostProcessingConfig = {
+  toneMapping: "aces",
+  exposure: 1.05,
+  aa: "msaa",
+  bloom: { strength: 0.12, radius: 0.4, threshold: 1 },
+  ao: { intensity: 1, radius: 1.2 },
+  stylize: { outline: { thickness: 1.5 }, bands: 4 },
+  grade: { saturation: 1.3, gamma: 0.94, vignette: 0.15, grain: 0 },
+};
+
+/** Chunky pixels and posterized colour with no smoothing — a low-resolution retro look. */
+export const RETRO_POST_PROCESSING: PostProcessingConfig = {
+  toneMapping: "aces",
+  aa: false,
+  bloom: false,
+  ao: false,
+  stylize: { pixelSize: 3, bands: 6 },
+  grade: { saturation: 1.15, gamma: 1, vignette: 0, grain: 0 },
+};
+
+const PRESET_POST: Record<Exclude<LookPreset, "neutral" | "flat">, PostProcessingConfig> = {
+  photoreal: PHOTOREAL_POST_PROCESSING,
+  toon: TOON_POST_PROCESSING,
+  comic: COMIC_POST_PROCESSING,
+  retro: RETRO_POST_PROCESSING,
+  cinematic: CINEMATIC_POST_PROCESSING,
+};
+
 /**
  * Expand a game's `look` into concrete lighting/backdrop/post. The default is `"neutral"`;
  * `"flat"` passes the explicit knobs through untouched.
@@ -87,8 +120,6 @@ export function resolveGameLook(input: GameLookInput): ResolvedGameLook {
   return {
     lighting: input.lighting,
     backdrop,
-    postProcessing:
-      input.postProcessing ??
-      (look === "toon" ? TOON_POST_PROCESSING : look === "photoreal" ? PHOTOREAL_POST_PROCESSING : CINEMATIC_POST_PROCESSING),
+    postProcessing: input.postProcessing ?? PRESET_POST[look],
   };
 }

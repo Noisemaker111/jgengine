@@ -11,6 +11,7 @@ import type { PostProcessingConfig, ToneMappingMode } from "@jgengine/core/rende
 import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { createGradePass } from "./gradeShader";
+import { StylizePass } from "./stylizePass";
 import { hidePostfxOverlays, restorePostfxOverlays } from "./postfxOverlay";
 
 /**
@@ -88,7 +89,7 @@ function syncSize(built: BuiltGraph, width: number, height: number, pixelRatio: 
 /**
  * Mounts an `EffectComposer` inside the shell Canvas and takes over rendering
  * (priority-1 `useFrame`, which disables R3F auto-render) to run the configured
- * post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Grade. Rendered only
+ * post chain: RenderPass → GTAO → UnrealBloom → SMAA → OutputPass → Stylize → Grade. Rendered only
  * when `PlayableGame.postProcessing` is set, so games without it draw unchanged.
  *
  * `stages` (resolved from the player's graphics profile) controls expensive passes
@@ -158,6 +159,10 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
     }
 
     composer.addPass(new OutputPass());
+
+    if (config.stylize !== undefined && config.stylize !== false) {
+      composer.addPass(new StylizePass(scene, camera, config.stylize));
+    }
 
     let grade: ShaderPass | null = null;
     if (config.grade !== false) {
