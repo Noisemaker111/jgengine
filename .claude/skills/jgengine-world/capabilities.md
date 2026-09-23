@@ -265,6 +265,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
 
+## feedback-mixer — map sim telemetry to camera, audio and haptic parameters through curves, smoothing and threshold events
+
+- `createFeedbackMixer` (function) · `import { createFeedbackMixer } from "@jgengine/core/vfx/feedbackMixer"`
+
 ## flight-dynamics — simulate fixed-wing, helicopter, and VTOL aircraft
 
 - `createAircraftDynamics` (function) · `import { createAircraftDynamics } from "@jgengine/core/world"`

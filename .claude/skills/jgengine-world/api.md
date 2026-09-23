@@ -1708,6 +1708,17 @@
 - `HitInput` (interface): interface HitInput — A single incoming hit to register on a {@link DamageDirectionTracker}. The angle is relative to the player's facing (renderer-agnostic): `0` points at the front/top of the reticle and increases clockwise, so a game passes the bearing from the player toward the attacker without knowing anything about the screen.
 - `createDamageDirectionTracker` (function): function createDamageDirectionTracker(options: DamageDirectionOptions = {}): DamageDirectionTracker — Create a damage-direction tracker: the classic "hit-from" feedback brain. A game calls `registerHit({ angle, intensity, kind })` with the bearing from the player toward the attacker (radians, `0` = front) and the tracker owns the fade timers and eased strength so the renderer just draws an arc per `active()` entry. It is renderer-free and genre-agnostic (the `kind` tag is never interpreted here), allocation-aware (a fixed pool, no per-frame garbage), and fully serializable via `snapshot`/`restore`. Optional angle merging collapses a burst from one direction into a single strong arc.
 
+## @jgengine/core/vfx/feedbackMixer
+
+- `FeedbackCurve` (type): type FeedbackCurve = readonly (readonly [number, number])[] — Piecewise-linear map from a signal value to an output value; points in ascending input order, ends clamp.
+- `FeedbackEvent` (interface): interface FeedbackEvent<TSignal extends string> — A one-shot fired when a signal crosses a threshold (landing thud, gear-change clunk, impact rumble).
+- `FeedbackMixer` (interface): interface FeedbackMixer<TSignal extends string, TTarget extends string> — Maps sim telemetry to presentation parameters through declared routes, curves and smoothing.
+- `FeedbackMixerConfig` (interface): interface FeedbackMixerConfig<TSignal extends string, TTarget extends string> — Config for {@link createFeedbackMixer}.
+- `FeedbackMixerState` (interface): interface FeedbackMixerState — Serializable mixer state: smoothed route values, last signal per event, and event cooldowns.
+- `FeedbackRoute` (interface): interface FeedbackRoute<TSignal extends string, TTarget extends string> — One wire from a sim signal to a named output.
+- `createFeedbackMixer` (function): function createFeedbackMixer<TSignal extends string, TTarget extends string>(initial: FeedbackMixerConfig<TSignal, TTarget>): FeedbackMixer<TSignal, TTarget> — Creates a {@link FeedbackMixer}: the one place a game declares how sim telemetry drives presentation — rpm to engine pitch, tire saturation to squeal and rumble, speed to FOV, landing speed to a thud — instead of hand-writing that glue per vehicle, aircraft or weapon. Deterministic, allocation-free per update.
+- `sampleFeedbackCurve` (function): function sampleFeedbackCurve(curve: FeedbackCurve | undefined, x: number): number — Sample a {@link FeedbackCurve}; an empty curve is the identity.
+
 ## @jgengine/core/vfx/particleDirector
 
 - `ParticleAttachOptions` (interface): interface ParticleAttachOptions — Options for {@link ParticleDirector.attach}.
