@@ -26,6 +26,8 @@
    - "Planted" is `maxLateralG` close to the tire μ with `stepPeakSideslipDeg < 8`.
    - "Drifty but safe" is `handbrakePeakSideslipDeg` 40–70 with `spun === false`.
    - "Keyboard-friendly" is `spun` and `powerSteerSpun` both `false`, including at `cornerSpeed: 40`.
+   - "Neutral balance" is `measureCourse(...).understeerGradient` near 0–0.5 deg/g; "tail-happy" is below 0.
+   - "Agile" is a high `measureCourse(...).slalomSpeed`; "forgiving" is a short `handbrakeRecoverySeconds`.
 2. **Put those ranges in a test first**, next to the tuning.
 3. **Start from the real vehicle's physical numbers**: mass, wheelbase, weight split, CoM height, driven axle, torque and gears. Then move one knob at a time using the table below, rerunning the test after each change.
 4. **Drive it.**
@@ -37,6 +39,7 @@
 
 | Symptom | Knob (direction) |
 | --- | --- |
+| `understeerGradient` too high | front tire `peakSlipAngle` ↓ or rear ↑ (tire stiffness split is what moves it at moderate g) |
 | Pushes wide, won't turn in | `rollStiffnessFront` ↓, rear `peakGrip` ↓ relative to front, `yawInertiaIndex` ↓, `steering.rate` ↑ |
 | Snaps into oversteer | `rollStiffnessFront` ↑, rear `peakGrip` ↑, `slideGrip` ↑ (gentler breakaway), `assists.stability` ↑ |
 | Spins holding throttle and steer | `assists.tractionControl` ↑ (budgets for cornering grip), `driveFront` ↑, peak torque ↓ |

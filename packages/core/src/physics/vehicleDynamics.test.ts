@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { AxisInput } from "../input/axisInput";
 import { tickDrivableVehicle } from "./drivableVehicle";
-import { measureAir, measureHandling, measureRide } from "./handlingProbe";
+import { measureAir, measureCourse, measureHandling, measureRide } from "./handlingProbe";
 import {
   createVehicleDynamics,
   type VehicleDynamicsTuning,
@@ -443,5 +443,30 @@ describe("createVehicleDynamics — jumps and air control", () => {
       replica.tick(DT, axis({ throttle: 0.5 }), { air: air(i) });
     }
     expect(replica.snapshot()).toEqual(reference.snapshot());
+  });
+});
+
+describe("measureCourse and recovery", () => {
+  test("skidpad g sits near tire μ and the lighter, grippier car wins the slalom", () => {
+    const grip = measureCourse(() => createVehicleDynamics(gripRwd), { wheelbase: gripRwd.wheelbase });
+    const ball = measureCourse(() => createVehicleDynamics(ballCar), { wheelbase: ballCar.wheelbase });
+    expect(grip.skidpadG).toBeGreaterThan(0.95);
+    expect(grip.skidpadG).toBeLessThan(1.25);
+    expect(ball.skidpadG).toBeGreaterThan(grip.skidpadG + 0.3);
+    expect(ball.slalomSpeed).toBeGreaterThan(grip.slalomSpeed + 2);
+    expect(grip.slalomSpeed).toBeGreaterThan(8);
+  });
+
+  test("softer front tires understeer and softer rear tires oversteer", () => {
+    const soft = (peakSlipAngle: number) => ({ peakGrip: 1.1, peakSlipAngle, slideGrip: 0.75 });
+    const frontSoft = measureCourse(() => createVehicleDynamics({ ...gripRwd, front: soft(0.16), rear: soft(0.08) }), { wheelbase: 2.6 });
+    const rearSoft = measureCourse(() => createVehicleDynamics({ ...gripRwd, front: soft(0.08), rear: soft(0.16) }), { wheelbase: 2.6 });
+    expect(frontSoft.understeerGradient).toBeGreaterThan(0.5);
+    expect(rearSoft.understeerGradient).toBeLessThan(0);
+  });
+
+  test("caster and stability catch a handbrake slide that spins a bare RWD car", () => {
+    expect(measureHandling(() => createVehicleDynamics(forgivingStreet)).handbrakeRecoverySeconds).toBeLessThan(2);
+    expect(measureHandling(() => createVehicleDynamics(gripRwd)).handbrakeRecoverySeconds).toBe(Number.POSITIVE_INFINITY);
   });
 });

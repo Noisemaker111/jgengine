@@ -958,12 +958,16 @@
 
 - `AirReport` (interface): interface AirReport — Deterministic jump and air-control metrics.
 - `AirSubject` (interface): interface AirSubject — The slice of a jumping vehicle sim {@link measureAir} drives; a `VehicleDynamics` with `suspension`, `jump` and `air` fits.
+- `CourseProbeOptions` (interface): interface CourseProbeOptions — Settings for {@link measureCourse}; every field but `wheelbase` has a default.
+- `CourseReport` (interface): interface CourseReport — Deterministic driven-course metrics.
+- `CourseSubject` (interface): interface CourseSubject — A vehicle sim {@link measureCourse} can drive along a line: a {@link HandlingSubject} that also reports its pose and front-wheel angle.
 - `HandlingProbeOptions` (interface): interface HandlingProbeOptions — Scenario settings for {@link measureHandling}; every field has a default.
 - `HandlingReport` (interface): interface HandlingReport — Deterministic feel metrics, in the units drivers and reviewers use. `Infinity` means the target was never reached.
 - `HandlingSubject` (interface): interface HandlingSubject — The slice of a vehicle sim {@link measureHandling} drives: `VehicleDynamics` and `KinematicVehicle` both fit.
 - `RideReport` (interface): interface RideReport — Deterministic ride metrics for a sprung vehicle.
 - `RideSubject` (interface): interface RideSubject — The slice of a sprung vehicle sim {@link measureRide} drives; a `VehicleDynamics` with `suspension` fits.
 - `measureAir` (function): function measureAir(create: () => AirSubject, options: { dt?: number } = {}): AirReport — Jumps a fresh vehicle from rest and holds full air input on each axis, reporting jump height and timing, double-jump height, and how fast the body rotates in the air.
+- `measureCourse` (function): function measureCourse(create: () => CourseSubject, options: CourseProbeOptions): CourseReport — Drives a fresh vehicle from `create` through a steer ramp, a skidpad and a slalom with simple deterministic drivers, and reports understeer gradient, skidpad g and the fastest clean slalom.
 - `measureHandling` (function): function measureHandling(create: () => HandlingSubject, options: HandlingProbeOptions = {}): HandlingReport — Drives fresh instances from `create` through fixed scenarios (launch, top speed, braking, a slow steer ramp, a step steer, a mid-corner lift-off, a handbrake pull, full throttle with full steer) and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a tuning change shows up as a number moving, not an opinion.
 - `measureRide` (function): function measureRide(create: () => RideSubject, options: { dt?: number } = {}): RideReport — Drives fresh sprung vehicles from `create` through a vertical kick, a hard stop, a steady corner and a launch-and-land, and reports how the body moves: how fast it settles, how much it dives and rolls, and whether a landing bounces.
 

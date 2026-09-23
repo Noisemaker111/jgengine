@@ -201,6 +201,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createTimerSet` (function) · `import { createTimerSet } from "@jgengine/core/world"`
 
+## course-metrics — measure a vehicle on driven tests — understeer gradient, skidpad g, slalom speed
+
+- `measureCourse` (function) · `import { measureCourse } from "@jgengine/core/physics/handlingProbe"`
+
 ## crouch-prone — stance/pose transitions that change the hitbox
 
 - `createPoseState` (function) · `import { createPoseState } from "@jgengine/core/world"`

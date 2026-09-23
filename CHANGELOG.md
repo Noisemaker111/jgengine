@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `measureCourse` (`@jgengine/core/physics/handlingProbe`): understeer gradient (deg/g), skidpad g at a set radius, and the fastest clean slalom, from simple deterministic drivers. `measureHandling` adds `handbrakeRecoverySeconds`.
 - `createWeaponHandling` (`@jgengine/core/combat/weaponHandling`): weapon feel as serializable state.
   - Recoil: a per-shot `pattern` or flat `pitch`, a random cone from an injected `random`, a `cameraShare` split between view punch and aim, `recoverRate`/`recoverDelay`, and `adsScale`.
   - Spread: `base`, `perShot` bloom, `max`, recovery, and stance/ADS multipliers.
