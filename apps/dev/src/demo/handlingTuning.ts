@@ -33,6 +33,8 @@ export const handlingDemoTuning: VehicleDynamicsTuning = {
   assists: { abs: 1, tractionControl: 0.55, stability: 0.8, maxSideslip: 0.25 },
   aero: { dragArea: 0.68, downforceArea: 0.25 },
   suspension: { springRate: 34000, damperRate: 3400, travel: 0.16, rideHeight: 0.5, antiRoll: 32000 },
+  jump: { speed: 5.5 },
+  air: { pitchAccel: 6, yawAccel: 4, rollAccel: 6, damping: 2, maxRate: 2.5 },
 };
 
 const RAMP_START = 200;

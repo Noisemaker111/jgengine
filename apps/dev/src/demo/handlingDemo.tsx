@@ -72,9 +72,14 @@ function onTick(ctx: GameContext, dt: number): void {
   const state = ensureRun();
   const raw = ctx.input.axis(bindings, { throttle: pedal, brake: pedal, handbrake: pedal });
   const axis = state.shaper.shape(dt, raw, { analog: analogAxes(bindings, ctx.input.analog()) });
-  const drive = tickDrivableVehicle(state.car, dt, axis, { groundHeight: handlingDemoGround });
+  // Throttle keeps driving in the air here; only steer yaws the body, so a held W never noses the car down.
+  const drive = tickDrivableVehicle(state.car, dt, axis, {
+    groundHeight: handlingDemoGround,
+    modifiers: { air: { pitch: 0, yaw: axis.steer, roll: 0 } },
+  });
   state.last = drive.step;
   ctx.scene.entity.setPose(id, drive.pose);
+  if (ctx.input.justPressed("jump")) state.car.jump();
 
   const step = drive.step;
   const at = drive.pose.position;
@@ -202,7 +207,7 @@ function Telemetry() {
       <div className="tabular-nums">lat {(step.lateralAccel / 9.81).toFixed(2)} g · slip {((step.sideslip * 180) / Math.PI).toFixed(0)}°</div>
       <div className="mt-1 flex items-center gap-2">front {bar(step.frontSaturation)}</div>
       <div className="flex items-center gap-2">rear&nbsp; {bar(step.rearSaturation)}</div>
-      <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake</div>
+      <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump</div>
     </div>
   );
 }
@@ -219,6 +224,7 @@ const game = defineGame({
     steerLeft: ["KeyA", "ArrowLeft"],
     steerRight: ["KeyD", "ArrowRight"],
     handbrake: ["Space"],
+    jump: ["KeyJ"],
   },
   loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: onInit },
   camera: {

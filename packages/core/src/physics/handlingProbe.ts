@@ -324,3 +324,80 @@ export function measureRide(create: () => RideSubject, options: { dt?: number } 
 
   return { settleSeconds, heaveOvershoot, brakeDiveDeg, rollGradient, landingBounces };
 }
+
+/** The slice of a jumping vehicle sim {@link measureAir} drives; a `VehicleDynamics` with `suspension`, `jump` and `air` fits. */
+export interface AirSubject {
+  tick(
+    dt: number,
+    input: AxisInput,
+    modifiers?: { air?: { pitch: number; yaw: number; roll: number } },
+  ): { position: readonly [number, number, number]; airborne: boolean };
+  jump(): boolean;
+  snapshot(): { pitchRate: number; yawRate: number; rollRate: number };
+}
+
+/** Deterministic jump and air-control metrics. */
+export interface AirReport {
+  /** Peak height above the resting height after one standing jump, m. */
+  jumpApexHeight: number;
+  /** Seconds from the jump to that peak. */
+  jumpApexTime: number;
+  /** Peak height with a second jump pressed at the first jump's apex, m (equals `jumpApexHeight` without a double jump). */
+  doubleJumpApexHeight: number;
+  /** Angular rate reached after 0.4 s of full input in the air, rad/s, per axis. */
+  airPitchRate: number;
+  airYawRate: number;
+  airRollRate: number;
+}
+
+/**
+ * Jumps a fresh vehicle from rest and holds full air input on each axis, reporting jump height and timing,
+ * double-jump height, and how fast the body rotates in the air.
+ * @capability air-metrics measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates
+ */
+export function measureAir(create: () => AirSubject, options: { dt?: number } = {}): AirReport {
+  const dt = options.dt ?? 1 / 60;
+  const neutral = input(0, 0, 0);
+
+  const flight = (secondJumpAtApex: boolean) => {
+    const car = create();
+    const rest = car.tick(dt, neutral).position[1];
+    car.jump();
+    let apex = 0;
+    let apexTime = 0;
+    let rising = true;
+    let last = rest;
+    for (let i = 1; i <= Math.ceil(4 / dt); i += 1) {
+      const y = car.tick(dt, neutral).position[1];
+      if (rising && y < last) {
+        rising = false;
+        if (secondJumpAtApex) car.jump();
+      }
+      if (y - rest > apex) {
+        apex = y - rest;
+        apexTime = i * dt;
+      }
+      last = y;
+    }
+    return { apex, apexTime };
+  };
+  const single = flight(false);
+  const double = flight(true);
+
+  const rateAfter = (air: { pitch: number; yaw: number; roll: number }, key: "pitchRate" | "yawRate" | "rollRate") => {
+    const car = create();
+    car.tick(dt, neutral);
+    car.jump();
+    for (let i = 0; i < Math.ceil(0.4 / dt); i += 1) car.tick(dt, neutral, { air });
+    return Math.abs(car.snapshot()[key]);
+  };
+
+  return {
+    jumpApexHeight: single.apex,
+    jumpApexTime: single.apexTime,
+    doubleJumpApexHeight: double.apex,
+    airPitchRate: rateAfter({ pitch: 1, yaw: 0, roll: 0 }, "pitchRate"),
+    airYawRate: rateAfter({ pitch: 0, yaw: 1, roll: 0 }, "yawRate"),
+    airRollRate: rateAfter({ pitch: 0, yaw: 0, roll: 1 }, "rollRate"),
+  };
+}
