@@ -28,6 +28,11 @@ between (`--json` for structured output).
 
 ### Added
 
+- `RigidAircraftTuning.motor` makes `createRigidAircraft` a rocket.
+  - Thrust follows `thrustCurve` over burn time. `propellantKg` leaves at `massFlow`, so mass and inertia fall and acceleration rises through the burn. The nozzle `gimbal` steers on the pitch and yaw inputs.
+  - To stage, `retune` to the next stage: a new `motor` loads its propellant.
+  - The step reports `massKg` and `motor` telemetry. `RigidAircraftState` gains `burnTime` and `propellantKg`.
+  - Dev runner demo: `bun run drive flight-rocket`.
 - Jump shape on `movement.feel`: `jumpCutFactor` (releasing jump early cuts the rise, so a tap hops), `apexGravityScale`/`apexSpeed` (hang at the peak), `fallGravityScale` (drop faster than you rose) and `landingRecoveryMs`/`landingSpeedScale` (a short slowdown and jump lockout after landing). All default to no change. `measureMovement` adds `tapJumpHeight`. Dev runner demos `walk-floaty` and `walk-weighty` differ only in these fields (#1772).
 - `RigidAircraftTuning.rotor` turns `createRigidAircraft` into a helicopter: `input.collective` sets thrust, throttle spools the rotor, cyclic tilts the disc, and rotor drag torque yaws the body unless the `tail` rotor (pedal) cancels it. Thrust adds translational lift, drops while climbing through the disc, and grows in ground effect. The step reports `rotor` speed, thrust, torque, ground effect and translational lift. Dev runner demo: `bun run drive flight-heli`.
 - `snapshot()`/`restore(next)` on `createGlideModel`, `createLodScheduler`, `createSimulationCuller` and `createSpatialIndex`, and `restore(state)` on `createGrappleSwing`, so gliding, rope swings, LOD throttling and the spatial hash save, load and replay bit-exactly (#1775).

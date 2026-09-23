@@ -4,6 +4,7 @@ import * as THREE from "three";
 import type { AxisBinding } from "@jgengine/core/input/axisInput";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import {
+  aircraftAttitudeQuaternion,
   createRigidAircraft,
   type RigidAircraft,
   type RigidAircraftInput,
@@ -18,7 +19,7 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
-import { flightDemoHelicopter, flightDemoPlane, flightDemoSpawn } from "./flightTuning";
+import { flightDemoBooster, flightDemoHelicopter, flightDemoPlane, flightDemoSpawn, flightDemoUpperStage } from "./flightTuning";
 
 const PLANE = "plane";
 const TILE = 200;
@@ -35,14 +36,17 @@ const bindings: Record<StickAxis, AxisBinding> = {
 type StickSample = Record<StickAxis, number>;
 
 interface Craft {
-  kind: "plane" | "helicopter";
+  kind: "plane" | "helicopter" | "rocket";
   tuning: RigidAircraftTuning;
   spawn: RigidAircraftOptions & { position: readonly [number, number, number] };
   /** Starting lever position: throttle for the plane, collective for the helicopter. */
   lever: number;
   /** Turns the stick sample and lever into sim input. */
   input(stick: StickSample, lever: number): RigidAircraftInput;
+  /** Lever travel per second of a held key. */
+  leverRate: number;
   onSpawn?(aircraft: RigidAircraft): void;
+  afterTick?(run: FlightRun, step: RigidAircraftStep): void;
 }
 
 const PLANE_CRAFT: Craft = {
@@ -50,6 +54,7 @@ const PLANE_CRAFT: Craft = {
   tuning: flightDemoPlane,
   spawn: flightDemoSpawn,
   lever: 0.35,
+  leverRate: 0.8,
   input: (stick, lever) => ({ throttle: lever, pitch: stick.pitch, roll: stick.roll, yaw: stick.yaw }),
 };
 
@@ -59,14 +64,44 @@ const HELICOPTER_CRAFT: Craft = {
   tuning: flightDemoHelicopter,
   spawn: { position: [0, 1, 0] },
   lever: 0,
+  leverRate: 0.4,
   input: (stick, lever) => ({ throttle: 1, collective: lever, pitch: stick.pitch * 0.5, roll: stick.roll * 0.5, yaw: stick.yaw * 0.6 }),
   onSpawn: (aircraft) => aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 }),
+};
+
+// Upper stage centre of mass sits this far ahead of the stack's; staging moves the pose there so nothing jumps.
+const UPPER_STAGE_OFFSET = 3.8;
+
+const ROCKET_CRAFT: Craft = {
+  kind: "rocket",
+  tuning: flightDemoBooster,
+  spawn: { position: [0, 4, 0], orientation: aircraftAttitudeQuaternion(0, Math.PI / 2 - 0.03, 0) },
+  lever: 0,
+  leverRate: 3,
+  input: (stick, lever) => ({ throttle: lever, pitch: stick.pitch, roll: 0, yaw: stick.roll }),
+  afterTick(state, step) {
+    if (state.stage !== 1 || step.motor?.burnedOut !== true) return;
+    const [qx, qy, qz, qw] = step.orientation;
+    // Body forward in world space: the quaternion applied to [0, 0, 1].
+    const forward = [2 * (qx * qz + qw * qy), 2 * (qy * qz - qw * qx), 1 - 2 * (qx * qx + qy * qy)];
+    const snap = state.plane.snapshot();
+    state.plane.restore({
+      ...snap,
+      x: snap.x + forward[0]! * UPPER_STAGE_OFFSET,
+      y: snap.y + forward[1]! * UPPER_STAGE_OFFSET,
+      z: snap.z + forward[2]! * UPPER_STAGE_OFFSET,
+    });
+    state.plane.retune(flightDemoUpperStage);
+    state.stage = 2;
+  },
 };
 
 interface FlightRun {
   plane: RigidAircraft;
   lever: number;
   last: RigidAircraftStep | null;
+  stage: number;
+  accel: number;
 }
 
 let craft: Craft = PLANE_CRAFT;
@@ -76,7 +111,7 @@ function ensureRun(): FlightRun {
   if (run === null) {
     const plane = createRigidAircraft(craft.tuning, craft.spawn);
     craft.onSpawn?.(plane);
-    run = { plane, lever: craft.lever, last: null };
+    run = { plane, lever: craft.lever, last: null, stage: 1, accel: 0 };
   }
   return run;
 }
@@ -96,9 +131,15 @@ function onTick(ctx: GameContext, dt: number): void {
   if (ctx.scene.entity.get(id) === null) return;
   const state = ensureRun();
   const axis = ctx.input.axis(bindings);
-  state.lever = Math.max(0, Math.min(1, state.lever + axis.throttle * (craft.kind === "helicopter" ? 0.4 : 0.8) * dt));
+  state.lever = Math.max(0, Math.min(1, state.lever + axis.throttle * craft.leverRate * dt));
   const step = state.plane.tick(dt, craft.input(axis, state.lever));
+  if (state.last !== null && dt > 0) {
+    const [vx, vy, vz] = step.velocity;
+    const [px, py, pz] = state.last.velocity;
+    state.accel = Math.hypot(vx - px, vy - py, vz - pz) / dt;
+  }
   state.last = step;
+  craft.afterTick?.(state, step);
   ctx.scene.entity.setPose(id, { position: [...step.position], rotationY: step.heading, dt });
 }
 
@@ -206,6 +247,63 @@ function HelicopterBody({ entity }: { entity: SceneEntity }) {
   );
 }
 
+function RocketBody({ entity }: { entity: SceneEntity }) {
+  const body = useRef<THREE.Group>(null);
+  const booster = useRef<THREE.Group>(null);
+  const upper = useRef<THREE.Group>(null);
+  const flame = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    const step = run?.last;
+    if (step === null || step === undefined || body.current === null) return;
+    headingInverse.setFromAxisAngle(up, -step.heading);
+    attitude.set(...step.orientation);
+    body.current.quaternion.copy(headingInverse.multiply(attitude));
+    const staged = (run?.stage ?? 1) === 2;
+    if (booster.current !== null) booster.current.visible = !staged;
+    if (upper.current !== null) upper.current.position.z = staged ? 0 : UPPER_STAGE_OFFSET;
+    if (flame.current !== null) {
+      const thrust = step.motor?.thrust ?? 0;
+      flame.current.visible = thrust > 0;
+      flame.current.position.z = staged ? -2.4 : -5.2;
+      flame.current.scale.setScalar(staged ? 0.5 : 1);
+    }
+  });
+  // The cylinder axis is y; rotating by π/2 about x lays it along body forward (+z).
+  const along: [number, number, number] = [Math.PI / 2, 0, 0];
+  return (
+    <group key={entity.id}>
+      <group ref={body}>
+        <group ref={booster}>
+          <mesh rotation={along} castShadow>
+            <cylinderGeometry args={[0.45, 0.45, 8, 20]} />
+            <meshStandardMaterial color="#e5e7eb" roughness={0.4} metalness={0.3} />
+          </mesh>
+          {[0, 1, 2, 3].map((i) => (
+            <mesh key={i} position={[Math.cos((i * Math.PI) / 2) * 0.8, Math.sin((i * Math.PI) / 2) * 0.8, -3.5]} rotation={[0, 0, (i * Math.PI) / 2]} castShadow>
+              <boxGeometry args={[0.8, 0.06, 1.2]} />
+              <meshStandardMaterial color="#dc2626" />
+            </mesh>
+          ))}
+        </group>
+        <group ref={upper} position={[0, 0, UPPER_STAGE_OFFSET]}>
+          <mesh rotation={along} castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 3, 16]} />
+            <meshStandardMaterial color="#f8fafc" roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0, 2]} rotation={along}>
+            <coneGeometry args={[0.3, 1, 16]} />
+            <meshStandardMaterial color="#1d4ed8" />
+          </mesh>
+        </group>
+        <mesh ref={flame} position={[0, 0, -5.2]} rotation={[-Math.PI / 2, 0, 0]}>
+          <coneGeometry args={[0.4, 2.4, 12]} />
+          <meshStandardMaterial color="#fb923c" emissive="#f97316" emissiveIntensity={2} transparent opacity={0.85} />
+        </mesh>
+      </group>
+    </group>
+  );
+}
+
 // Ground tiles and pylons follow the plane in whole tiles, so the world looks endless at any speed.
 function Landscape(_props: WorldOverlayProps) {
   const group = useRef<THREE.Group>(null);
@@ -253,12 +351,15 @@ function Telemetry() {
     <div className="pointer-events-none absolute right-3 top-3 rounded bg-slate-950/70 px-3 py-2 font-mono text-xs text-slate-100">
       <div className="text-2xl font-bold tabular-nums">{(step.airspeed * 1.944).toFixed(0)} <span className="text-sm font-normal text-slate-300">kt</span></div>
       <div className="tabular-nums">alt {step.position[1].toFixed(0)} m · {craft.kind === "helicopter" ? "coll" : "thr"} {Math.round((run?.lever ?? 0) * 100)}%</div>
+      {step.motor === undefined ? null : (
+        <div className="tabular-nums">stage {run?.stage ?? 1} · {(step.motor.thrust / 1000).toFixed(1)} kN · {step.massKg.toFixed(0)} kg · {((run?.accel ?? 0) / 9.81).toFixed(1)} g accel</div>
+      )}
       {step.rotor === undefined ? null : (
         <div className="tabular-nums">hdg {deg(step.heading)}° · yaw {deg(step.yawRate)}°/s · torque {(step.rotor.torque / 1000).toFixed(1)} kN·m</div>
       )}
       <div className="tabular-nums">pitch {deg(step.pitch)}° · bank {deg(step.bank)}°</div>
       <div className="tabular-nums">AoA {deg(step.angleOfAttack)}° · {step.gLoad.toFixed(1)} g{step.stalled && step.rotor === undefined ? " · STALL" : ""}</div>
-      <div className="mt-1 text-[10px] text-slate-400">{craft.kind === "helicopter" ? "W/S A/D cyclic · Q/E pedals · R/F collective" : "W/S pitch · A/D roll · Q/E yaw · R/F throttle"}</div>
+      <div className="mt-1 text-[10px] text-slate-400">{craft.kind === "helicopter" ? "W/S A/D cyclic · Q/E pedals · R/F collective" : craft.kind === "rocket" ? "W/S A/D gimbal · R ignite" : "W/S pitch · A/D roll · Q/E yaw · R/F throttle"}</div>
     </div>
   );
 }
@@ -289,8 +390,8 @@ function makeGame(name: string, choice: Craft): PlayableGame {
       rig: "chase",
       frustum: { far: 3000 },
       chase: {
-        distance: choice.kind === "helicopter" ? 18 : 16,
-        height: choice.kind === "helicopter" ? 6 : 4,
+        distance: choice.kind === "helicopter" ? 18 : choice.kind === "rocket" ? 34 : 16,
+        height: choice.kind === "helicopter" ? 6 : choice.kind === "rocket" ? 3 : 4,
         lookHeight: 1,
         springDamping: 8,
         fov: { base: 60, max: 72, speedForMax: 110 },
@@ -298,7 +399,7 @@ function makeGame(name: string, choice: Craft): PlayableGame {
       },
     },
     renderEntity: (entity) =>
-      entity.name !== PLANE ? null : choice.kind === "helicopter" ? <HelicopterBody entity={entity} /> : <PlaneBody entity={entity} />,
+      entity.name !== PLANE ? null : choice.kind === "helicopter" ? <HelicopterBody entity={entity} /> : choice.kind === "rocket" ? <RocketBody entity={entity} /> : <PlaneBody entity={entity} />,
     WorldOverlay: Landscape,
     GameUI: Telemetry,
     capture: {
@@ -319,6 +420,10 @@ function makeGame(name: string, choice: Craft): PlayableGame {
           lever: run?.lever ?? 0,
           yawRateDeg: (step.yawRate * 180) / Math.PI,
           rotorTorque: step.rotor?.torque ?? 0,
+        stage: run?.stage ?? 1,
+        massKg: step.massKg,
+        accelG: (run?.accel ?? 0) / 9.81,
+        motorThrust: step.motor?.thrust ?? 0,
         };
       },
     },
@@ -327,3 +432,4 @@ function makeGame(name: string, choice: Craft): PlayableGame {
 
 export const flightDemoGame: PlayableGame = makeGame("flight", PLANE_CRAFT);
 export const flightHelicopterDemoGame: PlayableGame = makeGame("flight-heli", HELICOPTER_CRAFT);
+export const flightRocketDemoGame: PlayableGame = makeGame("flight-rocket", ROCKET_CRAFT);

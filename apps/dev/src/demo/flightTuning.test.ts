@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics";
+import { aircraftAttitudeQuaternion, createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics";
 
-import { flightDemoHelicopter, flightDemoHover, flightDemoPlane, flightDemoSpawn } from "./flightTuning";
+import { flightDemoBooster, flightDemoHelicopter, flightDemoHover, flightDemoPlane, flightDemoSpawn, flightDemoUpperStage } from "./flightTuning";
 
 const DT = 1 / 60;
 
@@ -55,5 +55,29 @@ describe("flight demo helicopter", () => {
   test("needs pedal to hold heading", () => {
     expect(Math.abs(hover(0, 2).heading)).toBeGreaterThan(0.5);
     expect(Math.abs(hover(flightDemoHover.pedal, 2).heading)).toBeLessThan(0.15);
+  });
+});
+
+describe("flight demo rocket", () => {
+  test("pulls harder as the booster burns, then stages and keeps climbing", () => {
+    const rocket = createRigidAircraft(flightDemoBooster, { position: [0, 4, 0], orientation: aircraftAttitudeQuaternion(0, Math.PI / 2 - 0.03, 0) });
+    const input = { throttle: 1, pitch: 0, roll: 0, yaw: 0 };
+    let previous = rocket.tick(DT, input);
+    let first = 0;
+    let last = 0;
+    for (let i = 0; i < Math.round(5.2 / DT); i += 1) {
+      const step = rocket.tick(DT, input);
+      const accel = Math.hypot(step.velocity[0] - previous.velocity[0], step.velocity[1] - previous.velocity[1], step.velocity[2] - previous.velocity[2]) / DT;
+      if (i === 10) first = accel;
+      if (step.motor!.thrust > 0) last = accel;
+      previous = step;
+    }
+    expect(previous.motor!.burnedOut).toBe(true);
+    expect(last).toBeGreaterThan(first * 1.8);
+    rocket.retune(flightDemoUpperStage);
+    let step = previous;
+    for (let i = 0; i < Math.round(8 / DT); i += 1) step = rocket.tick(DT, input);
+    expect(step.position[1]).toBeGreaterThan(1200);
+    expect(step.pitch).toBeGreaterThan(0.8);
   });
 });

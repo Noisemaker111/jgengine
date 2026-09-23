@@ -75,6 +75,24 @@ export interface AircraftGearTuning {
 }
 
 /**
+ * A rocket motor: thrust follows a curve over burn time, propellant leaves at a mass flow so the body gets lighter and
+ * easier to turn, and the nozzle gimbals on the pitch and yaw channels. Stage by `retune`-ing to the next stage's
+ * mass and motor.
+ */
+export interface AircraftMotorTuning {
+  /** Thrust over burn time, `[seconds since ignition, N]` points, linear between; zero past the last point. */
+  thrustCurve: readonly (readonly [number, number])[];
+  /** Propellant at ignition, kg, on top of `massKg`. */
+  propellantKg: number;
+  /** Propellant mass flow at the curve's peak thrust, kg/s; it scales with thrust (constant exhaust velocity). */
+  massFlow: number;
+  /** Nozzle position relative to the centre of mass, body frame m (default `[0, 0, -1]`, behind it). */
+  at?: AircraftVector;
+  /** Largest nozzle gimbal angle, rad (default `0`, fixed). Pitch and yaw inputs swing it through their actuators. */
+  gimbal?: number;
+}
+
+/**
  * A main rotor. Collective sets blade pitch, throttle sets rotor speed, and cyclic (the pitch and roll channels) tilts
  * the disc. Its drag torque yaws the body the other way unless a tail rotor, a second rotor or a pedal input cancels it.
  */
@@ -112,13 +130,14 @@ export interface AircraftRotorTuning {
  * are outcomes, not special cases.
  */
 export interface RigidAircraftTuning {
-  /** Mass, kg. */
+  /** Mass, kg; with a `motor`, the mass without propellant. */
   massKg: number;
-  /** Principal moments of inertia about the body axes, kg·m²: `pitch` about left, `yaw` about up, `roll` about forward. */
+  /** Principal moments of inertia about the body axes at `massKg`, kg·m²: `pitch` about left, `yaw` about up, `roll` about forward. Propellant scales them by total mass over `massKg`. */
   inertia: { pitch: number; yaw: number; roll: number };
   surfaces: readonly AircraftSurface[];
   engine?: AircraftEngineTuning;
   rotor?: AircraftRotorTuning;
+  motor?: AircraftMotorTuning;
   /** Actuators per channel; each channel defaults to `{ maxDeflection: 0.35, rate: 2 }`. */
   controls?: { pitch?: AircraftControlChannel; roll?: AircraftControlChannel; yaw?: AircraftControlChannel };
   /** Fuselage drag coefficient × frontal area, m² (default `0`). */
@@ -196,6 +215,10 @@ export interface RigidAircraftState {
   spool: number;
   /** Rotor speed as a share of its rated speed, `0..1`. */
   rotorSpeed: number;
+  /** Seconds the motor has burned. */
+  burnTime: number;
+  /** Propellant left, kg. */
+  propellantKg: number;
   time: number;
 }
 
@@ -231,6 +254,17 @@ export interface RigidAircraftStep {
   /** Current actuator deflection per channel, rad. */
   deflection: { pitch: number; roll: number; yaw: number };
   grounded: boolean;
+  /** Total mass including propellant, kg. */
+  massKg: number;
+  /** Motor telemetry; absent without a `motor` block. */
+  motor?: {
+    /** Motor thrust this tick, N. */
+    thrust: number;
+    burnTime: number;
+    propellantKg: number;
+    /** Out of propellant or past the end of the thrust curve. */
+    burnedOut: boolean;
+  };
   /** Rotor telemetry; absent without a `rotor` block. */
   rotor?: {
     /** Rotor speed, share of rated, `0..1`. */
@@ -378,6 +412,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
   if (options.velocity !== undefined) [state.vx, state.vy, state.vz] = options.velocity;
   const telemetry = { airspeed: 0, alpha: 0, sideslip: 0, gLoad: 1, stallFraction: 0, stalled: false, thrust: 0, grounded: false };
   const rotorTelemetry = { thrust: 0, torque: 0, groundEffect: 1, translationalLift: 1 };
+  const motorTelemetry = { thrust: 0 };
 
   function largestSurface(list: readonly PreparedSurface[]): number {
     let best = -1;
@@ -407,6 +442,8 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       yawDeflection: 0,
       spool: 0,
       rotorSpeed: 0,
+      burnTime: 0,
+      propellantKg: tuning.motor?.propellantKg ?? 0,
       time: 0,
     };
   }
@@ -439,7 +476,7 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
 
   function substep(h: number, input: RigidAircraftInput, modifiers: RigidAircraftModifiers | undefined): void {
     const t = tuning;
-    const m = t.massKg;
+    const m = t.massKg + (t.motor === undefined ? 0 : state.propellantKg);
     const controls = t.controls;
     const pitchCh = controls?.pitch;
     const rollCh = controls?.roll;
@@ -548,6 +585,40 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       }
     }
 
+    const motor = t.motor;
+    if (motor !== undefined) {
+      const curve = motor.thrustCurve;
+      const lastTime = curve.length === 0 ? 0 : curve[curve.length - 1]![0];
+      let motorThrust = 0;
+      if (throttle > 0 && state.propellantKg > 0 && state.burnTime < lastTime) {
+        const rated = sampleCurve(curve, state.burnTime) * throttle;
+        const flow = (motor.massFlow * rated) / Math.max(1e-9, peakOf(curve));
+        const burned = Math.min(state.propellantKg, flow * h);
+        // The last sliver of propellant only delivers its share of the substep.
+        motorThrust = rated * (flow > 0 ? burned / (flow * h) : 1) * (modifiers?.thrustScale ?? 1);
+        state.propellantKg -= burned;
+        if (state.propellantKg < 1e-9) state.propellantKg = 0;
+        state.burnTime += h;
+      }
+      const [nx, ny, nz] = motor.at ?? [0, 0, -1];
+      const gimbal = motor.gimbal ?? 0;
+      // A nozzle behind the centre of mass swings its thrust the opposite way to the turn it makes.
+      const lever = nz <= 0 ? 1 : -1;
+      const gp = (state.pitchDeflection / (pitchCh?.maxDeflection ?? 0.35)) * gimbal;
+      const gy = (state.yawDeflection / (yawCh?.maxDeflection ?? 0.35)) * gimbal;
+      const tx = motorThrust * lever * Math.sin(gy);
+      const ty = -motorThrust * lever * Math.sin(gp);
+      const tz = motorThrust * Math.sqrt(Math.max(0, 1 - Math.sin(gy) ** 2 - Math.sin(gp) ** 2));
+      fx += tx;
+      fy += ty;
+      fz += tz;
+      mx += ny * tz - nz * ty;
+      my += nz * tx - nx * tz;
+      mz += nx * ty - ny * tx;
+      thrust += motorThrust;
+      motorTelemetry.thrust = motorThrust;
+    }
+
     const rotor = t.rotor;
     if (rotor !== undefined) {
       state.rotorSpeed += (throttle - state.rotorSpeed) * (1 - Math.exp(-(rotor.spoolRate ?? 0.5) * h));
@@ -652,7 +723,10 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
     state.y += state.vy * h;
     state.z += state.vz * h;
 
-    const { pitch: ip, yaw: iy, roll: ir } = t.inertia;
+    const inertiaScale = m / t.massKg;
+    const ip = t.inertia.pitch * inertiaScale;
+    const iy = t.inertia.yaw * inertiaScale;
+    const ir = t.inertia.roll * inertiaScale;
     // Euler's rotation equation, body frame: I·ω̇ = M − ω × (I·ω).
     const gx = wy * (ir * wz) - wz * (iy * wy);
     const gy = wz * (ip * wx) - wx * (ir * wz);
@@ -734,6 +808,17 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       thrust: telemetry.thrust,
       deflection: { pitch: state.pitchDeflection, roll: state.rollDeflection, yaw: state.yawDeflection },
       grounded: telemetry.grounded,
+      massKg: tuning.massKg + (tuning.motor === undefined ? 0 : state.propellantKg),
+      ...(tuning.motor === undefined
+        ? {}
+        : {
+            motor: {
+              thrust: motorTelemetry.thrust,
+              burnTime: state.burnTime,
+              propellantKg: state.propellantKg,
+              burnedOut: state.propellantKg <= 0 || state.burnTime >= (tuning.motor.thrustCurve.at(-1)?.[0] ?? 0),
+            },
+          }),
       ...(tuning.rotor === undefined
         ? {}
         : {
@@ -764,6 +849,10 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       state.vz += dv[2];
     },
     retune(next) {
+      if (next.motor !== tuning.motor) {
+        state.burnTime = 0;
+        state.propellantKg = next.motor?.propellantKg ?? 0;
+      }
       tuning = next;
       surfaces = next.surfaces.map(prepareSurface);
       largest = largestSurface(surfaces);
@@ -777,6 +866,25 @@ export function createRigidAircraft(initial: RigidAircraftTuning, options: Rigid
       Object.assign(state, fresh(position, orientation ?? aircraftHeadingQuaternion(attitudeOf(state).heading)));
     },
   };
+}
+
+function sampleCurve(curve: readonly (readonly [number, number])[], time: number): number {
+  if (curve.length === 0) return 0;
+  if (time <= curve[0]![0]) return curve[0]![1];
+  for (let i = 1; i < curve.length; i += 1) {
+    const [t1, v1] = curve[i]!;
+    if (time <= t1) {
+      const [t0, v0] = curve[i - 1]!;
+      return t1 > t0 ? v0 + ((v1 - v0) * (time - t0)) / (t1 - t0) : v1;
+    }
+  }
+  return 0;
+}
+
+function peakOf(curve: readonly (readonly [number, number])[]): number {
+  let peak = 0;
+  for (const [, value] of curve) peak = Math.max(peak, value);
+  return peak;
 }
 
 function clamp1(value: number): number {

@@ -13,6 +13,11 @@
   - Neutral pedal gives no tail thrust, so the nose swings with the torque until the pilot (or SAS) holds it. Hover pedal is `torque·collective / (tail.maxThrust · tailArm)`.
   - Thrust follows momentum theory: translational lift once clean air reaches the induced velocity `√(T/2ρA)`, less thrust while climbing through the disc, and Cheeseman–Bennett ground effect below about one rotor diameter.
   - The step's `rotor` telemetry (`speed`, `thrust`, `torque`, `groundEffect`, `translationalLift`) drives rotor sound, dust and HUD.
+- **Rockets.** A `motor` block: `thrustCurve` (`[seconds, N]` points over burn time), `propellantKg` on top of `massKg`, `massFlow` (kg/s at peak thrust; it scales with thrust), nozzle `at` and `gimbal` (rad, on the pitch and yaw actuators).
+  - Throttle above zero burns and advances the burn clock; throttle `0` coasts with the clock held.
+  - Mass and inertia fall as propellant leaves (inertia scales with total over dry mass), so acceleration and turn rate rise through the burn.
+  - Stage by `retune(nextStage)`: a new `motor` object loads its propellant and restarts its clock; the same object keeps both. Move the pose to the new stage's centre of mass with `restore` first if the stages differ in length.
+  - The step reports `massKg` and `motor` (`thrust`, `burnTime`, `propellantKg`, `burnedOut`).
 - **Pose.** Set the entity's `rotationY` from `step.heading` and apply the rest of `step.orientation` to the mesh (the heading-free part: `qY(-heading) · orientation`). `step.pitch`/`step.bank` match three.js `Euler(-pitch, heading, bank, "YXZ")`; `aircraftAttitudeQuaternion(heading, pitch, bank)` goes the other way for spawns.
 - **Camera.** The chase rig (`rig: "chase"`) follows heading; give it `frustum: { far }` in the thousands and a `yawResponse` around 4 so the boom swings smoothly over the top of a loop.
 - **Telemetry.** `airspeed`, `angleOfAttack`, `sideslip`, `gLoad`, `stalled`/`stallFraction`, `thrust`, body rates and `deflection` drive the HUD, stall horn, wind noise and camera shake.
@@ -23,7 +28,7 @@
 2. **Put them in a test** next to the tuning, flying the sim with fixed inputs.
 3. **Start from the real aircraft**: mass, wing area, span, tail arm, thrust. Inertia is roughly `m·(span/4)²` for roll and `m·(length/4)²` for pitch and yaw.
 4. **Trim it.** With the wing on the centre of mass, set wing `incidence` to the cruise lift coefficient over the lift slope, `W / (½ρV²·S·a)`, and leave the tail at `0`. It then flies level hands-off at that speed.
-5. **Drive it**: `bun run drive flight --key KeyR+KeyS:10500 --key KeyD:1500 --record <name> --record-fps 20`, or `bun run drive flight-heli --key KeyR:1500 --wait 3000 --key KeyE:3500 --record <name> --record-fps 20` for the helicopter.
+5. **Drive it**: `bun run drive flight --key KeyR+KeyS:10500 --key KeyD:1500 --record <name> --record-fps 20`, or `bun run drive flight-heli --key KeyR:1500 --wait 3000 --key KeyE:3500 --record <name> --record-fps 20` for the helicopter, or `bun run drive flight-rocket --key KeyR:400 --wait 12000 --record <name> --record-fps 20` for the two-stage rocket.
 
 ## Symptom → knob
 
@@ -44,6 +49,9 @@
 | Pedal too weak to stop a swing | `tail.maxThrust` ↑ or tail rotor further aft |
 | Cyclic twitchy / sluggish | `rotor.cyclic` ↓ / ↑, hub height (`rotor.at[1]`) ↓ / ↑, `rotor.damping` ↑ / ↓ |
 | Pedal also rolls the body | tail rotor `at[1]` above the centre of mass; move it down or trim with cyclic |
+| Rocket weathercocks too hard / tumbles | fin `area` ↓ / ↑, fins further aft for more stability |
+| Gimbal too twitchy / can't steer | `motor.gimbal` ↓ / ↑; lighter late in the burn it turns faster on its own |
+| Burns too long / short | `propellantKg` over `massFlow` sets burn time; the curve's last point cuts it off first |
 | Sinks when it slows down | that is translational lift going away; `rotor.translationalLift` sets how much |
 
 ## Traps

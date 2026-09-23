@@ -38,3 +38,34 @@ export const flightDemoHelicopter: RigidAircraftTuning = {
 
 /** Collective that carries the helicopter's weight out of ground effect, and the pedal that cancels its torque there. */
 export const flightDemoHover = { collective: 0.57, pedal: (10000 * 0.57) / (2500 * 7.5) };
+
+// A two-stage sounding rocket. The booster's dry mass includes the whole upper stage; staging retunes to the upper
+// stage with its own motor. Four tail fins keep it pointed into the airflow, and the booster nozzle gimbals.
+export const flightDemoUpperStage: RigidAircraftTuning = {
+  massKg: 60,
+  inertia: { pitch: 90, yaw: 90, roll: 1 },
+  surfaces: [
+    { at: [0.25, 0, -1.6], area: 0.08, liftSlope: 3 },
+    { at: [-0.25, 0, -1.6], area: 0.08, liftSlope: 3 },
+    { at: [0, 0.25, -1.6], normal: [1, 0, 0], area: 0.08, liftSlope: 3 },
+    { at: [0, -0.25, -1.6], normal: [1, 0, 0], area: 0.08, liftSlope: 3 },
+  ],
+  motor: { thrustCurve: [[0, 3000], [8, 3000]], propellantKg: 60, massFlow: 7.5, at: [0, 0, -1.8], gimbal: 0.05 },
+  controls: { pitch: { rate: 1 }, yaw: { rate: 1 } },
+  dragArea: 0.04,
+};
+
+export const flightDemoBooster: RigidAircraftTuning = {
+  massKg: 270,
+  inertia: { pitch: 1800, yaw: 1800, roll: 6 },
+  surfaces: [
+    { at: [0.45, 0, -3.6], area: 0.5, liftSlope: 3 },
+    { at: [-0.45, 0, -3.6], area: 0.5, liftSlope: 3 },
+    { at: [0, 0.45, -3.6], normal: [1, 0, 0], area: 0.5, liftSlope: 3 },
+    { at: [0, -0.45, -3.6], normal: [1, 0, 0], area: 0.5, liftSlope: 3 },
+  ],
+  motor: { thrustCurve: [[0, 15000], [5, 15000]], propellantKg: 250, massFlow: 50, at: [0, 0, -4], gimbal: 0.08 },
+  controls: { pitch: { rate: 1 }, yaw: { rate: 1 } },
+  dragArea: 0.12,
+  gear: { height: 4, maxPitch: Math.PI / 2 },
+};

@@ -292,3 +292,101 @@ test("a parked aircraft in still air is not stalled", () => {
   expect(parked.stalled).toBe(false);
   expect(parked.stallFraction).toBe(0);
 });
+
+// A sounding rocket: 50 kg dry, 50 kg of propellant burned at 10 kg/s behind a flat 4 kN thrust curve.
+const rocket: RigidAircraftTuning = {
+  massKg: 50,
+  inertia: { pitch: 67, yaw: 67, roll: 0.5 },
+  surfaces: [
+    { at: [0.2, 0, -1.8], area: 0.05, liftSlope: 3 },
+    { at: [-0.2, 0, -1.8], area: 0.05, liftSlope: 3 },
+    { at: [0, 0.2, -1.8], normal: [1, 0, 0], area: 0.05, liftSlope: 3 },
+    { at: [0, -0.2, -1.8], normal: [1, 0, 0], area: 0.05, liftSlope: 3 },
+  ],
+  motor: { thrustCurve: [[0, 4000], [5, 4000]], propellantKg: 50, massFlow: 10, at: [0, 0, -2], gimbal: 0.1 },
+  dragArea: 0.02,
+};
+const vacuum = () => 0;
+const upright = aircraftAttitudeQuaternion(0, Math.PI / 2, 0);
+
+function burn(partial: Partial<RigidAircraftInput> = {}): RigidAircraftInput {
+  return { throttle: 1, pitch: 0, roll: 0, yaw: 0, ...partial };
+}
+
+describe("createRigidAircraft motor", () => {
+  test("acceleration rises as the propellant burns off", () => {
+    const aircraft = createRigidAircraft(rocket, { position: [0, 1000, 0], orientation: upright, airDensity: vacuum });
+    const accel = (seconds: number) => {
+      const before = fly(aircraft, seconds, burn()).velocity[1];
+      const after = aircraft.tick(DT, burn()).velocity[1];
+      return (after - before) / DT;
+    };
+    const early = accel(0.2);
+    const late = accel(4.4);
+    expect(early).toBeCloseTo(4000 / 98 - 9.81, 0);
+    expect(late).toBeGreaterThan(early * 1.7);
+    expect(late).toBeCloseTo(4000 / 54 - 9.81, 0);
+  });
+
+  test("propellant leaves at the mass flow and the motor burns out when it is gone", () => {
+    const aircraft = createRigidAircraft(rocket, { position: [0, 1000, 0], orientation: upright, airDensity: vacuum });
+    const mid = fly(aircraft, 2, burn());
+    expect(mid.motor!.propellantKg).toBeCloseTo(30, 0);
+    expect(mid.massKg).toBeCloseTo(80, 0);
+    expect(mid.motor!.thrust).toBeCloseTo(4000, 5);
+    const out = fly(aircraft, 4, burn());
+    expect(out.motor!.propellantKg).toBe(0);
+    expect(out.motor!.burnedOut).toBe(true);
+    expect(out.motor!.thrust).toBe(0);
+    expect(out.massKg).toBe(50);
+  });
+
+  test("thrust follows the curve over burn time and throttle holds the burn clock", () => {
+    const boost = { ...rocket, motor: { ...rocket.motor!, thrustCurve: [[0, 6000], [1, 6000], [1.5, 2000], [8, 2000]] as const } };
+    const aircraft = createRigidAircraft(boost, { position: [0, 1000, 0], orientation: upright, airDensity: vacuum });
+    expect(fly(aircraft, 0.5, burn()).motor!.thrust).toBeCloseTo(6000, 5);
+    expect(fly(aircraft, 1.5, burn()).motor!.thrust).toBeCloseTo(2000, 5);
+    const coasting = fly(aircraft, 1, burn({ throttle: 0 }));
+    expect(coasting.motor!.thrust).toBe(0);
+    expect(coasting.motor!.burnTime).toBeCloseTo(2, 5);
+  });
+
+  test("gimbal turns the rocket, and it turns faster once lighter", () => {
+    const pitchAccel = (fuel: number) => {
+      const aircraft = createRigidAircraft(rocket, { position: [0, 1000, 0], orientation: upright, airDensity: vacuum });
+      aircraft.restore({ ...aircraft.snapshot(), propellantKg: fuel });
+      fly(aircraft, 0.3, burn({ pitch: 1 }));
+      const before = aircraft.tick(DT, burn({ pitch: 1 })).pitchRate;
+      return (aircraft.tick(DT, burn({ pitch: 1 })).pitchRate - before) / DT;
+    };
+    const full = pitchAccel(50);
+    const light = pitchAccel(8);
+    expect(full).toBeGreaterThan(0);
+    expect(light).toBeGreaterThan(full * 1.5);
+  });
+
+  test("staging: retune to the next stage drops the mass and lights its motor", () => {
+    const upper: RigidAircraftTuning = { ...rocket, massKg: 15, inertia: { pitch: 10, yaw: 10, roll: 0.1 }, motor: { thrustCurve: [[0, 1200], [6, 1200]], propellantKg: 12, massFlow: 2, at: [0, 0, -0.8] } };
+    const aircraft = createRigidAircraft(rocket, { position: [0, 1000, 0], orientation: upright, airDensity: vacuum });
+    const burnout = fly(aircraft, 5.5, burn());
+    expect(burnout.motor!.burnedOut).toBe(true);
+    aircraft.retune(upper);
+    const staged = aircraft.tick(DT, burn());
+    expect(staged.massKg).toBeCloseTo(15 + 12 - 2 * DT, 5);
+    expect(staged.motor!.thrust).toBeCloseTo(1200, 5);
+    expect(staged.velocity[1]).toBeGreaterThan(burnout.velocity[1]);
+    aircraft.retune(upper);
+    expect(aircraft.snapshot().burnTime).toBeGreaterThan(0);
+  });
+
+  test("burn state is part of the snapshot and replays bit-for-bit", () => {
+    const aircraft = createRigidAircraft(rocket, { position: [0, 1000, 0], orientation: upright });
+    fly(aircraft, 1, burn());
+    const saved = aircraft.snapshot();
+    const a = fly(aircraft, 2, burn({ pitch: 0.4, yaw: -0.2 }));
+    aircraft.restore(saved);
+    const b = fly(aircraft, 2, burn({ pitch: 0.4, yaw: -0.2 }));
+    expect(b.position).toEqual(a.position);
+    expect(b.motor).toEqual(a.motor);
+  });
+});
