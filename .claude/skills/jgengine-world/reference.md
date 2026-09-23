@@ -286,6 +286,10 @@ Compose, don't replace: scale `MobBrainConfig.aggroRadius` by `perceptionScale`,
 
 `movement/glideModel` `createGlideModel`, `world/lod` `createLodScheduler`, `visibility/simulationCulling` `createSimulationCuller` and `visibility/spatialIndex` `createSpatialIndex` hand back a plain JSON `snapshot()` and take it back with `restore(next)`; `movement/grappleSwing` `createGrappleSwing` pairs its existing `state()` with `restore(state)`. A restored spatial index keeps cell and id order, so queries return ids in the same order.
 
+### Snapshot and restore on AI, faction and sensor handles
+
+These handles hand back a plain JSON `snapshot()` that later ticks do not mutate, and take it back with `restore(next)`, so a host, save file or replay can rewind them bit-exactly: `ai/threat` `createThreatTable`, `ai/groupAssist` `createAssistNetwork` (membership only; `restore(next, tableOf)` rebinds each member's separately restored threat table), `faction/reputation` `createReputationLedger`, `sensor/concealment` `createConcealmentSensor`, `sensor/freezeMonitor` `createFreezeMonitor` and `sensor/recordingBuffer` `createRecordingBuffer` (frame `data` is shared, not cloned).
+
 ### Snapshot and restore on building handles
 
 `world/footprintGrid` `createFootprintGrid` (reservations in claim order; restore rebuilds occupancy), `world/walls` `createWallDrawTool` (points and closed flag) and `world/terraform` `createTerraformBrush` (radius and strength; the terrain keeps its own `snapshot()`) hand back a plain JSON `snapshot()` and take it back with `restore(next)`. `world/interiors` `createInteriors` holds config only, so it has nothing to save.

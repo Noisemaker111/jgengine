@@ -4,6 +4,7 @@ import { PerspectiveCamera, Quaternion, Vector3, type Camera } from "three";
 
 import type {
   ChaseCameraConfig,
+  ChaseView,
   GameCameraConfig,
   LockOnCameraConfig,
   ObserverCameraConfig,
@@ -18,12 +19,10 @@ import { useGameContext } from "@jgengine/react/provider";
 
 import { ORBIT_CAMERA_FRAME_PRIORITY, type Vec3 } from "./orbitCameraMath";
 import {
-  bankRollStep,
-  chaseDesiredPosition,
-  chaseLookAt,
   cinematicSample,
   clamp,
-  leadFollowPoint,
+  clampBoomToHit,
+  createChaseRigState,
   lockOnPose,
   observerPose,
   resolveChase,
@@ -37,11 +36,10 @@ import {
   shoulderPose,
   sideScrollFollowBlend,
   smoothYaw,
-  speedToFov,
-  springArmStep,
+  stepChase,
   topDownPose,
-  velocityYawTarget,
   type CameraPose,
+  type ChaseRigState,
 } from "./rigMath";
 import { usePlayerFov } from "./PlayerFov";
 import { useCameraShake } from "./shakeChannel";
@@ -537,83 +535,81 @@ export function ChaseRig(props: RigProps) {
   const staticResolved = useMemo(() => resolveChase(config), [config]);
   const { camera, commit, beginTransition } = useCameraCommit(props, followId);
   const shake = useCameraShake();
-  const posRef = useRef<Vec3 | null>(null);
-  const lastFollowRef = useRef<Vec3 | null>(null);
-  const lastYawRef = useRef<number | null>(null);
-  const anchorYawRef = useRef<number | null>(null);
-  const rollRef = useRef(0);
-  const view = config?.view ?? "chase";
-
-  useEffect(beginTransition, [view]);
+  const stateRef = useRef<ChaseRigState>(createChaseRigState());
+  const viewRef = useRef<ChaseView | null>(null);
 
   useFrame((_, dt) => {
     const tuning = ctx.camera.chaseTuning();
-    const resolved = tuning === null ? staticResolved : resolveChase({ ...config, ...tuning });
-    const sample = readFollow(ctx, followId);
-    const follow = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const yaw = sample?.yaw ?? 0;
+    const merged = tuning === null ? config : { ...config, ...tuning };
+    const resolved = tuning === null ? staticResolved : resolveChase(merged);
+    const view = merged?.view ?? "chase";
+    if (viewRef.current !== view) {
+      beginTransition();
+      viewRef.current = view;
+      stateRef.current.offset = null;
+    }
 
-    const last = lastFollowRef.current ?? follow;
-    const speed = dt > 0 ? Math.hypot(follow.x - last.x, follow.z - last.z) / dt : 0;
-    lastFollowRef.current = follow;
-    const lastYaw = lastYawRef.current ?? yaw;
-    lastYawRef.current = yaw;
-    rollRef.current = bankRollStep(rollRef.current, yaw, lastYaw, dt, resolved);
+    const entity = followId === null ? null : ctx.scene.entity.get(followId);
+    const follow: Vec3 = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
+    const yaw = entity?.rotationY ?? 0;
+    const v = entity?.velocity;
+    const published = v !== undefined && (v[0] !== 0 || v[1] !== 0 || v[2] !== 0);
+    const lookBack = resolved.lookBackAction !== null && ctx.input.isDown(resolved.lookBackAction);
+    const clampBoom = resolved.collision
+      ? (pivot: Vec3, desired: Vec3) => {
+          const dx = desired.x - pivot.x;
+          const dy = desired.y - pivot.y;
+          const dz = desired.z - pivot.z;
+          const length = Math.hypot(dx, dy, dz);
+          if (length <= 1e-6) return desired;
+          const hit = ctx.scene.raycast({
+            origin: [pivot.x, pivot.y, pivot.z],
+            direction: [dx / length, dy / length, dz / length],
+            maxDistance: length + resolved.collisionRadius,
+            excludeInstanceIds: followId === null ? undefined : [followId],
+            filter: { entities: false },
+          });
+          return clampBoomToHit(pivot, desired, hit?.distance ?? null, resolved.collisionRadius, resolved.collisionMinDistance);
+        }
+      : undefined;
 
-    const fov = speedToFov(speed, tuning?.fov ?? config?.fov);
+    const step = stepChase(
+      stateRef.current,
+      {
+        follow,
+        yaw,
+        bodyPitch: entity?.rotationX ?? 0,
+        velocity: published ? { x: v[0], y: v[1], z: v[2] } : null,
+        lookBack: lookBack && view === "chase",
+        fovKick: ctx.camera.takeFovKick(),
+      },
+      resolved,
+      dt,
+      view === "chase" ? clampBoom : undefined,
+    );
+    props.yawRef.current = step.anchorYaw;
 
     if (view !== "chase") {
       const seat =
         view === "cockpit"
-          ? config?.seatOffsets?.cockpit ?? { x: 0, y: 1.2, z: 0.1 }
+          ? merged?.seatOffsets?.cockpit ?? { x: 0, y: 1.2, z: 0.1 }
           : view === "hood"
-            ? config?.seatOffsets?.hood ?? { x: 0, y: 1, z: 1.4 }
-            : config?.seatOffsets?.rear ?? { x: 0, y: 1.6, z: -1.5 };
-      const lookBack = view === "rear";
-      const pose = seatPose(follow, lookBack ? yaw + Math.PI : yaw, seat, fov);
-      if (lookBack) {
-        pose.position = seatPose(follow, yaw, seat, fov).position;
-      }
+            ? merged?.seatOffsets?.hood ?? { x: 0, y: 1, z: 1.4 }
+            : merged?.seatOffsets?.rear ?? { x: 0, y: 1.6, z: -1.5 };
+      const seatLooksBack = view === "rear" || lookBack;
+      const pose = seatPose(follow, seatLooksBack ? yaw + Math.PI : yaw, seat, step.pose.fov);
+      if (seatLooksBack) pose.position = seatPose(follow, yaw, seat, step.pose.fov).position;
       props.yawRef.current = yaw;
       commit(pose, dt);
       return;
     }
 
-    // Anchor yaw always eases toward its target (#1370): with drift-lag configured the target is
-    // the velocity-blended yaw at velocityYawResponse, otherwise the raw body facing at
-    // yawResponse — so a strafe-flipped facing arcs the boom around the character instead of
-    // teleporting it to the far side. yawResponse: Infinity restores the legacy rigid follow.
-    let targetYaw = yaw;
-    let response = resolved.yawResponse;
-    if (resolved.velocityYawBlend > 0) {
-      const velocity: Vec3 =
-        dt > 0
-          ? { x: (follow.x - last.x) / dt, y: 0, z: (follow.z - last.z) / dt }
-          : { x: 0, y: 0, z: 0 };
-      targetYaw = velocityYawTarget(yaw, velocity, resolved);
-      response = resolved.velocityYawResponse;
-    }
-    const anchorYaw = Number.isFinite(response)
-      ? smoothYaw(anchorYawRef.current ?? targetYaw, targetYaw, response, dt)
-      : targetYaw;
-    anchorYawRef.current = anchorYaw;
-    // Report camera yaw back to the shell like every other player-facing rig, so
-    // on-foot movement and aim stay camera-relative instead of frozen at yaw 0.
-    props.yawRef.current = anchorYaw;
-
-    const led = leadFollowPoint(follow, last, dt, resolved);
-    const desired = chaseDesiredPosition(led, anchorYaw, resolved);
-    const prev = posRef.current ?? desired;
-    const smoothed = springArmStep(prev, desired, resolved.springDamping, dt);
-    posRef.current = smoothed;
-
-    if (resolved.shakePerSpeed > 0 && speed > 0) {
-      shake.shake(Math.min(resolved.shakePerSpeed * speed * dt, 0.1));
+    if (resolved.shakePerSpeed > 0 && step.speed > 0) {
+      shake.shake(Math.min(resolved.shakePerSpeed * step.speed * dt, 0.1));
     }
 
-    const pose: CameraPose = { position: smoothed, lookAt: chaseLookAt(led, anchorYaw, resolved), fov };
-    commit(pose, dt);
-    if (rollRef.current !== 0) camera.rotateZ(rollRef.current);
+    commit(step.pose, dt);
+    if (step.roll !== 0) camera.rotateZ(step.roll);
   }, CAMERA_RIG_FRAME_PRIORITY);
 
   return null;

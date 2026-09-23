@@ -29,10 +29,16 @@ between (`--json` for structured output).
 ### Added
 
 - `snapshot()`/`restore(next)` on `createGlideModel`, `createLodScheduler`, `createSimulationCuller` and `createSpatialIndex`, and `restore(state)` on `createGrappleSwing`, so gliding, rope swings, LOD throttling and the spatial hash save, load and replay bit-exactly (#1775).
+- `snapshot()`/`restore(next)` on `createThreatTable`, `createAssistNetwork`, `createReputationLedger`, `createConcealmentSensor`, `createFreezeMonitor` and `createRecordingBuffer`, so AI aggro, faction standing and sensor dwell save, load and replay bit-exactly (#1775).
 - `snapshot()`/`restore(next)` on `createFootprintGrid`, `createWallDrawTool` and `createTerraformBrush`, so build-grid claims, wall drafts and brush settings save, load and replay bit-exactly (#1775).
 - `createInputBuffer` (`@jgengine/core/input/inputBuffer`): buffered presses, coyote time, hold duration and double tap, with `snapshot`/`restore`. The walk controller uses it for `movement.feel.jumpBufferMs` (a jump pressed just before landing fires on landing) and `movement.feel.coyoteMs` (a jump just after walking off a ledge still fires). Both default to 0, so walking is unchanged until a game sets them (#1686, #1772).
 - `snapshot()`/`restore(next)` on `createLootRegistry`, `createToastQueue`, `createVfxInstanceStore`, `createRoundState` and `createLookChannel`, and `restore(state)` on `createDragCapture`, so loot tables, toasts, retained VFX, match rounds and look/drag input save, load and replay bit-exactly. `RoundSnapshot` gains `pendingWinner` (#1775).
 - `measureMovement` (`@jgengine/core/movement/movementProbe`) reports a walking character's feel from the same `movement.feel` and `physics` fields a game sets: time to top speed, stop distance, turn-around time, jump height, apex and air time, and air-control reach. Deterministic, for tests (#1772).
+- Chase camera depth (`camera.chase`, #1770):
+  - `fov.response` eases the speed FOV, and speed now comes from the followed entity's sim `velocity` when it publishes one, so FOV no longer jitters when render and sim rates differ.
+  - `distanceBySpeed`, `pitchFollow` (boom follows body pitch on slopes), `lookBackAction` (hold to look behind), and `collision` (the boom stops short of objects, terrain and walls via `ctx.scene.raycast`; on by default).
+  - `ctx.camera.kickFov(degrees)` queues a decaying FOV punch, tuned by `chase.fovKick`.
+  - `ChaseCameraTuning` accepts `view` and the new fields; `nextChaseView` (`@jgengine/core/runtime/cameraDirector`) cycles chase, hood and cockpit.
 - `createRigidAircraft` (`@jgengine/core/physics/aircraftDynamics`): a quaternion rigid-body aircraft with an inertia tensor, lifting surfaces (area, lift slope, stall, post-stall lift, drag polar) placed on the body, rate-limited control surfaces, an engine with spool and optional gear. Loops, rolls and stalls come from the surfaces. Same contract as `vehicleDynamics`: fixed substeps, `snapshot`/`restore`/`retune`, per-tick modifiers, and telemetry for AoA, sideslip, g-load, airspeed and stall. Dev runner demo: `bun run drive flight`.
 - Graphics settings a player can feel: an Ultra tier, a frame-rate limit (V-Sync or 30/60/120/144 cap), texture filtering (anisotropy, now applied to every loaded texture), and an FPS counter. `GraphicsProfile` gains `anisotropy`; a game that overrides tiers with `defineGame({ graphics })` can set it per tier.
 - `postProcessing.stylize` (`outline`, `bands`, `pixelSize`) and two new looks, `look: "comic"` (ink outlines + cel bands, Borderlands-style) and `look: "retro"` (pixelated, posterized). Same models, different art style.
@@ -70,6 +76,7 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- The chase camera no longer falls behind fast vehicles. Its spring eased the camera's world position toward a moving target, so the lag grew with speed (about 9 m extra at 220 km/h); it now eases the boom offset from the target (#1770).
 - A `createVehicleDynamics` bike with both `lean` and `suspension` launched itself the moment it leaned: the springs read the lean as body roll across the narrow track. Springs now ignore lean, and lateral g keeps the same lag it has without springs.
 - `@jgengine/rapier`: a body created with `mass` now weighs exactly that. It used to add `mass` on top of the collider's density-derived mass, so a 2 kg sphere of radius 0.5 weighed 2.52 kg, and every force, impulse and joint on a massed body was off by the collider's volume.
 - `createVehicleDynamics` with `suspension` spawned and reset level even on a slope. The wheels started buried, so the springs fired the car into the air and it tumbled. It now fits pitch, roll and height to the terrain under its four wheels.

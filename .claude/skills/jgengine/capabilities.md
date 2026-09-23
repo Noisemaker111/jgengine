@@ -12,6 +12,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `collectAuthoredTriggers` (function) · `import { collectAuthoredTriggers } from "@jgengine/shell/gameKit"`
 
+## chase-view-cycle — cycle a vehicle camera between chase, hood and cockpit views at runtime
+
+- `nextChaseView` (function) · `import { nextChaseView } from "@jgengine/core/runtime/cameraDirector"`
+
 ## client-side — input prediction with replay reconciliation
 
 - `createPredictionBuffer` (function) · `import { createPredictionBuffer } from "@jgengine/core/runtime/prediction"`
