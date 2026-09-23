@@ -174,6 +174,7 @@ export const gameRegistry: GameRegistry = {
   "walk-weighty": () => import("./demo/walkFeelDemo").then((module) => module.walkWeightyDemoGame),
   flight: () => import("./demo/flightDemo").then((module) => module.flightDemoGame),
   "flight-heli": () => import("./demo/flightDemo").then((module) => module.flightHelicopterDemoGame),
+  "flight-rocket": () => import("./demo/flightDemo").then((module) => module.flightRocketDemoGame),
   "pointer-commander": () =>
     import("./demo/pointerDemo").then((module) => module.pointerDemoGame),
   "environment-showcase": () =>

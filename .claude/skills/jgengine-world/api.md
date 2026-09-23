@@ -915,6 +915,7 @@
 - `AircraftControlChannel` (interface): interface AircraftControlChannel — One control channel's actuator: how far the surfaces move and how fast.
 - `AircraftEngineTuning` (interface): interface AircraftEngineTuning — A thrust source fixed to the body.
 - `AircraftGearTuning` (interface): interface AircraftGearTuning — Wheels or skids: what the body rests on when it touches the ground.
+- `AircraftMotorTuning` (interface): interface AircraftMotorTuning — A rocket motor: thrust follows a curve over burn time, propellant leaves at a mass flow so the body gets lighter and easier to turn, and the nozzle gimbals on the pitch and yaw channels. Stage by `retune`-ing to the next stage's mass and motor.
 - `AircraftQuaternion` (type): type AircraftQuaternion = readonly [number, number, number, number] — Unit quaternion `[x, y, z, w]` taking body-frame vectors to world space.
 - `AircraftRotorTuning` (interface): interface AircraftRotorTuning — A main rotor. Collective sets blade pitch, throttle sets rotor speed, and cyclic (the pitch and roll channels) tilts the disc. Its drag torque yaws the body the other way unless a tail rotor, a second rotor or a pedal input cancels it.
 - `AircraftSurface` (interface): interface AircraftSurface — One lifting surface: a wing panel, a tailplane, a fin, a canard. Its lift acts at `at`, so the moments that pitch, roll and yaw the body come from where the surfaces sit, not from commanded rates.
