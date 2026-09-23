@@ -403,6 +403,10 @@ export interface MovementFeelConfig {
   runMultiplier?: number;
   /** Crouch speed as a multiple of walk speed (default 0.45). */
   crouchMultiplier?: number;
+  /** A jump pressed up to this many ms before landing fires on landing (default 0). Kinematic walk only; the capsule and voxel controllers jump on the press frame. */
+  jumpBufferMs?: number;
+  /** A jump pressed up to this many ms after walking off a ledge still fires (default 0). Kinematic walk only, like `jumpBufferMs`. */
+  coyoteMs?: number;
 }
 
 /** Movement-control levers for the shell-driven local player walk controller. */
@@ -432,7 +436,7 @@ export interface PlayerMovementConfig {
   /**
    * Walk-controller feel. Acceleration and friction are exponential response rates (1/s): higher reaches
    * the target velocity or stops sooner. Omitted fields keep the engine defaults, so nothing changes until a
-   * game sets one. Tune against `measureMovement` once it lands (#1772).
+   * game sets one. Tune against `measureMovement` (`@jgengine/core/movement/movementProbe`).
    */
   feel?: MovementFeelConfig;
   /** Radians/second the rendered body rotates toward its movement heading (shortest arc), so strafing/backpedalling read as a turn rather than an instant flip; also the rate the internally-integrated `turnLeft`/`turnRight` heading turns when the shell doesn't own yaw. Unset = body facing snaps instantly (no change to existing feel). */

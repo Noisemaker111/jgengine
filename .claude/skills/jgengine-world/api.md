@@ -423,10 +423,18 @@
 - `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning { tapMoveThresholdPx: number; tapMaxMs: number; swipeMinPx: number; swipeMinVelocity: number; dragStepPx: number } — ⚠ undocumented
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
 
+## @jgengine/core/input/inputBuffer
+
+- `BufferedAction` (interface): interface BufferedAction — One action's press history inside an {@link InputBuffer}.
+- `InputBuffer` (interface): interface InputBuffer — Remembers recent action presses so a press slightly early (a jump before landing) still counts. Times are caller-supplied ms, so it runs the same on a client, a host or in a replay.
+- `InputBufferSnapshot` (interface): interface InputBufferSnapshot — Serializable state for an {@link InputBuffer}.
+- `createInputBuffer` (function): function createInputBuffer(options: { windowMs: number }): InputBuffer — Creates an input buffer for jump buffering, coyote time, hold duration and double taps.
+
 ## @jgengine/core/input/lookChannel
 
-- `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number } — ⚠ undocumented
+- `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number; snap… — ⚠ undocumented
 - `LookChannelOptions` (interface): interface LookChannelOptions { sensitivity: number; maxVerticalOffset?: number } — ⚠ undocumented
+- `LookChannelState` (interface): interface LookChannelState — Plain JSON state of a {@link LookChannel}: the pending pixel deltas and the committed pose.
 - `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
 - `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
 
@@ -692,6 +700,13 @@
 - `MovementKeysState` (type): type MovementKeysState = Record<MovementKey, boolean> — ⚠ undocumented · used by `resolveFreeFlightIntent` (@jgengine/core/movement/freeFlight): Translate held keys + analog into a free-flight intent.
 - `MovementTuningOverrides` (interface): interface MovementTuningOverrides — Per-game overrides for the gravity/jump feel, sourced from `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
 - `PlayerMotionState` (interface): interface PlayerMotionState — Mutable kinematic state carried between frames by the controller. Kept here so the velocity / jump / gravity integration is a pure function testable without a renderer — the controller just owns the ref.
+
+## @jgengine/core/movement/movementProbe
+
+- `MovementProbeOptions` (interface): interface MovementProbeOptions — Scenario settings for {@link measureMovement}; every field has a default.
+- `MovementProbeSubject` (interface): interface MovementProbeSubject — The walk character {@link measureMovement} drives: the same fields a game passes to `defineGame`.
+- `MovementReport` (interface): interface MovementReport — Deterministic walk-feel metrics. `Infinity` means the target was never reached.
+- `measureMovement` (function): function measureMovement(subject: MovementProbeSubject = {}, options: MovementProbeOptions = {}): MovementReport — Drives a walk character through fixed scenarios (standing start, release to stop, reversal, a standing jump, a strafed jump) on the same integrator `stepPlayerMovement` uses, and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a feel change shows up as a number moving. Collision, terrain and swimming are out of scope; it measures flat ground.
 
 ## @jgengine/core/movement/playerMovement
 
