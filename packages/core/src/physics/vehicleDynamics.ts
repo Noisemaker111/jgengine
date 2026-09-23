@@ -103,6 +103,28 @@ export interface VehicleAeroTuning {
 }
 
 /**
+ * Four sprung corners. With this block the chassis heaves, pitches and rolls on real springs, axle loads come
+ * from spring forces instead of a filtered estimate, slopes pull the car downhill, and the car can leave
+ * the ground and land. Omit it for the flat-ground model.
+ */
+export interface VehicleSuspensionTuning {
+  /** Spring rate per wheel, N/m (20 000 soft road car … 60 000 race car; monster trucks go lower with more travel). */
+  springRate: number;
+  /** Damper rate per wheel in compression, N·s/m (roughly 2·√(k·m/4)·0.3 for a comfortable car, higher for a racer). */
+  damperRate: number;
+  /** Damper rate per wheel in extension, N·s/m (default `1.5 · damperRate`); higher keeps a landing from bouncing. */
+  reboundRate?: number;
+  /** Compression available before the bump stop, m (0.08 race car … 0.6 monster truck). */
+  travel: number;
+  /** Centre-of-mass height above level ground at static rest, m. */
+  rideHeight: number;
+  /** Total anti-roll bar stiffness, N·m/rad, split between axles by `rollStiffnessFront` (default `0`). */
+  antiRoll?: number;
+  /** Pitch inertia as a multiple of `m·a·b` (default `0.9`). */
+  pitchInertiaIndex?: number;
+}
+
+/**
  * Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N,
  * N·m, rad, s), so a feel target maps to a knob a person can reason about: more rear grip or a lower
  * centre of mass for stability, softer tires for forgiveness, more drive to the rear for power oversteer.
@@ -159,6 +181,8 @@ export interface VehicleDynamicsTuning {
   maxSubstep?: number;
   /** Brake held near standstill drives in reverse (default `true`). Set `false` for a separate reverse action. */
   reverseOnBrake?: boolean;
+  /** Sprung corners, slopes and air; omit for the flat-ground model. */
+  suspension?: VehicleSuspensionTuning;
 }
 
 /** Per-tick overrides layered over tuning: boost, grip zones, damage. Each scale defaults to `1`. */
@@ -179,6 +203,8 @@ export interface VehicleDynamicsOptions {
   surfaceFriction?: (x: number, z: number) => number;
   /** Clamp a planar move (walls, bounds); velocity is rederived from the allowed displacement. */
   clampMove?: (from: readonly [number, number], to: readonly [number, number]) => readonly [number, number];
+  /** Terrain height under a point; read per wheel when `suspension` is set (ramps, hills, ledges). Default flat at the spawn height. */
+  groundHeight?: (x: number, z: number) => number;
 }
 
 /** Serializable integrator state: everything {@link VehicleDynamics.restore} needs to resume bit-for-bit. */
@@ -199,6 +225,13 @@ export interface VehicleDynamicsState {
   lateralAccel: number;
   bodyPitch: number;
   bodyRoll: number;
+  /** Vertical velocity of the chassis, m/s (suspension only). */
+  vy: number;
+  pitchRate: number;
+  rollRate: number;
+  /** Per-corner spring compression, m, in order front-left, front-right, rear-left, rear-right. */
+  compression: [number, number, number, number];
+  airborne: boolean;
 }
 
 /** Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read. */
@@ -238,9 +271,14 @@ export interface VehicleDynamicsStep {
   stabilityActive: boolean;
   bodyPitch: number;
   bodyRoll: number;
-  /** Always `0`: ground-plane sim. Present so `tickDrivableVehicle` can drive it. */
+  /** Height of the car's base above the terrain under it, m; `0` on the ground and always `0` without `suspension`. */
   airOffset: number;
+  /** No wheel touches the ground. */
   airborne: boolean;
+  /** Vertical speed at the moment of touchdown this tick, m/s (`0` otherwise) — landing shake, thud, rumble. */
+  landingSpeed: number;
+  /** Per-corner spring load, N (front-left, front-right, rear-left, rear-right); all `0` without `suspension`. */
+  wheelLoads: readonly [number, number, number, number];
 }
 
 /**
@@ -257,8 +295,8 @@ export interface VehicleDynamics {
   velocity(): readonly [number, number];
   /** Scale planar velocity and yaw rate (crash, boost pad). */
   scaleVelocity(factor: number): void;
-  /** Add a world-space velocity change, m/s (impacts, knockback). */
-  applyImpulse(dvx: number, dvz: number): void;
+  /** Add a world-space velocity change, m/s (impacts, knockback, a jump pad's `dvy` with `suspension`). */
+  applyImpulse(dvx: number, dvz: number, dvy?: number): void;
   /** Swap tuning in place (upgrades, damage, a live tuning panel) without losing momentum. */
   retune(next: VehicleDynamicsTuning): void;
   tuning(): VehicleDynamicsTuning;
@@ -302,8 +340,23 @@ export function createVehicleDynamics(
   let rearShape = tireShape(tuning.rear ?? tuning.front);
   const surfaceFriction = options.surfaceFriction ?? (() => 1);
   const clampMove = options.clampMove;
+  const spawnGround = options.position?.[1] ?? 0;
+  const groundAt = options.groundHeight ?? (() => spawnGround);
 
   const state: VehicleDynamicsState = freshState(tuning, options.position ?? [0, 0, 0], options.heading ?? 0);
+  settleOnGround();
+
+  function settleOnGround(): void {
+    const suspension = tuning.suspension;
+    if (suspension === undefined) return;
+    state.y = groundAt(state.x, state.z) + suspension.rideHeight;
+    const sags = staticSags(tuning, suspension);
+    for (let i = 0; i < 4; i += 1) state.compression[i] = sags[i]!;
+  }
+
+  function baseHeight(): number {
+    return tuning.suspension === undefined ? state.y : state.y - tuning.suspension.rideHeight;
+  }
 
   function tick(dt: number, input: AxisInput, modifiers?: VehicleDynamicsModifiers): VehicleDynamicsStep {
     const maxSub = Math.max(1 / 2000, tuning.maxSubstep ?? DEFAULT_SUBSTEP);
@@ -311,13 +364,14 @@ export function createVehicleDynamics(
     const h = steps > 0 ? dt / steps : 0;
     const telemetry = emptyTelemetry();
     const surface = surfaceFriction(state.x, state.z);
+    telemetry.airborne = state.airborne;
     for (let i = 0; i < steps; i += 1) substep(h, input, modifiers, surface, telemetry);
     if (steps === 0) substep(0, input, modifiers, surface, telemetry);
     const [fx, fz] = forwardOf(state.heading);
     const forwardSpeed = state.vx * fx + state.vz * fz;
     const lateralSpeed = -state.vx * fz + state.vz * fx;
     return {
-      position: [state.x, state.y, state.z],
+      position: [state.x, baseHeight(), state.z],
       heading: state.heading,
       forwardSpeed,
       lateralSpeed,
@@ -343,8 +397,10 @@ export function createVehicleDynamics(
       stabilityActive: telemetry.stability,
       bodyPitch: state.bodyPitch,
       bodyRoll: state.bodyRoll,
-      airOffset: 0,
-      airborne: false,
+      airOffset: tuning.suspension === undefined ? 0 : Math.max(0, baseHeight() - groundAt(state.x, state.z)),
+      airborne: state.airborne,
+      landingSpeed: telemetry.landingSpeed,
+      wheelLoads: telemetry.wheelLoads,
     };
   }
 
@@ -399,16 +455,47 @@ export function createVehicleDynamics(
     const downforce = q * (aero?.downforceArea ?? 0);
     const downFront = aero?.downforceFront ?? 0.45;
     const weight = m * GRAVITY;
-    const transferLong = (m * state.longitudinalAccel * t.comHeight) / L;
-    const loadFront = Math.max(0, weight * (b / L) - transferLong + downforce * downFront);
-    const loadRear = Math.max(0, weight * (a / L) + transferLong + downforce * (1 - downFront));
-    const transferLat = (m * Math.abs(state.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
     const rsf = t.rollStiffnessFront ?? 0.5;
+    const suspension = t.suspension;
+    let loadFront: number;
+    let loadRear: number;
+    let transferFront: number;
+    let transferRear: number;
+    let grounded = true;
+    let slopeLong = 0;
+    let slopeLat = 0;
+    if (suspension === undefined) {
+      const transferLong = (m * state.longitudinalAccel * t.comHeight) / L;
+      loadFront = Math.max(0, weight * (b / L) - transferLong + downforce * downFront);
+      loadRear = Math.max(0, weight * (a / L) + transferLong + downforce * (1 - downFront));
+      const transferLat = (m * Math.abs(state.lateralAccel) * t.comHeight) / Math.max(0.3, t.trackWidth);
+      transferFront = transferLat * rsf;
+      transferRear = transferLat * (1 - rsf);
+    } else {
+      const wheel = springForces(suspension, a, b, h, rsf);
+      loadFront = wheel[0] + wheel[1];
+      loadRear = wheel[2] + wheel[3];
+      transferFront = Math.abs(wheel[0] - wheel[1]) / 2;
+      transferRear = Math.abs(wheel[2] - wheel[3]) / 2;
+      grounded = loadFront + loadRear > 0;
+      out.wheelLoads = [wheel[0], wheel[1], wheel[2], wheel[3]];
+      if (grounded) {
+        // Gravity along the terrain: the tires hold the car to the surface, so the downhill share acts in-plane.
+        const e = 0.5;
+        const gx = (groundAt(state.x + e, state.z) - groundAt(state.x - e, state.z)) / (2 * e);
+        const gz = (groundAt(state.x, state.z + e) - groundAt(state.x, state.z - e)) / (2 * e);
+        const norm = Math.sqrt(1 + gx * gx + gz * gz);
+        const worldX = (-weight * gx) / norm;
+        const worldZ = (-weight * gz) / norm;
+        slopeLong = worldX * fx + worldZ * fz;
+        slopeLat = -worldX * fz + worldZ * fx;
+      }
+    }
     const sens = t.loadSensitivity ?? 0.2;
     const gripScale = surface * (modifiers?.gripScale ?? 1);
-    const muFront = t.front.peakGrip * gripScale * loadSensitivityFactor(transferLat * rsf, loadFront, sens);
+    const muFront = t.front.peakGrip * gripScale * loadSensitivityFactor(transferFront, loadFront, sens);
     const rearTire = t.rear ?? t.front;
-    const muRear = rearTire.peakGrip * gripScale * loadSensitivityFactor(transferLat * (1 - rsf), loadRear, sens);
+    const muRear = rearTire.peakGrip * gripScale * loadSensitivityFactor(transferRear, loadRear, sens);
     const capFront = muFront * loadFront;
     const hbGrip = 1 - handbrake * (1 - (t.handbrakeGrip ?? 0.35));
     const capRear = muRear * loadRear;
@@ -495,16 +582,17 @@ export function createVehicleDynamics(
 
     // Car-frame forces (x forward, y along the lateral axis used by `v`).
     const frontLat = fyFront * cosD - fxFront * sinD;
-    let forceLong = fxFront * cosD + fyFront * sinD + fxRear + (modifiers?.thrust ?? 0);
-    const forceLat = frontLat + fyRear;
+    let forceLong = fxFront * cosD + fyFront * sinD + fxRear + (modifiers?.thrust ?? 0) + slopeLong;
+    const forceLat = frontLat + fyRear + slopeLat;
     const drag = q * (aero?.dragArea ?? 0) * Math.sign(u);
-    const rolling = (aero?.rollingResistance ?? 0.015) * weight * Math.sign(u) * Math.min(1, Math.abs(u) / 0.5);
+    const rollingLoad = suspension === undefined ? weight : loadFront + loadRear;
+    const rolling = (aero?.rollingResistance ?? 0.015) * rollingLoad * Math.sign(u) * Math.min(1, Math.abs(u) / 0.5);
     forceLong -= drag + rolling;
     // Lateral force ahead of the CG yaws the heading negative in this frame, force behind it positive.
     let yawMoment = -a * frontLat + b * fyRear;
 
     const stab = assists?.stability ?? 0;
-    if (stab > 0 && Math.abs(u) > 3) {
+    if (stab > 0 && grounded && Math.abs(u) > 3) {
       const allowed = assists?.maxSideslip ?? 0.2;
       const excess = Math.abs(sideslipNow) - allowed;
       if (excess > 0) {
@@ -516,8 +604,8 @@ export function createVehicleDynamics(
 
     let du = forceLong / m - r * v;
     const dv = forceLat / m + r * u;
-    // Brakes and rolling resistance cannot reverse the car inside one substep.
-    if (h > 0 && throttle <= 0 && !wantReverseDrive && (modifiers?.thrust ?? 0) === 0) {
+    // Brakes and rolling resistance cannot reverse the car inside one substep (a slope can).
+    if (h > 0 && throttle <= 0 && !wantReverseDrive && (modifiers?.thrust ?? 0) === 0 && slopeLong === 0) {
       const next = u + du * h;
       if (Math.sign(next) !== Math.sign(u) && u !== 0) du = -u / h;
     }
@@ -526,7 +614,9 @@ export function createVehicleDynamics(
     let nu = u + du * h;
     let nv = v + dv * h;
     let nr = r + dr * h;
-    if (h > 0 && speed < 0.3 && throttle <= 0 && brakeInput <= 0 && Math.abs(modifiers?.thrust ?? 0) === 0) {
+    const slopePull = Math.hypot(slopeLong, slopeLat);
+    const holds = slopePull <= (aero?.rollingResistance ?? 0.015) * weight * 2 || brakeInput > 0 || handbrake > 0;
+    if (h > 0 && grounded && holds && speed < 0.3 && throttle <= 0 && brakeInput <= 0 && Math.abs(modifiers?.thrust ?? 0) === 0) {
       nu *= Math.max(0, 1 - 6 * h);
       nv *= Math.max(0, 1 - 6 * h);
       nr *= Math.max(0, 1 - 6 * h);
@@ -554,21 +644,104 @@ export function createVehicleDynamics(
     state.vz = nvz;
     state.yawRate = nr;
 
-    const response = 1 - Math.exp(-(t.suspensionResponse ?? 8) * h);
+    const response = suspension === undefined ? 1 - Math.exp(-(t.suspensionResponse ?? 8) * h) : 1;
     const accelLong = h > 0 ? du + r * v : 0;
     const accelLat = h > 0 ? dv - r * u : 0;
     state.longitudinalAccel += (accelLong - state.longitudinalAccel) * response;
     state.lateralAccel += (accelLat - state.lateralAccel) * response;
-    const rollK = t.rollStiffness ?? (m * GRAVITY * t.comHeight) / 0.05;
-    const pitchK = t.pitchStiffness ?? (m * GRAVITY * t.comHeight) / 0.035;
-    state.bodyRoll = (m * state.lateralAccel * t.comHeight) / rollK;
-    state.bodyPitch = (-m * state.longitudinalAccel * t.comHeight) / pitchK;
+    if (suspension === undefined) {
+      const rollK = t.rollStiffness ?? (m * GRAVITY * t.comHeight) / 0.05;
+      const pitchK = t.pitchStiffness ?? (m * GRAVITY * t.comHeight) / 0.035;
+      state.bodyRoll = (m * state.lateralAccel * t.comHeight) / rollK;
+      state.bodyPitch = (-m * state.longitudinalAccel * t.comHeight) / pitchK;
+    } else {
+      integrateBody(suspension, a, b, h, downforce, grounded, out);
+    }
 
     out.sideslip = Math.abs(nu) > 1 ? Math.atan2(nv, Math.abs(nu)) : 0;
     out.slipFront = slipFront;
     out.slipRear = slipRear;
     out.loadFront = loadFront;
     out.loadRear = loadRear;
+  }
+
+  const corner = [0, 0, 0, 0];
+
+  /** Spring + damper + anti-roll force at each corner from the current body pose; updates stored compression. */
+  function springForces(suspension: VehicleSuspensionTuning, a: number, b: number, h: number, rsf: number): number[] {
+    const t = tuning;
+    const half = Math.max(0.15, t.trackWidth / 2);
+    const [fx, fz] = forwardOf(state.heading);
+    const sags = staticSags(t, suspension);
+    for (let i = 0; i < 4; i += 1) {
+      const along = i < 2 ? a : -b;
+      const lat = i % 2 === 0 ? -half : half;
+      const px = state.x + fx * along - fz * lat;
+      const pz = state.z + fz * along + fx * lat;
+      const attach = state.y - state.bodyPitch * along + state.bodyRoll * lat;
+      const c = groundAt(px, pz) + suspension.rideHeight + sags[i]! - attach;
+      const rate = h > 0 ? (c - state.compression[i]!) / h : 0;
+      state.compression[i] = c;
+      let force = 0;
+      if (c > 0) {
+        const damping = rate >= 0 ? suspension.damperRate : (suspension.reboundRate ?? suspension.damperRate * 1.5);
+        force = suspension.springRate * c + damping * rate;
+        // The bump stop is stiff and lossy: it stops the travel without handing the landing back as a bounce.
+        if (c > suspension.travel) force += suspension.springRate * 20 * (c - suspension.travel) + Math.max(0, rate) * suspension.damperRate * 6;
+      }
+      corner[i] = Math.max(0, force);
+    }
+    const antiRoll = suspension.antiRoll ?? 0;
+    if (antiRoll > 0) {
+      for (let axle = 0; axle < 2; axle += 1) {
+        const left = axle * 2;
+        if (corner[left]! <= 0 || corner[left + 1]! <= 0) continue;
+        const share = axle === 0 ? rsf : 1 - rsf;
+        const shift = (antiRoll * share * state.bodyRoll) / (2 * half);
+        corner[left] = Math.max(0, corner[left]! + shift);
+        corner[left + 1] = Math.max(0, corner[left + 1]! - shift);
+      }
+    }
+    return corner;
+  }
+
+  /** Heave, pitch and roll from the corner forces found this substep plus the tires' inertial moments. */
+  function integrateBody(
+    suspension: VehicleSuspensionTuning,
+    a: number,
+    b: number,
+    h: number,
+    downforce: number,
+    grounded: boolean,
+    out: Telemetry,
+  ): void {
+    const t = tuning;
+    const m = t.massKg;
+    const half = Math.max(0.15, t.trackWidth / 2);
+    let lift = 0;
+    let pitchMoment = 0;
+    let rollMoment = 0;
+    for (let i = 0; i < 4; i += 1) {
+      const along = i < 2 ? a : -b;
+      const lat = i % 2 === 0 ? -half : half;
+      lift += corner[i]!;
+      pitchMoment -= corner[i]! * along;
+      rollMoment += corner[i]! * lat;
+    }
+    if (grounded) {
+      pitchMoment -= m * state.longitudinalAccel * t.comHeight;
+      rollMoment += m * state.lateralAccel * t.comHeight;
+    }
+    const pitchInertia = Math.max(1, (suspension.pitchInertiaIndex ?? 0.9) * m * a * b);
+    const rollInertia = Math.max(1, 0.6 * m * half * half);
+    state.vy += ((lift - downforce) / m - GRAVITY) * h;
+    state.y += state.vy * h;
+    state.pitchRate += (pitchMoment / pitchInertia) * h;
+    state.rollRate += (rollMoment / rollInertia) * h;
+    state.bodyPitch += state.pitchRate * h;
+    state.bodyRoll += state.rollRate * h;
+    if (state.airborne && grounded) out.landingSpeed = Math.max(out.landingSpeed, -state.vy);
+    state.airborne = !grounded;
   }
 
   function driveForce(throttle: number, reverse: number, u: number, h: number, out: Telemetry): number {
@@ -615,16 +788,17 @@ export function createVehicleDynamics(
 
   return {
     tick,
-    pose: () => ({ position: [state.x, state.y, state.z], heading: state.heading }),
+    pose: () => ({ position: [state.x, baseHeight(), state.z], heading: state.heading }),
     velocity: () => [state.vx, state.vz],
     scaleVelocity(factor) {
       state.vx *= factor;
       state.vz *= factor;
       state.yawRate *= factor;
     },
-    applyImpulse(dvx, dvz) {
+    applyImpulse(dvx, dvz, dvy = 0) {
       state.vx += dvx;
       state.vz += dvz;
+      if (tuning.suspension !== undefined) state.vy += dvy;
     },
     retune(next) {
       tuning = next;
@@ -635,12 +809,13 @@ export function createVehicleDynamics(
       }
     },
     tuning: () => tuning,
-    snapshot: () => ({ ...state }),
+    snapshot: () => ({ ...state, compression: [...state.compression] }),
     restore(next) {
-      Object.assign(state, next);
+      Object.assign(state, next, { compression: [...next.compression] });
     },
     resetTo(position, heading) {
       Object.assign(state, freshState(tuning, position, heading));
+      settleOnGround();
     },
   };
 }
@@ -659,6 +834,9 @@ interface Telemetry {
   abs: boolean;
   traction: boolean;
   stability: boolean;
+  airborne: boolean;
+  landingSpeed: number;
+  wheelLoads: readonly [number, number, number, number];
 }
 
 function emptyTelemetry(): Telemetry {
@@ -676,7 +854,18 @@ function emptyTelemetry(): Telemetry {
     abs: false,
     traction: false,
     stability: false,
+    airborne: false,
+    landingSpeed: 0,
+    wheelLoads: [0, 0, 0, 0],
   };
+}
+
+/** Static spring compression at each corner that holds the car level at `rideHeight`. */
+function staticSags(tuning: VehicleDynamicsTuning, suspension: VehicleSuspensionTuning): readonly number[] {
+  const front = clamp01(tuning.frontWeight);
+  const perFront = (tuning.massKg * GRAVITY * front) / 2 / Math.max(1, suspension.springRate);
+  const perRear = (tuning.massKg * GRAVITY * (1 - front)) / 2 / Math.max(1, suspension.springRate);
+  return [perFront, perFront, perRear, perRear];
 }
 
 /**
@@ -749,5 +938,10 @@ function freshState(
     lateralAccel: 0,
     bodyPitch: 0,
     bodyRoll: 0,
+    vy: 0,
+    pitchRate: 0,
+    rollRate: 0,
+    compression: [0, 0, 0, 0],
+    airborne: false,
   };
 }

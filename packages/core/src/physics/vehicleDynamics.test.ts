@@ -2,8 +2,13 @@ import { describe, expect, test } from "bun:test";
 
 import type { AxisInput } from "../input/axisInput";
 import { tickDrivableVehicle } from "./drivableVehicle";
-import { measureHandling } from "./handlingProbe";
-import { createVehicleDynamics, type VehicleDynamicsTuning, type VehicleGearboxTuning } from "./vehicleDynamics";
+import { measureHandling, measureRide } from "./handlingProbe";
+import {
+  createVehicleDynamics,
+  type VehicleDynamicsTuning,
+  type VehicleGearboxTuning,
+  type VehicleSuspensionTuning,
+} from "./vehicleDynamics";
 
 const DT = 1 / 60;
 
@@ -258,5 +263,105 @@ describe("createVehicleDynamics — handling emerges from physical knobs", () =>
       return Math.abs(car.pose().heading - start);
     };
     expect(headingChange(1)).toBeGreaterThan(headingChange(0) * 1.5);
+  });
+});
+
+const roadSprings: VehicleSuspensionTuning = { springRate: 32000, damperRate: 3200, travel: 0.14, rideHeight: 0.48, antiRoll: 30000 };
+const sprung: VehicleDynamicsTuning = { ...gripRwd, assists: { abs: 1, tractionControl: 0.6, stability: 0.5 }, suspension: roadSprings };
+
+describe("createVehicleDynamics — suspension", () => {
+  test("rests level at its ride height with the static weight split across the corners", () => {
+    const car = createVehicleDynamics(sprung, { position: [0, 2, 0] });
+    let step = car.tick(DT, axis({}));
+    for (let i = 0; i < 120; i += 1) step = car.tick(DT, axis({}));
+    expect(step.position[1]).toBeCloseTo(2, 3);
+    expect(step.airborne).toBe(false);
+    const total = step.wheelLoads.reduce((sum, load) => sum + load, 0);
+    expect(total).toBeCloseTo(sprung.massKg * 9.81, -1);
+    expect((step.wheelLoads[0] + step.wheelLoads[1]) / total).toBeCloseTo(sprung.frontWeight, 2);
+  });
+
+  test("braking dives the nose and a right-hand corner loads and drops the left side", () => {
+    const car = createVehicleDynamics(sprung);
+    let step = car.tick(DT, axis({}));
+    for (let i = 0; i < 600 && step.forwardSpeed < 20; i += 1) step = car.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 90; i += 1) step = car.tick(DT, axis({ throttle: 0.4, steer: 0.5 }));
+    expect(step.bodyRoll).toBeGreaterThan(0.02);
+    expect(step.wheelLoads[0] + step.wheelLoads[2]).toBeGreaterThan((step.wheelLoads[1] + step.wheelLoads[3]) * 2);
+    const straight = createVehicleDynamics(sprung);
+    step = straight.tick(DT, axis({}));
+    for (let i = 0; i < 600 && step.forwardSpeed < 20; i += 1) step = straight.tick(DT, axis({ throttle: 1 }));
+    for (let i = 0; i < 20; i += 1) step = straight.tick(DT, axis({ brake: 1 }));
+    expect(step.bodyPitch).toBeGreaterThan(0.01);
+    expect(step.wheelLoads[0] + step.wheelLoads[1]).toBeGreaterThan(step.wheelLoads[2] + step.wheelLoads[3]);
+  });
+
+  test("drives off a ledge, flies, lands at the free-fall speed and settles without bouncing away", () => {
+    const car = createVehicleDynamics(sprung, { groundHeight: (_x, z) => (z > 40 ? -3 : 0) });
+    let airborneTicks = 0;
+    let landing = 0;
+    let step = car.tick(DT, axis({}));
+    for (let i = 0; i < 400; i += 1) {
+      step = car.tick(DT, axis({ throttle: 1 }));
+      if (step.airborne) airborneTicks += 1;
+      landing = Math.max(landing, step.landingSpeed);
+    }
+    expect(landing).toBeGreaterThan(Math.sqrt(2 * 9.81 * 3) - 1);
+    expect(airborneTicks * DT).toBeGreaterThan(0.5);
+    expect(airborneTicks * DT).toBeLessThan(1);
+    expect(step.airborne).toBe(false);
+    expect(step.position[1]).toBeCloseTo(-3, 1);
+  });
+
+  test("rolls back down a grade in neutral and the handbrake holds it", () => {
+    const grade = (_x: number, z: number) => 0.2 * z;
+    const rolling = createVehicleDynamics(sprung, { groundHeight: grade });
+    for (let i = 0; i < 180; i += 1) rolling.tick(DT, axis({}));
+    expect(rolling.pose().position[2]).toBeLessThan(-0.3);
+    const parked = createVehicleDynamics(sprung, { groundHeight: grade });
+    let step = parked.tick(DT, axis({ handbrake: 1 }));
+    for (let i = 0; i < 180; i += 1) step = parked.tick(DT, axis({ handbrake: 1 }));
+    expect(Math.abs(step.forwardSpeed)).toBeLessThan(0.05);
+  });
+
+  test("snapshot/restore resumes bit-for-bit over rough ground", () => {
+    const bumps = (x: number, z: number) => 0.15 * Math.sin(z * 0.7) + 0.08 * Math.sin(x * 1.3);
+    const inputs = Array.from({ length: 360 }, (_, i) => axis({ throttle: i < 200 ? 1 : 0.3, steer: i > 150 ? Math.sin(i / 25) * 0.6 : 0 }));
+    const reference = createVehicleDynamics(sprung, { groundHeight: bumps });
+    let saved = reference.snapshot();
+    for (let i = 0; i < inputs.length; i += 1) {
+      if (i === 180) saved = reference.snapshot();
+      reference.tick(DT, inputs[i]!);
+    }
+    const replica = createVehicleDynamics(sprung, { groundHeight: bumps });
+    replica.restore(saved);
+    for (let i = 180; i < inputs.length; i += 1) replica.tick(DT, inputs[i]!);
+    expect(replica.snapshot()).toEqual(reference.snapshot());
+  });
+
+  test("measureRide separates a stiff race setup from a soft road setup", () => {
+    const soft = measureRide(() => createVehicleDynamics({ ...sprung, suspension: { springRate: 18000, damperRate: 1400, travel: 0.2, rideHeight: 0.5 } }));
+    const stiff = measureRide(() => createVehicleDynamics({ ...sprung, suspension: { springRate: 70000, damperRate: 6500, travel: 0.07, rideHeight: 0.4, antiRoll: 90000 } }));
+    expect(stiff.settleSeconds).toBeLessThan(soft.settleSeconds);
+    expect(stiff.brakeDiveDeg).toBeLessThan(soft.brakeDiveDeg);
+    expect(stiff.rollGradient).toBeLessThan(soft.rollGradient / 2);
+    expect(stiff.rollGradient).toBeGreaterThan(0.5);
+    expect(stiff.landingBounces).toBe(0);
+  });
+
+  test("springs keep the flat-ground handling numbers close to the unsprung model", () => {
+    const flat = measureHandling(() => createVehicleDynamics({ ...gripRwd, assists: sprung.assists }));
+    const withSprings = measureHandling(() => createVehicleDynamics(sprung));
+    expect(Math.abs(withSprings.maxLateralG - flat.maxLateralG)).toBeLessThan(0.08);
+    expect(Math.abs(withSprings.zeroTo100 - flat.zeroTo100)).toBeLessThan(0.3);
+    expect(withSprings.spun).toBe(false);
+  });
+
+  test("tickDrivableVehicle over terrain places the car where the sim says", () => {
+    const ground = (_x: number, z: number) => 0.05 * z;
+    const car = createVehicleDynamics(sprung, { groundHeight: ground });
+    let drive = tickDrivableVehicle(car, DT, axis({ throttle: 1 }), { groundHeight: ground });
+    for (let i = 0; i < 120; i += 1) drive = tickDrivableVehicle(car, DT, axis({ throttle: 1 }), { groundHeight: ground });
+    expect(drive.pose.position[1]).toBeCloseTo(Math.max(drive.step.position[1], ground(0, drive.step.position[2])), 2);
   });
 });

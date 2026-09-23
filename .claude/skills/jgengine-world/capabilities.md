@@ -525,6 +525,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createResourceNodeField` (function) · `import { createResourceNodeField } from "@jgengine/core/world/resourceNode"`
 
+## ride-metrics — measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce
+
+- `measureRide` (function) · `import { measureRide } from "@jgengine/core/physics/handlingProbe"`
+
 ## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
 
 - `controlGroupKey` (function) · `import { controlGroupKey } from "@jgengine/core/world"`
