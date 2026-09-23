@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "../game/defineGame";
+import { createPhysicsWorldBackend } from "../physics/physicsWorldBackend";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { fittedObjectColliders } from "../scene/colliders";
 import { encodeCollisionMesh, type CollisionMeshSource } from "../scene/collisionMesh";
@@ -10,6 +11,8 @@ import type { TerrainField } from "../world/terrain";
 import {
   playerMovementHeading,
   resolvePlayerMovementTuning,
+  restorePlayerMovement,
+  snapshotPlayerMovement,
   stepPlayerMovement,
   type PlayerMovementTuning,
 } from "./playerMovement";
@@ -395,5 +398,76 @@ describe("resolvePlayerMovementTuning — movement.feel", () => {
       crouchSpeedMultiplier: 0.3,
     });
     expect(resolvePlayerMovementTuning({}).physics).toBeUndefined();
+  });
+});
+
+describe("snapshotPlayerMovement", () => {
+  function trace(ctx: GameContext): number[] {
+    const out: number[] = [];
+    const inputs = [["moveForward", "jump"], ["moveForward"], ["moveRight"], [], ["turnLeft", "moveForward"]];
+    for (let i = 0; i < 60; i++) {
+      stepPlayerMovement(ctx, "a", frame(inputs[Math.floor(i / 12)]!), 1 / 60, FLAT);
+      out.push(...ctx.scene.entity.get("a")!.position, playerMovementHeading(ctx, "a"));
+    }
+    return out;
+  }
+
+  test("restoring mid-jump replays the same path bit-exactly", () => {
+    const ctx = context(["a"]);
+    for (let i = 0; i < 10; i++) stepPlayerMovement(ctx, "a", frame(["moveForward", "jump", "turnRight"]), 1 / 60, FLAT);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    const pose = [...ctx.scene.entity.get("a")!.position] as [number, number, number];
+    const first = trace(ctx);
+    restorePlayerMovement(ctx, "a", saved);
+    ctx.scene.entity.setPose("a", { position: pose, rotationY: 0, dt: 1 / 60 });
+    expect(trace(ctx)).toEqual(first);
+    expect(JSON.parse(JSON.stringify(saved))).toEqual(saved);
+  });
+
+  test("a snapshot is a copy that later steps do not mutate", () => {
+    const ctx = context(["a"]);
+    for (let i = 0; i < 5; i++) stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, FLAT);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    const before = JSON.stringify(saved);
+    for (let i = 0; i < 20; i++) stepPlayerMovement(ctx, "a", frame(["moveForward", "jump"]), 1 / 60, FLAT);
+    expect(JSON.stringify(saved)).toBe(before);
+  });
+
+  test("an unknown player has no snapshot, and restoring one creates its state", () => {
+    const ctx = context(["a", "b"]);
+    expect(snapshotPlayerMovement(ctx, "b")).toBeNull();
+    for (let i = 0; i < 5; i++) stepPlayerMovement(ctx, "a", frame(["turnRight"]), 1 / 60, FLAT);
+    restorePlayerMovement(ctx, "b", snapshotPlayerMovement(ctx, "a")!);
+    expect(playerMovementHeading(ctx, "b")).toBe(playerMovementHeading(ctx, "a"));
+  });
+
+  test("a capsule-controller player restored into a fresh context replays the same path", () => {
+    function capsuleTuning(): PlayerMovementTuning {
+      const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -5, -60], max: [60, 60, 60] }, warn: false });
+      backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+      return resolvePlayerMovementTuning({ physics: { backend } });
+    }
+    const run = (ctx: GameContext, tuning: PlayerMovementTuning, held: string[], steps: number) => {
+      const out: number[] = [];
+      for (let i = 0; i < steps; i++) {
+        stepPlayerMovement(ctx, "a", frame(held), 1 / 60, tuning, 0);
+        out.push(...ctx.scene.entity.get("a")!.position);
+      }
+      return out;
+    };
+    const live = context(["a"]);
+    const liveTuning = capsuleTuning();
+    run(live, liveTuning, ["moveForward"], 5);
+    run(live, liveTuning, ["moveForward", "jump"], 4);
+    const saved = snapshotPlayerMovement(live, "a")!;
+    expect(saved.controller).not.toBeNull();
+    expect(saved.controller!.verticalVelocity).toBeGreaterThan(0);
+    const pose = [...live.scene.entity.get("a")!.position] as [number, number, number];
+    const expected = run(live, liveTuning, ["moveForward"], 30);
+
+    const replay = context(["a"]);
+    replay.scene.entity.setPose("a", { position: pose, rotationY: 0, dt: 1 / 60 });
+    restorePlayerMovement(replay, "a", saved);
+    expect(run(replay, capsuleTuning(), ["moveForward"], 30)).toEqual(expected);
   });
 });
