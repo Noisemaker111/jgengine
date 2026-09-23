@@ -358,3 +358,58 @@ describe("analog movement intent (#1370)", () => {
     expect(halfSpeed).toBeCloseTo(fullSpeed / 2, 1);
   });
 });
+
+describe("advancePlayerMotion — feel overrides", () => {
+  function timeToNinetyPercent(tuning?: Parameters<typeof advancePlayerMotion>[6]): number {
+    const motion = createPlayerMotionState();
+    const top = steadySpeed(forwardIntent(), tuning);
+    for (let i = 1; i < 600; i += 1) {
+      advancePlayerMotion(motion, forwardIntent(), 0, -1, 2.5, DT, tuning);
+      if (Math.hypot(motion.horizontalVelocityX, motion.horizontalVelocityZ) >= top * 0.9) return i * DT;
+    }
+    return Number.POSITIVE_INFINITY;
+  }
+
+  function stopDistance(tuning?: Parameters<typeof advancePlayerMotion>[6]): number {
+    const motion = createPlayerMotionState();
+    for (let i = 0; i < 120; i += 1) advancePlayerMotion(motion, forwardIntent(), 0, -1, 2.5, DT, tuning);
+    let travelled = 0;
+    for (let i = 0; i < 600; i += 1) {
+      const step = advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning);
+      travelled += Math.hypot(step.stepX, step.stepZ);
+    }
+    return travelled;
+  }
+
+  test("defaults are unchanged when no feel override is given", () => {
+    expect(timeToNinetyPercent({})).toBeCloseTo(timeToNinetyPercent(undefined), 9);
+  });
+
+  test("ground acceleration sets how fast the walk reaches speed", () => {
+    expect(timeToNinetyPercent({ groundAcceleration: 6 })).toBeGreaterThan(timeToNinetyPercent({ groundAcceleration: 40 }) * 3);
+  });
+
+  test("ground friction sets how far the walk slides to a stop", () => {
+    expect(stopDistance({ groundFriction: 4, groundAcceleration: 4 })).toBeGreaterThan(stopDistance() * 3);
+  });
+
+  test("zero air acceleration commits to the jump arc", () => {
+    const locked = createPlayerMotionState();
+    const free = createPlayerMotionState();
+    const jumpForward = resolveMovementIntent({ ...createEmptyMovementKeys(), space: true }, true);
+    advancePlayerMotion(locked, jumpForward, 0, -1, 2.5, DT, { airAcceleration: 0 });
+    advancePlayerMotion(free, jumpForward, 0, -1, 2.5, DT, { airAcceleration: 40 });
+    for (let i = 0; i < 20; i += 1) {
+      advancePlayerMotion(locked, forwardIntent(), 0, -1, 2.5, DT, { airAcceleration: 0 });
+      advancePlayerMotion(free, forwardIntent(), 0, -1, 2.5, DT, { airAcceleration: 40 });
+    }
+    expect(Math.abs(locked.horizontalVelocityZ)).toBeLessThan(0.01);
+    expect(Math.abs(free.horizontalVelocityZ)).toBeGreaterThan(2);
+  });
+
+  test("run and crouch multipliers scale their speeds", () => {
+    const sprint = { ...createEmptyMovementKeys(), w: true, shift: true };
+    const sprinting = resolveMovementIntent(sprint, true);
+    expect(steadySpeed(sprinting, { runSpeedMultiplier: 3 })).toBeCloseTo(steadySpeed(sprinting) * (3 / MOVEMENT_TUNING.runSpeedMultiplier), 3);
+  });
+});
