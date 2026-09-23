@@ -67,3 +67,22 @@ describe("simulationCulling", () => {
     expect(culler.step("b", 100, 0).update).toBe(false);
   });
 });
+
+describe("simulation culler snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const culler = createSimulationCuller({ enabled: true, beyondInterval: 0.5 });
+    for (const id of ["near", "mid", "far"]) culler.step(id, id === "near" ? 10 : id === "mid" ? 120 : 400, 0.05);
+    const saved = culler.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      const out = [];
+      for (let i = 0; i < 15; i += 1) for (const id of ["near", "mid", "far"]) out.push(culler.step(id, 60 + i * 20, 0.05));
+      return out;
+    };
+    const a = play();
+    culler.setEnabled(false);
+    expect(saved).toEqual(frozen);
+    culler.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

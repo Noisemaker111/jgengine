@@ -80,3 +80,30 @@ describe("createGrappleSwing — damping", () => {
     expect(result.velocity[0]).toBeCloseTo(5, 5);
   });
 });
+
+describe("grapple swing restore", () => {
+  test("state and restore replay bit-exactly", () => {
+    const swing = createGrappleSwing({ reelSpeed: 2, stiffness: 4 });
+    swing.fire([0, 10, 0], [6, 2, 0]);
+    swing.step([6, 2, 0], [0, 0, 3], 1 / 60, true);
+    const saved = swing.state();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      let position: readonly [number, number, number] = [7, 1, 1];
+      let velocity: readonly [number, number, number] = [1, -2, 3];
+      const out = [];
+      for (let i = 0; i < 40; i += 1) {
+        const step = swing.step(position, [velocity[0], velocity[1] - 0.3, velocity[2]], 1 / 60, i < 20);
+        position = [step.position[0] + step.velocity[0] / 60, step.position[1] + step.velocity[1] / 60, step.position[2] + step.velocity[2] / 60];
+        velocity = step.velocity;
+        out.push(step, swing.state());
+      }
+      return out;
+    };
+    const a = play();
+    swing.release();
+    expect(saved).toEqual(frozen);
+    swing.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});
