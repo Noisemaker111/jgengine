@@ -879,6 +879,16 @@
 - `BallisticSweepOptions` (interface): interface BallisticSweepOptions { step?: number; radius?: number } — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
 - `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
 
+## @jgengine/core/physics/boatDynamics
+
+- `BoatDynamics` (interface): interface BoatDynamics — A force-based powered hull on the same tick/snapshot/retune contract as `VehicleDynamics`.
+- `BoatOptions` (interface): interface BoatOptions — World hooks for a boat instance.
+- `BoatState` (interface): interface BoatState — Serializable boat state.
+- `BoatSteering` (type): type BoatSteering = | { kind: "rudder"; /** Rudder area, m². */ area: number; /** Largest rudder angle, rad (default `0.6`). */ maxAngle?: number; /** Share of prop thrust that washes over the rudder as flow, `0..1` (default `0.5`) — steering at low speed. */ propWash?: number; } | { kind: "outboard… — How the boat turns: a rudder needs water flowing past it; an outboard swings its own thrust.
+- `BoatStep` (interface): interface BoatStep — One boat tick: pose plus the telemetry wake, spray and engine sound read.
+- `BoatTuning` (interface): interface BoatTuning — A powered hull in physical units. Drag rises toward hull speed (`√(g·L)·1.34`) and then falls away once the hull planes, the keel resists sliding sideways, and the prop's thrust fades as the boat approaches the prop's speed.
+- `createBoatDynamics` (function): function createBoatDynamics(initial: BoatTuning, options: BoatOptions = {}): BoatDynamics — Creates a {@link BoatDynamics}: throttle drives the prop, brake reverses it, steer swings the rudder or outboard. A rudder boat barely turns at rest unless the prop is washing over it; an outboard turns at rest because it swings the thrust itself. Deterministic for a given `dt` sequence.
+
 ## @jgengine/core/physics/buoyancy
 
 - `BuoyantBody` (class): class BuoyantBody — Floats a {@link PhysicsWorld} body on a CPU {@link WaterSurface}: each hull sample point pushes the body up by its submerged depth (Archimedes, coarse), with vertical and horizontal water drag so the hull settles at the waterline and rides the Gerstner waves. Passing an {@link AxisInput} drives it as a boat — throttle thrusts along the heading, steer yaws, a keel bleeds sideways slip. Call `update(dt, time, input?)` before the shared `world.step(dt)`.
