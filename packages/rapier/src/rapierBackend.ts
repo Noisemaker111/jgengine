@@ -33,6 +33,7 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
   let nextJoint = 1;
   let hasStepped = false;
   let listener: ((event: ContactEvent) => void) | null = null;
+  const forced = new Set<number>();
 
   const shape = (s: BodyShape): any => {
     switch (s.kind) {
@@ -76,8 +77,13 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
       bd.setTranslation(...d.position).setRotation(q(d.rotation)).setLinvel(...(d.velocity ?? [0, 0, 0])).setAngvel(vec({ x: (d.angularVelocity ?? [0, 0, 0])[0], y: (d.angularVelocity ?? [0, 0, 0])[1], z: (d.angularVelocity ?? [0, 0, 0])[2] }));
       if (d.mass !== undefined) bd.setAdditionalMass(d.mass);
       if (d.ccd) bd.setCcdEnabled(true);
+      if (d.linearDamping !== undefined) bd.setLinearDamping(d.linearDamping);
+      if (d.angularDamping !== undefined) bd.setAngularDamping(d.angularDamping);
       const b = world.createRigidBody(bd);
-      const c = world.createCollider(shape(d.shape).setFriction(d.friction ?? 0.5).setRestitution(d.restitution ?? 0).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS), b);
+      const colliderDesc = shape(d.shape).setFriction(d.friction ?? 0.5).setRestitution(d.restitution ?? 0).setActiveEvents(R.ActiveEvents.COLLISION_EVENTS);
+      // `mass` is the body's total mass: without zero density, Rapier adds the collider's volume mass on top.
+      if (d.mass !== undefined) colliderDesc.setDensity(0);
+      const c = world.createCollider(colliderDesc, b);
       c.setCollisionGroups(((d.mask ?? ALL) << 16) | (d.layers ?? 1));
       b.__jg = { d, h };
       if (d.asleep) b.sleep();
@@ -102,6 +108,8 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
     setRotation(h, r) { get(h).setRotation(q(r), true); },
     setVelocity(h, p) { get(h).setLinvel({ x: p[0], y: p[1], z: p[2] }, true); },
     setAngularVelocity(h, p) { get(h).setAngvel({ x: p[0], y: p[1], z: p[2] }, true); },
+    applyForce(h, f, p) { const b = get(h); if (p) b.addForceAtPoint({ x: f[0], y: f[1], z: f[2] }, { x: p[0], y: p[1], z: p[2] }, true); else b.addForce({ x: f[0], y: f[1], z: f[2] }, true); forced.add(h); },
+    applyTorque(h, t) { get(h).addTorque({ x: t[0], y: t[1], z: t[2] }, true); forced.add(h); },
     applyImpulse(h, i, p) { const b = get(h); b.applyImpulseAtPoint({ x: i[0], y: i[1], z: i[2] }, p ? { x: p[0], y: p[1], z: p[2] } : b.translation(), true); },
     setKinematicTarget(h, p, r) { const b = get(h); b.setNextKinematicTranslation({ x: p[0], y: p[1], z: p[2] }); if (r) b.setNextKinematicRotation(q(r)); },
     wake(h) { get(h).wakeUp(); },
@@ -115,6 +123,8 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
     removeJoint(h) { const j = joints.get(h); if (j) { world.removeImpulseJoint(j.joint, true); joints.delete(h); } },
     step(dt) {
       if (dt <= 0) return; world.timestep = options.fixedDt ?? dt; world.step(events); hasStepped = true;
+      // Rapier keeps added forces until reset; the backend contract is one step per applyForce call.
+      for (const h of forced) { const b = bodies.get(h); if (b) { b.resetForces(false); b.resetTorques(false); } } forced.clear();
       events.drainCollisionEvents((rawX: number, rawY: number, started: boolean) => { if (!listener || !started) return; const x = eventHandle(rawX), y = eventHandle(rawY), ca = world.getCollider(x), cb = world.getCollider(y), ha = find(colliders, x), hb = find(colliders, y); if (!ca || !cb || ha === undefined || hb === undefined) return; const m = world.contactPair(ca, cb)?.manifolds?.()[0], n = vec(m?.normal?.() ?? { x: 0, y: 1, z: 0 }), va = ca.parent()?.linvel?.() ?? { x: 0, y: 0, z: 0 }, vb = cb.parent()?.linvel?.() ?? { x: 0, y: 0, z: 0 }; listener({ a: ha, b: hb, normal: n, approachSpeed: Math.max(0, -((vb.x - va.x) * n[0] + (vb.y - va.y) * n[1] + (vb.z - va.z) * n[2])), impulse: Number(m?.totalImpulse?.() ?? 0) }); });
     },
     raycast(d: RayDesc) {
@@ -146,7 +156,7 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
     retune(c) { if (c.gravity) world.gravity = { x: c.gravity[0], y: c.gravity[1], z: c.gravity[2] }; },
     snapshot() { return { bytes: world.takeSnapshot(), bodies: [...bodies].map(([h, b]) => ({ h, n: b.handle, d: b.__jg.d })), colliders: [...colliders].map(([h, c]) => ({ h, n: c.handle })), joints: [...joints].map(([h, j]) => ({ h, n: j.joint.handle, a: j.a, b: j.b, d: j.d })), next, nextJoint }; },
     restore(s: any) { if (!s?.bytes) throw Error("physics: invalid Rapier snapshot"); world.free(); world = R.World.restoreSnapshot(s.bytes); bodies.clear(); colliders.clear(); joints.clear(); for (const x of s.bodies ?? []) { const b = world.getRigidBody(x.n); if (!b) throw Error(`physics: snapshot body ${x.h} is missing`); b.__jg = { d: x.d, h: x.h }; bodies.set(x.h, b); } for (const x of s.colliders ?? []) { const c = world.getCollider(x.n); if (!c) throw Error(`physics: snapshot collider ${x.h} is missing`); colliders.set(x.h, c); } for (const x of s.joints ?? []) { const j = world.getImpulseJoint(x.n); if (j) joints.set(x.h, { joint: j, a: x.a, b: x.b, d: x.d }); } next = s.next ?? (Math.max(0, ...bodies.keys()) + 1); nextJoint = s.nextJoint ?? (Math.max(0, ...joints.keys()) + 1); },
-    dispose() { events.free?.(); world.free(); bodies.clear(); colliders.clear(); joints.clear(); listener = null; },
+    dispose() { forced.clear(); events.free?.(); world.free(); bodies.clear(); colliders.clear(); joints.clear(); listener = null; },
   };
   return backend;
 }
