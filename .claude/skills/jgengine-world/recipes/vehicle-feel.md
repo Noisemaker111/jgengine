@@ -14,7 +14,7 @@
   - Steer asks for a lean, and the bar steers the balanced turn that lean needs.
   - The bike tips the other way briefly as the lean starts, which is countersteer.
   - The step reports the balance lean `atan(lateral g)` as `lean`, with `bodyRoll = -lean`. The requested lean is capped at what grip can hold.
-  - `wheelie`/`stoppie` flags come from axle loads.
+  - `wheelie`/`stoppie` flags come from axle loads. `assists.antiWheelie` and `assists.antiStoppie` cap drive and braking just under the pitch-over limit, and on springs they also back off as the axle goes light. A sprung bike needs them to stay playable.
   - `measureLean` reports steady lean, time to lean and counter-lean.
 - **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight })` returns a `setPose` patch. Pitch and roll come from load transfer, or from the springs when `suspension` is set.
 - **Camera.** `camera: { rig: "chase", chase: { fov, lead, bank, velocityYaw, yawResponse } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
@@ -65,6 +65,7 @@
 | Leans too much / feels flat | `suspension.antiRoll` ↑ / ↓; `rollStiffnessFront` still sets which axle takes it |
 | Jump too floaty / too short | `jump.speed` (apex ≈ speed² / 2g); `jump.count: 2` plus `window` for a double jump |
 | Air rotation too twitchy / sluggish | `air.*Accel` for how fast it builds, `air.maxRate` for the ceiling, `air.damping` for how fast it stops |
+| Bike wheelies on launch / flips over the bars braking | `assists.antiWheelie` / `assists.antiStoppie` ↑ (1 keeps both wheels down; 0.6 lets it lift briefly) |
 | Bike tips in lazily / nervously | `lean.leanRate` ↑ / ↓ (2 tourer … 5 sport); `lean.countersteer` sets the wrong-way tip at the start |
 | Rolls over in corners | `comHeight` ↓ or `trackWidth` ↑: it tips over at about `trackWidth / (2 · comHeight)` g |
 

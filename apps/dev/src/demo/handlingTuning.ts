@@ -83,6 +83,7 @@ export const handlingDemoBike: VehicleDynamicsTuning = {
   brakeFront: 0.75,
   steering: { maxAngle: 0.5, highSpeedAngle: 0.5, highSpeedAt: 30, rate: 3 },
   lean: { maxLean: 0.85, leanRate: 4 },
-  assists: { abs: 1, tractionControl: 0.6 },
+  suspension: { springRate: 9000, damperRate: 900, travel: 0.12, rideHeight: 0.35, antiRoll: 0 },
+  assists: { abs: 1, tractionControl: 0.6, antiWheelie: 1, antiStoppie: 1 },
   aero: { dragArea: 0.35 },
 };

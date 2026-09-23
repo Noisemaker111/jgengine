@@ -31,6 +31,7 @@ between (`--json` for structured output).
 - Graphics settings a player can feel: an Ultra tier, a frame-rate limit (V-Sync or 30/60/120/144 cap), texture filtering (anisotropy, now applied to every loaded texture), and an FPS counter. `GraphicsProfile` gains `anisotropy`; a game that overrides tiers with `defineGame({ graphics })` can set it per tier.
 - `postProcessing.stylize` (`outline`, `bands`, `pixelSize`) and two new looks, `look: "comic"` (ink outlines + cel bands, Borderlands-style) and `look: "retro"` (pixelated, posterized). Same models, different art style.
 - `PhysicsBackend.applyForce(handle, force, point?)` and `applyTorque(handle, torque)` act over the next step, and `BodyDesc.linearDamping`/`angularDamping` set damping per body. Both are implemented on `PhysicsWorld` (translation only) and Rapier, and covered by the conformance suite. `createVehicleBackendLink` (`@jgengine/core/physics/vehicleBackendLink`) collides a vehicle sim with a backend world: a kinematic chassis shoves props, `clampMove` stops the car at walls and slides it along them, and `lastHit()` reports the impact.
+- `VehicleAssistTuning.antiWheelie` and `.antiStoppie` (`0..1`) cap drive and braking below the pitch-over limit (`g·b/h` forward, `g·a/h` braking). With `suspension` they also back off as the front or rear goes light. They report through `tractionLimited` and `absActive`.
 - Motorcycles on `createVehicleDynamics`: a `VehicleDynamicsTuning.lean` block (`maxLean`, `leanRate`, `countersteer`, `directSteerBelow`).
   - Steer asks for a lean, capped at what grip can hold. The bar steers the balanced turn that lean needs, with a rider trim for tire slip and a countersteer tip-in.
   - The bar steers directly at walking pace, and there is no lateral load transfer.
@@ -63,6 +64,7 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- A `createVehicleDynamics` bike with both `lean` and `suspension` launched itself the moment it leaned: the springs read the lean as body roll across the narrow track. Springs now ignore lean, and lateral g keeps the same lag it has without springs.
 - `@jgengine/rapier`: a body created with `mass` now weighs exactly that. It used to add `mass` on top of the collider's density-derived mass, so a 2 kg sphere of radius 0.5 weighed 2.52 kg, and every force, impulse and joint on a massed body was off by the collider's volume.
 - `createVehicleDynamics` with `suspension` spawned and reset level even on a slope. The wheels started buried, so the springs fired the car into the air and it tumbled. It now fits pitch, roll and height to the terrain under its four wheels.
 - A sky authored in the scene document (`editor.scene.json` `environment`, written by the editor lighting workspace) now renders in `place()` worlds. `defineGame` never passed `skyFromDocument(editorLayers)` to the renderer, so those edits were silently dropped. A game's own `backdrop.sky` still wins, and a document holding only point lights leaves the world sky alone (#1762).
