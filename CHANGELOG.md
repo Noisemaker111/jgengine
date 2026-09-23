@@ -28,6 +28,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- Jump shape on `movement.feel`: `jumpCutFactor` (releasing jump early cuts the rise, so a tap hops), `apexGravityScale`/`apexSpeed` (hang at the peak), `fallGravityScale` (drop faster than you rose) and `landingRecoveryMs`/`landingSpeedScale` (a short slowdown and jump lockout after landing). All default to no change. `measureMovement` adds `tapJumpHeight`. Dev runner demos `walk-floaty` and `walk-weighty` differ only in these fields (#1772).
 - `snapshot()`/`restore(next)` on `createFootprintGrid`, `createWallDrawTool` and `createTerraformBrush`, so build-grid claims, wall drafts and brush settings save, load and replay bit-exactly (#1775).
 - `createInputBuffer` (`@jgengine/core/input/inputBuffer`): buffered presses, coyote time, hold duration and double tap, with `snapshot`/`restore`. The walk controller uses it for `movement.feel.jumpBufferMs` (a jump pressed just before landing fires on landing) and `movement.feel.coyoteMs` (a jump just after walking off a ledge still fires). Both default to 0, so walking is unchanged until a game sets them (#1686, #1772).
 - `snapshot()`/`restore(next)` on `createLootRegistry`, `createToastQueue`, `createVfxInstanceStore`, `createRoundState` and `createLookChannel`, and `restore(state)` on `createDragCapture`, so loot tables, toasts, retained VFX, match rounds and look/drag input save, load and replay bit-exactly. `RoundSnapshot` gains `pendingWinner` (#1775).

@@ -1,5 +1,6 @@
 import type { PhysicsConfig } from "../game/defineGame";
 import type { PlayerMovementConfig } from "../game/playableGame";
+import { createInputBuffer } from "../input/inputBuffer";
 import {
   advancePlayerMotion,
   createEmptyMovementKeys,
@@ -27,6 +28,8 @@ export interface MovementProbeOptions {
   dt?: number;
   /** Measure with sprint held (default `false`). */
   sprint?: boolean;
+  /** How long jump is held for `tapJumpHeight`, s (default `0.1`). */
+  tapSeconds?: number;
 }
 
 /** Deterministic walk-feel metrics. `Infinity` means the target was never reached. */
@@ -43,6 +46,8 @@ export interface MovementReport {
   turnAroundTime: number;
   /** Peak height of a held standing jump, m. */
   jumpHeight: number;
+  /** Peak height of a standing jump released after `tapSeconds`, m. Lower than `jumpHeight` when `jumpCutFactor` is set. */
+  tapJumpHeight: number;
   /** Seconds from takeoff to the jump's peak. */
   apexTime: number;
   /** Seconds from takeoff to landing. */
@@ -66,7 +71,7 @@ function speedOf(motion: PlayerMotionState): number {
 
 /**
  * Drives a walk character through fixed scenarios (standing start, release to stop, reversal, a standing
- * jump, a strafed jump) on the same integrator `stepPlayerMovement` uses, and reports the feel metrics a
+ * jump, a tapped jump, a strafed jump) on the same integrator `stepPlayerMovement` uses, and reports the feel metrics a
  * test can assert. Deterministic: the same subject and options always produce the same report, so a feel
  * change shows up as a number moving. Collision, terrain and swimming are out of scope; it measures flat ground.
  * @capability movement-metrics measure a walking character's feel as numbers — time to top speed, stop distance, jump height and apex, air control, turn-around
@@ -79,14 +84,19 @@ export function measureMovement(subject: MovementProbeSubject = {}, options: Mov
     ...(subject.movement === undefined ? {} : { movement: subject.movement }),
     ...(subject.physics === undefined ? {} : { physics: subject.physics }),
   }).physics;
+  const buffer = createInputBuffer({ windowMs: 0 });
   const step = (motion: PlayerMotionState, intent: MovementIntent, forwardZ = 1, forwardX = 0) =>
-    advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning);
+    advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning, { buffer });
   const forward = held({ w: true, shift: sprint });
   const idle = held({});
   const ticks = (seconds: number) => Math.ceil(seconds / dt);
 
+  const fresh = (): PlayerMotionState => {
+    buffer.restore({ windowMs: 0, actions: {} });
+    return createPlayerMotionState();
+  };
   const settled = (): PlayerMotionState => {
-    const motion = createPlayerMotionState();
+    const motion = fresh();
     for (let i = 0; i < ticks(SETTLE_SECONDS); i += 1) step(motion, forward);
     return motion;
   };
@@ -95,7 +105,7 @@ export function measureMovement(subject: MovementProbeSubject = {}, options: Mov
 
   let timeToTopSpeed = Number.POSITIVE_INFINITY;
   {
-    const motion = createPlayerMotionState();
+    const motion = fresh();
     for (let i = 1; i <= ticks(LIMIT_SECONDS); i += 1) {
       step(motion, forward);
       if (speedOf(motion) >= topSpeed * ARRIVED) {
@@ -133,15 +143,16 @@ export function measureMovement(subject: MovementProbeSubject = {}, options: Mov
     }
   }
 
-  const jump = (airborne: MovementIntent) => {
-    const motion = createPlayerMotionState();
+  const jump = (airborne: MovementIntent, releaseAfter = Number.POSITIVE_INFINITY) => {
+    const motion = fresh();
     const takeoff = held({ space: true });
+    const released = held({ d: airborne.right !== 0, shift: sprint });
     let height = 0;
     let apex = 0;
     let lateral = 0;
     let landed = Number.POSITIVE_INFINITY;
     for (let i = 1; i <= ticks(LIMIT_SECONDS); i += 1) {
-      const moved = step(motion, i === 1 ? takeoff : airborne);
+      const moved = step(motion, i === 1 ? takeoff : i * dt > releaseAfter ? released : airborne);
       lateral += moved.stepX;
       if (motion.jumpOffset > height) {
         height = motion.jumpOffset;
@@ -157,6 +168,7 @@ export function measureMovement(subject: MovementProbeSubject = {}, options: Mov
 
   const standing = jump(held({ space: true }));
   const strafed = jump(held({ space: true, d: true, shift: sprint }));
+  const tapped = jump(held({ space: true }), options.tapSeconds ?? 0.1);
 
   return {
     topSpeed,
@@ -165,6 +177,7 @@ export function measureMovement(subject: MovementProbeSubject = {}, options: Mov
     stopTime,
     turnAroundTime,
     jumpHeight: standing.height,
+    tapJumpHeight: tapped.height,
     apexTime: standing.apex,
     airTime: standing.landed,
     airControlReach: Math.abs(strafed.lateral),

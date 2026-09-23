@@ -35,7 +35,7 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 
 Choose input intent, controller/motor, collision/navigation, and camera as separate seams. Commands express game intent; world systems resolve motion. Interaction targets come from bounded spatial/sensor queries, not full-world scans.
 
-Walk feel is data, not code. `movement.feel` sets `groundAcceleration`, `airAcceleration` and `groundFriction` (response rates, 1/s) plus `runMultiplier`, `crouchMultiplier`, and `jumpBufferMs`/`coyoteMs` (jump forgiveness, ms), and `physics` sets `gravity` and `jumpVelocity`. A floaty platformer and a weighty shooter differ only in these numbers.
+Walk feel is data, not code. `movement.feel` sets `groundAcceleration`, `airAcceleration` and `groundFriction` (response rates, 1/s) plus `runMultiplier`, `crouchMultiplier`, jump forgiveness (`jumpBufferMs`, `coyoteMs`) and jump shape (`jumpCutFactor`, `apexGravityScale`, `fallGravityScale`, `landingRecoveryMs`), and `physics` sets `gravity` and `jumpVelocity`. A floaty platformer and a weighty shooter differ only in these numbers; pin them with `measureMovement` (`movement/movementProbe`) in a test.
 
 ### Stateful placed objects
 
