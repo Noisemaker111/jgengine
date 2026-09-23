@@ -29,6 +29,12 @@ between (`--json` for structured output).
 ### Added
 
 - `PhysicsBackend.applyForce(handle, force, point?)` and `applyTorque(handle, torque)` act over the next step, and `BodyDesc.linearDamping`/`angularDamping` set damping per body. Both are implemented on `PhysicsWorld` (translation only) and Rapier, and covered by the conformance suite. `createVehicleBackendLink` (`@jgengine/core/physics/vehicleBackendLink`) collides a vehicle sim with a backend world: a kinematic chassis shoves props, `clampMove` stops the car at walls and slides it along them, and `lastHit()` reports the impact.
+- Motorcycles on `createVehicleDynamics`: a `VehicleDynamicsTuning.lean` block (`maxLean`, `leanRate`, `countersteer`, `directSteerBelow`).
+  - Steer asks for a lean, capped at what grip can hold. The bar steers the balanced turn that lean needs, with a rider trim for tire slip and a countersteer tip-in.
+  - The bar steers directly at walking pace, and there is no lateral load transfer.
+  - The step adds `lean` (balance lean, `bodyRoll = -lean`) and `wheelie`/`stoppie` for all vehicles.
+  - `measureLean` (`physics/handlingProbe`) reports steady lean, time to lean and counter-lean.
+  - Dev runner demo: `bun run drive handling-bike`.
 - `measureCourse` (`@jgengine/core/physics/handlingProbe`): understeer gradient (deg/g), skidpad g at a set radius, and the fastest clean slalom, from simple deterministic drivers. `measureHandling` adds `handbrakeRecoverySeconds`.
 - `createWeaponHandling` (`@jgengine/core/combat/weaponHandling`): weapon feel as serializable state.
   - Recoil: a per-shot `pattern` or flat `pitch`, a random cone from an injected `random`, a `cameraShare` split between view punch and aim, `recoverRate`/`recoverDelay`, and `adsScale`.
