@@ -28,6 +28,12 @@ between (`--json` for structured output).
 
 ### Added
 
+- `RigidAircraftTuning.assists`: flight assists on the same actuators as the pilot, so full stick stays the pilot's.
+  - `sas` per axis (`0..1`) damps rates and holds attitude or heading hands-off with a learned trim. On a helicopter it holds heading against rotor torque.
+  - `autoLevel`, `maxAngleOfAttack` and `maxG` limiters, and `hoverHold` for helicopters.
+  - A `policy(context, command)` callback has the last word.
+  - The step adds `command` and `limited`. `RigidAircraftState` gains the hold, trim and drift integrals.
+  - T toggles assists in `bun run drive flight` and `flight-heli`.
 - `RigidAircraftTuning.motor` makes `createRigidAircraft` a rocket.
   - Thrust follows `thrustCurve` over burn time. `propellantKg` leaves at `massFlow`, so mass and inertia fall and acceleration rises through the burn. The nozzle `gimbal` steers on the pitch and yaw inputs.
   - To stage, `retune` to the next stage: a new `motor` loads its propellant.

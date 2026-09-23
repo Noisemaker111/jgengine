@@ -6,6 +6,7 @@ import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import {
   aircraftAttitudeQuaternion,
   createRigidAircraft,
+  type AircraftAssistTuning,
   type RigidAircraft,
   type RigidAircraftInput,
   type RigidAircraftOptions,
@@ -19,7 +20,15 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
-import { flightDemoBooster, flightDemoHelicopter, flightDemoPlane, flightDemoSpawn, flightDemoUpperStage } from "./flightTuning";
+import {
+  flightDemoBooster,
+  flightDemoHelicopter,
+  flightDemoHelicopterAssists,
+  flightDemoPlane,
+  flightDemoPlaneAssists,
+  flightDemoSpawn,
+  flightDemoUpperStage,
+} from "./flightTuning";
 
 const PLANE = "plane";
 const TILE = 200;
@@ -45,6 +54,8 @@ interface Craft {
   input(stick: StickSample, lever: number): RigidAircraftInput;
   /** Lever travel per second of a held key. */
   leverRate: number;
+  /** What T switches on; the craft starts without them. */
+  assists?: AircraftAssistTuning;
   onSpawn?(aircraft: RigidAircraft): void;
   afterTick?(run: FlightRun, step: RigidAircraftStep): void;
 }
@@ -55,6 +66,7 @@ const PLANE_CRAFT: Craft = {
   spawn: flightDemoSpawn,
   lever: 0.35,
   leverRate: 0.8,
+  assists: flightDemoPlaneAssists,
   input: (stick, lever) => ({ throttle: lever, pitch: stick.pitch, roll: stick.roll, yaw: stick.yaw }),
 };
 
@@ -65,6 +77,7 @@ const HELICOPTER_CRAFT: Craft = {
   spawn: { position: [0, 1, 0] },
   lever: 0,
   leverRate: 0.4,
+  assists: flightDemoHelicopterAssists,
   input: (stick, lever) => ({ throttle: 1, collective: lever, pitch: stick.pitch * 0.5, roll: stick.roll * 0.5, yaw: stick.yaw * 0.6 }),
   onSpawn: (aircraft) => aircraft.restore({ ...aircraft.snapshot(), rotorSpeed: 1 }),
 };
@@ -102,6 +115,7 @@ interface FlightRun {
   last: RigidAircraftStep | null;
   stage: number;
   accel: number;
+  assisted: boolean;
 }
 
 let craft: Craft = PLANE_CRAFT;
@@ -111,7 +125,7 @@ function ensureRun(): FlightRun {
   if (run === null) {
     const plane = createRigidAircraft(craft.tuning, craft.spawn);
     craft.onSpawn?.(plane);
-    run = { plane, lever: craft.lever, last: null, stage: 1, accel: 0 };
+    run = { plane, lever: craft.lever, last: null, stage: 1, accel: 0, assisted: false };
   }
   return run;
 }
@@ -131,6 +145,10 @@ function onTick(ctx: GameContext, dt: number): void {
   if (ctx.scene.entity.get(id) === null) return;
   const state = ensureRun();
   const axis = ctx.input.axis(bindings);
+  if (craft.assists !== undefined && ctx.input.justPressed("assist")) {
+    state.assisted = !state.assisted;
+    state.plane.retune({ ...state.plane.tuning(), assists: state.assisted ? craft.assists : undefined });
+  }
   state.lever = Math.max(0, Math.min(1, state.lever + axis.throttle * craft.leverRate * dt));
   const step = state.plane.tick(dt, craft.input(axis, state.lever));
   if (state.last !== null && dt > 0) {
@@ -358,8 +376,9 @@ function Telemetry() {
         <div className="tabular-nums">hdg {deg(step.heading)}° · yaw {deg(step.yawRate)}°/s · torque {(step.rotor.torque / 1000).toFixed(1)} kN·m</div>
       )}
       <div className="tabular-nums">pitch {deg(step.pitch)}° · bank {deg(step.bank)}°</div>
+      {craft.assists === undefined ? null : <div className="tabular-nums">assists {run?.assisted === true ? "ON" : "off"}{step.limited ? " · LIMIT" : ""}</div>}
       <div className="tabular-nums">AoA {deg(step.angleOfAttack)}° · {step.gLoad.toFixed(1)} g{step.stalled && step.rotor === undefined ? " · STALL" : ""}</div>
-      <div className="mt-1 text-[10px] text-slate-400">{craft.kind === "helicopter" ? "W/S A/D cyclic · Q/E pedals · R/F collective" : craft.kind === "rocket" ? "W/S A/D gimbal · R ignite" : "W/S pitch · A/D roll · Q/E yaw · R/F throttle"}</div>
+      <div className="mt-1 text-[10px] text-slate-400">{craft.kind === "helicopter" ? "W/S A/D cyclic · Q/E pedals · R/F collective · T assists" : craft.kind === "rocket" ? "W/S A/D gimbal · R ignite" : "W/S pitch · A/D roll · Q/E yaw · R/F throttle · T assists"}</div>
     </div>
   );
 }
@@ -384,6 +403,7 @@ function makeGame(name: string, choice: Craft): PlayableGame {
       yawRight: ["KeyE"],
       throttleUp: ["KeyR"],
       throttleDown: ["KeyF"],
+      assist: ["KeyT"],
     },
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: resetRun },
     camera: {
@@ -424,6 +444,8 @@ function makeGame(name: string, choice: Craft): PlayableGame {
         massKg: step.massKg,
         accelG: (run?.accel ?? 0) / 9.81,
         motorThrust: step.motor?.thrust ?? 0,
+        assisted: run?.assisted === true ? 1 : 0,
+        speedOverGround: Math.hypot(step.velocity[0], step.velocity[2]),
         };
       },
     },

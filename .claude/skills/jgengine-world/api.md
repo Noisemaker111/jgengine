@@ -912,6 +912,9 @@
 
 ## @jgengine/core/physics/aircraftDynamics
 
+- `AircraftAssistCommand` (interface): interface AircraftAssistCommand — Control commands, `-1..1`, that drive the actuators after the assists.
+- `AircraftAssistContext` (interface): interface AircraftAssistContext — What an assist sees each substep, derived from the integrator state so it replays deterministically.
+- `AircraftAssistTuning` (interface): interface AircraftAssistTuning — Flight assists. Each one moves the same actuators the pilot does, so a stronger assist still flies within the airframe's authority. Strengths are `0..1`; an axis the pilot is deflecting gets less help the further the stick is pushed, so full stick is always the pilot's.
 - `AircraftControlChannel` (interface): interface AircraftControlChannel — One control channel's actuator: how far the surfaces move and how fast.
 - `AircraftEngineTuning` (interface): interface AircraftEngineTuning — A thrust source fixed to the body.
 - `AircraftGearTuning` (interface): interface AircraftGearTuning — Wheels or skids: what the body rests on when it touches the ground.

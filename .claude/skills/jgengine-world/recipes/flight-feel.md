@@ -18,6 +18,13 @@
   - Mass and inertia fall as propellant leaves (inertia scales with total over dry mass), so acceleration and turn rate rise through the burn.
   - Stage by `retune(nextStage)`: a new `motor` object loads its propellant and restarts its clock; the same object keeps both. Move the pose to the new stage's centre of mass with `restore` first if the stages differ in length.
   - The step reports `massKg` and `motor` (`thrust`, `burnTime`, `propellantKg`, `burnedOut`).
+- **Assists.** An `assists` block is a flight computer on the same actuators, so it never exceeds the airframe's authority, and full stick on an axis is always the pilot's.
+  - `sas: { pitch, roll, yaw }` (`0..1`) damps body rates and, hands-off, holds the attitude or heading at release with a learned trim. `sasRate` sets how firm (rad/s for full control). On a helicopter, `sas.yaw` holds heading against rotor torque with no pedal.
+  - `autoLevel` (`0..1`) flies the wings level and the nose to the horizon hands-off.
+  - `maxAngleOfAttack` (rad) and `maxG` cut the pitch command before the limit; `step.limited` reports it.
+  - `hoverHold` (`0..1`) flies hands-off cyclic to a stop over the ground: position → velocity → attitude → rate.
+  - `policy(context, command)` runs last and returns the command the actuators get: replace any built-in with the game's own.
+  - `step.command` is what the actuators got. Toggle assists with `retune({ ...aircraft.tuning(), assists })`.
 - **Pose.** Set the entity's `rotationY` from `step.heading` and apply the rest of `step.orientation` to the mesh (the heading-free part: `qY(-heading) · orientation`). `step.pitch`/`step.bank` match three.js `Euler(-pitch, heading, bank, "YXZ")`; `aircraftAttitudeQuaternion(heading, pitch, bank)` goes the other way for spawns.
 - **Camera.** The chase rig (`rig: "chase"`) follows heading; give it `frustum: { far }` in the thousands and a `yawResponse` around 4 so the boom swings smoothly over the top of a loop.
 - **Telemetry.** `airspeed`, `angleOfAttack`, `sideslip`, `gLoad`, `stalled`/`stallFraction`, `thrust`, body rates and `deflection` drive the HUD, stall horn, wind noise and camera shake.
@@ -52,6 +59,9 @@
 | Rocket weathercocks too hard / tumbles | fin `area` ↓ / ↑, fins further aft for more stability |
 | Gimbal too twitchy / can't steer | `motor.gimbal` ↓ / ↑; lighter late in the burn it turns faster on its own |
 | Burns too long / short | `propellantKg` over `massFlow` sets burn time; the curve's last point cuts it off first |
+| Helicopter too hard to hover on a keyboard | `assists.sas.yaw` 1 for heading hold, `assists.hoverHold` for cyclic; collective stays the pilot's |
+| Assisted aircraft oscillates | `assists.sasRate` ↑ (softer), strengths ↓ |
+| Players stall it pulling hard | `assists.maxAngleOfAttack` just under the wing `stallAngle`, or `maxG` |
 | Sinks when it slows down | that is translational lift going away; `rotor.translationalLift` sets how much |
 
 ## Traps
