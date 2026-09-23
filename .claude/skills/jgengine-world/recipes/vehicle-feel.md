@@ -10,6 +10,12 @@
 - **Jumps and air.** With `suspension`, a `jump` block (`speed`, `count` for double jumps, `window`) enables `car.jump()`, and an `air` block (`pitchAccel`/`yawAccel`/`rollAccel`, `damping`, `maxRate`) rotates the body in flight. Air input comes from `modifiers.air`; without it, throttle−brake pitches and steer yaws, which suits Rocket League-style play. Pass `{ pitch: 0, yaw: axis.steer, roll: 0 }` if W should keep driving instead of nosing down. `applyAngularImpulse` composes dodges and flips. The body stays near level, so full flips and wall-driving wait for the rigid-body backend.
 - **Boats.** `createBoatDynamics` (`@jgengine/core/physics/boatDynamics`) takes the same axis input and returns a step `tickDrivableVehicle` and `measureHandling` accept. Its knobs are mass, length, beam, prop thrust and prop speed, `planingSpeed`, `keel` and `steering` (`rudder` with an area, or `outboard`). A tug and a speedboat differ only in those numbers.
 - **Collision.** In a `PhysicsBackend` world (Rapier or `PhysicsWorld`), `createVehicleBackendLink` gives the car a kinematic chassis that shoves props, and a `clampMove` that stops it at walls. The sim keeps the handling, so the feel numbers above still hold.
+- **Two wheels.** A `lean` block (`maxLean`, `leanRate`, optional `countersteer`) turns the same sim into a motorcycle or bicycle.
+  - Steer asks for a lean, and the bar steers the balanced turn that lean needs.
+  - The bike tips the other way briefly as the lean starts, which is countersteer.
+  - The step reports the balance lean `atan(lateral g)` as `lean`, with `bodyRoll = -lean`. The requested lean is capped at what grip can hold.
+  - `wheelie`/`stoppie` flags come from axle loads.
+  - `measureLean` reports steady lean, time to lean and counter-lean.
 - **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight })` returns a `setPose` patch. Pitch and roll come from load transfer, or from the springs when `suspension` is set.
 - **Camera.** `camera: { rig: "chase", chase: { fov, lead, bank, velocityYaw, yawResponse } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
 - **Sound.** Call `ctx.game.audio.loop(id, sound)` once, then `setLoop` every tick:
@@ -59,6 +65,7 @@
 | Leans too much / feels flat | `suspension.antiRoll` ↑ / ↓; `rollStiffnessFront` still sets which axle takes it |
 | Jump too floaty / too short | `jump.speed` (apex ≈ speed² / 2g); `jump.count: 2` plus `window` for a double jump |
 | Air rotation too twitchy / sluggish | `air.*Accel` for how fast it builds, `air.maxRate` for the ceiling, `air.damping` for how fast it stops |
+| Bike tips in lazily / nervously | `lean.leanRate` ↑ / ↓ (2 tourer … 5 sport); `lean.countersteer` sets the wrong-way tip at the start |
 | Rolls over in corners | `comHeight` ↓ or `trackWidth` ↑: it tips over at about `trackWidth / (2 · comHeight)` g |
 
 ## Traps

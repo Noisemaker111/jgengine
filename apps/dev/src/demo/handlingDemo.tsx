@@ -6,7 +6,12 @@ import { analogAxes, createAxisShaper, type AxisShaper } from "@jgengine/core/in
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createFeedbackMixer, type FeedbackMixer } from "@jgengine/core/vfx/feedbackMixer";
-import { createVehicleDynamics, type VehicleDynamics, type VehicleDynamicsStep } from "@jgengine/core/physics/vehicleDynamics";
+import {
+  createVehicleDynamics,
+  type VehicleDynamics,
+  type VehicleDynamicsStep,
+  type VehicleDynamicsTuning,
+} from "@jgengine/core/physics/vehicleDynamics";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -14,7 +19,7 @@ import { useGameStore } from "@jgengine/react/hooks";
 import { defineGame } from "@jgengine/shell/defineGame";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
-import { handlingDemoGround, handlingDemoRamp, handlingDemoTuning as tuning } from "./handlingTuning";
+import { handlingDemoBike, handlingDemoGround, handlingDemoRamp, handlingDemoTuning } from "./handlingTuning";
 
 const CAR = "car";
 
@@ -70,14 +75,23 @@ interface HandlingRun {
   rumbleCooldown: number;
 }
 
+interface DemoVehicle {
+  kind: "car" | "bike";
+  tuning: VehicleDynamicsTuning;
+}
+
+const CAR_VEHICLE: DemoVehicle = { kind: "car", tuning: handlingDemoTuning };
+const BIKE_VEHICLE: DemoVehicle = { kind: "bike", tuning: handlingDemoBike };
+
+let vehicle: DemoVehicle = CAR_VEHICLE;
 let run: HandlingRun | null = null;
 
 function ensureRun(): HandlingRun {
-  run ??= { car: createVehicleDynamics(tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), last: null, rumbleCooldown: 0 };
+  run ??= { car: createVehicleDynamics(vehicle.tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), last: null, rumbleCooldown: 0 };
   return run;
 }
 
-function onInit(): void {
+function resetRun(): void {
   run = null;
 }
 
@@ -173,6 +187,41 @@ function CarBody({ entity }: { entity: SceneEntity }) {
   );
 }
 
+function BikeBody({ entity }: { entity: SceneEntity }) {
+  const fork = useRef<THREE.Group>(null);
+  const body = useRef<THREE.Group>(null);
+  useFrame(() => {
+    const step = run?.last;
+    if (step === null || step === undefined) return;
+    if (fork.current !== null) fork.current.rotation.y = -step.steerAngle;
+    if (body.current !== null) {
+      // Lean rolls the whole bike about its contact line; a positive lean drops the right (-x) side.
+      body.current.rotation.z = step.lean;
+      body.current.rotation.x = step.bodyPitch;
+    }
+  });
+  const wheel = (
+    <mesh rotation={[0, 0, Math.PI / 2]} castShadow>
+      <cylinderGeometry args={[0.31, 0.31, 0.16, 20]} />
+      <meshStandardMaterial color="#111827" roughness={0.9} />
+    </mesh>
+  );
+  return (
+    <group key={entity.id} ref={body}>
+      <mesh position={[0, 0.62, 0]} castShadow>
+        <boxGeometry args={[0.34, 0.42, 1.3]} />
+        <meshStandardMaterial color="#2563eb" roughness={0.35} metalness={0.3} />
+      </mesh>
+      <mesh position={[0, 1.05, -0.15]} castShadow>
+        <boxGeometry args={[0.38, 0.55, 0.36]} />
+        <meshStandardMaterial color="#1f2937" roughness={0.6} />
+      </mesh>
+      <group ref={fork} position={[0, 0.31, 0.71]}>{wheel}</group>
+      <group position={[0, 0.31, -0.71]}>{wheel}</group>
+    </group>
+  );
+}
+
 function Course(_props: WorldOverlayProps) {
   const stripes = useMemo(() => Array.from({ length: 40 }, (_, i) => i * 12 - 60), []);
   return (
@@ -229,7 +278,7 @@ function Telemetry() {
     <div className="pointer-events-none absolute right-3 top-3 rounded bg-slate-950/70 px-3 py-2 font-mono text-xs text-slate-100">
       <div className="text-2xl font-bold tabular-nums">{kmh.toFixed(0)} <span className="text-sm font-normal text-slate-300">km/h</span></div>
       <div className="tabular-nums">gear {gear} · {Math.round(step.rpm)} rpm</div>
-      <div className="tabular-nums">lat {(step.lateralAccel / 9.81).toFixed(2)} g · slip {((step.sideslip * 180) / Math.PI).toFixed(0)}°</div>
+      <div className="tabular-nums">lat {(step.lateralAccel / 9.81).toFixed(2)} g · slip {((step.sideslip * 180) / Math.PI).toFixed(0)}°{vehicle.kind === "bike" ? ` · lean ${Math.abs((step.lean * 180) / Math.PI).toFixed(0)}°` : ""}</div>
       <div className="mt-1 flex items-center gap-2">front {bar(step.frontSaturation)}</div>
       <div className="flex items-center gap-2">rear&nbsp; {bar(step.rearSaturation)}</div>
       <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump</div>
@@ -237,96 +286,105 @@ function Telemetry() {
   );
 }
 
-const game = defineGame({
-  name: "handling",
-  assets: createAssetCatalog(),
-  multiplayer: "off",
-  world: { kind: "flat" },
-  backdrop: { sky: { preset: "day" }, fog: { color: "#c7d7e6", near: 80, far: 320 } },
-  input: {
-    throttle: ["KeyW", "ArrowUp"],
-    brake: ["KeyS", "ArrowDown"],
-    steerLeft: ["KeyA", "ArrowLeft"],
-    steerRight: ["KeyD", "ArrowRight"],
-    handbrake: ["Space"],
-    jump: ["KeyJ"],
-  },
-  loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: onInit },
-  camera: {
-    rig: "chase",
-    chase: {
-      distance: 7,
-      height: 2.7,
-      lookHeight: 1.1,
-      springDamping: 7,
-      fov: { base: 58, max: 76, speedForMax: 50 },
-      lead: { time: 0.12, max: 2.5 },
-      bank: { perYawRate: 0.05, max: 0.06 },
-      velocityYaw: { blend: 0.35, minSpeed: 5, response: 7 },
-      yawResponse: 9,
+function makeGame(name: string, choice: DemoVehicle): PlayableGame {
+  const onInit = () => {
+    vehicle = choice;
+    resetRun();
+  };
+  return defineGame({
+    name,
+    assets: createAssetCatalog(),
+    multiplayer: "off",
+    world: { kind: "flat" },
+    backdrop: { sky: { preset: "day" }, fog: { color: "#c7d7e6", near: 80, far: 320 } },
+    input: {
+      throttle: ["KeyW", "ArrowUp"],
+      brake: ["KeyS", "ArrowDown"],
+      steerLeft: ["KeyA", "ArrowLeft"],
+      steerRight: ["KeyD", "ArrowRight"],
+      handbrake: ["Space"],
+      jump: ["KeyJ"],
     },
-  },
-  audio: {
-    sounds: {
-      engine: {
-        id: "engine",
-        bus: "sfx",
-        loop: true,
-        synth: {
-          gain: 0.5,
-          voices: [
-            { kind: "tone", wave: "sawtooth", freq: 100, duration: 1, sustain: 1, gain: 0.5 },
-            { kind: "tone", wave: "square", freq: 50, duration: 1, sustain: 1, gain: 0.25 },
-            { kind: "tone", wave: "triangle", freq: 200, duration: 1, sustain: 1, gain: 0.2 },
-          ],
+    loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: resetRun },
+    camera: {
+      rig: "chase",
+      chase: {
+        distance: choice.kind === "bike" ? 4.2 : 7,
+        height: choice.kind === "bike" ? 1.8 : 2.7,
+        lookHeight: 1.1,
+        springDamping: 7,
+        fov: { base: 58, max: 76, speedForMax: 50 },
+        lead: { time: 0.12, max: 2.5 },
+        bank: { perYawRate: 0.05, max: 0.06 },
+        velocityYaw: { blend: 0.35, minSpeed: 5, response: 7 },
+        yawResponse: 9,
+      },
+    },
+    audio: {
+      sounds: {
+        engine: {
+          id: "engine",
+          bus: "sfx",
+          loop: true,
+          synth: {
+            gain: 0.5,
+            voices: [
+              { kind: "tone", wave: "sawtooth", freq: 100, duration: 1, sustain: 1, gain: 0.5 },
+              { kind: "tone", wave: "square", freq: 50, duration: 1, sustain: 1, gain: 0.25 },
+              { kind: "tone", wave: "triangle", freq: 200, duration: 1, sustain: 1, gain: 0.2 },
+            ],
+          },
+        },
+        thud: {
+          id: "thud",
+          bus: "sfx",
+          synth: {
+            gain: 0.8,
+            voices: [
+              { kind: "noise", duration: 0.25, filterFreq: 220, filterType: "lowpass" },
+              { kind: "tone", wave: "sine", freq: 70, slideTo: 40, duration: 0.3 },
+            ],
+          },
+        },
+        tires: {
+          id: "tires",
+          bus: "sfx",
+          loop: true,
+          synth: { gain: 0.6, voices: [{ kind: "noise", duration: 1, sustain: 1, filterFreq: 1800, filterType: "bandpass" }] },
         },
       },
-      thud: {
-        id: "thud",
-        bus: "sfx",
-        synth: {
-          gain: 0.8,
-          voices: [
-            { kind: "noise", duration: 0.25, filterFreq: 220, filterType: "lowpass" },
-            { kind: "tone", wave: "sine", freq: 70, slideTo: 40, duration: 0.3 },
-          ],
-        },
-      },
-      tires: {
-        id: "tires",
-        bus: "sfx",
-        loop: true,
-        synth: { gain: 0.6, voices: [{ kind: "noise", duration: 1, sustain: 1, filterFreq: 1800, filterType: "bandpass" }] },
+    },
+    renderEntity: (entity) =>
+      entity.name !== CAR ? null : choice.kind === "bike" ? <BikeBody entity={entity} /> : <CarBody entity={entity} />,
+    WorldOverlay: Course,
+    GameUI: Telemetry,
+    capture: {
+      probe: (): Record<string, number> => {
+        const step = run?.last;
+        if (step === null || step === undefined) return {};
+        return {
+          x: step.position[0],
+          z: step.position[2],
+          y: step.position[1],
+          airborne: step.airborne ? 1 : 0,
+          speed: step.forwardSpeed,
+          heading: step.heading,
+          yawRate: step.yawRate,
+          steerDeg: (step.steerAngle * 180) / Math.PI,
+          leanDeg: (step.lean * 180) / Math.PI,
+          engineRate: run?.feedback.value().engineRate ?? 0,
+          tireGain: run?.feedback.value().tireGain ?? 0,
+          lateralG: step.lateralAccel / 9.81,
+          sideslipDeg: (step.sideslip * 180) / Math.PI,
+          gear: step.gear,
+          rpm: step.rpm,
+          frontSaturation: step.frontSaturation,
+          rearSaturation: step.rearSaturation,
+        };
       },
     },
-  },
-  renderEntity: (entity) => (entity.name === CAR ? <CarBody entity={entity} /> : null),
-  WorldOverlay: Course,
-  GameUI: Telemetry,
-  capture: {
-    probe: (): Record<string, number> => {
-      const step = run?.last;
-      if (step === null || step === undefined) return {};
-      return {
-        x: step.position[0],
-        z: step.position[2],
-        y: step.position[1],
-        airborne: step.airborne ? 1 : 0,
-        speed: step.forwardSpeed,
-        heading: step.heading,
-        yawRate: step.yawRate,
-        steerDeg: (step.steerAngle * 180) / Math.PI,
-        engineRate: run?.feedback.value().engineRate ?? 0,
-        tireGain: run?.feedback.value().tireGain ?? 0,
-        lateralG: step.lateralAccel / 9.81,
-        sideslipDeg: (step.sideslip * 180) / Math.PI,
-        gear: step.gear,
-        rpm: step.rpm,
-        frontSaturation: step.frontSaturation,
-        rearSaturation: step.rearSaturation,
-      };
-    },
-  },
-});
+  });
+}
 
-export const handlingDemoGame: PlayableGame = game;
+export const handlingDemoGame: PlayableGame = makeGame("handling", CAR_VEHICLE);
+export const handlingBikeDemoGame: PlayableGame = makeGame("handling-bike", BIKE_VEHICLE);

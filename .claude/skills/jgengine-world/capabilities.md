@@ -379,6 +379,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/input/rebindSession"`
 
+## lean-metrics — measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in
+
+- `measureLean` (function) · `import { measureLean } from "@jgengine/core/physics/handlingProbe"`
+
 ## limb-health — per-body-part/region health tracked separately
 
 - `createMultiRegionHealth` (function) · `import { createMultiRegionHealth } from "@jgengine/core/procedural"`
