@@ -6,6 +6,7 @@
 
 - **Sim.** `createVehicleDynamics(tuning, { surfaceFriction?, clampMove?, groundHeight? })` from `@jgengine/core/physics/vehicleDynamics`. Yaw comes from tire forces, so balance, slides and recovery are outcomes of the numbers, not special cases. It has `snapshot()`/`restore()` for prediction and replay, `retune()` for upgrades and damage, and per-tick modifiers (`driveScale`, `gripScale`, `steerScale`, `brakeScale`, `thrust` for boost).
 - **Terrain.** Add a `suspension` block (spring and damper rates, travel, ride height, anti-roll) and pass `groundHeight` for ramps, hills and jumps. Each wheel then samples the ground, the body heaves, pitches and rolls on real springs, slopes pull the car downhill, and the step reports `airborne`, `landingSpeed` and per-corner `wheelLoads`. Without the block the car stays on a flat plane.
+- **Input.** Put `createAxisShaper` (`@jgengine/core/input/axisShaper`) between `ctx.input.axis(...)` and the sim. Keys get `riseRate`/`returnRate`, so a tap steers a little and a hold builds up; sticks get `deadzone`/`curve` with no lag. Pass `{ analog: analogAxes(bindings, ctx.input.analog()) }` each frame so each axis picks the right profile.
 - **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight })` returns a `setPose` patch. Pitch and roll come from load transfer, or from the springs when `suspension` is set.
 - **Camera.** `camera: { rig: "chase", chase: { fov, lead, bank, velocityYaw, yawResponse } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
 - **Sound.** Call `ctx.game.audio.loop(id, sound)` once, then `setLoop` every tick:
@@ -37,7 +38,9 @@
 | Snaps into oversteer | `rollStiffnessFront` ↑, rear `peakGrip` ↑, `slideGrip` ↑ (gentler breakaway), `assists.stability` ↑ |
 | Spins holding throttle and steer | `assists.tractionControl` ↑ (budgets for cornering grip), `driveFront` ↑, peak torque ↓ |
 | Slides feel uncatchable | `steering.selfAlign` ↑ (caster catches the slide), `slideGrip` ↑, `assists.maxSideslip` ↑ with `stability` ↑ |
-| Too twitchy at speed | `steering.highSpeedAngle` ↓, `steering.rate` ↓, `yawInertiaIndex` ↑ |
+| Too twitchy at speed | `steering.highSpeedAngle` ↓, `steering.rate` ↓, `yawInertiaIndex` ↑, shaper steer `digital.riseRate` ↓ |
+| Keyboard steering is all-or-nothing | shaper steer `digital.riseRate` 2–4/s, `returnRate` 5–8/s |
+| Stick feels twitchy on centre | shaper steer `analog.curve` 1.3–2, `analog.deadzone` 0.05–0.12 |
 | Sluggish, boat-like | `yawInertiaIndex` ↓, `peakSlipAngle` ↓ (stiffer tire), `comHeight` ↓ |
 | Handbrake does nothing / spins every time | `handbrakeGrip` ↓ / ↑, with `selfAlign` to set how it recovers |
 | No top speed ceiling / wrong ceiling | `aero.dragArea`, power (`maxPower` or torque × gearing); `speedLimit` only for a hard governor |

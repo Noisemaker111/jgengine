@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type * as THREE from "three";
 import type { AxisBinding } from "@jgengine/core/input/axisInput";
+import { analogAxes, createAxisShaper, type AxisShaper } from "@jgengine/core/input/axisShaper";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createVehicleDynamics, type VehicleDynamics, type VehicleDynamicsStep } from "@jgengine/core/physics/vehicleDynamics";
@@ -25,10 +26,25 @@ const bindings: Record<"throttle" | "brake" | "steer" | "handbrake", AxisBinding
 };
 const pedal = { min: 0, max: 1 };
 
+type DriveAxis = "throttle" | "brake" | "steer" | "handbrake";
+
+// Keys ease in and self-centre; a stick keeps its deflection with a small deadzone and a finer centre.
+function createDriveShaper(): AxisShaper<DriveAxis> {
+  return createAxisShaper<DriveAxis>({
+    axes: {
+      steer: { digital: { riseRate: 3.2, returnRate: 6 }, analog: { deadzone: 0.08, curve: 1.5 } },
+      throttle: { range: pedal, digital: { riseRate: 6, fallRate: 12 }, analog: { deadzone: 0.05 } },
+      brake: { range: pedal, digital: { riseRate: 8, fallRate: 12 }, analog: { deadzone: 0.05 } },
+      handbrake: { range: pedal },
+    },
+  });
+}
+
 const CONES: readonly (readonly [number, number])[] = Array.from({ length: 14 }, (_, i) => [(i % 2 === 0 ? 3.5 : -3.5), 30 + i * 18]);
 
 interface HandlingRun {
   car: VehicleDynamics;
+  shaper: AxisShaper<DriveAxis>;
   last: VehicleDynamicsStep | null;
   rumbleCooldown: number;
 }
@@ -36,7 +52,7 @@ interface HandlingRun {
 let run: HandlingRun | null = null;
 
 function ensureRun(): HandlingRun {
-  run ??= { car: createVehicleDynamics(tuning, { groundHeight: handlingDemoGround }), last: null, rumbleCooldown: 0 };
+  run ??= { car: createVehicleDynamics(tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), last: null, rumbleCooldown: 0 };
   return run;
 }
 
@@ -54,7 +70,8 @@ function onTick(ctx: GameContext, dt: number): void {
   const id = ctx.player.userId;
   if (ctx.scene.entity.get(id) === null) return;
   const state = ensureRun();
-  const axis = ctx.input.axis(bindings, { throttle: pedal, brake: pedal, handbrake: pedal });
+  const raw = ctx.input.axis(bindings, { throttle: pedal, brake: pedal, handbrake: pedal });
+  const axis = state.shaper.shape(dt, raw, { analog: analogAxes(bindings, ctx.input.analog()) });
   const drive = tickDrivableVehicle(state.car, dt, axis, { groundHeight: handlingDemoGround });
   state.last = drive.step;
   ctx.scene.entity.setPose(id, drive.pose);
@@ -267,6 +284,7 @@ const game = defineGame({
         speed: step.forwardSpeed,
         heading: step.heading,
         yawRate: step.yawRate,
+        steerDeg: (step.steerAngle * 180) / Math.PI,
         lateralG: step.lateralAccel / 9.81,
         sideslipDeg: (step.sideslip * 180) / Math.PI,
         gear: step.gear,

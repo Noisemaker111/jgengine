@@ -116,6 +116,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `registerBuiltinTriggerActions` (function) · `import { registerBuiltinTriggerActions } from "@jgengine/core/scene/authoredTriggers"`
 - `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/world"`
 
+## axis-shaping — shape raw input per axis — deadzone, response curve, keyboard ramp, self-centring, speed-sensitive scaling
+
+- `createAxisShaper` (function) · `import { createAxisShaper } from "@jgengine/core/input/axisShaper"`
+
 ## behavior-actions — register named callbacks for decision graph behavior descriptors
 
 - `registerBehaviorActions` (function) · `import { registerBehaviorActions } from "@jgengine/core/world"`
