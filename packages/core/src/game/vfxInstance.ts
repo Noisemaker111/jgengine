@@ -121,6 +121,16 @@ export interface VfxInstanceStore {
   tick(nowMs?: number): number;
   /** Dispose every instance (scene change / reset), emitting a `stop` op for each. */
   clear(): void;
+  /** Plain JSON copy of every live instance plus the id counter. */
+  snapshot(): VfxInstanceStoreState;
+  /** Replaces the live set: emits `stop` for each current instance, then `upsert` for each restored one. */
+  restore(next: VfxInstanceStoreState): void;
+}
+
+/** Plain JSON state of a {@link VfxInstanceStore}. */
+export interface VfxInstanceStoreState {
+  instances: VfxInstanceState[];
+  seq: number;
 }
 
 /** Options for {@link createVfxInstanceStore}. */
@@ -236,5 +246,18 @@ export function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): V
     for (const id of [...instances.keys()]) stop(id);
   }
 
-  return { upsert, update, stop, get, list, count, tick, clear };
+  function snapshot(): VfxInstanceStoreState {
+    return { instances: structuredClone([...instances.values()]), seq };
+  }
+
+  function restore(next: VfxInstanceStoreState): void {
+    clear();
+    seq = next.seq;
+    for (const state of structuredClone(next.instances)) {
+      instances.set(state.id, state);
+      emit({ op: "upsert", id: state.id, instance: state });
+    }
+  }
+
+  return { upsert, update, stop, get, list, count, tick, clear, snapshot, restore };
 }

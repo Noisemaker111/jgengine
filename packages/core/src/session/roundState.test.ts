@@ -199,3 +199,31 @@ describe("custom phase cycles", () => {
     });
   });
 });
+
+describe("round state restore", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const rounds = createRoundState({
+      phases: { buy: 5, live: 30, end: 3 },
+      teams: [{ id: "t", role: "attacker" }, { id: "ct", role: "defender" }],
+      maxRounds: 3,
+      winReward: 3250,
+      lossBonus: { base: 1400, step: 500, max: 3400 },
+    });
+    rounds.tick(6);
+    rounds.concludeRound("t");
+    const saved = rounds.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => [
+      rounds.economyFor("ct"),
+      rounds.tick(4),
+      rounds.tick(10),
+      rounds.concludeRound("ct"),
+      rounds.tick(40),
+      rounds.snapshot(),
+    ];
+    const a = play();
+    expect(saved).toEqual(frozen);
+    rounds.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});
