@@ -6,6 +6,7 @@
 
 - **Sim.** `createVehicleDynamics(tuning, { surfaceFriction?, clampMove?, groundHeight? })` from `@jgengine/core/physics/vehicleDynamics`. Yaw comes from tire forces, so balance, slides and recovery are outcomes of the numbers, not special cases. It has `snapshot()`/`restore()` for prediction and replay, `retune()` for upgrades and damage, and per-tick modifiers (`driveScale`, `gripScale`, `steerScale`, `brakeScale`, `thrust` for boost).
 - **Terrain.** Add a `suspension` block (spring and damper rates, travel, ride height, anti-roll) and pass `groundHeight` for ramps, hills and jumps. Each wheel then samples the ground, the body heaves, pitches and rolls on real springs, slopes pull the car downhill, and the step reports `airborne`, `landingSpeed` and per-corner `wheelLoads`. Without the block the car stays on a flat plane.
+- **Jumps and air.** With `suspension`, a `jump` block (`speed`, `count` for double jumps, `window`) enables `car.jump()`, and an `air` block (`pitchAccel`/`yawAccel`/`rollAccel`, `damping`, `maxRate`) rotates the body in flight. Air input comes from `modifiers.air`; without it, throttle−brake pitches and steer yaws, which suits Rocket League-style play. Pass `{ pitch: 0, yaw: axis.steer, roll: 0 }` if W should keep driving instead of nosing down. `applyAngularImpulse` composes dodges and flips. The body stays near level, so full flips and wall-driving wait for the rigid-body backend.
 - **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight })` returns a `setPose` patch. Pitch and roll come from load transfer, or from the springs when `suspension` is set.
 - **Camera.** `camera: { rig: "chase", chase: { fov, lead, bank, velocityYaw, yawResponse } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
 - **Sound.** Call `ctx.game.audio.loop(id, sound)` once, then `setLoop` every tick:
@@ -13,6 +14,7 @@
   - Tires: `gain` from how far `max(step.frontSaturation, step.rearSaturation)` exceeds ~0.85.
 - **Rumble.** Call `ctx.input.rumble(userId, { strong, weak, ms })` with the saturation above 1, rate-limited to about 10 Hz. Use rear saturation for strong and front for weak.
 - **Sound.** Play a one-shot on `step.landingSpeed` (thud, suspension clunk).
+- **Proof.** For jumps and air control, `measureAir` reports apex height and time, double-jump height, and air rotation rates.
 - **Proof.** `measureHandling(() => createVehicleDynamics(tuning), options?)` from `@jgengine/core/physics/handlingProbe` returns deterministic numbers. Assert them in a test. For a sprung car, `measureRide` adds settle time, brake dive, roll per g and landing bounces.
 
 ## Workflow
@@ -46,6 +48,8 @@
 | Harsh, skips over bumps | `springRate` ↓, `travel` ↑ |
 | Landings bounce back into the air | `suspension.reboundRate` ↑ (defaults to 1.5 × `damperRate`), `travel` ↑ |
 | Leans too much / feels flat | `suspension.antiRoll` ↑ / ↓; `rollStiffnessFront` still sets which axle takes it |
+| Jump too floaty / too short | `jump.speed` (apex ≈ speed² / 2g); `jump.count: 2` plus `window` for a double jump |
+| Air rotation too twitchy / sluggish | `air.*Accel` for how fast it builds, `air.maxRate` for the ceiling, `air.damping` for how fast it stops |
 | Rolls over in corners | `comHeight` ↓ or `trackWidth` ↑: it tips over at about `trackWidth / (2 · comHeight)` g |
 
 ## Traps

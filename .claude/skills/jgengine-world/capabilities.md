@@ -20,6 +20,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createDriverState` (function) · `import { createDriverState } from "@jgengine/core/ai/driver"`
 
+## air-metrics — measure a vehicle's jumps and air control — apex height and time, double jump, air rotation rates
+
+- `measureAir` (function) · `import { measureAir } from "@jgengine/core/physics/handlingProbe"`
+
 ## anim-graph — data-first animation state machine with blend trees, crossfades, layers, and clip events
 
 - `createAnimGraphRuntime` (function) · `import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph"`

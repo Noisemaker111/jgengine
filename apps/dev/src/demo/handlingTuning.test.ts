@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { measureHandling } from "@jgengine/core/physics/handlingProbe";
+import { measureAir, measureHandling } from "@jgengine/core/physics/handlingProbe";
 import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics";
 
 import { handlingDemoGround, handlingDemoTuning } from "./handlingTuning";
@@ -43,5 +43,13 @@ describe("handling demo car", () => {
     expect(step.airborne).toBe(false);
     expect(Math.abs(step.heading)).toBeLessThan(0.05);
     expect(Math.abs(step.position[0])).toBeLessThan(0.5);
+  });
+
+  test("hops about a metre and a half and the air nudges it rather than flipping it", () => {
+    const air = measureAir(() => createVehicleDynamics(handlingDemoTuning));
+    expect(air.jumpApexHeight).toBeGreaterThan(1.2);
+    expect(air.jumpApexHeight).toBeLessThan(1.9);
+    expect(air.airPitchRate).toBeLessThanOrEqual(2.5 + 1e-9);
+    expect(air.airPitchRate).toBeGreaterThan(1);
   });
 });

@@ -944,11 +944,14 @@
 
 ## @jgengine/core/physics/handlingProbe
 
+- `AirReport` (interface): interface AirReport — Deterministic jump and air-control metrics.
+- `AirSubject` (interface): interface AirSubject — The slice of a jumping vehicle sim {@link measureAir} drives; a `VehicleDynamics` with `suspension`, `jump` and `air` fits.
 - `HandlingProbeOptions` (interface): interface HandlingProbeOptions — Scenario settings for {@link measureHandling}; every field has a default.
 - `HandlingReport` (interface): interface HandlingReport — Deterministic feel metrics, in the units drivers and reviewers use. `Infinity` means the target was never reached.
 - `HandlingSubject` (interface): interface HandlingSubject — The slice of a vehicle sim {@link measureHandling} drives: `VehicleDynamics` and `KinematicVehicle` both fit.
 - `RideReport` (interface): interface RideReport — Deterministic ride metrics for a sprung vehicle.
 - `RideSubject` (interface): interface RideSubject — The slice of a sprung vehicle sim {@link measureRide} drives; a `VehicleDynamics` with `suspension` fits.
+- `measureAir` (function): function measureAir(create: () => AirSubject, options: { dt?: number } = {}): AirReport — Jumps a fresh vehicle from rest and holds full air input on each axis, reporting jump height and timing, double-jump height, and how fast the body rotates in the air.
 - `measureHandling` (function): function measureHandling(create: () => HandlingSubject, options: HandlingProbeOptions = {}): HandlingReport — Drives fresh instances from `create` through fixed scenarios (launch, top speed, braking, a slow steer ramp, a step steer, a mid-corner lift-off, a handbrake pull, full throttle with full steer) and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a tuning change shows up as a number moving, not an opinion.
 - `measureRide` (function): function measureRide(create: () => RideSubject, options: { dt?: number } = {}): RideReport — Drives fresh sprung vehicles from `create` through a vertical kick, a hard stop, a steady corner and a launch-and-land, and reports how the body moves: how fast it settles, how much it dives and rolls, and whether a landing bounces.
 
@@ -1079,6 +1082,8 @@
 ## @jgengine/core/physics/vehicleDynamics
 
 - `VehicleAeroTuning` (interface): interface VehicleAeroTuning — Aero and resistance. Uses air density 1.225 kg/m³.
+- `VehicleAirInput` (interface): interface VehicleAirInput — Air-control input, each `-1..1`: `pitch > 0` noses down, `yaw > 0` turns like `steer > 0`, `roll > 0` drops the left side.
+- `VehicleAirTuning` (interface): interface VehicleAirTuning — Control of the body while airborne (needs `suspension`, the only way to leave the ground).
 - `VehicleAssistTuning` (interface): interface VehicleAssistTuning — Electronic and arcade assists; each is a strength `0..1`, `0`/omitted = off.
 - `VehicleDirectDriveTuning` (interface): interface VehicleDirectDriveTuning — Single-speed drive (electric, kart, arcade ball-car): force capped by power, so top speed comes out of drag.
 - `VehicleDynamics` (interface): interface VehicleDynamics — Force-based planar car: a two-axle ("bicycle") model where yaw comes from tire forces rather than being commanded, so understeer, oversteer, lift-off rotation, trail-braking, power slides and handbrake turns emerge from the numbers instead of from special cases. Deterministic for a given `dt` sequence; ticks are split into fixed substeps. Pairs with `tickDrivableVehicle` for the entity pose and `measureHandling` for asserting feel.
@@ -1088,6 +1093,7 @@
 - `VehicleDynamicsStep` (interface): interface VehicleDynamicsStep — Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read.
 - `VehicleDynamicsTuning` (interface): interface VehicleDynamicsTuning — Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N, N·m, rad, s), so a feel target maps to a knob a person can reason about: more rear grip or a lower centre of mass for stability, softer tires for forgiveness, more drive to the rear for power oversteer.
 - `VehicleGearboxTuning` (interface): interface VehicleGearboxTuning — Engine and gearbox. Drive force at the wheels = torque · curve(rpm) · gear · finalDrive · efficiency / wheelRadius.
+- `VehicleJumpTuning` (interface): interface VehicleJumpTuning — Jumps from the ground and in the air.
 - `VehicleSteeringTuning` (interface): interface VehicleSteeringTuning — Steering rack: lock, speed-sensitive lock, rack speed, and caster self-alignment.
 - `VehicleSuspensionTuning` (interface): interface VehicleSuspensionTuning — Four sprung corners. With this block the chassis heaves, pitches and rolls on real springs, axle loads come from spring forces instead of a filtered estimate, slopes pull the car downhill, and the car can leave the ground and land. Omit it for the flat-ground model.
 - `VehicleTireTuning` (interface): interface VehicleTireTuning — One axle's tire, in physical terms. Lateral force follows a simplified Pacejka curve `μ·Fz·sin(C·atan(B·α))` whose `B`/`C` are solved from `peakSlipAngle` and `slideGrip`, so the three numbers read the way a driver feels them: how much grip, how early it peaks, how much is left sliding.

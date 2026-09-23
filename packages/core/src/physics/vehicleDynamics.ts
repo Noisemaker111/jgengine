@@ -124,6 +124,28 @@ export interface VehicleSuspensionTuning {
   pitchInertiaIndex?: number;
 }
 
+/** Control of the body while airborne (needs `suspension`, the only way to leave the ground). */
+export interface VehicleAirTuning {
+  /** Angular acceleration at full input, rad/s², per axis. */
+  pitchAccel: number;
+  yawAccel: number;
+  rollAccel: number;
+  /** Angular damping while airborne, 1/s (default `1.5`); higher stops rotation when input is released. */
+  damping?: number;
+  /** Largest angular rate input can build, rad/s (default `5.5`). */
+  maxRate?: number;
+}
+
+/** Jumps from the ground and in the air. */
+export interface VehicleJumpTuning {
+  /** Upward velocity a jump adds, m/s. */
+  speed: number;
+  /** Jumps allowed per flight, counting the first from the ground (default `1`; `2` = double jump). */
+  count?: number;
+  /** Seconds after leaving the ground during which later jumps are allowed (default `Infinity`). */
+  window?: number;
+}
+
 /**
  * Tuning for {@link createVehicleDynamics}. Every number is a physical quantity in SI units (kg, m, N,
  * N·m, rad, s), so a feel target maps to a knob a person can reason about: more rear grip or a lower
@@ -183,6 +205,17 @@ export interface VehicleDynamicsTuning {
   reverseOnBrake?: boolean;
   /** Sprung corners, slopes and air; omit for the flat-ground model. */
   suspension?: VehicleSuspensionTuning;
+  /** Air control; needs `suspension`. Input comes from `modifiers.air`, else throttle−brake pitches and steer yaws. */
+  air?: VehicleAirTuning;
+  /** Enables {@link VehicleDynamics.jump}; needs `suspension`. */
+  jump?: VehicleJumpTuning;
+}
+
+/** Air-control input, each `-1..1`: `pitch > 0` noses down, `yaw > 0` turns like `steer > 0`, `roll > 0` drops the left side. */
+export interface VehicleAirInput {
+  pitch: number;
+  yaw: number;
+  roll: number;
 }
 
 /** Per-tick overrides layered over tuning: boost, grip zones, damage. Each scale defaults to `1`. */
@@ -193,6 +226,8 @@ export interface VehicleDynamicsModifiers {
   steerScale?: number;
   /** Thrust along the heading that bypasses the tires, N — boost, a rocket, a tow. */
   thrust?: number;
+  /** Air-control input this tick; omitted, throttle−brake pitches and steer yaws while airborne. */
+  air?: VehicleAirInput;
 }
 
 /** World hooks for one vehicle instance. */
@@ -232,6 +267,10 @@ export interface VehicleDynamicsState {
   /** Per-corner spring compression, m, in order front-left, front-right, rear-left, rear-right. */
   compression: [number, number, number, number];
   airborne: boolean;
+  /** Jumps used since last on the ground. */
+  jumpsUsed: number;
+  /** Seconds since leaving the ground (`0` while grounded). */
+  airTime: number;
 }
 
 /** Result of one {@link VehicleDynamics.tick}: pose plus the telemetry camera, audio, haptics and HUD read. */
@@ -297,6 +336,13 @@ export interface VehicleDynamics {
   scaleVelocity(factor: number): void;
   /** Add a world-space velocity change, m/s (impacts, knockback, a jump pad's `dvy` with `suspension`). */
   applyImpulse(dvx: number, dvz: number, dvy?: number): void;
+  /**
+   * Jump if the tuning's `jump` block allows it now: from the ground, or in the air while jumps remain inside
+   * the window. Returns `false` and changes nothing otherwise, so a held key cannot stack jumps.
+   */
+  jump(): boolean;
+  /** Add angular velocity to the body, rad/s: `pitch > 0` noses down, `yaw` in heading sense, `roll > 0` drops the left side (dodges, flips, hits). */
+  applyAngularImpulse(pitch: number, yaw: number, roll: number): void;
   /** Swap tuning in place (upgrades, damage, a live tuning panel) without losing momentum. */
   retune(next: VehicleDynamicsTuning): void;
   tuning(): VehicleDynamicsTuning;
@@ -346,10 +392,28 @@ export function createVehicleDynamics(
   const state: VehicleDynamicsState = freshState(tuning, options.position ?? [0, 0, 0], options.heading ?? 0);
   settleOnGround();
 
+  /** Spawn resting on the terrain: pitch, roll and height fitted to the ground under the four wheels. */
   function settleOnGround(): void {
     const suspension = tuning.suspension;
     if (suspension === undefined) return;
-    state.y = groundAt(state.x, state.z) + suspension.rideHeight;
+    const L = Math.max(0.5, tuning.wheelbase);
+    const a = L * (1 - clamp01(tuning.frontWeight));
+    const b = L - a;
+    const half = Math.max(0.15, tuning.trackWidth / 2);
+    const [fx, fz] = forwardOf(state.heading);
+    const ground = (along: number, lat: number) => groundAt(state.x + fx * along - fz * lat, state.z + fz * along + fx * lat);
+    const fl = ground(a, -half);
+    const fr = ground(a, half);
+    const rl = ground(-b, -half);
+    const rr = ground(-b, half);
+    const front = (fl + fr) / 2;
+    const rear = (rl + rr) / 2;
+    state.bodyPitch = -Math.atan2(front - rear, L);
+    state.bodyRoll = Math.atan2((fr + rr) / 2 - (fl + rl) / 2, 2 * half);
+    state.y = rear + (front - rear) * (b / L) + suspension.rideHeight;
+    state.vy = 0;
+    state.pitchRate = 0;
+    state.rollRate = 0;
     const sags = staticSags(tuning, suspension);
     for (let i = 0; i < 4; i += 1) state.compression[i] = sags[i]!;
   }
@@ -621,6 +685,13 @@ export function createVehicleDynamics(
       nv *= Math.max(0, 1 - 6 * h);
       nr *= Math.max(0, 1 - 6 * h);
     }
+    // Near rest, held brakes grip statically: they cancel motion up to what the braked axles can hold,
+    // so a car parks on a slope instead of creeping at whatever speed a damped slide settles to.
+    if (h > 0 && grounded && Math.abs(nu) < 0.5 && !wantReverseDrive && throttle <= 0) {
+      const holdForce = handbrake * capRear * rearTire.slideGrip + brakeInput * Math.min(t.brakeForce, capFront + capRear);
+      const hold = (holdForce / m) * h;
+      if (hold > 0) nu = Math.abs(nu) <= hold ? 0 : nu - Math.sign(nu) * hold;
+    }
     const reverseCap = t.reverseSpeed ?? 8;
     if (nu < -reverseCap) nu = -reverseCap;
 
@@ -655,6 +726,7 @@ export function createVehicleDynamics(
       state.bodyRoll = (m * state.lateralAccel * t.comHeight) / rollK;
       state.bodyPitch = (-m * state.longitudinalAccel * t.comHeight) / pitchK;
     } else {
+      if (!grounded && t.air !== undefined) steerInAir(t.air, input, modifiers?.air, h);
       integrateBody(suspension, a, b, h, downforce, grounded, out);
     }
 
@@ -678,7 +750,7 @@ export function createVehicleDynamics(
       const lat = i % 2 === 0 ? -half : half;
       const px = state.x + fx * along - fz * lat;
       const pz = state.z + fz * along + fx * lat;
-      const attach = state.y - state.bodyPitch * along + state.bodyRoll * lat;
+      const attach = state.y - Math.sin(state.bodyPitch) * along + Math.sin(state.bodyRoll) * lat;
       const c = groundAt(px, pz) + suspension.rideHeight + sags[i]! - attach;
       const rate = h > 0 ? (c - state.compression[i]!) / h : 0;
       state.compression[i] = c;
@@ -703,6 +775,17 @@ export function createVehicleDynamics(
       }
     }
     return corner;
+  }
+
+  function steerInAir(air: VehicleAirTuning, input: AxisInput, explicit: VehicleAirInput | undefined, h: number): void {
+    const pitch = clampUnit(explicit?.pitch ?? clamp01(input.throttle) - clamp01(input.brake));
+    const yaw = clampUnit(explicit?.yaw ?? input.steer);
+    const roll = clampUnit(explicit?.roll ?? 0);
+    const damping = air.damping ?? 1.5;
+    const maxRate = air.maxRate ?? 5.5;
+    state.pitchRate = driveRate(state.pitchRate, pitch * air.pitchAccel, damping, maxRate, h);
+    state.yawRate = driveRate(state.yawRate, -yaw * air.yawAccel, damping, maxRate, h);
+    state.rollRate = driveRate(state.rollRate, roll * air.rollAccel, damping, maxRate, h);
   }
 
   /** Heave, pitch and roll from the corner forces found this substep plus the tires' inertial moments. */
@@ -742,6 +825,12 @@ export function createVehicleDynamics(
     state.bodyRoll += state.rollRate * h;
     if (state.airborne && grounded) out.landingSpeed = Math.max(out.landingSpeed, -state.vy);
     state.airborne = !grounded;
+    if (!grounded) state.airTime += h;
+    else if (state.vy <= 0.5) {
+      // Still-compressed springs right after a jump read as ground contact; only a settled car has landed.
+      state.jumpsUsed = 0;
+      state.airTime = 0;
+    }
   }
 
   function driveForce(throttle: number, reverse: number, u: number, h: number, out: Telemetry): number {
@@ -794,6 +883,27 @@ export function createVehicleDynamics(
       state.vx *= factor;
       state.vz *= factor;
       state.yawRate *= factor;
+    },
+    jump() {
+      const jump = tuning.jump;
+      if (jump === undefined || tuning.suspension === undefined) return false;
+      if (!state.airborne && state.jumpsUsed === 0) {
+        state.vy = Math.max(state.vy, 0) + jump.speed;
+        state.jumpsUsed = 1;
+        return true;
+      }
+      const count = jump.count ?? 1;
+      const inWindow = state.airTime <= (jump.window ?? Number.POSITIVE_INFINITY);
+      if (state.jumpsUsed >= count || !inWindow) return false;
+      // An air jump always takes off from a first jump (or a ledge) and counts as one used either way.
+      state.jumpsUsed = Math.max(state.jumpsUsed, 1) + 1;
+      state.vy = Math.max(state.vy, 0) + jump.speed;
+      return true;
+    },
+    applyAngularImpulse(pitch, yaw, roll) {
+      state.pitchRate += pitch;
+      state.yawRate += yaw;
+      state.rollRate += roll;
     },
     applyImpulse(dvx, dvz, dvy = 0) {
       state.vx += dvx;
@@ -943,5 +1053,20 @@ function freshState(
     rollRate: 0,
     compression: [0, 0, 0, 0],
     airborne: false,
+    jumpsUsed: 0,
+    airTime: 0,
   };
+}
+
+function clampUnit(value: number): number {
+  return Math.max(-1, Math.min(1, value));
+}
+
+/** Angular rate driven by input acceleration and slowed by damping, capped at `maxRate` only while input pushes past it. */
+function driveRate(rate: number, accel: number, damping: number, maxRate: number, h: number): number {
+  let next = rate + (accel - damping * rate) * h;
+  if (Math.abs(next) > maxRate && Math.sign(accel) === Math.sign(next) && Math.abs(next) > Math.abs(rate)) {
+    next = Math.sign(next) * Math.max(maxRate, Math.abs(rate));
+  }
+  return next;
 }

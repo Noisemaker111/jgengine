@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { AxisInput } from "../input/axisInput";
 import { tickDrivableVehicle } from "./drivableVehicle";
-import { measureHandling, measureRide } from "./handlingProbe";
+import { measureAir, measureHandling, measureRide } from "./handlingProbe";
 import {
   createVehicleDynamics,
   type VehicleDynamicsTuning,
@@ -320,6 +320,8 @@ describe("createVehicleDynamics — suspension", () => {
     expect(rolling.pose().position[2]).toBeLessThan(-0.3);
     const parked = createVehicleDynamics(sprung, { groundHeight: grade });
     let step = parked.tick(DT, axis({ handbrake: 1 }));
+    expect(step.airborne).toBe(false);
+    expect(step.bodyPitch).toBeCloseTo(-Math.atan(0.2), 2);
     for (let i = 0; i < 180; i += 1) step = parked.tick(DT, axis({ handbrake: 1 }));
     expect(Math.abs(step.forwardSpeed)).toBeLessThan(0.05);
   });
@@ -363,5 +365,83 @@ describe("createVehicleDynamics — suspension", () => {
     let drive = tickDrivableVehicle(car, DT, axis({ throttle: 1 }), { groundHeight: ground });
     for (let i = 0; i < 120; i += 1) drive = tickDrivableVehicle(car, DT, axis({ throttle: 1 }), { groundHeight: ground });
     expect(drive.pose.position[1]).toBeCloseTo(Math.max(drive.step.position[1], ground(0, drive.step.position[2])), 2);
+  });
+});
+
+const jumper: VehicleDynamicsTuning = {
+  ...sprung,
+  jump: { speed: 6, count: 2, window: 1.2 },
+  air: { pitchAccel: 12, yawAccel: 10, rollAccel: 14, damping: 1.5, maxRate: 5.5 },
+};
+
+describe("createVehicleDynamics — jumps and air control", () => {
+  test("a jump reaches about v²/2g, and a single-jump car cannot jump again in the air", () => {
+    const report = measureAir(() => createVehicleDynamics({ ...jumper, jump: { speed: 6 } }));
+    expect(report.jumpApexHeight).toBeGreaterThan((6 * 6) / (2 * 9.81) * 0.8);
+    expect(report.jumpApexHeight).toBeLessThan((6 * 6) / (2 * 9.81) * 1.2);
+    expect(report.jumpApexTime).toBeCloseTo(6 / 9.81, 0);
+    expect(report.doubleJumpApexHeight).toBeCloseTo(report.jumpApexHeight, 5);
+  });
+
+  test("a double jump adds height inside its window and resets on landing", () => {
+    const report = measureAir(() => createVehicleDynamics(jumper));
+    expect(report.doubleJumpApexHeight).toBeGreaterThan(report.jumpApexHeight * 1.8);
+    const car = createVehicleDynamics(jumper);
+    car.tick(DT, axis({}));
+    expect(car.jump()).toBe(true);
+    for (let i = 0; i < 20; i += 1) car.tick(DT, axis({}));
+    expect(car.jump()).toBe(true);
+    for (let i = 0; i < 10; i += 1) car.tick(DT, axis({}));
+    expect(car.jump()).toBe(false);
+    for (let i = 0; i < 300; i += 1) car.tick(DT, axis({}));
+    expect(car.snapshot().jumpsUsed).toBe(0);
+    expect(car.jump()).toBe(true);
+    const late = createVehicleDynamics({ ...jumper, jump: { speed: 6, count: 2, window: 0.3 } });
+    late.tick(DT, axis({}));
+    late.jump();
+    for (let i = 0; i < 30; i += 1) late.tick(DT, axis({}));
+    expect(late.snapshot().airborne).toBe(true);
+    expect(late.jump()).toBe(false);
+  });
+
+  test("air input rotates the body on each axis up to its rate cap, and does nothing on the ground", () => {
+    const report = measureAir(() => createVehicleDynamics(jumper));
+    expect(report.airPitchRate).toBeGreaterThan(2.5);
+    expect(report.airPitchRate).toBeLessThanOrEqual(5.5 + 1e-9);
+    expect(report.airYawRate).toBeGreaterThan(2);
+    expect(report.airRollRate).toBeGreaterThan(2.5);
+    const grounded = createVehicleDynamics(jumper);
+    for (let i = 0; i < 30; i += 1) grounded.tick(DT, axis({}), { air: { pitch: 1, yaw: 0, roll: 1 } });
+    expect(Math.abs(grounded.snapshot().rollRate)).toBeLessThan(0.05);
+    const noAir = measureAir(() => createVehicleDynamics({ ...jumper, air: undefined }));
+    expect(noAir.airRollRate).toBeLessThan(0.05);
+  });
+
+  test("without explicit air input, throttle noses down and steer yaws in the air", () => {
+    const car = createVehicleDynamics(jumper);
+    car.tick(DT, axis({}));
+    car.jump();
+    for (let i = 0; i < 20; i += 1) car.tick(DT, axis({ throttle: 1, steer: 1 }));
+    const state = car.snapshot();
+    expect(state.pitchRate).toBeGreaterThan(1);
+    expect(state.yawRate).toBeLessThan(-1);
+  });
+
+  test("snapshot/restore resumes bit-for-bit through jumps and air control", () => {
+    const reference = createVehicleDynamics(jumper);
+    const replica = createVehicleDynamics(jumper);
+    const air = (i: number) => ({ pitch: Math.sin(i / 10), yaw: 0.3, roll: Math.cos(i / 15) });
+    let saved = reference.snapshot();
+    for (let i = 0; i < 200; i += 1) {
+      if (i === 5 || i === 30) reference.jump();
+      if (i === 20) saved = reference.snapshot();
+      reference.tick(DT, axis({ throttle: 0.5 }), { air: air(i) });
+    }
+    replica.restore(saved);
+    for (let i = 20; i < 200; i += 1) {
+      if (i === 30) replica.jump();
+      replica.tick(DT, axis({ throttle: 0.5 }), { air: air(i) });
+    }
+    expect(replica.snapshot()).toEqual(reference.snapshot());
   });
 });
