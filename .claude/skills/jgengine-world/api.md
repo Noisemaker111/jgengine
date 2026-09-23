@@ -360,7 +360,7 @@
 ## @jgengine/core/input/axisInput
 
 - `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
-- `AxisBinding` (interface): interface AxisBinding { positive: readonly string[]; negative?: readonly string[]; pointer?: PointerAxisBinding } — ⚠ undocumented
+- `AxisBinding` (interface): interface AxisBinding { positive: readonly string[]; negative?: readonly string[]; pointer?: PointerAxisBinding } — ⚠ undocumented · used by `analogAxes` (@jgengine/core/input/axisShaper): Which axes an analog source is driving this frame: an axis counts as analog when any action bound to it has a published analog magnitude (`c…
 - `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
 - `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
@@ -370,6 +370,18 @@
 - `GenericAxisChannel` (interface): interface GenericAxisChannel<TAxes extends string> — The held-key-ramping analog channel for any axis schema (#282.7) — drones (pitch/roll/strafe), boats, mechs — not just the four car axes `AxisChannel` hardcodes. Same semantics: keys ramp, `setAnalog` overrides, a binding's `pointer` source takes over while a pointer is active.
 - `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> { bindings: Record<TAxes, AxisBinding>; ranges?: Partial<Record<TAxes, AxisRange>>; smoothing?: number } — ⚠ undocumented
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
+
+## @jgengine/core/input/axisShaper
+
+- `AxisShapeConfig` (interface): interface AxisShapeConfig — Shaping for one named axis.
+- `AxisShapeProfile` (interface): interface AxisShapeProfile — How one axis responds to one kind of source. Keys want ramps (a held key should feel like a pedal being pressed, not a switch); sticks want deadzone and curve but no lag.
+- `AxisShapeSample` (interface): interface AxisShapeSample<TAxes extends string> — Per-sample options for {@link AxisShaper.shape}.
+- `AxisShaper` (interface): interface AxisShaper<TAxes extends string> — Stateful per-axis response shaping between raw input and a sim.
+- `AxisShaperConfig` (interface): interface AxisShaperConfig<TAxes extends string> — Config for {@link createAxisShaper}: one entry per axis.
+- `AxisValues` (type): type AxisValues<TAxes extends string> = Record<TAxes, number> — Shaped axis output, one number per axis.
+- `analogAxes` (function): function analogAxes<TAxes extends string>(bindings: Readonly<Record<TAxes, AxisBinding>>, analog: Readonly<Record<string, number>> | null): Set<TAxes> — Which axes an analog source is driving this frame: an axis counts as analog when any action bound to it has a published analog magnitude (`ctx.input.analog()`). Feed the result to {@link AxisShaper.shape}.
+- `createAxisShaper` (function): function createAxisShaper<TAxes extends string>(initial: AxisShaperConfig<TAxes>): AxisShaper<TAxes> — Creates an {@link AxisShaper}: deadzone, curve and ramp rates per axis, chosen per frame by whether the source was a key or a stick. It sits between `ctx.input.axis(...)` and any sim (a vehicle, an aircraft, aim), so a held key eases in and self-centres while a stick stays direct. Deterministic and serializable.
+- `shapeAxisValue` (function): function shapeAxisValue(raw: number, profile: AxisShapeProfile | undefined): number — Deadzone, saturation and curve applied to one raw value; sign is preserved.
 
 ## @jgengine/core/input/bindingOverrides
 

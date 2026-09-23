@@ -191,6 +191,7 @@
     "./input/actionBindings",
     "./input/actionContexts",
     "./input/axisInput",
+    "./input/axisShaper",
     "./input/bindingOverrides",
     "./input/controlGroups",
     "./input/gamepadModel",
