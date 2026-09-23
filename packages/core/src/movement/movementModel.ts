@@ -126,9 +126,9 @@ export const MOVEMENT_TUNING = {
 function resolveTargetSpeed(intent: MovementIntent, baseSpeed: number, tuning?: MovementTuningOverrides): number {
   const backpedal = tuning?.backpedalSpeedMultiplier ?? MOVEMENT_TUNING.backpedalSpeedMultiplier;
   const speedMultiplier = intent.crouching
-    ? MOVEMENT_TUNING.crouchSpeedMultiplier
+    ? (tuning?.crouchSpeedMultiplier ?? MOVEMENT_TUNING.crouchSpeedMultiplier)
     : intent.running
-      ? MOVEMENT_TUNING.runSpeedMultiplier
+      ? (tuning?.runSpeedMultiplier ?? MOVEMENT_TUNING.runSpeedMultiplier)
       : intent.forward < 0
         ? backpedal
         : 1;
@@ -176,6 +176,16 @@ export interface MovementTuningOverrides {
   jumpVelocity?: number;
   /** Fraction of walk speed while backpedalling; overrides {@link MOVEMENT_TUNING.backpedalSpeedMultiplier}. */
   backpedalSpeedMultiplier?: number;
+  /** Ground velocity response, 1/s: how fast the body reaches its target velocity (default 26). */
+  groundAcceleration?: number;
+  /** Air velocity response, 1/s: air control (default 12; `0` locks the jump arc). */
+  airAcceleration?: number;
+  /** Ground stopping response with no input, 1/s (default 18; lower slides). */
+  groundFriction?: number;
+  /** Sprint speed as a multiple of walk speed (default 2.25). */
+  runSpeedMultiplier?: number;
+  /** Crouch speed as a multiple of walk speed (default 0.45). */
+  crouchSpeedMultiplier?: number;
 }
 
 /**
@@ -251,13 +261,15 @@ export function advancePlayerMotion(
     }
   }
 
-  const acceleration = motion.grounded ? MOVEMENT_TUNING.groundAcceleration : MOVEMENT_TUNING.airAcceleration;
+  const acceleration = motion.grounded
+    ? (tuning?.groundAcceleration ?? MOVEMENT_TUNING.groundAcceleration)
+    : (tuning?.airAcceleration ?? MOVEMENT_TUNING.airAcceleration);
   const accelerationBlend = 1 - Math.exp(-acceleration * deltaSeconds);
   motion.horizontalVelocityX += (targetVelocityX - motion.horizontalVelocityX) * accelerationBlend;
   motion.horizontalVelocityZ += (targetVelocityZ - motion.horizontalVelocityZ) * accelerationBlend;
 
   if (!intent.moving && motion.grounded) {
-    const friction = Math.exp(-MOVEMENT_TUNING.groundFriction * deltaSeconds);
+    const friction = Math.exp(-(tuning?.groundFriction ?? MOVEMENT_TUNING.groundFriction) * deltaSeconds);
     motion.horizontalVelocityX *= friction;
     motion.horizontalVelocityZ *= friction;
   }

@@ -377,3 +377,23 @@ describe("per-player motion queues", () => {
     expect(ctx.player.motionFor("a").takePending()?.impulses).toEqual([2]);
   });
 });
+
+describe("resolvePlayerMovementTuning — movement.feel", () => {
+  test("maps feel fields onto the controller overrides alongside physics and backpedal", () => {
+    const tuning = resolvePlayerMovementTuning({
+      physics: { gravity: -30, jumpVelocity: 9 },
+      movement: { backpedalMult: 0.5, feel: { groundAcceleration: 10, airAcceleration: 0, groundFriction: 6, runMultiplier: 3, crouchMultiplier: 0.3 } },
+    });
+    expect(tuning.physics).toEqual({
+      gravityAcceleration: 30,
+      jumpVelocity: 9,
+      backpedalSpeedMultiplier: 0.5,
+      groundAcceleration: 10,
+      airAcceleration: 0,
+      groundFriction: 6,
+      runSpeedMultiplier: 3,
+      crouchSpeedMultiplier: 0.3,
+    });
+    expect(resolvePlayerMovementTuning({}).physics).toBeUndefined();
+  });
+});

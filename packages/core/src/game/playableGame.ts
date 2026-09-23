@@ -390,6 +390,20 @@ export interface FlightConfig {
   canFly?: (ctx: GameContext) => boolean;
 }
 
+/** Feel knobs for the built-in walk controller; see {@link PlayerMovementConfig.feel}. */
+export interface MovementFeelConfig {
+  /** Ground velocity response, 1/s (default 26). Lower drifts into and out of motion; higher is snappy. */
+  groundAcceleration?: number;
+  /** Air velocity response, 1/s (default 12). `0` commits to the jump arc; high values steer freely in the air. */
+  airAcceleration?: number;
+  /** Stopping response on the ground with no input, 1/s (default 18). Lower slides like ice. */
+  groundFriction?: number;
+  /** Sprint speed as a multiple of walk speed (default 2.25). */
+  runMultiplier?: number;
+  /** Crouch speed as a multiple of walk speed (default 0.45). */
+  crouchMultiplier?: number;
+}
+
 /** Movement-control levers for the shell-driven local player walk controller. */
 export interface PlayerMovementConfig {
   /** "free" (default) moves camera-relative across the plane; "axis" locks travel to one world axis; "grid" snaps each committed position to cell centers. */
@@ -414,6 +428,12 @@ export interface PlayerMovementConfig {
   canSprint?: (ctx: GameContext) => boolean;
   /** Fraction of walk speed while backpedalling (holding `moveBack`). Overrides the engine default (0.65). */
   backpedalMult?: number;
+  /**
+   * Walk-controller feel. Acceleration and friction are exponential response rates (1/s): higher reaches
+   * the target velocity or stops sooner. Omitted fields keep the engine defaults, so nothing changes until a
+   * game sets one. Tune against `measureMovement` once it lands (#1772).
+   */
+  feel?: MovementFeelConfig;
   /** Radians/second the rendered body rotates toward its movement heading (shortest arc), so strafing/backpedalling read as a turn rather than an instant flip; also the rate the internally-integrated `turnLeft`/`turnRight` heading turns when the shell doesn't own yaw. Unset = body facing snaps instantly (no change to existing feel). */
   turnSpeed?: number;
   /** On-foot swimming when the terrain declares a `waterLevel` and the player is submerged: caps speed and floats them at the surface. `true` uses defaults; default off. */
