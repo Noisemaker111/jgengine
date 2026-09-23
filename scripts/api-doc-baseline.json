@@ -2122,7 +2122,6 @@
   "@jgengine/core/world/interiors#Interiors",
   "@jgengine/core/world/interiors#InteriorsConfig",
   "@jgengine/core/world/interiors#SpaceRef",
-  "@jgengine/core/world/interiors#createInteriors",
   "@jgengine/core/world/lod#LodBand",
   "@jgengine/core/world/lod#LodScheduler",
   "@jgengine/core/world/lod#LodSchedulerConfig",

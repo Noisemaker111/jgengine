@@ -988,6 +988,15 @@ export interface TerraformBrush {
   setRadius(radius: number): void;
   setStrength(strength: number): void;
   config(): Required<Omit<TerraformBrushConfig, "surface">> & { surface: string | undefined };
+  /** The retunable brush settings; the terrain keeps its own `snapshot()`. */
+  snapshot(): TerraformBrushState;
+  restore(next: TerraformBrushState): void;
+}
+
+/** Plain JSON state of a {@link TerraformBrush}. */
+export interface TerraformBrushState {
+  radius: number;
+  strength: number;
 }
 
 export function createTerraformBrush(
@@ -1021,6 +1030,13 @@ export function createTerraformBrush(
     },
     config() {
       return { radius, strength, falloff, surface };
+    },
+    snapshot() {
+      return { radius, strength };
+    },
+    restore(next) {
+      radius = next.radius;
+      strength = next.strength;
     },
   };
 }

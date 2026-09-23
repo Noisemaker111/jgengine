@@ -68,3 +68,19 @@ describe("interiors", () => {
     expect(world.move(ghost, [1, 1])).toBe(ghost);
   });
 });
+
+describe("interiors are stateless", () => {
+  test("the handle holds no play state, so the same inputs give the same outputs after any history", () => {
+    const shop: Interior = { id: "shop", origin: [10, 5], rotation: Math.PI / 2, bounds: { minX: -3, maxX: 3, minZ: -3, maxZ: 3 } };
+    const interiors = createInteriors({ interiors: [shop], radius: 0.25 });
+    const start: EntityLocation = { space: { kind: "exterior" }, position: [11, 6] };
+    const play = () => {
+      const inside = interiors.enter(start, "shop")!;
+      const moved = interiors.move(inside, [5, 0]);
+      return [inside, moved, interiors.leave(moved)];
+    };
+    const a = play();
+    interiors.move({ space: { kind: "interior", id: "shop" }, position: [0, 0] }, [1, 1]);
+    expect(play()).toEqual(a);
+  });
+});

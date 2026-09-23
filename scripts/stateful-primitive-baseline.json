@@ -108,14 +108,10 @@
   "packages/core/src/world/buildSockets.ts#createBuildSocketCatalog",
   "packages/core/src/world/cellStates.ts#createCellStateGrid",
   "packages/core/src/world/fog.ts#createFogField",
-  "packages/core/src/world/footprintGrid.ts#createFootprintGrid",
-  "packages/core/src/world/interiors.ts#createInteriors",
   "packages/core/src/world/placementController.ts#createPlacementController",
   "packages/core/src/world/sharedAnnotations.ts#createSharedAnnotations",
-  "packages/core/src/world/terraform.ts#createTerraformBrush",
   "packages/core/src/world/visibilityField.ts#createVisibilityField",
   "packages/core/src/world/voxelField.ts#createVoxelField",
-  "packages/core/src/world/walls.ts#createWallDrawTool",
   "packages/core/src/world/weather.ts#createFireGrid",
   "packages/core/src/world/windZones.ts#createWindZones"
 ]
