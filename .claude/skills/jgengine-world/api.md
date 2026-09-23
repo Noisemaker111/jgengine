@@ -3204,6 +3204,7 @@
 - `AdjacentCell` (interface): interface AdjacentCell — One occupied neighbor cell reported by {@link boundaryNeighbors}.
 - `FootprintGrid` (interface): interface FootprintGrid — Handle returned by {@link createFootprintGrid}.
 - `FootprintGridOptions` (interface): interface FootprintGridOptions — Config for {@link createFootprintGrid}.
+- `FootprintGridState` (interface): interface FootprintGridState — Plain JSON state of a {@link FootprintGrid}: live reservations in claim order.
 - `FootprintReservation` (interface): interface FootprintReservation — A live claim on a {@link FootprintGrid}: which cells `id` (a `kind` tag for adjacency checks) holds.
 - `GridCell` (interface): interface GridCell — One integer cell address on a {@link FootprintGrid}.
 - `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
@@ -3246,10 +3247,10 @@
 - `EntityLocation` (interface): interface EntityLocation { space: SpaceRef; position: Vec2 } — ⚠ undocumented
 - `Exterior` (interface): interface Exterior { bounds?: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
 - `Interior` (interface): interface Interior { id: string; origin: Vec2; rotation?: number; bounds: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
-- `Interiors` (interface): interface Interiors { move(location: EntityLocation, delta: Vec2): EntityLocation; enter(location: EntityLocation, id: string): EntityLocation | null; leave(location: EntityLocation): EntityLocation | null; toInterior(id: string, exterior: Vec2): Vec2 | null; … — ⚠ undocumented
-- `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented
+- `Interiors` (interface): interface Interiors { move(location: EntityLocation, delta: Vec2): EntityLocation; enter(location: EntityLocation, id: string): EntityLocation | null; leave(location: EntityLocation): EntityLocation | null; toInterior(id: string, exterior: Vec2): Vec2 | null; … — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
+- `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 - `SpaceRef` (type): type SpaceRef = { kind: "exterior" } | { kind: "interior"; id: string } — ⚠ undocumented
-- `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — ⚠ undocumented
+- `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 
 ## @jgengine/core/world/lod
 
@@ -3717,6 +3718,7 @@
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `TerraformBrush` (interface): interface TerraformBrush { raise(center: Vec2): number; lower(center: Vec2): number; flatten(center: Vec2, target?: number): number; paint(center: Vec2, surface?: string): number; setRadius(radius: number): void; setStrength(strength: number): void; config(): Requi… — ⚠ undocumented
 - `TerraformBrushConfig` (interface): interface TerraformBrushConfig { radius?: number; strength?: number; falloff?: TerraformFalloff; surface?: string } — ⚠ undocumented
+- `TerraformBrushState` (interface): interface TerraformBrushState — Plain JSON state of a {@link TerraformBrush}.
 - `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
 - `TerraformDeltaRecorder` (type): type TerraformDeltaRecorder = (index: number, before: number, after: number) => void — Reports each changed vertex during a recorded edit: grid index, prior offset, new offset.
 - `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
@@ -3861,6 +3863,7 @@
 - `RoofStyle` (type): type RoofStyle = "hip" | "gable" | "flat" — ⚠ undocumented
 - `SurfacePaintStore` (interface): interface SurfacePaintStore { paint(target: PaintTarget, key: string, surface: string): void; clear(target: PaintTarget, key: string): void; get(target: PaintTarget, key: string): string | null; entries(target: PaintTarget): readonly (readonly [string, string])[]; sna… — ⚠ undocumented
 - `WallDrawTool` (interface): interface WallDrawTool { addPoint(point: Vec2, snap?: number): Vec2; undo(): void; close(): void; clear(): void; points(): readonly Vec2[]; segments(): WallSegment[]; isClosed(): boolean; footprint(): EnclosedFootprint | null; roof(config?: RoofConfig): RoofPlan … — ⚠ undocumented
+- `WallDrawToolState` (interface): interface WallDrawToolState — Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed.
 - `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
 

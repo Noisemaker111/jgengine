@@ -51,11 +51,15 @@ function toExteriorFrame(interior: Interior, local: Vec2): Vec2 {
   return [rotated[0] + interior.origin[0], rotated[1] + interior.origin[1]];
 }
 
+function indexInteriors(interiors: readonly Interior[]): ReadonlyMap<string, Interior> {
+  return new Map(interiors.map((interior) => [interior.id, interior]));
+}
+
+/** Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state. */
 export function createInteriors(config: InteriorsConfig = {}): Interiors {
   const radius = config.radius ?? 0;
   const exterior = config.exterior ?? {};
-  const byId = new Map<string, Interior>();
-  for (const interior of config.interiors ?? []) byId.set(interior.id, interior);
+  const byId = indexInteriors(config.interiors ?? []);
 
   return {
     move(location, delta) {

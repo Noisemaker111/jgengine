@@ -80,3 +80,24 @@ describe("walls", () => {
     expect(restored.get("floor", "2,3")).toBe("oak");
   });
 });
+
+describe("wall draw tool snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const tool = createWallDrawTool({ snap: 0.5, closeTolerance: 0.5 });
+    tool.addPoint([0, 0]);
+    tool.addPoint([4.2, 0.1]);
+    tool.addPoint([4, 3.9]);
+    const saved = tool.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      tool.addPoint([0.1, 4]);
+      tool.addPoint([0.2, 0.1]);
+      return [tool.points().map((p) => [...p]), tool.isClosed(), tool.segments(), tool.footprint(), tool.roof({ style: "hip" })];
+    };
+    const a = play();
+    tool.clear();
+    expect(saved).toEqual(frozen);
+    tool.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

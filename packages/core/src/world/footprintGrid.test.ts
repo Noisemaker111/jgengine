@@ -101,3 +101,26 @@ describe("connective-piece adjacency", () => {
     expect(hasValidAdjacency(grid, cells, (kind) => kind === "pipe", true)).toBe(false);
   });
 });
+
+describe("footprint grid snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const grid = createFootprintGrid({ cellSize: 2 });
+    grid.reserve("house", "building", grid.cellsFor([0, 0], { w: 4, d: 4 }));
+    grid.reserve("road", "road", grid.cellsFor([6, 0], { w: 2, d: 6 }, 1));
+    const saved = grid.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => [
+      grid.reserve("shed", "building", grid.cellsFor([2, 0], { w: 2, d: 2 })),
+      grid.reserve("well", "prop", grid.cellsFor([-6, -6], { w: 2, d: 2 })),
+      grid.release("road"),
+      grid.list(),
+      grid.kindAt({ col: -1, row: -1 }),
+      footprintObstacles(grid),
+    ];
+    const a = play();
+    grid.clear();
+    expect(saved).toEqual(frozen);
+    grid.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});
