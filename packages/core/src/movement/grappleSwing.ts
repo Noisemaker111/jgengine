@@ -32,6 +32,8 @@ export interface GrappleSwing {
   fire(anchor: SwingVec3, from: SwingVec3): void;
   release(): void;
   state(): GrappleSwingState;
+  /** Puts a {@link GrappleSwing.state} back; `anchor: null` detaches. */
+  restore(next: GrappleSwingState): void;
   /** Constrain one frame. `reeling` shortens the rope; returns the corrected position/velocity. */
   step(position: SwingVec3, velocity: SwingVec3, dt: number, reeling?: boolean): GrappleSwingStep;
 }
@@ -61,7 +63,11 @@ export function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwin
     release() {
       anchor = null;
     },
-    state: () => ({ attached: anchor !== null, anchor, ropeLength }),
+    state: () => ({ attached: anchor !== null, anchor: anchor === null ? null : [anchor[0], anchor[1], anchor[2]], ropeLength }),
+    restore(next) {
+      anchor = next.anchor === null ? null : [next.anchor[0], next.anchor[1], next.anchor[2]];
+      ropeLength = next.ropeLength;
+    },
     step(position, velocity, dt, reeling = false) {
       if (anchor === null || dt <= 0) return { position, velocity };
       if (reeling && reelSpeed > 0) ropeLength = Math.max(minLength, ropeLength - reelSpeed * dt);

@@ -158,8 +158,30 @@ export interface ChaseCameraConfig {
   lookHeight?: number;
   /** Spring-arm damping (higher = stiffer, less lag). Default 6. */
   springDamping?: number;
-  /** Speed→FOV curve: FOV lerps from `base` to `max` as speed climbs to `speedForMax`. */
-  fov?: { base?: number; max?: number; speedForMax?: number };
+  /**
+   * Speed→FOV curve: FOV lerps from `base` to `max` as speed climbs to `speedForMax`. Speed is the
+   * followed entity's sim `velocity` when it publishes one. `response` (default 6) eases the FOV
+   * toward the curve with `1-exp(-response*dt)`; `Infinity` applies it unsmoothed.
+   */
+  fov?: { base?: number; max?: number; speedForMax?: number; response?: number };
+  /** Pull the boom back by up to `extra` world units as speed climbs to `speedForMax` (default the FOV curve's `speedForMax`). */
+  distanceBySpeed?: { extra: number; speedForMax?: number };
+  /**
+   * Tilt the boom with the target's body pitch (`rotationX`) so the camera stays behind it on
+   * slopes and ramps. `blend` (default 1) is the fraction of the pitch followed, clamped to `max`
+   * radians (default 0.6) and eased by `response` (default 5). Omit the block to keep a level boom.
+   */
+  pitchFollow?: { blend?: number; max?: number; response?: number };
+  /** How `ctx.camera.kickFov(degrees)` impulses feel: the kick decays at `decay` per second (default 7) and the summed kick is clamped to `max` degrees (default 20). */
+  fovKick?: { decay?: number; max?: number };
+  /** Input action that, while held, swings the chase view to look back at what is behind the target. */
+  lookBackAction?: string;
+  /**
+   * Pull the boom in past scene colliders, objects, terrain and walls via `ctx.scene.raycast`
+   * (entities never block). `radius` (default 0.3) keeps the lens off the surface; `minDistance`
+   * (default 0.8) is the closest the camera gets to the look pivot. Default on; `false` disables.
+   */
+  collision?: boolean | { radius?: number; minDistance?: number };
   /** Procedural shake amplitude per unit of speed (adds to the trauma channel). Default 0.0. */
   shakePerSpeed?: number;
   /** Velocity-lead / predictive follow (#286.9): the rig aims `time` seconds ahead of the target along its velocity, clamped to `max` world units (default 4). */

@@ -65,8 +65,9 @@
 ## @jgengine/core/ai/groupAssist
 
 - `AssistMember` (interface): interface AssistMember { id: string; groupId: string; table: ThreatTable } — ⚠ undocumented
-- `AssistNetwork` (interface): interface AssistNetwork { register(member: AssistMember): void; remove(memberId: string): void; memberIds(groupId?: string): string[]; assistersOf(memberId: string): string[]; addThreat(memberId: string, sourceId: string, amount: number): string[] } — ⚠ undocumented
+- `AssistNetwork` (interface): interface AssistNetwork { register(member: AssistMember): void; remove(memberId: string): void; memberIds(groupId?: string): string[]; assistersOf(memberId: string): string[]; addThreat(memberId: string, sourceId: string, amount: number): string[]; snapshot(): Ass… — ⚠ undocumented
 - `AssistNetworkConfig` (interface): interface AssistNetworkConfig { radius?: number; shareFraction?: number; distanceBetween?: (a: string, b: string) => number } — ⚠ undocumented
+- `AssistNetworkState` (interface): interface AssistNetworkState — Plain JSON membership of an {@link AssistNetwork}, in registration order; threat lives in each member's own table.
 
 ## @jgengine/core/ai/heatSystem
 
@@ -190,6 +191,7 @@
 - `ThreatEntry` (interface): interface ThreatEntry { sourceId: string; threat: number } — ⚠ undocumented
 - `ThreatTable` (interface): interface ThreatTable { add(sourceId: string, amount: number): number; set(sourceId: string, amount: number): void; threatOf(sourceId: string): number; decay(dt: number): void; highest(options?: HighestThreatOptions): string | null; ranked(): ThreatEntry[]; taun… — ⚠ undocumented
 - `ThreatTableConfig` (interface): interface ThreatTableConfig { decayPerSecond?: number; max?: number; forgetBelow?: number } — ⚠ undocumented
+- `ThreatTableState` (interface): interface ThreatTableState — Plain JSON state of a {@link ThreatTable}; `entries` keeps insertion order, which breaks ties in `highest`.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
 
 ## @jgengine/core/ai/waveRunner
@@ -333,6 +335,7 @@
 - `EffectiveRelationInput` (interface): interface EffectiveRelationInput { base: FactionRelation; ledger: ReputationLedger; actorId: string; factionId: string } — ⚠ undocumented
 - `ReputationLedger` (interface): interface ReputationLedger { standing(actorId: string, factionId: string): number; hasStanding(actorId: string, factionId: string): boolean; gain(actorId: string, factionId: string, amount: number): number; set(actorId: string, factionId: string, standing: number): n… — ⚠ undocumented
 - `ReputationLedgerConfig` (interface): interface ReputationLedgerConfig { tiers?: readonly ReputationTier[]; initial?: Readonly<Record<string, number>>; min?: number; max?: number } — ⚠ undocumented
+- `ReputationLedgerState` (interface): interface ReputationLedgerState — Plain JSON standings of a {@link ReputationLedger}: stored values only, `initial` stays config.
 - `ReputationTier` (interface): interface ReputationTier { id: string; min: number; relation: FactionRelation } — ⚠ undocumented · used by `tierForStanding`: Map a faction standing value to its named reputation tier.
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
@@ -1594,12 +1597,14 @@
 
 - `ColorHex` (type): type ColorHex = string — ⚠ undocumented
 - `ConcealmentSample` (interface): interface ConcealmentSample { id: string; score: number; concealed: boolean; dwellSeconds: number } — ⚠ undocumented
-- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void } — ⚠ undocumented
+- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void; snapshot(): ConcealmentSensorState; restore(next: ConcealmentSensorState): void } — ⚠ undocumented
+- `ConcealmentSensorState` (interface): interface ConcealmentSensorState — Plain JSON state of a {@link ConcealmentSensor}: seconds each target has stayed concealed.
 - `ConcealmentTarget` (interface): interface ConcealmentTarget { id: string; entityColors: readonly ColorHex[]; backgroundColors: readonly ColorHex[] } — ⚠ undocumented
 
 ## @jgengine/core/sensor/freezeMonitor
 
-- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void } — ⚠ undocumented
+- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void; snapshot(): FreezeMonitorState; restore(next: FreezeMonitorState): void } — ⚠ undocumented
+- `FreezeMonitorState` (interface): interface FreezeMonitorState — Plain JSON state of a {@link FreezeMonitor}: seconds each frozen subject has kept moving.
 - `FreezeSubject` (interface): interface FreezeSubject { id: string; groundSpeed: number } — ⚠ undocumented
 - `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
 
@@ -1886,15 +1891,18 @@
 
 ## @jgengine/core/visibility/simulationCulling
 
-- `SimulationCuller` (interface): interface SimulationCuller { enabled(): boolean; setEnabled(value: boolean): void; step(id: string, distance: number, dt: number): SimulationDecision; forget(id: string): void; clear(): void } — ⚠ undocumented
+- `SimulationCuller` (interface): interface SimulationCuller { enabled(): boolean; setEnabled(value: boolean): void; step(id: string, distance: number, dt: number): SimulationDecision; forget(id: string): void; clear(): void; snapshot(): SimulationCullerState; restore(next: SimulationCullerState): vo… — ⚠ undocumented
+- `SimulationCullerState` (interface): interface SimulationCullerState — Plain JSON state of a {@link SimulationCuller}: the enabled flag and each id's throttle accumulator.
 - `SimulationCullingOptions` (interface): interface SimulationCullingOptions — Simulation culling is a SEPARATE, opt-in system from render culling. Render culling only decides what is drawn; this decides whether a low-priority off-screen entity updates this tick. It is disabled by default and never throttles a protected entity — physics-critical, networking-critical, audio-critical, scripted, or explicitly-active entities always update. Gameplay correctness must never depend on an entity being on-screen, so opt in only where skipping updates is provably safe.
 - `SimulationDecision` (interface): interface SimulationDecision { update: boolean; elapsed: number } — ⚠ undocumented
 - `createSimulationCuller` (function): function createSimulationCuller(options: SimulationCullingOptions = {}): SimulationCuller — ⚠ undocumented
 
 ## @jgengine/core/visibility/spatialIndex
 
+- `SpatialCellRange` (interface): interface SpatialCellRange — Integer cell bounds an object covers, inclusive on both ends.
 - `SpatialIndex` (interface): interface SpatialIndex — A uniform 3D spatial hash the renderer and streaming system query for potentially-visible objects instead of scanning the whole scene. Objects are keyed by their world AABB into every overlapping cell; a moving object only rewrites the cells that actually changed. Static objects are inserted once and never touched again. Oversized objects (huge terrain chunks, world bounds) are held separately so they are always considered.
 - `SpatialIndexOptions` (interface): interface SpatialIndexOptions { readonly cellSize?: number; readonly maxCellSpan?: number } — ⚠ undocumented
+- `SpatialIndexState` (interface): interface SpatialIndexState — Plain JSON state of a {@link SpatialIndex}. Cells and their ids keep insertion order, so a restored index returns query results in the same order.
 - `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — ⚠ undocumented
 
 ## @jgengine/core/visibility/visibilitySystem
@@ -2034,7 +2042,7 @@
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
 - `CollisionEvent` (interface): interface CollisionEvent — A contact reported to `onCollision`. The object is reused each call — read/copy, never retain.
 - `CollisionObstacle` (interface): interface CollisionObstacle — A placed scene object the walking player collides against as a circle-vs-AABB obstacle.
-- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void } — ⚠ undocumented
+- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void; snapshot(): ConcealmentSensorState; restore(next: ConcealmentSensorState): void } — ⚠ undocumented
 - `ContextMenu` (interface): interface ContextMenu { kind: ContextTargetKind; targetId: string; point?: readonly [number, number, number]; verbs: readonly ContextVerb[] } — ⚠ undocumented · used by `buildContextMenu`: Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `ContextVerb` (interface): interface ContextVerb — One right-click verb: a label plus the command it dispatches (walk-then-act supported by args).
 - `ContourLine` (interface): interface ContourLine — A single iso-elevation contour traced across a region as a flat list of XZ line segments.
@@ -2100,7 +2108,7 @@
 - `FreeFlightState` (interface): interface FreeFlightState — Velocity state for a free-flight actor — serializable and ownable by the caller.
 - `FreeFlightStep` (interface): interface FreeFlightStep — World displacement produced by one free-flight tick.
 - `FreeFlightTuning` (interface): interface FreeFlightTuning — Data-first tuning for one free-flight profile.
-- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void } — ⚠ undocumented
+- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void; snapshot(): FreezeMonitorState; restore(next: FreezeMonitorState): void } — ⚠ undocumented
 - `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
 - `Frustum` (interface): interface Frustum { readonly planes: Float64Array; readonly corners: Float64Array; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } — ⚠ undocumented
 - `FrustumProjection` (interface): interface FrustumProjection { inView: boolean; distance: number; screenX: number; screenY: number } — ⚠ undocumented
@@ -3274,8 +3282,9 @@
 ## @jgengine/core/world/lod
 
 - `LodBand` (interface): interface LodBand { maxDistance: number; interval: number } — ⚠ undocumented
-- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number } — ⚠ undocumented
+- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number; snapshot(): LodSchedulerState; restore(next: LodSchedulerState): void } — ⚠ undocumented
 - `LodSchedulerConfig` (interface): interface LodSchedulerConfig { bands: readonly LodBand[]; beyondInterval?: number | null; stagger?: boolean } — ⚠ undocumented
+- `LodSchedulerState` (interface): interface LodSchedulerState — Plain JSON state of a {@link LodScheduler}: each id's accumulated seconds.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 
 ## @jgengine/core/world/mapAnnotations

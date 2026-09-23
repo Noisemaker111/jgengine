@@ -85,3 +85,21 @@ describe("recordingBuffer", () => {
     expect(createRecordingBuffer<number>().seekPair(0)).toEqual({ before: null, after: null });
   });
 });
+
+describe("recordingBuffer snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const buffer = createRecordingBuffer<{ x: number }>({ maxFrames: 4 });
+    for (let i = 0; i < 5; i += 1) buffer.append(i * 0.5, { x: i });
+    const saved = buffer.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      buffer.append(3, { x: 9 });
+      buffer.append(3.5, { x: 10 });
+      return [buffer.frames().map((f) => ({ ...f })), buffer.seekPair(2.2), buffer.duration()];
+    };
+    const a = play();
+    expect(saved).toEqual(frozen);
+    buffer.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

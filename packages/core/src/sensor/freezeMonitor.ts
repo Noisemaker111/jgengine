@@ -9,9 +9,16 @@ export interface FreezeViolation {
   movedSeconds: number;
 }
 
+/** Plain JSON state of a {@link FreezeMonitor}: seconds each frozen subject has kept moving. */
+export interface FreezeMonitorState {
+  moved: Record<string, number>;
+}
+
 export interface FreezeMonitor {
   tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[];
   reset(id?: string): void;
+  snapshot(): FreezeMonitorState;
+  restore(next: FreezeMonitorState): void;
 }
 
 /** @internal */
@@ -45,6 +52,13 @@ export function createFreezeMonitor(config?: { toleranceSpeed?: number; graceSec
     reset(id) {
       if (id === undefined) moved.clear();
       else moved.delete(id);
+    },
+    snapshot() {
+      return { moved: Object.fromEntries(moved) };
+    },
+    restore(next) {
+      moved.clear();
+      for (const [id, seconds] of Object.entries(next.moved)) moved.set(id, seconds);
     },
   };
 }

@@ -121,3 +121,29 @@ describe("threat taunt / forced target", () => {
     expect(table.forcedTarget()).toBeNull();
   });
 });
+
+describe("threat table snapshot", () => {
+  function play(table: ReturnType<typeof createThreatTable>): unknown[] {
+    const out: unknown[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      table.add(i % 2 === 0 ? "dps" : "healer", 7 + i);
+      table.decay(0.4);
+      out.push(table.highest({ current: "tank", stickiness: 1.1 }), table.ranked(), table.forcedTarget());
+    }
+    return out;
+  }
+
+  test("snapshot and restore replay bit-exactly", () => {
+    const table = createThreatTable({ decayPerSecond: 3, max: 60, forgetBelow: 1 });
+    table.add("tank", 20);
+    table.add("dps", 18);
+    table.taunt("tank", 1);
+    const saved = table.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const a = play(table);
+    expect(saved).toEqual(frozen);
+    table.restore(saved);
+    expect(play(table)).toEqual(a);
+    expect(table.snapshot()).toEqual(JSON.parse(JSON.stringify(table.snapshot())));
+  });
+});

@@ -18,6 +18,11 @@
   - `measureLean` reports steady lean, time to lean and counter-lean.
 - **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight })` returns a `setPose` patch. Pitch and roll come from load transfer, or from the springs when `suspension` is set.
 - **Camera.** `camera: { rig: "chase", chase: { fov, lead, bank, velocityYaw, yawResponse } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
+  - Speed comes from the entity's sim `velocity`, so publish poses with `setPose({ ..., dt })` (`tickDrivableVehicle` does). `fov.response` eases the FOV.
+  - The boom holds its length at any speed. `distanceBySpeed: { extra }` pulls it back on purpose; `ctx.camera.kickFov(deg)` adds a decaying punch for landings and hits.
+  - `pitchFollow` tilts the boom with `rotationX` on ramps and slopes. `lookBackAction` names an input action that looks behind while held.
+  - The boom stops short of objects, terrain and walls through `ctx.scene.raycast`; `collision: false` turns that off.
+  - Switch views at runtime with `ctx.camera.setChaseTuning({ ...ctx.camera.chaseTuning(), view: nextChaseView(view) })` (`@jgengine/core/runtime/cameraDirector`).
 - **Sound.** Call `ctx.game.audio.loop(id, sound)` once, then `setLoop` every tick:
   - Engine: `rate` from `step.rpm`, `gain` from `step.engineLoad`.
   - Tires: `gain` from how far `max(step.frontSaturation, step.rearSaturation)` exceeds ~0.85.
