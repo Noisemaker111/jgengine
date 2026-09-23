@@ -428,6 +428,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineMoveOrder` (function) · `import { defineMoveOrder } from "@jgengine/core/world"`
 
+## movement-metrics — measure a walking character's feel as numbers — time to top speed, stop distance, jump height and apex, air control, turn-around
+
+- `measureMovement` (function) · `import { measureMovement } from "@jgengine/core/movement/movementProbe"`
+
 ## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
 
 - `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/world"`

@@ -237,6 +237,7 @@
     "./movement/grappleSwing",
     "./movement/leaderTrail",
     "./movement/movementModel",
+    "./movement/movementProbe",
     "./movement/playerMovement",
     "./movement/poseState",
     "./movement/serverStep",
