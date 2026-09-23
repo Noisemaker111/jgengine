@@ -63,3 +63,7 @@ Default stages: fixed `input → movement → combat → ai → activities → c
 
 - **Save / replicate** — system modules register via `ctx.game.registerSave` / `registerReplicate` at install.
 - **Reset / dispose** — `loop.onReset` / `loop.onDispose` (composed) run system hooks.
+
+## Snapshot and restore on stateful handles
+
+These handles hand back a plain JSON `snapshot()` that later ticks do not mutate, and take it back with `restore(next)`, so a host, save file or replay can rewind them bit-exactly: `game/lootTable` `createLootRegistry` (registered tables; not JSON when an entry uses `generate`), `game/toasts` `createToastQueue`, `game/vfxInstance` `createVfxInstanceStore` (restore emits `stop` then `upsert` so the renderer follows), `session/roundState` `createRoundState` (`RoundSnapshot` now carries `pendingWinner`), `input/lookChannel` `createLookChannel`, and `input/pointer` `createDragCapture` (`state()` out, `restore(state | null)` in).

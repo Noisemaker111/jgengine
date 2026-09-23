@@ -31,3 +31,24 @@ describe("createLookChannel", () => {
     expect(channel.readVerticalOffset()).toBe(0.5);
   });
 });
+
+describe("look channel snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const channel = createLookChannel({ sensitivity: 0.002, maxVerticalOffset: 1.5 });
+    channel.accumulate(12, -4);
+    channel.setYaw(0.3);
+    channel.setPitch(-0.1);
+    channel.setVerticalOffset(0.7);
+    const saved = channel.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      channel.accumulate(3, 9);
+      return [channel.consume(), channel.readYaw(), channel.readPitch(), channel.readVerticalOffset()];
+    };
+    const a = play();
+    channel.setYaw(2);
+    expect(saved).toEqual(frozen);
+    channel.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

@@ -428,8 +428,9 @@
 
 ## @jgengine/core/input/lookChannel
 
-- `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number } — ⚠ undocumented
+- `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number; snap… — ⚠ undocumented
 - `LookChannelOptions` (interface): interface LookChannelOptions { sensitivity: number; maxVerticalOffset?: number } — ⚠ undocumented
+- `LookChannelState` (interface): interface LookChannelState — Plain JSON state of a {@link LookChannel}: the pending pixel deltas and the committed pose.
 - `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
 - `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
 

@@ -93,3 +93,24 @@ describe("createDragCapture", () => {
     expect(drag.state()).toBeNull();
   });
 });
+
+describe("drag capture restore", () => {
+  test("state and restore replay bit-exactly", () => {
+    const drag = createDragCapture({ maxPull: 4, grabRadius: 1 });
+    drag.begin([0, 0, 0], [0.5, 0, 0]);
+    drag.update([2, 0, 1]);
+    const saved = drag.state();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      drag.update([6, 0, 3]);
+      const mid = drag.state();
+      return [mid, drag.release()];
+    };
+    const a = play();
+    expect(saved).toEqual(frozen);
+    drag.restore(saved);
+    expect(play()).toEqual(a);
+    drag.restore(null);
+    expect(drag.state()).toBeNull();
+  });
+});

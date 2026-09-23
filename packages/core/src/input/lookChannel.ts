@@ -11,6 +11,15 @@ export interface LookDeltas {
   pitch: number;
 }
 
+/** Plain JSON state of a {@link LookChannel}: the pending pixel deltas and the committed pose. */
+export interface LookChannelState {
+  deltaX: number;
+  deltaY: number;
+  yaw: number;
+  pitch: number;
+  verticalOffset: number;
+}
+
 export interface LookChannel {
   accumulate(dx: number, dy: number): void;
   /** Yaw/pitch deltas (radians) for this frame; clears the accumulator. */
@@ -21,6 +30,8 @@ export interface LookChannel {
   readPitch(): number;
   setVerticalOffset(offset: number): void;
   readVerticalOffset(): number;
+  snapshot(): LookChannelState;
+  restore(next: LookChannelState): void;
 }
 
 export interface LookChannelOptions {
@@ -65,6 +76,12 @@ export function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }:
     },
     readVerticalOffset() {
       return verticalOffset;
+    },
+    snapshot() {
+      return { deltaX, deltaY, yaw, pitch, verticalOffset };
+    },
+    restore(next) {
+      ({ deltaX, deltaY, yaw, pitch, verticalOffset } = next);
     },
   };
 }

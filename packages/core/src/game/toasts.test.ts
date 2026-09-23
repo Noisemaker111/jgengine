@@ -50,3 +50,23 @@ describe("createToastQueue", () => {
     expect(queue.list()).toEqual([]);
   });
 });
+
+describe("toast queue snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const queue = createToastQueue({ cap: 3, ttlSeconds: 2 });
+    queue.push("a", 0);
+    queue.push("b", 0.5, 5);
+    const saved = queue.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      queue.push("c", 1);
+      queue.push("d", 1.5);
+      queue.prune(2.2);
+      return [...queue.list()];
+    };
+    const a = play();
+    expect(saved).toEqual(frozen);
+    queue.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

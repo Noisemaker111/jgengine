@@ -74,6 +74,8 @@ export interface RoundSnapshot<TPhase extends string = RoundPhase> {
   lossStreaks: Record<string, number>;
   roles: Record<string, string | undefined>;
   matchOver: boolean;
+  /** Winner of the round being settled, or null; drives `economyFor` until the next round starts. */
+  pendingWinner: string | null;
 }
 
 export interface RoundState<TPhase extends string = RoundPhase> {
@@ -90,6 +92,8 @@ export interface RoundState<TPhase extends string = RoundPhase> {
   /** The role tag configured for `team`, if any. */
   roleOf(team: string): string | undefined;
   snapshot(): RoundSnapshot<TPhase>;
+  /** Puts a {@link RoundState.snapshot} back; phase hooks stay registered. */
+  restore(next: RoundSnapshot<TPhase>): void;
 }
 
 const DEFAULT_PHASE_ORDER: readonly RoundPhase[] = ["buy", "live", "end"];
@@ -215,6 +219,7 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
       lossStreaks: { ...lossStreaks },
       roles: { ...roles },
       matchOver,
+      pendingWinner,
     };
   }
 
@@ -264,5 +269,15 @@ export function createRoundState<TPhase extends string>(config: RoundConfig<TPha
     economyFor,
     roleOf: (team) => roles[team],
     snapshot: currentSnapshot,
+    restore(next) {
+      round = next.round;
+      phase = next.phase;
+      timeLeft = next.timeLeft;
+      matchOver = next.matchOver;
+      pendingWinner = next.pendingWinner;
+      Object.assign(scores, next.scores);
+      Object.assign(lossStreaks, next.lossStreaks);
+      Object.assign(roles, next.roles);
+    },
   };
 }
