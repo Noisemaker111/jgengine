@@ -362,7 +362,7 @@ export interface BackdropConfig {
   fog?: BackdropFogConfig;
 }
 
-/** Free-flight families moved into the walk controller so one seam covers ground + air — creative/spectator/noclip/hover are weightless, aircraft/rotorcraft stay on `flightDynamics`. */
+/** Free-flight families moved into the walk controller so one seam covers ground + air — creative/spectator/noclip/hover are weightless, aircraft, rotorcraft and rockets use `physics/aircraftDynamics`. */
 export interface FlightConfig {
   /** Which free-flight family to use when flight is active. Default "creative". */
   mode?: "creative" | "spectator" | "noclip" | "hover";
@@ -461,8 +461,8 @@ export interface PlayerMovementConfig {
    * Free-flight — creative/spectator/noclip/hover — folded into the same walk controller so a game
    * doesn't hand-roll a second movement loop to get Minecraft-like flight. `true` uses creative defaults;
    * an object tunes speed/vertical/sprint/collide/canFly. Horizontal is always yaw-relative strafe
-   * (A = left, D = right — never roll/bank), vertical is Space/Ctrl, and aircraft/rotorcraft remain
-   * on `physics/flightDynamics`. The shell drives this automatically when present; `canFly` toggles
+   * (A = left, D = right — never roll/bank), vertical is Space/Ctrl, and aircraft, rotorcraft and rockets
+   * use `physics/aircraftDynamics`. The shell drives this automatically when present; `canFly` toggles
    * between walking and flying per tick without rebuilding the config.
    */
   flight?: FlightConfig | boolean;

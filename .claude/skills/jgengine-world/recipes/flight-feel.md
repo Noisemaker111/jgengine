@@ -70,6 +70,7 @@
 
 ## Traps
 
+- `createAircraftDynamics` (`physics/flightDynamics`) is deprecated: it commands rotation and can't loop. The CHANGELOG Migrate note maps its fields onto `createRigidAircraft`.
 - Setting orientation or angular velocity by hand defeats the model. Change a surface, the inertia or the control authority.
 - A single centreline wing has no roll arm, so ailerons on it do nothing. Split it into left and right panels.
 - For multiplayer, send inputs, not poses. Predict with the same tuning and `restore(serverState)` on correction.
