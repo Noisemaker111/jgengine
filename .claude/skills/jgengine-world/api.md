@@ -1087,6 +1087,14 @@
 - `Grapple` (class): class Grapple — A fired-anchor rope on the joint API — grapple (reel toward a hit point), zipline (rigid cable to a far anchor you then slide/reel along), swing (rigid rope + gravity = a pendulum). `fire` attaches a `distance`/`spring` joint from the traveller body to a fixed world point; `reel` shrinks its rest length so the constraint drags the body in; `moveAnchor` re-points it (zipline glide, grapple-to- moving-target). The pick — a raycast to find the anchor — is the caller's; core owns the constraint.
 - `GrappleConfig` (interface): interface GrappleConfig { reelSpeed?: number; minLength?: number; maxLength?: number; elastic?: boolean; stiffness?: number; damping?: number } — ⚠ undocumented
 
+## @jgengine/core/physics/vehicleBackendLink
+
+- `VehicleBackendLink` (interface): interface VehicleBackendLink — A vehicle sim's presence in a physics backend: a kinematic chassis that shoves props, and a wall-aware move clamp.
+- `VehicleBackendLinkOptions` (interface): interface VehicleBackendLinkOptions — Options for {@link createVehicleBackendLink}.
+- `VehicleLinkHit` (interface): interface VehicleLinkHit — A wall the last clamped move ran into.
+- `VehicleLinkPose` (interface): interface VehicleLinkPose — The pose fields {@link VehicleBackendLink.sync} reads; any vehicle step (`VehicleDynamicsStep`, `KinematicVehicleStep`) fits.
+- `createVehicleBackendLink` (function): function createVehicleBackendLink(backend: PhysicsBackend, options: VehicleBackendLinkOptions): VehicleBackendLink — Puts a vehicle sim (`createVehicleDynamics`, `createKinematicVehicle`) into a {@link PhysicsBackend} world without handing its handling to the rigid-body solver: the sim still owns grip and balance, while a kinematic chassis box follows it so Rapier or `PhysicsWorld` props get shoved, and `clampMove` sweeps that box so walls and parked cars stop it and it slides along them.
+
 ## @jgengine/core/physics/vehicleBody
 
 - `DEFAULT_GRIP_CURVE` (const): const DEFAULT_GRIP_CURVE: GripCurve — ⚠ undocumented
