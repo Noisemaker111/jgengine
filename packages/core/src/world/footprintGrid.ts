@@ -20,6 +20,11 @@ export interface FootprintReservation {
   cells: readonly GridCell[];
 }
 
+/** Plain JSON state of a {@link FootprintGrid}: live reservations in claim order. */
+export interface FootprintGridState {
+  reservations: FootprintReservation[];
+}
+
 /** Handle returned by {@link createFootprintGrid}. */
 export interface FootprintGrid {
   readonly cellSize: number;
@@ -34,10 +39,17 @@ export interface FootprintGrid {
   reservationOf(id: string): FootprintReservation | null;
   list(): readonly FootprintReservation[];
   clear(): void;
+  snapshot(): FootprintGridState;
+  /** Replaces every reservation with `next`'s and rebuilds cell occupancy from them. */
+  restore(next: FootprintGridState): void;
 }
 
 function cellKey(cell: GridCell): string {
   return `${cell.col}:${cell.row}`;
+}
+
+function copyReservation(reservation: FootprintReservation): FootprintReservation {
+  return { id: reservation.id, kind: reservation.kind, cells: reservation.cells.map((cell) => ({ col: cell.col, row: cell.row })) };
 }
 
 /**
@@ -102,6 +114,18 @@ export function createFootprintGrid(options: FootprintGridOptions = {}): Footpri
     clear() {
       occupied.clear();
       reservations.clear();
+    },
+    snapshot() {
+      return { reservations: Array.from(reservations.values(), copyReservation) };
+    },
+    restore(next) {
+      occupied.clear();
+      reservations.clear();
+      for (const reservation of next.reservations) {
+        const copy = copyReservation(reservation);
+        reservations.set(copy.id, copy);
+        for (const cell of copy.cells) occupied.set(cellKey(cell), copy.id);
+      }
     },
   };
 }
