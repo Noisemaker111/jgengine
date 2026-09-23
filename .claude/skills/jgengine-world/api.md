@@ -902,6 +902,7 @@
 
 - `AircraftAxis` (type): type AircraftAxis = "pitch" | "roll" | "yaw" | "throttle" | "collective" | "airbrake" | "afterburner" | "vectoring" — Axes an aircraft can bind — which actions drive each flight control.
 - `AircraftDynamics` (interface): interface AircraftDynamics — Stateful six-degree-of-freedom aircraft simulation.
+- `AircraftDynamicsState` (interface): interface AircraftDynamicsState — Serializable integrator state of an {@link AircraftDynamics}: what `restore` needs to resume bit-for-bit.
 - `AircraftKind` (type): type AircraftKind = "fixedWing" | "rotorcraft" | "vtol" — Supported aerodynamic/propulsion families.
 - `AircraftOptions` (interface): interface AircraftOptions — Spawn state and injectable world-field samplers for an aircraft instance.
 - `AircraftStep` (interface): interface AircraftStep — Pose and aerodynamic telemetry returned after one flight tick.
@@ -909,7 +910,7 @@
 - `FlightControlInput` (interface): interface FlightControlInput — Normalized pilot inputs for one flight-simulation tick.
 - `FlightControlRates` (interface): interface FlightControlRates — Angular authority, response, damping, and self-leveling configuration.
 - `FlightVector` (type): type FlightVector = readonly [number, number, number] — Three-dimensional world-space vector used by the flight model.
-- `createAircraftDynamics` (function): function createAircraftDynamics(tuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics — Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
+- `createAircraftDynamics` (function): function createAircraftDynamics(initialTuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics — Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
 
 ## @jgengine/core/physics/flowTube
 
@@ -958,6 +959,7 @@
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
 - `KinematicVehicleModifiers` (interface): interface KinematicVehicleModifiers — Per-tick multipliers layered over the base tuning — the transient overrides games apply for one frame without rebuilding the vehicle: nitro/boost, a braced-plow bonus, or entering a speed zone or slow field. Each defaults to `1` (no change), so passing nothing leaves the base tuning untouched.
 - `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions { position?: readonly [number, number, number]; heading?: number; surfaceFriction?: (x: number, z: number) => number; dragAt?: (x: number, z: number) => number; clampMove?: (from: readonly [number, number], to: readonly [number, number]) =>… — ⚠ undocumented
+- `KinematicVehicleState` (interface): interface KinematicVehicleState — Serializable integrator state of a {@link KinematicVehicle}: what `restore` needs to resume bit-for-bit.
 - `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented
 - `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
@@ -2419,7 +2421,7 @@
 - `contextVerb` (function): function contextVerb(label: string, command: string, args?: Record<string, unknown>): ContextVerb — Builds a {@link ContextVerb} for a right-click menu entry.
 - `contextVerbInput` (function): function contextVerbInput(menu: ContextMenu, verb: ContextVerb): Record<string, unknown> — Command input a chosen verb dispatches: the verb's own args, plus the target id and the world point, so a single handler can walk the actor to the target then perform it.
 - `controlGroupKey` (function): function controlGroupKey(digit: number, options: ControlGroupOptions = {}): string — The stable bookmark key for a control-group `digit` under `options.keyPrefix` — the key a caller passes to `SelectionBookmarks.bind`/`recall` to store a group without going through {@link resolveControlGroupIntent}.
-- `createAircraftDynamics` (function): function createAircraftDynamics(tuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics — Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
+- `createAircraftDynamics` (function): function createAircraftDynamics(initialTuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics — Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
 - `createAnnotationLayer` (function): function createAnnotationLayer(options: AnnotationLayerOptions = {}): AnnotationLayer — Player-drawn map annotation layer: freehand `strokes`, area `shapes`, and pinned `notes`, all world-XZ and serializable. `routes()`/`zones()` project strokes/shapes into the exact shapes `Minimap`/`WorldMap`/`FullscreenMap` already render via their `routes`/`zones` props, so drawing needs no new renderer. State is plain data; `snapshot`/`restore` round-trip through a save.
 - `createAreaEffectField` (function): function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): AreaEffectField<P> — Build a continuous area-effect field. Drive it with `setSource` (once per live source per tick, so shapes follow their emitters) and `step` (to reconcile membership and drain enter/refresh/leave edges). Optionally restore prior membership by passing a `serialize()` snapshot; re-`setSource` live shapes before the first `step` after restore, since shapes are transient.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented

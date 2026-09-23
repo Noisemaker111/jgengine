@@ -58,7 +58,8 @@ export function findStatefulPrimitives(root: string): StatefulPrimitive[] {
         if (declaration?.index === undefined) continue;
         const members = bodyOf(source, source.indexOf("{", declaration.index));
         if (!/\n\s+\w+\s*[(<]/.test(members)) continue;
-        if (!MUTABLE_BODY.test(bodyOf(source, source.indexOf("{", match.index)))) continue;
+        // Search for the body after the return type: an earlier `{` can be a default like `options = {}`.
+        if (!MUTABLE_BODY.test(bodyOf(source, source.indexOf("{", match.index + match[0].length - 1)))) continue;
         if (STATE_OUT.test(members) && STATE_IN.test(members)) continue;
         found.push({ key: `${rel}#${factory}`, factory, handle });
       }

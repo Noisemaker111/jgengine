@@ -77,3 +77,30 @@ describe("createAircraftDynamics", () => {
     expect(step.airspeed).toBeGreaterThan(5);
   });
 });
+
+describe("createAircraftDynamics — snapshot/restore/retune", () => {
+  const control = (i: number): FlightControlInput => ({ throttle: 0.8, pitch: Math.sin(i / 25) * 0.5, roll: Math.cos(i / 40) * 0.4, yaw: 0, collective: 0.7 });
+
+  test("restoring a mid-flight snapshot replays the rest bit-for-bit", () => {
+    for (const tuning of [FIXED_WING, HELICOPTER]) {
+      const reference = createAircraftDynamics(tuning, { position: [0, 40, 0], velocity: [0, 0, 30] });
+      let saved = reference.snapshot();
+      for (let i = 0; i < 240; i += 1) {
+        if (i === 120) saved = reference.snapshot();
+        reference.tick(1 / 60, control(i));
+      }
+      const replica = createAircraftDynamics(tuning);
+      replica.restore(saved);
+      for (let i = 120; i < 240; i += 1) replica.tick(1 / 60, control(i));
+      expect(replica.snapshot()).toEqual(reference.snapshot());
+    }
+  });
+
+  test("retune changes thrust without resetting pose or velocity", () => {
+    const aircraft = createAircraftDynamics(FIXED_WING, { position: [0, 40, 0], velocity: [0, 0, 30] });
+    for (let i = 0; i < 60; i += 1) aircraft.tick(1 / 60, control(i));
+    const before = aircraft.snapshot();
+    aircraft.retune({ ...FIXED_WING, maxThrust: FIXED_WING.maxThrust * 2 });
+    expect(aircraft.snapshot()).toEqual(before);
+  });
+});

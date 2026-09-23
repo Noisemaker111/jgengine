@@ -657,3 +657,24 @@ describe("retune", () => {
     expect(vehicle.hop(6)).toBe(true);
   });
 });
+
+describe("createKinematicVehicle — snapshot/restore", () => {
+  test("restoring a mid-run snapshot replays the rest bit-for-bit", () => {
+    const tuning: KinematicVehicleTuning = { ...TUNING, hopGravity: 22 };
+    const inputs = Array.from({ length: 300 }, (_, i) => axis({ throttle: i < 150 ? 1 : 0.4, steer: i > 100 ? Math.sin(i / 20) : 0, handbrake: i > 200 && i < 220 ? 1 : 0 }));
+    const reference = createKinematicVehicle(tuning);
+    let saved = reference.snapshot();
+    for (let i = 0; i < inputs.length; i += 1) {
+      if (i === 160) {
+        saved = reference.snapshot();
+        reference.hop(6);
+      }
+      reference.tick(DT, inputs[i]!);
+    }
+    const replica = createKinematicVehicle(tuning);
+    replica.restore(saved);
+    replica.hop(6);
+    for (let i = 160; i < inputs.length; i += 1) replica.tick(DT, inputs[i]!);
+    expect(replica.snapshot()).toEqual(reference.snapshot());
+  });
+});
