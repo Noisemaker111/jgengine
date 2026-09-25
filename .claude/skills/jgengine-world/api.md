@@ -226,6 +226,16 @@
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
 
+## @jgengine/core/anim/footPlacement
+
+- `FootGroundSample` (interface): interface FootGroundSample — One foot's animated ankle height and the ground found under it, both in world units.
+- `FootPlacement` (interface): interface FootPlacement — Result of {@link placeFeet}: where each ankle should go and how far the pelvis drops.
+- `FootPlacementInput` (interface): interface FootPlacementInput — Inputs for {@link placeFeet}. All heights are world units.
+- `LegChain` (interface): interface LegChain — Thigh → shin → foot bone names for one leg.
+- `RigBone` (interface): interface RigBone — A bone as {@link inferLegChains} sees it: its name and its parent's name.
+- `inferLegChains` (function): function inferLegChains(bones: readonly RigBone[]): LegChain[] — Finds leg chains on a humanoid rig by bone name: a thigh-like bone (`UpLeg`, `UpperLeg`, `Thigh`) with its first child and grandchild as shin and foot. Control, IK-target and twist bones are skipped. Returns chains in rig order; an empty array means the rig has no recognizable legs.
+- `placeFeet` (function): function placeFeet(input: FootPlacementInput, out?: FootPlacement): FootPlacement — Resolves foot placement for a rig whose clips were authored on flat ground at its origin. Each foot keeps its animated lift and moves by its ground's height above or below the origin, the sole is never left under the ground, and the pelvis drops by the deepest reach so both legs stay within length. Pure and allocation-light; the renderer applies the targets with {@link solveTwoBone}.
+
 ## @jgengine/core/anim/ikSolver
 
 - `FabrikOptions` (interface): interface FabrikOptions — Iteration budget and convergence threshold for {@link solveFabrik}.
@@ -448,6 +458,15 @@
 - `GestureSurfaceTracker` (interface): interface GestureSurfaceTracker { begin(x: number, y: number, nowMs: number): void; move(x: number, y: number): readonly string[]; end(x: number, y: number, nowMs: number): readonly string[]; cancel(): void; isActive(): boolean } — ⚠ undocumented
 - `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning { tapMoveThresholdPx: number; tapMaxMs: number; swipeMinPx: number; swipeMinVelocity: number; dragStepPx: number } — ⚠ undocumented
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
+
+## @jgengine/core/input/haptics
+
+- `HapticChannels` (interface): interface HapticChannels — Named continuous rumble channels for one player, mixed by priority each frame. Game code sets levels from its own telemetry (engine rpm, road surface, impacts); the shell mixes and drives the pad.
+- `HapticChannelsOptions` (interface): interface HapticChannelsOptions — Options for {@link createHapticChannels}.
+- `HapticChannelsSnapshot` (interface): interface HapticChannelsSnapshot — Serializable channel state.
+- `HapticLevel` (interface): interface HapticLevel — Motor intensities, each `0..1`: `strong` is the low-frequency motor, `weak` the high-frequency one.
+- `HapticPulse` (interface): interface HapticPulse extends HapticLevel — A decaying one-shot on a channel: starts at `strong`/`weak` and fades to zero over `ms`.
+- `createHapticChannels` (function): function createHapticChannels(options: HapticChannelsOptions = {}): HapticChannels — Per-player haptic channels mixed by priority.
 
 ## @jgengine/core/input/inputBuffer
 
@@ -4016,6 +4035,13 @@
 - `wallSolids` (function): function wallSolids(segments: readonly WallSegment[], options: WallSolidOptions): WorldSolid[] — One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `worldSolidBounds` (function): function worldSolidBounds(solid: WorldSolid): { min: [number, number, number]; max: [number, number, number]; } — Yaw-expanded world AABB of an oriented solid box.
 - `worldSolidFootprint` (function): function worldSolidFootprint(solid: WorldSolid): Aabb — XZ footprint of a solid's world AABB, for 2D consumers such as nav grids.
+
+## @jgengine/navbake
+
+- `BakeNavMeshOptions` (interface): interface BakeNavMeshOptions — Walkable geometry and agent dimensions for {@link bakeNavMesh}.
+- `bakeNavMesh` (function): function bakeNavMesh(options: BakeNavMeshOptions): NavMeshData — Voxelize indexed triangles with recast and return the walkable surface as convex polygons in the engine's serializable nav-mesh format: eroded by `agentRadius`, cut where clearance is under `agentHeight`, and split at slopes over `maxSlope` or steps over `maxClimb`. Requires {@link initNavBake}.
+- `initNavBake` (function): function initNavBake(): Promise<void> — Load the recast WebAssembly module once; await before the first {@link bakeNavMesh}.
+- `navBakeReady` (function): function navBakeReady(): boolean — Whether {@link initNavBake} has finished and {@link bakeNavMesh} can run synchronously.
 
 ## @jgengine/rapier
 

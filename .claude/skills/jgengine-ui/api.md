@@ -2189,6 +2189,13 @@
 - `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
 
+## @jgengine/shell/input/padHaptics
+
+- `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
+- `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
+- `emptyPadHapticState` (function): function emptyPadHapticState(): PadHapticState — Fresh state for {@link stepPadHaptics}.
+- `stepPadHaptics` (function): function stepPadHaptics(state: PadHapticState, level: HapticLevel, nowMs: number): "play" | "reset" | null — Decide what to send a pad this frame for a mixed level: `"play"` when the level changed or the last effect is about to run out, `"reset"` when it fell silent, `null` otherwise.
+
 ## @jgengine/shell/input/pointerLock
 
 - `requestRawPointerLock` (function): function requestRawPointerLock(element: LockableElement): void — Request pointer lock with raw (unaccelerated) mouse deltas, falling back to a plain lock when the browser or OS rejects `unadjustedMovement`.
@@ -2375,8 +2382,11 @@
 
 ## @jgengine/shell/render/useFootIk
 
-- `applyFootIk` (function): function applyFootIk(scene: THREE.Object3D, config: FootIkConfig, raycast: GameContext["scene"]["raycast"], weight: number, cameraTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK to a loaded rig. Exported for renderer tests and custom model hosts.
-- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string): void — Runs foot IK after the model animation mixer, fading the correction out while the entity is airborne.
+- `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
+- `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
+- `applyFootIk` (function): function applyFootIk(rig: FootIkRig, originY: number, probe: GroundProbe, state: FootIkState, delta: number, cameraTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK after the animation mixer: probes the ground under each foot, resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending toward the animated knee, and tilts planted feet to the ground. Returns whether the feet are grounded; `state` carries the faded weight between frames. Exported for tests and custom hosts.
+- `resolveFootIkRig` (function): function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): FootIkRig | null — Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"` and configs without `feet`. Returns `null` when no leg resolves.
+- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`).
 
 ## @jgengine/shell/render/useModelAnimation
 

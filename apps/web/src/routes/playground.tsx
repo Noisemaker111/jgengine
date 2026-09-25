@@ -1023,7 +1023,7 @@ function Playground() {
             </code>
           </div>
         </div>
-        <div className={query.inspect ? "absolute inset-0 overflow-hidden bg-[#0b1017]" : "relative min-h-[420px] overflow-hidden rounded-2xl border border-line bg-[#0b1017] lg:min-h-[560px]"}>
+        <div data-theme="dark" className={query.inspect ? "absolute inset-0 overflow-hidden bg-[#0b1017]" : "relative min-h-[420px] overflow-hidden rounded-2xl border border-line bg-[#0b1017] lg:min-h-[560px]"}>
           <div
             ref={viewerHost}
             className={`absolute inset-0 transition-opacity duration-500 ${

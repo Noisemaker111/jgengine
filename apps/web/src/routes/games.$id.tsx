@@ -2,14 +2,15 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
 import { Page } from "../components/Layout";
-import { gameCredit, gameTitle, isGameId } from "../lib/games";
+import { GameCard } from "../components/GameCard";
+import { GAME_IDS, gameBlurb, gameCredit, gameTitle, isGameId } from "../lib/games";
 import { seo } from "../lib/seo";
 
 export const Route = createFileRoute("/games/$id")({
   head: ({ params }) =>
     seo({
-      title: `${gameTitle(params.id)} — play in your browser · JGengine`,
-      description: `Play ${gameTitle(params.id)}, built with JGengine, right in your browser.`,
+      title: `${gameTitle(params.id)} — play in your browser · jgengine`,
+      description: `Play ${gameTitle(params.id)}, a probe game built with jgengine, right in your browser.`,
       path: `/games/${params.id}`,
     }),
   component: GamePage,
@@ -37,10 +38,11 @@ function GamePage() {
   if (!isGameId(id)) {
     return (
       <Page>
-        <div className="mx-auto flex max-w-6xl flex-col items-start gap-4 px-4 py-24 sm:px-6">
-          <h1 className="text-2xl font-bold text-fg">No game called “{id}”</h1>
-          <Link to="/games" className="text-accent-text underline decoration-accent/50 underline-offset-2 hover:text-accent-text">
-            ← Back to all games
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-5 px-4 py-24 sm:px-6">
+          <p className="eyebrow">Unknown game</p>
+          <h1 className="font-display text-4xl font-bold tracking-tight text-fg">No game called “{id}”.</h1>
+          <Link to="/games" className="btn btn-secondary">
+            ← All games
           </Link>
         </div>
       </Page>
@@ -72,64 +74,65 @@ function GamePage() {
     window.open(playUrl, "_blank", "noopener,noreferrer");
   };
 
+  const blurb = gameBlurb(id);
+  const others = GAME_IDS.filter((other) => other !== id).slice(0, 4);
+
   return (
     <Page stickyHeader={false}>
-      <section className="relative">
-        <div className="mx-auto max-w-6xl px-4 pb-10 pt-8 sm:px-6">
-          <div className="overflow-hidden rounded-2xl border border-line bg-sunken/60">
-            <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
-              <div className="flex min-w-0 items-center gap-3">
-                <Link
-                  to="/games"
-                  className="shrink-0 font-mono text-[11px] text-faint transition hover:text-muted"
-                >
-                  ← games
-                </Link>
-                <span className="truncate text-sm font-semibold text-fg">{gameTitle(id)}</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleFullscreenClick}
-                className="shrink-0 font-mono text-[11px] text-accent-text transition hover:text-accent-text"
-              >
-                {isFullscreen ? "exit fullscreen" : supportsFullscreen ? "fullscreen ↗" : "open player ↗"}
-              </button>
-            </div>
-            <div
-              ref={frameWrapRef}
-              className={isFullscreen ? "h-full w-full bg-neutral-950" : ""}
-            >
-              <iframe
-                src={playUrl}
-                title={`${gameTitle(id)} — JGengine`}
-                allow="fullscreen; xr-spatial-tracking; gamepad"
-                className={`w-full border-0 bg-neutral-950 ${
-                  isFullscreen ? "h-full" : "h-[78dvh] min-h-[320px] sm:min-h-[520px]"
-                }`}
-              />
-            </div>
+      <section className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div className="min-w-0">
+            <Link to="/games" className="font-mono text-xs text-faint transition-colors hover:text-fg">
+              ← All games
+            </Link>
+            <h1 className="font-display mt-2 text-3xl font-bold tracking-tight text-fg sm:text-4xl">{gameTitle(id)}</h1>
+            {blurb !== null && <p className="mt-1 text-muted">{blurb}</p>}
           </div>
-          <p className="mt-3 text-center text-xs text-faint">
-            Runs entirely in your browser. Source:{" "}
-            <code className="text-muted">Games/{id}</code> — built by a coding agent on JGengine.
-          </p>
-          {credit !== null && (
-            <p className="mt-1 text-center text-xs text-faint">
-              {credit.url !== undefined ? (
-                <a
-                  href={credit.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-muted underline decoration-line-strong underline-offset-2 transition hover:text-accent-text"
-                >
-                  {credit.text}
-                </a>
-              ) : (
-                <span className="text-muted">{credit.text}</span>
-              )}
-            </p>
-          )}
+          <button type="button" onClick={handleFullscreenClick} className="btn btn-secondary">
+            {isFullscreen ? "Exit fullscreen" : supportsFullscreen ? "Fullscreen ↗" : "Open player ↗"}
+          </button>
         </div>
+        <div
+          ref={frameWrapRef}
+          data-theme="dark"
+          className={`mt-5 overflow-hidden border border-line bg-[#0a0908] ${isFullscreen ? "h-full w-full" : "rounded-2xl"}`}
+        >
+          <iframe
+            src={playUrl}
+            title={`${gameTitle(id)}, playable`}
+            allow="fullscreen; xr-spatial-tracking; gamepad"
+            className={`block w-full border-0 bg-[#0a0908] ${isFullscreen ? "h-full" : "h-[72dvh] min-h-[320px] sm:min-h-[520px]"}`}
+          />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-faint">
+          <p>
+            Runs in your browser. Source:{" "}
+            <a href={`https://github.com/Noisemaker111/JGengine-games/tree/main/${id}`} className="link">
+              JGengine-games/{id}
+            </a>
+          </p>
+          {credit !== null &&
+            (credit.url !== undefined ? (
+              <a href={credit.url} target="_blank" rel="noreferrer" className="link">
+                {credit.text}
+              </a>
+            ) : (
+              <span>{credit.text}</span>
+            ))}
+        </div>
+
+        {others.length > 0 && (
+          <div className="mt-16">
+            <h2 className="font-display text-xl font-bold tracking-tight text-fg">More games</h2>
+            <ul className="mt-5 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+              {others.map((other) => (
+                <li key={other}>
+                  <GameCard id={other} size="sm" />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
     </Page>
   );

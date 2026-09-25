@@ -129,10 +129,8 @@ function createCarFeedback(): FeedbackMixer<FeedbackSignal, FeedbackTarget> {
       { signal: "scrub", target: "tireGain", curve: [[0.85, 0], [1.25, 1]], attack: 20, release: 5 },
       { signal: "slip", target: "tireRate", curve: [[0, 0.85], [0.5, 1.35]] },
       { signal: "rear", target: "rumbleStrong", curve: [[0.85, 0], [1.85, 1]] },
-      { signal: "landing", target: "rumbleStrong", curve: [[1.5, 0], [8, 1]] },
       { signal: "front", target: "rumbleWeak", curve: [[0.85, 0], [1.85, 1]] },
     ],
-    combine: { rumbleStrong: "max" },
     events: [{ id: "landing", signal: "landing", threshold: 1.5, cooldown: 0.3 }],
   });
 }
@@ -143,7 +141,6 @@ interface HandlingRun {
   feedback: FeedbackMixer<FeedbackSignal, FeedbackTarget>;
   engine: EngineLayers;
   last: VehicleDynamicsStep | null;
-  rumbleCooldown: number;
   contextVersion: number;
   bindings: Record<DriveAxis, AxisBinding>;
 }
@@ -160,7 +157,7 @@ let vehicle: DemoVehicle = CAR_VEHICLE;
 let run: HandlingRun | null = null;
 
 function ensureRun(): HandlingRun {
-  run ??= { car: createVehicleDynamics(vehicle.tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), engine: createEngineLayers(ENGINE_LAYERS), last: null, rumbleCooldown: 0, contextVersion: -1, bindings: { throttle: NO_AXIS, brake: NO_AXIS, steer: NO_AXIS, handbrake: NO_AXIS } };
+  run ??= { car: createVehicleDynamics(vehicle.tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), engine: createEngineLayers(ENGINE_LAYERS), last: null, contextVersion: -1, bindings: { throttle: NO_AXIS, brake: NO_AXIS, steer: NO_AXIS, handbrake: NO_AXIS } };
   return run;
 }
 
@@ -228,15 +225,14 @@ function onTick(ctx: GameContext, dt: number): void {
   state.engine.play(ctx.game.audio, { at, velocity: ctx.scene.entity.get(id)?.velocity, gain: out.engineGain, lowpass: out.engineLowpass });
   ctx.game.audio.setLoop("tires", { rate: out.tireRate, gain: out.tireGain, at });
   if (state.feedback.fired("landing")) {
+    ctx.input.haptics(id).pulse("impact", { strong: Math.min(1, step.landingSpeed / 8), weak: 0.3, ms: 240 }, 1);
     ctx.game.audio.play("thud", at);
     ctx.camera.kickFov(-Math.min(8, step.landingSpeed));
   }
 
-  state.rumbleCooldown -= dt;
-  if (state.rumbleCooldown <= 0 && (out.rumbleStrong > 0.05 || out.rumbleWeak > 0.05)) {
-    state.rumbleCooldown = 0.1;
-    void ctx.input.rumble(id, { strong: out.rumbleStrong, weak: out.rumbleWeak, ms: 110 });
-  }
+  const haptics = ctx.input.haptics(id);
+  haptics.set("engine", { strong: 0, weak: 0.1 * step.engineLoad * Math.min(1, step.rpm / 6000) });
+  haptics.set("road", { strong: out.rumbleStrong, weak: out.rumbleWeak });
 }
 
 function CarBody({ entity }: { entity: SceneEntity }) {

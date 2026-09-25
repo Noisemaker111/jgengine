@@ -28,9 +28,11 @@ export function CopyButton({
   label = "Copy",
   variant = "outline",
   className = "",
+  ariaLabel,
 }: {
   value: string;
   label?: string;
+  ariaLabel?: string;
   variant?: keyof typeof VARIANTS;
   className?: string;
 }) {
@@ -38,6 +40,7 @@ export function CopyButton({
   return (
     <button
       type="button"
+      aria-label={ariaLabel}
       onClick={() => {
         void navigator.clipboard
           .writeText(value)
@@ -50,7 +53,7 @@ export function CopyButton({
       className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${VARIANTS[variant]} ${className}`}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
-      <span aria-live="polite">{copied ? "Copied" : label}</span>
+      {(label !== "" || copied) && <span aria-live="polite">{copied ? "Copied" : label}</span>}
     </button>
   );
 }
