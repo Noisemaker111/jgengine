@@ -155,7 +155,7 @@ describe("SDK validation ownership", () => {
     for (const name of externalGameChecks) expect(full.some((stage) => stage.name === name)).toBe(true);
     expect(sdk).toEqual(full.filter((stage) => !externalGameChecks.includes(stage.name)));
     expect(sdk.map((stage) => stage.name)).toEqual([
-      "ensure-ready", "check-artifacts", "check-skills", "check-skill-api", "check-orphan-ratchet",
+      "ensure-ready", "check-artifacts", "check-release-set", "check-skills", "check-skill-api", "check-orphan-ratchet",
       "check-stateful-ratchet", "check-capabilities", "check-pack-texture-layout", "check-recipes",
       "check-doc-symbols", "check-hud-tokens", "check-street-rule-parity", "check-types-all",
     ]);

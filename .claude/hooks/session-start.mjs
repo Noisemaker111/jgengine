@@ -194,7 +194,7 @@ emit(
     `Flow: commit here, push with git push -u origin ${branch}, open a PR via the GitHub MCP ` +
       `tools (ready for review), subscribe_pr_activity on it, report the PR link, and END ` +
       `THE TURN. Never wait or poll on CI — the subscription delivers failures as events, ` +
-      `silence is green (PRs run only the ~30s quick job). ${mergePolicy} A CI failure event ` +
+      `silence is green (PRs run the same types, tests and games smoke as main). ${mergePolicy} A CI failure event ` +
       `→ fix on the same branch, push (auto-merge stays armed and lands the fixed run), end ` +
       `turn. ` +
       `New task in the same session → fresh claude/... branch off origin/${defaultBranch}, ` +
