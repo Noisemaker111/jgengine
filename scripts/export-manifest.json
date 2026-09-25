@@ -79,6 +79,7 @@
     "./combat/telegraph",
     "./combat/thresholdCrossings",
     "./combat/vfxPresets",
+    "./combat/weaponFeedback",
     "./combat/weaponFire",
     "./combat/weaponHandling",
     "./combat/weaponPresentation",

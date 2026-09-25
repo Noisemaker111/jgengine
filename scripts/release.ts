@@ -3,12 +3,14 @@
 //   bun run release --dry-run    # print the plan, write nothing
 //   bun run release --no-gen     # skip the generated-artifact refresh
 //
-// It runs set-version --release, renames `## [Unreleased]` to the new version, prepends the
+// It folds the per-PR notes in changes/*.md into `## [Unreleased]` and deletes them, runs
+// set-version --release, renames `## [Unreleased]` to the new version, prepends the
 // lockstep Migrate bullet, leaves a fresh empty [Unreleased], and mirrors the same notes into
 // the typed CHANGELOG export in packages/core/src/meta/changelog.ts.
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { foldFragments, readFragments } from "./changelog-fragments";
 
 export interface ChangelogSections {
   migrate: string[];
@@ -174,7 +176,8 @@ function main(): void {
 
   const changelogPath = `${root}CHANGELOG.md`;
   const mirrorPath = `${root}packages/core/src/meta/changelog.ts`;
-  const markdown = read("CHANGELOG.md");
+  const fragments = readFragments(root);
+  const markdown = foldFragments(read("CHANGELOG.md"), fragments.map((f) => f.text));
   const unreleased = splitComment(sectionLines(markdown, "## [Unreleased]")).body;
   const sections = parseSections(unreleased);
   const total = Object.values(sections).reduce((n, list) => n + list.length, 0);
@@ -198,7 +201,7 @@ function main(): void {
   const nextMirror = mirrorEntry(read("packages/core/src/meta/changelog.ts"), sdk, sections);
 
   if (dryRun) {
-    console.log(`release --dry-run: would cut ${sdk} (CLI ${cli}, @jgengine/github ${github})`);
+    console.log(`release --dry-run: would cut ${sdk} (CLI ${cli}, @jgengine/github ${github}), folding ${fragments.length} fragment(s)`);
     for (const key of ["migrate", "added", "changed", "removed"] as const) {
       console.log(`  ${key}: ${sections[key].length}`);
     }
@@ -207,6 +210,7 @@ function main(): void {
 
   writeFileSync(changelogPath, nextMarkdown);
   writeFileSync(mirrorPath, nextMirror);
+  for (const fragment of fragments) rmSync(fragment.path);
   console.log(`release: cut ${sdk} — CHANGELOG.md and the typed mirror now carry ${total + 1} note(s).`);
 
   if (!skipGen) {

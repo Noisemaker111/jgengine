@@ -587,6 +587,13 @@
 - `resolveVfxPreset` (function): function resolveVfxPreset(name: string | undefined, overrides?: Partial<VfxPreset>): VfxPreset — Resolve a named visual flavor into a concrete `{ kind, color, durationMs?, radius? }`, with any provided `overrides` winning field by field. An unknown name resolves to {@link DEFAULT_VFX_PRESET} rather than throwing, so a flavor typo degrades to a visible spark. Used by `ctx.scene.entity.vfx({ preset })`; call it directly when you need the raw numbers (e.g. to seed a retained `vfxInstance` from the same vocabulary).
 - `vfxPresets` (const): const vfxPresets: { readonly arrow: { readonly kind: "projectile"; readonly color: 14207392; }; readonly bolt: { readonly kind: "projectile"; readonly color: 16777215; }; readonly fireball: { readonly kind: "projectile"; readonly color: 16738842; readonly durationMs: 460; }; readonly firebolt: { rea… — Ready-made visual flavors for the things players actually shoot, swing, and cast — so `ctx.scene.entity.vfx({ preset: "arrow", from, to })` renders a visible bolt with zero tuning, and `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` likewise just work. Each entry only picks a `kind` (`projectile | beam | nova | glow | spark`), a color, and a lifetime; it is visual vocabulary (like named CSS colors), not a gameplay archetype — combat numbers stay in the caller's own effect/ability data. Any field passed to `vfx()` overrides the preset, and unknown names fall back to `spark` so a flavor typo still shows *something* rather than nothing.
 
+## @jgengine/core/combat/weaponFeedback
+
+- `WeaponFeedbackSignal` (type): type WeaponFeedbackSignal = "shot" | "kick" | "impact" | "recoil" | "cameraKick" | "spread" | "ads" — Signals {@link createWeaponFeedbackSignals} reports each tick, named for `createFeedbackMixer` routes. `shot`, `kick` and `impact` are pulses that read non-zero only on the tick they happened; the rest follow the handling frame.
+- `WeaponFeedbackSignals` (interface): interface WeaponFeedbackSignals — Collects weapon events between presentation ticks and hands them to a feedback mixer as one signal record.
+- `WeaponFeedbackState` (interface): interface WeaponFeedbackState — Serializable pending pulses, so a snapshot taken between a shot and the next read loses nothing.
+- `createWeaponFeedbackSignals` (function): function createWeaponFeedbackSignals(): WeaponFeedbackSignals — Creates {@link WeaponFeedbackSignals}: the bridge from shots, recoil kick and impacts to `createFeedbackMixer` routes (camera shake, audio, rumble). Route `kick` with no smoothing into camera-shake trauma, `impact` with a `release` into rumble, and `ads`/`spread` into continuous audio or FOV targets. Deterministic and allocation-free per read.
+
 ## @jgengine/core/combat/weaponFire
 
 - `FireCadence` (interface): interface FireCadence — A minimal minimum-interval rate gate for a repeated action — weapon fire, ability spam, any "no faster than N per second" rule. Deterministic and serializable: its whole state is the elapsed time since the last action, exposed via {@link FireCadence.elapsedMs}.
@@ -604,13 +611,14 @@
 - `WeaponHandlingFrame` (interface): interface WeaponHandlingFrame — Live handling readout: the offsets to add to aim and camera, current spread and ADS blend.
 - `WeaponHandlingState` (interface): interface WeaponHandlingState — Serializable handling state.
 - `WeaponHandlingTuning` (interface): interface WeaponHandlingTuning — Tuning for {@link createWeaponHandling}. Every number is an angle in radians or a time in seconds, so two weapons differ by numbers a person can reason about: a controllable rifle climbs a little and recovers fast; a shotgun kicks hard and blooms wide.
+- `WeaponProbeOptions` (interface): interface WeaponProbeOptions — Options for {@link measureWeapon}.
 - `WeaponRecoilTuning` (interface): interface WeaponRecoilTuning — Recoil per shot, in radians of aim. `pitch > 0` climbs the muzzle, `yaw > 0` pulls right.
 - `WeaponReport` (interface): interface WeaponReport — Deterministic weapon-feel metrics from {@link measureWeapon}.
 - `WeaponShot` (interface): interface WeaponShot — What one shot did: the cone to sample and the kick it applied.
 - `WeaponSpreadTuning` (interface): interface WeaponSpreadTuning — Cone of fire, as a half-angle in radians.
 - `WeaponStance` (interface): interface WeaponStance — Stance and aim for one tick.
 - `createWeaponHandling` (function): function createWeaponHandling(initial: WeaponHandlingTuning, options: { random?: () => number } = {}): WeaponHandling — Creates a {@link WeaponHandling}. Pass `random` (e.g. `ctx.rng` or `seededRng(seed)`) for the random recoil cone; without it the cone is skipped, so the result stays deterministic either way.
-- `measureWeapon` (function): function measureWeapon(create: () => WeaponHandling, options: { interval: number; burst?: number; damage?: number; targetHealth?: number; dt?: number }): WeaponReport — Fires a held burst through a fresh handling instance at a fixed interval and reports spread growth, climb, reset time, ADS time and time-to-kill.
+- `measureWeapon` (function): function measureWeapon(create: () => WeaponHandling, options: WeaponProbeOptions): WeaponReport — Fires a held burst through a fresh handling instance at a fixed interval and reports spread growth, climb, reset time, ADS time and time-to-kill. Time-to-kill counts expected damage: each projectile hits with the share of its spread cone the target covers at `range`, scaled by `damageAt(range)`, so a blooming rifle and a wide shotgun compare at the distance the game cares about.
 
 ## @jgengine/core/combat/weaponPresentation
 

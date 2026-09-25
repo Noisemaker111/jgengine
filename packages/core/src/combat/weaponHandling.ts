@@ -237,36 +237,73 @@ export interface WeaponReport {
   firstShotSpread: number;
   /** Spread of the tenth shot of a held burst, rad. */
   tenthShotSpread: number;
-  /** Aim climb after a full burst, rad. */
+  /** Spread of every shot in the burst, rad; `spreadByShot[n - 1]` is the spread after `n - 1` shots of bloom. */
+  spreadByShot: number[];
+  /** Aim climb after a full burst, rad; set `burst` to the magazine size for climb over a magazine. */
   burstClimb: number;
   /** Seconds after the burst until aim recoil is back within 5% of its peak and bloom within 5% of base. */
   resetSeconds: number;
   /** Seconds to go fully into aim-down-sights. */
   adsSeconds: number;
-  /** Time to kill a target with `targetHealth`, s, from `damage` per shot at `interval` (`0` if one shot kills). */
+  /** Shots until the expected damage reaches `targetHealth` (`0` without `damage`, `Infinity` if it never does). */
+  shotsToKill: number;
+  /** Seconds from the first to the killing shot at `interval` (`0` without `damage` or when one shot kills). */
   timeToKill: number;
+}
+
+/** Options for {@link measureWeapon}. */
+export interface WeaponProbeOptions {
+  /** Seconds between shots (`60 / rpm`). */
+  interval: number;
+  /** Shots in the held burst (default `30`). */
+  burst?: number;
+  /** Damage per projectile at the muzzle. */
+  damage?: number;
+  /** Projectiles per shot, e.g. shotgun pellets (default `1`). */
+  pellets?: number;
+  targetHealth?: number;
+  /** Distance to the target, m. Without it every projectile hits. */
+  range?: number;
+  /** Radius of the target's hittable area, m (default `0.4`). */
+  targetRadius?: number;
+  /** Damage multiplier at a range, the game's falloff policy (default: none). */
+  damageAt?: (range: number) => number;
+  /** Stance the burst and kill run are fired in (e.g. `{ ads: true }` after the ADS time). */
+  stance?: WeaponStance;
+  dt?: number;
+}
+
+function hitChance(spread: number, range: number | undefined, radius: number): number {
+  if (range === undefined || range <= 0) return 1;
+  const coneRadius = range * Math.tan(Math.max(0, spread));
+  return coneRadius <= radius ? 1 : (radius / coneRadius) ** 2;
 }
 
 /**
  * Fires a held burst through a fresh handling instance at a fixed interval and reports spread growth,
- * climb, reset time, ADS time and time-to-kill.
- * @capability weapon-metrics measure a weapon's feel as numbers — first and tenth shot spread, climb, reset time, ADS time, time-to-kill
+ * climb, reset time, ADS time and time-to-kill. Time-to-kill counts expected damage: each projectile hits
+ * with the share of its spread cone the target covers at `range`, scaled by `damageAt(range)`, so a
+ * blooming rifle and a wide shotgun compare at the distance the game cares about.
+ * @capability weapon-metrics measure a weapon's feel as numbers — spread per shot, climb over a magazine, reset time, ADS time, time-to-kill at a range
  */
-export function measureWeapon(
-  create: () => WeaponHandling,
-  options: { interval: number; burst?: number; damage?: number; targetHealth?: number; dt?: number },
-): WeaponReport {
+export function measureWeapon(create: () => WeaponHandling, options: WeaponProbeOptions): WeaponReport {
   const dt = options.dt ?? 1 / 120;
   const burst = options.burst ?? 30;
   const interval = Math.max(dt, options.interval);
+  const stance = options.stance;
+  const settle = (weapon: WeaponHandling): void => {
+    if (stance?.ads !== true) return;
+    for (let i = 0; i < Math.ceil(5 / dt) && weapon.frame().adsProgress < 1; i += 1) weapon.tick(dt, stance);
+  };
+  const hold = (weapon: WeaponHandling): void => {
+    for (let t = 0; t < interval - 1e-9; t += dt) weapon.tick(dt, stance);
+  };
   const weapon = create();
-  let firstShotSpread = 0;
-  let tenthShotSpread = 0;
+  settle(weapon);
+  const spreadByShot: number[] = [];
   for (let shot = 0; shot < burst; shot += 1) {
-    const fired = weapon.fire();
-    if (shot === 0) firstShotSpread = fired.spread;
-    if (shot === 9) tenthShotSpread = fired.spread;
-    for (let t = 0; t < interval - 1e-9; t += dt) weapon.tick(dt);
+    spreadByShot.push(weapon.fire(stance).spread);
+    hold(weapon);
   }
   const peak = weapon.snapshot();
   const burstClimb = peak.aimPitch;
@@ -291,8 +328,34 @@ export function measureWeapon(
     }
   }
   const damage = options.damage ?? 0;
-  const health = options.targetHealth ?? 0;
-  const shotsToKill = damage > 0 ? Math.max(1, Math.ceil(health / damage)) : 0;
+  let shotsToKill = 0;
+  if (damage > 0) {
+    const health = options.targetHealth ?? 0;
+    const perHit = damage * (options.range !== undefined && options.damageAt !== undefined ? options.damageAt(options.range) : 1);
+    const pellets = Math.max(1, Math.floor(options.pellets ?? 1));
+    const radius = options.targetRadius ?? 0.4;
+    const shooter = create();
+    settle(shooter);
+    let dealt = 0;
+    shotsToKill = Number.POSITIVE_INFINITY;
+    for (let shot = 1; shot <= 10_000 && perHit > 0; shot += 1) {
+      dealt += perHit * pellets * hitChance(shooter.fire(stance).spread, options.range, radius);
+      if (dealt >= health - 1e-9) {
+        shotsToKill = shot;
+        break;
+      }
+      hold(shooter);
+    }
+  }
   const timeToKill = shotsToKill > 0 ? (shotsToKill - 1) * interval : 0;
-  return { firstShotSpread, tenthShotSpread, burstClimb, resetSeconds, adsSeconds, timeToKill };
+  return {
+    firstShotSpread: spreadByShot[0] ?? 0,
+    tenthShotSpread: spreadByShot[9] ?? 0,
+    spreadByShot,
+    burstClimb,
+    resetSeconds,
+    adsSeconds,
+    shotsToKill,
+    timeToKill,
+  };
 }
