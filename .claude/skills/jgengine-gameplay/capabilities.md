@@ -439,6 +439,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/gameplay"`
 
+## split-screen — Split the screen into one viewport per local seat, each with its own follow camera.
+
+- `splitViewports` (function) · `import { splitViewports } from "@jgengine/core/game/viewports"`
+
 ## stat-graph — derive game-defined stats from named inputs with provenance and preview
 
 - `createStatGraph` (function) · `import { createStatGraph } from "@jgengine/core/gameplay"`

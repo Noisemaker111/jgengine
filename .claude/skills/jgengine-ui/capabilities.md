@@ -523,6 +523,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/ui"`
 
+## split-screen-hud — Per-seat HUD roots positioned over each split-screen viewport.
+
+- `ViewportHuds` (function) · `import { ViewportHuds } from "@jgengine/shell/camera/Viewports"`
+
 ## sprite-2d — animate a sprite atlas clip from headless or rendered game code
 
 - `createSpriteClipPlayer` (function) · `import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d"`
