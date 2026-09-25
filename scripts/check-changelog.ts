@@ -15,7 +15,7 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 const BASE_REF = process.env.CHANGELOG_BASE_REF ?? "origin/main";
 const SKIP_MARKER = "[skip changelog]";
 const SOURCE = /^packages\/[^/]+\/src\/.+/;
-const isTest = (f: string) => /\.(test|spec)\.[tj]sx?$/.test(f);
+const isNotShipped = (f: string) => /\.(test|spec)\.[tj]sx?$/.test(f) || /\.mdx?$/i.test(f);
 const isChangelogMirror = (f: string) => f === "packages/core/src/meta/changelog.ts";
 
 function git(args: string[]): { status: number; stdout: string } {
@@ -55,7 +55,7 @@ const changedFiles = (filter?: string) =>
     .stdout.split("\n")
     .map((l) => l.trim())
     .filter(Boolean);
-const sourceChanges = changedFiles().filter((f) => SOURCE.test(f) && !isTest(f) && !isChangelogMirror(f));
+const sourceChanges = changedFiles().filter((f) => SOURCE.test(f) && !isNotShipped(f) && !isChangelogMirror(f));
 
 if (sourceChanges.length === 0) {
   console.log("check-changelog ok: no published-SDK source changes require an entry.");
