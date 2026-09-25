@@ -52,4 +52,28 @@ describe("createPerception", () => {
     expect(perception.memory("guard")).toEqual([]);
     expect(perception.snapshot().memories).toEqual([]);
   });
+
+  test("judges a sound once, from where the observer stood when it heard it", () => {
+    const perception = createPerception({ sightRange: 0, sightConeDeg: 0, hearingRange: 10, memorySeconds: 10 });
+    perception.pushStimulus({ kind: "sound", sourceId: "player", position: [0, 0, 8], at: 1000 });
+    perception.observe(observer, [], 1000);
+    const first = perception.memory("guard")[0]!.confidence;
+    expect(first).toBeCloseTo(0.2, 5);
+    perception.observe({ ...observer, position: [0, 0, 7.9] }, [], 1000);
+    expect(perception.memory("guard")[0]!.confidence).toBeCloseTo(first, 9);
+    const saved = perception.snapshot();
+    const copy = createPerception({ sightRange: 0, sightConeDeg: 0, hearingRange: 10, memorySeconds: 10 });
+    copy.restore(saved);
+    copy.observe({ ...observer, position: [0, 0, 7.9] }, [], 1000);
+    expect(copy.snapshot()).toEqual(saved);
+  });
+
+  test("a future-dated stimulus is judged once its time arrives", () => {
+    const perception = createPerception({ sightRange: 0, sightConeDeg: 0, hearingRange: 10, memorySeconds: 10 });
+    perception.pushStimulus({ kind: "damage", sourceId: "sniper", position: [0, 0, 50], at: 2000 });
+    perception.observe(observer, [], 1000);
+    expect(perception.memory("guard")).toEqual([]);
+    perception.observe(observer, [], 2000);
+    expect(perception.memory("guard").map((memory) => memory.targetId)).toEqual(["sniper"]);
+  });
 });

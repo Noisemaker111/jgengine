@@ -49,9 +49,14 @@ export interface PerceptionConfig {
 /** Serializable state for a perception service. */
 export interface PerceptionSnapshot {
   memories: Array<{ observerId: string; memory: PerceptionMemory }>;
-  stimuli: PerceptionStimulus[];
+  stimuli: Array<PerceptionStimulus & { seq?: number }>;
   nowMs: number;
+  /** Per observer, the last stimulus sequence number it has already judged. Absent in older saves. */
+  heard?: Record<string, number>;
+  nextSeq?: number;
 }
+
+type StoredStimulus = PerceptionStimulus & { seq: number };
 
 /** Stateful perception API with retuning and save/restore support. */
 export interface PerceptionService {
@@ -102,7 +107,9 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
   validate(initial);
   let config = { ...initial };
   let nowMs = 0;
-  const stimuli: PerceptionStimulus[] = [];
+  const stimuli: StoredStimulus[] = [];
+  const heard = new Map<string, number>();
+  let nextSeq = 1;
   const memories = new Map<string, Map<string, PerceptionMemory>>();
 
   function remember(observerId: string, targetId: string, position: PerceptionPosition, at: number, confidence: number): void {
@@ -140,7 +147,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       }
       let index = stimuli.length;
       while (index > 0 && stimuli[index - 1]!.at > stimulus.at) index -= 1;
-      stimuli.splice(index, 0, { ...stimulus, position: [...stimulus.position] as PerceptionPosition });
+      stimuli.splice(index, 0, { ...stimulus, position: [...stimulus.position] as PerceptionPosition, seq: nextSeq++ });
       nowMs = Math.max(nowMs, stimulus.at);
       prune();
     },
@@ -152,8 +159,19 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
         if (config.occluded?.(observer.position, candidate.position)) continue;
         remember(observer.id, candidate.id, candidate.position, nowMs, 1);
       }
+      // Each observer judges a stimulus once, from where it stood when it first observed after the stimulus;
+      // re-judging every tick would make an old noise louder as the observer walks toward it.
+      const judgedThrough = heard.get(observer.id) ?? 0;
+      let judged = judgedThrough;
+      let firstFuture = Number.POSITIVE_INFINITY;
       for (const stimulus of stimuli) {
-        if (stimulus.at > nowMs || stimulus.sourceId === observer.id) continue;
+        if (stimulus.seq <= judgedThrough) continue;
+        if (stimulus.at > nowMs) {
+          firstFuture = Math.min(firstFuture, stimulus.seq);
+          continue;
+        }
+        judged = Math.max(judged, stimulus.seq);
+        if (stimulus.sourceId === observer.id) continue;
         const range = distance(observer.position, stimulus.position);
         if (stimulus.kind === "sound") {
           const audible = config.hearingRange * (stimulus.loudness ?? 1);
@@ -163,6 +181,7 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
           remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, 1);
         }
       }
+      heard.set(observer.id, Math.min(judged, firstFuture - 1));
       prune();
     },
     memory(observerId) {
@@ -191,7 +210,13 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       prune();
     },
     snapshot() {
-      const result: PerceptionSnapshot = { memories: [], stimuli: stimuli.map((stimulus) => ({ ...stimulus, position: [...stimulus.position] as PerceptionPosition })), nowMs };
+      const result: PerceptionSnapshot = {
+        memories: [],
+        stimuli: stimuli.map((stimulus) => ({ ...stimulus, position: [...stimulus.position] as PerceptionPosition })),
+        nowMs,
+        heard: Object.fromEntries(heard),
+        nextSeq,
+      };
       for (const [observerId, observerMemories] of memories) for (const memory of observerMemories.values()) result.memories.push({ observerId, memory: { ...memory, lastKnownPos: [...memory.lastKnownPos] as PerceptionPosition } });
       return result;
     },
@@ -199,7 +224,14 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       memories.clear();
       stimuli.length = 0;
       nowMs = snapshot.nowMs;
-      stimuli.push(...snapshot.stimuli.map((stimulus) => ({ ...stimulus, position: [...stimulus.position] as PerceptionPosition })));
+      heard.clear();
+      for (const [observerId, seq] of Object.entries(snapshot.heard ?? {})) heard.set(observerId, seq);
+      let seq = 0;
+      for (const stimulus of snapshot.stimuli) {
+        seq = stimulus.seq ?? seq + 1;
+        stimuli.push({ ...stimulus, position: [...stimulus.position] as PerceptionPosition, seq });
+      }
+      nextSeq = Math.max(snapshot.nextSeq ?? 0, seq + 1);
       for (const entry of snapshot.memories) remember(entry.observerId, entry.memory.targetId, entry.memory.lastKnownPos, entry.memory.lastSeenAt, entry.memory.confidence);
       prune();
     },

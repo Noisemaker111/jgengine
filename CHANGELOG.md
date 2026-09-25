@@ -33,6 +33,7 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Perception judges each sound or damage stimulus once per observer, from where the observer stood when it first observed after the stimulus. Before, every `observe` re-scored past sounds from the observer's current position, so a guard walking toward an old noise grew more certain of it. `PerceptionSnapshot` gains `heard` and `nextSeq`; older saves re-judge their stimuli once.
 - Perception `loudness` now scales how far a sound carries (`hearingRange × loudness`) instead of only its confidence, so a gunshot is heard past normal hearing range and a footstep only close by. Loudness `1` behaves as before.
 - `npx jgengine find` now surfaces seams that had no capability row: `vehicle-seats`, `drivable-vehicle`, `kinematic-vehicle`, `affix-roller`, `hitscan-shot`, `loot-beams`, `world-item-pickup`, `on-death-drops`, `pointer-commands`, `current-target`, `fire-input`, `global-cooldown`. `PointerConfig.moveCommand` JSDoc now says it receives the clicked entity (click-to-target).
 - `npx jgengine find` matches whole stemmed words (`aim` no longer hits `claim`), drops stopwords, tries multi-word queries joined (`pick up` → `pickup`), returns the closest partial matches instead of "no match", and searches CLI recipes and skill recipe docs.
