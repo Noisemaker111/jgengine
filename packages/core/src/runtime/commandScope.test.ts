@@ -72,3 +72,16 @@ test("joinScope defaults to the joining member alone when a runtime declares no 
  test("actor shorthand resolves before hydration", () => {
   expect(resolveCommandScope({ place: { scope: () => ({ players: "actor", chunkKeys: ["0,0"] }), validate: () => null, apply: s => s } }, "place", {}, "alice")).toEqual({ players: ["alice"], chunkKeys: ["0,0"] });
  });
+
+test("resolveCommandScope hands scope parsed input and falls back to the actor when parse refuses", () => {
+  const commands = {
+    "world.place": {
+      parse: (input: unknown) => (typeof input === "string" ? { chunkKey: input } : null),
+      scope: (input: { chunkKey: string }) => ({ chunkKeys: [input.chunkKey] }),
+      validate: () => null,
+      apply: (snapshot: ReturnType<typeof createRuntimeSnapshot>) => snapshot,
+    },
+  };
+  expect(resolveCommandScope(commands as never, "world.place", "2,3", "alice")).toEqual({ chunkKeys: ["2,3"] });
+  expect(resolveCommandScope(commands as never, "world.place", 42, "alice")).toEqual({ players: ["alice"], chunkKeys: [] });
+});
