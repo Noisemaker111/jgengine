@@ -44,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `EditorCatalogDefinition` (interface) · `import { EditorCatalogDefinition } from "@jgengine/shell/gameKit"`
 
+## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
+
+- `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/authoring"`
+
 ## game-system — declare a composable capability with its own schedule and lifecycle
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/shell/gameKit"`
@@ -201,3 +205,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
 - `environment` (function) · `import { environment } from "@jgengine/shell/gameKit"`
+
+## world-item-pickup — pick up dropped items: ctx.scene.worldItem nearestInRadius → pickup into the player's inventory
+
+- `SceneWorldItemContext` (interface) · `import { SceneWorldItemContext } from "@jgengine/core/runtime/gameContext"`

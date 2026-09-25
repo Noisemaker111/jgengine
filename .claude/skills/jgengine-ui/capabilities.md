@@ -117,6 +117,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `CreditsScreen` (function) · `import { CreditsScreen } from "@jgengine/react/creditsScreen"`
 
+## current-target — read the player's selected target (click or tab target) to drive a target frame
+
+- `useTarget` (function) · `import { useTarget } from "@jgengine/react"`
+
 ## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
 
 - `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`

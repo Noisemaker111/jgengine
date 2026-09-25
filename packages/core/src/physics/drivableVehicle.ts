@@ -46,6 +46,8 @@ export interface DrivableVehicleStep<TStep extends DrivableSimStep = KinematicVe
  * game hand-rolled. Ground-snaps the result when `groundHeight` is given (terrain-following cars, not
  * just flat racetracks). Pair with `scene/vehicleSeat` for who is allowed to drive and where the camera
  * points; this function only steps the sim and shapes the pose patch, nothing else.
+ *
+ * @capability drivable-vehicle drive a car from throttle/steer/handbrake input each tick: step the vehicle sim and pose its entity
  */
 export function tickDrivableVehicle<TStep extends DrivableSimStep = KinematicVehicleStep, TModifiers = KinematicVehicleModifiers>(
   vehicle: DrivableSim<TModifiers, TStep>,

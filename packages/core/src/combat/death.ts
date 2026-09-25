@@ -19,6 +19,13 @@ export interface OnDeathCommandRule {
 
 export type DropMode = "grant" | "world";
 
+/**
+ * Catalog `onDeath` for an entity: loot tables to roll, `dropMode: "world"` to scatter drops on the ground
+ * (rendered with loot beams) instead of granting them into the killer's bag, and commands to run. Fires only
+ * when the entity dies through `ctx.scene.entity.effect`, not a raw `stats.delta`.
+ *
+ * @capability on-death-drops make a killed enemy drop loot on the ground or into the killer's bag via catalog onDeath
+ */
 export interface OnDeathSpec {
   drops?: string | OnDeathDropRule[];
   command?: string | OnDeathCommandRule;
