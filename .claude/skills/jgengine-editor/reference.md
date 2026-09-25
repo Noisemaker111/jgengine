@@ -224,8 +224,7 @@ undoable `setMinimapBake` command. Runtime feeds the stored `background`/`bounds
   mounted). It is **not** a headless CLI/MCP verb: with no viewport the sampler is null and
   `bake_minimap` returns `{ ok:false, error:"bake_minimap needs the live editor viewport" }`. To bake
   a committed scene offline, run a deterministic node script that rebuilds the base field with
-  `groundFieldFor(world)` and calls `bakeMinimapFromDocument` (see
-  `scripts/bake-claudecraft-minimap.ts`).
+  `groundFieldFor(world)` and calls `bakeMinimapFromDocument`.
 - GUI: the Terrain panel's **Bake minimap** button calls `bake_minimap` and surfaces any `ok:false`
   error inline.
 - RPC/CLI verb: `bake_minimap` (optional `padding`, `resolution`, `waterLevel`). The bake path uses

@@ -125,7 +125,8 @@ jobs:
 
   ci:
     needs: [quick, types, test, web-build, smoke]
-    if: always()
+    # A superseded run is cancelled, not failed; reporting it as a failure only pages the PR's owner.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
