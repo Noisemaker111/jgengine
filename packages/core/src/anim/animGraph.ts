@@ -101,7 +101,10 @@ export interface AnimClipOutput {
 export interface AnimGraphOutput {
   clips: AnimClipOutput[];
   events: { name: string; clip: string }[];
+  /** Root-bone travel over this advance from `rootMotion` states, in the rig's local units. */
   rootDelta?: [number, number, number];
+  /** `true` while any layer's current state has `rootMotion`, even on an advance with no travel. */
+  rootMotion?: true;
 }
 
 /** The evaluator handle: arm triggers, advance, inspect, snapshot and restore. */
@@ -319,12 +322,14 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
     advance(dt, params, clips) {
       const output: AnimGraphOutput = { clips: [], events: [] };
       const rootDelta: [number, number, number] = [0, 0, 0];
+      let rootMotion = false;
       for (const layer of graph.layers) {
         const state = layers[layer.id];
         if (state === undefined) continue;
         const def = layer.states[state.current];
         if (def === undefined) continue;
         const layerWeight = layer.weight ?? 1;
+        if (def.rootMotion === true && layerWeight > 0) rootMotion = true;
 
         const before = state.time;
         state.time += dt * stateSpeed(def);
@@ -403,6 +408,7 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
       }
       triggers.clear();
       if (rootDelta[0] !== 0 || rootDelta[1] !== 0 || rootDelta[2] !== 0) output.rootDelta = rootDelta;
+      if (rootMotion) output.rootMotion = true;
       return output;
     },
   };
