@@ -15,6 +15,7 @@ import { usePlayer } from "@jgengine/react/hooks";
 import { useEntityRenderCues } from "../render/useEntityRenderCues";
 import { usePlayerFov } from "./PlayerFov";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
+import { requestRawPointerLock } from "../input/pointerLock";
 
 const DEFAULT_SENSITIVITY = 0.0025;
 const DEFAULT_MAX_PITCH = 1.45;
@@ -75,7 +76,7 @@ export function GameFirstPersonCamera({
   useEffect(() => {
     const requestLock = () => {
       if (window.matchMedia?.("(pointer: coarse)").matches) return;
-      if (document.pointerLockElement !== domElement) void domElement.requestPointerLock?.();
+      if (document.pointerLockElement !== domElement) requestRawPointerLock(domElement);
     };
     const onMove = (event: MouseEvent) => {
       if (document.pointerLockElement !== domElement) return;

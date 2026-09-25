@@ -32,6 +32,7 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Mouse look now asks for raw, unaccelerated mouse deltas (`requestPointerLock({ unadjustedMovement: true })`) in `createMouseLookTracker`, the first-person camera and the shoulder rig, and falls back to a plain lock where that is unsupported. The helper is `requestRawPointerLock` (`@jgengine/shell/input/pointerLock`).
 - `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `editor.scene.json` seeds rolling hills as a terrain sculpt (deterministic per game id, flat around the spawn) and a bright `day` sky with a sun bearing and distance fog; `src/world.ts` renders them through `environment()` and `environmentContentFromDocument` and holds only the detail-shaded ground palette. Reshape the hills in the editor. `--ground flat` keeps the old `place()` slab (#1762).
 
 ### Added

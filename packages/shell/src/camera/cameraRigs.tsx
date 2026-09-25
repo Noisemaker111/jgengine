@@ -48,6 +48,7 @@ import {
   captureCameraBlendFrom,
   createCameraBlendScratch,
 } from "./cameraBlendMath";
+import { requestRawPointerLock } from "../input/pointerLock";
 
 export {
   applyCameraBlendStep,
@@ -417,7 +418,7 @@ export function ShoulderRig(props: RigProps) {
 
   useEffect(() => {
     const requestLock = () => {
-      if (document.pointerLockElement !== domElement) void domElement.requestPointerLock?.();
+      if (document.pointerLockElement !== domElement) requestRawPointerLock(domElement);
     };
     const onMove = (event: MouseEvent) => {
       if (document.pointerLockElement !== domElement) return;
