@@ -343,6 +343,7 @@
     "./runtime/hostedWorldStore",
     "./runtime/inputRecorder",
     "./runtime/inputSnapshot",
+    "./runtime/localPlayers",
     "./runtime/motionIntents",
     "./runtime/objectRows",
     "./runtime/perContext",
