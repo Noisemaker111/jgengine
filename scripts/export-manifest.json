@@ -23,6 +23,7 @@
     "./ai/waveRunner",
     "./anim/animGraph",
     "./anim/easing",
+    "./anim/footPlacement",
     "./anim/ikSolver",
     "./anim/locomotionGraph",
     "./anim/oscillator",

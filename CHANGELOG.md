@@ -32,6 +32,7 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Foot IK (`ModelConfig.ik`) keeps each clip's swing lift and moves feet by their ground's height relative to the model origin, instead of pinning every ankle to the ground. It lowers the pelvis so the lower leg can reach, keeps soles above the ground where a clip dips below it, bends toward the animated knee, tilts planted feet to the ground normal and fades out while airborne. `ik: "auto"` finds the legs by bone name, and `pelvis`, `maxAdjust` and `alignToGround` are optional. Probes hit terrain and blocking objects. The math is `placeFeet` and `inferLegChains` (`@jgengine/core/anim/footPlacement`) (#1683, #1758).
 - `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `editor.scene.json` seeds rolling hills as a terrain sculpt (deterministic per game id, flat around the spawn) and a bright `day` sky with a sun bearing and distance fog; `src/world.ts` renders them through `environment()` and `environmentContentFromDocument` and holds only the detail-shaded ground palette. Reshape the hills in the editor. `--ground flat` keeps the old `place()` slab (#1762).
 
 ### Added
