@@ -43,6 +43,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `npx jgengine recipe` adds `world-drops`, `click-target`, `ability-bar`, `hitscan-weapon`, `rolled-gear` and `enter-vehicle`, each type-checked against the SDK.
 - `SkinnedInstances` (`@jgengine/shell/render/SkinnedInstances`) renders hundreds of animated copies of one rig, each with its own clip, time offset and speed, in one instanced draw per material. Clips are baked once to a bone-matrix texture and sampled on the GPU. Shadows follow the pose. The layout and frame lookup are pure: `planBoneTexture` and `sampleBoneTexture` (`@jgengine/core/anim/boneTexture`). Dev runner demo: `bun run drive skinned-crowd`, with `skinned-crowd-mixers` as the one-mixer-per-character baseline (#1683).
 - Continuous haptics (#1769). `ctx.input.haptics(userId)` returns named rumble channels (`createHapticChannels`, `@jgengine/core/input/haptics`): `set` a level per tick, `pulse` a fading hit, mixed by priority so an impact ducks the engine hum. The shell drives each local seat's pad with refreshed short effects and resets it when silent; channels are local only. The `handling` demo feeds engine, road and impact channels.
 - Local seats for couch co-op (#1686). `defineGame({ localPlayers: { maxSlots, claimPrimary? } })` and `localPlayers(ctx)` (`@jgengine/core/runtime/localPlayers`): pads hot-join their own seat on a button press, the shell spawns each through `loop.onNewPlayer(ctx, { userId, isNew: true })`, routes that pad to the seat's own `InputSnapshot` (`local(slotId).input`), and moves its entity with the walk controller. The seat table has `snapshot`/`restore`/`retune`. `?gamepad=N` injects N synthetic pads for headless checks.
@@ -116,6 +117,7 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- The `combat-loop` recipe drained health with `stats.delta`, which never reaches the death pipeline, so copied enemies never died. It now damages through `ctx.scene.entity.effect` and a catalog `receive` map. The `loot` recipe now registers on `ctx.game.loot` and rolls from catalog `onDeath`. `KinematicVehicleTuning.camera` and `DRIVE_AXIS_BINDINGS` JSDoc now state what they actually do.
 - Editor RPC `add_marker` and `set_marker` accept `catalogId`. It used to be dropped while the call still returned `ok`, so a headlessly authored `mob`/`boss` marker spawned nothing.
 - Agent bridge `editor_summon` now resolves once the editor has mounted (up to 15 s). It used to return immediately, so editor verbs later in the same `drive` batch failed with "no live editor".
 - Catalog `onDeath: { dropMode: "world" }` scattered drops with `Math.random`, so kill loot landed in different spots on replay and on each peer. The runtime now passes the world's seeded `ctx.rng` to the scatter.

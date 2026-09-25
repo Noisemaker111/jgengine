@@ -126,6 +126,10 @@ export class AxisChannel {
   }
 }
 
+/**
+ * Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`. `ctx.input.axis`
+ * samples action names instead, so bind it to the game's input actions (e.g. `moveForward`), not this map.
+ */
 export const DRIVE_AXIS_BINDINGS: AxisBindingMap = {
   throttle: { positive: ["KeyW", "ArrowUp"] },
   brake: { positive: ["KeyS", "ArrowDown"] },
