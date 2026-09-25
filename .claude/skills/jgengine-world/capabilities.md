@@ -458,6 +458,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `populateNavGridFromSolids` (function) · `import { populateNavGridFromSolids } from "@jgengine/core/nav/navFromEnvironment"`
 
+## navmesh-bake — voxelize scene triangles into an agent-sized polygon nav mesh
+
+- `bakeNavMesh` (function) · `import { bakeNavMesh } from "@jgengine/navbake"`
+
 ## navmesh-query — route, snap, and raycast on a polygon navmesh with retunable area costs and a bounded search
 
 - `createNavMeshQuery` (function) · `import { createNavMeshQuery } from "@jgengine/core/world"`
