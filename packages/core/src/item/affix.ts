@@ -79,6 +79,12 @@ export interface AffixRoller {
   rollRandom(base: ItemBaseDef, rng: () => number): RolledItem;
 }
 
+/**
+ * Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks
+ * prefix/suffix affixes that name and modify the item. Deterministic for a given `rng`.
+ *
+ * @capability affix-roller roll randomized gear (guns, armor, loot) with rarity tiers, stat scaling and prefix/suffix affixes from a seed
+ */
 export function createAffixRoller(config: RollerConfig): AffixRoller {
   assertConfig(config);
   const poolById = new Map(config.pools.map((p) => [p.id, p] as const));

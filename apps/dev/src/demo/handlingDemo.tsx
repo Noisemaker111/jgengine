@@ -2,7 +2,15 @@ import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import type * as THREE from "three";
 import type { AxisBinding } from "@jgengine/core/input/axisInput";
-import { analogAxes, createAxisShaper, type AxisShaper } from "@jgengine/core/input/axisShaper";
+import type { ActionContext, ActiveContextAxes } from "@jgengine/core/input/actionContexts";
+import {
+  analogAxes,
+  createAxisShaper,
+  type AxisShapeConfig,
+  type AxisShaper,
+  type AxisShaperConfig,
+} from "@jgengine/core/input/axisShaper";
+import { actionContextStack } from "@jgengine/core/game/controlGate";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
 import { createEngineLayers, type EngineLayers } from "@jgengine/core/audio/engineLayers";
 import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
@@ -27,26 +35,45 @@ import { handlingDemoBike, handlingDemoGround, handlingDemoRamp, handlingDemoTun
 const CAR = "car";
 
 
-const bindings: Record<"throttle" | "brake" | "steer" | "handbrake", AxisBinding> = {
-  throttle: { positive: ["throttle"] },
-  brake: { positive: ["brake"] },
-  steer: { positive: ["steerRight"], negative: ["steerLeft"] },
-  handbrake: { positive: ["handbrake"] },
-};
+type DriveAxis = "throttle" | "brake" | "steer" | "handbrake";
 const pedal = { min: 0, max: 1 };
 
-type DriveAxis = "throttle" | "brake" | "steer" | "handbrake";
+// The driving context carries the drive axes and their feel: keys ease in and self-centre; a stick
+// keeps its deflection with a small deadzone and a finer centre. Popping it (KeyF) parks the car live.
+const DRIVING: ActionContext = {
+  id: "driving",
+  codes: {},
+  passthrough: true,
+  axes: {
+    throttle: { positive: ["throttle"] },
+    brake: { positive: ["brake"] },
+    steer: { positive: ["steerRight"], negative: ["steerLeft"] },
+    handbrake: { positive: ["handbrake"] },
+  },
+  shaping: {
+    steer: { digital: { riseRate: 3.2, returnRate: 6 }, analog: { deadzone: 0.08, curve: 1.5 } },
+    throttle: { range: pedal, digital: { riseRate: 6, fallRate: 12 }, analog: { deadzone: 0.05 } },
+    brake: { range: pedal, digital: { riseRate: 8, fallRate: 12 }, analog: { deadzone: 0.05 } },
+    handbrake: { range: pedal },
+  },
+};
+const PARKED: ActionContext = {
+  id: "parked",
+  codes: { toggleDrive: ["KeyF", "pad:3"], cycleView: ["KeyV", "pad:9"], lookBack: ["KeyC", "pad:2"] },
+  passthrough: false,
+};
+const NO_AXIS: AxisBinding = { positive: [] };
+const DRIVE_AXES: readonly DriveAxis[] = ["throttle", "brake", "steer", "handbrake"];
+const PEDALS = { throttle: pedal, brake: pedal, handbrake: pedal };
 
-// Keys ease in and self-centre; a stick keeps its deflection with a small deadzone and a finer centre.
 function createDriveShaper(): AxisShaper<DriveAxis> {
-  return createAxisShaper<DriveAxis>({
-    axes: {
-      steer: { digital: { riseRate: 3.2, returnRate: 6 }, analog: { deadzone: 0.08, curve: 1.5 } },
-      throttle: { range: pedal, digital: { riseRate: 6, fallRate: 12 }, analog: { deadzone: 0.05 } },
-      brake: { range: pedal, digital: { riseRate: 8, fallRate: 12 }, analog: { deadzone: 0.05 } },
-      handbrake: { range: pedal },
-    },
-  });
+  return createAxisShaper<DriveAxis>({ axes: { throttle: {}, brake: {}, steer: {}, handbrake: {} } });
+}
+
+function driveShaping(shaping: ActiveContextAxes["shaping"]): AxisShaperConfig<DriveAxis> {
+  const axes = {} as Record<DriveAxis, AxisShapeConfig>;
+  for (const axis of DRIVE_AXES) axes[axis] = shaping[axis] ?? {};
+  return { axes };
 }
 
 // Each synth patch stands in for an engine sample recorded at `rpm`; the layers crossfade them and repitch by rpm / layer.rpm.
@@ -102,10 +129,8 @@ function createCarFeedback(): FeedbackMixer<FeedbackSignal, FeedbackTarget> {
       { signal: "scrub", target: "tireGain", curve: [[0.85, 0], [1.25, 1]], attack: 20, release: 5 },
       { signal: "slip", target: "tireRate", curve: [[0, 0.85], [0.5, 1.35]] },
       { signal: "rear", target: "rumbleStrong", curve: [[0.85, 0], [1.85, 1]] },
-      { signal: "landing", target: "rumbleStrong", curve: [[1.5, 0], [8, 1]] },
       { signal: "front", target: "rumbleWeak", curve: [[0.85, 0], [1.85, 1]] },
     ],
-    combine: { rumbleStrong: "max" },
     events: [{ id: "landing", signal: "landing", threshold: 1.5, cooldown: 0.3 }],
   });
 }
@@ -116,7 +141,8 @@ interface HandlingRun {
   feedback: FeedbackMixer<FeedbackSignal, FeedbackTarget>;
   engine: EngineLayers;
   last: VehicleDynamicsStep | null;
-  rumbleCooldown: number;
+  contextVersion: number;
+  bindings: Record<DriveAxis, AxisBinding>;
 }
 
 interface DemoVehicle {
@@ -131,7 +157,7 @@ let vehicle: DemoVehicle = CAR_VEHICLE;
 let run: HandlingRun | null = null;
 
 function ensureRun(): HandlingRun {
-  run ??= { car: createVehicleDynamics(vehicle.tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), engine: createEngineLayers(ENGINE_LAYERS), last: null, rumbleCooldown: 0 };
+  run ??= { car: createVehicleDynamics(vehicle.tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), engine: createEngineLayers(ENGINE_LAYERS), last: null, contextVersion: -1, bindings: { throttle: NO_AXIS, brake: NO_AXIS, steer: NO_AXIS, handbrake: NO_AXIS } };
   return run;
 }
 
@@ -143,13 +169,31 @@ function onNewPlayer(ctx: GameContext): void {
   const id = ctx.player.userId;
   ctx.scene.entity.spawn(CAR, { id, position: [0, 0, 0], role: "player" });
   ctx.scene.entity.update(id, { movement: { frozen: true } });
+  const contexts = actionContextStack(ctx);
+  contexts.pop(PARKED.id);
+  contexts.push(DRIVING);
 }
 
 function onTick(ctx: GameContext, dt: number): void {
   const id = ctx.player.userId;
   if (ctx.scene.entity.get(id) === null) return;
   const state = ensureRun();
-  const raw = ctx.input.axis(bindings, { throttle: pedal, brake: pedal, handbrake: pedal });
+  const contexts = actionContextStack(ctx);
+  if (ctx.input.justPressed("toggleDrive")) {
+    if (contexts.pop(PARKED.id)) contexts.push(DRIVING);
+    else {
+      contexts.pop(DRIVING.id);
+      contexts.push(PARKED);
+    }
+  }
+  if (state.contextVersion !== contexts.version()) {
+    state.contextVersion = contexts.version();
+    const layer = contexts.activeAxes();
+    for (const name of DRIVE_AXES) state.bindings[name] = layer.bindings[name] ?? NO_AXIS;
+    state.shaper.retune(driveShaping(layer.shaping));
+  }
+  const bindings = state.bindings;
+  const raw = ctx.input.axis(bindings, PEDALS);
   const axis = state.shaper.shape(dt, raw, { analog: analogAxes(bindings, ctx.input.analog()) });
   // Throttle keeps driving in the air here; only steer yaws the body, so a held W never noses the car down.
   const drive = tickDrivableVehicle(state.car, dt, axis, {
@@ -181,15 +225,14 @@ function onTick(ctx: GameContext, dt: number): void {
   state.engine.play(ctx.game.audio, { at, velocity: ctx.scene.entity.get(id)?.velocity, gain: out.engineGain, lowpass: out.engineLowpass });
   ctx.game.audio.setLoop("tires", { rate: out.tireRate, gain: out.tireGain, at });
   if (state.feedback.fired("landing")) {
+    ctx.input.haptics(id).pulse("impact", { strong: Math.min(1, step.landingSpeed / 8), weak: 0.3, ms: 240 }, 1);
     ctx.game.audio.play("thud", at);
     ctx.camera.kickFov(-Math.min(8, step.landingSpeed));
   }
 
-  state.rumbleCooldown -= dt;
-  if (state.rumbleCooldown <= 0 && (out.rumbleStrong > 0.05 || out.rumbleWeak > 0.05)) {
-    state.rumbleCooldown = 0.1;
-    void ctx.input.rumble(id, { strong: out.rumbleStrong, weak: out.rumbleWeak, ms: 110 });
-  }
+  const haptics = ctx.input.haptics(id);
+  haptics.set("engine", { strong: 0, weak: 0.1 * step.engineLoad * Math.min(1, step.rpm / 6000) });
+  haptics.set("road", { strong: out.rumbleStrong, weak: out.rumbleWeak });
 }
 
 function CarBody({ entity }: { entity: SceneEntity }) {
@@ -332,7 +375,7 @@ function Telemetry() {
       <div className="tabular-nums">lat {(step.lateralAccel / 9.81).toFixed(2)} g · slip {((step.sideslip * 180) / Math.PI).toFixed(0)}°{vehicle.kind === "bike" ? ` · lean ${Math.abs((step.lean * 180) / Math.PI).toFixed(0)}°` : ""}</div>
       <div className="mt-1 flex items-center gap-2">front {bar(step.frontSaturation)}</div>
       <div className="flex items-center gap-2">rear&nbsp; {bar(step.rearSaturation)}</div>
-      <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump · C look back · V view</div>
+      <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump · C look back · V view · F park</div>
     </div>
   );
 }
@@ -349,14 +392,15 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
     world: { kind: "flat" },
     backdrop: { sky: { preset: "day" }, fog: { color: "#c7d7e6", near: 80, far: 320 } },
     input: {
-      throttle: ["KeyW", "ArrowUp"],
-      brake: ["KeyS", "ArrowDown"],
-      steerLeft: ["KeyA", "ArrowLeft"],
-      steerRight: ["KeyD", "ArrowRight"],
-      handbrake: ["Space"],
-      jump: ["KeyJ"],
-      lookBack: ["KeyC"],
-      cycleView: ["KeyV"],
+      throttle: ["KeyW", "ArrowUp", "pad:7"],
+      brake: ["KeyS", "ArrowDown", "pad:6"],
+      steerLeft: ["KeyA", "ArrowLeft", "padaxis:0-"],
+      steerRight: ["KeyD", "ArrowRight", "padaxis:0+"],
+      handbrake: ["Space", "pad:0"],
+      jump: ["KeyJ", "pad:1"],
+      lookBack: ["KeyC", "pad:2"],
+      cycleView: ["KeyV", "pad:9"],
+      toggleDrive: ["KeyF", "pad:3"],
     },
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: resetRun },
     camera: {

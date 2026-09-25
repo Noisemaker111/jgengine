@@ -186,11 +186,15 @@ export { createNavGrid, findPath, slopeStepCost, type NavGrid, type NavPoint } f
 export {
   buildNavAdjacency,
   closestPoint,
+  createNavMeshQuery,
   raycastNav,
   type NavMeshAdjacency,
   type NavMeshData,
   type NavMeshLink,
   type NavMeshPath,
+  type NavMeshQuery,
+  type NavMeshQueryOptions,
+  type NavMeshQuerySnapshot,
 } from "./nav/navMesh";
 export {
   advancePathFollow,
@@ -349,6 +353,7 @@ export {
   registerBehaviorActions,
   type BehaviorAction,
   type BehaviorActionContext,
+  type BehaviorActionOptions,
   type BehaviorControl,
   type BehaviorInspection,
   type BehaviorResumePolicy,

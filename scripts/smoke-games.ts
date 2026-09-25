@@ -19,6 +19,10 @@ const GAMES = ["vice-isle", "the-robots", "wreckway", "spire-cards"];
 const root = resolve(import.meta.dir, "..");
 
 if (!existsSync(join(root, "Games"))) {
+  if (process.env.CI) {
+    console.error("smoke: Games/ checkout is required in CI — run bun run games:clone first");
+    process.exit(1);
+  }
   console.log("smoke: skipped — no Games/ checkout (games live in Noisemaker111/JGengine-games, run bun run games:clone for a smoke)");
   process.exit(0);
 }

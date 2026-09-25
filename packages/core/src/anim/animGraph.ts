@@ -101,7 +101,10 @@ export interface AnimClipOutput {
 export interface AnimGraphOutput {
   clips: AnimClipOutput[];
   events: { name: string; clip: string }[];
+  /** Root-bone travel over this advance from `rootMotion` states, in the rig's local units. */
   rootDelta?: [number, number, number];
+  /** `true` while any layer's current state has `rootMotion`, even on an advance with no travel. */
+  rootMotion?: true;
 }
 
 /** The evaluator handle: arm triggers, advance, inspect, snapshot and restore. */
@@ -319,12 +322,14 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
     advance(dt, params, clips) {
       const output: AnimGraphOutput = { clips: [], events: [] };
       const rootDelta: [number, number, number] = [0, 0, 0];
+      let rootMotion = false;
       for (const layer of graph.layers) {
         const state = layers[layer.id];
         if (state === undefined) continue;
         const def = layer.states[state.current];
         if (def === undefined) continue;
         const layerWeight = layer.weight ?? 1;
+        if (def.rootMotion === true && layerWeight > 0) rootMotion = true;
 
         const before = state.time;
         state.time += dt * stateSpeed(def);
@@ -403,7 +408,126 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
       }
       triggers.clear();
       if (rootDelta[0] !== 0 || rootDelta[1] !== 0 || rootDelta[2] !== 0) output.rootDelta = rootDelta;
+      if (rootMotion) output.rootMotion = true;
       return output;
     },
   };
+}
+
+const COMPARES: readonly AnimCompare[] = [">", "<", ">=", "<=", "==", "!="];
+
+function record(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function optionalNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function parseState(value: unknown): AnimState | null {
+  const raw = record(value);
+  if (raw === null) return null;
+  const extra = {
+    ...(optionalNumber(raw.speed) === undefined ? {} : { speed: raw.speed as number }),
+    ...(typeof raw.loop === "boolean" ? { loop: raw.loop } : {}),
+    ...(typeof raw.rootMotion === "boolean" ? { rootMotion: raw.rootMotion } : {}),
+  };
+  if (raw.kind === "clip" && typeof raw.clip === "string") return { kind: "clip", clip: raw.clip, ...extra };
+  if (!Array.isArray(raw.points)) return null;
+  if (raw.kind === "blend1D" && typeof raw.param === "string") {
+    const points = raw.points.flatMap((point) => {
+      const entry = record(point);
+      return entry !== null && typeof entry.clip === "string" && optionalNumber(entry.at) !== undefined ? [{ at: entry.at as number, clip: entry.clip }] : [];
+    });
+    return { kind: "blend1D", param: raw.param, points, ...extra };
+  }
+  if (raw.kind === "blend2D" && Array.isArray(raw.params) && raw.params.length === 2 && raw.params.every((param) => typeof param === "string")) {
+    const points = raw.points.flatMap((point) => {
+      const entry = record(point);
+      const at = entry?.at;
+      return entry !== null && typeof entry.clip === "string" && Array.isArray(at) && at.length === 2 && at.every((n) => optionalNumber(n) !== undefined)
+        ? [{ at: [at[0] as number, at[1] as number] as const, clip: entry.clip }]
+        : [];
+    });
+    return { kind: "blend2D", params: [raw.params[0] as string, raw.params[1] as string], points, ...extra };
+  }
+  return null;
+}
+
+function parseTransition(value: unknown, states: Readonly<Record<string, AnimState>>): AnimTransition | null {
+  const raw = record(value);
+  if (raw === null || typeof raw.from !== "string" || typeof raw.to !== "string") return null;
+  if (states[raw.to] === undefined || (raw.from !== "*" && states[raw.from] === undefined)) return null;
+  const when = Array.isArray(raw.when)
+    ? raw.when.flatMap((condition) => {
+        const entry = record(condition);
+        return entry !== null &&
+          typeof entry.param === "string" &&
+          COMPARES.includes(entry.op as AnimCompare) &&
+          (typeof entry.value === "number" || typeof entry.value === "boolean")
+          ? [{ param: entry.param, op: entry.op as AnimCompare, value: entry.value }]
+          : [];
+      })
+    : undefined;
+  return {
+    from: raw.from,
+    to: raw.to,
+    ...(when === undefined || when.length === 0 ? {} : { when }),
+    ...(typeof raw.trigger === "string" ? { trigger: raw.trigger } : {}),
+    ...(optionalNumber(raw.duration) === undefined ? {} : { duration: Math.max(0, raw.duration as number) }),
+    ...(optionalNumber(raw.exitTime) === undefined ? {} : { exitTime: raw.exitTime as number }),
+  };
+}
+
+/**
+ * Validates untrusted JSON (a saved scene document, a network payload) as an {@link AnimGraph}.
+ * Malformed states, transitions to unknown states, and bad conditions are dropped; a layer whose
+ * entry state is missing is dropped; the result is `undefined` when no layer survives.
+ *
+ * @capability anim-graph load an animation graph from saved JSON without trusting its shape
+ */
+export function parseAnimGraph(value: unknown): AnimGraph | undefined {
+  const raw = record(value);
+  if (raw === null || !Array.isArray(raw.layers)) return undefined;
+  const layers: AnimLayer[] = [];
+  const seen = new Set<string>();
+  for (const candidate of raw.layers) {
+    const layer = record(candidate);
+    if (layer === null || typeof layer.id !== "string" || seen.has(layer.id) || typeof layer.entry !== "string") continue;
+    const rawStates = record(layer.states);
+    if (rawStates === null) continue;
+    const states: Record<string, AnimState> = {};
+    for (const [name, state] of Object.entries(rawStates)) {
+      const parsed = parseState(state);
+      if (parsed !== null) states[name] = parsed;
+    }
+    if (states[layer.entry] === undefined) continue;
+    const transitions = Array.isArray(layer.transitions)
+      ? layer.transitions.flatMap((transition) => {
+          const parsed = parseTransition(transition, states);
+          return parsed === null ? [] : [parsed];
+        })
+      : [];
+    const mask = Array.isArray(layer.mask) ? layer.mask.filter((prefix): prefix is string => typeof prefix === "string") : undefined;
+    seen.add(layer.id);
+    layers.push({
+      id: layer.id,
+      entry: layer.entry,
+      states,
+      transitions,
+      ...(mask === undefined ? {} : { mask }),
+      ...(typeof layer.additive === "boolean" ? { additive: layer.additive } : {}),
+      ...(optionalNumber(layer.weight) === undefined ? {} : { weight: Math.min(1, Math.max(0, layer.weight as number)) }),
+    });
+  }
+  if (layers.length === 0) return undefined;
+  const events = Array.isArray(raw.events)
+    ? raw.events.flatMap((event) => {
+        const entry = record(event);
+        return entry !== null && typeof entry.clip === "string" && typeof entry.name === "string" && optionalNumber(entry.atSec) !== undefined
+          ? [{ clip: entry.clip, atSec: entry.atSec as number, name: entry.name }]
+          : [];
+      })
+    : [];
+  return { layers, ...(events.length === 0 ? {} : { events }) };
 }

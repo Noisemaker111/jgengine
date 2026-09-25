@@ -4,7 +4,11 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
-## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, and utility AI decisions.
+## action-contexts — Swap bindings live for on-foot, driving, menu or build modes by pushing and popping layered action maps.
+
+- `createActionContextStack` (function) · `import { createActionContextStack } from "@jgengine/core/input/actionContexts"`
+
+## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, utility, timer, and random AI decisions with interrupt hooks.
 
 - `createDecisionGraphRuntime` (function) · `import { createDecisionGraphRuntime } from "@jgengine/core/ai/decisionGraph"`
 
@@ -27,10 +31,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## anim-graph — data-first animation state machine with blend trees, crossfades, layers, and clip events
 
 - `createAnimGraphRuntime` (function) · `import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph"`
+- `parseAnimGraph` (function) · `import { parseAnimGraph } from "@jgengine/core/anim/animGraph"`
 
-## animation — inverse kinematics orient a bone toward a target with constrained yaw and pitch
+## animation — find thigh, shin and foot bones on a humanoid rig for foot IK
 
+- `inferLegChains` (function) · `import { inferLegChains } from "@jgengine/core/anim/footPlacement"`
 - `lookAt` (function) · `import { lookAt } from "@jgengine/core/anim/ikSolver"`
+- `placeFeet` (function) · `import { placeFeet } from "@jgengine/core/anim/footPlacement"`
+- `planBoneTexture` (function) · `import { planBoneTexture } from "@jgengine/core/anim/boneTexture"`
+- `sampleBoneTexture` (function) · `import { sampleBoneTexture } from "@jgengine/core/anim/boneTexture"`
 - `solveFabrik` (function) · `import { solveFabrik } from "@jgengine/core/anim/ikSolver"`
 - `solveTwoBone` (function) · `import { solveTwoBone } from "@jgengine/core/anim/ikSolver"`
 
@@ -104,6 +113,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
 - `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
+
+## authored-solids — collision for studio-authored world content such as city volumes
+
+- `resolveAuthoredSolids` (function) · `import { resolveAuthoredSolids } from "@jgengine/core/world/authoredSolids"`
+- `syncAuthoredSolids` (function) · `import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids"`
 
 ## authored-spawn — read spawn points and markers from the editor document
 
@@ -179,6 +193,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
+- `citySolids` (function) · `import { citySolids } from "@jgengine/core/world/cityKind"`
 - `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/world/cityBlocks"`
 - `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/cityGeometry"`
 - `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/cityGeometry"`
@@ -261,6 +276,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `dopplerRate` (function) · `import { dopplerRate } from "@jgengine/core/audio/doppler"`
 
+## drivable-vehicle — drive a car from throttle/steer/handbrake input each tick: step the vehicle sim and pose its entity
+
+- `tickDrivableVehicle` (function) · `import { tickDrivableVehicle } from "@jgengine/core/world"`
+
 ## elevation-readout — cursor height and delta-from-reference feedback
 
 - `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
@@ -284,6 +303,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## feedback-mixer — map sim telemetry to camera, audio and haptic parameters through curves, smoothing and threshold events
 
 - `createFeedbackMixer` (function) · `import { createFeedbackMixer } from "@jgengine/core/vfx/feedbackMixer"`
+
+## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
+
+- `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/input/actionBindings"`
 
 ## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
 
@@ -359,6 +382,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureHandling` (function) · `import { measureHandling } from "@jgengine/core/physics/handlingProbe"`
 
+## haptics — Continuous gamepad rumble from named channels (engine, road, impact) mixed by priority, plus fading pulses.
+
+- `createHapticChannels` (function) · `import { createHapticChannels } from "@jgengine/core/input/haptics"`
+
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
@@ -391,6 +418,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/input/rebindSession"`
 
+## kinematic-vehicle — arcade car/kart driving physics with throttle, brake, steer and retunable handling
+
+- `createKinematicVehicle` (function) · `import { createKinematicVehicle } from "@jgengine/core/world"`
+
 ## lean-metrics — measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in
 
 - `measureLean` (function) · `import { measureLean } from "@jgengine/core/physics/handlingProbe"`
@@ -407,8 +438,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
-## locomotion-graph — build the default idle/walk/run plus one-shot graph from clip names
+## locomotion-graph — resolve the animation graph a model config plays
 
+- `animGraphFromConfig` (function) · `import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph"`
 - `locomotionGraph` (function) · `import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph"`
 
 ## map-annotations — player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable
@@ -443,6 +475,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## movement-metrics — measure a walking character's feel as numbers — time to top speed, stop distance, jump height and apex, air control, turn-around
 
 - `measureMovement` (function) · `import { measureMovement } from "@jgengine/core/movement/movementProbe"`
+
+## nav-from-solids — block world solids on a nav grid
+
+- `populateNavGridFromSolids` (function) · `import { populateNavGridFromSolids } from "@jgengine/core/nav/navFromEnvironment"`
+
+## navmesh-bake — voxelize scene triangles into an agent-sized polygon nav mesh
+
+- `bakeNavMesh` (function) · `import { bakeNavMesh } from "@jgengine/navbake"`
+
+## navmesh-query — route, snap, and raycast on a polygon navmesh with retunable area costs and a bounded search
+
+- `createNavMeshQuery` (function) · `import { createNavMeshQuery } from "@jgengine/core/world"`
 
 ## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
 
@@ -541,7 +585,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
 
-## pursuit — chase-to-reach cooldown-gated attack with optional leash-to-home; owns the attack cooldown
+## pursuit — enemy/mob aggro chase-to-reach with a cooldown-gated attack and optional leash-to-home; owns the attack cooldown
 
 - `advancePursuit` (function) · `import { advancePursuit } from "@jgengine/core/ai/pursuit"`
 
@@ -612,6 +656,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## solid-obstacles — the one blocking-geometry query the player resolver and NPC movers share
 
+- `obstacleFromSolid` (function) · `import { obstacleFromSolid } from "@jgengine/core/movement/solidObstacles"`
 - `solidObstaclesNear` (function) · `import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles"`
 
 ## spatial-region-box — sample uniformly within an axis-aligned 3D box
@@ -743,6 +788,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createVehicleDynamics` (function) · `import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics"`
 
+## vehicle-seats — enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots
+
+- `createVehicleSeats` (function) · `import { createVehicleSeats } from "@jgengine/core/world"`
+
 ## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure
 
 - `createVisibilityField` (function) · `import { createVisibilityField } from "@jgengine/core/world"`
@@ -789,3 +838,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-seed — derive a deterministic generator/scatter seed from world id + save/run seed
 
 - `seedForPlace` (function) · `import { seedForPlace } from "@jgengine/core/world"`
+
+## world-solid-bounds — world AABB and nav footprint of a world solid
+
+- `worldSolidBounds` (function) · `import { worldSolidBounds } from "@jgengine/core/world/worldSolids"`
+- `worldSolidFootprint` (function) · `import { worldSolidFootprint } from "@jgengine/core/world/worldSolids"`
+
+## world-solids — collision for generated and authored world geometry (buildings, city lots, walls)
+
+- `createWorldSolids` (function) · `import { createWorldSolids } from "@jgengine/core/world/worldSolids"`
+
+## world-solids-from-data — derive collision boxes from generated buildings and wall runs
+
+- `buildingSolids` (function) · `import { buildingSolids } from "@jgengine/core/world/worldSolids"`
+- `structureSolids` (function) · `import { structureSolids } from "@jgengine/core/world/worldSolids"`
+- `wallSolids` (function) · `import { wallSolids } from "@jgengine/core/world/worldSolids"`

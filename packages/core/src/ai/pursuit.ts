@@ -68,7 +68,7 @@ function tickCooldown(state: PursuitState, dt: number): void {
  *
  * On `"attack"` the caller applies the hit and calls {@link armPursuit} with the next interval.
  *
- * @capability pursuit chase-to-reach cooldown-gated attack with optional leash-to-home; owns the attack cooldown
+ * @capability pursuit enemy/mob aggro chase-to-reach with a cooldown-gated attack and optional leash-to-home; owns the attack cooldown
  */
 export function advancePursuit(
   state: PursuitState,

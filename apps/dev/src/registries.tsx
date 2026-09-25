@@ -168,13 +168,17 @@ export const editorLayerRegistry: Partial<
 export const gameRegistry: GameRegistry = {
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
+  "guard-probe": () => import("./demo/guardProbeDemo").then((module) => module.guardProbeGame),
   handling: () => import("./demo/handlingDemo").then((module) => module.handlingDemoGame),
   "handling-bike": () => import("./demo/handlingDemo").then((module) => module.handlingBikeDemoGame),
+  couch: () => import("./demo/couchDemo").then((module) => module.couchDemoGame),
   "walk-floaty": () => import("./demo/walkFeelDemo").then((module) => module.walkFloatyDemoGame),
   "walk-weighty": () => import("./demo/walkFeelDemo").then((module) => module.walkWeightyDemoGame),
   flight: () => import("./demo/flightDemo").then((module) => module.flightDemoGame),
   "flight-heli": () => import("./demo/flightDemo").then((module) => module.flightHelicopterDemoGame),
   "flight-rocket": () => import("./demo/flightDemo").then((module) => module.flightRocketDemoGame),
+  "skinned-crowd": () => import("./demo/crowdDemo").then((module) => module.crowdDemoGame),
+  "skinned-crowd-mixers": () => import("./demo/crowdDemo").then((module) => module.crowdMixerDemoGame),
   "pointer-commander": () =>
     import("./demo/pointerDemo").then((module) => module.pointerDemoGame),
   "environment-showcase": () =>

@@ -41,6 +41,30 @@ describe("createAnimGraphRuntime", () => {
       walk: { duration: 1, rootTrack: { times: new Float32Array([0, 1]), values: new Float32Array([0, 0, 0, 2, 0, 0]) } },
     });
     expect(out.rootDelta).toEqual([1, 0, 0]);
+    expect(out.rootMotion).toBe(true);
+  });
+
+  test("flags root motion only while a root-motion state is current, even when it does not travel", () => {
+    const rt = createAnimGraphRuntime({
+      layers: [
+        {
+          id: "base",
+          entry: "idle",
+          states: { idle: { kind: "clip", clip: "idle" }, dodge: { kind: "clip", clip: "dodge", loop: false, rootMotion: true } },
+          transitions: [{ from: "idle", to: "dodge", trigger: "dodge", duration: 0 }],
+        },
+      ],
+    });
+    const clips = { idle: 1, dodge: { duration: 1, rootTrack: { times: new Float32Array([0, 1]), values: new Float32Array([0, 0, 0, 0, 0, 1]) } } };
+    const idle = rt.advance(0.1, {}, clips);
+    expect(idle.rootMotion).toBeUndefined();
+    expect(idle.rootDelta).toBeUndefined();
+    rt.trigger("dodge");
+    rt.advance(0.1, {}, clips);
+    expect(rt.advance(0.5, {}, clips)).toMatchObject({ rootMotion: true, rootDelta: [0, 0, 0.5] });
+    const held = rt.advance(0, {}, clips);
+    expect(held.rootMotion).toBe(true);
+    expect(held.rootDelta).toBeUndefined();
   });
 
   test("a clip state advances time, loops, and fires events across the wrap", () => {

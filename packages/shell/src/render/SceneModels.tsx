@@ -322,7 +322,7 @@ export function EntityModel({
   }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey]);
 
   useModelAnimation(scene, gltf.animations, model.animation, instanceId);
-  useFootIk(scene, model.ik, ctx, instanceId);
+  useFootIk(scene, model.ik, ctx, instanceId, baseY);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);
   const paintDrawnCountRef = useRef(0);

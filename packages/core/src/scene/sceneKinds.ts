@@ -6,6 +6,8 @@
  * matching renderer in `shell` — without editing editor or engine files. Scatter is the proof adopter.
  */
 
+import type { WorldSolid } from "../world/worldSolids";
+
 /** Which document collection a scene kind lives in. Drives placement + which `meta` bag holds params. */
 export type SceneKindTarget = "path" | "marker" | "volume";
 
@@ -388,6 +390,12 @@ export interface SceneKindDefinition<TResolved = unknown> {
    * marker/volume/path; `params` is `parseParams(schema, object.meta)`.
    */
   resolve?: (object: SceneKindObject, params: ParsedParams, context: SceneKindResolveContext) => TResolved;
+  /**
+   * World-space collision for a resolved object. Omitted, the kind is render-only. `syncAuthoredSolids`
+   * (`world/authoredSolids`) writes these into `ctx.world.solids`, so movement, NPCs, physics
+   * backends and nav grids all collide with what the studio draws.
+   */
+  solids?: (resolved: TResolved, object: SceneKindObject, params: ParsedParams, context: SceneKindResolveContext) => readonly WorldSolid[];
   /** Optional one-line readout under the inspector fields (estimate, dimensions) — owned by the studio. */
   note?: (object: SceneKindObject, params: ParsedParams) => string;
   /**
@@ -420,6 +428,8 @@ export interface SceneKindObject {
 export interface SceneKindResolveContext {
   sampleHeight?: (x: number, z: number) => number;
   sampleNormal?: (x: number, z: number) => readonly [number, number, number];
+  /** Every studio object in the same document, for kinds that read siblings (a `city` reads its `cityzone` volumes). */
+  objects?: readonly SceneKindObject[];
 }
 
 const registry = new Map<string, SceneKindDefinition>();

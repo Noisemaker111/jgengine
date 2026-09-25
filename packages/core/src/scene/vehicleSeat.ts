@@ -113,7 +113,11 @@ export class VehicleSeats {
   }
 }
 
-/** Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy. */
+/**
+ * Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
+ *
+ * @capability vehicle-seats enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots
+ */
 export function createVehicleSeats(controller?: MountController): VehicleSeats {
   return new VehicleSeats(controller);
 }

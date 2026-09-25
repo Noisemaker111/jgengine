@@ -73,6 +73,7 @@ describe("editor host RPC", () => {
       x: 168,
       z: 232,
       label: "Pier's end",
+      catalogId: "smuggler",
       meta: { value: 300 },
     });
     expect(added.ok).toBe(true);
@@ -80,6 +81,7 @@ describe("editor host RPC", () => {
     expect(marker?.kind).toBe("stash");
     expect(marker?.position).toEqual({ x: 168, y: 0, z: 232 });
     expect(marker?.label).toBe("Pier's end");
+    expect(marker?.catalogId).toBe("smuggler");
     expect(marker?.meta?.value).toBe(300);
 
     // The new marker is selected and the edit is undoable.

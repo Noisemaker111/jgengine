@@ -3,7 +3,16 @@ import { describe, expect, test } from "bun:test";
 import { createActionStateTracker, toActionStateBindingMap } from "@jgengine/core/input/actionBindings";
 import { gamepadFeelOptions, type GamepadSample } from "@jgengine/core/input/gamepadModel";
 
-import { emptyGamepadPoll, gamepadCodes, stepGamepadPoll } from "./gamepadPoll";
+import { createLocalPlayers } from "@jgengine/core/runtime/localPlayers";
+
+import {
+  emptyGamepadPoll,
+  emptyGamepadRoute,
+  gamepadCodes,
+  rebindGamepadPoll,
+  routeGamepads,
+  stepGamepadPoll,
+} from "./gamepadPoll";
 
 const input = { steerRight: ["KeyD", "padaxis:0+"], throttle: ["KeyW", "pad:7"], jump: ["Space"] };
 const pad = (axis: number, trigger: number): GamepadSample => ({
@@ -42,4 +51,64 @@ describe("stepGamepadPoll", () => {
     expect(second).toBe(first);
     expect(stepGamepadPoll(poll, [null], bindings, options, tracker, null)).toBeNull();
   });
+
+  test("a context swap keeps keyboard holds and moves pad holds to the new map", () => {
+    const onFoot = { forward: ["KeyW", "pad:7"], jump: ["Space", "pad:0"] };
+    const driving = { throttle: ["KeyW", "pad:7"], horn: ["KeyH", "pad:0"] };
+    const tracker = createActionStateTracker<string>(toActionStateBindingMap(onFoot));
+    const poll = emptyGamepadPoll();
+    const options = gamepadFeelOptions({ deadzone: 0, triggerDeadzone: 0 });
+    const held: GamepadSample = {
+      axes: [0],
+      buttons: [{ pressed: true, value: 1 }, ...Array.from({ length: 6 }, () => ({ pressed: false, value: 0 })), { pressed: true, value: 1 }],
+      connected: true,
+    };
+    tracker.handleDown("KeyW");
+    stepGamepadPoll(poll, [held], gamepadCodes(onFoot), options, tracker, null);
+    expect(tracker.isDown("jump")).toBe(true);
+
+    tracker.rebind(toActionStateBindingMap(driving));
+    rebindGamepadPoll(poll, gamepadCodes(onFoot), gamepadCodes(driving), tracker);
+    expect(tracker.isDown("throttle")).toBe(true);
+    stepGamepadPoll(poll, [held], gamepadCodes(driving), options, tracker, null);
+    expect(tracker.isDown("horn")).toBe(true);
+    expect(tracker.isDown("throttle")).toBe(true);
+
+    const released: GamepadSample = { ...held, buttons: held.buttons.map(() => ({ pressed: false, value: 0 })) };
+    stepGamepadPoll(poll, [released], gamepadCodes(driving), options, tracker, null);
+    expect(tracker.isDown("horn")).toBe(false);
+    expect(tracker.isDown("throttle")).toBe(true);
+    tracker.handleUp("KeyW");
+    expect(tracker.isDown("throttle")).toBe(false);
+  });
 });
+
+describe("routeGamepads", () => {
+  const idle = (): GamepadSample => ({ axes: [0.3], buttons: [{ pressed: false, value: 0 }], connected: true });
+  const pressing = (): GamepadSample => ({ axes: [0], buttons: [{ pressed: true, value: 1 }], connected: true });
+
+  test("one seat sends every pad to the primary player, even before a button press", () => {
+    const seats = createLocalPlayers({ maxSlots: 1, primaryUserId: "u1" });
+    const route = routeGamepads([idle(), idle()], seats, emptyGamepadRoute());
+    expect(route.primary.every((pad) => pad !== null)).toBe(true);
+    expect(route.seatCount).toBe(0);
+    expect(route.joined).toEqual([]);
+  });
+
+  test("a second pad hot-joins its own seat on a button press, not on stick drift", () => {
+    const seats = createLocalPlayers({ maxSlots: 2, primaryUserId: "u1" });
+    const route = emptyGamepadRoute();
+    routeGamepads([pressing(), idle()], seats, route);
+    expect(route.primary[0]).not.toBeNull();
+    expect(route.primary[1]).toBeNull();
+    expect(route.seatCount).toBe(0);
+    routeGamepads([idle(), pressing()], seats, route);
+    expect(route.joined.map((slot) => slot.userId)).toEqual(["u1:p2"]);
+    expect(route.seatCount).toBe(1);
+    expect(route.seats[0]?.slotId).toBe("slot:1");
+    routeGamepads([idle(), idle()], seats, route);
+    expect(route.joined).toEqual([]);
+    expect(route.seatCount).toBe(1);
+  });
+});
+

@@ -2,6 +2,7 @@ import { createCommandRegistry } from "../commands/commandRegistry";
 import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
 import { groundFieldFor } from "../world/terrain";
+import { createWorldSolids, structureSolids } from "../world/worldSolids";
 import { createGameEvents, type GameEventMap, type GameEvents } from "../game/events";
 import { createGameFeed } from "../game/feed";
 import { setGamePhase } from "../game/gamePhase";
@@ -99,6 +100,10 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const activeUserId = () => actingUserId ?? player.userId;
   const time = createSimClock({ config: definition.time, onChange: signal.notify });
   const ground = groundFieldFor(definition.world);
+  const solids = createWorldSolids();
+  if (definition.world?.kind === "environment") {
+    solids.set("environment:structures", structureSolids(definition.world, ground.sampleHeight));
+  }
 
   const rawEvents = createGameEvents();
   const events: GameEvents = {
@@ -317,6 +322,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       commandRegistry.run(ctxRef, name, args);
     },
     localUserId: player.userId,
+    rng,
     ...(definition.physics !== undefined ? { physics: definition.physics } : {}),
   });
   scene.setOnAfterSpawn((instanceId) => combat.death.revive(instanceId));
@@ -528,6 +534,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     world: {
       ground,
       groundHeightAt: ground.sampleHeight,
+      solids,
     },
     game: {
       territory: options.territory,

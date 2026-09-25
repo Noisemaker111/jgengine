@@ -5,6 +5,10 @@ import { createEditorSession, createEmptyEditorDocument } from "@jgengine/core/e
 import {
   animationMetaPatch,
   animationMode,
+  clearAnimGraph,
+  effectiveAnimGraph,
+  setTransitionDuration,
+  storeAnimGraph,
   defaultCustomConfig,
   readAnimationSetting,
   setAnimationMode,
@@ -142,5 +146,35 @@ describe("document round-trip (undo/redo safe)", () => {
     });
     // Override key drops to undefined (removed from the saved JSON document).
     expect(readAnimationSetting(markerMeta(session))).toBeUndefined();
+  });
+});
+
+describe("animation graph authoring", () => {
+  const clips = ["Idle", "Walking_A", "Running_A", "Hit_A", "Death_A", "1H_Melee_Attack_Chop"];
+
+  test("the effective graph follows the stored setting", () => {
+    expect(effectiveAnimGraph(undefined, clips)?.source).toBe("auto");
+    expect(effectiveAnimGraph("auto", clips)?.graph.layers[0]!.states.death).toEqual({ kind: "clip", clip: "Death_A", loop: false });
+    expect(effectiveAnimGraph("none", clips)).toBeNull();
+    const custom = effectiveAnimGraph({ states: { idle: "Idle", walk: "Walking_A" }, oneShots: { cheer: "Cheer" } }, clips);
+    expect(custom?.source).toBe("locomotion");
+    expect(Object.keys(custom!.graph.layers[0]!.states)).toEqual(["locomotion", "cheer"]);
+    expect(effectiveAnimGraph({ clip: "Idle" }, clips)).toBeNull();
+  });
+
+  test("editing a transition stores the graph, which survives a meta round trip", () => {
+    const derived = effectiveAnimGraph("auto", clips)!.graph;
+    const stored = setTransitionDuration("auto", derived, "base", 0, 0.35);
+    expect(stored.graph!.layers[0]!.transitions[0]!.duration).toBe(0.35);
+    const reread = readAnimationSetting(JSON.parse(JSON.stringify(animationMetaPatch(stored))));
+    expect(reread).toEqual(stored);
+    expect(effectiveAnimGraph(reread, clips)?.source).toBe("authored");
+  });
+
+  test("clearing the graph falls back to states, or to no override", () => {
+    const graph = effectiveAnimGraph("auto", clips)!.graph;
+    expect(clearAnimGraph(storeAnimGraph({ states: { idle: "Idle" } }, graph))).toEqual({ states: { idle: "Idle" } });
+    expect(clearAnimGraph(storeAnimGraph(undefined, graph))).toBeUndefined();
+    expect(clearAnimGraph("auto")).toBe("auto");
   });
 });

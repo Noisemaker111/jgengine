@@ -227,6 +227,7 @@ export const documentHandlers: Pick<
       ...(request.rotationY === undefined ? {} : { rotationY: request.rotationY }),
       ...(request.color === undefined ? {} : { color: request.color }),
       ...(request.label === undefined ? {} : { label: request.label }),
+      ...(request.catalogId === undefined ? {} : { catalogId: request.catalogId }),
       ...(request.meta === undefined ? {} : { meta: request.meta }),
     };
     // addMarker re-ids on a document-global collision, so read the created id back from the selection.
@@ -249,6 +250,7 @@ export const documentHandlers: Pick<
         ...(request.color === undefined ? {} : { color: request.color }),
         ...(request.label === undefined ? {} : { label: request.label }),
         ...(request.rotationY === undefined ? {} : { rotationY: request.rotationY }),
+        ...(request.catalogId === undefined ? {} : { catalogId: request.catalogId }),
         ...(merged === undefined ? {} : { meta: merged }),
       },
     });

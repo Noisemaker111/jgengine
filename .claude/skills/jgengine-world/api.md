@@ -18,14 +18,17 @@
 
 - `Blackboard` (type): type Blackboard = Record<string, BlackboardValue> — Named facts available to conditions, utilities, and actions.
 - `BlackboardValue` (type): type BlackboardValue = number | boolean | string — Scalar values stored in a decision graph blackboard.
+- `DecisionAbort` (type): type DecisionAbort<Context = unknown> = ( action: string, ctx: Context, params: Record<string, BlackboardValue> | undefined, blackboard: Blackboard, ) => void — Called when an action that was running last tick is not reached this tick, so it can release what it holds.
 - `DecisionAction` (type): type DecisionAction<Context = unknown> = ( ctx: Context, params: Record<string, BlackboardValue> | undefined, blackboard: Blackboard, ) => DecisionStatus — Callback implementation for an action node.
 - `DecisionGraph` (type): type DecisionGraph = DecisionNode — Root node for a serializable AI decision graph.
+- `DecisionGraphOptions` (interface): interface DecisionGraphOptions<Context = unknown> — Optional hooks and injected randomness for {@link createDecisionGraphRuntime}.
 - `DecisionGraphRuntime` (interface): interface DecisionGraphRuntime<Context = unknown> — Stateful evaluator for a serializable decision graph.
-- `DecisionGraphSnapshot` (interface): interface DecisionGraphSnapshot — Serializable state retained by an active decision graph.
-- `DecisionNode` (type): type DecisionNode = | { kind: "selector"; children: DecisionNode[] } | { kind: "sequence"; children: DecisionNode[] } | { kind: "condition"; key: string; op: DecisionOperator; value: BlackboardValue } | { kind: "action"; action: string; params?: Record<string, BlackboardValue> } | { kind: "utility";… — Serializable selector, sequence, condition, action, or utility node.
+- `DecisionGraphSnapshot` (interface): interface DecisionGraphSnapshot — Serializable state retained by an active decision graph. Fields besides `runningPath` are absent in older saves.
+- `DecisionNode` (type): type DecisionNode = | { kind: "selector"; children: DecisionNode[]; memory?: boolean } | { kind: "sequence"; children: DecisionNode[]; memory?: boolean } | { kind: "condition"; key: string; op: DecisionOperator; value: BlackboardValue } | { kind: "action"; action: string; params?: Record<string, Bla… — Serializable decision node. - `selector` runs children in order until one does not fail; `sequence` until one does not finish. With `memory`, a composite whose child was running last tick resumes at that child instead of re-checking earlier ones. - `condition` compares a blackboard key; `action` calls a registered action. - `utility` runs the option with the highest weighted blackboard score. - `invert` swaps `done` and `failed`; `cooldown` fails for `seconds` after its child finishes; `wait` stays running for `seconds`; `random` picks a child by `weights` from the runtime's `rng` and keeps it while it runs.
+- `DecisionNodeMemory` (interface): interface DecisionNodeMemory — Progress of a memory composite, `random` choice, or `wait` timer, keyed by node id (depth-first order).
 - `DecisionOperator` (type): type DecisionOperator = "=" | "==" | "!=" | "<" | "<=" | ">" | ">=" | "eq" | "ne" | "lt" | "lte" | "gt" | "gte" — Comparison operators supported by decision conditions.
 - `DecisionStatus` (type): type DecisionStatus = "running" | "done" | "failed" — Outcome reported when a decision graph evaluates.
-- `createDecisionGraphRuntime` (function): function createDecisionGraphRuntime<Context = unknown>(graph: DecisionGraph, actions: Record<string, DecisionAction<Context>>): DecisionGraphRuntime<Context> — Creates a deterministic runtime for a serializable decision graph.
+- `createDecisionGraphRuntime` (function): function createDecisionGraphRuntime<Context = unknown>(graph: DecisionGraph, actions: Record<string, DecisionAction<Context>>, options: DecisionGraphOptions<Context> = {}): DecisionGraphRuntime<Context> — Creates a deterministic runtime for a serializable decision graph.
 
 ## @jgengine/core/ai/difficulty
 
@@ -220,11 +223,32 @@
 - `AnimState` (type): type AnimState = | { kind: "clip"; clip: string; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend2D"; params: readonly [string, string]; … — A state plays one clip, or blends clips by one or two parameters.
 - `AnimTransition` (interface): interface AnimTransition — Edge between states. `from: "*"` matches any state except `to`.
 - `createAnimGraphRuntime` (function): function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime — Headless animation state machine and blend evaluator. It owns every clip's playback time and weight, so the renderer only seeks and weights actions on a mixer, and headless hosts, replays, and tests advance the same graph without three.js. Transitions are data (parameter comparisons and consumed triggers), layers can be masked or additive, and events fire by clip time, including across loop wraps.
+- `parseAnimGraph` (function): function parseAnimGraph(value: unknown): AnimGraph | undefined — Validates untrusted JSON (a saved scene document, a network payload) as an {@link AnimGraph}. Malformed states, transitions to unknown states, and bad conditions are dropped; a layer whose entry state is missing is dropped; the result is `undefined` when no layer survives.
 - `stateClipWeights` (function): function stateClipWeights(state: AnimState, params: AnimParams): Record<string, number> — Static clip weights of a state at `params`, before any crossfade.
+
+## @jgengine/core/anim/boneTexture
+
+- `BoneTextureClip` (interface): interface BoneTextureClip — One baked clip's rows in a {@link BoneTextureLayout}.
+- `BoneTextureClipInput` (interface): interface BoneTextureClipInput — A clip to bake: its name and length in seconds.
+- `BoneTextureInput` (interface): interface BoneTextureInput — Inputs for {@link planBoneTexture}.
+- `BoneTextureLayout` (interface): interface BoneTextureLayout — Where every bone matrix of every baked frame lives in a vertex-animation texture: one row per frame, four RGBA texels (matrix columns) per bone. Plain data, so a baked crowd can be cached, shipped or checked in a test without a renderer.
+- `BoneTextureSample` (interface): interface BoneTextureSample — Two texture rows around a playback time and the blend between them.
+- `planBoneTexture` (function): function planBoneTexture(input: BoneTextureInput): BoneTextureLayout — Plans a bone-matrix texture for a rig's clips. Throws when the rig or the clip set does not fit `maxTextureSize`; lower `fps` or bake fewer clips.
+- `sampleBoneTexture` (function): function sampleBoneTexture(clip: BoneTextureClip, fps: number, time: number, loop: boolean, out?: BoneTextureSample): BoneTextureSample — Finds the baked rows around `time` in a clip, wrapping when `loop` and holding the last pose otherwise. This is the CPU mirror of the crowd shader's lookup.
 
 ## @jgengine/core/anim/easing
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
+
+## @jgengine/core/anim/footPlacement
+
+- `FootGroundSample` (interface): interface FootGroundSample — One foot's animated ankle height and the ground found under it, both in world units.
+- `FootPlacement` (interface): interface FootPlacement — Result of {@link placeFeet}: where each ankle should go and how far the pelvis drops.
+- `FootPlacementInput` (interface): interface FootPlacementInput — Inputs for {@link placeFeet}. All heights are world units.
+- `LegChain` (interface): interface LegChain — Thigh → shin → foot bone names for one leg.
+- `RigBone` (interface): interface RigBone — A bone as {@link inferLegChains} sees it: its name and its parent's name.
+- `inferLegChains` (function): function inferLegChains(bones: readonly RigBone[]): LegChain[] — Finds leg chains on a humanoid rig by bone name: a thigh-like bone (`UpLeg`, `UpperLeg`, `Thigh`) with its first child and grandchild as shin and foot. Control, IK-target and twist bones are skipped. Returns chains in rig order; an empty array means the rig has no recognizable legs.
+- `placeFeet` (function): function placeFeet(input: FootPlacementInput, out?: FootPlacement): FootPlacement — Resolves foot placement for a rig whose clips were authored on flat ground at its origin. Each foot keeps its animated lift and moves by its ground's height above or below the origin, the sole is never left under the ground, and the pelvis drops by the deepest reach so both legs stay within length. Pure and allocation-light; the renderer applies the targets with {@link solveTwoBone}.
 
 ## @jgengine/core/anim/ikSolver
 
@@ -244,6 +268,7 @@
 - `LOCOMOTION_LAYER` (const): const LOCOMOTION_LAYER: "base" — Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`.
 - `LOCOMOTION_SPEED_PARAM` (const): const LOCOMOTION_SPEED_PARAM: "speed" — The parameter name the shell feeds with the entity's smoothed ground speed.
 - `LocomotionGraphInput` (interface): interface LocomotionGraphInput — Inputs for {@link locomotionGraph}: the idle/walk/run clip names and the one-shot table a rig config already carries.
+- `animGraphFromConfig` (function): function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined — The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its `states` and `oneShots` describe (a `string[]` one-shot uses its first variant). `undefined` for a single-clip config. The shell plays this and the editor inspects it, so both see the same graph.
 - `locomotionGraph` (function): function locomotionGraph(input: LocomotionGraphInput): AnimGraph — The engine's default locomotion as an authored graph: a speed-driven blend between idle, walk, and run, plus a state per one-shot that plays once and returns (or clamps for `death`). What `useModelAnimation` used to hardcode.
 
 ## @jgengine/core/area/areaEffectField
@@ -365,28 +390,30 @@
 - `ActionBindingMap` (type): type ActionBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBinding<TCode> > — ⚠ undocumented
 - `ActionBindingModes` (interface): interface ActionBindingModes<TCode extends string = string> { hold?: ActionBinding<TCode>[]; toggle?: ActionBinding<TCode>[] } — ⚠ undocumented
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
-- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
+- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim }`; `repeatMs` re-fires it while held (automatic weapons).
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void } — ⚠ undocumented · used by `stepGamepadPoll` (@jgengine/shell/input/gamepadPoll): One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish…
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `rebindGamepadPoll` (@jgengine/shell/input/gamepadPoll): Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes chang…
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput { pressed: boolean; down: boolean; repeatMs: number | undefined; lastFiredAt: number | null; now: number } — ⚠ undocumented
 
 ## @jgengine/core/input/actionContexts
 
 - `ActionContext` (interface): interface ActionContext — Named action-binding layer that may optionally expose lower layers.
+- `ActionContextAxisShape` (type): type ActionContextAxisShape = Omit<AxisShapeConfig, "scale"> — Serializable axis shaping a context may carry: {@link AxisShapeConfig} without the `scale` callback.
 - `ActionContextStack` (interface): interface ActionContextStack — Mutable layered action-map stack with snapshot and restore support.
 - `ActionContextStackSnapshot` (interface): interface ActionContextStackSnapshot — Serializable state for an action-context stack.
+- `ActiveContextAxes` (interface): interface ActiveContextAxes — Axis bindings and shaping merged across the active contexts.
 - `createActionContextStack` (function): function createActionContextStack(): ActionContextStack — Creates a serializable stack of layered action maps for menus and gameplay modes.
 
 ## @jgengine/core/input/axisInput
 
 - `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
 - `AxisBinding` (interface): interface AxisBinding { positive: readonly string[]; negative?: readonly string[]; pointer?: PointerAxisBinding } — ⚠ undocumented · used by `analogAxes` (@jgengine/core/input/axisShaper): Which axes an analog source is driving this frame: an axis counts as analog when any action bound to it has a published analog magnitude (`c…
-- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
+- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented · used by `DRIVE_AXIS_BINDINGS`: Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`.
 - `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
 - `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
 - `AxisRange` (interface): interface AxisRange { min: number; max: number } — ⚠ undocumented
-- `DRIVE_AXIS_BINDINGS` (const): const DRIVE_AXIS_BINDINGS: AxisBindingMap — ⚠ undocumented
+- `DRIVE_AXIS_BINDINGS` (const): const DRIVE_AXIS_BINDINGS: AxisBindingMap — Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`. `ctx.input.axis` samples action names instead, so bind it to the game's input actions (e.g. `moveForward`), not this map.
 - `GenericAxisChannel` (interface): interface GenericAxisChannel<TAxes extends string> — The held-key-ramping analog channel for any axis schema (#282.7) — drones (pitch/roll/strafe), boats, mechs — not just the four car axes `AxisChannel` hardcodes. Same semantics: keys ramp, `setAnalog` overrides, a binding's `pointer` source takes over while a pointer is active.
 - `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> { bindings: Record<TAxes, AxisBinding>; ranges?: Partial<Record<TAxes, AxisRange>>; smoothing?: number } — ⚠ undocumented
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented
@@ -446,6 +473,15 @@
 - `GestureSurfaceTracker` (interface): interface GestureSurfaceTracker { begin(x: number, y: number, nowMs: number): void; move(x: number, y: number): readonly string[]; end(x: number, y: number, nowMs: number): readonly string[]; cancel(): void; isActive(): boolean } — ⚠ undocumented
 - `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning { tapMoveThresholdPx: number; tapMaxMs: number; swipeMinPx: number; swipeMinVelocity: number; dragStepPx: number } — ⚠ undocumented
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
+
+## @jgengine/core/input/haptics
+
+- `HapticChannels` (interface): interface HapticChannels — Named continuous rumble channels for one player, mixed by priority each frame. Game code sets levels from its own telemetry (engine rpm, road surface, impacts); the shell mixes and drives the pad.
+- `HapticChannelsOptions` (interface): interface HapticChannelsOptions — Options for {@link createHapticChannels}.
+- `HapticChannelsSnapshot` (interface): interface HapticChannelsSnapshot — Serializable channel state.
+- `HapticLevel` (interface): interface HapticLevel — Motor intensities, each `0..1`: `strong` is the low-frequency motor, `weak` the high-frequency one.
+- `HapticPulse` (interface): interface HapticPulse extends HapticLevel — A decaying one-shot on a channel: starts at `strong`/`weak` and fades to zero over `ms`.
+- `createHapticChannels` (function): function createHapticChannels(options: HapticChannelsOptions = {}): HapticChannels — Per-player haptic channels mixed by priority.
 
 ## @jgengine/core/input/inputBuffer
 
@@ -766,10 +802,11 @@
 - `ObstacleReachCache` (interface): interface ObstacleReachCache — Mutable reach cache; one per source, invalidated by object count.
 - `SolidObstacleSource` (interface): interface SolidObstacleSource — The slice of the scene's object store this query needs. Narrow on purpose: the scene context wires its own store here while it is still being constructed, `ctx.scene.object` satisfies it as-is, and a pure rules package with no `GameContext` to import can satisfy it from its own object list.
 - `createObstacleReachCache` (function): function createObstacleReachCache(): ObstacleReachCache — A fresh {@link ObstacleReachCache} for a caller that owns its own source.
+- `obstacleFromSolid` (function): function obstacleFromSolid(solid: WorldSolid): CollisionObstacle — A {@link WorldSolid} as a {@link CollisionObstacle}. Axis-aligned solids are one box; a yawed solid is cut into strips along its long axis, each fitted with an AABB, so a turned building does not block the street beside it the way a single enclosing box would.
 - `resolveSourceWalkerStep` (function): function resolveSourceWalkerStep(source: SolidObstacleSource, cache: ObstacleReachCache, position: EntityPosition, stepX: number, stepZ: number, options: { radius?: number; stepUpHeight?: number } = {}): { stepX: number; stepZ: number } — {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare {@link SolidObstacleSource} and a caller-owned {@link ObstacleReachCache}.
 - `resolveWalkerStep` (function): function resolveWalkerStep(ctx: GameContext, position: EntityPosition, stepX: number, stepZ: number, options: { radius?: number; stepUpHeight?: number } = {}): { stepX: number; stepZ: number } — Slide a walker's horizontal step against the same solid geometry that stops the player, returning the X/Z it may actually take this tick. A step into a wall is cut on the blocked axis and preserved on the other, exactly as {@link stepPlayerMovement} resolves the player's.
 - `slideStep` (function): function slideStep(position: EntityPosition, stepX: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius = DEFAULT_OBSTACLE_PLAYER_RADIUS, stepUpHeight = 0): { stepX: number; stepZ: number } — {@link resolveWalkerStep} against an already-gathered obstacle set.
-- `solidObstaclesNear` (function): function solidObstaclesNear(ctx: GameContext, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — Every blocking physical obstacle overlapping the box `position` ± `reachX`/`reachZ`, read from the scene's resolved colliders.
+- `solidObstaclesNear` (function): function solidObstaclesNear(ctx: GameContext, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — Every blocking physical obstacle overlapping the box `position` ± `reachX`/`reachZ`, read from the scene's resolved colliders and `ctx.world.solids`.
 - `sourceObstacleReach` (function): function sourceObstacleReach(source: SolidObstacleSource, cache: ObstacleReachCache): ObstacleReach — {@link solidObstacleReach} against a bare source and caller-owned cache.
 - `sourceObstaclesNear` (function): function sourceObstaclesNear(source: SolidObstacleSource, reach: ObstacleReach, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — {@link solidObstaclesNear} against a bare source and an already-resolved reach.
 
@@ -808,8 +845,9 @@
 
 ## @jgengine/core/nav/navFromEnvironment
 
-- `NavObstacleGrid` (interface): interface NavObstacleGrid { blockAabb(aabb: Aabb): void } — ⚠ undocumented · used by `populateNavGridFromEnvironment`: Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`.
-- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
+- `NavObstacleGrid` (interface): interface NavObstacleGrid { blockAabb(aabb: Aabb): void } — ⚠ undocumented · used by `populateNavGridFromEnvironment`: Blocks the footprint of every solid building an environment feature's `structures` generate — the same set `ctx.world.solids` holds for it.
+- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Blocks the footprint of every solid building an environment feature's `structures` generate — the same set `ctx.world.solids` holds for it. Returns the number of buildings blocked.
+- `populateNavGridFromSolids` (function): function populateNavGridFromSolids(grid: NavObstacleGrid, solids: Pick<WorldSolids, "all">): number — Blocks the XZ footprint of every solid in `solids` (usually `ctx.world.solids`) on `grid`, so NPC paths avoid exactly what movement and physics collide with. Returns the number of solids blocked.
 
 ## @jgengine/core/nav/navGrid
 
@@ -826,12 +864,16 @@
 ## @jgengine/core/nav/navMesh
 
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
-- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
+- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object.
 - `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
 - `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
+- `NavMeshQuery` (interface): interface NavMeshQuery — Cached, allocation-light queries over one {@link NavMeshData}.
+- `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
+- `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
 - `buildNavAdjacency` (function): function buildNavAdjacency(mesh: NavMeshData): NavMeshAdjacency[] — Build polygon adjacency from shared edges and explicit off-mesh links.
 - `closestPoint` (function): function closestPoint(mesh: NavMeshData, point: Vec3): Vec3 | null — Return the closest point on the mesh surface, or null for an empty mesh.
-- `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon centers, followed by deterministic visibility string-pulling.
+- `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
+- `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon portals with default area costs, straightened by a portal funnel. Use {@link createNavMeshQuery} to price areas.
 - `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
 
 ## @jgengine/core/nav/pathFollow
@@ -1063,11 +1105,11 @@
 - `KinematicSteeringTuning` (interface): interface KinematicSteeringTuning — Bicycle-model steering settings; all angles are radians.
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
 - `KinematicVehicleModifiers` (interface): interface KinematicVehicleModifiers — Per-tick multipliers layered over the base tuning — the transient overrides games apply for one frame without rebuilding the vehicle: nitro/boost, a braced-plow bonus, or entering a speed zone or slow field. Each defaults to `1` (no change), so passing nothing leaves the base tuning untouched.
-- `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions { position?: readonly [number, number, number]; heading?: number; surfaceFriction?: (x: number, z: number) => number; dragAt?: (x: number, z: number) => number; clampMove?: (from: readonly [number, number], to: readonly [number, number]) =>… — ⚠ undocumented
+- `KinematicVehicleOptions` (interface): interface KinematicVehicleOptions { position?: readonly [number, number, number]; heading?: number; surfaceFriction?: (x: number, z: number) => number; dragAt?: (x: number, z: number) => number; clampMove?: (from: readonly [number, number], to: readonly [number, number]) =>… — ⚠ undocumented · used by `createKinematicVehicle`: Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
 - `KinematicVehicleState` (interface): interface KinematicVehicleState — Serializable integrator state of a {@link KinematicVehicle}: what `restore` needs to resume bit-for-bit.
 - `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
-- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented
-- `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
+- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented · used by `createKinematicVehicle`: Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
+- `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
 
 ## @jgengine/core/physics/physicsBackend
 
@@ -1216,7 +1258,7 @@
 ## @jgengine/core/physics/worldColliders
 
 - `WorldColliderSync` (interface): interface WorldColliderSync — Handle for synchronizing authored static world collision with a physics backend.
-- `syncWorldColliders` (function): function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync — Mirrors static scene-object physical colliders and the context's ground field into a physics backend.
+- `syncWorldColliders` (function): function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync — Mirrors static scene-object physical colliders, `ctx.world.solids` and the context's ground field into a physics backend.
 
 ## @jgengine/core/procedural
 
@@ -1311,6 +1353,7 @@
 
 - `BehaviorAction` (type): type BehaviorAction = DecisionAction<BehaviorActionContext> — Callback used by a registered decision graph behavior action.
 - `BehaviorActionContext` (interface): interface BehaviorActionContext — Context supplied to a registered decision graph action.
+- `BehaviorActionOptions` (interface): interface BehaviorActionOptions — Optional hooks for a registered behavior action set.
 - `BehaviorControl` (interface): interface BehaviorControl — Per-entity control surface for the behavior runtime — pause/resume/disable/enable an instance, seek it to semantic progress, serialize/restore its state, and inspect it, all keyed by stable entity id without a full-world scan. Obtain it with {@link behaviorControl}.
 - `BehaviorInspection` (interface): interface BehaviorInspection — Inspection readout for editor/debug tooling, from {@link BehaviorControl.inspect}/{@link BehaviorControl.list}.
 - `BehaviorResumePolicy` (type): type BehaviorResumePolicy = "freeze" | "advance" — Catch-up policy applied when a paused instance resumes. `freeze` (default, deterministic) discards the time spent paused; `advance` silently fast-forwards the instance by the paused duration without emitting intermediate pose writes. Only patrol honors `advance`; wander treats it as `freeze`.
@@ -1318,7 +1361,7 @@
 - `BehaviorStatus` (type): type BehaviorStatus = "active" | "paused" | "disabled" — Whether a behavior instance advances and writes pose (`active`), is temporarily suspended retaining state (`paused`), or is held off until re-enabled (`disabled`).
 - `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. Instances that are paused or disabled through {@link behaviorControl} retain their state and are skipped. The shell/host call this each frame; a game never does.
 - `behaviorControl` (function): function behaviorControl(ctx: GameContext): BehaviorControl — Obtain the per-context {@link BehaviorControl} surface for suspending, resuming, seeking, serializing, and inspecting behavior instances by entity id — the lifecycle contract games use to hand pose ownership to possession/streaming/staggering code instead of bypassing the behavior runtime.
-- `registerBehaviorActions` (function): function registerBehaviorActions(id: string, actions: Record<string, BehaviorAction>): () => void — Register the named actions used by decision graph behavior descriptors.
+- `registerBehaviorActions` (function): function registerBehaviorActions(id: string, actions: Record<string, BehaviorAction>, options: BehaviorActionOptions = {}): () => void — Register the named actions used by decision graph behavior descriptors.
 
 ## @jgengine/core/scene/behaviors
 
@@ -1523,7 +1566,7 @@
 - `SceneKindDefinition` (interface): interface SceneKindDefinition<TResolved = unknown> — A registered scene kind — everything the editor/engine need to author and render a studio without bespoke code. `schema` drives the inspector + parse; `resolve` (optional) turns one document object into pure renderable data a matching `shell` renderer consumes; `add*` fields build the `+ Add` menu.
 - `SceneKindObject` (interface): interface SceneKindObject — The raw document object a resolver receives — shape shared by markers, volumes, and paths.
 - `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
-- `SceneKindTarget` (type): type SceneKindTarget = "path" | "marker" | "volume" — The parametric-studio seam: a registry that maps an editor object `kind` to a typed parameter schema (drives the inspector + `meta` parse/validation), an optional pure-data `resolve` (turns a document object into renderable data), and `+ Add` menu metadata. Registering a kind lets a third party ship a new authorable "studio" (pole line, water, bookcase) — schema + resolver here, a matching renderer in `shell` — without editing editor or engine files. Scatter is the proof adopter.
+- `SceneKindTarget` (type): type SceneKindTarget = "path" | "marker" | "volume" — Which document collection a scene kind lives in. Drives placement + which `meta` bag holds params.
 - `ScenePathShape` (type): type ScenePathShape = "area" | "line" — A closed-polygon area vs an open polyline, for path-target kinds. Ignored for marker/volume kinds.
 - `SeedParamField` (interface): interface SeedParamField — A seed string with a reroll button — same seed reproduces the same generated result.
 - `SelectParamField` (interface): interface SelectParamField — A dropdown of fixed string options.
@@ -1546,7 +1589,7 @@
 - `SceneRaycastInput` (interface): interface SceneRaycastInput { origin: EntityPosition; direction: EntityPosition; maxDistance: number; excludeInstanceIds?: ReadonlySet<string> | readonly string[]; filter?: SceneRaycastFilter; accept?: (hit: SceneRaycastHit) => boolean } — ⚠ undocumented
 - `SceneRaycastTargetKind` (type): type SceneRaycastTargetKind = "entity" | "object" | "terrain" | "wall" — ⚠ undocumented
 - `TerrainRaycastSource` (interface): interface TerrainRaycastSource { sampleHeight(x: number, z: number): number } — ⚠ undocumented
-- `WallSegment` (interface): interface WallSegment { id: string; a: readonly [number, number]; b: readonly [number, number]; yCenter?: number; halfHeight?: number; thickness?: number } — ⚠ undocumented
+- `WallSegment` (interface): interface WallSegment { id: string; a: readonly [number, number]; b: readonly [number, number]; yCenter?: number; halfHeight?: number; thickness?: number } — ⚠ undocumented · used by `wallSolids` (@jgengine/core/world/worldSolids): One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `createSceneRaycast` (function): function createSceneRaycast(deps: SceneRaycastDeps): SceneRaycastApi — ⚠ undocumented
 - `firstImpact` (function): function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null — First impact: nearest hit that blocks, or nearest hit if none block.
 - `hitsUntilBlocked` (function): function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] — Hits up to and including the first blocking collider (damage hitboxes before a wall stay).
@@ -1993,6 +2036,7 @@
 - `BandTrimOptions` (interface): interface BandTrimOptions extends JunctionGeometryOptions — Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance.
 - `BehaviorAction` (type): type BehaviorAction = DecisionAction<BehaviorActionContext> — Callback used by a registered decision graph behavior action.
 - `BehaviorActionContext` (interface): interface BehaviorActionContext — Context supplied to a registered decision graph action.
+- `BehaviorActionOptions` (interface): interface BehaviorActionOptions — Optional hooks for a registered behavior action set.
 - `BehaviorControl` (interface): interface BehaviorControl — Per-entity control surface for the behavior runtime — pause/resume/disable/enable an instance, seek it to semantic progress, serialize/restore its state, and inspect it, all keyed by stable entity id without a full-world scan. Obtain it with {@link behaviorControl}.
 - `BehaviorDescriptor` (type): type BehaviorDescriptor = | WanderBehavior | PatrolBehavior | PromptableBehavior | PlayerBehavior | DecisionGraphBehavior — ⚠ undocumented
 - `BehaviorInspection` (interface): interface BehaviorInspection — Inspection readout for editor/debug tooling, from {@link BehaviorControl.inspect}/{@link BehaviorControl.list}.
@@ -2006,7 +2050,7 @@
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit" | "solid"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
 - `BuildingIndex` (interface): interface BuildingIndex { readonly buildings: readonly GeneratedBuilding[]; at(point: Vec2): GeneratedBuilding | undefined; within(area: Aabb): GeneratedBuilding[]; nearest(point: Vec2): BuildingHit | undefined; isInside(point: Vec2): boolean; blockers(margin?: nu… — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
 - `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented · used by `BUILDING_STYLE_WALL_TONES` (@jgengine/core/world/buildings): Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block…
@@ -2190,7 +2234,7 @@
 - `KinematicSteeringTuning` (interface): interface KinematicSteeringTuning — Bicycle-model steering settings; all angles are radians.
 - `KinematicVehicle` (interface): interface KinematicVehicle — The pure-kinematic arcade car every racing game hand-rolled (#282.1): steer-yaw scaled by speed, throttle/brake acceleration, and a grip-curve lateral-slip bleed — no `PhysicsWorld`, no wheels, just the drift-friendly integration the three shipped racers proved out. Games keep their flavor (drift meters, boost, off-track rules) via `surfaceFriction`/`dragAt` hooks and the returned slip.
 - `KinematicVehicleStep` (interface): interface KinematicVehicleStep { position: readonly [number, number, number]; heading: number; forwardSpeed: number; lateralSpeed: number; slip: number; surface: number; gear: number; rpm: number; steerAngle: number; yawRate: number; longitudinalAcceleration: number; tra… — ⚠ undocumented · used by `tickDrivableVehicle`: Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
-- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented
+- `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented · used by `createKinematicVehicle`: Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
 - `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on grand plots emitted regardless of dial/city size.
 - `LOCK_ACTIONS` (const): const LOCK_ACTIONS: readonly LockAction[] — The five pick actions, in display order (shallow → deep).
 - `LineFormationOptions` (interface): interface LineFormationOptions — Options for {@link lineFormation}.
@@ -2234,9 +2278,12 @@
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
 - `NavGrid` (interface): interface NavGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly bounds: Aabb; readonly diagonal: boolean; isWalkable(col: number, row: number): boolean; setWalkable(col: number, row: number, walkable: boolean): void; blo… — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
-- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
+- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object.
 - `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
 - `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
+- `NavMeshQuery` (interface): interface NavMeshQuery — Cached, allocation-light queries over one {@link NavMeshData}.
+- `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
+- `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
 - `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
@@ -2582,13 +2629,14 @@
 - `createGrappleSwing` (function): function createGrappleSwing(config: GrappleSwingConfig = {}): GrappleSwing — Grappling-hook rope swing physics with anchor, pendulum motion, and reel-in.
 - `createInterestCensus` (function): function createInterestCensus(): InterestCensusAccumulator — Create a census accumulator so the caller can tally active/dormant gates during the loop it already runs, avoiding any separate full-world scan just to report scheduler metrics.
 - `createInterestGateState` (function): function createInterestGateState(config: InterestSchedulerConfig, phase = 0): InterestGateState — Create a dormant gate state, staggered by `phase` (`[0,1)`, typically {@link interestPhase} of the agent id) so siblings created together do not all fire their first active tick on the same frame.
-- `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — ⚠ undocumented
+- `createKinematicVehicle` (function): function createKinematicVehicle(initialTuning: KinematicVehicleTuning, options: KinematicVehicleOptions = {}): KinematicVehicle — Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
 - `createLeaderTrail` (function): function createLeaderTrail(config: LeaderTrailConfig): LeaderTrail — A trailing follower formation that chases a leader along its past path — snake/convoy trails.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 - `createMarkerSet` (function): function createMarkerSet<TMeta = unknown>(now: () => number = Date.now): MarkerSet<TMeta> — ⚠ undocumented
 - `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
+- `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 - `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
@@ -2717,7 +2765,7 @@
 - `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
 - `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
 - `polygonRegion` (function): function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> — An arbitrary closed polygon on the XZ plane. Candidates are drawn uniformly from the polygon's bounding box and gated by point-in-polygon `contains`, so a run's draw count stays fixed (the sampler's attempt budget bounds the rejection, not a hidden inner loop).
-- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
+- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Blocks the footprint of every solid building an environment feature's `structures` generate — the same set `ctx.world.solids` holds for it. Returns the number of buildings blocked.
 - `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
 - `proximityPrompt` (function): function proximityPrompt({ radius, display, invoke = null }: ProximityPromptConfig): ProximityPrompt — ⚠ undocumented
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
@@ -2730,7 +2778,7 @@
 - `recallSelectionBookmark` (function): function recallSelectionBookmark(bookmarks: SelectionBookmarks, key: string, selection: SelectionSet, options: RecallBookmarkOptions = {}): string[] — Compose a bookmark recall onto an active {@link SelectionSet}: optionally prune stale ids (updating the stored bookmark), fold the survivors into the selection by `mode`, then fire the caller's focus hook. This is the one place the store, the selection, and the camera meet — kept as an explicit helper, not a store side effect, so games opt into the exact replacement/merge and focus policy they want. Returns the surviving ids that were applied.
 - `rectRegion` (function): function rectRegion(area: Aabb, options: { distribution?: AreaDistribution; edgeThickness?: number } = {}): SampleRegion<Vec2> — An axis-aligned rectangle on the XZ plane. `"uniform"` spreads evenly (draws x then z); `"edge"` biases onto a boundary band of `edgeThickness` meters (perimeter-weighted side, then inward depth) — the two are never conflated, the caller opts in.
 - `registerAssetGenerator` (function): function registerAssetGenerator(definition: AssetGeneratorDefinition): void — Register a parametric asset generator. Idempotent per id (last wins); call at module load.
-- `registerBehaviorActions` (function): function registerBehaviorActions(id: string, actions: Record<string, BehaviorAction>): () => void — Register the named actions used by decision graph behavior descriptors.
+- `registerBehaviorActions` (function): function registerBehaviorActions(id: string, actions: Record<string, BehaviorAction>, options: BehaviorActionOptions = {}): () => void — Register the named actions used by decision graph behavior descriptors.
 - `registerSceneKind` (function): function registerSceneKind<TResolved>(definition: SceneKindDefinition<TResolved>): void — Register a scene kind — the plug-in point for a new parametric studio. Idempotent per `kind` (last registration wins), so a game's registration overrides a default. Call at module load; the editor inspector, `+ Add` menu, and `AuthoredScene` renderer lookup all read this registry.
 - `registerTriggerAction` (function): function registerTriggerAction(definition: TriggerActionDefinition): void — Declare a game action the editor can assign to volume/marker triggers. Idempotent per `id` (last registration wins). Call at module load next to catalogs.
 - `relativeBearing` (function): function relativeBearing(bearing: number, reference: number): number — Signed offset of `bearing` from `reference`, wrapped into (−π, π].
@@ -2854,6 +2902,13 @@
 - `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
 - `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
 - `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike, options: ResolveAuthoredObjectsOptions = {}): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places. Entity-spawn kinds (`mob`/`boss`) are skipped by default — they carry a `catalogId` for their entity definition, but are spawned via `authoredEntitySpawns`, not placed as static meshes.
+
+## @jgengine/core/world/authoredSolids
+
+- `AUTHORED_SOLID_LAYER_PREFIX` (const): const AUTHORED_SOLID_LAYER_PREFIX: "authored:" — Layer prefix `syncAuthoredSolids` owns in `ctx.world.solids`; one layer per document object.
+- `AuthoredSolidsDocumentLike` (interface): interface AuthoredSolidsDocumentLike — Minimal editor document shape {@link resolveAuthoredSolids} walks; any `EditorDocument` satisfies it.
+- `resolveAuthoredSolids` (function): function resolveAuthoredSolids(document: AuthoredSolidsDocumentLike, sampleHeight?: (x: number, z: number) => number): Map<string, readonly WorldSolid[]> — Solids for every document object whose scene kind declares `solids`, keyed by object id. Objects whose kind has no `solids` hook, or whose hook returns none, are left out.
+- `syncAuthoredSolids` (function): function syncAuthoredSolids(solids: WorldSolids, document: AuthoredSolidsDocumentLike, sampleHeight?: (x: number, z: number) => number): void — Write a document's studio solids into `solids` (usually `ctx.world.solids`), one `authored:<objectId>` layer per object, dropping authored layers the document no longer has. Call again whenever the document changes.
 
 ## @jgengine/core/world/authoredSpawn
 
@@ -3120,6 +3175,7 @@
 - `CityVehicleKind` (type): type CityVehicleKind = "car" | "van" | "truck" — Silhouette class of a parked vehicle — sizes the body the renderer instances.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `ResolvedRace` (interface): interface ResolvedRace — An instanced street race lifted out of the district's OWN streets: a closed lap through the city, with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
+- `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
 
 ## @jgengine/core/world/connectors
@@ -3180,7 +3236,7 @@
 - `BiomeSky` (interface): interface BiomeSky — Per-band sky/light override cross-faded along z by `createBiomeSkySampler`; unset fields fall through to the base sky.
 - `BiomesWorldConfig` (interface): interface BiomesWorldConfig extends WorldGridConfig { map: string; zones: string; bounds?: WorldBounds } — ⚠ undocumented · used by `biomes`: Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `BuildingEnvironmentConfig` (interface): interface BuildingEnvironmentConfig { count?: number; position?: EnvironmentVec2; footprint?: WorldBounds; stories?: readonly [number, number]; storyHeight?: number; spacing?: number; style?: BuildingStyle; palette?: BuildingPaletteOverrides; seed?: string; along?: BuildingFr… — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit" | "solid"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
 - `BuildingFrontageConfig` (interface): interface BuildingFrontageConfig — Street-aware placement for `building()`: instead of a grid scattered around `position`, lots are stepped along each road's frontage, offset by a consistent setback (a curb + sidewalk strip), and turned so every building FRONT faces its road. `footprint` (`w` = frontage width, `d` = depth) and `spacing` (along-road gap) are shared with the grid mode. Deterministic and bounded by `maxLots`.
 - `BuildingFrontageRoad` (interface): interface BuildingFrontageRoad — One road a `building({ along })` frontage lines with buildings: centerline + full width.
 - `EnvironmentArea` (interface): interface EnvironmentArea extends WorldBounds { h?: number; position?: EnvironmentVec2 } — ⚠ undocumented
@@ -3922,7 +3978,7 @@
 - `SurfacePaintStore` (interface): interface SurfacePaintStore { paint(target: PaintTarget, key: string, surface: string): void; clear(target: PaintTarget, key: string): void; get(target: PaintTarget, key: string): string | null; entries(target: PaintTarget): readonly (readonly [string, string])[]; sna… — ⚠ undocumented
 - `WallDrawTool` (interface): interface WallDrawTool { addPoint(point: Vec2, snap?: number): Vec2; undo(): void; close(): void; clear(): void; points(): readonly Vec2[]; segments(): WallSegment[]; isClosed(): boolean; footprint(): EnclosedFootprint | null; roof(config?: RoofConfig): RoofPlan … — ⚠ undocumented
 - `WallDrawToolState` (interface): interface WallDrawToolState — Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed.
-- `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented
+- `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented · used by `wallSolids` (@jgengine/core/world/worldSolids): One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/core/world/water
@@ -3983,6 +4039,26 @@
 - `WindZones` (interface): interface WindZones — Named, discrete wind zones over an ambient field — each zone runs a deterministic `StateSchedule` of wind states, so games get scheduled shifts with advance announcement (`forecastShift` drives the "gale in 12s" countdown) instead of one continuous field.
 - `WindZonesConfig` (interface): interface WindZonesConfig { zones: readonly WindZoneConfig[]; ambient?: WindField } — ⚠ undocumented
 - `createWindZones` (function): function createWindZones(config: WindZonesConfig): WindZones — ⚠ undocumented
+
+## @jgengine/core/world/worldSolids
+
+- `WallSolidOptions` (interface): interface WallSolidOptions — Wall height, thickness and base for {@link wallSolids}.
+- `WorldSolid` (interface): interface WorldSolid — One solid box in world space: the collision half of generated or authored world geometry.
+- `WorldSolids` (interface): interface WorldSolids — Static collision for world geometry that is not a scene object: generated buildings, studio volumes like `city`, wall runs. Solids live in named layers so a feature can replace or drop its own set without touching the rest. `solidObstaclesNear` (player and NPC movement), `syncWorldColliders` (physics backends) and `populateNavGridFromSolids` all read this one store.
+- `WorldSolidsState` (interface): interface WorldSolidsState — Serializable contents of a {@link WorldSolids}: every layer's solids by layer id.
+- `buildingSolids` (function): function buildingSolids(buildings: readonly GeneratedBuilding[], groundHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per generated building: its `bounds` footprint turned by `rotationY` about `center`, from the ground under its center up through its floors. `groundHeight` defaults to flat `0`.
+- `createWorldSolids` (function): function createWorldSolids(options: { cellSize?: number } = {}): WorldSolids — A store of static world solids in named layers.
+- `structureSolids` (function): function structureSolids(world: EnvironmentWorldFeature, groundHeight?: (x: number, z: number) => number): WorldSolid[] — Solids for every `structures` descriptor on an environment feature, skipping any marked `solid: false`.
+- `wallSolids` (function): function wallSolids(segments: readonly WallSegment[], options: WallSolidOptions): WorldSolid[] — One oriented solid per wall segment (see `wallSegments` in `world/walls`).
+- `worldSolidBounds` (function): function worldSolidBounds(solid: WorldSolid): { min: [number, number, number]; max: [number, number, number]; } — Yaw-expanded world AABB of an oriented solid box.
+- `worldSolidFootprint` (function): function worldSolidFootprint(solid: WorldSolid): Aabb — XZ footprint of a solid's world AABB, for 2D consumers such as nav grids.
+
+## @jgengine/navbake
+
+- `BakeNavMeshOptions` (interface): interface BakeNavMeshOptions — Walkable geometry and agent dimensions for {@link bakeNavMesh}.
+- `bakeNavMesh` (function): function bakeNavMesh(options: BakeNavMeshOptions): NavMeshData — Voxelize indexed triangles with recast and return the walkable surface as convex polygons in the engine's serializable nav-mesh format: eroded by `agentRadius`, cut where clearance is under `agentHeight`, and split at slopes over `maxSlope` or steps over `maxClimb`. Requires {@link initNavBake}.
+- `initNavBake` (function): function initNavBake(): Promise<void> — Load the recast WebAssembly module once; await before the first {@link bakeNavMesh}.
+- `navBakeReady` (function): function navBakeReady(): boolean — Whether {@link initNavBake} has finished and {@link bakeNavMesh} can run synchronously.
 
 ## @jgengine/rapier
 

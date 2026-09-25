@@ -136,6 +136,7 @@ function snapshotOf(runtime: SlotRuntime, resourceAvailable: number, group: Grou
  * A bar of cooldown-gated abilities the player fires by slot, tracking readiness and cooldown per ability.
  *
  * @capability ability-bar a bar of cooldown-gated abilities the player triggers by slot
+ * @capability global-cooldown share one cooldown across every ability slot (MMO global cooldown) with a cooldown group
  */
 export function createAbilityKit(configs: readonly AbilitySlotConfig[], options: AbilityKitOptions = {}): AbilityKit {
   const boundResource = options.resource;

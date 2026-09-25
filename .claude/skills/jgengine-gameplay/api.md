@@ -725,6 +725,7 @@
 - `ModelAnimationStates` (interface): interface ModelAnimationStates — Movement-state clip set for `ModelAnimationConfig.states`: the shell reads the entity's live speed each frame and crossfades between these clips, so a walking mob animates without any game-side driver.
 - `ModelAttachment` (interface): interface ModelAttachment — Parents a prop/weapon model to a named bone or node on the host model's rig — a sword on `handslot.r`, a spellbook offhand — following the bone's animated transform each frame.
 - `ModelConfig` (interface): interface ModelConfig { url: string; scale?: number; targetHeight?: number; y?: number; anchor?: "center" | "origin"; dims?: ModelDims; collisionMesh?: CollisionMeshData; material?: ModelMaterialOverride; shadows?: "cast" | "receive" | "both" | "none"; animation… — ⚠ undocumented · used by `PartMotionRig` (@jgengine/shell/render/PartMotion): Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`).
+- `ModelIkConfig` (interface): interface ModelIkConfig — Bone names and limits for {@link ModelConfig.ik}.
 - `ModelMaterialMaps` (interface): interface ModelMaterialMaps — Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`) layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any role may be omitted to keep the model's own map.
 - `ModelMaterialOverride` (interface): interface ModelMaterialOverride — Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph.
 - `ModelPart` (interface): interface ModelPart — Static child model stacked at a fixed local offset under its parent's transform — no bone/rig resolution, unlike `ModelAttachment`. Assembles a compound entity (e.g. a modular castle wall + tower + roof) from several single-mesh kit pieces.
@@ -737,7 +738,7 @@
 - `PlayerFovConfig` (interface): interface PlayerFovConfig — Player-facing FOV preference applied across every perspective camera rig. Orthographic projections ignore it.
 - `PlayerMovementConfig` (interface): interface PlayerMovementConfig — Movement-control levers for the shell-driven local player walk controller.
 - `PointLightingConfig` (interface): interface PointLightingConfig — A bounded dynamic point light in world space.
-- `PointerConfig` (interface): interface PointerConfig { moveCommand?: string; select?: boolean; selectFilter?: (entityId: string) => boolean; orderCommand?: string; contextMenu?: boolean; aim?: boolean; grabWorldItems?: boolean; pingCommand?: string; secondaryCommand?: string } — ⚠ undocumented
+- `PointerConfig` (interface): interface PointerConfig — Mouse/touch pointer bindings for `defineGame({ pointer })`.
 - `PresentationEffectsConfig` (interface): interface PresentationEffectsConfig — Per-channel combat presentation toggles for the 3D shell canvas. Missing keys default to enabled when the parent `presentationEffects` is an object.
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
 - `ShoulderCameraConfig` (interface): interface ShoulderCameraConfig — Over-the-shoulder combat rig (#25) — offset, ADS, shoulder swap, decoupled reticle.
@@ -1015,12 +1016,23 @@
 - `VfxInstanceStoreState` (interface): interface VfxInstanceStoreState — Plain JSON state of a {@link VfxInstanceStore}.
 - `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 
+## @jgengine/core/game/viewports
+
+- `ViewportCameraConfig` (interface): interface ViewportCameraConfig — The follow camera an extra viewport runs; the primary seat keeps the game's main camera rig.
+- `ViewportDef` (interface): interface ViewportDef — One viewport: which local seat it shows and where.
+- `ViewportPixels` (interface): interface ViewportPixels — A viewport in canvas pixels with a bottom-left origin, ready for `gl.setViewport`/`setScissor`.
+- `ViewportRect` (type): type ViewportRect = readonly [number, number, number, number] — A screen region as fractions of the canvas, `[x, y, width, height]` in `0..1` with the origin at the top left.
+- `ViewportsConfig` (interface): interface ViewportsConfig — `defineGame({ viewports })`: split-screen layout for local seats.
+- `resolveViewports` (function): function resolveViewports(config: ViewportsConfig | undefined, slots: readonly string[]): ViewportDef[] — The viewports to draw for the seats currently joined: the explicit layout filtered to joined seats, or an even split.
+- `splitViewports` (function): function splitViewports(slots: readonly string[], split: "vertical" | "horizontal" = "vertical"): ViewportDef[] — Even split-screen rects for seats in order: one fills the screen, two split side by side (or stacked), three put the first on a full-width top half, four make a 2×2 grid, more fill a grid row by row.
+- `viewportPixels` (function): function viewportPixels(rect: ViewportRect, width: number, height: number): ViewportPixels — Convert a top-left fractional rect into whole canvas pixels with a bottom-left origin; neighbours share edges exactly.
+
 ## @jgengine/core/game/worldItem
 
 - `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented
 - `DEFAULT_RARITY` (const): const DEFAULT_RARITY: "common" — ⚠ undocumented
 - `DEFAULT_SCATTER` (const): const DEFAULT_SCATTER: ScatterOptions — ⚠ undocumented
-- `RarityStyle` (interface): interface RarityStyle { color?: string; beam?: boolean; label?: string } — ⚠ undocumented
+- `RarityStyle` (interface): interface RarityStyle — Per-rarity look of a dropped item: beam, color and label. Set via `defineGame({ worldItem: { rarityStyle } })`.
 - `ResolveDeathDropsOptions` (interface): interface ResolveDeathDropsOptions { mode: "grant" | "world"; origin: EntityPosition; resolveRarity(itemId: string): string; resolveBaseType?(itemId: string): string; scatter?: ScatterOptions; rng?(): number; source?: string } — ⚠ undocumented
 - `ResolvedDeathDrops` (interface): interface ResolvedDeathDrops { worldSpawns: WorldItemSpawnInput[]; grants: Drop[] } — ⚠ undocumented
 - `ScatterOptions` (interface): interface ScatterOptions { radius: number; minRadius?: number; height?: number } — ⚠ undocumented
@@ -1040,8 +1052,8 @@
 - `AchievementUnlock` (interface): interface AchievementUnlock — Emitted the instant an achievement unlocks — wire to a toast, feed, or sound.
 - `AchievementView` (interface): interface AchievementView extends AchievementDef — A definition plus its live unlock/progress state — what UI renders.
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
-- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void } — ⚠ undocumented · used by `stepGamepadPoll` (@jgengine/shell/input/gamepadPoll): One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish…
+- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim }`; `repeatMs` re-fires it while held (automatic weapons).
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `rebindGamepadPoll` (@jgengine/shell/input/gamepadPoll): Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes chang…
 - `ActiveEffect` (interface): interface ActiveEffect — A live timed effect an engine is tracking until it expires or is cleaned up.
 - `AdvanceOptions` (interface): interface AdvanceOptions — Per-advance settings: the policy pipeline, caller context, rounding, and safety bounds.
 - `AdvanceResult` (interface): interface AdvanceResult — The outcome of {@link advanceLedger}: the new ledger plus applied transactions and events.
@@ -1049,7 +1061,7 @@
 - `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
 - `Auction` (interface): interface Auction — One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes.
 - `AuctionSettlement` (type): type AuctionSettlement = | { status: "sold"; auction: Auction; winnerId: string; price: number; houseCut: number; sellerProceeds: number; } | { status: "returned"; auction: Auction } — How one closed auction resolved during {@link AuctionBook.settleExpired}.
-- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
+- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented · used by `DRIVE_AXIS_BINDINGS` (@jgengine/core/input/axisInput): Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`.
 - `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
 - `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
@@ -1245,7 +1257,7 @@
 - `PingSystem` (interface): interface PingSystem { classify(hit: PointerHit): PingCategory; buildPayload(from: string, hit: PointerHit, category?: PingCategory): PingPayload; broadcast(payload: PingPayload): MapMarker; ping(from: string, hit: PointerHit, category?: PingCategory): PingPayl… — ⚠ undocumented · used by `createPingSystem`: Contextual ping/marker communication between teammates, classified by what was pinged.
 - `PlayableGame` (interface): interface PlayableGame<TUi = unknown, TWorldOverlay = unknown, TRenderEntity = never, TRenderObject = never, TViewmodel = unknown, TOverlay = TWorldOverlay> { game: GameDefinition; content: GameContextContent; loop: Required<Omit<GameLoop<GameContext>, "onPlayerLeave">> & Pick<GameLoop<GameContext>, "onPlayerLeave">; GameUI: TUi; presentation?: "3d" | "hud"; WorldOverlay?: TOverlay; environment… — ⚠ undocumented · used by `defineGame` (@jgengine/shell/defineGame): The one public authoring entry point: compose engine fields (systems, world, physics, input) and presentation fields (camera, HUD, audio, au…
 - `PointerAxisState` (interface): interface PointerAxisState { x: number; y: number; active: boolean } — ⚠ undocumented · used by `normalizePointerToAxis`: Normalize client coordinates against a surface rect into a `PointerAxisState`, clamped to `[-1, 1]` per axis.
-- `PointerConfig` (interface): interface PointerConfig { moveCommand?: string; select?: boolean; selectFilter?: (entityId: string) => boolean; orderCommand?: string; contextMenu?: boolean; aim?: boolean; grabWorldItems?: boolean; pingCommand?: string; secondaryCommand?: string } — ⚠ undocumented
+- `PointerConfig` (interface): interface PointerConfig — Mouse/touch pointer bindings for `defineGame({ pointer })`.
 - `PointerHit` (interface): interface PointerHit — Renderer-free result of a screen→world raycast. The shell's pointer service produces this from the cursor; core-side gameplay (item.use aim, click-to-move, ground-target abilities, pings) consumes it without touching three.js.
 - `PointerVec3` (type): type PointerVec3 = readonly [number, number, number] — ⚠ undocumented · used by `aimToPoint`: Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `PolicyContext` (interface): interface PolicyContext — Read-only context handed to every {@link ResourcePolicy} for a transaction.
@@ -1264,7 +1276,7 @@
 - `RankLeaderboardOptions` (interface): interface RankLeaderboardOptions — Options for {@link rankLeaderboard}. All optional.
 - `RankableRow` (interface): interface RankableRow — A single input score to rank. Accepts the raw shape produced by {@link LeaderboardRow} (a `LeaderboardRow` is assignable to this) as well as a minimal `{ userId, value }` pair with an optional display `label` the game owns.
 - `RankedEntry` (interface): interface RankedEntry — One render-ready row of the ranked table produced by {@link rankLeaderboard}.
-- `RarityStyle` (interface): interface RarityStyle { color?: string; beam?: boolean; label?: string } — ⚠ undocumented
+- `RarityStyle` (interface): interface RarityStyle — Per-rarity look of a dropped item: beam, color and label. Set via `defineGame({ worldItem: { rarityStyle } })`.
 - `RateLimit` (interface): interface RateLimit — Bounded firing budget over a sliding time window.
 - `RebindActionConfig` (interface): interface RebindActionConfig — One rebindable action as declared to {@link createRebindSession}. The `id` and `label` are FREE strings the session never interprets — the game owns their meaning and display text. `defaultCodes` is the authored binding the session resets back to.
 - `RebindConflict` (interface): interface RebindConflict — A group of actions bound to the same normalized code — the conflict this session detects.
@@ -1445,7 +1457,7 @@
 - `craft` (function): function craft(state: InventoryState, layout: InventoryLayout, traits: ItemTraits, recipe: RecipeDef, context: CraftContext = {}): CraftResult — ⚠ undocumented
 - `craftSeconds` (function): function craftSeconds(recipe: RecipeDef): number — ⚠ undocumented
 - `createAchievementTracker` (function): function createAchievementTracker(options: AchievementTrackerOptions): AchievementTracker — Tracks achievement/trophy unlocks over caller-driven events — counter goals (`progress`/`setProgress`) and boolean flags (`unlock`) — with score, completion, an `onUnlock` seam, and serializable `snapshot`/`restore`. State is plain data; the view list keeps a stable identity between changes so React can read it through `useSyncExternalStore` without re-projecting every frame.
-- `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
+- `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the item. Deterministic for a given `rng`.
 - `createAuctionBook` (function): function createAuctionBook(config: AuctionBookConfig): AuctionBook — Timed-bid auctions in the WoW/BDO auction-house mold: post an item with a start price, minimum increment, and optional buyout; bids escrow currency, outbid players are refunded into their collection box, bids near the close extend it (anti-snipe), and settlement pays the seller minus the house cut while the item lands in the winner's collection box. Unsold auctions return the goods to the seller's box. Wallet and inventory movement is the caller's job (mirrors `economy/listingBook`) — this primitive owns the auction lifecycle and the escrowed collection-box bookkeeping behind it.
 - `createBehaviourWorld` (function): function createBehaviourWorld(): BehaviourWorld — ⚠ undocumented
 - `createCardPile` (function): function createCardPile(config: CardPileConfig, initial?: Partial<Record<ZoneName, readonly string[]>>): CardPile — ⚠ undocumented
@@ -1715,13 +1727,13 @@
 - `AffixDef` (interface): interface AffixDef { id: string; stat: string; op?: AffixOp; roll: number | [number, number]; weight: number; namePart?: {position: "prefix" | "suffix"; text: string} } — ⚠ undocumented
 - `AffixOp` (type): type AffixOp = "add" | "mul" — ⚠ undocumented
 - `AffixPool` (interface): interface AffixPool { id: string; affixes: readonly AffixDef[] } — ⚠ undocumented
-- `AffixRoller` (interface): interface AffixRoller { rollRarity(rng: () => number): RarityTier; roll(base: ItemBaseDef, rarityId: string, rng: () => number): RolledItem; rollRandom(base: ItemBaseDef, rng: () => number): RolledItem } — ⚠ undocumented
+- `AffixRoller` (interface): interface AffixRoller { rollRarity(rng: () => number): RarityTier; roll(base: ItemBaseDef, rarityId: string, rng: () => number): RolledItem; rollRandom(base: ItemBaseDef, rng: () => number): RolledItem } — ⚠ undocumented · used by `createAffixRoller`: Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the it…
 - `ItemBaseDef` (interface): interface ItemBaseDef { id: string; name: string; baseStats: Record<string, number>; pools: readonly string[] } — ⚠ undocumented
 - `RarityTier` (interface): interface RarityTier { id: string; weight: number; affixCount: number | [number, number]; statScale?: number; namePart?: string; pools?: readonly string[] } — ⚠ undocumented
 - `RolledAffix` (interface): interface RolledAffix { id: string; stat: string; op: AffixOp; value: number } — ⚠ undocumented
 - `RolledItem` (interface): interface RolledItem { baseId: string; rarity: string; name: string; affixes: readonly RolledAffix[]; stats: Record<string, number> } — ⚠ undocumented
-- `RollerConfig` (interface): interface RollerConfig { pools: readonly AffixPool[]; rarities: readonly RarityTier[] } — ⚠ undocumented
-- `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — ⚠ undocumented
+- `RollerConfig` (interface): interface RollerConfig { pools: readonly AffixPool[]; rarities: readonly RarityTier[] } — ⚠ undocumented · used by `createAffixRoller`: Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the it…
+- `createAffixRoller` (function): function createAffixRoller(config: RollerConfig): AffixRoller — Rolls randomized gear from a base item: a weighted rarity tier scales base stats and picks prefix/suffix affixes that name and modify the item. Deterministic for a given `rng`.
 - `seededRng` (function): function seededRng(seed: string | number): SeededRng — Deterministic pseudo-random generator seeded from a string or number — same seed, same sequence.
 
 ## @jgengine/core/item/durability
