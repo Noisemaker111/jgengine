@@ -14,11 +14,12 @@ Search [capabilities.md](capabilities.md) by intent before designing a primitive
 For a *connected* walkthrough that wires several primitives into a running loop, read the goal-oriented recipes under [recipes/](recipes/) — organized by composition seam (what connects to what), never by genre. Start there before reading a game's source to learn how pieces fit; a hybrid game is just a different composition of the same primitives.
 
 - [recipes/commanding-entities.md](recipes/commanding-entities.md) — select → order → tick → resolve: direct command over a group of entities (the command loop behind squad control, base-defense, herding, autobattle, or a mutating game's real-time phase).
+- [recipes/npc-senses.md](recipes/npc-senses.md) — perceive → remember → decide → route: perception memory written into a decision-graph blackboard, with nav-mesh routing (guards, mobs, pedestrians, police response).
 - [recipes/building-kit.md](recipes/building-kit.md) — bind the facade generator's part slots to real models: one massing, swappable art per style, blocks where the kit is silent.
 - [recipes/vehicle-feel.md](recipes/vehicle-feel.md) — feel target → handling metrics → physical knobs for a ground vehicle, plus the camera, sound and rumble hooks that hang off its telemetry.
 - [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, with the symptom → knob table for how it flies.
 - [recipes/controls.md](recipes/controls.md) — actions → layered contexts that rebind live → keyboard, touch and gamepad on the same actions → per-axis feel.
-- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: data-driven state machines, triggers and clip events, root motion, and foot IK that keeps feet on slopes.
+- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: data-driven state machines, triggers and clip events, root motion, foot IK that keeps feet on slopes, and instanced crowds.
 
 ## Canonical workflows
 
@@ -47,6 +48,8 @@ Per-instance state belongs on the placement, not in a game-owned map keyed by `i
 ### AI and navigation
 
 Compose perception, selection, planning/behavior, movement, and lifecycle independently. Inject randomness and scheduling. Use spatial indexes, interest tiers, or bounded candidate sets for scale.
+
+NPC decisions are a `decisionGraph` behavior: the graph and its blackboard are data, actions are registered by name, and perception or game systems write facts into `behaviorControl(ctx).blackboard(id)` rather than actions querying the world. Set `thinkInterval` so crowds think a few times a second, not every frame, and release movement or claims in `onAbort`.
 
 Route on a polygon nav mesh through one `createNavMeshQuery(mesh)` per mesh; price terrain and gate doors with `areaCosts` via `retune`, and keep `maxNodes` bounded so a long request returns a `partial` route instead of stalling a frame.
 

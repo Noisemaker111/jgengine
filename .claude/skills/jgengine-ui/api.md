@@ -997,7 +997,7 @@
 - `useShopStock` (function): function useShopStock(shop: ShopStock): ShopStockEntry[] — Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add, remove, restore). Returns the current entry list — a detached snapshot safe to map over.
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
 - `useT` (function): function useT(): (key: string, params?: TParams) => string — Return the translator bound to the current locale; the component re-renders when `setLocale` is called, so returned strings stay live.
-- `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
+- `useTarget` (function): function useTarget(fromInstanceId: string): string | null — The entity `fromInstanceId` currently targets (set by `ctx.scene.entity.setTarget` or `cycleTarget`), for a target frame.
 - `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useTimerRead` (function): function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null — Subscribe to a single timer and re-read it every animation frame while mounted, so a HUD readout stays live without the game hand-rolling interval math. Reuses one read object (allocation-aware). Returns `null` for an unknown id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
@@ -1301,7 +1301,7 @@
 - `useSceneEntityIds` (function): function useSceneEntityIds(): readonly string[] — Membership-only entity id list: the returned array keeps a stable identity across per-frame pose writes and only changes when an entity spawns, despawns, or the store is hydrated (#625). A marker mapped from these ids reads its own live pose imperatively (useFrame), so the actor tree no longer re-reconciles every frame. Prefer this over {@link useSceneEntities} for large scenes.
 - `useSceneObjectIds` (function): function useSceneObjectIds(): readonly string[] — Membership-only object id list — the object counterpart of {@link useSceneEntityIds}; stable across move/rotate/setVisual, changes only on place/remove.
 - `useSceneObjects` (function): function useSceneObjects(): readonly SceneObject[] — ⚠ undocumented
-- `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
+- `useTarget` (function): function useTarget(fromInstanceId: string): string | null — The entity `fromInstanceId` currently targets (set by `ctx.scene.entity.setTarget` or `cycleTarget`), for a target frame.
 - `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
@@ -1890,6 +1890,10 @@
 - `PlayerFovState` (interface): interface PlayerFovState { fov: number; bounds: PlayerFovBounds; enabled: boolean; persist: boolean; setFov: (value: number) => void; compose: (poseFov: number, mode?: "relative" | "absolute") => number } — ⚠ undocumented
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
+## @jgengine/shell/camera/Viewports
+
+- `ViewportHuds` (function): function ViewportHuds({ ctx, config, children, }: { ctx: GameContext; config?: ViewportsConfig; children: (slot: LocalPlayerSlot, viewport: ViewportDef) => ReactNode; }): React.JSX.Element — One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own health, prompts or score with `children(slot)`. Pass the same `viewports` config the game gave `defineGame`.
+
 ## @jgengine/shell/camera/cameraBlendMath
 
 - `CameraBlendScratch` (interface): interface CameraBlendScratch { fromPos: Vector3; fromQuat: Quaternion; toPos: Vector3; toQuat: Quaternion; fov: number; elapsed: number; duration: number } — ⚠ undocumented
@@ -2315,6 +2319,19 @@
 - `EntitySprite` (function): function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }): React.JSX.Element — ⚠ undocumented
 - `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
+
+## @jgengine/shell/render/SkinnedInstances
+
+- `BakeSkinnedCrowdOptions` (interface): interface BakeSkinnedCrowdOptions — Options for {@link bakeSkinnedCrowd}.
+- `BakedSkinnedCrowd` (interface): interface BakedSkinnedCrowd — A rig baked for instancing: one merged geometry, the bone-matrix texture and its layout.
+- `CrowdInstance` (interface): interface CrowdInstance — One crowd member: where it stands and what it plays.
+- `CrowdUniforms` (interface): interface CrowdUniforms — Uniforms shared by every material of one crowd; `crowdTime` advances once per frame.
+- `SkinnedCrowdSource` (interface): interface SkinnedCrowdSource — A rig to bake: a loaded scene with skinned meshes and its clips.
+- `SkinnedInstances` (function): function SkinnedInstances({ url, instances, clips, once, fps, modelScale = 1, castShadow = true, receiveShadow = true, timeScale = 1, }: SkinnedInstancesProps): React.JSX.Element — Renders many animated copies of one rigged model in a single instanced draw per material: the rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs blending, IK or attachments stays an entity model.
+- `SkinnedInstancesProps` (interface): interface SkinnedInstancesProps — Props for {@link SkinnedInstances}.
+- `bakeSkinnedCrowd` (function): function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinnedCrowdOptions = {}): BakedSkinnedCrowd — Bakes a rig for {@link SkinnedInstances}: merges its skinned meshes into one geometry in bind space, samples every requested clip at `fps`, and writes each bone's model-space skinning matrix into a float texture laid out by `planBoneTexture`. Meshes with several materials keep only the first. Exported for tests and custom crowd renderers.
+- `createCrowdUniforms` (function): function createCrowdUniforms(baked: BakedSkinnedCrowd): CrowdUniforms — Builds the uniforms a crowd material reads: the texture and per-clip start, frames, fps and loop.
+- `patchCrowdMaterial` (function): function patchCrowdMaterial<T extends THREE.Material>(material: T, uniforms: CrowdUniforms): T — Patches a material so each instance skins itself from the crowd texture: per-instance `crowdPlay` is (clip index, time offset, speed). Works on any built-in material, the depth material for shadows included.
 
 ## @jgengine/shell/render/assetBase
 

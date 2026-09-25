@@ -9,6 +9,7 @@ import type { Aim } from "@jgengine/core/scene/spatial";
 import { steerYaw } from "@jgengine/core/movement/steering";
 import { stepPlayerMovement, resolvePlayerMovementTuning } from "@jgengine/core/movement/playerMovement";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
+import { seatCameraYaw } from "../camera/Viewports";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import { resolveCommandSink, type CommandSink } from "../commandSink";
@@ -224,6 +225,7 @@ export function FrameDriver({
             { held: seat.input.held(), pointer: null, analog: seat.input.analog() },
             stepDt,
             movementTuning,
+            seatCameraYaw(ctx, seat.userId),
           );
         }
       }

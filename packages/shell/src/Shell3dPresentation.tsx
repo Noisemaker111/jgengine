@@ -92,6 +92,7 @@ import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "./input/gamepadSource";
+import { SplitScreenRenderer, useSeatViewports } from "./camera/Viewports";
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
@@ -416,6 +417,8 @@ export function Shell3dPresentation({
   };
 
   const controlsActive = playControlsActive(ctx);
+  const seatViewports = useSeatViewports(ctx, playable.viewports);
+  const splitScreen = playable.viewports !== undefined && seatViewports.length > 1;
   const settingsDisabled = playable.settings === false;
   const settingsConfig: GameSettingsConfig =
     playable.settings === false || playable.settings === undefined ? {} : playable.settings;
@@ -673,7 +676,10 @@ export function Shell3dPresentation({
                   seatsActive={() => !gateRef.current && playControlsActive(ctx)}
                 />
                 <DevtoolsRendererProbe />
-                {resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
+                {splitScreen ? (
+                  <SplitScreenRenderer ctx={ctx} viewports={seatViewports} config={playable.viewports} mainCamera={playable.camera} />
+                ) : null}
+                {!splitScreen && resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (
                   <PostProcessing config={resolvedLook.postProcessing} quality={graphics.quality} stages={graphics.profile.postStages} />
                 ) : null}
               </Canvas>

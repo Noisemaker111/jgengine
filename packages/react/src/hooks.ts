@@ -139,6 +139,11 @@ export function useEntityStat(instanceId: string, statId: string): StatValue | n
   return useGameStore((ctx) => ctx.scene.entity.stats.get(instanceId, statId));
 }
 
+/**
+ * The entity `fromInstanceId` currently targets (set by `ctx.scene.entity.setTarget` or `cycleTarget`), for a target frame.
+ *
+ * @capability current-target read the player's selected target (click or tab target) to drive a target frame
+ */
 export function useTarget(fromInstanceId: string): string | null {
   return useGameStore((ctx) => ctx.scene.entity.getTarget(fromInstanceId));
 }
