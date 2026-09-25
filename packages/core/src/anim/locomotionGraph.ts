@@ -1,3 +1,4 @@
+import type { ModelAnimationConfig } from "../game/playableGame";
 import type { AnimGraph, AnimLayer, AnimTransition } from "./animGraph";
 
 /** Inputs for {@link locomotionGraph}: the idle/walk/run clip names and the one-shot table a rig config already carries. */
@@ -47,4 +48,31 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
   return {
     layers: [{ id: LOCOMOTION_LAYER, entry: "locomotion", states, transitions }],
   };
+}
+
+/**
+ * The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its
+ * `states` and `oneShots` describe (a `string[]` one-shot uses its first variant). `undefined` for a
+ * single-clip config. The shell plays this and the editor inspects it, so both see the same graph.
+ *
+ * @capability locomotion-graph resolve the animation graph a model config plays
+ */
+export function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined {
+  if (config.graph !== undefined) return config.graph;
+  const states = config.states;
+  if (states === undefined) return undefined;
+  const oneShots: Record<string, string> = {};
+  for (const [event, spec] of Object.entries(config.oneShots ?? {})) {
+    const clip = typeof spec === "string" ? spec : spec[0];
+    if (clip !== undefined) oneShots[event] = clip;
+  }
+  return locomotionGraph({
+    idle: states.idle,
+    walk: states.walk,
+    ...(states.run === undefined ? {} : { run: states.run }),
+    walkSpeed: states.walkSpeed,
+    runSpeed: states.runSpeed,
+    fadeSec: states.fadeSec,
+    ...(Object.keys(oneShots).length === 0 ? {} : { oneShots }),
+  });
 }

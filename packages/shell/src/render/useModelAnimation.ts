@@ -7,11 +7,12 @@ import { resolveAnimationConfig } from "@jgengine/core/game/clipRoles";
 import {
   ANIM_PARAMS_KEY,
   createAnimGraphRuntime,
+  type AnimClipOutput,
   type AnimGraph,
   type AnimGraphRuntime,
   type AnimParamValue,
 } from "@jgengine/core/anim/animGraph";
-import { LOCOMOTION_SPEED_PARAM, locomotionGraph } from "@jgengine/core/anim/locomotionGraph";
+import { animGraphFromConfig, LOCOMOTION_SPEED_PARAM } from "@jgengine/core/anim/locomotionGraph";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 function graphClipNames(graph: AnimGraph): Set<string> {
@@ -81,6 +82,46 @@ interface GraphPlayback {
 /** Per-layer action key: a masked or additive layer needs its own clip variant even for a clip another layer plays. */
 function actionKey(layer: string, clip: string): string {
   return `${layer}:${clip}`;
+}
+
+function applyGraphClips(actions: ReadonlyMap<string, THREE.AnimationAction>, clips: readonly AnimClipOutput[]): void {
+  for (const action of actions.values()) action.weight = 0;
+  for (const entry of clips) {
+    const action = actions.get(actionKey(entry.layer, entry.clip));
+    if (action === undefined) continue;
+    action.weight += entry.weight;
+    action.time = entry.time;
+  }
+}
+
+/** A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}. */
+export interface GraphPose {
+  /** Clip durations read from the rig, the `clips` argument `runtime.advance` expects. */
+  durations: Readonly<Record<string, { duration: number }>>;
+  /** Poses the rig with one advance's clip weights and times. */
+  apply(clips: readonly AnimClipOutput[]): void;
+  dispose(): void;
+}
+
+/**
+ * Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered
+ * clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as
+ * the editor's graph preview, poses the rig from the runtime's output.
+ */
+export function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose {
+  const mixer = new THREE.AnimationMixer(scene);
+  const playback = buildGraphPlayback(scene, mixer, graph, clips);
+  return {
+    durations: playback.durations,
+    apply(output) {
+      applyGraphClips(playback.actions, output);
+      mixer.update(0);
+    },
+    dispose() {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(scene);
+    },
+  };
 }
 
 function buildGraphPlayback(scene: THREE.Object3D, mixer: THREE.AnimationMixer, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPlayback {
@@ -177,24 +218,8 @@ export function useModelAnimation(
   const graphRef = useRef<GraphPlayback | null>(null);
   const states = animation?.states;
   const oneShots = animation?.oneShots;
-  const graph = useMemo(() => {
-    if (animation?.graph !== undefined) return animation.graph;
-    if (states === undefined) return undefined;
-    const graphOneShots: Record<string, string> = {};
-    for (const [event, spec] of Object.entries(oneShots ?? {})) {
-      const clip = typeof spec === "string" ? spec : spec[0];
-      if (clip !== undefined) graphOneShots[event] = clip;
-    }
-    return locomotionGraph({
-      idle: states.idle,
-      walk: states.walk,
-      ...(states.run === undefined ? {} : { run: states.run }),
-      walkSpeed: states.walkSpeed,
-      runSpeed: states.runSpeed,
-      fadeSec: states.fadeSec,
-      ...(Object.keys(graphOneShots).length === 0 ? {} : { oneShots: graphOneShots }),
-    });
-  }, [animation?.graph, states, oneShots]);
+  const authoredGraph = animation?.graph;
+  const graph = useMemo(() => animGraphFromConfig({ graph: authoredGraph, states, oneShots }), [authoredGraph, states, oneShots]);
 
   useEffect(() => {
     if (animation === undefined || clips.length === 0) {
@@ -287,13 +312,7 @@ export function useModelAnimation(
       }
       params[LOCOMOTION_SPEED_PARAM] = playback.smoothedSpeed;
       const out = playback.runtime.advance(delta * (animation?.timeScale ?? 1), params, playback.durations);
-      for (const action of playback.actions.values()) action.weight = 0;
-      for (const entry of out.clips) {
-        const action = playback.actions.get(actionKey(entry.layer, entry.clip));
-        if (action === undefined) continue;
-        action.weight += entry.weight;
-        action.time = entry.time;
-      }
+      applyGraphClips(playback.actions, out.clips);
       mixerRef.current.update(0);
       const currentPlayback = graphRef.current;
       if (currentPlayback !== null && currentPlayback.rootBone !== null && currentPlayback.rootBindPosition !== null) {

@@ -1,4 +1,6 @@
-import { rolesFromClips } from "@jgengine/core/game/clipRoles";
+import { parseAnimGraph, type AnimGraph } from "@jgengine/core/anim/animGraph";
+import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph";
+import { resolveAnimationConfig, rolesFromClips } from "@jgengine/core/game/clipRoles";
 
 /**
  * Authoring model for a placement's `ModelConfig.animation`, persisted on a marker's `meta.animation`
@@ -50,6 +52,8 @@ export interface AuthoredAnimationConfig {
   timeScale?: number;
   states?: AuthoredAnimationStates;
   oneShots?: Record<string, string>;
+  /** A stored animation graph; takes over from `states`/`oneShots` at play time. */
+  graph?: AnimGraph;
 }
 
 /** The value stored at `meta.animation`. */
@@ -87,6 +91,8 @@ export function readAnimationSetting(meta: Record<string, unknown> | undefined):
     }
     if (Object.keys(oneShots).length > 0) config.oneShots = oneShots;
   }
+  const graph = parseAnimGraph(value["graph"]);
+  if (graph !== undefined) config.graph = graph;
   return config;
 }
 
@@ -189,4 +195,72 @@ export function setOneShotClip(
  */
 export function animationMetaPatch(setting: AnimationSetting | undefined): { animation: AnimationSetting | undefined } {
   return { animation: setting };
+}
+
+/** Where the graph a placement plays comes from. */
+export type AnimGraphSource = "authored" | "locomotion" | "auto";
+
+/**
+ * The graph a placement plays at run time: its stored `graph`, else the locomotion graph of its
+ * custom `states`/`oneShots`, else the one clip roles derive for `"auto"` and no-override placements.
+ * `null` for `"none"`, a single-clip config, or a rig whose clips have no idle.
+ */
+export function effectiveAnimGraph(
+  setting: AnimationSetting | undefined,
+  clips: readonly string[],
+): { graph: AnimGraph; source: AnimGraphSource } | null {
+  if (setting === "none") return null;
+  if (setting !== undefined && setting !== "auto") {
+    if (setting.graph !== undefined) return { graph: setting.graph, source: "authored" };
+    const states = setting.states;
+    if (states?.idle === undefined) return null;
+    const graph = animGraphFromConfig({
+      states: { ...states, idle: states.idle, walk: states.walk ?? states.idle },
+      ...(setting.oneShots === undefined ? {} : { oneShots: setting.oneShots }),
+    });
+    return graph === undefined ? null : { graph, source: "locomotion" };
+  }
+  const resolved = resolveAnimationConfig("auto", clips);
+  const graph = resolved === undefined ? undefined : animGraphFromConfig(resolved);
+  return graph === undefined ? null : { graph, source: "auto" };
+}
+
+/** Stores `graph` on the placement, keeping its other fields; the stored graph wins at play time. */
+export function storeAnimGraph(setting: AnimationSetting | undefined, graph: AnimGraph): AuthoredAnimationConfig {
+  return normalizeConfig({ ...asConfig(setting), graph });
+}
+
+/** Removes a stored graph so `states`/`oneShots` (or clip roles) drive the placement again. */
+export function clearAnimGraph(setting: AnimationSetting | undefined): AnimationSetting | undefined {
+  if (setting === undefined || setting === "auto" || setting === "none") return setting;
+  const { graph: _graph, ...rest } = setting;
+  const next = normalizeConfig(rest);
+  return Object.keys(next).length === 0 ? undefined : next;
+}
+
+/**
+ * Sets one transition's crossfade seconds in `graph` and stores the result, so editing a derived
+ * graph turns it into an authored one.
+ */
+export function setTransitionDuration(
+  setting: AnimationSetting | undefined,
+  graph: AnimGraph,
+  layerId: string,
+  index: number,
+  duration: number,
+): AuthoredAnimationConfig {
+  const next: AnimGraph = {
+    ...graph,
+    layers: graph.layers.map((layer) =>
+      layer.id !== layerId
+        ? layer
+        : {
+            ...layer,
+            transitions: layer.transitions.map((transition, i) =>
+              i === index ? { ...transition, duration: Math.max(0, Number.isFinite(duration) ? duration : 0) } : transition,
+            ),
+          },
+    ),
+  };
+  return storeAnimGraph(setting, next);
 }

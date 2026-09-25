@@ -93,6 +93,17 @@ export const STASH_KIND = definePlaceableMarkerKind({
 - **Load path:** register from a module the editor loads. Importing your `editorKinds.ts` (side effect) from `editorLayers.ts` covers it — `loadGameLayers` imports `editorLayers.ts` for every editor session, and the game runtime imports it too, so one registration serves both.
 - `fields` also gives `add_marker`/`set_marker`/`set_meta` a schema to validate that kind's `meta` against; omit `fields` for a bare placeable marker.
 
+## Placement animation
+
+A placed rigged asset's animation override lives at `marker.meta.animation` and reaches the game through `markerAnimation` → `ModelConfig.animation`. It is `"auto"`, `"none"` or a config with `states`, `oneShots` and an optional stored `graph` (an `AnimGraph`, validated with `parseAnimGraph` on read).
+
+- **Inspector → Animation** picks the mode and binds idle/walk/run and one-shot clips.
+- **Animation workspace → Graph** (rail button, or the bottom dock's Animation tab) shows the graph the selected placement plays: layers, states and transitions, with the source (stored, built from states, or derived from clip roles).
+  - The scrub slider replays the graph runtime from its entry states. Parameter sliders come from the graph's blend points and conditions.
+  - Trigger buttons record a press at the playhead, so scrubbing back and forth replays it. The rig at the camera focus is posed from the runtime's output through the shell's `createGraphPose`.
+  - Editing a crossfade, or **Store graph**, writes the graph to `meta.animation.graph` as one undoable edit. **Use derived graph** drops it.
+- Scripted: `set_meta` with `{ "animation": { "graph": { ... } } }` on the marker; see the `jgengine-world` recipe `character-animation.md` for the graph shape.
+
 ## Pure API (`@jgengine/editor`)
 
 ```ts

@@ -9,6 +9,7 @@
   - `locomotionGraph({ idle, walk, run, walkSpeed, runSpeed, fadeSec, oneShots })` builds the idle/walk/run blend plus one-shots; `states`/`oneShots` configs are converted through it.
   - Upper-body actions (aim, reload, wave) go on a second layer with `mask: ["spine", "arm", ...]` bone prefixes, `additive` for recoil or breathing on top of the base.
   - `createAnimGraphRuntime(graph)` runs the same graph headless: `advance(dt, params, clips)`, `trigger`, `snapshot`/`restore`, `retune`. Test transitions with it before looking at pixels.
+- **Authoring in the editor.** A placement's graph is inspected, previewed and stored from the editor's Animation workspace (see `jgengine-editor` reference, "Placement animation"). `animGraphFromConfig(config)` gives the graph any config plays, so tools and tests see what the shell plays. `parseAnimGraph(json)` validates a stored one.
 - **Parameters.** The shell feeds the entity's smoothed ground speed as `speed`. Anything else (aiming, crouched, strafe x/y) goes on the entity blackboard under `ANIM_PARAMS_KEY`.
 - **Triggers.** `ctx.game.playEntityAnimation(id, name)` arms a trigger; `hit` and `death` arm from their combat events.
 - **Events.** `graph.events: [{ clip, atSec, name }]` emit `animation.event` when a clip crosses that time. Hook footstep audio, the damage frame of a swing or the magazine swap of a reload to the event, not to a timer.
