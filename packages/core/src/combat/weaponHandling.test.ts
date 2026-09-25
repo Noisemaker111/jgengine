@@ -102,4 +102,37 @@ describe("measureWeapon", () => {
     expect(shotgunReport.timeToKill).toBeCloseTo(0.9, 9);
     expect(shotgunReport.adsSeconds).toBeGreaterThan(rifleReport.adsSeconds);
   });
+
+  test("time-to-kill at a range weighs each shot's cone against the target and the game's falloff", () => {
+    const rifleFar = measureWeapon(() => createWeaponHandling(rifle), { interval: 0.1, damage: 25, targetHealth: 100, range: 30, stance: { ads: true } });
+    const shotgunClose = measureWeapon(() => createWeaponHandling(shotgun), { interval: 0.9, burst: 5, damage: 12, pellets: 10, targetHealth: 100, range: 5 });
+    const shotgunFar = measureWeapon(() => createWeaponHandling(shotgun), { interval: 0.9, burst: 5, damage: 12, pellets: 10, targetHealth: 100, range: 30 });
+    expect(rifleFar.shotsToKill).toBe(4);
+    expect(shotgunClose.shotsToKill).toBe(1);
+    expect(shotgunClose.timeToKill).toBe(0);
+    expect(shotgunFar.shotsToKill).toBeGreaterThan(10);
+    expect(shotgunFar.timeToKill).toBeGreaterThan(rifleFar.timeToKill * 20);
+    const falloff = measureWeapon(() => createWeaponHandling(rifle), {
+      interval: 0.1,
+      damage: 25,
+      targetHealth: 100,
+      range: 30,
+      stance: { ads: true },
+      damageAt: (range) => (range > 20 ? 0.5 : 1),
+    });
+    expect(falloff.shotsToKill).toBe(8);
+    expect(falloff.timeToKill).toBeCloseTo(0.7, 9);
+  });
+
+  test("reports spread per shot and climb over a magazine, softer when aimed", () => {
+    const hip = measureWeapon(() => createWeaponHandling(rifle), { interval: 0.1, burst: 30 });
+    const aimed = measureWeapon(() => createWeaponHandling(rifle), { interval: 0.1, burst: 30, stance: { ads: true } });
+    expect(hip.spreadByShot).toHaveLength(30);
+    expect(hip.spreadByShot[0]).toBe(hip.firstShotSpread);
+    expect(hip.spreadByShot[9]).toBe(hip.tenthShotSpread);
+    expect(hip.spreadByShot[29]).toBeCloseTo(deg(2.5), 9);
+    expect(aimed.spreadByShot[29]).toBeCloseTo(deg(2.5) * 0.35, 9);
+    expect(hip.burstClimb).toBeGreaterThan(deg(1));
+    expect(aimed.burstClimb).toBeLessThan(hip.burstClimb / 2);
+  });
 });

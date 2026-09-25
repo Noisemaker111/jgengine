@@ -236,11 +236,15 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `vfxPresets` (const) · `import { vfxPresets } from "@jgengine/core/combat"`
 
+## weapon-feedback — turn weapon shots, recoil kick and impacts into per-tick feedback-mixer signals for camera shake, audio and rumble
+
+- `createWeaponFeedbackSignals` (function) · `import { createWeaponFeedbackSignals } from "@jgengine/core/combat/weaponFeedback"`
+
 ## weapon-handling — recoil patterns with camera kick and recovery, spread bloom, stance multipliers and ADS as serializable state
 
 - `createWeaponHandling` (function) · `import { createWeaponHandling } from "@jgengine/core/combat/weaponHandling"`
 
-## weapon-metrics — measure a weapon's feel as numbers — first and tenth shot spread, climb, reset time, ADS time, time-to-kill
+## weapon-metrics — measure a weapon's feel as numbers — spread per shot, climb over a magazine, reset time, ADS time, time-to-kill at a range
 
 - `measureWeapon` (function) · `import { measureWeapon } from "@jgengine/core/combat/weaponHandling"`
 

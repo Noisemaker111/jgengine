@@ -19,6 +19,9 @@ a parallel entity store. To bolt firing onto an existing game, compose
 `resolveDamageHit`) per the
 [portable weapon-plumbing recipe](recipes/portable-weapon-plumbing.md); never add
 a default gun or FPS kit.
+Tune how a weapon feels (recoil, bloom, ADS, shake and rumble) with the
+[weapon-feel recipe](recipes/weapon-feel.md): feel target → `measureWeapon`
+numbers → handling knobs, and `createWeaponFeedbackSignals` into the feedback mixer.
 
 Damage commitment accepts the same structural pool adapter while the matchup,
 receiver, interceptor, and status stages remain pure. Follow the

@@ -36,6 +36,8 @@ between (`--json` for structured output).
 
 ### Added
 
+- `createWeaponFeedbackSignals` (`@jgengine/core/combat/weaponFeedback`) turns `WeaponHandling.fire()` shots, their recoil kick and impacts into one-tick pulses (`shot`, `kick`, `impact`) plus the frame's `recoil`, `cameraKick`, `spread` and `ads`, keyed for `createFeedbackMixer` routes to camera shake, audio and rumble. It has `snapshot`/`restore`/`reset`.
+- `measureWeapon` now reports `spreadByShot` and `shotsToKill`, fires in a given `stance` (e.g. ADS), and computes time-to-kill at a `range`. Each projectile (`pellets` per shot) counts by the share of its spread cone the `targetRadius` covers, scaled by the game's `damageAt(range)` falloff. The recipe is `jgengine-combat` `weapon-feel.md`.
 - `measureFlight` (`@jgengine/core/physics/handlingProbe`) flies a `createRigidAircraft` through deterministic autopilot scenarios. It reports roll rate (deg/s), sustained turn rate, stall speed, climb rate, time to 90% throttle response and hands-off hover drift, so a flight feel target can be a test.
 - `RigidAircraftTuning.assists`: flight assists on the same actuators as the pilot, so full stick stays the pilot's.
   - `sas` per axis (`0..1`) damps rates and holds attitude or heading hands-off with a learned trim. On a helicopter it holds heading against rotor torque.
