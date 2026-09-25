@@ -449,6 +449,15 @@
 - `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning { tapMoveThresholdPx: number; tapMaxMs: number; swipeMinPx: number; swipeMinVelocity: number; dragStepPx: number } — ⚠ undocumented
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
 
+## @jgengine/core/input/haptics
+
+- `HapticChannels` (interface): interface HapticChannels — Named continuous rumble channels for one player, mixed by priority each frame. Game code sets levels from its own telemetry (engine rpm, road surface, impacts); the shell mixes and drives the pad.
+- `HapticChannelsOptions` (interface): interface HapticChannelsOptions — Options for {@link createHapticChannels}.
+- `HapticChannelsSnapshot` (interface): interface HapticChannelsSnapshot — Serializable channel state.
+- `HapticLevel` (interface): interface HapticLevel — Motor intensities, each `0..1`: `strong` is the low-frequency motor, `weak` the high-frequency one.
+- `HapticPulse` (interface): interface HapticPulse extends HapticLevel — A decaying one-shot on a channel: starts at `strong`/`weak` and fades to zero over `ms`.
+- `createHapticChannels` (function): function createHapticChannels(options: HapticChannelsOptions = {}): HapticChannels — Per-player haptic channels mixed by priority.
+
 ## @jgengine/core/input/inputBuffer
 
 - `BufferedAction` (interface): interface BufferedAction — One action's press history inside an {@link InputBuffer}.
