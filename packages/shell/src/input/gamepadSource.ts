@@ -27,14 +27,15 @@ function hasAnalog(analog: Readonly<Record<string, number>>): boolean {
   for (const _ in analog) return true;
   return false;
 }
-// `?gamepad` (or `?gamepad=N` for N pads) injects synthetic pads holding button 0, since headless
-// browsers cannot attach a real one; N > 1 exercises local-seat hot-join.
+// `?gamepad` (or `?gamepad=N` for N pads) injects synthetic pads holding Start (button 9), since
+// headless browsers cannot attach a real one; N > 1 hot-joins local seats.
 function syntheticPads(): readonly GamepadSample[] | null {
   if (typeof window === "undefined") return null;
   const param = new URLSearchParams(window.location.search).get("gamepad");
   if (param === null) return null;
   const count = Math.max(1, Math.min(4, Number(param) || 1));
-  return Array.from({ length: count }, () => ({ axes: [0, 0], buttons: [{ pressed: true, value: 1 }], connected: true }));
+  const buttons = Array.from({ length: 10 }, (_, index) => ({ pressed: index === 9, value: index === 9 ? 1 : 0 }));
+  return Array.from({ length: count }, () => ({ axes: [0, 0, 0, 0], buttons, connected: true }));
 }
 
 /** Poll browser gamepads and feed semantic actions into the shell tracker. */
