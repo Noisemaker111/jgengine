@@ -9,6 +9,7 @@
 - **Axes and feel per context.** A context can carry `axes` (axis bindings by action name) and `shaping` (serializable `createAxisShaper` profiles). Read them with `activeAxes()` when `version()` changes and `retune` the shaper, so on-foot movement and driving steer each get their own ramp and curve without a branch per mode.
 - **Pad feel.** `defineGame({ gamepad: { deadzone, curve, triggerDeadzone } })` shapes sticks and triggers before values reach `ctx.input`; the axis shaper only adds ramps and speed scaling on top.
 - **Timing.** `createInputBuffer` (`@jgengine/core/input/inputBuffer`) buffers early presses, coyote time, hold duration and double taps.
+- **Local seats (couch co-op).** `defineGame({ localPlayers: { maxSlots: 4 } })` opens seats on one screen. The first pad to press a button shares the primary seat with keyboard and touch (`claimPrimary: "none"` keeps the primary keyboard-only); each further pad hot-joins its own seat, and the shell calls `loop.onNewPlayer(ctx, { userId, isNew: true })` for it, so spawn with `player?.userId ?? ctx.player.userId`. Read a seat with `localPlayers(ctx).local(slotId)` → `{ userId, input }` (`@jgengine/core/runtime/localPlayers`); iterate `slots()` in `onTick`. Seats use the same bindings and contexts as the primary, and the shell's walk controller moves every seat's entity. The table has `snapshot`/`restore`/`retune`.
 - **Rebinding.** `createRebindSession` drives a conflict-aware "press a key" flow; overrides persist per game and apply under the context stack.
 
 ## Wiring a mode swap

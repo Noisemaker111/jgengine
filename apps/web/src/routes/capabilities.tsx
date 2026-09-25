@@ -246,13 +246,13 @@ function Capabilities() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/editor"
-            className="rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 px-5 py-2.5 text-sm font-semibold text-ink-deep shadow-[0_0_36px_-8px_rgba(52,211,153,0.7)] transition hover:shadow-[0_0_48px_-8px_rgba(52,211,153,0.9)]"
+            className="btn btn-primary"
           >
             The 3D editor →
           </Link>
           <Link
             to="/why"
-            className="rounded-xl border border-white/12 bg-white/[0.03] px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.06]"
+            className="btn btn-secondary"
           >
             Why JGengine
           </Link>
@@ -273,7 +273,7 @@ function Capabilities() {
                 {spec.credit && (
                   <a
                     href={spec.credit.url}
-                    className="mt-2.5 inline-flex items-center gap-1.5 font-mono text-[11px] text-slate-500 transition hover:text-emerald-300"
+                    className="mt-2.5 inline-flex items-center gap-1.5 font-mono text-[11px] text-faint transition hover:text-accent-text"
                   >
                     <span aria-hidden>♥</span>
                     {spec.credit.label}
@@ -282,9 +282,9 @@ function Capabilities() {
                 )}
               </div>
               <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-1" : ""}`}>
-                <p className="font-mono text-xs uppercase tracking-[0.2em] text-emerald-400/90">{spec.domain}</p>
-                <h3 className="mt-3 text-balance text-2xl font-bold tracking-tight text-slate-50">{spec.title}</h3>
-                <p className="mt-3 text-pretty leading-relaxed text-slate-400">{spec.blurb}</p>
+                <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-text">{spec.domain}</p>
+                <h3 className="mt-3 text-balance text-2xl font-bold tracking-tight text-fg">{spec.title}</h3>
+                <p className="mt-3 text-pretty leading-relaxed text-muted">{spec.blurb}</p>
                 <div className="mt-5">
                   <CodeBlock code={spec.code} filename={spec.filename} tone="good" />
                 </div>
@@ -292,7 +292,6 @@ function Capabilities() {
             </section>
           ))}
         </div>
-        <div className="hairline mx-auto mt-16 max-w-4xl sm:mt-20" />
       </section>
 
       <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
@@ -303,16 +302,16 @@ function Capabilities() {
               className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12"
             >
               <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-2" : ""}`}>
-                <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-emerald-400/90">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-sm">
+                <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-accent-text">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg border border-line bg-fg/[0.03] text-sm">
                     {cap.glyph}
                   </span>
                   {cap.domain}
                 </p>
-                <h2 className="mt-4 text-balance text-2xl font-bold tracking-tight text-slate-50">
+                <h2 className="mt-4 text-balance text-2xl font-bold tracking-tight text-fg">
                   {cap.title}
                 </h2>
-                <p className="mt-3 text-pretty leading-relaxed text-slate-400">{cap.blurb}</p>
+                <p className="mt-3 text-pretty leading-relaxed text-muted">{cap.blurb}</p>
               </div>
               <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-1" : ""}`}>
                 <CodeBlock code={cap.code} filename={cap.filename} />
@@ -323,7 +322,6 @@ function Capabilities() {
       </div>
 
       <section className="relative">
-        <div className="hairline mx-auto max-w-4xl" />
         <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="And the rest"
@@ -335,7 +333,7 @@ function Capabilities() {
               (tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-mono text-xs text-slate-400"
+                  className="rounded-full border border-line bg-fg/[0.03] px-3 py-1 font-mono text-xs text-muted"
                 >
                   {tag}
                 </span>
