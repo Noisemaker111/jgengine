@@ -94,7 +94,7 @@ export function CodeBlock({
           {copy && <CopyButton value={code} variant="ghost" />}
         </div>
       )}
-      <pre className="overflow-x-auto px-4 py-4 text-[12.5px] leading-[1.7] sm:text-[13px]">
+      <pre className="overflow-x-auto px-4 py-4 text-left text-[12.5px] leading-[1.7] sm:text-[13px]">
         <code className="font-mono">
           {code.split("\n").map((line, i) => (
             <div key={i}>
