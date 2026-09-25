@@ -45,6 +45,8 @@ Per-instance state belongs on the placement, not in a game-owned map keyed by `i
 
 Compose perception, selection, planning/behavior, movement, and lifecycle independently. Inject randomness and scheduling. Use spatial indexes, interest tiers, or bounded candidate sets for scale.
 
+Route on a polygon nav mesh through one `createNavMeshQuery(mesh)` per mesh; price terrain and gate doors with `areaCosts` via `retune`, and keep `maxNodes` bounded so a long request returns a `partial` route instead of stalling a frame.
+
 ### Fallback-seam diagnostics
 
 Render seams fall back to placeholders when content is unauthored: default green ground (no environment), primitive capsule/box actors (no `entityModels`/`objectModels` mapping), stylized proxy foliage (no scatter `resolveItem`). These placeholders are sometimes intended, so runtime never changes — but a dev-only, opt-in probe (`@jgengine/core/devtools/fallbackSeams`) tells "unauthored/misconfigured" apart from "intended". The shell arms it via `armFallbackSeams(devtoolsEnabled)`; each seam reports at its choice site (`reportFallbackSeam`), and counts surface through the devtools `fallbacks` probe. Disarmed (production) it is a pure, allocation-free no-op.

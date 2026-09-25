@@ -826,12 +826,16 @@
 ## @jgengine/core/nav/navMesh
 
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
-- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
+- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object.
 - `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
 - `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
+- `NavMeshQuery` (interface): interface NavMeshQuery — Cached, allocation-light queries over one {@link NavMeshData}.
+- `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
+- `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
 - `buildNavAdjacency` (function): function buildNavAdjacency(mesh: NavMeshData): NavMeshAdjacency[] — Build polygon adjacency from shared edges and explicit off-mesh links.
 - `closestPoint` (function): function closestPoint(mesh: NavMeshData, point: Vec3): Vec3 | null — Return the closest point on the mesh surface, or null for an empty mesh.
-- `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon centers, followed by deterministic visibility string-pulling.
+- `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
+- `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon portals with default area costs, straightened by a portal funnel. Use {@link createNavMeshQuery} to price areas.
 - `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
 
 ## @jgengine/core/nav/pathFollow
@@ -2234,9 +2238,12 @@
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
 - `NavGrid` (interface): interface NavGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly bounds: Aabb; readonly diagonal: boolean; isWalkable(col: number, row: number): boolean; setWalkable(col: number, row: number, walkable: boolean): void; blo… — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
-- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
+- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object.
 - `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
 - `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
+- `NavMeshQuery` (interface): interface NavMeshQuery — Cached, allocation-light queries over one {@link NavMeshData}.
+- `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
+- `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
 - `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
@@ -2589,6 +2596,7 @@
 - `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
+- `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 - `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.

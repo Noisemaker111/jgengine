@@ -444,6 +444,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureMovement` (function) · `import { measureMovement } from "@jgengine/core/movement/movementProbe"`
 
+## navmesh-query — route, snap, and raycast on a polygon navmesh with retunable area costs and a bounded search
+
+- `createNavMeshQuery` (function) · `import { createNavMeshQuery } from "@jgengine/core/world"`
+
 ## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
 
 - `SceneObjectSlots` (interface) · `import { SceneObjectSlots } from "@jgengine/core/world"`
