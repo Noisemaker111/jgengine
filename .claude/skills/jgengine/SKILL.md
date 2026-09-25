@@ -48,7 +48,7 @@ World content routes editor-first: any request that adds, moves, restyles, or re
 
 Within each selected domain:
 
-0. Fastest start for a common composition: `npx jgengine recipe <name>` prints a vetted, SDK-typechecked snippet (imports + wired code) for `combat-loop`, `boss-telegraph`, `loot`, `quest`, `coop-presence`, `third-person-camera`; `npx jgengine recipe` lists them. Copy that instead of reconning per-file.
+0. Fastest start for a common composition: `npx jgengine recipe <name>` prints a vetted, SDK-typechecked snippet (imports + wired code) (`combat-loop`, `loot`, `world-drops`, `click-target`, `ability-bar`, `hitscan-weapon`, `rolled-gear`, `enter-vehicle` and more); `npx jgengine recipe` lists them. Copy that instead of reconning per-file.
 1. Search capabilities by intent; do not read `capabilities.md` top to bottom. `npx jgengine find <intent>` searches every domain's index at once, installed or not, and prints the primitive and its import; in the monorepo, `grep -i "<intent>" .claude/skills/*/capabilities.md` does the same. Search the moment you are tempted to hand-roll a HUD window, inventory grid, paperdoll, hotkey listener, minimap, stat bar, or character motion. A `z-index`, a `keydown` for a panel, a `<div>` inventory, or a limb bob almost certainly has a shipped drop-in (`usePanels`/`PanelHost`, `InventoryGrid`, `CharacterSheet`/`Paperdoll`, `PartMotionRig`, `EntityPreview`); games own the *skin*, not the re-derivation.
 2. Open `api.md` (monorepo) or the package `.d.ts` only when exact signatures are needed; grep it, never read it whole.
 3. Open the linked reference only for a deeper recipe or trap.

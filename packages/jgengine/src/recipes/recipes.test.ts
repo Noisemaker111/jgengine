@@ -5,7 +5,20 @@ import { fileURLToPath } from "node:url";
 
 import { RECIPES, getRecipe, recipeNames, renderRecipe, renderRecipeList } from "./index";
 
-const SEED = ["combat-loop", "boss-telegraph", "loot", "quest", "coop-presence", "third-person-camera"];
+const SEED = [
+  "combat-loop",
+  "boss-telegraph",
+  "loot",
+  "quest",
+  "coop-presence",
+  "third-person-camera",
+  "world-drops",
+  "click-target",
+  "ability-bar",
+  "hitscan-weapon",
+  "rolled-gear",
+  "enter-vehicle",
+];
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -41,7 +54,8 @@ describe("recipe catalog", () => {
     // The snippet files are type-checked against the SDK by tsconfig.recipes.json, so
     // this equality is what makes the printed recipe the compiled recipe — it can't rot.
     for (const recipe of RECIPES) {
-      const file = join(here, "snippets", `${recipe.name}.ts`);
+      const ts = join(here, "snippets", `${recipe.name}.ts`);
+      const file = existsSync(ts) ? ts : join(here, "snippets", `${recipe.name}.tsx`);
       expect(readFileSync(file, "utf8")).toBe(recipe.code);
     }
   });

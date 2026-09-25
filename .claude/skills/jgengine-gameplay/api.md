@@ -1049,7 +1049,7 @@
 - `AppliedTransaction` (type): type AppliedTransaction = ResourceTransaction — A {@link ResourceTransaction} after policies and rounding, as actually applied to balances.
 - `Auction` (interface): interface Auction — One live timed auction in an {@link AuctionBook}: an item stack under open bidding until it closes.
 - `AuctionSettlement` (type): type AuctionSettlement = | { status: "sold"; auction: Auction; winnerId: string; price: number; houseCut: number; sellerProceeds: number; } | { status: "returned"; auction: Auction } — How one closed auction resolved during {@link AuctionBook.settleExpired}.
-- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
+- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented · used by `DRIVE_AXIS_BINDINGS` (@jgengine/core/input/axisInput): Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`.
 - `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
 - `BackdropConfig` (interface): interface BackdropConfig — Generic sky/background/fog for ANY world kind, including a custom `environment` component (#207.6).
