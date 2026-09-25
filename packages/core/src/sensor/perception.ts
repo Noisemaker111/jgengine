@@ -9,6 +9,7 @@ export interface PerceptionStimulus {
   kind: PerceptionStimulusKind;
   sourceId: string;
   position: PerceptionPosition;
+  /** Multiplies `hearingRange` for this sound: a footstep might be `0.3`, a gunshot `4`. Default `1`. */
   loudness?: number;
   at: number;
 }
@@ -40,6 +41,8 @@ export interface PerceptionConfig {
   sightConeDeg: number;
   hearingRange: number;
   memorySeconds: number;
+  /** Most stimuli retained at once; the oldest are dropped first. Default 256. */
+  maxStimuli?: number;
   occluded?: (from: PerceptionPosition, to: PerceptionPosition) => boolean;
 }
 
@@ -55,6 +58,8 @@ export interface PerceptionService {
   pushStimulus(stimulus: PerceptionStimulus): void;
   observe(observer: PerceptionObserver, candidates: readonly PerceptionCandidate[], nowMs: number): void;
   memory(observerId: string): PerceptionMemory[];
+  /** Drop one remembered target, or everything an observer remembers (despawn, reset, disguise). */
+  forget(observerId: string, targetId?: string): void;
   retune(patch: Partial<PerceptionConfig>): void;
   snapshot(): PerceptionSnapshot;
   restore(snapshot: PerceptionSnapshot): void;
@@ -85,7 +90,10 @@ function validate(config: PerceptionConfig): void {
   if (!Number.isFinite(config.sightConeDeg) || config.sightConeDeg < 0 || config.sightConeDeg > 360) throw new Error("sightConeDeg must be between 0 and 360.");
   if (!Number.isFinite(config.hearingRange) || config.hearingRange < 0) throw new Error("hearingRange must be non-negative.");
   if (!Number.isFinite(config.memorySeconds) || config.memorySeconds <= 0) throw new Error("memorySeconds must be positive.");
+  if (config.maxStimuli !== undefined && (!Number.isInteger(config.maxStimuli) || config.maxStimuli < 1)) throw new Error("maxStimuli must be a positive integer.");
 }
+
+const DEFAULT_MAX_STIMULI = 256;
 
 /** Creates a deterministic sight, sound, and damage perception service with expiring target memory.
  * @capability perception-service retain sight, sound, and damage observations with range, cone, occlusion, and decay policy
@@ -119,7 +127,9 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       if (observerMemories.size === 0) memories.delete(observerId);
     }
     const cutoff = nowMs - memoryMs;
-    while (stimuli.length > 0 && stimuli[0]!.at < cutoff) stimuli.shift();
+    let drop = Math.max(0, stimuli.length - (config.maxStimuli ?? DEFAULT_MAX_STIMULI));
+    while (drop < stimuli.length && stimuli[drop]!.at < cutoff) drop += 1;
+    if (drop > 0) stimuli.splice(0, drop);
   }
 
   return {
@@ -128,8 +138,9 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
       if (stimulus.kind === "sound" && stimulus.loudness !== undefined && (!Number.isFinite(stimulus.loudness) || stimulus.loudness < 0)) {
         throw new Error("stimulus.loudness must be non-negative.");
       }
-      stimuli.push({ ...stimulus, position: [...stimulus.position] as PerceptionPosition });
-      stimuli.sort((a, b) => a.at - b.at);
+      let index = stimuli.length;
+      while (index > 0 && stimuli[index - 1]!.at > stimulus.at) index -= 1;
+      stimuli.splice(index, 0, { ...stimulus, position: [...stimulus.position] as PerceptionPosition });
       nowMs = Math.max(nowMs, stimulus.at);
       prune();
     },
@@ -145,9 +156,9 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
         if (stimulus.at > nowMs || stimulus.sourceId === observer.id) continue;
         const range = distance(observer.position, stimulus.position);
         if (stimulus.kind === "sound") {
-          if (range > config.hearingRange) continue;
-          const falloff = 1 - range / Math.max(config.hearingRange, 1e-9);
-          remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, falloff * (stimulus.loudness ?? 1));
+          const audible = config.hearingRange * (stimulus.loudness ?? 1);
+          if (range >= audible) continue;
+          remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, 1 - range / audible);
         } else if (stimulus.kind === "damage") {
           remember(observer.id, stimulus.sourceId, stimulus.position, stimulus.at, 1);
         }
@@ -164,6 +175,15 @@ export function createPerception(initial: PerceptionConfig): PerceptionService {
         if (confidence > 0) result.push({ ...memory, lastKnownPos: [...memory.lastKnownPos] as PerceptionPosition, confidence });
       }
       return result;
+    },
+    forget(observerId, targetId) {
+      if (targetId === undefined) {
+        memories.delete(observerId);
+        return;
+      }
+      const observerMemories = memories.get(observerId);
+      observerMemories?.delete(targetId);
+      if (observerMemories?.size === 0) memories.delete(observerId);
     },
     retune(patch) {
       config = { ...config, ...patch };
