@@ -11,7 +11,7 @@ import { HERO_SCENARIOS } from "../lib/heroScenarios";
 import { buildCityModel, buildGround, type CityModel, type CityStats } from "./cityScene";
 import { disposeObject, mountLive, type LiveHandle } from "./mount";
 
-const INK = 0x04060c;
+const INK = 0x0d0c0b;
 
 export interface HeroWorldCallbacks {
   /** Fired after every regeneration with the real generated numbers. */

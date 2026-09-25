@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { ENTRY_PROMPT, REPO_URL } from "../lib/site";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -11,29 +12,55 @@ export function GitHubIcon({ className = "h-4 w-4" }: { className?: string }) {
   );
 }
 
-export function Backdrop({ variant = "page" }: { variant?: "hero" | "page" }) {
+/** The jgengine mark: four blocks, one of them lit. */
+export function LogoMark({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <rect x="2" y="2" width="9" height="9" rx="2" className="fill-fg" />
+      <rect x="13" y="2" width="9" height="9" rx="2" className="fill-fg" opacity="0.55" />
+      <rect x="2" y="13" width="9" height="9" rx="2" className="fill-fg" opacity="0.55" />
+      <rect x="13" y="13" width="9" height="9" rx="2" className="fill-accent" />
+    </svg>
+  );
+}
+
+function Wordmark() {
+  return (
+    <span className="flex items-center gap-2.5">
+      <LogoMark />
+      <span className="font-display text-[1.15rem] font-bold tracking-tight text-fg">jgengine</span>
+    </span>
+  );
+}
+
+/** Dot-grid backdrop used behind page heroes. */
+export function Backdrop() {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      <div className="bg-grid absolute inset-0" />
-      <div className="orb orb-emerald -top-32 left-[8%] h-96 w-96" />
-      <div className="orb orb-cyan -top-24 right-[10%] h-80 w-80" />
-      {variant === "hero" && <div className="orb orb-violet top-40 left-[42%] h-[28rem] w-[28rem]" />}
-      <div className="bg-noise absolute inset-0" />
+      <div className="bg-dots bg-dots-fade absolute inset-0" />
+      <div className="absolute -top-40 left-1/2 h-80 w-[46rem] -translate-x-1/2 rounded-full bg-accent/10 blur-3xl" />
     </div>
   );
 }
 
-export function SectionHeading({ eyebrow, title, blurb }: { eyebrow: string; title: string; blurb?: string }) {
+export function SectionHeading({
+  eyebrow,
+  title,
+  blurb,
+  align = "left",
+}: {
+  eyebrow: string;
+  title: ReactNode;
+  blurb?: ReactNode;
+  align?: "left" | "center";
+}) {
   return (
-    <div className="max-w-2xl">
-      <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.22em] text-emerald-400/90">
-        <span className="h-px w-6 bg-gradient-to-r from-emerald-400/70 to-transparent" />
-        {eyebrow}
-      </p>
-      <h2 className="mt-3 text-balance text-2xl font-bold tracking-tight text-slate-50 sm:text-[2rem] sm:leading-tight">
+    <div className={`reveal max-w-2xl ${align === "center" ? "mx-auto text-center" : ""}`}>
+      <p className="eyebrow">{eyebrow}</p>
+      <h2 className="font-display mt-4 text-balance text-3xl font-bold leading-[1.05] tracking-tight text-fg sm:text-[2.6rem]">
         {title}
       </h2>
-      {blurb && <p className="mt-3 text-pretty leading-relaxed text-slate-400">{blurb}</p>}
+      {blurb && <p className="mt-4 text-pretty leading-relaxed text-muted sm:text-lg">{blurb}</p>}
     </div>
   );
 }
@@ -45,32 +72,29 @@ export function PageHero({
   children,
 }: {
   eyebrow: string;
-  title: string;
-  blurb: string;
+  title: ReactNode;
+  blurb: ReactNode;
   children?: ReactNode;
 }) {
   return (
     <div className="relative overflow-hidden">
       <Backdrop />
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-4 pt-16 sm:px-6 sm:pt-24">
-        <p className="animate-fade-up flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.22em] text-emerald-400/90">
-          <span className="h-px w-6 bg-gradient-to-r from-emerald-400/70 to-transparent" />
-          {eyebrow}
-        </p>
+      <div className="relative mx-auto w-full max-w-6xl px-4 pb-10 pt-14 sm:px-6 sm:pb-12 sm:pt-24">
+        <p className="eyebrow animate-fade-up">{eyebrow}</p>
         <h1
-          className="animate-fade-up mt-3 text-4xl font-bold tracking-tight text-slate-50 sm:text-5xl"
+          className="font-display animate-fade-up mt-5 max-w-4xl text-balance text-[2.6rem] font-bold leading-[0.98] tracking-[-0.03em] text-fg sm:text-6xl lg:text-7xl"
           style={{ animationDelay: "60ms" }}
         >
           {title}
         </h1>
         <p
-          className="animate-fade-up mt-4 max-w-2xl text-pretty leading-relaxed text-slate-400 sm:text-lg"
+          className="animate-fade-up mt-6 max-w-2xl text-pretty text-lg leading-relaxed text-muted"
           style={{ animationDelay: "120ms" }}
         >
           {blurb}
         </p>
         {children && (
-          <div className="animate-fade-up mt-8" style={{ animationDelay: "180ms" }}>
+          <div className="animate-fade-up mt-9" style={{ animationDelay: "180ms" }}>
             {children}
           </div>
         )}
@@ -80,190 +104,212 @@ export function PageHero({
 }
 
 const NAV_LINKS = [
-  { to: "/why", label: "Why JGengine" },
-  { to: "/capabilities", label: "Capabilities" },
-  { to: "/adopt", label: "Adopt" },
-  { to: "/editor", label: "Editor" },
   { to: "/games", label: "Games" },
+  { to: "/capabilities", label: "Capabilities" },
+  { to: "/why", label: "Why" },
+  { to: "/editor", label: "Editor" },
   { to: "/playground", label: "Playground" },
+  { to: "/adopt", label: "Adopt" },
 ] as const;
 
 export function Header({ sticky = true }: { sticky?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
   return (
-    <header className={`${sticky ? "sticky top-0" : "relative"} z-20 px-3 pt-3 sm:px-4`}>
-      <div className="mx-auto max-w-6xl rounded-2xl border border-white/[0.08] bg-ink/75 shadow-[0_8px_32px_-12px_rgba(2,3,8,0.9)] backdrop-blur-xl">
-        <div className="flex items-center justify-between py-2.5 pl-4 pr-3 sm:pl-5">
-          <Link
-            to="/"
-            onClick={closeMenu}
-            className="shrink-0 text-lg font-semibold tracking-tight text-white"
+    <header
+      className={`${sticky ? "sticky top-0" : "relative"} z-30 border-b border-line bg-bg/80 backdrop-blur-xl backdrop-saturate-150`}
+    >
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-accent focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-on-accent"
+      >
+        Skip to content
+      </a>
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Link to="/" onClick={closeMenu} className="shrink-0 rounded-md" aria-label="jgengine home">
+          <Wordmark />
+        </Link>
+        <nav aria-label="Main" className="hidden items-center gap-0.5 text-sm md:flex">
+          {NAV_LINKS.map(({ to, label }) => (
+            <Link
+              key={to}
+              to={to}
+              className="rounded-lg px-3 py-2 text-muted transition-colors hover:bg-fg/[0.05] hover:text-fg"
+              activeProps={{ className: "!text-fg bg-fg/[0.06]", "aria-current": "page" }}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle />
+          <a
+            href={REPO_URL}
+            aria-label="jgengine on GitHub"
+            className="hidden h-9 items-center gap-2 rounded-lg border border-line px-3 text-sm text-muted transition-colors hover:border-line-strong hover:text-fg sm:flex"
           >
-            JGengine
-          </Link>
-          {/* Inline nav on wider screens */}
-          <nav className="hidden items-center justify-end gap-0.5 text-sm text-slate-400 md:flex lg:gap-1">
-            {NAV_LINKS.map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                className="rounded-full px-3 py-1.5 transition hover:bg-white/[0.04] hover:text-slate-100"
-                activeProps={{ className: "rounded-full bg-emerald-400/10 px-3 py-1.5 text-emerald-300" }}
-              >
-                {label}
-              </Link>
-            ))}
-            <a
-              href={REPO_URL}
-              className="ml-1.5 flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
-            >
-              <GitHubIcon />
-              <span>GitHub</span>
-            </a>
-          </nav>
-          {/* Compact controls on narrow screens */}
-          <div className="flex items-center gap-1.5 md:hidden">
-            <a
-              href={REPO_URL}
-              aria-label="GitHub"
-              className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-2 text-slate-400 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
-            >
-              <GitHubIcon />
-            </a>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-label="Toggle navigation menu"
-              aria-expanded={menuOpen}
-              className="flex items-center rounded-full border border-white/10 bg-white/[0.04] p-2 text-slate-300 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.08] hover:text-slate-100"
-            >
-              <MenuIcon open={menuOpen} />
-            </button>
-          </div>
+            <GitHubIcon />
+            <span className="hidden lg:inline">GitHub</span>
+          </a>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+            className="grid h-9 w-9 place-items-center rounded-lg border border-line text-fg transition-colors hover:border-line-strong md:hidden"
+          >
+            <MenuIcon open={menuOpen} />
+          </button>
         </div>
-        {/* Mobile dropdown panel */}
-        {menuOpen && (
-          <nav className="flex flex-col gap-0.5 border-t border-white/[0.08] px-2 pb-2 pt-1.5 text-sm text-slate-300 md:hidden">
-            {NAV_LINKS.map(({ to, label }) => (
-              <Link
-                key={to}
-                to={to}
-                onClick={closeMenu}
-                className="rounded-lg px-3 py-2 transition hover:bg-white/[0.04] hover:text-slate-100"
-                activeProps={{ className: "rounded-lg bg-emerald-400/10 px-3 py-2 text-emerald-300" }}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-        )}
       </div>
+      {menuOpen && (
+        <nav
+          id="mobile-nav"
+          aria-label="Main"
+          className="border-t border-line bg-bg px-3 pb-4 pt-2 md:hidden"
+        >
+          <ul className="grid gap-0.5">
+            {NAV_LINKS.map(({ to, label }) => (
+              <li key={to}>
+                <Link
+                  to={to}
+                  onClick={closeMenu}
+                  className="font-display flex items-center justify-between rounded-lg px-3 py-3 text-lg font-semibold text-fg transition-colors hover:bg-fg/[0.05]"
+                  activeProps={{ className: "!text-accent-text", "aria-current": "page" }}
+                >
+                  {label}
+                  <span aria-hidden className="text-faint">
+                    →
+                  </span>
+                </Link>
+              </li>
+            ))}
+            <li>
+              <a
+                href={REPO_URL}
+                className="font-display flex items-center gap-2 rounded-lg px-3 py-3 text-lg font-semibold text-fg transition-colors hover:bg-fg/[0.05]"
+              >
+                <GitHubIcon /> GitHub
+              </a>
+            </li>
+          </ul>
+        </nav>
+      )}
     </header>
   );
 }
 
 function MenuIcon({ open }: { open: boolean }) {
   return (
-    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" className="h-4 w-4" aria-hidden>
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-4 w-4" aria-hidden>
       {open ? (
         <path strokeLinecap="round" d="M3.5 3.5l9 9M12.5 3.5l-9 9" />
       ) : (
-        <path strokeLinecap="round" d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" />
+        <path strokeLinecap="round" d="M2.5 5h11M2.5 11h11" />
       )}
     </svg>
   );
 }
 
+const FOOTER_COLUMNS: { title: string; links: { label: string; to?: string; href?: string }[] }[] = [
+  {
+    title: "Site",
+    links: [
+      { label: "Games", to: "/games" },
+      { label: "Capabilities", to: "/capabilities" },
+      { label: "Why jgengine", to: "/why" },
+      { label: "Editor", to: "/editor" },
+      { label: "Playground", to: "/playground" },
+      { label: "Adopt one system", to: "/adopt" },
+    ],
+  },
+  {
+    title: "For agents",
+    links: [
+      { label: "llms.txt", href: "/llms.txt" },
+      { label: "llms-full.txt", href: "/llms-full.txt" },
+      { label: "agents.md", href: "/agents.md" },
+      { label: "Skills source", href: `${REPO_URL}/tree/main/.claude/skills` },
+    ],
+  },
+  {
+    title: "Source",
+    links: [
+      { label: "GitHub", href: REPO_URL },
+      { label: "Packages", href: `${REPO_URL}/tree/main/packages` },
+      { label: "npm: jgengine", href: "https://www.npmjs.com/package/jgengine" },
+      { label: "Probe games", href: "https://github.com/Noisemaker111/JGengine-games" },
+      { label: "Credits", href: `${REPO_URL}/blob/main/CREDITS.md` },
+    ],
+  },
+];
+
 export function Footer() {
   return (
-    <footer className="relative mt-4 overflow-hidden">
-      <div className="hairline" />
-      <div className="relative mx-auto max-w-6xl px-4 pb-24 pt-14 sm:px-6">
-        <div className="flex flex-col gap-10 sm:flex-row sm:justify-between">
-          <div className="max-w-xs">
-            <div className="text-lg font-semibold text-white">JGengine</div>
-            <p className="mt-3 text-sm leading-relaxed text-slate-500">
-              A pure-TypeScript game engine SDK. AI coding agents build on it using focused JGengine Skills.
+    <footer className="relative overflow-hidden border-t border-line">
+      <div className="relative mx-auto max-w-6xl px-4 pb-10 pt-16 sm:px-6">
+        <div className="grid gap-12 md:grid-cols-[1.3fr_2fr]">
+          <div className="max-w-sm">
+            <Wordmark />
+            <p className="mt-4 text-sm leading-relaxed text-muted">
+              A pure-TypeScript game SDK. Coding agents build whole games on it from one sentence.
             </p>
-            <code className="mt-4 block font-mono text-xs text-emerald-400/70">› {ENTRY_PROMPT}</code>
+            <p className="mt-5 inline-flex max-w-full items-center gap-2 rounded-lg border border-line bg-raised px-3 py-2 font-mono text-xs text-muted">
+              <span className="text-accent-text" aria-hidden>
+                ›
+              </span>
+              <span className="truncate">{ENTRY_PROMPT}</span>
+            </p>
           </div>
-          <div className="flex gap-16 text-sm">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-slate-600">Explore</p>
-              <ul className="mt-3 space-y-2 text-slate-400">
-                <li>
-                  <Link to="/why" className="transition hover:text-emerald-300">
-                    Why JGengine
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/capabilities" className="transition hover:text-emerald-300">
-                    Capabilities
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/adopt" className="transition hover:text-emerald-300">
-                    Drop-in adoption
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/editor" className="transition hover:text-emerald-300">
-                    Editor
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/games" className="transition hover:text-emerald-300">
-                    Games
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/playground" className="transition hover:text-emerald-300">
-                    Playground
-                  </Link>
-                </li>
-                <li>
-                  <a href={REPO_URL} className="transition hover:text-emerald-300">
-                    GitHub
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-slate-600">Source</p>
-              <ul className="mt-3 space-y-2 text-slate-400">
-                <li>
-                  <a href={`${REPO_URL}/tree/main/skills`} className="transition hover:text-emerald-300">
-                    Skills source
-                  </a>
-                </li>
-                <li>
-                  <a href={`${REPO_URL}/tree/main/packages`} className="transition hover:text-emerald-300">
-                    Packages
-                  </a>
-                </li>
-                <li>
-                  <a href={`${REPO_URL}/tree/main/Games`} className="transition hover:text-emerald-300">
-                    Game sources
-                  </a>
-                </li>
-              </ul>
-            </div>
+          <div className="grid grid-cols-2 gap-8 text-sm sm:grid-cols-3">
+            {FOOTER_COLUMNS.map((column) => (
+              <div key={column.title}>
+                <p className="font-mono text-[0.7rem] uppercase tracking-[0.16em] text-faint">{column.title}</p>
+                <ul className="mt-4 space-y-2.5">
+                  {column.links.map((link) => (
+                    <li key={link.label}>
+                      {link.to !== undefined ? (
+                        <Link to={link.to} className="text-muted transition-colors hover:text-fg">
+                          {link.label}
+                        </Link>
+                      ) : (
+                        <a href={link.href} className="text-muted transition-colors hover:text-fg">
+                          {link.label}
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
-        <p className="mt-12 border-t border-white/[0.05] pt-6 text-xs text-slate-600">
-          Apache-2.0 · Open source ·{" "}
-          <a href={REPO_URL} className="text-slate-500 underline decoration-slate-700 underline-offset-2 transition hover:text-slate-300">
-            Noisemaker111/jgengine
-          </a>
-        </p>
+        <div className="mt-14 flex flex-col gap-2 border-t border-line pt-6 text-xs text-faint sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            Apache-2.0 ·{" "}
+            <a href={REPO_URL} className="underline decoration-line-strong underline-offset-2 transition-colors hover:text-fg">
+              Noisemaker111/jgengine
+            </a>
+          </p>
+          <p>Not related to automotive “JG Engines”.</p>
+        </div>
       </div>
       <p
-        className="pointer-events-none absolute inset-x-0 -bottom-[0.22em] select-none whitespace-nowrap text-center font-mono text-[17vw] font-bold leading-none tracking-tighter text-white/[0.018] sm:text-[13vw]"
+        className="font-display pointer-events-none select-none whitespace-nowrap text-center text-[21vw] font-extrabold leading-[0.72] tracking-[-0.05em] text-fg/[0.04]"
         aria-hidden
       >
-        JGENGINE
+        jgengine
       </p>
     </footer>
   );
@@ -273,7 +319,9 @@ export function Page({ children, stickyHeader = true }: { children: ReactNode; s
   return (
     <div className="flex min-h-dvh flex-col">
       <Header sticky={stickyHeader} />
-      <main className={`${stickyHeader ? "-mt-16 pt-16" : ""} flex-1`}>{children}</main>
+      <main id="main" className="flex-1">
+        {children}
+      </main>
       <Footer />
     </div>
   );

@@ -629,6 +629,7 @@
 ## @jgengine/editor/handlers/navmesh
 
 - `navMeshHandlers` (const): const navMeshHandlers: Pick<HandlerTable, "bakeNavMesh"> — Bake caller-provided indexed geometry into a named document navigation mesh.
+- `warmNavBake` (function): function warmNavBake(): void — Start loading the recast module so the first bake request does not have to wait.
 
 ## @jgengine/editor/handlers/runtime
 

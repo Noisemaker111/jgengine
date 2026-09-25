@@ -17,19 +17,30 @@ function CheckIcon() {
   );
 }
 
+const VARIANTS = {
+  outline: "border border-line-strong bg-raised text-fg hover:border-fg",
+  ghost: "border border-transparent text-faint hover:bg-fg/[0.06] hover:text-fg",
+  solid: "border border-transparent bg-accent text-on-accent hover:brightness-110",
+} as const;
+
 export function CopyButton({
   value,
   label = "Copy",
+  variant = "outline",
   className = "",
+  ariaLabel,
 }: {
   value: string;
   label?: string;
+  ariaLabel?: string;
+  variant?: keyof typeof VARIANTS;
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
   return (
     <button
       type="button"
+      aria-label={ariaLabel}
       onClick={() => {
         void navigator.clipboard
           .writeText(value)
@@ -39,38 +50,32 @@ export function CopyButton({
           })
           .catch(() => setCopied(false));
       }}
-      className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
-        copied
-          ? "border-emerald-400/40 bg-emerald-400/10 text-emerald-300"
-          : "border-white/15 bg-white/5 text-slate-200 hover:border-white/30 hover:bg-white/10"
-      } ${className}`}
+      className={`flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${VARIANTS[variant]} ${className}`}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
-      {copied ? "Copied" : label}
+      {(label !== "" || copied) && <span aria-live="polite">{copied ? "Copied" : label}</span>}
     </button>
   );
 }
 
+/** A single copyable line: what a person says to their agent, or a shell command. */
 export function CommandBlock({
   command,
   kind = "shell",
 }: {
   command: string;
-  /** shell = agent CLI; prompt = what a human says to their agent */
   kind?: "shell" | "prompt";
 }) {
   const prefix = kind === "prompt" ? "›" : "$";
   return (
-    <div className="shine group relative overflow-hidden rounded-2xl border border-emerald-400/25 bg-ink-deep/85 shadow-[0_0_50px_-12px_rgba(16,185,129,0.35),inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
-      <div className="pointer-events-none absolute -inset-x-8 -top-12 h-16 bg-emerald-400/10 blur-2xl" />
-      <div className="relative flex items-center gap-2 p-3 sm:gap-3 sm:px-5 sm:py-4">
-        <span className="select-none font-mono text-sm font-semibold text-emerald-500/80">{prefix}</span>
-        <code className="flex-1 break-all text-left font-mono text-[13px] leading-relaxed text-emerald-300 sm:text-sm">
-          {command}
-        </code>
-        <CopyButton value={command} />
-      </div>
+    <div className="card flex items-center gap-3 p-2 pl-4 sm:p-2.5 sm:pl-5">
+      <span className="select-none font-mono text-sm font-semibold text-accent-text" aria-hidden>
+        {prefix}
+      </span>
+      <code className="min-w-0 flex-1 break-words text-left font-mono text-[13px] leading-relaxed text-fg sm:text-sm">
+        {command}
+      </code>
+      <CopyButton value={command} variant="solid" className="py-2" />
     </div>
   );
 }

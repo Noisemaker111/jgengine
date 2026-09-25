@@ -92,6 +92,7 @@ import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "./input/gamepadSource";
+import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
 import { CombatPresentation } from "./CombatPresentation";
@@ -661,6 +662,15 @@ export function Shell3dPresentation({
                   analogRef={analogRef}
                   input={ctx.input}
                   feel={playable.gamepad}
+                  seats={localPlayers(ctx)}
+                  onSeatJoin={(slot) => {
+                    try {
+                      playable.loop.onNewPlayer(ctx, { userId: slot.userId, isNew: true });
+                    } catch (error) {
+                      reportRuntimeError(error, "tick");
+                    }
+                  }}
+                  seatsActive={() => !gateRef.current && playControlsActive(ctx)}
                 />
                 <DevtoolsRendererProbe />
                 {resolvedLook.postProcessing !== undefined && resolvedLook.postProcessing.enabled !== false ? (

@@ -13,6 +13,7 @@ import {
   placeAuthoredObjects,
   resolveAuthoredObjects,
 } from "@jgengine/core/world/authoredObjects";
+import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids";
 import { buildRoadRibbon, GROUND_DECAL_LAYERS, roundPathCorners } from "@jgengine/core/world/roads";
 import { isScatterPath, resolveScatter } from "@jgengine/core/world/scatterRegion";
 import type { TerrainField } from "@jgengine/core/world/terrain";
@@ -236,6 +237,25 @@ export function AuthoredObjects({
   return null;
 }
 
+/**
+ * Writes the document's studio solids (city buildings and any kind with a `solids` hook) into
+ * `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
+ * @capability authored-solids collision for studio-authored world content such as city volumes
+ */
+export function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }) {
+  const ctx = useGameContext();
+  useEffect(() => {
+    syncAuthoredSolids(ctx.world.solids, document, (x, z) => field.sampleHeight(x, z));
+  }, [ctx.world.solids, document, field]);
+  useEffect(
+    () => () => {
+      syncAuthoredSolids(ctx.world.solids, { markers: [], volumes: [], paths: [] });
+    },
+    [ctx.world.solids],
+  );
+  return null;
+}
+
 /** Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on. */
 export interface AuthoredSceneProps {
   document: EditorDocument;
@@ -308,6 +328,7 @@ export function AuthoredScene({
         }}
       />
       <AuthoredGenerators document={liveDocument} field={field} />
+      <AuthoredSolids document={liveDocument} field={field} />
       {shouldPlaceObjects ? (
         <AuthoredObjects document={liveDocument} field={field} verticalOffset={objectVerticalOffset} />
       ) : null}
