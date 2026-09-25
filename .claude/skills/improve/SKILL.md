@@ -15,7 +15,7 @@ Use this for backlog missions ("look at all the issues, plan each one, implement
 
 ## Ship one issue
 
-Route through `jgengine` intake and deliver through `workflow`, with evidence via `jgengine-verify`. Post the `Working on this in <branch>` claim comment on the issue thread before implementing — never skip it. In a parallel-lane pass this is what stops two lanes from grabbing the same issue, so claim up front, not at PR time. In the `Noisemaker111` repo, enable squash auto-merge on each PR so it lands once CI is green — the user never merges by hand; for any other owner/repo, park the PR for the user. Never publish npm releases or bump versions without an explicit ask.
+Route through `jgengine` intake and deliver through `workflow` (claim, merge and release rules live there and in AGENTS.md), with evidence via `jgengine-verify`.
 
 While implementing, record friction as it happens:
 
@@ -27,7 +27,7 @@ While implementing, record friction as it happens:
 
 After each shipped fix, answer from the actual diff, not memory:
 
-0. **Root-cause reinforcement check.** For a bugfix, confirm the PR body answered the three reinforcement questions (allowing seam, blast radius across other consumers, upstream fix or filed `[FEATURE]` issue). A patch whose class of bug remains open for other games is symptom work — the retrospective's first output is the missing upstream contract, safe default, dev-mode warning, or gate check.
+0. **Root-cause reinforcement check.** For a bugfix, a class of bug still open for other games is symptom work; the first output is the missing upstream contract, default, warning or gate check (AGENTS.md, bugfix PR body).
 1. **Size check.** Most gaps here are ~20-line concepts. Count files touched and lines changed. A small concept that required edits in many places is itself a finding — name the missing seam, wrong default, or missing generator that forced the spread.
 2. **Exact-diff replay.** If this same diff arrived tomorrow, what one upstream change would halve it? Candidates: a new primitive, a better default, a codegen step, a skill or capability-index fix, a test harness.
 3. **Act now.** A seam fix that shares the issue's verification story lands in the same PR. Anything larger becomes a concise `[FEATURE]` issue — and jumps to the front of the queue when it would pay for itself within this pass.
