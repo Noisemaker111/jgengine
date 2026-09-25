@@ -19,6 +19,14 @@ bun --cwd=Games install
 
 The dev server serves the same runner build and restores it from the content-hash cache when game and engine sources have not changed.
 
+## Design system
+
+- Colors, type and surfaces are CSS tokens at the top of [`src/styles.css`](src/styles.css), exposed to Tailwind as `bg`, `raised`, `sunken`, `line`, `fg`, `muted`, `faint`, `accent`, `accent-text` and `live`. Use those names, not raw palette classes, so both themes work.
+- The theme follows the system until the visitor toggles it; `?theme=light|dark` forces one for a page view (captures, shared links). Sections that sit on a live 3D canvas pin `data-theme="dark"`.
+- Game titles and descriptions come from the `Games/README.md` table; covers are `public/covers/<id>.webp` (800×450, from `bun run shoot <id> --mode play`).
+- The landing's "big games from small blocks" rows are keys into the skills' generated `capabilities.md`; `src/lib/capabilityIndex.test.ts` fails if one disappears.
+- Pages flag `data-jg-capture="ready"` after fonts load; live canvases mark it `pending` until they draw, so `bun run shoot --site <route>` works on every page.
+
 ## Develop
 
 ```sh

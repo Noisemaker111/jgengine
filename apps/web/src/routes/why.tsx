@@ -187,13 +187,13 @@ function Why() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/capabilities"
-            className="rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 px-5 py-2.5 text-sm font-semibold text-ink-deep shadow-[0_0_36px_-8px_rgba(52,211,153,0.7)] transition hover:shadow-[0_0_48px_-8px_rgba(52,211,153,0.9)]"
+            className="btn btn-primary"
           >
             See the capabilities →
           </Link>
           <Link
             to="/editor"
-            className="rounded-xl border border-white/12 bg-white/[0.03] px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.06]"
+            className="btn btn-secondary"
           >
             The 3D editor
           </Link>
@@ -219,7 +219,6 @@ function Why() {
       </section>
 
       <section className="relative">
-        <div className="hairline mx-auto max-w-4xl" />
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="The honest cut"
@@ -233,23 +232,22 @@ function Why() {
       </section>
 
       <section className="relative">
-        <div className="hairline mx-auto max-w-4xl" />
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="Who it's for"
             title="Reach for JGengine when…"
           />
           <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <div className="panel rounded-2xl p-6">
-              <p className="text-sm leading-relaxed text-slate-300">
-                You want a <span className="text-emerald-300">multiplayer-capable web game</span> in TypeScript
+            <div className="card rounded-2xl p-6">
+              <p className="text-sm leading-relaxed text-muted">
+                You want a <span className="text-accent-text">multiplayer-capable web game</span> in TypeScript
                 without hand-building a netcode stack, a scene editor, and ten gameplay systems first — and
                 you're happy to drive it with an AI coding agent.
               </p>
             </div>
-            <div className="panel rounded-2xl border-dashed p-6">
-              <p className="text-sm leading-relaxed text-slate-400">
-                Look elsewhere if you need a <span className="text-slate-200">closed-source commercial build</span>{" "}
+            <div className="card rounded-2xl border-dashed p-6">
+              <p className="text-sm leading-relaxed text-muted">
+                Look elsewhere if you need a <span className="text-fg">closed-source commercial build</span>{" "}
                 today, a native/console target, a no-code editor, or a battle-hardened engine with a decade of
                 stability. We'd rather you know now.
               </p>
@@ -260,15 +258,12 @@ function Why() {
 
       <section className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0" aria-hidden>
-          <div className="orb orb-emerald -bottom-40 left-[24%] h-[26rem] w-[26rem]" />
-          <div className="bg-noise absolute inset-0" />
         </div>
-        <div className="hairline mx-auto max-w-4xl" />
         <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-24">
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl">
+          <h2 className="text-balance text-3xl font-bold tracking-tight text-fg sm:text-4xl">
             Try it in one prompt.
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-pretty text-slate-400">
+          <p className="mx-auto mt-4 max-w-xl text-pretty text-muted">
             Paste this into any coding agent. If it doesn't fit your project, you'll know within one build —
             not one month.
           </p>

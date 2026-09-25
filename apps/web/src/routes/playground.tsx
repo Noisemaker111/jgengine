@@ -268,9 +268,9 @@ function Slider({
 }) {
   return (
     <label className="block">
-      <div className="flex items-center justify-between text-xs text-slate-400">
+      <div className="flex items-center justify-between text-xs text-muted">
         <span>{label}</span>
-        <span className="font-mono text-emerald-300">{value}</span>
+        <span className="font-mono text-accent-text">{value}</span>
       </div>
       <input
         type="range"
@@ -279,14 +279,14 @@ function Slider({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 w-full accent-emerald-400"
+        className="mt-1 w-full accent-accent"
       />
     </label>
   );
 }
 
 function GroupLabel({ children }: { children: string }) {
-  return <p className="pt-2 text-[11px] uppercase tracking-wide text-slate-500">{children}</p>;
+  return <p className="pt-2 text-[11px] uppercase tracking-wide text-faint">{children}</p>;
 }
 
 function Toggle({ label, value, onChange }: { label: string; value: boolean; onChange: (value: boolean) => void }) {
@@ -295,7 +295,7 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
       type="button"
       onClick={() => onChange(!value)}
       className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-xs transition ${
-        value ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-white/10 bg-black/20 text-slate-500"
+        value ? "border-accent/30 bg-accent/10 text-accent-text" : "border-line bg-black/20 text-faint"
       }`}
     >
       <span>{label}</span>
@@ -885,9 +885,9 @@ function Playground() {
         />
       )}
       <div className={query.inspect ? "fixed inset-0 z-50 bg-[#0b1017]" : "mx-auto grid max-w-6xl gap-6 px-6 pb-24 lg:grid-cols-[320px_1fr]"}>
-        <div className={query.inspect ? "hidden" : "space-y-5 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5"}>
+        <div className={query.inspect ? "hidden" : "space-y-5 rounded-2xl border border-line bg-fg/[0.02] p-5"}>
           <div>
-            <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">Preset — moves the shared sliders</p>
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-faint">Preset — moves the shared sliders</p>
             <div className="flex gap-2">
               {(["city", "circuit", "race"] as const).map((m) => (
                 <button
@@ -898,7 +898,7 @@ function Playground() {
                     set(PRESETS[m]);
                   }}
                   className={`flex-1 rounded-full px-2 py-1.5 text-xs transition ${
-                    mode === m ? "bg-emerald-400/15 text-emerald-300" : "bg-white/[0.04] text-slate-400 hover:text-slate-200"
+                    mode === m ? "bg-accent/15 text-accent-text" : "bg-fg/[0.04] text-muted hover:text-fg"
                   }`}
                 >
                   {MODE_LABEL[m]}
@@ -910,13 +910,13 @@ function Playground() {
             <input
               value={dials.seed}
               onChange={(e) => set({ seed: e.target.value })}
-              className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-1.5 font-mono text-sm text-emerald-300 outline-none focus:border-emerald-400/50"
+              className="w-full rounded-lg border border-line bg-black/30 px-3 py-1.5 font-mono text-sm text-accent-text outline-none focus:border-accent/50"
               aria-label="Seed"
             />
             <button
               type="button"
               onClick={() => set({ seed: randomSeed() })}
-              className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm transition hover:border-emerald-400/40"
+              className="rounded-lg border border-line bg-fg/[0.04] px-3 py-1.5 text-sm transition hover:border-accent/40"
               title="Random seed"
             >
               🎲
@@ -983,22 +983,22 @@ function Playground() {
               )}
             </>
           )}
-          <div className="space-y-1 text-xs leading-relaxed text-slate-500">
+          <div className="space-y-1 text-xs leading-relaxed text-faint">
             <p>
-              These sliders grow a <span className="font-mono text-emerald-300">{result.topology}</span> —{" "}
-              <span className="text-emerald-300">{result.network.streets.length}</span> streets,{" "}
-              <span className="text-emerald-300">{result.network.loops}</span> independent loops. Loopiness decides which; the
+              These sliders grow a <span className="font-mono text-accent-text">{result.topology}</span> —{" "}
+              <span className="text-accent-text">{result.network.streets.length}</span> streets,{" "}
+              <span className="text-accent-text">{result.network.loops}</span> independent loops. Loopiness decides which; the
               preset buttons only move it.
             </p>
             {mode === "city" && (
               <p>
-                <span className="text-emerald-300">{result.city?.lotContent?.length ?? result.city?.lots.length ?? 0}</span>{" "}
+                <span className="text-accent-text">{result.city?.lotContent?.length ?? result.city?.lots.length ?? 0}</span>{" "}
                 buildings on street-fronting plots.
               </p>
             )}
             {mode === "circuit" && (
               <p>
-                Track density <span className="text-emerald-300">{dials.trackDensity}</span> folds the lap into its footprint: 0
+                Track density <span className="text-accent-text">{dials.trackDensity}</span> folds the lap into its footprint: 0
                 keeps an open, flowing loop; 1 fills the interior with parallel corridors and switchbacks.
               </p>
             )}
@@ -1009,21 +1009,21 @@ function Playground() {
                 </p>
               ) : (
                 <p>
-                  <span className="text-emerald-300">{Math.round(lap.length)} m</span> lap ·{" "}
-                  <span className="text-emerald-300">{lap.corners.length}</span> corners · runs on{" "}
-                  <span className="text-emerald-300">{lap.edges.length}</span> of {result.network.edges.length} city streets ·{" "}
-                  <span className="text-emerald-300">{lap.seals.length}</span> side streets sealed off.
+                  <span className="text-accent-text">{Math.round(lap.length)} m</span> lap ·{" "}
+                  <span className="text-accent-text">{lap.corners.length}</span> corners · runs on{" "}
+                  <span className="text-accent-text">{lap.edges.length}</span> of {result.network.edges.length} city streets ·{" "}
+                  <span className="text-accent-text">{lap.seals.length}</span> side streets sealed off.
                 </p>
               ))}
           </div>
-          <div className="rounded-lg border border-white/[0.06] bg-black/30 p-3">
-            <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">Bake this exact layout into a game</p>
-            <code className="block max-h-28 overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed text-slate-400">
+          <div className="rounded-lg border border-line bg-black/30 p-3">
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-faint">Bake this exact layout into a game</p>
+            <code className="block max-h-28 overflow-auto whitespace-pre-wrap break-all font-mono text-[10px] leading-relaxed text-muted">
               bun packages/editor/src/mcp/cli.ts --game &lt;id&gt; --rpc '{rpc}' --save
             </code>
           </div>
         </div>
-        <div className={query.inspect ? "absolute inset-0 overflow-hidden bg-[#0b1017]" : "relative min-h-[420px] overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0b1017] lg:min-h-[560px]"}>
+        <div className={query.inspect ? "absolute inset-0 overflow-hidden bg-[#0b1017]" : "relative min-h-[420px] overflow-hidden rounded-2xl border border-line bg-[#0b1017] lg:min-h-[560px]"}>
           <div
             ref={viewerHost}
             className={`absolute inset-0 transition-opacity duration-500 ${
@@ -1037,18 +1037,18 @@ function Playground() {
             </div>
           )}
           {view === "3d" && !worldReady && (
-            <p className="absolute inset-0 grid place-items-center font-mono text-xs text-slate-600">
+            <p className="absolute inset-0 grid place-items-center font-mono text-xs text-faint">
               loading three.js…
             </p>
           )}
-          <div className="absolute right-3 top-3 flex gap-1 rounded-full border border-white/10 bg-ink/80 p-1 backdrop-blur-sm">
+          <div className="absolute right-3 top-3 flex gap-1 rounded-full border border-line bg-bg/80 p-1 backdrop-blur-sm">
             {(["3d", "map"] as const).map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setView(v)}
                 className={`rounded-full px-3 py-1 font-mono text-xs uppercase transition ${
-                  view === v ? "bg-emerald-400/15 text-emerald-300" : "text-slate-500 hover:text-slate-200"
+                  view === v ? "bg-accent/15 text-accent-text" : "text-faint hover:text-fg"
                 }`}
               >
                 {v}
@@ -1056,7 +1056,7 @@ function Playground() {
             ))}
           </div>
           {view === "3d" && (
-            <p className="pointer-events-none absolute bottom-3 left-3 font-mono text-[10px] text-slate-600">
+            <p className="pointer-events-none absolute bottom-3 left-3 font-mono text-[10px] text-faint">
               {dials.focusJunction >= 0 ? `junction ${Math.floor(dials.focusJunction)} · ` : ""}drag to orbit · scroll to zoom
             </p>
           )}
