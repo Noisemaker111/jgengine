@@ -32,23 +32,23 @@ function Games() {
                 key={id}
                 to="/games/$id"
                 params={{ id }}
-                className="group flex flex-col justify-between gap-6 rounded-2xl border border-white/[0.08] bg-ink/60 p-5 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.04]"
+                className="group flex flex-col justify-between gap-6 rounded-2xl border border-line bg-bg/60 p-5 transition hover:border-accent/40 hover:bg-accent/[0.04]"
               >
                 <div>
-                  <h2 className="text-lg font-semibold text-slate-100 transition group-hover:text-emerald-200">
+                  <h2 className="text-lg font-semibold text-fg transition group-hover:text-accent-text">
                     {gameTitle(id)}
                   </h2>
-                  <p className="mt-1 font-mono text-xs text-slate-500">Games/{id}</p>
+                  <p className="mt-1 font-mono text-xs text-faint">Games/{id}</p>
                 </div>
-                <span className="inline-flex items-center gap-2 self-start rounded-full border border-emerald-400/35 bg-emerald-400/10 px-3.5 py-1.5 text-sm font-medium text-emerald-300 transition group-hover:bg-emerald-400/20">
+                <span className="inline-flex items-center gap-2 self-start rounded-full border border-accent/35 bg-accent/10 px-3.5 py-1.5 text-sm font-medium text-accent-text transition group-hover:bg-accent/20">
                   ▶ Play
                 </span>
               </Link>
             ))}
           </div>
-          <p className="mt-8 text-sm text-slate-500">
+          <p className="mt-8 text-sm text-faint">
             These are the in-repo test games the engine is developed against — sources under{" "}
-            <code className="text-slate-400">Games/*</code>. They probe engine gaps; they are not templates.
+            <code className="text-muted">Games/*</code>. They probe engine gaps; they are not templates.
           </p>
         </div>
       </section>

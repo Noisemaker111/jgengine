@@ -143,12 +143,12 @@ const CONS: { title: string; body: string }[] = [
 const MODES: { label: string; tone: string; body: string }[] = [
   {
     label: "Pure portable",
-    tone: "text-emerald-300 border-emerald-400/30 bg-emerald-400/[0.06]",
+    tone: "text-accent-text border-accent/30 bg-accent/[0.06]",
     body: "Plain data in, plain data out. No runtime, renderer, store, or React. Curves, matchups, pool math.",
   },
   {
     label: "Adapter portable",
-    tone: "text-cyan-300 border-cyan-400/30 bg-cyan-400/[0.06]",
+    tone: "text-accent-text border-accent/30 bg-accent/[0.06]",
     body: "Works over your state through a small structural interface. You keep ownership of entities, updates, and rendering.",
   },
   {
@@ -169,13 +169,13 @@ function Adopt() {
         <div className="flex flex-wrap gap-3">
           <Link
             to="/capabilities"
-            className="rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 px-5 py-2.5 text-sm font-semibold text-ink-deep shadow-[0_0_36px_-8px_rgba(52,211,153,0.7)] transition hover:shadow-[0_0_48px_-8px_rgba(52,211,153,0.9)]"
+            className="btn btn-primary"
           >
             All capabilities →
           </Link>
           <Link
             to="/why"
-            className="rounded-xl border border-white/12 bg-white/[0.03] px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.06]"
+            className="btn btn-secondary"
           >
             Why JGengine
           </Link>
@@ -189,12 +189,12 @@ function Adopt() {
             { n: "2", t: "Write a tiny adapter", b: "A get/set over your store, or one entity → marker projection." },
             { n: "3", t: "Call it from your loop", b: "Apply results and tick(dt) yourself. Your renderer never changes." },
           ].map((step) => (
-            <div key={step.n} className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5">
-              <div className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-400/30 bg-emerald-400/[0.08] font-mono text-sm text-emerald-300">
+            <div key={step.n} className="rounded-2xl border border-line bg-fg/[0.02] p-5">
+              <div className="grid h-8 w-8 place-items-center rounded-lg border border-accent/30 bg-accent/[0.08] font-mono text-sm text-accent-text">
                 {step.n}
               </div>
-              <h3 className="mt-3 text-base font-semibold text-slate-100">{step.t}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{step.b}</p>
+              <h3 className="mt-3 text-base font-semibold text-fg">{step.t}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{step.b}</p>
             </div>
           ))}
         </div>
@@ -205,22 +205,22 @@ function Adopt() {
           {ADOPTIONS.map((cap, i) => (
             <section key={cap.title} className="grid items-center gap-6 lg:grid-cols-2 lg:gap-12">
               <div className={`min-w-0 ${i % 2 === 1 ? "lg:order-2" : ""}`}>
-                <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-emerald-400/90">
-                  <span className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.03] text-sm">
+                <p className="flex items-center gap-2.5 font-mono text-xs uppercase tracking-[0.2em] text-accent-text">
+                  <span className="grid h-7 w-7 place-items-center rounded-lg border border-line bg-fg/[0.03] text-sm">
                     {cap.glyph}
                   </span>
                   {cap.domain}
                 </p>
-                <h2 className="mt-4 text-balance text-2xl font-bold tracking-tight text-slate-50">{cap.title}</h2>
-                <p className="mt-3 text-pretty leading-relaxed text-slate-400">{cap.blurb}</p>
+                <h2 className="mt-4 text-balance text-2xl font-bold tracking-tight text-fg">{cap.title}</h2>
+                <p className="mt-3 text-pretty leading-relaxed text-muted">{cap.blurb}</p>
                 <dl className="mt-5 space-y-2.5 text-sm">
                   <div className="flex gap-3">
-                    <dt className="mt-0.5 shrink-0 font-mono text-[11px] uppercase tracking-wider text-slate-500">You keep</dt>
-                    <dd className="text-slate-300">{cap.keep}</dd>
+                    <dt className="mt-0.5 shrink-0 font-mono text-[11px] uppercase tracking-wider text-faint">You keep</dt>
+                    <dd className="text-muted">{cap.keep}</dd>
                   </div>
                   <div className="flex gap-3">
-                    <dt className="mt-0.5 shrink-0 font-mono text-[11px] uppercase tracking-wider text-emerald-400/80">You get</dt>
-                    <dd className="text-slate-300">{cap.get}</dd>
+                    <dt className="mt-0.5 shrink-0 font-mono text-[11px] uppercase tracking-wider text-accent-text">You get</dt>
+                    <dd className="text-muted">{cap.get}</dd>
                   </div>
                 </dl>
               </div>
@@ -233,7 +233,6 @@ function Adopt() {
       </div>
 
       <section className="relative">
-        <div className="hairline mx-auto max-w-4xl" />
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="The tradeoffs"
@@ -241,18 +240,18 @@ function Adopt() {
             blurb="Drop-in adoption is a deliberate deal: a tiny surface and total ownership of your world, in exchange for wiring the SDK deliberately doesn't do for you."
           />
           <div className="mt-10 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/[0.03] p-6">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-emerald-300">Why it's worth it</p>
+            <div className="rounded-2xl border border-accent/20 bg-accent/[0.03] p-6">
+              <p className="font-mono text-xs uppercase tracking-[0.2em] text-accent-text">Why it's worth it</p>
               <ul className="mt-5 space-y-5">
                 {PROS.map((p) => (
                   <li key={p.title}>
-                    <p className="flex gap-2.5 font-semibold text-slate-100">
-                      <span className="text-emerald-400" aria-hidden>
+                    <p className="flex gap-2.5 font-semibold text-fg">
+                      <span className="text-accent-text" aria-hidden>
                         +
                       </span>
                       {p.title}
                     </p>
-                    <p className="mt-1 pl-6 text-sm leading-relaxed text-slate-400">{p.body}</p>
+                    <p className="mt-1 pl-6 text-sm leading-relaxed text-muted">{p.body}</p>
                   </li>
                 ))}
               </ul>
@@ -262,13 +261,13 @@ function Adopt() {
               <ul className="mt-5 space-y-5">
                 {CONS.map((c) => (
                   <li key={c.title}>
-                    <p className="flex gap-2.5 font-semibold text-slate-100">
+                    <p className="flex gap-2.5 font-semibold text-fg">
                       <span className="text-amber-400/90" aria-hidden>
                         −
                       </span>
                       {c.title}
                     </p>
-                    <p className="mt-1 pl-6 text-sm leading-relaxed text-slate-400">{c.body}</p>
+                    <p className="mt-1 pl-6 text-sm leading-relaxed text-muted">{c.body}</p>
                   </li>
                 ))}
               </ul>
@@ -278,7 +277,6 @@ function Adopt() {
       </section>
 
       <section className="relative">
-        <div className="hairline mx-auto max-w-4xl" />
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="How to read a capability"
@@ -289,11 +287,11 @@ function Adopt() {
             {MODES.map((m) => (
               <div key={m.label} className={`rounded-2xl border p-5 ${m.tone}`}>
                 <p className="font-mono text-sm font-semibold">{m.label}</p>
-                <p className="mt-2 text-sm leading-relaxed text-slate-300/90">{m.body}</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted/90">{m.body}</p>
               </div>
             ))}
           </div>
-          <p className="mt-8 text-sm text-slate-500">
+          <p className="mt-8 text-sm text-faint">
             More drop-in systems land as they're built — inventory, quests, weapon plumbing, and multiplayer plumbing follow the
             same adapter shape.
           </p>

@@ -98,6 +98,7 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
     if (host === null) return;
     let cancelled = false;
     let created: SpecimenInstance | null = null;
+    document.documentElement.dataset.jgCapture = "pending";
     config
       .load(host)
       .then((instance) => {
@@ -114,6 +115,7 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
       .catch(() => {
         // No WebGL, or a module/render failure: fall back to the "unavailable" note.
         if (!cancelled) setFailed(true);
+        document.documentElement.dataset.jgCapture = "ready";
       });
     return () => {
       cancelled = true;
@@ -133,23 +135,23 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-white/[0.08] bg-black/30">
+      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-line bg-black/30">
         <div ref={hostRef} className="absolute inset-0" aria-hidden />
         {ready && !failed && (
-          <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-ink/70 px-2.5 py-1 font-mono text-[10px] text-emerald-300 backdrop-blur-sm">
+          <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-bg/70 px-2.5 py-1 font-mono text-[10px] text-accent-text backdrop-blur-sm">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
             </span>
             live · @jgengine/core
           </span>
         )}
         {!ready && !failed && (
-          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-white/[0.05] via-transparent to-emerald-400/[0.04]" />
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-fg/[0.05] via-transparent to-accent/[0.04]" />
         )}
         {failed && (
           <div className="absolute inset-0 grid place-items-center p-6 text-center">
-            <p className="font-mono text-xs text-slate-500">
+            <p className="font-mono text-xs text-faint">
               WebGL unavailable — the code beside this still runs everywhere `@jgengine/core` does.
             </p>
           </div>
@@ -157,16 +159,16 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
       </div>
 
       {!failed && (
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4">
+        <div className="rounded-xl border border-line bg-fg/[0.02] p-4">
           <div className="grid gap-x-5 gap-y-3 sm:grid-cols-2">
             {config.controls.map((control) => {
               if (control.kind === "range") {
                 const value = Number(dials[control.key] ?? 0);
                 return (
                   <label key={control.key} className="block">
-                    <div className="flex items-center justify-between text-xs text-slate-400">
+                    <div className="flex items-center justify-between text-xs text-muted">
                       <span>{control.label}</span>
-                      <span className="font-mono text-emerald-300">{value.toFixed(decimals(control.step))}</span>
+                      <span className="font-mono text-accent-text">{value.toFixed(decimals(control.step))}</span>
                     </div>
                     <input
                       type="range"
@@ -175,7 +177,7 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
                       step={control.step}
                       value={value}
                       onChange={(e) => patch({ [control.key]: Number(e.target.value) })}
-                      className="mt-1 w-full accent-emerald-400"
+                      className="mt-1 w-full accent-accent"
                     />
                   </label>
                 );
@@ -183,7 +185,7 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
               if (control.kind === "toggle") {
                 const on = Boolean(dials[control.key]);
                 return (
-                  <div key={control.key} className="flex items-center justify-between text-xs text-slate-400">
+                  <div key={control.key} className="flex items-center justify-between text-xs text-muted">
                     <span>{control.label}</span>
                     <button
                       type="button"
@@ -191,7 +193,7 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
                       aria-checked={on}
                       onClick={() => patch({ [control.key]: !on })}
                       className={`rounded-full px-3 py-1 font-mono text-[11px] transition ${
-                        on ? "bg-emerald-400/15 text-emerald-300" : "bg-white/[0.04] text-slate-400 hover:text-slate-200"
+                        on ? "bg-accent/15 text-accent-text" : "bg-fg/[0.04] text-muted hover:text-fg"
                       }`}
                     >
                       {on ? "on" : "off"}
@@ -200,12 +202,12 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
                 );
               }
               return (
-                <div key={control.label} className="flex items-center justify-between text-xs text-slate-400">
+                <div key={control.label} className="flex items-center justify-between text-xs text-muted">
                   <span>{control.label}</span>
                   <button
                     type="button"
                     onClick={() => setDials((current) => control.run(current))}
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 font-mono text-[11px] text-slate-300 transition hover:border-emerald-400/40 hover:text-emerald-300"
+                    className="rounded-full border border-line bg-fg/[0.04] px-3 py-1 font-mono text-[11px] text-muted transition hover:border-accent/40 hover:text-accent-text"
                   >
                     {control.label} →
                   </button>
@@ -213,7 +215,7 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
               );
             })}
           </div>
-          <p className="mt-3 font-mono text-[10.5px] leading-relaxed text-slate-500">{config.hint}</p>
+          <p className="mt-3 font-mono text-[10.5px] leading-relaxed text-faint">{config.hint}</p>
         </div>
       )}
     </div>

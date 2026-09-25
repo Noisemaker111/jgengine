@@ -1,7 +1,10 @@
+import { useEffect } from "react";
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 
 import { SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from "../lib/site";
+import { THEME_INIT_SCRIPT } from "../lib/theme";
 import appCss from "../styles.css?url";
+import displayWoff2 from "@fontsource-variable/bricolage-grotesque/files/bricolage-grotesque-latin-wght-normal.woff2?url";
 import interWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import monoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
 
@@ -43,9 +46,11 @@ export const Route = createRootRoute({
       { name: "twitter:title", content: TITLE },
       { name: "twitter:description", content: DESCRIPTION },
       { name: "twitter:image", content: OG_IMAGE },
-      { name: "theme-color", content: "#05070d" },
+      { name: "theme-color", content: "#0d0c0b", media: "(prefers-color-scheme: dark)" },
+      { name: "theme-color", content: "#f5f1e8", media: "(prefers-color-scheme: light)" },
     ],
     links: [
+      { rel: "preload", href: displayWoff2, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preload", href: interWoff2, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preload", href: monoWoff2, as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: appCss },
@@ -53,6 +58,7 @@ export const Route = createRootRoute({
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
     scripts: [
+      { children: THEME_INIT_SCRIPT },
       {
         type: "application/ld+json",
         children: JSON.stringify(JSON_LD),
@@ -63,12 +69,22 @@ export const Route = createRootRoute({
 });
 
 function RootComponent() {
+  // Screenshot tooling (jgengine-verify) waits for data-jg-capture="ready". Live canvases
+  // mark themselves "pending" in their own (earlier-running) effects and flag ready when drawn.
+  useEffect(() => {
+    const flags = document.documentElement.dataset;
+    if (flags.jgCapture !== undefined) return;
+    void document.fonts.ready.then(() => {
+      flags.jgCapture ??= "ready";
+    });
+  }, []);
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
-      <body className="min-h-dvh bg-[#05070d] text-slate-200 antialiased">
+      <body className="min-h-dvh bg-bg font-sans text-fg antialiased">
         <Outlet />
         <Scripts />
       </body>

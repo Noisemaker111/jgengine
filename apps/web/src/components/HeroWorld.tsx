@@ -4,12 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { HERO_SCENARIOS } from "../lib/heroScenarios";
 import type { CityStats } from "../live/cityScene";
 import type { HeroWorldHandle } from "../live/heroWorld";
+import { ENTRY_PROMPT } from "../lib/site";
 import { CopyButton } from "./Copy";
 import { Backdrop } from "./Layout";
 
 type TypingPhase = "typing" | "deleting";
 
 const SEED_WORDS = ["neon", "vice", "harbor", "palm", "dusk", "loop", "ridge", "delta", "night", "coast", "ember", "static"];
+
+const LONGEST_FILL = HERO_SCENARIOS.reduce((a, b) => (b.fill.length > a.length ? b.fill : a), "");
 
 function rollSeed(): string {
   const a = SEED_WORDS[Math.floor(Math.random() * SEED_WORDS.length)];
@@ -25,7 +28,7 @@ export function HeroWorld() {
   const [stats, setStats] = useState<CityStats | null>(null);
   const [ready, setReady] = useState(false);
   const [reduced, setReduced] = useState(false);
-  const [typing, setTyping] = useState({ index: 0, chars: 0, phase: "typing" as TypingPhase });
+  const [typing, setTyping] = useState({ index: 0, chars: HERO_SCENARIOS[0]!.fill.length, phase: "typing" as TypingPhase });
   const [origin, setOrigin] = useState("https://jgengine.com");
 
   // Boot the live world (client-only; three.js is loaded lazily so it never
@@ -34,6 +37,7 @@ export function HeroWorld() {
     const host = canvasHost.current;
     if (host === null) return;
     let cancelled = false;
+    document.documentElement.dataset.jgCapture = "pending";
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setReduced(prefersReduced);
     setOrigin(window.location.origin);
@@ -60,6 +64,7 @@ export function HeroWorld() {
       })
       .catch(() => {
         // No WebGL / import failure: the static backdrop stays, the page still works.
+        document.documentElement.dataset.jgCapture = "ready";
       });
     return () => {
       cancelled = true;
@@ -116,7 +121,8 @@ export function HeroWorld() {
 
   return (
     <section
-      className="relative flex min-h-svh flex-col overflow-hidden"
+      data-theme="dark"
+      className="relative isolate flex min-h-[calc(100svh-4rem)] flex-col overflow-hidden bg-bg text-fg"
       onPointerMove={(event) => {
         const bounds = event.currentTarget.getBoundingClientRect();
         worldRef.current?.setPointer(
@@ -125,110 +131,121 @@ export function HeroWorld() {
         );
       }}
     >
-      {!ready && <Backdrop variant="hero" />}
+      {!ready && <Backdrop />}
       <div
         ref={canvasHost}
         aria-hidden
-        className={`absolute inset-0 transition-opacity duration-1000 ${ready ? "opacity-100" : "opacity-0"}`}
+        className="absolute inset-0"
       />
-      {/* Readability scrims: ink at the top for the header, ink at the bottom into the page. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-ink via-ink/60 to-transparent" />
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-ink to-transparent" />
+      {/* Scrims keep the copy readable over the moving city. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-bg via-bg/75 to-bg/10 max-lg:via-bg/80 max-lg:to-bg/40" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-bg to-transparent" />
 
-      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-6 pt-20 sm:px-6 sm:pt-24">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="animate-fade-up mx-auto inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-ink/70 px-3.5 py-1.5 text-xs font-medium text-emerald-300 backdrop-blur-sm">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            </span>
-            This skyline is being generated in your tab by @jgengine/core
+      <div className="relative mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 pb-6 pt-14 sm:px-6 sm:pt-20 lg:pt-24">
+        <div className="max-w-3xl">
+          <p className="animate-fade-up inline-flex items-center gap-2.5 rounded-full border border-line bg-bg/70 px-3 py-1.5 font-mono text-[11px] text-muted backdrop-blur-sm sm:text-xs">
+            <span className="live-dot" aria-hidden />
+            Game SDK for coding agents · pure TypeScript<span className="hidden sm:inline"> · Apache-2.0</span>
           </p>
           <h1
-            className="animate-fade-up mt-6 text-balance text-4xl font-bold leading-[1.08] tracking-tighter text-slate-50 [text-shadow:0_2px_24px_rgba(2,3,8,0.9)] sm:text-6xl"
+            className="font-display animate-fade-up mt-7 text-[2.65rem] font-bold leading-[0.95] tracking-[-0.035em] text-fg min-[400px]:text-5xl sm:text-7xl lg:text-[5.4rem]"
             style={{ animationDelay: "60ms" }}
           >
-            Make a game that{" "}
-            <span className={`text-gradient ${caret ? "terminal-caret" : ""}`}>{typed}</span>
-            {typing.chars === 0 && !caret ? <span className="text-slate-600">…</span> : null} with
-            jgengine.
+            <span className="sr-only">Make a game that … with jgengine.</span>
+            <span aria-hidden className="block">Make a game that</span>
+            <span aria-hidden className="grid text-accent">
+              <span className="invisible col-start-1 row-start-1">{LONGEST_FILL}</span>
+              <span className="col-start-1 row-start-1">
+                <span className={caret ? "terminal-caret" : ""}>{typed}</span>
+              </span>
+            </span>
+            <span aria-hidden className="block">with jgengine.</span>
           </h1>
           <p
-            className="animate-fade-up mx-auto mt-5 max-w-2xl text-pretty text-base text-slate-300 [text-shadow:0_1px_16px_rgba(2,3,8,0.9)] sm:text-lg"
+            className="animate-fade-up mt-7 max-w-xl text-pretty text-base leading-relaxed text-muted sm:text-lg"
             style={{ animationDelay: "120ms" }}
           >
-            That sentence is the whole interface — a coding agent builds the rest on a
-            pure-TypeScript SDK. Each pitch you see regrows the city below from one seed, live,
-            using the same generators a shipped game runs.
+            Say that to Claude Code, Cursor, Codex or any coding agent. It reads jgengine's skills, builds the game
+            on the SDK from small building blocks, and checks it with tests and screenshots.
           </p>
           <div
-            className="animate-fade-up mt-8 flex flex-wrap items-center justify-center gap-3"
+            className="animate-fade-up mt-9 flex flex-wrap items-center gap-3"
             style={{ animationDelay: "180ms" }}
           >
-            <Link
-              to="/playground"
-              className="group rounded-xl bg-gradient-to-r from-emerald-400 to-emerald-300 px-6 py-3 text-sm font-semibold text-ink-deep shadow-[0_0_36px_-8px_rgba(52,211,153,0.7)] transition hover:shadow-[0_0_48px_-8px_rgba(52,211,153,0.9)]"
-            >
-              Drive the generator yourself
-              <span className="ml-2 inline-block transition-transform group-hover:translate-x-0.5" aria-hidden>
-                →
-              </span>
-            </Link>
-            <Link
-              to="/capabilities"
-              className="rounded-xl border border-white/12 bg-ink/60 px-6 py-3 text-sm font-semibold text-slate-200 backdrop-blur-sm transition hover:border-emerald-400/40 hover:bg-emerald-400/[0.06]"
-            >
-              See every system live
+            <CopyPromptButton />
+            <Link to="/games" className="btn btn-secondary">
+              Play the games <span className="arrow" aria-hidden>→</span>
             </Link>
           </div>
         </div>
 
-        {/* World HUD: real numbers read back from the generator, not copy. */}
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-4 pt-10">
+        {/* Real numbers read back from the generator, not copy. */}
+        <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-12">
           <div
-            className={`pointer-events-auto rounded-xl border border-white/[0.08] bg-ink/70 p-3.5 font-mono text-[11px] leading-relaxed text-slate-400 backdrop-blur-md transition-opacity duration-700 sm:text-xs ${
+            className={`rounded-xl border border-line bg-bg/75 p-3 font-mono text-[11px] leading-relaxed text-muted backdrop-blur-md transition-opacity duration-700 sm:text-xs ${
               stats !== null ? "opacity-100" : "opacity-0"
             }`}
           >
-            <div className="flex items-center gap-2">
-              <span className="text-slate-600">seed</span>
-              <span className="text-emerald-300">{seed}</span>
+            <p className="text-faint">
+              live · this city is <span className="text-fg">generateCity()</span> from @jgengine/core, running in your tab
+            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <span className="text-faint">seed</span>
+              <span className="text-live">{seed}</span>
               <button
                 type="button"
                 onClick={() => applySeed(rollSeed())}
-                title="Regrow from a new seed"
-                className="rounded-md border border-white/10 bg-white/[0.04] px-1.5 py-0.5 transition hover:border-emerald-400/40 hover:text-emerald-300"
+                className="rounded-md border border-line px-1.5 py-0.5 transition-colors hover:border-line-strong hover:text-fg"
               >
                 reroll
               </button>
-              <CopyButton value={`${origin}/?seed=${encodeURIComponent(seed)}`} label="share" className="!px-2 !py-0.5 !text-[10px]" />
+              <CopyButton value={`${origin}/?seed=${encodeURIComponent(seed)}`} label="share" variant="ghost" className="!px-1.5 !py-0.5 !text-[10px]" />
             </div>
             {stats !== null && (
-              <p className="mt-1.5 text-slate-500">
-                streets <span className="text-slate-300">{stats.streets}</span> · lots{" "}
-                <span className="text-slate-300">{stats.lots}</span> · junctions{" "}
-                <span className="text-slate-300">{stats.junctions}</span> · loops{" "}
-                <span className="text-slate-300">{stats.loops}</span> — deterministic: same seed,
-                same city, every machine
+              <p className="mt-1 text-faint">
+                streets <span className="text-fg">{stats.streets}</span> · lots <span className="text-fg">{stats.lots}</span> ·
+                junctions <span className="text-fg">{stats.junctions}</span> · loops <span className="text-fg">{stats.loops}</span>
               </p>
             )}
           </div>
-          <div className="pointer-events-auto flex items-center gap-2 rounded-xl border border-white/[0.08] bg-ink/70 px-3 py-2.5 backdrop-blur-md">
+          <div className="flex items-center gap-1 rounded-xl border border-line bg-bg/75 p-1.5 backdrop-blur-md" role="group" aria-label="Example prompts">
             {HERO_SCENARIOS.map((scenario, i) => (
               <button
                 key={scenario.fill}
                 type="button"
                 title={`…${scenario.fill}`}
-                aria-label={`Switch world: ${scenario.fill}`}
+                aria-label={`Show: ${scenario.fill}`}
+                aria-pressed={i === typing.index}
                 onClick={() => jumpTo(i)}
-                className={`h-2.5 w-2.5 rounded-full transition ${
-                  i === typing.index ? "scale-125 bg-emerald-300" : "bg-white/20 hover:bg-white/45"
-                }`}
-              />
+                className="grid h-7 w-7 place-items-center rounded-lg transition-colors hover:bg-fg/10"
+              >
+                <span className={`block h-2 rounded-full transition-all ${i === typing.index ? "w-4 bg-accent" : "w-2 bg-fg/30"}`} />
+              </button>
             ))}
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function CopyPromptButton() {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      className="btn btn-primary"
+      onClick={() => {
+        void navigator.clipboard
+          .writeText(ENTRY_PROMPT)
+          .then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1600);
+          })
+          .catch(() => setCopied(false));
+      }}
+    >
+      <span aria-live="polite">{copied ? "Copied — paste it into your agent" : "Copy the prompt"}</span>
+    </button>
   );
 }

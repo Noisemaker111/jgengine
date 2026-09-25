@@ -8,6 +8,7 @@ import { shellDrivesPlayerPose } from "../shellMovement";
 import type { Aim } from "@jgengine/core/scene/spatial";
 import { steerYaw } from "@jgengine/core/movement/steering";
 import { stepPlayerMovement, resolvePlayerMovementTuning } from "@jgengine/core/movement/playerMovement";
+import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
 import { resolveCommandSink, type CommandSink } from "../commandSink";
@@ -123,7 +124,6 @@ export function FrameDriver({
     [multiplayer, serverAuthoritative, serverIdRef],
   );
   const lastSentInputRef = useRef<InputFrame | null>(null);
-  const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
   const predictionRef = useRef(createPredictionBuffer<EntityPosition>({
     initial: [0, 0, 0],
     maxTicks: 120,
@@ -176,7 +176,7 @@ export function FrameDriver({
     try {
     let endPhase = devtools.profile.begin("time+input");
     const dt = Math.min(rawDt, 0.05);
-    ctx.input.publish(heldActionsFor(tracker, inputActions));
+    ctx.input.publish(heldActionsFor(tracker, tracker.actions()));
     ctx.input.publishPointer(pointerAxisRef.current);
     ctx.input.publishAnalog(analogRef.current);
     sendInput();
@@ -211,6 +211,21 @@ export function FrameDriver({
           );
         }
         endPose();
+      }
+      if (drivesPose && !serverAuthoritative) {
+        const table = localPlayers(ctx);
+        const seats = table.slots();
+        for (let index = 1; index < seats.length; index += 1) {
+          const seat = table.local(seats[index]!.slotId);
+          if (seat === null) continue;
+          stepPlayerMovement(
+            ctx,
+            seat.userId,
+            { held: seat.input.held(), pointer: null, analog: seat.input.analog() },
+            stepDt,
+            movementTuning,
+          );
+        }
       }
       ctx.sim.runStages("afterMovement", stepDt);
 
