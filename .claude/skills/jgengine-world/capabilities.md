@@ -8,7 +8,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createActionContextStack` (function) · `import { createActionContextStack } from "@jgengine/core/input/actionContexts"`
 
-## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, and utility AI decisions.
+## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, utility, timer, and random AI decisions with interrupt hooks.
 
 - `createDecisionGraphRuntime` (function) · `import { createDecisionGraphRuntime } from "@jgengine/core/ai/decisionGraph"`
 
