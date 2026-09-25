@@ -226,6 +226,16 @@
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented
 
+## @jgengine/core/anim/footPlacement
+
+- `FootGroundSample` (interface): interface FootGroundSample — One foot's animated ankle height and the ground found under it, both in world units.
+- `FootPlacement` (interface): interface FootPlacement — Result of {@link placeFeet}: where each ankle should go and how far the pelvis drops.
+- `FootPlacementInput` (interface): interface FootPlacementInput — Inputs for {@link placeFeet}. All heights are world units.
+- `LegChain` (interface): interface LegChain — Thigh → shin → foot bone names for one leg.
+- `RigBone` (interface): interface RigBone — A bone as {@link inferLegChains} sees it: its name and its parent's name.
+- `inferLegChains` (function): function inferLegChains(bones: readonly RigBone[]): LegChain[] — Finds leg chains on a humanoid rig by bone name: a thigh-like bone (`UpLeg`, `UpperLeg`, `Thigh`) with its first child and grandchild as shin and foot. Control, IK-target and twist bones are skipped. Returns chains in rig order; an empty array means the rig has no recognizable legs.
+- `placeFeet` (function): function placeFeet(input: FootPlacementInput, out?: FootPlacement): FootPlacement — Resolves foot placement for a rig whose clips were authored on flat ground at its origin. Each foot keeps its animated lift and moves by its ground's height above or below the origin, the sole is never left under the ground, and the pelvis drops by the deepest reach so both legs stay within length. Pure and allocation-light; the renderer applies the targets with {@link solveTwoBone}.
+
 ## @jgengine/core/anim/ikSolver
 
 - `FabrikOptions` (interface): interface FabrikOptions — Iteration budget and convergence threshold for {@link solveFabrik}.

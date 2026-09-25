@@ -270,17 +270,34 @@ export interface ModelConfig {
    * rig's bind pose.
    */
   animation?: ModelAnimationConfig | "auto" | "none";
-  /** Optional runtime inverse-kinematics targets for a rigged model. Bone names are resolved on the loaded scene. */
-  ik?: {
-    feet: readonly { root: string; mid: string; tip: string }[];
-    lookAt?: { bone: string };
-  };
+  /**
+   * Runtime inverse kinematics for a rigged model, applied after the animation mixer each frame.
+   * Feet follow slopes and steps while keeping each clip's swing lift, soles never sink below the
+   * ground, the pelvis drops so the lower leg can reach, and the correction fades out while airborne.
+   * `"auto"` finds the legs by bone name (`UpLeg`, `UpperLeg`, `Thigh`); bone names resolve on the
+   * loaded scene.
+   */
+  ik?: "auto" | ModelIkConfig;
   /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
   attachments?: readonly ModelAttachment[];
   /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. Tag parts with a `role` to procedurally animate a rig-less character composition. */
   parts?: readonly ModelPart[];
   /** Tuning for the procedural part-motion driver when any part carries a `role`; omit for defaults. */
   partMotion?: PartMotionParams;
+}
+
+/** Bone names and limits for {@link ModelConfig.ik}. */
+export interface ModelIkConfig {
+  /** Thigh → shin → foot chains; omit to find them by bone name. `[]` turns foot IK off. */
+  feet?: readonly { root: string; mid: string; tip: string }[];
+  /** Bone shifted down when a foot has to reach lower ground; defaults to the first thigh's parent. */
+  pelvis?: string;
+  /** Largest foot or pelvis correction, as a fraction of leg length. Default `0.4`. */
+  maxAdjust?: number;
+  /** Tilt planted feet to the ground normal, `0..1`. Default `1`. */
+  alignToGround?: number;
+  /** Turns this bone toward the camera. */
+  lookAt?: { bone: string };
 }
 
 export interface ObjectStyle {
