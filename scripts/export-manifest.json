@@ -804,6 +804,7 @@
     "./input/gamepadMerge",
     "./input/gamepadSource",
     "./input/mouseLook",
+    "./input/pointerLock",
     "./inputSink",
     "./map/MapMarkerBeacons",
     "./map/index",
