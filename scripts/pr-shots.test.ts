@@ -24,7 +24,7 @@ describe("pr-shots", () => {
     // Minimal valid-enough bytes for --dry (never hashed into git).
     writeFileSync(png, Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
 
-    execFileSync("bun", ["run", join(import.meta.dir, "pr-shots.ts"), "--dry", png], {
+    execFileSync("bun", ["run", join(import.meta.dir, "pr-shots.ts"), "--dry", "--branch", "pr-shots-test", png], {
       encoding: "utf8",
       cwd: join(import.meta.dir, ".."),
     });

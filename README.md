@@ -69,7 +69,7 @@ The game the agent builds is **its own project in its own repo/directory**, on t
 
 It deploys to Cloudflare Workers through the official Cloudflare Vite plugin. Because the site is built from `.claude/skills/` and `packages/`, **shipping an engine or skill change redeploys the site with it** — the deploy of the engine is the deploy of the website. Setup in [`apps/web/README.md`](apps/web/README.md).
 
-The probe games that live in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) are also playable on jgengine.com itself, at `/games/<id>` via the games page and header link — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. The website clones the games repo at build time into an ephemeral `./Games` directory (see `scripts/ensure-games.ts` / `bun run games:clone`); the clone is gitignored and never committed to this repo. Root `bun dev` runs this same website locally on one server, serving that same static runner build (content-hash cached, rebuilt in the background when game or engine sources change), so the games are playable at `/games/<id>` locally once you have a clone. To play a game standalone, run `bun run --cwd Games/<id> dev` after cloning, or use the standalone dev harness inside any external game scaffolded per `jgengine`'s dev harness.
+The probe games that live in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) are also playable on jgengine.com itself, at `/games/<id>` via the games page and header link — the page embeds the `apps/dev` runner, which the site bundles as a static build at build time. The website clones the games repo at build time into an ephemeral `./Games` directory at the commit pinned in `scripts/games-ref.txt` (see `scripts/ensure-games.ts` / `bun run games:clone`; `bun run games:bump` moves the pin); the clone is gitignored and never committed to this repo. Root `bun dev` runs this same website locally on one server, serving that same static runner build (content-hash cached, rebuilt in the background when game or engine sources change), so the games are playable at `/games/<id>` locally once you have a clone. To play a game standalone, run `bun run --cwd Games/<id> dev` after cloning, or use the standalone dev harness inside any external game scaffolded per `jgengine`'s dev harness.
 
 ## Layering
 
@@ -83,7 +83,8 @@ bun run build        # tsgo + import-extension rewrite, per package
 bun run check-types
 bun run test
 bun run gen           # regenerate every committed derived artifact, in dependency order
-bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games
+bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games at the pinned commit
+bun run games:update # move an existing clone to the pin; games:bump pins the games repo's latest main
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
 # a cloned game standalone:
 bun run --cwd Games/vice-isle dev

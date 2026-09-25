@@ -4,7 +4,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
+  findCapabilities,
   loadCapabilityIndex,
+  loadSkillRecipes,
+  recipeCapabilities,
   parseCapabilities,
   renderFindResults,
   resolveSkillsDir,
@@ -77,6 +80,31 @@ describe("searchCapabilities", () => {
     expect(searchCapabilities(index, "@jgengine/react").length).toBe(3);
   });
 
+  test("tokens match whole stemmed words, not substrings", () => {
+    const rows = [
+      ...index,
+      { skill: "jgengine-gameplay", slug: "territory", description: "resolve a claim on a plot", imports: [], symbols: [] },
+      { skill: "jgengine-world", slug: "aim-direction", description: "aim a shot from the eye", imports: [], symbols: [] },
+    ];
+    expect(searchCapabilities(rows, "aim").map((e) => e.slug)).toEqual(["aim-direction"]);
+    expect(searchCapabilities(index, "windows").map((e) => e.slug)).toContain("use-panels");
+    expect(searchCapabilities(index, "panels hosting").map((e) => e.slug)).toContain("panel-host");
+  });
+
+  test("stopwords drop and a multi-word query also matches its words joined", () => {
+    const rows = [{ skill: "jgengine-world", slug: "world-item-pickup", description: "walk-over item pickup", imports: [], symbols: [] }];
+    expect(searchCapabilities(rows, "pick up").map((e) => e.slug)).toEqual(["world-item-pickup"]);
+    expect(searchCapabilities(index, "a toggleable window for the bag").length).toBe(0);
+    expect(searchCapabilities(index, "a toggleable window").map((e) => e.slug)).toContain("use-panels");
+  });
+
+  test("with no full match, the rows carrying the most tokens come back flagged partial", () => {
+    const result = findCapabilities(index, "toggleable submarine");
+    expect(result.partial).toBe(true);
+    expect(result.matches.map((e) => e.slug)).toEqual(["use-panels"]);
+    expect(renderFindResults(result.matches, "toggleable submarine", true)).toContain("nothing matched every word");
+  });
+
   test("an empty query matches nothing", () => {
     expect(searchCapabilities(index, "   ")).toHaveLength(0);
   });
@@ -112,6 +140,32 @@ describe("loadCapabilityIndex + resolveSkillsDir (disk)", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  test("indexes skill recipe docs and CLI recipes as rows", () => {
+    const dir = mkdtempSync(join(tmpdir(), "jg-find-recipes-"));
+    try {
+      mkdirSync(join(dir, "jgengine-world", "recipes"), { recursive: true });
+      writeFileSync(
+        join(dir, "jgengine-world", "recipes", "vehicle-feel.md"),
+        "# Recipe — vehicle feel\n\n**What this wires:** a ground vehicle that feels right.\n",
+      );
+      const rows = loadSkillRecipes(dir);
+      expect(rows).toEqual([
+        {
+          skill: "jgengine-world",
+          slug: "recipe/vehicle-feel",
+          description: "vehicle feel — a ground vehicle that feels right.",
+          imports: ["read .claude/skills/jgengine-world/recipes/vehicle-feel.md"],
+          symbols: [],
+        },
+      ]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+    expect(searchCapabilities(recipeCapabilities(), "third person camera").map((e) => e.slug)).toEqual([
+      "third-person-camera",
+    ]);
   });
 
   test("resolveSkillsDir finds a package root that has both skills/ and package.json", () => {

@@ -34,6 +34,7 @@ between (`--json` for structured output).
 ### Changed
 
 - `npx jgengine find` now surfaces seams that had no capability row: `vehicle-seats`, `drivable-vehicle`, `kinematic-vehicle`, `affix-roller`, `hitscan-shot`, `loot-beams`, `world-item-pickup`, `on-death-drops`, `pointer-commands`, `current-target`, `fire-input`, `global-cooldown`. `PointerConfig.moveCommand` JSDoc now says it receives the clicked entity (click-to-target).
+- `npx jgengine find` matches whole stemmed words (`aim` no longer hits `claim`), drops stopwords, tries multi-word queries joined (`pick up` → `pickup`), returns the closest partial matches instead of "no match", and searches CLI recipes and skill recipe docs.
 - `raycastNav` and `NavMeshQuery.raycast` step into the polygon a segment enters when it starts on or crosses a shared vertex, so a funnel path's corner-to-corner legs raycast clear.
 - `bakeNavMesh` (`@jgengine/navbake`) now voxelizes geometry with recast: the walkable surface is eroded by `agentRadius`, cut under obstacles lower than `agentHeight`, and split at `maxSlope` and `maxClimb`, so a wall standing on a floor leaves a hole the path goes around. Call `await initNavBake()` once before baking; `navBakeReady()` reports it. Walkable triangles must wind counter-clockwise seen from above. Optional `cellSize`/`cellHeight` trade precision for speed. The editor warms the baker when a host starts.
 - `findPath`, `closestPoint` and `raycastNav` on `NavMeshData` share the cached query: paths bend only at portal corners, stacked floors resolve by height, and raycasts walk polygon edges instead of sampling.
@@ -115,6 +116,8 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- Editor RPC `add_marker` and `set_marker` accept `catalogId`. It used to be dropped while the call still returned `ok`, so a headlessly authored `mob`/`boss` marker spawned nothing.
+- Agent bridge `editor_summon` now resolves once the editor has mounted (up to 15 s). It used to return immediately, so editor verbs later in the same `drive` batch failed with "no live editor".
 - Catalog `onDeath: { dropMode: "world" }` scattered drops with `Math.random`, so kill loot landed in different spots on replay and on each peer. The runtime now passes the world's seeded `ctx.rng` to the scatter.
 - The chase camera no longer falls behind fast vehicles. Its spring eased the camera's world position toward a moving target, so the lag grew with speed (about 9 m extra at 220 km/h); it now eases the boom offset from the target (#1770).
 - A `createVehicleDynamics` bike with both `lean` and `suspension` launched itself the moment it leaned: the springs read the lean as body roll across the narrow track. Springs now ignore lean, and lateral g keeps the same lag it has without springs.

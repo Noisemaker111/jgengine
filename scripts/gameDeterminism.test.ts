@@ -1,18 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { rmSync } from "node:fs";
 
+import { writeGameTree } from "./fixtures/gameTree";
 import { findRandomnessLeaks } from "./gameDeterminism";
 
 function scan(files: Record<string, string>) {
-  const root = mkdtempSync(join(tmpdir(), "determinism-"));
+  const root = writeGameTree("determinism-", files);
   try {
-    for (const [rel, source] of Object.entries(files)) {
-      const path = join(root, rel);
-      mkdirSync(join(path, ".."), { recursive: true });
-      writeFileSync(path, source);
-    }
     return findRandomnessLeaks(root);
   } finally {
     rmSync(root, { recursive: true, force: true });
