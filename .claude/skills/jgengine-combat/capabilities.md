@@ -120,13 +120,21 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEncounterState` (function) · `import { createEncounterState } from "@jgengine/core/combat"`
 
-## event-meter — a heat/streak gauge that builds from repeated hits and cools down over time
+## event-meter — a heat/streak/alert gauge (wanted level, rage, combo) that builds from repeated events and cools down over time
 
 - `createEventMeter` (function) · `import { createEventMeter } from "@jgengine/core/combat"`
 
 ## fire-cadence — a serializable minimum-interval rate gate for repeated actions (weapon fire, ability spam)
 
 - `createFireCadence` (function) · `import { createFireCadence } from "@jgengine/core/combat"`
+
+## global-cooldown — share one cooldown across every ability slot (MMO global cooldown) with a cooldown group
+
+- `createAbilityKit` (function) · `import { createAbilityKit } from "@jgengine/core/combat"`
+
+## hitscan-shot — aim a hitscan shot (shoot a gun): resolve origin and direction from the eye or muzzle for a raycast
+
+- `resolveShot` (function) · `import { resolveShot } from "@jgengine/core/combat"`
 
 ## immunity-window — reject damage during a per-target invulnerability window installed by transitions
 
@@ -140,6 +148,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## magazine — a weapon magazine with capacity, timed reload, and reserve-pool interaction
 
 - `createMagazine` (function) · `import { createMagazine } from "@jgengine/core/combat"`
+
+## on-death-drops — make a killed enemy drop loot on the ground or into the killer's bag via catalog onDeath
+
+- `OnDeathSpec` (interface) · `import { OnDeathSpec } from "@jgengine/core/combat"`
 
 ## parry-window — time a block/parry/i-frame defensive window against incoming hits
 

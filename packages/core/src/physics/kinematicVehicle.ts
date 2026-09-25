@@ -251,6 +251,11 @@ export interface KinematicVehicle {
   resetTo(position: readonly [number, number, number], heading: number): void;
 }
 
+/**
+ * Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
+ *
+ * @capability kinematic-vehicle arcade car/kart driving physics with throttle, brake, steer and retunable handling
+ */
 export function createKinematicVehicle(
   initialTuning: KinematicVehicleTuning,
   options: KinematicVehicleOptions = {},

@@ -104,7 +104,6 @@ export function selectNearestWorldItem(
 /**
  * Spawn and track pickup-able items scattered in the world, including drops that scatter on death.
  *
- * @capability world-drops spawn pickup-able items in the world, including death drops
   * @internal
   */
 export function createWorldItemStore(deps: WorldItemStoreDeps): WorldItemStore {
@@ -207,6 +206,11 @@ export function resolveDeathDrops(
   return { worldSpawns, grants };
 }
 
+/**
+ * Per-rarity look of a dropped item: beam, color and label. Set via `defineGame({ worldItem: { rarityStyle } })`.
+ *
+ * @capability loot-beams rarity-colored loot beams and labels on dropped items via defineGame({ worldItem: { rarityStyle, beamHeight } })
+ */
 export interface RarityStyle {
   color?: string;
   beam?: boolean;
