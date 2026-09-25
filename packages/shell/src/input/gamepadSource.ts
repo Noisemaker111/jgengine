@@ -1,52 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 
-import {
-  resolveGamepadFrame,
-  type GamepadBindings,
-  type GamepadFrame,
-  type GamepadSnapshot,
-} from "@jgengine/core/input/gamepadModel";
+import { gamepadFeelOptions, type GamepadFeelConfig, type GamepadSample } from "@jgengine/core/input/gamepadModel";
 import type { ActionCodesMap, ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import type { InputSnapshot } from "@jgengine/core/runtime/inputSnapshot";
-import { mergeGamepadInput } from "./gamepadMerge";
+import { emptyGamepadPoll, gamepadCodes, stepGamepadPoll } from "./gamepadPoll";
 export { mergeGamepadFrame, mergeGamepadInput } from "./gamepadMerge";
 
-function snapshotOf(gamepad: Gamepad): GamepadSnapshot {
-  return {
-    id: gamepad.id,
-    axes: Array.from(gamepad.axes),
-    buttons: Array.from(gamepad.buttons, (button) => ({ pressed: button.pressed, value: button.value })),
-    connected: gamepad.connected,
-  };
-}
+const SYNTHETIC_PAD: GamepadSample = { axes: [0, 0], buttons: [{ pressed: true, value: 1 }], connected: true };
 
-function gamepadCodes(bindings: ActionCodesMap): Map<string, string[]> {
-  const result = new Map<string, string[]>();
-  for (const [action, config] of Object.entries(bindings)) {
-    const codes = Array.isArray(config)
-      ? config
-      : [...((config as { hold?: readonly string[] }).hold ?? []), ...((config as { toggle?: readonly string[] }).toggle ?? [])];
-    const padCodes = codes.filter((code) => code.startsWith("pad:") || code.startsWith("padaxis:"));
-    if (padCodes.length > 0) result.set(action, padCodes);
-  }
-  return result;
-}
-
-function syncTracker(tracker: ActionStateTracker<string>, bindings: Map<string, string[]>, previous: Set<string>, next: Set<string>) {
-  for (const [action, codes] of bindings) {
-    for (const code of codes) {
-      const wasDown = previous.has(action);
-      const isDown = next.has(action);
-      if (isDown && !wasDown) tracker.handleDown(code);
-      if (!isDown && wasDown) tracker.handleUp(code);
-    }
-  }
-}
-
-function syntheticSnapshot(): GamepadSnapshot | null {
+function syntheticPads(): readonly GamepadSample[] | null {
   if (typeof window === "undefined" || !new URLSearchParams(window.location.search).has("gamepad")) return null;
-  return { id: "Synthetic Gamepad", axes: [0, 0], buttons: [{ pressed: true, value: 1 }], connected: true };
+  return [SYNTHETIC_PAD];
 }
 
 /** Poll browser gamepads and feed semantic actions into the shell tracker. */
@@ -55,19 +20,22 @@ export function GamepadSource({
   bindings,
   analogRef,
   input,
+  feel,
 }: {
   tracker: ActionStateTracker<string>;
   bindings: ActionCodesMap;
   analogRef: { current: Readonly<Record<string, number>> | null };
   input: InputSnapshot;
+  /** Game-level pad feel (`defineGame({ gamepad })`); unset keeps the shell defaults. */
+  feel?: GamepadFeelConfig;
 }) {
-  const previousHeld = useRef<Set<string>>(new Set());
-  const previousAnalog = useRef<Set<string>>(new Set());
+  const poll = useRef(emptyGamepadPoll());
   const padBindings = useRef(gamepadCodes(bindings));
+  const options = useMemo(() => gamepadFeelOptions(feel), [feel]);
+  const synthetic = useMemo(syntheticPads, []);
   useEffect(() => {
     padBindings.current = gamepadCodes(bindings);
-    previousHeld.current.clear();
-    previousAnalog.current.clear();
+    poll.current.held.clear();
     tracker.reset();
   }, [bindings, tracker]);
 
@@ -98,31 +66,9 @@ export function GamepadSource({
   }, [input]);
 
   useFrame(() => {
-    const synthetic = syntheticSnapshot();
-    const pads = synthetic === null
-      ? (typeof navigator === "undefined" || navigator.getGamepads === undefined ? [] : navigator.getGamepads())
-      : [synthetic];
-    const frames: GamepadFrame[] = [];
-    for (let index = 0; index < pads.length; index += 1) {
-      const pad = pads[index];
-      if (pad !== null && pad !== undefined) {
-        frames.push(resolveGamepadFrame(snapshotOf(pad as Gamepad), padBindingsToGamepad(padBindings.current), {
-          deadzone: { kind: "axial", inner: 0.12, outer: 0.95 },
-        }));
-      }
-    }
-    const baseAnalog = { ...(analogRef.current ?? {}) };
-    for (const action of previousAnalog.current) delete baseAnalog[action];
-    const merged = mergeGamepadInput(frames, { held: [], analog: baseAnalog });
-    const nextHeld = new Set(merged.held);
-    syncTracker(tracker, padBindings.current, previousHeld.current, nextHeld);
-    previousHeld.current = nextHeld;
-    analogRef.current = Object.keys(merged.analog).length === 0 ? null : merged.analog;
-    previousAnalog.current = new Set(Object.keys(mergeGamepadInput(frames).analog));
+    const pads: ArrayLike<GamepadSample | null> =
+      synthetic ?? (typeof navigator === "undefined" || navigator.getGamepads === undefined ? [] : navigator.getGamepads());
+    analogRef.current = stepGamepadPoll(poll.current, pads, padBindings.current, options, tracker, analogRef.current);
   });
   return null;
-}
-
-function padBindingsToGamepad(bindings: Map<string, string[]>): GamepadBindings {
-  return Object.fromEntries(bindings.entries()) as GamepadBindings;
 }

@@ -199,6 +199,8 @@ export const gameRegistry: GameRegistry = {
   "kill-feed": () => import("./demo/killFeedDemo").then((module) => module.killFeedDemoGame),
   "interaction-prompt": () => import("./demo/interactionPromptDemo").then((module) => module.interactionPromptDemoGame),
   "camera-shake": () => import("./demo/cameraShakeDemo").then((module) => module.cameraShakeDemoGame),
+  "weapon-handling": () => import("./demo/weaponDemo").then((module) => module.weaponDemoGame),
+  "weapon-handling-shoulder": () => import("./demo/weaponDemo").then((module) => module.weaponShoulderDemoGame),
   "wave-director": () => import("./demo/waveDirectorDemo").then((module) => module.waveDirectorDemoGame),
   "combo-meter": () => import("./demo/comboMeterDemo").then((module) => module.comboMeterDemoGame),
   "waypoint-markers": () => import("./demo/waypointMarkersDemo").then((module) => module.waypointMarkersDemoGame),

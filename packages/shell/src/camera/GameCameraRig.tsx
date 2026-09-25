@@ -101,6 +101,7 @@ export function GameCameraRig({
             config={config?.firstPerson}
             followEntityId={followEntityId ?? undefined}
             viewmodel={viewmodel}
+            weapon={config?.weapon}
           />
         );
       case "topDown":

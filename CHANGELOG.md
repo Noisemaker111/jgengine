@@ -37,6 +37,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `defineGame({ gamepad: { deadzone, curve, triggerDeadzone } })` sets pad feel for the shell's gamepad poll (#1769). Triggers now go through `triggerDeadzone` and the same curve as the sticks, and a trigger resting inside its deadzone no longer holds its action. `resolveGamepadFrame` takes a browser `Gamepad` directly and an optional reusable `out` frame, and the shell poll no longer allocates per frame. `gamepadFeelOptions` resolves the config with the old defaults (axial `0.12`/`0.95`, linear).
 - `measureFlight` (`@jgengine/core/physics/handlingProbe`) flies a `createRigidAircraft` through deterministic autopilot scenarios. It reports roll rate (deg/s), sustained turn rate, stall speed, climb rate, time to 90% throttle response and hands-off hover drift, so a flight feel target can be a test.
 - `RigidAircraftTuning.assists`: flight assists on the same actuators as the pilot, so full stick stays the pilot's.
   - `sas` per axis (`0..1`) damps rates and holds attitude or heading hands-off with a learned trim. On a helicopter it holds heading against rotor torque.
@@ -83,6 +84,7 @@ between (`--json` for structured output).
   - Spread: `base`, `perShot` bloom, `max`, recovery, and stance/ADS multipliers.
   - ADS time, plus `snapshot`/`restore`/`retune`/`reset`.
   - `measureWeapon` reports first and tenth shot spread, burst climb, reset time, ADS time and time-to-kill.
+- `createWeaponPresentation` (`@jgengine/core/combat/weaponPresentation`): per-weapon viewmodel hip and ADS offsets, viewmodel FOV, ADS zoom, sway from look speed, bob from the movement probe, and recoil kick, from a `createWeaponHandling` frame. `camera.weapon` hands that frame to the rigs: first person poses its viewmodel and adds the recoil to the look, and `shoulder` takes its ADS blend and recoil from the same frame. Dev demos: `weapon-handling`, `weapon-handling-shoulder`.
 - `createFeedbackMixer` (`@jgengine/core/vfx/feedbackMixer`): declares how sim telemetry drives presentation. Routes map a signal through a piecewise `curve` with `attack`/`release` smoothing onto a named target, targets combine by `sum` or `max` over a `base`, and threshold `events` with cooldowns fire one-shots. No allocation per update, with `snapshot`/`restore`/`retune`/`reset`. `sampleFeedbackCurve` exposes the curve.
 - `snapshotPlayerMovement(ctx, userId)` / `restorePlayerMovement(ctx, userId, snapshot)` (`@jgengine/core/movement/playerMovement`): per-player walk state (heading, velocities, jump latch, capsule controller) as a plain JSON copy, so walking characters predict and roll back like vehicles. A snapshot restored before the capsule exists is applied when it is created.
 - `PlayerMovementConfig.feel` (`MovementFeelConfig`): `groundAcceleration`, `airAcceleration`, `groundFriction` (response rates, 1/s), `runMultiplier` and `crouchMultiplier` for the built-in walk controller and the voxel controller. They were hard-coded before, so every game walked the same. Omitted fields keep today's defaults.
