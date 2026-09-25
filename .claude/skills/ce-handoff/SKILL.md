@@ -143,7 +143,7 @@ When sufficient, return a concise orientation: objective, progress, decisions, c
 
 ## JGengine notes
 
-- Multi-session engine work often spans `docs/plans/`, GitHub issues, and stacked PRs — point at those; do not paste full plan bodies.
+- Multi-session engine work spans GitHub issues and PRs — point at those; do not paste full plan bodies.
 - Prefer `bun run agent:bootstrap --check` status, branch names, and PR links as state anchors.
 - Local parallelism uses `.claude/worktrees/`; never invent `C:\tmp\…` Codex-shared trees.
 - Durable process changes belong in skills, not only the handoff.
