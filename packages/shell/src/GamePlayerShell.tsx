@@ -16,12 +16,8 @@ import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengin
 import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
-<<<<<<< HEAD
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
-import { activeActionCodes } from "@jgengine/core/game/controlGate";
-=======
 import { actionContextStack, activeActionCodes } from "@jgengine/core/game/controlGate";
->>>>>>> origin/main
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";

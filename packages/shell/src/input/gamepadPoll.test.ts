@@ -3,13 +3,16 @@ import { describe, expect, test } from "bun:test";
 import { createActionStateTracker, toActionStateBindingMap } from "@jgengine/core/input/actionBindings";
 import { gamepadFeelOptions, type GamepadSample } from "@jgengine/core/input/gamepadModel";
 
-<<<<<<< HEAD
 import { createLocalPlayers } from "@jgengine/core/runtime/localPlayers";
 
-import { emptyGamepadPoll, emptyGamepadRoute, gamepadCodes, routeGamepads, stepGamepadPoll } from "./gamepadPoll";
-=======
-import { emptyGamepadPoll, gamepadCodes, rebindGamepadPoll, stepGamepadPoll } from "./gamepadPoll";
->>>>>>> origin/main
+import {
+  emptyGamepadPoll,
+  emptyGamepadRoute,
+  gamepadCodes,
+  rebindGamepadPoll,
+  routeGamepads,
+  stepGamepadPoll,
+} from "./gamepadPoll";
 
 const input = { steerRight: ["KeyD", "padaxis:0+"], throttle: ["KeyW", "pad:7"], jump: ["Space"] };
 const pad = (axis: number, trigger: number): GamepadSample => ({
