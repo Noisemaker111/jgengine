@@ -5,25 +5,15 @@ description: Carry repository changes from issue through verified ready pull req
 
 # Repository change workflow
 
+Bootstrap, branch, merge and release policy live in [AGENTS.md](../../../AGENTS.md); the cloud session-start hook repeats the parts a session needs. This skill is the delivery order.
+
 ## Session handoffs
 
 When this session's context must survive a model/harness switch or a tear-down, use the `ce-handoff` skill (`/ce-handoff` or `/ce-handoff create <focus>`). Resume in the next session with `/ce-handoff resume <path-or-URL>` (or keywords). Orientation stops before action — the user chooses how to continue. Do not dump a full transcript into a plan or issue just to preserve temporary continuity.
 
-## Bootstrap first
-
-Before claiming issues or editing packages, ensure the checkout can run Bun and resolve built `@jgengine/*` dist:
-
-- `bun run agent:bootstrap` (or `bun run agent:bootstrap --check` if you believe the tree is warm); start it in the background and never kill a slow install — re-invoking joins the running bootstrap
-- Local-machine parallelism only: `bun run agent:worktree -- <name>` or Claude `claude --worktree <name>`; cloud containers are already isolated — branch, do not worktree
-- Prefer `bun --cwd=packages/<pkg> run <script>` over `bun run --cwd packages/<pkg> <script>` — use the `=` form; the space form (`bun --cwd packages/<pkg> run ...`) mis-parses and prints `bun run` help while exiting 0 without running the script
-
-Do not open a multi-issue program until bootstrap succeeds.
-
 ## Scope and issue
 
-Start from current `origin/main` on a fresh task branch without discarding user work. Search open issues before creating one. Prefer **one shippable issue per session** unless the user explicitly requested a multi-slice program.
-
-**Claim the issue before you write any code — a required, verifiable action, not a formality.** As soon as you have picked the issue and cut its branch, post a comment on the issue thread reading `Working on this in <branch>` with `mcp__github__add_issue_comment` (or `gh issue comment <N> --body "Working on this in <branch>"`). Do this once per issue, up front — before implementing, never deferred to PR time. Skipping the comment leaves the issue unclaimed and lets another agent collide with your work, so an issue that reaches a PR with no claim comment on its thread means the claim step was missed: post it before continuing. Close fixed issues through the PR body (`Closes #N`).
+Search open issues before creating one. An issue the user or a parent session handed you is already yours; for one you picked yourself, post `Working on this in <branch>` on its thread once before implementing so parallel sessions do not collide. Close fixed issues through the PR body (`Closes #N`).
 
 Choose the PR boundary by cohesion:
 
@@ -32,28 +22,24 @@ Choose the PR boundary by cohesion:
 - a PR may close multiple issues with `Closes #N`
 - issue count never determines PR count
 
+A session given several issues ships them as separate PRs in dependency order, each branched fresh from `origin/main`.
+
 ## Change
 
-Implement the underlying seam and update the owning skill/reference plus generated artifacts. Preserve unrelated work. Public API changes require JSDoc and regenerated API/capability/export artifacts as applicable; inside function bodies write no comments beyond a non-obvious why (see [CLAUDE.md](../../../CLAUDE.md#writing)). Do not create freestanding design documents. Awkward or handrolled glue a custom game needs (catalog builders, loadout compose, boost meters, and the like) is lifted into `packages/*` or a skill recipe, not built as a game-local mini-framework or copied from `Games/*` (see [AGENTS.md](../../../AGENTS.md)).
-
-## Verify
-
-Run checks proportional to risk while iterating. Before shipping, run supported generators, then `bun run gate`. SDK publication runs `check-types:sdk` and package tests. Full local, PR and main CI gates run the external Games checks and games smoke against the JGengine-games commit pinned in `scripts/games-ref.txt`; move the pin with `bun run games:bump` in a PR of its own. Game-quality failures do not gate registry publication. Immediately before commit/push, run `bun run ship:preflight`. Use `jgengine-verify` for scene, UI, or gameplay evidence. PRs touching a rendered surface include the ten-category visual scorecard table.
+Implement the underlying seam and update the owning skill/reference plus generated artifacts. Preserve unrelated work. Public API changes require JSDoc and regenerated artifacts (`bun run gen`). Awkward or handrolled glue a custom game needs is lifted into `packages/*` or a skill recipe, not built as a game-local mini-framework or copied from `Games/*`.
 
 A change to published-SDK source (`packages/<pkg>/src`) adds `changes/<branch-name>.md` with its release note ([changes/README.md](../../../changes/README.md)); never edit `CHANGELOG.md` directly, since parallel PRs conflict there.
 
-Inspect `git status`, the full diff, and acceptance criteria before staging. Stage only the intended files and commit once the cohesive change is complete.
+## Verify
 
-For a bugfix, write the one-sentence root-cause reinforcement before shipping: name the seam, default, or missing contract that allowed the bug; state whether other games or consumers can hit the same class and, if so, land the upstream hardening (`packages/*` contract, safe default, dev-mode warning, or a gate check) in this PR or file the `[FEATURE]` issue for it first. Wrong-state-unrepresentable beats process; one sentence is the ceiling.
+Run the focused tests and typecheck for the packages you touched while iterating (`bun --cwd=packages/<pkg> run test` and `bun --cwd=packages/<pkg> run check-types`; root `bun run check-types` when types cross packages). After committing, run `bun run ship:preflight`. PR CI runs the full gate (types, all tests, Games checks and smoke against the pin in `scripts/games-ref.txt`), so skip local `bun run gate` unless you changed the gate or are reproducing a CI failure. Move the Games pin with `bun run games:bump` in a PR of its own. Use `jgengine-verify` for scene, UI, or gameplay evidence.
+
+Inspect `git status`, the full diff, and acceptance criteria before staging. Stage only the intended files and commit once the cohesive change is complete.
 
 ## Ship
 
-Check whether the branch already has a PR. Push with a standalone `git push -u origin <branch>` command, open one ready-for-review PR, and include validation, `Closes #N`, and (for bugfixes) the one-sentence root cause. Keep the body tight — a bullet per changed area, no rationale essays (see [CLAUDE.md](../../../CLAUDE.md#writing)). In the `Noisemaker111` repo, enable squash auto-merge on the PR (`enable_pr_auto_merge`, or `gh pr merge --squash --auto`) so GitHub lands it itself once CI is green. Subscribe to PR activity when supported, report the link, and stop.
+Push with a standalone `git push -u origin <branch>`, open one ready-for-review PR following the PR body shape in AGENTS.md, arm auto-merge per AGENTS.md, subscribe to PR activity, report the link, and end the turn. A CI failure event is fixed on the same branch and pushed to the same PR. When a merge from main is needed, regenerate artifacts with `bun run gen` rather than resolving generated files by hand.
 
-Report to the user in a few lines: what shipped, what is still open, the PR link. Validation and screenshots live in the PR body — do not repeat them in chat.
+When the user asks for a release, it is one command: `bun run release` (`--patch` for an explicitly requested patch; `--dry-run` to preview) bumps every package, folds `changes/*.md` into `## [Unreleased]` and cuts it into the new version section with the lockstep Migrate bullet, mirrors the notes into the typed `CHANGELOG` export, and regenerates `api.md`. Run it, skim the diff, commit as `Release <version>`, push, open the PR.
 
-Enable auto-merge only in the `Noisemaker111` repo — the user never merges by hand there. For any other owner/repo, park the PR unmerged and never enable auto-merge. Never bump a version or publish an npm release to force release unless the user explicitly asks; the user owns release and publish timing. CI failure feedback is fixed on the same branch and pushed to the same PR (auto-merge stays armed and lands the fixed run).
-
-When the user does ask for a release, it is one command: `bun run release` (`--patch` for an explicitly requested patch; `--dry-run` to preview) bumps every package, folds `changes/*.md` into `## [Unreleased]` and cuts it into the new version section with the lockstep Migrate bullet, mirrors the notes into the typed `CHANGELOG` export, and regenerates `api.md`. Do not hand-assemble those edits or narrate them — run it, skim the diff, commit as `Release <version>`, push, open the PR.
-
-Restarting a branch whose PR already squash-merged (its remote branch auto-deleted): run `git fetch --prune` before pushing again. Without it, `git push --force-with-lease` rejects with `stale info` and the branch has no remote ref to compare against — start the follow-up from a fresh branch off current `origin/main` rather than the parked one.
+Restarting a branch whose PR already squash-merged: run `git fetch --prune` first, then start the follow-up from a fresh branch off current `origin/main`.

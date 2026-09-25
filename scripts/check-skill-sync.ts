@@ -38,7 +38,7 @@ if (existsSync(join(root, "skills"))) {
 
 const claude = readFileSync(join(root, "CLAUDE.md"), "utf8");
 const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
-if (claude !== agents) problems.push("CLAUDE.md and AGENTS.md must be byte-identical");
+if (claude.trim() !== "@AGENTS.md") problems.push("CLAUDE.md must only import AGENTS.md (`@AGENTS.md`); governance lives in AGENTS.md");
 
 const skillDirs = readdirSync(skillsRoot)
   .filter((name) => existsSync(join(skillsRoot, name, "SKILL.md")))
@@ -78,7 +78,7 @@ for (const name of skillDirs) {
 
 const router = skillText.get("jgengine") ?? "";
 
-let normalIntakeBytes = bytes(claude);
+let normalIntakeBytes = bytes(agents);
 for (const name of NORMAL_GAME_INTAKE) {
   const raw = skillText.get(name);
   if (raw === undefined) problems.push(`normal intake references missing skill ${name}`);
@@ -104,7 +104,7 @@ for (const domain of coreDomains) {
 }
 
 const duplicateOwners = new Map<string, string>();
-for (const [name, raw] of [["CLAUDE.md", claude], ...skillText.entries()] as Array<[string, string]>) {
+for (const [name, raw] of [["AGENTS.md", agents], ...skillText.entries()] as Array<[string, string]>) {
   for (const paragraph of body(raw).split(/\r?\n\s*\r?\n/)) {
     const normalized = paragraph.replace(/\s+/g, " ").trim();
     if (normalized.length < DUPLICATE_PARAGRAPH_MIN_CHARS || normalized.startsWith("|")) continue;
@@ -153,7 +153,7 @@ for (const file of new Glob("**/*.md").scanSync({ cwd: skillsRoot, absolute: tru
 }
 
 if (process.argv.includes("--report")) {
-  console.log(`root ${lines(claude)} lines ${words(claude)} words ${bytes(claude)} bytes`);
+  console.log(`root ${lines(agents)} lines ${words(agents)} words ${bytes(agents)} bytes`);
   for (const name of skillDirs) {
     const raw = skillText.get(name) ?? "";
     console.log(`${name} ${lines(raw)} lines ${words(raw)} words ${bytes(raw)} bytes`);
@@ -168,5 +168,5 @@ if (problems.length > 0) {
 
 console.log(
   `check-skill-sync: ${skillDirs.length} skills, router ${lines(router)} lines/${bytes(router)} bytes, ` +
-    `total ${totalSkillBytes} bytes, normal intake ${normalIntakeBytes} bytes, roots mirrored`,
+    `total ${totalSkillBytes} bytes, normal intake ${normalIntakeBytes} bytes, CLAUDE.md imports AGENTS.md`,
 );

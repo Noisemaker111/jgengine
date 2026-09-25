@@ -62,7 +62,7 @@ PRs that add authored world content must include a before/after `debug_snapshot`
 
 ## Visual proof
 
-For any PR that touches a rendered surface, include the ten-category table from [references/visual-scorecard.md](references/visual-scorecard.md) with the inspected evidence.
+A PR that touches a rendered surface embeds the inspected shots. The ten-category table in [references/visual-scorecard.md](references/visual-scorecard.md) is for milestone claims about a game's overall look ("premium", "showcase", a whole-game pass), not for every rendered change.
 
 **Created standalone game:** `bun run shoot` (or `npx jgengine shoot`, which also works in an older scaffold without `scripts/`) starts the dev server if needed, forces a real viewport, waits for an honest frame, and writes `shots/shot.png` headless. Flags: `--device desktop|mobile|mobile-landscape`, `--url`, `--out`, `--settle`, `--timeout`; `--help` for all. Set `CHROME_PATH` if Chrome is not auto-detected. For shots that need play first (menus clicked through, keys held, RPC state set up), use `bun run drive` (or `npx jgengine drive`) with `--shot` steps instead of scripting a browser by hand.
 
@@ -90,13 +90,13 @@ Behavior over time gets a clip, and every behavior change gets *tried*: tests pr
 
 ## Evidence report
 
-Report each applicable rung as pass/fail/skipped with the command or artifact: types, tests, world/document, gameplay, screenshot, pixel metrics, and visual score. A completion claim without the acceptance evidence is not complete.
+Report each applicable rung as pass/fail with the command or artifact, one line each; leave out rungs that do not apply. A completion claim without the acceptance evidence is not complete.
 
 ## Inside the engine monorepo
 
 These guarded repository scripts exist only in the jgengine monorepo — never expect them in a created project:
 
-- `bun run gate` is the full local verdict before shipping; `bun run ship:preflight` is the final check immediately before commit/push.
+- PR CI runs the full `bun run gate` set; run it locally only when changing the gate or reproducing a CI failure. `bun run ship:preflight` runs after commit, before push.
 - Use guarded scripts (`bun run test`, `bun run test:all`, `bun run gate`), not an unbounded bare `bun test` across the repository.
 - Any change to a map, world, or scene document counts as visual: attach captures of the changed content to the PR, not just test assertions.
 - Everything else (`drive --playtest` on software GL, fixtures, aiming, recording, PR media) is in [references/monorepo-capture.md](references/monorepo-capture.md).
