@@ -768,10 +768,11 @@
 - `ObstacleReachCache` (interface): interface ObstacleReachCache — Mutable reach cache; one per source, invalidated by object count.
 - `SolidObstacleSource` (interface): interface SolidObstacleSource — The slice of the scene's object store this query needs. Narrow on purpose: the scene context wires its own store here while it is still being constructed, `ctx.scene.object` satisfies it as-is, and a pure rules package with no `GameContext` to import can satisfy it from its own object list.
 - `createObstacleReachCache` (function): function createObstacleReachCache(): ObstacleReachCache — A fresh {@link ObstacleReachCache} for a caller that owns its own source.
+- `obstacleFromSolid` (function): function obstacleFromSolid(solid: WorldSolid): CollisionObstacle — A {@link WorldSolid} as a {@link CollisionObstacle}. Axis-aligned solids are one box; a yawed solid is cut into strips along its long axis, each fitted with an AABB, so a turned building does not block the street beside it the way a single enclosing box would.
 - `resolveSourceWalkerStep` (function): function resolveSourceWalkerStep(source: SolidObstacleSource, cache: ObstacleReachCache, position: EntityPosition, stepX: number, stepZ: number, options: { radius?: number; stepUpHeight?: number } = {}): { stepX: number; stepZ: number } — {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare {@link SolidObstacleSource} and a caller-owned {@link ObstacleReachCache}.
 - `resolveWalkerStep` (function): function resolveWalkerStep(ctx: GameContext, position: EntityPosition, stepX: number, stepZ: number, options: { radius?: number; stepUpHeight?: number } = {}): { stepX: number; stepZ: number } — Slide a walker's horizontal step against the same solid geometry that stops the player, returning the X/Z it may actually take this tick. A step into a wall is cut on the blocked axis and preserved on the other, exactly as {@link stepPlayerMovement} resolves the player's.
 - `slideStep` (function): function slideStep(position: EntityPosition, stepX: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius = DEFAULT_OBSTACLE_PLAYER_RADIUS, stepUpHeight = 0): { stepX: number; stepZ: number } — {@link resolveWalkerStep} against an already-gathered obstacle set.
-- `solidObstaclesNear` (function): function solidObstaclesNear(ctx: GameContext, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — Every blocking physical obstacle overlapping the box `position` ± `reachX`/`reachZ`, read from the scene's resolved colliders.
+- `solidObstaclesNear` (function): function solidObstaclesNear(ctx: GameContext, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — Every blocking physical obstacle overlapping the box `position` ± `reachX`/`reachZ`, read from the scene's resolved colliders and `ctx.world.solids`.
 - `sourceObstacleReach` (function): function sourceObstacleReach(source: SolidObstacleSource, cache: ObstacleReachCache): ObstacleReach — {@link solidObstacleReach} against a bare source and caller-owned cache.
 - `sourceObstaclesNear` (function): function sourceObstaclesNear(source: SolidObstacleSource, reach: ObstacleReach, position: EntityPosition, reachX: number, reachZ: number, height = WALKER_HEIGHT): CollisionObstacle[] — {@link solidObstaclesNear} against a bare source and an already-resolved reach.
 
@@ -810,8 +811,9 @@
 
 ## @jgengine/core/nav/navFromEnvironment
 
-- `NavObstacleGrid` (interface): interface NavObstacleGrid { blockAabb(aabb: Aabb): void } — ⚠ undocumented · used by `populateNavGridFromEnvironment`: Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`.
-- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
+- `NavObstacleGrid` (interface): interface NavObstacleGrid { blockAabb(aabb: Aabb): void } — ⚠ undocumented · used by `populateNavGridFromEnvironment`: Blocks the footprint of every solid building an environment feature's `structures` generate — the same set `ctx.world.solids` holds for it.
+- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Blocks the footprint of every solid building an environment feature's `structures` generate — the same set `ctx.world.solids` holds for it. Returns the number of buildings blocked.
+- `populateNavGridFromSolids` (function): function populateNavGridFromSolids(grid: NavObstacleGrid, solids: Pick<WorldSolids, "all">): number — Blocks the XZ footprint of every solid in `solids` (usually `ctx.world.solids`) on `grid`, so NPC paths avoid exactly what movement and physics collide with. Returns the number of solids blocked.
 
 ## @jgengine/core/nav/navGrid
 
@@ -1222,7 +1224,7 @@
 ## @jgengine/core/physics/worldColliders
 
 - `WorldColliderSync` (interface): interface WorldColliderSync — Handle for synchronizing authored static world collision with a physics backend.
-- `syncWorldColliders` (function): function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync — Mirrors static scene-object physical colliders and the context's ground field into a physics backend.
+- `syncWorldColliders` (function): function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync — Mirrors static scene-object physical colliders, `ctx.world.solids` and the context's ground field into a physics backend.
 
 ## @jgengine/core/procedural
 
@@ -1529,7 +1531,7 @@
 - `SceneKindDefinition` (interface): interface SceneKindDefinition<TResolved = unknown> — A registered scene kind — everything the editor/engine need to author and render a studio without bespoke code. `schema` drives the inspector + parse; `resolve` (optional) turns one document object into pure renderable data a matching `shell` renderer consumes; `add*` fields build the `+ Add` menu.
 - `SceneKindObject` (interface): interface SceneKindObject — The raw document object a resolver receives — shape shared by markers, volumes, and paths.
 - `SceneKindResolveContext` (interface): interface SceneKindResolveContext — Ground sampler + options a resolver may read (terrain height/normal snap).
-- `SceneKindTarget` (type): type SceneKindTarget = "path" | "marker" | "volume" — The parametric-studio seam: a registry that maps an editor object `kind` to a typed parameter schema (drives the inspector + `meta` parse/validation), an optional pure-data `resolve` (turns a document object into renderable data), and `+ Add` menu metadata. Registering a kind lets a third party ship a new authorable "studio" (pole line, water, bookcase) — schema + resolver here, a matching renderer in `shell` — without editing editor or engine files. Scatter is the proof adopter.
+- `SceneKindTarget` (type): type SceneKindTarget = "path" | "marker" | "volume" — Which document collection a scene kind lives in. Drives placement + which `meta` bag holds params.
 - `ScenePathShape` (type): type ScenePathShape = "area" | "line" — A closed-polygon area vs an open polyline, for path-target kinds. Ignored for marker/volume kinds.
 - `SeedParamField` (interface): interface SeedParamField — A seed string with a reroll button — same seed reproduces the same generated result.
 - `SelectParamField` (interface): interface SelectParamField — A dropdown of fixed string options.
@@ -1552,7 +1554,7 @@
 - `SceneRaycastInput` (interface): interface SceneRaycastInput { origin: EntityPosition; direction: EntityPosition; maxDistance: number; excludeInstanceIds?: ReadonlySet<string> | readonly string[]; filter?: SceneRaycastFilter; accept?: (hit: SceneRaycastHit) => boolean } — ⚠ undocumented
 - `SceneRaycastTargetKind` (type): type SceneRaycastTargetKind = "entity" | "object" | "terrain" | "wall" — ⚠ undocumented
 - `TerrainRaycastSource` (interface): interface TerrainRaycastSource { sampleHeight(x: number, z: number): number } — ⚠ undocumented
-- `WallSegment` (interface): interface WallSegment { id: string; a: readonly [number, number]; b: readonly [number, number]; yCenter?: number; halfHeight?: number; thickness?: number } — ⚠ undocumented
+- `WallSegment` (interface): interface WallSegment { id: string; a: readonly [number, number]; b: readonly [number, number]; yCenter?: number; halfHeight?: number; thickness?: number } — ⚠ undocumented · used by `wallSolids` (@jgengine/core/world/worldSolids): One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `createSceneRaycast` (function): function createSceneRaycast(deps: SceneRaycastDeps): SceneRaycastApi — ⚠ undocumented
 - `firstImpact` (function): function firstImpact(hits: readonly SceneRaycastHit[]): SceneRaycastHit | null — First impact: nearest hit that blocks, or nearest hit if none block.
 - `hitsUntilBlocked` (function): function hitsUntilBlocked(hits: readonly SceneRaycastHit[]): SceneRaycastHit[] — Hits up to and including the first blocking collider (damage hitboxes before a wall stay).
@@ -2012,7 +2014,7 @@
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
 - `BuildRole` (type): type BuildRole = "owner" | "editor" | "viewer" — ⚠ undocumented
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit" | "solid"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
 - `BuildingIndex` (interface): interface BuildingIndex { readonly buildings: readonly GeneratedBuilding[]; at(point: Vec2): GeneratedBuilding | undefined; within(area: Aabb): GeneratedBuilding[]; nearest(point: Vec2): BuildingHit | undefined; isInside(point: Vec2): boolean; blockers(margin?: nu… — ⚠ undocumented
 - `BuildingPaletteOverrides` (type): type BuildingPaletteOverrides = Partial<BuildingPalette> — ⚠ undocumented
 - `BuildingStyle` (type): type BuildingStyle = | "generic" | "capital" | "village" | "desert" | "industrial" | "coastal" | "neon" | "ruin" | "frontier" | "aerial" — ⚠ undocumented · used by `BUILDING_STYLE_WALL_TONES` (@jgengine/core/world/buildings): Per-style facade-tone family: the wall colours a district spreads across its buildings so neighbours differ in hue and value while the block…
@@ -2727,7 +2729,7 @@
 - `polygonArea` (function): function polygonArea(polygon: readonly Vec2[]): number — Shoelace area of a polygon (always non-negative), in square meters.
 - `polygonBounds` (function): function polygonBounds(polygon: readonly Vec2[]): Aabb | null — Axis-aligned bounds of a polygon, or null if it has no points.
 - `polygonRegion` (function): function polygonRegion(polygon: readonly Vec2[]): SampleRegion<Vec2> — An arbitrary closed polygon on the XZ plane. Candidates are drawn uniformly from the polygon's bounding box and gated by point-in-polygon `contains`, so a run's draw count stays fixed (the sampler's attempt budget bounds the rejection, not a hidden inner loop).
-- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Expands every structure descriptor on an environment world feature into its generated buildings and blocks their footprints on `grid`. Returns the number of buildings blocked.
+- `populateNavGridFromEnvironment` (function): function populateNavGridFromEnvironment(grid: NavObstacleGrid, world: EnvironmentWorldFeature): number — Blocks the footprint of every solid building an environment feature's `structures` generate — the same set `ctx.world.solids` holds for it. Returns the number of buildings blocked.
 - `projectToMinimap` (function): function projectToMinimap(world: WorldXZ | readonly [number, number, number], view: MinimapView): MinimapPoint — Project a world XZ (or XYZ) point into minimap pixel space. Origin is the top-left of the `size×size` box; north (−Z) maps to −Y (up). Pass `view.rotate` to spin the map under a fixed north-up player arrow.
 - `proximityPrompt` (function): function proximityPrompt({ radius, display, invoke = null }: ProximityPromptConfig): ProximityPrompt — ⚠ undocumented
 - `quarterTurnsToRotationY` (function): function quarterTurnsToRotationY(quarterTurns: number): number — Maps 0–3 quarter turns onto radians for ghost/commit rotation.
@@ -2864,6 +2866,13 @@
 - `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
 - `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
 - `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike, options: ResolveAuthoredObjectsOptions = {}): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places. Entity-spawn kinds (`mob`/`boss`) are skipped by default — they carry a `catalogId` for their entity definition, but are spawned via `authoredEntitySpawns`, not placed as static meshes.
+
+## @jgengine/core/world/authoredSolids
+
+- `AUTHORED_SOLID_LAYER_PREFIX` (const): const AUTHORED_SOLID_LAYER_PREFIX: "authored:" — Layer prefix `syncAuthoredSolids` owns in `ctx.world.solids`; one layer per document object.
+- `AuthoredSolidsDocumentLike` (interface): interface AuthoredSolidsDocumentLike — Minimal editor document shape {@link resolveAuthoredSolids} walks; any `EditorDocument` satisfies it.
+- `resolveAuthoredSolids` (function): function resolveAuthoredSolids(document: AuthoredSolidsDocumentLike, sampleHeight?: (x: number, z: number) => number): Map<string, readonly WorldSolid[]> — Solids for every document object whose scene kind declares `solids`, keyed by object id. Objects whose kind has no `solids` hook, or whose hook returns none, are left out.
+- `syncAuthoredSolids` (function): function syncAuthoredSolids(solids: WorldSolids, document: AuthoredSolidsDocumentLike, sampleHeight?: (x: number, z: number) => number): void — Write a document's studio solids into `solids` (usually `ctx.world.solids`), one `authored:<objectId>` layer per object, dropping authored layers the document no longer has. Call again whenever the document changes.
 
 ## @jgengine/core/world/authoredSpawn
 
@@ -3130,6 +3139,7 @@
 - `CityVehicleKind` (type): type CityVehicleKind = "car" | "van" | "truck" — Silhouette class of a parked vehicle — sizes the body the renderer instances.
 - `ResolvedCity` (interface): interface ResolvedCity — A resolved city district: world-space network, zoned lots, parks, and furniture.
 - `ResolvedRace` (interface): interface ResolvedRace — An instanced street race lifted out of the district's OWN streets: a closed lap through the city, with every side street leaving it sealed off. World space, like the rest of {@link ResolvedCity}.
+- `citySolids` (function): function citySolids(city: ResolvedCity, sampleHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it: grade at the highest lot corner, foundations down to half a metre under the lowest.
 - `resolveCityObject` (function): function resolveCityObject(object: SceneKindObject, context?: CityResolveContext): ResolvedCity | null — Synthesize the deterministic city plan for one `city` volume: streets → bridges → parks → zoned frontage lots with massing pieces → furniture, all in the volume's local frame and then rotated/translated into world space. Same volume (id, footprint, meta) over the same terrain always resolves to the identical plan. When `context` provides a ground sampler, lots respect the `maxSlope` cliff rule — hillside and canyon districts keep their steep faces open. When `context.zoneOverrides` carries sibling `cityzone` volumes, lots inside them adopt the override band/mix. Returns null without a usable footprint.
 
 ## @jgengine/core/world/connectors
@@ -3190,7 +3200,7 @@
 - `BiomeSky` (interface): interface BiomeSky — Per-band sky/light override cross-faded along z by `createBiomeSkySampler`; unset fields fall through to the base sky.
 - `BiomesWorldConfig` (interface): interface BiomesWorldConfig extends WorldGridConfig { map: string; zones: string; bounds?: WorldBounds } — ⚠ undocumented · used by `biomes`: Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
 - `BuildingEnvironmentConfig` (interface): interface BuildingEnvironmentConfig { count?: number; position?: EnvironmentVec2; footprint?: WorldBounds; stories?: readonly [number, number]; storyHeight?: number; spacing?: number; style?: BuildingStyle; palette?: BuildingPaletteOverrides; seed?: string; along?: BuildingFr… — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
-- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
+- `BuildingEnvironmentDescriptor` (type): type BuildingEnvironmentDescriptor = { kind: "building" } & Required< Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style"> > & Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit" | "solid"> — ⚠ undocumented · used by `building`: Declares a cluster of procedurally-massed buildings for `environment()` — count, footprint, stories, style.
 - `BuildingFrontageConfig` (interface): interface BuildingFrontageConfig — Street-aware placement for `building()`: instead of a grid scattered around `position`, lots are stepped along each road's frontage, offset by a consistent setback (a curb + sidewalk strip), and turned so every building FRONT faces its road. `footprint` (`w` = frontage width, `d` = depth) and `spacing` (along-road gap) are shared with the grid mode. Deterministic and bounded by `maxLots`.
 - `BuildingFrontageRoad` (interface): interface BuildingFrontageRoad — One road a `building({ along })` frontage lines with buildings: centerline + full width.
 - `EnvironmentArea` (interface): interface EnvironmentArea extends WorldBounds { h?: number; position?: EnvironmentVec2 } — ⚠ undocumented
@@ -3932,7 +3942,7 @@
 - `SurfacePaintStore` (interface): interface SurfacePaintStore { paint(target: PaintTarget, key: string, surface: string): void; clear(target: PaintTarget, key: string): void; get(target: PaintTarget, key: string): string | null; entries(target: PaintTarget): readonly (readonly [string, string])[]; sna… — ⚠ undocumented
 - `WallDrawTool` (interface): interface WallDrawTool { addPoint(point: Vec2, snap?: number): Vec2; undo(): void; close(): void; clear(): void; points(): readonly Vec2[]; segments(): WallSegment[]; isClosed(): boolean; footprint(): EnclosedFootprint | null; roof(config?: RoofConfig): RoofPlan … — ⚠ undocumented
 - `WallDrawToolState` (interface): interface WallDrawToolState — Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed.
-- `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented
+- `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented · used by `wallSolids` (@jgengine/core/world/worldSolids): One oriented solid per wall segment (see `wallSegments` in `world/walls`).
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
 
 ## @jgengine/core/world/water
@@ -3993,6 +4003,19 @@
 - `WindZones` (interface): interface WindZones — Named, discrete wind zones over an ambient field — each zone runs a deterministic `StateSchedule` of wind states, so games get scheduled shifts with advance announcement (`forecastShift` drives the "gale in 12s" countdown) instead of one continuous field.
 - `WindZonesConfig` (interface): interface WindZonesConfig { zones: readonly WindZoneConfig[]; ambient?: WindField } — ⚠ undocumented
 - `createWindZones` (function): function createWindZones(config: WindZonesConfig): WindZones — ⚠ undocumented
+
+## @jgengine/core/world/worldSolids
+
+- `WallSolidOptions` (interface): interface WallSolidOptions — Wall height, thickness and base for {@link wallSolids}.
+- `WorldSolid` (interface): interface WorldSolid — One solid box in world space: the collision half of generated or authored world geometry.
+- `WorldSolids` (interface): interface WorldSolids — Static collision for world geometry that is not a scene object: generated buildings, studio volumes like `city`, wall runs. Solids live in named layers so a feature can replace or drop its own set without touching the rest. `solidObstaclesNear` (player and NPC movement), `syncWorldColliders` (physics backends) and `populateNavGridFromSolids` all read this one store.
+- `WorldSolidsState` (interface): interface WorldSolidsState — Serializable contents of a {@link WorldSolids}: every layer's solids by layer id.
+- `buildingSolids` (function): function buildingSolids(buildings: readonly GeneratedBuilding[], groundHeight: (x: number, z: number) => number = () => 0): WorldSolid[] — One solid per generated building: its `bounds` footprint turned by `rotationY` about `center`, from the ground under its center up through its floors. `groundHeight` defaults to flat `0`.
+- `createWorldSolids` (function): function createWorldSolids(options: { cellSize?: number } = {}): WorldSolids — A store of static world solids in named layers.
+- `structureSolids` (function): function structureSolids(world: EnvironmentWorldFeature, groundHeight?: (x: number, z: number) => number): WorldSolid[] — Solids for every `structures` descriptor on an environment feature, skipping any marked `solid: false`.
+- `wallSolids` (function): function wallSolids(segments: readonly WallSegment[], options: WallSolidOptions): WorldSolid[] — One oriented solid per wall segment (see `wallSegments` in `world/walls`).
+- `worldSolidBounds` (function): function worldSolidBounds(solid: WorldSolid): { min: [number, number, number]; max: [number, number, number]; } — Yaw-expanded world AABB of an oriented solid box.
+- `worldSolidFootprint` (function): function worldSolidFootprint(solid: WorldSolid): Aabb — XZ footprint of a solid's world AABB, for 2D consumers such as nav grids.
 
 ## @jgengine/rapier
 

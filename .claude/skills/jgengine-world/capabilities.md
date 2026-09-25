@@ -109,6 +109,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
 
+## authored-solids — collision for studio-authored world content such as city volumes
+
+- `resolveAuthoredSolids` (function) · `import { resolveAuthoredSolids } from "@jgengine/core/world/authoredSolids"`
+- `syncAuthoredSolids` (function) · `import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids"`
+
 ## authored-spawn — read spawn points and markers from the editor document
 
 - `authoredSpawnPosition` (function) · `import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn"`
@@ -183,6 +188,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## city-district — polygon math for road-derived blocks, parcels, and buildable footprints
 
 - `Vec2` (type) · `import { Vec2 } from "@jgengine/core/world/cityGeometry"`
+- `citySolids` (function) · `import { citySolids } from "@jgengine/core/world/cityKind"`
 - `extractGraphBlocks` (function) · `import { extractGraphBlocks } from "@jgengine/core/world/cityBlocks"`
 - `rectClearsPolyline` (function) · `import { rectClearsPolyline } from "@jgengine/core/world/cityGeometry"`
 - `rectsSeparated` (function) · `import { rectsSeparated } from "@jgengine/core/world/cityGeometry"`
@@ -448,6 +454,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureMovement` (function) · `import { measureMovement } from "@jgengine/core/movement/movementProbe"`
 
+## nav-from-solids — block world solids on a nav grid
+
+- `populateNavGridFromSolids` (function) · `import { populateNavGridFromSolids } from "@jgengine/core/nav/navFromEnvironment"`
+
 ## navmesh-query — route, snap, and raycast on a polygon navmesh with retunable area costs and a bounded search
 
 - `createNavMeshQuery` (function) · `import { createNavMeshQuery } from "@jgengine/core/world"`
@@ -620,6 +630,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 ## solid-obstacles — the one blocking-geometry query the player resolver and NPC movers share
 
+- `obstacleFromSolid` (function) · `import { obstacleFromSolid } from "@jgengine/core/movement/solidObstacles"`
 - `solidObstaclesNear` (function) · `import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles"`
 
 ## spatial-region-box — sample uniformly within an axis-aligned 3D box
@@ -797,3 +808,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-seed — derive a deterministic generator/scatter seed from world id + save/run seed
 
 - `seedForPlace` (function) · `import { seedForPlace } from "@jgengine/core/world"`
+
+## world-solid-bounds — world AABB and nav footprint of a world solid
+
+- `worldSolidBounds` (function) · `import { worldSolidBounds } from "@jgengine/core/world/worldSolids"`
+- `worldSolidFootprint` (function) · `import { worldSolidFootprint } from "@jgengine/core/world/worldSolids"`
+
+## world-solids — collision for generated and authored world geometry (buildings, city lots, walls)
+
+- `createWorldSolids` (function) · `import { createWorldSolids } from "@jgengine/core/world/worldSolids"`
+
+## world-solids-from-data — derive collision boxes from generated buildings and wall runs
+
+- `buildingSolids` (function) · `import { buildingSolids } from "@jgengine/core/world/worldSolids"`
+- `structureSolids` (function) · `import { structureSolids } from "@jgengine/core/world/worldSolids"`
+- `wallSolids` (function) · `import { wallSolids } from "@jgengine/core/world/worldSolids"`

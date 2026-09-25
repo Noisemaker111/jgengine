@@ -27,11 +27,13 @@ export interface WorldColliderSync {
   dispose(): void;
 }
 
-/** Mirrors static scene-object physical colliders and the context's ground field into a physics backend.
+/** Mirrors static scene-object physical colliders, `ctx.world.solids` and the context's ground field into a physics backend.
  * @capability world-physics-colliders Synchronize terrain and authored static colliders with a physics backend.
  */
 export function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): WorldColliderSync {
   const objectBodies = new Map<string, BodyHandle>();
+  const solidBodies: BodyHandle[] = [];
+  let solidsVersion = -1;
   let terrainBody: BodyHandle | null = null;
   let disposed = false;
 
@@ -78,9 +80,32 @@ export function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): W
     objectBodies.set(objectId, handle);
   }
 
+  function syncSolids(): void {
+    const solids = ctx.world.solids;
+    if (solids.version() === solidsVersion) return;
+    solidsVersion = solids.version();
+    for (const handle of solidBodies) backend.removeBody(handle);
+    solidBodies.length = 0;
+    for (const layer of solids.layers()) {
+      for (const solid of solids.layer(layer)) {
+        const yaw = solid.rotationY ?? 0;
+        solidBodies.push(
+          backend.addBody({
+            shape: { kind: "box", halfExtents: [solid.halfExtents[0], solid.halfExtents[1], solid.halfExtents[2]] },
+            position: [solid.center[0], solid.center[1], solid.center[2]],
+            rotation: [0, Math.sin(yaw / 2), 0, Math.cos(yaw / 2)],
+            kind: "static",
+            userData: { kind: "solid", layer },
+          }),
+        );
+      }
+    }
+  }
+
   function sync(): void {
     if (disposed) return;
     rebuildTerrain();
+    syncSolids();
     const ids = new Set(ctx.scene.object.ids());
     for (const [objectId, handle] of objectBodies) {
       if (!ids.has(objectId)) {
@@ -91,14 +116,20 @@ export function syncWorldColliders(backend: PhysicsBackend, ctx: GameContext): W
     for (const objectId of ids) syncObject(objectId);
   }
 
-  const unsubscribe = ctx.scene.object.subscribe(sync);
+  const unsubscribeObjects = ctx.scene.object.subscribe(sync);
+  const unsubscribeSolids = ctx.world.solids.subscribe(() => {
+    if (!disposed) syncSolids();
+  });
   sync();
   return {
     sync,
     dispose() {
       if (disposed) return;
       disposed = true;
-      unsubscribe();
+      unsubscribeObjects();
+      unsubscribeSolids();
+      for (const handle of solidBodies) backend.removeBody(handle);
+      solidBodies.length = 0;
       if (terrainBody !== null) backend.removeBody(terrainBody);
       terrainBody = null;
       for (const handle of objectBodies.values()) backend.removeBody(handle);
