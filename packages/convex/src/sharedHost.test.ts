@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createEmptyPlayerRow } from "@jgengine/core/runtime/snapshot";
-import { createGameServerFunctions, type JGMutationCtx } from "./server";
+import { MAX_MEMBER_SESSIONS, MAX_SESSION_ID_LENGTH, createGameServerFunctions, type JGMutationCtx } from "./server";
 import { handlerOf, makeDb, profileDoc, serverDoc } from "./testFixtures";
 
 function setup(save: "none" | { auto: string; scope: "player+chunks" } = { auto: "60s", scope: "player+chunks" }) {
@@ -25,12 +25,16 @@ function setup(save: "none" | { auto: string; scope: "player+chunks" } = { auto:
     },
   } });
   const fns = createGameServerFunctions({ topology: "shared", runtimes: [runtime], auth: "anonymous" });
-  const join = async (externalId: string, serverId?: string) => {
-    const result = await handlerOf(fns.joinServer)(ctx, { gameId: "demo", externalId, ...(serverId ? { serverId } : {}) }) as { ok: boolean; serverId: string; isNew: boolean };
+  const join = async (externalId: string, serverId?: string, sessionId?: string) => {
+    const result = await handlerOf(fns.joinServer)(ctx, { gameId: "demo", externalId, ...(serverId ? { serverId } : {}), ...(sessionId ? { sessionId } : {}) }) as { ok: boolean; serverId: string; isNew: boolean };
     expect(result.ok).toBe(true);
     return result;
   };
-  return { ...fixture, writes, ctx, fns, join };
+  const leave = (externalId: string, serverId: string, sessionId?: string) =>
+    handlerOf(fns.leaveServer)(ctx, { serverId, externalId, ...(sessionId ? { sessionId } : {}) });
+  const earn = (externalId: string, serverId: string) =>
+    fns.helpers.runCommand(ctx, { serverId, command: "earn", input: {}, externalId });
+  return { ...fixture, writes, ctx, fns, join, leave, earn };
 }
 
 test("shared singleton accepts over 256 members without rewriting the world row on joins or leaves", async () => {
@@ -163,4 +167,73 @@ test("public runCommand refuses server-only commands that the host helper still 
   expect(await handlerOf(fns.runCommand)(ctx, { serverId, command: "grant", input: {}, externalId: "alice" })).toEqual({ ok: false, reason: "Command is server-only" });
   expect(await handlerOf(fns.runCommand)(ctx, { serverId, command: "earn", input: {}, externalId: "alice" })).toEqual({ ok: true });
   expect(await fns.helpers.runCommand(ctx, { serverId, command: "grant", input: {}, externalId: "alice" })).toEqual({ ok: true });
+});
+
+test("closing one of two sessions keeps the user a member; closing both leaves", async () => {
+  const { rows, join, leave, earn } = setup();
+  const { serverId } = await join("alice", undefined, "tab-a");
+  await join("alice", serverId, "tab-b");
+  expect(rows("jgServerMembers")).toHaveLength(1);
+  expect(rows("jgServerCapacity")[0]!.memberCount).toBe(1);
+  await leave("alice", serverId, "tab-b");
+  expect(rows("jgServerMembers")[0]!.sessionIds).toEqual(["tab-a"]);
+  expect(await earn("alice", serverId)).toEqual({ ok: true });
+  await leave("alice", serverId, "tab-a");
+  expect(rows("jgServerMembers")).toHaveLength(0);
+  expect(rows("jgServerCapacity")[0]!.memberCount).toBe(0);
+  expect(await earn("alice", serverId)).toEqual({ ok: false, reason: "Not a member of this server" });
+});
+
+test("a leave without a session id leaves outright", async () => {
+  const { rows, join, leave, earn } = setup();
+  const { serverId } = await join("alice", undefined, "tab-a");
+  await join("alice", serverId, "tab-b");
+  await leave("alice", serverId);
+  expect(rows("jgServerMembers")).toHaveLength(0);
+  expect(await earn("alice", serverId)).toEqual({ ok: false, reason: "Not a member of this server" });
+});
+
+test("a disposed join's late leave does not evict the session that replaced it", async () => {
+  const { rows, join, leave, earn } = setup();
+  const { serverId } = await join("alice", undefined, "mount-1");
+  await join("alice", serverId, "mount-2");
+  await leave("alice", serverId, "mount-1");
+  await leave("alice", serverId, "mount-1");
+  await leave("alice", serverId, "never-joined");
+  expect(rows("jgServerMembers")[0]!.sessionIds).toEqual(["mount-2"]);
+  expect(await earn("alice", serverId)).toEqual({ ok: true });
+});
+
+test("legacy member rows without session ids leave on any session leave", async () => {
+  const { rows, join, leave } = setup();
+  const { serverId } = await join("alice");
+  expect(rows("jgServerMembers")[0]!.sessionIds).toBeUndefined();
+  await leave("alice", serverId, "tab-a");
+  expect(rows("jgServerMembers")).toHaveLength(0);
+});
+
+test("membership remembers a bounded number of sessions and rejects oversized ids", async () => {
+  const { rows, join, ctx, fns } = setup();
+  const { serverId } = await join("alice", undefined, "s0");
+  for (let i = 1; i < 40; i++) await join("alice", serverId, `s${i}`);
+  expect(rows("jgServerMembers")[0]!.sessionIds).toHaveLength(MAX_MEMBER_SESSIONS);
+  expect(rows("jgServerMembers")[0]!.sessionIds!.at(-1)).toBe("s39");
+  await expect(handlerOf(fns.joinServer)(ctx, { gameId: "demo", externalId: "alice", sessionId: "x".repeat(MAX_SESSION_ID_LENGTH + 1) })).rejects.toThrow("Invalid sessionId");
+});
+
+test("ensureJoined lets a host run a command for a user with no live session, idempotently", async () => {
+  const { rows, ctx, fns, join, leave, earn } = setup();
+  const { serverId } = await join("alice", undefined, "tab-a");
+  await leave("alice", serverId, "tab-a");
+  expect(await fns.helpers.runCommand(ctx, { serverId, command: "earn", input: {}, actorUserId: "alice" })).toEqual({ ok: false, reason: "Not a member of this server" });
+  expect(await fns.helpers.ensureJoined(ctx, { gameId: "demo", userId: "alice" })).toEqual({ ok: true, serverId, isNew: false });
+  expect(await fns.helpers.ensureJoined(ctx, { gameId: "demo", userId: "alice", serverId })).toEqual({ ok: true, serverId, isNew: false });
+  expect(await fns.helpers.ensureJoined(ctx, { gameId: "demo", userId: "alice" })).toMatchObject({ ok: true, serverId });
+  expect(rows("jgServerMembers")).toHaveLength(1);
+  expect(rows("jgServerMembers")[0]!.sessionIds).toBeUndefined();
+  expect(rows("jgServerCapacity")[0]!.memberCount).toBe(1);
+  expect(await fns.helpers.runCommand(ctx, { serverId, command: "earn", input: {}, actorUserId: "alice" })).toEqual({ ok: true });
+  expect(await fns.helpers.ensureJoined(ctx, { gameId: "demo", userId: "agent-7" })).toEqual({ ok: true, serverId, isNew: true });
+  expect(rows("jgServerCapacity")[0]!.memberCount).toBe(2);
+  expect(await earn("agent-7", serverId)).toEqual({ ok: true });
 });

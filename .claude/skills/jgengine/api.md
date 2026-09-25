@@ -572,7 +572,7 @@
 - `GameRuntimeFeeds` (type): type GameRuntimeFeeds = { subscribeServer: ( serverId: string, onChange: (view: GameRuntimeServerView | null) => void, ) => FeedUnsubscribe; subscribePlayer: ( args: { serverId: string }, onChange: (view: GameRuntimePlayerView | null) => void, ) => FeedUnsubscribe; subscribeFeed: ( args: { serverId:… — ⚠ undocumented
 - `GameRuntimePlayerView` (type): type GameRuntimePlayerView = { userId: string; gameId: string; playerState: unknown; updatedAt: number; } — ⚠ undocumented
 - `GameRuntimeServerView` (type): type GameRuntimeServerView = { serverId: string; gameId: string; revision: number; memberUserIds: string[]; serverState: unknown | WorldSyncFrame; updatedAt: number; } — ⚠ undocumented
-- `GameRuntimeTransport` (type): type GameRuntimeTransport = { joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole }) => Promise<JoinServerOutcome>; leaveServer: (args: { serverId: string }) => Promise<void>; runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>; } — ⚠ undocumented · used by `useServerSession` (@jgengine/react/useServerSession): Joins a host and exposes a retryable blocking state until membership is confirmed.
+- `GameRuntimeTransport` (type): type GameRuntimeTransport = { /** * Join a server. `sessionId` names this client session (one tab, one mounted view) so the host keeps * the user a member while any of their sessions is still live. */ joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole; sessionId?: string … — ⚠ undocumented · used by `useServerSession` (@jgengine/react/useServerSession): Joins a host and exposes a retryable blocking state until membership is confirmed.
 - `JoinServerOutcome` (type): type JoinServerOutcome = | (JoinServerResult & { ok: true }) | { ok: false; reason: "full" | "closed" | "unauthorized" } — Join failures are returned to the caller so the triggering surface can offer retry.
 - `JoinServerResult` (type): type JoinServerResult = { serverId: string; isNew: boolean; resumeTicket?: ResumeTicket; } — ⚠ undocumented
 - `LiveGameBackend` (type): type LiveGameBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = GameBackend<TPresenceRow, TPresenceLocation, TGameId> & { presenceSync: PresenceSync; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; chatSyncFor… — ⚠ undocumented
@@ -584,6 +584,7 @@
 - `RunCommandArgs` (type): type RunCommandArgs = { serverId: string; command: string; input: unknown; } — ⚠ undocumented
 - `TransportRunCommandResult` (type): type TransportRunCommandResult = | { ok: true } | { ok: false; reason: string } — ⚠ undocumented
 - `WorldSyncFrame` (type): type WorldSyncFrame = | { kind: "baseline"; revision: number; snapshot: WorldSnapshot } | { kind: "diff"; revision: number; diff: WorldDiff } — A revision-stamped world baseline or compact diff sent to a server-authoritative client.
+- `createTransportSessionId` (function): function createTransportSessionId(): string — Fresh id for one client session's join/leave pair (see {@link GameRuntimeTransport.joinServer}).
 
 ## @jgengine/core/runtime/visibility
 

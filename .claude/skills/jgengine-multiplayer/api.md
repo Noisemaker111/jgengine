@@ -7,7 +7,7 @@
 - `ConvexBackend` (type): type ConvexBackend<TPresenceRow = unknown, TPresenceLocation = unknown, TGameId extends string = string> = LiveGameBackend<TPresenceRow, TPresenceLocation, TGameId> & { leaderboard: ConvexLeaderboardReads; } — ⚠ undocumented
 - `ConvexBackendOptions` (type): type ConvexBackendOptions<TRawPresenceRow extends { actorExternalId: string }, TPresenceRow> = { client: ConvexReactClient; gameId: string; userId: string; api?: ConvexGameApi; poseTuning?: PoseSyncTuning; presence?: { functions: ConvexPresenceFunctions; mapRow: (row: TRawPresenceRow) => TPresenceRo… — ⚠ undocumented
 - `ConvexChatFunctions` (interface): interface ConvexChatFunctions { messages: FunctionReference<"query">; sendMessage: FunctionReference<"mutation"> } — ⚠ undocumented · used by `createConvexChatTransport`: Wires a game's Convex chat functions into the engine's ChatTransport contract: one live query per subscribed channel (the channel's recent h…
-- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; }, JoinServerOutcome >; leaveServer: FunctionReference<"mutation", "public", { serverI… — ⚠ undocumented
+- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; sessionId?: string; }, JoinServerOutcome >; leaveServer: FunctionReference<"mutation",… — ⚠ undocumented
 - `ConvexGameClient` (type): type ConvexGameClient = Pick<ConvexReactClient, "mutation" | "watchQuery"> — Structural client seam avoids requiring the engine and game to share a class instance type.
 - `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
 - `ConvexLeaderboardReads` (type): type ConvexLeaderboardReads = ReturnType<typeof createConvexLeaderboardReads> — ⚠ undocumented
@@ -16,6 +16,7 @@
 - `ConvexSaveFunctions` (interface): interface ConvexSaveFunctions — The three Convex functions a save backend calls — a `query` that returns the stored string (or `null`) and two `mutation`s. Point them at your app's own module, or lean on the default `saves.*` convention.
 - `DEFAULT_CONVEX_POSE_RULES` (const): const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `DEFAULT_MAX_SERVERS_PER_TICK` (const): const DEFAULT_MAX_SERVERS_PER_TICK: 32 — How many running servers one `tickActiveServers` transaction may hydrate, tick, and persist.
+- `EnsureJoinedOutcome` (type): type EnsureJoinedOutcome = | { ok: true; serverId: GenericId<"jgGameServers">; isNew: boolean } | { ok: false; reason: "full" | "closed" | "unauthorized" } — Outcome of a join: the server joined and whether the player's profile was created, or why it was refused.
 - `GameServerHelpers` (type): type GameServerHelpers = { ensureServer: (ctx: JGMutationCtx, gameId: string) => Promise<ServerDoc>; loadSnapshot: ( ctx: JGMutationCtx, serverId: string, scope?: LoadSnapshotScope, ) => Promise<LoadedServerSnapshot | null>; applyCommand: (args: { gameId: string; loadedRevision: number; currentRevis… — The plain-function half of {@link createGameServerFunctions}, bound to the same runtime registry and auth mode as its mutations. Reach for it when a host mutation must pair snapshot work with its own table writes in one transaction, which a pre-registered mutation cannot do.
 - `HostedGameConfig` (interface): interface HostedGameConfig — One game the hosted path can serve, bound per `gameId`: its definition plus content lookup.
 - `HostedWorldInvocation` (interface): interface HostedWorldInvocation<T> — Everything one stateless invocation reconstructs a hosted world from: the persisted record via `store`, plus the member roster and held inputs the snapshot doesn't carry, and the op to apply to the fresh session.
@@ -31,6 +32,8 @@
 - `LoadSnapshotScope` (type): type LoadSnapshotScope = CommandScope — How much of a server to hydrate. Both fields default to "everything", which is a document read per member plus one per chunk — the cost that makes a large shared world unaffordable per mutation. Narrow them when the caller knows what it will touch: a command that only moves the actor's own state needs `players: [actorUserId]`, and a spatial edit needs only the chunk keys it writes (`chunkKeysInRadius` from `@jgengine/core/runtime/worldChunks`).
 - `LoadedServerSnapshot` (type): type LoadedServerSnapshot = { server: ServerDoc; runtime: GameRuntime; snapshot: GameRuntimeSnapshot; } — A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot.
 - `MAX_CHUNKS_PER_QUERY` (const): const MAX_CHUNKS_PER_QUERY: 64 — How many chunk rows one `getChunks` call may return.
+- `MAX_MEMBER_SESSIONS` (const): const MAX_MEMBER_SESSIONS: 16 — Most live client sessions one shared-topology membership remembers; the oldest drop first.
+- `MAX_SESSION_ID_LENGTH` (const): const MAX_SESSION_ID_LENGTH: 128 — Longest accepted client `sessionId`.
 - `MatchmakingMode` (type): type MatchmakingMode = "auto" | "singleton" — How auto-match behaves when no `serverId` is supplied.
 - `OnlinePlayer` (type): type OnlinePlayer = { serverId: string; userId: string; homeGameId?: string } — One active player delivered to an online-system batch.
 - `PresenceListRow` (type): type PresenceListRow = { userId: string; sessionId?: string; kind?: string; label?: string; position: { x: number; y: number; z: number }; rotationY: number; rotationPitch: number; lastSeenAt: number; } — One member's pose as `list` reports it.
@@ -91,7 +94,7 @@
 
 ## @jgengine/convex/createConvexGameTransport
 
-- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; }, JoinServerOutcome >; leaveServer: FunctionReference<"mutation", "public", { serverI… — ⚠ undocumented
+- `ConvexGameApi` (type): type ConvexGameApi = { runtime: { joinServer: FunctionReference< "mutation", "public", { gameId: string; serverId?: string; mode?: string; visibility?: "public" | "private"; joinCode?: string; externalId?: string; sessionId?: string; }, JoinServerOutcome >; leaveServer: FunctionReference<"mutation",… — ⚠ undocumented
 - `ConvexGameClient` (type): type ConvexGameClient = Pick<ConvexReactClient, "mutation" | "watchQuery"> — Structural client seam avoids requiring the engine and game to share a class instance type.
 - `ConvexGameTransportConfig` (type): type ConvexGameTransportConfig = { gameId: string; userId?: string; } — ⚠ undocumented
 - `createConvexChatSync` (function): function createConvexChatSync(client: ConvexGameClient, api: ConvexGameApi, config: ConvexGameTransportConfig, serverId: string): ChatSync — ⚠ undocumented
@@ -123,6 +126,7 @@
 
 - `DEFAULT_CONVEX_POSE_RULES` (const): const DEFAULT_CONVEX_POSE_RULES: PoseSyncRules — ⚠ undocumented
 - `DEFAULT_MAX_SERVERS_PER_TICK` (const): const DEFAULT_MAX_SERVERS_PER_TICK: 32 — How many running servers one `tickActiveServers` transaction may hydrate, tick, and persist.
+- `EnsureJoinedOutcome` (type): type EnsureJoinedOutcome = | { ok: true; serverId: GenericId<"jgGameServers">; isNew: boolean } | { ok: false; reason: "full" | "closed" | "unauthorized" } — Outcome of a join: the server joined and whether the player's profile was created, or why it was refused.
 - `GameServerHelpers` (type): type GameServerHelpers = { ensureServer: (ctx: JGMutationCtx, gameId: string) => Promise<ServerDoc>; loadSnapshot: ( ctx: JGMutationCtx, serverId: string, scope?: LoadSnapshotScope, ) => Promise<LoadedServerSnapshot | null>; applyCommand: (args: { gameId: string; loadedRevision: number; currentRevis… — The plain-function half of {@link createGameServerFunctions}, bound to the same runtime registry and auth mode as its mutations. Reach for it when a host mutation must pair snapshot work with its own table writes in one transaction, which a pre-registered mutation cannot do.
 - `JGDataModel` (type): type JGDataModel = DataModelFromSchemaDefinition<typeof schemaForTypes> — Data model of the {@link jgengineTables} schema — the shape a host's own Convex ctx must satisfy to call the exported persistence helpers.
 - `JGMutationCtx` (type): type JGMutationCtx = GenericMutationCtx<JGDataModel> — Mutation ctx accepted by {@link loadServerSnapshot} / {@link persistServerSnapshot}.
@@ -134,6 +138,8 @@
 - `LoadSnapshotScope` (type): type LoadSnapshotScope = CommandScope — How much of a server to hydrate. Both fields default to "everything", which is a document read per member plus one per chunk — the cost that makes a large shared world unaffordable per mutation. Narrow them when the caller knows what it will touch: a command that only moves the actor's own state needs `players: [actorUserId]`, and a spatial edit needs only the chunk keys it writes (`chunkKeysInRadius` from `@jgengine/core/runtime/worldChunks`).
 - `LoadedServerSnapshot` (type): type LoadedServerSnapshot = { server: ServerDoc; runtime: GameRuntime; snapshot: GameRuntimeSnapshot; } — A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot.
 - `MAX_CHUNKS_PER_QUERY` (const): const MAX_CHUNKS_PER_QUERY: 64 — How many chunk rows one `getChunks` call may return.
+- `MAX_MEMBER_SESSIONS` (const): const MAX_MEMBER_SESSIONS: 16 — Most live client sessions one shared-topology membership remembers; the oldest drop first.
+- `MAX_SESSION_ID_LENGTH` (const): const MAX_SESSION_ID_LENGTH: 128 — Longest accepted client `sessionId`.
 - `MatchmakingMode` (type): type MatchmakingMode = "auto" | "singleton" — How auto-match behaves when no `serverId` is supplied.
 - `OnlinePlayer` (type): type OnlinePlayer = { serverId: string; userId: string; homeGameId?: string } — One active player delivered to an online-system batch.
 - `PresenceListRow` (type): type PresenceListRow = { userId: string; sessionId?: string; kind?: string; label?: string; position: { x: number; y: number; z: number }; rotationY: number; rotationPitch: number; lastSeenAt: number; } — One member's pose as `list` reports it.
@@ -492,6 +498,7 @@
 - `MAX_FEED_ACTION_LENGTH` (const): const MAX_FEED_ACTION_LENGTH: 256 — Max length of a `pushFeed` action name, in UTF-16 code units.
 - `MAX_FEED_ENTRY_BYTES` (const): const MAX_FEED_ENTRY_BYTES: 65536 — Max serialized size of a `pushFeed` entry payload, in bytes.
 - `MAX_QUEUED_MESSAGES` (const): const MAX_QUEUED_MESSAGES: 64 — Cap on frames queued behind a connection's in-flight message; beyond this a flood gets rejected instead of piling up unbounded promises.
+- `MAX_SESSION_ID_LENGTH` (const): const MAX_SESSION_ID_LENGTH: 128 — Max length of a join/leave `sessionId`, in UTF-16 code units.
 - `OP_LEDGER_LIMIT` (const): const OP_LEDGER_LIMIT: 64 — Max recently-applied `runCommand` op IDs retained per (serverId, userId), oldest evicted first.
 - `PeerGuest` (type): type PeerGuest = { backend: WsBackend; offer: () => Promise<string>; connect: (answerCode: string) => Promise<void>; close: () => void; } — ⚠ undocumented
 - `PeerGuestOptions` (type): type PeerGuestOptions = { userId: string; token?: string; rtc?: PeerRtcOptions; } — ⚠ undocumented
@@ -526,7 +533,7 @@
 - `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
 - `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
 - `WsChatSync` (type): type WsChatSync = { subscribe: ( serverId: string, channelId: string, onChange: (messages: WsChatMessage[]) => void, ) => () => void; send: (serverId: string, channelId: string, body: string) => Promise<ChatSendOutcome>; } — ⚠ undocumented
-- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "ping"; id: number; at: number } | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: "player" | "spectator"; } | { v: 1; t: "jo… — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "ping"; id: number; at: number } | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: "player" | "spectator"; /** Client session… — ⚠ undocumented
 - `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number; } — ⚠ undocumented
 - `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
 - `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented
@@ -649,12 +656,13 @@
 - `MAX_COMMAND_LENGTH` (const): const MAX_COMMAND_LENGTH: 4096 — Max length of a `runCommand` command name, in UTF-16 code units.
 - `MAX_FEED_ACTION_LENGTH` (const): const MAX_FEED_ACTION_LENGTH: 256 — Max length of a `pushFeed` action name, in UTF-16 code units.
 - `MAX_FEED_ENTRY_BYTES` (const): const MAX_FEED_ENTRY_BYTES: 65536 — Max serialized size of a `pushFeed` entry payload, in bytes.
+- `MAX_SESSION_ID_LENGTH` (const): const MAX_SESSION_ID_LENGTH: 128 — Max length of a join/leave `sessionId`, in UTF-16 code units.
 - `WS_PROTOCOL_VERSION` (const): const WS_PROTOCOL_VERSION: 1 — ⚠ undocumented
 - `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
 - `WsBrowseResult` (type): type WsBrowseResult = SessionListing[] — ⚠ undocumented
 - `WsChannel` (type): type WsChannel = "server" | "player" | "feed" | "presence" | "chat" | "voice" — ⚠ undocumented
 - `WsChatMessage` (type): type WsChatMessage = { id: string; channelId: string; fromUserId: string; body: string; at: number; } — ⚠ undocumented
-- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "ping"; id: number; at: number } | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: "player" | "spectator"; } | { v: 1; t: "jo… — ⚠ undocumented
+- `WsClientMessage` (type): type WsClientMessage = | { v: 1; t: "ping"; id: number; at: number } | { v: 1; t: "hello"; id: number; userId: string; token?: string } | { v: 1; t: "join"; id: number; gameId: string; serverId?: string; attributes?: SessionAttributes; code?: string; role?: "player" | "spectator"; /** Client session… — ⚠ undocumented
 - `WsDecodeFailure` (type): type WsDecodeFailure = { reason: string; id?: number; } — ⚠ undocumented
 - `WsJoinByCodeResult` (type): type WsJoinByCodeResult = JoinServerResult | null — ⚠ undocumented
 - `WsJoinResult` (type): type WsJoinResult = JoinServerResult — ⚠ undocumented

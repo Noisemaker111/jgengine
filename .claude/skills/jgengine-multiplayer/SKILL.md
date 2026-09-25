@@ -67,6 +67,6 @@ A cron never collects a whole table. Use presence-gated `forEachOnlinePlayer` wi
 
 Pass runtimes to `jgengineCronSpecs` so no tick cron registers when no runtime declares `onTick`; set per-spec `intervalSeconds` deliberately. Retention sweeps and one-shot backfills are bounded, report `remaining`, and stop at convergence. Delete completed migration crons instead of leaving hourly table scans installed forever.
 
-Join failures return typed `full`, `closed`, or `unauthorized` outcomes. Surface them through a retry gate; returning a rejection without visible UI is unfinished. Browser adapters leave sessions on `pagehide`.
+Join failures return typed `full`, `closed`, or `unauthorized` outcomes. Surface them through a retry gate; returning a rejection without visible UI is unfinished. Browser adapters leave sessions on `pagehide`. Membership is per client session: pass a fresh `sessionId` (`createTransportSessionId`) to each `joinServer` and its matching `leaveServer`, so a closed tab or a disposed mount never evicts a live one. A host mutation acting for a user who may have no live session calls `helpers.ensureJoined` before `helpers.runCommand`.
 
 For the explicit shared-builder composition, `jgengine create "World Name" --shape shared-world-builder` generates the connected Convex shell, runtime scope declarations, claim/accrual examples, chat, indexed presence, and an online batch pipeline. The generated README owns setup; replace the demonstration economy and author buildable world content in the editor.

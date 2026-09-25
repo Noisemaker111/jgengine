@@ -102,6 +102,8 @@ type Connection = {
   userId: string | null;
   subscriptions: Set<string>;
   joinedServers: Set<string>;
+  /** Live client session ids per joined server; the connection leaves once the last one does. */
+  sessions: Map<string, Set<string>>;
   queue: Promise<void>;
   queuedMessages: number;
   worldRevisions: Map<string, number | null>;
@@ -173,6 +175,12 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     if (timer === undefined) return;
     clearTimeout(timer);
     pendingLeaves.delete(key);
+  };
+  const heldByOtherConnection = (self: Connection, userId: string, serverId: string): boolean => {
+    for (const other of connections) {
+      if (other !== self && other.userId === userId && other.joinedServers.has(serverId)) return true;
+    }
+    return false;
   };
   const subscribers = new Map<string, Set<Connection>>();
 
@@ -572,6 +580,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           });
           connection.joinedServers.add(result.serverId);
           connection.roles.set(result.serverId, message.role ?? "player");
+          if (message.sessionId !== undefined) getOrCreate(connection.sessions, result.serverId, () => new Set<string>()).add(message.sessionId);
           reply(connection, message.id, {
             ...result,
             resumeTicket: ticketFor(userId, result.serverId),
@@ -609,12 +618,23 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           return;
         }
         case "leave": {
-          await host.leaveServer({ userId, serverId: message.serverId });
-          clearPendingLeave(userId, message.serverId);
+          const sessions = connection.sessions.get(message.serverId);
+          // A leave for a session that is not live (a disposed join) must not end the sessions that are.
+          if (message.sessionId !== undefined && sessions !== undefined && sessions.size > 0) {
+            if (!sessions.delete(message.sessionId) || sessions.size > 0) {
+              reply(connection, message.id, null);
+              return;
+            }
+          }
+          connection.sessions.delete(message.serverId);
           connection.joinedServers.delete(message.serverId);
           connection.roles.delete(message.serverId);
-          dropPresenceForServer(userId, message.serverId);
-          dropVoiceForServer(userId, message.serverId);
+          if (!heldByOtherConnection(connection, userId, message.serverId)) {
+            await host.leaveServer({ userId, serverId: message.serverId });
+            clearPendingLeave(userId, message.serverId);
+            dropPresenceForServer(userId, message.serverId);
+            dropVoiceForServer(userId, message.serverId);
+          }
           reply(connection, message.id, null);
           return;
         }
@@ -721,6 +741,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     const userId = connection.userId;
     const servers = [...connection.joinedServers];
     connection.joinedServers.clear();
+    connection.sessions.clear();
     for (const serverId of servers) {
       const key = ticketKey(userId, serverId);
       clearPendingLeave(userId, serverId);
@@ -728,6 +749,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         key,
         setTimeout(() => {
           pendingLeaves.delete(key);
+          if (heldByOtherConnection(connection, userId, serverId)) return;
           void host.leaveServer({ userId, serverId }).catch(() => undefined);
         }, graceMs),
       );
@@ -741,6 +763,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         userId: null,
         subscriptions: new Set(),
         joinedServers: new Set(),
+        sessions: new Map(),
         queue: Promise.resolve(),
         queuedMessages: 0,
         worldRevisions: new Map(),

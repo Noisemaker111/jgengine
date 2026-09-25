@@ -122,6 +122,8 @@ export function jgengineTables() {
       serverId: v.id("jgGameServers"),
       userId: v.string(),
       joinedAt: v.number(),
+      /** Live client sessions holding this membership; absent on legacy and host-driven joins. */
+      sessionIds: v.optional(v.array(v.string())),
     }).index("by_server", ["serverId"]).index("by_server_and_user", ["serverId", "userId"]),
     jgRateLimits: defineTable({
       key: v.string(), startedAt: v.number(), count: v.number(), expiresAt: v.number(),
@@ -282,6 +284,25 @@ async function hasMember(ctx: JGQueryCtx | JGMutationCtx, server: ServerDoc, use
   if (server.topology !== "shared") return false;
   return (await ctx.db.query("jgServerMembers")
     .withIndex("by_server_and_user", q => q.eq("serverId", server._id).eq("userId", userId)).unique()) !== null;
+}
+
+async function memberRow(ctx: JGQueryCtx | JGMutationCtx, serverId: GenericId<"jgGameServers">, userId: string) {
+  return ctx.db.query("jgServerMembers").withIndex("by_server_and_user", q => q.eq("serverId", serverId).eq("userId", userId)).unique();
+}
+
+/** Most live client sessions one shared-topology membership remembers; the oldest drop first. */
+export const MAX_MEMBER_SESSIONS = 16;
+/** Longest accepted client `sessionId`. */
+export const MAX_SESSION_ID_LENGTH = 128;
+
+function withSession(sessionIds: readonly string[] | undefined, sessionId: string): string[] {
+  return [...(sessionIds ?? []).filter((id) => id !== sessionId), sessionId].slice(-MAX_MEMBER_SESSIONS);
+}
+
+function assertSessionId(sessionId: string | undefined): void {
+  if (sessionId !== undefined && (sessionId.length === 0 || sessionId.length > MAX_SESSION_ID_LENGTH)) {
+    throw new ConvexError("Invalid sessionId");
+  }
 }
 
 async function requireServerMember(
@@ -654,10 +675,29 @@ export type RunCommandArgs = {
    * {@link CommandDef} declares through its own `scope`; omit both to hydrate the whole world.
    */
   scope?: LoadSnapshotScope;
-  /** Trusted host override after game-specific authorization; never forward a client-supplied actor. */
+  /**
+   * Trusted host override after game-specific authorization; never forward a client-supplied actor.
+   * The actor must be a member; when they might have no live session (a closed tab, an agent), call
+   * {@link GameServerHelpers.ensureJoined} first.
+   */
   actorUserId?: string;
   beforePersist?: (ctx: JGMutationCtx, loaded: LoadedServerSnapshot) => Promise<void>;
 };
+
+/** Server-selection arguments of the `joinServer` mutation, minus the caller identity. */
+type JoinServerArgs = {
+  gameId: string;
+  serverId?: GenericId<"jgGameServers">;
+  mode?: string;
+  modeConfig?: unknown;
+  visibility?: "public" | "private";
+  joinCode?: string;
+};
+
+/** Outcome of a join: the server joined and whether the player's profile was created, or why it was refused. */
+export type EnsureJoinedOutcome =
+  | { ok: true; serverId: GenericId<"jgGameServers">; isNew: boolean }
+  | { ok: false; reason: "full" | "closed" | "unauthorized" };
 
 /** A server resolved for runtime work: its row, its registered runtime, and its hydrated snapshot. */
 export type LoadedServerSnapshot = {
@@ -693,7 +733,17 @@ export type GameServerHelpers = {
     snapshot: GameRuntimeSnapshot,
     save?: SaveConfig,
   ) => Promise<boolean>;
+  /**
+   * Apply a command as the actor. Refuses non-members with "Not a member of this server"; host
+   * mutations acting for a user who might have no live session call {@link ensureJoined} first.
+   */
   runCommand: (ctx: JGMutationCtx, args: RunCommandArgs) => Promise<RunCommandOutcome>;
+  /**
+   * Join a trusted, already-authorized actor through the same path as the `joinServer` mutation.
+   * Idempotent: an existing member of `serverId` returns at once. Pins no client session, so it never
+   * keeps a membership alive past the user's own session leaves.
+   */
+  ensureJoined: (ctx: JGMutationCtx, args: { gameId: string; userId: string; serverId?: string }) => Promise<EnsureJoinedOutcome>;
   resetPlayerProfile: (ctx: JGMutationCtx, serverId: string, userId: string) => Promise<RuntimePlayerRow>;
 };
 
@@ -738,6 +788,161 @@ export function createGameServerFunctions(options?: {
     .filter((runtime) => runtime.hasTick)
     .map((runtime) => runtime.gameId);
 
+  const joinAs = async (
+    ctx: JGMutationCtx,
+    actorUserId: string,
+    args: JoinServerArgs,
+    sessionId: string | undefined,
+  ): Promise<EnsureJoinedOutcome> => {
+    const now = Date.now();
+    const runtime = resolveRuntime(registry, args.gameId);
+    const save = runtime.save as SaveConfig;
+    const slotsPerServer = hostSlotsPerServer;
+
+    let server =
+      args.serverId !== undefined ? await ctx.db.get("jgGameServers", args.serverId) : null;
+
+    if (args.serverId !== undefined && !server) {
+      return { ok: false as const, reason: "closed" as const };
+    }
+
+    if (server && server.gameId !== args.gameId) {
+      return { ok: false as const, reason: "unauthorized" as const };
+    }
+
+    if (server?.status === "closed") return { ok: false as const, reason: "closed" as const };
+    let mayCreate = true;
+    if (!server) {
+      const joinable = [];
+      for (const status of ["running", "open"] as const) {
+        const rows = await ctx.db
+          .query("jgGameServers")
+          .withIndex("by_game_and_status", (q) => q.eq("gameId", args.gameId).eq("status", status))
+          .take(100);
+        joinable.push(...rows);
+      }
+      // Two concurrent first-joins can both see an empty list here and both insert. Convex's OCC
+      // resolves it — the loser's read set is invalidated and its mutation retries against the
+      // winner's row — so the engine adds no lock. A `HostPersistence` backend without
+      // serializable-snapshot retry must supply that guarantee itself.
+      const target = selectJoinTarget(joinable, {
+        userId: actorUserId,
+        mode: matchmaking,
+        slotsPerServer,
+      });
+      if (target.kind === "refuse") return { ok: false as const, reason: "full" as const };
+      server = target.kind === "join" ? target.row : null;
+      mayCreate = target.kind === "create";
+    }
+
+    if (!server && mayCreate) {
+      const serverId = await ctx.db.insert("jgGameServers", {
+        gameId: args.gameId,
+        status: "running",
+        mode: args.mode,
+        modeConfig: args.modeConfig,
+        visibility: args.visibility ?? "public",
+        joinCode: args.joinCode,
+        topology: shared ? "shared" : "rooms",
+        memberCount: 0,
+        memberUserIds: [],
+        slotsPerServer,
+        save,
+        serverState: defaultServerStateForGame(args.gameId),
+        sessionPlayers: {},
+        revision: 0,
+        tickAnchorMs: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      server = await ctx.db.get("jgGameServers", serverId);
+      if (!server) throw new ConvexError("Failed to create server");
+    }
+
+    if (!server) throw new ConvexError("No joinable server");
+
+    // Capacity and save policy live in host options, not in the row. Without this a long-lived
+    // world keeps whatever it was created with and raising the host option silently does nothing.
+    if (server.slotsPerServer !== slotsPerServer || JSON.stringify(server.save) !== JSON.stringify(save)) {
+      await ctx.db.patch(server._id, { slotsPerServer, save, updatedAt: now });
+      const reconciled = await ctx.db.get("jgGameServers", server._id);
+      if (!reconciled) throw new ConvexError("Server missing after reconcile");
+      server = reconciled;
+    }
+
+    if (!shared && isServerFull(server.memberUserIds, server.slotsPerServer, actorUserId)) {
+      return { ok: false as const, reason: "full" as const };
+    }
+
+    if (
+      isPrivateJoinBlocked({
+        visibility: server.visibility,
+        memberUserIds: await hasMember(ctx, server, actorUserId) ? [actorUserId] : [],
+        userId: actorUserId,
+        joinCode: server.joinCode,
+        suppliedCode: args.joinCode,
+      })
+    ) {
+      return { ok: false as const, reason: "unauthorized" as const };
+    }
+
+    let profile = await ctx.db
+      .query("jgPlayerProfiles")
+      .withIndex("by_user_and_game", (q) => q.eq("userId", actorUserId).eq("gameId", args.gameId))
+      .unique();
+
+    if (shared && server.topology !== "shared") {
+      for (const userId of server.memberUserIds) {
+        const member = await ctx.db.query("jgServerMembers").withIndex("by_server_and_user", q => q.eq("serverId", server!._id).eq("userId", userId)).unique();
+        if (!member) await ctx.db.insert("jgServerMembers", { serverId: server._id, userId, joinedAt: now });
+        const state = (server.sessionPlayers as Record<string, RuntimePlayerRow>)[userId];
+        if (!state) continue;
+        const stored = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", userId).eq("gameId", server!.gameId)).unique();
+        const patch = { sessionState: state.session ?? {}, sessionServerId: server._id };
+        if (stored) await ctx.db.patch(stored._id, patch);
+        else await ctx.db.insert("jgPlayerProfiles", { userId, gameId: server.gameId, playerState: state, revision: server.revision, createdAt: now, updatedAt: now, ...patch });
+      }
+      await ctx.db.patch(server._id, { topology: "shared", memberCount: server.memberUserIds.length, memberUserIds: [], sessionPlayers: {} });
+      server = (await ctx.db.get("jgGameServers", server._id))!;
+      profile = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", actorUserId).eq("gameId", args.gameId)).unique();
+    }
+    const isNew = profile === null;
+    const memberUserIds = withJoinedMember(server.memberUserIds, actorUserId);
+
+    if (shared) {
+      const capacity = await ensureServerCapacity(ctx, server);
+      const member = await memberRow(ctx, server._id, actorUserId);
+      const isMember = member !== null || server.memberUserIds.includes(actorUserId);
+      await ctx.db.patch(capacity._id, {
+        memberCount: capacity.memberCount + (isMember ? 0 : 1), status: "running", slotsPerServer,
+      });
+      if (!isMember) {
+        await ctx.db.insert("jgServerMembers", {
+          serverId: server._id, userId: actorUserId, joinedAt: now, ...(sessionId === undefined ? {} : { sessionIds: [sessionId] }),
+        });
+      } else if (member !== null && sessionId !== undefined) {
+        await ctx.db.patch(member._id, { sessionIds: withSession(member.sessionIds, sessionId) });
+      }
+      if (server.status !== "running") await ctx.db.patch(server._id, { status: "running" });
+    } else {
+      await ctx.db.patch(server._id, { memberUserIds, status: "running", updatedAt: now });
+    }
+
+    const refreshed = await ctx.db.get("jgGameServers", server._id);
+    if (!refreshed) throw new ConvexError("Server missing after join");
+
+    let snapshot = await loadServerSnapshot(
+      ctx,
+      refreshed,
+      runtime,
+      scopeWithActor(runtime.joinScope(actorUserId, isNew), actorUserId),
+    );
+    snapshot = runtime.joinPlayer(snapshot, actorUserId, isNew, now);
+    await persistServerSnapshot(ctx, refreshed, snapshot, save);
+
+    return { ok: true as const, serverId: refreshed._id, isNew };
+  };
+
   const joinServer = mutation({
     args: {
       gameId: v.string(),
@@ -747,152 +952,15 @@ export function createGameServerFunctions(options?: {
       visibility: v.optional(v.union(v.literal("public"), v.literal("private"))),
       joinCode: v.optional(v.string()),
       externalId: v.optional(v.string()),
+      sessionId: v.optional(v.string()),
     },
     returns: v.union(v.object({ ok: v.literal(true), serverId: v.id("jgGameServers"), isNew: v.boolean() }), v.object({ ok: v.literal(false), reason: v.union(v.literal("full"), v.literal("closed"), v.literal("unauthorized")) })),
     handler: async (ctx, args) => {
       const actorUserId = await resolveActor(ctx, args.externalId, mode);
       if (!actorUserId) return { ok: false as const, reason: "unauthorized" as const };
-
-      const now = Date.now();
-      const runtime = resolveRuntime(registry, args.gameId);
-      const save = runtime.save as SaveConfig;
-      const slotsPerServer = hostSlotsPerServer;
-
-      let server =
-        args.serverId !== undefined ? await ctx.db.get("jgGameServers", args.serverId) : null;
-
-      if (args.serverId !== undefined && !server) {
-        return { ok: false as const, reason: "closed" as const };
-      }
-
-      if (server && server.gameId !== args.gameId) {
-        return { ok: false as const, reason: "unauthorized" as const };
-      }
-
-      if (server?.status === "closed") return { ok: false as const, reason: "closed" as const };
-      let mayCreate = true;
-      if (!server) {
-        const joinable = [];
-        for (const status of ["running", "open"] as const) {
-          const rows = await ctx.db
-            .query("jgGameServers")
-            .withIndex("by_game_and_status", (q) => q.eq("gameId", args.gameId).eq("status", status))
-            .take(100);
-          joinable.push(...rows);
-        }
-        // Two concurrent first-joins can both see an empty list here and both insert. Convex's OCC
-        // resolves it — the loser's read set is invalidated and its mutation retries against the
-        // winner's row — so the engine adds no lock. A `HostPersistence` backend without
-        // serializable-snapshot retry must supply that guarantee itself.
-        const target = selectJoinTarget(joinable, {
-          userId: actorUserId,
-          mode: matchmaking,
-          slotsPerServer,
-        });
-        if (target.kind === "refuse") return { ok: false as const, reason: "full" as const };
-        server = target.kind === "join" ? target.row : null;
-        mayCreate = target.kind === "create";
-      }
-
-      if (!server && mayCreate) {
-        const serverId = await ctx.db.insert("jgGameServers", {
-          gameId: args.gameId,
-          status: "running",
-          mode: args.mode,
-          modeConfig: args.modeConfig,
-          visibility: args.visibility ?? "public",
-          joinCode: args.joinCode,
-          topology: shared ? "shared" : "rooms",
-          memberCount: 0,
-          memberUserIds: [],
-          slotsPerServer,
-          save,
-          serverState: defaultServerStateForGame(args.gameId),
-          sessionPlayers: {},
-          revision: 0,
-          tickAnchorMs: now,
-          createdAt: now,
-          updatedAt: now,
-        });
-        server = await ctx.db.get("jgGameServers", serverId);
-        if (!server) throw new ConvexError("Failed to create server");
-      }
-
-      if (!server) throw new ConvexError("No joinable server");
-
-      // Capacity and save policy live in host options, not in the row. Without this a long-lived
-      // world keeps whatever it was created with and raising the host option silently does nothing.
-      if (server.slotsPerServer !== slotsPerServer || JSON.stringify(server.save) !== JSON.stringify(save)) {
-        await ctx.db.patch(server._id, { slotsPerServer, save, updatedAt: now });
-        const reconciled = await ctx.db.get("jgGameServers", server._id);
-        if (!reconciled) throw new ConvexError("Server missing after reconcile");
-        server = reconciled;
-      }
-
-      if (!shared && isServerFull(server.memberUserIds, server.slotsPerServer, actorUserId)) {
-        return { ok: false as const, reason: "full" as const };
-      }
-
-      if (
-        isPrivateJoinBlocked({
-          visibility: server.visibility,
-          memberUserIds: await hasMember(ctx, server, actorUserId) ? [actorUserId] : [],
-          userId: actorUserId,
-          joinCode: server.joinCode,
-          suppliedCode: args.joinCode,
-        })
-      ) {
-        return { ok: false as const, reason: "unauthorized" as const };
-      }
-
-      let profile = await ctx.db
-        .query("jgPlayerProfiles")
-        .withIndex("by_user_and_game", (q) => q.eq("userId", actorUserId).eq("gameId", args.gameId))
-        .unique();
-
-      if (shared && server.topology !== "shared") {
-        for (const userId of server.memberUserIds) {
-          const member = await ctx.db.query("jgServerMembers").withIndex("by_server_and_user", q => q.eq("serverId", server!._id).eq("userId", userId)).unique();
-          if (!member) await ctx.db.insert("jgServerMembers", { serverId: server._id, userId, joinedAt: now });
-          const state = (server.sessionPlayers as Record<string, RuntimePlayerRow>)[userId];
-          if (!state) continue;
-          const stored = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", userId).eq("gameId", server!.gameId)).unique();
-          const patch = { sessionState: state.session ?? {}, sessionServerId: server._id };
-          if (stored) await ctx.db.patch(stored._id, patch);
-          else await ctx.db.insert("jgPlayerProfiles", { userId, gameId: server.gameId, playerState: state, revision: server.revision, createdAt: now, updatedAt: now, ...patch });
-        }
-        await ctx.db.patch(server._id, { topology: "shared", memberCount: server.memberUserIds.length, memberUserIds: [], sessionPlayers: {} });
-        server = (await ctx.db.get("jgGameServers", server._id))!;
-        profile = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", actorUserId).eq("gameId", args.gameId)).unique();
-      }
-      const isNew = profile === null;
-      const memberUserIds = withJoinedMember(server.memberUserIds, actorUserId);
-
-      if (shared) {
-        const capacity = await ensureServerCapacity(ctx, server);
-        const isMember = await hasMember(ctx, server, actorUserId);
-        await ctx.db.patch(capacity._id, {
-          memberCount: capacity.memberCount + (isMember ? 0 : 1), status: "running", slotsPerServer,
-        });
-        if (!isMember) await ctx.db.insert("jgServerMembers", { serverId: server._id, userId: actorUserId, joinedAt: now });
-        if (server.status !== "running") await ctx.db.patch(server._id, { status: "running" });
-      } else {
-        await ctx.db.patch(server._id, { memberUserIds, status: "running", updatedAt: now });
-      }
-
-      const refreshed = await ctx.db.get("jgGameServers", server._id);
-      if (!refreshed) throw new ConvexError("Server missing after join");
-
-      let snapshot = await loadServerSnapshot(
-        ctx,
-        refreshed,
-        runtime,
-        scopeWithActor(runtime.joinScope(actorUserId, isNew), actorUserId),
-      );
-      snapshot = runtime.joinPlayer(snapshot, actorUserId, isNew, now);
-      await persistServerSnapshot(ctx, refreshed, snapshot, save);
-
-      return { ok: true as const, serverId: refreshed._id, isNew };
+      assertSessionId(args.sessionId);
+      const { externalId: _externalId, sessionId, ...joinArgs } = args;
+      return joinAs(ctx, actorUserId, joinArgs, sessionId);
     },
   });
 
@@ -900,13 +968,29 @@ export function createGameServerFunctions(options?: {
     args: {
       serverId: v.id("jgGameServers"),
       externalId: v.optional(v.string()),
+      sessionId: v.optional(v.string()),
     },
     returns: v.null(),
     handler: async (ctx, args) => {
       const actorUserId = await requireActor(ctx, args.externalId, mode);
+      assertSessionId(args.sessionId);
 
       const server = await requireServerMember(ctx, args.serverId, actorUserId);
       if (server === null) return null;
+
+      if (args.sessionId !== undefined && server.topology === "shared") {
+        const member = await memberRow(ctx, server._id, actorUserId);
+        const live = member?.sessionIds ?? [];
+        // A leave for a session that is not live (a disposed join, or one trimmed by the bound) must not evict the sessions that are.
+        if (live.length > 0) {
+          const remaining = live.filter((id) => id !== args.sessionId);
+          if (remaining.length === live.length) return null;
+          if (remaining.length > 0) {
+            await ctx.db.patch(member!._id, { sessionIds: remaining });
+            return null;
+          }
+        }
+      }
 
       const now = Date.now();
       const runtime = resolveRuntime(registry, server.gameId);
@@ -947,6 +1031,16 @@ export function createGameServerFunctions(options?: {
   });
 
   const helpers: GameServerHelpers = {
+    async ensureJoined(ctx, args) {
+      const serverId = args.serverId as GenericId<"jgGameServers"> | undefined;
+      if (serverId !== undefined) {
+        const server = await ctx.db.get("jgGameServers", serverId);
+        if (server && server.gameId === args.gameId && server.status !== "closed" && await hasMember(ctx, server, args.userId)) {
+          return { ok: true as const, serverId: server._id, isNew: false };
+        }
+      }
+      return joinAs(ctx, args.userId, { gameId: args.gameId, serverId }, undefined);
+    },
     async ensureServer(ctx, gameId) {
       if (!shared || matchmaking !== "singleton") throw new Error("ensureServer requires a shared singleton host");
       for (const status of ["running", "open"] as const) {
