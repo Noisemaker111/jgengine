@@ -2170,6 +2170,7 @@
 - `GamepadPoll` (interface): interface GamepadPoll — Buffers one shell gamepad poll reuses across frames.
 - `emptyGamepadPoll` (function): function emptyGamepadPoll(): GamepadPoll — Fresh buffers for {@link stepGamepadPoll}.
 - `gamepadCodes` (function): function gamepadCodes(bindings: ActionCodesMap): GamepadBindings — The pad-only slice of an action binding map, in the shape {@link resolveGamepadFrame} reads.
+- `rebindGamepadPoll` (function): function rebindGamepadPoll(poll: GamepadPoll, previous: GamepadBindings, next: GamepadBindings, tracker: ActionStateTracker<string>): void — Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes changed (the next poll presses them under the new map), and keep the rest held.
 - `stepGamepadPoll` (function): function stepGamepadPoll(poll: GamepadPoll, pads: ArrayLike<GamepadSample | null | undefined>, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, tracker: ActionStateTracker<string>, analogIn: Readonly<Record<string, number>> | null): Readonly<Record<string, number>> | null — One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish (pad values max-merged over the other source's). Allocation-free after the first frame.
 
 ## @jgengine/shell/input/gamepadSource

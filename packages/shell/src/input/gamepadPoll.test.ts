@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { createActionStateTracker, toActionStateBindingMap } from "@jgengine/core/input/actionBindings";
 import { gamepadFeelOptions, type GamepadSample } from "@jgengine/core/input/gamepadModel";
 
-import { emptyGamepadPoll, gamepadCodes, stepGamepadPoll } from "./gamepadPoll";
+import { emptyGamepadPoll, gamepadCodes, rebindGamepadPoll, stepGamepadPoll } from "./gamepadPoll";
 
 const input = { steerRight: ["KeyD", "padaxis:0+"], throttle: ["KeyW", "pad:7"], jump: ["Space"] };
 const pad = (axis: number, trigger: number): GamepadSample => ({
@@ -41,5 +41,35 @@ describe("stepGamepadPoll", () => {
     expect(second).toEqual({ moveForward: 0.4, steerRight: 0.2 });
     expect(second).toBe(first);
     expect(stepGamepadPoll(poll, [null], bindings, options, tracker, null)).toBeNull();
+  });
+
+  test("a context swap keeps keyboard holds and moves pad holds to the new map", () => {
+    const onFoot = { forward: ["KeyW", "pad:7"], jump: ["Space", "pad:0"] };
+    const driving = { throttle: ["KeyW", "pad:7"], horn: ["KeyH", "pad:0"] };
+    const tracker = createActionStateTracker<string>(toActionStateBindingMap(onFoot));
+    const poll = emptyGamepadPoll();
+    const options = gamepadFeelOptions({ deadzone: 0, triggerDeadzone: 0 });
+    const held: GamepadSample = {
+      axes: [0],
+      buttons: [{ pressed: true, value: 1 }, ...Array.from({ length: 6 }, () => ({ pressed: false, value: 0 })), { pressed: true, value: 1 }],
+      connected: true,
+    };
+    tracker.handleDown("KeyW");
+    stepGamepadPoll(poll, [held], gamepadCodes(onFoot), options, tracker, null);
+    expect(tracker.isDown("jump")).toBe(true);
+
+    tracker.rebind(toActionStateBindingMap(driving));
+    rebindGamepadPoll(poll, gamepadCodes(onFoot), gamepadCodes(driving), tracker);
+    expect(tracker.isDown("throttle")).toBe(true);
+    stepGamepadPoll(poll, [held], gamepadCodes(driving), options, tracker, null);
+    expect(tracker.isDown("horn")).toBe(true);
+    expect(tracker.isDown("throttle")).toBe(true);
+
+    const released: GamepadSample = { ...held, buttons: held.buttons.map(() => ({ pressed: false, value: 0 })) };
+    stepGamepadPoll(poll, [released], gamepadCodes(driving), options, tracker, null);
+    expect(tracker.isDown("horn")).toBe(false);
+    expect(tracker.isDown("throttle")).toBe(true);
+    tracker.handleUp("KeyW");
+    expect(tracker.isDown("throttle")).toBe(false);
   });
 });

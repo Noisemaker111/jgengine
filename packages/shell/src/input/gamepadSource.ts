@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { gamepadFeelOptions, type GamepadFeelConfig, type GamepadSample } from "@jgengine/core/input/gamepadModel";
 import type { ActionCodesMap, ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import type { InputSnapshot } from "@jgengine/core/runtime/inputSnapshot";
-import { emptyGamepadPoll, gamepadCodes, stepGamepadPoll } from "./gamepadPoll";
+import { emptyGamepadPoll, gamepadCodes, rebindGamepadPoll, stepGamepadPoll } from "./gamepadPoll";
 export { mergeGamepadFrame, mergeGamepadInput } from "./gamepadMerge";
 
 const SYNTHETIC_PAD: GamepadSample = { axes: [0, 0], buttons: [{ pressed: true, value: 1 }], connected: true };
@@ -34,9 +34,9 @@ export function GamepadSource({
   const options = useMemo(() => gamepadFeelOptions(feel), [feel]);
   const synthetic = useMemo(syntheticPads, []);
   useEffect(() => {
-    padBindings.current = gamepadCodes(bindings);
-    poll.current.held.clear();
-    tracker.reset();
+    const next = gamepadCodes(bindings);
+    rebindGamepadPoll(poll.current, padBindings.current, next, tracker);
+    padBindings.current = next;
   }, [bindings, tracker]);
 
   useEffect(() => {
