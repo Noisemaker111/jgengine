@@ -17,6 +17,7 @@ import type { ChargeOptions as WalletChargeOptions } from "../economy/wallet";
 import type { Cosmetics } from "../game/cosmetics";
 import type { GameDefinition } from "../game/defineGame";
 import type { TerrainField } from "../world/terrain";
+import type { WorldSolids } from "../world/worldSolids";
 import type { GameEventMap, GameEvents, VfxKind } from "../game/events";
 import type { VfxInstanceStore } from "../game/vfxInstance";
 import type { GameFeed } from "../game/feed";
@@ -424,6 +425,11 @@ export interface GameContextItemUse {
 export interface GameContextWorld {
   ground: TerrainField;
   groundHeightAt(x: number, z: number): number;
+  /**
+   * Static collision for world geometry that is not a scene object. `environment({ structures })`
+   * fills the `environment:structures` layer; `syncAuthoredSolids` fills one layer per studio object.
+   */
+  solids: WorldSolids;
 }
 
 export interface GameContextCards {

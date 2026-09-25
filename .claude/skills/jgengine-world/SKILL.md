@@ -30,7 +30,8 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 1. Load the scene document through the shared authored-scene feature.
 2. Render objects, paths, terrain, foliage, and markers generically.
 3. Query the same ids/layers for spawns, routes, plots, and interaction.
-4. Keep derived caches rebuildable; the document remains authoritative.
+4. Collision for generated and studio content comes from its data through `ctx.world.solids`; never hand-place invisible blockers for it (see reference.md, World solids).
+5. Keep derived caches rebuildable; the document remains authoritative.
 
 ### Movement and interaction
 

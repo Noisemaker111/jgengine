@@ -417,6 +417,11 @@ export interface BuildingEnvironmentConfig {
    * untextured block; without a kit the whole facade stays blocks, as before.
    */
   kit?: BuildingKit;
+  /**
+   * Whether the buildings block movement and physics through `ctx.world.solids` (default `true`).
+   * `false` keeps them render-only, e.g. a distant skyline nobody can reach.
+   */
+  solid?: boolean;
 }
 
 export type PadSize = readonly [number, number] | { radius: number };
@@ -470,7 +475,7 @@ export type OceanEnvironmentDescriptor = { kind: "ocean" } & Required<
 export type BuildingEnvironmentDescriptor = { kind: "building" } & Required<
   Pick<BuildingEnvironmentConfig, "count" | "footprint" | "stories" | "storyHeight" | "spacing" | "style">
 > &
-  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit">;
+  Pick<BuildingEnvironmentConfig, "seed" | "position" | "palette" | "along" | "kit" | "solid">;
 
 export type PadEnvironmentDescriptor = { kind: "pad" } & Required<
   Pick<PadEnvironmentConfig, "center" | "size" | "height" | "color">
@@ -919,6 +924,7 @@ export function building(config: BuildingEnvironmentConfig = {}): BuildingEnviro
       ...(config.palette === undefined ? {} : { palette: config.palette }),
       ...(config.along === undefined ? {} : { along: config.along }),
       ...(config.kit === undefined ? {} : { kit: config.kit }),
+      ...(config.solid === undefined ? {} : { solid: config.solid }),
     },
   );
 }
