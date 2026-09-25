@@ -33,6 +33,7 @@ between (`--json` for structured output).
 
 ### Changed
 
+- `npx jgengine find` now surfaces seams that had no capability row: `vehicle-seats`, `drivable-vehicle`, `kinematic-vehicle`, `affix-roller`, `hitscan-shot`, `loot-beams`, `world-item-pickup`, `on-death-drops`, `pointer-commands`, `current-target`, `fire-input`, `global-cooldown`. `PointerConfig.moveCommand` JSDoc now says it receives the clicked entity (click-to-target).
 - `raycastNav` and `NavMeshQuery.raycast` step into the polygon a segment enters when it starts on or crosses a shared vertex, so a funnel path's corner-to-corner legs raycast clear.
 - `bakeNavMesh` (`@jgengine/navbake`) now voxelizes geometry with recast: the walkable surface is eroded by `agentRadius`, cut under obstacles lower than `agentHeight`, and split at `maxSlope` and `maxClimb`, so a wall standing on a floor leaves a hole the path goes around. Call `await initNavBake()` once before baking; `navBakeReady()` reports it. Walkable triangles must wind counter-clockwise seen from above. Optional `cellSize`/`cellHeight` trade precision for speed. The editor warms the baker when a host starts.
 - `findPath`, `closestPoint` and `raycastNav` on `NavMeshData` share the cached query: paths bend only at portal corners, stacked floors resolve by height, and raycasts walk polygon edges instead of sampling.
