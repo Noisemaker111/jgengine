@@ -1,5 +1,5 @@
 import type { SaveConfig } from "./save";
-import type { CommandDef, CommandScope } from "./commandRunner";
+import type { CommandAccess, CommandDef, CommandScope } from "./commandRunner";
 import { resolveCommandScope, runCommand } from "./commandRunner";
 import {
   createEmptyPlayerRow,
@@ -89,6 +89,8 @@ export type GameRuntime = {
    * and nothing else. Missing scopes load only the actor and no chunks; `{}` explicitly requests all state.
    */
   commandScope: (commandName: string, input: unknown, actorUserId: string) => CommandScope | undefined;
+  /** Who may send a command, or `undefined` when the runtime has no command by that name. */
+  commandAccess: (commandName: string) => CommandAccess | undefined;
   /** What a join has to hydrate. `undefined` means the whole world, as when `onNewPlayer` is unscoped. */
   joinScope: (userId: string, isNew: boolean) => CommandScope | undefined;
   /** `nowMs` is the host wall clock at the start of the tick, in ms; defaults to `Date.now()`. */
@@ -150,6 +152,11 @@ export function createGameRuntime(definition: GameRuntimeDefinition): GameRuntim
 
     commandScope(commandName, input, actorUserId) {
       return resolveCommandScope(definition.commands, commandName, input, actorUserId);
+    },
+
+    commandAccess(commandName) {
+      const command = definition.commands[commandName];
+      return command === undefined ? undefined : (command.access ?? "client");
     },
 
     joinScope(userId, isNew) {

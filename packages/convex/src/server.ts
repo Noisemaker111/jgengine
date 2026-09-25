@@ -36,7 +36,7 @@ import {
   type PresencePoseState,
 } from "@jgengine/core/multiplayer/presenceModel";
 import type { CommandDef, CommandScope } from "@jgengine/core/runtime/commandRunner";
-import { commandScopeEscape, scopeWithActor } from "@jgengine/core/runtime/commandRunner";
+import { SERVER_ONLY_COMMAND_REASON, commandScopeEscape, scopeWithActor } from "@jgengine/core/runtime/commandRunner";
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createGameRuntime, initialPlayerState } from "@jgengine/core/runtime/gameRuntime";
 import type { GameServerRecord, LeaderboardIncrement, PlayerProfileRecord } from "@jgengine/core/runtime/hostPersistence";
@@ -965,15 +965,18 @@ export function createGameServerFunctions(options?: {
       return server;
     },
     async resetPlayerProfile(ctx, serverId, userId) {
-      const server = await requireServerMember(ctx, serverId, userId);
-      if (!server) throw new ConvexError("Not a member of this server");
+      const server = await ctx.db.get("jgGameServers", serverId as GenericId<"jgGameServers">);
+      if (!server) throw new ConvexError("Server not found");
+      const profile = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", userId).eq("gameId", server.gameId)).unique();
+      const member = await hasMember(ctx, server, userId);
+      // A player who left keeps a profile that host code (a scheduled wipe, an insolvency reset) must still be able to reset.
+      if (!member && profile === null) throw new ConvexError("Not a member of this server");
       const state = initialPlayerState(resolveRuntime(registry, server.gameId), userId);
-      const profile = await ctx.db.query("jgPlayerProfiles").withIndex("by_user_and_game", q => q.eq("userId", userId).eq("gameId", server!.gameId)).unique();
       const now = Date.now();
       const patch = { playerState: state, sessionState: state.session, sessionServerId: server._id, revision: (profile?.revision ?? 0) + 1, updatedAt: now };
       if (profile) await ctx.db.patch(profile._id, patch);
       else await ctx.db.insert("jgPlayerProfiles", { userId, gameId: server.gameId, createdAt: now, ...patch });
-      if (server.topology !== "shared") await ctx.db.patch(server._id, { sessionPlayers: { ...server.sessionPlayers, [userId]: state } });
+      if (server.topology !== "shared" && member) await ctx.db.patch(server._id, { sessionPlayers: { ...server.sessionPlayers, [userId]: state } });
       return state;
     },
     async loadSnapshot(ctx, serverId, scope) {
@@ -1059,7 +1062,13 @@ export function createGameServerFunctions(options?: {
       v.object({ ok: v.literal(true) }),
       v.object({ ok: v.literal(false), reason: v.string() }),
     ),
-    handler: (ctx, args) => helpers.runCommand(ctx, { serverId: args.serverId, command: args.command, input: args.input, externalId: args.externalId }),
+    handler: async (ctx, args) => {
+      const server = await ctx.db.get("jgGameServers", args.serverId);
+      if (server !== null && resolveRuntime(registry, server.gameId).commandAccess(args.command) === "server") {
+        return { ok: false as const, reason: SERVER_ONLY_COMMAND_REASON };
+      }
+      return helpers.runCommand(ctx, { serverId: args.serverId, command: args.command, input: args.input, externalId: args.externalId });
+    },
   });
 
   const flushSave = mutation({

@@ -271,11 +271,13 @@
 
 ## @jgengine/core/runtime/commandRunner
 
-- `CommandDef` (type): type CommandDef<TInput = unknown> = { /** * What this command reads and writes, derived from its own input. A host that hydrates through a * scope loads only this slice instead of the whole world, and refuses the command if `apply` then * dirties a player or chunk the scope did not name — writing an… — ⚠ undocumented
+- `CommandAccess` (type): type CommandAccess = "client" | "server" — Who may send a command: any client through the public transport, or only trusted host code.
+- `CommandDef` (type): type CommandDef<TInput = unknown> = { /** * `"server"` when `input` carries facts only the host may decide (unlock state, prices, multipliers): * public transports then refuse it and only trusted host calls such as `helpers.runCommand` run it. * Defaults to `"client"`, so every field of `input` must… — ⚠ undocumented
 - `CommandScope` (type): type CommandScope = { /** Member ids to hydrate; omit for the whole roster. */ players?: readonly string[]; /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */ chunkKeys?: readonly string[]; } — Which slice of a server has to be hydrated before some work runs against it. Both fields default to "everything", which costs a read per member plus one per chunk — the cost that makes a large shared world unaffordable per mutation. Narrow them when the caller knows what it will touch.
 - `CommandScopeDefinition` (type): type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" } — Declarative read scope; actor is resolved before host hydration.
 - `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
 - `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
+- `SERVER_ONLY_COMMAND_REASON` (const): const SERVER_ONLY_COMMAND_REASON: "Command is server-only" — Reason a public transport returns for a {@link CommandDef} marked `access: "server"`.
 
 ## @jgengine/core/runtime/context/objectSlots
 
