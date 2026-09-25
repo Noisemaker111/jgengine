@@ -34,6 +34,58 @@ describe("advanceBehaviors", () => {
     unregister();
   });
 
+  test("decision graph keeps a per-entity blackboard, thinks on its interval and aborts pre-empted actions", () => {
+    const c = ctx();
+    const thinks: number[] = [];
+    const aborted: string[] = [];
+    const unregister = registerBehaviorActions("sentry", {
+      investigate: ({ ctx: game, entityId, dt }, _params, board) => {
+        thinks.push(dt);
+        const guard = game.scene.entity.get(entityId)!;
+        const dx = Number(board.lastKnownX) - guard.position[0];
+        if (Math.abs(dx) < 0.01) return "done";
+        const step = Math.sign(dx) * Math.min(Math.abs(dx), 2 * dt);
+        game.scene.entity.setPose(entityId, { position: [guard.position[0] + step, 0, 0], dt });
+        return "running";
+      },
+      idle: () => "running",
+    }, { onAbort: (name) => aborted.push(name) });
+    c.scene.entity.spawn("guard", {
+      id: "guard",
+      position: [0, 0, 0],
+      role: "npc",
+      behaviors: [{
+        kind: "decisionGraph",
+        actions: "sentry",
+        thinkInterval: 0.5,
+        blackboard: { alerted: false },
+        graph: { kind: "selector", children: [
+          { kind: "sequence", children: [{ kind: "condition", key: "alerted", op: "=", value: true }, { kind: "action", action: "investigate" }] },
+          { kind: "action", action: "idle" },
+        ] },
+      }],
+    });
+    const control = behaviorControl(c);
+    for (let i = 0; i < 10; i += 1) advanceBehaviors(c, 0.1);
+    expect(aborted).toEqual([]);
+    const board = control.blackboard("guard")!;
+    board.alerted = true;
+    board.lastKnownX = 6;
+    for (let i = 0; i < 20; i += 1) advanceBehaviors(c, 0.1);
+    expect(aborted).toEqual(["idle"]);
+    expect(thinks.length).toBeGreaterThanOrEqual(3);
+    expect(thinks.length).toBeLessThanOrEqual(5);
+    for (const dt of thinks) expect(dt).toBeCloseTo(0.5, 5);
+    expect(c.scene.entity.get("guard")!.position[0]).toBeCloseTo(4, 5);
+
+    const saved = control.serialize("guard")!;
+    expect(saved.kind === "decisionGraph" && saved.blackboard).toEqual({ alerted: true, lastKnownX: 6 });
+    board.alerted = false;
+    expect(control.restore("guard", saved)).toBe(true);
+    expect(control.blackboard("guard")!.alerted).toBe(true);
+    unregister();
+  });
+
   test("advances a patrol entity along its waypoints and poses it", () => {
     const c = ctx();
     c.scene.entity.spawn("car", {

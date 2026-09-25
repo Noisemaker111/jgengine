@@ -353,6 +353,7 @@ export {
   registerBehaviorActions,
   type BehaviorAction,
   type BehaviorActionContext,
+  type BehaviorActionOptions,
   type BehaviorControl,
   type BehaviorInspection,
   type BehaviorResumePolicy,

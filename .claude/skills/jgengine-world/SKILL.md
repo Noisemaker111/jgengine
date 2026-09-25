@@ -48,6 +48,8 @@ Per-instance state belongs on the placement, not in a game-owned map keyed by `i
 
 Compose perception, selection, planning/behavior, movement, and lifecycle independently. Inject randomness and scheduling. Use spatial indexes, interest tiers, or bounded candidate sets for scale.
 
+NPC decisions are a `decisionGraph` behavior: the graph and its blackboard are data, actions are registered by name, and perception or game systems write facts into `behaviorControl(ctx).blackboard(id)` rather than actions querying the world. Set `thinkInterval` so crowds think a few times a second, not every frame, and release movement or claims in `onAbort`.
+
 Route on a polygon nav mesh through one `createNavMeshQuery(mesh)` per mesh; price terrain and gate doors with `areaCosts` via `retune`, and keep `maxNodes` bounded so a long request returns a `partial` route instead of stalling a frame.
 
 ### Fallback-seam diagnostics
