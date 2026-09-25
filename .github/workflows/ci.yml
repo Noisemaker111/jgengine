@@ -135,13 +135,19 @@ jobs:
           for result in "${{ needs.quick.result }}" "${{ needs.types.result }}" "${{ needs.test.result }}" "${{ needs.web-build.result }}" "${{ needs.smoke.result }}"; do
             test "$result" = "success"
           done
-      - name: Report red main as an issue
-        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Track red main in one issue
+        if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          VERDICT: ${{ job.status }}
         run: |
           title="CI red on main"
-          body="[Run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) failed on \`${{ github.sha }}\`. Fix forward from origin/main on a fresh branch, then close this."
           n=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number' || true)
-          if [ -n "$n" ]; then gh issue comment "$n" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
+          run="[Run ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          if [ "$VERDICT" = "success" ]; then
+            [ -z "$n" ] || gh issue close "$n" --comment "Green again: $run on \`${{ github.sha }}\`."
+            exit 0
+          fi
+          body="Latest failure: $run on \`${{ github.sha }}\`. Fix forward from origin/main on a fresh branch. This issue closes itself when main goes green."
+          if [ -n "$n" ]; then gh issue edit "$n" --body "$body"; else gh issue create --title "$title" --body "$body"; fi
