@@ -79,7 +79,7 @@ export function PageHero({
   return (
     <div className="relative overflow-hidden">
       <Backdrop />
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-14 pt-14 sm:px-6 sm:pb-20 sm:pt-24">
+      <div className="relative mx-auto w-full max-w-6xl px-4 pb-10 pt-14 sm:px-6 sm:pb-12 sm:pt-24">
         <p className="eyebrow animate-fade-up">{eyebrow}</p>
         <h1
           className="font-display animate-fade-up mt-5 max-w-4xl text-balance text-[2.6rem] font-bold leading-[0.98] tracking-[-0.03em] text-fg sm:text-6xl lg:text-7xl"
