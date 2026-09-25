@@ -13,7 +13,7 @@
 - **Parameters.** The shell feeds the entity's smoothed ground speed as `speed`. Anything else (aiming, crouched, strafe x/y) goes on the entity blackboard under `ANIM_PARAMS_KEY`.
 - **Triggers.** `ctx.game.playEntityAnimation(id, name)` arms a trigger; `hit` and `death` arm from their combat events.
 - **Events.** `graph.events: [{ clip, atSec, name }]` emit `animation.event` when a clip crosses that time. Hook footstep audio, the damage frame of a swing or the magazine swap of a reload to the event, not to a timer.
-- **Root motion.** `rootMotion: true` on a state moves the entity by the clip's root-bone travel instead of playing it in place. Use it for dodges, vaults and attacks with lunges whose distance must match the feet.
+- **Root motion.** `rootMotion: true` on a state moves the entity by the clip's horizontal root-bone travel, turned by the entity's facing and scaled with the model, instead of playing it in place. The root bone's vertical motion stays in the clip, and other states keep their root animation untouched. Use it for dodges, vaults and attacks with lunges whose distance must match the feet. `output.rootMotion` reports when a root-motion state is current.
 - **Foot IK.** `ModelConfig.ik` runs after the mixer each frame.
   - `ik: "auto"` finds thigh → shin → foot chains by bone name. Pass `{ feet: [{ root, mid, tip }] }` when the rig's names are unusual, and `feet: []` to keep only `lookAt`.
   - Each foot keeps its animated swing and moves by its ground's height above or below the model origin. The pelvis drops so the lower leg can reach, soles never end under the ground, and planted feet tilt to the ground normal (`alignToGround`, `0..1`). The correction fades out while the feet are clear of the ground.

@@ -33,6 +33,7 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Graph playback no longer resets the rig's first bone to its bind position every frame. On rigs whose first bone is the hips, that flattened the walk bob in every clip. The root bone is pinned only while a `rootMotion` state is current (the new `AnimGraphOutput.rootMotion` flag), and only horizontally. Root travel now moves the entity along its facing and at the model's scale instead of in rig space, and its vertical part stays in the clip. The shell helper is `takeRootMotion` (#1683).
 - Perception judges each sound or damage stimulus once per observer, from where the observer stood when it first observed after the stimulus. Before, every `observe` re-scored past sounds from the observer's current position, so a guard walking toward an old noise grew more certain of it. `PerceptionSnapshot` gains `heard` and `nextSeq`; older saves re-judge their stimuli once.
 - Perception `loudness` now scales how far a sound carries (`hearingRange × loudness`) instead of only its confidence, so a gunshot is heard past normal hearing range and a footstep only close by. Loudness `1` behaves as before.
 - `npx jgengine find` now surfaces seams that had no capability row: `vehicle-seats`, `drivable-vehicle`, `kinematic-vehicle`, `affix-roller`, `hitscan-shot`, `loot-beams`, `world-item-pickup`, `on-death-drops`, `pointer-commands`, `current-target`, `fire-input`, `global-cooldown`. `PointerConfig.moveCommand` JSDoc now says it receives the clicked entity (click-to-target).

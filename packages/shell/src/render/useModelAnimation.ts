@@ -84,6 +84,31 @@ function actionKey(layer: string, clip: string): string {
   return `${layer}:${clip}`;
 }
 
+const rootTravel = new THREE.Vector3();
+const rootBasis = new THREE.Matrix3();
+
+/**
+ * For a frame where a `rootMotion` state is current: pins the root bone's horizontal translation to
+ * its bind pose, so the clip plays in place, and returns that step's root travel as a world-space
+ * horizontal delta (through the rig's parent transform, so the entity's facing and the model's
+ * scale apply). The root bone's vertical motion stays in the clip.
+ */
+export function takeRootMotion(
+  rootBone: THREE.Object3D,
+  bind: THREE.Vector3,
+  localDelta: readonly [number, number, number] | undefined,
+  out: THREE.Vector3,
+): THREE.Vector3 {
+  rootBone.position.x = bind.x;
+  rootBone.position.z = bind.z;
+  out.set(0, 0, 0);
+  if (localDelta === undefined || rootBone.parent === null) return out;
+  rootBone.parent.updateWorldMatrix(true, false);
+  out.set(localDelta[0], localDelta[1], localDelta[2]).applyMatrix3(rootBasis.setFromMatrix4(rootBone.parent.matrixWorld));
+  out.y = 0;
+  return out;
+}
+
 function applyGraphClips(actions: ReadonlyMap<string, THREE.AnimationAction>, clips: readonly AnimClipOutput[]): void {
   for (const action of actions.values()) action.weight = 0;
   for (const entry of clips) {
@@ -314,19 +339,17 @@ export function useModelAnimation(
       const out = playback.runtime.advance(delta * (animation?.timeScale ?? 1), params, playback.durations);
       applyGraphClips(playback.actions, out.clips);
       mixerRef.current.update(0);
-      const currentPlayback = graphRef.current;
-      if (currentPlayback !== null && currentPlayback.rootBone !== null && currentPlayback.rootBindPosition !== null) {
-        currentPlayback.rootBone.position.copy(currentPlayback.rootBindPosition);
-      }
-      if (ctx !== null && instanceId !== undefined) {
-        const rootDelta = out.rootDelta;
-        const entity = rootDelta === undefined ? null : ctx.scene.entity.get(instanceId);
-        if (entity !== null && rootDelta !== undefined) {
+      if (out.rootMotion === true && playback.rootBone !== null && playback.rootBindPosition !== null) {
+        const travel = takeRootMotion(playback.rootBone, playback.rootBindPosition, out.rootDelta, rootTravel);
+        const entity = ctx === null || instanceId === undefined || (travel.x === 0 && travel.z === 0) ? null : ctx.scene.entity.get(instanceId);
+        if (entity !== null && ctx !== null && instanceId !== undefined) {
           ctx.scene.entity.setPose(instanceId, {
-            position: [entity.position[0] + rootDelta[0], entity.position[1] + rootDelta[1], entity.position[2] + rootDelta[2]],
+            position: [entity.position[0] + travel.x, entity.position[1], entity.position[2] + travel.z],
             dt: delta,
           });
         }
+      }
+      if (ctx !== null && instanceId !== undefined) {
         for (const event of out.events) ctx.game.events.emit("animation.event", { instanceId, name: event.name, clip: event.clip });
       }
       return;
