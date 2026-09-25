@@ -393,12 +393,12 @@
 
 - `AXIS_RANGE` (const): const AXIS_RANGE: Record<AxisName, AxisRange> — ⚠ undocumented
 - `AxisBinding` (interface): interface AxisBinding { positive: readonly string[]; negative?: readonly string[]; pointer?: PointerAxisBinding } — ⚠ undocumented · used by `analogAxes` (@jgengine/core/input/axisShaper): Which axes an analog source is driving this frame: an axis counts as analog when any action bound to it has a published analog magnitude (`c…
-- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented
+- `AxisBindingMap` (type): type AxisBindingMap = Record<AxisName, AxisBinding> — ⚠ undocumented · used by `DRIVE_AXIS_BINDINGS`: Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`.
 - `AxisChannelConfig` (interface): interface AxisChannelConfig { bindings: AxisBindingMap; smoothing?: number } — ⚠ undocumented · used by `useAxisChannel` (@jgengine/react): Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`.
 - `AxisInput` (interface): interface AxisInput { throttle: number; brake: number; steer: number; handbrake: number } — ⚠ undocumented · used by `tickDrivableVehicle` (@jgengine/core/physics/drivableVehicle): Connects an `AxisInput` sample straight through a ground-vehicle sim (`KinematicVehicle` or `VehicleDynamics`) to a scene entity's pose for …
 - `AxisName` (type): type AxisName = keyof AxisInput — ⚠ undocumented
 - `AxisRange` (interface): interface AxisRange { min: number; max: number } — ⚠ undocumented
-- `DRIVE_AXIS_BINDINGS` (const): const DRIVE_AXIS_BINDINGS: AxisBindingMap — ⚠ undocumented
+- `DRIVE_AXIS_BINDINGS` (const): const DRIVE_AXIS_BINDINGS: AxisBindingMap — Car axes bound to raw key codes, for an {@link AxisChannel} sampled with a key-code `isDown`. `ctx.input.axis` samples action names instead, so bind it to the game's input actions (e.g. `moveForward`), not this map.
 - `GenericAxisChannel` (interface): interface GenericAxisChannel<TAxes extends string> — The held-key-ramping analog channel for any axis schema (#282.7) — drones (pitch/roll/strafe), boats, mechs — not just the four car axes `AxisChannel` hardcodes. Same semantics: keys ramp, `setAnalog` overrides, a binding's `pointer` source takes over while a pointer is active.
 - `GenericAxisConfig` (interface): interface GenericAxisConfig<TAxes extends string> { bindings: Record<TAxes, AxisBinding>; ranges?: Partial<Record<TAxes, AxisRange>>; smoothing?: number } — ⚠ undocumented
 - `NEUTRAL_AXIS` (const): const NEUTRAL_AXIS: AxisInput — ⚠ undocumented

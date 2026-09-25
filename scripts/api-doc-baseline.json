@@ -876,7 +876,6 @@
   "@jgengine/core/input/axisInput#AxisInput",
   "@jgengine/core/input/axisInput#AxisName",
   "@jgengine/core/input/axisInput#AxisRange",
-  "@jgengine/core/input/axisInput#DRIVE_AXIS_BINDINGS",
   "@jgengine/core/input/axisInput#GenericAxisConfig",
   "@jgengine/core/input/axisInput#NEUTRAL_AXIS",
   "@jgengine/core/input/bindingOverrides#BINDING_OVERRIDES_STORAGE_PREFIX",
