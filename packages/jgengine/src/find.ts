@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { findUp } from "./pkg";
+import { RECIPES } from "./recipes";
 
 /**
  * `jgengine find <intent>` — active discovery over the capability indexes that ship inside this CLI's
@@ -59,41 +60,113 @@ export function parseCapabilities(markdown: string, skill: string): CapabilityEn
   return entries;
 }
 
-/** @internal Lowercased haystack for matching a query against a whole capability row. */
-function haystack(entry: CapabilityEntry): string {
-  return `${entry.slug} ${entry.description} ${entry.symbols.join(" ")} ${entry.imports.join(" ")}`.toLowerCase();
+const STOPWORDS = new Set(["a", "an", "the", "to", "for", "of", "with", "and", "or", "in", "on", "my", "i", "want"]);
+
+/** @internal Strip a plural/gerund/past suffix so "targeting", "targets" and "target" compare equal. */
+function stem(word: string): string {
+  for (const suffix of ["ing", "es", "ed", "s"]) {
+    if (word.endsWith(suffix) && word.length - suffix.length >= 3) return word.slice(0, -suffix.length);
+  }
+  return word;
+}
+
+/** @internal Every word in a row: raw alphanumeric runs plus their camelCase parts, lowercased. */
+function rowWords(text: string): Set<string> {
+  const words = new Set<string>();
+  for (const run of text.split(/[^A-Za-z0-9]+/)) {
+    if (run === "") continue;
+    words.add(run.toLowerCase());
+    for (const part of run.split(/(?<=[a-z0-9])(?=[A-Z])/)) words.add(part.toLowerCase());
+  }
+  return words;
 }
 
 /**
- * Rank capability rows against a free-text intent. A row matches when EVERY whitespace-separated query
- * token appears somewhere in it (slug, description, symbol, or import). Rows whose slug or a symbol
- * carries a token sort first (a direct name hit beats an incidental description mention), then by skill
- * and slug for a stable order.
+ * @internal A query token hits a word when their stems match, or when a 4+ letter stem prefixes the
+ * word. Whole-word matching keeps "aim" off "claim" and "car" off "carry"; a token with punctuation
+ * (an import path) falls back to substring.
  */
-export function searchCapabilities(entries: readonly CapabilityEntry[], query: string): CapabilityEntry[] {
-  const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) return [];
-  const scored: { entry: CapabilityEntry; score: number }[] = [];
-  for (const entry of entries) {
-    const hay = haystack(entry);
-    if (!tokens.every((token) => hay.includes(token))) continue;
-    const name = `${entry.slug} ${entry.symbols.join(" ")}`.toLowerCase();
-    const score = tokens.reduce((sum, token) => sum + (name.includes(token) ? 1 : 0), 0);
-    scored.push({ entry, score });
+function tokenHits(token: string, words: ReadonlySet<string>, raw: string): boolean {
+  if (/[^a-z0-9]/.test(token)) return raw.includes(token);
+  const target = stem(token);
+  for (const word of words) {
+    if (word === token || stem(word) === target) return true;
+    if (target.length >= 4 && word.startsWith(target)) return true;
   }
-  scored.sort(
+  return false;
+}
+
+interface IndexedRow {
+  entry: CapabilityEntry;
+  raw: string;
+  words: Set<string>;
+  nameWords: Set<string>;
+}
+
+function indexRow(entry: CapabilityEntry): IndexedRow {
+  const name = `${entry.slug} ${entry.symbols.join(" ")}`;
+  const raw = `${name} ${entry.description} ${entry.imports.join(" ")}`;
+  return { entry, raw: raw.toLowerCase(), words: rowWords(raw), nameWords: rowWords(name) };
+}
+
+function queryTokens(query: string): string[] {
+  return query
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((token) => token !== "" && !STOPWORDS.has(token));
+}
+
+/** Result of a `find` search: `partial` is true when no row carried every token and the best partial hits were returned. */
+export interface FindResult {
+  matches: CapabilityEntry[];
+  partial: boolean;
+}
+
+/**
+ * Rank capability rows against a free-text intent. Tokens match whole words (stemmed, camelCase-split),
+ * stopwords are dropped, and a multi-word query also tries its words joined ("pick up" → "pickup").
+ * Rows carrying every token come first, name/slug hits ranked above description mentions. When no row
+ * carries every token, the rows that carry the most tokens are returned with `partial: true`.
+ */
+export function findCapabilities(entries: readonly CapabilityEntry[], query: string): FindResult {
+  const tokens = queryTokens(query);
+  if (tokens.length === 0) return { matches: [], partial: false };
+  const joined = tokens.length > 1 ? tokens.join("") : null;
+  const scored: { entry: CapabilityEntry; hits: number; score: number }[] = [];
+  for (const entry of entries) {
+    const row = indexRow(entry);
+    const hitTokens = tokens.filter((token) => tokenHits(token, row.words, row.raw));
+    const joinedHit = joined !== null && tokenHits(joined, row.words, row.raw);
+    const hits = joinedHit ? tokens.length : hitTokens.length;
+    if (hits === 0) continue;
+    const nameHits = joinedHit && tokenHits(joined, row.nameWords, row.raw)
+      ? tokens.length
+      : hitTokens.filter((token) => tokenHits(token, row.nameWords, row.raw)).length;
+    scored.push({ entry, hits, score: nameHits });
+  }
+  const full = scored.filter((row) => row.hits === tokens.length);
+  const partial = full.length === 0 && tokens.length > 1;
+  const best = partial ? Math.max(0, ...scored.map((row) => row.hits)) : tokens.length;
+  const kept = partial ? scored.filter((row) => row.hits === best) : full;
+  kept.sort(
     (a, b) =>
       b.score - a.score ||
       a.entry.skill.localeCompare(b.entry.skill) ||
       a.entry.slug.localeCompare(b.entry.slug),
   );
-  return scored.map((row) => row.entry);
+  return { matches: kept.map((row) => row.entry), partial: partial && kept.length > 0 };
+}
+
+/** Rows that carry every query token, best first — `findCapabilities` without the partial fallback. */
+export function searchCapabilities(entries: readonly CapabilityEntry[], query: string): CapabilityEntry[] {
+  const result = findCapabilities(entries, query);
+  return result.partial ? [] : result.matches;
 }
 
 const MAX_RESULTS = 40;
 
 /** Render matches as grouped `[skill] slug — description` blocks with the import line(s) beneath. */
-export function renderFindResults(matches: readonly CapabilityEntry[], query: string): string {
+export function renderFindResults(matches: readonly CapabilityEntry[], query: string, partial = false): string {
   if (matches.length === 0) {
     return [
       `jgengine find "${query}" — no shipped capability matched.`,
@@ -104,7 +177,9 @@ export function renderFindResults(matches: readonly CapabilityEntry[], query: st
   }
   const shown = matches.slice(0, MAX_RESULTS);
   const lines: string[] = [
-    `jgengine find "${query}" — ${matches.length} shipped ${matches.length === 1 ? "capability" : "capabilities"} match${matches.length === 1 ? "es" : ""} (reach for these before hand-rolling):`,
+    partial
+      ? `jgengine find "${query}" — nothing matched every word; ${matches.length} closest ${matches.length === 1 ? "capability matches" : "capabilities match"} some of them:`
+      : `jgengine find "${query}" — ${matches.length} shipped ${matches.length === 1 ? "capability" : "capabilities"} match${matches.length === 1 ? "es" : ""} (reach for these before hand-rolling):`,
     "",
   ];
   for (const entry of shown) {
@@ -118,7 +193,7 @@ export function renderFindResults(matches: readonly CapabilityEntry[], query: st
     lines.push(`… ${matches.length - shown.length} more — narrow the intent to see them.`);
     lines.push("");
   }
-  lines.push("Signatures: the owning skill's api.md · wired example: npx jgengine recipe");
+  lines.push("Signatures: node_modules/@jgengine/<pkg>/dist/*.d.ts · wired examples: npx jgengine recipe");
   return lines.join("\n");
 }
 
@@ -153,6 +228,50 @@ export function loadCapabilityIndex(skillsDir: string): CapabilityEntry[] {
   return entries;
 }
 
+/** CLI recipes (`npx jgengine recipe <name>`) as searchable rows. */
+export function recipeCapabilities(): CapabilityEntry[] {
+  return RECIPES.map((recipe) => ({
+    skill: "recipe",
+    slug: recipe.name,
+    description: recipe.description,
+    imports: [`npx jgengine recipe ${recipe.name}`],
+    symbols: [],
+  }));
+}
+
+/**
+ * Skill recipe documents (`<skillsDir>/<domain>/recipes/*.md`) as searchable rows: the H1 (minus a
+ * leading "Recipe —") plus the "What this wires" line, pointing at the installed path.
+ */
+export function loadSkillRecipes(skillsDir: string): CapabilityEntry[] {
+  const entries: CapabilityEntry[] = [];
+  let domains: string[];
+  try {
+    domains = readdirSync(skillsDir, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name);
+  } catch {
+    return entries;
+  }
+  for (const domain of domains) {
+    const dir = join(skillsDir, domain, "recipes");
+    if (!existsSync(dir)) continue;
+    for (const file of readdirSync(dir).filter((name) => name.endsWith(".md")).sort()) {
+      const text = readFileSync(join(dir, file), "utf8");
+      const title = /^#\s+(.+)$/m.exec(text)?.[1]?.replace(/^Recipe\s*[—-]\s*/i, "").trim() ?? file;
+      const wires = /\*\*What this wires:\*\*\s*(.+)$/m.exec(text)?.[1]?.trim();
+      entries.push({
+        skill: domain,
+        slug: `recipe/${file.replace(/\.md$/, "")}`,
+        description: wires === undefined ? title : `${title} — ${wires}`,
+        imports: [`read .claude/skills/${domain}/recipes/${file}`],
+        symbols: [],
+      });
+    }
+  }
+  return entries;
+}
+
 /** `jgengine find <intent>` command entry. */
 export function runFind(argv: string[]): number {
   const query = argv.filter((arg) => !arg.startsWith("-")).join(" ").trim();
@@ -178,8 +297,8 @@ export function runFind(argv: string[]): number {
     );
     return 1;
   }
-  const index = loadCapabilityIndex(skillsDir);
-  const matches = searchCapabilities(index, query);
-  console.log(renderFindResults(matches, query));
+  const index = [...loadCapabilityIndex(skillsDir), ...loadSkillRecipes(skillsDir), ...recipeCapabilities()];
+  const { matches, partial } = findCapabilities(index, query);
+  console.log(renderFindResults(matches, query, partial));
   return 0;
 }
