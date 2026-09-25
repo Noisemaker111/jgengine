@@ -32,6 +32,15 @@ function coinsRuntime() {
   });
 }
 
+test("server-only commands run only when the host call is trusted", async () => {
+  const buy = coinsRuntime();
+  const runtime = createGameRuntime({ gameId: "vault", save: "none", commands: { grant: { access: "server", validate: () => null, apply: snapshot => snapshot } } });
+  const host = createGameHost({ persistence: memoryPersistence(), runtimes: [buy, runtime] });
+  const { serverId } = await host.joinServer({ userId: "alice", gameId: "vault" });
+  expect(await host.runCommand({ userId: "alice", serverId, command: "grant", input: {} })).toEqual({ ok: false, reason: "Command is server-only" });
+  expect(await host.runCommand({ userId: "alice", serverId, command: "grant", input: {}, trusted: true })).toEqual({ ok: true });
+});
+
 function coinsOf(view: { serverState: unknown } | null): number {
   return ((view?.serverState as { session: { coins?: number } } | undefined)?.session.coins) ?? 0;
 }

@@ -13,6 +13,7 @@ function setup(save: "none" | { auto: string; scope: "player+chunks" } = { auto:
   } };
   const ctx = { db, auth: { getUserIdentity: async () => null } } as unknown as JGMutationCtx;
   const runtime = createGameRuntime({ gameId: "demo", save, commands: {
+    grant: { access: "server", validate: () => null, apply: snapshot => snapshot },
     earn: { validate: () => null, apply(snapshot, _input, actor) {
       const player = snapshot.players[actor]!;
       return { ...snapshot, players: { ...snapshot.players, [actor]: { ...player, economy: { cash: (player.economy.cash ?? 0) + 1 }, session: { visits: 7 } } } };
@@ -113,6 +114,15 @@ test("profile reset runs the initializer and leaves the shared world and neighbo
   await expect(fns.helpers.resetPlayerProfile(ctx, serverId, "outsider")).rejects.toThrow("Not a member");
 });
 
+test("profile reset still reaches a player who left the server", async () => {
+  const { ctx, fns, join } = setup();
+  const { serverId } = await join("alice");
+  await fns.helpers.runCommand(ctx, { serverId, command: "earn", input: {}, externalId: "alice" });
+  await handlerOf(fns.leaveServer)(ctx, { serverId, externalId: "alice" });
+  const reset = await fns.helpers.resetPlayerProfile(ctx, serverId, "alice");
+  expect(reset.economy.cash).toBe(50);
+});
+
 test("shared capacity subscribes to membership and capacity, without reading the world document", async () => {
   const { reads, ctx, fns, join } = setup();
   const { serverId } = await join("alice");
@@ -145,4 +155,12 @@ test("runtime topology selects a shared singleton without repeating host configu
   expect(server.topology).toBe("shared");
   expect(server.slotsPerServer).toBe(Number.MAX_SAFE_INTEGER);
   expect(rows("jgGameServers")).toHaveLength(1);
+});
+
+test("public runCommand refuses server-only commands that the host helper still runs", async () => {
+  const { ctx, fns, join } = setup();
+  const { serverId } = await join("alice");
+  expect(await handlerOf(fns.runCommand)(ctx, { serverId, command: "grant", input: {}, externalId: "alice" })).toEqual({ ok: false, reason: "Command is server-only" });
+  expect(await handlerOf(fns.runCommand)(ctx, { serverId, command: "earn", input: {}, externalId: "alice" })).toEqual({ ok: true });
+  expect(await fns.helpers.runCommand(ctx, { serverId, command: "grant", input: {}, externalId: "alice" })).toEqual({ ok: true });
 });

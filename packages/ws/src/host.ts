@@ -1,5 +1,6 @@
 import type { GameRuntime } from "@jgengine/core/runtime/gameRuntime";
 import { createGameRuntime } from "@jgengine/core/runtime/gameRuntime";
+import { SERVER_ONLY_COMMAND_REASON } from "@jgengine/core/runtime/commandRunner";
 import type {
   GameServerRecord,
   HostPersistence,
@@ -90,6 +91,8 @@ export type GameHost = {
     serverId: string;
     command: string;
     input: unknown;
+    /** Set only from host code: runs commands marked `access: "server"`, which client messages cannot. */
+    trusted?: boolean;
   }) => Promise<TransportRunCommandResult>;
   isMember: (args: { userId: string; serverId: string }) => Promise<boolean>;
   getServerView: (args: { userId: string; serverId: string; role?: SnapshotViewer["role"] }) => Promise<GameRuntimeServerView | null>;
@@ -490,6 +493,9 @@ export function createGameHost(options: GameHostOptions): GameHost {
         const commandInput = envelope !== null ? envelope.input : args.input;
 
         const runtime = resolveRuntime(entry.record.gameId);
+        if (args.trusted !== true && runtime.commandAccess(args.command) === "server") {
+          return { ok: false as const, reason: SERVER_ONLY_COMMAND_REASON };
+        }
         const result = runtime.runCommand(entry.snapshot, args.userId, args.command, commandInput, now());
         const outcome: TransportRunCommandResult = result.ok
           ? { ok: true }

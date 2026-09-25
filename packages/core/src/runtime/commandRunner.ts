@@ -15,7 +15,19 @@ export type CommandScope = {
 /** Declarative read scope; actor is resolved before host hydration. */
 export type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" };
 
+/** Who may send a command: any client through the public transport, or only trusted host code. */
+export type CommandAccess = "client" | "server";
+
+/** Reason a public transport returns for a {@link CommandDef} marked `access: "server"`. */
+export const SERVER_ONLY_COMMAND_REASON = "Command is server-only";
+
 export type CommandDef<TInput = unknown> = {
+  /**
+   * `"server"` when `input` carries facts only the host may decide (unlock state, prices, multipliers):
+   * public transports then refuse it and only trusted host calls such as `helpers.runCommand` run it.
+   * Defaults to `"client"`, so every field of `input` must be validated as untrusted.
+   */
+  access?: CommandAccess;
   /**
    * What this command reads and writes, derived from its own input. A host that hydrates through a
    * scope loads only this slice instead of the whole world, and refuses the command if `apply` then
