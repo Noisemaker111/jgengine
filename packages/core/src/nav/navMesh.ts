@@ -72,8 +72,6 @@ const EPS = 1e-9;
 interface Prepared {
   mesh: NavMeshData;
   polyCount: number;
-  edgeStart: Int32Array;
-  edgeNeighbor: Int32Array;
   owners: Map<number, number[]>;
   vertexCount: number;
   bounds: Float64Array;
@@ -114,8 +112,6 @@ function prepare(mesh: NavMeshData): Prepared {
   if (cached !== undefined) return cached;
   const polyCount = mesh.polys.length;
   const vertexCount = Math.max(1, Math.floor(mesh.verts.length / 3));
-  const edgeStart = new Int32Array(polyCount + 1);
-  for (let p = 0; p < polyCount; p += 1) edgeStart[p + 1] = edgeStart[p]! + mesh.polys[p]!.length;
   const owners = new Map<number, number[]>();
   for (let p = 0; p < polyCount; p += 1) {
     const poly = mesh.polys[p]!;
@@ -124,14 +120,6 @@ function prepare(mesh: NavMeshData): Prepared {
       const list = owners.get(key);
       if (list === undefined) owners.set(key, [p]);
       else if (!list.includes(p)) list.push(p);
-    }
-  }
-  const edgeNeighbor = new Int32Array(edgeStart[polyCount]!).fill(-1);
-  for (let p = 0; p < polyCount; p += 1) {
-    const poly = mesh.polys[p]!;
-    for (let i = 0; i < poly.length; i += 1) {
-      const list = owners.get(edgeKey(poly[i]!, poly[(i + 1) % poly.length]!, vertexCount))!;
-      for (const other of list) if (other !== p) { edgeNeighbor[edgeStart[p]! + i] = other; break; }
     }
   }
   const bounds = new Float64Array(polyCount * 4);
@@ -174,7 +162,7 @@ function prepare(mesh: NavMeshData): Prepared {
     if (link.from >= 0 && link.from < polyCount && link.to >= 0 && link.to < polyCount) linksFrom[link.from]!.push(index);
   });
   const prepared: Prepared = {
-    mesh, polyCount, edgeStart, edgeNeighbor, owners, vertexCount, bounds, centers, planes, linksFrom,
+    mesh, polyCount, owners, vertexCount, bounds, centers, planes, linksFrom,
     gridMinX: minX, gridMinZ: minZ, cellSize, cols, rows, cells,
     stamp: new Uint32Array(polyCount), stampId: 0,
     g: new Float64Array(polyCount), parent: new Int32Array(polyCount), viaA: new Int32Array(polyCount), viaB: new Int32Array(polyCount), viaLink: new Int32Array(polyCount),
@@ -444,16 +432,40 @@ function search(prep: Prepared, from: Vec3, to: Vec3, costs: Readonly<Record<num
   return partial ? { points, polys, partial: true } : { points, polys };
 }
 
+function sharesVertex(mesh: NavMeshData, a: number, b: number): boolean {
+  for (const v of mesh.polys[a]!) if (mesh.polys[b]!.includes(v)) return true;
+  return false;
+}
+
+/** The polygon holding (x, z) among `current` and the polygons touching it, nearest in height; -1 when none. */
+function stepInto(prep: Prepared, current: number, x: number, z: number, costs: Readonly<Record<number, number>>): number {
+  if (insideXZ(prep, current, x, z)) return current;
+  const c = clampInt(Math.floor((x - prep.gridMinX) / prep.cellSize), prep.cols);
+  const r = clampInt(Math.floor((z - prep.gridMinZ) / prep.cellSize), prep.rows);
+  const y = heightAt(prep, current, x, z);
+  let best = -1, bestDy = Infinity;
+  for (const p of prep.cells[r * prep.cols + c]!) {
+    if (p === current || !insideXZ(prep, p, x, z) || !sharesVertex(prep.mesh, current, p) || areaCost(prep.mesh, costs, p) < 0) continue;
+    const dy = Math.abs(heightAt(prep, p, x, z) - y);
+    if (dy < bestDy) { bestDy = dy; best = p; }
+  }
+  return best;
+}
+
 function raycastPrepared(prep: Prepared, from: Vec3, to: Vec3, costs: Readonly<Record<number, number>>): boolean {
   const mesh = prep.mesh;
-  const scratch: [number, number, number] = [0, 0, 0];
-  let current = nearestPolygon(prep, from, scratch);
+  let current = nearestPolygon(prep, from, [0, 0, 0]);
   if (current < 0 || !insideXZ(prep, current, from[0], from[2]) || areaCost(mesh, costs, current) < 0) return false;
   const dx = to[0] - from[0], dz = to[2] - from[2];
-  for (let steps = 0; steps <= prep.polyCount; steps += 1) {
+  const length = Math.hypot(dx, dz);
+  if (length < 1e-9) return true;
+  // Probes step just past each crossing so segments through shared vertices pick the polygon they enter.
+  const nudge = Math.min(1, 1e-5 / length);
+  current = stepInto(prep, current, from[0] + dx * nudge, from[2] + dz * nudge, costs);
+  for (let steps = 0; current >= 0 && steps <= prep.polyCount; steps += 1) {
     if (insideXZ(prep, current, to[0], to[2])) return true;
     const poly = mesh.polys[current]!;
-    let exitEdge = -1, exitT = -Infinity;
+    let exitT = -Infinity;
     for (let i = 0; i < poly.length; i += 1) {
       const a = poly[i]!, b = poly[(i + 1) % poly.length]!;
       const ax = vx(mesh, a), az = vz(mesh, a), ex = vx(mesh, b) - ax, ez = vz(mesh, b) - az;
@@ -462,11 +474,12 @@ function raycastPrepared(prep: Prepared, from: Vec3, to: Vec3, costs: Readonly<R
       const t = ((ax - from[0]) * ez - (az - from[2]) * ex) / denom;
       const s = ((ax - from[0]) * dz - (az - from[2]) * dx) / denom;
       if (s < -1e-7 || s > 1 + 1e-7 || t < -1e-7 || t > 1 + 1e-7) continue;
-      if (t > exitT) { exitT = t; exitEdge = i; }
+      exitT = Math.max(exitT, t);
     }
-    if (exitEdge < 0) return false;
-    const next = prep.edgeNeighbor[prep.edgeStart[current]! + exitEdge]!;
-    if (next < 0 || areaCost(mesh, costs, next) < 0) return false;
+    if (exitT === -Infinity) return false;
+    const t = Math.min(1, exitT + nudge);
+    const next = stepInto(prep, current, from[0] + dx * t, from[2] + dz * t, costs);
+    if (next === current) return t >= 1;
     current = next;
   }
   return false;

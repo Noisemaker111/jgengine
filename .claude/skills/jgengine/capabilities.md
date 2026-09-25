@@ -104,6 +104,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createInputRecorder` (function) · `import { createInputRecorder } from "@jgengine/core/runtime/inputRecorder"`
 
+## local-players — Couch co-op seats: devices hot-join into slots, each with its own user id and input snapshot.
+
+- `createLocalPlayers` (function) · `import { createLocalPlayers } from "@jgengine/core/runtime/localPlayers"`
+
 ## loot-table — validate a loot table definition for use with the registry
 
 - `lootTable` (function) · `import { lootTable } from "@jgengine/core/authoring"`

@@ -44,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
 
+## authored-solids — collision for studio-authored world content such as city volumes
+
+- `AuthoredSolids` (function) · `import { AuthoredSolids } from "@jgengine/shell/scene"`
+
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`

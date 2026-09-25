@@ -18,6 +18,7 @@ For a *connected* walkthrough that wires several primitives into a running loop,
 - [recipes/vehicle-feel.md](recipes/vehicle-feel.md) — feel target → handling metrics → physical knobs for a ground vehicle, plus the camera, sound and rumble hooks that hang off its telemetry.
 - [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, with the symptom → knob table for how it flies.
 - [recipes/controls.md](recipes/controls.md) — actions → layered contexts that rebind live → keyboard, touch and gamepad on the same actions → per-axis feel.
+- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: data-driven state machines, triggers and clip events, root motion, and foot IK that keeps feet on slopes.
 
 ## Canonical workflows
 
@@ -30,7 +31,8 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 1. Load the scene document through the shared authored-scene feature.
 2. Render objects, paths, terrain, foliage, and markers generically.
 3. Query the same ids/layers for spawns, routes, plots, and interaction.
-4. Keep derived caches rebuildable; the document remains authoritative.
+4. Collision for generated and studio content comes from its data through `ctx.world.solids`; never hand-place invisible blockers for it (see reference.md, World solids).
+5. Keep derived caches rebuildable; the document remains authoritative.
 
 ### Movement and interaction
 

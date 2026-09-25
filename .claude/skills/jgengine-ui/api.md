@@ -2168,14 +2168,17 @@
 ## @jgengine/shell/input/gamepadPoll
 
 - `GamepadPoll` (interface): interface GamepadPoll — Buffers one shell gamepad poll reuses across frames.
+- `GamepadRoute` (interface): interface GamepadRoute — Where each connected pad's input goes this frame; buffers are reused across frames.
 - `emptyGamepadPoll` (function): function emptyGamepadPoll(): GamepadPoll — Fresh buffers for {@link stepGamepadPoll}.
+- `emptyGamepadRoute` (function): function emptyGamepadRoute(): GamepadRoute — Fresh buffers for {@link routeGamepads}.
 - `gamepadCodes` (function): function gamepadCodes(bindings: ActionCodesMap): GamepadBindings — The pad-only slice of an action binding map, in the shape {@link resolveGamepadFrame} reads.
 - `rebindGamepadPoll` (function): function rebindGamepadPoll(poll: GamepadPoll, previous: GamepadBindings, next: GamepadBindings, tracker: ActionStateTracker<string>): void — Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes changed (the next poll presses them under the new map), and keep the rest held.
+- `routeGamepads` (function): function routeGamepads(pads: ArrayLike<GamepadSample | null | undefined>, seats: Pick<LocalPlayers, "assign" | "slotForDevice" | "config">, route: GamepadRoute): GamepadRoute — Route pads to local seats: a claimed pad goes to its seat, an unclaimed pad hot-joins on a button press (stick drift never opens a seat), and with one seat every pad drives the primary player.
 - `stepGamepadPoll` (function): function stepGamepadPoll(poll: GamepadPoll, pads: ArrayLike<GamepadSample | null | undefined>, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, tracker: ActionStateTracker<string>, analogIn: Readonly<Record<string, number>> | null): Readonly<Record<string, number>> | null — One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish (pad values max-merged over the other source's). Allocation-free after the first frame.
 
 ## @jgengine/shell/input/gamepadSource
 
-- `GamepadSource` (function): function GamepadSource({ tracker, bindings, analogRef, input, feel, }: { tracker: ActionStateTracker<string>; bindings: ActionCodesMap; analogRef: { current: Readonly<Record<string, number>> | null }; input: InputSnapshot; /** Game-level pad feel (`defineGame({ gamepad })`); unset keeps the shell de… — Poll browser gamepads and feed semantic actions into the shell tracker.
+- `GamepadSource` (function): function GamepadSource({ tracker, bindings, analogRef, input, feel, seats, onSeatJoin, seatsActive, }: { tracker: ActionStateTracker<string>; bindings: ActionCodesMap; analogRef: { current: Readonly<Record<string, number>> | null }; input: InputSnapshot; /** Game-level pad feel (`defineGame({ gamepa… — Poll browser gamepads and feed semantic actions into the shell tracker.
 - `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
 - `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
 
@@ -2185,6 +2188,13 @@
 - `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
 - `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
+
+## @jgengine/shell/input/padHaptics
+
+- `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
+- `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
+- `emptyPadHapticState` (function): function emptyPadHapticState(): PadHapticState — Fresh state for {@link stepPadHaptics}.
+- `stepPadHaptics` (function): function stepPadHaptics(state: PadHapticState, level: HapticLevel, nowMs: number): "play" | "reset" | null — Decide what to send a pad this frame for a mixed level: `"play"` when the level changed or the last effect is about to run out, `"reset"` when it fell silent, `null` otherwise.
 
 ## @jgengine/shell/input/pointerLock
 
@@ -2372,8 +2382,11 @@
 
 ## @jgengine/shell/render/useFootIk
 
-- `applyFootIk` (function): function applyFootIk(scene: THREE.Object3D, config: FootIkConfig, raycast: GameContext["scene"]["raycast"], weight: number, cameraTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK to a loaded rig. Exported for renderer tests and custom model hosts.
-- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string): void — Runs foot IK after the model animation mixer, fading the correction out while the entity is airborne.
+- `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
+- `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
+- `applyFootIk` (function): function applyFootIk(rig: FootIkRig, originY: number, probe: GroundProbe, state: FootIkState, delta: number, cameraTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK after the animation mixer: probes the ground under each foot, resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending toward the animated knee, and tilts planted feet to the ground. Returns whether the feet are grounded; `state` carries the faded weight between frames. Exported for tests and custom hosts.
+- `resolveFootIkRig` (function): function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): FootIkRig | null — Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"` and configs without `feet`. Returns `null` when no leg resolves.
+- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`).
 
 ## @jgengine/shell/render/useModelAnimation
 
@@ -2406,6 +2419,7 @@
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
 - `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
+- `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
 
 ## @jgengine/shell/scene/AuthoredScene
 
@@ -2415,6 +2429,7 @@
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
 - `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
+- `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
 
 ## @jgengine/shell/scene/GeneratedAssetRenderer
 

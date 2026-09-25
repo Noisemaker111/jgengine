@@ -304,7 +304,7 @@
 - `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> { definition: GameDefinition<TAssetRef, TMultiplayer>; content: GameContextContent; player: {userId: string; isNew: boolean}; territory?: Territory; now?: () => number; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; seed?… — ⚠ undocumented
 - `GameContextRace` (interface): interface GameContextRace { state(id: string, config?: RaceStateConfig): RaceState } — ⚠ undocumented
 - `GameContextTurn` (interface): interface GameContextTurn { loop(id: string, config?: TurnLoopConfig): TurnLoop } — ⚠ undocumented
-- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number } — ⚠ undocumented
+- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number; solids: WorldSolids } — ⚠ undocumented
 - `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented · used by `resolveHitReaction` (@jgengine/core/combat): Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
 - `MoveTowardCommitOptions` (interface): interface MoveTowardCommitOptions extends MoveTowardOptions — Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn.
 - `SceneEntityContext` (interface): interface SceneEntityContext { spawn(name: string, options?: SpawnOptions): string; despawn(instanceId: string): boolean; update: EntityStore["update"]; setPose(instanceId: string, pose: EntityPose): boolean; setPoseConstraint: EntityStore["setPoseConstraint"]; get(ins… — ⚠ undocumented
@@ -335,7 +335,7 @@
 - `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> { definition: GameDefinition<TAssetRef, TMultiplayer>; content: GameContextContent; player: {userId: string; isNew: boolean}; territory?: Territory; now?: () => number; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; seed?… — ⚠ undocumented
 - `GameContextRace` (interface): interface GameContextRace { state(id: string, config?: RaceStateConfig): RaceState } — ⚠ undocumented
 - `GameContextTurn` (interface): interface GameContextTurn { loop(id: string, config?: TurnLoopConfig): TurnLoop } — ⚠ undocumented
-- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number } — ⚠ undocumented
+- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number; solids: WorldSolids } — ⚠ undocumented
 - `HitReactionInput` (interface): interface HitReactionInput { from: string; to: string; config: HitReactionConfig | ImpactPresetName; power?: number } — ⚠ undocumented · used by `resolveHitReaction` (@jgengine/core/combat): Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
 - `MoveTowardCommitOptions` (interface): interface MoveTowardCommitOptions extends MoveTowardOptions — Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn.
 - `SceneEntityContext` (interface): interface SceneEntityContext { spawn(name: string, options?: SpawnOptions): string; despawn(instanceId: string): boolean; update: EntityStore["update"]; setPose(instanceId: string, pose: EntityPose): boolean; setPoseConstraint: EntityStore["setPoseConstraint"]; get(ins… — ⚠ undocumented
@@ -438,8 +438,19 @@
 ## @jgengine/core/runtime/inputSnapshot
 
 - `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
-- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishAnalog(values: Readonly<Record<string, num… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
+- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; haptics(userId: string): HapticChannels; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishA… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
 - `createInputSnapshot` (function): function createInputSnapshot(): InputSnapshot — ⚠ undocumented
+
+## @jgengine/core/runtime/localPlayers
+
+- `LocalPlayerAssignment` (interface): interface LocalPlayerAssignment — Result of {@link LocalPlayers.assign}.
+- `LocalPlayerSlot` (interface): interface LocalPlayerSlot — One local seat on a shared screen: a stable slot id, the user id the game spawns for it, and the device driving it.
+- `LocalPlayers` (interface): interface LocalPlayers — Seats for couch co-op: devices hot-join into slots, each slot has its own input.
+- `LocalPlayersConfig` (interface): interface LocalPlayersConfig — Retunable seat policy.
+- `LocalPlayersOptions` (interface): interface LocalPlayersOptions extends LocalPlayersConfig — Options for {@link createLocalPlayers}.
+- `LocalPlayersSnapshot` (interface): interface LocalPlayersSnapshot — Serializable seat table.
+- `createLocalPlayers` (function): function createLocalPlayers(options: LocalPlayersOptions): LocalPlayers — Seat table for local multiplayer on one screen.
+- `localPlayers` (function): function localPlayers(ctx: GameContext): LocalPlayers — The seat table of a game context, created on first use with one seat for `ctx.player` and `ctx.input`. The shell retunes it from `defineGame({ localPlayers })` and hot-joins pads into it.
 
 ## @jgengine/core/runtime/motionIntents
 
