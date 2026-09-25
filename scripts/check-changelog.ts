@@ -1,6 +1,7 @@
-// Gate: every PR that changes published-SDK source (packages/<pkg>/src) must record
-// a `## [Unreleased]` entry in CHANGELOG.md, so the notes for the next publish are
-// complete by construction. Wired into the PR `quick` job in .github/workflows/ci.yml.
+// Gate: every PR that changes published-SDK source (packages/<pkg>/src) must add a note
+// file under changes/ (folded into CHANGELOG.md by `bun run release`), so the notes for the
+// next publish are complete by construction. Editing `## [Unreleased]` directly still passes.
+// Wired into the PR `quick` job in .github/workflows/ci.yml.
 //
 // Bypass a pure refactor / test-only / internal change with `[skip changelog]` in a
 // commit message. If the base ref is unavailable (shallow clone, fresh repo) the check
@@ -8,6 +9,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { FRAGMENT_PATTERN, groupByHeading } from "./changelog-fragments";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const BASE_REF = process.env.CHANGELOG_BASE_REF ?? "origin/main";
@@ -48,15 +50,28 @@ if (log.stdout.includes(SKIP_MARKER)) {
   process.exit(0);
 }
 
-const diff = git(["diff", "--name-only", `${base}..HEAD`]);
-const sourceChanges = diff.stdout
-  .split("\n")
-  .map((l) => l.trim())
-  .filter(Boolean)
-  .filter((f) => SOURCE.test(f) && !isTest(f) && !isChangelogMirror(f));
+const changedFiles = (filter?: string) =>
+  git(["diff", "--name-only", ...(filter ? [`--diff-filter=${filter}`] : []), `${base}..HEAD`])
+    .stdout.split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+const sourceChanges = changedFiles().filter((f) => SOURCE.test(f) && !isTest(f) && !isChangelogMirror(f));
 
 if (sourceChanges.length === 0) {
   console.log("check-changelog ok: no published-SDK source changes require an entry.");
+  process.exit(0);
+}
+
+const fragments = changedFiles("AM").filter((f) => FRAGMENT_PATTERN.test(f));
+for (const fragment of fragments) {
+  const groups = groupByHeading(readFileSync(new URL(`../${fragment}`, import.meta.url), "utf8").split("\n"));
+  if (![...groups.values()].some((body) => body.length > 0)) {
+    console.error(`\ncheck-changelog failed: ${fragment} needs a ### Migrate/Added/Changed/Fixed/Removed heading with a bullet under it.\n`);
+    process.exit(1);
+  }
+}
+if (fragments.length > 0) {
+  console.log(`check-changelog ok: ${fragments.join(", ")} records changes for ${sourceChanges.length} source file(s).`);
   process.exit(0);
 }
 
@@ -67,9 +82,9 @@ const after = unreleasedBlock(readFileSync(new URL("../CHANGELOG.md", import.met
 function fail(reason: string): never {
   console.error(
     `\ncheck-changelog failed: ${reason}\n\n` +
-      "Add a bullet under `## [Unreleased]` in CHANGELOG.md (Migrate / Added / Changed / Removed)\n" +
-      "describing the consumer-facing change, then commit it. A pure refactor, test, or internal-only\n" +
-      'change can bypass with "[skip changelog]" in a commit message.\n\n' +
+      "Add changes/<branch-name>.md with a `### Migrate|Added|Changed|Fixed|Removed` heading and a\n" +
+      "bullet describing the consumer-facing change, then commit it (see changes/README.md).\n" +
+      'A pure refactor, test, or internal-only change can bypass with "[skip changelog]" in a commit message.\n\n' +
       `Published-SDK source changed on this branch without an [Unreleased] entry:\n${sourceChanges
         .map((f) => `  ${f}`)
         .join("\n")}\n`,
