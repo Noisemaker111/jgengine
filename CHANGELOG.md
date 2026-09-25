@@ -36,6 +36,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- Action contexts rebind live input (#1769). `ActionContextStack` gains `subscribe`, `version`, `ids` and `activeAxes()`; a context may carry `axes` and serializable `shaping`. The shell re-binds keyboard, touch and gamepad when a context is pushed or popped, without remounting: keys held across the swap keep counting toward their new action, and context-only actions reach `ctx.input`. `ActionStateTracker` gains `rebind` and `actions`. The `handling` demo drives through a `driving` context (F parks it), with pad codes on every action. Recipe: `jgengine-world/recipes/controls.md`.
 - `defineGame({ gamepad: { deadzone, curve, triggerDeadzone } })` sets pad feel for the shell's gamepad poll (#1769). Triggers now go through `triggerDeadzone` and the same curve as the sticks, and a trigger resting inside its deadzone no longer holds its action. `resolveGamepadFrame` takes a browser `Gamepad` directly and an optional reusable `out` frame, and the shell poll no longer allocates per frame. `gamepadFeelOptions` resolves the config with the old defaults (axial `0.12`/`0.95`, linear).
 - `measureFlight` (`@jgengine/core/physics/handlingProbe`) flies a `createRigidAircraft` through deterministic autopilot scenarios. It reports roll rate (deg/s), sustained turn rate, stall speed, climb rate, time to 90% throttle response and hands-off hover drift, so a flight feel target can be a test.
 - `RigidAircraftTuning.assists`: flight assists on the same actuators as the pilot, so full stick stays the pilot's.

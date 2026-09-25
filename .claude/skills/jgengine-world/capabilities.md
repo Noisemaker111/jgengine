@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## action-contexts — Swap bindings live for on-foot, driving, menu or build modes by pushing and popping layered action maps.
+
+- `createActionContextStack` (function) · `import { createActionContextStack } from "@jgengine/core/input/actionContexts"`
+
 ## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, and utility AI decisions.
 
 - `createDecisionGraphRuntime` (function) · `import { createDecisionGraphRuntime } from "@jgengine/core/ai/decisionGraph"`

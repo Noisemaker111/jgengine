@@ -6,6 +6,7 @@ import {
   bindingLabel,
   bindingMatches,
   createActionStateTracker,
+  toActionStateBindingMap,
   hotbarSlotActionIndex,
   hotbarSlotBindings,
   isHotbarSlotAction,
@@ -115,6 +116,31 @@ describe("createActionStateTracker", () => {
     tracker.reset();
     expect(tracker.isDown("crouch")).toBe(false);
     expect(tracker.wasPressed("crouch")).toBe(false);
+  });
+
+  test("rebind keeps a held key and maps it to its new action without a press edge", () => {
+    const tracker = createActionStateTracker<string>(toActionStateBindingMap({ forward: ["KeyW"], jump: ["Space"] }));
+    tracker.handleDown("KeyW");
+    tracker.endFrame();
+    tracker.rebind(toActionStateBindingMap({ throttle: ["KeyW"], horn: ["KeyH"] }));
+    expect(tracker.actions()).toEqual(["throttle", "horn"]);
+    expect(tracker.isDown("throttle")).toBe(true);
+    expect(tracker.wasPressed("throttle")).toBe(false);
+    expect(tracker.isDown("forward")).toBe(false);
+    tracker.handleUp("KeyW");
+    expect(tracker.isDown("throttle")).toBe(false);
+    tracker.handleDown("KeyH");
+    expect(tracker.wasPressed("horn")).toBe(true);
+  });
+
+  test("rebind to an empty map and back restores held keys", () => {
+    const map = toActionStateBindingMap<string, string>({ forward: ["KeyW"] });
+    const tracker = createActionStateTracker<string>(map);
+    tracker.handleDown("KeyW");
+    tracker.rebind({});
+    expect(tracker.isDown("forward")).toBe(false);
+    tracker.rebind(map);
+    expect(tracker.isDown("forward")).toBe(true);
   });
 });
 
