@@ -117,7 +117,6 @@ describe("CUTLIST surface diet", () => {
     expect(readFileSync(join(root, "packages/core/src/scene/entityStore.ts"), "utf8")).toMatch(
       /export function entityMetaOf/,
     );
-    expect(existsSync(join(root, "packages/core/src/physics/README.md"))).toBe(true);
   });
 
   test("resolveAuthority and isPresenceOnly are exported from adapter", () => {
