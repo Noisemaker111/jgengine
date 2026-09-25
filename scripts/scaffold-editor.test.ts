@@ -23,8 +23,14 @@ describe("scaffold → edit → play parity", () => {
       return file.contents;
     };
 
-    test(`${variant}: starter scene normalizes with an authored spawn and placeable props`, () => {
-      const raw = JSON.parse(fileOf("src/editor.scene.json")) as EditorDocument;
+    test(`${variant}: default scene normalizes with an authored spawn`, () => {
+      const document = normalizeEditorLayers(JSON.parse(fileOf("src/editor.scene.json")) as EditorDocument);
+      expect(authoredSpawnPosition(document)).not.toBeNull();
+    });
+
+    test(`${variant}: --scene starter normalizes with an authored spawn and placeable props`, () => {
+      const starter = gameTemplate({ id: "probe-game", name: "Probe Game", variant, engineVersion: "0.10.0", sceneMode: "starter" });
+      const raw = JSON.parse(starter.find((entry) => entry.path === "src/editor.scene.json")!.contents) as EditorDocument;
       const document = normalizeEditorLayers(raw);
       expect(authoredSpawnPosition(document)).not.toBeNull();
       const props = resolveAuthoredObjects(document);
