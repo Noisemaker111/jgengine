@@ -16,6 +16,7 @@ import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengin
 import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import { activeActionCodes } from "@jgengine/core/game/controlGate";
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/react/display";
@@ -264,6 +265,7 @@ export function GamePlayerShell({
         player: { userId, isNew: true },
         ...(models === undefined ? {} : { models }),
       });
+      if (playable.localPlayers !== undefined) localPlayers(context).retune(playable.localPlayers);
       playable.loop.onInit(context);
       playable.loop.onNewPlayer(context);
       onContextReady?.(context);
