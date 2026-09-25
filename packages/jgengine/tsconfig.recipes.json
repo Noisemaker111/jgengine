@@ -16,7 +16,9 @@
       "@jgengine/assets": ["../assets/dist/index.d.ts"],
       "@jgengine/assets/*": ["../assets/dist/*"],
       "@jgengine/editor": ["../editor/dist/index.d.ts"],
-      "@jgengine/editor/*": ["../editor/dist/*"]
+      "@jgengine/editor/*": ["../editor/dist/*"],
+      "react": ["../react/node_modules/@types/react/index.d.ts"],
+      "react/jsx-runtime": ["../react/node_modules/@types/react/jsx-runtime.d.ts"]
     }
   },
   "include": ["src/recipes/snippets"]

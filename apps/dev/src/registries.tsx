@@ -168,13 +168,17 @@ export const editorLayerRegistry: Partial<
 export const gameRegistry: GameRegistry = {
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
+  "guard-probe": () => import("./demo/guardProbeDemo").then((module) => module.guardProbeGame),
   handling: () => import("./demo/handlingDemo").then((module) => module.handlingDemoGame),
   "handling-bike": () => import("./demo/handlingDemo").then((module) => module.handlingBikeDemoGame),
+  couch: () => import("./demo/couchDemo").then((module) => module.couchDemoGame),
   "walk-floaty": () => import("./demo/walkFeelDemo").then((module) => module.walkFloatyDemoGame),
   "walk-weighty": () => import("./demo/walkFeelDemo").then((module) => module.walkWeightyDemoGame),
   flight: () => import("./demo/flightDemo").then((module) => module.flightDemoGame),
   "flight-heli": () => import("./demo/flightDemo").then((module) => module.flightHelicopterDemoGame),
   "flight-rocket": () => import("./demo/flightDemo").then((module) => module.flightRocketDemoGame),
+  "skinned-crowd": () => import("./demo/crowdDemo").then((module) => module.crowdDemoGame),
+  "skinned-crowd-mixers": () => import("./demo/crowdDemo").then((module) => module.crowdMixerDemoGame),
   "pointer-commander": () =>
     import("./demo/pointerDemo").then((module) => module.pointerDemoGame),
   "environment-showcase": () =>
@@ -199,6 +203,8 @@ export const gameRegistry: GameRegistry = {
   "kill-feed": () => import("./demo/killFeedDemo").then((module) => module.killFeedDemoGame),
   "interaction-prompt": () => import("./demo/interactionPromptDemo").then((module) => module.interactionPromptDemoGame),
   "camera-shake": () => import("./demo/cameraShakeDemo").then((module) => module.cameraShakeDemoGame),
+  "weapon-handling": () => import("./demo/weaponDemo").then((module) => module.weaponDemoGame),
+  "weapon-handling-shoulder": () => import("./demo/weaponDemo").then((module) => module.weaponShoulderDemoGame),
   "wave-director": () => import("./demo/waveDirectorDemo").then((module) => module.waveDirectorDemoGame),
   "combo-meter": () => import("./demo/comboMeterDemo").then((module) => module.comboMeterDemoGame),
   "waypoint-markers": () => import("./demo/waypointMarkersDemo").then((module) => module.waypointMarkersDemoGame),

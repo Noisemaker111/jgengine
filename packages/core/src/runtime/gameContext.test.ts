@@ -7,6 +7,7 @@ import { raceTrack, type Checkpoint } from "@jgengine/core/game/race";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { encodeCollisionMesh, type CollisionMeshData, type CollisionMeshSource } from "../scene/collisionMesh";
 import { defineStore } from "../store/defineStore";
+import { resetRngFallbackWarnings } from "../random/resolveRng";
 import { environment, terrain } from "../world/features";
 import { resolveTerrainField } from "../world/terrain";
 import { createGameContext, type GameContextContent } from "./gameContext";
@@ -478,6 +479,47 @@ describe("createGameContext", () => {
     ctx.scene.entity.effect({ from: rival, to: slime, effect: "damage", via: { amount: 999 } });
     expect(ctx.scene.entity.get(slime)).toBeNull();
     expect(ctx.player.inventory.count("backpack", "goo")).toBe(0);
+  });
+
+  test("world drops scatter from the seeded world stream, not Math.random", () => {
+    const worldContent: GameContextContent = {
+      entityById(catalogId) {
+        if (catalogId === "hero") return { stats: { health: { max: 20 } } };
+        if (catalogId !== "slime") return null;
+        return {
+          stats: { health: { max: 10 } },
+          receive: { damage: { order: ["health"] } },
+          onDeath: { drops: [{ table: "slime-drops" }], dropMode: "world" },
+        };
+      },
+    };
+    const warnings: unknown[] = [];
+    const originalWarn = console.warn;
+    console.warn = (...args: unknown[]) => warnings.push(args[0]);
+    resetRngFallbackWarnings();
+    const dropPositions = (seed: string) => {
+      const ctx = createGameContext({
+        definition: defineGameDefinition({ name: "Drops", assets: createAssetCatalog(), multiplayer: "off" }),
+        content: worldContent,
+        player: { userId: "user_a", isNew: true },
+        seed,
+      });
+      ctx.game.loot.register({ id: "slime-drops", entries: [{ item: "goo", count: 1, weight: 1 }] });
+      ctx.scene.entity.spawn("hero", { id: "user_a", position: [0, 0, 0] });
+      const slime = ctx.scene.entity.spawn("slime", { position: [4, 0, 4] });
+      ctx.scene.entity.effect({ from: "user_a", to: slime, effect: "damage", via: { amount: 999 } });
+      return ctx.scene.worldItem.list().map((item) => ctx.scene.entity.get(item.instanceId)?.position);
+    };
+    try {
+      const first = dropPositions("seed-a");
+      expect(first).toHaveLength(1);
+      expect(first[0]).toBeDefined();
+      expect(first[0]).not.toEqual([4, 0, 4]);
+      expect(dropPositions("seed-a")).toEqual(first);
+      expect(warnings.some((warning) => String(warning).includes("worldItem fell back"))).toBe(false);
+    } finally {
+      console.warn = originalWarn;
+    }
   });
 
   test("cycleTarget with hostile filter skips friendly npcs", () => {

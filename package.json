@@ -70,6 +70,7 @@
     "test:all": "bun scripts/guard.ts 900 'bun scripts/ensure-ready.ts && bun test packages apps/dev apps/web apps/desktop scripts'",
     "games:clone": "bun scripts/ensure-games.ts",
     "games:update": "bun scripts/ensure-games.ts --update",
+    "games:bump": "bun scripts/ensure-games.ts --bump",
     "dev": "bun run --cwd apps/web dev",
     "dev:runner": "bun run --cwd apps/dev dev",
     "shoot": "bun scripts/guard.ts 420 'bun scripts/shoot-dev.ts'",

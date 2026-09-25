@@ -997,7 +997,7 @@
 - `useShopStock` (function): function useShopStock(shop: ShopStock): ShopStockEntry[] — Subscribe to a shop's stock and re-render whenever it changes (buy, sell, restock, price, add, remove, restore). Returns the current entry list — a detached snapshot safe to map over.
 - `useStore` (function): function useStore<T>(handle: StoreHandle<T>): T — Subscribe a component to a typed store slot defined with `defineStore`. Returns the current value (or the definition's initial before any write), re-rendering only when the slot changes — the cast-free, boilerplate-free replacement for a hand-written `useGameStore((ctx) => ctx.game.store.get(KEY) as T)`.
 - `useT` (function): function useT(): (key: string, params?: TParams) => string — Return the translator bound to the current locale; the component re-renders when `setLocale` is called, so returned strings stay live.
-- `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
+- `useTarget` (function): function useTarget(fromInstanceId: string): string | null — The entity `fromInstanceId` currently targets (set by `ctx.scene.entity.setTarget` or `cycleTarget`), for a target frame.
 - `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useTimerRead` (function): function useTimerRead(timer: TimerSet, id: string, active = true): TimerRead | null — Subscribe to a single timer and re-read it every animation frame while mounted, so a HUD readout stays live without the game hand-rolling interval math. Reuses one read object (allocation-aware). Returns `null` for an unknown id. Pass `active={false}` to freeze the per-frame tick (e.g. an off-screen HUD).
 - `useViewportMetrics` (function): function useViewportMetrics(): ViewportMetrics — Live visible viewport, tracking `window.visualViewport` (mobile browser chrome, pinch-zoom) with a layout-viewport fallback.
@@ -1301,7 +1301,7 @@
 - `useSceneEntityIds` (function): function useSceneEntityIds(): readonly string[] — Membership-only entity id list: the returned array keeps a stable identity across per-frame pose writes and only changes when an entity spawns, despawns, or the store is hydrated (#625). A marker mapped from these ids reads its own live pose imperatively (useFrame), so the actor tree no longer re-reconciles every frame. Prefer this over {@link useSceneEntities} for large scenes.
 - `useSceneObjectIds` (function): function useSceneObjectIds(): readonly string[] — Membership-only object id list — the object counterpart of {@link useSceneEntityIds}; stable across move/rotate/setVisual, changes only on place/remove.
 - `useSceneObjects` (function): function useSceneObjects(): readonly SceneObject[] — ⚠ undocumented
-- `useTarget` (function): function useTarget(fromInstanceId: string): string | null — ⚠ undocumented
+- `useTarget` (function): function useTarget(fromInstanceId: string): string | null — The entity `fromInstanceId` currently targets (set by `ctx.scene.entity.setTarget` or `cycleTarget`), for a target frame.
 - `useTicker` (function): function useTicker(hz = 10): number — Re-render at a steady rate. Returns a monotonically increasing tick count driven by a setInterval, for HUD elements that display wall-clock-derived values (cooldowns, cast bars, swing timers) without an engine subscription to hang off. `hz <= 0` disables the ticker.
 - `useWorldBrowser` (function): function useWorldBrowser(options: { fetchSessions: () => Promise<readonly SessionListing[]>; filter?: MatchFilter; limit?: number; refreshMs?: number; }): WorldBrowserState — Polls a host-supplied session fetcher (e.g. createWsBackend().browse) and filters through matchmaking's browseSessions. fetchSessions must be identity-stable (wrap in useCallback at the call site) or every render refetches.
 - `useWorldInvites` (function): function useWorldInvites(): WorldInvite[] — ⚠ undocumented
@@ -1839,8 +1839,8 @@
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; director?: CameraDirector; viewmodel?: Compo… — ⚠ undocumented
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
-- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps> } — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, weapon, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
+- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps>; weapon?: (entityId: string) => CameraWeaponView | null } — ⚠ undocumented
 - `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps { config?: InspectionCameraConfig } — ⚠ undocumented · used by `GameInspectionCamera`: Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurab…
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
@@ -1866,8 +1866,8 @@
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
 
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
-- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps> } — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, weapon, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
+- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps>; weapon?: (entityId: string) => CameraWeaponView | null } — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 
@@ -1889,6 +1889,10 @@
 - `PlayerFovSlider` (function): function PlayerFovSlider(): React.JSX.Element | null — ⚠ undocumented
 - `PlayerFovState` (interface): interface PlayerFovState { fov: number; bounds: PlayerFovBounds; enabled: boolean; persist: boolean; setFov: (value: number) => void; compose: (poseFov: number, mode?: "relative" | "absolute") => number } — ⚠ undocumented
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
+
+## @jgengine/shell/camera/Viewports
+
+- `ViewportHuds` (function): function ViewportHuds({ ctx, config, children, }: { ctx: GameContext; config?: ViewportsConfig; children: (slot: LocalPlayerSlot, viewport: ViewportDef) => ReactNode; }): React.JSX.Element — One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own health, prompts or score with `children(slot)`. Pass the same `viewports` config the game gave `defineGame`.
 
 ## @jgengine/shell/camera/cameraBlendMath
 
@@ -2165,9 +2169,20 @@
 - `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
 - `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
 
+## @jgengine/shell/input/gamepadPoll
+
+- `GamepadPoll` (interface): interface GamepadPoll — Buffers one shell gamepad poll reuses across frames.
+- `GamepadRoute` (interface): interface GamepadRoute — Where each connected pad's input goes this frame; buffers are reused across frames.
+- `emptyGamepadPoll` (function): function emptyGamepadPoll(): GamepadPoll — Fresh buffers for {@link stepGamepadPoll}.
+- `emptyGamepadRoute` (function): function emptyGamepadRoute(): GamepadRoute — Fresh buffers for {@link routeGamepads}.
+- `gamepadCodes` (function): function gamepadCodes(bindings: ActionCodesMap): GamepadBindings — The pad-only slice of an action binding map, in the shape {@link resolveGamepadFrame} reads.
+- `rebindGamepadPoll` (function): function rebindGamepadPoll(poll: GamepadPoll, previous: GamepadBindings, next: GamepadBindings, tracker: ActionStateTracker<string>): void — Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes changed (the next poll presses them under the new map), and keep the rest held.
+- `routeGamepads` (function): function routeGamepads(pads: ArrayLike<GamepadSample | null | undefined>, seats: Pick<LocalPlayers, "assign" | "slotForDevice" | "config">, route: GamepadRoute): GamepadRoute — Route pads to local seats: a claimed pad goes to its seat, an unclaimed pad hot-joins on a button press (stick drift never opens a seat), and with one seat every pad drives the primary player.
+- `stepGamepadPoll` (function): function stepGamepadPoll(poll: GamepadPoll, pads: ArrayLike<GamepadSample | null | undefined>, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, tracker: ActionStateTracker<string>, analogIn: Readonly<Record<string, number>> | null): Readonly<Record<string, number>> | null — One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish (pad values max-merged over the other source's). Allocation-free after the first frame.
+
 ## @jgengine/shell/input/gamepadSource
 
-- `GamepadSource` (function): function GamepadSource({ tracker, bindings, analogRef, input, }: { tracker: ActionStateTracker<string>; bindings: ActionCodesMap; analogRef: { current: Readonly<Record<string, number>> | null }; input: InputSnapshot; }): null — Poll browser gamepads and feed semantic actions into the shell tracker.
+- `GamepadSource` (function): function GamepadSource({ tracker, bindings, analogRef, input, feel, seats, onSeatJoin, seatsActive, }: { tracker: ActionStateTracker<string>; bindings: ActionCodesMap; analogRef: { current: Readonly<Record<string, number>> | null }; input: InputSnapshot; /** Game-level pad feel (`defineGame({ gamepa… — Poll browser gamepads and feed semantic actions into the shell tracker.
 - `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
 - `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
 
@@ -2177,6 +2192,17 @@
 - `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
 - `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
+
+## @jgengine/shell/input/padHaptics
+
+- `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
+- `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
+- `emptyPadHapticState` (function): function emptyPadHapticState(): PadHapticState — Fresh state for {@link stepPadHaptics}.
+- `stepPadHaptics` (function): function stepPadHaptics(state: PadHapticState, level: HapticLevel, nowMs: number): "play" | "reset" | null — Decide what to send a pad this frame for a mixed level: `"play"` when the level changed or the last effect is about to run out, `"reset"` when it fell silent, `null` otherwise.
+
+## @jgengine/shell/input/pointerLock
+
+- `requestRawPointerLock` (function): function requestRawPointerLock(element: LockableElement): void — Request pointer lock with raw (unaccelerated) mouse deltas, falling back to a plain lock when the browser or OS rejects `unadjustedMovement`.
 
 ## @jgengine/shell/inputSink
 
@@ -2294,6 +2320,19 @@
 - `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
 
+## @jgengine/shell/render/SkinnedInstances
+
+- `BakeSkinnedCrowdOptions` (interface): interface BakeSkinnedCrowdOptions — Options for {@link bakeSkinnedCrowd}.
+- `BakedSkinnedCrowd` (interface): interface BakedSkinnedCrowd — A rig baked for instancing: one merged geometry, the bone-matrix texture and its layout.
+- `CrowdInstance` (interface): interface CrowdInstance — One crowd member: where it stands and what it plays.
+- `CrowdUniforms` (interface): interface CrowdUniforms — Uniforms shared by every material of one crowd; `crowdTime` advances once per frame.
+- `SkinnedCrowdSource` (interface): interface SkinnedCrowdSource — A rig to bake: a loaded scene with skinned meshes and its clips.
+- `SkinnedInstances` (function): function SkinnedInstances({ url, instances, clips, once, fps, modelScale = 1, castShadow = true, receiveShadow = true, timeScale = 1, }: SkinnedInstancesProps): React.JSX.Element — Renders many animated copies of one rigged model in a single instanced draw per material: the rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs blending, IK or attachments stays an entity model.
+- `SkinnedInstancesProps` (interface): interface SkinnedInstancesProps — Props for {@link SkinnedInstances}.
+- `bakeSkinnedCrowd` (function): function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinnedCrowdOptions = {}): BakedSkinnedCrowd — Bakes a rig for {@link SkinnedInstances}: merges its skinned meshes into one geometry in bind space, samples every requested clip at `fps`, and writes each bone's model-space skinning matrix into a float texture laid out by `planBoneTexture`. Meshes with several materials keep only the first. Exported for tests and custom crowd renderers.
+- `createCrowdUniforms` (function): function createCrowdUniforms(baked: BakedSkinnedCrowd): CrowdUniforms — Builds the uniforms a crowd material reads: the texture and per-clip start, frames, fps and loop.
+- `patchCrowdMaterial` (function): function patchCrowdMaterial<T extends THREE.Material>(material: T, uniforms: CrowdUniforms): T — Patches a material so each instance skins itself from the crowd texture: per-instance `crowdPlay` is (clip index, time offset, speed). Works on any built-in material, the depth material for shadows included.
+
 ## @jgengine/shell/render/assetBase
 
 - `installAssetBase` (function): function installAssetBase(base: string): void — Installs the app base URL (pass `import.meta.env.BASE_URL`) so root-absolute asset paths load from under it. Call once at app startup, before any game loads. Bases that are not root-absolute (`/`, `./`) reset to the pass-through default. Also registers {@link resolveAssetBaseUrl} on `THREE.DefaultLoadingManager`, covering `TextureLoader`, drei's `useTexture` / `useGLTF`, and every other loader on the default manager.
@@ -2360,11 +2399,17 @@
 
 ## @jgengine/shell/render/useFootIk
 
-- `applyFootIk` (function): function applyFootIk(scene: THREE.Object3D, config: FootIkConfig, raycast: GameContext["scene"]["raycast"], weight: number, cameraTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK to a loaded rig. Exported for renderer tests and custom model hosts.
-- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string): void — Runs foot IK after the model animation mixer, fading the correction out while the entity is airborne.
+- `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
+- `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
+- `applyFootIk` (function): function applyFootIk(rig: FootIkRig, originY: number, probe: GroundProbe, state: FootIkState, delta: number, cameraTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK after the animation mixer: probes the ground under each foot, resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending toward the animated knee, and tilts planted feet to the ground. Returns whether the feet are grounded; `state` carries the faded weight between frames. Exported for tests and custom hosts.
+- `resolveFootIkRig` (function): function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): FootIkRig | null — Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"` and configs without `feet`. Returns `null` when no leg resolves.
+- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`).
 
 ## @jgengine/shell/render/useModelAnimation
 
+- `GraphPose` (interface): interface GraphPose — A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}.
+- `createGraphPose` (function): function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose — Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as the editor's graph preview, poses the rig from the runtime's output.
+- `takeRootMotion` (function): function takeRootMotion(rootBone: THREE.Object3D, bind: THREE.Vector3, localDelta: readonly [number, number, number] | undefined, out: THREE.Vector3): THREE.Vector3 — For a frame where a `rootMotion` state is current: pins the root bone's horizontal translation to its bind pose, so the clip plays in place, and returns that step's root travel as a world-space horizontal delta (through the rig's parent transform, so the entity's facing and the model's scale apply). The root bone's vertical motion stays in the clip.
 - `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp. With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight and the mixer only applies them; clip events surface as `animation.event`.
 
 ## @jgengine/shell/replay/useSessionRecorder
@@ -2394,6 +2439,7 @@
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
 - `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
+- `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
 
 ## @jgengine/shell/scene/AuthoredScene
 
@@ -2403,6 +2449,7 @@
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
 - `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
+- `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
 
 ## @jgengine/shell/scene/GeneratedAssetRenderer
 

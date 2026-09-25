@@ -1,3 +1,4 @@
+import type { AnimClipOutput, AnimGraph } from "@jgengine/core/anim/animGraph";
 import { classifyClip, type ClipRole } from "@jgengine/core/game/clipRoles";
 import type { ModelAnimationConfig } from "@jgengine/core/game/playableGame";
 
@@ -49,6 +50,10 @@ export interface ClipPreviewSession {
   readonly source: ClipPreviewSource;
   readonly driver: ClipPreviewState;
   readonly duration: number;
+  /** Every clip's duration, published by the viewport layer once the GLB loads. */
+  readonly clipDurations?: Readonly<Record<string, number>>;
+  /** When set, the viewport poses the rig from this graph output instead of playing `driver`'s clip. */
+  readonly graphPose?: { readonly graph: AnimGraph; readonly clips: readonly AnimClipOutput[] };
 }
 
 /** Playback state of the clip preview driver. `time` is seconds into the clip. */

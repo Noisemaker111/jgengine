@@ -1,4 +1,4 @@
-import type { Blackboard, DecisionAction, DecisionGraphRuntime } from "../ai/decisionGraph";
+import type { Blackboard, DecisionAbort, DecisionAction, DecisionGraphRuntime } from "../ai/decisionGraph";
 import { createDecisionGraphRuntime } from "../ai/decisionGraph";
 import { advanceInterestGate, createInterestGateState, type InterestGateState, type InterestSchedulerConfig } from "../ai/interestScheduler";
 import {
@@ -35,15 +35,27 @@ export interface BehaviorActionContext {
 /** Callback used by a registered decision graph behavior action. */
 export type BehaviorAction = DecisionAction<BehaviorActionContext>;
 
-const behaviorActions = new Map<string, Record<string, BehaviorAction>>();
+/** Optional hooks for a registered behavior action set. */
+export interface BehaviorActionOptions {
+  /** Called when an action running last think is pre-empted by another branch, to stop movement or release claims. */
+  onAbort?: DecisionAbort<BehaviorActionContext>;
+}
+
+interface RegisteredActions {
+  actions: Record<string, BehaviorAction>;
+  options: BehaviorActionOptions;
+}
+
+const behaviorActions = new Map<string, RegisteredActions>();
 
 /** Register the named actions used by decision graph behavior descriptors.
  * @capability behavior-actions register named callbacks for decision graph behavior descriptors
  */
-export function registerBehaviorActions(id: string, actions: Record<string, BehaviorAction>): () => void {
-  behaviorActions.set(id, actions);
+export function registerBehaviorActions(id: string, actions: Record<string, BehaviorAction>, options: BehaviorActionOptions = {}): () => void {
+  const entry = { actions, options };
+  behaviorActions.set(id, entry);
   return () => {
-    if (behaviorActions.get(id) === actions) behaviorActions.delete(id);
+    if (behaviorActions.get(id) === entry) behaviorActions.delete(id);
   };
 }
 
@@ -59,7 +71,14 @@ export type BehaviorResumePolicy = "freeze" | "advance";
 export type BehaviorSnapshot =
   | { readonly kind: "patrol"; readonly state: PathFollowState }
   | { readonly kind: "wander"; readonly origin: Waypoint; readonly target: Waypoint | null }
-  | { readonly kind: "decisionGraph"; readonly graph: ReturnType<DecisionGraphRuntime["snapshot"]>; readonly gate: InterestGateState };
+  | {
+      readonly kind: "decisionGraph";
+      readonly graph: ReturnType<DecisionGraphRuntime["snapshot"]>;
+      readonly gate: InterestGateState;
+      readonly blackboard?: Blackboard;
+      /** Seconds accrued since the last think. */
+      readonly pending?: number;
+    };
 
 /** Inspection readout for editor/debug tooling, from {@link BehaviorControl.inspect}/{@link BehaviorControl.list}. */
 export interface BehaviorInspection {
@@ -96,11 +115,16 @@ interface DecisionGraphNav extends Lifecycle {
   behavior: DecisionGraphBehavior;
   runtime: DecisionGraphRuntime<BehaviorActionContext>;
   gate: InterestGateState;
+  cadence: InterestSchedulerConfig;
+  blackboard: Blackboard;
+  pending: number;
 }
 
 type Nav = PatrolNav | WanderNav | DecisionGraphNav;
 
-const DECISION_GRAPH_CADENCE: InterestSchedulerConfig = { wakeRadius: Number.POSITIVE_INFINITY, activeInterval: 0 };
+function thinkCadence(behavior: DecisionGraphBehavior): InterestSchedulerConfig {
+  return { wakeRadius: Number.POSITIVE_INFINITY, activeInterval: Math.max(0, behavior.thinkInterval ?? 0) };
+}
 
 /**
  * Per-entity control surface for the behavior runtime — pause/resume/disable/enable an instance,
@@ -130,6 +154,8 @@ export interface BehaviorControl {
   inspect(id: string): BehaviorInspection | null;
   /** Inspect every live instance (bounded by spawned behavior entities). */
   list(): BehaviorInspection[];
+  /** The live, persistent blackboard of a decision graph instance for perception and game systems to write facts into, or `null`. */
+  blackboard(id: string): Blackboard | null;
 }
 
 function patrolOf(entity: { behaviors: readonly { kind: string }[] }): PatrolBehavior | null {
@@ -182,13 +208,20 @@ const runtimeOf = perContext((ctx) => {
       }
       const decisionGraph = decisionGraphOf(entity);
       if (decisionGraph !== null) {
-        const actions = behaviorActions.get(decisionGraph.actions);
-        if (actions === undefined) continue;
+        const registered = behaviorActions.get(decisionGraph.actions);
+        if (registered === undefined) continue;
+        const cadence = thinkCadence(decisionGraph);
         nav.set(entity.id, {
           kind: "decisionGraph",
           behavior: decisionGraph,
-          runtime: createDecisionGraphRuntime(decisionGraph.graph, actions),
-          gate: createInterestGateState(DECISION_GRAPH_CADENCE, ctx.rng()),
+          runtime: createDecisionGraphRuntime(decisionGraph.graph, registered.actions, {
+            rng: () => ctx.rng(),
+            ...(registered.options.onAbort === undefined ? {} : { onAbort: registered.options.onAbort }),
+          }),
+          gate: createInterestGateState(cadence, ctx.rng()),
+          cadence,
+          blackboard: { ...(decisionGraph.blackboard ?? {}) },
+          pending: 0,
           status: "active",
           reason: null,
           pausedElapsed: 0,
@@ -282,11 +315,12 @@ export function advanceBehaviors(ctx: GameContext, dt: number): void {
     } else {
       const entity = ctx.scene.entity.get(id);
       if (entity === null) continue;
-      const step = advanceInterestGate(entry.gate, DECISION_GRAPH_CADENCE, dt, { proximity: 0 });
+      entry.pending += dt;
+      const step = advanceInterestGate(entry.gate, entry.cadence, dt, { proximity: 0 });
       if (!step.active) continue;
-      const blackboard: Blackboard = {};
-      const status = entry.runtime.tick({ ctx, entityId: id, dt }, blackboard, dt);
-      if (status === "done" || status === "failed") entry.runtime.restore({ runningPath: null });
+      const elapsed = entry.pending;
+      entry.pending = 0;
+      entry.runtime.tick({ ctx, entityId: id, dt: elapsed }, entry.blackboard, elapsed);
     }
   }
 }
@@ -351,7 +385,7 @@ export function behaviorControl(ctx: GameContext): BehaviorControl {
       if (entry === undefined) return null;
       if (entry.kind === "patrol") return { kind: "patrol", state: { ...entry.state } };
       if (entry.kind === "wander") return { kind: "wander", origin: [...entry.origin], target: entry.target === null ? null : [...entry.target] };
-      return { kind: "decisionGraph", graph: entry.runtime.snapshot(), gate: { ...entry.gate } };
+      return { kind: "decisionGraph", graph: entry.runtime.snapshot(), gate: { ...entry.gate }, blackboard: { ...entry.blackboard }, pending: entry.pending };
     },
     restore: (id, snapshot) => {
       const entry = nav.get(id);
@@ -363,6 +397,8 @@ export function behaviorControl(ctx: GameContext): BehaviorControl {
       if (entry.kind === "decisionGraph" && snapshot.kind === "decisionGraph") {
         entry.runtime.restore(snapshot.graph);
         entry.gate = { ...snapshot.gate };
+        entry.blackboard = { ...(snapshot.blackboard ?? entry.behavior.blackboard ?? {}) };
+        entry.pending = snapshot.pending ?? 0;
         return true;
       }
       if (entry.kind === "wander" && snapshot.kind === "wander") {
@@ -381,6 +417,10 @@ export function behaviorControl(ctx: GameContext): BehaviorControl {
       const out: BehaviorInspection[] = [];
       for (const [id, entry] of nav) out.push({ id, kind: entry.kind, status: entry.status, reason: entry.reason });
       return out;
+    },
+    blackboard: (id) => {
+      const entry = nav.get(id);
+      return entry?.kind === "decisionGraph" ? entry.blackboard : null;
     },
   };
 }

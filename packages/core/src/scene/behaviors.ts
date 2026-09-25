@@ -5,7 +5,7 @@ import {
   type ProximityPrompt,
 } from "../interaction/proximityPrompt";
 import type { PathProgress, Waypoint } from "../nav/pathFollow";
-import type { DecisionGraph } from "../ai/decisionGraph";
+import type { Blackboard, DecisionGraph } from "../ai/decisionGraph";
 
 export interface WanderBehavior {
   kind: "wander";
@@ -43,6 +43,10 @@ export interface DecisionGraphBehavior {
   kind: "decisionGraph";
   graph: DecisionGraph;
   actions: string;
+  /** Initial facts for this entity's persistent blackboard; systems write more through `behaviorControl(ctx).blackboard(id)`. */
+  blackboard?: Blackboard;
+  /** Seconds between graph ticks (`0` = every frame). Siblings are staggered; actions receive the elapsed time. */
+  thinkInterval?: number;
 }
 
 export type BehaviorDescriptor =

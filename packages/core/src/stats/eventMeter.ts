@@ -47,7 +47,7 @@ function readyOf(meter: AccumulatorMeter, mode: MeterMode): boolean {
 /**
  * A heat/hype gauge that rises as tagged events land and cools between them, firing when it fills or breaks — the streak/overdrive meter shooters and fighters hand-roll.
  *
- * @capability event-meter a heat/streak gauge that builds from repeated hits and cools down over time
+ * @capability event-meter a heat/streak/alert gauge (wanted level, rage, combo) that builds from repeated events and cools down over time
  */
 export function createEventMeter(config: EventMeterConfig): EventMeter {
   const mode = config.mode ?? "hold";

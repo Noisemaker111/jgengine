@@ -88,6 +88,8 @@ describe("meta-patch RPC tools", () => {
     const { api, dispose } = host();
     expect(api.handle({ method: "set_marker", id: "m1", meta: { assetId: "bookcase" } }).ok).toBe(true);
     expect(api.handle({ method: "set_marker", id: "nope", label: "x" }).ok).toBe(false);
+    const patched = api.handle({ method: "set_marker", id: "m1", catalogId: "raider" });
+    expect((patched.result as { catalogId?: string }).catalogId).toBe("raider");
     dispose();
   });
 });

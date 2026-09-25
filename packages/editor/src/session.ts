@@ -27,6 +27,7 @@ import type { TerrainField } from "@jgengine/core/world/terrain";
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
 
 import { EDITOR_RPC_HANDLERS, type HandlerContext } from "./handlers";
+import { warmNavBake } from "./handlers/navmesh";
 import { emitEditorConsole } from "./shell/consoleSink";
 
 registerBuiltinSceneKinds();
@@ -77,9 +78,19 @@ export type EditorBridgeRequest =
       color?: string;
       label?: string;
       rotationY?: number;
+      catalogId?: string;
       meta?: Record<string, unknown>;
     }
-  | { method: "set_marker"; id: string; kind?: string; color?: string; label?: string; rotationY?: number; meta?: Record<string, unknown> }
+  | {
+      method: "set_marker";
+      id: string;
+      kind?: string;
+      color?: string;
+      label?: string;
+      rotationY?: number;
+      catalogId?: string;
+      meta?: Record<string, unknown>;
+    }
   | { method: "set_note"; id: string; text?: string; meta?: Record<string, unknown> }
   | { method: "set_meta"; id: string; patch: Record<string, unknown> }
   | { method: "apply_preset"; id: string; preset: string }
@@ -401,6 +412,7 @@ export function createEditorHost(options: {
   api: EditorHostApi;
   dispose: () => void;
 } {
+  warmNavBake();
   const catalogDefinitions = options.catalogs ?? [];
   const document = seedEditorCatalogs(normalizeEditorLayers(options.layers), catalogDefinitions);
   const session = createEditorSession(document);

@@ -12,6 +12,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `advanceLedger` (function) · `import { advanceLedger } from "@jgengine/core/gameplay"`
 
+## affix-roller — roll randomized gear (guns, armor, loot) with rarity tiers, stat scaling and prefix/suffix affixes from a seed
+
+- `createAffixRoller` (function) · `import { createAffixRoller } from "@jgengine/core/gameplay"`
+
 ## auction-book — timed bid auctions with escrowed bids, buyout, anti-snipe close extension, and collection-box settlement
 
 - `createAuctionBook` (function) · `import { createAuctionBook } from "@jgengine/core/gameplay"`
@@ -140,6 +144,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEventTicker` (function) · `import { createEventTicker } from "@jgengine/core/gameplay"`
 
+## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
+
+- `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/gameplay"`
+
 ## game-save — save/load game state with a pluggable backend, autosave, slots, and migration
 
 - `createSaveStore` (function) · `import { createSaveStore } from "@jgengine/core/gameplay"`
@@ -243,6 +251,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `localSaveBackend` (function) · `import { localSaveBackend } from "@jgengine/core/gameplay"`
 
+## loot-beams — rarity-colored loot beams and labels on dropped items via defineGame({ worldItem: { rarityStyle, beamHeight } })
+
+- `RarityStyle` (interface) · `import { RarityStyle } from "@jgengine/core/gameplay"`
+
 ## loot-filter — filter and highlight drops by rarity/name rules
 
 - `evaluateLootFilter` (function) · `import { evaluateLootFilter } from "@jgengine/core/gameplay"`
@@ -315,6 +327,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## ping-wheel — contextual ping/marker communication between teammates
 
 - `createPingSystem` (function) · `import { createPingSystem } from "@jgengine/core/gameplay"`
+
+## pointer-commands — click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select)
+
+- `PointerConfig` (interface) · `import { PointerConfig } from "@jgengine/core/gameplay"`
 
 ## policy-annotate — tag a scheduled transaction's provenance without changing its value
 
@@ -438,6 +454,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## spawn-points — register spawn locations and pick where entities respawn
 
 - `createSpawnPoints` (function) · `import { createSpawnPoints } from "@jgengine/core/gameplay"`
+
+## split-screen — Split the screen into one viewport per local seat, each with its own follow camera.
+
+- `splitViewports` (function) · `import { splitViewports } from "@jgengine/core/game/viewports"`
 
 ## stat-graph — derive game-defined stats from named inputs with provenance and preview
 

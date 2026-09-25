@@ -48,6 +48,7 @@ import {
   captureCameraBlendFrom,
   createCameraBlendScratch,
 } from "./cameraBlendMath";
+import { requestRawPointerLock } from "../input/pointerLock";
 
 export {
   applyCameraBlendStep,
@@ -417,7 +418,7 @@ export function ShoulderRig(props: RigProps) {
 
   useEffect(() => {
     const requestLock = () => {
-      if (document.pointerLockElement !== domElement) void domElement.requestPointerLock?.();
+      if (document.pointerLockElement !== domElement) requestRawPointerLock(domElement);
     };
     const onMove = (event: MouseEvent) => {
       if (document.pointerLockElement !== domElement) return;
@@ -453,8 +454,11 @@ export function ShoulderRig(props: RigProps) {
   useFrame((_, dt) => {
     const sample = readFollow(ctx, followId);
     const follow = sample?.pos ?? { x: 0, y: 0, z: 0 };
-    const adsTarget = aimingRef.current ? 1 : 0;
-    aimRef.current += (adsTarget - aimRef.current) * (1 - Math.exp(-(config?.adsTransitionSpeed ?? 10) * dt));
+    const weapon = followId === null ? null : (props.config?.weapon?.(followId) ?? null);
+    if (weapon === null) {
+      const adsTarget = aimingRef.current ? 1 : 0;
+      aimRef.current += (adsTarget - aimRef.current) * (1 - Math.exp(-(config?.adsTransitionSpeed ?? 10) * dt));
+    } else aimRef.current = weapon.handling.adsProgress;
     const hip = resolveShoulder(config, false);
     const ads = resolveShoulder(config, true);
     const blended = {
@@ -463,7 +467,11 @@ export function ShoulderRig(props: RigProps) {
       distance: hip.distance + (ads.distance - hip.distance) * aimRef.current,
       fov: hip.fov + (ads.fov - hip.fov) * aimRef.current,
     };
-    const pose = shoulderPose(follow, props.yawRef.current, props.pitchRef.current, sideRef.current, blended);
+    const handling = weapon?.handling;
+    const yaw = props.yawRef.current - (handling === undefined ? 0 : handling.aimYaw + handling.cameraYaw);
+    // This rig's pitch is camera elevation, so a muzzle climb lowers it.
+    const pitch = props.pitchRef.current - (handling === undefined ? 0 : handling.aimPitch + handling.cameraPitch);
+    const pose = shoulderPose(follow, yaw, pitch, sideRef.current, blended);
     commit(pose, dt);
   }, CAMERA_RIG_FRAME_PRIORITY);
 

@@ -48,6 +48,7 @@ export interface CombatSubsystemDeps {
   despawnEntity: (instanceId: string) => boolean;
   runCommand: (name: string, args: unknown) => void;
   localUserId: string;
+  rng: () => number;
   physics?: PhysicsConfig;
 }
 
@@ -84,6 +85,7 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
     despawnEntity,
     runCommand,
     localUserId,
+    rng,
   } = d;
 
   const death = createDeathSystem({
@@ -140,6 +142,7 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
           spawnWorldItem,
           grantToPlayer: loot.grantToPlayer,
           localUserId,
+          rng,
         });
       },
     }),

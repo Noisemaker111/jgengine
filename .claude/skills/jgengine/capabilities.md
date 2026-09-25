@@ -44,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `EditorCatalogDefinition` (interface) · `import { EditorCatalogDefinition } from "@jgengine/shell/gameKit"`
 
+## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
+
+- `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/authoring"`
+
 ## game-system — declare a composable capability with its own schedule and lifecycle
 
 - `SystemDefinition` (interface) · `import { SystemDefinition } from "@jgengine/shell/gameKit"`
@@ -99,6 +103,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## input-recorder — tick-indexed input log for replay, rollback, and regression tests
 
 - `createInputRecorder` (function) · `import { createInputRecorder } from "@jgengine/core/runtime/inputRecorder"`
+
+## local-players — Couch co-op seats: devices hot-join into slots, each with its own user id and input snapshot.
+
+- `createLocalPlayers` (function) · `import { createLocalPlayers } from "@jgengine/core/runtime/localPlayers"`
 
 ## loot-table — validate a loot table definition for use with the registry
 
@@ -201,3 +209,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 
 - `environment` (function) · `import { environment } from "@jgengine/shell/gameKit"`
+
+## world-item-pickup — pick up dropped items: ctx.scene.worldItem nearestInRadius → pickup into the player's inventory
+
+- `SceneWorldItemContext` (interface) · `import { SceneWorldItemContext } from "@jgengine/core/runtime/gameContext"`

@@ -51,10 +51,13 @@ describe("CUTLIST surface diet", () => {
     expect(existsSync(join(gamesDir, "studio-showcase", "src", "index.tsx"))).toBe(true);
   });
 
-  test("README sample uses createGameContext and a real games: script id", () => {
+  test("README sample uses createGameContext and only real games: scripts", () => {
     const readme = readFileSync(join(root, "README.md"), "utf8");
+    const scripts = (JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as { scripts: Record<string, string> }).scripts;
     expect(readme).toMatch(/createGameContext/);
-    expect(readme).toMatch(/games:studio-showcase/);
+    const named = [...readme.matchAll(/bun run (games:[\w-]+)/g)].map((match) => match[1]!);
+    expect(named).toContain("games:clone");
+    for (const script of named) expect(Object.keys(scripts)).toContain(script);
     expect(readme).not.toMatch(/createGameRuntime/);
     expect(readme).not.toMatch(/games:voxel-mine/);
   });

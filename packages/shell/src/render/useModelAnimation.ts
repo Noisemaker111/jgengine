@@ -7,11 +7,12 @@ import { resolveAnimationConfig } from "@jgengine/core/game/clipRoles";
 import {
   ANIM_PARAMS_KEY,
   createAnimGraphRuntime,
+  type AnimClipOutput,
   type AnimGraph,
   type AnimGraphRuntime,
   type AnimParamValue,
 } from "@jgengine/core/anim/animGraph";
-import { LOCOMOTION_SPEED_PARAM, locomotionGraph } from "@jgengine/core/anim/locomotionGraph";
+import { animGraphFromConfig, LOCOMOTION_SPEED_PARAM } from "@jgengine/core/anim/locomotionGraph";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 function graphClipNames(graph: AnimGraph): Set<string> {
@@ -81,6 +82,71 @@ interface GraphPlayback {
 /** Per-layer action key: a masked or additive layer needs its own clip variant even for a clip another layer plays. */
 function actionKey(layer: string, clip: string): string {
   return `${layer}:${clip}`;
+}
+
+const rootTravel = new THREE.Vector3();
+const rootBasis = new THREE.Matrix3();
+
+/**
+ * For a frame where a `rootMotion` state is current: pins the root bone's horizontal translation to
+ * its bind pose, so the clip plays in place, and returns that step's root travel as a world-space
+ * horizontal delta (through the rig's parent transform, so the entity's facing and the model's
+ * scale apply). The root bone's vertical motion stays in the clip.
+ */
+export function takeRootMotion(
+  rootBone: THREE.Object3D,
+  bind: THREE.Vector3,
+  localDelta: readonly [number, number, number] | undefined,
+  out: THREE.Vector3,
+): THREE.Vector3 {
+  rootBone.position.x = bind.x;
+  rootBone.position.z = bind.z;
+  out.set(0, 0, 0);
+  if (localDelta === undefined || rootBone.parent === null) return out;
+  rootBone.parent.updateWorldMatrix(true, false);
+  out.set(localDelta[0], localDelta[1], localDelta[2]).applyMatrix3(rootBasis.setFromMatrix4(rootBone.parent.matrixWorld));
+  out.y = 0;
+  return out;
+}
+
+function applyGraphClips(actions: ReadonlyMap<string, THREE.AnimationAction>, clips: readonly AnimClipOutput[]): void {
+  for (const action of actions.values()) action.weight = 0;
+  for (const entry of clips) {
+    const action = actions.get(actionKey(entry.layer, entry.clip));
+    if (action === undefined) continue;
+    action.weight += entry.weight;
+    action.time = entry.time;
+  }
+}
+
+/** A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}. */
+export interface GraphPose {
+  /** Clip durations read from the rig, the `clips` argument `runtime.advance` expects. */
+  durations: Readonly<Record<string, { duration: number }>>;
+  /** Poses the rig with one advance's clip weights and times. */
+  apply(clips: readonly AnimClipOutput[]): void;
+  dispose(): void;
+}
+
+/**
+ * Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered
+ * clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as
+ * the editor's graph preview, poses the rig from the runtime's output.
+ */
+export function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose {
+  const mixer = new THREE.AnimationMixer(scene);
+  const playback = buildGraphPlayback(scene, mixer, graph, clips);
+  return {
+    durations: playback.durations,
+    apply(output) {
+      applyGraphClips(playback.actions, output);
+      mixer.update(0);
+    },
+    dispose() {
+      mixer.stopAllAction();
+      mixer.uncacheRoot(scene);
+    },
+  };
 }
 
 function buildGraphPlayback(scene: THREE.Object3D, mixer: THREE.AnimationMixer, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPlayback {
@@ -177,24 +243,8 @@ export function useModelAnimation(
   const graphRef = useRef<GraphPlayback | null>(null);
   const states = animation?.states;
   const oneShots = animation?.oneShots;
-  const graph = useMemo(() => {
-    if (animation?.graph !== undefined) return animation.graph;
-    if (states === undefined) return undefined;
-    const graphOneShots: Record<string, string> = {};
-    for (const [event, spec] of Object.entries(oneShots ?? {})) {
-      const clip = typeof spec === "string" ? spec : spec[0];
-      if (clip !== undefined) graphOneShots[event] = clip;
-    }
-    return locomotionGraph({
-      idle: states.idle,
-      walk: states.walk,
-      ...(states.run === undefined ? {} : { run: states.run }),
-      walkSpeed: states.walkSpeed,
-      runSpeed: states.runSpeed,
-      fadeSec: states.fadeSec,
-      ...(Object.keys(graphOneShots).length === 0 ? {} : { oneShots: graphOneShots }),
-    });
-  }, [animation?.graph, states, oneShots]);
+  const authoredGraph = animation?.graph;
+  const graph = useMemo(() => animGraphFromConfig({ graph: authoredGraph, states, oneShots }), [authoredGraph, states, oneShots]);
 
   useEffect(() => {
     if (animation === undefined || clips.length === 0) {
@@ -287,27 +337,19 @@ export function useModelAnimation(
       }
       params[LOCOMOTION_SPEED_PARAM] = playback.smoothedSpeed;
       const out = playback.runtime.advance(delta * (animation?.timeScale ?? 1), params, playback.durations);
-      for (const action of playback.actions.values()) action.weight = 0;
-      for (const entry of out.clips) {
-        const action = playback.actions.get(actionKey(entry.layer, entry.clip));
-        if (action === undefined) continue;
-        action.weight += entry.weight;
-        action.time = entry.time;
-      }
+      applyGraphClips(playback.actions, out.clips);
       mixerRef.current.update(0);
-      const currentPlayback = graphRef.current;
-      if (currentPlayback !== null && currentPlayback.rootBone !== null && currentPlayback.rootBindPosition !== null) {
-        currentPlayback.rootBone.position.copy(currentPlayback.rootBindPosition);
-      }
-      if (ctx !== null && instanceId !== undefined) {
-        const rootDelta = out.rootDelta;
-        const entity = rootDelta === undefined ? null : ctx.scene.entity.get(instanceId);
-        if (entity !== null && rootDelta !== undefined) {
+      if (out.rootMotion === true && playback.rootBone !== null && playback.rootBindPosition !== null) {
+        const travel = takeRootMotion(playback.rootBone, playback.rootBindPosition, out.rootDelta, rootTravel);
+        const entity = ctx === null || instanceId === undefined || (travel.x === 0 && travel.z === 0) ? null : ctx.scene.entity.get(instanceId);
+        if (entity !== null && ctx !== null && instanceId !== undefined) {
           ctx.scene.entity.setPose(instanceId, {
-            position: [entity.position[0] + rootDelta[0], entity.position[1] + rootDelta[1], entity.position[2] + rootDelta[2]],
+            position: [entity.position[0] + travel.x, entity.position[1], entity.position[2] + travel.z],
             dt: delta,
           });
         }
+      }
+      if (ctx !== null && instanceId !== undefined) {
         for (const event of out.events) ctx.game.events.emit("animation.event", { instanceId, name: event.name, clip: event.clip });
       }
       return;

@@ -1,3 +1,5 @@
+import { requestRawPointerLock } from "./pointerLock";
+
 export interface MouseLookOptions {
   /** Radians of look per pixel of mouse movement; default `0.0024`. */
   sensitivity?: number;
@@ -37,7 +39,7 @@ export function createMouseLookTracker(element: HTMLElement, options: MouseLookO
   const requestLock = () => {
     if (!pointerLock) return;
     if (window.matchMedia?.("(pointer: coarse)").matches) return;
-    if (document.pointerLockElement !== element) void element.requestPointerLock?.();
+    if (document.pointerLockElement !== element) requestRawPointerLock(element);
   };
   const onMove = (event: MouseEvent) => {
     if (pointerLock && document.pointerLockElement !== element) return;

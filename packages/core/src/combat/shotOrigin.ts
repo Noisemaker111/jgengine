@@ -81,6 +81,12 @@ export function aimSpreadDeg(aim: Aim): number {
   return "origin" in aim ? 0 : aim.spread ?? 0;
 }
 
+/**
+ * Resolves a shot's world origin and direction from the shooter's eye or muzzle and an {@link Aim}, ready for
+ * `ctx.scene.raycast` — the aim half of a hitscan weapon.
+ *
+ * @capability hitscan-shot aim a hitscan shot (shoot a gun): resolve origin and direction from the eye or muzzle for a raycast
+ */
 export function resolveShot(
   deps: ShotOriginDeps,
   from: string,

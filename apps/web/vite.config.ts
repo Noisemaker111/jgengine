@@ -10,6 +10,7 @@ import viteReact from "@vitejs/plugin-react";
 import { defineConfig, type Connect, type Plugin } from "vite";
 
 import { restoreFromCache, saveToCache } from "../../scripts/games-player-cache";
+import { parseGameReadme } from "./src/lib/gameReadme";
 import { shouldRouteMdRequestToSsr } from "./src/lib/mdSsrRoute";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
@@ -17,6 +18,8 @@ const devAppRoot = fileURLToPath(new URL("../dev", import.meta.url));
 const gamesDir = fileURLToPath(new URL("../../Games", import.meta.url));
 const githubSrc = fileURLToPath(new URL("../../packages/github/src", import.meta.url));
 const coreSrc = fileURLToPath(new URL("../../packages/core/src", import.meta.url));
+
+const gameThumbsDir = fileURLToPath(new URL("./public/covers", import.meta.url));
 
 const GAMES_INDEX_ID = "virtual:jgengine-games";
 
@@ -60,8 +63,10 @@ const gamesIndexPlugin = (): Plugin => ({
     if (id !== `\0${GAMES_INDEX_ID}`) return;
     if (!existsSync(gamesDir)) {
       console.warn("[jgengine-games-index] Games/ not found — site will build with no games. Run bun run games:clone to fetch Noisemaker111/JGengine-games.");
-      return `export const GAME_IDS = ${JSON.stringify([])};
-export const GAME_CREDITS = ${JSON.stringify({})};`;
+      return `export const GAME_IDS = [];
+export const GAME_CREDITS = {};
+export const GAME_META = {};
+export const GAME_THUMBS = [];`;
     }
     const ids = readdirSync(gamesDir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory() && existsSync(join(gamesDir, entry.name, "src/index.tsx")))
@@ -74,8 +79,13 @@ export const GAME_CREDITS = ${JSON.stringify({})};`;
       const credit = parseGameCredit(readFileSync(configPath, "utf8"));
       if (credit !== null) credits[gameId] = credit;
     }
+    const readmePath = join(gamesDir, "README.md");
+    const meta = existsSync(readmePath) ? parseGameReadme(readFileSync(readmePath, "utf8")) : {};
+    const thumbs = ids.filter((gameId) => existsSync(join(gameThumbsDir, `${gameId}.webp`)));
     return `export const GAME_IDS = ${JSON.stringify(ids)};
-export const GAME_CREDITS = ${JSON.stringify(credits)};`;
+export const GAME_CREDITS = ${JSON.stringify(credits)};
+export const GAME_META = ${JSON.stringify(meta)};
+export const GAME_THUMBS = ${JSON.stringify(thumbs)};`;
   },
 });
 

@@ -6,6 +6,8 @@ import type { PostProcessingConfig } from "../render/postProcessing";
 import type { EnvironmentSource } from "../render/environment";
 import type { SpriteAtlas } from "../assets/spriteAtlas";
 import type { LookPreset } from "../render/lookPreset";
+import type { GamepadFeelConfig } from "../input/gamepadModel";
+import type { LocalPlayersConfig } from "../runtime/localPlayers";
 import type { TouchControlsConfig } from "../input/touchScheme";
 import type { GameSettingsConfig } from "../settings/settingsModel";
 import type { GraphicsProfile } from "../settings/graphicsProfile";
@@ -22,6 +24,7 @@ import type { SkyEnvironmentConfig } from "../world/features";
 import type { VisibilityConfig } from "../visibility/config";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { GameCameraConfig } from "./cameraConfig";
+import type { ViewportsConfig } from "./viewports";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
 
@@ -31,6 +34,7 @@ export type {
   CameraKeyframe,
   CameraProjection,
   CameraRigKind,
+  CameraWeaponView,
   CameraShakeConfig,
   ChaseCameraConfig,
   ChaseView,
@@ -50,10 +54,16 @@ export type {
 } from "./cameraConfig";
 export { CAMERA_FRUSTUM_DEFAULTS } from "./cameraConfig";
 
+/**
+ * Mouse/touch pointer bindings for `defineGame({ pointer })`.
+ *
+ * @capability pointer-commands click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select)
+ */
 export interface PointerConfig {
   /**
-   * Left-click on open ground runs this command with `{ point, entity, object }`
-   * (click-to-move / ground-target). Suppresses the default left-click hotbar fire.
+   * Left-click runs this command with `{ point, entity, object }`; `entity` is the clicked entity id or
+   * null, so the same command covers click-to-move, ground-target and click-to-target
+   * (`ctx.scene.entity.setTarget`). Suppresses the default left-click hotbar fire.
    */
   moveCommand?: string;
   /** Enable left-drag marquee + single-click box-select of entities (RTS unit command). */
@@ -267,17 +277,34 @@ export interface ModelConfig {
    * rig's bind pose.
    */
   animation?: ModelAnimationConfig | "auto" | "none";
-  /** Optional runtime inverse-kinematics targets for a rigged model. Bone names are resolved on the loaded scene. */
-  ik?: {
-    feet: readonly { root: string; mid: string; tip: string }[];
-    lookAt?: { bone: string };
-  };
+  /**
+   * Runtime inverse kinematics for a rigged model, applied after the animation mixer each frame.
+   * Feet follow slopes and steps while keeping each clip's swing lift, soles never sink below the
+   * ground, the pelvis drops so the lower leg can reach, and the correction fades out while airborne.
+   * `"auto"` finds the legs by bone name (`UpLeg`, `UpperLeg`, `Thigh`); bone names resolve on the
+   * loaded scene.
+   */
+  ik?: "auto" | ModelIkConfig;
   /** Props/weapons parented to named bones on this model's rig; each follows its bone through animation. */
   attachments?: readonly ModelAttachment[];
   /** Static kit-of-parts pieces stacked at fixed local offsets — no bone/rig involved. Use this for a compound entity assembled from several modular meshes (a castle keep from base + mid + roof pieces); use `attachments` for props parented to an animated rig's bones. Tag parts with a `role` to procedurally animate a rig-less character composition. */
   parts?: readonly ModelPart[];
   /** Tuning for the procedural part-motion driver when any part carries a `role`; omit for defaults. */
   partMotion?: PartMotionParams;
+}
+
+/** Bone names and limits for {@link ModelConfig.ik}. */
+export interface ModelIkConfig {
+  /** Thigh → shin → foot chains; omit to find them by bone name. `[]` turns foot IK off. */
+  feet?: readonly { root: string; mid: string; tip: string }[];
+  /** Bone shifted down when a foot has to reach lower ground; defaults to the first thigh's parent. */
+  pelvis?: string;
+  /** Largest foot or pelvis correction, as a fraction of leg length. Default `0.4`. */
+  maxAdjust?: number;
+  /** Tilt planted feet to the ground normal, `0..1`. Default `1`. */
+  alignToGround?: number;
+  /** Turns this bone toward the camera. */
+  lookAt?: { bone: string };
 }
 
 export interface ObjectStyle {
@@ -611,6 +638,12 @@ export interface PlayableGame<
   pointer?: PointerConfig;
   /** Touch controls on coarse-pointer devices. Unset derives a scheme from `input` (virtual joystick for movement actions, on-screen buttons for the rest); a config refines it with gestures and curated buttons; `false` opts out. */
   touch?: TouchControlsConfig | false;
+  /** Gamepad stick deadzone, response curve and trigger deadzone the shell's pad poll applies before publishing analog values. Unset keeps the shell defaults (axial `0.12`/`0.95`, linear). */
+  gamepad?: GamepadFeelConfig;
+  /** Local seats on this screen for couch co-op. With `maxSlots > 1` each extra pad hot-joins its own seat on its first button press, the shell calls `loop.onNewPlayer(ctx, { userId, isNew: true })` for it, and its input lands on `localPlayers(ctx).local(slotId).input` instead of `ctx.input`. Unset keeps one seat: every device drives `ctx.player`. */
+  localPlayers?: LocalPlayersConfig;
+  /** Split-screen for local seats (`localPlayers`): one viewport per joined seat, each following its own entity. The primary seat keeps the main camera rig; post-processing is skipped while more than one viewport is drawn. */
+  viewports?: ViewportsConfig;
   /** Phone orientation contract. Legacy `"landscape"`/`"portrait"` stays advisory (a dismissible rotate hint). The object form `{ mobile: "landscape-required" }` is strict — the shell shows an engine-owned rotate screen and blocks gameplay until the device is turned. See `GameOrientation`. */
   orientation?: GameOrientation;
   /** Where the game is meant to be played. Default `["web", "mobile"]` — design-resolution HUD fit is on for every game: `HudCanvas` auto-scales from `hudFit.designSize` down to the live viewport, so the desktop layout shrinks to fit a phone instead of overflowing it. Declare `["web"]` to opt a desktop-only game out (compact displays fall back to the legacy fixed 0.85 zoom). */

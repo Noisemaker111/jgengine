@@ -63,7 +63,13 @@ export type ActionCodes<TCode extends string = string> =
   | readonly TCode[]
   | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number };
 
-/** Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. */
+/**
+ * Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a
+ * `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim }`;
+ * `repeatMs` re-fires it while held (automatic weapons).
+ *
+ * @capability fire-input bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
+ */
 export type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record<
   TAction,
   ActionCodes<TCode>
@@ -240,6 +246,14 @@ export interface ActionStateTracker<TAction extends string> {
   wasPressed(action: TAction): boolean;
   endFrame(): void;
   reset(): void;
+  /**
+   * Swap the binding map without dropping what is physically held: a key still down counts toward
+   * whatever action it maps to now, with no fresh press edge. Toggle state survives for actions that
+   * come back later.
+   */
+  rebind(map: ActionStateBindingMap<TAction, string>): void;
+  /** The action names in the current binding map. */
+  actions(): readonly TAction[];
 }
 
 function resolveActionBindingModes<TCode extends string>(
@@ -253,9 +267,9 @@ function resolveActionBindingModes<TCode extends string>(
 export function createActionStateTracker<TAction extends string, TCode extends string = string>(
   map: ActionStateBindingMap<TAction, TCode>,
 ): ActionStateTracker<TAction> {
-  const actions = Object.keys(map) as TAction[];
-  const modesByAction = new Map(actions.map((action) => [action, resolveActionBindingModes(map[action])]));
-  const heldCodesByAction = new Map<TAction, Set<TCode>>(actions.map((action) => [action, new Set()]));
+  let actions = Object.keys(map) as TAction[];
+  let modesByAction = new Map(actions.map((action) => [action, resolveActionBindingModes(map[action])]));
+  let heldCodesByAction = new Map<TAction, Set<TCode>>(actions.map((action) => [action, new Set()]));
   const toggledActions = new Set<TAction>();
   const pressedThisFrame = new Set<TAction>();
   const activeCodes = new Set<TCode>();
@@ -318,5 +332,17 @@ export function createActionStateTracker<TAction extends string, TCode extends s
       pressedThisFrame.clear();
       activeCodes.clear();
     },
+    rebind(next) {
+      actions = Object.keys(next) as TAction[];
+      modesByAction = new Map(
+        actions.map((action) => [action, resolveActionBindingModes(next[action] as ActionBindingConfig<TCode>)]),
+      );
+      heldCodesByAction = new Map(actions.map((action) => [action, new Set()]));
+      for (const code of activeCodes) {
+        const holdAction = findAction(code, (modes) => modes.hold);
+        if (holdAction !== null) heldCodesByAction.get(holdAction)!.add(code);
+      }
+    },
+    actions: () => actions,
   };
 }

@@ -44,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
 
+## authored-solids — collision for studio-authored world content such as city volumes
+
+- `AuthoredSolids` (function) · `import { AuthoredSolids } from "@jgengine/shell/scene"`
+
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
@@ -116,6 +120,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## credits-screen — drop-in credits view over a CreditsDocument — headed sections, optional links, HudTheme-skinned
 
 - `CreditsScreen` (function) · `import { CreditsScreen } from "@jgengine/react/creditsScreen"`
+
+## current-target — read the player's selected target (click or tab target) to drive a target frame
+
+- `useTarget` (function) · `import { useTarget } from "@jgengine/react"`
 
 ## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
 
@@ -518,6 +526,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## speed-format — render a m/s speed as km/h, mph, knots, or m/s for speedometers and telemetry HUDs
 
 - `formatSpeed` (function) · `import { formatSpeed } from "@jgengine/core/ui"`
+
+## split-screen-hud — Per-seat HUD roots positioned over each split-screen viewport.
+
+- `ViewportHuds` (function) · `import { ViewportHuds } from "@jgengine/shell/camera/Viewports"`
 
 ## sprite-2d — animate a sprite atlas clip from headless or rendered game code
 

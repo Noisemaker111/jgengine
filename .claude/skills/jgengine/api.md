@@ -10,7 +10,7 @@
 
 ## @jgengine/core/authoring
 
-- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
+- `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it. In a `defineGame({ input })`, pressing an action runs the same-named command with `{ yaw, pitch, aim }`; `repeatMs` re-fires it while held (automatic weapons).
 - `AuthoredProvenance` (interface): interface AuthoredProvenance — A first-class entry in the scene document — the editor fully owns and persists it.
 - `Drop` (interface): interface Drop — A resolved loot outcome — one item or currency grant with its rolled count.
 - `GameDefinition` (interface): interface GameDefinition<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> — Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems.
@@ -304,12 +304,12 @@
 - `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> { definition: GameDefinition<TAssetRef, TMultiplayer>; content: GameContextContent; player: {userId: string; isNew: boolean}; territory?: Territory; now?: () => number; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; seed?… — ⚠ undocumented
 - `GameContextRace` (interface): interface GameContextRace { state(id: string, config?: RaceStateConfig): RaceState } — ⚠ undocumented
 - `GameContextTurn` (interface): interface GameContextTurn { loop(id: string, config?: TurnLoopConfig): TurnLoop } — ⚠ undocumented
-- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number } — ⚠ undocumented
+- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number; solids: WorldSolids } — ⚠ undocumented
 - `HitReactionInput` (interface): interface HitReactionInput — ⚠ undocumented · used by `resolveHitReaction` (@jgengine/core/combat): Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
 - `MoveTowardCommitOptions` (interface): interface MoveTowardCommitOptions extends MoveTowardOptions — Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn.
 - `SceneEntityContext` (interface): interface SceneEntityContext { spawn(name: string, options?: SpawnOptions): string; despawn(instanceId: string): boolean; update: EntityStore["update"]; setPose(instanceId: string, pose: EntityPose): boolean; setPoseConstraint: EntityStore["setPoseConstraint"]; get(ins… — ⚠ undocumented
 - `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore { catalog(instanceId: string): GameContextObjectEntry | null; raycast(input: ObjectRaycastInput): ObjectRaycastHit | null; raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[]; setColliders(instanceId: string, colliders: Entit… — ⚠ undocumented
-- `SceneWorldItemContext` (interface): interface SceneWorldItemContext { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
+- `SceneWorldItemContext` (interface): interface SceneWorldItemContext — `ctx.scene.worldItem`: items lying in the world — spawn, list, find the nearest, and pick up into a player's bag.
 - `TelegraphInput` (interface): interface TelegraphInput { from: string; shape: TelegraphShape; at: [number, number, number]; dir?: number; windupMs: number; kind?: string; effect?: {effect: string; via?: EffectVia; radius?: number; falloff?: "linear" | "none"; los?: boolean;} } — ⚠ undocumented
 - `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst. The easy path is a named `preset` — `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`, `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color` yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
@@ -335,12 +335,12 @@
 - `GameContextOptions` (interface): interface GameContextOptions<TAssetRef extends ModelAssetRef = ModelAssetRef, TMultiplayer = unknown> { definition: GameDefinition<TAssetRef, TMultiplayer>; content: GameContextContent; player: {userId: string; isNew: boolean}; territory?: Territory; now?: () => number; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; seed?… — ⚠ undocumented
 - `GameContextRace` (interface): interface GameContextRace { state(id: string, config?: RaceStateConfig): RaceState } — ⚠ undocumented
 - `GameContextTurn` (interface): interface GameContextTurn { loop(id: string, config?: TurnLoopConfig): TurnLoop } — ⚠ undocumented
-- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number } — ⚠ undocumented
+- `GameContextWorld` (interface): interface GameContextWorld { ground: TerrainField; groundHeightAt(x: number, z: number): number; solids: WorldSolids } — ⚠ undocumented
 - `HitReactionInput` (interface): interface HitReactionInput { from: string; to: string; config: HitReactionConfig | ImpactPresetName; power?: number } — ⚠ undocumented · used by `resolveHitReaction` (@jgengine/core/combat): Resolves hit feel (hitstop, knockback impulse, camera shake) from either a named `impactPresets` event (`resolveHitReaction("explosion", inp…
 - `MoveTowardCommitOptions` (interface): interface MoveTowardCommitOptions extends MoveTowardOptions — Options for {@link SceneEntityContext.moveTowardCommit}: {@link MoveTowardOptions} plus an optional facing turn.
 - `SceneEntityContext` (interface): interface SceneEntityContext { spawn(name: string, options?: SpawnOptions): string; despawn(instanceId: string): boolean; update: EntityStore["update"]; setPose(instanceId: string, pose: EntityPose): boolean; setPoseConstraint: EntityStore["setPoseConstraint"]; get(ins… — ⚠ undocumented
 - `SceneObjectContext` (interface): interface SceneObjectContext extends ObjectStore { catalog(instanceId: string): GameContextObjectEntry | null; raycast(input: ObjectRaycastInput): ObjectRaycastHit | null; raycastAll(input: ObjectRaycastInput): readonly ObjectRaycastHit[]; setColliders(instanceId: string, colliders: Entit… — ⚠ undocumented
-- `SceneWorldItemContext` (interface): interface SceneWorldItemContext { spawn(input: WorldItemSpawnInput): WorldItemRecord; get(instanceId: string): WorldItemRecord | null; list(): readonly WorldItemRecord[]; nearestInRadius(from: EntityPosition, radius: number, filter?: (record: WorldItemRecord) => boolean):… — ⚠ undocumented
+- `SceneWorldItemContext` (interface): interface SceneWorldItemContext — `ctx.scene.worldItem`: items lying in the world — spawn, list, find the nearest, and pick up into a player's bag.
 - `TelegraphInput` (interface): interface TelegraphInput { from: string; shape: TelegraphShape; at: [number, number, number]; dir?: number; windupMs: number; kind?: string; effect?: {effect: string; via?: EffectVia; radius?: number; falloff?: "linear" | "none"; los?: boolean;} } — ⚠ undocumented
 - `VfxInput` (interface): interface VfxInput — Request a transient spell/ability VFX burst. The easy path is a named `preset` — `vfx({ preset: "arrow", from: caster, to: enemy })` renders a visible bolt with no color or archetype tuning; `"lightning"`, `"web"`, `"slash"`, `"shield"`, `"heal"`, `"explosion"` and the rest of {@link vfxPresets} likewise just work. `from`/`to` accept an instance id (the shell follows its live pose) or a fixed world point. Anything you also pass — `kind`, `color` (`0xRRGGBB`), `radius`, `durationMs` — overrides the preset; supply `kind` + `color` yourself for a fully custom burst with no preset. `durationMs` defaults per `kind`.
 - `WorldItemPickupResult` (type): type WorldItemPickupResult = | { status: "ok"; record: WorldItemRecord } | { status: "rejected"; reason: string } — ⚠ undocumented
@@ -438,8 +438,19 @@
 ## @jgengine/core/runtime/inputSnapshot
 
 - `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
-- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishAnalog(values: Readonly<Record<string, num… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
+- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; haptics(userId: string): HapticChannels; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishA… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
 - `createInputSnapshot` (function): function createInputSnapshot(): InputSnapshot — ⚠ undocumented
+
+## @jgengine/core/runtime/localPlayers
+
+- `LocalPlayerAssignment` (interface): interface LocalPlayerAssignment — Result of {@link LocalPlayers.assign}.
+- `LocalPlayerSlot` (interface): interface LocalPlayerSlot — One local seat on a shared screen: a stable slot id, the user id the game spawns for it, and the device driving it.
+- `LocalPlayers` (interface): interface LocalPlayers — Seats for couch co-op: devices hot-join into slots, each slot has its own input.
+- `LocalPlayersConfig` (interface): interface LocalPlayersConfig — Retunable seat policy.
+- `LocalPlayersOptions` (interface): interface LocalPlayersOptions extends LocalPlayersConfig — Options for {@link createLocalPlayers}.
+- `LocalPlayersSnapshot` (interface): interface LocalPlayersSnapshot — Serializable seat table.
+- `createLocalPlayers` (function): function createLocalPlayers(options: LocalPlayersOptions): LocalPlayers — Seat table for local multiplayer on one screen.
+- `localPlayers` (function): function localPlayers(ctx: GameContext): LocalPlayers — The seat table of a game context, created on first use with one seat for `ctx.player` and `ctx.input`. The shell retunes it from `defineGame({ localPlayers })` and hot-joins pads into it.
 
 ## @jgengine/core/runtime/motionIntents
 

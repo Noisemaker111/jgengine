@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ENTRY_PROMPT } from "../lib/site";
 import { CopyButton } from "./Copy";
@@ -16,59 +16,63 @@ type TermLine = {
 };
 
 const LINES: TermLine[] = [
-  {
-    mode: "type",
-    prefix: "you",
-    prefixClass: "text-cyan-400",
-    text: EXAMPLE,
-    textClass: "text-slate-100",
-    delay: 500,
-  },
+  { mode: "type", prefix: "you", prefixClass: "text-accent-text", text: EXAMPLE, textClass: "text-fg", delay: 500 },
   {
     mode: "print",
     prefix: "◆",
-    prefixClass: "text-violet-400",
-    text: "agent reads jgengine intake · routes domains · scaffolds",
-    textClass: "text-slate-500",
+    prefixClass: "text-faint",
+    text: 'npx jgengine create "Goo Party"  → project + skills',
+    textClass: "text-muted",
     delay: 700,
   },
   {
     mode: "print",
     prefix: "◆",
-    prefixClass: "text-violet-400",
-    text: "jgengine → 1. POV · 2. world · 3. loop · 4. systems",
-    textClass: "text-slate-500",
-    delay: 950,
+    prefixClass: "text-faint",
+    text: "jgengine intake → world · gameplay · ui · multiplayer",
+    textClass: "text-muted",
+    delay: 900,
   },
   {
     mode: "print",
     prefix: "◆",
-    prefixClass: "text-violet-400",
-    text: "jgengine skill + selected domains → @jgengine/core",
-    textClass: "text-slate-500",
-    delay: 750,
+    prefixClass: "text-faint",
+    text: "composes primitives from each capabilities.md",
+    textClass: "text-muted",
+    delay: 800,
   },
   {
     mode: "print",
     prefix: "✓",
-    prefixClass: "text-emerald-400",
-    text: "full game — not a slice",
-    textClass: "text-slate-500",
+    prefixClass: "text-live",
+    text: "bun run check-types · bun test · bun run shoot",
+    textClass: "text-muted",
     delay: 850,
   },
-  {
-    mode: "print",
-    prefix: "▶",
-    prefixClass: "text-emerald-300",
-    text: "playable",
-    textClass: "font-semibold text-emerald-300",
-    delay: 650,
-  },
+  { mode: "print", prefix: "▶", prefixClass: "text-accent-text", text: "playable", textClass: "font-semibold text-fg", delay: 650 },
 ];
 
 export function HeroTerminal() {
   const [pos, setPos] = useState({ line: 0, chars: 0 });
+  const [started, setStarted] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const done = pos.line >= LINES.length;
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (el === null) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setStarted(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.4 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -77,7 +81,7 @@ export function HeroTerminal() {
   }, []);
 
   useEffect(() => {
-    if (done) return;
+    if (done || !started) return;
     const current = LINES[pos.line];
     if (current === undefined) return;
     const stillTyping = current.mode === "type" && pos.chars < current.text.length;
@@ -94,36 +98,33 @@ export function HeroTerminal() {
       );
     }, wait);
     return () => window.clearTimeout(timer);
-  }, [pos, done]);
+  }, [pos, done, started]);
 
   const active = done ? undefined : LINES[pos.line];
 
   return (
-    <div className="panel shine relative overflow-hidden rounded-2xl bg-ink-deep/85 shadow-[0_24px_80px_-24px_rgba(2,3,8,0.95),0_0_60px_-24px_rgba(16,185,129,0.35)] backdrop-blur-sm">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-400/40 to-transparent" />
-      <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
-        <span className="h-2.5 w-2.5 rounded-full bg-rose-500/60" />
-        <span className="h-2.5 w-2.5 rounded-full bg-amber-500/60" />
-        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500/60" />
-        <span className="ml-2 font-mono text-xs text-slate-600">your agent — chat</span>
-        <CopyButton value={ENTRY_PROMPT} label="Copy prompt" className="ml-auto" />
+    <div ref={rootRef} className="code-surface relative overflow-hidden rounded-2xl border border-line">
+      <div className="flex items-center gap-2 border-b border-line px-4 py-2.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+        <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+        <span className="h-2.5 w-2.5 rounded-full bg-fg/15" />
+        <span className="ml-2 font-mono text-xs text-faint">your agent</span>
+        <CopyButton value={ENTRY_PROMPT} label="Copy prompt" variant="ghost" className="ml-auto" />
       </div>
-      <div className="min-h-[15rem] px-5 py-5 text-left font-mono text-[13px] leading-[1.9] sm:text-sm">
+      <div className="min-h-[16rem] px-4 py-5 text-left font-mono text-[12.5px] leading-[1.9] sm:px-5 sm:text-[13px]" aria-live="off">
         {LINES.slice(0, pos.line).map((line) => (
           <p key={line.text} className="flex gap-2.5">
-            <span className={`select-none ${line.prefixClass}`}>{line.prefix}</span>
-            <span className={line.textClass}>{line.text}</span>
+            <span className={`w-6 shrink-0 select-none ${line.prefixClass}`}>{line.prefix}</span>
+            <span className={`min-w-0 break-words ${line.textClass}`}>{line.text}</span>
           </p>
         ))}
         {active !== undefined && active.mode === "type" && (
           <p className="flex gap-2.5">
-            <span className={`select-none ${active.prefixClass}`}>{active.prefix}</span>
-            <span className={`terminal-caret ${active.textClass}`}>
-              {active.text.slice(0, pos.chars)}
-            </span>
+            <span className={`w-6 shrink-0 select-none ${active.prefixClass}`}>{active.prefix}</span>
+            <span className={`terminal-caret min-w-0 break-words ${active.textClass}`}>{active.text.slice(0, pos.chars)}</span>
           </p>
         )}
-        {done && <p className="terminal-caret select-none text-cyan-400">you</p>}
+        {done && <p className="terminal-caret w-6 select-none text-accent-text">you</p>}
       </div>
     </div>
   );

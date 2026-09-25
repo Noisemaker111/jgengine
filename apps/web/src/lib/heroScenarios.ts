@@ -36,7 +36,7 @@ export interface HeroScenario {
 
 export const HERO_SCENARIOS: HeroScenario[] = [
   {
-    fill: "is a neon rooftop heist sandbox",
+    fill: "is an open-world crime sandbox",
     streets: { gridness: 0.88, connectivity: 0.7, branching: 0.25, winding: 0.12, segmentLength: 82, boulevards: 0.32 },
     lots: { footprint: { w: 13, d: 11 }, setback: 3 },
     halfExtent: 230,
@@ -48,13 +48,13 @@ export const HERO_SCENARIOS: HeroScenario[] = [
       avenue: 0x2a3a50,
       street: 0x223043,
       lane: 0x1a2534,
-      glow: 0x34d399,
+      glow: 0xff6a2b,
       windowWarm: 0xffd9a0,
       windowCool: 0x67e8f9,
       trafficA: 0xfff3d6,
       trafficB: 0xf87171,
-      lightA: 0x34d399,
-      lightB: 0x22d3ee,
+      lightA: 0xff6a2b,
+      lightB: 0xffb347,
       fogDensity: 0.0016,
     },
   },

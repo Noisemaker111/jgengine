@@ -1,7 +1,19 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+
+/**
+ * Keeps ./Games on the Noisemaker111/JGengine-games commit pinned in scripts/games-ref.txt, so gates and tests
+ * that read Games/ only change when a PR here bumps the pin, never on a games-repo push.
+ *
+ *   bun run games:clone          clone at the pin (no-op when Games/ exists)
+ *   bun run games:update         move an existing clone to the pin
+ *   bun run games:bump           write the games repo's current main SHA into the pin, then update
+ *   bun scripts/ensure-games.ts --check   report whether Games/ matches the pin
+ *
+ * GAMES_REF=<sha|branch> overrides the pin for a one-off local try.
+ */
 
 const repoRoot = fileURLToPath(new URL("..", import.meta.url));
 const gamesDir = join(repoRoot, "Games");
@@ -14,68 +26,69 @@ function gamesRepoUrl(): string {
   return `https://x-access-token:${encodeURIComponent(token)}@github.com/Noisemaker111/JGengine-games.git`;
 }
 
-function run(cmd: string, args: string[]): boolean {
-  const result = spawnSync(cmd, args, { stdio: "inherit", cwd: repoRoot });
-  return result.status === 0;
+function run(args: string[], cwd = repoRoot): boolean {
+  return spawnSync("git", args, { stdio: "inherit", cwd }).status === 0;
 }
 
-function gamesRef(): string | null {
-  if (!existsSync(refFile)) return null;
-  try {
-    const ref = readFileSync(refFile, "utf8").trim();
-    return ref.length > 0 ? ref : null;
-  } catch {
-    return null;
-  }
+function output(args: string[], cwd = repoRoot): string | null {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+  return result.status === 0 ? result.stdout.trim() : null;
 }
 
-const update = process.argv.includes("--update");
-const checkOnly = process.argv.includes("--check");
-
-if (existsSync(gamesDir)) {
-  if (update) {
-    console.log("ensure-games: updating Games/ from JGengine-games…");
-    const ok = run("git", ["-C", gamesDir, "pull", "--ff-only"]);
-    if (!ok) {
-      console.error("ensure-games: pull failed — trying fetch + reset");
-      run("git", ["-C", gamesDir, "fetch", "origin"]);
-      run("git", ["-C", gamesDir, "reset", "--hard", "origin/main"]);
-    }
-    // In CI, we may want to ensure the ref file is respected; if games-ref.txt exists, checkout that ref
-    const ref = gamesRef();
-    if (ref !== null) {
-      console.log(`ensure-games: checking out pinned ref ${ref}`);
-      run("git", ["-C", gamesDir, "checkout", ref]);
-    }
-  } else if (checkOnly) {
-    console.log("ensure-games: Games/ exists");
-  } else {
-    // already exists, nothing to do
-  }
-  process.exit(0);
+function pinnedRef(): string {
+  const override = process.env.GAMES_REF?.trim();
+  if (override) return override;
+  const ref = readFileSync(refFile, "utf8").trim();
+  if (!/^[0-9a-f]{40}$/.test(ref)) throw new Error(`ensure-games: ${refFile} must hold a full commit SHA (got "${ref}")`);
+  return ref;
 }
 
-if (checkOnly) {
-  console.log("ensure-games: Games/ not found — run bun run games:clone to fetch Noisemaker111/JGengine-games");
-  process.exit(0);
+/** Shallow-fetches one ref (GitHub serves any reachable SHA) and detaches Games/ onto it. */
+function checkoutPinned(ref: string): boolean {
+  if (!run(["-C", gamesDir, "fetch", "--depth", "1", gamesRepoUrl(), ref])) return false;
+  return run(["-C", gamesDir, "checkout", "--detach", "FETCH_HEAD"]);
 }
 
-console.log(`ensure-games: cloning ${GAMES_REPO} into Games/…`);
-const ref = gamesRef();
-const cloneArgs = ["clone", "--depth", "1", gamesRepoUrl(), gamesDir];
-if (ref !== null) {
-  console.log(`ensure-games: will checkout ref ${ref} after clone`);
-}
-const ok = run("git", cloneArgs);
-if (!ok) {
-  console.error("ensure-games: clone failed");
-  process.exit(1);
-}
-if (ref !== null) {
-  const ok2 = run("git", ["-C", gamesDir, "checkout", ref]);
-  if (!ok2) {
-    console.error(`ensure-games: checkout ${ref} failed`);
+const args = process.argv.slice(2);
+
+if (args.includes("--bump")) {
+  const line = output(["ls-remote", gamesRepoUrl(), "refs/heads/main"]);
+  const sha = line?.split(/\s+/)[0];
+  if (!sha || !/^[0-9a-f]{40}$/.test(sha)) {
+    console.error("ensure-games: could not read JGengine-games main");
     process.exit(1);
   }
+  writeFileSync(refFile, `${sha}\n`);
+  console.log(`ensure-games: pinned ${sha} in scripts/games-ref.txt — commit it`);
+  args.push("--update");
+}
+
+const ref = pinnedRef();
+
+if (args.includes("--check")) {
+  if (!existsSync(gamesDir)) {
+    console.log("ensure-games: Games/ not found — run bun run games:clone");
+  } else {
+    const head = output(["-C", gamesDir, "rev-parse", "HEAD"]);
+    if (head === ref) console.log(`ensure-games: Games/ at pinned ${ref}`);
+    else console.log(`ensure-games: Games/ at ${head ?? "unknown"}, pin is ${ref} — run bun run games:update`);
+  }
+  process.exit(0);
+}
+
+if (existsSync(gamesDir)) {
+  if (!args.includes("--update")) process.exit(0);
+  console.log(`ensure-games: moving Games/ to ${ref}…`);
+  if (!checkoutPinned(ref)) {
+    console.error(`ensure-games: could not check out ${ref} in Games/ (local changes?)`);
+    process.exit(1);
+  }
+  process.exit(0);
+}
+
+console.log(`ensure-games: cloning ${GAMES_REPO}@${ref} into Games/…`);
+if (!run(["init", "--quiet", gamesDir]) || !run(["-C", gamesDir, "remote", "add", "origin", GAMES_REPO]) || !checkoutPinned(ref)) {
+  console.error("ensure-games: clone failed");
+  process.exit(1);
 }
 console.log("ensure-games: done — Games/ ready");
