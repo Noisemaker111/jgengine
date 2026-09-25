@@ -114,7 +114,7 @@ export const DEFAULT_ORBIT_CAMERA: ResolvedOrbitCameraConfig = {
   maxDistance: 28,
   targetHeight: 1.2,
   initialDistance: 7,
-  initialHeight: 3.2,
+  initialHeight: 2.4,
   followLock: true,
   followEnabled: true,
   rotateSpeed: 0.22,

@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import type { DayNightCycle } from "@jgengine/core/time/dayNightCycle";
 
-import { SkyDome } from "./Daylight";
+import { setSkyDomeColors, SkyDome, SunLight } from "./Daylight";
 import { daylightStateAt } from "./daylightCycle";
 
 const HEMI_GROUND = "#4c6b34";
@@ -56,6 +56,7 @@ export function DayNightSky({
 
   const initial = useMemo(() => cycle.sample(), [cycle]);
   const initialSun = useMemo(() => daylightStateAt(initial.dayFraction).sunPosition, [initial.dayFraction]);
+  const sunDirectionRef = useRef<readonly [number, number, number]>(initialSun);
 
   useFrame(() => {
     const sample = cycle.sample();
@@ -63,8 +64,7 @@ export function DayNightSky({
 
     const material = skyMaterialRef.current;
     if (material !== null) {
-      (material.uniforms.topColor!.value as THREE.Color).set(sample.lightColor);
-      (material.uniforms.bottomColor!.value as THREE.Color).set(sample.color);
+      setSkyDomeColors(material, sample.lightColor, sample.color);
       (material.uniforms.uSunColor!.value as THREE.Color).set(sample.lightColor);
       (material.uniforms.uSunDirection!.value as THREE.Vector3)
         .set(geometry.sunPosition[0], geometry.sunPosition[1], geometry.sunPosition[2])
@@ -72,9 +72,9 @@ export function DayNightSky({
       material.uniforms.uSunIntensity!.value = sample.intensity;
     }
 
+    sunDirectionRef.current = geometry.sunPosition;
     const sun = sunRef.current;
     if (sun !== null) {
-      sun.position.set(geometry.sunPosition[0], geometry.sunPosition[1], geometry.sunPosition[2]);
       sun.intensity = sample.intensity * keyLightIntensity;
       sun.color.set(sample.lightColor);
     }
@@ -101,22 +101,12 @@ export function DayNightSky({
       {lights ? (
         <>
           <hemisphereLight ref={hemiRef} args={[initial.lightColor, HEMI_GROUND, initial.intensity * ambientIntensity]} />
-          <directionalLight
-            ref={sunRef}
-            position={initialSun}
+          <SunLight
+            direction={initialSun}
+            directionRef={sunDirectionRef}
+            lightRef={sunRef}
             intensity={initial.intensity * keyLightIntensity}
             color={initial.lightColor}
-            castShadow
-            shadow-mapSize-width={2048}
-            shadow-mapSize-height={2048}
-            shadow-camera-left={-90}
-            shadow-camera-right={90}
-            shadow-camera-top={90}
-            shadow-camera-bottom={-90}
-            shadow-camera-near={10}
-            shadow-camera-far={520}
-            shadow-bias={-0.0004}
-            shadow-normalBias={0.02}
           />
         </>
       ) : null}
