@@ -232,3 +232,26 @@ describe("surface painting", () => {
     expect(reverted.surfaces.every((s) => s === null)).toBe(true);
   });
 });
+
+describe("terraform brush snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const terrain = createEditableTerrain({ bounds, cellSize: 1 });
+    const brush = createTerraformBrush(terrain, { radius: 2, strength: 0.4, surface: "dirt" });
+    brush.setRadius(4);
+    brush.raise([1, 1]);
+    const saved = brush.snapshot();
+    const savedTerrain = terrain.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      brush.setStrength(0.9);
+      const out = [brush.raise([2, 0]), brush.flatten([0, 2], 0.5), brush.paint([1, 1]), brush.config()];
+      return [...out, terrain.sampleHeight(2, 0), terrain.sampleHeight(0, 2)];
+    };
+    const a = play();
+    brush.setRadius(1);
+    expect(saved).toEqual(frozen);
+    brush.restore(saved);
+    terrain.restore(savedTerrain);
+    expect(play()).toEqual(a);
+  });
+});

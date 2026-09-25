@@ -16,6 +16,7 @@ For a *connected* walkthrough that wires several primitives into a running loop,
 - [recipes/commanding-entities.md](recipes/commanding-entities.md) — select → order → tick → resolve: direct command over a group of entities (the command loop behind squad control, base-defense, herding, autobattle, or a mutating game's real-time phase).
 - [recipes/building-kit.md](recipes/building-kit.md) — bind the facade generator's part slots to real models: one massing, swappable art per style, blocks where the kit is silent.
 - [recipes/vehicle-feel.md](recipes/vehicle-feel.md) — feel target → handling metrics → physical knobs for a ground vehicle, plus the camera, sound and rumble hooks that hang off its telemetry.
+- [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, with the symptom → knob table for how it flies.
 
 ## Canonical workflows
 
@@ -34,7 +35,7 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 
 Choose input intent, controller/motor, collision/navigation, and camera as separate seams. Commands express game intent; world systems resolve motion. Interaction targets come from bounded spatial/sensor queries, not full-world scans.
 
-Walk feel is data, not code. `movement.feel` sets `groundAcceleration`, `airAcceleration` and `groundFriction` (response rates, 1/s) plus `runMultiplier`, `crouchMultiplier`, and `jumpBufferMs`/`coyoteMs` (jump forgiveness, ms), and `physics` sets `gravity` and `jumpVelocity`. A floaty platformer and a weighty shooter differ only in these numbers.
+Walk feel is data, not code. `movement.feel` sets `groundAcceleration`, `airAcceleration` and `groundFriction` (response rates, 1/s) plus `runMultiplier`, `crouchMultiplier`, jump forgiveness (`jumpBufferMs`, `coyoteMs`) and jump shape (`jumpCutFactor`, `apexGravityScale`, `fallGravityScale`, `landingRecoveryMs`), and `physics` sets `gravity` and `jumpVelocity`. A floaty platformer and a weighty shooter differ only in these numbers; pin them with `measureMovement` (`movement/movementProbe`) in a test.
 
 ### Stateful placed objects
 

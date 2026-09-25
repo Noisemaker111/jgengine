@@ -12,12 +12,20 @@ export interface AssistNetworkConfig {
   distanceBetween?: (a: string, b: string) => number;
 }
 
+/** Plain JSON membership of an {@link AssistNetwork}, in registration order; threat lives in each member's own table. */
+export interface AssistNetworkState {
+  members: { id: string; groupId: string }[];
+}
+
 export interface AssistNetwork {
   register(member: AssistMember): void;
   remove(memberId: string): void;
   memberIds(groupId?: string): string[];
   assistersOf(memberId: string): string[];
   addThreat(memberId: string, sourceId: string, amount: number): string[];
+  snapshot(): AssistNetworkState;
+  /** Replaces the membership; `tableOf` supplies each member's (separately restored) threat table. */
+  restore(next: AssistNetworkState, tableOf: (memberId: string) => ThreatTable): void;
 }
 
 /** @internal */
@@ -68,6 +76,17 @@ export function createAssistNetwork(config: AssistNetworkConfig = {}): AssistNet
       });
       for (const id of assisters) members.get(id)!.table.add(sourceId, amount * shareFraction);
       return assisters;
+    },
+    snapshot() {
+      return { members: order.map((id) => ({ id, groupId: members.get(id)!.groupId })) };
+    },
+    restore(next, tableOf) {
+      members.clear();
+      order.length = 0;
+      for (const { id, groupId } of next.members) {
+        order.push(id);
+        members.set(id, { id, groupId, table: tableOf(id) });
+      }
     },
   };
 }

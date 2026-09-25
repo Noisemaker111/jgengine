@@ -88,3 +88,25 @@ describe("effectiveRelation", () => {
     ).toBe("hostile");
   });
 });
+
+describe("reputation ledger snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const ledger = createReputationLedger({ initial: { guild: 100 }, min: -5000, max: 5000 });
+    ledger.gain("p1", "guild", 2500);
+    ledger.set("p2", "bandits", -4000);
+    const saved = ledger.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => [
+      ledger.gain("p1", "guild", 3000),
+      ledger.gain("p2", "bandits", -2000),
+      ledger.tier("p1", "guild").id,
+      ledger.standings("p2"),
+      ledger.hasStanding("p3", "bandits"),
+    ];
+    const a = play();
+    ledger.reset("p1");
+    expect(saved).toEqual(frozen);
+    ledger.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

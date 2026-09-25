@@ -285,6 +285,12 @@ export interface AudioLoopSetEvent {
   rate?: number;
   gain?: number;
   at?: readonly [number, number, number];
+  /** Emitter velocity (world units/s) for doppler on sounds that declare `doppler`. */
+  velocity?: readonly [number, number, number];
+  /** Lowpass cutoff in Hz. */
+  lowpass?: number;
+  /** Highpass cutoff in Hz. */
+  highpass?: number;
 }
 
 /** Stop and dispose the retained loop `id`; an unknown `id` is ignored (#1051). */

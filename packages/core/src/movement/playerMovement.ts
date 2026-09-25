@@ -104,6 +104,12 @@ export function resolvePlayerMovementTuning(opts: {
     ...(feel?.crouchMultiplier === undefined ? {} : { crouchSpeedMultiplier: feel.crouchMultiplier }),
     ...(feel?.jumpBufferMs === undefined ? {} : { jumpBufferMs: feel.jumpBufferMs }),
     ...(feel?.coyoteMs === undefined ? {} : { coyoteMs: feel.coyoteMs }),
+    ...(feel?.jumpCutFactor === undefined ? {} : { jumpCutFactor: feel.jumpCutFactor }),
+    ...(feel?.apexGravityScale === undefined ? {} : { apexGravityScale: feel.apexGravityScale }),
+    ...(feel?.apexSpeed === undefined ? {} : { apexSpeed: feel.apexSpeed }),
+    ...(feel?.fallGravityScale === undefined ? {} : { fallGravityScale: feel.fallGravityScale }),
+    ...(feel?.landingRecoveryMs === undefined ? {} : { landingRecoveryMs: feel.landingRecoveryMs }),
+    ...(feel?.landingSpeedScale === undefined ? {} : { landingSpeedScale: feel.landingSpeedScale }),
   };
   const overrides =
     Object.keys(feelOverrides).length === 0 ? physics : { ...(physics ?? {}), ...feelOverrides };

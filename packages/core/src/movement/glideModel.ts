@@ -44,6 +44,9 @@ export interface GlideModel {
   step(dt: number, input?: GlideInput, externalVelocity?: GlideVec3): GlideStep;
   pose(): GlideStep;
   launch(position: GlideVec3, heading: number, initialSpeed?: number): void;
+  /** Plain JSON copy of the glider's position, velocity and heading. */
+  snapshot(): GlideStep;
+  restore(next: GlideStep): void;
 }
 
 /**
@@ -83,6 +86,12 @@ export function createGlideModel(config: GlideModelConfig = {}): GlideModel {
       vz = Math.cos(heading) * initialSpeed;
     },
     pose: snapshot,
+    snapshot,
+    restore(next) {
+      [x, y, z] = next.position;
+      [vx, vy, vz] = next.velocity;
+      heading = next.heading;
+    },
     step(dt, input = {}, externalVelocity) {
       if (dt <= 0) return snapshot();
       const control = Math.max(0, Math.min(1, input.control ?? baseControl));

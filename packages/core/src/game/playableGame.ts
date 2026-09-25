@@ -363,7 +363,7 @@ export interface BackdropConfig {
   fog?: BackdropFogConfig;
 }
 
-/** Free-flight families moved into the walk controller so one seam covers ground + air — creative/spectator/noclip/hover are weightless, aircraft/rotorcraft stay on `flightDynamics`. */
+/** Free-flight families moved into the walk controller so one seam covers ground + air — creative/spectator/noclip/hover are weightless, aircraft, rotorcraft and rockets use `physics/aircraftDynamics`. */
 export interface FlightConfig {
   /** Which free-flight family to use when flight is active. Default "creative". */
   mode?: "creative" | "spectator" | "noclip" | "hover";
@@ -403,10 +403,22 @@ export interface MovementFeelConfig {
   runMultiplier?: number;
   /** Crouch speed as a multiple of walk speed (default 0.45). */
   crouchMultiplier?: number;
-  /** A jump pressed up to this many ms before landing fires on landing (default 0). Kinematic walk only; the capsule and voxel controllers jump on the press frame. */
+  /** A jump pressed up to this many ms before landing fires on landing (default 0). */
   jumpBufferMs?: number;
-  /** A jump pressed up to this many ms after walking off a ledge still fires (default 0). Kinematic walk only, like `jumpBufferMs`. */
+  /** A jump pressed up to this many ms after walking off a ledge still fires (default 0). */
   coyoteMs?: number;
+  /** Rising speed kept when jump is released early, 0..1 (default 1: no cut). Lower makes a tap a hop. */
+  jumpCutFactor?: number;
+  /** Gravity multiplier near the peak, while vertical speed is under `apexSpeed` (default 1). Below 1 hangs. */
+  apexGravityScale?: number;
+  /** Vertical speed under which `apexGravityScale` applies, m/s (default 1.5). */
+  apexSpeed?: number;
+  /** Gravity multiplier while falling (default 1). Above 1 drops faster than it rose. */
+  fallGravityScale?: number;
+  /** After landing, jumps wait and walk speed ramps back from `landingSpeedScale` over this many ms (default 0). */
+  landingRecoveryMs?: number;
+  /** Walk speed share right after landing when `landingRecoveryMs` is set (default 0.5). */
+  landingSpeedScale?: number;
 }
 
 /** Movement-control levers for the shell-driven local player walk controller. */
@@ -436,7 +448,8 @@ export interface PlayerMovementConfig {
   /**
    * Walk-controller feel. Acceleration and friction are exponential response rates (1/s): higher reaches
    * the target velocity or stops sooner. Omitted fields keep the engine defaults, so nothing changes until a
-   * game sets one. Tune against `measureMovement` (`@jgengine/core/movement/movementProbe`).
+   * game sets one. The jump fields apply to the kinematic walk; a `physics.backend` capsule or `collision.voxel`
+   * body jumps on the press frame with plain gravity. Tune against `measureMovement` (`@jgengine/core/movement/movementProbe`).
    */
   feel?: MovementFeelConfig;
   /** Radians/second the rendered body rotates toward its movement heading (shortest arc), so strafing/backpedalling read as a turn rather than an instant flip; also the rate the internally-integrated `turnLeft`/`turnRight` heading turns when the shell doesn't own yaw. Unset = body facing snaps instantly (no change to existing feel). */
@@ -449,8 +462,8 @@ export interface PlayerMovementConfig {
    * Free-flight — creative/spectator/noclip/hover — folded into the same walk controller so a game
    * doesn't hand-roll a second movement loop to get Minecraft-like flight. `true` uses creative defaults;
    * an object tunes speed/vertical/sprint/collide/canFly. Horizontal is always yaw-relative strafe
-   * (A = left, D = right — never roll/bank), vertical is Space/Ctrl, and aircraft/rotorcraft remain
-   * on `physics/flightDynamics`. The shell drives this automatically when present; `canFly` toggles
+   * (A = left, D = right — never roll/bank), vertical is Space/Ctrl, and aircraft, rotorcraft and rockets
+   * use `physics/aircraftDynamics`. The shell drives this automatically when present; `canFly` toggles
    * between walking and flying per tick without rebuilding the config.
    */
   flight?: FlightConfig | boolean;

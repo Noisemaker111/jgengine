@@ -456,11 +456,23 @@ export interface GameAudio {
   loop(id: string, sound: string, options?: { at?: readonly [number, number, number] }): void;
   /**
    * Live-update retained loop `id` via `audio.loopSet`: `rate` re-pitches it (1 = authored pitch, clamped
-   * 0.25–4 by the shell), `gain` rescales volume (0–1), `at` repositions its emitter. Cheap to call every
-   * tick (~60 Hz) — the shell ramps rate/gain over ~20 ms to avoid zipper noise. A no-op when `id` is not a
-   * live loop (an update may race a stop) (#1051).
+   * 0.25–4 by the shell), `gain` rescales volume (0–1), `at` repositions its emitter. `lowpass`/`highpass`
+   * set filter cutoffs in Hz (muffle an engine off-throttle or behind a wall); `velocity` is the emitter's
+   * world velocity, which pitches the loop by doppler when its sound declares `doppler`. Cheap to call every
+   * tick (~60 Hz) — the shell ramps rate/gain/cutoffs over ~20 ms to avoid zipper noise. A no-op when `id`
+   * is not a live loop (an update may race a stop) (#1051).
    */
-  setLoop(id: string, params: { rate?: number; gain?: number; at?: readonly [number, number, number] }): void;
+  setLoop(
+    id: string,
+    params: {
+      rate?: number;
+      gain?: number;
+      at?: readonly [number, number, number];
+      velocity?: readonly [number, number, number];
+      lowpass?: number;
+      highpass?: number;
+    },
+  ): void;
   /** Stop and dispose retained loop `id` (emits `audio.loopStop`); an unknown `id` is ignored (#1051). */
   stopLoop(id: string): void;
 }

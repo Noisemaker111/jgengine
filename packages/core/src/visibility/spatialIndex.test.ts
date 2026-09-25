@@ -155,3 +155,31 @@ describe("spatialIndex", () => {
     for (const id of frustumOut) expect(boxOut).toContain(id);
   });
 });
+
+describe("spatialIndex snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const idx = createSpatialIndex({ cellSize: 8, maxCellSpan: 3 });
+    idx.insert("rock", boxAt(3, 0, 3));
+    idx.insert("cart", boxAt(20, 0, 5), true);
+    idx.insert("hill", boxAt(0, 0, 0, 60));
+    idx.insert("tree", boxAt(4, 0, 12, 5));
+    idx.update("cart", boxAt(9, 0, 9));
+    const saved = idx.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      idx.update("cart", boxAt(30, 0, 30));
+      idx.insert("bird", boxAt(2, 4, 2));
+      idx.remove("rock");
+      return [
+        [...idx.queryBox(-10, -10, -10, 40, 10, 40, [])],
+        [...idx.querySphere(5, 0, 5, 12, [])],
+        idx.cells(),
+        idx.size(),
+      ];
+    };
+    const a = play();
+    expect(saved).toEqual(frozen);
+    idx.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

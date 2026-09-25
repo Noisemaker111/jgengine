@@ -1,14 +1,17 @@
 import { distance3, resolveEmitterGain, type AudioBusDef, type SoundDef } from "@jgengine/core/audio/audioFalloff";
+import { dopplerRate } from "@jgengine/core/audio/doppler";
 import type { MusicTheme } from "@jgengine/core/audio/music";
 import { patchDuration, type SynthPatch } from "@jgengine/core/audio/synth";
 import { createDisposer } from "@jgengine/core/game/defineGame";
 
-import { clampLoopGain, clampLoopRate } from "./loopParams";
+import { clampLoopCutoff, clampLoopGain, clampLoopRate, MIN_LOOP_CUTOFF, MAX_LOOP_CUTOFF } from "./loopParams";
 import { MusicDirector, type CrossfadeOptions } from "./musicDirector";
 import { createNoiseBuffer, realizeSynthPatch } from "./synthEngine";
 
 /** setTargetAtTime time constant (~20 ms) for zipper-free live rate/gain ramps on retained loops (#1051). */
 const LOOP_PARAM_SMOOTH_TC = 0.02;
+
+const ZERO_VELOCITY: Vec3 = { x: 0, y: 0, z: 0 };
 
 export interface Vec3 {
   x: number;
@@ -21,6 +24,8 @@ export interface ListenerPose {
   position: Vec3;
   forward: Vec3;
   up: Vec3;
+  /** World velocity of the listener, for doppler on loops whose sound declares `doppler`. Default zero. */
+  velocity?: Vec3;
 }
 
 export interface AudioSceneConfig {
@@ -38,6 +43,12 @@ export interface AudioEmitterHandle {
   setRate(rate: number): void;
   /** Live volume of a retained loop: `gain` scales the source (0–1), clamped and ramped ~20 ms (#1051). */
   setGain(gain: number): void;
+  /** Live lowpass cutoff of a retained loop in Hz, clamped and ramped like rate. */
+  setLowpass(hz: number): void;
+  /** Live highpass cutoff of a retained loop in Hz, clamped and ramped like rate. */
+  setHighpass(hz: number): void;
+  /** Emitter world velocity for doppler; ignored unless the sound declares `doppler`. */
+  setVelocity(velocity: Vec3): void;
   stop(): void;
 }
 
@@ -189,6 +200,8 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
   }
 
   let listenerPosition: Vec3 = { x: 0, y: 0, z: 0 };
+  let listenerVelocity: Vec3 = { x: 0, y: 0, z: 0 };
+  const nyquist = context.sampleRate / 2;
   const activeSpatialUpdaters = new Set<() => void>();
   const activeLoops = new Set<AudioEmitterHandle>();
 
@@ -196,6 +209,9 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     setPosition: () => undefined,
     setRate: () => undefined,
     setGain: () => undefined,
+    setLowpass: () => undefined,
+    setHighpass: () => undefined,
+    setVelocity: () => undefined,
     stop: () => undefined,
   };
 
@@ -243,16 +259,39 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     // Live control state, applied on source creation so updates that race the async buffer load stick.
     let currentRate = 1;
     let currentUserGain = 1;
+    let currentLowpass = MAX_LOOP_CUTOFF;
+    let currentHighpass = MIN_LOOP_CUTOFF;
+    let currentVelocity: Vec3 = { x: 0, y: 0, z: 0 };
+    const dopplerFactor = loop ? sound.doppler ?? 0 : 0;
     let sourceNode: AudioBufferSourceNode | null = null;
+    let lowpassNode: BiquadFilterNode | null = null;
+    let highpassNode: BiquadFilterNode | null = null;
     let userGainNode: GainNode | null = null;
     let falloffGain: GainNode | null = null;
     let pannerNode: PannerNode | null = null;
+
+    function effectiveRate(): number {
+      if (dopplerFactor === 0) return currentRate;
+      const shift = dopplerRate(
+        [listenerPosition.x, listenerPosition.y, listenerPosition.z],
+        [listenerVelocity.x, listenerVelocity.y, listenerVelocity.z],
+        [currentPosition.x, currentPosition.y, currentPosition.z],
+        [currentVelocity.x, currentVelocity.y, currentVelocity.z],
+        { factor: dopplerFactor },
+      );
+      return clampLoopRate(currentRate * shift);
+    }
+
+    function applyRate(): void {
+      if (sourceNode !== null) sourceNode.playbackRate.setTargetAtTime(effectiveRate(), context.currentTime, LOOP_PARAM_SMOOTH_TC);
+    }
 
     function updateFalloff(): void {
       if (falloffGain !== null && sound.spatial === undefined) {
         falloffGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
       }
       if (pannerNode !== null) setPannerPosition(pannerNode, currentPosition);
+      if (dopplerFactor !== 0) applyRate();
     }
 
     void bufferPromise.then((buffer) => {
@@ -260,13 +299,27 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       const src = context.createBufferSource();
       src.buffer = buffer;
       src.loop = loop || (sound.loop ?? false);
-      src.playbackRate.value = currentRate;
-      // source → per-loop user gain (setGain) → distance falloff → bus
+      src.playbackRate.value = effectiveRate();
+      // source → [lowpass → highpass, loops only] → per-loop user gain (setGain) → distance falloff → bus
       const uGain = context.createGain();
       uGain.gain.value = currentUserGain;
       const fGain = context.createGain();
       fGain.gain.value = resolveEmitterGain(distance3(currentPosition, listenerPosition), sound, 1);
-      src.connect(uGain);
+      if (loop) {
+        const lp = context.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = clampLoopCutoff(currentLowpass, MAX_LOOP_CUTOFF, nyquist);
+        const hp = context.createBiquadFilter();
+        hp.type = "highpass";
+        hp.frequency.value = clampLoopCutoff(currentHighpass, MIN_LOOP_CUTOFF, nyquist);
+        src.connect(lp);
+        lp.connect(hp);
+        hp.connect(uGain);
+        lowpassNode = lp;
+        highpassNode = hp;
+      } else {
+        src.connect(uGain);
+      }
       uGain.connect(fGain);
       if (sound.spatial !== undefined) {
         const panner = createPanner(context, sound.spatial, currentPosition);
@@ -287,10 +340,14 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
         } catch {
         }
         src.disconnect();
+        lowpassNode?.disconnect();
+        highpassNode?.disconnect();
         uGain.disconnect();
         fGain.disconnect();
         pannerNode?.disconnect();
         sourceNode = null;
+        lowpassNode = null;
+        highpassNode = null;
         userGainNode = null;
         falloffGain = null;
       });
@@ -305,7 +362,19 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
       },
       setRate(rate) {
         currentRate = clampLoopRate(rate);
-        if (sourceNode !== null) sourceNode.playbackRate.setTargetAtTime(currentRate, context.currentTime, LOOP_PARAM_SMOOTH_TC);
+        applyRate();
+      },
+      setLowpass(hz) {
+        currentLowpass = clampLoopCutoff(hz, MAX_LOOP_CUTOFF, nyquist);
+        if (lowpassNode !== null) lowpassNode.frequency.setTargetAtTime(currentLowpass, context.currentTime, LOOP_PARAM_SMOOTH_TC);
+      },
+      setHighpass(hz) {
+        currentHighpass = clampLoopCutoff(hz, MIN_LOOP_CUTOFF, nyquist);
+        if (highpassNode !== null) highpassNode.frequency.setTargetAtTime(currentHighpass, context.currentTime, LOOP_PARAM_SMOOTH_TC);
+      },
+      setVelocity(velocity) {
+        currentVelocity = velocity;
+        if (dopplerFactor !== 0) applyRate();
       },
       setGain(gain) {
         currentUserGain = clampLoopGain(gain);
@@ -325,6 +394,7 @@ export function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine {
     setListenerPose(position) {
       const pose = "position" in position ? position : { position, forward: { x: 0, y: 0, z: -1 }, up: { x: 0, y: 1, z: 0 } };
       listenerPosition = pose.position;
+      listenerVelocity = "velocity" in pose && pose.velocity !== undefined ? pose.velocity : ZERO_VELOCITY;
       const listener = context.listener;
       setAudioParam(listener.positionX, pose.position.x);
       setAudioParam(listener.positionY, pose.position.y);

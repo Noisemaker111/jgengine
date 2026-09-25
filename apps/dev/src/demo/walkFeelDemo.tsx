@@ -1,56 +1,58 @@
 import type { ReactNode } from "react";
 
-import { defineGameDefinition, type PhysicsConfig } from "@jgengine/core/game/defineGame";
-import type { PlayerMovementConfig } from "@jgengine/core/game/playableGame";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
+import { measureMovement } from "@jgengine/core/movement/movementProbe";
 import type { GameContext, GameContextEntityEntry } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { PlayableGame } from "@jgengine/shell/registry";
 
+import { FLOATY_FEEL, WEIGHTY_FEEL, type WalkFeel } from "./walkFeelTuning";
+
 const HERO = "hero";
-
-interface WalkFeel {
-  name: string;
-  label: string;
-  color: string;
-  walkSpeed: number;
-  movement: PlayerMovementConfig;
-  physics: PhysicsConfig;
-}
-
-// The two characters differ only in these numbers; the engine walk controller does the rest.
-export const FLOATY_FEEL: WalkFeel = {
-  name: "walk-floaty",
-  label: "Floaty platformer",
-  color: "#f472b6",
-  walkSpeed: 3,
-  movement: { feel: { groundAcceleration: 30, airAcceleration: 25, groundFriction: 20, jumpBufferMs: 150, coyoteMs: 120 } },
-  physics: { gravity: -12, jumpVelocity: 7 },
-};
-
-export const WEIGHTY_FEEL: WalkFeel = {
-  name: "walk-weighty",
-  label: "Weighty shooter",
-  color: "#64748b",
-  walkSpeed: 3,
-  movement: { feel: { groundAcceleration: 10, airAcceleration: 1.5, groundFriction: 8 } },
-  physics: { gravity: -32, jumpVelocity: 6 },
-};
 
 function Stage({ color }: { color: string }): ReactNode {
   return (
     <>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
-        <meshStandardMaterial color="#3f5f3a" roughness={0.95} />
+        <meshStandardMaterial color="#4b6b3f" roughness={0.95} />
       </mesh>
-      <gridHelper args={[80, 80, "#1f2f1c", "#2c4428"]} position={[0, 0.01, 0]} />
-      {Array.from({ length: 9 }, (_, i) => (
-        <mesh key={i} position={[-1.5, 0.5 + i * 0.25, i * 2]} castShadow>
-          <boxGeometry args={[0.4, 1 + i * 0.5, 0.4]} />
+      <gridHelper args={[80, 80, "#2c4428", "#3b5a33"]} position={[0, 0.01, 0]} />
+      {Array.from({ length: 12 }, (_, i) => (
+        <mesh key={i} position={[-1.2, 1, i * 2]} castShadow>
+          <boxGeometry args={[0.15, 2, 0.15]} />
           <meshStandardMaterial color={color} roughness={0.6} />
         </mesh>
       ))}
+      {[0.5, 1, 1.5, 2].map((height) => (
+        <mesh key={height} position={[-1.2, height, 11]}>
+          <boxGeometry args={[0.1, 0.03, 22]} />
+          <meshStandardMaterial color="#f8fafc" transparent opacity={0.5} />
+        </mesh>
+      ))}
     </>
+  );
+}
+
+function FeelPanel({ feel }: { feel: WalkFeel }): ReactNode {
+  const report = measureMovement(feel);
+  const rows: [string, string][] = [
+    ["jump height", `${report.jumpHeight.toFixed(2)} m (tap ${report.tapJumpHeight.toFixed(2)} m)`],
+    ["air time", `${report.airTime.toFixed(2)} s`],
+    ["air control", `${report.airControlReach.toFixed(2)} m`],
+    ["to top speed", `${report.timeToTopSpeed.toFixed(2)} s`],
+    ["stop distance", `${report.stopDistance.toFixed(2)} m`],
+  ];
+  return (
+    <div className="pointer-events-none absolute left-5 top-5 rounded-lg bg-black/65 px-4 py-3 font-sans text-sm text-white">
+      <div className="mb-1 text-base font-semibold">{feel.label}</div>
+      {rows.map(([name, value]) => (
+        <div key={name} className="flex justify-between gap-6">
+          <span className="opacity-70">{name}</span>
+          <span className="tabular-nums">{value}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -91,15 +93,9 @@ function makeWalkFeelGame(feel: WalkFeel): PlayableGame {
       },
     },
     movement: feel.movement,
+    backdrop: { background: "#a9c8e6" },
     environment: () => <Stage color={feel.color} />,
-    GameUI: () => (
-      <div className="pointer-events-none absolute left-5 top-5 rounded-lg bg-black/60 px-4 py-3 font-sans text-sm text-white">
-        <div className="text-base font-semibold">{feel.label}</div>
-        <div className="opacity-80">
-          gravity {-(feel.physics.gravity ?? 0)} · jump {feel.physics.jumpVelocity} · air {feel.movement.feel?.airAcceleration}
-        </div>
-      </div>
-    ),
+    GameUI: () => <FeelPanel feel={feel} />,
     camera: { initialDistance: 9, initialHeight: 3.5, minDistance: 5, maxDistance: 20, targetHeight: 1 },
     capture: {
       probe: (): Record<string, number> => {
