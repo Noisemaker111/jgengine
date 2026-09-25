@@ -267,17 +267,26 @@
 ## @jgengine/core/runtime/commandInput
 
 - `QuantityResult` (type): type QuantityResult = { ok: true; quantity: number } | { ok: false; reason: "invalid-quantity" } — Validated integer quantity or a stable input rejection.
+- `isInputRecord` (function): function isInputRecord(value: unknown): value is Record<string, unknown> — Narrow an untrusted value to a plain object, rejecting arrays and null.
+- `readInputArray` (function): function readInputArray<T>(value: unknown, readItem: (item: unknown) => T | null, options: { maxItems?: number } = {}): T[] | null — Read an array of at most `maxItems` entries, each accepted by `readItem`; any rejected entry rejects the whole array.
+- `readInputNumber` (function): function readInputNumber(value: unknown, options: { min?: number; max?: number; integer?: boolean } = {}): number | null — Read a finite number inside `[min, max]`, or `null`. `NaN` and `±Infinity` are always rejected, so a coordinate can never drive an unbounded loop; `integer` also rejects fractions instead of flooring them.
+- `readInputOneOf` (function): function readInputOneOf<const T extends string | number>(value: unknown, allowed: readonly T[]): T | null — Read one of a fixed set of values, or `null`.
+- `readInputPoint2` (function): function readInputPoint2(value: unknown, options: { maxAbs?: number } = {}): { x: number; z: number } | null — Read an `{ x, z }` ground point whose axes are finite and within `maxAbs`, or `null`.
+- `readInputPoint3` (function): function readInputPoint3(value: unknown, options: { maxAbs?: number } = {}): { x: number; y: number; z: number } | null — Read an `{ x, y, z }` point whose axes are finite and within `maxAbs`, or `null`.
+- `readInputString` (function): function readInputString(value: unknown, options: { maxLength?: number } = {}): string | null — Read a non-empty string of at most `maxLength` characters, or `null`.
 - `readQuantity` (function): function readQuantity(value: unknown, options: { min?: number; max?: number } = {}): QuantityResult — Read an untrusted whole-item quantity without coercion, truncation, or clamping.
 
 ## @jgengine/core/runtime/commandRunner
 
 - `CommandAccess` (type): type CommandAccess = "client" | "server" — Who may send a command: any client through the public transport, or only trusted host code.
-- `CommandDef` (type): type CommandDef<TInput = unknown> = { /** * `"server"` when `input` carries facts only the host may decide (unlock state, prices, multipliers): * public transports then refuse it and only trusted host calls such as `helpers.runCommand` run it. * Defaults to `"client"`, so every field of `input` must… — ⚠ undocumented
+- `CommandDef` (type): type CommandDef<TInput = unknown> = { /** * `"server"` when `input` carries facts only the host may decide (unlock state, prices, multipliers): * public transports then refuse it and only trusted host calls such as `helpers.runCommand` run it. * Defaults to `"client"`, so every field of `input` must… — ⚠ undocumented · used by `defineCommand`: Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and `apply` receive the parsed type.
 - `CommandScope` (type): type CommandScope = { /** Member ids to hydrate; omit for the whole roster. */ players?: readonly string[]; /** Chunk keys to hydrate; omit for every chunk of the server, `[]` for none. */ chunkKeys?: readonly string[]; } — Which slice of a server has to be hydrated before some work runs against it. Both fields default to "everything", which costs a read per member plus one per chunk — the cost that makes a large shared world unaffordable per mutation. Narrow them when the caller knows what it will touch.
 - `CommandScopeDefinition` (type): type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?: readonly string[] | "actor" } — Declarative read scope; actor is resolved before host hydration.
 - `CommandValidationError` (type): type CommandValidationError = { reason: string } — ⚠ undocumented
+- `MALFORMED_COMMAND_INPUT_REASON` (const): const MALFORMED_COMMAND_INPUT_REASON: "Malformed command input" — Reason every host returns when a command's `parse` rejects its input.
 - `RunCommandResult` (type): type RunCommandResult = | { ok: true; snapshot: GameRuntimeSnapshot } | { ok: false; reason: string } — ⚠ undocumented
 - `SERVER_ONLY_COMMAND_REASON` (const): const SERVER_ONLY_COMMAND_REASON: "Command is server-only" — Reason a public transport returns for a {@link CommandDef} marked `access: "server"`.
+- `defineCommand` (function): function defineCommand<TInput>(definition: CommandDef<TInput> & { parse: (input: unknown) => TInput | null }): CommandDef — Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and `apply` receive the parsed type. Returns the untyped {@link CommandDef} a runtime's command table holds.
 
 ## @jgengine/core/runtime/context/objectSlots
 

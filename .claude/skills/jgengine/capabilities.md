@@ -24,6 +24,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `GameContextModels` (interface) · `import { GameContextModels } from "@jgengine/core/runtime/gameContext"`
 
+## command-number — validate finite, bounded numbers and integers at command boundaries
+
+- `readInputNumber` (function) · `import { readInputNumber } from "@jgengine/core/runtime/commandInput"`
+
+## command-parse — parse untrusted command input once so every command stage sees typed, bounded values
+
+- `defineCommand` (function) · `import { defineCommand } from "@jgengine/core/runtime/commandRunner"`
+
 ## command-quantity — validate bounded whole-item counts at command boundaries
 
 - `readQuantity` (function) · `import { readQuantity } from "@jgengine/core/runtime/commandInput"`

@@ -18,6 +18,9 @@ export type CommandScopeDefinition = Omit<CommandScope, "players"> & { players?:
 /** Who may send a command: any client through the public transport, or only trusted host code. */
 export type CommandAccess = "client" | "server";
 
+/** Reason every host returns when a command's `parse` rejects its input. */
+export const MALFORMED_COMMAND_INPUT_REASON = "Malformed command input";
+
 /** Reason a public transport returns for a {@link CommandDef} marked `access: "server"`. */
 export const SERVER_ONLY_COMMAND_REASON = "Command is server-only";
 
@@ -28,6 +31,13 @@ export type CommandDef<TInput = unknown> = {
    * Defaults to `"client"`, so every field of `input` must be validated as untrusted.
    */
   access?: CommandAccess;
+  /**
+   * Turns the untrusted wire value into the command's input, or `null` to refuse it with
+   * {@link MALFORMED_COMMAND_INPUT_REASON} before `scope`, `validate` or `apply` run. Those then only ever see
+   * parsed input, so a field checked here can't be skipped in one of them. Build it from the readers in
+   * `runtime/commandInput`; declare typed commands with {@link defineCommand}.
+   */
+  parse?: (input: unknown) => TInput | null;
   /**
    * What this command reads and writes, derived from its own input. A host that hydrates through a
    * scope loads only this slice instead of the whole world, and refuses the command if `apply` then
@@ -61,7 +71,15 @@ export function resolveCommandScope<TInput>(
   input: TInput,
   actorUserId: string,
 ): CommandScope {
-  const scope = commands[commandName]?.scope?.(input, actorUserId) ?? { players: "actor", chunkKeys: [] };
+  const command = commands[commandName];
+  let declared: CommandScopeDefinition | undefined;
+  if (command?.parse === undefined) {
+    declared = command?.scope?.(input, actorUserId);
+  } else {
+    const parsed = command.parse(input);
+    declared = parsed === null ? undefined : command.scope?.(parsed, actorUserId);
+  }
+  const scope = declared ?? { players: "actor", chunkKeys: [] };
   const { players, ...rest } = scope;
   return players === undefined ? rest : { ...rest, players: players === "actor" ? [actorUserId] : players };
 }
@@ -120,12 +138,19 @@ export function runCommand<TInput>(
     return { ok: false, reason: `Unknown command: ${commandName}` };
   }
 
-  const validationError = command.validate(snapshot, input, actorUserId, nowMs);
+  let parsed = input;
+  if (command.parse !== undefined) {
+    const result = command.parse(input);
+    if (result === null) return { ok: false, reason: MALFORMED_COMMAND_INPUT_REASON };
+    parsed = result;
+  }
+
+  const validationError = command.validate(snapshot, parsed, actorUserId, nowMs);
   if (validationError) {
     return { ok: false, reason: validationError.reason };
   }
 
-  const next = command.apply(snapshot, input, actorUserId, nowMs);
+  const next = command.apply(snapshot, parsed, actorUserId, nowMs);
   return {
     ok: true,
     snapshot: {
@@ -140,4 +165,15 @@ export function runCommand<TInput>(
       },
     },
   };
+}
+
+/**
+ * Declare a command with a typed input: `parse` narrows the wire value once, and `scope`, `validate` and
+ * `apply` receive the parsed type. Returns the untyped {@link CommandDef} a runtime's command table holds.
+ * @capability command-parse parse untrusted command input once so every command stage sees typed, bounded values
+ */
+export function defineCommand<TInput>(
+  definition: CommandDef<TInput> & { parse: (input: unknown) => TInput | null },
+): CommandDef {
+  return definition as unknown as CommandDef;
 }
