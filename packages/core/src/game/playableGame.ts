@@ -24,6 +24,7 @@ import type { SkyEnvironmentConfig } from "../world/features";
 import type { VisibilityConfig } from "../visibility/config";
 import type { GameDefinition, GameLoop } from "./defineGame";
 import type { GameCameraConfig } from "./cameraConfig";
+import type { ViewportsConfig } from "./viewports";
 import type { LootFilterRule } from "./lootFilter";
 import type { RarityStyle } from "./worldItem";
 
@@ -641,6 +642,8 @@ export interface PlayableGame<
   gamepad?: GamepadFeelConfig;
   /** Local seats on this screen for couch co-op. With `maxSlots > 1` each extra pad hot-joins its own seat on its first button press, the shell calls `loop.onNewPlayer(ctx, { userId, isNew: true })` for it, and its input lands on `localPlayers(ctx).local(slotId).input` instead of `ctx.input`. Unset keeps one seat: every device drives `ctx.player`. */
   localPlayers?: LocalPlayersConfig;
+  /** Split-screen for local seats (`localPlayers`): one viewport per joined seat, each following its own entity. The primary seat keeps the main camera rig; post-processing is skipped while more than one viewport is drawn. */
+  viewports?: ViewportsConfig;
   /** Phone orientation contract. Legacy `"landscape"`/`"portrait"` stays advisory (a dismissible rotate hint). The object form `{ mobile: "landscape-required" }` is strict — the shell shows an engine-owned rotate screen and blocks gameplay until the device is turned. See `GameOrientation`. */
   orientation?: GameOrientation;
   /** Where the game is meant to be played. Default `["web", "mobile"]` — design-resolution HUD fit is on for every game: `HudCanvas` auto-scales from `hudFit.designSize` down to the live viewport, so the desktop layout shrinks to fit a phone instead of overflowing it. Declare `["web"]` to opt a desktop-only game out (compact displays fall back to the legacy fixed 0.85 zoom). */

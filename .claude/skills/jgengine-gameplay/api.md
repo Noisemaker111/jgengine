@@ -1016,6 +1016,17 @@
 - `VfxInstanceStoreState` (interface): interface VfxInstanceStoreState — Plain JSON state of a {@link VfxInstanceStore}.
 - `createVfxInstanceStore` (function): function createVfxInstanceStore(options: VfxInstanceStoreOptions = {}): VfxInstanceStore — Build a headless retained-VFX registry. The store is the serializable source of truth for long-lived effects (beams, tethers, zones, target lines, looping emitters) that must move and mutate without one-shot re-emit flicker: `upsert` creates or replaces by stable id, `update` nudges dynamic params, `stop` disposes with an optional fade, and `tick` enforces TTL heartbeats. It stays independent of renderer availability, so simulation and tests run without a shell; a wired `onOp` sink turns each op into a `combat.vfxInstance` event the shell binds to render resources.
 
+## @jgengine/core/game/viewports
+
+- `ViewportCameraConfig` (interface): interface ViewportCameraConfig — The follow camera an extra viewport runs; the primary seat keeps the game's main camera rig.
+- `ViewportDef` (interface): interface ViewportDef — One viewport: which local seat it shows and where.
+- `ViewportPixels` (interface): interface ViewportPixels — A viewport in canvas pixels with a bottom-left origin, ready for `gl.setViewport`/`setScissor`.
+- `ViewportRect` (type): type ViewportRect = readonly [number, number, number, number] — A screen region as fractions of the canvas, `[x, y, width, height]` in `0..1` with the origin at the top left.
+- `ViewportsConfig` (interface): interface ViewportsConfig — `defineGame({ viewports })`: split-screen layout for local seats.
+- `resolveViewports` (function): function resolveViewports(config: ViewportsConfig | undefined, slots: readonly string[]): ViewportDef[] — The viewports to draw for the seats currently joined: the explicit layout filtered to joined seats, or an even split.
+- `splitViewports` (function): function splitViewports(slots: readonly string[], split: "vertical" | "horizontal" = "vertical"): ViewportDef[] — Even split-screen rects for seats in order: one fills the screen, two split side by side (or stacked), three put the first on a full-width top half, four make a 2×2 grid, more fill a grid row by row.
+- `viewportPixels` (function): function viewportPixels(rect: ViewportRect, width: number, height: number): ViewportPixels — Convert a top-left fractional rect into whole canvas pixels with a bottom-left origin; neighbours share edges exactly.
+
 ## @jgengine/core/game/worldItem
 
 - `DEFAULT_PICKUP_RADIUS` (const): const DEFAULT_PICKUP_RADIUS: 2 — ⚠ undocumented

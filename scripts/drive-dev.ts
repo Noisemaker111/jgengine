@@ -87,6 +87,7 @@ type Args = {
   softlockMs: number;
   epsilon: number;
   spawn?: string;
+  params: [string, string][];
   look?: string;
   lookFrom?: string;
   view?: string;
@@ -116,6 +117,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --shot <name|path>  screenshot to shots/<game>-<name>.png for a bare name, or to
                       an absolute path written verbatim (like shoot --out; no size
                       suffix). Relative paths are rejected — they ENOENT.
+  --param <key=value> add a query parameter to the game URL (repeatable), e.g.
+                      --param gamepad=2 injects two synthetic pads for local seats
   --spawn <x,y,z>     override the authored player spawn for this run only (adds a
                       ?spawn= overlay like ?cam=); never mutates editor.scene.json.
                        Accepts x,y,z or x,y,z,yaw (yaw radians)
@@ -203,6 +206,7 @@ function parseArgs(argv: string[]): Args {
     timeoutMs: 60_000,
     timeoutExplicit: false,
     steps: [],
+    params: [],
     playtest: false,
     strict: false,
     seed: 1,
@@ -257,6 +261,12 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--softlock") args.softlockMs = Number(argv[++index] ?? args.softlockMs);
     else if (value === "--epsilon") args.epsilon = Number(argv[++index] ?? args.epsilon);
     else if (value === "--spawn") args.spawn = argv[++index];
+    else if (value === "--param") {
+      const pair = argv[++index] ?? "";
+      const split = pair.indexOf("=");
+      if (split <= 0) throw new Error(`--param expects key=value, got "${pair}"`);
+      args.params.push([pair.slice(0, split), pair.slice(split + 1)]);
+    }
     else if (value === "--look") args.look = argv[++index];
     else if (value === "--look-from") args.lookFrom = argv[++index];
     else if (value === "--view") args.view = argv[++index];
@@ -685,6 +695,7 @@ const exitCode = await withBrowserSession(
       }
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
+      for (const [key, value] of args.params) url.searchParams.set(key, value);
       if (args.view !== undefined) url.searchParams.set("view", args.view);
       if (args.state !== undefined) url.searchParams.set("state", args.state);
       const aim = parseLookAim(args.look, args.lookFrom, { withNamedView: args.view !== undefined });

@@ -1890,6 +1890,10 @@
 - `PlayerFovState` (interface): interface PlayerFovState { fov: number; bounds: PlayerFovBounds; enabled: boolean; persist: boolean; setFov: (value: number) => void; compose: (poseFov: number, mode?: "relative" | "absolute") => number } — ⚠ undocumented
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
+## @jgengine/shell/camera/Viewports
+
+- `ViewportHuds` (function): function ViewportHuds({ ctx, config, children, }: { ctx: GameContext; config?: ViewportsConfig; children: (slot: LocalPlayerSlot, viewport: ViewportDef) => ReactNode; }): React.JSX.Element — One absolutely-positioned HUD root per viewport, laid over the canvas: render each seat's own health, prompts or score with `children(slot)`. Pass the same `viewports` config the game gave `defineGame`.
+
 ## @jgengine/shell/camera/cameraBlendMath
 
 - `CameraBlendScratch` (interface): interface CameraBlendScratch { fromPos: Vector3; fromQuat: Quaternion; toPos: Vector3; toQuat: Quaternion; fov: number; elapsed: number; duration: number } — ⚠ undocumented

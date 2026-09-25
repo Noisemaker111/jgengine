@@ -170,6 +170,7 @@ export const gameRegistry: GameRegistry = {
   "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
   handling: () => import("./demo/handlingDemo").then((module) => module.handlingDemoGame),
   "handling-bike": () => import("./demo/handlingDemo").then((module) => module.handlingBikeDemoGame),
+  couch: () => import("./demo/couchDemo").then((module) => module.couchDemoGame),
   "walk-floaty": () => import("./demo/walkFeelDemo").then((module) => module.walkFloatyDemoGame),
   "walk-weighty": () => import("./demo/walkFeelDemo").then((module) => module.walkWeightyDemoGame),
   flight: () => import("./demo/flightDemo").then((module) => module.flightDemoGame),
