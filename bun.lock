@@ -66,6 +66,7 @@
       "name": "@jgengine-apps/web",
       "version": "0.1.0",
       "dependencies": {
+        "@fontsource-variable/bricolage-grotesque": "^5.3.0",
         "@fontsource-variable/inter": "^5.2.8",
         "@fontsource-variable/jetbrains-mono": "^5.2.8",
         "@jgengine/core": "workspace:*",
@@ -195,7 +196,7 @@
     },
     "packages/assets": {
       "name": "@jgengine/assets",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "bin": {
         "assets": "dist/cli/pull.js",
       },
@@ -209,7 +210,7 @@
     },
     "packages/convex": {
       "name": "@jgengine/convex",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@jgengine/core": "^0.18.0",
       },
@@ -225,11 +226,11 @@
     },
     "packages/core": {
       "name": "@jgengine/core",
-      "version": "0.18.0",
+      "version": "0.18.1",
     },
     "packages/editor": {
       "name": "@jgengine/editor",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@jgengine/core": "^0.18.0",
         "@jgengine/navbake": "^0.18.0",
@@ -256,11 +257,11 @@
     },
     "packages/github": {
       "name": "@jgengine/github",
-      "version": "0.5.0",
+      "version": "0.5.1",
     },
     "packages/jgengine": {
       "name": "jgengine",
-      "version": "0.15.0",
+      "version": "0.15.1",
       "bin": {
         "jgengine": "dist/cli/index.js",
       },
@@ -281,7 +282,7 @@
     },
     "packages/node": {
       "name": "@jgengine/node",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@jgengine/core": "^0.11.0",
         "@jgengine/ws": "^0.11.0",
@@ -297,7 +298,7 @@
     },
     "packages/rapier": {
       "name": "@jgengine/rapier",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@dimforge/rapier3d-compat": "0.19.3",
         "@jgengine/core": "^0.18.0",
@@ -305,7 +306,7 @@
     },
     "packages/react": {
       "name": "@jgengine/react",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@jgengine/core": "^0.18.0",
       },
@@ -322,7 +323,7 @@
     },
     "packages/shell": {
       "name": "@jgengine/shell",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@jgengine/core": "^0.18.0",
         "@jgengine/react": "^0.18.0",
@@ -347,7 +348,7 @@
     },
     "packages/sql": {
       "name": "@jgengine/sql",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@jgengine/core": "^0.18.0",
       },
@@ -357,7 +358,7 @@
     },
     "packages/ws": {
       "name": "@jgengine/ws",
-      "version": "0.18.0",
+      "version": "0.18.1",
       "dependencies": {
         "@jgengine/core": "^0.18.0",
       },
@@ -526,6 +527,8 @@
     "@ffmpeg-installer/win32-ia32": ["@ffmpeg-installer/win32-ia32@4.1.0", "", { "os": "win32", "cpu": "ia32" }, "sha512-FV2D7RlaZv/lrtdhaQ4oETwoFUsUjlUiasiZLDxhEUPdNDWcH1OU9K1xTvqz+OXLdsmYelUDuBS/zkMOTtlUAw=="],
 
     "@ffmpeg-installer/win32-x64": ["@ffmpeg-installer/win32-x64@4.1.0", "", { "os": "win32", "cpu": "x64" }, "sha512-Drt5u2vzDnIONf4ZEkKtFlbvwj6rI3kxw1Ck9fpudmtgaZIHD4ucsWB2lCZBXRxJgXR+2IMSti+4rtM4C4rXgg=="],
+
+    "@fontsource-variable/bricolage-grotesque": ["@fontsource-variable/bricolage-grotesque@5.3.0", "", {}, "sha512-TLi9Q4hJjS2UvoTMRSS2nHu6c4R56lAw60NR9QYtVRCHn0XtsFpiEhNffZ8Glsoxu6wEEwLKBP8lb94J52PNBA=="],
 
     "@fontsource-variable/inter": ["@fontsource-variable/inter@5.2.8", "", {}, "sha512-kOfP2D+ykbcX/P3IFnokOhVRNoTozo5/JxhAIVYLpea/UBmCQ/YWPBfWIDuBImXX/15KH+eKh4xpEUyS2sQQGQ=="],
 
