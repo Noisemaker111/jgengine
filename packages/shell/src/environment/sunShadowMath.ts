@@ -1,14 +1,14 @@
 /**
- * One shadow map for an outdoor sun: 2048 texels over a 90 m box that leads the camera, so the
- * ground the player looks at gets ~4.4 cm texels and a PCF radius wide enough to hide the
+ * One shadow map for an outdoor sun: 2048 texels over a 70 m box that leads the camera, so the
+ * ground the player looks at gets ~3.4 cm texels and a PCF radius wide enough to hide the
  * stair-step. A 180 m box centered on the camera wasted half its texels behind the view.
  * @internal
  */
 export const SUN_SHADOW = {
   mapSize: 2048,
-  halfExtent: 45,
-  lead: 30,
-  radius: 4,
+  halfExtent: 35,
+  lead: 22,
+  radius: 6,
   distance: 220,
   near: 10,
   far: 520,
