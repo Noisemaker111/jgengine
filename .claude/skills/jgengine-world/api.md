@@ -223,6 +223,7 @@
 - `AnimState` (type): type AnimState = | { kind: "clip"; clip: string; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend2D"; params: readonly [string, string]; … — A state plays one clip, or blends clips by one or two parameters.
 - `AnimTransition` (interface): interface AnimTransition — Edge between states. `from: "*"` matches any state except `to`.
 - `createAnimGraphRuntime` (function): function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime — Headless animation state machine and blend evaluator. It owns every clip's playback time and weight, so the renderer only seeks and weights actions on a mixer, and headless hosts, replays, and tests advance the same graph without three.js. Transitions are data (parameter comparisons and consumed triggers), layers can be masked or additive, and events fire by clip time, including across loop wraps.
+- `parseAnimGraph` (function): function parseAnimGraph(value: unknown): AnimGraph | undefined — Validates untrusted JSON (a saved scene document, a network payload) as an {@link AnimGraph}. Malformed states, transitions to unknown states, and bad conditions are dropped; a layer whose entry state is missing is dropped; the result is `undefined` when no layer survives.
 - `stateClipWeights` (function): function stateClipWeights(state: AnimState, params: AnimParams): Record<string, number> — Static clip weights of a state at `params`, before any crossfade.
 
 ## @jgengine/core/anim/boneTexture
@@ -267,6 +268,7 @@
 - `LOCOMOTION_LAYER` (const): const LOCOMOTION_LAYER: "base" — Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`.
 - `LOCOMOTION_SPEED_PARAM` (const): const LOCOMOTION_SPEED_PARAM: "speed" — The parameter name the shell feeds with the entity's smoothed ground speed.
 - `LocomotionGraphInput` (interface): interface LocomotionGraphInput — Inputs for {@link locomotionGraph}: the idle/walk/run clip names and the one-shot table a rig config already carries.
+- `animGraphFromConfig` (function): function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined — The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its `states` and `oneShots` describe (a `string[]` one-shot uses its first variant). `undefined` for a single-clip config. The shell plays this and the editor inspects it, so both see the same graph.
 - `locomotionGraph` (function): function locomotionGraph(input: LocomotionGraphInput): AnimGraph — The engine's default locomotion as an authored graph: a speed-driven blend between idle, walk, and run, plus a state per one-shot that plays once and returns (or clamps for `death`). What `useModelAnimation` used to hardcode.
 
 ## @jgengine/core/area/areaEffectField

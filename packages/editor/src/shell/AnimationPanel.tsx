@@ -21,6 +21,7 @@ import {
   type ClipPreviewSession,
   type ClipPreviewState,
 } from "./clipPreview";
+import { AnimationGraphPanel } from "./AnimationGraphPanel";
 import { listScrubbablePaths, samplePathAt } from "./pathFlythrough";
 import { FOCUS_RING, INPUT_CLS, NUMERIC } from "./theme";
 import { EmptyState, IconButton } from "./ui";
@@ -34,7 +35,9 @@ function riggedAssets(assets: readonly EditorAssetEntry[]): EditorAssetEntry[] {
 }
 
 /**
- * Animation dock with two modes:
+ * Animation dock with three modes:
+ * - **Graph** — the selected placement's animation graph with a scrubbed, triggerable preview posed
+ *   on the rig in the viewport (see {@link AnimationGraphPanel}).
  * - **Path** — scrub/play the editor orbit camera along authored scene polylines (real path points,
  *   no fabricated keyframes).
  * - **Clips** — preview a rigged asset's animation clips in the viewport (scrub, loop, speed) via the
@@ -54,11 +57,7 @@ export function AnimationPanel({
   assets: readonly EditorAssetEntry[];
 }) {
   const rigged = useMemo(() => riggedAssets(assets), [assets]);
-  // Default to clips only when the scene has rigged assets but no scrubbable path yet.
-  const paths = useStoreSelector(session, (state) => state.document.paths);
-  const [mode, setMode] = useState<"path" | "clips">(() =>
-    rigged.length > 0 && listScrubbablePaths(paths).length === 0 ? "clips" : "path",
-  );
+  const [mode, setMode] = useState<"path" | "clips" | "graph">(() => (rigged.length > 0 ? "graph" : "path"));
 
   // Tear down the viewport preview when the panel unmounts; leaving clip mode tears down in the
   // tab click below.
@@ -75,8 +74,9 @@ export function AnimationPanel({
         <div className="flex items-center gap-0.5" role="tablist" aria-label="Animation mode">
           {(
             [
-              ["path", "Path flythrough"],
+              ["graph", "Graph"],
               ["clips", "Clip preview"],
+              ["path", "Path flythrough"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -88,7 +88,7 @@ export function AnimationPanel({
                 mode === id ? "bg-cyan-500/15 text-cyan-200" : "text-neutral-500 hover:text-neutral-300"
               }`}
               onClick={() => {
-                if (id !== "clips" && ui.getState().clipPreview !== null) ui.patch({ clipPreview: null });
+                if (id !== mode && ui.getState().clipPreview !== null) ui.patch({ clipPreview: null });
                 setMode(id);
               }}
             >
@@ -99,6 +99,8 @@ export function AnimationPanel({
       </div>
       {mode === "path" ? (
         <PathFlythrough session={session} api={api} />
+      ) : mode === "graph" ? (
+        <AnimationGraphPanel session={session} ui={ui} rigged={rigged} />
       ) : (
         <ClipPreview session={session} ui={ui} rigged={rigged} />
       )}

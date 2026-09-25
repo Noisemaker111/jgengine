@@ -4,7 +4,7 @@ import * as THREE from "three";
 
 import { sharedGltfLoader } from "@jgengine/shell/render/modelLoad";
 import { cloneModelScene, disposeClonedMaterials } from "@jgengine/shell/render/modelRender";
-import { useModelAnimation } from "@jgengine/shell/render/useModelAnimation";
+import { createGraphPose, useModelAnimation } from "@jgengine/shell/render/useModelAnimation";
 
 import { previewAnimationConfig, type ClipPreviewSession } from "./shell/clipPreview";
 import type { EditorHostApi } from "./session";
@@ -60,8 +60,24 @@ function ClipPreviewModel({
     };
   }, [scene]);
 
-  const config = useMemo(() => previewAnimationConfig(driver), [driver]);
+  const graphPose = session.graphPose;
+  const posedByGraph = graphPose !== undefined;
+  const config = useMemo(() => (posedByGraph ? undefined : previewAnimationConfig(driver)), [driver, posedByGraph]);
   useModelAnimation(scene, gltf.animations, config, undefined);
+
+  const graph = graphPose?.graph;
+  const pose = useMemo(() => (graph === undefined ? null : createGraphPose(scene, graph, gltf.animations)), [scene, graph, gltf]);
+  useEffect(() => () => pose?.dispose(), [pose]);
+  const graphClips = graphPose?.clips;
+  useEffect(() => {
+    if (pose !== null && graphClips !== undefined) pose.apply(graphClips);
+  }, [pose, graphClips]);
+
+  useEffect(() => {
+    const current = ui.getState().clipPreview;
+    if (current === null || current.source.assetId !== source.assetId || current.clipDurations !== undefined) return;
+    ui.patch({ clipPreview: { ...current, clipDurations: Object.fromEntries(gltf.animations.map((clip) => [clip.name, clip.duration])) } });
+  }, [gltf, ui, source.assetId]);
 
   // Publish the selected clip's duration once loaded so the dock scrubber can span it (0 = unknown).
   const clipName = driver.clipName;
