@@ -11,7 +11,14 @@ import {
 import type { LocalPlayerSlot, LocalPlayers } from "@jgengine/core/runtime/localPlayers";
 import type { ActionCodesMap, ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import type { InputSnapshot } from "@jgengine/core/runtime/inputSnapshot";
-import { emptyGamepadPoll, emptyGamepadRoute, gamepadCodes, routeGamepads, stepGamepadPoll } from "./gamepadPoll";
+import {
+  emptyGamepadPoll,
+  emptyGamepadRoute,
+  gamepadCodes,
+  rebindGamepadPoll,
+  routeGamepads,
+  stepGamepadPoll,
+} from "./gamepadPoll";
 export { mergeGamepadFrame, mergeGamepadInput } from "./gamepadMerge";
 
 const NO_HELD: readonly string[] = [];
@@ -59,9 +66,9 @@ export function GamepadSource({
   const options = useMemo(() => gamepadFeelOptions(feel), [feel]);
   const synthetic = useMemo(syntheticPads, []);
   useEffect(() => {
-    padBindings.current = gamepadCodes(bindings);
-    poll.current.held.clear();
-    tracker.reset();
+    const next = gamepadCodes(bindings);
+    rebindGamepadPoll(poll.current, padBindings.current, next, tracker);
+    padBindings.current = next;
   }, [bindings, tracker]);
 
   useEffect(() => {

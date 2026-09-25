@@ -240,6 +240,14 @@ export interface ActionStateTracker<TAction extends string> {
   wasPressed(action: TAction): boolean;
   endFrame(): void;
   reset(): void;
+  /**
+   * Swap the binding map without dropping what is physically held: a key still down counts toward
+   * whatever action it maps to now, with no fresh press edge. Toggle state survives for actions that
+   * come back later.
+   */
+  rebind(map: ActionStateBindingMap<TAction, string>): void;
+  /** The action names in the current binding map. */
+  actions(): readonly TAction[];
 }
 
 function resolveActionBindingModes<TCode extends string>(
@@ -253,9 +261,9 @@ function resolveActionBindingModes<TCode extends string>(
 export function createActionStateTracker<TAction extends string, TCode extends string = string>(
   map: ActionStateBindingMap<TAction, TCode>,
 ): ActionStateTracker<TAction> {
-  const actions = Object.keys(map) as TAction[];
-  const modesByAction = new Map(actions.map((action) => [action, resolveActionBindingModes(map[action])]));
-  const heldCodesByAction = new Map<TAction, Set<TCode>>(actions.map((action) => [action, new Set()]));
+  let actions = Object.keys(map) as TAction[];
+  let modesByAction = new Map(actions.map((action) => [action, resolveActionBindingModes(map[action])]));
+  let heldCodesByAction = new Map<TAction, Set<TCode>>(actions.map((action) => [action, new Set()]));
   const toggledActions = new Set<TAction>();
   const pressedThisFrame = new Set<TAction>();
   const activeCodes = new Set<TCode>();
@@ -318,5 +326,17 @@ export function createActionStateTracker<TAction extends string, TCode extends s
       pressedThisFrame.clear();
       activeCodes.clear();
     },
+    rebind(next) {
+      actions = Object.keys(next) as TAction[];
+      modesByAction = new Map(
+        actions.map((action) => [action, resolveActionBindingModes(next[action] as ActionBindingConfig<TCode>)]),
+      );
+      heldCodesByAction = new Map(actions.map((action) => [action, new Set()]));
+      for (const code of activeCodes) {
+        const holdAction = findAction(code, (modes) => modes.hold);
+        if (holdAction !== null) heldCodesByAction.get(holdAction)!.add(code);
+      }
+    },
+    actions: () => actions,
   };
 }

@@ -124,7 +124,6 @@ export function FrameDriver({
     [multiplayer, serverAuthoritative, serverIdRef],
   );
   const lastSentInputRef = useRef<InputFrame | null>(null);
-  const inputActions = useMemo(() => Object.keys(playable.game.input ?? {}), [playable]);
   const predictionRef = useRef(createPredictionBuffer<EntityPosition>({
     initial: [0, 0, 0],
     maxTicks: 120,
@@ -177,7 +176,7 @@ export function FrameDriver({
     try {
     let endPhase = devtools.profile.begin("time+input");
     const dt = Math.min(rawDt, 0.05);
-    ctx.input.publish(heldActionsFor(tracker, inputActions));
+    ctx.input.publish(heldActionsFor(tracker, tracker.actions()));
     ctx.input.publishPointer(pointerAxisRef.current);
     ctx.input.publishAnalog(analogRef.current);
     sendInput();

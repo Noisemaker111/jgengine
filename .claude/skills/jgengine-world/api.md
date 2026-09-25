@@ -367,14 +367,16 @@
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void } — ⚠ undocumented · used by `stepGamepadPoll` (@jgengine/shell/input/gamepadPoll): One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish…
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `rebindGamepadPoll` (@jgengine/shell/input/gamepadPoll): Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes chang…
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput { pressed: boolean; down: boolean; repeatMs: number | undefined; lastFiredAt: number | null; now: number } — ⚠ undocumented
 
 ## @jgengine/core/input/actionContexts
 
 - `ActionContext` (interface): interface ActionContext — Named action-binding layer that may optionally expose lower layers.
+- `ActionContextAxisShape` (type): type ActionContextAxisShape = Omit<AxisShapeConfig, "scale"> — Serializable axis shaping a context may carry: {@link AxisShapeConfig} without the `scale` callback.
 - `ActionContextStack` (interface): interface ActionContextStack — Mutable layered action-map stack with snapshot and restore support.
 - `ActionContextStackSnapshot` (interface): interface ActionContextStackSnapshot — Serializable state for an action-context stack.
+- `ActiveContextAxes` (interface): interface ActiveContextAxes — Axis bindings and shaping merged across the active contexts.
 - `createActionContextStack` (function): function createActionContextStack(): ActionContextStack — Creates a serializable stack of layered action maps for menus and gameplay modes.
 
 ## @jgengine/core/input/axisInput

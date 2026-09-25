@@ -49,6 +49,26 @@ function syncTracker(tracker: ActionStateTracker<string>, bindings: GamepadBindi
 }
 
 /**
+ * Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes
+ * of pad-held actions whose pad codes changed (the next poll presses them under the new map), and
+ * keep the rest held.
+ */
+export function rebindGamepadPoll(
+  poll: GamepadPoll,
+  previous: GamepadBindings,
+  next: GamepadBindings,
+  tracker: ActionStateTracker<string>,
+): void {
+  for (const action of poll.held) {
+    const before = (previous[action] ?? []) as readonly GamepadCode[];
+    const after = next[action] as readonly GamepadCode[] | undefined;
+    if (after !== undefined && after.length === before.length && after.every((code, index) => code === before[index])) continue;
+    for (const code of before) tracker.handleUp(code);
+    poll.held.delete(action);
+  }
+}
+
+/**
  * One poll: resolve every connected pad, press/release tracker codes for actions whose pad state
  * changed, and return the analog map to publish (pad values max-merged over the other source's).
  * Allocation-free after the first frame.

@@ -28,6 +28,8 @@ export interface LethalLootInput {
   spawnWorldItem: (input: WorldItemSpawnInput) => void;
   grantToPlayer: (userId: string, drops: Drop[], source?: string) => void;
   localUserId: string;
+  /** The world's seeded stream — scatter positions must replay with the rest of the simulation. */
+  rng: () => number;
 }
 
 /**
@@ -44,6 +46,7 @@ export function applyLethalLoot(input: LethalLootInput): void {
     const resolved = resolveDeathDrops([...input.drops], {
       mode: "world",
       origin: input.position,
+      rng: input.rng,
       resolveRarity: (itemId) => input.content.itemById?.(itemId)?.rarity ?? DEFAULT_RARITY,
       resolveBaseType: (itemId) => input.content.itemById?.(itemId)?.baseType ?? itemId,
       scatter: normalizedOnDeath.scatter,

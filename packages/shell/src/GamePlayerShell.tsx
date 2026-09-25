@@ -16,8 +16,12 @@ import { deriveTouchScheme, withTouchCodes, DEFAULT_TOUCH_STYLE } from "@jgengin
 import { activeTouchControlsMode } from "@jgengine/core/input/touchControlsMode";
 import { normalizePointerToAxis, type PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+<<<<<<< HEAD
 import { localPlayers } from "@jgengine/core/runtime/localPlayers";
 import { activeActionCodes } from "@jgengine/core/game/controlGate";
+=======
+import { actionContextStack, activeActionCodes } from "@jgengine/core/game/controlGate";
+>>>>>>> origin/main
 import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
 import { useDisplayProfile } from "@jgengine/react/display";
 import { RotateDeviceScreen } from "@jgengine/react/rotateDevice";
@@ -63,6 +67,9 @@ const DEV_USER_ID = "dev-player";
 
 /** The query param that mirrors the devtools overlay into the URL — present = open. */
 const DEBUG_PARAM = "debug";
+
+const NO_SUBSCRIBE = () => () => undefined;
+const ZERO_VERSION = () => 0;
 
 export { applyMotionImpulses } from "@jgengine/core/runtime/motionIntents";
 export { nearbyObstacles } from "@jgengine/core/movement/movementModel";
@@ -150,12 +157,25 @@ export function GamePlayerShell({
     (action: string) => setBindingOverrides(clearBindingOverride(playable.game.name, action)),
     [playable],
   );
-  const tracker = useMemo(
-    () => createActionStateTracker(toActionStateBindingMap(withTouchCodes(
-      ctx === null ? effectiveInput : activeActionCodes(ctx, effectiveInput),
-    ))),
-    [ctx, effectiveInput],
+  const contextStack = ctx === null ? null : actionContextStack(ctx);
+  const contextVersion = useSyncExternalStore(
+    contextStack?.subscribe ?? NO_SUBSCRIBE,
+    contextStack?.version ?? ZERO_VERSION,
+    contextStack?.version ?? ZERO_VERSION,
   );
+  const activeInput = useMemo(
+    () => (ctx === null ? effectiveInput : activeActionCodes(ctx, effectiveInput)),
+    // contextVersion re-derives the layered map when a context is pushed or popped mid-game.
+    [ctx, effectiveInput, contextVersion],
+  );
+  const activeBindingMap = useMemo(() => toActionStateBindingMap(withTouchCodes(activeInput)), [activeInput]);
+  // One tracker per context, rebound in place so keys held across a context swap stay held.
+  const tracker = useMemo(() => createActionStateTracker<string>(activeBindingMap), [ctx]);
+  const boundMapRef = useRef(activeBindingMap);
+  if (boundMapRef.current !== activeBindingMap) {
+    boundMapRef.current = activeBindingMap;
+    tracker.rebind(activeBindingMap);
+  }
   const graphics = useGraphicsSettings(settingsStore, playable.shadows ?? true, playable.graphics);
   const trackPointerAxis = (event: { clientX: number; clientY: number }) => {
     const rect = wrapperRef.current?.getBoundingClientRect();
@@ -315,7 +335,7 @@ export function GamePlayerShell({
     touchSink,
     touchJoystickVariant,
     analogRef,
-    inputBindings: effectiveInput,
+    inputBindings: activeInput,
     orientationGate,
     orientationGateEl,
     coarsePointer,

@@ -38,6 +38,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- Action contexts rebind live input (#1769). `ActionContextStack` gains `subscribe`, `version`, `ids` and `activeAxes()`; a context may carry `axes` and serializable `shaping`. The shell re-binds keyboard, touch and gamepad when a context is pushed or popped, without remounting: keys held across the swap keep counting toward their new action, and context-only actions reach `ctx.input`. `ActionStateTracker` gains `rebind` and `actions`. The `handling` demo drives through a `driving` context (F parks it), with pad codes on every action. Recipe: `jgengine-world/recipes/controls.md`.
 - `createNavMeshQuery` (`@jgengine/core/nav/navMesh`) caches a nav mesh's adjacency and a uniform polygon grid, then answers `findPath`, `findPolygon`, `closestPoint` and `raycast` without full-mesh scans. Paths use a binary-heap A* priced by `areaCosts` per `NavMeshData.areas` id (non-finite blocks an area), stop at `maxNodes` with a `partial` route, and are straightened by a portal funnel. `retune`/`snapshot`/`restore` cover the costs, so a door or hazard can close an area during play. `NavMeshLink` gains optional `start`/`end` landing points.
 - `defineGame({ gamepad: { deadzone, curve, triggerDeadzone } })` sets pad feel for the shell's gamepad poll (#1769). Triggers now go through `triggerDeadzone` and the same curve as the sticks, and a trigger resting inside its deadzone no longer holds its action. `resolveGamepadFrame` takes a browser `Gamepad` directly and an optional reusable `out` frame, and the shell poll no longer allocates per frame. `gamepadFeelOptions` resolves the config with the old defaults (axial `0.12`/`0.95`, linear).
 - `measureFlight` (`@jgengine/core/physics/handlingProbe`) flies a `createRigidAircraft` through deterministic autopilot scenarios. It reports roll rate (deg/s), sustained turn rate, stall speed, climb rate, time to 90% throttle response and hands-off hover drift, so a flight feel target can be a test.
@@ -107,6 +108,7 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- Catalog `onDeath: { dropMode: "world" }` scattered drops with `Math.random`, so kill loot landed in different spots on replay and on each peer. The runtime now passes the world's seeded `ctx.rng` to the scatter.
 - The chase camera no longer falls behind fast vehicles. Its spring eased the camera's world position toward a moving target, so the lag grew with speed (about 9 m extra at 220 km/h); it now eases the boom offset from the target (#1770).
 - A `createVehicleDynamics` bike with both `lean` and `suspension` launched itself the moment it leaned: the springs read the lean as body roll across the narrow track. Springs now ignore lean, and lateral g keeps the same lag it has without springs.
 - `@jgengine/rapier`: a body created with `mass` now weighs exactly that. It used to add `mass` on top of the collider's density-derived mass, so a 2 kg sphere of radius 0.5 weighed 2.52 kg, and every force, impulse and joint on a massed body was off by the collider's volume.
