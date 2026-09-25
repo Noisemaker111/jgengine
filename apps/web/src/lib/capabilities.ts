@@ -8,10 +8,6 @@ const SOURCES = import.meta.glob("../../../../.claude/skills/*/capabilities.md",
 
 const skillOf = (path: string) => /skills\/([^/]+)\/capabilities\.md$/.exec(path)?.[1] ?? "unknown";
 
-/** Every intent row across the shipped skills' generated capability indexes, grouped by skill order below. */
-export const CAPABILITIES: readonly Capability[] = Object.entries(SOURCES)
-  .flatMap(([path, markdown]) => parseCapabilityIndex(markdown, skillOf(path)));
-
 /** Skill ids in reading order, each with a human label. */
 export const SKILL_DOMAINS: readonly { id: string; label: string; blurb: string }[] = [
   { id: "jgengine", label: "Foundation", blurb: "Game definition, runtime, stores, hosting." },
@@ -23,6 +19,16 @@ export const SKILL_DOMAINS: readonly { id: string; label: string; blurb: string 
   { id: "jgengine-editor", label: "Editor", blurb: "Scene documents, streaming, bakes." },
   { id: "jgengine-assets", label: "Assets", blurb: "CC0 model index, credits." },
 ];
+
+const skillRank = (skill: string) => {
+  const rank = SKILL_DOMAINS.findIndex((domain) => domain.id === skill);
+  return rank === -1 ? SKILL_DOMAINS.length : rank;
+};
+
+/** Every intent row across the shipped skills' generated capability indexes, in skill reading order. */
+export const CAPABILITIES: readonly Capability[] = Object.entries(SOURCES)
+  .flatMap(([path, markdown]) => parseCapabilityIndex(markdown, skillOf(path)))
+  .sort((a, b) => skillRank(a.skill) - skillRank(b.skill));
 
 const BY_REF = new Map(CAPABILITIES.map((row) => [`${row.skill}/${row.key}`, row]));
 

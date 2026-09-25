@@ -64,8 +64,8 @@ function Editor() {
       </PageHero>
 
       <section className="relative">
-        <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6">
-          <div className="overflow-hidden rounded-2xl border border-line bg-sunken/60">
+        <div className="mx-auto max-w-6xl px-4 pb-16 sm:px-6">
+          <div data-theme="dark" className="overflow-hidden rounded-2xl border border-line bg-sunken">
             <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-2.5">
               <div className="flex items-center gap-2 font-mono text-[11px] text-muted">
                 <span className="flex gap-1.5" aria-hidden>
@@ -79,7 +79,7 @@ function Editor() {
                 href="/play/?editor=standalone"
                 target="_blank"
                 rel="noreferrer"
-                className="font-mono text-[11px] text-accent-text transition hover:text-accent-text"
+                className="font-mono text-[11px] text-accent-text underline-offset-2 hover:underline"
               >
                 fullscreen ↗
               </a>
@@ -89,7 +89,7 @@ function Editor() {
               title="JGengine scene editor"
               loading="lazy"
               allow="fullscreen; xr-spatial-tracking"
-              className="h-[78vh] min-h-[520px] w-full border-0 bg-neutral-950"
+              className="block h-[78vh] min-h-[420px] w-full border-0 bg-[#0a0908] sm:min-h-[520px]"
             />
           </div>
           <p className="mt-3 text-center text-xs text-faint">
@@ -100,7 +100,7 @@ function Editor() {
         </div>
       </section>
 
-      <section className="relative">
+      <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <SectionHeading eyebrow="What's in it" title="A full authoring toolset, not a toy" />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -113,7 +113,7 @@ function Editor() {
         </div>
       </section>
 
-      <section className="relative">
+      <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="Standalone"
@@ -136,7 +136,7 @@ function Editor() {
         </div>
       </section>
 
-      <section className="relative">
+      <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="Author once, render generically"
@@ -176,7 +176,7 @@ function Editor() {
         <div className="pointer-events-none absolute inset-0" aria-hidden>
         </div>
         <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-24">
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-fg sm:text-4xl">
+          <h2 className="font-display text-balance text-4xl font-bold leading-none tracking-[-0.03em] text-fg sm:text-5xl">
             Open the editor on anything.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-pretty text-muted">

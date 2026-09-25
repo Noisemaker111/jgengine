@@ -77,7 +77,7 @@ export function PageHero({
   children?: ReactNode;
 }) {
   return (
-    <div className="relative overflow-hidden border-b border-line">
+    <div className="relative overflow-hidden">
       <Backdrop />
       <div className="relative mx-auto w-full max-w-6xl px-4 pb-14 pt-14 sm:px-6 sm:pb-20 sm:pt-24">
         <p className="eyebrow animate-fade-up">{eyebrow}</p>
