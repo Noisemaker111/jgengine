@@ -32,11 +32,13 @@ between (`--json` for structured output).
 
 ### Changed
 
+- `findPath`, `closestPoint` and `raycastNav` on `NavMeshData` share the cached query: paths bend only at portal corners, stacked floors resolve by height, and raycasts walk polygon edges instead of sampling.
 - Mouse look now asks for raw, unaccelerated mouse deltas (`requestPointerLock({ unadjustedMovement: true })`) in `createMouseLookTracker`, the first-person camera and the shoulder rig, and falls back to a plain lock where that is unsupported. The helper is `requestRawPointerLock` (`@jgengine/shell/input/pointerLock`).
 - `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `editor.scene.json` seeds rolling hills as a terrain sculpt (deterministic per game id, flat around the spawn) and a bright `day` sky with a sun bearing and distance fog; `src/world.ts` renders them through `environment()` and `environmentContentFromDocument` and holds only the detail-shaded ground palette. Reshape the hills in the editor. `--ground flat` keeps the old `place()` slab (#1762).
 
 ### Added
 
+- `createNavMeshQuery` (`@jgengine/core/nav/navMesh`) caches a nav mesh's adjacency and a uniform polygon grid, then answers `findPath`, `findPolygon`, `closestPoint` and `raycast` without full-mesh scans. Paths use a binary-heap A* priced by `areaCosts` per `NavMeshData.areas` id (non-finite blocks an area), stop at `maxNodes` with a `partial` route, and are straightened by a portal funnel. `retune`/`snapshot`/`restore` cover the costs, so a door or hazard can close an area during play. `NavMeshLink` gains optional `start`/`end` landing points.
 - `defineGame({ gamepad: { deadzone, curve, triggerDeadzone } })` sets pad feel for the shell's gamepad poll (#1769). Triggers now go through `triggerDeadzone` and the same curve as the sticks, and a trigger resting inside its deadzone no longer holds its action. `resolveGamepadFrame` takes a browser `Gamepad` directly and an optional reusable `out` frame, and the shell poll no longer allocates per frame. `gamepadFeelOptions` resolves the config with the old defaults (axial `0.12`/`0.95`, linear).
 - `measureFlight` (`@jgengine/core/physics/handlingProbe`) flies a `createRigidAircraft` through deterministic autopilot scenarios. It reports roll rate (deg/s), sustained turn rate, stall speed, climb rate, time to 90% throttle response and hands-off hover drift, so a flight feel target can be a test.
 - `RigidAircraftTuning.assists`: flight assists on the same actuators as the pilot, so full stick stays the pilot's.
