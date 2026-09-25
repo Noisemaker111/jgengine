@@ -157,6 +157,7 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
         ...(typeof args.color === "string" ? { color: args.color } : {}),
         ...(typeof args.label === "string" ? { label: args.label } : {}),
         ...(typeof args.rotationY === "number" ? { rotationY: args.rotationY } : {}),
+        ...(typeof args.catalogId === "string" ? { catalogId: args.catalogId } : {}),
         ...(typeof args.meta === "object" && args.meta !== null ? { meta: args.meta as Record<string, unknown> } : {}),
       };
     case "set_note":

@@ -24,6 +24,24 @@ export type AgentBridgeResponse =
 
 type EditorHost = { gameId: string; handle(request: AgentBridgeRequest): unknown };
 
+/**
+ * @internal
+ * Resolves true once `isLive()` reports a mounted editor host, polling every `intervalMs` up to
+ * `timeoutMs`. `editor_summon` awaits this so the next RPC verb in a `drive` batch finds the editor.
+ */
+export async function waitForEditorHost(
+  isLive: () => boolean,
+  timeoutMs = 15_000,
+  intervalMs = 100,
+  sleep: (ms: number) => Promise<void> = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+): Promise<boolean> {
+  for (let waited = 0; ; waited += intervalMs) {
+    if (isLive()) return true;
+    if (waited >= timeoutMs) return false;
+    await sleep(intervalMs);
+  }
+}
+
 async function saveScene(editorHost: EditorHost): Promise<AgentBridgeResponse> {
   const endpoint = getSaveEndpoint();
   if (endpoint === null) return { ok: false, error: "no save endpoint — save_scene only works in the dev runner" };
@@ -281,7 +299,9 @@ export function installAgentBridge(options: {
           return { ok: false, error: "no editor summoner on this page — open with ?mode=editor" };
         }
         window.__jgengineSummonEditor();
-        return { ok: true, live: false };
+        return waitForEditorHost(() => window.__jgengineEditorHost !== undefined).then((live) =>
+          live ? { ok: true, live: true } : { ok: false, error: "editor did not mount within 15s" },
+        );
       }
       case "save_scene": {
         const editorHost = window.__jgengineEditorHost;
