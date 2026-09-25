@@ -1,1 +1,26 @@
-[]
+[
+  "claudecraft#camera-smoothing",
+  "claudecraft#combat-feedback",
+  "duet-keys#camera-smoothing",
+  "duet-keys#combat-feedback",
+  "ironhold#camera-smoothing",
+  "ironhold#combat-feedback",
+  "ironhold#input-audio",
+  "loopline#camera-smoothing",
+  "loopline#combat-feedback",
+  "spire-cards#camera-smoothing",
+  "spire-cards#combat-feedback",
+  "spire-cards#input-audio",
+  "starhome#camera-smoothing",
+  "starhome#combat-feedback",
+  "studio-showcase#camera-smoothing",
+  "studio-showcase#combat-feedback",
+  "studio-showcase#input-audio",
+  "the-robots#camera-smoothing",
+  "tower-guard#camera-smoothing",
+  "tower-guard#combat-feedback",
+  "tower-guard#input-audio",
+  "vice-isle#camera-smoothing",
+  "wreckway#combat-feedback",
+  "wreckway#input-audio"
+]
