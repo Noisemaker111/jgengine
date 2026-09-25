@@ -441,6 +441,17 @@
 - `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishAnalog(values: Readonly<Record<string, num… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
 - `createInputSnapshot` (function): function createInputSnapshot(): InputSnapshot — ⚠ undocumented
 
+## @jgengine/core/runtime/localPlayers
+
+- `LocalPlayerAssignment` (interface): interface LocalPlayerAssignment — Result of {@link LocalPlayers.assign}.
+- `LocalPlayerSlot` (interface): interface LocalPlayerSlot — One local seat on a shared screen: a stable slot id, the user id the game spawns for it, and the device driving it.
+- `LocalPlayers` (interface): interface LocalPlayers — Seats for couch co-op: devices hot-join into slots, each slot has its own input.
+- `LocalPlayersConfig` (interface): interface LocalPlayersConfig — Retunable seat policy.
+- `LocalPlayersOptions` (interface): interface LocalPlayersOptions extends LocalPlayersConfig — Options for {@link createLocalPlayers}.
+- `LocalPlayersSnapshot` (interface): interface LocalPlayersSnapshot — Serializable seat table.
+- `createLocalPlayers` (function): function createLocalPlayers(options: LocalPlayersOptions): LocalPlayers — Seat table for local multiplayer on one screen.
+- `localPlayers` (function): function localPlayers(ctx: GameContext): LocalPlayers — The seat table of a game context, created on first use with one seat for `ctx.player` and `ctx.input`. The shell retunes it from `defineGame({ localPlayers })` and hot-joins pads into it.
+
 ## @jgengine/core/runtime/motionIntents
 
 - `MotionIntentBatch` (interface): interface MotionIntentBatch { impulses: readonly number[]; horizontalImpulses: readonly (readonly [number, number])[]; verticalVelocity: number | null; y: number | null } — ⚠ undocumented
