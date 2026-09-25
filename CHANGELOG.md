@@ -43,6 +43,11 @@ between (`--json` for structured output).
 
 ### Added
 
+- Editor Animation workspace (#1683). The rail button opens the bottom dock's new **Graph** mode for the selected placement, showing layers, states and transitions.
+  - A scrub slider replays the graph runtime; parameter sliders and trigger buttons record presses on the timeline.
+  - The rig at the camera focus is posed from the runtime's output.
+  - Crossfade edits and **Store graph** save the graph to `marker.meta.animation.graph` as undoable edits.
+  - Supporting APIs: `parseAnimGraph` (`@jgengine/core/anim/animGraph`) validates stored graphs, `animGraphFromConfig` (`@jgengine/core/anim/locomotionGraph`) resolves the graph a config plays, and `createGraphPose` (`@jgengine/shell/render/useModelAnimation`) poses a rig from graph output.
 - `npx jgengine recipe` adds `world-drops`, `click-target`, `ability-bar`, `hitscan-weapon`, `rolled-gear` and `enter-vehicle`, each type-checked against the SDK.
 - Continuous haptics (#1769). `ctx.input.haptics(userId)` returns named rumble channels (`createHapticChannels`, `@jgengine/core/input/haptics`): `set` a level per tick, `pulse` a fading hit, mixed by priority so an impact ducks the engine hum. The shell drives each local seat's pad with refreshed short effects and resets it when silent; channels are local only. The `handling` demo feeds engine, road and impact channels.
 - Local seats for couch co-op (#1686). `defineGame({ localPlayers: { maxSlots, claimPrimary? } })` and `localPlayers(ctx)` (`@jgengine/core/runtime/localPlayers`): pads hot-join their own seat on a button press, the shell spawns each through `loop.onNewPlayer(ctx, { userId, isNew: true })`, routes that pad to the seat's own `InputSnapshot` (`local(slotId).input`), and moves its entity with the walk controller. The seat table has `snapshot`/`restore`/`retune`. `?gamepad=N` injects N synthetic pads for headless checks.

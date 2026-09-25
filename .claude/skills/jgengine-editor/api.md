@@ -709,6 +709,7 @@
 
 ## @jgengine/editor/modelAnimationAuthoring
 
+- `AnimGraphSource` (type): type AnimGraphSource = "authored" | "locomotion" | "auto" — Where the graph a placement plays comes from.
 - `AnimationMode` (type): type AnimationMode = "default" | "auto" | "none" | "custom" — Which authoring mode a stored setting represents. `default` = no override key.
 - `AnimationSetting` (type): type AnimationSetting = AuthoredAnimationConfig | "auto" | "none" — The value stored at `meta.animation`.
 - `AuthoredAnimationConfig` (interface): interface AuthoredAnimationConfig — Structurally compatible with `ModelAnimationConfig`, but every field optional for authoring.
@@ -720,12 +721,16 @@
 - `OneShotEvent` (type): type OneShotEvent = (typeof ONE_SHOT_EVENTS)[number] — One-shot animation event a placement can bind a clip to (attack/hit/death/...).
 - `animationMetaPatch` (function): function animationMetaPatch(setting: AnimationSetting | undefined): { animation: AnimationSetting | undefined } — The meta patch that persists a setting (or clears the override when undefined). Shallow-merges onto `marker.meta` via `setMarker`; an undefined value drops out of the saved JSON document.
 - `animationMode` (function): function animationMode(setting: AnimationSetting | undefined): AnimationMode — The authoring mode a stored setting maps to.
+- `clearAnimGraph` (function): function clearAnimGraph(setting: AnimationSetting | undefined): AnimationSetting | undefined — Removes a stored graph so `states`/`oneShots` (or clip roles) drive the placement again.
 - `defaultCustomConfig` (function): function defaultCustomConfig(clips: readonly string[]): AuthoredAnimationConfig — A concrete custom config derived from a rigged asset's clip roles — the `custom` mode seed.
+- `effectiveAnimGraph` (function): function effectiveAnimGraph(setting: AnimationSetting | undefined, clips: readonly string[]): { graph: AnimGraph; source: AnimGraphSource } | null — The graph a placement plays at run time: its stored `graph`, else the locomotion graph of its custom `states`/`oneShots`, else the one clip roles derive for `"auto"` and no-override placements. `null` for `"none"`, a single-clip config, or a rig whose clips have no idle.
 - `readAnimationSetting` (function): function readAnimationSetting(meta: Record<string, unknown> | undefined): AnimationSetting | undefined — Reads and shape-validates the animation override from a marker's meta; undefined when absent/invalid.
 - `setAnimationMode` (function): function setAnimationMode(setting: AnimationSetting | undefined, mode: AnimationMode, clips: readonly string[] = []): AnimationSetting | undefined — Switches authoring mode. `custom` seeds from the asset's clip-role defaults (so the user starts from a working config, then overrides) when there is no existing object config; the other modes are the bare string/undefined values.
 - `setLocomotionClip` (function): function setLocomotionClip(setting: AnimationSetting | undefined, role: LocomotionRole, clipName: string | null): AuthoredAnimationConfig — Sets or clears (null) a locomotion state clip; forces the setting into `custom`.
 - `setLocomotionNumber` (function): function setLocomotionNumber(setting: AnimationSetting | undefined, key: LocomotionNumber, value: number | null): AuthoredAnimationConfig — Sets or clears (null) a numeric locomotion tuning.
 - `setOneShotClip` (function): function setOneShotClip(setting: AnimationSetting | undefined, event: string, clipName: string | null): AuthoredAnimationConfig — Binds or clears (null) a one-shot event to a clip.
+- `setTransitionDuration` (function): function setTransitionDuration(setting: AnimationSetting | undefined, graph: AnimGraph, layerId: string, index: number, duration: number): AuthoredAnimationConfig — Sets one transition's crossfade seconds in `graph` and stores the result, so editing a derived graph turns it into an authored one.
+- `storeAnimGraph` (function): function storeAnimGraph(setting: AnimationSetting | undefined, graph: AnimGraph): AuthoredAnimationConfig — Stores `graph` on the placement, keeping its other fields; the stored graph wins at play time.
 
 ## @jgengine/editor/networkSnapshot
 
@@ -820,6 +825,18 @@
 
 - `WORKSPACES` (const): const WORKSPACES: readonly RailEntry[] — Rail order and support map. Unsupported modes are visible but disabled — never fake panels.
 - `WorkspaceRail` (function): function WorkspaceRail({ active, onSelect, }: { active: EditorWorkspace; onSelect: (workspace: EditorWorkspace) => void; }): React.JSX.Element — Narrow left workspace rail. Supported modes activate their home panels; planned modes are disabled with an explanatory tooltip so nothing pretends to work.
+
+## @jgengine/editor/shell/animGraphPreview
+
+- `GraphParamControl` (interface): interface GraphParamControl — A parameter the preview needs a control for: blend inputs and condition operands.
+- `GraphPreviewFrame` (interface): interface GraphPreviewFrame — What the rig shows at the scrub time.
+- `GraphPreviewInput` (interface): interface GraphPreviewInput — Inputs for {@link simulateGraphPreview}.
+- `MAX_PREVIEW_SECONDS` (const): const MAX_PREVIEW_SECONDS: 20 — Longest preview timeline the scrubber offers, in seconds.
+- `graphClipNames` (function): function graphClipNames(graph: AnimGraph): string[] — Every clip name a graph plays.
+- `graphParamControls` (function): function graphParamControls(graph: AnimGraph): GraphParamControl[] — Parameters a graph reads, with a range covering its blend points and condition values.
+- `graphTriggers` (function): function graphTriggers(graph: AnimGraph): string[] — Every trigger name a graph's transitions listen for, in first-seen order.
+- `recordTrigger` (function): function recordTrigger(triggers: readonly GraphPreviewTrigger[], name: string, at: number): GraphPreviewTrigger[] — Adds a trigger press at `at`, keeping the log in time order.
+- `simulateGraphPreview` (function): function simulateGraphPreview(input: GraphPreviewInput): GraphPreviewFrame — Replays `graph` from its entry states to `time` and reports the pose there.
 
 ## @jgengine/editor/shell/cameraTelemetry
 

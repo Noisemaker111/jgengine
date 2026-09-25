@@ -31,6 +31,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## anim-graph — data-first animation state machine with blend trees, crossfades, layers, and clip events
 
 - `createAnimGraphRuntime` (function) · `import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph"`
+- `parseAnimGraph` (function) · `import { parseAnimGraph } from "@jgengine/core/anim/animGraph"`
 
 ## animation — find thigh, shin and foot bones on a humanoid rig for foot IK
 
@@ -423,8 +424,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
 
-## locomotion-graph — build the default idle/walk/run plus one-shot graph from clip names
+## locomotion-graph — resolve the animation graph a model config plays
 
+- `animGraphFromConfig` (function) · `import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph"`
 - `locomotionGraph` (function) · `import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph"`
 
 ## map-annotations — player-drawn map annotation layer — freehand strokes, area shapes, and pinned notes, projected into the map's routes/zones props and serializable

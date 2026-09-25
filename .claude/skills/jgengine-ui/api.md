@@ -2390,6 +2390,8 @@
 
 ## @jgengine/shell/render/useModelAnimation
 
+- `GraphPose` (interface): interface GraphPose — A mixer set up to show {@link AnimGraph} output on a rig; see {@link createGraphPose}.
+- `createGraphPose` (function): function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose — Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as the editor's graph preview, poses the rig from the runtime's output.
 - `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp. With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight and the mixer only applies them; clip events surface as `animation.event`.
 
 ## @jgengine/shell/replay/useSessionRecorder

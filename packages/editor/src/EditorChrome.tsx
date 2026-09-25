@@ -141,6 +141,9 @@ const LEFT_PAGES: readonly { id: LeftDockPage; label: string }[] = [
   { id: "catalogs", label: "Data" },
 ];
 
+/** The Animation workspace needs room for a graph's layers, so it raises a shorter dock to this height. */
+const ANIMATION_DOCK_HEIGHT = 400;
+
 /**
  * The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable
  * hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI
@@ -698,6 +701,10 @@ export function EditorChrome({
 
   const selectWorkspace = (workspace: EditorWorkspace) => {
     layout.setWorkspace(workspace);
+    if (workspace === "animation") {
+      openBottomTab("animation");
+      if (layout.getState().bottomHeight < ANIMATION_DOCK_HEIGHT) layout.patch({ bottomHeight: ANIMATION_DOCK_HEIGHT });
+    }
     if (workspace === "terrain") ui.setTool("terrain");
     else if (ui.getState().tool === "terrain") ui.setTool("select");
   };
