@@ -248,6 +248,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureWeapon` (function) · `import { measureWeapon } from "@jgengine/core/combat/weaponHandling"`
 
+## weapon-presentation — per-weapon viewmodel offset, ADS pose, viewmodel FOV, sway, bob and recoil kick from a weapon handling frame
+
+- `createWeaponPresentation` (function) · `import { createWeaponPresentation } from "@jgengine/core/combat/weaponPresentation"`
+
 ## weapon-runtime — compose cadence, magazine, a caller-owned raycast, and portable damage resolution into a fire controller
 
 - `createWeaponRuntime` (function) · `import { createWeaponRuntime } from "@jgengine/core/combat"`

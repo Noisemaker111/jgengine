@@ -11,6 +11,7 @@
   - `adsTime`.
   - Sample the shot direction inside `fire().spread`. Add `tick(dt, stance).aimPitch/aimYaw` to the aim and `cameraPitch/cameraYaw` to the view only.
   - `snapshot`/`restore` for prediction and replay; `retune` for attachments, parts and upgrades mid-fight.
+- **Presentation.** Return `{ handling: handling.frame(), presentation }` from `camera.weapon(entityId)`, with a `createWeaponPresentation` tuning (`@jgengine/core/combat/weaponPresentation`): `hip`/`ads` viewmodel offsets, `viewmodelFov`, `adsZoom`, `sway`, `bob` and `kick`. The `first` rig poses the viewmodel, adds recoil to the look and zooms with `adsProgress`. The `shoulder` rig takes its ADS framing and recoil from the same frame.
 - **Feedback.** `createWeaponFeedbackSignals()` from `@jgengine/core/combat/weaponFeedback`.
   - Call `signals.shot(handling.fire(stance))` on each shot and `signals.impact(damage)` when a hit lands.
   - Each tick, `mixer.update(dt, signals.read(handling.tick(dt, stance)))` on a `createFeedbackMixer` (`@jgengine/core/vfx/feedbackMixer`) the game declares.

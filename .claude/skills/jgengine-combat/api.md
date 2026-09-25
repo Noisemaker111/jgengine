@@ -620,6 +620,19 @@
 - `createWeaponHandling` (function): function createWeaponHandling(initial: WeaponHandlingTuning, options: { random?: () => number } = {}): WeaponHandling — Creates a {@link WeaponHandling}. Pass `random` (e.g. `ctx.rng` or `seededRng(seed)`) for the random recoil cone; without it the cone is skipped, so the result stays deterministic either way.
 - `measureWeapon` (function): function measureWeapon(create: () => WeaponHandling, options: WeaponProbeOptions): WeaponReport — Fires a held burst through a fresh handling instance at a fixed interval and reports spread growth, climb, reset time, ADS time and time-to-kill. Time-to-kill counts expected damage: each projectile hits with the share of its spread cone the target covers at `range`, scaled by `damageAt(range)`, so a blooming rifle and a wide shotgun compare at the distance the game cares about.
 
+## @jgengine/core/combat/weaponPresentation
+
+- `DEFAULT_VIEWMODEL_ADS` (const): const DEFAULT_VIEWMODEL_ADS: ViewmodelOffset — Default ADS anchor: the built-in viewmodel's top rail on the camera axis.
+- `DEFAULT_VIEWMODEL_HIP` (const): const DEFAULT_VIEWMODEL_HIP: ViewmodelOffset — Default hip anchor, matching the shell's built-in viewmodel.
+- `ViewmodelOffset` (type): type ViewmodelOffset = readonly [number, number, number] — Camera-space position `[x, y, z]` in metres: `+x` right, `+y` up, `-z` forward.
+- `WeaponPose` (interface): interface WeaponPose — Where the viewmodel and camera go this frame. First person applies all of it; third person and over-the-shoulder read `lookPitch`/`lookYaw`, `aimPitch`/`aimYaw` and `adsProgress` from the same frame.
+- `WeaponPresentation` (interface): interface WeaponPresentation — Turns a {@link WeaponHandlingFrame} plus look and movement into a viewmodel and camera pose.
+- `WeaponPresentationInput` (interface): interface WeaponPresentationInput — One frame of inputs: look motion, the movement probe, and the weapon's handling readout.
+- `WeaponPresentationState` (interface): interface WeaponPresentationState — Serializable presentation state: the current sway lag.
+- `WeaponPresentationTuning` (interface): interface WeaponPresentationTuning — How one weapon sits in first person. Offsets are camera-space metres, angles are radians, FOVs are degrees. Every field is optional; two weapons differ by the ones they set.
+- `createWeaponPresentation` (function): function createWeaponPresentation(initial: WeaponPresentationTuning = {}): WeaponPresentation — Creates a {@link WeaponPresentation}: per-weapon viewmodel offset, ADS pose and viewmodel FOV, sway and inertia from look speed, bob from the movement probe, and a recoil kick, all driven by the same handling frame third-person and over-the-shoulder rigs read. Deterministic and allocation-free per update.
+- `viewmodelFovScale` (function): function viewmodelFovScale(worldFov: number, viewmodelFov: number): number — Scale for a viewmodel drawn at `viewmodelFov` through a camera at `worldFov` (both degrees): multiply the viewmodel's camera-space x and y by this and it projects as if rendered with its own FOV, without a second camera or render pass.
+
 ## @jgengine/core/stats/accumulatorMeter
 
 - `AccumulatorMeter` (interface): interface AccumulatorMeter { value(): number; fraction(): number; tier(): string | null; broke(): boolean; add(amount: number): MeterAddResult; drain(amount: number): void; reset(): void; tick(dtSeconds: number): void } — ⚠ undocumented · used by `createAccumulatorMeter`: A raw accumulating gauge that crosses named tier thresholds as a value builds, with optional decay — the primitive under charge, rage, and c…

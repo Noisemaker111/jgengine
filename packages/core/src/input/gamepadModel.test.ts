@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { bindingLabel } from "./actionBindings";
-import { GAMEPAD_GLYPH_SETS, resolveGamepadFrame, type GamepadSnapshot } from "./gamepadModel";
+import { GAMEPAD_GLYPH_SETS, gamepadFeelOptions, resolveGamepadFrame, type GamepadSnapshot } from "./gamepadModel";
 
 const snapshot = (axes: number[], buttons: { pressed: boolean; value: number }[] = []): GamepadSnapshot => ({
   id: "test-pad",
@@ -42,6 +42,44 @@ describe("resolveGamepadFrame", () => {
 
   test("disconnected snapshots produce no input", () => {
     expect(resolveGamepadFrame({ ...snapshot([1]), connected: false }, { move: ["padaxis:0+"] }, { deadzone: { kind: "axial", inner: 0, outer: 1 } })).toEqual({ held: [], analog: {} });
+  });
+
+  test("triggers resolve through triggerDeadzone and the shared curve", () => {
+    const bindings = { throttle: ["pad:7"] } as const;
+    const options = { deadzone: { kind: "axial", inner: 0.1, outer: 1 }, curve: 2, triggerDeadzone: 0.2 } as const;
+    const resting = resolveGamepadFrame(snapshot([], [...Array(7).fill({ pressed: false, value: 0 }), { pressed: true, value: 0.15 }]), bindings, options);
+    expect(resting).toEqual({ held: [], analog: {} });
+    const half = resolveGamepadFrame(snapshot([], [...Array(7).fill({ pressed: false, value: 0 }), { pressed: true, value: 0.6 }]), bindings, options);
+    expect(half.held).toEqual(["throttle"]);
+    expect(half.analog.throttle).toBeCloseTo(0.25, 5);
+  });
+
+  test("reuses the out frame and clears stale actions", () => {
+    const out = { held: [] as string[], analog: {} as Record<string, number> };
+    const options = { deadzone: { kind: "axial", inner: 0, outer: 1 } } as const;
+    const first = resolveGamepadFrame(snapshot([1]), { steer: ["padaxis:0+"] }, options, out);
+    expect(first).toBe(out);
+    expect(out).toEqual({ held: ["steer"], analog: { steer: 1 } });
+    resolveGamepadFrame(snapshot([0]), { steer: ["padaxis:0+"] }, options, out);
+    expect(out).toEqual({ held: [], analog: {} });
+  });
+});
+
+describe("gamepadFeelOptions", () => {
+  test("defaults to the shell deadzone and a linear curve", () => {
+    expect(gamepadFeelOptions(undefined)).toEqual({
+      deadzone: { kind: "axial", inner: 0.12, outer: 0.95 },
+      curve: 1,
+      triggerDeadzone: 0,
+    });
+  });
+
+  test("a number deadzone is the axial inner edge", () => {
+    expect(gamepadFeelOptions({ deadzone: 0.2, curve: 1.6, triggerDeadzone: 0.05 })).toEqual({
+      deadzone: { kind: "axial", inner: 0.2, outer: 0.95 },
+      curve: 1.6,
+      triggerDeadzone: 0.05,
+    });
   });
 });
 

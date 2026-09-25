@@ -44,7 +44,7 @@ keeps its clock, reserve state, schema, and authority.
 
 Compose stages through registration/policy seams; adding a damage type, effect, target policy, or reward strategy must not add a central engine branch.
 
-Weapon feel sits beside the pipeline, not inside it. `createWeaponHandling` (`combat/weaponHandling`) owns recoil pattern, camera kick versus aim kick, recovery, spread bloom, stance and ADS multipliers, and ADS time, all as serializable state. `weaponFire`/`magazine` own cadence and ammo, and call `fire()` on each shot. Sample the shot cone from `fire().spread`, add `tick().aimPitch/aimYaw` to the aim, and send `cameraPitch/cameraYaw` to the view. Two weapons differ by numbers in radians and seconds; assert them with `measureWeapon` (first and tenth shot spread, climb, reset time, ADS time, time-to-kill).
+Weapon feel sits beside the pipeline, not inside it. `createWeaponHandling` (`combat/weaponHandling`) owns recoil pattern, camera kick versus aim kick, recovery, spread bloom, stance and ADS multipliers, and ADS time, all as serializable state. `weaponFire`/`magazine` own cadence and ammo, and call `fire()` on each shot. Sample the shot cone from `fire().spread`, add `tick().aimPitch/aimYaw` to the aim, and send `cameraPitch/cameraYaw` to the view. Two weapons differ by numbers in radians and seconds; assert them with `measureWeapon` (first and tenth shot spread, climb, reset time, ADS time, time-to-kill). To present it, return the frame from `camera.weapon` with a `createWeaponPresentation` tuning (`combat/weaponPresentation`); the first-person and shoulder rigs pose the viewmodel and camera from that one frame, and third-person code reads `aimPitch`/`aimYaw` from the same pose.
 
 ## Traps
 
