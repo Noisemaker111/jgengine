@@ -508,11 +508,13 @@ describe("createGameContext", () => {
       ctx.scene.entity.spawn("hero", { id: "user_a", position: [0, 0, 0] });
       const slime = ctx.scene.entity.spawn("slime", { position: [4, 0, 4] });
       ctx.scene.entity.effect({ from: "user_a", to: slime, effect: "damage", via: { amount: 999 } });
-      return ctx.scene.worldItem.list().map((item) => item.position);
+      return ctx.scene.worldItem.list().map((item) => ctx.scene.entity.get(item.instanceId)?.position);
     };
     try {
       const first = dropPositions("seed-a");
       expect(first).toHaveLength(1);
+      expect(first[0]).toBeDefined();
+      expect(first[0]).not.toEqual([4, 0, 4]);
       expect(dropPositions("seed-a")).toEqual(first);
       expect(warnings.some((warning) => String(warning).includes("worldItem fell back"))).toBe(false);
     } finally {
