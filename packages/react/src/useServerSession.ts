@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { GameRuntimeTransport } from "@jgengine/core/runtime/transport";
+import { createTransportSessionId, type GameRuntimeTransport } from "@jgengine/core/runtime/transport";
 
 /**
  * Joins a host and exposes a retryable blocking state until membership is confirmed.
@@ -12,14 +12,15 @@ export function useServerSession(transport: GameRuntimeTransport, gameId: string
   useEffect(() => {
     let disposed = false;
     let serverId: string | null = null;
+    const sessionId = createTransportSessionId();
     setSession({ serverId: null, status: "joining", failureReason: null });
-    void transport.joinServer({ gameId, serverId: preferredServerId }).then((result) => {
+    void transport.joinServer({ gameId, serverId: preferredServerId, sessionId }).then((result) => {
       if (!result.ok) {
         if (!disposed) setSession({ serverId: null, status: "failed", failureReason: result.reason });
         return;
       }
       if (disposed) {
-        void transport.leaveServer({ serverId: result.serverId }).catch(() => undefined);
+        void transport.leaveServer({ serverId: result.serverId, sessionId }).catch(() => undefined);
         return;
       }
       serverId = result.serverId;
@@ -29,7 +30,7 @@ export function useServerSession(transport: GameRuntimeTransport, gameId: string
     });
     return () => {
       disposed = true;
-      if (serverId !== null) void transport.leaveServer({ serverId }).catch(() => undefined);
+      if (serverId !== null) void transport.leaveServer({ serverId, sessionId }).catch(() => undefined);
     };
   }, [transport, gameId, preferredServerId, attempt]);
   return { ...session, retry };

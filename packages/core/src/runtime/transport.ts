@@ -62,10 +62,22 @@ export type GameRuntimeFeedView = {
 };
 
 export type GameRuntimeTransport = {
-  joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole }) => Promise<JoinServerOutcome>;
-  leaveServer: (args: { serverId: string }) => Promise<void>;
+  /**
+   * Join a server. `sessionId` names this client session (one tab, one mounted view) so the host keeps
+   * the user a member while any of their sessions is still live.
+   */
+  joinServer: (args: { gameId: string; serverId?: string; role?: MultiplayerRole; sessionId?: string }) => Promise<JoinServerOutcome>;
+  /** Leave a server. With `sessionId` only that session ends; the user leaves once no session remains. Without it the user leaves outright. */
+  leaveServer: (args: { serverId: string; sessionId?: string }) => Promise<void>;
   runCommand: (args: RunCommandArgs) => Promise<TransportRunCommandResult>;
 };
+
+/** Fresh id for one client session's join/leave pair (see {@link GameRuntimeTransport.joinServer}). */
+export function createTransportSessionId(): string {
+  const cryptoApi = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+  if (cryptoApi?.randomUUID) return cryptoApi.randomUUID();
+  return `s-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
 
 export type FeedUnsubscribe = () => void;
 

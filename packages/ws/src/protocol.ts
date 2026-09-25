@@ -13,6 +13,8 @@ export const WS_PROTOCOL_VERSION = 1;
 
 /** Max length of a `runCommand` command name, in UTF-16 code units. */
 export const MAX_COMMAND_LENGTH = 4_096;
+/** Max length of a join/leave `sessionId`, in UTF-16 code units. */
+export const MAX_SESSION_ID_LENGTH = 128;
 /** Max length of a `pushFeed` action name, in UTF-16 code units. */
 export const MAX_FEED_ACTION_LENGTH = 256;
 /** Max serialized size of a `pushFeed` entry payload, in bytes. */
@@ -56,10 +58,12 @@ export type WsClientMessage =
       attributes?: SessionAttributes;
       code?: string;
       role?: "player" | "spectator";
+      /** Client session holding this join; see `GameRuntimeTransport.joinServer`. */
+      sessionId?: string;
     }
   | { v: 1; t: "joinByCode"; id: number; gameId: string; code: string; role?: "player" | "spectator" }
   | { v: 1; t: "browse"; id: number; gameId: string; filter?: MatchFilter; limit?: number }
-  | { v: 1; t: "leave"; id: number; serverId: string }
+  | { v: 1; t: "leave"; id: number; serverId: string; sessionId?: string }
   | { v: 1; t: "runCommand"; id: number; serverId: string; command: string; input: unknown }
   | { v: 1; t: "pushFeed"; id: number; serverId: string; action: string; entry: unknown }
   | { v: 1; t: "subscribe"; id: number; channel: WsChannel; serverId: string; action?: string }
@@ -92,6 +96,10 @@ export type WsJoinByCodeResult = JoinServerResult | null;
 /** @internal */
 export function encodeWsMessage(message: WsClientMessage | WsServerMessage): string {
   return JSON.stringify(message);
+}
+
+function isOptionalSessionId(value: unknown): boolean {
+  return value === undefined || (typeof value === "string" && value.length > 0 && value.length <= MAX_SESSION_ID_LENGTH);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -217,7 +225,8 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
         typeof message.gameId === "string" &&
         (message.serverId === undefined || typeof message.serverId === "string") &&
         (message.code === undefined || typeof message.code === "string") &&
-        (message.role === undefined || message.role === "player" || message.role === "spectator")
+        (message.role === undefined || message.role === "player" || message.role === "spectator") &&
+        isOptionalSessionId(message.sessionId)
         ? (message as WsClientMessage)
         : null;
     case "joinByCode":
@@ -232,7 +241,7 @@ export function decodeWsClientMessage(raw: unknown): WsClientMessage | null {
         ? (message as WsClientMessage)
         : null;
     case "leave":
-      return typeof message.id === "number" && typeof message.serverId === "string"
+      return typeof message.id === "number" && typeof message.serverId === "string" && isOptionalSessionId(message.sessionId)
         ? (message as WsClientMessage)
         : null;
     case "runCommand":

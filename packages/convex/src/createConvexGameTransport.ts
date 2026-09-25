@@ -36,10 +36,11 @@ export type ConvexGameApi = {
         visibility?: "public" | "private";
         joinCode?: string;
         externalId?: string;
+        sessionId?: string;
       },
       JoinServerOutcome
     >;
-    leaveServer: FunctionReference<"mutation", "public", { serverId: string; externalId?: string }, null>;
+    leaveServer: FunctionReference<"mutation", "public", { serverId: string; externalId?: string; sessionId?: string }, null>;
     runCommand: FunctionReference<
       "mutation",
       "public",
@@ -131,10 +132,12 @@ export function createConvexGameTransport(
   api: { runtime: Pick<ConvexGameApi["runtime"], "joinServer" | "leaveServer" | "runCommand"> },
   config: ConvexGameTransportConfig,
 ): GameRuntimeTransport {
-  const joinedServers = new Set<string>();
+  const joinedServers = new Map<string, Set<string | undefined>>();
   const onPageHide = () => {
-    for (const serverId of joinedServers) {
-      void client.mutation(api.runtime.leaveServer, { serverId, externalId: config.userId }).catch(() => undefined);
+    for (const [serverId, sessions] of joinedServers) {
+      for (const sessionId of sessions) {
+        void client.mutation(api.runtime.leaveServer, { serverId, externalId: config.userId, ...(sessionId === undefined ? {} : { sessionId }) }).catch(() => undefined);
+      }
     }
     joinedServers.clear();
     globalThis.removeEventListener?.("pagehide", onPageHide);
@@ -145,9 +148,12 @@ export function createConvexGameTransport(
         gameId: config.gameId,
         serverId: args.serverId,
         externalId: config.userId,
+        ...(args.sessionId === undefined ? {} : { sessionId: args.sessionId }),
       });
       if (result.ok) {
-        joinedServers.add(result.serverId);
+        const sessions = joinedServers.get(result.serverId) ?? new Set<string | undefined>();
+        sessions.add(args.sessionId);
+        joinedServers.set(result.serverId, sessions);
         globalThis.addEventListener?.("pagehide", onPageHide);
       }
       return result;
@@ -155,7 +161,12 @@ export function createConvexGameTransport(
 
     async leaveServer(args) {
       await client.mutation(api.runtime.leaveServer, { ...args, externalId: config.userId });
-      joinedServers.delete(args.serverId);
+      const sessions = joinedServers.get(args.serverId);
+      if (args.sessionId === undefined) joinedServers.delete(args.serverId);
+      else {
+        sessions?.delete(args.sessionId);
+        if (sessions?.size === 0) joinedServers.delete(args.serverId);
+      }
       if (joinedServers.size === 0) globalThis.removeEventListener?.("pagehide", onPageHide);
     },
 

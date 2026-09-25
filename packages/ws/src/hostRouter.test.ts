@@ -771,3 +771,36 @@ test("middleware: authorize hook can gate a sensitive op while leaving others un
     await stack.shutdown();
   }
 });
+
+test("sessions: a disposed join's leave keeps the live session, and the last leave ends membership", async () => {
+  const stack = startStack();
+  try {
+    const alice = stack.connect("alice");
+    const { serverId } = await alice.transport.joinServer({ gameId: "test-game", sessionId: "mount-1" });
+    await alice.transport.joinServer({ gameId: "test-game", serverId, sessionId: "mount-2" });
+    await alice.transport.leaveServer({ serverId, sessionId: "mount-1" });
+    expect(await stack.host.isMember({ userId: "alice", serverId })).toBe(true);
+    expect(await alice.transport.runCommand({ serverId, command: "engine.ping", input: {} })).toMatchObject({ ok: true });
+    await alice.transport.leaveServer({ serverId, sessionId: "mount-2" });
+    expect(await stack.host.isMember({ userId: "alice", serverId })).toBe(false);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("sessions: with multiple connections, one connection leaving keeps the user in the server", async () => {
+  const stack = startStack({ singleSession: false, graceMs: 0 });
+  try {
+    const tabA = stack.connect("alice");
+    const tabB = stack.connect("alice");
+    const { serverId } = await tabA.transport.joinServer({ gameId: "test-game", sessionId: "a" });
+    await tabB.transport.joinServer({ gameId: "test-game", serverId, sessionId: "b" });
+    await tabB.transport.leaveServer({ serverId });
+    expect(await stack.host.isMember({ userId: "alice", serverId })).toBe(true);
+    tabA.close();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(await stack.host.isMember({ userId: "alice", serverId })).toBe(false);
+  } finally {
+    await stack.shutdown();
+  }
+});

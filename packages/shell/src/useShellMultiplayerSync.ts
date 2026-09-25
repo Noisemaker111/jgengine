@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, type Dispatch, type SetStateAction } 
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
-import type { PresencePoseRow } from "@jgengine/core/runtime/transport";
+import { createTransportSessionId, type PresencePoseRow } from "@jgengine/core/runtime/transport";
 
 import { attachWorldSync, type AuthoritativeFrameHandler } from "./worldSync";
 import type { ShellMultiplayer } from "./multiplayer";
@@ -27,9 +27,10 @@ export function useShellMultiplayerSync(
     setFailureReason(null);
     let disposed = false;
     const cleanups: (() => void)[] = [];
+    const sessionId = createTransportSessionId();
 
     void multiplayer.backend.transport
-      .joinServer({ gameId: multiplayer.gameId })
+      .joinServer({ gameId: multiplayer.gameId, sessionId })
       .then((joined) => {
         if (!joined.ok) {
           if (!disposed) {
@@ -39,7 +40,7 @@ export function useShellMultiplayerSync(
           return;
         }
         if (disposed) {
-          void multiplayer.backend.transport.leaveServer({ serverId: joined.serverId });
+          void multiplayer.backend.transport.leaveServer({ serverId: joined.serverId, sessionId }).catch(() => undefined);
           return;
         }
         serverIdRef.current = joined.serverId;
@@ -140,7 +141,7 @@ export function useShellMultiplayerSync(
       serverIdRef.current = null;
       setRemotePlayers([]);
       if (serverId !== null) {
-        void multiplayer.backend.transport.leaveServer({ serverId }).catch(() => undefined);
+        void multiplayer.backend.transport.leaveServer({ serverId, sessionId }).catch(() => undefined);
       }
     };
   }, [ctx, multiplayer, playable, attempt]);

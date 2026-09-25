@@ -152,6 +152,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   const resumeTickets = new Map<string, ResumeTicket>();
   const joinedGames = new Map<string, string>();
   const joinedRoles = new Map<string, "player" | "spectator">();
+  const joinedSessions = new Map<string, Set<string>>();
   const rtt = { sampleMs: 0, smoothedMs: 0 };
   let pingTimer: ReturnType<typeof setTimeout> | null = null;
   const schedulePing = () => {
@@ -224,7 +225,10 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
 
   const rejoinServers = () => {
     for (const [serverId, gameId] of joinedGames) {
-      rawSend({ v: 1, t: "join", id: nextId++, gameId, serverId, role: joinedRoles.get(serverId) });
+      const sessions = [...(joinedSessions.get(serverId) ?? [])];
+      for (const sessionId of sessions.length > 0 ? sessions : [undefined]) {
+        rawSend({ v: 1, t: "join", id: nextId++, gameId, serverId, role: joinedRoles.get(serverId), ...(sessionId === undefined ? {} : { sessionId }) });
+      }
     }
   };
   const helloToken = () => resumeTickets.values().next().value?.token ?? options.token;
@@ -421,10 +425,16 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
         gameId: args.gameId,
         serverId: args.serverId,
         role: args.role,
+        ...(args.sessionId === undefined ? {} : { sessionId: args.sessionId }),
       }));
       const joined = result as JoinServerResult;
       joinedGames.set(joined.serverId, args.gameId);
       joinedRoles.set(joined.serverId, args.role ?? "player");
+      if (args.sessionId !== undefined) {
+        const sessions = joinedSessions.get(joined.serverId) ?? new Set<string>();
+        sessions.add(args.sessionId);
+        joinedSessions.set(joined.serverId, sessions);
+      }
       if (joined.resumeTicket !== undefined) resumeTickets.set(joined.serverId, joined.resumeTicket);
       return { ...joined, ok: true as const };
       } catch (error) {
@@ -436,8 +446,17 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       }
     },
     async leaveServer(args) {
+      const sessions = joinedSessions.get(args.serverId);
+      const partial = args.sessionId !== undefined && sessions !== undefined && sessions.size > 0 &&
+        (!sessions.has(args.sessionId) || sessions.size > 1);
+      if (partial) {
+        await request((id) => ({ v: 1, t: "leave", id, serverId: args.serverId, sessionId: args.sessionId }));
+        sessions.delete(args.sessionId!);
+        return;
+      }
       poseGates.delete(args.serverId);
-      await request((id) => ({ v: 1, t: "leave", id, serverId: args.serverId }));
+      await request((id) => ({ v: 1, t: "leave", id, serverId: args.serverId, ...(args.sessionId === undefined ? {} : { sessionId: args.sessionId }) }));
+      joinedSessions.delete(args.serverId);
       joinedGames.delete(args.serverId);
       joinedRoles.delete(args.serverId);
       resumeTickets.delete(args.serverId);
