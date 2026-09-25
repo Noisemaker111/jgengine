@@ -33,6 +33,8 @@ between (`--json` for structured output).
 
 ### Changed
 
+- Perception judges each sound or damage stimulus once per observer, from where the observer stood when it first observed after the stimulus. Before, every `observe` re-scored past sounds from the observer's current position, so a guard walking toward an old noise grew more certain of it. `PerceptionSnapshot` gains `heard` and `nextSeq`; older saves re-judge their stimuli once.
+- Perception `loudness` now scales how far a sound carries (`hearingRange × loudness`) instead of only its confidence, so a gunshot is heard past normal hearing range and a footstep only close by. Loudness `1` behaves as before.
 - `npx jgengine find` now surfaces seams that had no capability row: `vehicle-seats`, `drivable-vehicle`, `kinematic-vehicle`, `affix-roller`, `hitscan-shot`, `loot-beams`, `world-item-pickup`, `on-death-drops`, `pointer-commands`, `current-target`, `fire-input`, `global-cooldown`. `PointerConfig.moveCommand` JSDoc now says it receives the clicked entity (click-to-target).
 - `npx jgengine find` matches whole stemmed words (`aim` no longer hits `claim`), drops stopwords, tries multi-word queries joined (`pick up` → `pickup`), returns the closest partial matches instead of "no match", and searches CLI recipes and skill recipe docs.
 - `raycastNav` and `NavMeshQuery.raycast` step into the polygon a segment enters when it starts on or crosses a shared vertex, so a funnel path's corner-to-corner legs raycast clear.
@@ -44,6 +46,7 @@ between (`--json` for structured output).
 
 ### Added
 
+- `createPerception` takes `maxStimuli` (default 256; the oldest are dropped) and adds `forget(observerId, targetId?)`. Stimuli insert in time order instead of re-sorting on every push.
 - Decision graphs (`@jgengine/core/ai/decisionGraph`) gain `invert`, `cooldown`, `wait` and `random` nodes and `memory` selectors/sequences that resume at their running child. `createDecisionGraphRuntime(graph, actions, { onAbort, rng })` calls `onAbort` when a branch pre-empts a running action, and `random` draws from the injected `rng` only. `running()` names the running action; snapshots now carry timers, memory and cooldowns (older `{ runningPath }` saves still restore).
 - Decision graph behaviors keep a persistent per-entity blackboard: seed it with `blackboard`, write facts from perception or game systems through `behaviorControl(ctx).blackboard(id)`, and it round-trips through `serialize`/`restore`. `thinkInterval` ticks the graph every N seconds, staggered across siblings, with the elapsed time as `dt`. `registerBehaviorActions(id, actions, { onAbort })`; `random` nodes draw from `ctx.rng`.
 - `npx jgengine recipe` adds `world-drops`, `click-target`, `ability-bar`, `hitscan-weapon`, `rolled-gear` and `enter-vehicle`, each type-checked against the SDK.
