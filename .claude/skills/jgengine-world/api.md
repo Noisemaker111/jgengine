@@ -4017,6 +4017,13 @@
 - `worldSolidBounds` (function): function worldSolidBounds(solid: WorldSolid): { min: [number, number, number]; max: [number, number, number]; } — Yaw-expanded world AABB of an oriented solid box.
 - `worldSolidFootprint` (function): function worldSolidFootprint(solid: WorldSolid): Aabb — XZ footprint of a solid's world AABB, for 2D consumers such as nav grids.
 
+## @jgengine/navbake
+
+- `BakeNavMeshOptions` (interface): interface BakeNavMeshOptions — Walkable geometry and agent dimensions for {@link bakeNavMesh}.
+- `bakeNavMesh` (function): function bakeNavMesh(options: BakeNavMeshOptions): NavMeshData — Voxelize indexed triangles with recast and return the walkable surface as convex polygons in the engine's serializable nav-mesh format: eroded by `agentRadius`, cut where clearance is under `agentHeight`, and split at slopes over `maxSlope` or steps over `maxClimb`. Requires {@link initNavBake}.
+- `initNavBake` (function): function initNavBake(): Promise<void> — Load the recast WebAssembly module once; await before the first {@link bakeNavMesh}.
+- `navBakeReady` (function): function navBakeReady(): boolean — Whether {@link initNavBake} has finished and {@link bakeNavMesh} can run synchronously.
+
 ## @jgengine/rapier
 
 - `RapierBackendOptions` (interface): interface RapierBackendOptions extends PhysicsBackendConfig — Construction options for the Rapier-backed {@link PhysicsBackend}.
