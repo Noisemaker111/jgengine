@@ -253,6 +253,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
+import { inflateSync } from "node:zlib";
 
 export const DEVICES = {
   desktop: { width: 1600, height: 900, dsf: 1, mobile: false },
@@ -493,17 +494,107 @@ export async function waitForHonestFrame(session, url, timeoutMs) {
   );
 }
 
-/** Capture the current frame to a PNG (atomic write). */
-export async function screenshotTo(session, outPath) {
-  const shot = await session.send("Page.captureScreenshot", {
-    format: "png",
-    fromSurface: true,
-    captureBeyondViewport: false,
-  });
-  if (typeof shot.data !== "string" || shot.data.length === 0) {
-    throw new Error("Page.captureScreenshot returned no data");
+/** Decode an 8-bit, non-interlaced PNG (what Page.captureScreenshot emits) into raw pixels. */
+export function decodePng(bytes) {
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let channels = 0;
+  const idat = [];
+  while (offset < bytes.length) {
+    const length = bytes.readUInt32BE(offset);
+    const type = bytes.toString("ascii", offset + 4, offset + 8);
+    const data = bytes.subarray(offset + 8, offset + 8 + length);
+    if (type === "IHDR") {
+      width = data.readUInt32BE(0);
+      height = data.readUInt32BE(4);
+      channels = { 0: 1, 2: 3, 4: 2, 6: 4 }[data[9]] ?? 0;
+      if (data[8] !== 8 || data[12] !== 0) channels = 0;
+    } else if (type === "IDAT") idat.push(data);
+    else if (type === "IEND") break;
+    offset += 12 + length;
   }
-  writePngAtomic(outPath, Buffer.from(shot.data, "base64"));
+  if (channels === 0) return null;
+  const stride = width * channels;
+  const raw = inflateSync(Buffer.concat(idat));
+  const px = Buffer.alloc(stride * height);
+  for (let y = 0; y < height; y += 1) {
+    const filter = raw[y * (stride + 1)];
+    const src = y * (stride + 1) + 1;
+    const row = y * stride;
+    for (let x = 0; x < stride; x += 1) {
+      const a = x >= channels ? px[row + x - channels] : 0;
+      const b = y > 0 ? px[row - stride + x] : 0;
+      const c = x >= channels && y > 0 ? px[row - stride + x - channels] : 0;
+      let v = raw[src + x];
+      if (filter === 1) v += a;
+      else if (filter === 2) v += b;
+      else if (filter === 3) v += (a + b) >> 1;
+      else if (filter === 4) {
+        const p = a + b - c;
+        const pa = Math.abs(p - a);
+        const pb = Math.abs(p - b);
+        const pc = Math.abs(p - c);
+        v += pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+      }
+      px[row + x] = v & 255;
+    }
+  }
+  return { width, height, channels, px };
+}
+
+// A viewport that is one flat fill (a canvas that never drew, a cleared background
+// with nothing on it) has almost no luminance spread; any rendered scene has plenty.
+export function isBlankFrame(pngBytes) {
+  const image = decodePng(pngBytes);
+  if (image === null || image.width === 0 || image.height === 0) return false;
+  const { width, height, channels, px } = image;
+  const step = Math.max(1, Math.floor(Math.min(width, height) / 64));
+  let n = 0;
+  let sum = 0;
+  let sumSq = 0;
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const i = (y * width + x) * channels;
+      const lum = channels >= 3 ? 0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2] : px[i];
+      n += 1;
+      sum += lum;
+      sumSq += lum * lum;
+    }
+  }
+  const mean = sum / n;
+  return Math.sqrt(Math.max(0, sumSq / n - mean * mean)) < 2;
+}
+
+/**
+ * Capture the current frame to a PNG (atomic write). A blank viewport is retried for
+ * up to blankWaitMs, then refused: nothing is written and the capture fails.
+ */
+export async function screenshotTo(session, outPath, blankWaitMs = 10_000) {
+  const deadline = Date.now() + blankWaitMs;
+  for (;;) {
+    const shot = await session.send("Page.captureScreenshot", {
+      format: "png",
+      fromSurface: true,
+      captureBeyondViewport: false,
+    });
+    if (typeof shot.data !== "string" || shot.data.length === 0) {
+      throw new Error("Page.captureScreenshot returned no data");
+    }
+    const bytes = Buffer.from(shot.data, "base64");
+    if (!isBlankFrame(bytes)) {
+      writePngAtomic(outPath, bytes);
+      return;
+    }
+    if (Date.now() >= deadline) {
+      throw new Error(
+        "viewport stayed one flat color for " +
+          Math.round(blankWaitMs / 1000) +
+          "s — the game drew nothing. Check the page console, or raise --settle if it loads slowly.",
+      );
+    }
+    await sleep(500);
+  }
 }
 
 /** Kill the launched Chrome and (when we started it) the dev server tree. */
@@ -1104,14 +1195,15 @@ export { editorLayers } from "./editorLayers";
 // at +Z of the spawn because rotationY 0 faces +Z: the follow camera frames it and W walks to the goal.
 /**
  * Seeded sky for a new 3D scene: the `day` preset honors intensities and custom tints, so the first
- * frame reads bright. Retune in the editor lighting workspace (F2+E), which rewrites this block.
+ * frame reads bright, and the sun sits low ahead-left of the spawn's +Z facing so its glow is in
+ * frame. Retune in the editor lighting workspace (F2+E), which rewrites this block.
  */
 export const STARTER_ENVIRONMENT = {
   preset: "day",
   zenithColor: "#2c6cc6",
   horizonColor: "#cfe4f5",
-  sunAzimuth: 140,
-  sunElevation: 40,
+  sunAzimuth: 128,
+  sunElevation: 20,
   fog: { color: "#cfe4f5", near: 90, far: 460 },
 } as const;
 

@@ -28,10 +28,14 @@ between (`--json` for structured output).
   - Euler `rotation` → step `heading`/`pitch`/`bank` and `orientation`; spawn with `aircraftAttitudeQuaternion(heading, pitch, bank)`.
   - Tune against `measureFlight` with the `jgengine-world` recipe `flight-feel.md`.
 - `KinematicVehicleTuning.chassis` and `.steering` are deprecated. Their heading is still commanded from steer, so a held steer at speed spins the car. For handling that matters, move to `createVehicleDynamics` (`@jgengine/core/physics/vehicleDynamics`). Map `massKg`/`engineForce`/`brakeForce`/`tireGrip`/`comHeight`/`trackWidth` to `massKg`, `powertrain: { kind: "direct", maxForce, maxPower }` or a gearbox, `brakeForce`, `front.peakGrip`, `comHeight` and `trackWidth`. Map `steering.wheelbase`/`maxAngle`/`highSpeedAngle`/`highSpeedAt` to the same `steering` fields plus a rack `rate`. Then tune against `measureHandling` with the `jgengine-world` recipe `vehicle-feel.md`. Plain `kinematicVehicle`, without those blocks, stays for karts, top-down and bumper cars.
-- The default third-person orbit camera sits lower and closer (`initialDistance` 9 → 7, `initialHeight` 5.5 → 3.2), so the horizon and sky are in frame. To keep the old framing, set `camera: { initialDistance: 9, initialHeight: 5.5 }` in `defineGame`.
+- The default third-person orbit camera sits lower and closer (`initialDistance` 9 → 7, `initialHeight` 5.5 → 2.4), so the horizon sits near the top third and the sky is in frame. To keep the old framing, set `camera: { initialDistance: 9, initialHeight: 5.5 }` in `defineGame`.
 
 ### Changed
 
+- Sky and fog colors render as authored under any tone mapping. The sky dome and sky fog treat their colors as on-screen swatches and pre-invert the renderer's tone-mapping curve, so a `#cfe4f5` horizon no longer shows as grey `#a6b3c2` under the default `neutral` look (AgX). The dome now runs three's tone-mapping and color-space chunks, so it matches with or without a post chain. Looks with bloom (`cinematic`, `photoreal`) get a brighter sky that blooms more near the sun; raise `bloom.threshold` if that is too much.
+- The sky's sun shadows lose their stair-step: one 2048 map over a 90 m box that leads the camera (was 180 m centered on it), texel-snapped, with a 4-texel PCF radius. Time-of-day, biome and `DayNightSky` suns use the same rig instead of three's default 10 m box.
+- `jgengine create` seeds the sun lower and ahead-left of the spawn (bearing 128°, 20° up), so its glow is in the first frame.
+- Scaffolded `scripts/shoot.mjs` and `scripts/drive.mjs` refuse a viewport that stays one flat color for 10 s instead of saving it; nothing is written and the command fails.
 - `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `editor.scene.json` seeds rolling hills as a terrain sculpt (deterministic per game id, flat around the spawn) and a bright `day` sky with a sun bearing and distance fog; `src/world.ts` renders them through `environment()` and `environmentContentFromDocument` and holds only the detail-shaded ground palette. Reshape the hills in the editor. `--ground flat` keeps the old `place()` slab (#1762).
 
 ### Added

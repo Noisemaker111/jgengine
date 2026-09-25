@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, type MutableRefObject, type RefObject } from "react";
 import * as THREE from "three";
 
 import type { BiomeBand, SkyEnvironmentDescriptor } from "@jgengine/core/world/features";
@@ -8,7 +8,9 @@ import { resolveVolumetricClouds, type VolumetricCloudsConfig } from "@jgengine/
 
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
+import { DisplayColorWriter } from "../render/displayColor";
 import { daylightStateAt, SKY_PRESET_DAY_FRACTION } from "./daylightCycle";
+import { SUN_SHADOW, sunLightPosition, sunShadowFocus } from "./sunShadowMath";
 import { VolumetricClouds } from "./VolumetricClouds";
 
 export interface SkyDomeProps {
@@ -46,49 +48,107 @@ const HEMI_SKY = "#bfe3ff";
 const HEMI_GROUND = "#4c6b34";
 
 /**
- * Sun directional light whose high-resolution shadow camera follows the view each
- * frame, so grounded shadows stay crisp under the player anywhere in a large world
- * instead of only near the origin.
+ * Shadow-casting sun whose shadow box leads the camera each frame ({@link sunShadowFocus}), so
+ * grounded shadows stay crisp and soft-edged under the player anywhere in a large world. Time-of-day
+ * drivers aim it through `directionRef` and retint it through `lightRef`.
+ * @internal
  */
-function ShadowCastingSun({
-  position,
+export function SunLight({
+  direction,
+  directionRef,
+  lightRef,
   intensity,
   color,
 }: {
-  position: readonly [number, number, number];
+  direction: readonly [number, number, number];
+  directionRef?: MutableRefObject<readonly [number, number, number]>;
+  lightRef?: RefObject<THREE.DirectionalLight | null>;
   intensity: number;
   color: string;
 }) {
-  const ref = useRef<THREE.DirectionalLight>(null);
+  const ownRef = useRef<THREE.DirectionalLight>(null);
+  const ref = lightRef ?? ownRef;
+  const scratch = useMemo(() => ({ forward: new THREE.Vector3(), focus: { x: 0, z: 0 }, position: [0, 0, 0] as [number, number, number] }), []);
   useFrame((state) => {
     const light = ref.current;
     if (light === null) return;
-    const cx = state.camera.position.x;
-    const cz = state.camera.position.z;
-    light.position.set(cx + position[0], position[1], cz + position[2]);
-    light.target.position.set(cx, 0, cz);
+    state.camera.getWorldDirection(scratch.forward);
+    const focus = sunShadowFocus(state.camera.position, scratch.forward, scratch.focus);
+    const [x, y, z] = sunLightPosition(focus, directionRef?.current ?? direction, scratch.position);
+    light.position.set(x, y, z);
+    light.target.position.set(focus.x, 0, focus.z);
     light.target.updateMatrixWorld();
   });
+  const initial = sunLightPosition({ x: 0, z: 0 }, direction);
   return (
     <directionalLight
       ref={ref}
-      position={[position[0], position[1], position[2]]}
+      position={initial}
       intensity={intensity}
       color={color}
       castShadow
-      shadow-mapSize-width={2048}
-      shadow-mapSize-height={2048}
-      shadow-camera-left={-90}
-      shadow-camera-right={90}
-      shadow-camera-top={90}
-      shadow-camera-bottom={-90}
-      shadow-camera-near={10}
-      shadow-camera-far={520}
-      shadow-bias={-0.0004}
-      shadow-normalBias={0.02}
+      shadow-mapSize-width={SUN_SHADOW.mapSize}
+      shadow-mapSize-height={SUN_SHADOW.mapSize}
+      shadow-camera-left={-SUN_SHADOW.halfExtent}
+      shadow-camera-right={SUN_SHADOW.halfExtent}
+      shadow-camera-top={SUN_SHADOW.halfExtent}
+      shadow-camera-bottom={-SUN_SHADOW.halfExtent}
+      shadow-camera-near={SUN_SHADOW.near}
+      shadow-camera-far={SUN_SHADOW.far}
+      shadow-bias={SUN_SHADOW.bias}
+      shadow-normalBias={SUN_SHADOW.normalBias}
+      shadow-radius={SUN_SHADOW.radius}
     />
   );
 }
+
+interface SkyDomeDisplay {
+  top: THREE.Color;
+  bottom: THREE.Color;
+}
+
+/**
+ * Sets the zenith and horizon colors a sky dome should show on screen. The dome converts them each
+ * frame through the renderer's tone mapping ({@link DisplayColorWriter}), so a picked swatch renders
+ * as picked instead of greyed by the output curve.
+ * @internal
+ */
+export function setSkyDomeColors(material: THREE.ShaderMaterial, top: THREE.ColorRepresentation, bottom: THREE.ColorRepresentation): void {
+  const display = material.userData as Partial<SkyDomeDisplay>;
+  (display.top ??= new THREE.Color()).set(top);
+  (display.bottom ??= new THREE.Color()).set(bottom);
+}
+
+/**
+ * Scene fog whose color is a display color, converted through the renderer's tone mapping like the
+ * dome's horizon so fogged ground meets the sky without a seam. Drivers retint it with
+ * {@link setSkyFogColor}.
+ * @internal
+ */
+export function SkyFog({ color, near, far, fogRef }: { color: string; near: number; far: number; fogRef?: RefObject<THREE.Fog | null> }) {
+  const ownRef = useRef<THREE.Fog>(null);
+  const ref = fogRef ?? ownRef;
+  const writer = useMemo(() => new DisplayColorWriter(), []);
+  useLayoutEffect(() => {
+    if (ref.current !== null) setSkyFogColor(ref.current, color);
+  }, [ref, color]);
+  useFrame((state) => {
+    const fog = ref.current;
+    const display = fog === null ? undefined : fogDisplayColors.get(fog);
+    if (fog === null || display === undefined) return;
+    writer.write(fog.color, display, state.gl);
+  });
+  return <fog attach="fog" ref={ref} args={[color, near, far]} />;
+}
+
+/** Sets the display color a {@link SkyFog} converts each frame. @internal */
+export function setSkyFogColor(fog: THREE.Fog, color: THREE.ColorRepresentation): void {
+  const display = fogDisplayColors.get(fog);
+  if (display === undefined) fogDisplayColors.set(fog, new THREE.Color(color));
+  else display.set(color);
+}
+
+const fogDisplayColors = new WeakMap<THREE.Fog, THREE.Color>();
 
 /** @internal */
 export function SkyDome({
@@ -107,7 +167,7 @@ export function SkyDome({
 }: SkyDomeProps = {}) {
   const meshRef = useRef<THREE.Mesh>(null);
   const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
+    const dome = new THREE.ShaderMaterial({
       uniforms: {
         topColor: { value: new THREE.Color(topColor) },
         bottomColor: { value: new THREE.Color(horizonColor) },
@@ -161,12 +221,16 @@ export function SkyDome({
           float glow = pow(sd, 8.0) * 0.35 + pow(sd, 128.0) * 2.6;
           col += uSunColor * glow * uSunIntensity * uSunGlow;
           gl_FragColor = vec4(col, 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
         }
       `,
       side: THREE.BackSide,
       depthWrite: false,
       fog: false,
     });
+    setSkyDomeColors(dome, topColor, horizonColor);
+    return dome;
   }, [topColor, horizonColor, offset, exponent, sunColor, sunDirection, sunIntensity, hazeStrength, sunGlowStrength, cloudiness]);
   useEffect(() => {
     if (materialRef !== undefined) materialRef.current = material;
@@ -176,6 +240,7 @@ export function SkyDome({
     };
   }, [material, materialRef]);
   const camera = useThree((state) => state.camera);
+  const writers = useMemo(() => ({ top: new DisplayColorWriter(), bottom: new DisplayColorWriter() }), []);
   useEffect(() => {
     const far = (camera as THREE.PerspectiveCamera).far;
     if (typeof far !== "number" || radius < far) return;
@@ -185,6 +250,9 @@ export function SkyDome({
     );
   }, [camera, radius]);
   useFrame((state) => {
+    const display = material.userData as SkyDomeDisplay;
+    writers.top.write(material.uniforms.topColor!.value as THREE.Color, display.top, state.gl);
+    writers.bottom.write(material.uniforms.bottomColor!.value as THREE.Color, display.bottom, state.gl);
     const mesh = meshRef.current;
     if (mesh === null) return;
     mesh.position.x = state.camera.position.x;
@@ -230,18 +298,14 @@ export function Daylight({ sky, fog, sun, ambient, lights = true, clouds }: Dayl
         <VolumetricClouds rules={resolveVolumetricClouds(clouds)} sunDirection={sunPosition} />
       )}
       {fog === false ? null : (
-        <fog attach="fog" args={[fog?.color ?? FOG_COLOR, fog?.near ?? 70, fog?.far ?? 260]} />
+        <SkyFog color={fog?.color ?? FOG_COLOR} near={fog?.near ?? 70} far={fog?.far ?? 260} />
       )}
       {lights ? (
         <>
           <hemisphereLight
             args={[ambient?.skyColor ?? HEMI_SKY, ambient?.groundColor ?? HEMI_GROUND, ambient?.intensity ?? 0.55]}
           />
-          <ShadowCastingSun
-            position={sunPosition}
-            intensity={sun?.intensity ?? 0.85}
-            color={sun?.color ?? SUN_COLOR}
-          />
+          <SunLight direction={sunPosition} intensity={sun?.intensity ?? 0.85} color={sun?.color ?? SUN_COLOR} />
         </>
       ) : null}
     </>
@@ -336,6 +400,7 @@ function BiomeDaylight({
   const baseFraction = timeOfDay ? clock!.calendar().dayFraction : SKY_PRESET_DAY_FRACTION[sky.preset];
   const initial = useMemo(() => daylightStateAt(baseFraction, sky), [sky, baseFraction]);
   const sunRef = useRef<THREE.DirectionalLight>(null);
+  const sunDirectionRef = useRef<readonly [number, number, number]>(initial.sunPosition);
   const hemiRef = useRef<THREE.HemisphereLight>(null);
   const fogRef = useRef<THREE.Fog>(null);
   const skyMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -368,21 +433,18 @@ function BiomeDaylight({
     const skyValue = skySampler(z);
     const fogNode = fogRef.current;
     if (fogNode !== null) {
-      fogNode.color.set(fog.color);
+      setSkyFogColor(fogNode, fog.color);
       fogNode.near = fog.near;
       fogNode.far = fog.far;
     }
     const skyMaterial = skyMaterialRef.current;
     if (skyMaterial !== null) {
-      (skyMaterial.uniforms.topColor!.value as THREE.Color).set(skyValue.zenithColor);
-      (skyMaterial.uniforms.bottomColor!.value as THREE.Color).set(skyValue.horizonColor);
+      setSkyDomeColors(skyMaterial, skyValue.zenithColor, skyValue.horizonColor);
       aimSkySun(skyMaterial, base.sunPosition);
     }
+    sunDirectionRef.current = base.sunPosition;
     const sun = sunRef.current;
-    if (sun !== null) {
-      sun.position.set(base.sunPosition[0], base.sunPosition[1], base.sunPosition[2]);
-      sun.intensity = skyValue.sunIntensity;
-    }
+    if (sun !== null) sun.intensity = skyValue.sunIntensity;
     const hemi = hemiRef.current;
     if (hemi !== null) hemi.intensity = skyValue.ambientIntensity;
   });
@@ -400,16 +462,16 @@ function BiomeDaylight({
       {sky.volumetricClouds === undefined ? null : (
         <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} sunDirection={initial.sunPosition} />
       )}
-      <fog attach="fog" ref={fogRef} args={[fogFallback.color, fogFallback.near, fogFallback.far]} />
+      <SkyFog fogRef={fogRef} color={fogFallback.color} near={fogFallback.near} far={fogFallback.far} />
       {lights ? (
         <>
           <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
-          <directionalLight
-            ref={sunRef}
-            position={initial.sunPosition}
+          <SunLight
+            direction={initial.sunPosition}
+            directionRef={sunDirectionRef}
+            lightRef={sunRef}
             intensity={initial.sunIntensity}
             color={SUN_COLOR}
-            castShadow
           />
         </>
       ) : null}
@@ -428,25 +490,23 @@ function DrivenDaylight({
 }) {
   const initial = useMemo(() => daylightStateAt(clock.calendar().dayFraction, sky), [clock, sky]);
   const sunRef = useRef<THREE.DirectionalLight>(null);
+  const sunDirectionRef = useRef<readonly [number, number, number]>(initial.sunPosition);
   const hemiRef = useRef<THREE.HemisphereLight>(null);
   const fogRef = useRef<THREE.Fog>(null);
   const skyMaterialRef = useRef<THREE.ShaderMaterial | null>(null);
 
   useFrame(() => {
     const state = daylightStateAt(clock.calendar().dayFraction, sky);
+    sunDirectionRef.current = state.sunPosition;
     const sun = sunRef.current;
-    if (sun !== null) {
-      sun.position.set(state.sunPosition[0], state.sunPosition[1], state.sunPosition[2]);
-      sun.intensity = state.sunIntensity;
-    }
+    if (sun !== null) sun.intensity = state.sunIntensity;
     const hemi = hemiRef.current;
     if (hemi !== null) hemi.intensity = state.ambientIntensity;
     const fog = fogRef.current;
-    if (fog !== null) fog.color.set(sky.fog?.color ?? state.background);
+    if (fog !== null) setSkyFogColor(fog, sky.fog?.color ?? state.background);
     const skyMaterial = skyMaterialRef.current;
     if (skyMaterial !== null) {
-      (skyMaterial.uniforms.topColor!.value as THREE.Color).set(state.skyTop);
-      (skyMaterial.uniforms.bottomColor!.value as THREE.Color).set(state.skyBottom);
+      setSkyDomeColors(skyMaterial, state.skyTop, state.skyBottom);
       aimSkySun(skyMaterial, state.sunPosition);
     }
   });
@@ -464,11 +524,11 @@ function DrivenDaylight({
       {sky.volumetricClouds === undefined ? null : (
         <VolumetricClouds rules={resolveVolumetricClouds(sky.volumetricClouds)} sunDirection={initial.sunPosition} />
       )}
-      <fog attach="fog" ref={fogRef} args={[sky.fog?.color ?? initial.background, sky.fog?.near ?? 70, sky.fog?.far ?? 260]} />
+      <SkyFog fogRef={fogRef} color={sky.fog?.color ?? initial.background} near={sky.fog?.near ?? 70} far={sky.fog?.far ?? 260} />
       {lights ? (
         <>
           <hemisphereLight ref={hemiRef} args={[HEMI_SKY, HEMI_GROUND, initial.ambientIntensity]} />
-          <directionalLight ref={sunRef} position={initial.sunPosition} intensity={initial.sunIntensity} color={SUN_COLOR} castShadow />
+          <SunLight direction={initial.sunPosition} directionRef={sunDirectionRef} lightRef={sunRef} intensity={initial.sunIntensity} color={SUN_COLOR} />
         </>
       ) : null}
     </>
