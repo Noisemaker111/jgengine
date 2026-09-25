@@ -79,6 +79,7 @@
     "./combat/vfxPresets",
     "./combat/weaponFire",
     "./combat/weaponHandling",
+    "./combat/weaponPresentation",
     "./commands/commandRegistry",
     "./crafting/crop",
     "./crafting/production",
