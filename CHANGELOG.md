@@ -107,6 +107,7 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- Catalog `onDeath: { dropMode: "world" }` scattered drops with `Math.random`, so kill loot landed in different spots on replay and on each peer. The runtime now passes the world's seeded `ctx.rng` to the scatter.
 - The chase camera no longer falls behind fast vehicles. Its spring eased the camera's world position toward a moving target, so the lag grew with speed (about 9 m extra at 220 km/h); it now eases the boom offset from the target (#1770).
 - A `createVehicleDynamics` bike with both `lean` and `suspension` launched itself the moment it leaned: the springs read the lean as body roll across the narrow track. Springs now ignore lean, and lateral g keeps the same lag it has without springs.
 - `@jgengine/rapier`: a body created with `mass` now weighs exactly that. It used to add `mass` on top of the collider's density-derived mass, so a 2 kg sphere of radius 0.5 weighed 2.52 kg, and every force, impulse and joint on a massed body was off by the collider's volume.
