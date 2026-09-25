@@ -54,10 +54,16 @@ export type {
 } from "./cameraConfig";
 export { CAMERA_FRUSTUM_DEFAULTS } from "./cameraConfig";
 
+/**
+ * Mouse/touch pointer bindings for `defineGame({ pointer })`.
+ *
+ * @capability pointer-commands click an entity or the ground to run a command (click-to-target, click-to-move, grab loot, marquee select)
+ */
 export interface PointerConfig {
   /**
-   * Left-click on open ground runs this command with `{ point, entity, object }`
-   * (click-to-move / ground-target). Suppresses the default left-click hotbar fire.
+   * Left-click runs this command with `{ point, entity, object }`; `entity` is the clicked entity id or
+   * null, so the same command covers click-to-move, ground-target and click-to-target
+   * (`ctx.scene.entity.setTarget`). Suppresses the default left-click hotbar fire.
    */
   moveCommand?: string;
   /** Enable left-drag marquee + single-click box-select of entities (RTS unit command). */

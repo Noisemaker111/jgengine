@@ -371,6 +371,11 @@ export type WorldItemPickupResult =
   | { status: "ok"; record: WorldItemRecord }
   | { status: "rejected"; reason: string };
 
+/**
+ * `ctx.scene.worldItem`: items lying in the world — spawn, list, find the nearest, and pick up into a player's bag.
+ *
+ * @capability world-item-pickup pick up dropped items: ctx.scene.worldItem nearestInRadius → pickup into the player's inventory
+ */
 export interface SceneWorldItemContext {
   spawn(input: WorldItemSpawnInput): WorldItemRecord;
   get(instanceId: string): WorldItemRecord | null;

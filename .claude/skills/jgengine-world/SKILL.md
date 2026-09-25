@@ -18,7 +18,7 @@ For a *connected* walkthrough that wires several primitives into a running loop,
 - [recipes/vehicle-feel.md](recipes/vehicle-feel.md) — feel target → handling metrics → physical knobs for a ground vehicle, plus the camera, sound and rumble hooks that hang off its telemetry.
 - [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, with the symptom → knob table for how it flies.
 - [recipes/controls.md](recipes/controls.md) — actions → layered contexts that rebind live → keyboard, touch and gamepad on the same actions → per-axis feel.
-- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: data-driven state machines, triggers and clip events, root motion, and foot IK that keeps feet on slopes.
+- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: data-driven state machines, triggers and clip events, root motion, foot IK that keeps feet on slopes, and instanced crowds.
 
 ## Canonical workflows
 
@@ -47,6 +47,8 @@ Per-instance state belongs on the placement, not in a game-owned map keyed by `i
 ### AI and navigation
 
 Compose perception, selection, planning/behavior, movement, and lifecycle independently. Inject randomness and scheduling. Use spatial indexes, interest tiers, or bounded candidate sets for scale.
+
+NPC decisions are a `decisionGraph` behavior: the graph and its blackboard are data, actions are registered by name, and perception or game systems write facts into `behaviorControl(ctx).blackboard(id)` rather than actions querying the world. Set `thinkInterval` so crowds think a few times a second, not every frame, and release movement or claims in `onAbort`.
 
 Route on a polygon nav mesh through one `createNavMeshQuery(mesh)` per mesh; price terrain and gate doors with `areaCosts` via `retune`, and keep `maxNodes` bounded so a long request returns a `partial` route instead of stalling a frame.
 

@@ -8,7 +8,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createActionContextStack` (function) · `import { createActionContextStack } from "@jgengine/core/input/actionContexts"`
 
-## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, and utility AI decisions.
+## ai-decision-graph — Evaluate serializable selector, sequence, condition, action, utility, timer, and random AI decisions with interrupt hooks.
 
 - `createDecisionGraphRuntime` (function) · `import { createDecisionGraphRuntime } from "@jgengine/core/ai/decisionGraph"`
 
@@ -37,6 +37,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `inferLegChains` (function) · `import { inferLegChains } from "@jgengine/core/anim/footPlacement"`
 - `lookAt` (function) · `import { lookAt } from "@jgengine/core/anim/ikSolver"`
 - `placeFeet` (function) · `import { placeFeet } from "@jgengine/core/anim/footPlacement"`
+- `planBoneTexture` (function) · `import { planBoneTexture } from "@jgengine/core/anim/boneTexture"`
+- `sampleBoneTexture` (function) · `import { sampleBoneTexture } from "@jgengine/core/anim/boneTexture"`
 - `solveFabrik` (function) · `import { solveFabrik } from "@jgengine/core/anim/ikSolver"`
 - `solveTwoBone` (function) · `import { solveTwoBone } from "@jgengine/core/anim/ikSolver"`
 
@@ -273,6 +275,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `dopplerRate` (function) · `import { dopplerRate } from "@jgengine/core/audio/doppler"`
 
+## drivable-vehicle — drive a car from throttle/steer/handbrake input each tick: step the vehicle sim and pose its entity
+
+- `tickDrivableVehicle` (function) · `import { tickDrivableVehicle } from "@jgengine/core/world"`
+
 ## elevation-readout — cursor height and delta-from-reference feedback
 
 - `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
@@ -296,6 +302,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## feedback-mixer — map sim telemetry to camera, audio and haptic parameters through curves, smoothing and threshold events
 
 - `createFeedbackMixer` (function) · `import { createFeedbackMixer } from "@jgengine/core/vfx/feedbackMixer"`
+
+## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
+
+- `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/input/actionBindings"`
 
 ## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
 
@@ -406,6 +416,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## key-rebinding — conflict-aware key-remap session over the action-binding model — capture/reassign, conflict detection, reset-to-defaults, persist overrides, snapshot/restore
 
 - `createRebindSession` (function) · `import { createRebindSession } from "@jgengine/core/input/rebindSession"`
+
+## kinematic-vehicle — arcade car/kart driving physics with throttle, brake, steer and retunable handling
+
+- `createKinematicVehicle` (function) · `import { createKinematicVehicle } from "@jgengine/core/world"`
 
 ## lean-metrics — measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in
 
@@ -569,7 +583,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
 
-## pursuit — chase-to-reach cooldown-gated attack with optional leash-to-home; owns the attack cooldown
+## pursuit — enemy/mob aggro chase-to-reach with a cooldown-gated attack and optional leash-to-home; owns the attack cooldown
 
 - `advancePursuit` (function) · `import { advancePursuit } from "@jgengine/core/ai/pursuit"`
 
@@ -771,6 +785,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## vehicle-dynamics — force-based car handling — tires, load transfer, drivetrain, assists — tuned with physical numbers
 
 - `createVehicleDynamics` (function) · `import { createVehicleDynamics } from "@jgengine/core/physics/vehicleDynamics"`
+
+## vehicle-seats — enter, exit and swap seats in a car or mount (GTA-style boarding) with driver and passenger slots
+
+- `createVehicleSeats` (function) · `import { createVehicleSeats } from "@jgengine/core/world"`
 
 ## visibility-field — per-viewer-group observed/remembered/hidden fog-of-war knowledge with terrain memory and authoritative entity disclosure
 

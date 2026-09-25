@@ -18,6 +18,11 @@
   - Each foot keeps its animated swing and moves by its ground's height above or below the model origin. The pelvis drops so the lower leg can reach, soles never end under the ground, and planted feet tilt to the ground normal (`alignToGround`, `0..1`). The correction fades out while the feet are clear of the ground.
   - `maxAdjust` caps the correction as a fraction of leg length (default `0.4`). Probes hit terrain and blocking physical objects, never the model's own entity.
   - The pure pieces are `placeFeet` and `inferLegChains` (`@jgengine/core/anim/footPlacement`) and `solveTwoBone`/`solveFabrik`/`lookAt` (`@jgengine/core/anim/ikSolver`), for a custom host or a non-leg chain (a hand on a ledge, a tail).
+- **Crowds.** `<SkinnedInstances url instances clips once fps modelScale />` (`@jgengine/shell/render/SkinnedInstances`) draws hundreds of animated copies of one rig in one instanced draw per material. Each `CrowdInstance` has `position`, `rotationY`, `scale`, `clip`, `timeOffset` and `speed`.
+  - Every clip is baked once to a bone-matrix texture (layout from `planBoneTexture`, `@jgengine/core/anim/boneTexture`) and sampled on the GPU. Clips in `once` hold their last pose. A member changes clip when the game passes a new `instances` array.
+  - Only skinned meshes are baked. Static props parented to bones (a weapon in a hand slot, a hat) are dropped, and a mesh with several materials keeps its first.
+  - Crowd members have no graph, IK or attachments. Promote the few near the camera or near the player to entity models.
+  - `bakeSkinnedCrowd` and `patchCrowdMaterial` are exported for a custom renderer.
 
 ## Symptom → knob
 
@@ -30,3 +35,4 @@
 | Feet tilt wrongly on rubble or props | lower `ik.alignToGround` |
 | Attack damage lands before the swing | `graph.events` on the hit frame instead of a timer |
 | Lunge distance doesn't match the feet | `rootMotion: true` on that state |
+| Hundreds of animated characters cost thousands of draw calls | `SkinnedInstances` for the background crowd |
