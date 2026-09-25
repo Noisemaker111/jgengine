@@ -1839,8 +1839,8 @@
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; director?: CameraDirector; viewmodel?: Compo… — ⚠ undocumented
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
-- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps> } — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, weapon, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
+- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps>; weapon?: (entityId: string) => CameraWeaponView | null } — ⚠ undocumented
 - `GameInspectionCamera` (function): function GameInspectionCamera({ config: configPatch }: GameInspectionCameraProps): React.JSX.Element — Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurable anchor. Orbits a fixed `target`; never reads player/entity state.
 - `GameInspectionCameraProps` (interface): interface GameInspectionCameraProps { config?: InspectionCameraConfig } — ⚠ undocumented · used by `GameInspectionCamera`: Model-viewer / editor rig (#207.7, #866): left-click selects (editor), middle-drag pans, right-drag orbits, scroll zooms toward a configurab…
 - `GameOrbitCamera` (function): function GameOrbitCamera({ yawRef, pitchRef, config: configPatch, followEntityId, resolveFollowTarget, onDragChange, onCameraFollow, pointerControls = false, }: GameOrbitCameraProps): React.JSX.Element — ⚠ undocumented
@@ -1866,8 +1866,8 @@
 
 ## @jgengine/shell/camera/GameFirstPersonCamera
 
-- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
-- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps> } — ⚠ undocumented
+- `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, weapon, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
+- `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps>; weapon?: (entityId: string) => CameraWeaponView | null } — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
 
@@ -2165,9 +2165,17 @@
 - `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
 - `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
 
+## @jgengine/shell/input/gamepadPoll
+
+- `GamepadPoll` (interface): interface GamepadPoll — Buffers one shell gamepad poll reuses across frames.
+- `emptyGamepadPoll` (function): function emptyGamepadPoll(): GamepadPoll — Fresh buffers for {@link stepGamepadPoll}.
+- `gamepadCodes` (function): function gamepadCodes(bindings: ActionCodesMap): GamepadBindings — The pad-only slice of an action binding map, in the shape {@link resolveGamepadFrame} reads.
+- `rebindGamepadPoll` (function): function rebindGamepadPoll(poll: GamepadPoll, previous: GamepadBindings, next: GamepadBindings, tracker: ActionStateTracker<string>): void — Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes changed (the next poll presses them under the new map), and keep the rest held.
+- `stepGamepadPoll` (function): function stepGamepadPoll(poll: GamepadPoll, pads: ArrayLike<GamepadSample | null | undefined>, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, tracker: ActionStateTracker<string>, analogIn: Readonly<Record<string, number>> | null): Readonly<Record<string, number>> | null — One poll: resolve every connected pad, press/release tracker codes for actions whose pad state changed, and return the analog map to publish (pad values max-merged over the other source's). Allocation-free after the first frame.
+
 ## @jgengine/shell/input/gamepadSource
 
-- `GamepadSource` (function): function GamepadSource({ tracker, bindings, analogRef, input, }: { tracker: ActionStateTracker<string>; bindings: ActionCodesMap; analogRef: { current: Readonly<Record<string, number>> | null }; input: InputSnapshot; }): null — Poll browser gamepads and feed semantic actions into the shell tracker.
+- `GamepadSource` (function): function GamepadSource({ tracker, bindings, analogRef, input, feel, }: { tracker: ActionStateTracker<string>; bindings: ActionCodesMap; analogRef: { current: Readonly<Record<string, number>> | null }; input: InputSnapshot; /** Game-level pad feel (`defineGame({ gamepad })`); unset keeps the shell de… — Poll browser gamepads and feed semantic actions into the shell tracker.
 - `mergeGamepadFrame` (function): function mergeGamepadFrame(base: GamepadInputFrame, gamepad: GamepadFrame): GamepadInputFrame — Merge one resolved gamepad frame with another input source's semantic state.
 - `mergeGamepadInput` (function): function mergeGamepadInput(frames: readonly GamepadFrame[], base: GamepadInputFrame = { held: [], analog: {} }): GamepadInputFrame — Pure reducer used by the shell and synthetic gamepad tests.
 
@@ -2177,6 +2185,10 @@
 - `MouseLookOptions` (interface): interface MouseLookOptions { sensitivity?: number; maxPitch?: number; pointerLock?: boolean; initialYaw?: number; initialPitch?: number } — ⚠ undocumented
 - `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
+
+## @jgengine/shell/input/pointerLock
+
+- `requestRawPointerLock` (function): function requestRawPointerLock(element: LockableElement): void — Request pointer lock with raw (unaccelerated) mouse deltas, falling back to a plain lock when the browser or OS rejects `unadjustedMovement`.
 
 ## @jgengine/shell/inputSink
 

@@ -322,6 +322,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       commandRegistry.run(ctxRef, name, args);
     },
     localUserId: player.userId,
+    rng,
     ...(definition.physics !== undefined ? { physics: definition.physics } : {}),
   });
   scene.setOnAfterSpawn((instanceId) => combat.death.revive(instanceId));

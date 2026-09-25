@@ -367,14 +367,16 @@
 - `ActionCodes` (type): type ActionCodes<TCode extends string = string> = | readonly TCode[] | { hold?: readonly TCode[]; toggle?: readonly TCode[]; repeatMs?: number } — ⚠ undocumented
 - `ActionCodesMap` (type): type ActionCodesMap<TAction extends string = string, TCode extends string = string> = Record< TAction, ActionCodes<TCode> > — Maps each game action name to the input codes (hold/toggle keys, repeat rate) that trigger it.
 - `ActionStateBindingMap` (type): type ActionStateBindingMap<TAction extends string, TCode extends string = string> = Record< TAction, ActionBindingConfig<TCode> > — ⚠ undocumented
-- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void } — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
+- `ActionStateTracker` (interface): interface ActionStateTracker<TAction extends string> { handleDown(code: string): TAction | null; handleUp(code: string): TAction | null; isDown(action: TAction): boolean; wasPressed(action: TAction): boolean; endFrame(): void; reset(): void; rebind(map: ActionStateBindingMap<TAction, string>)… — ⚠ undocumented · used by `rebindGamepadPoll` (@jgengine/shell/input/gamepadPoll): Swap the pad bindings mid-game (a context push) without touching keyboard state: release the codes of pad-held actions whose pad codes chang…
 - `ShouldDispatchActionInput` (interface): interface ShouldDispatchActionInput { pressed: boolean; down: boolean; repeatMs: number | undefined; lastFiredAt: number | null; now: number } — ⚠ undocumented
 
 ## @jgengine/core/input/actionContexts
 
 - `ActionContext` (interface): interface ActionContext — Named action-binding layer that may optionally expose lower layers.
+- `ActionContextAxisShape` (type): type ActionContextAxisShape = Omit<AxisShapeConfig, "scale"> — Serializable axis shaping a context may carry: {@link AxisShapeConfig} without the `scale` callback.
 - `ActionContextStack` (interface): interface ActionContextStack — Mutable layered action-map stack with snapshot and restore support.
 - `ActionContextStackSnapshot` (interface): interface ActionContextStackSnapshot — Serializable state for an action-context stack.
+- `ActiveContextAxes` (interface): interface ActiveContextAxes — Axis bindings and shaping merged across the active contexts.
 - `createActionContextStack` (function): function createActionContextStack(): ActionContextStack — Creates a serializable stack of layered action maps for menus and gameplay modes.
 
 ## @jgengine/core/input/axisInput
@@ -424,17 +426,21 @@
 
 ## @jgengine/core/input/gamepadModel
 
+- `DEFAULT_GAMEPAD_DEADZONE` (const): const DEFAULT_GAMEPAD_DEADZONE: GamepadDeadzone — Shell default stick deadzone.
 - `GAMEPAD_GLYPH_SETS` (const): const GAMEPAD_GLYPH_SETS: Record<GamepadGlyphName, GamepadGlyphSet> — Built-in short labels for the common controller families.
 - `GamepadBindings` (type): type GamepadBindings<TAction extends string = string> = ActionCodesMap<TAction, GamepadCode> — Action bindings whose codes identify gamepad buttons or axes.
 - `GamepadCode` (type): type GamepadCode = `pad:${number}` | `padaxis:${number}${"+" | "-"}` — A gamepad button or signed axis binding code.
 - `GamepadDeadzone` (interface): interface GamepadDeadzone — Deadzone policy applied to gamepad axes.
+- `GamepadFeelConfig` (interface): interface GamepadFeelConfig — Game-level pad feel read by the shell's gamepad poll. A number `deadzone` is the axial inner deadzone with a `0.95` outer edge.
 - `GamepadFrame` (interface): interface GamepadFrame — The digital and analog action state produced by a gamepad frame.
 - `GamepadGlyphName` (type): type GamepadGlyphName = "xbox" | "playstation" | "nintendo" | "generic" — Names of the built-in controller glyph sets.
 - `GamepadGlyphSet` (interface): interface GamepadGlyphSet — Button labels used by one controller family.
+- `GamepadSample` (interface): interface GamepadSample — Read-only view of one sampled gamepad. The browser `Gamepad` satisfies it structurally, so a poll loop can resolve `navigator.getGamepads()` entries without copying them.
 - `GamepadSnapshot` (interface): interface GamepadSnapshot — A serializable gamepad state sampled from the platform input API.
 - `ResolveGamepadFrameOptions` (interface): interface ResolveGamepadFrameOptions — Options for resolving one gamepad snapshot into action state.
+- `gamepadFeelOptions` (function): function gamepadFeelOptions(config: GamepadFeelConfig | undefined): ResolveGamepadFrameOptions — Resolve a {@link GamepadFeelConfig} into the options {@link resolveGamepadFrame} takes.
 - `gamepadGlyphSets` (const): const gamepadGlyphSets: Record<GamepadGlyphName, GamepadGlyphSet> — Lowercase alias for consumers that prefer data-oriented naming.
-- `resolveGamepadFrame` (function): function resolveGamepadFrame(snapshot: GamepadSnapshot, bindings: GamepadBindings, options: ResolveGamepadFrameOptions): GamepadFrame — Resolve one sampled gamepad into held actions and shaped analog action values.
+- `resolveGamepadFrame` (function): function resolveGamepadFrame(snapshot: GamepadSample, bindings: GamepadBindings, options: ResolveGamepadFrameOptions, out: GamepadFrame = { held: [], analog: {} }): GamepadFrame — Resolve one sampled gamepad into held actions and shaped analog action values. Sticks go through the deadzone and curve; analog buttons (triggers) through `triggerDeadzone` and the same curve. Pass `out` to reuse a frame across polls; it is cleared and returned.
 
 ## @jgengine/core/input/gestureSurface
 
@@ -824,12 +830,16 @@
 ## @jgengine/core/nav/navMesh
 
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
-- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
+- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object.
 - `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
 - `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
+- `NavMeshQuery` (interface): interface NavMeshQuery — Cached, allocation-light queries over one {@link NavMeshData}.
+- `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
+- `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
 - `buildNavAdjacency` (function): function buildNavAdjacency(mesh: NavMeshData): NavMeshAdjacency[] — Build polygon adjacency from shared edges and explicit off-mesh links.
 - `closestPoint` (function): function closestPoint(mesh: NavMeshData, point: Vec3): Vec3 | null — Return the closest point on the mesh surface, or null for an empty mesh.
-- `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon centers, followed by deterministic visibility string-pulling.
+- `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
+- `findPath` (function): function findPath(mesh: NavMeshData, from: Vec3, to: Vec3): NavMeshPath | null — A* over polygon portals with default area costs, straightened by a portal funnel. Use {@link createNavMeshQuery} to price areas.
 - `raycastNav` (function): function raycastNav(mesh: NavMeshData, from: Vec3, to: Vec3): boolean — True when the segment remains over walkable polygons.
 
 ## @jgengine/core/nav/pathFollow
@@ -2232,9 +2242,12 @@
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
 - `NavGrid` (interface): interface NavGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly bounds: Aabb; readonly diagonal: boolean; isWalkable(col: number, row: number): boolean; setWalkable(col: number, row: number, walkable: boolean): void; blo… — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NavMeshAdjacency` (interface): interface NavMeshAdjacency — Neighbor relationship for one navigation polygon.
-- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data.
+- `NavMeshData` (interface): interface NavMeshData — Serializable polygon navigation mesh data. Treat it as immutable once queried; queries cache derived geometry per object.
 - `NavMeshLink` (interface): interface NavMeshLink — Explicit traversable connection between two navigation polygons.
 - `NavMeshPath` (interface): interface NavMeshPath — Route points and polygons selected through a navigation mesh.
+- `NavMeshQuery` (interface): interface NavMeshQuery — Cached, allocation-light queries over one {@link NavMeshData}.
+- `NavMeshQueryOptions` (interface): interface NavMeshQueryOptions — Tunable pricing and bounds for a {@link NavMeshQuery}.
+- `NavMeshQuerySnapshot` (interface): interface NavMeshQuerySnapshot — Serializable tuning of a {@link NavMeshQuery}.
 - `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NoiseFieldConfig` (interface): interface NoiseFieldConfig — Configuration for {@link noiseField}: seed, amplitude, and fractal noise shaping.
 - `NoiseVoice` (interface): interface NoiseVoice — A filtered white-noise burst — impacts, whooshes, breath, crackle. Realised from a shared 1s noise buffer at a randomised playback rate and start offset, decaying exponentially to silence at `duration * decay`.
@@ -2587,6 +2600,7 @@
 - `createMarkerSource` (function): function createMarkerSource<TEntity, TMarker extends MarkerView = MarkerView>(options: MarkerSourceOptions<TEntity, TMarker>): MarkerSource<TMarker> — Adapt a caller-owned array/store to an observable marker source. Projection is cached between source changes, so React reads do not copy the collection per frame. The caller retains ownership of entities, updates, persistence, and subscription scheduling.
 - `createMountController` (function): function createMountController(): MountController — ⚠ undocumented
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
+- `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 - `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
