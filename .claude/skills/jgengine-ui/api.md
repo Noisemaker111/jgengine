@@ -2316,6 +2316,19 @@
 - `IsolatedEntityModel` (function): function IsolatedEntityModel({ model, instanceId, measure, fallback, }: { model: ModelConfig; instanceId?: string; measure?: MeasureTarget; fallback?: ReactNode; }): React.JSX.Element — ⚠ undocumented
 - `MeasureTarget` (interface): interface MeasureTarget — Where a measured model reports its rendered bounds: an entity kind or an object catalog id.
 
+## @jgengine/shell/render/SkinnedInstances
+
+- `BakeSkinnedCrowdOptions` (interface): interface BakeSkinnedCrowdOptions — Options for {@link bakeSkinnedCrowd}.
+- `BakedSkinnedCrowd` (interface): interface BakedSkinnedCrowd — A rig baked for instancing: one merged geometry, the bone-matrix texture and its layout.
+- `CrowdInstance` (interface): interface CrowdInstance — One crowd member: where it stands and what it plays.
+- `CrowdUniforms` (interface): interface CrowdUniforms — Uniforms shared by every material of one crowd; `crowdTime` advances once per frame.
+- `SkinnedCrowdSource` (interface): interface SkinnedCrowdSource — A rig to bake: a loaded scene with skinned meshes and its clips.
+- `SkinnedInstances` (function): function SkinnedInstances({ url, instances, clips, once, fps, modelScale = 1, castShadow = true, receiveShadow = true, timeScale = 1, }: SkinnedInstancesProps): React.JSX.Element — Renders many animated copies of one rigged model in a single instanced draw per material: the rig's clips are baked to a bone-matrix texture once, and each instance samples its own clip, time offset and speed on the GPU. For crowds, spectators and distant NPCs; a character that needs blending, IK or attachments stays an entity model.
+- `SkinnedInstancesProps` (interface): interface SkinnedInstancesProps — Props for {@link SkinnedInstances}.
+- `bakeSkinnedCrowd` (function): function bakeSkinnedCrowd(source: SkinnedCrowdSource, options: BakeSkinnedCrowdOptions = {}): BakedSkinnedCrowd — Bakes a rig for {@link SkinnedInstances}: merges its skinned meshes into one geometry in bind space, samples every requested clip at `fps`, and writes each bone's model-space skinning matrix into a float texture laid out by `planBoneTexture`. Meshes with several materials keep only the first. Exported for tests and custom crowd renderers.
+- `createCrowdUniforms` (function): function createCrowdUniforms(baked: BakedSkinnedCrowd): CrowdUniforms — Builds the uniforms a crowd material reads: the texture and per-clip start, frames, fps and loop.
+- `patchCrowdMaterial` (function): function patchCrowdMaterial<T extends THREE.Material>(material: T, uniforms: CrowdUniforms): T — Patches a material so each instance skins itself from the crowd texture: per-instance `crowdPlay` is (clip index, time offset, speed). Works on any built-in material, the depth material for shadows included.
+
 ## @jgengine/shell/render/assetBase
 
 - `installAssetBase` (function): function installAssetBase(base: string): void — Installs the app base URL (pass `import.meta.env.BASE_URL`) so root-absolute asset paths load from under it. Call once at app startup, before any game loads. Bases that are not root-absolute (`/`, `./`) reset to the pass-through default. Also registers {@link resolveAssetBaseUrl} on `THREE.DefaultLoadingManager`, covering `TextureLoader`, drei's `useTexture` / `useGLTF`, and every other loader on the default manager.

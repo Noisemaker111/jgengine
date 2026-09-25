@@ -37,6 +37,8 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `inferLegChains` (function) · `import { inferLegChains } from "@jgengine/core/anim/footPlacement"`
 - `lookAt` (function) · `import { lookAt } from "@jgengine/core/anim/ikSolver"`
 - `placeFeet` (function) · `import { placeFeet } from "@jgengine/core/anim/footPlacement"`
+- `planBoneTexture` (function) · `import { planBoneTexture } from "@jgengine/core/anim/boneTexture"`
+- `sampleBoneTexture` (function) · `import { sampleBoneTexture } from "@jgengine/core/anim/boneTexture"`
 - `solveFabrik` (function) · `import { solveFabrik } from "@jgengine/core/anim/ikSolver"`
 - `solveTwoBone` (function) · `import { solveTwoBone } from "@jgengine/core/anim/ikSolver"`
 

@@ -222,6 +222,16 @@
 - `createAnimGraphRuntime` (function): function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime — Headless animation state machine and blend evaluator. It owns every clip's playback time and weight, so the renderer only seeks and weights actions on a mixer, and headless hosts, replays, and tests advance the same graph without three.js. Transitions are data (parameter comparisons and consumed triggers), layers can be masked or additive, and events fire by clip time, including across loop wraps.
 - `stateClipWeights` (function): function stateClipWeights(state: AnimState, params: AnimParams): Record<string, number> — Static clip weights of a state at `params`, before any crossfade.
 
+## @jgengine/core/anim/boneTexture
+
+- `BoneTextureClip` (interface): interface BoneTextureClip — One baked clip's rows in a {@link BoneTextureLayout}.
+- `BoneTextureClipInput` (interface): interface BoneTextureClipInput — A clip to bake: its name and length in seconds.
+- `BoneTextureInput` (interface): interface BoneTextureInput — Inputs for {@link planBoneTexture}.
+- `BoneTextureLayout` (interface): interface BoneTextureLayout — Where every bone matrix of every baked frame lives in a vertex-animation texture: one row per frame, four RGBA texels (matrix columns) per bone. Plain data, so a baked crowd can be cached, shipped or checked in a test without a renderer.
+- `BoneTextureSample` (interface): interface BoneTextureSample — Two texture rows around a playback time and the blend between them.
+- `planBoneTexture` (function): function planBoneTexture(input: BoneTextureInput): BoneTextureLayout — Plans a bone-matrix texture for a rig's clips. Throws when the rig or the clip set does not fit `maxTextureSize`; lower `fps` or bake fewer clips.
+- `sampleBoneTexture` (function): function sampleBoneTexture(clip: BoneTextureClip, fps: number, time: number, loop: boolean, out?: BoneTextureSample): BoneTextureSample — Finds the baked rows around `time` in a clip, wrapping when `loop` and holding the last pose otherwise. This is the CPU mirror of the crowd shader's lookup.
+
 ## @jgengine/core/anim/easing
 
 - `Easing` (type): type Easing = (t: number) => number — ⚠ undocumented

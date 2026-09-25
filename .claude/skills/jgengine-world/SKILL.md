@@ -18,7 +18,7 @@ For a *connected* walkthrough that wires several primitives into a running loop,
 - [recipes/vehicle-feel.md](recipes/vehicle-feel.md) — feel target → handling metrics → physical knobs for a ground vehicle, plus the camera, sound and rumble hooks that hang off its telemetry.
 - [recipes/flight-feel.md](recipes/flight-feel.md) — an aircraft as physical numbers: surfaces, inertia and engine, with the symptom → knob table for how it flies.
 - [recipes/controls.md](recipes/controls.md) — actions → layered contexts that rebind live → keyboard, touch and gamepad on the same actions → per-axis feel.
-- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: data-driven state machines, triggers and clip events, root motion, and foot IK that keeps feet on slopes.
+- [recipes/character-animation.md](recipes/character-animation.md) — clips → graph → rig → ground: data-driven state machines, triggers and clip events, root motion, foot IK that keeps feet on slopes, and instanced crowds.
 
 ## Canonical workflows
 
