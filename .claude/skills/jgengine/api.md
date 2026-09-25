@@ -438,7 +438,7 @@
 ## @jgengine/core/runtime/inputSnapshot
 
 - `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
-- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishAnalog(values: Readonly<Record<string, num… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
+- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; haptics(userId: string): HapticChannels; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishA… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
 - `createInputSnapshot` (function): function createInputSnapshot(): InputSnapshot — ⚠ undocumented
 
 ## @jgengine/core/runtime/localPlayers

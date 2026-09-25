@@ -211,7 +211,7 @@ function Adopt() {
                   </span>
                   {cap.domain}
                 </p>
-                <h2 className="mt-4 text-balance text-2xl font-bold tracking-tight text-fg">{cap.title}</h2>
+                <h2 className="font-display mt-4 text-balance text-2xl font-bold tracking-tight text-fg">{cap.title}</h2>
                 <p className="mt-3 text-pretty leading-relaxed text-muted">{cap.blurb}</p>
                 <dl className="mt-5 space-y-2.5 text-sm">
                   <div className="flex gap-3">
@@ -232,7 +232,7 @@ function Adopt() {
         </div>
       </div>
 
-      <section className="relative">
+      <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="The tradeoffs"
@@ -276,7 +276,7 @@ function Adopt() {
         </div>
       </section>
 
-      <section className="relative">
+      <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="How to read a capability"

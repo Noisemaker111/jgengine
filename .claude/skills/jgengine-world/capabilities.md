@@ -371,6 +371,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureHandling` (function) · `import { measureHandling } from "@jgengine/core/physics/handlingProbe"`
 
+## haptics — Continuous gamepad rumble from named channels (engine, road, impact) mixed by priority, plus fading pulses.
+
+- `createHapticChannels` (function) · `import { createHapticChannels } from "@jgengine/core/input/haptics"`
+
 ## hold-order — stand-ground order that holds position until preempted or canceled
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`

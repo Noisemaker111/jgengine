@@ -135,14 +135,11 @@ export function LiveSpecimen({ specimen }: { specimen: SpecimenKey }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-line bg-black/30">
+      <div data-theme="dark" className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-line bg-sunken">
         <div ref={hostRef} className="absolute inset-0" aria-hidden />
         {ready && !failed && (
-          <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-bg/70 px-2.5 py-1 font-mono text-[10px] text-accent-text backdrop-blur-sm">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
-            </span>
+          <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-line bg-bg/75 px-2.5 py-1 font-mono text-[10px] text-fg backdrop-blur-sm">
+            <span className="live-dot" aria-hidden />
             live · @jgengine/core
           </span>
         )}

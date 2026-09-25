@@ -200,7 +200,7 @@ function Why() {
         </div>
       </PageHero>
 
-      <section className="relative">
+      <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="Hand-rolled vs. authored"
@@ -218,7 +218,7 @@ function Why() {
         </div>
       </section>
 
-      <section className="relative">
+      <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="The honest cut"
@@ -231,24 +231,25 @@ function Why() {
         </div>
       </section>
 
-      <section className="relative">
+      <section className="relative border-t border-line">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
           <SectionHeading
             eyebrow="Who it's for"
-            title="Reach for JGengine when…"
+            title="Reach for jgengine when…"
           />
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
-            <div className="card rounded-2xl p-6">
-              <p className="text-sm leading-relaxed text-muted">
-                You want a <span className="text-accent-text">multiplayer-capable web game</span> in TypeScript
-                without hand-building a netcode stack, a scene editor, and ten gameplay systems first — and
-                you're happy to drive it with an AI coding agent.
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            <div className="card p-6 sm:p-7">
+              <p className="eyebrow">Good fit</p>
+              <p className="mt-4 leading-relaxed text-muted">
+                You want a <span className="font-semibold text-fg">multiplayer-capable web game</span> in TypeScript
+                without hand-building a netcode stack, a scene editor and ten gameplay systems first, and you are happy
+                to drive it with a coding agent.
               </p>
             </div>
-            <div className="card rounded-2xl border-dashed p-6">
-              <p className="text-sm leading-relaxed text-muted">
-                Look elsewhere if you need a <span className="text-fg">closed-source commercial build</span>{" "}
-                today, a native/console target, a no-code editor, or a battle-hardened engine with a decade of
+            <div className="rounded-2xl border border-dashed border-line-strong p-6 sm:p-7">
+              <p className="font-mono text-[0.72rem] font-medium uppercase tracking-[0.16em] text-faint">Look elsewhere</p>
+              <p className="mt-4 leading-relaxed text-muted">
+                If you need a native or console target, a no-code editor, or an engine with a decade of API
                 stability. We'd rather you know now.
               </p>
             </div>
@@ -256,11 +257,10 @@ function Why() {
         </div>
       </section>
 
-      <section className="relative overflow-hidden">
-        <div className="pointer-events-none absolute inset-0" aria-hidden>
-        </div>
+      <section className="relative overflow-hidden border-t border-line">
+        <div className="bg-dots bg-dots-fade pointer-events-none absolute inset-0" aria-hidden />
         <div className="relative mx-auto max-w-3xl px-4 py-20 text-center sm:px-6 sm:py-24">
-          <h2 className="text-balance text-3xl font-bold tracking-tight text-fg sm:text-4xl">
+          <h2 className="font-display text-balance text-4xl font-bold leading-none tracking-[-0.03em] text-fg sm:text-5xl">
             Try it in one prompt.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-pretty text-muted">

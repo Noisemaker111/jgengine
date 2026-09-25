@@ -1,18 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { rmSync } from "node:fs";
 
+import { writeGameTree } from "./fixtures/gameTree";
 import { findFrontEndGaps } from "./gameFrontEnd";
 
 function scan(files: Record<string, string>): string[] {
-  const root = mkdtempSync(join(tmpdir(), "front-end-"));
+  const root = writeGameTree("front-end-", files);
   try {
-    for (const [rel, source] of Object.entries(files)) {
-      const path = join(root, rel);
-      mkdirSync(join(path, ".."), { recursive: true });
-      writeFileSync(path, source);
-    }
     return findFrontEndGaps(root).map((gap) => gap.key);
   } finally {
     rmSync(root, { recursive: true, force: true });

@@ -73,7 +73,7 @@ bun packages/editor/src/mcp/cli.ts --game <id> \
 ```
 
 - **Required:** `id`, `kind`, and `x`/`z` (`y` optional, defaults to `0`). A game reads its own custom kinds off the document (`editorLayers.markers.filter(m => m.kind === "stash")`), so no engine change is needed to introduce one.
-- **Optional:** `color`, `label`, `rotationY`, `meta` — `meta` is validated against the kind's registered schema when one exists (custom kinds skip validation), same as `set_marker`.
+- **Optional:** `color`, `label`, `rotationY`, `catalogId`, `meta` — `catalogId` is the entity kind a `mob`/`boss` marker spawns (without it the marker spawns nothing); `set_marker` patches it too. `meta` is validated against the kind's registered schema when one exists (custom kinds skip validation), same as `set_marker`.
 - **Id collisions re-id** exactly as `add_path`; the response's `result` carries the id the marker landed under. Use `place_asset` instead when the marker should carry a mesh (it stamps `catalogId`/`meta.assetId`); `add_marker` is for logical, mesh-free markers.
 
 ### Click-to-place custom kinds in the GUI

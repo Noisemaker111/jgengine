@@ -1,18 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { rmSync } from "node:fs";
 
+import { writeGameTree } from "./fixtures/gameTree";
 import { findModuleGlobals } from "./moduleGlobalState";
 
 function scan(files: Record<string, string>): string[] {
-  const root = mkdtempSync(join(tmpdir(), "module-globals-"));
+  const root = writeGameTree("module-globals-", files);
   try {
-    for (const [rel, source] of Object.entries(files)) {
-      const path = join(root, rel);
-      mkdirSync(join(path, ".."), { recursive: true });
-      writeFileSync(path, source);
-    }
     return findModuleGlobals(root).map((entry) => entry.key);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -49,9 +43,7 @@ describe("findModuleGlobals", () => {
   });
 
   test("reports a 1-indexed declaration line", () => {
-    const root = mkdtempSync(join(tmpdir(), "module-globals-"));
-    mkdirSync(join(root, "Games/probe/src"), { recursive: true });
-    writeFileSync(join(root, "Games/probe/src/loop.ts"), "// header\n\nlet timer = 0;\n");
+    const root = writeGameTree("module-globals-", { "Games/probe/src/loop.ts": "// header\n\nlet timer = 0;\n" });
     expect(findModuleGlobals(root)[0]!.where).toBe("Games/probe/src/loop.ts:3");
     rmSync(root, { recursive: true, force: true });
   });
