@@ -32,7 +32,7 @@ Score all ten from one `--mode play` shot plus deterministic world/document evid
 
 ## Measured-evidence row
 
-Pixel metrics from `bun run shoot <id> --mode play --inspect` (or `bun run inspect-shot.ts <shot.png>` on an existing PNG — [#788](https://github.com/Noisemaker111/jgengine/issues/788), shipped) are the objective inputs to categories 5–7 — they don't replace the eye, they catch what a rushed glance misses. Output lands at `shots/<name>.metrics.json`:
+Pixel metrics from `bun run shoot <id> --mode play --inspect` are the objective inputs to categories 5–7 — they don't replace the eye, they catch what a rushed glance misses. Output lands at `shots/<name>.metrics.json`:
 
 | Metric | Threshold | Flags |
 | --- | --- | --- |
