@@ -33,6 +33,7 @@ between (`--json` for structured output).
 
 ### Changed
 
+- `raycastNav` and `NavMeshQuery.raycast` step into the polygon a segment enters when it starts on or crosses a shared vertex, so a funnel path's corner-to-corner legs raycast clear.
 - `bakeNavMesh` (`@jgengine/navbake`) now voxelizes geometry with recast: the walkable surface is eroded by `agentRadius`, cut under obstacles lower than `agentHeight`, and split at `maxSlope` and `maxClimb`, so a wall standing on a floor leaves a hole the path goes around. Call `await initNavBake()` once before baking; `navBakeReady()` reports it. Walkable triangles must wind counter-clockwise seen from above. Optional `cellSize`/`cellHeight` trade precision for speed. The editor warms the baker when a host starts.
 - `findPath`, `closestPoint` and `raycastNav` on `NavMeshData` share the cached query: paths bend only at portal corners, stacked floors resolve by height, and raycasts walk polygon edges instead of sampling.
 - Mouse look now asks for raw, unaccelerated mouse deltas (`requestPointerLock({ unadjustedMovement: true })`) in `createMouseLookTracker`, the first-person camera and the shoulder rig, and falls back to a plain lock where that is unsupported. The helper is `requestRawPointerLock` (`@jgengine/shell/input/pointerLock`).

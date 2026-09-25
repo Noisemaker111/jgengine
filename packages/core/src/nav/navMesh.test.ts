@@ -99,6 +99,15 @@ describe("navMesh", () => {
     expect(raycastNav(lMesh, [0.5, 0, 0.5], [3, 0, 2])).toBe(false);
   });
 
+  test("raycasts through and from shared vertices", () => {
+    const mesh = gridMesh(3, 3);
+    expect(raycastNav(mesh, [0.5, 0, 0.5], [2.5, 0, 2.5])).toBe(true);
+    expect(raycastNav(mesh, [1, 0, 1], [2.5, 0, 2.5])).toBe(true);
+    expect(raycastNav(mesh, [2.5, 0, 0.5], [1, 0, 2])).toBe(true);
+    const pinched = gridMesh(3, 3, 1, new Set([1, 3, 5, 7]));
+    expect(raycastNav(pinched, [0.5, 0, 0.5], [0.5, 0, 2.5])).toBe(false);
+  });
+
   test("keeps large-mesh queries off full scans", () => {
     const mesh = gridMesh(200, 200);
     const query = createNavMeshQuery(mesh, { maxNodes: 40_000 });
