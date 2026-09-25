@@ -2,6 +2,7 @@ import type { GameContext } from "../runtime/gameContext";
 import { perContext } from "../runtime/perContext";
 import { resolveColliders, type ResolvedCollider } from "../scene/colliders";
 import type { EntityPosition } from "../scene/entityStore";
+import type { WorldSolid } from "../world/worldSolids";
 import {
   DEFAULT_OBSTACLE_PLAYER_RADIUS,
   resolveObstacleStep,
@@ -33,6 +34,10 @@ const OBSTACLE_VERTICAL_CAP = 8;
  * multiply narrowphase cost without changing the blocked footprint.
  */
 const MOVEMENT_MESH_BOX_BUDGET = 12;
+/** Most AABB strips an oriented world solid is sliced into, bounding the corner overhang a yawed box leaves. */
+const SOLID_MAX_STRIPS = 8;
+/** Yaw within this of a quarter turn is treated as axis-aligned (radians). */
+const AXIS_ALIGNED_EPSILON = 1e-4;
 /** Feet-to-head span a walker is tested over — matches the player's, so both agree on what a wall is. */
 const WALKER_HEIGHT = 1.8;
 
@@ -190,8 +195,40 @@ export function obstacleFromCollider(
 }
 
 /**
+ * A {@link WorldSolid} as a {@link CollisionObstacle}. Axis-aligned solids are one box; a yawed solid is
+ * cut into strips along its long axis, each fitted with an AABB, so a turned building does not block
+ * the street beside it the way a single enclosing box would.
+ * @capability solid-obstacles the one blocking-geometry query the player resolver and NPC movers share
+ */
+export function obstacleFromSolid(solid: WorldSolid): CollisionObstacle {
+  const [hx, hy, hz] = solid.halfExtents;
+  const yaw = solid.rotationY ?? 0;
+  const quarter = yaw / (Math.PI / 2);
+  const nearest = Math.round(quarter);
+  if (Math.abs(quarter - nearest) < AXIS_ALIGNED_EPSILON) {
+    const swapped = Math.abs(nearest) % 2 === 1;
+    return { position: solid.center, halfExtents: swapped ? [hz, hy, hx] : [hx, hy, hz] };
+  }
+  const alongX = hx >= hz;
+  const long = alongX ? hx : hz;
+  const short = Math.max(alongX ? hz : hx, 1e-6);
+  const strips = Math.min(SOLID_MAX_STRIPS, Math.max(1, Math.ceil(long / short)));
+  const cos = Math.cos(yaw);
+  const sin = Math.sin(yaw);
+  const boxes: { min: [number, number, number]; max: [number, number, number] }[] = [];
+  for (let i = 0; i < strips; i += 1) {
+    const from = -long + (2 * long * i) / strips;
+    const to = from + (2 * long) / strips;
+    const boxMin: [number, number, number] = alongX ? [from, -hy, -hz] : [-hx, -hy, from];
+    const boxMax: [number, number, number] = alongX ? [to, hy, hz] : [hx, hy, to];
+    boxes.push(yawExpandLocalBox(boxMin, boxMax, cos, sin));
+  }
+  return { position: solid.center, boxes };
+}
+
+/**
  * Every blocking physical obstacle overlapping the box `position` ± `reachX`/`reachZ`, read from the
- * scene's resolved colliders.
+ * scene's resolved colliders and `ctx.world.solids`.
  *
  * This is the engine's single answer to "what is solid here". The player resolver, a walking NPC, and
  * anything else that has to stop at a wall read it rather than deriving their own set — three
@@ -207,7 +244,16 @@ export function solidObstaclesNear(
   reachZ: number,
   height = WALKER_HEIGHT,
 ): CollisionObstacle[] {
-  return sourceObstaclesNear(ctx.scene.object, solidObstacleReach(ctx), position, reachX, reachZ, height);
+  const obstacles = sourceObstaclesNear(ctx.scene.object, solidObstacleReach(ctx), position, reachX, reachZ, height);
+  const solids = ctx.world.solids;
+  if (solids.count() === 0) return obstacles;
+  for (const solid of solids.inBox(
+    [position[0] - reachX, position[1] - height, position[2] - reachZ],
+    [position[0] + reachX, position[1] + 2 * height, position[2] + reachZ],
+  )) {
+    obstacles.push(obstacleFromSolid(solid));
+  }
+  return obstacles;
 }
 
 /** {@link solidObstaclesNear} against a bare source and an already-resolved reach. */

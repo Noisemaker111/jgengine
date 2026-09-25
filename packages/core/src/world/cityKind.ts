@@ -63,6 +63,7 @@ import {
 import { furnitureSpots, parkingSpots } from "./streets";
 import { CITY_BUILDING_BUDGET, budgetWarning, placedCoverage } from "./scatterCoverage";
 import type { RoadEnvironmentDescriptor } from "./features";
+import type { WorldSolid } from "./worldSolids";
 import type { RoadPoint } from "./roads";
 import {
   generateStreets,
@@ -365,6 +366,7 @@ export const CITY_SCHEMA: ParamSchema = {
       options: [{ value: "auto" }, { value: "gravel" }],
     },
     { type: "bool", key: "fabric", label: "buildings & parcels", group: "layout", default: CITY_DEFAULTS.fabric },
+    { type: "bool", key: "solid", label: "solid buildings", group: "layout", default: true },
     { type: "bool", key: "bridges", label: "bridges over water", group: "layout", default: CITY_DEFAULTS.bridges },
     { type: "bool", key: "tunnels", label: "tunnels through ridges", group: "layout", default: CITY_DEFAULTS.tunnels },
     {
@@ -1132,6 +1134,58 @@ export interface ResolvedCity {
   signals: readonly CitySignal[];
   /** The instanced street race through these streets, when `race` is on and a lap could be found. */
   race?: ResolvedRace;
+}
+
+/** Lot pieces that block: walls and roofs. Trim and accents (cornices, awnings) stay passable. */
+const SOLID_PIECE_ROLES: ReadonlySet<CityLotPiece["role"]> = new Set(["wall", "roof"]);
+
+/**
+ * One solid per wall and roof piece of every lot, grounded the way the city renderer grounds it:
+ * grade at the highest lot corner, foundations down to half a metre under the lowest.
+ * @capability city-district editor-authorable procedural city district (streets, zoning, buildings, furniture)
+ */
+export function citySolids(
+  city: ResolvedCity,
+  sampleHeight: (x: number, z: number) => number = () => 0,
+): WorldSolid[] {
+  const solids: WorldSolid[] = [];
+  for (const lot of city.lots) {
+    const c = Math.cos(lot.rotationY);
+    const s = Math.sin(lot.rotationY);
+    const hw = lot.size[0] / 2;
+    const hd = lot.size[1] / 2;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const [dx, dz] of [
+      [hw, hd],
+      [hw, -hd],
+      [-hw, hd],
+      [-hw, -hd],
+    ] as const) {
+      const y = sampleHeight(lot.center[0] + dx * c + dz * s, lot.center[1] - dx * s + dz * c);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+    const grade = maxY;
+    const foundationBase = minY - 0.5;
+    for (const piece of lot.pieces) {
+      if (!SOLID_PIECE_ROLES.has(piece.role)) continue;
+      const bottom = piece.grounded ? foundationBase : grade + piece.offset[1];
+      const top = piece.grounded ? grade + piece.size[1] : grade + piece.offset[1] + piece.size[1];
+      if (top - bottom <= 0 || piece.size[0] <= 0 || piece.size[2] <= 0) continue;
+      const yaw = lot.rotationY + piece.rotationY;
+      solids.push({
+        center: [
+          lot.center[0] + piece.offset[0] * c + piece.offset[2] * s,
+          (bottom + top) / 2,
+          lot.center[1] - piece.offset[0] * s + piece.offset[2] * c,
+        ],
+        halfExtents: [piece.size[0] / 2, (top - bottom) / 2, piece.size[2] / 2],
+        ...(yaw === 0 ? {} : { rotationY: yaw }),
+      });
+    }
+  }
+  return solids;
 }
 
 /** Extended resolve context: sibling `cityzone` volumes that override the band/mix locally. */
@@ -1909,7 +1963,7 @@ export function resolveCityObject(object: SceneKindObject, context?: CityResolve
         };
 
   // Child `cityzone` volumes override the band (and optionally the class mix) for lots inside them.
-  const overrides = (context?.zoneOverrides ?? []).filter((volume) => volume.kind === CITY_ZONE_KIND);
+  const overrides = (context?.zoneOverrides ?? context?.objects ?? []).filter((volume) => volume.kind === CITY_ZONE_KIND);
   const overrideAt =
     overrides.length === 0
       ? null
@@ -2356,6 +2410,8 @@ export function registerCityKind(): void {
     schema: CITY_SCHEMA,
     coverage: { spec: "city", densityKey: "roadsideOccupancy" },
     resolve: (object, _params, context) => resolveCityObject(object, context),
+    solids: (resolved, _object, params, context) =>
+      resolved === null || params["solid"] === false ? [] : citySolids(resolved, context.sampleHeight),
     note: (object) => {
       const resolved = resolveCityObject(object);
       if (resolved === null) return "Give the volume a box footprint.";

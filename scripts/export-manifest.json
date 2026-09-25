@@ -492,6 +492,7 @@
     "./world",
     "./world/authoredEntities",
     "./world/authoredObjects",
+    "./world/authoredSolids",
     "./world/authoredSpawn",
     "./world/buildPermissions",
     "./world/buildSockets",
@@ -571,7 +572,8 @@
     "./world/waypoints",
     "./world/weather",
     "./world/wind",
-    "./world/windZones"
+    "./world/windZones",
+    "./world/worldSolids"
   ],
   "@jgengine/rapier": [
     ".",

@@ -19,6 +19,7 @@ between (`--json` for structured output).
 
 ### Migrate
 
+- `environment({ structures: building(...) })` buildings and `city` volume buildings now block the player, walking NPCs, `syncWorldColliders` physics backends and `populateNavGridFromSolids` through the new `ctx.world.solids`. Before, they were render-only. If a game re-authored generated buildings as placed scene objects to make them solid, drop those objects. To keep a set passable, pass `building({ solid: false })` or turn off `solid buildings` on the city volume. A mock `GameContext` needs `world.solids` (`createWorldSolids()` from `@jgengine/core/world/worldSolids`).
 - `createAircraftDynamics` and `AircraftTuning` (`physics/flightDynamics`) are deprecated. They command rotation from rates with pitch clamped, so aircraft can't loop, and mass and stall are fixed. Move to `createRigidAircraft` (`@jgengine/core/physics/aircraftDynamics`):
   - `mass` → `massKg`, plus an `inertia` tensor (roughly `m·(span/4)²` for roll and `m·(length/4)²` for pitch and yaw).
   - `fixedWing`: `lift`/`stallSpeed` → left and right wing `surfaces` (area, `liftSlope`, `stallAngle`, trim `incidence`), a tailplane and a fin; `controls.pitch/roll/yaw` → `control` authority on those surfaces plus `controls.<channel>.rate`; `maxThrust` → `engine.maxThrust`; `drag`/`maxSpeed` → `dragArea` and surface `cd0` (top speed is where thrust meets drag); `sideDrag` → the fin.

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { createObjectStore } from "../scene/objectStore";
 import { createPhysicsWorldBackend } from "./physicsWorldBackend";
+import { createWorldSolids } from "../world/worldSolids";
 import { syncWorldColliders } from "./worldColliders";
 
 describe("syncWorldColliders", () => {
@@ -13,7 +14,7 @@ describe("syncWorldColliders", () => {
     });
     const ctx = {
       scene: { object: { ...object, collidersOf: (id: string) => colliders.get(id) ?? null } },
-      world: { ground: { bounds: { w: 20, d: 20 }, sampleHeight: () => 0 } },
+      world: { ground: { bounds: { w: 20, d: 20 }, sampleHeight: () => 0 }, solids: createWorldSolids() },
     } as any;
     const backend = createPhysicsWorldBackend({
       capacity: 8,
