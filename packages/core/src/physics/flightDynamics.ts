@@ -33,7 +33,10 @@ export interface FlightControlRates {
 /** Axes an aircraft can bind — which actions drive each flight control. */
 export type AircraftAxis = "pitch" | "roll" | "yaw" | "throttle" | "collective" | "airbrake" | "afterburner" | "vectoring";
 
-/** Data-first physical tuning shared by all aircraft instances of one catalog type. */
+/**
+ * Data-first physical tuning shared by all aircraft instances of one catalog type.
+ * @deprecated Rotation is commanded from rates with pitch clamped to ±0.49π, so it can't loop, and mass and stall angle are fixed. Use `createRigidAircraft` (`physics/aircraftDynamics`), whose rotation comes from surface forces on an inertia tensor.
+ */
 export interface AircraftTuning {
   kind: AircraftKind;
   mass: number;
@@ -137,8 +140,9 @@ function wrapAngle(value: number): number {
   return angle;
 }
 
-/** Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
- * @capability flight-dynamics simulate fixed-wing, helicopter, and VTOL aircraft
+/**
+ * Six-degree-of-freedom arcade flight model for fixed-wing, helicopter, and VTOL aircraft.
+ * @deprecated Rotation is commanded from rates with pitch clamped to ±0.49π, so it can't loop, and mass and stall angle are fixed. Use `createRigidAircraft` (`physics/aircraftDynamics`), whose rotation comes from surface forces on an inertia tensor.
  */
 export function createAircraftDynamics(initialTuning: AircraftTuning, options: AircraftOptions = {}): AircraftDynamics {
   let tuning = initialTuning;

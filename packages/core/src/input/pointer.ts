@@ -79,6 +79,8 @@ export interface DragCapture {
   cancel(): void;
   /** The current drag state, or `null` when idle. */
   state(): DragState | null;
+  /** Resumes the drag a {@link DragCapture.state} described (its `origin` and `current`), or goes idle on `null`. */
+  restore(next: DragState | null): void;
 }
 
 function subtractVec3(a: PointerVec3, b: PointerVec3): PointerVec3 {
@@ -128,5 +130,9 @@ export function createDragCapture(config: DragCaptureConfig = {}): DragCapture {
       current = null;
     },
     state: snapshot,
+    restore(next) {
+      origin = next === null ? null : [next.origin[0], next.origin[1], next.origin[2]];
+      current = next === null ? null : [next.current[0], next.current[1], next.current[2]];
+    },
   };
 }

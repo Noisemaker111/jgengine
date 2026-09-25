@@ -1791,7 +1791,7 @@
 
 ## @jgengine/shell/audio/audioEngine
 
-- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; stop(): void } — ⚠ undocumented
+- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Vec3): void; stop(): void } — ⚠ undocumented
 - `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; playOneShot(soundId: string, position?: Vec3): void; playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null; playMusic(themeId: string | null, options?: CrossfadeOptions): v… — ⚠ undocumented
 - `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string } — ⚠ undocumented
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
@@ -1800,7 +1800,9 @@
 
 ## @jgengine/shell/audio/loopParams
 
+- `MAX_LOOP_CUTOFF` (const): const MAX_LOOP_CUTOFF: 22050 — Highest live filter cutoff, Hz; the engine also caps it at the context's Nyquist frequency.
 - `MAX_LOOP_RATE` (const): const MAX_LOOP_RATE: 4 — Highest live playback-rate multiplier (two octaves above authored pitch).
+- `MIN_LOOP_CUTOFF` (const): const MIN_LOOP_CUTOFF: 10 — Lowest live filter cutoff, Hz.
 - `MIN_LOOP_RATE` (const): const MIN_LOOP_RATE: 0.25 — Pure clamps for retained-loop live control (#1051). Kept dependency-free so the playback-rate/gain windows are one testable source of truth the audio engine reads.
 
 ## @jgengine/shell/audio/musicDirector
@@ -1947,6 +1949,10 @@
 - `CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_OFFSET: 0.55 — Calibrated positional shake amplitude at full trauma (world units) for `traumaShake`.
 - `CALIBRATED_TRAUMA_SHAKE_MAX_ROLL` (const): const CALIBRATED_TRAUMA_SHAKE_MAX_ROLL: 0.1 — Calibrated rotational shake amplitude at full trauma (radians) for `traumaShake`.
 - `CameraPose` (interface): interface CameraPose { position: Vec3; lookAt: Vec3; fov: number } — ⚠ undocumented
+- `ChaseBoomClamp` (type): type ChaseBoomClamp = (pivot: Vec3, desired: Vec3) => Vec3 — Pulls a desired camera position in toward `pivot` when something blocks the boom.
+- `ChaseRigState` (interface): interface ChaseRigState — Mutable per-rig chase state; {@link stepChase} advances it in place.
+- `ChaseSample` (interface): interface ChaseSample — What the chase rig reads from its target each frame.
+- `ChaseStepResult` (interface): interface ChaseStepResult — One frame of chase output from {@link stepChase}.
 - `CinematicSample` (interface): interface CinematicSample { pose: CameraPose; done: boolean } — ⚠ undocumented
 - `DirectorCameraValues` (interface): interface DirectorCameraValues { followEntityId?: string | null; cinematic?: CinematicCameraConfig | null } — ⚠ undocumented
 - `ResolvedChase` (interface): interface ResolvedChase { distance: number; height: number; lookHeight: number; springDamping: number; shakePerSpeed: number; leadTime: number; leadMax: number; bankPerYawRate: number; bankMax: number; bankDamping: number; velocityYawBlend: number; velocityYawMinS… — ⚠ undocumented

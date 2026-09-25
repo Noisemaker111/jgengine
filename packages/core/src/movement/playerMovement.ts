@@ -2,6 +2,7 @@ import type { PhysicsConfig } from "../game/defineGame";
 import type { MovementCommitFrame, PlayerMovementConfig, VoxelCollisionConfig } from "../game/playableGame";
 import type { GameContext } from "../runtime/gameContext";
 import type { InputFrame } from "../runtime/inputSnapshot";
+import { createInputBuffer, type InputBuffer, type InputBufferSnapshot } from "../input/inputBuffer";
 import { applyHorizontalImpulses, applyMotionImpulses } from "../runtime/motionIntents";
 import {
   createCharacterController,
@@ -101,6 +102,14 @@ export function resolvePlayerMovementTuning(opts: {
     ...(feel?.groundFriction === undefined ? {} : { groundFriction: feel.groundFriction }),
     ...(feel?.runMultiplier === undefined ? {} : { runSpeedMultiplier: feel.runMultiplier }),
     ...(feel?.crouchMultiplier === undefined ? {} : { crouchSpeedMultiplier: feel.crouchMultiplier }),
+    ...(feel?.jumpBufferMs === undefined ? {} : { jumpBufferMs: feel.jumpBufferMs }),
+    ...(feel?.coyoteMs === undefined ? {} : { coyoteMs: feel.coyoteMs }),
+    ...(feel?.jumpCutFactor === undefined ? {} : { jumpCutFactor: feel.jumpCutFactor }),
+    ...(feel?.apexGravityScale === undefined ? {} : { apexGravityScale: feel.apexGravityScale }),
+    ...(feel?.apexSpeed === undefined ? {} : { apexSpeed: feel.apexSpeed }),
+    ...(feel?.fallGravityScale === undefined ? {} : { fallGravityScale: feel.fallGravityScale }),
+    ...(feel?.landingRecoveryMs === undefined ? {} : { landingRecoveryMs: feel.landingRecoveryMs }),
+    ...(feel?.landingSpeedScale === undefined ? {} : { landingSpeedScale: feel.landingSpeedScale }),
   };
   const overrides =
     Object.keys(feelOverrides).length === 0 ? physics : { ...(physics ?? {}), ...feelOverrides };
@@ -133,6 +142,7 @@ interface PlayerMovementState {
   flight: FreeFlightState | null;
   controller: CharacterController | null;
   controllerJumpHeld: boolean;
+  jumpBuffer: InputBuffer | null;
   /** Controller state restored before the capsule exists; applied when it is created. */
   pendingController: CharacterControllerState | null;
 }
@@ -167,6 +177,7 @@ function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState 
       flight: null,
       controller: null,
       controllerJumpHeld: false,
+      jumpBuffer: null,
       pendingController: null,
     };
     store.players.set(userId, state);
@@ -188,6 +199,8 @@ export interface PlayerMovementSnapshot {
   flight: FreeFlightState | null;
   controller: CharacterControllerState | null;
   controllerJumpHeld: boolean;
+  /** Buffered jump presses; absent in snapshots taken before jump buffering existed. */
+  jumpBuffer?: InputBufferSnapshot | null;
 }
 
 function copyController(state: CharacterControllerState): CharacterControllerState {
@@ -207,6 +220,7 @@ export function snapshotPlayerMovement(ctx: GameContext, userId: string): Player
     flight: state.flight === null ? null : { ...state.flight },
     controller: controller === null ? null : copyController(controller),
     controllerJumpHeld: state.controllerJumpHeld,
+    jumpBuffer: state.jumpBuffer?.snapshot() ?? null,
   };
 }
 
@@ -219,6 +233,13 @@ export function restorePlayerMovement(ctx: GameContext, userId: string, snapshot
   state.motion = snapshot.motion === null ? null : { ...snapshot.motion };
   state.flight = snapshot.flight === null ? null : { ...snapshot.flight };
   state.controllerJumpHeld = snapshot.controllerJumpHeld;
+  const jumpBuffer = snapshot.jumpBuffer ?? null;
+  if (jumpBuffer === null) {
+    state.jumpBuffer = null;
+  } else {
+    state.jumpBuffer ??= createInputBuffer({ windowMs: jumpBuffer.windowMs });
+    state.jumpBuffer.restore(jumpBuffer);
+  }
   const controller = snapshot.controller === null ? null : copyController(snapshot.controller);
   if (state.controller !== null && controller !== null) {
     state.controller.restore(controller);
@@ -636,9 +657,15 @@ export function stepPlayerMovement(
     swimEnabled &&
     waterLevel !== undefined &&
     tuning.ground.sampleHeight(player.position[0], player.position[2]) < waterLevel;
-  const motionOptions: MotionFrameOptions | undefined = submerged
-    ? { speedScale: swimSpeedMultiplier, floating: true }
-    : undefined;
+  const jumpBufferMs = tuning.physics?.jumpBufferMs ?? 0;
+  let jumpBuffer = state.jumpBuffer;
+  if (jumpBuffer === null) {
+    jumpBuffer = createInputBuffer({ windowMs: jumpBufferMs });
+    state.jumpBuffer = jumpBuffer;
+  }
+  const motionOptions: MotionFrameOptions = submerged
+    ? { speedScale: swimSpeedMultiplier, floating: true, buffer: jumpBuffer }
+    : { buffer: jumpBuffer };
   const prevJumpOffset = motion.jumpOffset;
   const step = advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning.physics, motionOptions);
   // Airborne means "not resting on the surface below": any jump/impulse height before or after this

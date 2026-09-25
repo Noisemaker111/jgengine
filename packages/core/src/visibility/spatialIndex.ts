@@ -13,6 +13,23 @@ export interface SpatialIndexOptions {
   readonly maxCellSpan?: number;
 }
 
+/** Integer cell bounds an object covers, inclusive on both ends. */
+export interface SpatialCellRange {
+  x0: number; y0: number; z0: number;
+  x1: number; y1: number; z1: number;
+}
+
+/**
+ * Plain JSON state of a {@link SpatialIndex}. Cells and their ids keep insertion order, so a restored
+ * index returns query results in the same order.
+ */
+export interface SpatialIndexState {
+  /** Per object: its cell range (`null` when oversized) and whether it was inserted as dynamic. */
+  entries: [id: string, range: SpatialCellRange | null, dynamic: boolean][];
+  cells: [x: number, y: number, z: number, ids: string[]][];
+  oversized: string[];
+}
+
 /**
  * A uniform 3D spatial hash the renderer and streaming system query for potentially-visible
  * objects instead of scanning the whole scene. Objects are keyed by their world AABB into
@@ -33,12 +50,11 @@ export interface SpatialIndex {
   cells(): { key: string; count: number; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number }[];
   cellSize(): number;
   clear(): void;
+  snapshot(): SpatialIndexState;
+  restore(next: SpatialIndexState): void;
 }
 
-interface CellRange {
-  x0: number; y0: number; z0: number;
-  x1: number; y1: number; z1: number;
-}
+type CellRange = SpatialCellRange;
 
 interface Entry {
   range: CellRange | null; // null when oversized
@@ -274,6 +290,19 @@ export function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIn
       oversized.clear();
       entries.clear();
       stamps.clear();
+    },
+    snapshot() {
+      return {
+        entries: [...entries].map(([id, entry]) => [id, entry.range === null ? null : { ...entry.range }, entry.dynamic]),
+        cells: [...cells.values()].map((bucket) => [bucket.x, bucket.y, bucket.z, [...bucket.ids]]),
+        oversized: [...oversized],
+      };
+    },
+    restore(next) {
+      this.clear();
+      for (const [id, range, dynamic] of next.entries) entries.set(id, { range: range === null ? null : { ...range }, dynamic });
+      for (const [x, y, z, ids] of next.cells) cells.set(packCell(x, y, z), { x, y, z, ids: new Set(ids) });
+      for (const id of next.oversized) oversized.add(id);
     },
   };
 }

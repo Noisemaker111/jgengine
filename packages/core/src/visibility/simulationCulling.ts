@@ -1,4 +1,4 @@
-import type { LodBand } from "../world/lod";
+import type { LodBand, LodSchedulerState } from "../world/lod";
 import { createLodScheduler } from "../world/lod";
 
 /**
@@ -27,6 +27,12 @@ export interface SimulationDecision {
   elapsed: number;
 }
 
+/** Plain JSON state of a {@link SimulationCuller}: the enabled flag and each id's throttle accumulator. */
+export interface SimulationCullerState {
+  enabled: boolean;
+  scheduler: LodSchedulerState;
+}
+
 export interface SimulationCuller {
   enabled(): boolean;
   setEnabled(value: boolean): void;
@@ -34,6 +40,8 @@ export interface SimulationCuller {
   step(id: string, distance: number, dt: number): SimulationDecision;
   forget(id: string): void;
   clear(): void;
+  snapshot(): SimulationCullerState;
+  restore(next: SimulationCullerState): void;
 }
 
 const DEFAULT_BANDS: readonly LodBand[] = [
@@ -70,6 +78,13 @@ export function createSimulationCuller(options: SimulationCullingOptions = {}): 
     },
     clear() {
       scheduler.clear();
+    },
+    snapshot() {
+      return { enabled, scheduler: scheduler.snapshot() };
+    },
+    restore(next) {
+      enabled = next.enabled;
+      scheduler.restore(next.scheduler);
     },
   };
 }

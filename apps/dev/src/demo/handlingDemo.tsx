@@ -4,6 +4,8 @@ import type * as THREE from "three";
 import type { AxisBinding } from "@jgengine/core/input/axisInput";
 import { analogAxes, createAxisShaper, type AxisShaper } from "@jgengine/core/input/axisShaper";
 import type { WorldOverlayProps } from "@jgengine/core/game/playableGame";
+import { createEngineLayers, type EngineLayers } from "@jgengine/core/audio/engineLayers";
+import type { SoundDef } from "@jgengine/core/audio/audioFalloff";
 import { tickDrivableVehicle } from "@jgengine/core/physics/drivableVehicle";
 import { createFeedbackMixer, type FeedbackMixer } from "@jgengine/core/vfx/feedbackMixer";
 import {
@@ -12,6 +14,7 @@ import {
   type VehicleDynamicsStep,
   type VehicleDynamicsTuning,
 } from "@jgengine/core/physics/vehicleDynamics";
+import { nextChaseView } from "@jgengine/core/runtime/cameraDirector";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
@@ -46,15 +49,55 @@ function createDriveShaper(): AxisShaper<DriveAxis> {
   });
 }
 
+// Each synth patch stands in for an engine sample recorded at `rpm`; the layers crossfade them and repitch by rpm / layer.rpm.
+function engineVoice(id: string, freq: number, onLoad: boolean): SoundDef {
+  return {
+    id,
+    bus: "sfx",
+    loop: true,
+    doppler: 1,
+    synth: {
+      gain: onLoad ? 0.5 : 0.35,
+      voices: onLoad
+        ? [
+            { kind: "tone", wave: "sawtooth", freq, duration: 1, sustain: 1, gain: 0.5 },
+            { kind: "tone", wave: "square", freq: freq / 2, duration: 1, sustain: 1, gain: 0.25 },
+            { kind: "tone", wave: "triangle", freq: freq * 2, duration: 1, sustain: 1, gain: 0.2 },
+          ]
+        : [
+            { kind: "tone", wave: "triangle", freq, duration: 1, sustain: 1, gain: 0.5 },
+            { kind: "tone", wave: "sine", freq: freq / 2, duration: 1, sustain: 1, gain: 0.35 },
+          ],
+    },
+  };
+}
+
+const ENGINE_SOUNDS: Record<string, SoundDef> = {
+  engineOnLow: engineVoice("engineOnLow", 66, true),
+  engineOnHigh: engineVoice("engineOnHigh", 233, true),
+  engineOffLow: engineVoice("engineOffLow", 66, false),
+  engineOffHigh: engineVoice("engineOffHigh", 233, false),
+};
+
+const ENGINE_LAYERS = {
+  id: "engine",
+  layers: [
+    { sound: "engineOnLow", rpm: 2000, load: "on" },
+    { sound: "engineOnHigh", rpm: 7000, load: "on" },
+    { sound: "engineOffLow", rpm: 2000, load: "off" },
+    { sound: "engineOffHigh", rpm: 7000, load: "off" },
+  ],
+} as const;
+
 const CONES: readonly (readonly [number, number])[] = Array.from({ length: 14 }, (_, i) => [(i % 2 === 0 ? 3.5 : -3.5), 30 + i * 18]);
 
 type FeedbackSignal = "rpm" | "load" | "scrub" | "slip" | "front" | "rear" | "landing";
-type FeedbackTarget = "engineRate" | "engineGain" | "tireGain" | "tireRate" | "rumbleStrong" | "rumbleWeak";
+type FeedbackTarget = "engineLowpass" | "engineGain" | "tireGain" | "tireRate" | "rumbleStrong" | "rumbleWeak";
 
 function createCarFeedback(): FeedbackMixer<FeedbackSignal, FeedbackTarget> {
   return createFeedbackMixer<FeedbackSignal, FeedbackTarget>({
     routes: [
-      { signal: "rpm", target: "engineRate", curve: [[0, 0], [3000, 1], [9000, 3]] },
+      { signal: "load", target: "engineLowpass", curve: [[0, 900], [1, 7000]], attack: 20000, release: 8000 },
       { signal: "load", target: "engineGain", curve: [[0, 0.25], [1, 0.8]], attack: 8, release: 4 },
       { signal: "scrub", target: "tireGain", curve: [[0.85, 0], [1.25, 1]], attack: 20, release: 5 },
       { signal: "slip", target: "tireRate", curve: [[0, 0.85], [0.5, 1.35]] },
@@ -71,6 +114,7 @@ interface HandlingRun {
   car: VehicleDynamics;
   shaper: AxisShaper<DriveAxis>;
   feedback: FeedbackMixer<FeedbackSignal, FeedbackTarget>;
+  engine: EngineLayers;
   last: VehicleDynamicsStep | null;
   rumbleCooldown: number;
 }
@@ -87,7 +131,7 @@ let vehicle: DemoVehicle = CAR_VEHICLE;
 let run: HandlingRun | null = null;
 
 function ensureRun(): HandlingRun {
-  run ??= { car: createVehicleDynamics(vehicle.tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), last: null, rumbleCooldown: 0 };
+  run ??= { car: createVehicleDynamics(vehicle.tuning, { groundHeight: handlingDemoGround }), shaper: createDriveShaper(), feedback: createCarFeedback(), engine: createEngineLayers(ENGINE_LAYERS), last: null, rumbleCooldown: 0 };
   return run;
 }
 
@@ -115,6 +159,10 @@ function onTick(ctx: GameContext, dt: number): void {
   state.last = drive.step;
   ctx.scene.entity.setPose(id, drive.pose);
   if (ctx.input.justPressed("jump")) state.car.jump();
+  if (ctx.input.justPressed("cycleView")) {
+    const tuning = ctx.camera.chaseTuning();
+    ctx.camera.setChaseTuning({ ...tuning, view: nextChaseView(tuning?.view ?? "chase") });
+  }
 
   const step = drive.step;
   const at = drive.pose.position;
@@ -128,11 +176,14 @@ function onTick(ctx: GameContext, dt: number): void {
     rear: step.rearSaturation,
     landing: step.landingSpeed,
   });
-  ctx.game.audio.loop("engine", "engine", { at });
   ctx.game.audio.loop("tires", "tires", { at });
-  ctx.game.audio.setLoop("engine", { rate: out.engineRate, gain: out.engineGain, at });
+  state.engine.update(dt, { rpm: step.rpm, load: step.engineLoad });
+  state.engine.play(ctx.game.audio, { at, velocity: ctx.scene.entity.get(id)?.velocity, gain: out.engineGain, lowpass: out.engineLowpass });
   ctx.game.audio.setLoop("tires", { rate: out.tireRate, gain: out.tireGain, at });
-  if (state.feedback.fired("landing")) ctx.game.audio.play("thud", at);
+  if (state.feedback.fired("landing")) {
+    ctx.game.audio.play("thud", at);
+    ctx.camera.kickFov(-Math.min(8, step.landingSpeed));
+  }
 
   state.rumbleCooldown -= dt;
   if (state.rumbleCooldown <= 0 && (out.rumbleStrong > 0.05 || out.rumbleWeak > 0.05)) {
@@ -281,7 +332,7 @@ function Telemetry() {
       <div className="tabular-nums">lat {(step.lateralAccel / 9.81).toFixed(2)} g · slip {((step.sideslip * 180) / Math.PI).toFixed(0)}°{vehicle.kind === "bike" ? ` · lean ${Math.abs((step.lean * 180) / Math.PI).toFixed(0)}°` : ""}</div>
       <div className="mt-1 flex items-center gap-2">front {bar(step.frontSaturation)}</div>
       <div className="flex items-center gap-2">rear&nbsp; {bar(step.rearSaturation)}</div>
-      <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump</div>
+      <div className="mt-1 text-[10px] text-slate-400">W/S throttle·brake · A/D steer · Space handbrake · J jump · C look back · V view</div>
     </div>
   );
 }
@@ -304,6 +355,8 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
       steerRight: ["KeyD", "ArrowRight"],
       handbrake: ["Space"],
       jump: ["KeyJ"],
+      lookBack: ["KeyC"],
+      cycleView: ["KeyV"],
     },
     loop: { onInit, onNewPlayer, onTick, onReset: onInit, onDispose: resetRun },
     camera: {
@@ -318,23 +371,15 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
         bank: { perYawRate: 0.05, max: 0.06 },
         velocityYaw: { blend: 0.35, minSpeed: 5, response: 7 },
         yawResponse: 9,
+        distanceBySpeed: { extra: choice.kind === "bike" ? 1 : 1.5, speedForMax: 60 },
+        pitchFollow: { blend: 0.8, response: 3 },
+        fovKick: { decay: 6, max: 10 },
+        lookBackAction: "lookBack",
       },
     },
     audio: {
       sounds: {
-        engine: {
-          id: "engine",
-          bus: "sfx",
-          loop: true,
-          synth: {
-            gain: 0.5,
-            voices: [
-              { kind: "tone", wave: "sawtooth", freq: 100, duration: 1, sustain: 1, gain: 0.5 },
-              { kind: "tone", wave: "square", freq: 50, duration: 1, sustain: 1, gain: 0.25 },
-              { kind: "tone", wave: "triangle", freq: 200, duration: 1, sustain: 1, gain: 0.2 },
-            ],
-          },
-        },
+        ...ENGINE_SOUNDS,
         thud: {
           id: "thud",
           bus: "sfx",
@@ -372,7 +417,9 @@ function makeGame(name: string, choice: DemoVehicle): PlayableGame {
           yawRate: step.yawRate,
           steerDeg: (step.steerAngle * 180) / Math.PI,
           leanDeg: (step.lean * 180) / Math.PI,
-          engineRate: run?.feedback.value().engineRate ?? 0,
+          engineLowpass: run?.feedback.value().engineLowpass ?? 0,
+          engineOnHigh: run?.engine.mix()[1]?.gain ?? 0,
+          engineOffLow: run?.engine.mix()[2]?.gain ?? 0,
           tireGain: run?.feedback.value().tireGain ?? 0,
           lateralG: step.lateralAccel / 9.81,
           sideslipDeg: (step.sideslip * 180) / Math.PI,

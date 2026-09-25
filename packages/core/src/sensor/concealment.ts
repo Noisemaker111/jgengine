@@ -51,9 +51,16 @@ export interface ConcealmentSample {
   dwellSeconds: number;
 }
 
+/** Plain JSON state of a {@link ConcealmentSensor}: seconds each target has stayed concealed. */
+export interface ConcealmentSensorState {
+  dwell: Record<string, number>;
+}
+
 export interface ConcealmentSensor {
   tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[];
   reset(id?: string): void;
+  snapshot(): ConcealmentSensorState;
+  restore(next: ConcealmentSensorState): void;
 }
 
 /** @internal */
@@ -81,6 +88,13 @@ export function createConcealmentSensor(config?: { threshold?: number }): Concea
     reset(id) {
       if (id === undefined) dwell.clear();
       else dwell.delete(id);
+    },
+    snapshot() {
+      return { dwell: Object.fromEntries(dwell) };
+    },
+    restore(next) {
+      dwell.clear();
+      for (const [id, seconds] of Object.entries(next.dwell)) dwell.set(id, seconds);
     },
   };
 }

@@ -259,8 +259,10 @@
 
 ## @jgengine/core/runtime/cameraDirector
 
+- `CHASE_VIEWS` (const): const CHASE_VIEWS: readonly ChaseView[] — Default order {@link nextChaseView} cycles through.
 - `CameraDirector` (interface): interface CameraDirector { follow(entityId: string | null): void; followedEntityId(): string | null | undefined; setCinematic(config: CinematicCameraConfig | null): void; cinematic(): CinematicCameraConfig | null; setChaseTuning(tuning: ChaseCameraTuning | null): v… — ⚠ undocumented
-- `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick<ChaseCameraConfig, "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw" | "yawResponse"> > — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), or a whole driving-feel overlay (speed→FOV, lead, bank, speed shake, drift-lag) applied only while a vehicle is piloted (#1299).
+- `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick< ChaseCameraConfig, | "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw" | "yawResponse" | "distanceBySpeed" | "pitchFollow" | "fovKick" | "lookBackAction" | "collision" | "view" > > — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), a whole driving-feel overlay applied only while a vehicle is piloted (#1299), or a `view` switch between chase and seat cameras.
+- `nextChaseView` (function): function nextChaseView(current: ChaseView, views: readonly ChaseView[] = CHASE_VIEWS): ChaseView — The view after `current` in `views`, wrapping at the end; a view missing from the list starts the cycle over. Pair with `setChaseTuning` to bind a "change camera" key: `ctx.camera.setChaseTuning({ ...ctx.camera.chaseTuning(), view: nextChaseView(view) })`.
 
 ## @jgengine/core/runtime/commandInput
 

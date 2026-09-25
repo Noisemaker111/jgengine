@@ -1,5 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
+import { createInputBuffer } from "../input/inputBuffer";
+
 import {
   advancePlayerMotion,
   constrainStepToAxis,
@@ -411,5 +413,152 @@ describe("advancePlayerMotion — feel overrides", () => {
     const sprint = { ...createEmptyMovementKeys(), w: true, shift: true };
     const sprinting = resolveMovementIntent(sprint, true);
     expect(steadySpeed(sprinting, { runSpeedMultiplier: 3 })).toBeCloseTo(steadySpeed(sprinting) * (3 / MOVEMENT_TUNING.runSpeedMultiplier), 3);
+  });
+});
+
+describe("advancePlayerMotion — jump buffer and coyote time", () => {
+  function airborneAfterJump(tuning: Parameters<typeof advancePlayerMotion>[6], buffer = createInputBuffer({ windowMs: 0 })) {
+    const motion = createPlayerMotionState();
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    return { motion, buffer };
+  }
+
+  function landingFrame(motion: PlayerMotionState, tuning: Parameters<typeof advancePlayerMotion>[6], buffer: ReturnType<typeof createInputBuffer>, pressAtFramesBeforeLanding: number): boolean {
+    const probe = { ...motion };
+    let framesToLand = 0;
+    while (!probe.grounded) {
+      advancePlayerMotion(probe, idleIntent(), 0, -1, 2.5, DT, tuning);
+      framesToLand += 1;
+    }
+    for (let frame = 1; frame < framesToLand; frame += 1) {
+      const pressing = frame === framesToLand - pressAtFramesBeforeLanding;
+      advancePlayerMotion(motion, pressing ? jumpIntent() : idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    }
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    return motion.verticalVelocity > 0;
+  }
+
+  test("default: a press just before landing is lost", () => {
+    const { motion, buffer } = airborneAfterJump(undefined);
+    expect(landingFrame(motion, undefined, buffer, 3)).toBe(false);
+  });
+
+  test("jumpBufferMs: a press just before landing jumps on landing", () => {
+    const tuning = { jumpBufferMs: 100 };
+    const { motion, buffer } = airborneAfterJump(tuning);
+    expect(landingFrame(motion, tuning, buffer, 3)).toBe(true);
+  });
+
+  test("jumpBufferMs: a press older than the window is dropped", () => {
+    const tuning = { jumpBufferMs: 100 };
+    const { motion, buffer } = airborneAfterJump(tuning);
+    expect(landingFrame(motion, tuning, buffer, 12)).toBe(false);
+  });
+
+  function walkOffLedge(tuning: Parameters<typeof advancePlayerMotion>[6], framesAfter: number): boolean {
+    const motion = createPlayerMotionState();
+    const buffer = createInputBuffer({ windowMs: 0 });
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    motion.grounded = false;
+    motion.jumpOffset = 5;
+    for (let frame = 0; frame < framesAfter; frame += 1) {
+      advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    }
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    return motion.verticalVelocity > 0;
+  }
+
+  test("default: no jump after walking off a ledge", () => {
+    expect(walkOffLedge(undefined, 2)).toBe(false);
+  });
+
+  test("coyoteMs: a late press after leaving the ledge still jumps, once", () => {
+    const tuning = { coyoteMs: 100 };
+    expect(walkOffLedge(tuning, 3)).toBe(true);
+    expect(walkOffLedge(tuning, 10)).toBe(false);
+  });
+
+  test("coyoteMs does not grant a second jump in the air", () => {
+    const tuning = { coyoteMs: 150 };
+    const { motion, buffer } = airborneAfterJump(tuning);
+    for (let frame = 0; frame < 20; frame += 1) {
+      advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    }
+    const before = motion.verticalVelocity;
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    expect(motion.verticalVelocity).toBeLessThan(before);
+  });
+});
+
+describe("advancePlayerMotion — jump shape", () => {
+  type Tuning = Parameters<typeof advancePlayerMotion>[6];
+
+  function arc(tuning: Tuning, holdFrames = Number.POSITIVE_INFINITY) {
+    const motion = createPlayerMotionState();
+    const buffer = createInputBuffer({ windowMs: 0 });
+    let peak = 0;
+    let peakFrame = 0;
+    let frame = 0;
+    do {
+      frame += 1;
+      advancePlayerMotion(motion, frame <= holdFrames ? jumpIntent() : idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+      if (motion.jumpOffset > peak) {
+        peak = motion.jumpOffset;
+        peakFrame = frame;
+      }
+    } while (!motion.grounded && frame < 600);
+    return { peak, rise: peakFrame, fall: frame - peakFrame, motion, buffer };
+  }
+
+  test("defaults: releasing early does not cut the jump", () => {
+    expect(arc(undefined, 3).peak).toBeCloseTo(arc(undefined).peak, 10);
+  });
+
+  test("jumpCutFactor: releasing early makes a lower hop", () => {
+    const tuning = { jumpCutFactor: 0.4 };
+    const held = arc(tuning).peak;
+    const tapped = arc(tuning, 3).peak;
+    expect(tapped).toBeLessThan(held * 0.5);
+  });
+
+  test("jumpCutFactor does not cut a launch that was not a jump", () => {
+    const motion = createPlayerMotionState();
+    motion.grounded = false;
+    motion.verticalVelocity = 8;
+    motion.jumpOffset = 0.1;
+    motion.jumpHeld = true;
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, { jumpCutFactor: 0 });
+    expect(motion.verticalVelocity).toBeGreaterThan(7);
+  });
+
+  test("apexGravityScale below 1 hangs at the peak", () => {
+    const plain = arc(undefined);
+    const hang = arc({ apexGravityScale: 0.3 });
+    expect(hang.rise + hang.fall).toBeGreaterThan(plain.rise + plain.fall + 6);
+  });
+
+  test("fallGravityScale above 1 falls faster than it rose", () => {
+    const plain = arc(undefined);
+    const heavy = arc({ fallGravityScale: 2 });
+    expect(heavy.rise).toBe(plain.rise);
+    expect(heavy.fall).toBeLessThan(plain.fall * 0.9);
+  });
+
+  test("landingRecoveryMs slows the first steps after landing and holds off the next jump", () => {
+    const tuning = { landingRecoveryMs: 200 };
+    const { motion, buffer } = arc(tuning);
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    expect(motion.grounded).toBe(true);
+    advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    for (let frame = 0; frame < 3; frame += 1) advancePlayerMotion(motion, forwardIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    const recovering = Math.hypot(motion.horizontalVelocityX, motion.horizontalVelocityZ);
+    const fresh = createPlayerMotionState();
+    for (let frame = 0; frame < 3; frame += 1) advancePlayerMotion(fresh, forwardIntent(), 0, -1, 2.5, DT, tuning);
+    expect(recovering).toBeLessThan(Math.hypot(fresh.horizontalVelocityX, fresh.horizontalVelocityZ) * 0.8);
+    for (let frame = 0; frame < 12; frame += 1) advancePlayerMotion(motion, idleIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    advancePlayerMotion(motion, jumpIntent(), 0, -1, 2.5, DT, tuning, { buffer });
+    expect(motion.grounded).toBe(false);
   });
 });

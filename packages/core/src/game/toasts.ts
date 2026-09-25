@@ -24,6 +24,12 @@ export function pruneToasts<T>(toasts: readonly Toast<T>[], now: number): readon
   return kept.length === toasts.length ? toasts : kept;
 }
 
+/** Plain JSON state of a {@link ToastQueue}: live toasts plus the id counter. */
+export interface ToastQueueState<T = string> {
+  toasts: Toast<T>[];
+  counter: number;
+}
+
 /** Stateful transient-toast list with a size cap and time-to-live eviction. */
 export interface ToastQueue<T = string> {
   /** Raise a toast at `now` living `ttlSeconds` (falling back to the queue default); returns it. */
@@ -34,6 +40,9 @@ export interface ToastQueue<T = string> {
   list(): readonly Toast<T>[];
   /** Remove all toasts. */
   clear(): void;
+  /** Copies the queue; each toast's `body` is shared, since the queue never mutates it. */
+  snapshot(): ToastQueueState<T>;
+  restore(next: ToastQueueState<T>): void;
 }
 
 /** Options for {@link createToastQueue}. */
@@ -71,6 +80,13 @@ export function createToastQueue<T = string>(options: ToastQueueOptions = {}): T
     },
     clear() {
       toasts = [];
+    },
+    snapshot() {
+      return { toasts: toasts.map((toast) => ({ ...toast })), counter };
+    },
+    restore(next) {
+      toasts = next.toasts.map((toast) => ({ ...toast }));
+      counter = next.counter;
     },
   };
 }

@@ -152,3 +152,21 @@ describe("lod remove / negative dt / size / clear", () => {
     expect(scheduler.size()).toBe(0);
   });
 });
+
+describe("lod scheduler snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const lod = createLodScheduler({ bands: [{ maxDistance: 10, interval: 0 }, { maxDistance: 50, interval: 0.3 }], beyondInterval: 1 });
+    for (const id of ["a", "b", "c"]) lod.step(id, id === "a" ? 5 : id === "b" ? 30 : 90, 0.1);
+    const saved = lod.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => {
+      const out: number[] = [];
+      for (let i = 0; i < 12; i += 1) for (const id of ["a", "b", "c", "d"]) out.push(lod.step(id, 20 + i * 7, 0.1));
+      return out;
+    };
+    const a = play();
+    expect(saved).toEqual(frozen);
+    lod.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

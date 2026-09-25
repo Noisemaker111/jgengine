@@ -65,8 +65,9 @@
 ## @jgengine/core/ai/groupAssist
 
 - `AssistMember` (interface): interface AssistMember { id: string; groupId: string; table: ThreatTable } — ⚠ undocumented
-- `AssistNetwork` (interface): interface AssistNetwork { register(member: AssistMember): void; remove(memberId: string): void; memberIds(groupId?: string): string[]; assistersOf(memberId: string): string[]; addThreat(memberId: string, sourceId: string, amount: number): string[] } — ⚠ undocumented
+- `AssistNetwork` (interface): interface AssistNetwork { register(member: AssistMember): void; remove(memberId: string): void; memberIds(groupId?: string): string[]; assistersOf(memberId: string): string[]; addThreat(memberId: string, sourceId: string, amount: number): string[]; snapshot(): Ass… — ⚠ undocumented
 - `AssistNetworkConfig` (interface): interface AssistNetworkConfig { radius?: number; shareFraction?: number; distanceBetween?: (a: string, b: string) => number } — ⚠ undocumented
+- `AssistNetworkState` (interface): interface AssistNetworkState — Plain JSON membership of an {@link AssistNetwork}, in registration order; threat lives in each member's own table.
 
 ## @jgengine/core/ai/heatSystem
 
@@ -190,6 +191,7 @@
 - `ThreatEntry` (interface): interface ThreatEntry { sourceId: string; threat: number } — ⚠ undocumented
 - `ThreatTable` (interface): interface ThreatTable { add(sourceId: string, amount: number): number; set(sourceId: string, amount: number): void; threatOf(sourceId: string): number; decay(dt: number): void; highest(options?: HighestThreatOptions): string | null; ranked(): ThreatEntry[]; taun… — ⚠ undocumented
 - `ThreatTableConfig` (interface): interface ThreatTableConfig { decayPerSecond?: number; max?: number; forgetBelow?: number } — ⚠ undocumented
+- `ThreatTableState` (interface): interface ThreatTableState — Plain JSON state of a {@link ThreatTable}; `entries` keeps insertion order, which breaks ties in `highest`.
 - `createThreatTable` (function): function createThreatTable(config: ThreatTableConfig = {}): ThreatTable — ⚠ undocumented
 
 ## @jgengine/core/ai/waveRunner
@@ -273,10 +275,27 @@
 - `AudioBusId` (type): type AudioBusId = string — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
 - `FalloffCurve` (type): type FalloffCurve = "linear" | "inverse" | "none" — ⚠ undocumented
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistance?: number; rollo… — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistan… — ⚠ undocumented
 - `computeFalloffGain` (function): function computeFalloffGain(distance: number, config: AudioFalloffConfig = {}): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
+
+## @jgengine/core/audio/doppler
+
+- `DopplerOptions` (interface): interface DopplerOptions — Options for {@link dopplerRate}.
+- `SPEED_OF_SOUND` (const): const SPEED_OF_SOUND: 343 — Speed of sound in air at 20 °C, metres per second — the default for {@link dopplerRate}.
+- `dopplerRate` (function): function dopplerRate(listenerPosition: Vec3Tuple, listenerVelocity: Vec3Tuple, emitterPosition: Vec3Tuple, emitterVelocity: Vec3Tuple, options: DopplerOptions = {}): number — Doppler pitch multiplier for an emitter heard by a listener: `(c + vListener) / (c - vEmitter)`, where each speed is the component along the line between them, positive when closing. Multiply a loop's playback rate by it. Pure and allocation-free.
+
+## @jgengine/core/audio/engineLayers
+
+- `EngineLayer` (interface): interface EngineLayer — One recorded engine sample, keyed by the rpm it was recorded at.
+- `EngineLayerMix` (interface): interface EngineLayerMix — One layer's live mix.
+- `EngineLayers` (interface): interface EngineLayers — A layered engine loop: N rpm-keyed samples crossfaded by rpm, with on- and off-load sets picked by engine load.
+- `EngineLayersAudio` (interface): interface EngineLayersAudio — The part of `ctx.game.audio` {@link EngineLayers} drives.
+- `EngineLayersConfig` (interface): interface EngineLayersConfig — Config for {@link createEngineLayers}.
+- `EngineLayersPlayOptions` (interface): interface EngineLayersPlayOptions — Per-tick parameters {@link EngineLayers.play} forwards to every layer's loop.
+- `EngineLayersState` (interface): interface EngineLayersState — Serializable {@link EngineLayers} state.
+- `createEngineLayers` (function): function createEngineLayers(initial: EngineLayersConfig): EngineLayers — Layered engine sound: each set of rpm-keyed samples is equal-power crossfaded between the two samples bracketing the current rpm and pitched by `rpm / layer.rpm`; the on- and off-load sets are equal-power crossfaded by smoothed `engineLoad`. A config with only one load set plays it at every load. `play` drives `ctx.game.audio` directly, so a game needs no per-layer glue.
 
 ## @jgengine/core/audio/music
 
@@ -333,6 +352,7 @@
 - `EffectiveRelationInput` (interface): interface EffectiveRelationInput { base: FactionRelation; ledger: ReputationLedger; actorId: string; factionId: string } — ⚠ undocumented
 - `ReputationLedger` (interface): interface ReputationLedger { standing(actorId: string, factionId: string): number; hasStanding(actorId: string, factionId: string): boolean; gain(actorId: string, factionId: string, amount: number): number; set(actorId: string, factionId: string, standing: number): n… — ⚠ undocumented
 - `ReputationLedgerConfig` (interface): interface ReputationLedgerConfig { tiers?: readonly ReputationTier[]; initial?: Readonly<Record<string, number>>; min?: number; max?: number } — ⚠ undocumented
+- `ReputationLedgerState` (interface): interface ReputationLedgerState — Plain JSON standings of a {@link ReputationLedger}: stored values only, `initial` stays config.
 - `ReputationTier` (interface): interface ReputationTier { id: string; min: number; relation: FactionRelation } — ⚠ undocumented · used by `tierForStanding`: Map a faction standing value to its named reputation tier.
 - `createReputationLedger` (function): function createReputationLedger(config: ReputationLedgerConfig = {}): ReputationLedger — ⚠ undocumented
 - `effectiveRelation` (function): function effectiveRelation(input: EffectiveRelationInput): FactionRelation — ⚠ undocumented
@@ -427,10 +447,18 @@
 - `GestureSurfaceTuning` (interface): interface GestureSurfaceTuning { tapMoveThresholdPx: number; tapMaxMs: number; swipeMinPx: number; swipeMinVelocity: number; dragStepPx: number } — ⚠ undocumented
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
 
+## @jgengine/core/input/inputBuffer
+
+- `BufferedAction` (interface): interface BufferedAction — One action's press history inside an {@link InputBuffer}.
+- `InputBuffer` (interface): interface InputBuffer — Remembers recent action presses so a press slightly early (a jump before landing) still counts. Times are caller-supplied ms, so it runs the same on a client, a host or in a replay.
+- `InputBufferSnapshot` (interface): interface InputBufferSnapshot — Serializable state for an {@link InputBuffer}.
+- `createInputBuffer` (function): function createInputBuffer(options: { windowMs: number }): InputBuffer — Creates an input buffer for jump buffering, coyote time, hold duration and double taps.
+
 ## @jgengine/core/input/lookChannel
 
-- `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number } — ⚠ undocumented
+- `LookChannel` (interface): interface LookChannel { accumulate(dx: number, dy: number): void; consume(): LookDeltas; setYaw(yaw: number): void; readYaw(): number; setPitch(pitch: number): void; readPitch(): number; setVerticalOffset(offset: number): void; readVerticalOffset(): number; snap… — ⚠ undocumented
 - `LookChannelOptions` (interface): interface LookChannelOptions { sensitivity: number; maxVerticalOffset?: number } — ⚠ undocumented
+- `LookChannelState` (interface): interface LookChannelState — Plain JSON state of a {@link LookChannel}: the pending pixel deltas and the committed pose.
 - `LookDeltas` (interface): interface LookDeltas — Per-frame look channel shared between an event-driven capture layer (writer of raw pointer deltas) and a frame-driven controller (consumer), plus the latest committed pose for same-frame readers such as presence sync. Kept as plain mutable state on purpose: routing per-frame deltas through a reactive store would notify subscribers every frame for state no UI reads.
 - `createLookChannel` (function): function createLookChannel({ sensitivity, maxVerticalOffset = Infinity }: LookChannelOptions): LookChannel — ⚠ undocumented
 
@@ -697,6 +725,13 @@
 - `MovementTuningOverrides` (interface): interface MovementTuningOverrides — Per-game overrides for the gravity/jump feel, sourced from `GameDefinition.physics`. Omitted fields fall back to {@link MOVEMENT_TUNING}.
 - `PlayerMotionState` (interface): interface PlayerMotionState — Mutable kinematic state carried between frames by the controller. Kept here so the velocity / jump / gravity integration is a pure function testable without a renderer — the controller just owns the ref.
 
+## @jgengine/core/movement/movementProbe
+
+- `MovementProbeOptions` (interface): interface MovementProbeOptions — Scenario settings for {@link measureMovement}; every field has a default.
+- `MovementProbeSubject` (interface): interface MovementProbeSubject — The walk character {@link measureMovement} drives: the same fields a game passes to `defineGame`.
+- `MovementReport` (interface): interface MovementReport — Deterministic walk-feel metrics. `Infinity` means the target was never reached.
+- `measureMovement` (function): function measureMovement(subject: MovementProbeSubject = {}, options: MovementProbeOptions = {}): MovementReport — Drives a walk character through fixed scenarios (standing start, release to stop, reversal, a standing jump, a tapped jump, a strafed jump) on the same integrator `stepPlayerMovement` uses, and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a feel change shows up as a number moving. Collision, terrain and swimming are out of scope; it measures flat ground.
+
 ## @jgengine/core/movement/playerMovement
 
 - `PlayerMovementSnapshot` (interface): interface PlayerMovementSnapshot — One player's serializable movement state: heading, facing, velocities, jump latch and controller capsule. The entity pose lives in the entity store.
@@ -879,6 +914,30 @@
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
 
+## @jgengine/core/physics/aircraftDynamics
+
+- `AircraftAssistCommand` (interface): interface AircraftAssistCommand — Control commands, `-1..1`, that drive the actuators after the assists.
+- `AircraftAssistContext` (interface): interface AircraftAssistContext — What an assist sees each substep, derived from the integrator state so it replays deterministically.
+- `AircraftAssistTuning` (interface): interface AircraftAssistTuning — Flight assists. Each one moves the same actuators the pilot does, so a stronger assist still flies within the airframe's authority. Strengths are `0..1`; an axis the pilot is deflecting gets less help the further the stick is pushed, so full stick is always the pilot's.
+- `AircraftControlChannel` (interface): interface AircraftControlChannel — One control channel's actuator: how far the surfaces move and how fast.
+- `AircraftEngineTuning` (interface): interface AircraftEngineTuning — A thrust source fixed to the body.
+- `AircraftGearTuning` (interface): interface AircraftGearTuning — Wheels or skids: what the body rests on when it touches the ground.
+- `AircraftMotorTuning` (interface): interface AircraftMotorTuning — A rocket motor: thrust follows a curve over burn time, propellant leaves at a mass flow so the body gets lighter and easier to turn, and the nozzle gimbals on the pitch and yaw channels. Stage by `retune`-ing to the next stage's mass and motor.
+- `AircraftQuaternion` (type): type AircraftQuaternion = readonly [number, number, number, number] — Unit quaternion `[x, y, z, w]` taking body-frame vectors to world space.
+- `AircraftRotorTuning` (interface): interface AircraftRotorTuning — A main rotor. Collective sets blade pitch, throttle sets rotor speed, and cyclic (the pitch and roll channels) tilts the disc. Its drag torque yaws the body the other way unless a tail rotor, a second rotor or a pedal input cancels it.
+- `AircraftSurface` (interface): interface AircraftSurface — One lifting surface: a wing panel, a tailplane, a fin, a canard. Its lift acts at `at`, so the moments that pitch, roll and yaw the body come from where the surfaces sit, not from commanded rates.
+- `AircraftVector` (type): type AircraftVector = readonly [number, number, number] — Body-frame or world-frame vector, m or N. The body frame is `[left, up, forward]` about the centre of mass.
+- `RigidAircraft` (interface): interface RigidAircraft — A force-and-torque aircraft on the same tick/snapshot/retune contract as `VehicleDynamics`.
+- `RigidAircraftInput` (interface): interface RigidAircraftInput — Pilot input for one tick.
+- `RigidAircraftModifiers` (interface): interface RigidAircraftModifiers — Per-tick overrides layered over tuning: damage, icing, boost, gusts. Each scale defaults to `1`.
+- `RigidAircraftOptions` (interface): interface RigidAircraftOptions — World hooks for one aircraft instance.
+- `RigidAircraftState` (interface): interface RigidAircraftState — Serializable integrator state: everything `restore` needs to resume bit-for-bit.
+- `RigidAircraftStep` (interface): interface RigidAircraftStep — One aircraft tick: pose plus the telemetry HUDs, camera, sound and probes read.
+- `RigidAircraftTuning` (interface): interface RigidAircraftTuning — A rigid aircraft in physical units. There is no aircraft type: a jet, a glider and a paper plane differ only in these numbers. Rotation comes from surface forces acting on the inertia tensor, so loops, rolls, stalls and weathervaning are outcomes, not special cases.
+- `aircraftAttitudeQuaternion` (function): function aircraftAttitudeQuaternion(heading: number, pitch: number, bank: number): AircraftQuaternion — Quaternion from heading, nose-up pitch and right bank, rad — the inverse of a step's `heading`/`pitch`/`bank`. Matches three.js `Euler(-pitch, heading, bank, "YXZ")`.
+- `aircraftHeadingQuaternion` (function): function aircraftHeadingQuaternion(heading: number): AircraftQuaternion — Quaternion for a heading about world up, forward `[sin h, 0, cos h]`.
+- `createRigidAircraft` (function): function createRigidAircraft(initial: RigidAircraftTuning, options: RigidAircraftOptions = {}): RigidAircraft — Creates a {@link RigidAircraft}: a quaternion rigid body with a diagonal inertia tensor, pushed by lifting surfaces, fuselage drag, an engine and gravity. Controls deflect surfaces through rate-limited actuators; nothing commands a rotation rate, so a jet loops when its tail can push the nose around and a glider stalls when it runs out of speed. Fixed internal substeps make it deterministic for a given `dt` sequence.
+
 ## @jgengine/core/physics/ballisticSweep
 
 - `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
@@ -978,6 +1037,9 @@
 - `CourseProbeOptions` (interface): interface CourseProbeOptions — Settings for {@link measureCourse}; every field but `wheelbase` has a default.
 - `CourseReport` (interface): interface CourseReport — Deterministic driven-course metrics.
 - `CourseSubject` (interface): interface CourseSubject — A vehicle sim {@link measureCourse} can drive along a line: a {@link HandlingSubject} that also reports its pose and front-wheel angle.
+- `FlightProbeOptions` (interface): interface FlightProbeOptions — Scenario settings for {@link measureFlight}.
+- `FlightReport` (interface): interface FlightReport — Deterministic flight metrics. Fields that don't apply to the aircraft are `NaN`: turn and stall need wings, hover drift needs a rotor.
+- `FlightSpawn` (interface): interface FlightSpawn — Where {@link measureFlight} spawns each fresh aircraft: level, heading `0` (forward `+z`).
 - `HandlingProbeOptions` (interface): interface HandlingProbeOptions — Scenario settings for {@link measureHandling}; every field has a default.
 - `HandlingReport` (interface): interface HandlingReport — Deterministic feel metrics, in the units drivers and reviewers use. `Infinity` means the target was never reached.
 - `HandlingSubject` (interface): interface HandlingSubject — The slice of a vehicle sim {@link measureHandling} drives: `VehicleDynamics` and `KinematicVehicle` both fit.
@@ -987,6 +1049,7 @@
 - `RideSubject` (interface): interface RideSubject — The slice of a sprung vehicle sim {@link measureRide} drives; a `VehicleDynamics` with `suspension` fits.
 - `measureAir` (function): function measureAir(create: () => AirSubject, options: { dt?: number } = {}): AirReport — Jumps a fresh vehicle from rest and holds full air input on each axis, reporting jump height and timing, double-jump height, and how fast the body rotates in the air.
 - `measureCourse` (function): function measureCourse(create: () => CourseSubject, options: CourseProbeOptions): CourseReport — Drives a fresh vehicle from `create` through a steer ramp, a skidpad and a slalom with simple deterministic drivers, and reports understeer gradient, skidpad g and the fastest clean slalom.
+- `measureFlight` (function): function measureFlight(create: (spawn: FlightSpawn) => RigidAircraft, options: FlightProbeOptions = {}): FlightReport — Flies fresh aircraft from `create` through fixed scenarios with simple deterministic autopilots: a full-aileron roll, banked turns at full throttle, an idle deceleration holding altitude, a full-throttle climb at cruise speed, a throttle step from idle, and a hands-off hover. `create` gets a spawn to pass straight into `createRigidAircraft`. Deterministic, so a tuning change shows up as a number moving.
 - `measureHandling` (function): function measureHandling(create: () => HandlingSubject, options: HandlingProbeOptions = {}): HandlingReport — Drives fresh instances from `create` through fixed scenarios (launch, top speed, braking, a slow steer ramp, a step steer, a mid-corner lift-off, a handbrake pull, full throttle with full steer) and reports the feel metrics a test can assert. Deterministic: the same subject and options always produce the same report, so a tuning change shows up as a number moving, not an opinion.
 - `measureLean` (function): function measureLean(create: () => LeanSubject, options: { dt?: number; speed?: number } = {}): LeanReport — Brings a fresh bike to `speed` and holds full steer, reporting how far and how fast it leans and how much it tips the other way first.
 - `measureRide` (function): function measureRide(create: () => RideSubject, options: { dt?: number } = {}): RideReport — Drives fresh sprung vehicles from `create` through a vertical kick, a hard stop, a steady corner and a launch-and-land, and reports how the body moves: how fast it settles, how much it dives and rolls, and whether a landing bounces.
@@ -1564,12 +1627,14 @@
 
 - `ColorHex` (type): type ColorHex = string — ⚠ undocumented
 - `ConcealmentSample` (interface): interface ConcealmentSample { id: string; score: number; concealed: boolean; dwellSeconds: number } — ⚠ undocumented
-- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void } — ⚠ undocumented
+- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void; snapshot(): ConcealmentSensorState; restore(next: ConcealmentSensorState): void } — ⚠ undocumented
+- `ConcealmentSensorState` (interface): interface ConcealmentSensorState — Plain JSON state of a {@link ConcealmentSensor}: seconds each target has stayed concealed.
 - `ConcealmentTarget` (interface): interface ConcealmentTarget { id: string; entityColors: readonly ColorHex[]; backgroundColors: readonly ColorHex[] } — ⚠ undocumented
 
 ## @jgengine/core/sensor/freezeMonitor
 
-- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void } — ⚠ undocumented
+- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void; snapshot(): FreezeMonitorState; restore(next: FreezeMonitorState): void } — ⚠ undocumented
+- `FreezeMonitorState` (interface): interface FreezeMonitorState — Plain JSON state of a {@link FreezeMonitor}: seconds each frozen subject has kept moving.
 - `FreezeSubject` (interface): interface FreezeSubject { id: string; groundSpeed: number } — ⚠ undocumented
 - `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
 
@@ -1856,15 +1921,18 @@
 
 ## @jgengine/core/visibility/simulationCulling
 
-- `SimulationCuller` (interface): interface SimulationCuller { enabled(): boolean; setEnabled(value: boolean): void; step(id: string, distance: number, dt: number): SimulationDecision; forget(id: string): void; clear(): void } — ⚠ undocumented
+- `SimulationCuller` (interface): interface SimulationCuller { enabled(): boolean; setEnabled(value: boolean): void; step(id: string, distance: number, dt: number): SimulationDecision; forget(id: string): void; clear(): void; snapshot(): SimulationCullerState; restore(next: SimulationCullerState): vo… — ⚠ undocumented
+- `SimulationCullerState` (interface): interface SimulationCullerState — Plain JSON state of a {@link SimulationCuller}: the enabled flag and each id's throttle accumulator.
 - `SimulationCullingOptions` (interface): interface SimulationCullingOptions — Simulation culling is a SEPARATE, opt-in system from render culling. Render culling only decides what is drawn; this decides whether a low-priority off-screen entity updates this tick. It is disabled by default and never throttles a protected entity — physics-critical, networking-critical, audio-critical, scripted, or explicitly-active entities always update. Gameplay correctness must never depend on an entity being on-screen, so opt in only where skipping updates is provably safe.
 - `SimulationDecision` (interface): interface SimulationDecision { update: boolean; elapsed: number } — ⚠ undocumented
 - `createSimulationCuller` (function): function createSimulationCuller(options: SimulationCullingOptions = {}): SimulationCuller — ⚠ undocumented
 
 ## @jgengine/core/visibility/spatialIndex
 
+- `SpatialCellRange` (interface): interface SpatialCellRange — Integer cell bounds an object covers, inclusive on both ends.
 - `SpatialIndex` (interface): interface SpatialIndex — A uniform 3D spatial hash the renderer and streaming system query for potentially-visible objects instead of scanning the whole scene. Objects are keyed by their world AABB into every overlapping cell; a moving object only rewrites the cells that actually changed. Static objects are inserted once and never touched again. Oversized objects (huge terrain chunks, world bounds) are held separately so they are always considered.
 - `SpatialIndexOptions` (interface): interface SpatialIndexOptions { readonly cellSize?: number; readonly maxCellSpan?: number } — ⚠ undocumented
+- `SpatialIndexState` (interface): interface SpatialIndexState — Plain JSON state of a {@link SpatialIndex}. Cells and their ids keep insertion order, so a restored index returns query results in the same order.
 - `createSpatialIndex` (function): function createSpatialIndex(options: SpatialIndexOptions = {}): SpatialIndex — ⚠ undocumented
 
 ## @jgengine/core/visibility/visibilitySystem
@@ -2004,7 +2072,7 @@
 - `ColliderPurpose` (type): type ColliderPurpose = "physical" | "damage" — ⚠ undocumented
 - `CollisionEvent` (interface): interface CollisionEvent — A contact reported to `onCollision`. The object is reused each call — read/copy, never retain.
 - `CollisionObstacle` (interface): interface CollisionObstacle — A placed scene object the walking player collides against as a circle-vs-AABB obstacle.
-- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void } — ⚠ undocumented
+- `ConcealmentSensor` (interface): interface ConcealmentSensor { tick(targets: readonly ConcealmentTarget[], dt: number): ConcealmentSample[]; reset(id?: string): void; snapshot(): ConcealmentSensorState; restore(next: ConcealmentSensorState): void } — ⚠ undocumented
 - `ContextMenu` (interface): interface ContextMenu { kind: ContextTargetKind; targetId: string; point?: readonly [number, number, number]; verbs: readonly ContextVerb[] } — ⚠ undocumented · used by `buildContextMenu`: Assemble a menu from a target's catalog verbs; null when the target lists none.
 - `ContextVerb` (interface): interface ContextVerb — One right-click verb: a label plus the command it dispatches (walk-then-act supported by args).
 - `ContourLine` (interface): interface ContourLine — A single iso-elevation contour traced across a region as a flat list of XZ line segments.
@@ -2070,7 +2138,7 @@
 - `FreeFlightState` (interface): interface FreeFlightState — Velocity state for a free-flight actor — serializable and ownable by the caller.
 - `FreeFlightStep` (interface): interface FreeFlightStep — World displacement produced by one free-flight tick.
 - `FreeFlightTuning` (interface): interface FreeFlightTuning — Data-first tuning for one free-flight profile.
-- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void } — ⚠ undocumented
+- `FreezeMonitor` (interface): interface FreezeMonitor { tick(subjects: readonly FreezeSubject[], frozenIds: ReadonlySet<string>, dt: number): FreezeViolation[]; reset(id?: string): void; snapshot(): FreezeMonitorState; restore(next: FreezeMonitorState): void } — ⚠ undocumented
 - `FreezeViolation` (interface): interface FreezeViolation { id: string; speed: number; movedSeconds: number } — ⚠ undocumented
 - `Frustum` (interface): interface Frustum { readonly planes: Float64Array; readonly corners: Float64Array; minX: number; minY: number; minZ: number; maxX: number; maxY: number; maxZ: number } — ⚠ undocumented
 - `FrustumProjection` (interface): interface FrustumProjection { inView: boolean; distance: number; screenX: number; screenY: number } — ⚠ undocumented
@@ -2323,7 +2391,7 @@
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistance?: number; rollo… — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistan… — ⚠ undocumented
 - `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
 - `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented
@@ -3193,6 +3261,7 @@
 - `AdjacentCell` (interface): interface AdjacentCell — One occupied neighbor cell reported by {@link boundaryNeighbors}.
 - `FootprintGrid` (interface): interface FootprintGrid — Handle returned by {@link createFootprintGrid}.
 - `FootprintGridOptions` (interface): interface FootprintGridOptions — Config for {@link createFootprintGrid}.
+- `FootprintGridState` (interface): interface FootprintGridState — Plain JSON state of a {@link FootprintGrid}: live reservations in claim order.
 - `FootprintReservation` (interface): interface FootprintReservation — A live claim on a {@link FootprintGrid}: which cells `id` (a `kind` tag for adjacency checks) holds.
 - `GridCell` (interface): interface GridCell — One integer cell address on a {@link FootprintGrid}.
 - `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
@@ -3235,16 +3304,17 @@
 - `EntityLocation` (interface): interface EntityLocation { space: SpaceRef; position: Vec2 } — ⚠ undocumented
 - `Exterior` (interface): interface Exterior { bounds?: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
 - `Interior` (interface): interface Interior { id: string; origin: Vec2; rotation?: number; bounds: Aabb; obstacles?: readonly Aabb[] } — ⚠ undocumented
-- `Interiors` (interface): interface Interiors { move(location: EntityLocation, delta: Vec2): EntityLocation; enter(location: EntityLocation, id: string): EntityLocation | null; leave(location: EntityLocation): EntityLocation | null; toInterior(id: string, exterior: Vec2): Vec2 | null; … — ⚠ undocumented
-- `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented
+- `Interiors` (interface): interface Interiors { move(location: EntityLocation, delta: Vec2): EntityLocation; enter(location: EntityLocation, id: string): EntityLocation | null; leave(location: EntityLocation): EntityLocation | null; toInterior(id: string, exterior: Vec2): Vec2 | null; … — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
+- `InteriorsConfig` (interface): interface InteriorsConfig { exterior?: Exterior; interiors?: readonly Interior[]; radius?: number } — ⚠ undocumented · used by `createInteriors`: Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 - `SpaceRef` (type): type SpaceRef = { kind: "exterior" } | { kind: "interior"; id: string } — ⚠ undocumented
-- `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — ⚠ undocumented
+- `createInteriors` (function): function createInteriors(config: InteriorsConfig = {}): Interiors — Frame conversion and bounded movement across an exterior and its interiors; holds config only, no play state.
 
 ## @jgengine/core/world/lod
 
 - `LodBand` (interface): interface LodBand { maxDistance: number; interval: number } — ⚠ undocumented
-- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number } — ⚠ undocumented
+- `LodScheduler` (interface): interface LodScheduler { bandIndex(distance: number): number; step(id: string, distance: number, dtSeconds: number): number; remove(id: string): void; clear(): void; size(): number; snapshot(): LodSchedulerState; restore(next: LodSchedulerState): void } — ⚠ undocumented
 - `LodSchedulerConfig` (interface): interface LodSchedulerConfig { bands: readonly LodBand[]; beyondInterval?: number | null; stagger?: boolean } — ⚠ undocumented
+- `LodSchedulerState` (interface): interface LodSchedulerState — Plain JSON state of a {@link LodScheduler}: each id's accumulated seconds.
 - `createLodScheduler` (function): function createLodScheduler(config: LodSchedulerConfig): LodScheduler — ⚠ undocumented
 
 ## @jgengine/core/world/mapAnnotations
@@ -3706,6 +3776,7 @@
 - `SurfaceStroke` (interface): interface SurfaceStroke — Accumulates a whole paint drag — many surface stamps — into one compact {@link SurfaceDelta}. Keeps each cell's first `before` and latest `after`, so undo replays the paint as a single step.
 - `TerraformBrush` (interface): interface TerraformBrush { raise(center: Vec2): number; lower(center: Vec2): number; flatten(center: Vec2, target?: number): number; paint(center: Vec2, surface?: string): number; setRadius(radius: number): void; setStrength(strength: number): void; config(): Requi… — ⚠ undocumented
 - `TerraformBrushConfig` (interface): interface TerraformBrushConfig { radius?: number; strength?: number; falloff?: TerraformFalloff; surface?: string } — ⚠ undocumented
+- `TerraformBrushState` (interface): interface TerraformBrushState — Plain JSON state of a {@link TerraformBrush}.
 - `TerraformDelta` (interface): interface TerraformDelta — A compact record of the vertices a sculpt stroke touched: parallel `indices`/`before`/`after` arrays into the offset grid. Storing one of these per stroke keeps undo history small — the whole terrain document is never copied.
 - `TerraformDeltaRecorder` (type): type TerraformDeltaRecorder = (index: number, before: number, after: number) => void — Reports each changed vertex during a recorded edit: grid index, prior offset, new offset.
 - `TerraformEdit` (interface): interface TerraformEdit — A single sculpt stamp: which brush, where, and its shaping parameters.
@@ -3850,6 +3921,7 @@
 - `RoofStyle` (type): type RoofStyle = "hip" | "gable" | "flat" — ⚠ undocumented
 - `SurfacePaintStore` (interface): interface SurfacePaintStore { paint(target: PaintTarget, key: string, surface: string): void; clear(target: PaintTarget, key: string): void; get(target: PaintTarget, key: string): string | null; entries(target: PaintTarget): readonly (readonly [string, string])[]; sna… — ⚠ undocumented
 - `WallDrawTool` (interface): interface WallDrawTool { addPoint(point: Vec2, snap?: number): Vec2; undo(): void; close(): void; clear(): void; points(): readonly Vec2[]; segments(): WallSegment[]; isClosed(): boolean; footprint(): EnclosedFootprint | null; roof(config?: RoofConfig): RoofPlan … — ⚠ undocumented
+- `WallDrawToolState` (interface): interface WallDrawToolState — Plain JSON state of a {@link WallDrawTool}: the drawn points and whether the loop is closed.
 - `WallSegment` (interface): interface WallSegment { from: Vec2; to: Vec2; length: number; angle: number } — ⚠ undocumented
 - `WallVec3` (type): type WallVec3 = readonly [number, number, number] — ⚠ undocumented
 

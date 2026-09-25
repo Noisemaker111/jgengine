@@ -257,6 +257,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DIFFICULTY_TIERS` (const) · `import { DIFFICULTY_TIERS } from "@jgengine/core/ai/difficulty"`
 
+## doppler-pitch — pitch a moving sound up as it approaches and down as it passes, from listener and emitter velocity
+
+- `dopplerRate` (function) · `import { dopplerRate } from "@jgengine/core/audio/doppler"`
+
 ## elevation-readout — cursor height and delta-from-reference feedback
 
 - `sampleElevation` (function) · `import { sampleElevation } from "@jgengine/core/world"`
@@ -264,6 +268,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## elevation-summary — selection min/max/mean and relief over a region
 
 - `summarizeElevation` (function) · `import { summarizeElevation } from "@jgengine/core/world"`
+
+## engine-layers — layered engine audio: rpm-keyed samples crossfaded, with on-load and off-load sets picked by engine load
+
+- `createEngineLayers` (function) · `import { createEngineLayers } from "@jgengine/core/audio/engineLayers"`
 
 ## entity-meta — cast-free narrow of SceneEntity.meta via a type guard
 
@@ -277,9 +285,9 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createFeedbackMixer` (function) · `import { createFeedbackMixer } from "@jgengine/core/vfx/feedbackMixer"`
 
-## flight-dynamics — simulate fixed-wing, helicopter, and VTOL aircraft
+## flight-metrics — measure an aircraft's feel as numbers — roll rate, sustained turn, stall speed, climb, throttle response, hover drift
 
-- `createAircraftDynamics` (function) · `import { createAircraftDynamics } from "@jgengine/core/world"`
+- `measureFlight` (function) · `import { measureFlight } from "@jgengine/core/physics/handlingProbe"`
 
 ## follow-trail — trailing follower/snake formation that chases a leader
 
@@ -355,6 +363,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineHoldOrder` (function) · `import { defineHoldOrder } from "@jgengine/core/world"`
 
+## input-buffer — buffer early presses, coyote time, hold duration and double tap for responsive controls
+
+- `createInputBuffer` (function) · `import { createInputBuffer } from "@jgengine/core/input/inputBuffer"`
+
 ## interaction-prompt — observable nearest-interactable prompt registry over the proximity-prompt resolver — register/resolve/active with priority+range and change-notified snapshot/restore
 
 - `createPromptRegistry` (function) · `import { createPromptRegistry } from "@jgengine/core/world"`
@@ -427,6 +439,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## move-order — go-to-point order that completes on arrival, composed over a motion adapter
 
 - `defineMoveOrder` (function) · `import { defineMoveOrder } from "@jgengine/core/world"`
+
+## movement-metrics — measure a walking character's feel as numbers — time to top speed, stop distance, jump height and apex, air control, turn-around
+
+- `measureMovement` (function) · `import { measureMovement } from "@jgengine/core/movement/movementProbe"`
 
 ## object-slot-inventory — placed objects hold validated per-instance container contents that replicate and save with the placement
 
@@ -552,6 +568,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## ride-metrics — measure a sprung vehicle's ride — settle time, dive, roll per g, landing bounce
 
 - `measureRide` (function) · `import { measureRide } from "@jgengine/core/physics/handlingProbe"`
+
+## rigid-aircraft — force-and-torque aircraft — lifting surfaces with stall and drag polar, control surfaces, inertia, loops and rolls
+
+- `createRigidAircraft` (function) · `import { createRigidAircraft } from "@jgengine/core/physics/aircraftDynamics"`
 
 ## rts-control-groups — map Ctrl+digit / digit / double-tap presses onto selection-bookmark bind / recall / focus intents
 

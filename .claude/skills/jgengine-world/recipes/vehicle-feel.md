@@ -19,9 +19,16 @@
   - `measureLean` reports steady lean, time to lean and counter-lean.
 - **Pose.** `tickDrivableVehicle(car, dt, ctx.input.axis(bindings, ranges), { groundHeight })` returns a `setPose` patch. Pitch and roll come from load transfer, or from the springs when `suspension` is set.
 - **Camera.** `camera: { rig: "chase", chase: { fov, lead, bank, velocityYaw, yawResponse } }`. `velocityYaw` shows the car's side in a slide, and `fov` widens with speed.
+  - Speed comes from the entity's sim `velocity`, so publish poses with `setPose({ ..., dt })` (`tickDrivableVehicle` does). `fov.response` eases the FOV.
+  - The boom holds its length at any speed. `distanceBySpeed: { extra }` pulls it back on purpose; `ctx.camera.kickFov(deg)` adds a decaying punch for landings and hits.
+  - `pitchFollow` tilts the boom with `rotationX` on ramps and slopes. `lookBackAction` names an input action that looks behind while held.
+  - The boom stops short of objects, terrain and walls through `ctx.scene.raycast`; `collision: false` turns that off.
+  - Switch views at runtime with `ctx.camera.setChaseTuning({ ...ctx.camera.chaseTuning(), view: nextChaseView(view) })` (`@jgengine/core/runtime/cameraDirector`).
 - **Sound.** Call `ctx.game.audio.loop(id, sound)` once, then `setLoop` every tick:
   - Engine: `rate` from `step.rpm`, `gain` from `step.engineLoad`.
   - Tires: `gain` from how far `max(step.frontSaturation, step.rearSaturation)` exceeds ~0.85.
+  - Real engine samples: `createEngineLayers` (`@jgengine/core/audio/engineLayers`) takes N loops keyed by the rpm they were recorded at, crossfades the two around the current rpm, and picks on-load or off-load sets by `engineLoad`. Call `update(dt, { rpm, load })` then `play(ctx.game.audio, { at, velocity, gain, lowpass })` each tick.
+  - `setLoop` also takes `lowpass`/`highpass` cutoffs in Hz (muffle off-throttle) and `velocity`; a sound with `doppler: 1` pitches by listener and emitter velocity.
 - **One place for all of it.** `createFeedbackMixer` (`@jgengine/core/vfx/feedbackMixer`) declares these mappings as routes: `{ signal, target, curve, attack, release }`, with `max` or `sum` combining and threshold `events` for one-shots like a landing thud. Update it with the step's telemetry each tick and apply its targets to `setLoop`, the chase camera and `rumble`, instead of hand-writing the glue.
 - **Rumble.** Call `ctx.input.rumble(userId, { strong, weak, ms })` with the saturation above 1, rate-limited to about 10 Hz. Use rear saturation for strong and front for weak.
 - **Sound.** Play a one-shot on `step.landingSpeed` (thud, suspension clunk).

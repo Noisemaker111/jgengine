@@ -401,6 +401,25 @@ describe("resolvePlayerMovementTuning — movement.feel", () => {
   });
 });
 
+describe("stepPlayerMovement jump buffer", () => {
+  function bounces(jumpBufferMs: number | undefined): boolean {
+    const t = resolvePlayerMovementTuning(jumpBufferMs === undefined ? {} : { movement: { feel: { jumpBufferMs } } });
+    const ctx = context(["a"]);
+    const step = (held: string[]) => stepPlayerMovement(ctx, "a", frame(held), 1 / 60, t, 0);
+    step(["jump"]);
+    for (let i = 0; i < 20; i++) step([]);
+    while (ctx.scene.entity.get("a")!.position[1] > 0.1) step([]);
+    step(["jump"]);
+    for (let i = 0; i < 10; i++) step(["jump"]);
+    return ctx.scene.entity.get("a")!.position[1] > 0.2;
+  }
+
+  test("movement.feel.jumpBufferMs turns a press just before landing into a jump", () => {
+    expect(bounces(undefined)).toBe(false);
+    expect(bounces(120)).toBe(true);
+  });
+});
+
 describe("snapshotPlayerMovement", () => {
   function trace(ctx: GameContext): number[] {
     const out: number[] = [];

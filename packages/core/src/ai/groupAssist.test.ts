@@ -209,3 +209,31 @@ describe("group assist addThreat no-ops", () => {
     expect(network.addThreat("ghost", "boss", 10)).toEqual([]);
   });
 });
+
+describe("assist network snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const tables = new Map<string, ReturnType<typeof createThreatTable>>();
+    const tableOf = (id: string) => {
+      let table = tables.get(id);
+      if (!table) {
+        table = createThreatTable();
+        tables.set(id, table);
+      }
+      return table;
+    };
+    const network = createAssistNetwork({ shareFraction: 0.5 });
+    for (const [id, groupId] of [["a", "red"], ["b", "red"], ["c", "blue"], ["d", "red"]] as const) {
+      network.register({ id, groupId, table: tableOf(id) });
+    }
+    network.remove("b");
+    const saved = network.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => [network.addThreat("a", "boss", 10), network.memberIds("red"), network.assistersOf("d")];
+    const a = play();
+    network.register({ id: "e", groupId: "red", table: tableOf("e") });
+    expect(saved).toEqual(frozen);
+    network.restore(saved, tableOf);
+    expect(play()).toEqual(a);
+    expect(network.memberIds()).toEqual(["a", "c", "d"]);
+  });
+});

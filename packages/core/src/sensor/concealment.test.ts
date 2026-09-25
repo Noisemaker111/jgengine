@@ -89,3 +89,22 @@ describe("createConcealmentSensor", () => {
     expect(strict.tick([mixed], 0.1)[0]!.concealed).toBe(false);
   });
 });
+
+describe("concealment sensor snapshot", () => {
+  test("snapshot and restore replay bit-exactly", () => {
+    const sensor = createConcealmentSensor({ threshold: 0.5 });
+    const targets = [
+      { id: "fox", entityColors: ["#556b2f"], backgroundColors: ["#556b2f", "#6b8e23"] },
+      { id: "flag", entityColors: ["#ff0000"], backgroundColors: ["#00ff00"] },
+    ];
+    sensor.tick(targets, 0.25);
+    sensor.tick(targets, 0.25);
+    const saved = sensor.snapshot();
+    const frozen = JSON.parse(JSON.stringify(saved));
+    const play = () => [sensor.tick(targets, 0.1), sensor.tick(targets.slice(0, 1), 0.3)];
+    const a = play();
+    expect(saved).toEqual(frozen);
+    sensor.restore(saved);
+    expect(play()).toEqual(a);
+  });
+});

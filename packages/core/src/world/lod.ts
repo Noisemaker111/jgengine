@@ -9,12 +9,19 @@ export interface LodSchedulerConfig {
   stagger?: boolean;
 }
 
+/** Plain JSON state of a {@link LodScheduler}: each id's accumulated seconds. */
+export interface LodSchedulerState {
+  buckets: Record<string, number>;
+}
+
 export interface LodScheduler {
   bandIndex(distance: number): number;
   step(id: string, distance: number, dtSeconds: number): number;
   remove(id: string): void;
   clear(): void;
   size(): number;
+  snapshot(): LodSchedulerState;
+  restore(next: LodSchedulerState): void;
 }
 
 const MAX_ACCUMULATED_SECONDS = 60;
@@ -84,6 +91,13 @@ export function createLodScheduler(config: LodSchedulerConfig): LodScheduler {
     },
     size() {
       return buckets.size;
+    },
+    snapshot() {
+      return { buckets: Object.fromEntries(buckets) };
+    },
+    restore(next) {
+      buckets.clear();
+      for (const [id, seconds] of Object.entries(next.buckets)) buckets.set(id, seconds);
     },
   };
 }
