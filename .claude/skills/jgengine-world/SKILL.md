@@ -9,7 +9,7 @@ description: Build spatial runtime, movement, interaction, AI, and environments.
 
 This skill owns runtime spatial behavior: authored-scene consumption, environments, movement, input mapping, interaction, AI, navigation, physics, visibility, time, and spatial audio. Scene creation and placement stay in `jgengine-editor`; presentation stays in `jgengine-ui`.
 
-Search [capabilities.md](capabilities.md) by intent before designing a primitive. Use [api.md](api.md) for exact exports and [reference.md](reference.md) for environment, camera, navigation, physics, audio, and authored-scene recipes.
+Search [capabilities.md](capabilities.md) by intent before designing a primitive. Use [api.md](api.md) for exact exports and [reference.md](reference.md) for environment, camera, navigation, physics, audio, and authored-scene recipes. Culling and streaming overrides are in [visibility.md](visibility.md).
 
 For a *connected* walkthrough that wires several primitives into a running loop, read the goal-oriented recipes under [recipes/](recipes/) — organized by composition seam (what connects to what), never by genre. Start there before reading a game's source to learn how pieces fit; a hybrid game is just a different composition of the same primitives.
 

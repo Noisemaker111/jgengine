@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { basename, join } from "node:path";
 import { Glob } from "bun";
@@ -34,6 +35,23 @@ function body(raw: string): string {
 
 if (existsSync(join(root, "skills"))) {
   problems.push("a top-level skills/ directory exists; model-invocable skills live only in .claude/skills/");
+}
+
+// Guidance lives in AGENTS.md, a README, a skill, or the PR/issue that motivated it. Plans, audits,
+// decision records, logs and docs/ trees go stale and get re-read by every agent, so they fail here.
+const ROOT_MARKDOWN = new Set(["README.md", "AGENTS.md", "CLAUDE.md", "CHANGELOG.md", "CREDITS.md", "LICENSING.md"]);
+const allowedMarkdown = (path: string): boolean =>
+  ROOT_MARKDOWN.has(path) ||
+  path.endsWith("/README.md") ||
+  /^\.(claude|agents|github)\//.test(path) ||
+  /^changes\/[^/]+\.md$/.test(path) ||
+  /^examples\//.test(path);
+const tracked = spawnSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).stdout.split("\n").filter(Boolean);
+for (const path of tracked) {
+  if (path.startsWith("docs/")) problems.push(`${path}: no docs/ tree; put durable guidance in AGENTS.md, a README or the owning skill`);
+  else if (/\.mdx?$/i.test(path) && !allowedMarkdown(path)) {
+    problems.push(`${path}: freestanding markdown (plan, audit, log, decision record); fold it into AGENTS.md, a README or the owning skill, or delete it`);
+  }
 }
 
 const claude = readFileSync(join(root, "CLAUDE.md"), "utf8");
