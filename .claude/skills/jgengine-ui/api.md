@@ -2189,6 +2189,13 @@
 - `MouseLookTracker` (interface): interface MouseLookTracker — The analog mouse-look service chase/orbit-cam games hand-rolled (#282.8) — pointer-lock lifecycle plus delta accumulation into a yaw/pitch aim, decoupled from the first-person rig. Attach it to the canvas, read `aim()` from `onTick`/`useFrame`, dispose on unmount.
 - `createMouseLookTracker` (function): function createMouseLookTracker(element: HTMLElement, options: MouseLookOptions = {}): MouseLookTracker — ⚠ undocumented
 
+## @jgengine/shell/input/padHaptics
+
+- `PAD_HAPTIC_EFFECT_MS` (const): const PAD_HAPTIC_EFFECT_MS: 120 — How long each rumble command lasts; refreshed before it runs out so a held level feels continuous.
+- `PadHapticState` (interface): interface PadHapticState — Last command sent to one pad.
+- `emptyPadHapticState` (function): function emptyPadHapticState(): PadHapticState — Fresh state for {@link stepPadHaptics}.
+- `stepPadHaptics` (function): function stepPadHaptics(state: PadHapticState, level: HapticLevel, nowMs: number): "play" | "reset" | null — Decide what to send a pad this frame for a mixed level: `"play"` when the level changed or the last effect is about to run out, `"reset"` when it fell silent, `null` otherwise.
+
 ## @jgengine/shell/input/pointerLock
 
 - `requestRawPointerLock` (function): function requestRawPointerLock(element: LockableElement): void — Request pointer lock with raw (unaccelerated) mouse deltas, falling back to a plain lock when the browser or OS rejects `unadjustedMovement`.

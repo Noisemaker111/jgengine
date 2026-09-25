@@ -1,5 +1,6 @@
 import type { PointerAxisState } from "../input/pointerAxis";
 import { type AxisBinding, type AxisRange, sampleAxisBindings } from "../input/axisInput";
+import { createHapticChannels, type HapticChannels } from "../input/haptics";
 
 /** One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player. */
 export interface InputFrame {
@@ -14,6 +15,11 @@ export interface InputFrame {
 export interface InputSnapshot {
   /** Trigger controller vibration for a local user's gamepad when supported. */
   rumble(userId: string, options: { strong: number; weak: number; ms: number }): Promise<boolean>;
+  /**
+   * Continuous rumble channels for a local user (`engine`, `road`, `impact`, …): set levels each tick
+   * and the shell mixes them by priority onto that user's pad. Local only — never in a snapshot or on the wire.
+   */
+  haptics(userId: string): HapticChannels;
   /** Replaces the held-action set for this frame, rolling the previous held set forward for edge detection (#671). Called by the shell before `onTick` each frame; does not bump `ctx.version()` or notify `ctx.subscribe` listeners — per-frame publishes would storm subscribers. */
   publish(held: readonly string[]): void;
   /** Replaces the normalized pointer-position state for this frame (#293). Same no-notify contract as `publish`. */
@@ -52,6 +58,7 @@ export function createInputSnapshot(): InputSnapshot {
   let heldList: readonly string[] = [];
   let pointerState: Readonly<PointerAxisState> | null = null;
   let analogValues: Readonly<Record<string, number>> | null = null;
+  const haptics = new Map<string, HapticChannels>();
 
   const value = (action: string): number => {
     const analog = analogValues?.[action];
@@ -61,6 +68,14 @@ export function createInputSnapshot(): InputSnapshot {
 
   return {
     rumble: async () => false,
+    haptics(userId) {
+      let channels = haptics.get(userId);
+      if (channels === undefined) {
+        channels = createHapticChannels();
+        haptics.set(userId, channels);
+      }
+      return channels;
+    },
     publish(held) {
       previousHeldSet = heldSet;
       heldList = Object.freeze([...held]);

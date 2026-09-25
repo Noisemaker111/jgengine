@@ -19,7 +19,34 @@ import {
   routeGamepads,
   stepGamepadPoll,
 } from "./gamepadPoll";
+import { PAD_HAPTIC_EFFECT_MS, emptyPadHapticState, stepPadHaptics, type PadHapticState } from "./padHaptics";
 export { mergeGamepadFrame, mergeGamepadInput } from "./gamepadMerge";
+
+const NO_PADS: readonly (Gamepad | null)[] = [];
+
+function browserPads(): ArrayLike<Gamepad | null> {
+  return typeof navigator === "undefined" || navigator.getGamepads === undefined ? NO_PADS : navigator.getGamepads();
+}
+
+function actuatorOf(pad: GamepadSample | Gamepad | null | undefined): GamepadHapticActuator | null {
+  return pad === null || pad === undefined || !("vibrationActuator" in pad) ? null : (pad.vibrationActuator ?? null);
+}
+
+function ignore(): void {}
+
+/** Pad index a user's rumble goes to: their seat's pad, else the first connected pad for the primary seat. */
+function padIndexForUser(userId: string, seats: LocalPlayers | undefined, pads: ArrayLike<GamepadSample | null>): number {
+  const legacy = /^gamepad:(\d+)$/.exec(userId)?.[1];
+  if (legacy !== undefined) return Number(legacy);
+  const slot = seats?.slots().find((candidate) => candidate.userId === userId);
+  const claimed = slot?.deviceId === null || slot?.deviceId === undefined ? undefined : /^gamepad:(\d+)$/.exec(slot.deviceId)?.[1];
+  if (claimed !== undefined) return Number(claimed);
+  if (slot !== undefined && slot.index !== 0) return -1;
+  for (let index = 0; index < pads.length; index += 1) {
+    if (pads[index]?.connected === true) return index;
+  }
+  return -1;
+}
 
 const NO_HELD: readonly string[] = [];
 
@@ -76,11 +103,9 @@ export function GamepadSource({
       rumble?: (userId: string, options: { strong: number; weak: number; ms: number }) => Promise<boolean>;
     };
     inputWithRumble.rumble = async (userId: string, options: { strong: number; weak: number; ms: number }) => {
-      const pads = typeof navigator === "undefined" || navigator.getGamepads === undefined ? [] : navigator.getGamepads();
-      const requested = /^gamepad:(\d+)$/.exec(userId)?.[1];
-      const pad = (requested === undefined ? Array.from(pads).find((candidate) => candidate?.connected) : pads[Number(requested)]) ?? null;
-      const actuator = pad?.vibrationActuator;
-      if (actuator === undefined) return false;
+      const pads = browserPads();
+      const actuator = actuatorOf(pads[padIndexForUser(userId, seats, pads)]);
+      if (actuator === null) return false;
       try {
         await actuator.playEffect("dual-rumble", {
           duration: options.ms,
@@ -95,14 +120,40 @@ export function GamepadSource({
     return () => {
       delete inputWithRumble.rumble;
     };
-  }, [input]);
+  }, [input, seats]);
+
+  const hapticStates = useRef(new Map<number, PadHapticState>());
+  const driveHaptics = (dt: number, pads: ArrayLike<GamepadSample | null>) => {
+    if (seats === undefined) return;
+    const nowMs = performance.now();
+    const slots = seats.slots();
+    for (let index = 0; index < slots.length; index += 1) {
+      const level = input.haptics(slots[index]!.userId).mix(dt);
+      const padIndex = padIndexForUser(slots[index]!.userId, seats, pads);
+      const actuator = actuatorOf(pads[padIndex]);
+      if (actuator === null) continue;
+      let state = hapticStates.current.get(padIndex);
+      if (state === undefined) {
+        state = emptyPadHapticState();
+        hapticStates.current.set(padIndex, state);
+      }
+      const command = stepPadHaptics(state, level, nowMs);
+      if (command === "play") {
+        actuator
+          .playEffect("dual-rumble", { duration: PAD_HAPTIC_EFFECT_MS, strongMagnitude: level.strong, weakMagnitude: level.weak })
+          .catch(ignore);
+      } else if (command === "reset") {
+        actuator.reset?.().catch(ignore);
+      }
+    }
+  };
 
   const route = useRef(emptyGamepadRoute());
   const seatFrame = useRef<GamepadFrame>({ held: [], analog: {} });
   const seatsPublished = useRef(new Set<string>());
-  useFrame(() => {
-    const pads: ArrayLike<GamepadSample | null> =
-      synthetic ?? (typeof navigator === "undefined" || navigator.getGamepads === undefined ? [] : navigator.getGamepads());
+  useFrame((_state, dt) => {
+    const pads: ArrayLike<GamepadSample | null> = synthetic ?? browserPads();
+    driveHaptics(dt, pads);
     if (seats === undefined) {
       analogRef.current = stepGamepadPoll(poll.current, pads, padBindings.current, options, tracker, analogRef.current);
       return;
