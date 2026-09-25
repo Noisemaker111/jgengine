@@ -114,6 +114,8 @@ between (`--json` for structured output).
 
 ### Fixed
 
+- Editor RPC `add_marker` and `set_marker` accept `catalogId`. It used to be dropped while the call still returned `ok`, so a headlessly authored `mob`/`boss` marker spawned nothing.
+- Agent bridge `editor_summon` now resolves once the editor has mounted (up to 15 s). It used to return immediately, so editor verbs later in the same `drive` batch failed with "no live editor".
 - Catalog `onDeath: { dropMode: "world" }` scattered drops with `Math.random`, so kill loot landed in different spots on replay and on each peer. The runtime now passes the world's seeded `ctx.rng` to the scatter.
 - The chase camera no longer falls behind fast vehicles. Its spring eased the camera's world position toward a moving target, so the lag grew with speed (about 9 m extra at 220 km/h); it now eases the boom offset from the target (#1770).
 - A `createVehicleDynamics` bike with both `lean` and `suspension` launched itself the moment it leaned: the springs read the lean as body roll across the narrow track. Springs now ignore lean, and lateral g keeps the same lag it has without springs.

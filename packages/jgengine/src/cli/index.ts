@@ -170,7 +170,13 @@ function runEditorMcp(argv: string[]): number {
     const result = spawnSync("bun", [monorepoCli, ...argv], { stdio: "inherit" });
     return result.status ?? 1;
   }
-  console.error("error: editor-mcp CLI not found — run from the jgengine monorepo or install @jgengine/editor");
+  console.error(
+    [
+      "error: the editor-mcp CLI runs only inside the jgengine monorepo.",
+      "In a game project, run editor verbs on the live page instead:",
+      `  bun run drive -- --rpc '{"method":"editor_summon"}' --rpc '{"method":"scene_summary"}' --rpc '{"method":"save_scene"}'`,
+    ].join("\n"),
+  );
   return 1;
 }
 
