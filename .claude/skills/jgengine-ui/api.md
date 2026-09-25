@@ -2382,8 +2382,11 @@
 
 ## @jgengine/shell/render/useFootIk
 
-- `applyFootIk` (function): function applyFootIk(scene: THREE.Object3D, config: FootIkConfig, raycast: GameContext["scene"]["raycast"], weight: number, cameraTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK to a loaded rig. Exported for renderer tests and custom model hosts.
-- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string): void — Runs foot IK after the model animation mixer, fading the correction out while the entity is airborne.
+- `FootIkRig` (interface): interface FootIkRig — Bones resolved once per loaded scene for {@link applyFootIk}.
+- `FootIkState` (interface): interface FootIkState — Per-model state carried between frames: the faded weight and the smoothed pelvis drop.
+- `applyFootIk` (function): function applyFootIk(rig: FootIkRig, originY: number, probe: GroundProbe, state: FootIkState, delta: number, cameraTarget?: readonly [number, number, number]): boolean — Applies one frame of foot IK after the animation mixer: probes the ground under each foot, resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending toward the animated knee, and tilts planted feet to the ground. Returns whether the feet are grounded; `state` carries the faded weight between frames. Exported for tests and custom hosts.
+- `resolveFootIkRig` (function): function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): FootIkRig | null — Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"` and configs without `feet`. Returns `null` when no leg resolves.
+- `useFootIk` (function): function useFootIk(scene: THREE.Object3D, config: FootIkConfig | undefined, ctx: GameContext | null, instanceId?: string, groundOffset = 0): void — Runs foot IK after the model's animation mixer for `ModelConfig.ik`. Ground probes hit terrain and blocking physical objects, never the model's own entity. `groundOffset` is the model-space height its soles rest on (`ModelConfig.y`).
 
 ## @jgengine/shell/render/useModelAnimation
 

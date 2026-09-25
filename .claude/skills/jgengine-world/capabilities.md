@@ -32,9 +32,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAnimGraphRuntime` (function) · `import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph"`
 
-## animation — inverse kinematics orient a bone toward a target with constrained yaw and pitch
+## animation — find thigh, shin and foot bones on a humanoid rig for foot IK
 
+- `inferLegChains` (function) · `import { inferLegChains } from "@jgengine/core/anim/footPlacement"`
 - `lookAt` (function) · `import { lookAt } from "@jgengine/core/anim/ikSolver"`
+- `placeFeet` (function) · `import { placeFeet } from "@jgengine/core/anim/footPlacement"`
 - `solveFabrik` (function) · `import { solveFabrik } from "@jgengine/core/anim/ikSolver"`
 - `solveTwoBone` (function) · `import { solveTwoBone } from "@jgengine/core/anim/ikSolver"`
 
@@ -461,6 +463,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## nav-from-solids — block world solids on a nav grid
 
 - `populateNavGridFromSolids` (function) · `import { populateNavGridFromSolids } from "@jgengine/core/nav/navFromEnvironment"`
+
+## navmesh-bake — voxelize scene triangles into an agent-sized polygon nav mesh
+
+- `bakeNavMesh` (function) · `import { bakeNavMesh } from "@jgengine/navbake"`
 
 ## navmesh-query — route, snap, and raycast on a polygon navmesh with retunable area costs and a bounded search
 
