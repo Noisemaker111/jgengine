@@ -56,7 +56,7 @@ export interface KinematicVehicleTuning {
   chassis?: KinematicChassisTuning;
   /** Per-axis bindings for this vehicle — which actions drive throttle/brake/steer/handbrake. Unlisted axes keep car defaults (W/S/A/D/Space). */
   bindings?: Partial<Record<"throttle" | "brake" | "steer" | "handbrake", AxisBinding>>;
-  /** Camera POV while this vehicle is piloted — chase tuning overlay applied on mount, cleared on dismount. */
+  /** Camera POV while this vehicle is piloted. Nothing applies it automatically: pass it to `ctx.camera.setChaseTuning` when the driver enters and `null` when they exit. */
   camera?: ChaseCameraTuning | null;
 }
 

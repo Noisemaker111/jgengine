@@ -1,23 +1,36 @@
-import { seededRng } from "@jgengine/shell/gameKit";
-import { createLootRegistry } from "@jgengine/core/game/lootTable";
+import { defineGame, defineSystem } from "@jgengine/shell/gameKit";
+import type { GameContextContent } from "@jgengine/core/runtime/gameContext";
 
-// The joint: an authored weighted table rolled with INJECTED determinism (never
-// Math.random), so a host can roll a kill's drops and replicate the exact result.
-const loot = createLootRegistry();
-loot.register({
-  id: "goblin",
-  entries: [
-    { item: "coin", count: [3, 8], weight: 70 },
-    { item: "dagger", count: 1, weight: 25 },
-    { item: "ruby", count: 1, weight: 5 },
-  ],
+// The joint: register the table on ctx.game.loot (rolled with the world's seeded
+// ctx.rng, so a host and its replicas roll the same drops) and point the enemy's
+// catalog `onDeath` at it. A kill through ctx.scene.entity.effect rolls the table and
+// grants the drops to the killer's bag. For drops on the ground: `recipe world-drops`.
+const content: GameContextContent = {
+  entityById(catalogId) {
+    if (catalogId !== "goblin") return null;
+    return {
+      role: "enemy",
+      stats: { health: { max: 30 } },
+      receive: { damage: { order: ["health"] } },
+      onDeath: { drops: [{ table: "goblin" }] },
+    };
+  },
+};
+
+const loot = defineSystem({
+  id: "loot",
+  create(ctx) {
+    ctx.game.loot.register({
+      id: "goblin",
+      entries: [
+        { item: "coin", count: [3, 8], weight: 70 },
+        { item: "dagger", count: 1, weight: 25 },
+        { item: "ruby", count: 1, weight: 5 },
+      ],
+    });
+  },
 });
 
-const rng = seededRng("run-seed");
-
-export function rollKill(): void {
-  for (const drop of loot.roll("goblin", rng)) {
-    // grant drop.item × drop.count to the killer's inventory / feed
-    void drop;
-  }
-}
+export const game = defineGame({ name: "Loot", content, inventories: { bag: { slots: 20 } }, systems: [loot] });
+// A chest or quest reward: ctx.game.loot.grantToPlayer(userId, ctx.game.loot.roll("goblin"), "chest")
+// Listen: ctx.game.events.on("loot.granted", ({ userId, drops }) => ...)
