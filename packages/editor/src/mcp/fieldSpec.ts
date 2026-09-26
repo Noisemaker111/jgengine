@@ -37,7 +37,7 @@ const AXES = ["xz", "xy"] as const;
  * `EditorHostApi.handle` (whose per-method guards return honest `ok:false` diagnostics for
  * missing/unknown targets). Type-checking presented fields is what keeps a fuzzed value — a string
  * where a number belongs, a scalar where an object belongs — from reaching a live session uncoerced.
- * Unknown extra fields are ignored so a superset payload stays forward-compatible.
+ * Undeclared top-level fields are rejected by the decoder for every method.
  *
  * The same table generates the MCP tool `inputSchema`s (see `mcp/tools.ts`), so `required`/`oneOf`/
  * `of` here also shape what agents are told a tool accepts. The `Record<EditorBridgeRequest["method"],
