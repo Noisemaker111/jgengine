@@ -1,6 +1,13 @@
 {
   "permissions": {
-    "defaultMode": "auto"
+    "defaultMode": "auto",
+    "allow": [
+      "Bash(git rm:*)",
+      "Bash(git mv:*)",
+      "Bash(gh run rerun:*)",
+      "Bash(bun run release)",
+      "Bash(bun run release --dry-run)"
+    ]
   },
   "extraKnownMarketplaces": {
     "i-have-adhd": {
