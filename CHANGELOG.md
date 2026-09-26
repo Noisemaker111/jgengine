@@ -17,8 +17,20 @@ between (`--json` for structured output).
 
 ## [Unreleased]
 
+<!--
+Every PR that changes `packages/*/src` records its consumer-facing change here, so
+the next release's notes are complete by construction. Add a bullet under the right
+subhead below. `bun run check-changelog` fails a source PR whose `[Unreleased]` block
+is untouched; pure refactors/tests bypass with `[skip changelog]` in a commit message.
+At publish, rename this heading to the new version and mirror the entries into
+`packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
+-->
+
+## 0.19.0
+
 ### Migrate
 
+- **Bump lockstep SDK packages to `^0.19.0`:** `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}`. CLI `jgengine` is `0.16.0`; `@jgengine/github` is `0.6.0`.
 - `environment({ structures: building(...) })` buildings and `city` volume buildings now block the player, walking NPCs, `syncWorldColliders` physics backends and `populateNavGridFromSolids` through the new `ctx.world.solids`. Before, they were render-only. If a game re-authored generated buildings as placed scene objects to make them solid, drop those objects. To keep a set passable, pass `building({ solid: false })` or turn off `solid buildings` on the city volume. A mock `GameContext` needs `world.solids` (`createWorldSolids()` from `@jgengine/core/world/worldSolids`).
 - `createAircraftDynamics` and `AircraftTuning` (`physics/flightDynamics`) are deprecated. They command rotation from rates with pitch clamped, so aircraft can't loop, and mass and stall are fixed. Move to `createRigidAircraft` (`@jgengine/core/physics/aircraftDynamics`):
   - `mass` → `massKg`, plus an `inertia` tensor (roughly `m·(span/4)²` for roll and `m·(length/4)²` for pitch and yaw).
@@ -30,24 +42,6 @@ between (`--json` for structured output).
   - Tune against `measureFlight` with the `jgengine-world` recipe `flight-feel.md`.
 - `KinematicVehicleTuning.chassis` and `.steering` are deprecated. Their heading is still commanded from steer, so a held steer at speed spins the car. For handling that matters, move to `createVehicleDynamics` (`@jgengine/core/physics/vehicleDynamics`). Map `massKg`/`engineForce`/`brakeForce`/`tireGrip`/`comHeight`/`trackWidth` to `massKg`, `powertrain: { kind: "direct", maxForce, maxPower }` or a gearbox, `brakeForce`, `front.peakGrip`, `comHeight` and `trackWidth`. Map `steering.wheelbase`/`maxAngle`/`highSpeedAngle`/`highSpeedAt` to the same `steering` fields plus a rack `rate`. Then tune against `measureHandling` with the `jgengine-world` recipe `vehicle-feel.md`. Plain `kinematicVehicle`, without those blocks, stays for karts, top-down and bumper cars.
 - The default third-person orbit camera sits lower and closer (`initialDistance` 9 → 7, `initialHeight` 5.5 → 2.4), so the horizon sits near the top third and the sky is in frame. To keep the old framing, set `camera: { initialDistance: 9, initialHeight: 5.5 }` in `defineGame`.
-
-### Changed
-
-- Graph playback no longer resets the rig's first bone to its bind position every frame. On rigs whose first bone is the hips, that flattened the walk bob in every clip. The root bone is pinned only while a `rootMotion` state is current (the new `AnimGraphOutput.rootMotion` flag), and only horizontally. Root travel now moves the entity along its facing and at the model's scale instead of in rig space, and its vertical part stays in the clip. The shell helper is `takeRootMotion` (#1683).
-- Perception judges each sound or damage stimulus once per observer, from where the observer stood when it first observed after the stimulus. Before, every `observe` re-scored past sounds from the observer's current position, so a guard walking toward an old noise grew more certain of it. `PerceptionSnapshot` gains `heard` and `nextSeq`; older saves re-judge their stimuli once.
-- Perception `loudness` now scales how far a sound carries (`hearingRange × loudness`) instead of only its confidence, so a gunshot is heard past normal hearing range and a footstep only close by. Loudness `1` behaves as before.
-- `npx jgengine find` now surfaces seams that had no capability row: `vehicle-seats`, `drivable-vehicle`, `kinematic-vehicle`, `affix-roller`, `hitscan-shot`, `loot-beams`, `world-item-pickup`, `on-death-drops`, `pointer-commands`, `current-target`, `fire-input`, `global-cooldown`. `PointerConfig.moveCommand` JSDoc now says it receives the clicked entity (click-to-target).
-- `npx jgengine find` matches whole stemmed words (`aim` no longer hits `claim`), drops stopwords, tries multi-word queries joined (`pick up` → `pickup`), returns the closest partial matches instead of "no match", and searches CLI recipes and skill recipe docs.
-- `raycastNav` and `NavMeshQuery.raycast` step into the polygon a segment enters when it starts on or crosses a shared vertex, so a funnel path's corner-to-corner legs raycast clear.
-- `bakeNavMesh` (`@jgengine/navbake`) now voxelizes geometry with recast: the walkable surface is eroded by `agentRadius`, cut under obstacles lower than `agentHeight`, and split at `maxSlope` and `maxClimb`, so a wall standing on a floor leaves a hole the path goes around. Call `await initNavBake()` once before baking; `navBakeReady()` reports it. Walkable triangles must wind counter-clockwise seen from above. Optional `cellSize`/`cellHeight` trade precision for speed. The editor warms the baker when a host starts.
-- `findPath`, `closestPoint` and `raycastNav` on `NavMeshData` share the cached query: paths bend only at portal corners, stacked floors resolve by height, and raycasts walk polygon edges instead of sampling.
-- Mouse look now asks for raw, unaccelerated mouse deltas (`requestPointerLock({ unadjustedMovement: true })`) in `createMouseLookTracker`, the first-person camera and the shoulder rig, and falls back to a plain lock where that is unsupported. The helper is `requestRawPointerLock` (`@jgengine/shell/input/pointerLock`).
-- Foot IK (`ModelConfig.ik`) keeps each clip's swing lift and moves feet by their ground's height relative to the model origin, instead of pinning every ankle to the ground. It lowers the pelvis so the lower leg can reach, keeps soles above the ground where a clip dips below it, bends toward the animated knee, tilts planted feet to the ground normal and fades out while airborne. `ik: "auto"` finds the legs by bone name, and `pelvis`, `maxAdjust` and `alignToGround` are optional. Probes hit terrain and blocking objects. The math is `placeFeet` and `inferLegChains` (`@jgengine/core/anim/footPlacement`) (#1683, #1758).
-- Sky and fog colors render as authored under any tone mapping. The sky dome and sky fog treat their colors as on-screen swatches and pre-invert the renderer's tone-mapping curve, so a `#cfe4f5` horizon no longer shows as grey `#a6b3c2` under the default `neutral` look (AgX). The dome now runs three's tone-mapping and color-space chunks, so it matches with or without a post chain. Looks with bloom (`cinematic`, `photoreal`) get a brighter sky that blooms more near the sun; raise `bloom.threshold` if that is too much.
-- The sky's sun shadows lose their stair-step: one 2048 map over a 70 m box that leads the camera (was 180 m centered on it), texel-snapped, with a 6-texel PCF radius. Time-of-day, biome and `DayNightSky` suns use the same rig instead of three's default 10 m box.
-- `jgengine create` seeds the sun lower and ahead-left of the spawn (bearing 128°, 20° up), so its glow is in the first frame.
-- Scaffolded `scripts/shoot.mjs` and `scripts/drive.mjs` refuse a viewport that stays one flat color for 10 s instead of saving it; nothing is written and the command fails.
-- `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `editor.scene.json` seeds rolling hills as a terrain sculpt (deterministic per game id, flat around the spawn) and a bright `day` sky with a sun bearing and distance fog; `src/world.ts` renders them through `environment()` and `environmentContentFromDocument` and holds only the detail-shaded ground palette. Reshape the hills in the editor. `--ground flat` keeps the old `place()` slab (#1762).
 
 ### Added
 
@@ -133,6 +127,33 @@ between (`--json` for structured output).
 - Model triangle budget: the shared GLB loader counts each model's triangles as it lands and warns once per URL when one exceeds `DEFAULT_MODEL_TRIANGLE_BUDGET` (100k; retune with `setModelTriangleBudget`). `heavyModels()` lists the offenders and `debug_snapshot` reports them under `probes.heavyModels`, so a heavy prop shows up in evidence instead of only as a slow frame.
 - `bun run drive <game> --state <name>` boots into a `capture.states` entry the same way `shoot --state` does, so a staged scene can be measured with `--rpc debug_snapshot` or probed instead of clicked together by hand.
 - Building palettes take textured surfaces: a `BuildingPalette` part (and `BuildingKitPart.material`) may be `{ color?, maps?, repeat?, roughness?, metalness? }` with `maps` straight from `buildMaterialCatalog(...).resolve(id)!.maps`, not only a hex colour. Generated facade boxes and kit models tile the PBR maps per slot; unbound kinds keep their flat colour. `buildingSurfaceColor` / `resolveBuildingSurface` read either form.
+- `CommandDef.parse` and `defineCommand` (`@jgengine/core/runtime/commandRunner`). `parse` turns the untrusted wire value into typed input once. The runner refuses a `null` result with `MALFORMED_COMMAND_INPUT_REASON` before `scope`, `validate` or `apply` run, so those stages only see parsed input.
+- Bounded input readers in `@jgengine/core/runtime/commandInput`: `readInputNumber` (always finite, optional range and integer), `readInputString`, `readInputOneOf`, `readInputPoint2`, `readInputPoint3`, `readInputArray` and `isInputRecord`.
+- `helpers.ensureJoined(ctx, { gameId, userId, serverId? })` (`@jgengine/convex/server`) joins a trusted actor through the `joinServer` path and returns its outcome, so host mutations can run commands for users with no live session. It is idempotent and pins no client session.
+- `createTransportSessionId()` (`@jgengine/core/runtime/transport`) makes a fresh id for one client session's join/leave pair.
+- `CommandDef.access` (`@jgengine/core/runtime/commandRunner`). `"server"` marks a command whose input carries host-decided facts. The public Convex `runCommand` mutation and WebSocket client messages refuse it with `SERVER_ONLY_COMMAND_REASON`, while `helpers.runCommand` and `host.runCommand({ trusted: true })` still run it. `GameRuntime.commandAccess(name)` reports it.
+
+### Changed
+
+- Graph playback no longer resets the rig's first bone to its bind position every frame. On rigs whose first bone is the hips, that flattened the walk bob in every clip. The root bone is pinned only while a `rootMotion` state is current (the new `AnimGraphOutput.rootMotion` flag), and only horizontally. Root travel now moves the entity along its facing and at the model's scale instead of in rig space, and its vertical part stays in the clip. The shell helper is `takeRootMotion` (#1683).
+- Perception judges each sound or damage stimulus once per observer, from where the observer stood when it first observed after the stimulus. Before, every `observe` re-scored past sounds from the observer's current position, so a guard walking toward an old noise grew more certain of it. `PerceptionSnapshot` gains `heard` and `nextSeq`; older saves re-judge their stimuli once.
+- Perception `loudness` now scales how far a sound carries (`hearingRange × loudness`) instead of only its confidence, so a gunshot is heard past normal hearing range and a footstep only close by. Loudness `1` behaves as before.
+- `npx jgengine find` now surfaces seams that had no capability row: `vehicle-seats`, `drivable-vehicle`, `kinematic-vehicle`, `affix-roller`, `hitscan-shot`, `loot-beams`, `world-item-pickup`, `on-death-drops`, `pointer-commands`, `current-target`, `fire-input`, `global-cooldown`. `PointerConfig.moveCommand` JSDoc now says it receives the clicked entity (click-to-target).
+- `npx jgengine find` matches whole stemmed words (`aim` no longer hits `claim`), drops stopwords, tries multi-word queries joined (`pick up` → `pickup`), returns the closest partial matches instead of "no match", and searches CLI recipes and skill recipe docs.
+- `raycastNav` and `NavMeshQuery.raycast` step into the polygon a segment enters when it starts on or crosses a shared vertex, so a funnel path's corner-to-corner legs raycast clear.
+- `bakeNavMesh` (`@jgengine/navbake`) now voxelizes geometry with recast: the walkable surface is eroded by `agentRadius`, cut under obstacles lower than `agentHeight`, and split at `maxSlope` and `maxClimb`, so a wall standing on a floor leaves a hole the path goes around. Call `await initNavBake()` once before baking; `navBakeReady()` reports it. Walkable triangles must wind counter-clockwise seen from above. Optional `cellSize`/`cellHeight` trade precision for speed. The editor warms the baker when a host starts.
+- `findPath`, `closestPoint` and `raycastNav` on `NavMeshData` share the cached query: paths bend only at portal corners, stacked floors resolve by height, and raycasts walk polygon edges instead of sampling.
+- Mouse look now asks for raw, unaccelerated mouse deltas (`requestPointerLock({ unadjustedMovement: true })`) in `createMouseLookTracker`, the first-person camera and the shoulder rig, and falls back to a plain lock where that is unsupported. The helper is `requestRawPointerLock` (`@jgengine/shell/input/pointerLock`).
+- Foot IK (`ModelConfig.ik`) keeps each clip's swing lift and moves feet by their ground's height relative to the model origin, instead of pinning every ankle to the ground. It lowers the pelvis so the lower leg can reach, keeps soles above the ground where a clip dips below it, bends toward the animated knee, tilts planted feet to the ground normal and fades out while airborne. `ik: "auto"` finds the legs by bone name, and `pelvis`, `maxAdjust` and `alignToGround` are optional. Probes hit terrain and blocking objects. The math is `placeFeet` and `inferLegChains` (`@jgengine/core/anim/footPlacement`) (#1683, #1758).
+- Sky and fog colors render as authored under any tone mapping. The sky dome and sky fog treat their colors as on-screen swatches and pre-invert the renderer's tone-mapping curve, so a `#cfe4f5` horizon no longer shows as grey `#a6b3c2` under the default `neutral` look (AgX). The dome now runs three's tone-mapping and color-space chunks, so it matches with or without a post chain. Looks with bloom (`cinematic`, `photoreal`) get a brighter sky that blooms more near the sun; raise `bloom.threshold` if that is too much.
+- The sky's sun shadows lose their stair-step: one 2048 map over a 70 m box that leads the camera (was 180 m centered on it), texel-snapped, with a 6-texel PCF radius. Time-of-day, biome and `DayNightSky` suns use the same rig instead of three's default 10 m box.
+- `jgengine create` seeds the sun lower and ahead-left of the spawn (bearing 128°, 20° up), so its glow is in the first frame.
+- Scaffolded `scripts/shoot.mjs` and `scripts/drive.mjs` refuse a viewport that stays one flat color for 10 s instead of saving it; nothing is written and the command fails.
+- `jgengine create` defaults to a 3D terrain world instead of an infinite flat slab. `editor.scene.json` seeds rolling hills as a terrain sculpt (deterministic per game id, flat around the spawn) and a bright `day` sky with a sun bearing and distance fog; `src/world.ts` renders them through `environment()` and `environmentContentFromDocument` and holds only the detail-shaded ground palette. Reshape the hills in the editor. `--ground flat` keeps the old `place()` slab (#1762).
+- `GameRuntimeTransport.joinServer`/`leaveServer` take an optional `sessionId`. The Convex `joinServer`/`leaveServer` mutations and the WebSocket `join`/`leave` messages accept it (at most 128 characters). `useServerSession` and the shell's multiplayer sync send a fresh one per mount.
+- Shared-topology `jgServerMembers` rows keep up to 16 live `sessionIds`. A leave with a `sessionId` ends only that session; the user leaves once none remain. A leave without one, or on a row without session ids, still leaves outright. Rooms topology is unchanged.
+- The WebSocket router tracks sessions per connection and only leaves the host when no other connection of the same user holds the server.
+- `helpers.resetPlayerProfile` (`@jgengine/convex/server`) now resets a player who has left the server but still has a profile, instead of throwing, so scheduled wipes and insolvency resets no longer abort a whole batch. A user with neither membership nor a profile still throws.
 
 ### Fixed
 
@@ -161,14 +182,7 @@ between (`--json` for structured output).
 - Correct foot-IK endpoint recomputation after hip rotation; verify reachable targets and clamping without changing bone lengths.
 - Restore release CI prerequisites and make catalog-loader tests independent of the external Games checkout.
 
-<!--
-Every PR that changes `packages/*/src` records its consumer-facing change here, so
-the next release's notes are complete by construction. Add a bullet under the right
-subhead below. `bun run check-changelog` fails a source PR whose `[Unreleased]` block
-is untouched; pure refactors/tests bypass with `[skip changelog]` in a commit message.
-At publish, rename this heading to the new version and mirror the entries into
-`packages/core/src/meta/changelog.ts` (the typed `CHANGELOG` export).
--->
+- Closing a second tab, or a join that resolved after a remount, no longer evicts a user whose live tab still shows them joined, which made every later command fail with "Not a member of this server".
 
 ## 0.18.1
 

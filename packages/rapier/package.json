@@ -1,6 +1,6 @@
 {
   "name": "@jgengine/rapier",
-  "version": "0.18.1",
+  "version": "0.19.0",
   "description": "Rapier physics backend for JGengine",
   "license": "Apache-2.0",
   "type": "module",
@@ -30,7 +30,7 @@
     "test": "bun test src"
   },
   "dependencies": {
-    "@jgengine/core": "^0.18.1",
+    "@jgengine/core": "^0.19.0",
     "@dimforge/rapier3d-compat": "0.19.3"
   },
   "publishConfig": {
