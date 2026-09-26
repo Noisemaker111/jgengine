@@ -71,9 +71,9 @@ function validateField(value: unknown, spec: RpcFieldSpec, errors: RpcRequestDia
  * call) before it reaches `EditorHostApi.handle`: confirms it is a plain object carrying a known
  * `method`, then type-checks every field the method understands against {@link RPC_FIELD_SCHEMAS}.
  * A garbled method, or a field whose value is the wrong type (a string where a number belongs, a
- * scalar where an object belongs), is rejected here with a path-specific diagnostic instead of
- * flowing into a live session on a blind cast. Missing fields and unknown extra fields are left for
- * `handle` to interpret so the boundary stays forward-compatible.
+ * scalar where an object belongs), or an undeclared field is rejected here with a path-specific
+ * diagnostic instead of flowing into a live session on a blind cast. Missing fields are left for
+ * `handle` to interpret.
  */
 export function decodeEditorBridgeRequest(raw: unknown): DecodeRpcRequestResult {
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
@@ -88,7 +88,12 @@ export function decodeEditorBridgeRequest(raw: unknown): DecodeRpcRequestResult 
     return { ok: false, errors: [{ path: "$.method", message: `unknown method "${method}"` }] };
   }
   const errors: RpcRequestDiagnostic[] = [];
-  for (const spec of RPC_FIELD_SCHEMAS[method as EditorBridgeRequest["method"]]) {
+  const specs = RPC_FIELD_SCHEMAS[method as EditorBridgeRequest["method"]];
+  const allowed = new Set(["method", ...specs.map((spec) => spec.name)]);
+  for (const field of Object.keys(record)) {
+    if (!allowed.has(field)) errors.push({ path: `$.${field}`, message: `unknown field "${field}" for method "${method}"` });
+  }
+  for (const spec of specs) {
     validateField(record[spec.name], spec, errors);
   }
   if (errors.length > 0) return { ok: false, errors };
