@@ -67,11 +67,24 @@ describe("decodeEditorBridgeRequest", () => {
     expect(decodeEditorBridgeRequest({ method: "set_parent", ids: ["a"], parentId: null }).ok).toBe(true);
   });
 
-  test("missing fields are left for handle to guard (forward-compatible boundary)", () => {
+  test("missing fields are left for handle to guard", () => {
     // No `id` — the decoder does not enforce presence; handle returns an honest not-found.
     expect(decodeEditorBridgeRequest({ method: "get_marker" }).ok).toBe(true);
-    // Unknown extra fields are ignored.
-    expect(decodeEditorBridgeRequest({ method: "scene_summary", extra: 1 }).ok).toBe(true);
+  });
+
+  test("every method rejects undeclared request fields with its own name", () => {
+    for (const method of EDITOR_BRIDGE_METHOD_NAMES) {
+      const decoded = decodeEditorBridgeRequest({ method, unexpected: true });
+      expect(decoded).toEqual({
+        ok: false,
+        errors: [{ path: "$.unexpected", message: `unknown field "unexpected" for method "${method}"` }],
+      });
+    }
+  });
+
+  test("declared payload objects remain open to document and patch content", () => {
+    expect(decodeEditorBridgeRequest({ method: "push_document_patch", patch: { custom: "value" } }).ok).toBe(true);
+    expect(decodeEditorBridgeRequest({ method: "runtime_set", id: "entity", values: { custom: 1 } }).ok).toBe(true);
   });
 
   test("every method carries a field schema (lockstep with the union)", () => {
