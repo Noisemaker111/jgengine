@@ -51,16 +51,16 @@ function git(args: string[], timeoutMs = 120_000): string {
   return out.trim();
 }
 
-git(["fetch", "origin", "main", "--prune"]);
-const base = git(["rev-parse", "origin/main"]);
+git(["fetch", "origin", "agents", "--prune"]);
+const base = git(["rev-parse", "origin/agents"]);
 
 mkdirSync(worktreesRoot, { recursive: true });
 
 if (existsSync(target)) {
   console.log(`agent-worktree: already exists at ${target}`);
 } else {
-  console.log(`agent-worktree: adding ${target} on ${branch} from origin/main (${base.slice(0, 8)})`);
-  git(["worktree", "add", "-b", branch, target, "origin/main"], 180_000);
+  console.log(`agent-worktree: adding ${target} on ${branch} from origin/agents (${base.slice(0, 8)})`);
+  git(["worktree", "add", "-b", branch, target, "origin/agents"], 180_000);
 }
 
 console.log(`agent-worktree: bootstrapping ${target}`);
@@ -80,7 +80,7 @@ console.log(`
 agent-worktree: ready
   path:   ${target}
   branch: ${branch}
-  base:   origin/main
+  base:   origin/agents
 
 Open your agent with cwd = that path. Do not create another worktree from inside it.
 `);

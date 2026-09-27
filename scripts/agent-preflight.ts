@@ -92,9 +92,9 @@ function checkLockfileSync(): void {
 checkLockfileSync();
 
 if (ship) {
-  run("git", ["fetch", "origin", "main"]);
+  run("git", ["fetch", "origin", "agents"]);
   const branch = run("git", ["branch", "--show-current"]);
-  if (branch === "" || branch === "main") failures.push("ship from a dedicated branch, not main or detached HEAD");
+  if (branch === "" || branch === "main" || branch === "agents") failures.push("ship from a dedicated branch, not main, agents or detached HEAD");
 
   const status = run("git", ["status", "--porcelain"]);
   if (status !== "")
@@ -103,8 +103,8 @@ if (ship) {
     );
 
   // Catch stash-pop / merge conflict markers that leave the tree "clean" but break CI.
-  // Only scan files changed vs origin/main (or the working tree if no commits yet).
-  const changedFiles = run("git", ["diff", "--name-only", "--diff-filter=ACMR", "origin/main...HEAD"])
+  // Only scan files changed vs origin/agents (or the working tree if no commits yet).
+  const changedFiles = run("git", ["diff", "--name-only", "--diff-filter=ACMR", "origin/agents...HEAD"])
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0);
@@ -128,16 +128,16 @@ if (ship) {
     }
   }
 
-  const mergeBase = run("git", ["merge-base", "HEAD", "origin/main"]);
-  const main = run("git", ["rev-parse", "origin/main"]);
-  if (mergeBase !== "" && main !== "" && mergeBase !== main) {
-    failures.push("branch is not based on the current origin/main tip — update it before opening the PR");
+  const mergeBase = run("git", ["merge-base", "HEAD", "origin/agents"]);
+  const landing = run("git", ["rev-parse", "origin/agents"]);
+  if (mergeBase !== "" && landing !== "" && mergeBase !== landing) {
+    failures.push("branch is not based on the current origin/agents tip — update it before opening the PR");
   }
 
-  const diff = run("git", ["diff", "--stat", "origin/main...HEAD"]);
+  const diff = run("git", ["diff", "--stat", "origin/agents...HEAD"]);
   if (diff === "")
     failures.push(
-      "branch has no net diff from origin/main — commit your work to this branch first (ship:preflight reads committed history, not the working tree), or drop the no-op PR",
+      "branch has no net diff from origin/agents — commit your work to this branch first (ship:preflight reads committed history, not the working tree), or drop the no-op PR",
     );
 }
 
