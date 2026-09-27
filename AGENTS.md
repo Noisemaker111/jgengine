@@ -30,7 +30,7 @@ A cold checkout or worktree needs `bun run agent:bootstrap` before build-depende
 
 Run package scripts as `bun --cwd=packages/<pkg> run <script>` (the `=` form). The space form prints bun-run help and exits 0 without running anything, and `bun run --cwd` can hit the wrong root script.
 
-Worktrees are for local parallelism only: `bun run agent:worktree -- <name>` or `claude --worktree <name>`, both under `.claude/worktrees/`, never nested and never under `C:\tmp`. Cloud sessions are already isolated; branch from `origin/beta` there.
+Worktrees are for local parallelism only: `bun run agent:worktree -- <name>` or `claude --worktree <name>`, both under `.claude/worktrees/`, never nested and never under `C:\tmp`. Scratch and evidence go in `.scratch/`, which never holds a checkout. Cloud sessions are already isolated; branch from `origin/beta` there.
 
 Local tests, typechecks and `bun run ship:preflight` run without asking; fix failures the change caused and rerun the affected checks. Deterministic tests come first. Before pushing, run the focused tests and typecheck for the packages you touched, `bun run gen` when public API changed, and `ship:preflight`; PR CI runs the full gate and auto-merge waits for it, so do not run `bun run gate` locally unless you changed the gate itself or CI failed and you need to reproduce it. Screenshots are for pixel claims, captured with `bun run shoot` / `drive` per `jgengine-verify`, never a hand-rolled Vite app; arbitrary `--url` pages set `document.documentElement.dataset.jgCapture = "ready"`. After two capture failures, stop and report lower-rung evidence.
 

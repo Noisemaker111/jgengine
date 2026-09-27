@@ -53,3 +53,6 @@ Games/
 .agent-bootstrap.log
 .agent-bootstrap.installing
 apps/web/.wrangler/
+
+# One checkout home and one scratch folder (JonsOCsetup docs/worktrees.md)
+.scratch/
