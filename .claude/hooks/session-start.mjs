@@ -180,9 +180,9 @@ const originUrl = git("remote", "get-url", "origin") ?? "";
 const owner = (originUrl.match(/[:/]([^/]+)\/[^/]+?(?:\.git)?$/) ?? [])[1] ?? "";
 const autoMerge = owner === "Noisemaker111";
 const mergePolicy = autoMerge
-  ? `MERGE POLICY (${owner} repo): enable squash auto-merge when you open the PR ` +
-    `(enable_pr_auto_merge, or gh pr merge --squash --auto) so GitHub lands it itself once CI ` +
-    `passes — the user never merges by hand, so do not wait for or babysit the merge. Never ` +
+  ? `MERGE POLICY (${owner} repo): open the PR into agents and arm auto-merge when you open it ` +
+    `(gh pr merge <n> --auto --merge; if GitHub refuses, gh pr merge <n> --merge once CI passes) ` +
+    `so it lands on agents — the user never merges by hand, and main moves only when the user asks. Never ` +
     `publish an npm release or bump a version to force release; the user owns release/publish ` +
     `timing.`
   : `NEVER merge and never enable auto-merge — auto-merge is only for the Noisemaker111 repo. ` +

@@ -22,7 +22,7 @@ Choose the PR boundary by cohesion:
 - a PR may close multiple issues with `Closes #N`
 - issue count never determines PR count
 
-A session given several issues ships them as separate PRs in dependency order, each branched fresh from `origin/main`.
+A session given several issues ships them as separate PRs in dependency order, each branched fresh from `origin/agents`.
 
 ## Change
 
@@ -38,8 +38,8 @@ Inspect `git status`, the full diff, and acceptance criteria before staging. Sta
 
 ## Ship
 
-Push with a standalone `git push -u origin <branch>`, open one ready-for-review PR following the PR body shape in AGENTS.md, arm auto-merge per AGENTS.md, subscribe to PR activity, report the link, and end the turn. A CI failure event is fixed on the same branch and pushed to the same PR. When a merge from main is needed, regenerate artifacts with `bun run gen` rather than resolving generated files by hand.
+Push with a standalone `git push -u origin <branch>`, open one ready-for-review PR following the PR body shape in AGENTS.md, arm auto-merge per AGENTS.md, subscribe to PR activity, report the link, and end the turn. A CI failure event is fixed on the same branch and pushed to the same PR. When a merge from `agents` is needed, regenerate artifacts with `bun run gen` rather than resolving generated files by hand.
 
 When the user asks for a release, it is one command: `bun run release` (`--patch` for an explicitly requested patch; `--dry-run` to preview) bumps every package, folds `changes/*.md` into `## [Unreleased]` and cuts it into the new version section with the lockstep Migrate bullet, mirrors the notes into the typed `CHANGELOG` export, and regenerates `api.md`. Run it, skim the diff, commit as `Release <version>`, push, open the PR.
 
-Restarting a branch whose PR already squash-merged: run `git fetch --prune` first, then start the follow-up from a fresh branch off current `origin/main`.
+Restarting a branch whose PR already merged: run `git fetch --prune` first, then start the follow-up from a fresh branch off current `origin/agents`.
