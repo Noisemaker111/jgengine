@@ -3,6 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { deflateSync } from "node:zlib";
+import { runInNewContext } from "node:vm";
 
 import { findProjectRoot, materializeHarness, planHarness } from "./harness";
 import { browserLibMjs, shootMjs } from "./templates/gameFiles";
@@ -149,6 +150,72 @@ function encodePng(width: number, height: number, pixel: (x: number, y: number) 
 }
 
 describe("scaffold blank-frame guard", () => {
+  test("portable renderer signal honors a host that is still preparing", async () => {
+    const dir = materializeHarness("shoot");
+    try {
+      const lib = await import(join(dir, "browser.mjs"));
+      let source = "";
+      const session = {
+        on() { return () => {}; },
+        async send(method: string, params: { source?: string }) {
+          if (method === "Page.addScriptToEvaluateOnNewDocument") source = params.source!;
+          if (method === "Page.navigate") return { errorText: "skip navigation" };
+          return {};
+        },
+      };
+      await expect(lib.navigateToFrame(session, "http://127.0.0.1:5173", 1_000)).rejects.toThrow("skip navigation");
+      const root = { dataset: { jgCapture: "preparing" } };
+      const signals: string[] = [];
+      let changed = () => {};
+      runInNewContext(source, {
+        document: {
+          documentElement: root,
+          querySelector: () => ({ hasAttribute: () => true, clientWidth: 800, clientHeight: 450 }),
+        },
+        MutationObserver: class {
+          constructor(callback: () => void) { changed = callback; }
+          observe() {}
+          disconnect() {}
+        },
+        window: { __jgFrameSignal: (payload: string) => signals.push(payload) },
+      });
+      expect(signals).toEqual([]);
+      root.dataset.jgCapture = "ready";
+      changed();
+      expect(JSON.parse(signals[0]!).cap).toBe("ready");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("portable capture waits for the renderer signal, with listeners installed before navigation", async () => {
+    const dir = materializeHarness("shoot");
+    try {
+      const lib = await import(join(dir, "browser.mjs"));
+      const calls: string[] = [];
+      const listeners = new Map<string, (event: { name: string; payload: string }) => void>();
+      const session = {
+        on(method: string, next: (event: { name: string; payload: string }) => void) {
+          listeners.set(method, next);
+          return () => { listeners.delete(method); };
+        },
+        async send(method: string) {
+          calls.push(method);
+          if (method === "Page.navigate") {
+            listeners.get("Runtime.bindingCalled")?.({ name: "__jgFrameSignal", payload: JSON.stringify({ cap: "ready", bw: 800, bh: 450 }) });
+          }
+          return {};
+        },
+        async evaluate() { throw new Error("capture must not accept canvas size or poll"); },
+      };
+      expect(await lib.navigateToFrame(session, "http://127.0.0.1:5173", 1_000)).toEqual({ cap: "ready", bw: 800, bh: 450 });
+      expect(calls).toEqual(["Runtime.addBinding", "Page.addScriptToEvaluateOnNewDocument", "Page.navigate"]);
+      expect(listeners.size).toBe(0);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   test("decodes captured PNGs and refuses a one-color viewport but not a rendered one", async () => {
     const dir = materializeHarness("shoot");
     try {

@@ -4,8 +4,6 @@
  * Page.captureScreenshot — never ships PNG/base64 through the page.
  */
 
-import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad";
-
 import { resolvedLook } from "./appEnv";
 import { verifyLookSubject } from "./lookCamera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -113,33 +111,10 @@ function delay(ms: number): Promise<void> {
   });
 }
 
-/** Streaming counts as done after this much loader idle; below it a model can still pop in. */
-const MODEL_IDLE_MS = 400;
-const MODEL_IDLE_TIMEOUT_MS = 15_000;
-
-/**
- * Block until the shared GLB loader has been idle for {@link MODEL_IDLE_MS}, bounded.
- * A detached `?look=` camera frames a region the player never stood in, so its models
- * are still streaming when a fixed settle expires — the reason establishing captures
- * used to need a hand-tuned `--settle` before they stopped coming back half-empty.
- */
-async function waitForModelStreaming(): Promise<void> {
-  const deadline = Date.now() + MODEL_IDLE_TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    if (modelLoadIdleMs() >= MODEL_IDLE_MS) return;
-    await delay(100);
-  }
-}
-
 async function waitPlayFrames(settleMs: number): Promise<void> {
   await waitForSelector("canvas, [data-jg-frame-ready]", 25_000);
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => resolve());
-    });
-  });
-  await waitForModelStreaming();
   await delay(settleMs);
+  await waitForSelector("[data-jg-frame-ready]", 30_000);
 }
 
 function assertNoMenuOnScreen(): void {
@@ -155,7 +130,7 @@ function assertNoMenuOnScreen(): void {
 
 /**
  * When `?capture=1`, marks preparing → ready|error once the runner has an
- * honest frame for the active mode. Host polls `data-jg-capture` / console.
+ * honest frame for the active mode. The host observes `data-jg-capture` changes.
  */
 export function armCaptureReady(mode: string, defaultSettleMs?: number): () => void {
   if (!captureArmed()) return () => undefined;
