@@ -3,12 +3,12 @@
  * Headless editor control plane for agents.
  *
  * Usage:
- *   bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"scene_summary"}'
- *   bun packages/editor/src/mcp/cli.ts --game the-robots --rpc '{"method":"set_marker",...}' --save
- *   bun packages/editor/src/mcp/cli.ts --game the-robots --rpc-file payload.json
- *   bun packages/editor/src/mcp/cli.ts --game the-robots --rpc - < payload.json
- *   bun packages/editor/src/mcp/cli.ts --game the-robots --serve
- *   bun packages/editor/src/mcp/cli.ts --game the-robots --stdio
+ *   bun packages/editor/src/mcp/cli.ts --game scrap-signal --rpc '{"method":"scene_summary"}'
+ *   bun packages/editor/src/mcp/cli.ts --game scrap-signal --rpc '{"method":"set_marker",...}' --save
+ *   bun packages/editor/src/mcp/cli.ts --game scrap-signal --rpc-file payload.json
+ *   bun packages/editor/src/mcp/cli.ts --game scrap-signal --rpc - < payload.json
+ *   bun packages/editor/src/mcp/cli.ts --game scrap-signal --serve
+ *   bun packages/editor/src/mcp/cli.ts --game scrap-signal --stdio
  */
 
 import { existsSync, writeFileSync } from "node:fs";
@@ -29,7 +29,7 @@ import { EDITOR_MCP_TOOLS } from "./tools";
 function printHelp(): void {
   console.log(`jgengine editor-mcp
 
-  --game <id>          game id under Games/ (default the-robots)
+  --game <id>          game id under Games/ (default scrap-signal)
   --port <n>           HTTP bridge port (default 17373)
   --rpc '<json>'       run an RPC and exit; repeat to run several in order on one session
   --save               after a successful --rpc/--rpc-file batch, write the session document
@@ -56,7 +56,7 @@ export type EditorCliOptions = {
  * @internal
  */
 export function parseEditorCliArgs(argv: string[]): EditorCliOptions {
-  let gameId = "the-robots";
+  let gameId = "scrap-signal";
   let port = 17373;
   const rpcSources: RpcPayloadSource[] = [];
   let save = false;

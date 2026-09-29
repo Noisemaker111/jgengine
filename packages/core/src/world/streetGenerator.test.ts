@@ -85,7 +85,7 @@ describe("topology mode", () => {
 
 describe("geometry sliders", () => {
   test("every split degree-2 bend is owned by a welded two-arm junction", () => {
-    const net = generateStreets(rules({ seed: "vice-isle", gridness: 0.85, connectivity: 0.6, branching: 0.25, winding: 0.15 }), 260, 260);
+    const net = generateStreets(rules({ seed: "harbor-heat", gridness: 0.85, connectivity: 0.6, branching: 0.25, winding: 0.15 }), 260, 260);
     const junctionAt = (x: number, z: number) => net.junctions.some((j) => Math.hypot(j.x - x, j.z - z) < 1e-6);
     for (const node of net.nodes) {
       if (node.degree !== 2) continue;
@@ -177,15 +177,15 @@ describe("arc-fillet corners (#1364)", () => {
   test("filleted corners cap the per-vertex turn at ~10° even with a loose maxTurnAngle", () => {
     const cases: Partial<StreetNetworkRules>[] = [
       // The exact playground circuit rules the user measured (28° in round 1).
-      { seed: "vice-isle", loopiness: 1, connectivity: 0, branching: 0, gridness: 0.5, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120 },
-      { seed: "vice-isle-2", loopiness: 1, connectivity: 0, branching: 0, winding: 0.6, minCurveRadius: 18, maxTurnAngle: 140 },
+      { seed: "harbor-heat", loopiness: 1, connectivity: 0, branching: 0, gridness: 0.5, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120 },
+      { seed: "harbor-heat-2", loopiness: 1, connectivity: 0, branching: 0, winding: 0.6, minCurveRadius: 18, maxTurnAngle: 140 },
       // Open net with a wide ceiling — fillets must still self-cap the sample step.
       { seed: "net-wide", winding: 1, minCurveRadius: 20, maxTurnAngle: 160, loopiness: 0.3 },
       { seed: "net-wide-2", gridness: 0.4, winding: 0.8, minCurveRadius: 26, maxTurnAngle: 120, loopiness: 0.4 },
     ];
     for (const c of cases) {
-      const hx = c.seed === "vice-isle" ? 260 : 260;
-      const hz = c.seed === "vice-isle" ? 260 : 220;
+      const hx = c.seed === "harbor-heat" ? 260 : 260;
+      const hz = c.seed === "harbor-heat" ? 260 : 220;
       const net = generateStreets(rules(c), hx, hz);
       for (const street of net.streets) {
         for (let i = 1; i < street.points.length - 1; i += 1) {
@@ -505,8 +505,8 @@ describe("curve-first circuit centerline (#1395)", () => {
   });
 
   test("the playground circuit rules read as a flowing, curve-first lap", () => {
-    // seed vice-isle, the exact rules the orchestrator measures.
-    const play = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120 });
+    // seed harbor-heat, the exact rules the orchestrator measures.
+    const play = rules({ seed: "harbor-heat", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120 });
     const m = measure(generateStreets(play, 260, 260), 24);
     expect(m.maxTurn).toBeLessThanOrEqual(7 + 1e-6);
     expect(m.minRad).toBeGreaterThanOrEqual(24 * 0.92);
@@ -546,7 +546,7 @@ describe("structural hierarchy (#1368)", () => {
   });
 
   test("no arterial ever dead-ends at an interior node — wide roads never stub out (#1454)", () => {
-    for (const seed of ["art", "vice-isle", "stub-a", "stub-b", "stub-c"]) {
+    for (const seed of ["art", "harbor-heat", "stub-a", "stub-b", "stub-c"]) {
       const net = generateStreets(rules({ seed, deadEnds: 0.6, branching: 0.35 }), 300, 300);
       const deg = new Map(net.nodes.map((n) => [n.id, n.degree] as const));
       const byId = new Map(net.nodes.map((n) => [n.id, n] as const));
@@ -579,7 +579,7 @@ describe("planarity (#1454)", () => {
       return t > eps && t < 1 - eps && u > eps && u < 1 - eps;
     };
     // High branching + loopiness + low gridness exercises the chord-reconnect and spur paths hard.
-    for (const seed of ["p1", "p2", "p3", "vice-isle"]) {
+    for (const seed of ["p1", "p2", "p3", "harbor-heat"]) {
       const net = generateStreets(
         rules({ seed, branching: 0.8, loopiness: 0.6, deadEnds: 0.1, gridness: 0.3, connectivity: 0.7 }),
         300,
@@ -806,7 +806,7 @@ describe("elevation profile (#1395 round-3)", () => {
   });
 
   test("a circuit lap's elevation is continuous across the start/finish seam and grade-capped", () => {
-    const play = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120, elevation: 0.6 });
+    const play = rules({ seed: "harbor-heat", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120, elevation: 0.6 });
     const net = generateStreets(play, 260, 260);
     const loop = net.streets.find((s) => s.loop)!;
     const h = loop.heights!;
@@ -1005,7 +1005,7 @@ describe("compactness — space-filling grid-cycle circuit (#1395 round-4)", () 
   const T = 30000; // per-test timeout: several fresh compact generations
 
   test("compactness 0 is byte-identical to the default hull circuit (regression)", () => {
-    for (const seed of ["r1", "r2", "vice-isle"]) {
+    for (const seed of ["r1", "r2", "harbor-heat"]) {
       const hull = gen(cRules({ seed }), 260, 220);
       const dialled = gen(cRules({ seed, compactness: 0 }), 260, 220);
       expect(JSON.stringify(dialled)).toBe(JSON.stringify(hull));
@@ -1083,9 +1083,9 @@ describe("compactness — space-filling grid-cycle circuit (#1395 round-4)", () 
     expect(JSON.stringify(a)).toBe(JSON.stringify(b));
   }, T);
 
-  test("the vice-isle playground reads as a space-filling compact lap at 0.5 and 1.0", () => {
+  test("the harbor-heat playground reads as a space-filling compact lap at 0.5 and 1.0", () => {
     for (const compactness of [0.5, 1]) {
-      const r = rules({ seed: "vice-isle", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120, compactness });
+      const r = rules({ seed: "harbor-heat", gridness: 0.5, loopiness: 1, connectivity: 0, branching: 0, segmentLength: 80, winding: 0.5, minCurveRadius: 24, maxTurnAngle: 120, compactness });
       const net = gen(r, 260, 260);
       const m = measureLoop(net, r);
       expect(net.mode).toBe("circuit");

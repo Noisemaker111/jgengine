@@ -1,8 +1,8 @@
 [
-  "Games/claudecraft/src/game/ui/components/ActionBar.tsx:local-widget-Slot",
-  "Games/claudecraft/src/game/ui/components/Panels.tsx:local-widget-Window",
-  "Games/ironhold/src/game/session.ts:export-let",
-  "Games/ironhold/src/game/ui/components/Hud.tsx:local-widget-Slot",
-  "Games/loopline/src/game/ui/components/TopBar.tsx:local-widget-Chip",
-  "Games/tower-guard/src/game/session.ts:export-let"
+  "Games/lantern-reach/src/game/ui/components/ActionBar.tsx:local-widget-Slot",
+  "Games/lantern-reach/src/game/ui/components/Panels.tsx:local-widget-Window",
+  "Games/ember-command/src/game/session.ts:export-let",
+  "Games/ember-command/src/game/ui/components/Hud.tsx:local-widget-Slot",
+  "Games/brightway-park/src/game/ui/components/TopBar.tsx:local-widget-Chip",
+  "Games/beacon-bastion/src/game/session.ts:export-let"
 ]

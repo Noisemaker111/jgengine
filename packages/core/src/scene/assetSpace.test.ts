@@ -76,7 +76,7 @@ describe("rotation policy (locked / snap / free adopters)", () => {
 
 describe("canonical facing correction (replaces per-game corrective yaw)", () => {
   test("a south-facing model placed toward north resolves to Math.PI", () => {
-    // Claudecraft rotates every NPC by Math.PI; encode it as forwardDegrees: 180 instead.
+    // Lantern Reach rotates every NPC by Math.PI; encode it as forwardDegrees: 180 instead.
     const space: AssetSpace = { forwardDegrees: 180 };
     expect(resolveFacingRotationY(0, space)).toBeCloseTo(Math.PI, 10);
   });

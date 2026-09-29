@@ -40,21 +40,21 @@ afterEach(() => {
 describe("listGames", () => {
   test("lists package games with display names and thumbnails", () => {
     const gamesDir = makeGamesRoot({
-      "tower-guard": {
-        config: `export const game = defineGame({ name: "Tower Guard", world });\n`,
+      "beacon-bastion": {
+        config: `export const game = defineGame({ name: "Beacon Bastion", world });\n`,
         thumb: true,
       },
-      starhome: {
-        config: `export const game = defineGame({ name: "Starhome", world });\n`,
+      "odd-orbit": {
+        config: `export const game = defineGame({ name: "Odd Orbit", world });\n`,
       },
       "not-a-game": { pkg: false },
     });
     writeFileSync(join(gamesDir, "README.md"), "skip");
     const listed = listGames({ gamesDir });
-    expect(listed.map((g) => g.id).sort()).toEqual(["starhome", "tower-guard"]);
-    expect(listed.find((g) => g.id === "tower-guard")?.displayName).toBe("Tower Guard");
-    expect(listed.find((g) => g.id === "tower-guard")?.thumbnail).toBe("public/thumbnail.png");
-    expect(listed.find((g) => g.id === "starhome")?.thumbnail).toBeNull();
+    expect(listed.map((g) => g.id).sort()).toEqual(["beacon-bastion", "odd-orbit"]);
+    expect(listed.find((g) => g.id === "beacon-bastion")?.displayName).toBe("Beacon Bastion");
+    expect(listed.find((g) => g.id === "beacon-bastion")?.thumbnail).toBe("public/thumbnail.png");
+    expect(listed.find((g) => g.id === "odd-orbit")?.thumbnail).toBeNull();
   });
 
   test("readGameSettings returns null for unknown ids", () => {

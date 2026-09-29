@@ -109,7 +109,7 @@ type Args = {
 
 const HELP = `bun run shoot [game] [options]
 
-  --game <id>         game id (default world-of-warcraft; positional arg also works)
+  --game <id>         game id (default lantern-reach; positional arg also works)
   --mode <ui|play|poster|preview>   capture mode (default ui)
   --device <desktop|mobile|mobile-landscape|both>   viewport (default desktop)
   --size <full|half>  half halves both dimensions (~1/4 the pixels) for cheap
@@ -183,7 +183,7 @@ Manual warm loop (still supported):
 
 function parseArgs(argv: string[]): Args {
   const args: Args = {
-    game: "world-of-warcraft",
+    game: "lantern-reach",
     mode: "ui",
     modeExplicit: false,
     device: "desktop",

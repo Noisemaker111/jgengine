@@ -115,7 +115,7 @@ describe("item identity — set/match bonuses", () => {
   });
 });
 
-describe("item identity — the-robots manufacturers migrate as one data catalog", () => {
+describe("item identity — scrap-signal manufacturers migrate as one data catalog", () => {
   // Manufacturer identity that once lived as hardcoded fields in the game's
   // handroll table, re-expressed as caller-owned tags + generic rules. No
   // manufacturer-specific code lives in core.

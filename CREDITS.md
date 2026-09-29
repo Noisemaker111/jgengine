@@ -110,12 +110,12 @@ not vendor or run this model itself; the reference documents how to run it
 externally and bring its output in as a catalogued asset. Apache-2.0 permits
 commercial use; credited here per its terms.
 
-## game-icons.net (Ironhold HUD)
+## game-icons.net (Ember Command HUD)
 
-The **[Ironhold](Games/ironhold)** command-console HUD uses vector glyphs from
+The **[Ember Command](Games/ember-command)** command-console HUD uses vector glyphs from
 **[game-icons.net](https://game-icons.net)** (CC BY 3.0) for its resource, unit,
 building, research, and ability icons
-([`Games/ironhold/src/game/ui/iconData.ts`](Games/ironhold/src/game/ui/iconData.ts)).
+([`Games/ember-command/src/game/ui/iconData.ts`](Games/ember-command/src/game/ui/iconData.ts)).
 The individual icons are by **Lorc**, **Delapouite**, and **sbed** — coins,
 wood-pile, meat, despair, miner, broadsword, high-shot, crossed-swords, barracks,
 wheat, watchtower, checkered-flag, palm, pointy-sword, breastplate,
@@ -140,52 +140,47 @@ JGengine's editor-owned world and reusable-package workflow.
 
 ## Game concepts
 
-Some of the games in `Games/*` are our own take on someone else's idea. We
-credit the originators here, in the game's on-screen HUD (which each game
-renders itself — for example, the World of ClaudeCraft port ships a `CreditLine`
-in its HUD), and on the game's jgengine.com page. Each game declares its own
+The games in `Games/*` have independently named projects and authored settings.
+Source and asset attribution remains here, in each game's on-screen credits,
+and on its jgengine.com page. Each game declares its own
 attribution via `export const credit` in its `game.config.ts`; the game page
 (`apps/web/src/routes/games.$id.tsx`) renders that credit beneath the runner,
 sourced from the game's config rather than a hand-maintained web registry.
 
-### Levy Street — *World of ClaudeCraft*
+### Lantern Reach — Levy Street source attribution
 
-**[World of ClaudeCraft](Games/claudecraft)** is a port of
+**[Lantern Reach](Games/lantern-reach)** retains source from
 **[world-of-claudecraft](https://github.com/levy-street/world-of-claudecraft)**
-by **[Levy Street](https://github.com/levy-street)** (MIT) — a from-scratch,
-browser-based classic-era MMORPG built almost entirely with AI coding agents:
-nine classes, three zones, dungeons, professions, PvP, and a deterministic
-20 Hz simulation that doubles as a Gymnasium RL environment. Our version
-rebuilds the core of that game on the engine's own primitives — the exact
-movement, armor, and XP formulas, the class kits, the three zone bands
-(Eastbrook Vale, Mirefen Marsh, Thornpeak Heights), the mob rosters and loot
-tables, and the Gravecaller storyline down to Morthen in the Hollow Crypt —
-credited here and on the game's HUD.
+by **[Levy Street](https://github.com/levy-street)** (MIT). Its required historical
+acknowledgment remains exactly **Port of World of ClaudeCraft · Levy Street (MIT)**
+in its credit export and HUD. Lantern Reach now uses its own title, callings,
+abilities, talent vocabulary, and creature names. The source attribution and
+license remain intact.
 
-The port's committed 3D art is not upstream's: the `.glb` models under
-[`apps/dev/public/models/claudecraft/`](apps/dev/public/models/claudecraft) —
+The committed `.glb` models under
+[`apps/dev/public/models/lantern-reach/`](apps/dev/public/models/lantern-reach) —
 player classes, weapons, creatures, and enemies — are CC0 **KayKit**
 (adventurer classes, weapons, skeletons) and **Quaternius** (animals, monsters)
-models, renamed to match the roles in upstream's visual manifest. See the
+models, named by their visual roles. See the
 KayKit and Quaternius sections above.
 
-### Classic games (Wave 2)
+### Original game settings
 
-A handful of genre-anchor classics in `Games/*` are our own builds of decades-old
-game concepts — original code, art, and levels, but the mechanics trace back to
-specific inventors and titles. Credited here and on each game's HUD; all
-lineages this wave are corporate or traditional, so each game shows a
-genre-homage line rather than crediting a named individual creator.
+These games use familiar genre mechanics with their own identities and content.
+Third-party asset packs retain their actual source names and license notices.
 
-| Game | id | Lineage |
+| Game | id | Setting |
 | --- | --- | --- |
-| **[Vice Isle](Games/vice-isle)** | `vice-isle` | Rockstar Games's **Grand Theft Auto** series, in the cel-shaded look of Gearbox's **Borderlands** — genre homage. |
-| **[Ironhold](Games/ironhold)** | `ironhold` | Blizzard Entertainment's **Warcraft III** — the base-and-army real-time-strategy skirmish (select, command, attack-move, focus-fire). Original code, art, and map; only the feel and verb set are harvested. |
+| **[Harbor Heat](Games/harbor-heat)** | `harbor-heat` | Coastal courier jobs, rival crews, and high-speed escapes. |
+| **[Ember Command](Games/ember-command)** | `ember-command` | A highland commander leads the Vanguard against Marauder fortifications. |
+| **[Scrap Signal](Games/scrap-signal)** | `scrap-signal` | Reclaim Ferralon, recover relay modules, and breach an industrial reactor. |
+
+The complete game catalog and content provenance live in the games repository.
 
 ## First-party generated assets
 
-The fantasy sprite sheets under `apps/dev/public/game-assets/wow/` and
-`apps/desktop/public/game-assets/wow/` (character portraits, ability and item
+The fantasy sprite sheets under `apps/dev/public/game-assets/lantern-reach/` and
+`apps/desktop/public/game-assets/lantern-reach/` (character portraits, ability and item
 icons, plus their slicing manifests) were AI-generated for this repository and
 sliced into sheets by its own tooling. They are first-party assets — no
 third-party artwork, asset pack, or outside artist is involved.

@@ -109,13 +109,13 @@ describe("appendFeed / pruneFeed on flat serializable entries", () => {
     at,
   });
 
-  test("count-cap keeps the newest limit entries (loopline-style toasts)", () => {
+  test("count-cap keeps the newest limit entries (brightway-park-style toasts)", () => {
     let toasts: Notice[] = [];
     for (let i = 1; i <= 8; i += 1) toasts = appendFeed(toasts, notice(i, i), { limit: 6 });
     expect(toasts.map((t) => t.id)).toEqual([3, 4, 5, 6, 7, 8]);
   });
 
-  test("ttl drops entries older than the window at append time (starhome-style events)", () => {
+  test("ttl drops entries older than the window at append time (odd-orbit-style events)", () => {
     let events: Notice[] = [notice(1, 0), notice(2, 4)];
     events = appendFeed(events, notice(3, 10), { limit: 6, ttl: 7 });
     // cutoff = 10 - 7 = 3; keep at > 3, so at=0 is evicted and at=4 survives (matches `now - at < ttl`).

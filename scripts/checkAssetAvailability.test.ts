@@ -19,20 +19,20 @@ import {
 describe("checkAssetAvailability", () => {
   test("fails a referenced pack that is neither committed nor provisioned (the pre-fix bug)", () => {
     const result = checkAssetAvailability({
-      references: [{ game: "the-robots", pack: "kaykit-skeletons", via: "buildCatalog" }],
+      references: [{ game: "scrap-signal", pack: "kaykit-skeletons", via: "buildCatalog" }],
       committed: new Set(["kaykit-adventurers"]),
       provisioned: new Set(),
     });
     expect(result.ok).toBe(false);
     expect(result.errors).toHaveLength(1);
     expect(result.errors[0]).toContain("kaykit-skeletons");
-    expect(result.errors[0]).toContain("the-robots");
+    expect(result.errors[0]).toContain("scrap-signal");
     expect(result.errors[0]).toContain("clean checkout");
   });
 
   test("passes when the pack is committed", () => {
     const result = checkAssetAvailability({
-      references: [{ game: "the-robots", pack: "kaykit-skeletons", via: "buildCatalog" }],
+      references: [{ game: "scrap-signal", pack: "kaykit-skeletons", via: "buildCatalog" }],
       committed: new Set(["kaykit-skeletons"]),
       provisioned: new Set(),
     });
@@ -42,7 +42,7 @@ describe("checkAssetAvailability", () => {
 
   test("passes when the pack is provisioned by a bootstrap pull step", () => {
     const result = checkAssetAvailability({
-      references: [{ game: "starhome", pack: "quaternius-modular-scifi", via: "buildCatalog" }],
+      references: [{ game: "odd-orbit", pack: "quaternius-modular-scifi", via: "buildCatalog" }],
       committed: new Set(),
       provisioned: new Set(["quaternius-modular-scifi"]),
     });
@@ -51,7 +51,7 @@ describe("checkAssetAvailability", () => {
 
   test("ignores the editor-import sentinel pack", () => {
     const result = checkAssetAvailability({
-      references: [{ game: "studio-showcase", pack: "imported", via: "path-literal" }],
+      references: [{ game: "field-station", pack: "imported", via: "path-literal" }],
       committed: new Set(),
       provisioned: new Set(),
     });
@@ -93,7 +93,7 @@ describe("packReferencesForGame", () => {
       "game/assets.ts":
         'export const assets = buildCatalog({\n  basePath: "/models",\n  sources: [\n    "quaternius-modular-scifi",\n    "kaykit-space-base",\n  ],\n});\n',
     });
-    const refs = packReferencesForGame("the-robots", srcDir);
+    const refs = packReferencesForGame("scrap-signal", srcDir);
     const packs = new Set(refs.map((r) => r.pack));
     expect(packs.has("quaternius-modular-scifi")).toBe(true);
     expect(packs.has("kaykit-space-base")).toBe(true);
@@ -103,10 +103,10 @@ describe("packReferencesForGame", () => {
 
   test("extracts /models/<pack>/ path literals (the buildCatalog-free surface)", () => {
     const srcDir = makeGame({
-      "game/models.ts": 'const PLAYERS = "/models/claudecraft/players";\n',
+      "game/models.ts": 'const PLAYERS = "/models/lantern-reach/players";\n',
     });
-    const refs = packReferencesForGame("claudecraft", srcDir);
-    expect(refs.map((r) => r.pack)).toContain("claudecraft");
+    const refs = packReferencesForGame("lantern-reach", srcDir);
+    expect(refs.map((r) => r.pack)).toContain("lantern-reach");
     cleanup();
   });
 });

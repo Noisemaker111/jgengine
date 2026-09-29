@@ -22,7 +22,7 @@ describe("lockfileChanged", () => {
   });
 
   test("ignores source-only diffs", () => {
-    expect(lockfileChanged("packages/core/src/index.ts\nGames/the-robots/src/game.ts")).toBe(false);
+    expect(lockfileChanged("packages/core/src/index.ts\nGames/scrap-signal/src/game.ts")).toBe(false);
     expect(lockfileChanged("apps/dev/src/package.json.ts")).toBe(false);
     expect(lockfileChanged("")).toBe(false);
   });

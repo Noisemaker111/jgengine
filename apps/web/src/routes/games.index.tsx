@@ -26,7 +26,7 @@ function Games() {
             Play what the <span className="text-accent">agents built.</span>
           </>
         }
-        blurb="Every probe game runs right here with no install. Coding agents built them on the same npm packages you get, to find the engine's gaps. Some are homages to games you know."
+        blurb="Play original probe games here with no install. Coding agents built them on the published packages to find the engine's gaps."
       />
 
       <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">

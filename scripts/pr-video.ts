@@ -19,7 +19,7 @@
  * or comment renders as a video player regardless of which account posts it.
  * Sessions expire on GitHub's side eventually; on 401/422 refresh the secret.
  *
- *   bun run pr-video shots/vice-isle-collision-half.mp4
+ *   bun run pr-video shots/harbor-heat-collision-half.mp4
  *
  * Size limits (GitHub): 10MB video on free plans, 100MB on paid. Formats:
  * mp4, mov, webm (H.264 mp4 is the safe choice — drive --record emits it).

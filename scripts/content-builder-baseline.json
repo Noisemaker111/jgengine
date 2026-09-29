@@ -1,15 +1,15 @@
 [
-  "Games/claudecraft/src/world.ts:building",
-  "Games/claudecraft/src/world.ts:grass",
-  "Games/ironhold/src/world.ts:grass",
-  "Games/loopline/src/world.ts:building",
-  "Games/loopline/src/world.ts:grass",
-  "Games/loopline/src/world.ts:pad",
-  "Games/the-robots/src/world.ts:building",
-  "Games/the-robots/src/world.ts:grass",
-  "Games/the-robots/src/world.ts:road",
-  "Games/tower-guard/src/world.ts:grass",
-  "Games/vice-isle/src/world.ts:grass",
-  "Games/vice-isle/src/world.ts:ocean",
-  "Games/vice-isle/src/world.ts:road"
+  "Games/lantern-reach/src/world.ts:building",
+  "Games/lantern-reach/src/world.ts:grass",
+  "Games/ember-command/src/world.ts:grass",
+  "Games/brightway-park/src/world.ts:building",
+  "Games/brightway-park/src/world.ts:grass",
+  "Games/brightway-park/src/world.ts:pad",
+  "Games/scrap-signal/src/world.ts:building",
+  "Games/scrap-signal/src/world.ts:grass",
+  "Games/scrap-signal/src/world.ts:road",
+  "Games/beacon-bastion/src/world.ts:grass",
+  "Games/harbor-heat/src/world.ts:grass",
+  "Games/harbor-heat/src/world.ts:ocean",
+  "Games/harbor-heat/src/world.ts:road"
 ]

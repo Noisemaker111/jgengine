@@ -51,7 +51,7 @@ describe("loadGameLayers", () => {
   });
 
   test("a real game's editorLayers export decodes to a typed document", async () => {
-    const loaded = await loadGameLayers("studio-showcase");
+    const loaded = await loadGameLayers("field-station");
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) throw new Error("expected load success");
     expect(loaded.document.version).toBe(1);

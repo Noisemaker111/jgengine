@@ -21,16 +21,16 @@ describe("project commands", () => {
   });
 
   test("start-game maps mount modes onto existing root scripts", () => {
-    expect(buildShellCommand({ kind: "start-game", id: "starhome", mount: "standalone" })).toEqual({
-      label: "games:starhome",
-      argv: ["bun", "run", "games:starhome"],
+    expect(buildShellCommand({ kind: "start-game", id: "odd-orbit", mount: "standalone" })).toEqual({
+      label: "games:odd-orbit",
+      argv: ["bun", "run", "games:odd-orbit"],
       cwd: "repo",
       stream: true,
     });
-    expect(buildShellCommand({ kind: "start-game", id: "starhome", mount: "website" }).argv).toEqual(
+    expect(buildShellCommand({ kind: "start-game", id: "odd-orbit", mount: "website" }).argv).toEqual(
       ["bun", "run", "dev"],
     );
-    expect(buildShellCommand({ kind: "start-game", id: "starhome", mount: "runner" }).argv).toEqual(
+    expect(buildShellCommand({ kind: "start-game", id: "odd-orbit", mount: "runner" }).argv).toEqual(
       ["bun", "run", "dev:runner"],
     );
   });
@@ -40,8 +40,8 @@ describe("project commands", () => {
   });
 
   test("open paths stay on existing query/route contracts", () => {
-    expect(runnerOpenPath("tower-guard", "editor")).toBe("?game=tower-guard&mode=editor");
-    expect(websitePlayPath("tower-guard")).toBe("/play/?game=tower-guard");
+    expect(runnerOpenPath("beacon-bastion", "editor")).toBe("?game=beacon-bastion&mode=editor");
+    expect(websitePlayPath("beacon-bastion")).toBe("/play/?game=beacon-bastion");
   });
 
   test("process keys are stable", () => {

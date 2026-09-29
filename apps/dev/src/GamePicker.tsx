@@ -1,6 +1,6 @@
 import { gameRegistry } from "./registries";
 
-const FEATURED_GAMES = ["the-robots", "loopline", "vice-isle", "claudecraft"] as const;
+const FEATURED_GAMES = ["scrap-signal", "brightway-park", "harbor-heat", "lantern-reach"] as const;
 
 export function GamePicker() {
   const ids = Object.keys(gameRegistry).sort();
@@ -62,8 +62,8 @@ export function GamePicker() {
           </a>
         </div>
         <p className="mt-6 text-[11px] text-neutral-500">
-          Direct URLs: <code className="text-neutral-400">?game=the-robots</code> ·{" "}
-          <code className="text-neutral-400">?game=the-robots&amp;mode=editor</code> ·{" "}
+          Direct URLs: <code className="text-neutral-400">?game=scrap-signal</code> ·{" "}
+          <code className="text-neutral-400">?game=scrap-signal&amp;mode=editor</code> ·{" "}
           <code className="text-neutral-400">?editor=standalone</code>
         </p>
       </div>

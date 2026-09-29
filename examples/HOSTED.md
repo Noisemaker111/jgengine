@@ -6,10 +6,10 @@ End-to-end recipe using a **real tracked game** — not a missing gallery id.
 
 | | |
 | --- | --- |
-| Game | **`claudecraft`** (`Games/claudecraft`) |
+| Game | **`lantern-reach`** (`Games/lantern-reach`) |
 | Adapter | `multiplayer: ws({ authority: "server" })` in `game.config.ts` |
-| Play local | `bun run games:claudecraft` |
-| Dev multi-game host | `bun run dev:runner` → open `?game=claudecraft` |
+| Play local | `bun run games:lantern-reach` |
+| Dev multi-game host | `bun run dev:runner` → open `?game=lantern-reach` |
 
 Server-authority means the host owns the sim; the shell mirrors world state (see `jgengine-multiplayer` → Authority).
 
@@ -21,8 +21,8 @@ bun examples/express-host/src/server.ts
 # ws://localhost:8080/ws  ·  GET /healthz
 
 # terminal 2 — client
-VITE_JG_WS_URL=ws://localhost:8080/ws bun run games:claudecraft
-# or: bun run dev:runner  →  http://localhost:5173/?game=claudecraft
+VITE_JG_WS_URL=ws://localhost:8080/ws bun run games:lantern-reach
+# or: bun run dev:runner  →  http://localhost:5173/?game=lantern-reach
 ```
 
 LAN: `multiplayer: lan()` derives `ws://<page-host>:8080/ws` automatically when the express host is on the same machine network. Deploy notes: `examples/express-host/DEPLOY.md`.

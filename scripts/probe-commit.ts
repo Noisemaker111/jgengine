@@ -6,7 +6,7 @@
  * it started on, including on failure.
  *
  *   bun run probe <commit> [-- <shoot args>]
- *   bun run probe 7a6de492 -- the-robots --mode play --settle 4000
+ *   bun run probe 7a6de492 -- scrap-signal --mode play --settle 4000
  */
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
@@ -21,7 +21,7 @@ Captures <commit> into shots/probe-<commit>.png and restores your original ref.
   --help         show this text
 
 Everything after -- is passed to shoot verbatim, so any shoot flag works:
-  bun run probe b523a6f7 -- the-robots --mode play --look 40,120 --settle 4000
+  bun run probe b523a6f7 -- scrap-signal --mode play --look 40,120 --settle 4000
 `;
 
 function git(args: string[], repoRoot: string): { status: number; stdout: string; stderr: string } {

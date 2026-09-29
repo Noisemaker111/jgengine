@@ -287,7 +287,7 @@ function parseArgs(argv: string[]): Args {
   }
   if (args.help) return args;
   if (args.game === "" && args.site === undefined) {
-    throw new Error("drive: pass a game id or --site <path>, e.g. bun run drive the-robots --click START");
+    throw new Error("drive: pass a game id or --site <path>, e.g. bun run drive scrap-signal --click START");
   }
   if (args.game === "") args.game = "site";
   if (args.site !== undefined && !args.timeoutExplicit) {

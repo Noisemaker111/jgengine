@@ -4,12 +4,12 @@ import { DEFAULTS, PRESETS, growPlayground, parsePlaygroundQuery, shouldAnimateP
 
 describe("playground query controls", () => {
   test("parses all generation and inspection controls deterministically", () => {
-    const search = "?seed=vice-isle&size=300&gridness=.4&connectivity=.5&branching=.6&winding=.2&segmentLength=75&boulevards=.3&lotW=14&lotD=16&setback=4&spacing=3.5&variety=.8&fill=.9&landmarks=.1&elevation=.25&trackDensity=.7&sidewalks=false&sidewalkWidth=2.5&markings=off&markingWidth=.2&markingOffset=-.5&markingDash=6&markingGap=3&junction=5&cameraRadius=90&cameraPitch=50&cameraYaw=-35&inspect=1&capture=true&mode=city&view=3d";
+    const search = "?seed=harbor-heat&size=300&gridness=.4&connectivity=.5&branching=.6&winding=.2&segmentLength=75&boulevards=.3&lotW=14&lotD=16&setback=4&spacing=3.5&variety=.8&fill=.9&landmarks=.1&elevation=.25&trackDensity=.7&sidewalks=false&sidewalkWidth=2.5&markings=off&markingWidth=.2&markingOffset=-.5&markingDash=6&markingGap=3&junction=5&cameraRadius=90&cameraPitch=50&cameraYaw=-35&inspect=1&capture=true&mode=city&view=3d";
     const parsed = parsePlaygroundQuery(search);
     expect(parsed).toEqual(parsePlaygroundQuery(search));
     expect(parsed).toMatchObject({
       dials: {
-        seed: "vice-isle",
+        seed: "harbor-heat",
         size: 300,
         spacing: 3.5,
         variety: 0.8,
