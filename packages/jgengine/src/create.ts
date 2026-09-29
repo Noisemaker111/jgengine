@@ -23,7 +23,7 @@ export function writeGame(
     dimension?: "2d" | "3d";
   },
 ): void {
-  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), scene, ...options })) {
+  for (const file of gameTemplate({ id, name, variant, engineVersion: sdkVersion(), cliVersion: cliVersion(), scene, ...options })) {
     const dest = join(targetDir, file.path);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, file.contents);

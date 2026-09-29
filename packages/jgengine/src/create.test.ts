@@ -84,10 +84,12 @@ describe("writeGame", () => {
     writeGame(dir, "caret-game", "Caret Game", "standalone");
     const pkg = JSON.parse(readFileSync(join(dir, "package.json"), "utf8")) as {
       dependencies: Record<string, string>;
+      devDependencies: Record<string, string>;
     };
     const version = sdkVersion();
     expect(pkg.dependencies["@jgengine/core"]).toBe(`^${version}`);
     expect(pkg.dependencies["@jgengine/assets"]).toBe(`^${version}`);
+    expect(pkg.devDependencies.jgengine).toBe(cliVersion());
   });
 });
 

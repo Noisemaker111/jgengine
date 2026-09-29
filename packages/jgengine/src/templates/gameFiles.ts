@@ -76,7 +76,7 @@ export default defineConfig({
 });
 `;
 
-const standalonePackageJson = (id: string, engineVersion: string) => `${JSON.stringify(
+const standalonePackageJson = (id: string, engineVersion: string, cliVersion: string) => `${JSON.stringify(
   {
     name: id,
     version: "0.1.0",
@@ -105,6 +105,7 @@ const standalonePackageJson = (id: string, engineVersion: string) => `${JSON.str
       three: "^0.182.0",
     },
     devDependencies: {
+      jgengine: cliVersion,
       "@jgengine/node": `^${engineVersion}`,
       "@tailwindcss/vite": "^4.0.15",
       "@types/react": "^19",

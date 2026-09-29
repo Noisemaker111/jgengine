@@ -1,3 +1,4 @@
+import { cliVersion } from "./pkg";
 import { sharedBuilderFiles } from "./templates/sharedBuilder";
 import {
   boardGameConfigTs,
@@ -85,7 +86,7 @@ export function gameTemplate(options: TemplateOptions): TemplateFile[] {
     { path: "vite.config.ts", contents: viteConfig(variant) },
     {
       path: "package.json",
-      contents: variant === "in-repo" ? inRepoPackageJson(id) : standalonePackageJson(id, engineVersion),
+      contents: variant === "in-repo" ? inRepoPackageJson(id) : standalonePackageJson(id, engineVersion, options.cliVersion ?? cliVersion()),
     },
     { path: "tsconfig.json", contents: tsconfigJson(variant) },
     { path: ".gitignore", contents: gitignore },
