@@ -22,6 +22,12 @@ function failingLabels(dir: string): string[] {
 }
 
 describe("diagnose", () => {
+  test("a generated 2D game has no unused editor dependency or editor styling error", () => {
+    const dir = join(mkdtempSync(join(tmpdir(), "jgengine-doctor-board-")), "board");
+    writeGame(dir, "board", "Board", "standalone", undefined, { dimension: "2d" });
+    expect(failingLabels(dir)).not.toContain("Tailwind @source covers @jgengine/editor (F2+E summon)");
+    expect(JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).dependencies["@jgengine/editor"]).toBeUndefined();
+  });
   test("compares the running CLI's SDK target with installed SDK versions, independently of declared ranges", () => {
     const dir = scaffold();
     const installed = join(dir, "node_modules", "@jgengine", "core", "package.json");

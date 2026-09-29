@@ -76,7 +76,7 @@ export default defineConfig({
 });
 `;
 
-const standalonePackageJson = (id: string, engineVersion: string, cliVersion: string) => `${JSON.stringify(
+const standalonePackageJson = (id: string, engineVersion: string, cliVersion: string, editor: boolean) => `${JSON.stringify(
   {
     name: id,
     version: "0.1.0",
@@ -95,7 +95,7 @@ const standalonePackageJson = (id: string, engineVersion: string, cliVersion: st
     dependencies: {
       "@jgengine/assets": `^${engineVersion}`,
       "@jgengine/core": `^${engineVersion}`,
-      "@jgengine/editor": `^${engineVersion}`,
+      ...(editor ? { "@jgengine/editor": `^${engineVersion}` } : {}),
       "@jgengine/react": `^${engineVersion}`,
       "@jgengine/shell": `^${engineVersion}`,
       "@react-three/drei": "^10.7.7",

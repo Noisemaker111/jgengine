@@ -280,6 +280,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(fileOf(files, "src/game/ui/GameUI.tsx")).not.toContain("outcome");
     // No editor summon → no editor dep → drop its @source so Tailwind isn't pointed at a missing package.
     expect(fileOf(files, "src/index.css")).not.toContain("@jgengine/editor");
+    expect(JSON.parse(fileOf(files, "package.json")).dependencies["@jgengine/editor"]).toBeUndefined();
   });
 
   test("starter scene puts its goal and props ahead of the spawn's default +Z facing", () => {
