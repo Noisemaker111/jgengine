@@ -55,6 +55,7 @@ const have = new Set(release.assets.map((asset) => asset.name));
 let uploaded = 0;
 const softFailures: string[] = [];
 const hardFailures: string[] = [];
+const unpulledFailures: string[] = [];
 
 for (const source of sources) {
   const assetName = `${source.provider}-${source.id}.zip`;
@@ -78,15 +79,17 @@ for (const source of sources) {
     console.log(`mirrored ${assetName} (${(archive.byteLength / 1_048_576).toFixed(1)} MB) from ${url}`);
   } catch (error) {
     const line = `${assetName}: ${error instanceof Error ? error.message : String(error)}`;
-    if (isPriority(source)) hardFailures.push(line);
+    if (source.unpulled !== undefined) unpulledFailures.push(`${line} (unpulled: ${source.unpulled})`);
+    else if (isPriority(source)) hardFailures.push(line);
     else softFailures.push(line);
   }
 }
 
 console.log(
-  `mirror-assets: ${sources.length} catalog packs, ${have.size} already mirrored, ${uploaded} uploaded, ${hardFailures.length} hard fails, ${softFailures.length} soft fails (materials)`,
+  `mirror-assets: ${sources.length} catalog packs, ${have.size} already mirrored, ${uploaded} uploaded, ${hardFailures.length} hard fails, ${softFailures.length} soft fails (materials), ${unpulledFailures.length} unpulled`,
 );
+for (const failure of unpulledFailures) console.warn(`  ? ${failure}`);
 for (const failure of softFailures) console.warn(`  ~ ${failure}`);
 for (const failure of hardFailures) console.error(`  - ${failure}`);
-// Materials 404s (stale ambientCG ids) must not block model/sprite mirroring.
+// Materials 404s (stale ambientCG ids) and packs the catalog already records as `unpulled` must not block model/sprite mirroring.
 if (hardFailures.length > 0) process.exit(1);
