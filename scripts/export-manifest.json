@@ -1121,6 +1121,7 @@
   "jgengine": [
     ".",
     "./cli/index",
+    "./compatibility",
     "./create",
     "./desktop",
     "./doctor",

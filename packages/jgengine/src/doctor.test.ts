@@ -5,6 +5,7 @@ import { join } from "node:path";
 
 import { writeGame } from "./create";
 import { diagnose } from "./doctor";
+import { sdkVersion } from "./pkg";
 
 function scaffold(): string {
   const dir = join(mkdtempSync(join(tmpdir(), "jgengine-doctor-")), "probe-game");
@@ -21,6 +22,24 @@ function failingLabels(dir: string): string[] {
 }
 
 describe("diagnose", () => {
+  test("a generated 2D game has no unused editor dependency or editor styling error", () => {
+    const dir = join(mkdtempSync(join(tmpdir(), "jgengine-doctor-board-")), "board");
+    writeGame(dir, "board", "Board", "standalone", undefined, { dimension: "2d" });
+    expect(failingLabels(dir)).not.toContain("Tailwind @source covers @jgengine/editor (F2+E summon)");
+    expect(JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).dependencies["@jgengine/editor"]).toBeUndefined();
+  });
+  test("compares the running CLI's SDK target with installed SDK versions, independently of declared ranges", () => {
+    const dir = scaffold();
+    const installed = join(dir, "node_modules", "@jgengine", "core", "package.json");
+    writeFileSync(installed, '{"version":"99.0.0"}');
+    const finding = diagnose(dir).find(entry => entry.label === "running CLI supports installed SDK minor");
+    expect(finding?.ok).toBe(false);
+    expect(finding?.fix).toContain("@jgengine/core@99.0.0");
+    const [major, minor] = sdkVersion().split(".");
+    writeFileSync(installed, JSON.stringify({ version: `${major}.${minor}.99` }));
+    expect(failingLabels(dir)).not.toContain("running CLI supports installed SDK minor");
+  });
+
   test("flags @jgengine/* version skew", () => {
     const dir = scaffold();
     const pkgPath = join(dir, "package.json");
