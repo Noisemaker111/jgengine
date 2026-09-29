@@ -22,6 +22,8 @@ export interface TemplateOptions {
   name: string;
   variant: TemplateVariant;
   engineVersion: string;
+  /** Exact CLI version used to create the project; independent of the SDK version. */
+  cliVersion?: string;
   /**
    * An authored scene document to bake in as `src/editor.scene.json` instead of the starter scene —
    * the "promote a scene folder into a game" path (`jgengine create --from-scene`). The generated

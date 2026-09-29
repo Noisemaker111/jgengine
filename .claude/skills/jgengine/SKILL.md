@@ -9,6 +9,8 @@ This skill decides what to load; it is not an engine manual. Package map, comman
 
 A created project installs only `jgengine`, `jgengine-editor`, `jgengine-verify`, `game-design`, and `jgengine-ui`. Run `npx jgengine skills -p --all` before loading any other domain named below. Those projects do not ship `api.md`; read exact signatures from the `.d.ts` files under `node_modules/@jgengine/<pkg>/dist/`.
 
+Created projects pin their scaffolding CLI as a local devDependency, separately from SDK versions. Run `npx jgengine doctor` after SDK upgrades to check CLI compatibility. Skill installation preserves newer or differing unversioned copies; update the project CLI first, and use `skills -p --force` only when replacement is intended. Each packaged skill install records its CLI and SDK versions in `.jgengine-version.json`.
+
 ## 1. Establish the target
 
 For greenfield builds, write `src/art-direction.md` before any code.

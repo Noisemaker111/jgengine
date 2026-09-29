@@ -202,11 +202,14 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(css).toContain('@source "../node_modules/@jgengine/editor/dist"');
   });
 
-  test("standalone: engine deps pin the CLI's own version", () => {
-    const files = gameTemplate({ id: "pin-probe", name: "Pin Probe", variant: "standalone", engineVersion: "1.2.3" });
-    const pkg = JSON.parse(fileOf(files, "package.json")) as { dependencies: Record<string, string> };
-    expect(pkg.dependencies["@jgengine/shell"]).toBe("^1.2.3");
-  });
+  for (const dimension of ["2d", "3d"] as const) {
+    test(`${dimension} standalone pins the exact CLI separately from SDK ranges`, () => {
+      const files = gameTemplate({ id: "pin-probe", name: "Pin Probe", variant: "standalone", engineVersion: "1.2.3", cliVersion: "0.16.0-next.2", dimension });
+      const pkg = JSON.parse(fileOf(files, "package.json")) as { dependencies: Record<string, string>; devDependencies: Record<string, string> };
+      expect(pkg.dependencies["@jgengine/shell"]).toBe("^1.2.3");
+      expect(pkg.devDependencies.jgengine).toBe("0.16.0-next.2");
+    });
+  }
 
   for (const variant of ["standalone", "in-repo"] as const) {
     test(`${variant}: scaffold walks out of the box (DEFAULT_WALK_CODES + interact)`, () => {
@@ -277,6 +280,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
     expect(fileOf(files, "src/game/ui/GameUI.tsx")).not.toContain("outcome");
     // No editor summon → no editor dep → drop its @source so Tailwind isn't pointed at a missing package.
     expect(fileOf(files, "src/index.css")).not.toContain("@jgengine/editor");
+    expect(JSON.parse(fileOf(files, "package.json")).dependencies["@jgengine/editor"]).toBeUndefined();
   });
 
   test("starter scene puts its goal and props ahead of the spawn's default +Z facing", () => {

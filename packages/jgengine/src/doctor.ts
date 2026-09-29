@@ -2,7 +2,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { gameSkeletonRequiredSummary, isAllowedGameSrcEntry } from "./gameShape";
-import { findWorkspaceRoot, readPackageJson, type PackageJson } from "./pkg";
+import { cliVersion, findWorkspaceRoot, readPackageJson, sdkVersion, type PackageJson } from "./pkg";
+import { installedSdkVersions, sdkMinorNewer } from "./compatibility";
 import { assessPrototypeLook } from "./prototypeLook";
 import { IN_REPO_TSCONFIG_PATHS } from "./templates";
 
@@ -52,6 +53,12 @@ export function diagnose(dir: string): Finding[] {
   }
 
   const engineDeps = allEngineDeps(pkg);
+  const newerSdk = installedSdkVersions(dir).filter(entry => sdkMinorNewer(entry.version, sdkVersion()));
+  findings.push({
+    ok: newerSdk.length === 0,
+    label: "running CLI supports installed SDK minor",
+    fix: `jgengine CLI ${cliVersion()} targets SDK ${sdkVersion()}, but installed ${newerSdk.map(entry => `${entry.name}@${entry.version}`).join(", ")} — update the project's jgengine devDependency to a CLI supporting this SDK`,
+  });
   findings.push({
     ok: Object.keys(engineDeps).length > 0,
     label: "@jgengine/* dependencies declared",
