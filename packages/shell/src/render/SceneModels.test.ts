@@ -1,4 +1,5 @@
 import { describe, expect, mock, test } from "bun:test";
+import { PendingFrame } from "./frameReady";
 import { Suspense, type ReactNode } from "react";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
@@ -114,6 +115,6 @@ describe("IsolatedModelPart", () => {
     expect(element.props.url).toBe(MODEL.url);
     expect(element.props.fallback).toBeNull();
     expect(element.props.children.type).toBe(Suspense);
-    expect(element.props.children.props.fallback).toBeNull();
+    expect((element.props.children.props.fallback as { type: unknown }).type).toBe(PendingFrame);
   });
 });

@@ -1,3 +1,4 @@
+import { PendingFrame } from "../render/frameReady";
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
@@ -179,7 +180,7 @@ export function InstancedScatter({
         return geometry === undefined ? null : <ScatterBatchMesh key={batch.key} batch={batch} geometry={geometry} />;
       })}
       {modelSpecies.map(([item, species]) => (
-        <Suspense key={item} fallback={null}>
+        <Suspense key={item} fallback={<PendingFrame />}>
           <ScatterModelSpecies model={species.model} batches={species.batches} />
         </Suspense>
       ))}

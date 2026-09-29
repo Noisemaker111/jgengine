@@ -90,6 +90,7 @@ import { FrameRateLimiter } from "./drivers/FrameRateLimiter";
 import { FpsCounter, FpsProbe, type FrameTally } from "./diagnostics/FpsCounter";
 import { ConfiguredLighting, BackdropFog } from "./render/SceneLighting";
 import { WorldView, RemotePlayers } from "./world/WorldScene";
+import { FrameReady } from "./render/frameReady";
 import { FrameDriver } from "./drivers/FrameDriver";
 import { GamepadSource } from "./input/gamepadSource";
 import { SplitScreenRenderer, useSeatViewports } from "./camera/Viewports";
@@ -535,6 +536,7 @@ export function Shell3dPresentation({
                 gl={{ preserveDrawingBuffer: true, powerPreference: "high-performance" }}
                 style={{ touchAction: "none" }}
               >
+                <FrameReady />
                 <TextureFiltering anisotropy={graphics.profile.anisotropy} />
                 {graphics.frameRateLimit > 0 && !poster ? <FrameRateLimiter fps={graphics.frameRateLimit} /> : null}
                 {graphics.showFps ? <FpsProbe tally={frameTally} /> : null}

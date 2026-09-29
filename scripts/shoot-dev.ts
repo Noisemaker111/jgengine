@@ -16,6 +16,7 @@ import {
   DEVICES,
   applyDevice,
   captureViewportPng,
+  clearOriginStorage,
   checkoutIdentity,
   ensureDevServer,
   ensureWebServer,
@@ -78,6 +79,7 @@ type DeviceArg = Device | "both";
 type Args = {
   game: string;
   mode: Mode;
+  modeExplicit: boolean;
   device: DeviceArg;
   size: SizeMode;
   stage?: boolean;
@@ -98,6 +100,7 @@ type Args = {
   site?: string;
   connect?: number;
   keep: boolean;
+  reuseStorage: boolean;
   inspect: boolean;
   help: boolean;
   timeoutMs: number;
@@ -138,7 +141,7 @@ const HELP = `bun run shoot [game] [options]
   --look-from <dist[,height[,angle]]>
                       vantage for --look (default 12,5,0; angle in radians)
   --view <name>       replay a framing the game declares in capture.views — the
-                      same camera, staging, and settle every run, so a
+                      Defaults to live play. Same camera, staging, and settle every run, so a
                       before/after pair is the same view by construction rather
                       than two hand-typed flag sets that drifted. Any explicit
                       flag still wins over the view's value. With no name (or
@@ -146,8 +149,8 @@ const HELP = `bun run shoot [game] [options]
   --list-views        list the game's declared capture.views and exit
   --out <path>        explicit output path
   --url <url>         capture an arbitrary URL instead of the dev runner
-                      (page MUST set document.documentElement.dataset.jgCapture
-                      = "ready" when the frame is honest; otherwise shoot times out)
+                      (native shell hosts supply readiness; custom renderers set
+                      document.documentElement.dataset.jgCapture = "ready" after drawing)
   --site <path>       capture a route from the managed apps/web server, e.g.
                       --site '/playground?inspect=1&junction=5'
   --connect <port>    attach to an already-running Chrome (skips launch/kill)
@@ -155,6 +158,7 @@ const HELP = `bun run shoot [game] [options]
                       running after this shot — pair with --connect <port>
                       on every following shot in the loop (warm-loop pattern)
   --serve             keep Chrome warm; start the requested Vite lazily
+  --reuse-storage    keep origin storage to capture a saved-world restore flow
   --inspect           run the pixel-metrics pass on the PNG we already have
                       in memory (no second browser launch) and write
                       shots/<name>.metrics.json beside it
@@ -181,10 +185,12 @@ function parseArgs(argv: string[]): Args {
   const args: Args = {
     game: "world-of-warcraft",
     mode: "ui",
+    modeExplicit: false,
     device: "desktop",
     size: "full",
     connect: undefined,
     keep: false,
+    reuseStorage: false,
     inspect: false,
     help: false,
     listFixtures: false,
@@ -195,7 +201,10 @@ function parseArgs(argv: string[]): Args {
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === "--game") args.game = argv[++index] ?? args.game;
-    else if (value === "--mode") args.mode = (argv[++index] as Mode) ?? args.mode;
+    else if (value === "--mode") {
+      args.mode = (argv[++index] as Mode) ?? args.mode;
+      args.modeExplicit = true;
+    }
     else if (value === "--device") {
       const device = argv[++index] as DeviceArg | undefined;
       if (device !== "desktop" && device !== "mobile" && device !== "mobile-landscape" && device !== "both") {
@@ -252,6 +261,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--site") args.site = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
     else if (value === "--keep") args.keep = true;
+    else if (value === "--reuse-storage") args.reuseStorage = true;
     else if (value === "--inspect") args.inspect = true;
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value === "--timeout") {
@@ -260,6 +270,7 @@ function parseArgs(argv: string[]): Args {
     }
     else if (!value.startsWith("--")) args.game = value;
   }
+  if (!args.modeExplicit && args.view !== undefined) args.mode = "play";
   if (args.mode === "preview" && args.preview === undefined) args.preview = "";
   if (args.site !== undefined && !args.timeoutExplicit) {
     args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
@@ -427,6 +438,7 @@ async function shootOne(
     await applyDevice(session, device, args.size);
     mark("device");
     const url = targetUrl(args, device, devBase);
+    if (!args.reuseStorage) await clearOriginStorage(session, new URL(url).origin);
     await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS);
     mark("ready");
     await reportAppliedAim(session, args);
@@ -480,6 +492,10 @@ async function shootOne(
     // Viewport metrics are scored on every shot, not only under --inspect: a dead 3D view
     // that nobody opens the PNG to notice is the failure this rung exists to catch. Skipped
     // when the region is mostly covered (a HUD/menu capture has no 3D view to judge).
+    if (viewport === null && regions.region !== undefined && args.mode === "play" && args.state === undefined && args.preview === undefined) {
+      console.error(`shoot [${label}]: the HUD masks the viewport — live-world pixels could not be verified`);
+      ok = false;
+    }
     if (viewport !== null) {
       const dead = deadViewport(viewport);
       if (dead !== null) {

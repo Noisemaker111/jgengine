@@ -926,24 +926,35 @@ export async function captureViewportPng(
   return { bytes: Buffer.from(data, "base64"), via: "screenshot" };
 }
 
-/**
- * Poll `data-jg-capture` until the page reports an honest frame (`ready`) or
- * surfaces an error, shared by shoot and drive. Throws with the page-reported
- * detail on error, or on timeout.
- */
+/** Wait for a page readiness mutation once; no browser round-trip polling. */
 export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const remote = await session.evaluate<{ status: string | null; error: string | null }>(`({
-      status: document.documentElement.dataset.jgCapture ?? null,
-      error: document.documentElement.dataset.jgCaptureError ?? null
-    })`);
-    const status = remote?.status;
-    if (status === "ready") return;
-    if (status === "error") throw new Error(`capture error: ${remote?.error ?? "unknown"}`);
-    await new Promise((r) => setTimeout(r, 100));
-  }
+  const remote = await session.evaluate<{ status: string; error: string | null }>(`new Promise((resolve) => {
+    const root = document.documentElement;
+    const finish = (status) => {
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve({ status, error: root.dataset.jgCaptureError ?? null });
+    };
+    const check = () => {
+      const status = root.dataset.jgCapture;
+      if (status === "ready" || status === "error") finish(status);
+    };
+    const observer = new MutationObserver(check);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-jg-capture"] });
+    const timer = setTimeout(() => finish("timeout"), ${timeoutMs});
+    check();
+  })`, { awaitPromise: true });
+  if (remote?.status === "ready") return;
+  if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
   throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+}
+
+/** Clear saved worlds before shoot/drive navigation; a warm browser must still start a clean run. */
+export async function clearOriginStorage(session: CdpSession, origin: string): Promise<void> {
+  await session.send("Storage.clearDataForOrigin", {
+    origin,
+    storageTypes: "local_storage,indexeddb,websql,cache_storage,service_workers",
+  });
 }
 
 function exceptionMessage(params: Record<string, unknown>): string {
@@ -1096,7 +1107,6 @@ const readinessInstalled = new WeakSet<CdpSession>();
  */
 async function installReadinessSignal(session: CdpSession): Promise<void> {
   if (readinessInstalled.has(session)) return;
-  readinessInstalled.add(session);
   // Runs at document start, before <html> exists — hence the two-stage attach.
   const source = `(() => {
     const check = () => {
@@ -1125,6 +1135,7 @@ async function installReadinessSignal(session: CdpSession): Promise<void> {
   })()`;
   await session.send("Runtime.addBinding", { name: CAPTURE_SIGNAL_BINDING });
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source });
+  readinessInstalled.add(session);
 }
 
 /** Navigate and surface browser/page failures instead of waiting for the capture timeout. */
@@ -1135,19 +1146,24 @@ export async function navigateCapturePage(
 ): Promise<void> {
   let pageFailure: string | undefined;
   let frameId: string | undefined;
+  let settle!: () => void;
+  const changed = new Promise<void>((resolve) => { settle = resolve; });
   let signalled: { status: string | null; error: string | null } | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const requestFrames = new Map<string, string>();
   const pendingDocumentFailures: Array<{ frameId?: string; message: string }> = [];
   const offSignal = session.on("Runtime.bindingCalled", (params) => {
     if (params.name !== CAPTURE_SIGNAL_BINDING || typeof params.payload !== "string") return;
     try {
       signalled = JSON.parse(params.payload) as { status: string | null; error: string | null };
+      if (signalled.status === "ready" || signalled.status === "error") settle();
     } catch {
-      /* malformed payload — the poll below still reads the real flag */
+      /* ignore malformed binding payloads */
     }
   });
   const offException = session.on("Runtime.exceptionThrown", (params) => {
     pageFailure ??= exceptionMessage(params);
+    settle();
   });
   const offRequest = session.on("Network.requestWillBeSent", (params) => {
     if (params.type !== "Document") return;
@@ -1161,11 +1177,14 @@ export async function navigateCapturePage(
     const failedFrameId = typeof params.requestId === "string" ? requestFrames.get(params.requestId) : undefined;
     const message = `page load failed: ${errorText}`;
     if (frameId === undefined) pendingDocumentFailures.push({ frameId: failedFrameId, message });
-    else if (failedFrameId === undefined || failedFrameId === frameId) pageFailure ??= message;
+    else if (failedFrameId === undefined || failedFrameId === frameId) {
+      pageFailure ??= message;
+      settle();
+    }
   });
   try {
     await session.send("Network.enable");
-    await installReadinessSignal(session).catch(() => {});
+    await installReadinessSignal(session);
     const navigation = await session.send("Page.navigate", { url });
     if (typeof navigation.errorText === "string" && navigation.errorText.length > 0) {
       throw new Error(`navigation failed for ${url}: ${navigation.errorText}`);
@@ -1176,28 +1195,15 @@ export async function navigateCapturePage(
     );
     if (matchingFailure !== undefined) pageFailure ??= matchingFailure.message;
 
-    const deadline = Date.now() + timeoutMs;
-    // The pushed signal is the fast path; the evaluate below is the backstop, polled slowly
-    // so it does not itself compete with the page for the main thread.
-    let nextPollAt = Date.now();
-    while (Date.now() < deadline) {
-      if (pageFailure !== undefined) throw new Error(pageFailure);
-      const remote =
-        signalled ??
-        (Date.now() >= nextPollAt
-          ? ((nextPollAt = Date.now() + 500),
-            await session.evaluate<{ status: string | null; error: string | null }>(`({
-              status: document.documentElement.dataset.jgCapture ?? null,
-              error: document.documentElement.dataset.jgCaptureError ?? null
-            })`))
-          : undefined);
-      if (remote?.status === "ready") return;
-      if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
     if (pageFailure !== undefined) throw new Error(pageFailure);
+    timer = setTimeout(settle, timeoutMs);
+    await changed;
+    if (pageFailure !== undefined) throw new Error(pageFailure);
+    if (signalled?.status === "ready") return;
+    if (signalled?.status === "error") throw new Error(`capture error: ${signalled.error ?? "unknown"}`);
     throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
   } finally {
+    if (timer !== undefined) clearTimeout(timer);
     offSignal();
     offException();
     offRequest();
@@ -1225,10 +1231,7 @@ export async function navigateCapturePageWithRetry(
         `capture attempt ${attempt} hit a stale page after HMR (${message}) - settling ${settleMs}ms, then reloading fresh`,
       );
       await new Promise((resolve) => setTimeout(resolve, settleMs));
-      const deadline = Date.now() + 5_000;
-      while (Date.now() < deadline && !(await isUp(serverBase))) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-      }
+      if (!(await isUp(serverBase))) throw new Error(`capture dev server unavailable after HMR: ${serverBase}`);
       await session.send("Network.setCacheDisabled", { cacheDisabled: true });
     }
   }
