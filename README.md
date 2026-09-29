@@ -84,7 +84,7 @@ bun run check-types
 bun run test
 bun run gen           # regenerate every committed derived artifact, in dependency order
 bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral ./Games at the pinned commit
-bun run games:update # move an existing clone to the pin; games:bump pins the games repo's latest main
+bun run games:update # move an existing clone to the pin; games:bump pins the games repo's latest stable
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
 # a cloned game standalone:
 bun run --cwd Games/vice-isle dev
