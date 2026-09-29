@@ -60,6 +60,19 @@ export interface AbilitySlotRetune {
   resourceCost?: number;
 }
 
+/** Mutable kit state; slot/group definitions and any bound resource are saved by the caller. */
+export interface AbilityKitState {
+  slots: {
+    id: string;
+    cooldownMs: number;
+    resourceCost: number;
+    charges: number;
+    rechargeRemainingMs: number;
+    flashRemainingMs: number;
+  }[];
+  groups: { id: string; remainingMs: number }[];
+}
+
 export type AbilityCastResult =
   | { ok: true; slot: AbilitySlotSnapshot }
   | { ok: false; reason: AbilityCastReason; slot: AbilitySlotSnapshot | null };
@@ -67,8 +80,12 @@ export type AbilityCastResult =
 export interface AbilityKit {
   slots(): readonly string[];
   config(slotId: string): AbilitySlotConfig | null;
+  /** Detached persistence state, including in-flight timers and slot retuning. */
+  state(): AbilityKitState;
   state(slotId: string, resourceAvailable?: number): AbilitySlotSnapshot | null;
   snapshot(resourceAvailable?: number): AbilitySlotSnapshot[];
+  /** Restore without spending resources; returns false without mutation for mismatched slot/group ids. */
+  restore(next: AbilityKitState): boolean;
   canCast(slotId: string, resourceAvailable?: number): AbilityCastResult;
   cast(slotId: string, resourceAvailable?: number): AbilityCastResult;
   tick(dtSeconds: number): void;
@@ -198,6 +215,29 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[], options:
     return { ok: true, slot: snapshotOf(runtime, resourceAvailable, groupBlockOf(runtime)) };
   }
 
+  function state(): AbilityKitState;
+  function state(slotId: string, resourceAvailable?: number): AbilitySlotSnapshot | null;
+  function state(slotId?: string, resourceAvailable?: number): AbilityKitState | AbilitySlotSnapshot | null {
+    if (slotId !== undefined) {
+      const runtime = runtimes.get(slotId);
+      return runtime === undefined ? null : snapshotOf(runtime, currentResource(resourceAvailable), groupBlockOf(runtime));
+    }
+    return {
+      slots: order.map((id) => {
+        const runtime = runtimes.get(id)!;
+        return {
+          id,
+          cooldownMs: runtime.config.cooldownMs,
+          resourceCost: runtime.config.resourceCost,
+          charges: runtime.charges,
+          rechargeRemainingMs: runtime.rechargeRemainingMs,
+          flashRemainingMs: runtime.flashRemainingMs,
+        };
+      }),
+      groups: Array.from(groupRemaining, ([id, remainingMs]) => ({ id, remainingMs })),
+    };
+  }
+
   return {
     slots() {
       return order.slice();
@@ -205,16 +245,32 @@ export function createAbilityKit(configs: readonly AbilitySlotConfig[], options:
     config(slotId) {
       return runtimes.get(slotId)?.config ?? null;
     },
-    state(slotId, resourceAvailable) {
-      const runtime = runtimes.get(slotId);
-      return runtime === undefined ? null : snapshotOf(runtime, currentResource(resourceAvailable), groupBlockOf(runtime));
-    },
+    state,
     snapshot(resourceAvailable) {
       const available = currentResource(resourceAvailable);
       return order.map((slotId) => {
         const runtime = runtimes.get(slotId)!;
         return snapshotOf(runtime, available, groupBlockOf(runtime));
       });
+    },
+    restore(next) {
+      if (
+        next.slots.length !== runtimes.size || next.groups.length !== groupRemaining.size ||
+        new Set(next.slots.map((slot) => slot.id)).size !== runtimes.size ||
+        new Set(next.groups.map((group) => group.id)).size !== groupRemaining.size ||
+        next.slots.some((slot) => !runtimes.has(slot.id)) ||
+        next.groups.some((group) => !groupRemaining.has(group.id))
+      ) return false;
+      for (const slot of next.slots) {
+        const runtime = runtimes.get(slot.id)!;
+        runtime.config.cooldownMs = Math.max(0, slot.cooldownMs);
+        runtime.config.resourceCost = Math.max(0, slot.resourceCost);
+        runtime.charges = Math.max(0, Math.min(runtime.config.chargesMax, slot.charges));
+        runtime.rechargeRemainingMs = Math.max(0, slot.rechargeRemainingMs);
+        runtime.flashRemainingMs = Math.max(0, slot.flashRemainingMs);
+      }
+      for (const group of next.groups) groupRemaining.set(group.id, Math.max(0, group.remainingMs));
+      return true;
     },
     canCast(slotId, resourceAvailable) {
       return evaluate(slotId, currentResource(resourceAvailable));

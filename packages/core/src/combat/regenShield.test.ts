@@ -52,6 +52,36 @@ describe("createRegenShield", () => {
     expect(shield.current()).toBe(100);
     expect(shield.suppressed()).toBe(true);
   });
+
+  test("refill adds points without clearing suppression", () => {
+    const shield = createRegenShield({ max: 100, regenPerSecond: 10, regenDelayMs: 1000 });
+    shield.damage(80);
+    shield.refill(30);
+    expect(shield.current()).toBe(50);
+    expect(shield.suppressed()).toBe(true);
+  });
+
+  test("JSON restore resumes resized bounds, grace timing, and a live delay override", () => {
+    const config = { max: 100, regenPerSecond: 20, regenDelayMs: 1000 };
+    const original = createRegenShield(config);
+    original.setMax(150);
+    original.damage(40);
+    original.tick(0.4, { regenDelayMs: 2000 });
+    const saved = original.state();
+    const resumed = createRegenShield(config);
+    expect(resumed.restore(JSON.parse(JSON.stringify(saved)))).toBe(true);
+    expect(resumed.state()).toEqual(original.state());
+    expect(resumed.max()).toBe(150);
+    expect(resumed.suppressed()).toBe(true);
+    saved.current = 999;
+    for (const dt of [0.4, 0.4, 0.4, 0.5]) {
+      original.tick(dt, { regenDelayMs: 2000 });
+      resumed.tick(dt, { regenDelayMs: 2000 });
+      expect(resumed.state()).toEqual(original.state());
+    }
+    expect(resumed.suppressed()).toBe(false);
+    expect(resumed.current()).toBe(70);
+  });
 });
 
 describe("pool-backed shields", () => {
@@ -152,5 +182,35 @@ describe("pool-backed shields", () => {
     shield.restore(30);
     expect(stat.value()).toBe(45);
     expect(shield.suppressed()).toBe(true);
+  });
+
+  test("JSON restore writes the pool and retains a pending external hit for the next tick", () => {
+    const first = statPool(100, 100);
+    const second = statPool(10, 100);
+    const config = { max: 0, regenPerSecond: 50, regenDelayMs: 1000 };
+    const original = createRegenShield({ ...config, pool: first.pool });
+    first.hit(40);
+    const saved = original.state();
+    const resumed = createRegenShield({ ...config, pool: second.pool });
+    expect(resumed.restore(JSON.parse(JSON.stringify(saved)))).toBe(true);
+    expect(second.value()).toBe(60);
+    expect(resumed.state()).toEqual(original.state());
+    for (const dt of [0.2, 0.5, 0.6]) {
+      original.tick(dt);
+      resumed.tick(dt);
+      expect(resumed.state()).toEqual(original.state());
+      expect(second.value()).toBe(first.value());
+    }
+    expect(second.value()).toBe(90);
+  });
+
+  test("rejects incompatible pool bounds without moving the pool or timer", () => {
+    const stat = statPool(50, 100);
+    const shield = createRegenShield({ max: 0, regenPerSecond: 10, regenDelayMs: 1000, pool: stat.pool });
+    shield.damage(10);
+    const before = shield.state();
+    expect(shield.restore({ ...before, max: 200, current: 5, sinceDamageMs: 999 })).toBe(false);
+    expect(shield.state()).toEqual(before);
+    expect(stat.value()).toBe(40);
   });
 });

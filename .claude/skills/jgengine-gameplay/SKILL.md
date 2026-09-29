@@ -15,6 +15,13 @@ Existing projects can keep player state and saves behind `LevelingStatAccess`.
 Follow the [portable XP/leveling recipe](recipes/portable-xp-leveling.md) for
 custom stat ids, immutable store writes, multiple level events, and JSON resume.
 
+Persist rolled items with `createItemInstanceRegistry` (`item/itemInstanceRegistry`):
+`state()` detaches definitions, runtime ids, prefix, and allocation sequence;
+`restore(state)` replaces the registry and rejects a different prefix. Keep
+definitions structured-cloneable and JSON-compatible for JSON saves. Save the
+inventory's returned runtime ids alongside this state; do not regenerate rolls
+or infer the next id from the surviving items.
+
 ## Canonical workflow
 
 1. Define plain serializable state and stable ids.

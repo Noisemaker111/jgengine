@@ -181,7 +181,7 @@ export interface LifecycleConfig<TState = unknown> {
 /**
  * How a game declares its run-phase story to {@link defineGameDefinition}. Every game states this
  * explicitly so the shell never has to guess — a silent game used to default to `"playing"`, which
- * painted the touch dock over title/menu/results screens (#1337, Vice Isle #1329).
+ * painted the touch dock over title/menu/results screens (#1337, Harbor Heat #1329).
  *
  * - A {@link LifecycleConfig} — the game moves through menu/playing/paused/ended run states; the
  *   runtime owns the command glue and phase sync.

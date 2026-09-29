@@ -9,7 +9,7 @@ import { join } from "node:path";
  *
  *   bun run games:clone          clone at the pin (no-op when Games/ exists)
  *   bun run games:update         move an existing clone to the pin
- *   bun run games:bump           write the games repo's current main SHA into the pin, then update
+ *   bun run games:bump           write the games repo's current stable SHA into the pin, then update
  *   bun scripts/ensure-games.ts --check   report whether Games/ matches the pin
  *
  * GAMES_REF=<sha|branch> overrides the pin for a one-off local try.
@@ -52,10 +52,10 @@ function checkoutPinned(ref: string): boolean {
 const args = process.argv.slice(2);
 
 if (args.includes("--bump")) {
-  const line = output(["ls-remote", gamesRepoUrl(), "refs/heads/main"]);
+  const line = output(["ls-remote", gamesRepoUrl(), "refs/heads/stable"]);
   const sha = line?.split(/\s+/)[0];
   if (!sha || !/^[0-9a-f]{40}$/.test(sha)) {
-    console.error("ensure-games: could not read JGengine-games main");
+    console.error("ensure-games: could not read JGengine-games stable");
     process.exit(1);
   }
   writeFileSync(refFile, `${sha}\n`);

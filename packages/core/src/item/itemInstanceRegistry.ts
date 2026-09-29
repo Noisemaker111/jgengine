@@ -1,3 +1,10 @@
+/** Save data for a registry; definitions must be structured-cloneable and use the caller's serialization format. */
+export interface ItemInstanceRegistryState<TDef> {
+  prefix: string;
+  sequence: number;
+  entries: [string, TDef][];
+}
+
 /**
  * A runtime store for procedurally generated item instances — a rolled unique gun, a rolled
  * affixed relic — keyed by a generated id distinct from any static catalog id. The counterpart a
@@ -5,6 +12,10 @@
  * rolls never need a hand-rolled parallel registry (#536.1).
  */
 export interface ItemInstanceRegistry<TDef> {
+  /** Detached definitions and allocator state, including ids of released instances in the sequence. */
+  state(): ItemInstanceRegistryState<TDef>;
+  /** Replace the registry; returns false without mutation when the id prefix differs. */
+  restore(next: ItemInstanceRegistryState<TDef>): boolean;
   /** Stores `def` under a fresh generated id derived from `baseId`; returns that id. */
   register(baseId: string, def: TDef): string;
   get(id: string): TDef | undefined;
@@ -25,6 +36,15 @@ export function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceR
   const store = new Map<string, TDef>();
 
   return {
+    state: () => ({ prefix, sequence: seq, entries: structuredClone(Array.from(store)) }),
+    restore(next) {
+      if (next.prefix !== prefix) return false;
+      const entries = structuredClone(next.entries);
+      store.clear();
+      for (const [id, def] of entries) store.set(id, def);
+      seq = next.sequence;
+      return true;
+    },
     register(baseId, def) {
       seq += 1;
       const id = `${prefix}:${baseId}:${seq}`;

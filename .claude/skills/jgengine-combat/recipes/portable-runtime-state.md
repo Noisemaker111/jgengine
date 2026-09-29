@@ -1,8 +1,8 @@
 # Save and restore closure-backed combat runtimes
 
-Use this recipe when an existing project wants JGengine's convenient magazine
-or stat-modifier runtime but keeps its own save system, clock, entities, and
-authority. Both runtimes expose detached plain snapshots; no JGengine store or
+Use this recipe when an existing project wants JGengine's combat runtimes but
+keeps its own save system, clock, entities, and authority. The runtimes expose
+detached plain state; no JGengine store or
 `GameContext` is required.
 
 ## Install and focused imports
@@ -132,11 +132,43 @@ and restores that reserve directly. For a caller-owned `MagazineReserve`, save
 and restore the caller's reserve first; `restore` returns `false` rather than
 partially changing loaded/reload state when it cannot reconcile the reserve.
 
+## Abilities, shields, and meters
+
+Ability kits, shields, and meters use the same save boundary:
+
+```ts
+const saved = JSON.stringify({
+  abilities: kit.state(),
+  shield: shield.state(),
+  heat: heat.state(),
+});
+const decoded = JSON.parse(saved);
+if (!kit.restore(decoded.abilities)) throw new Error("ability slot/group ids differ");
+if (!shield.restore(decoded.shield)) throw new Error("external shield pool max differs");
+heat.restore(decoded.heat);
+```
+
+`AbilityKit.state()` contains charges, separate recharge/flash/group timers,
+and retuned cooldowns/costs. `state(slotId, resourceAvailable?)` and `snapshot()`
+remain HUD views. Rebuild with the same slot/group definitions; save any bound
+resource separately. Restore never spends it.
+
+`RegenShield.state()` includes mutable bounds, pool value, grace timing, the
+active delay override, and the last external-pool observation. Restore writes
+the pool value, preserving even damage waiting to be observed on the next tick;
+the caller's pool must already have the saved max. Use `refill(amount)` for
+pickups; numeric `restore(amount)` remains a deprecated compatibility alias.
+
+`EventMeter.state()` and `AccumulatorMeter.state()` contain value, the hold
+latch, and the decay-delay timer. Rebuild with the same meter configuration.
+For caller-owned visibility policy, `heat.tick(dt, !sourceVisible)` pauses both
+decay and its delay while seen; omitting the second argument advances normally.
+
 ## Ownership
 
 The existing project owns save versioning, entity identity, clock value,
 reserve state, networking/rollback policy, content, and when ticks occur.
-JGengine owns the closure convenience methods, snapshot encoding shape,
+JGengine owns the closure convenience methods, state encoding shape,
 detached copies, and deterministic continuation once the caller supplies the
 same config and clock.
 

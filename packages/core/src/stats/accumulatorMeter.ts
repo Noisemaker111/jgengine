@@ -21,7 +21,18 @@ export interface MeterAddResult {
   tierChanged: boolean;
 }
 
+/** Mutable meter value, hold latch, and time since the last gain. */
+export interface AccumulatorMeterState {
+  value: number;
+  broken: boolean;
+  idleMs: number;
+}
+
 export interface AccumulatorMeter {
+  /** Detached state for persistence and deterministic continuation. */
+  state(): AccumulatorMeterState;
+  /** Restore using the caller's existing configuration. */
+  restore(next: AccumulatorMeterState): void;
   value(): number;
   fraction(): number;
   tier(): string | null;
@@ -67,6 +78,12 @@ export function createAccumulatorMeter(config: AccumulatorMeterConfig): Accumula
   }
 
   return {
+    state: () => ({ value, broken, idleMs }),
+    restore(next) {
+      value = clamp(next.value);
+      broken = next.broken;
+      idleMs = Math.max(0, next.idleMs);
+    },
     value() {
       return value;
     },
