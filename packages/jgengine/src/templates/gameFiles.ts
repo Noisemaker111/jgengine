@@ -323,8 +323,20 @@ export function launchChrome(port, prefix) {
       "--disable-dev-shm-usage",
       "about:blank",
     ],
-    { stdio: "ignore" },
+    { stdio: ["ignore", "ignore", "pipe"], windowsHide: true },
   );
+  child.debuggerReady = new Promise((resolve, reject) => {
+    let output = "";
+    let ready = false;
+    child.stderr.on("data", (chunk) => {
+      if (ready) return;
+      output += chunk.toString();
+      if (output.includes("DevTools listening on")) { ready = true; output = ""; resolve(); }
+    });
+    child.once("error", reject);
+    child.once("exit", (code) => reject(new Error("Chrome exited before debugger readiness: " + code)));
+  });
+  child.debuggerReady.catch(() => {});
   return child;
 }
 
@@ -337,40 +349,58 @@ export async function isUp(url) {
   }
 }
 
-export async function waitForDebugger(port, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const r = await fetch("http://127.0.0.1:" + port + "/json/version", { signal: AbortSignal.timeout(500) });
-      if (r.ok) return;
-    } catch {
-      /* retry */
-    }
-    await sleep(150);
+export async function waitForDebugger(port, timeoutMs, chrome) {
+  let timer;
+  try {
+    await Promise.race([
+      chrome.debuggerReady,
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Chrome debugger never came up on port " + port)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
-  throw new Error("Chrome debugger never came up on port " + port);
 }
 
 /** Start the game's Vite dev server if nothing is already serving base. */
 export async function ensureDevServer(base, port) {
   if (await isUp(base)) return null;
-  const bin = join(process.cwd(), "node_modules", ".bin", process.platform === "win32" ? "vite.cmd" : "vite");
+  const bin = join(process.cwd(), "node_modules", "vite", "bin", "vite.js");
   if (!existsSync(bin)) {
     throw new Error(
-      "nothing is serving " + base + " and node_modules/.bin/vite is missing.\\n" +
+      "nothing is serving " + base + " and the installed Vite entry is missing.\\n" +
         "Start your dev server first (bun dev) or run 'bun install'.",
     );
   }
-  const child = spawn(bin, ["--port", String(port), "--host", "127.0.0.1", "--strictPort"], {
-    stdio: "ignore",
+  const child = spawn(process.execPath, [bin, "--port", String(port), "--host", "127.0.0.1", "--strictPort"], {
+    stdio: ["ignore", "pipe", "pipe"],
     detached: process.platform !== "win32",
+    windowsHide: true,
   });
-  for (let i = 0; i < 120; i += 1) {
-    await sleep(500);
-    if (await isUp(base)) return child;
+  let timer;
+  try {
+    await new Promise((resolve, reject) => {
+      let output = "";
+      let ready = false;
+      child.stdout.on("data", (chunk) => {
+        if (ready) return;
+        output += chunk.toString();
+        if (output.includes("http://127.0.0.1:" + port)) { ready = true; output = ""; resolve(); }
+      });
+      child.stderr.on("data", () => {});
+      child.once("error", reject);
+      child.once("exit", (code) => reject(new Error("dev server exited before readiness: " + code)));
+      timer = setTimeout(() => reject(new Error("dev server never became ready on " + base)), 60_000);
+    });
+    if (!(await isUp(base))) throw new Error("dev server announced readiness but did not serve " + base);
+    return child;
+  } catch (error) {
+    shutdown({ kill() {} }, child);
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
-  child.kill();
-  throw new Error("dev server failed to start on port " + port);
 }
 
 export class Cdp {
@@ -378,6 +408,7 @@ export class Cdp {
     this.ws = ws;
     this.nextId = 0;
     this.pending = new Map();
+    this.listeners = new Map();
     ws.addEventListener("message", (event) => {
       let msg;
       try {
@@ -385,7 +416,10 @@ export class Cdp {
       } catch {
         return;
       }
-      if (msg.id === undefined) return;
+      if (msg.id === undefined) {
+        for (const listener of this.listeners.get(msg.method) ?? []) listener(msg.params ?? {});
+        return;
+      }
       const waiter = this.pending.get(msg.id);
       if (waiter === undefined) return;
       this.pending.delete(msg.id);
@@ -410,6 +444,13 @@ export class Cdp {
         rej(new Error("CDP connect error"));
       });
     });
+  }
+
+  on(method, listener) {
+    const listeners = this.listeners.get(method) ?? new Set();
+    listeners.add(listener);
+    this.listeners.set(method, listeners);
+    return () => listeners.delete(listener);
   }
 
   send(method, params) {
@@ -456,12 +497,6 @@ export async function openPage(debugPort) {
   return Cdp.connect(page.webSocketDebuggerUrl, 15_000);
 }
 
-// Reads the honesty signals in one round-trip: the optional jgCapture handshake
-// (set by some hosts) plus the live canvas element size + backing-store size.
-export const HONESTY_EXPR =
-  "(function(){var r=document.documentElement;var c=document.querySelector('canvas');" +
-  "return {cap:r.dataset.jgCapture||null,err:r.dataset.jgCaptureError||null," +
-  "hasCanvas:!!c,cw:c?c.clientWidth:0,ch:c?c.clientHeight:0,bw:c?c.width:0,bh:c?c.height:0};})()";
 export const RAF_EXPR =
   "new Promise(function(res){requestAnimationFrame(function(){requestAnimationFrame(function(){res(1);});});})";
 
@@ -473,25 +508,48 @@ export function writePngAtomic(outPath, bytes) {
   renameSync(tmp, outPath);
 }
 
-export async function waitForHonestFrame(session, url, timeoutMs) {
-  const deadline = Date.now() + timeoutMs;
-  let last;
-  while (Date.now() < deadline) {
-    const s = await session.evaluate(HONESTY_EXPR);
-    last = s;
-    if (s && s.cap === "error") throw new Error("page reported a capture error: " + (s.err || "unknown"));
-    if (s && s.cap === "ready") return s;
-    if (s && s.hasCanvas && s.cw > 10 && s.ch > 10) return s;
-    await sleep(100);
+export async function navigateToFrame(session, url, timeoutMs) {
+  let complete;
+  const ready = new Promise((resolve) => { complete = resolve; });
+  const detach = session.on("Runtime.bindingCalled", (event) => {
+    if (event.name !== "__jgFrameSignal") return;
+    try { complete(JSON.parse(event.payload)); } catch { /* unrelated binding */ }
+  });
+  const detachError = session.on("Runtime.exceptionThrown", (event) => {
+    const details = event.exceptionDetails ?? {};
+    complete({ cap: "error", err: details.exception?.description ?? details.text ?? "uncaught page exception" });
+  });
+  const source = "(function(){" +
+    "var observer=new MutationObserver(check);observer.observe(document,{subtree:true,childList:true,attributes:true});" +
+    "function check(){var r=document.documentElement;if(!r)return;var c=document.querySelector('canvas');" +
+    "var cap=r.dataset.jgCapture;var frame=c&&c.hasAttribute('data-jg-frame-ready')&&c.clientWidth>10&&c.clientHeight>10;" +
+    "if(cap!=='ready'&&cap!=='error'&&!(cap===undefined&&frame))return;" +
+    "observer.disconnect();window.__jgFrameSignal(JSON.stringify({cap:cap||'ready',err:r.dataset.jgCaptureError||null," +
+    "hasCanvas:!!c,cw:c?c.clientWidth:0,ch:c?c.clientHeight:0,bw:c?c.width:0,bh:c?c.height:0}));}check();})()";
+  let timer;
+  try {
+    await session.send("Runtime.addBinding", { name: "__jgFrameSignal" });
+    await session.send("Page.addScriptToEvaluateOnNewDocument", { source });
+    const result = await session.send("Page.navigate", { url });
+    if (result.errorText) throw new Error("navigation failed: " + result.errorText);
+    timer = setTimeout(() => complete({ cap: "timeout" }), timeoutMs);
+    const frame = await ready;
+    if (frame.cap === "error") throw new Error("page reported a capture error: " + (frame.err || "unknown"));
+    if (frame.cap !== "ready") throw new Error("timed out waiting for a rendered frame at " + url +
+      " — use the current @jgengine/shell or set data-jg-capture=ready after your renderer draws");
+    return frame;
+  } finally {
+    clearTimeout(timer);
+    detach();
+    detachError();
   }
-  if (last && last.hasCanvas) return last; // canvas exists but small — capture it anyway, caller may warn
-  throw new Error(
-    "timed out after " +
-      Math.round(timeoutMs / 1000) +
-      "s waiting for a sized <canvas> at " +
-      url +
-      " — is the game being served there?",
-  );
+}
+
+export async function clearOriginStorage(session, url) {
+  await session.send("Storage.clearDataForOrigin", {
+    origin: new URL(url).origin,
+    storageTypes: "local_storage,indexeddb,websql,cache_storage,service_workers",
+  });
 }
 
 /** Decode an 8-bit, non-interlaced PNG (what Page.captureScreenshot emits) into raw pixels. */
@@ -566,35 +624,19 @@ export function isBlankFrame(pngBytes) {
   return Math.sqrt(Math.max(0, sumSq / n - mean * mean)) < 2;
 }
 
-/**
- * Capture the current frame to a PNG (atomic write). A blank viewport is retried for
- * up to blankWaitMs, then refused: nothing is written and the capture fails.
- */
-export async function screenshotTo(session, outPath, blankWaitMs = 10_000) {
-  const deadline = Date.now() + blankWaitMs;
-  for (;;) {
-    const shot = await session.send("Page.captureScreenshot", {
-      format: "png",
-      fromSurface: true,
-      captureBeyondViewport: false,
-    });
-    if (typeof shot.data !== "string" || shot.data.length === 0) {
-      throw new Error("Page.captureScreenshot returned no data");
-    }
-    const bytes = Buffer.from(shot.data, "base64");
-    if (!isBlankFrame(bytes)) {
-      writePngAtomic(outPath, bytes);
-      return;
-    }
-    if (Date.now() >= deadline) {
-      throw new Error(
-        "viewport stayed one flat color for " +
-          Math.round(blankWaitMs / 1000) +
-          "s — the game drew nothing. Check the page console, or raise --settle if it loads slowly.",
-      );
-    }
-    await sleep(500);
+/** Capture the rendered frame once; refuse a flat viewport without writing it. */
+export async function screenshotTo(session, outPath) {
+  const shot = await session.send("Page.captureScreenshot", {
+    format: "png",
+    fromSurface: true,
+    captureBeyondViewport: false,
+  });
+  if (typeof shot.data !== "string" || shot.data.length === 0) {
+    throw new Error("Page.captureScreenshot returned no data");
   }
+  const bytes = Buffer.from(shot.data, "base64");
+  if (isBlankFrame(bytes)) throw new Error("viewport is one flat color — the game drew nothing. Check the page console.");
+  writePngAtomic(outPath, bytes);
 }
 
 /** Kill the launched Chrome and (when we started it) the dev server tree. */
@@ -648,7 +690,8 @@ import {
   shutdown,
   sleep,
   waitForDebugger,
-  waitForHonestFrame,
+  navigateToFrame,
+  clearOriginStorage,
 } from "./browser.mjs";
 
 const HELP = [
@@ -661,7 +704,8 @@ const HELP = [
   "  --height <n>      viewport height override",
   "  --out <path>      output PNG (default shots/shot.png)",
   "  --settle <ms>     extra wait after first honest frame (default 2000)",
-  "  --timeout <s>     max seconds to wait for a sized canvas (default 60)",
+  "  --timeout <s>     max seconds to wait for a rendered frame (default 60)",
+  "  --reuse-storage   keep saved-world storage for this capture",
   "  --help            show this text",
   "",
   "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
@@ -679,6 +723,7 @@ function parseArgs(argv) {
     settle: 2000,
     timeoutMs: 60_000,
     help: false,
+    reuseStorage: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const v = argv[i];
@@ -690,6 +735,7 @@ function parseArgs(argv) {
     else if (v === "--out") args.out = argv[++i];
     else if (v === "--settle") args.settle = Number(argv[++i]);
     else if (v === "--timeout") args.timeoutMs = Number(argv[++i]) * 1000;
+    else if (v === "--reuse-storage") args.reuseStorage = true;
     else if (v === "--help" || v === "-h") args.help = true;
     else throw new Error("unknown argument: " + v);
   }
@@ -721,7 +767,7 @@ async function main() {
 
   let exitCode = 0;
   try {
-    await waitForDebugger(debugPort, 30_000);
+    await waitForDebugger(debugPort, 30_000, chrome);
     const session = await openPage(debugPort);
     try {
       await session.send("Page.enable");
@@ -733,8 +779,8 @@ async function main() {
         deviceScaleFactor: profile.dsf,
         mobile: profile.mobile,
       });
-      await session.send("Page.navigate", { url });
-      const frame = await waitForHonestFrame(session, url, args.timeoutMs);
+      if (!args.reuseStorage) await clearOriginStorage(session, url);
+      const frame = await navigateToFrame(session, url, args.timeoutMs);
       if (frame && frame.bw === 300 && frame.bh === 150) {
         console.error(
           "shoot: warning — canvas backing store is 300x150 (React-Three-Fiber's unsized default). " +
@@ -797,7 +843,8 @@ import {
   shutdown,
   sleep,
   waitForDebugger,
-  waitForHonestFrame,
+  navigateToFrame,
+  clearOriginStorage,
 } from "./browser.mjs";
 
 const HELP = [
@@ -816,6 +863,7 @@ const HELP = [
   "  --device <name>     desktop | mobile | mobile-landscape (default desktop)",
   "  --width/--height    viewport overrides",
   "  --timeout <s>       page-ready timeout in seconds (default 60)",
+  "  --reuse-storage    keep saved-world storage for this session",
   "",
   "Playtest (softlock/progress rung — game must expose capture.probe):",
   "  --playtest          sample probe metrics while steps run; print JSON verdict",
@@ -845,6 +893,7 @@ function parseArgs(argv) {
     softlockMs: 2000,
     epsilon: 1e-3,
     help: false,
+    reuseStorage: false,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const v = argv[i];
@@ -870,6 +919,7 @@ function parseArgs(argv) {
     else if (v === "--sample") args.sampleMs = Number(argv[++i] ?? args.sampleMs);
     else if (v === "--softlock") args.softlockMs = Number(argv[++i] ?? args.softlockMs);
     else if (v === "--epsilon") args.epsilon = Number(argv[++i] ?? args.epsilon);
+    else if (v === "--reuse-storage") args.reuseStorage = true;
     else if (v === "--help" || v === "-h") args.help = true;
     else throw new Error("unknown argument: " + v);
   }
@@ -1073,7 +1123,7 @@ async function main() {
 
   let exitCode = 0;
   try {
-    await waitForDebugger(debugPort, 30_000);
+    await waitForDebugger(debugPort, 30_000, chrome);
     const session = await openPage(debugPort);
     try {
       await session.send("Page.enable");
@@ -1084,8 +1134,8 @@ async function main() {
         deviceScaleFactor: profile.dsf,
         mobile: profile.mobile,
       });
-      await session.send("Page.navigate", { url });
-      await waitForHonestFrame(session, url, args.timeoutMs);
+      if (!args.reuseStorage) await clearOriginStorage(session, url);
+      await navigateToFrame(session, url, args.timeoutMs);
       await session.evaluate(RAF_EXPR, { awaitPromise: true });
       await sleep(500);
 

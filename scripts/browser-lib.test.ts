@@ -36,6 +36,9 @@ function fakeSession(options: {
     async send(method) {
       if (method === "Page.navigate") {
         options.onNavigate?.(emit);
+        if (options.captureStatus !== undefined) {
+          emit("Runtime.bindingCalled", { name: "__jgCaptureSignal", payload: JSON.stringify({ status: options.captureStatus, error: null }) });
+        }
         return options.navigation ?? {};
       }
       return {};
@@ -200,6 +203,24 @@ describe("capture navigation failures", () => {
   test("returns when the page declares the capture ready", async () => {
     const session = fakeSession({ captureStatus: "ready" });
     await expect(navigateCapturePage(session, "http://127.0.0.1:5712/playground", 1_000)).resolves.toBeUndefined();
+  });
+
+  test("waits for readiness pushed after navigation without evaluating the page", async () => {
+    const session = fakeSession({
+      onNavigate(emit) {
+        queueMicrotask(() => emit("Runtime.bindingCalled", {
+          name: "__jgCaptureSignal", payload: JSON.stringify({ status: "ready", error: null }),
+        }));
+      },
+    });
+    session.evaluate = async () => { throw new Error("capture must not poll"); };
+    await expect(navigateCapturePage(session, "http://127.0.0.1:5712/playground", 1_000)).resolves.toBeUndefined();
+  });
+
+  test("fails once when a page never sends readiness", async () => {
+    await expect(navigateCapturePage(fakeSession({}), "http://127.0.0.1:5712/playground", 1)).rejects.toThrow(
+      "timed out waiting for data-jg-capture=ready (1ms)",
+    );
   });
 
   test("ignores a failed document request from a subframe", async () => {

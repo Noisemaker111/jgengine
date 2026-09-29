@@ -25,6 +25,7 @@ import {
   DEVICES,
   applyDevice,
   captureViewportPng,
+  clearOriginStorage,
   ensureDevServer,
   ensureWebServer,
   navigateCapturePageWithRetry,
@@ -451,27 +452,6 @@ async function readProbe(session: CdpSession): Promise<Record<string, number> | 
       }
     })()`);
   return value ?? null;
-}
-
-/**
- * Clear localStorage / IndexedDB / origin storage for the capture target BEFORE
- * navigating to it, so a game that auto-restores a save boots clean instead of
- * resuming a prior drive's session off a warm/persistent Chrome profile (issue
- * #1505). `Storage.clearDataForOrigin` takes an explicit origin, so it works
- * from the initial `about:blank` page without a round-trip navigation. Best
- * effort: a Chrome build that lacks the verb must not abort the drive.
- */
-async function clearOriginStorage(session: CdpSession, origin: string): Promise<void> {
-  try {
-    await session.send("Storage.clearDataForOrigin", {
-      origin,
-      storageTypes: "local_storage,indexeddb,websql,cache_storage,service_workers",
-    });
-  } catch (error) {
-    console.error(
-      `drive: could not clear ${origin} storage before capture (${error instanceof Error ? error.message : error}) — a restored save may corrupt the probe; pass --reuse-storage to silence`,
-    );
-  }
 }
 
 /**

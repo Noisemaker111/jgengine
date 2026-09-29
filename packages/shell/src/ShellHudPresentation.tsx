@@ -20,6 +20,7 @@ import { TouchPlaySurface } from "./touch/TouchControlsOverlay";
  * @internal
  */
 export function markHudCaptureReady(root: { dataset: DOMStringMap }): void {
+  root.dataset.jgFrameReady = "";
   if (root.dataset.jgCapture === undefined) root.dataset.jgCapture = "ready";
 }
 

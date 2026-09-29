@@ -1,3 +1,4 @@
+import { PendingFrame } from "../render/frameReady";
 import { Suspense, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
@@ -197,7 +198,7 @@ export function InstancedBuildings({
         <BuildingKindBatch key={kind} kind={kind} matrices={matrices} palette={palette} geometry={geometry} />
       ))}
       {[...models.entries()].map(([url, instances]) => (
-        <Suspense key={url} fallback={null}>
+        <Suspense key={url} fallback={<PendingFrame />}>
           <BuildingKitBatch url={url} instances={instances} />
         </Suspense>
       ))}

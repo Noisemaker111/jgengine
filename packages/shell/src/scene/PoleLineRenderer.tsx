@@ -1,3 +1,4 @@
+import { PendingFrame } from "../render/frameReady";
 /**
  * Runtime renderer for the built-in `pole_line` scene kind: instanced poles (proxy cylinders, or a
  * GLB pole asset when one is named) plus merged tube geometry for the sagging cables. Registered by
@@ -330,9 +331,10 @@ function OnePoleLine({ object, context }: { object: SceneKindObject; context: Sc
     <>
       {modelUrl !== undefined ? (
         <Suspense
-          fallback={
+          fallback={<>
+            <PendingFrame />
             <ProxyPoles poles={resolved.poles} height={resolved.poleHeight} wireCount={resolved.wireCount} wireSpacing={resolved.wireSpacing} />
-          }
+          </>}
         >
           <ModelPoles url={modelUrl} poles={resolved.poles} />
         </Suspense>

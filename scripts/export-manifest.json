@@ -845,6 +845,7 @@
     "./render/assetBase",
     "./render/defaultSurface",
     "./render/displayColor",
+    "./render/frameReady",
     "./render/measureBounds",
     "./render/measureCollisionMesh",
     "./render/modelLoad",
