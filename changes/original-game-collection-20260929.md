@@ -5,3 +5,4 @@
 ### Changed
 
 - Development, desktop and website catalogs, native capture defaults, supporting references and coverage gates use the renamed collection. All eleven playable website covers are fresh native captures. Required third-party source and asset acknowledgments remain in the credits.
+- Art-direction checks resolve Windows file URLs correctly and check actual game entry points, excluding shared helpers, generated registry output and the design-only folder.

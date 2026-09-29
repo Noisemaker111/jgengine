@@ -37,6 +37,8 @@ function boot(game: string): Promise<number> {
         game,
         "--mode",
         "play",
+        "--size",
+        "half",
         "--timeout",
         "90",
         "--out",
