@@ -338,7 +338,7 @@ export function runCreate(argv: string[]): number {
     console.log(`  cd ${cdHint}`);
     if (!installed) console.log("  bun install   # or npm install");
     if (wantAssets && !assetsPulled) console.log(`  ${ASSETS_PULL_HINT}   # starter models into public/models`);
-    console.log("  bun dev       # walkable base: WASD + jump, HUD canvas");
+    console.log(dimension === "2d" ? "  bun dev       # board game with HUD controls" : "  bun dev       # walkable base: WASD + jump, HUD canvas");
     if (editor) {
       console.log("  # F2+E in the browser opens the scene editor on src/editor.scene.json (Ctrl+S saves)");
     }
