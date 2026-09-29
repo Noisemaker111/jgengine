@@ -33,6 +33,15 @@ export interface RegenShieldConfig {
   pool?: RegenShieldPool;
 }
 
+/** Complete mutable shield state, including pending external damage detection. */
+export interface RegenShieldState {
+  max: number;
+  current: number;
+  sinceDamageMs: number;
+  activeDelayMs: number;
+  observed: number | null;
+}
+
 /**
  * A shield pool that stops regenerating for `regenDelayMs` after every hit, then refills at
  * `regenPerSecond` — the delayed-regen primitive that replaces snapshot-comparing stat values per
@@ -40,6 +49,10 @@ export interface RegenShieldConfig {
  * regenerates once it elapses.
  */
 export interface RegenShield {
+  /** Detached pool value, bounds, and regen timing. */
+  state(): RegenShieldState;
+  /** Restore state; returns false without mutation when an external pool's max differs. */
+  restore(next: RegenShieldState): boolean;
   current(): number;
   max(): number;
   setMax(value: number): void;
@@ -51,6 +64,8 @@ export interface RegenShield {
   /** Absorb `amount` and reset the regen grace timer; returns damage that got through (0 while the shield holds). */
   damage(amount: number): number;
   /** Add `amount` without touching the regen timer (a pickup or scripted refill). */
+  refill(amount: number): void;
+  /** @deprecated Use `refill(amount)` for pickups; `restore(state)` loads persisted state. */
   restore(amount: number): void;
   set(value: number): void;
   /**
@@ -116,7 +131,30 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
     observed = live;
   }
 
+  function refill(amount: number): void {
+    if (amount <= 0) return;
+    syncExternal();
+    write(readCurrent() + amount);
+    observed = pool === undefined ? observed : readCurrent();
+  }
+
+  function restore(next: RegenShieldState): boolean;
+  function restore(amount: number): void;
+  function restore(next: RegenShieldState | number): boolean | void {
+    if (typeof next === "number") return refill(next);
+    if (pool !== undefined && readMax() !== next.max) return false;
+    if (pool === undefined) ownMax = Math.max(0, next.max);
+    write(next.current);
+    sinceDamageMs = Math.max(0, next.sinceDamageMs);
+    activeDelayMs = Math.max(0, next.activeDelayMs);
+    observed = pool === undefined ? null : next.observed;
+    return true;
+  }
+
   return {
+    state: () => ({ max: readMax(), current: readCurrent(), sinceDamageMs, activeDelayMs, observed }),
+    restore,
+    refill,
     current: readCurrent,
     max: readMax,
     setMax(value) {
@@ -139,12 +177,6 @@ export function createRegenShield(config: RegenShieldConfig): RegenShield {
       write(live - amount);
       observed = pool === undefined ? observed : readCurrent();
       return overflow;
-    },
-    restore(amount) {
-      if (amount <= 0) return;
-      syncExternal();
-      write(readCurrent() + amount);
-      observed = pool === undefined ? observed : readCurrent();
     },
     set(value) {
       write(value);

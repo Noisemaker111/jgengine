@@ -261,3 +261,68 @@ describe("abilityKit bound resource (#357)", () => {
     expect(kit.canCast("fireball").ok).toBe(true); // charge remains, resource ignored (treated as infinite)
   });
 });
+
+describe("abilityKit persistence", () => {
+  it("resumes independent recharge, flash, groups, and retuning after a JSON round trip", () => {
+    const configs = [
+      { id: "dash", cooldownMs: 1000, chargesMax: 3, flashMs: 800 },
+      { id: "bolt", cooldownMs: 500, flashMs: 800, groups: ["short", "long"] },
+      { id: "heal", cooldownMs: 200, groups: ["short"] },
+    ];
+    const options = { groups: [{ id: "short", cooldownMs: 600 }, { id: "long", cooldownMs: 1500 }] };
+    const original = createAbilityKit(configs, options);
+    original.cast("dash");
+    original.cast("dash");
+    original.cast("bolt");
+    original.tick(0.2);
+    original.retuneSlot("dash", { cooldownMs: 300, resourceCost: 20 });
+    const saved = original.state();
+    const decoded = JSON.parse(JSON.stringify(saved));
+    const resumed = createAbilityKit(configs, options);
+    expect(resumed.restore(decoded)).toBe(true);
+    expect(resumed.state()).toEqual(saved);
+    decoded.slots[0].rechargeRemainingMs = 0;
+    saved.slots[0].charges = 99;
+    saved.groups[0].remainingMs = 0;
+    expect(original.state()).toEqual(resumed.state());
+    for (const dt of [0.2, 0.3, 0.1, 0.5, 1]) {
+      original.tick(dt);
+      resumed.tick(dt);
+      expect(resumed.state()).toEqual(original.state());
+      expect(resumed.snapshot(30)).toEqual(original.snapshot(30));
+      expect(resumed.canCast("heal", 30)).toEqual(original.canCast("heal", 30));
+    }
+    expect(resumed.cast("dash", 30)).toEqual(original.cast("dash", 30));
+  });
+
+  it("rejects missing, unknown, or duplicate ids without partially restoring", () => {
+    const kit = createAbilityKit([{ id: "a", cooldownMs: 100 }, { id: "b", cooldownMs: 200 }], {
+      groups: [{ id: "g", cooldownMs: 50 }],
+    });
+    kit.cast("a");
+    const before = kit.state();
+    for (const invalid of [
+      { ...before, slots: before.slots.slice(1) },
+      { ...before, slots: [before.slots[0], before.slots[0]] },
+      { ...before, slots: [{ ...before.slots[0], charges: 99 }, { ...before.slots[1], id: "missing" }] },
+      { ...before, groups: [{ id: "missing", remainingMs: 0 }] },
+    ]) {
+      expect(kit.restore(invalid)).toBe(false);
+      expect(kit.state()).toEqual(before);
+    }
+  });
+
+  it("restoring never reads or spends the caller-owned resource", () => {
+    let reads = 0;
+    let spends = 0;
+    const kit = createAbilityKit([{ id: "bolt", cooldownMs: 100, resourceCost: 10 }], {
+      resource: { available: () => { reads++; return 20; }, spend: () => { spends++; } },
+    });
+    kit.cast("bolt");
+    const before = { reads, spends };
+    const saved = kit.state();
+    kit.reset();
+    expect(kit.restore(saved)).toBe(true);
+    expect({ reads, spends }).toEqual(before);
+  });
+});
