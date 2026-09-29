@@ -8,8 +8,10 @@ import {
   renameSync,
   statSync,
   unlinkSync,
+  watch,
   writeFileSync,
 } from "node:fs";
+import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -259,21 +261,26 @@ export async function isOurDevServer(port: number, identity: string): Promise<bo
  */
 export async function retireDriftedDevServer(port: number, cwd = process.cwd()): Promise<boolean> {
   const marker = readMarker(port);
-  if (marker === null) return false;
+  if (marker === null || marker.identity !== checkoutIdentity(cwd)) return false;
   if (!revisionDrifted(marker.head, headRevision(cwd))) return false;
   if (!(await isUp(`http://127.0.0.1:${port}`))) return false;
-  killPid(marker.pid, true);
+  if (marker.pid === undefined) throw new Error(`capture: stale Vite on :${port} has no owned process identity`);
+  await new Promise<void>((resolve, reject) => {
+    const socket = createConnection({ host: "127.0.0.1", port });
+    const timer = setTimeout(() => {
+      socket.destroy();
+      reject(new Error(`capture: stale Vite on :${port} did not close its connection`));
+    }, 10_000);
+    socket.once("connect", () => killPid(marker.pid, true));
+    socket.once("error", reject);
+    socket.once("close", () => { clearTimeout(timer); resolve(); });
+  });
+  if (await isUp(`http://127.0.0.1:${port}`)) throw new Error(`capture: stale Vite still serves :${port} after its owned process exited`);
   const cleared = clearViteCaches(cwd);
   console.error(
     `capture: warm Vite on :${port} booted from ${shortRevision(marker.head)} but HEAD is ${shortRevision(headRevision(cwd))} — restarting it${cleared.length > 0 ? " and clearing the dep cache" : ""}`,
   );
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    if (!(await isUp(`http://127.0.0.1:${port}`))) return true;
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  throw new Error(
-    `capture: the Vite on :${port} from ${shortRevision(marker.head)} would not die — kill it by hand, then retry`,
-  );
+  return true;
 }
 
 export interface EnsureDevServerResult {
@@ -284,27 +291,160 @@ export interface EnsureDevServerResult {
   base: string;
 }
 
+function waitForStartupOutput(
+  subscribe: (output: (text: string) => void, fail: (error: Error) => void) => () => void,
+  matches: (output: string) => boolean,
+  timeoutMs: number,
+  label: string,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let output = "";
+    let settled = false;
+    let cleanup = () => {};
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cleanup();
+      if (error !== undefined) reject(error); else resolve();
+    };
+    const timer = setTimeout(() => finish(new Error(`${label} did not announce readiness within ${timeoutMs}ms\n${output}`)), timeoutMs);
+    try {
+      cleanup = subscribe(text => {
+        output += text.replace(/\x1b\[[0-9;]*m/g, "");
+        if (matches(output)) finish();
+      }, error => finish(new Error(`${label}: ${error.message}\n${output}`)));
+    } catch (error) { finish(error instanceof Error ? error : new Error(String(error))); }
+    if (settled) cleanup();
+  });
+}
+
+/** @internal Await the launched process's announcement, failure, or one deadline. */
+export function waitForProcessOutput(child: ChildProcess, matches: (output: string) => boolean, timeoutMs: number, label: string): Promise<void> {
+  return waitForStartupOutput((output, fail) => {
+    const data = (chunk: Buffer) => output(chunk.toString());
+    const exited = (code: number | null) => fail(new Error(`process exited before readiness (code ${code})`));
+    child.stdout?.on("data", data);
+    child.stderr?.on("data", data);
+    child.once("error", fail);
+    child.once("exit", exited);
+    return () => {
+      child.stdout?.off("data", data).resume();
+      child.stderr?.off("data", data).resume();
+      child.off("error", fail);
+      child.off("exit", exited);
+    };
+  }, matches, timeoutMs, label);
+}
+
 function launchPersistentCommand(
   file: string,
   args: readonly string[],
   cwd: string,
   env: Record<string, string>,
-): number {
+  matches: (output: string) => boolean,
+  timeoutMs: number,
+  label: string,
+): { pid: number; ready: Promise<void> } {
+  const logs = mkdtempSync(join(tmpdir(), "jg-startup-"));
+  const stdout = join(logs, "stdout.log");
+  const stderr = join(logs, "stderr.log");
+  let failStartup = (_error: Error) => {};
+  let scanAfterLaunch = () => {};
+  let observer: ChildProcess | undefined;
+  const ready = waitForStartupOutput((output, fail) => {
+    failStartup = fail;
+    const positions = new Map<string, number>();
+    const scan = () => {
+      try {
+        for (const path of [stdout, stderr]) {
+          if (!existsSync(path)) continue;
+          const bytes = readFileSync(path);
+          output(bytes.subarray(positions.get(path) ?? 0).toString());
+          positions.set(path, bytes.length);
+        }
+      } catch (error) { fail(error instanceof Error ? error : new Error(String(error))); }
+    };
+    const watcher = watch(logs, scan);
+    watcher.once("error", fail);
+    scanAfterLaunch = scan;
+    scan();
+    return () => { watcher.close(); observer?.kill(); };
+  }, matches, timeoutMs, label);
+  ready.catch(() => {});
   const assignments = Object.entries(env)
     .map(([key, value]) => `$env:${key}=${powershellQuote(value)}`)
     .join(";");
-  const command = `${assignments};$p=Start-Process -FilePath ${powershellQuote(file)} -ArgumentList @(${powershellArgumentList(args)}) -WorkingDirectory ${powershellQuote(cwd)} -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
+  // Windows does not notify file watchers for writes through an open redirect handle.
+  // Closing each event's append keeps warm output intact and makes readiness observable.
+  const relay = `${assignments};try { Add-Type -ErrorAction Stop -TypeDefinition @'
+using System;
+using System.Diagnostics;
+using System.IO;
+public static class JgStartupOutput {
+  public static int Run(string file, string args, string cwd, string stdout, string stderr) {
+    var gate = new object();
+    using (var process = new Process()) {
+      process.StartInfo = new ProcessStartInfo(file, args) {
+        WorkingDirectory = cwd, UseShellExecute = false, CreateNoWindow = true,
+        RedirectStandardOutput = true, RedirectStandardError = true
+      };
+      process.OutputDataReceived += (sender, line) => {
+        if (line.Data != null) lock (gate) File.AppendAllText(stdout, line.Data + "\\n");
+      };
+      process.ErrorDataReceived += (sender, line) => {
+        if (line.Data != null) lock (gate) File.AppendAllText(stderr, line.Data + "\\n");
+      };
+      process.Start();
+      process.BeginOutputReadLine();
+      process.BeginErrorReadLine();
+      process.WaitForExit();
+      return process.ExitCode;
+    }
+  }
+}
+'@
+exit ([JgStartupOutput]::Run(${powershellQuote(file)}, ${powershellQuote(args.map(windowsCommandLineArg).join(" "))}, ${powershellQuote(cwd)}, ${powershellQuote(stdout)}, ${powershellQuote(stderr)}))
+} catch { [IO.File]::AppendAllText(${powershellQuote(stderr)}, $_.ToString()); exit 1 }`;
+  const relayArgs = ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", Buffer.from(relay, "utf16le").toString("base64")];
+  const command = `$p=Start-Process -FilePath 'powershell.exe' -ArgumentList @(${powershellArgumentList(relayArgs)}) -WorkingDirectory ${powershellQuote(cwd)} -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
   const encoded = Buffer.from(command, "utf16le").toString("base64");
   const launched = spawnSync(
     "powershell.exe",
     ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
     { encoding: "utf8", windowsHide: true, timeout: 10_000 },
   );
-  const pid = Number(launched.stdout.trim());
+  const pid = Number(launched.stdout?.trim());
   if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
+    failStartup(new Error(`Persistent process launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`));
     throw new Error(`Persistent process launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
   }
-  return pid;
+  scanAfterLaunch();
+  observer = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `$p=Get-Process -Id ${pid} -ErrorAction Stop;$p.WaitForExit()`], { stdio: "ignore", windowsHide: true });
+  observer.once("error", failStartup);
+  observer.once("exit", () => failStartup(new Error("process exited before readiness")));
+  void ready.then(() => observer?.kill(), () => observer?.kill());
+  return { pid, ready };
+}
+
+async function bootManagedServer(args: string[], cwd: string, env: Record<string, string>, port: number, timeoutMs: number, label: string): Promise<EnsureDevServerResult> {
+  const base = `http://127.0.0.1:${port}`;
+  const child = process.platform === "win32" ? null : spawn(process.execPath, args, {
+    cwd, stdio: ["ignore", "pipe", "pipe"], detached: true,
+    env: { ...process.env, ...env }, windowsHide: true,
+  });
+  const persistent = child === null ? launchPersistentCommand(process.execPath, args, cwd, env, output => output.includes(base), timeoutMs, label) : null;
+  const pid = child?.pid ?? persistent!.pid;
+  try {
+    await (persistent?.ready ?? waitForProcessOutput(child!, output => output.includes(base), timeoutMs, label));
+    if (!(await isUp(base))) throw new Error(`${label} announced readiness but did not serve ${base}`);
+    writeMarker(port, checkoutIdentity(cwd), pid, headRevision(cwd));
+    child?.unref();
+    return { child, pid, port, base };
+  } catch (error) {
+    killPid(pid, true);
+    throw error;
+  }
 }
 
 /**
@@ -318,18 +458,20 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   const base = `http://127.0.0.1:${port}`;
 
   await retireDriftedDevServer(port, cwd);
-  if (await isOurDevServer(port, identity)) {
+  const live = await isUp(base);
+  if (live && readMarker(port)?.identity === identity) {
     return { child: null, port, base };
   }
 
-  if (await isUp(base)) {
+  if (live) {
     // Something else owns this port — try a few offsets rather than attach wrong.
     for (let step = 1; step <= 20; step += 1) {
       const candidate = 4517 + ((port - 4517 + step * 17) % 483);
-      if (await isOurDevServer(candidate, identity)) {
+      const candidateLive = await isUp(`http://127.0.0.1:${candidate}`);
+      if (candidateLive && readMarker(candidate)?.identity === identity) {
         return { child: null, port: candidate, base: `http://127.0.0.1:${candidate}` };
       }
-      if (!(await isUp(`http://127.0.0.1:${candidate}`))) {
+      if (!candidateLive) {
         port = candidate;
         break;
       }
@@ -337,36 +479,7 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   }
 
   const args = ["--cwd=apps/dev", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"];
-  const child = process.platform === "win32"
-    ? null
-    : spawn(process.execPath, args, {
-        cwd,
-        stdio: "ignore",
-        detached: true,
-        env: { ...process.env, JG_DEV_PORT: String(port) },
-        windowsHide: true,
-      });
-  const pid = child?.pid ?? launchPersistentCommand(process.execPath, args, cwd, { JG_DEV_PORT: String(port) });
-  child?.unref();
-  writeMarker(port, identity, pid, headRevision(cwd));
-
-  const finalBase = `http://127.0.0.1:${port}`;
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    await new Promise((r) => setTimeout(r, 500));
-    if (await isUp(finalBase)) return { child, pid, port, base: finalBase };
-    if (child?.exitCode !== null && child?.exitCode !== undefined) {
-      throw new Error(`Dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
-    }
-  }
-  if (child !== null) child.kill();
-  else killPid(pid, true);
-  const viteInstalled =
-    existsSync(join(cwd, "node_modules", ".bin", "vite")) ||
-    existsSync(join(cwd, "node_modules", "vite"));
-  const hint = viteInstalled
-    ? "the apps/dev Vite server never became reachable — check for a port conflict or a Vite boot error"
-    : "node_modules looks incomplete (vite is missing) — run `bun scripts/ensure-ready.ts` (or `bun install`) first";
-  throw new Error(`Dev server failed to start on :${port} for ${identity} — ${hint}`);
+  return bootManagedServer(args, cwd, { JG_DEV_PORT: String(port) }, port, 30_000, "Dev server");
 }
 
 /** Boot or reuse this checkout's website Vite server for `shoot --site` captures. */
@@ -375,15 +488,17 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
   let port = resolveWebPort(cwd);
   const base = `http://127.0.0.1:${port}`;
   await retireDriftedDevServer(port, cwd);
-  if (await isOurDevServer(port, identity)) return { child: null, port, base };
+  const live = await isUp(base);
+  if (live && readMarker(port)?.identity === identity) return { child: null, port, base };
 
-  if (await isUp(base)) {
+  if (live) {
     for (let step = 1; step <= 20; step += 1) {
       const candidate = 5517 + ((port - 5517 + step * 17) % 400);
-      if (await isOurDevServer(candidate, identity)) {
+      const candidateLive = await isUp(`http://127.0.0.1:${candidate}`);
+      if (candidateLive && readMarker(candidate)?.identity === identity) {
         return { child: null, port: candidate, base: `http://127.0.0.1:${candidate}` };
       }
-      if (!(await isUp(`http://127.0.0.1:${candidate}`))) {
+      if (!candidateLive) {
         port = candidate;
         break;
       }
@@ -391,33 +506,10 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
   }
 
   const args = ["--cwd=apps/web", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"];
-  const child = process.platform === "win32"
-    ? null
-    : spawn(process.execPath, args, {
-        cwd,
-        stdio: "ignore",
-        detached: true,
-        env: { ...process.env, JG_WEB_PORT: String(port), JG_CAPTURE_SITE: "1" },
-        windowsHide: true,
-      });
-  const pid = child?.pid ?? launchPersistentCommand(process.execPath, args, cwd, {
+  return bootManagedServer(args, cwd, {
     JG_WEB_PORT: String(port),
     JG_CAPTURE_SITE: "1",
-  });
-  child?.unref();
-  writeMarker(port, identity, pid, headRevision(cwd));
-
-  const finalBase = `http://127.0.0.1:${port}`;
-  for (let attempt = 0; attempt < 120; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    if (await isUp(finalBase)) return { child, pid, port, base: finalBase };
-    if (child?.exitCode !== null && child?.exitCode !== undefined) {
-      throw new Error(`Website dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
-    }
-  }
-  if (child !== null) killProcessTree(child);
-  else killPid(pid, true);
-  throw new Error(`Website dev server failed to start on :${port} for ${identity}`);
+  }, port, 60_000, "Website dev server");
 }
 
 /**
@@ -454,20 +546,15 @@ export function pickDebugPort(): number {
   return 9200 + Math.floor(Math.random() * 700);
 }
 
+const debuggerStartup = new Map<number, Promise<void>>();
+
 export async function waitForDebugger(port: number, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
-        signal: AbortSignal.timeout(500),
-      });
-      if (response.ok) return;
-    } catch {
-      /* retry */
-    }
-    await new Promise((r) => setTimeout(r, 150));
+  const startup = debuggerStartup.get(port);
+  if (startup !== undefined) {
+    try { await startup; } finally { debuggerStartup.delete(port); }
   }
-  throw new Error(`Chrome debugger not ready on :${port} within ${timeoutMs}ms`);
+  const response = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(timeoutMs) });
+  if (!response.ok) throw new Error(`Chrome debugger unavailable on :${port}: HTTP ${response.status}`);
 }
 
 type CdpMessage = {
@@ -640,7 +727,7 @@ export function launchChrome(
 ): ChildProcess {
   const chrome = findChromeExecutable();
   const userDataDir = mkdtempSync(join(tmpdir(), prefix));
-  return spawn(
+  const child = spawn(
     chrome,
     [
       `--remote-debugging-port=${debugPort}`,
@@ -667,13 +754,17 @@ export function launchChrome(
       "about:blank",
     ],
     {
-      stdio: "ignore",
+      stdio: ["ignore", "ignore", "pipe"],
       windowsHide: true,
       // A daemon Chrome must outlive the Bun command that starts it. Chrome is a GUI-subsystem
       // executable on Windows, so detaching it does not create a console window.
       detached: options.persistent === true || process.platform !== "win32",
     },
   );
+  const ready = waitForProcessOutput(child, output => output.includes(`DevTools listening on ws://127.0.0.1:${debugPort}/`), 30_000, "Chrome debugger");
+  ready.catch(() => {});
+  debuggerStartup.set(debugPort, ready);
+  return child;
 }
 
 function powershellQuote(value: string): string {
@@ -688,12 +779,6 @@ function windowsCommandLineArg(value: string): string {
 
 function powershellArgumentList(args: readonly string[]): string {
   return args.map((arg) => powershellQuote(windowsCommandLineArg(arg))).join(",");
-}
-
-/** Hidden native Windows launcher used when Chrome must outlive the Bun process that starts it. */
-export function windowsPersistentChromeCommand(chrome: string, args: readonly string[]): string {
-  const argumentList = powershellArgumentList(args);
-  return `$p=Start-Process -FilePath ${powershellQuote(chrome)} -ArgumentList @(${argumentList}) -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
 }
 
 /** Launch persistent headless Chrome without retaining a Windows child-process handle in Bun. */
@@ -731,17 +816,9 @@ export function launchPersistentChrome(
     "--disable-dev-shm-usage",
     "about:blank",
   ];
-  const encoded = Buffer.from(windowsPersistentChromeCommand(chrome, args), "utf16le").toString("base64");
-  const launched = spawnSync(
-    "powershell.exe",
-    ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
-    { encoding: "utf8", windowsHide: true, timeout: 10_000 },
-  );
-  const pid = Number(launched.stdout.trim());
-  if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
-    throw new Error(`Persistent Chrome launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
-  }
-  return { pid, child: null };
+  const launched = launchPersistentCommand(chrome, args, process.cwd(), {}, output => output.includes(`DevTools listening on ws://127.0.0.1:${debugPort}/`), 30_000, "Chrome debugger");
+  debuggerStartup.set(debugPort, launched.ready);
+  return { pid: launched.pid, child: null };
 }
 
 export type CaptureVia = "screencast" | "screenshot";

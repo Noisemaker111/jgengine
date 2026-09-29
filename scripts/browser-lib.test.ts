@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
+import { spawn, type ChildProcess } from "node:child_process";
+import { EventEmitter } from "node:events";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { PassThrough } from "node:stream";
 import { deflateSync } from "node:zlib";
 
 import {
@@ -18,8 +21,44 @@ import {
   resolveWarmChromePort,
   regionCarriesPicture,
   screencastCapturesFully,
-  windowsPersistentChromeCommand,
+  waitForDebugger,
+  waitForProcessOutput,
 } from "./browser-lib";
+
+describe("process startup events", () => {
+  test("accepts a split announcement and removes startup listeners", async () => {
+    const child = Object.assign(new EventEmitter(), { stdout: new PassThrough(), stderr: new PassThrough() });
+    const ready = waitForProcessOutput(child as ChildProcess, output => output.includes("DevTools listening"), 1000, "Chrome");
+    child.stderr.write("DevTools list");
+    child.stderr.write("ening on ws://127.0.0.1:9222/");
+    await ready;
+    expect(child.listenerCount("exit")).toBe(0);
+    expect(child.stderr.listenerCount("data")).toBe(0);
+  });
+
+  test("reports real early process exit with its startup diagnostics", async () => {
+    const child = spawn(process.execPath, ["-e", "console.error('startup failed');process.exit(3)"], { stdio: ["ignore", "pipe", "pipe"] });
+    await expect(waitForProcessOutput(child, () => false, 1000, "Vite")).rejects.toThrow("process exited before readiness (code 3)\nstartup failed");
+    expect(child.listenerCount("exit")).toBe(0);
+  });
+
+  test("a single deadline removes pending observers", async () => {
+    const child = Object.assign(new EventEmitter(), { stdout: new PassThrough(), stderr: new PassThrough() });
+    await expect(waitForProcessOutput(child as ChildProcess, () => false, 10, "Vite")).rejects.toThrow("did not announce readiness");
+    expect(child.listenerCount("exit")).toBe(0);
+    expect(child.stdout.listenerCount("data")).toBe(0);
+  });
+
+  test("an existing unavailable debugger is checked once", async () => {
+    let requests = 0;
+    const server = createServer((_request, response) => { requests++; response.writeHead(503).end(); });
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+    try {
+      await expect(waitForDebugger((server.address() as AddressInfo).port, 1000)).rejects.toThrow("HTTP 503");
+      expect(requests).toBe(1);
+    } finally { server.close(); }
+  });
+});
 
 function fakeSession(options: {
   navigation?: Record<string, unknown>;
@@ -99,17 +138,6 @@ describe("worktree-scoped ports", () => {
 });
 
 describe("Chrome graphics profile", () => {
-  test("persistent Windows Chrome uses a hidden native process boundary", () => {
-    const command = windowsPersistentChromeCommand("C:\\Program Files\\Chrome\\chrome.exe", [
-      "--headless=new",
-      "--user-data-dir=C:\\Users\\Test User\\Temp\\profile",
-    ]);
-    expect(command).toContain("Start-Process");
-    expect(command).toContain("-WindowStyle Hidden");
-    expect(command).toContain("-PassThru");
-    expect(command).toContain("'\"--user-data-dir=C:\\Users\\Test User\\Temp\\profile\"'");
-  });
-
   test("uses native GPU locally instead of forcing CPU-bound SwiftShader", () => {
     expect(chromeGraphicsArgs({}, "win32")).toEqual(["--ignore-gpu-blocklist"]);
   });
