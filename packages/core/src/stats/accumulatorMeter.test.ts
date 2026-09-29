@@ -70,4 +70,24 @@ describe("accumulatorMeter", () => {
     expect(meter.value()).toBe(0);
     expect(meter.broke()).toBe(false);
   });
+
+  test("JSON restore preserves the hold latch even after a partial drain", () => {
+    const config = { max: 100, decayPerSecond: 10, decayDelayMs: 1000 };
+    const original = createAccumulatorMeter(config);
+    original.add(100);
+    original.drain(30);
+    original.tick(0.4);
+    const saved = original.state();
+    const resumed = createAccumulatorMeter(config);
+    resumed.restore(JSON.parse(JSON.stringify(saved)));
+    saved.value = 0;
+    expect(resumed.state()).toEqual(original.state());
+    expect(resumed.broke()).toBe(true);
+    resumed.tick(2);
+    original.tick(2);
+    expect(resumed.state()).toEqual(original.state());
+    expect(resumed.value()).toBe(70);
+    expect(resumed.add(40)).toEqual(original.add(40));
+    expect(resumed.add(1).fired).toBe(false);
+  });
 });

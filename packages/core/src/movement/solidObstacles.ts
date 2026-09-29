@@ -23,7 +23,7 @@ const OBSTACLE_MAX_HALF_EXTENT = 4;
 const OBSTACLE_HORIZONTAL_CAP = 22;
 /**
  * Vertical broadphase floor/cap. A walker only needs nearby ground props / step-ups — never full tower
- * height. Using building height for Y was the Vice Isle pose killer: a 50 m tower turned `inBox` into
+ * height. Using building height for Y was the Harbor Heat pose killer: a 50 m tower turned `inBox` into
  * a 100^3 empty cell walk every frame.
  */
 const OBSTACLE_VERTICAL_FLOOR = 3;

@@ -28,8 +28,9 @@ receiver, interceptor, and status stages remain pure. Follow the
 [portable damage/effects recipe](recipes/portable-damage-effects.md) to compose
 them over an existing store, clock, RNG, spatial index, and death flow.
 
-Closure-backed magazines and stat modifiers expose plain snapshot/restore
-state for caller-owned saves, rollback, replay, and workers. Follow the
+Closure-backed magazines and stat modifiers expose snapshot/restore; ability
+kits, shields, and meters expose state/restore for caller-owned saves,
+rollback, replay, and workers. Follow the
 [portable runtime-state recipe](recipes/portable-runtime-state.md); the caller
 keeps its clock, reserve state, schema, and authority.
 

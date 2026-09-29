@@ -1,6 +1,7 @@
 import {
   createAccumulatorMeter,
   type AccumulatorMeter,
+  type AccumulatorMeterState,
   type MeterMode,
   type MeterTier,
 } from "./accumulatorMeter";
@@ -28,7 +29,14 @@ export interface EventMeterFeedResult {
   tierChanged: boolean;
 }
 
+/** Event meter persistence uses the underlying accumulator's complete state. */
+export type EventMeterState = AccumulatorMeterState;
+
 export interface EventMeter {
+  /** Detached value, hold latch, and decay-delay timer. */
+  state(): EventMeterState;
+  /** Restore using the caller's existing event and decay configuration. */
+  restore(next: EventMeterState): void;
   value(): number;
   fraction(): number;
   tier(): string | null;
@@ -37,7 +45,8 @@ export interface EventMeter {
   consume(): boolean;
   drain(amount: number): void;
   reset(): void;
-  tick(dtSeconds: number): void;
+  /** Advance decay and its delay; pass false to pause both while a source is visible. */
+  tick(dtSeconds: number, decayEnabled?: boolean): void;
 }
 
 function readyOf(meter: AccumulatorMeter, mode: MeterMode): boolean {
@@ -61,6 +70,8 @@ export function createEventMeter(config: EventMeterConfig): EventMeter {
   });
 
   return {
+    state: meter.state,
+    restore: meter.restore,
     value() {
       return meter.value();
     },
@@ -116,8 +127,8 @@ export function createEventMeter(config: EventMeterConfig): EventMeter {
     reset() {
       meter.reset();
     },
-    tick(dtSeconds) {
-      meter.tick(dtSeconds);
+    tick(dtSeconds, decayEnabled = true) {
+      if (decayEnabled) meter.tick(dtSeconds);
     },
   };
 }

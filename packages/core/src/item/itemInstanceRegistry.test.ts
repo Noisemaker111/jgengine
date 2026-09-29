@@ -35,6 +35,39 @@ describe("createItemInstanceRegistry", () => {
     const id = registry.register("base", { name: "x" });
     expect(id.startsWith("item:base:")).toBe(true);
   });
+
+  test("JSON restore keeps rolled definitions, ids, and the sequence after releases", () => {
+    const original = createItemInstanceRegistry<{ stats: { damage: number } }>("loot");
+    const kept = original.register("gun", { stats: { damage: 17 } });
+    const released = original.register("gun", { stats: { damage: 25 } });
+    original.release(released);
+    const saved = original.state();
+    const decoded = JSON.parse(JSON.stringify(saved));
+    const resumed = createItemInstanceRegistry<{ stats: { damage: number } }>("loot");
+    const stale = resumed.register("relic", { stats: { damage: 0 } });
+    expect(resumed.restore(decoded)).toBe(true);
+    expect(resumed.has(stale)).toBe(false);
+    expect(resumed.get(kept)).toEqual({ stats: { damage: 17 } });
+    expect(resumed.has(released)).toBe(false);
+    expect(resumed.state()).toEqual(original.state());
+    saved.entries[0][1].stats.damage = 999;
+    decoded.entries[0][1].stats.damage = 888;
+    expect(original.get(kept)?.stats.damage).toBe(17);
+    expect(resumed.get(kept)?.stats.damage).toBe(17);
+    expect(resumed.register("gun", { stats: { damage: 30 } })).toBe("loot:gun:3");
+  });
+
+  test("an empty registry retains its allocator and rejects a different prefix", () => {
+    const registry = createItemInstanceRegistry<number>("loot");
+    registry.release(registry.register("gun", 10));
+    const saved = registry.state();
+    const resumed = createItemInstanceRegistry<number>("loot");
+    expect(resumed.restore(JSON.parse(JSON.stringify(saved)))).toBe(true);
+    expect(resumed.register("gun", 20)).toBe("loot:gun:2");
+    const before = resumed.state();
+    expect(resumed.restore({ ...saved, prefix: "other" })).toBe(false);
+    expect(resumed.state()).toEqual(before);
+  });
 });
 
 describe("proceduralLootEntry", () => {
