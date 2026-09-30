@@ -43,6 +43,29 @@ await context.addInitScript(() => {
     const epochMs = performance.timeOrigin + monotonicMs;
     queueMicrotask(() => keys.push({ type, code: key.code, target: (key.target as Element | null)?.tagName ?? "none", prevented: key.defaultPrevented, epochMs, monotonicMs }));
   }, true);
+  const loadClicks: { epochMs: number; monotonicMs: number }[] = [];
+  (window as unknown as { __jgRecoveryLoadClicks: typeof loadClicks }).__jgRecoveryLoadClicks = loadClicks;
+  document.addEventListener("click", (event) => {
+    const button = (event.target as Element | null)?.closest("button");
+    if (button?.textContent === "Load textured ground") loadClicks.push({ epochMs: performance.timeOrigin + performance.now(), monotonicMs: performance.now() });
+  }, true);
+  const visibility: unknown[] = [];
+  (window as unknown as { __jgRecoveryVisibility: unknown[] }).__jgRecoveryVisibility = visibility;
+  const observeSurface = (phase: string) => {
+    const wrapper = document.querySelector("canvas")?.closest("[tabindex]");
+    visibility.push({ phase, at: performance.now(), active: document.activeElement?.tagName,
+      connected: wrapper?.isConnected ?? false, rect: wrapper?.getBoundingClientRect().toJSON() ?? null,
+      display: wrapper ? getComputedStyle(wrapper).display : null,
+      ownsFocus: document.activeElement === wrapper,
+      loading: document.querySelector("[data-shell-code-loading]") !== null });
+  };
+  document.addEventListener("focusin", () => observeSurface("focusin"), true);
+  document.addEventListener("focusout", () => observeSurface("focusout"), true);
+  document.addEventListener("DOMContentLoaded", () => {
+    new MutationObserver((mutations) => {
+      if (mutations.some(m => m.type === "attributes" && (m.target instanceof HTMLCanvasElement || m.target instanceof HTMLElement && m.target.hasAttribute("tabindex")) || m.type === "childList" && [...m.addedNodes, ...m.removedNodes].some(node => node instanceof Element && (node.matches("canvas,[tabindex],[data-shell-code-loading],[data-presentation-recovery]") || node.querySelector("canvas,[tabindex],[data-shell-code-loading],[data-presentation-recovery]"))))) observeSurface("surface-mutation");
+    }).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ["style", "tabindex"], childList: true });
+  }, { once: true });
   const wire: unknown[] = [];
   (window as unknown as { __jgRecoveryWire: unknown[] }).__jgRecoveryWire = wire;
   const send = WebSocket.prototype.send;
@@ -96,12 +119,16 @@ await context.addInitScript(() => {
         queueMicrotask(() => {
           queued = false;
           if (!state.__jgRecoveryDrawArmed || gl.isContextLost()) return;
+          const owner = (window as unknown as { __jgProbe?: () => Record<string, number> }).__jgProbe?.();
+          const surface = gl.canvas instanceof HTMLCanvasElement ? gl.canvas.closest("[tabindex]") : null;
+          const bounds = surface?.getBoundingClientRect();
+          if (owner?.renderAttached !== 1 || owner.textured !== 1 || owner.controlsActive !== 1 || !bounds || bounds.width === 0 || bounds.height === 0) return;
           const started = performance.now();
           gl.finish();
           const pixel = new Uint8Array(4);
           gl.readPixels(Math.floor(gl.drawingBufferWidth / 2), Math.floor(gl.drawingBufferHeight / 2), 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel);
           state.__jgRecoveryDrawArmed = false;
-          document.dispatchEvent(new CustomEvent("jg-proof-completed-draw", { detail: { at: performance.now(), finishMs: performance.now() - started, draws, pixel: [...pixel], width: gl.drawingBufferWidth, height: gl.drawingBufferHeight } }));
+          document.dispatchEvent(new CustomEvent("jg-proof-completed-draw", { detail: { owner, at: performance.now(), finishMs: performance.now() - started, draws, pixel: [...pixel], width: gl.drawingBufferWidth, height: gl.drawingBufferHeight } }));
         });
       };
     }
@@ -243,9 +270,11 @@ try {
   mark("baseline-native-keyboard-movement");
   await page.mouse.click(900, 500);
   const baselineAck = waitNativeForwardAck();
-  await page.keyboard.down("w");
-  try { await baselineAck; await waitFrames(12); snapshots.push({ step: "baseline-native-movement", ...await read() }); }
-  finally { const neutralAck = waitNativeNeutralAck(); await page.keyboard.up("w"); await neutralAck; await waitNeutralSettled("native-keyup-authoritative-settled"); }
+  const baselineNeutralAck = waitNativeNeutralAck();
+  await page.keyboard.press("w", { delay: 200 });
+  await Promise.all([baselineAck, baselineNeutralAck]);
+  await waitNeutralSettled("native-keyup-authoritative-settled");
+  snapshots.push({ step: "baseline-native-movement", ...await read() });
   const baseline = await read(); assert.notEqual(baseline.z, before.z, "Authored courier must move before injecting the asset failure");
   mark("inspect-live-renderer");
   renderer = await page.evaluate(() => {
@@ -262,15 +291,34 @@ try {
     return { samples, distinctSamples: new Set(samples.map((pixel) => pixel.join(","))).size, width: canvas?.width, height: canvas?.height, vendor: info ? gl.getParameter(info.UNMASKED_VENDOR_WEBGL) : gl.getParameter(gl.VENDOR), renderer: info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) };
   });
   mark("trigger-material-failure");
-  await page.getByRole("button", { name: "Load textured ground", exact: true }).click();
-  await materialRequest;
-  mark("held-native-input-before-material-rejection");
+  mark("held-native-input-before-material-load");
+  const loadButton = page.getByRole("button", { name: "Load textured ground", exact: true });
+  const loadBounds = await loadButton.boundingBox();
+  assert.ok(loadBounds && loadBounds.width > 0 && loadBounds.height > 0);
   await page.mouse.click(900, 500);
   const heldFailureAck = waitNativeForwardAck();
-  await page.keyboard.down("w");
-  await heldFailureAck;
-  snapshots.push({ step: "accepted-held-input-before-failure", ...await read() });
   const failureNeutralAck = waitNativeNeutralAck();
+  await page.keyboard.down("w");
+  // Finish the real pointer gesture before observing delayed ACKs or evaluating the page.
+  await page.mouse.click(loadBounds.x + loadBounds.width / 2, loadBounds.y + loadBounds.height / 2);
+  await Promise.all([heldFailureAck, failureNeutralAck, materialRequest]);
+  const gesture = await page.evaluate(() => ({
+    keys: (window as unknown as { __jgRecoveryKeys: { type: string; code: string; target: string; epochMs: number }[] }).__jgRecoveryKeys,
+    clicks: (window as unknown as { __jgRecoveryLoadClicks: { epochMs: number }[] }).__jgRecoveryLoadClicks,
+    wire: (window as unknown as { __jgRecoveryWire: { stage: string; packet: { input?: { held?: string[] } }; epochMs: number }[] }).__jgRecoveryWire,
+  }));
+  const click = gesture.clicks.at(-1); assert.ok(click, "Native pointer must actually click Load textured ground");
+  const key = gesture.keys.filter(key => key.type === "keydown" && key.code === "KeyW").at(-1);
+  assert.ok(key && key.target === "DIV" && key.epochMs < click.epochMs);
+  const held = gesture.wire.filter(event => event.stage === "client-send" && event.packet.input?.held?.includes("moveForward") && event.epochMs >= key.epochMs && event.epochMs < click.epochMs).at(-1);
+  assert.ok(held, "Real held input must reach transport before the actual Load click");
+  assert.equal(gesture.keys.filter(event => event.type === "keyup" && event.epochMs >= key.epochMs).length, 0, "Loading neutral must precede physical W release");
+  snapshots.push({ step: "held-native-load-gesture", key, click, held, heldUntilClickMs: click.epochMs - key.epochMs });
+  snapshots.push({ step: "pending-material-neutral", ...await read(), display: await page.evaluate(() => ({
+    activeElement: document.activeElement?.tagName,
+    canvas: [...document.querySelectorAll("canvas")].map(canvas => ({ connected: canvas.isConnected, display: getComputedStyle(canvas).display, bounds: { width: canvas.getBoundingClientRect().width, height: canvas.getBoundingClientRect().height } })),
+    loadingText: document.body.innerText.includes("Loading game view"),
+  })) });
   releaseFailure();
   const retry = page.getByRole("button", { name: "Retry display", exact: true });
   await retry.waitFor({ state: "visible", timeout: 15000 });
@@ -291,18 +339,27 @@ try {
   await page.unroute("**/materials/ambientcg-grass001/color.jpg");
   mark("retry-restored-material");
   const restoredResponse = page.waitForResponse((response) => new URL(response.url()).pathname === "/materials/ambientcg-grass001/color.jpg" && response.status() === 200, { timeout: 25000 });
-  await retry.click();
-  await restoredResponse;
-  await page.getByRole("heading", { name: "Relay material workshop", exact: true }).waitFor({ state: "visible", timeout: 20000 });
-  await page.locator("canvas").waitFor({ state: "visible" });
-  mark("await-actual-recovered-draw");
-  const completedDraw = await page.evaluate(() => new Promise<unknown>((resolveDraw, reject) => {
-    const onDraw = (event: Event) => { clearTimeout(deadline); resolveDraw((event as CustomEvent).detail); };
-    const deadline = setTimeout(() => { document.removeEventListener("jg-proof-completed-draw", onDraw); reject(new Error("No completed restored renderer draw within 25s; observed prior first draw 9.85s")); }, 25000);
-    document.addEventListener("jg-proof-completed-draw", onDraw, { once: true });
+  let resolveDraw!: (draw: unknown) => void;
+  const drawObserved = new Promise<unknown>(resolveObserved => { resolveDraw = resolveObserved; });
+  await page.exposeFunction("__jgProofRecoveredDraw", resolveDraw);
+  await page.evaluate(() => {
+    document.addEventListener("jg-proof-completed-draw", (event) => {
+      void (window as unknown as { __jgProofRecoveredDraw: (draw: unknown) => Promise<void> }).__jgProofRecoveredDraw((event as CustomEvent).detail);
+    }, { once: true });
     (window as unknown as { __jgRecoveryDrawArmed: boolean }).__jgRecoveryDrawArmed = true;
-  }));
-  snapshots.push({ step: "actual-completed-recovered-draw", completedDraw });
+  });
+  let drawDeadline: ReturnType<typeof setTimeout>;
+  const completedDrawWithinDeadline = Promise.race([drawObserved, new Promise<never>((_, reject) => {
+    drawDeadline = setTimeout(() => reject(new Error("No completed restored renderer draw within 25s of Retry")), 25000);
+  })]);
+  void completedDrawWithinDeadline.catch(() => {});
+  try {
+    await retry.click();
+    await restoredResponse;
+    mark("await-actual-recovered-draw");
+    const completedDraw = await completedDrawWithinDeadline;
+    snapshots.push({ step: "actual-completed-recovered-draw", completedDraw });
+  } finally { clearTimeout(drawDeadline!); }
   mark("await-recovered-realm-frames");
   await waitFrames(15);
   const recovered = await read(); assert.equal(recovered.contextLifetime, before.contextLifetime); assert.equal(recovered.textured, 1); assert.equal(recovered.controlsActive, 1); assert.ok(recovered.hostTick > failedLater.hostTick);
@@ -341,9 +398,11 @@ try {
 } finally {
   const wire = await page.evaluate(() => (window as unknown as { __jgRecoveryWire: unknown }).__jgRecoveryWire).catch(() => null);
   const serverTrace = await fetch(new URL("/__fixture/input-trace", ws.toString().replace(/^ws/, "http"))).then(response => response.json()).catch(() => null);
+  const loadClicks = await page.evaluate(() => (window as unknown as { __jgRecoveryLoadClicks: unknown }).__jgRecoveryLoadClicks).catch(() => null);
   const nativeKeys = await page.evaluate(() => (window as unknown as { __jgRecoveryKeys: unknown }).__jgRecoveryKeys).catch(() => null);
   const longTasks = await page.evaluate(() => (window as unknown as { __jgRecoveryLongTasks: unknown }).__jgRecoveryLongTasks).catch(() => null);
+  const recoveryLifecycle = await page.evaluate(() => ({ visibility: (window as unknown as { __jgRecoveryVisibility: unknown }).__jgRecoveryVisibility, runtime: (window as unknown as { __JG_DEVTOOLS?: { snapshot: () => unknown } }).__JG_DEVTOOLS?.snapshot() })).catch(() => null);
   const finalDom = await page.evaluate(() => ({ title: document.title, headings: Array.from(document.querySelectorAll("h1,h2")).map((node) => node.textContent), recovery: Array.from(document.querySelectorAll("[data-presentation-recovery],button")).map((node) => ({ text: node.textContent, recovery: node.getAttribute("data-presentation-recovery"), rect: node.getBoundingClientRect().toJSON() })), canvasCount: document.querySelectorAll("canvas").length })).catch(() => null);
-  writeFileSync(resolve(evidence, "result.json"), JSON.stringify({ outcome, inputPackets, wire, serverTrace, authoritativePoses, nativeKeys, finalDom, finalPhase: phase, phases, longTasks, viewport: { width: 1024, height: 640 }, renderer, identities, sockets, frames, requests, responses, snapshots, expectedAssetFailure: "/materials/ambientcg-grass001/color.jpg", errors }, null, 2));
+  writeFileSync(resolve(evidence, "result.json"), JSON.stringify({ outcome, recoveryLifecycle, inputPackets, wire, serverTrace, authoritativePoses, nativeKeys, loadClicks, finalDom, finalPhase: phase, phases, longTasks, viewport: { width: 1024, height: 640 }, renderer, identities, sockets, frames, requests, responses, snapshots, expectedAssetFailure: "/materials/ambientcg-grass001/color.jpg", errors }, null, 2));
   await context.close(); await browser.close();
 }

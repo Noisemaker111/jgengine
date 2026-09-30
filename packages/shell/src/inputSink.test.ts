@@ -1,6 +1,8 @@
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, mock, spyOn, test } from "bun:test";
 import type { LiveGameBackend } from "@jgengine/core/runtime/transport";
-import type { InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
+import { createHostedGameRunner, type InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
+import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { inputFramesEqual, noopInputSink, remoteInputSink, resolveInputSink } from "./inputSink";
 
 function controllableBackend(calls: Array<{ serverId: string; command: string; input: unknown }>) {
@@ -146,22 +148,25 @@ describe("input sink", () => {
     expect(calls.length).toBe(2);
   });
 
-  test("each in-flight send carries a strictly increasing seq", async () => {
+  test("a regressing local clock cannot make a released frame stale", async () => {
     const calls: Array<{ serverId: string; command: string; input: unknown }> = [];
     const { backend, resolveNext } = controllableBackend(calls);
-    const sink = remoteInputSink(backend, "seq-1");
-
-    sink.send(frame(["a"]));
-    await flush();
-    resolveNext({ ok: true });
-    await flush();
-
-    sink.send(frame(["b"]));
-    await flush();
-
-    const seqs = calls.map((c) => (c.input as { seq: number }).seq);
-    expect(seqs.length).toBe(2);
-    expect(seqs[1]).toBeGreaterThan(seqs[0]!);
+    const sink = remoteInputSink(backend, "seq-clock-regression");
+    const clock = spyOn(performance, "now");
+    try {
+      clock.mockReturnValue(10000);
+      sink.send(frame(["moveForward"]));
+      resolveNext({ ok: true });
+      await flush();
+      clock.mockReturnValue(100);
+      sink.send(frame([]), { urgent: true });
+      const seqs = calls.map((call) => (call.input as { seq: number }).seq);
+      expect(seqs.length).toBe(2);
+      expect(seqs[1]).toBeGreaterThan(seqs[0]!);
+      expect((calls[1]!.input as InputFrame).held).toEqual([]);
+      resolveNext({ ok: true });
+      await flush();
+    } finally { clock.mockRestore(); }
   });
 
   test("an out-of-order (stale) frame does not resurrect a released input via runner replay ordering", async () => {
@@ -207,4 +212,71 @@ describe("input sink", () => {
       console.warn = originalWarn;
     }
   });
+});
+
+
+test("a fresh browser's input advances the same live actor beyond the previous client's sequence", async () => {
+  const host = createHostedGameRunner({
+    definition: defineGameDefinition({ name: "Reload input", assets: createAssetCatalog(), multiplayer: "off" }),
+    content: { entityById: () => null },
+  });
+  const previousEpoch = performance.timeOrigin + performance.now();
+  host.input("same-actor", { held: [], pointer: null, seq: previousEpoch });
+  const backend: Pick<LiveGameBackend, "transport"> = {
+    transport: {
+      joinServer: async () => ({ serverId: "same-realm", isNew: false }),
+      leaveServer: async () => {},
+      runCommand: async ({ input }) => {
+        host.input("same-actor", input as InputFrame);
+        return { ok: true };
+      },
+    },
+  };
+  const sink = remoteInputSink(backend, "same-realm");
+  sink.send(frame(["moveForward"]));
+  await flush();
+  expect(host.heldInput("same-actor")?.held).toEqual(["moveForward"]);
+  sink.send(frame([]), { urgent: true });
+  await flush();
+  expect(host.heldInput("same-actor")?.held).toEqual([]);
+  host.input("same-actor", { held: ["moveForward"], pointer: null, seq: previousEpoch });
+  expect(host.heldInput("same-actor")?.held).toEqual([]);
+});
+
+
+test("reloaded tick-zero live input applies on the joined host clock and release supersedes held intent", async () => {
+  const applied: string[][] = [];
+  const host = createHostedGameRunner({
+    definition: defineGameDefinition({
+      name: "Joined input clock", assets: createAssetCatalog(), multiplayer: "off", features: { players: true },
+      loop: { onTick(ctx) { applied.push([...(ctx.game.players?.input("same-actor")?.held ?? [])]); } },
+    }),
+    content: { entityById: () => null },
+  });
+  host.join("same-actor", false);
+  for (let i = 0; i < 120; i++) host.tick(1 / 60);
+  const previousEpoch = performance.timeOrigin + performance.now();
+  host.input("same-actor", { held: [], pointer: null, seq: previousEpoch });
+  host.tick(1 / 60);
+  const sent: InputFrame[] = [];
+  const backend: Pick<LiveGameBackend, "transport"> = {
+    transport: {
+      joinServer: async () => ({ serverId: "joined-clock", isNew: false }),
+      leaveServer: async () => {},
+      runCommand: async ({ input }) => { sent.push(input as InputFrame); host.input("same-actor", input as InputFrame); return { ok: true }; },
+    },
+  };
+  const sink = remoteInputSink(backend, "joined-clock");
+  sink.send({ ...frame(["moveForward"]), tick: 0 });
+  await flush();
+  host.tick(1 / 60);
+  expect(host.context().sim.tick()).toBeGreaterThan(120);
+  expect(applied.at(-1)).toEqual(["moveForward"]);
+  expect(sent[0]?.tick).toBeUndefined();
+  sink.send({ ...frame([]), tick: 0 }, { urgent: true });
+  await flush();
+  host.input("same-actor", sent[0]!);
+  host.tick(1 / 60);
+  expect(applied.at(-1)).toEqual([]);
+  expect(host.heldInput("same-actor")?.held).toEqual([]);
 });

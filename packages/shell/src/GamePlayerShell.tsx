@@ -36,6 +36,7 @@ import {
   resolveOrientationRequirement,
   type LayoutOrientation,
 } from "@jgengine/core/ui/orientation";
+import { devtools } from "@jgengine/core/devtools/devtools";
 import { armFallbackSeams } from "@jgengine/core/devtools/fallbackSeams";
 import { armTextureErrors } from "@jgengine/core/devtools/textureErrors";
 import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
@@ -43,8 +44,8 @@ import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/d
 import { createAudioEngine } from "./audio/audioEngine";
 import { attachAudioEventWire } from "./audio/audioWire";
 import { installAgentBridge } from "./devtools/agentBridge";
-import { withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
-import { resolveRigKind } from "./camera";
+import { withDevtoolsLatency } from "./devtools/latencyInstrumentation";
+import { resolveRigKind } from "./camera/rigResolve";
 import { contextModels } from "./render/resolveModel";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
@@ -63,8 +64,8 @@ import { playControlsActive } from "@jgengine/core/game/controlGate";
 import { resolveInputSink } from "./inputSink";
 import { observableShellTracker, attachShellInputPublication } from "./shellInputPublication";
 import { attachShellControlSuspension } from "./shellControlSuspension";
-import { Shell3dPresentation } from "./Shell3dPresentation";
-import { createPresentationDiagnosticOwnership, PresentationRecovery } from "./presentationRecovery";
+import { LazyShell3dPresentation } from "./lazyShell3dPresentation";
+import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, PresentationRecovery, type PresentationRecoveryEvent } from "./presentationRecovery";
 
 const DEV_USER_ID = "dev-player";
 
@@ -133,6 +134,7 @@ export function GamePlayerShell({
   const presentationDiagnostics = useRef(createPresentationDiagnosticOwnership());
   const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const recoveredFocus = useRef(createPlaySurfaceFocusOwnership<GameContext>());
   const yawRef = useRef(0);
   const pitchRef = useRef(0);
   const serverIdRef = useRef<string | null>(null);
@@ -305,9 +307,36 @@ export function GamePlayerShell({
     setDiagnostics((current) => [...current.slice(-4), { ...diagnostic, id }]);
   };
 
+  const recoveryTrace = useRef<Array<Record<string, unknown>>>([]);
+  const traceRecovery = (event: PresentationRecoveryEvent | { phase: string }) => {
+    if (!devtoolsEnabled) return;
+    const wrapper = wrapperRef.current;
+    const active = document.activeElement;
+    const rect = wrapper?.getBoundingClientRect();
+    recoveryTrace.current.push({ ...event, at: performance.now(), connected: wrapper?.isConnected ?? false,
+      rects: wrapper?.getClientRects().length ?? 0, width: rect?.width ?? null, height: rect?.height ?? null,
+      display: wrapper === null ? null : getComputedStyle(wrapper).display,
+      active: active?.tagName ?? null, ownsFocus: active === wrapper, focusInside: wrapper?.contains(active) ?? false });
+  };
+  useEffect(() => {
+    recoveryTrace.current = [];
+    if (!devtoolsEnabled) return;
+    return devtools.probes.register("presentationRecovery", () => recoveryTrace.current);
+  }, [ctx, devtoolsEnabled]);
+
+  const revealRecoveredPresentation = () => {
+    if (ctx === null) return;
+    traceRecovery({ phase: "shell-reveal-layout" });
+    recoveredFocus.current.reveal(ctx, wrapperRef.current, document.activeElement, document.body);
+    traceRecovery({ phase: "shell-focus-result" });
+  };
+
   const retireRecoveredPresentation = (error: unknown) => {
+    traceRecovery({ phase: "shell-recovered-callback" });
     const owned = presentationDiagnostics.current.recovered(error);
     setDiagnostics((current) => current.filter((diagnostic) => !owned.has(diagnostic.id)));
+    if (ctx !== null) recoveredFocus.current.request(ctx);
+    revealRecoveredPresentation();
   };
 
   useEffect(() => {
@@ -385,7 +414,7 @@ export function GamePlayerShell({
 
   if (rigKind === "none" || playable.presentation === "hud") {
     return (
-      <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation}>
+      <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
         <ShellHudPresentation
           {...shared}
           serverIdRef={serverIdRef}
@@ -403,9 +432,10 @@ export function GamePlayerShell({
   }
 
   return (
-    <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation}>
-      <Shell3dPresentation
+    <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation} onRecoveryEvent={traceRecovery}>
+      <LazyShell3dPresentation
         {...shared}
+        onPresentationReveal={revealRecoveredPresentation}
         primaryClickRef={primaryClickRef}
         cameraDraggingRef={cameraDraggingRef}
         serverIdRef={serverIdRef}

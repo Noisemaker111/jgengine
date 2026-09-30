@@ -1,8 +1,31 @@
 import { describe, expect, test } from "bun:test";
-import { createPresentationDiagnosticOwnership, createPresentationRetryRegistry, deferUnhandledPresentationError, PresentationRecovery } from "./presentationRecovery";
+import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, createPresentationRetryRegistry, deferUnhandledPresentationError, markPresentationCodeLoadFailure, presentationRecoveryAction, PresentationRecovery } from "./presentationRecovery";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 describe("presentation retry ownership", () => {
+  test("only the exact failed import reloads; asset errors with matching text remain live retries", () => {
+    const failure = new TypeError("Failed to fetch dynamically imported module");
+    expect(markPresentationCodeLoadFailure(failure)).toBe(failure);
+    expect(presentationRecoveryAction(failure)).toBe("reload");
+    expect(presentationRecoveryAction(new TypeError(failure.message))).toBe("retry");
+    expect(presentationRecoveryAction(failure.message)).toBe("retry");
+    const previous = Object.getOwnPropertyDescriptor(globalThis, "location");
+    let reloads = 0; let cacheClears = 0; let resets = 0;
+    Object.defineProperty(globalThis, "location", { configurable: true, value: { reload: () => { reloads++; } } });
+    try {
+      const ctx = {} as GameContext;
+      const boundary = new PresentationRecovery({ ctx, children: null, onRuntimeError: () => {} });
+      boundary.state = { ...boundary.state, failed: true, error: failure };
+      boundary.state.registry.register(["/material.jpg"], () => { cacheClears++; });
+      boundary.setState = () => { resets++; };
+      (boundary.render() as { props: { retry(): void } }).props.retry();
+      expect(reloads).toBe(1); expect(cacheClears).toBe(0); expect(resets).toBe(0);
+      expect(boundary.state.owner).toBe(ctx); expect(boundary.state.failed).toBe(true);
+    } finally {
+      if (previous) Object.defineProperty(globalThis, "location", previous);
+      else Reflect.deleteProperty(globalThis, "location");
+    }
+  });
   test("recovered presentation retires only its exact error diagnostics", () => {
     const owned = createPresentationDiagnosticOwnership();
     const error = new Error("asset failed");
@@ -99,6 +122,18 @@ describe("presentation retry ownership", () => {
     registry.retry();
     expect(cleared).toHaveLength(3);
   });
+  test("owns cache identity by loader as well as ordered input group without a renderer dependency", () => {
+    const registry = createPresentationRetryRegistry();
+    const texture: string[][] = []; const model: string[][] = [];
+    const clearTexture = (inputs: string[]) => texture.push(inputs);
+    const clearModel = (inputs: string[]) => model.push(inputs);
+    registry.register(["/shared-resource"], clearTexture)();
+    registry.register(["/shared-resource"], clearModel);
+    registry.retry();
+    expect(texture).toEqual([]);
+    expect(model).toEqual([["/shared-resource"]]);
+    expect(() => registry.register(["/missing-loader-owner"])).toThrow("cache clear callback");
+  });
   test("context replacement discards the previous presentation failure and registry", () => {
     const previous = {} as GameContext;
     const next = {} as GameContext;
@@ -110,5 +145,41 @@ describe("presentation retry ownership", () => {
     expect(reset.failed).toBe(false);
     expect(reset.registry).not.toBe(registry);
     expect(PresentationRecovery.getDerivedStateFromProps({ ...props, ctx: previous }, state)).toBeNull();
+  });
+});
+
+
+describe("owned play surface focus", () => {
+  test("a recovered draw retains intent while Suspense detaches/hides its surface and consumes it at reveal", () => {
+    const owner = {};
+    const focus = createPlaySurfaceFocusOwnership<object>();
+    let calls = 0, visible = false;
+    const body = {} as HTMLElement;
+    const surface = { isConnected: true, getClientRects: () => visible ? [{}] : [],
+      getBoundingClientRect: () => ({ width: visible ? 640 : 0, height: visible ? 480 : 0 }),
+      contains: (active: unknown) => active === surface, focus: () => { calls++; } } as unknown as HTMLElement;
+    focus.request(owner);
+    expect(focus.reveal(owner, null, body, body)).toBe(false);
+    expect(focus.reveal(owner, surface, body, body)).toBe(false);
+    visible = true;
+    expect(focus.reveal(owner, surface, body, body)).toBe(true);
+    expect(calls).toBe(1);
+    expect(focus.reveal(owner, surface, body, body)).toBe(false);
+    expect(calls).toBe(1);
+  });
+
+  test("outside focus and a replacement owner retire intent without stealing focus", () => {
+    const owner = {}, replacement = {}, outside = {} as Element, body = {} as HTMLElement;
+    let calls = 0;
+    const surface = { isConnected: true, getClientRects: () => [{}], getBoundingClientRect: () => ({ width: 640, height: 480 }),
+      contains: () => false, focus: () => { calls++; } } as unknown as HTMLElement;
+    const focus = createPlaySurfaceFocusOwnership<object>();
+    focus.request(owner);
+    expect(focus.reveal(owner, surface, outside, body)).toBe(false);
+    expect(focus.reveal(owner, surface, body, body)).toBe(false);
+    focus.request(owner);
+    expect(focus.reveal(replacement, surface, body, body)).toBe(false);
+    expect(focus.reveal(owner, surface, body, body)).toBe(false);
+    expect(calls).toBe(0);
   });
 });

@@ -36,8 +36,10 @@ function remoteInputSourceFor(backend: Pick<LiveGameBackend, "transport">, serve
   return source;
 }
 
+// Use the browser time origin so a full reload stays ahead of the previous client.
+// The local high-water mark also preserves release ordering if its clock regresses.
 function monotonicInputSeq(): number {
-  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  const now = typeof performance !== "undefined" ? performance.timeOrigin + performance.now() : Date.now();
   return lastInputSeq = Math.max(now, lastInputSeq + 0.001);
 }
 
@@ -56,8 +58,11 @@ function pumpRemoteInput(
   const owner = {};
   source.inFlight = owner;
   const seq = monotonicInputSeq();
+  // Live clients and the joined host have independent simulation clocks. The host
+  // stamps receipt on its next tick; explicit ticks remain supported by replay.
+  const { tick: _clientTick, ...intent } = frame;
   void backend.transport
-    .runCommand({ serverId, command: INPUT_COMMAND, input: { ...frame, seq } })
+    .runCommand({ serverId, command: INPUT_COMMAND, input: { ...intent, seq } })
     .then((result: TransportRunCommandResult) => {
       if (!result.ok) console.warn(`[jgengine:input] frame seq=${seq} to server "${serverId}" rejected: ${result.reason}`);
     })

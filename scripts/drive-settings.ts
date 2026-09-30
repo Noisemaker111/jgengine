@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { chromium } from "playwright-core";
+import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
 
 const target = process.env["JG_SETTINGS_PROOF_URL"];
 const realmTarget = process.env["JG_SETTINGS_PROOF_REALM_URL"];
@@ -37,6 +38,15 @@ assert.equal(realmIdentity.component, "realm");
 assert.equal(realmIdentity.revision, expectedRevision);
 const browser = await chromium.launch({ executablePath, headless: true, args: ["--no-sandbox"] });
 const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+await context.addInitScript(() => {
+  const keys: unknown[] = [];
+  (window as unknown as { __jgSettingsKeys: unknown[] }).__jgSettingsKeys = keys;
+  for (const type of ["keydown", "keyup"]) document.addEventListener(type, event => {
+    const key = event as KeyboardEvent;
+    if (key.code !== "KeyW") return;
+    queueMicrotask(() => keys.push({ type, code: key.code, key: key.key, target: (key.target as Element | null)?.tagName, prevented: key.defaultPrevented, at: performance.timeOrigin + performance.now() }));
+  }, true);
+});
 const page = await context.newPage();
 page.setDefaultTimeout(5000);
 const errors: string[] = [];
@@ -44,7 +54,83 @@ page.on("pageerror", (error) => errors.push(error.message));
 page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
 const snapshots: unknown[] = [];
 const websockets: string[] = [];
-page.on("websocket", (socket) => websockets.push(socket.url()));
+
+let frames = 0;
+const inputPackets: unknown[] = [];
+const inputRequests = new Map<number, { held: string[]; at: number }>();
+const inputAcks: { id: number; held: string[]; result: unknown; at: number }[] = [];
+const ackWaiters = new Set<() => void>();
+const frameWaiters = new Set<() => void>();
+let requestOrdinal = 0;
+type AuthorityPose = { tick: number; x: number; z: number; revision: number };
+const authoritativePoses: AuthorityPose[] = [];
+const poseWaiters = new Set<(pose: AuthorityPose) => void>();
+page.on("websocket", (socket) => {
+  websockets.push(socket.url());
+  if (socket.url() !== expectedWebSocket.toString()) return;
+  const socketRequests = new Map<number, { held: string[]; at: number; ordinal: number }>();
+  socket.on("framesent", ({ payload }) => {
+    const packet = JSON.parse(typeof payload === "string" ? payload : payload.toString()) as { command?: string; id: number; input?: { held?: string[] } };
+    if (packet.command !== "engine.input") return;
+    const held = packet.input?.held ?? [];
+    const request = { held, at: performance.now(), ordinal: ++requestOrdinal };
+    socketRequests.set(packet.id, request);
+    inputRequests.set(request.ordinal, request);
+    inputPackets.push({ direction: "sent", at: performance.now(), packet });
+  });
+  socket.on("framereceived", ({ payload }) => {
+    frames++; for (const notify of [...frameWaiters]) notify();
+    const packet = JSON.parse(typeof payload === "string" ? payload : payload.toString()) as { t: string; id: number; result?: unknown; channel?: string; data?: { serverState?: WorldSyncFrame } };
+    if (packet.t === "update" && packet.channel === "server") {
+      const frame = packet.data?.serverState;
+      const entries = frame?.kind === "baseline" ? frame.snapshot["store"] : frame?.kind === "diff" ? frame.diff.store : null;
+      if (Array.isArray(entries)) {
+        const entry = entries.find(entry => Array.isArray(entry) && entry[0] === `relay.view:${url.searchParams.get("actor")}`);
+        const view = entry?.[1] as { ticks: number; position: number[] } | undefined;
+        if (view?.position?.length === 3 && frame !== undefined) {
+          const pose = { tick: view.ticks, x: view.position[0]!, z: view.position[2]!, revision: frame.revision };
+          authoritativePoses.push(pose);
+          for (const notify of [...poseWaiters]) notify(pose);
+        }
+      }
+    }
+    const request = socketRequests.get(packet.id);
+    if (packet.t !== "reply" || request === undefined) return;
+    inputPackets.push({ direction: "ack", at: performance.now(), packet });
+    inputAcks.push({ id: request.ordinal, held: request.held, result: packet.result, at: performance.now() });
+    for (const notify of [...ackWaiters]) notify();
+  });
+});
+const waitNativeForwardAck = () => {
+  const firstNewAck = inputAcks.length;
+  const firstNewRequest = Math.max(0, ...inputRequests.keys());
+  return new Promise<void>((resolveAck, reject) => {
+    const done = () => {
+      const ack = inputAcks.slice(firstNewAck).find((entry) => entry.id > firstNewRequest && entry.held.includes("moveForward"));
+      if (ack === undefined) return;
+      clearTimeout(deadline); ackWaiters.delete(done);
+      if ((ack.result as { ok?: boolean } | undefined)?.ok !== true) { reject(new Error("Native held movement was rejected by the real authority")); return; }
+      resolveAck();
+    };
+    const deadline = setTimeout(() => { ackWaiters.delete(done); reject(new Error("Native W did not reach an accepted engine.input acknowledgement within 25s")); }, 25000);
+    ackWaiters.add(done);
+  });
+};
+const waitNativeNeutralAck = () => {
+  const firstNewAck = inputAcks.length;
+  const firstNewRequest = Math.max(0, ...inputRequests.keys());
+  return new Promise<void>((resolveAck, reject) => {
+    const done = () => {
+      const ack = inputAcks.slice(firstNewAck).find((entry) => entry.id > firstNewRequest && entry.held.length === 0);
+      if (ack === undefined) return;
+      clearTimeout(deadline); ackWaiters.delete(done);
+      if ((ack.result as { ok?: boolean } | undefined)?.ok !== true) { reject(new Error("Native key release was rejected by the real authority")); return; }
+      resolveAck();
+    };
+    const deadline = setTimeout(() => { ackWaiters.delete(done); reject(new Error("Native W release did not reach an accepted neutral engine.input acknowledgement within 25s")); }, 25000);
+    ackWaiters.add(done);
+  });
+};
 let outcome: "pass" | "fail" = "fail";
 try {
   await page.goto(url.toString(), { waitUntil: "domcontentloaded", timeout: 15000 });
@@ -134,7 +220,10 @@ try {
   await heading.click();
   const beforeMove = await telemetry();
   assert.equal(beforeMove.controls, "Controls active");
+  snapshots.push({ step: "before-native-key", focus: await page.evaluate(() => ({ tag: document.activeElement?.tagName, tabIndex: (document.activeElement as HTMLElement | null)?.tabIndex })) });
+  const forwardAck = waitNativeForwardAck();
   await page.keyboard.down("KeyW");
+  await forwardAck;
   const moved = await advanceHost(10);
   assert.ok(distance(beforeMove.pose, moved.pose) > 0.1, "Real keyboard input must move the hosted courier");
   await page.getByRole("button", { name: "Display settings", exact: true }).click();
@@ -149,11 +238,14 @@ try {
   assert.equal(resumedWithoutPress.controls, "Controls active");
   assert.ok(distance(stillSuspended.pose, resumedWithoutPress.pose) < 0.01, "A physically held key must not leak back into play after close");
   await page.keyboard.up("KeyW");
-  await heading.click();
+  const freshAck = waitNativeForwardAck();
   await page.keyboard.down("KeyW");
+  await freshAck;
   const freshMovement = await advanceHost(10);
   assert.ok(distance(resumedWithoutPress.pose, freshMovement.pose) > 0.1, "Fresh keyboard input must resume movement");
+  const freshNeutralAck = waitNativeNeutralAck();
   await page.keyboard.up("KeyW");
+  await freshNeutralAck;
   await advanceHost(6);
   await page.getByRole("button", { name: "Pause controls", exact: true }).click();
   await page.getByRole("button", { name: "Display settings", exact: true }).click();
@@ -167,11 +259,14 @@ try {
   await page.getByRole("button", { name: "Close settings", exact: true }).click();
   const finalRelease = await telemetry();
   assert.equal(finalRelease.controls, "Controls active");
-  await heading.click();
+  const finalAck = waitNativeForwardAck();
   await page.keyboard.down("KeyW");
+  await finalAck;
   const finalMovement = await advanceHost(10);
   assert.ok(distance(finalRelease.pose, finalMovement.pose) > 0.1, "Final owner release must permit real keyboard movement");
+  const finalNeutralAck = waitNativeNeutralAck();
   await page.keyboard.up("KeyW");
+  await finalNeutralAck;
   snapshots.push({ step: "control-suspension", beforeMove, moved, suspended, stillSuspended, resumedWithoutPress, freshMovement, nested, nestedStill, finalRelease, finalMovement });
   await page.screenshot({ animations: "disabled", path: resolve(evidence, "courtyard-controls-resumed.png"), timeout: 10000 });
   await page.getByRole("button", { name: "Accept first signal", exact: true }).click();
@@ -195,7 +290,7 @@ try {
   writeFileSync(resolve(evidence, "failure-aria.txt"), await page.locator("body").ariaSnapshot().catch(() => "ARIA capture failed"));
   throw error;
 } finally {
-  writeFileSync(resolve(evidence, "result.json"), JSON.stringify({ outcome, identity, realmIdentity, actor: url.searchParams.get("actor"), websockets, snapshots, errors }, null, 2) + "\n");
+  writeFileSync(resolve(evidence, "result.json"), JSON.stringify({ outcome, inputPackets, authoritativePoses, nativeKeys: await page.evaluate(() => (window as unknown as { __jgSettingsKeys?: unknown[] }).__jgSettingsKeys ?? []).catch(() => []), identity, realmIdentity, actor: url.searchParams.get("actor"), websockets, snapshots, errors }, null, 2) + "\n");
   await browser.close();
   console.log(JSON.stringify({ outcome, evidence, revision: identity.revision }));
 }

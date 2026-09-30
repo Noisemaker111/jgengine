@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { PresentationAssetBoundary, PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery";
+import { PresentationAssetBoundary } from "../presentationRecovery";
+import { PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery3d";
 import * as THREE from "three";
 import type { Group } from "three";
 import { useGameContext } from "@jgengine/react/provider";

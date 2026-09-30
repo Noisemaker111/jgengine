@@ -1,19 +1,23 @@
-import type { ComponentType } from "react";
+import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { HudViewportProvider } from "@jgengine/react/hudViewport";
 import { GameProvider } from "@jgengine/react/provider";
 
-import { DevtoolsOverlay } from "./devtools/DevtoolsOverlay";
 import {
   DiagnosticOverlay,
   GameUiErrorBoundary,
   type RuntimeDiagnostic,
 } from "./diagnostics/RuntimeDiagnostics";
+import { DevtoolsRuntime } from "./devtools/DevtoolsRuntime";
 import { GamePhaseStamp } from "./GamePhaseStamp";
 import { SettingsPlayControlGate } from "./settings/SettingsRuntime";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
+
+const DevtoolsOverlay = lazy(() =>
+  import("./devtools/DevtoolsOverlay").then((module) => ({ default: module.DevtoolsOverlay })),
+);
 
 /** Shared GameUI mount: error boundary → GameProvider → phase stamp → HudViewport. @internal */
 export function ShellGameUiChrome({
@@ -66,10 +70,15 @@ export function ShellDebugOverlays({
   devtoolsOpen: boolean;
   hideDiagnostics?: boolean;
 }) {
+  const [openedOnce, setOpenedOnce] = useState(false);
+  useEffect(() => { if (devtoolsOpen) setOpenedOnce(true); }, [devtoolsOpen]);
   return (
     <>
-      {devtoolsEnabled ? (
-        <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
+      {devtoolsEnabled ? <DevtoolsRuntime ctx={ctx} playable={playable} /> : null}
+      {devtoolsEnabled && (devtoolsOpen || openedOnce) ? (
+        <Suspense fallback={devtoolsOpen ? <div role="status" style={{ position: "absolute", right: 16, top: 16, zIndex: 90, color: "#e2e8f0", background: "#0f172a", padding: "10px 14px", borderRadius: 8 }}>Loading developer tools…</div> : null}>
+          <DevtoolsOverlay open={devtoolsOpen} ctx={ctx} playable={playable} multiplayer={multiplayer} />
+        </Suspense>
       ) : null}
       {hideDiagnostics ? null : (
         <DiagnosticOverlay diagnostics={diagnostics} gameName={playable.game.name} />
