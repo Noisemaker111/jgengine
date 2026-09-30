@@ -13,6 +13,12 @@ Deep reference for `shoot`/`drive` inside the jgengine monorepo: the managed cap
 
 Do not run bare cold `shoot` or `drive` repeatedly in a multi-shot loop. For a single proof where persistent processes are undesirable, one ephemeral invocation is supported and cleans up Chrome/Vite afterward; measured local evidence for `/playground` is roughly 12 seconds cold wall time and 3 seconds inside the browser. If managed capture fails twice, stop retrying and report lower-rung deterministic evidence.
 
+## Anonymous authority HUD proof
+
+The Relay Courtyard host uses `scripts/authority-fixture-server.ts`. Its validated `JG_FIXTURE_FRONTEND_PORT` and `JG_FIXTURE_REALM_PORT` default to the managed 4624/4625 listeners. An owned development proof can use 4634/4635 with separate `JG_FIXTURE_ARTIFACT` and `JG_FIXTURE_DATA` directories. Build the runner with `VITE_JG_AUTHORITY_WS_URL=ws://127.0.0.1:4635/ws` and the actual `VITE_JG_COMPILED_REVISION`; compile the realm with the same `JG_COMPILED_REVISION`. Read its startup JSON once and retain the process handle for cleanup. A development proof may explicitly label dirty source; beta service activation still requires the exact landed revision.
+
+`bun scripts/drive-settings.ts` takes `JG_SETTINGS_PROOF_URL`, `JG_SETTINGS_PROOF_REALM_URL`, `JG_SETTINGS_PROOF_REVISION`, `JG_SETTINGS_PROOF_EVIDENCE`, and `CHROMIUM_PATH`. It checks each listener identity and the actual client websocket before driving selection, native Tab/Space, saved settings, full reload, and an authority command at desktop and phone widths. It closes its browser in `finally`; the host owner closes its listeners. Screenshots finish finite CSS transitions before capture so pressed-state evidence matches the visible selection.
+
 ## Aiming, spawn, and named views
 
 - Engine preview fixtures (the real exported `@jgengine/react` primitives — `HudThemePreview`, `BarsPreview`, `IconsPreview`, …) capture with `bun run shoot --fixture <name>` — no game boot, no hand-rolled `--url` page. `bun run shoot --list` (or `--fixture` with no name) prints the registered set; an unknown name reports the available fixtures. The runner mounts them from a `?fixture=<name>` overlay; the set lives in `@jgengine/react`'s `PREVIEW_FIXTURES` registry, so registering a new deterministic preview component there makes it capturable with no harness change. Use this to screenshot shipped HUD building blocks deterministically instead of booting a full game.

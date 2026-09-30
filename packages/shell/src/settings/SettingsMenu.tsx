@@ -134,7 +134,7 @@ function SelectRow({ row }: { row: SettingsRow }) {
     <RowShell
       label={row.label}
       control={
-        <div className="flex flex-wrap justify-end gap-1 rounded-lg p-1" style={{ background: surfaceDeep }}>
+        <div role="group" aria-label={row.label} className="flex flex-wrap justify-end gap-1 rounded-lg p-1" style={{ background: surfaceDeep }}>
           {options.map((option) => {
             const selected = option.value === current;
             return (
@@ -142,6 +142,7 @@ function SelectRow({ row }: { row: SettingsRow }) {
                 key={option.value}
                 type="button"
                 onClick={() => row.set(option.value)}
+                aria-pressed={selected}
                 className="min-h-[34px] rounded-md px-3 text-sm font-medium transition"
                 style={selected ? { background: accent, color: onAccent } : { color: textDim }}
               >

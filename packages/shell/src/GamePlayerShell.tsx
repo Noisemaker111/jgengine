@@ -351,6 +351,12 @@ export function GamePlayerShell({
         serverIdRef={serverIdRef}
         uiScale={graphics.uiScale}
         onPointerResumeAudio={() => audioEngine.resume()}
+        settingsStore={settingsStore}
+        bindingOverrides={bindingOverrides}
+        rebindAction={rebindAction}
+        resetActionBinding={resetActionBinding}
+        audioEngine={audioEngine}
+        poster={poster}
       />
     );
   }
