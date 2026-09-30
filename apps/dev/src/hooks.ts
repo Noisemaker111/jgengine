@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { readUrlParam, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 
+import { deferUnhandledPresentationError } from "@jgengine/shell/presentationRecovery";
+
 import { formatLoadError } from "./appShared";
 
 const EDITOR_MODE_PARAM = "mode";
@@ -93,19 +95,27 @@ export function useEditorSummon(mode: string): EditorSummon {
 export function useRuntimeError(): string | null {
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
   useEffect(() => {
+    let active = true;
     const onError = (event: ErrorEvent) => {
       const detail = event.error instanceof Error ? (event.error.stack ?? event.error.message) : event.message;
-      console.error(`[jgengine/play] runtime error`, event.error ?? event.message);
-      setRuntimeError(detail);
+      deferUnhandledPresentationError(event.error, () => {
+        if (!active) return;
+        console.error(`[jgengine/play] runtime error`, event.error ?? event.message);
+        setRuntimeError(detail);
+      });
     };
     const onRejection = (event: PromiseRejectionEvent) => {
       const detail = formatLoadError(event.reason);
-      console.error(`[jgengine/play] unhandled rejection`, event.reason);
-      setRuntimeError(detail);
+      deferUnhandledPresentationError(event.reason, () => {
+        if (!active) return;
+        console.error(`[jgengine/play] unhandled rejection`, event.reason);
+        setRuntimeError(detail);
+      });
     };
     window.addEventListener("error", onError);
     window.addEventListener("unhandledrejection", onRejection);
     return () => {
+      active = false;
       window.removeEventListener("error", onError);
       window.removeEventListener("unhandledrejection", onRejection);
     };

@@ -166,7 +166,9 @@ export const editorLayerRegistry: Partial<
 );
 
 export const gameRegistry: GameRegistry = {
-  "hosted-authority": () => import("./demo/hostedAuthorityDemo").then((module) => module.hostedAuthorityDemoGame),
+  "hosted-authority": () => new URLSearchParams(window.location.search).get("presentation") === "recovery"
+    ? import("./demo/presentationRecoveryDemo").then((module) => module.presentationRecoveryDemoGame)
+    : import("./demo/hostedAuthorityDemo").then((module) => module.hostedAuthorityDemoGame),
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
   "guard-probe": () => import("./demo/guardProbeDemo").then((module) => module.guardProbeGame),

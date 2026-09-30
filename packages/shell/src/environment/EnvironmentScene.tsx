@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
+import { PresentationAssetBoundary, PresentationRecoveredDraw, useRecoverableTexture } from "../presentationRecovery";
 import * as THREE from "three";
 import type { Group } from "three";
 import { useGameContext } from "@jgengine/react/provider";
@@ -63,7 +63,7 @@ function TexturedTerrainGround({
   layout: TerrainGroundLayout;
 }) {
   const maps = detail.material!.maps;
-  const textures = useTexture({
+  const textures = useRecoverableTexture({
     color: maps.color,
     normal: maps.normal,
     roughness: maps.roughness,
@@ -79,6 +79,8 @@ function TexturedTerrainGround({
   }, [textures]);
   const material = useDisposable(() => createTerrainDetailMaterial(detail, textures).material, [detail, textures]);
   return (
+    <>
+    <PresentationRecoveredDraw />
     <CarvedTerrain
       field={layout.field}
       size={layout.size}
@@ -90,6 +92,7 @@ function TexturedTerrainGround({
       roughness={0.94}
       surfaceMaterial={material}
     />
+    </>
   );
 }
 
@@ -140,10 +143,12 @@ function TerrainGround({
 
   if (resolvedDetail?.material !== undefined) {
     return (
-      <TexturedTerrainGround
-        detail={resolvedDetail}
-        layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, center }}
-      />
+      <PresentationAssetBoundary>
+        <TexturedTerrainGround
+          detail={resolvedDetail}
+          layout={{ field, size, segments: terrain.segments, colors, heightRange, paletteAt, center }}
+        />
+      </PresentationAssetBoundary>
     );
   }
 

@@ -29,8 +29,17 @@ const frontend = createServer(async (req, res) => {
     res.end(await readFile(path));
   } catch { res.writeHead(404).end(); }
 });
+const traceInput = process.env["JG_FIXTURE_INPUT_TRACE"] === "1";
+const inputTrace: unknown[] = [];
+function trace(stage: string, details: object) {
+  inputTrace.push({ stage, epochMs: Date.now(), monotonicMs: performance.now(), ...details });
+}
 const realm = createServer((req, res) => {
-  if (req.url === "/__version") {
+  if (req.url === "/__fixture/input-trace" && traceInput) {
+    res.setHeader("content-type", "application/json");
+    res.setHeader("cache-control", "no-store");
+    res.end(JSON.stringify({ revision, events: inputTrace }));
+  } else if (req.url === "/__version") {
     res.setHeader("content-type", "application/json");
     res.end(JSON.stringify({ revision, component: "realm", fixture: "hosted-authority", port: ports.realm }));
   } else if (req.url === "/__fixture/stop" && req.method === "POST") {
@@ -42,6 +51,42 @@ const world = createWorldGameServer({
   allowAnonymous: true, server: realm, path: "/ws",
   persistence: { store: ({ gameId, serverId }) => fileWorldStore(join(data, `${encodeURIComponent(gameId)}-${encodeURIComponent(serverId)}.json`)) },
 });
+// Opt-in anonymous QA observation only: forward the exact real operation and payload.
+// Memory recording avoids putting an asynchronous logger on the command path.
+if (traceInput) {
+  const runCommand = world.host.runCommand.bind(world.host);
+  world.host.runCommand = async args => {
+    if (args.command !== "engine.input") return runCommand(args);
+    trace("host-command-enter", { userId: args.userId, serverId: args.serverId, input: args.input });
+    try {
+      const result = await runCommand(args);
+      trace("host-command-complete", { userId: args.userId, serverId: args.serverId, input: args.input, result });
+      return result;
+    } catch (error) {
+      trace("host-command-error", { userId: args.userId, serverId: args.serverId, input: args.input });
+      throw error;
+    }
+  };
+  world.ws.wss.on("connection", socket => {
+    const inputIds = new Set<number>();
+    socket.prependListener("message", raw => {
+      try {
+        const packet = JSON.parse(raw.toString());
+        if (packet.command !== "engine.input") return;
+        inputIds.add(packet.id);
+        trace("socket-receive", { packet });
+      } catch { /* The real router owns malformed-message handling. */ }
+    });
+    const send = socket.send;
+    socket.send = ((...args: Parameters<typeof send>) => {
+      try {
+        const packet = JSON.parse(String(args[0]));
+        if (packet.t === "reply" && inputIds.has(packet.id)) trace("socket-ack-send", { packet, bufferedAmount: socket.bufferedAmount });
+      } catch { /* Non-JSON packets pass through untouched. */ }
+      return Reflect.apply(send, socket, args);
+    }) as typeof send;
+  });
+}
 let stopping: Promise<void> | undefined;
 function stop(): Promise<void> {
   return stopping ??= world.close().then(() => {
