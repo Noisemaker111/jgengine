@@ -58,8 +58,13 @@ import { EMPTY_RESERVED } from "./shellConstants";
 import { JoinGate } from "./JoinGate";
 import { useShellMultiplayerSync } from "./useShellMultiplayerSync";
 import { ShellHudPresentation } from "./ShellHudPresentation";
+import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
+import { playControlsActive } from "@jgengine/core/game/controlGate";
+import { resolveInputSink } from "./inputSink";
+import { observableShellTracker, attachShellInputPublication } from "./shellInputPublication";
 import { attachShellControlSuspension } from "./shellControlSuspension";
 import { Shell3dPresentation } from "./Shell3dPresentation";
+import { createPresentationDiagnosticOwnership, PresentationRecovery } from "./presentationRecovery";
 
 const DEV_USER_ID = "dev-player";
 
@@ -124,6 +129,8 @@ export function GamePlayerShell({
   const posterSettledRef = useRef(false);
   const [ctx, setCtx] = useState<GameContext | null>(null);
   const [diagnostics, setDiagnostics] = useState<RuntimeDiagnostic[]>([]);
+  const diagnosticSequence = useRef(0);
+  const presentationDiagnostics = useRef(createPresentationDiagnosticOwnership());
   const [remotePlayers, setRemotePlayers] = useState<PresencePoseRow[]>([]);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const yawRef = useRef(0);
@@ -168,7 +175,7 @@ export function GamePlayerShell({
   );
   const activeBindingMap = useMemo(() => toActionStateBindingMap(withTouchCodes(activeInput)), [activeInput]);
   // One tracker per context, rebound in place so keys held across a context swap stay held.
-  const tracker = useMemo(() => createActionStateTracker<string>(activeBindingMap), [ctx]);
+  const tracker = useMemo(() => observableShellTracker(createActionStateTracker<string>(activeBindingMap)), [ctx]);
   const boundMapRef = useRef(activeBindingMap);
   if (boundMapRef.current !== activeBindingMap) {
     boundMapRef.current = activeBindingMap;
@@ -182,7 +189,10 @@ export function GamePlayerShell({
   };
   const deactivatePointerAxis = () => {
     const state = pointerAxisRef.current;
-    if (state !== null && state.active) pointerAxisRef.current = { ...state, active: false };
+    if (state !== null && state.active) {
+      pointerAxisRef.current = { ...state, active: false };
+      tracker.notify("discrete");
+    }
   };
   // Reads fresh every render: the ctx-version useSyncExternalStore below re-renders on store
   // writes, so a gameplay setTouchControlsMode("car") swaps the visible control set that frame.
@@ -210,6 +220,7 @@ export function GamePlayerShell({
       onCodeUp: (code: string) => tracker.handleUp(code),
       onAnalog: (values: Readonly<Record<string, number>> | null) => {
         analogRef.current = values;
+        tracker.notify("analog");
       },
     }),
     [tracker],
@@ -221,6 +232,19 @@ export function GamePlayerShell({
     });
   }, [ctx, tracker]);
   const gateRef = useRef(false);
+  useLayoutEffect(() => {
+    if (ctx === null || poster) return;
+    return attachShellInputPublication({
+      ctx, tracker,
+      active: () => !gateRef.current && playControlsActive(ctx),
+      analog: () => analogRef.current,
+      pointer: () => pointerAxisRef.current,
+      sink: () => resolveInputSink({
+        serverAuthoritative: isServerAuthoritative(playable.game.multiplayer) && multiplayer !== null,
+        backend: multiplayer?.backend ?? null, serverId: serverIdRef.current,
+      }),
+    });
+  }, [ctx, tracker, multiplayer, playable, poster]);
   const orientationPlatform = coarsePointer ? "mobile" : "desktop";
   const orientationRequirement = useMemo(
     () => resolveOrientationRequirement(playable.orientation, orientationPlatform),
@@ -276,7 +300,14 @@ export function GamePlayerShell({
   const userId = multiplayer?.userId ?? DEV_USER_ID;
   const reportRuntimeError = (error: unknown, phase: string, componentStack?: string) => {
     const diagnostic = logRuntimeError(error, phase, componentStack);
-    setDiagnostics((current) => [...current.slice(-4), { ...diagnostic, id: Date.now() + current.length }]);
+    const id = ++diagnosticSequence.current;
+    presentationDiagnostics.current.register(error, id, phase);
+    setDiagnostics((current) => [...current.slice(-4), { ...diagnostic, id }]);
+  };
+
+  const retireRecoveredPresentation = (error: unknown) => {
+    const owned = presentationDiagnostics.current.recovered(error);
+    setDiagnostics((current) => current.filter((diagnostic) => !owned.has(diagnostic.id)));
   };
 
   useEffect(() => {
@@ -354,44 +385,48 @@ export function GamePlayerShell({
 
   if (rigKind === "none" || playable.presentation === "hud") {
     return (
-      <ShellHudPresentation
+      <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation}>
+        <ShellHudPresentation
+          {...shared}
+          serverIdRef={serverIdRef}
+          uiScale={graphics.uiScale}
+          onPointerResumeAudio={() => audioEngine.resume()}
+          settingsStore={settingsStore}
+          bindingOverrides={bindingOverrides}
+          rebindAction={rebindAction}
+          resetActionBinding={resetActionBinding}
+          audioEngine={audioEngine}
+          poster={poster}
+        />
+      </PresentationRecovery>
+    );
+  }
+
+  return (
+    <PresentationRecovery ctx={ctx} onRuntimeError={reportRuntimeError} onRetryCommitted={() => wrapperRef.current?.focus({ preventScroll: true })} onRecoveredDraw={retireRecoveredPresentation}>
+      <Shell3dPresentation
         {...shared}
+        primaryClickRef={primaryClickRef}
+        cameraDraggingRef={cameraDraggingRef}
         serverIdRef={serverIdRef}
-        uiScale={graphics.uiScale}
-        onPointerResumeAudio={() => audioEngine.resume()}
+        remotePlayers={remotePlayers}
+        touchStyle={touchStyle}
+        compact={compact}
+        graphics={graphics}
         settingsStore={settingsStore}
         bindingOverrides={bindingOverrides}
         rebindAction={rebindAction}
         resetActionBinding={resetActionBinding}
         audioEngine={audioEngine}
         poster={poster}
+        posterFrozen={posterFrozen}
+        onPosterSettled={() => {
+          if (posterSettledRef.current) return;
+          posterSettledRef.current = true;
+          setPosterFrozen(true);
+        }}
+        authoritativeFrameRef={authoritativeFrameRef}
       />
-    );
-  }
-
-  return (
-    <Shell3dPresentation
-      {...shared}
-      primaryClickRef={primaryClickRef}
-      cameraDraggingRef={cameraDraggingRef}
-      serverIdRef={serverIdRef}
-      remotePlayers={remotePlayers}
-      touchStyle={touchStyle}
-      compact={compact}
-      graphics={graphics}
-      settingsStore={settingsStore}
-      bindingOverrides={bindingOverrides}
-      rebindAction={rebindAction}
-      resetActionBinding={resetActionBinding}
-      audioEngine={audioEngine}
-      poster={poster}
-      posterFrozen={posterFrozen}
-      onPosterSettled={() => {
-        if (posterSettledRef.current) return;
-        posterSettledRef.current = true;
-        setPosterFrozen(true);
-      }}
-      authoritativeFrameRef={authoritativeFrameRef}
-    />
+    </PresentationRecovery>
   );
 }

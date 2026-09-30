@@ -3,7 +3,7 @@ import type { LiveGameBackend, TransportRunCommandResult } from "@jgengine/core/
 
 /** Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`. */
 export interface InputSink {
-  send(frame: InputFrame): void;
+  send(frame: InputFrame, options?: { urgent?: boolean }): void;
 }
 
 /** Discards input — the single-player / client-authoritative default, where the client integrates movement itself.
@@ -15,10 +15,12 @@ export function noopInputSink(): InputSink {
 
 interface RemoteInputSource {
   pending: InputFrame | null;
-  inFlight: boolean;
+  inFlight: object | null;
+  latest: InputFrame | null;
 }
 
 const remoteInputSources = new WeakMap<LiveGameBackend["transport"], Map<string, RemoteInputSource>>();
+let lastInputSeq = 0;
 
 function remoteInputSourceFor(backend: Pick<LiveGameBackend, "transport">, serverId: string): RemoteInputSource {
   let sources = remoteInputSources.get(backend.transport);
@@ -28,14 +30,15 @@ function remoteInputSourceFor(backend: Pick<LiveGameBackend, "transport">, serve
   }
   let source = sources.get(serverId);
   if (source === undefined) {
-    source = { pending: null, inFlight: false };
+    source = { pending: null, inFlight: null, latest: null };
     sources.set(serverId, source);
   }
   return source;
 }
 
 function monotonicInputSeq(): number {
-  return typeof performance !== "undefined" && typeof performance.now === "function" ? performance.now() : Date.now();
+  const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+  return lastInputSeq = Math.max(now, lastInputSeq + 0.001);
 }
 
 function pumpRemoteInput(
@@ -43,43 +46,50 @@ function pumpRemoteInput(
   serverId: string,
   source: RemoteInputSource,
 ): void {
-  if (source.inFlight) return;
+  if (source.inFlight !== null) return;
   const frame = source.pending;
   if (frame === null) {
     remoteInputSources.get(backend.transport)?.delete(serverId);
     return;
   }
   source.pending = null;
-  source.inFlight = true;
+  const owner = {};
+  source.inFlight = owner;
   const seq = monotonicInputSeq();
   void backend.transport
     .runCommand({ serverId, command: INPUT_COMMAND, input: { ...frame, seq } })
     .then((result: TransportRunCommandResult) => {
-      if (!result.ok) {
-        console.warn(`[jgengine:input] frame seq=${seq} to server "${serverId}" rejected: ${result.reason}`);
-      }
+      if (!result.ok) console.warn(`[jgengine:input] frame seq=${seq} to server "${serverId}" rejected: ${result.reason}`);
     })
     .catch((error: unknown) => {
       console.warn(`[jgengine:input] frame seq=${seq} to server "${serverId}" failed to send`, error);
     })
     .finally(() => {
-      source.inFlight = false;
+      // An urgent discrete intent supersedes this flight. Its old completion must not
+      // release the replacement's ACK gate or replay the superseded pending frame.
+      if (source.inFlight !== owner) return;
+      source.inFlight = null;
       pumpRemoteInput(backend, serverId, source);
     });
 }
 
-/**
- * Sends each frame's input to the authoritative host over the transport, reusing the `runCommand` path via
- * {@link INPUT_COMMAND}. Sends are sequenced one-in-flight-at-a-time per `serverId` and stamped with a monotonic
- * seq: a frame sent while one is already in flight replaces the pending frame rather than racing it, so the
- * latest intent always wins and a stale frame can never resolve after (and overwrite) a newer one.
+/** Coalesces continuous frames. Discrete release/reset intents bypass a pending ACK;
+ * the host's monotonic sequence admission rejects any older input arriving afterwards.
  * @internal
  */
 export function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): InputSink {
   return {
-    send(frame) {
+    send(frame, options) {
       const source = remoteInputSourceFor(backend, serverId);
-      source.pending = frame;
+      if (source.latest !== null && inputFramesEqual(source.latest, frame)) return;
+      const snapshot: InputFrame = {
+        ...frame, held: [...frame.held],
+        pointer: frame.pointer === null ? null : { ...frame.pointer },
+        ...(frame.analog === undefined ? {} : { analog: frame.analog === null ? null : { ...frame.analog } }),
+      };
+      source.latest = snapshot;
+      source.pending = snapshot;
+      if (options?.urgent) source.inFlight = null;
       pumpRemoteInput(backend, serverId, source);
     },
   };
