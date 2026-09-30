@@ -64,6 +64,69 @@ describe("economy/auctionBook", () => {
     ).toEqual({ status: "rejected", reason: "auction-cap-reached" });
   });
 
+  test("generated IDs preserve explicit auctions, escrow, and settlement", () => {
+    const book = bookFixture();
+    const terms = { count: 1, currency: "copper", startPrice: 100, minIncrement: 10, now: 0 };
+    expect(book.post({ ...terms, id: "auction_1", sellerId: "amy", itemId: "sword" }).status).toBe("ok");
+    expect(book.post({ ...terms, id: "auction_2", sellerId: "cal", itemId: "shield" }).status).toBe("ok");
+    expect(book.bid("auction_1", "bob", 100, 1)).toMatchObject({ status: "ok", escrowed: 100 });
+    const automatic = book.post({ ...terms, sellerId: "dee", itemId: "helmet", now: 2 });
+    if (automatic.status !== "ok") throw new Error("expected ok");
+
+    const settlements = book.settleExpired(200);
+    expect(settlements).toHaveLength(3);
+    expect(settlements).toContainEqual({
+      status: "sold",
+      auction: expect.objectContaining({ id: "auction_1", sellerId: "amy", itemId: "sword" }),
+      winnerId: "bob",
+      price: 100,
+      houseCut: 5,
+      sellerProceeds: 95,
+    });
+    expect(automatic.auction.id).not.toBe("auction_1");
+    expect(automatic.auction.id).not.toBe("auction_2");
+    expect(book.collectionOf("amy")).toEqual({ currency: { copper: 95 }, items: [] });
+    expect(book.collectionOf("bob")).toEqual({ currency: {}, items: [{ itemId: "sword", count: 1 }] });
+    expect(book.collectionOf("cal")).toEqual({ currency: {}, items: [{ itemId: "shield", count: 1 }] });
+    expect(book.collectionOf("dee")).toEqual({ currency: {}, items: [{ itemId: "helmet", count: 1 }] });
+    expect(book.settleExpired(200)).toEqual([]);
+    expect(book.claimCurrency("amy")).toEqual({ copper: 95 });
+    expect(book.claimCurrency("amy")).toEqual({});
+    expect(book.claimItem("bob", "sword", 1)).toBe(true);
+    expect(book.claimItem("bob", "sword", 1)).toBe(false);
+  });
+
+  test("duplicate explicit IDs cannot replace an auction or lose outbid refunds", () => {
+    const book = bookFixture();
+    const terms = { count: 1, currency: "copper", startPrice: 100, minIncrement: 10, now: 0 };
+    expect(book.post({ ...terms, id: "saved-auction", sellerId: "amy", itemId: "sword" }).status).toBe("ok");
+    expect(book.bid("saved-auction", "bob", 100, 1)).toMatchObject({ status: "ok", escrowed: 100 });
+    const original = book.get("saved-auction");
+    expect(book.post({ ...terms, id: "saved-auction", sellerId: "cal", itemId: "shield" })).toEqual({
+      status: "rejected",
+      reason: "duplicate-id",
+    });
+    expect(book.get("saved-auction")).toEqual(original);
+    expect(book.countOf("cal")).toBe(0);
+    expect(book.bid("saved-auction", "dee", 110, 2)).toMatchObject({ status: "ok", escrowed: 110 });
+    expect(book.collectionOf("bob").currency).toEqual({ copper: 100 });
+    expect(book.settleExpired(100)).toEqual([
+      {
+        status: "sold",
+        auction: expect.objectContaining({ id: "saved-auction", sellerId: "amy", itemId: "sword" }),
+        winnerId: "dee",
+        price: 110,
+        houseCut: 5,
+        sellerProceeds: 105,
+      },
+    ]);
+    expect(book.collectionOf("amy").currency).toEqual({ copper: 105 });
+    expect(book.collectionOf("dee").items).toEqual([{ itemId: "sword", count: 1 }]);
+    expect(book.settleExpired(100)).toEqual([]);
+    expect(book.claimCurrency("bob")).toEqual({ copper: 100 });
+    expect(book.claimCurrency("bob")).toEqual({});
+  });
+
   test("bid enforces start price, increments, and rejects seller and leading bidder", () => {
     const book = bookFixture();
     const auction = posted(book);
@@ -166,6 +229,31 @@ describe("economy/auctionBook", () => {
     expect(book.collectionOf("amy").items).toEqual([{ itemId: "sword", count: 1 }]);
     expect(book.active()).toEqual([]);
   });
+
+  test.each([-1, 0, 0.5, NaN, Infinity, -Infinity])(
+    "claimItem rejects invalid count %s without changing items",
+    (count) => {
+      const book = bookFixture();
+      const result = book.post({
+        sellerId: "amy",
+        itemId: "sword",
+        count: 2,
+        currency: "copper",
+        startPrice: 100,
+        minIncrement: 10,
+        now: 0,
+      });
+      expect(result.status).toBe("ok");
+      book.settleExpired(100);
+      expect(book.claimItem("amy", "sword", count)).toBe(false);
+      expect(book.collectionOf("amy").items).toEqual([{ itemId: "sword", count: 2 }]);
+      expect(book.claimItem("amy", "sword", 3)).toBe(false);
+      expect(book.claimItem("amy", "sword", 1)).toBe(true);
+      expect(book.collectionOf("amy").items).toEqual([{ itemId: "sword", count: 1 }]);
+      expect(book.claimItem("amy", "sword", 1)).toBe(true);
+      expect(book.collectionOf("amy").items).toEqual([]);
+    },
+  );
 
   test("bids are rejected once the close time passes", () => {
     const book = bookFixture();

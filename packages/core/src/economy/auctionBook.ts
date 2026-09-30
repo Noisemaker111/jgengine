@@ -55,7 +55,8 @@ export type PostAuctionReason =
   | "invalid-price"
   | "invalid-increment"
   | "invalid-buyout"
-  | "auction-cap-reached";
+  | "auction-cap-reached"
+  | "duplicate-id";
 
 /** Result of {@link AuctionBook.post}. */
 export type PostAuctionResult =
@@ -235,7 +236,14 @@ export function createAuctionBook(config: AuctionBookConfig): AuctionBook {
       if (countOf(input.sellerId) >= config.maxAuctionsPerSeller) {
         return { status: "rejected", reason: "auction-cap-reached" };
       }
-      const id = input.id ?? `auction_${(counter += 1)}`;
+      let id = input.id;
+      if (id === undefined) {
+        do {
+          id = `auction_${(counter += 1)}`;
+        } while (auctions.has(id));
+      } else if (auctions.has(id)) {
+        return { status: "rejected", reason: "duplicate-id" };
+      }
       const state: AuctionState = {
         id,
         sellerId: input.sellerId,
@@ -324,6 +332,7 @@ export function createAuctionBook(config: AuctionBookConfig): AuctionBook {
       return claimed;
     },
     claimItem(playerId, itemId, count) {
+      if (!Number.isInteger(count) || count < 1) return false;
       const box = boxOf(playerId);
       const index = box.items.findIndex((stack) => stack.itemId === itemId);
       if (index === -1) return false;
