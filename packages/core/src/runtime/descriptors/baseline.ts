@@ -147,7 +147,7 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
   {
     key: "time",
     create: (d) => ({
-      save: {
+      replicate: {
         key: "time",
         snapshot: () => d.time.snapshot(),
         decode: (raw): ClockSnapshot | null => {

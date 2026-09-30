@@ -66,8 +66,8 @@ Raycasts are **object-aware**: the default raycast checks placed scene objects a
 Resolved **once** by the engine when the last stat in the receive order hits min. No HP polling in `onTick`, ever.
 
 - `entity.died` is emitted (before despawn — handlers can still read the victim's stats), then reason-matching `onDeath` entries run.
-- `DeathReason = { kind: "player_kill", killerUserId, via? } | { kind: "environment", source } | { kind: "self", source }`. Kills by the local player attribute automatically.
-- `onDeath.drops` tables are rolled and **granted to the killer** on player kills (emits `loot.granted`) when `onDeath.dropMode` is `"grant"` (default); `onDeath.command` runs through `ctx.game.commands`.
+- `DeathReason = { kind: "player_kill", killerUserId, via? } | { kind: "environment", source } | { kind: "self", source }`. Local players, hosted members and uniquely owned pawns attribute automatically. `ctx.player.possession.ownerOf(entityId)` resolves recorded ownership without inventing an owner; shared ownership is ambiguous and returns `undefined`.
+- `onDeath.drops` tables are rolled and **granted to the killer** on player kills (emits `loot.granted`) when `onDeath.dropMode` is `"grant"` (default); `onDeath.command` runs through `ctx.game.commands.runAs` with the resolved killer. XP commands, quest kill events and loot therefore use the same actor identity on a remote host.
 - `onDeath.dropMode: "world"` routes item drops through a scatter impulse into ground `worldItem`s instead of straight to inventory (currency drops still grant directly) — tune the impulse with `onDeath.scatter: { radius, minRadius?, height? }` (defaults from `game/worldItem`'s `DEFAULT_SCATTER`).
 - Respawning under the same instance id revives it (it can die again). Same-id respawn must not happen synchronously inside the `entity.died` handler — defer a tick.
 - `quest.bind("entity.died")` credits kill objectives from the same event; leaderboards and kill feeds hang off it too.

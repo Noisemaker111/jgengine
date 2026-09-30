@@ -324,6 +324,7 @@
     "./rules/triggeredRules",
     "./runtime/adapter",
     "./runtime/cameraDirector",
+    "./runtime/commandDispatch",
     "./runtime/commandInput",
     "./runtime/commandRunner",
     "./runtime/context/combat",

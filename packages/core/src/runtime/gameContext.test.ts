@@ -481,6 +481,36 @@ describe("createGameContext", () => {
     expect(ctx.player.inventory.count("backpack", "goo")).toBe(0);
   });
 
+  test("a restored remote pawn attributes quest events, death rewards and bag loot to its owner", () => {
+    const ctx = createGameContext({
+      definition: defineGameDefinition({ name: "remote-rewards", assets: createAssetCatalog(), multiplayer: "off", inventories: { backpack: { slots: 9 } } }),
+      content: { ...CONTENT, entityById: (id) => id === "slime"
+        ? { ...CONTENT.entityById!(id), onDeath: { drops: "slime-drops", command: "reward" } }
+        : CONTENT.entityById!(id) },
+      player: { userId: "host", isNew: true },
+    });
+    ctx.scene.entity.spawn("hero", { id: "remote-pawn" });
+    ctx.player.possession.own("bob", "remote-pawn");
+    const saved = ctx.state();
+    ctx.player.possession.disown("bob", "remote-pawn");
+    ctx.restore(saved);
+    ctx.game.loot.register({ id: "slime-drops", entries: [{ item: "goo", count: 2, weight: 1 }] });
+    const questActors: string[] = [];
+    ctx.game.events.on("entity.died", (event) => {
+      if (event.reason.kind === "player_kill") questActors.push(event.reason.killerUserId);
+    });
+    const xpActors: string[] = [];
+    ctx.game.commands.define("reward", { apply: (state) => { xpActors.push(state.player.userId); } });
+    const slime = ctx.scene.entity.spawn("slime");
+    ctx.scene.entity.effect({ from: "remote-pawn", to: slime, effect: "damage", via: { amount: 999 } });
+    expect(questActors).toEqual(["bob"]);
+    expect(xpActors).toEqual(["bob"]);
+    ctx.game.commands.define("check-bag", { apply: (state) => { expect(state.player.inventory.count("backpack", "goo")).toBe(2); } });
+    expect(ctx.game.commands.runAs("bob", "check-bag", {}).status).toBe("applied");
+    expect(ctx.player.inventory.count("backpack", "goo")).toBe(0);
+    expect(ctx.player.userId).toBe("host");
+  });
+
   test("world drops scatter from the seeded world stream, not Math.random", () => {
     const worldContent: GameContextContent = {
       entityById(catalogId) {
@@ -1110,7 +1140,7 @@ describe("ctx.snapshot / ctx.hydrate", () => {
       player: { userId: "user_a", isNew: true },
     });
     const snap = slim.snapshot();
-    expect(Object.keys(snap).sort()).toEqual(["entities", "feed", "inventory", "objects", "stats", "store"]);
+    expect(Object.keys(snap).sort()).toEqual(["entities", "feed", "inventory", "objects", "stats", "store", "time"]);
     expect(snap["leaderboard"]).toBeUndefined();
     expect(snap["chat"]).toBeUndefined();
   });

@@ -52,7 +52,7 @@ export interface ClockSnapshot {
 }
 
 export interface SimClock {
-  /** Advance the world by a real-time delta; returns the scaled game-time delta (0 while paused) and fires any due timers. The shell calls this once per frame and passes the result to `loop.onTick`. */
+  /** Advance the clock directly when used alone. A GameContext's `ctx.sim.advance` owns this call once per step and passes scaled dt to its callback; game loops must not advance it again. */
   advance(realDt: number): number;
   now(): number;
   snapshot(): ClockSnapshot;

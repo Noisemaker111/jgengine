@@ -65,7 +65,7 @@ export interface DeathSystemDeps {
   resolveIdentity(instanceId: string): DeathIdentity | null;
   loot: { roll(tableId: string): Drop[] };
   events: GameEvents;
-  runCommand?(name: string, args: unknown): void;
+  runCommand?(name: string, args: unknown, reason?: DeathReason): void;
   despawn(instanceId: string): void;
 }
 
@@ -116,7 +116,7 @@ export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
         matchesReason(onDeath.command.when, reason) &&
         deps.runCommand !== undefined
       ) {
-        deps.runCommand(onDeath.command.name, onDeath.command.args);
+        deps.runCommand(onDeath.command.name, onDeath.command.args, reason);
         ranCommand = onDeath.command.name;
       }
       deps.despawn(instanceId);

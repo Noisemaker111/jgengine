@@ -33,6 +33,26 @@ const flush = () => Promise.resolve().then().then().then();
 const frame = (held: readonly string[]): InputFrame => ({ held, pointer: null });
 
 describe("input sink", () => {
+  test("two clients in one realm never coalesce or replay input under the other actor", async () => {
+    const aliceCalls: Array<{ serverId: string; command: string; input: unknown }> = [];
+    const bobCalls: typeof aliceCalls = [];
+    const alice = controllableBackend(aliceCalls);
+    const bob = controllableBackend(bobCalls);
+    const a = remoteInputSink(alice.backend, "shared-realm");
+    const b = remoteInputSink(bob.backend, "shared-realm");
+    a.send(frame(["alice-first"]));
+    b.send(frame(["bob-first"]));
+    a.send(frame(["alice-last"]));
+    b.send(frame(["bob-last"]));
+    alice.resolveNext({ ok: true });
+    bob.resolveNext({ ok: true });
+    await flush();
+    expect(aliceCalls.map((call) => (call.input as InputFrame).held)).toEqual([["alice-first"], ["alice-last"]]);
+    expect(bobCalls.map((call) => (call.input as InputFrame).held)).toEqual([["bob-first"], ["bob-last"]]);
+    alice.resolveNext({ ok: true });
+    bob.resolveNext({ ok: true });
+    await flush();
+  });
   test("noopInputSink discards frames", () => {
     expect(() => noopInputSink().send(frame(["moveForward"]))).not.toThrow();
   });

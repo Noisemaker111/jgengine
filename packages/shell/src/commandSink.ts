@@ -33,8 +33,7 @@ export function remoteCommandSink(
 
 /**
  * The sink a server-authoritative shell should dispatch gameplay commands through: remote when the game opts into
- * `authority: "server"` and a server is joined, local otherwise. Client-only UI commands (targeting, hotbar
- * scroll) keep calling `ctx.game.commands.run` directly — only authoritative gameplay verbs route to the host.
+ * `authority: "server"` and a server is joined. Before join it discards commands rather than mutating a replica.
   * @internal
   */
 export function resolveCommandSink(
@@ -48,5 +47,6 @@ export function resolveCommandSink(
   if (opts.serverAuthoritative && opts.backend !== null && opts.serverId !== null) {
     return remoteCommandSink(opts.backend, opts.serverId);
   }
+  if (opts.serverAuthoritative) return { run() {} };
   return localCommandSink(ctx);
 }

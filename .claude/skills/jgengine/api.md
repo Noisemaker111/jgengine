@@ -264,6 +264,12 @@
 - `ChaseCameraTuning` (type): type ChaseCameraTuning = Partial< Pick< ChaseCameraConfig, | "distance" | "height" | "lookHeight" | "springDamping" | "fov" | "lead" | "bank" | "shakePerSpeed" | "velocityYaw" | "yawResponse" | "distanceBySpeed" | "pitchFollow" | "fovKick" | "lookBackAction" | "collision" | "view" > > — Runtime patch over the static `camera.chase` config — distance/height/fov retuning from gameplay events (#286.11), a whole driving-feel overlay applied only while a vehicle is piloted (#1299), or a `view` switch between chase and seat cameras.
 - `nextChaseView` (function): function nextChaseView(current: ChaseView, views: readonly ChaseView[] = CHASE_VIEWS): ChaseView — The view after `current` in `views`, wrapping at the end; a view missing from the list starts the cycle over. Pair with `setChaseTuning` to bind a "change camera" key: `ctx.camera.setChaseTuning({ ...ctx.camera.chaseTuning(), view: nextChaseView(view) })`.
 
+## @jgengine/core/runtime/commandDispatch
+
+- `DispatchedCommandResult` (type): type DispatchedCommandResult = CommandResult<GameContext> | Promise<CommandResult<GameContext>> — A UI command completes locally or after its authoritative host acknowledges it.
+- `bindCommandTransport` (function): function bindCommandTransport(ctx: GameContext, route: Route): () => void — Bind UI command dispatch to the host for this context. A missing join rejects; it never mutates the local replica.
+- `dispatchCommand` (function): function dispatchCommand(ctx: GameContext, name: string, input: unknown): DispatchedCommandResult — Dispatch a player's command through the bound host, or locally for an unbound offline context. Await the result before showing success.
+
 ## @jgengine/core/runtime/commandInput
 
 - `QuantityResult` (type): type QuantityResult = { ok: true; quantity: number } | { ok: false; reason: "invalid-quantity" } — Validated integer quantity or a stable input rejection.
@@ -527,7 +533,7 @@
 - `SimContextState` (interface): interface SimContextState — Serializable `ctx.sim` state: loop position plus the interpolation pose history.
 - `SimStage` (interface): interface SimStage — Extra work a game or engine seam (a physics backend, a netcode buffer) runs inside every simulation step.
 - `SimStagePhase` (type): type SimStagePhase = "beforeMovement" | "afterMovement" | "afterTick" — Where a registered stage runs inside one simulation step.
-- `createSimContext` (function): function createSimContext(options: { config?: SimulationConfig; entities: EntityStore }): SimContext — Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
+- `createSimContext` (function): function createSimContext(options: { config?: SimulationConfig; entities: EntityStore; time?: Pick<SimClock, "advance"> }): SimContext — Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 
 ## @jgengine/core/runtime/simLoop
 

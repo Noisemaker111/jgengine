@@ -22,6 +22,7 @@
     }
   },
   "scripts": {
+    "host:fixture": "node scripts/authority-fixture.mjs",
     "agent:bootstrap": "bun scripts/agent-bootstrap.ts",
     "agent:worktree": "bun scripts/agent-worktree.ts",
     "agent:preflight": "bun scripts/agent-preflight.ts",

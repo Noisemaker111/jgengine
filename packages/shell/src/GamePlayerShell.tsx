@@ -348,6 +348,7 @@ export function GamePlayerShell({
     return (
       <ShellHudPresentation
         {...shared}
+        serverIdRef={serverIdRef}
         uiScale={graphics.uiScale}
         onPointerResumeAudio={() => audioEngine.resume()}
       />
