@@ -67,11 +67,11 @@ const vertexShader = /* glsl */ `
   }
 `;
 
-/** Build the display-space colour-grade pass (lift/gain/gamma, saturation, vignette, grain). Advance `uniforms.uTime.value` each frame to animate the grain. */
+/** Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain. */
 export function createGradePass(config: GradeConfig = {}): ShaderPass {
   const lift = config.lift ?? DEFAULT_LIFT;
   const gain = config.gain ?? DEFAULT_GAIN;
-  return new ShaderPass({
+  const pass = new ShaderPass({
     uniforms: {
       tDiffuse: { value: null },
       uLift: { value: new THREE.Vector3(lift[0], lift[1], lift[2]) },
@@ -88,4 +88,31 @@ export function createGradePass(config: GradeConfig = {}): ShaderPass {
     vertexShader,
     fragmentShader,
   });
+  let disposed = false;
+  let lutTexture: THREE.Texture | null = null;
+  const dispose = pass.dispose.bind(pass);
+  pass.dispose = () => {
+    if (disposed) return;
+    disposed = true;
+    lutTexture?.dispose();
+    lutTexture = null;
+    dispose();
+  };
+  if (config.lut !== undefined) {
+    const lut = config.lut;
+    void new THREE.TextureLoader().loadAsync(lut.url).then((texture) => {
+      if (disposed) {
+        texture.dispose();
+        return;
+      }
+      lutTexture = texture;
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.NearestFilter;
+      texture.magFilter = THREE.NearestFilter;
+      texture.generateMipmaps = false;
+      pass.uniforms.uLut.value = texture;
+      pass.uniforms.uLutSize.value = lut.size ?? 32;
+    }).catch(() => undefined);
+  }
+  return pass;
 }
