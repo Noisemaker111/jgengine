@@ -59,8 +59,8 @@ describe("parseGameReadme", () => {
     const table = [
       "| Game | Id | Description |",
       "| --- | --- | --- |",
-      "| Vice Isle | `vice-isle` | GTA / Borderlands open world |",
+      "| Harbor Heat | `harbor-heat` | Coastal courier and crew adventure |",
     ].join("\n");
-    expect(parseGameReadme(table)).toEqual({ "vice-isle": { title: "Vice Isle", blurb: "GTA / Borderlands open world" } });
+    expect(parseGameReadme(table)).toEqual({ "harbor-heat": { title: "Harbor Heat", blurb: "Coastal courier and crew adventure" } });
   });
 });

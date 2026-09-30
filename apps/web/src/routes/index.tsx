@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-const FEATURED = ["vice-isle", "the-robots", "claudecraft"];
+const FEATURED = ["harbor-heat", "scrap-signal", "lantern-reach"];
 
 const STEPS = [
   {
@@ -72,7 +72,7 @@ function Home() {
             <SectionHeading
               eyebrow="Built with jgengine"
               title={<span id="games-heading">Real games. Playable in this tab.</span>}
-              blurb="Coding agents built these probe games on the published packages. Some are homages to games you know. All of them run here with no install."
+              blurb="Coding agents built these original probe games on the published packages. Play them here with no install."
             />
             <Link to="/games" className="btn btn-secondary">
               All {GAME_IDS.length > 0 ? GAME_IDS.length : ""} games <span className="arrow" aria-hidden>→</span>

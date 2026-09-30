@@ -175,7 +175,6 @@ export function DevApp({ gameId }: { gameId: string }) {
   if (captureRunError !== null && captureArmed()) setCaptureStatus("error", captureRunError);
   const onContextReady = createCaptureContextReady({
     captureRun,
-    probe: playable.capture?.probe,
     stageScenario,
     gameId,
   });

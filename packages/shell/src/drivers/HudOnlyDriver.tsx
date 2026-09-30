@@ -10,6 +10,7 @@ import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 
 import { EMPTY_RESERVED, NO_ACTIONS } from "../shellConstants";
 import type { PlayableGame } from "../registry";
+import { publishCaptureProbe } from "../devtools/captureProbe";
 
 export function HudOnlyDriver({
   ctx,
@@ -40,6 +41,7 @@ export function HudOnlyDriver({
       if (last === null) return;
       if (gateRef.current || !playControlsActive(ctx)) {
         ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
+        publishCaptureProbe(ctx);
         return;
       }
       const rawDt = (now - last) / 1000;
@@ -76,6 +78,7 @@ export function HudOnlyDriver({
         }
       }
       devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
+      publishCaptureProbe(ctx);
     };
     frameId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frameId);

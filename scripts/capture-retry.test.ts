@@ -21,7 +21,7 @@ describe("isStaleCaptureFailure", () => {
   });
 
   test("does not match deterministic config errors a reload cannot fix", () => {
-    expect(isStaleCaptureFailure('unknown capture state "boss" for the-robots')).toBe(false);
+    expect(isStaleCaptureFailure('unknown capture state "boss" for scrap-signal')).toBe(false);
     expect(isStaleCaptureFailure('capture command "character.pick" is not registered')).toBe(false);
     expect(isStaleCaptureFailure("HUD OVERFLOW: panels escape the viewport")).toBe(false);
     expect(isStaleCaptureFailure("Page.captureScreenshot returned empty data")).toBe(false);

@@ -1,10 +1,14 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
+import { spawn, type ChildProcess } from "node:child_process";
+import { EventEmitter } from "node:events";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
+import { PassThrough } from "node:stream";
 import { deflateSync } from "node:zlib";
+import { runInNewContext } from "node:vm";
 
 import {
-  type CdpSession,
+  CdpSession,
   DEVICES,
   MAX_FLAT_SCREENCAST_FRAMES,
   captureViewportPng,
@@ -12,14 +16,137 @@ import {
   chromeGraphicsArgs,
   closePageTarget,
   navigateCapturePage,
+  navigateForPageAttribute,
   normalizeLoopbackUrl,
   resolveDevPort,
   resolveWebPort,
   resolveWarmChromePort,
   regionCarriesPicture,
   screencastCapturesFully,
-  windowsPersistentChromeCommand,
+  waitForDebugger,
+  waitForProcessOutput,
+  subscribeCaptureProbe,
+  waitForClickPoint,
 } from "./browser-lib";
+
+test("probe subscriptions forward native events and detach from a reused page", async () => {
+  const events = new EventTarget();
+  let receive: ((params: Record<string, unknown>) => void) | undefined;
+  let publish: ((sample: unknown) => void) | undefined;
+  let unsubscribed = false;
+  const page: Record<string, unknown> = {
+    addEventListener: events.addEventListener.bind(events),
+    removeEventListener: events.removeEventListener.bind(events),
+    __jgSubscribeProbe: (callback: (sample: unknown) => void) => {
+      publish = callback;
+      return () => { unsubscribed = true; };
+    },
+  };
+  const session = {
+    on: (_method: string, listener: (params: Record<string, unknown>) => void) => {
+      receive = listener;
+      return () => { receive = undefined; };
+    },
+    send: async (_method: string, params?: Record<string, unknown>) => {
+      const name = String(params?.name);
+      page[name] = (payload: string) => receive?.({ name, payload });
+      return {};
+    },
+    evaluate: async <T>(expression: string): Promise<T | undefined> => runInNewContext(expression, page),
+  };
+  const samples: unknown[] = [];
+  const stop = await subscribeCaptureProbe(session, sample => samples.push(sample));
+  publish!({ t: 10, metrics: { x: 4 } });
+  publish!({ t: 20, metrics: { x: 0 } });
+  expect(samples).toEqual([{ t: 10, metrics: { x: 4 } }, { t: 20, metrics: { x: 0 } }]);
+  await stop();
+  expect(unsubscribed).toBe(true);
+  expect(receive).toBeUndefined();
+  expect(page.__jgStopDriveProbe).toBeUndefined();
+});
+
+test("closing a debugger rejects commands still awaiting a page response", async () => {
+  const events = new EventTarget();
+  const socket = Object.assign(events, { readyState: WebSocket.OPEN, send: () => {} });
+  const session = Reflect.construct(CdpSession, [socket]) as CdpSession;
+  const response = session.send("Page.navigate", { url: "http://localhost/" });
+  events.dispatchEvent(new Event("close"));
+  await expect(response).rejects.toThrow("Chrome debugger disconnected");
+});
+
+test("click targets appear through DOM events and resolve after two actual paints", async () => {
+  let mutation = () => {};
+  let disconnected = 0;
+  let nodes: unknown[] = [];
+  let queries = 0;
+  let nextFrame = 0;
+  const frames = new Map<number, () => void>();
+  const page = {
+    document: {
+      documentElement: {},
+      querySelectorAll: () => { queries++; return nodes; },
+      getAnimations: () => [],
+    },
+    MutationObserver: class {
+      constructor(callback: () => void) { mutation = callback; }
+      observe() {}
+      disconnect() { disconnected++; }
+    },
+    ResizeObserver: class { observe() {} disconnect() { disconnected++; } },
+    requestAnimationFrame: (callback: () => void) => { const id = ++nextFrame; frames.set(id, callback); return id; },
+    cancelAnimationFrame: (id: number) => frames.delete(id),
+    setTimeout, clearTimeout,
+  };
+  const session = { evaluate: async <T>(expression: string): Promise<T | undefined> => runInNewContext(expression, page) };
+  const point = waitForClickPoint(session, "START", 1000);
+  expect(queries).toBe(1);
+  nodes = [{ textContent: "START", matches: () => true, getAttribute: () => null,
+    getBoundingClientRect: () => ({ left: 10, top: 20, width: 40, height: 30 }) }];
+  mutation();
+  for (let paint = 0; paint < 2; paint++) {
+    const scheduled = [...frames.values()]; frames.clear();
+    for (const callback of scheduled) callback();
+  }
+  expect(await point).toEqual({ x: 30, y: 35 });
+  expect(queries).toBe(2);
+  expect(disconnected).toBeGreaterThanOrEqual(2);
+  expect(frames.size).toBe(0);
+});
+
+describe("process startup events", () => {
+  test("accepts a split announcement and removes startup listeners", async () => {
+    const child = Object.assign(new EventEmitter(), { stdout: new PassThrough(), stderr: new PassThrough() });
+    const ready = waitForProcessOutput(child as ChildProcess, output => output.includes("DevTools listening"), 1000, "Chrome");
+    child.stderr.write("DevTools list");
+    child.stderr.write("ening on ws://127.0.0.1:9222/");
+    await ready;
+    expect(child.listenerCount("exit")).toBe(0);
+    expect(child.stderr.listenerCount("data")).toBe(0);
+  });
+
+  test("reports real early process exit with its startup diagnostics", async () => {
+    const child = spawn(process.execPath, ["-e", "console.error('startup failed');process.exit(3)"], { stdio: ["ignore", "pipe", "pipe"] });
+    await expect(waitForProcessOutput(child, () => false, 1000, "Vite")).rejects.toThrow("process exited before readiness (code 3)\nstartup failed");
+    expect(child.listenerCount("exit")).toBe(0);
+  });
+
+  test("a single deadline removes pending observers", async () => {
+    const child = Object.assign(new EventEmitter(), { stdout: new PassThrough(), stderr: new PassThrough() });
+    await expect(waitForProcessOutput(child as ChildProcess, () => false, 10, "Vite")).rejects.toThrow("did not announce readiness");
+    expect(child.listenerCount("exit")).toBe(0);
+    expect(child.stdout.listenerCount("data")).toBe(0);
+  });
+
+  test("an existing unavailable debugger is checked once", async () => {
+    let requests = 0;
+    const server = createServer((_request, response) => { requests++; response.writeHead(503).end(); });
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+    try {
+      await expect(waitForDebugger((server.address() as AddressInfo).port, 1000)).rejects.toThrow("HTTP 503");
+      expect(requests).toBe(1);
+    } finally { server.close(); }
+  });
+});
 
 function fakeSession(options: {
   navigation?: Record<string, unknown>;
@@ -36,6 +163,9 @@ function fakeSession(options: {
     async send(method) {
       if (method === "Page.navigate") {
         options.onNavigate?.(emit);
+        if (options.captureStatus !== undefined) {
+          emit("Runtime.bindingCalled", { name: "__jgCaptureSignal", payload: JSON.stringify({ status: options.captureStatus, error: null }) });
+        }
         return options.navigation ?? {};
       }
       return {};
@@ -96,17 +226,6 @@ describe("worktree-scoped ports", () => {
 });
 
 describe("Chrome graphics profile", () => {
-  test("persistent Windows Chrome uses a hidden native process boundary", () => {
-    const command = windowsPersistentChromeCommand("C:\\Program Files\\Chrome\\chrome.exe", [
-      "--headless=new",
-      "--user-data-dir=C:\\Users\\Test User\\Temp\\profile",
-    ]);
-    expect(command).toContain("Start-Process");
-    expect(command).toContain("-WindowStyle Hidden");
-    expect(command).toContain("-PassThru");
-    expect(command).toContain("'\"--user-data-dir=C:\\Users\\Test User\\Temp\\profile\"'");
-  });
-
   test("uses native GPU locally instead of forcing CPU-bound SwiftShader", () => {
     expect(chromeGraphicsArgs({}, "win32")).toEqual(["--ignore-gpu-blocklist"]);
   });
@@ -177,6 +296,18 @@ describe("page target cleanup", () => {
 });
 
 describe("capture navigation failures", () => {
+  test("view discovery consumes metadata pushed during navigation without reading the old page", async () => {
+    const session = fakeSession({ onNavigate(emit) {
+      emit("Runtime.bindingCalled", { name: "__jgMetadataSignal", payload: '["courtyard"]' });
+    } });
+    session.evaluate = async () => { throw new Error("view discovery must not poll"); };
+    await expect(navigateForPageAttribute(session, "http://host/?game=demo", "data-jg-views", 1000)).resolves.toBe('["courtyard"]');
+  });
+
+  test("missing view metadata fails at one bounded deadline", async () => {
+    await expect(navigateForPageAttribute(fakeSession({}), "http://host/", "data-jg-views", 1)).rejects.toThrow("timed out waiting for data-jg-views (1ms)");
+  });
+
   test("surfaces Chrome navigation errors immediately", async () => {
     const session = fakeSession({ navigation: { errorText: "net::ERR_UNSAFE_PORT" } });
     await expect(navigateCapturePage(session, "http://127.0.0.1:5060/playground", 60_000)).rejects.toThrow(
@@ -200,6 +331,48 @@ describe("capture navigation failures", () => {
   test("returns when the page declares the capture ready", async () => {
     const session = fakeSession({ captureStatus: "ready" });
     await expect(navigateCapturePage(session, "http://127.0.0.1:5712/playground", 1_000)).resolves.toBeUndefined();
+  });
+
+  test("waits for readiness pushed after navigation without evaluating the page", async () => {
+    const session = fakeSession({
+      onNavigate(emit) {
+        queueMicrotask(() => emit("Runtime.bindingCalled", {
+          name: "__jgCaptureSignal", payload: JSON.stringify({ status: "ready", error: null }),
+        }));
+      },
+    });
+    session.evaluate = async () => { throw new Error("capture must not poll"); };
+    await expect(navigateCapturePage(session, "http://127.0.0.1:5712/playground", 1_000)).resolves.toBeUndefined();
+  });
+
+  test("fails once when a page never sends readiness", async () => {
+    await expect(navigateCapturePage(fakeSession({}), "http://127.0.0.1:5712/playground", 1)).rejects.toThrow(
+      "timed out waiting for data-jg-capture=ready (1ms)",
+    );
+  });
+
+  test("failure diagnostics separate unfinished assets from failed or completed requests and read the frame only once", async () => {
+    const log = spyOn(console, "error").mockImplementation(() => {});
+    let reads = 0;
+    const session = fakeSession({ onNavigate(emit) {
+      emit("Network.requestWillBeSent", { type: "Fetch", requestId: "pending", request: { url: "http://host/model.glb" } });
+      emit("Network.requestWillBeSent", { type: "Image", requestId: "missing", request: { url: "http://host/missing.png" } });
+      emit("Network.responseReceived", { requestId: "missing", response: { status: 404 } });
+      emit("Network.loadingFinished", { requestId: "missing" });
+      emit("Network.requestWillBeSent", { type: "Script", requestId: "done", request: { url: "http://host/module.js" } });
+      emit("Network.loadingFinished", { requestId: "done" });
+    } });
+    session.evaluate = async <T>() => {
+      reads++;
+      return { canvases: [{ frame: { pending: 1, framesStarted: 2, framesCompleted: 2 } }] } as T;
+    };
+    try {
+      await expect(navigateCapturePage(session, "http://host/", 1)).rejects.toThrow("timed out waiting");
+      const network = JSON.parse(log.mock.calls.find(call => call[0] === "[jgengine:capture-network]")![1] as string);
+      expect(network.pending.map((request: { url: string }) => request.url)).toEqual(["http://host/model.glb"]);
+      expect(network.failed).toEqual([{ url: "http://host/missing.png", status: 404 }]);
+      expect(reads).toBe(1);
+    } finally { log.mockRestore(); }
   });
 
   test("ignores a failed document request from a subframe", async () => {

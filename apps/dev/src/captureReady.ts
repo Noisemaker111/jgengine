@@ -4,12 +4,11 @@
  * Page.captureScreenshot — never ships PNG/base64 through the page.
  */
 
-import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad";
-
 import { resolvedLook } from "./appEnv";
 import { verifyLookSubject } from "./lookCamera";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { PlayableGame } from "@jgengine/shell/registry";
+import { captureDeadline, captureTimeout } from "./captureDeadline";
 
 export type CaptureStatus = "preparing" | "ready" | "error";
 
@@ -29,24 +28,6 @@ const CAPTURE_CONSOLE = "[jgengine:capture]";
 export function captureArmed(): boolean {
   if (typeof window === "undefined") return false;
   return new URLSearchParams(window.location.search).get("capture") === "1";
-}
-
-/**
- * Bot-playtest read hook, part of the capture handshake: exposes the game's
- * `capture.probe` as `window.__jgProbe`, a live read the `drive --playtest`
- * host samples over time to prove the loop advances under input. Returns `{}`
- * on any error so a probe throw never softlocks the whole harness.
- */
-export function installPlaytestProbe(read: () => Record<string, number>): void {
-  if (typeof window === "undefined") return;
-  (window as { __jgProbe?: () => Record<string, number> }).__jgProbe = () => {
-    try {
-      const value = read();
-      return value !== null && typeof value === "object" ? value : {};
-    } catch {
-      return {};
-    }
-  };
 }
 
 export function readCaptureQuery(): { game: string; mode: string; device: string; settle: number | null } {
@@ -86,6 +67,10 @@ export function setCaptureStatus(status: CaptureStatus, error?: string): void {
 
 function waitForSelector(selector: string, timeoutMs: number): Promise<Element> {
   return new Promise((resolve, reject) => {
+    if (timeoutMs <= 0) {
+      reject(new Error(`capture readiness budget exhausted waiting for ${selector}`));
+      return;
+    }
     const existing = document.querySelector(selector);
     if (existing !== null) {
       resolve(existing);
@@ -113,33 +98,33 @@ function delay(ms: number): Promise<void> {
   });
 }
 
-/** Streaming counts as done after this much loader idle; below it a model can still pop in. */
-const MODEL_IDLE_MS = 400;
-const MODEL_IDLE_TIMEOUT_MS = 15_000;
-
-/**
- * Block until the shared GLB loader has been idle for {@link MODEL_IDLE_MS}, bounded.
- * A detached `?look=` camera frames a region the player never stood in, so its models
- * are still streaming when a fixed settle expires — the reason establishing captures
- * used to need a hand-tuned `--settle` before they stopped coming back half-empty.
- */
-async function waitForModelStreaming(): Promise<void> {
-  const deadline = Date.now() + MODEL_IDLE_TIMEOUT_MS;
-  while (Date.now() < deadline) {
-    if (modelLoadIdleMs() >= MODEL_IDLE_MS) return;
-    await delay(100);
-  }
+async function waitPlayFrames(settleMs: number, remaining: () => number): Promise<void> {
+  await waitForSelector("canvas, [data-jg-frame-ready]", remaining());
+  if (settleMs > remaining()) throw new Error("capture readiness budget exhausted before settle");
+  await delay(settleMs);
+  await waitForSelector("[data-jg-frame-ready]", remaining());
 }
 
-async function waitPlayFrames(settleMs: number): Promise<void> {
-  await waitForSelector("canvas, [data-jg-frame-ready]", 25_000);
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => resolve());
-    });
-  });
-  await waitForModelStreaming();
-  await delay(settleMs);
+/** Snapshot once on failure; never changes readiness or creates a graphics context. @internal */
+function captureDiagnostics(): unknown {
+  return {
+    elapsedMs: performance.now(),
+    phase: document.documentElement.dataset.jgPhase ?? null,
+    canvases: Array.from(document.querySelectorAll("canvas"), (canvas) => {
+      const read = (canvas as HTMLCanvasElement & { __jgFrameReadiness?: () => unknown }).__jgFrameReadiness;
+      const rect = canvas.getBoundingClientRect();
+      return {
+        width: canvas.width, height: canvas.height,
+        cssWidth: rect.width, cssHeight: rect.height,
+        ready: canvas.hasAttribute("data-jg-frame-ready"),
+        frame: typeof read === "function" ? read() : null,
+      };
+    }),
+    resources: performance.getEntriesByType("resource").map((entry) => {
+      const resource = entry as PerformanceResourceTiming;
+      return { url: resource.name, durationMs: resource.duration, bytes: resource.transferSize, status: resource.responseStatus };
+    }),
+  };
 }
 
 function assertNoMenuOnScreen(): void {
@@ -155,32 +140,43 @@ function assertNoMenuOnScreen(): void {
 
 /**
  * When `?capture=1`, marks preparing → ready|error once the runner has an
- * honest frame for the active mode. Host polls `data-jg-capture` / console.
+ * honest frame for the active mode. The host observes `data-jg-capture` changes.
  */
 export function armCaptureReady(mode: string, defaultSettleMs?: number): () => void {
   if (!captureArmed()) return () => undefined;
 
   let cancelled = false;
+  const timeoutMs = captureTimeout(new URLSearchParams(window.location.search));
+  // performance.now() starts at navigation; module loading spends the same host budget.
+  const remaining = captureDeadline(timeoutMs, () => performance.now(), 0);
   setCaptureStatus("preparing");
 
   void (async () => {
     try {
       if (mode === "ui") {
-        await waitForSelector("[data-ui-preview-ready]", 25_000);
+        await waitForSelector("[data-ui-preview-ready]", remaining());
+        if (400 > remaining()) throw new Error("capture readiness budget exhausted before settle");
         await delay(400);
       } else if (mode === "poster") {
-        await waitForSelector("[data-poster-ready]", 25_000);
+        await waitForSelector("[data-poster-ready]", remaining());
+        if (200 > remaining()) throw new Error("capture readiness budget exhausted before settle");
         await delay(200);
       } else if (mode === "editor") {
-        await waitForSelector("[data-jg-editor], canvas", 30_000);
-        await waitPlayFrames(readCaptureQuery().settle ?? 3_500);
+        await waitForSelector("[data-jg-editor], canvas", remaining());
+        await waitPlayFrames(readCaptureQuery().settle ?? 3_500, remaining);
       } else {
-        await waitPlayFrames(readCaptureQuery().settle ?? defaultSettleMs ?? 2_500);
+        await waitPlayFrames(readCaptureQuery().settle ?? defaultSettleMs ?? 2_500, remaining);
         assertNoMenuOnScreen();
       }
+      if (remaining() <= 0) throw new Error("capture readiness budget exhausted before ready");
       if (!cancelled) setCaptureStatus("ready");
     } catch (error) {
       if (!cancelled) {
+        try {
+          console.error("[jgengine:capture-diagnostics]", JSON.stringify({ timeoutMs, ...captureDiagnostics() as object }));
+        } catch (diagnosticError) {
+          console.error("[jgengine:capture-diagnostics] unavailable", String(diagnosticError));
+        }
         setCaptureStatus("error", error instanceof Error ? error.message : String(error));
       }
     }
@@ -225,26 +221,24 @@ export function resolveCaptureRun(args: {
 
 /**
  * Build the `onContextReady` callback the shell fires once the game context is
- * live: install the playtest probe, run any staged scenario, then dispatch each
+ * live: run any staged scenario, then dispatch each
  * capture command. Returns `undefined` when there is nothing to do so the shell
  * skips the hook entirely.
  */
 export function createCaptureContextReady(opts: {
   captureRun: readonly CaptureRunEntry[];
-  probe?: (ctx: GameContext) => Record<string, number>;
   stageScenario?: (ctx: GameContext) => void;
   gameId: string;
 }): ((ctx: GameContext) => void) | undefined {
-  const { captureRun, probe, stageScenario, gameId } = opts;
+  const { captureRun, stageScenario, gameId } = opts;
   const aimsAtEntity = typeof window !== "undefined" && (resolvedLook() ?? "").startsWith("@entity:");
-  if (stageScenario === undefined && captureRun.length === 0 && probe === undefined && !aimsAtEntity) {
+  if (stageScenario === undefined && captureRun.length === 0 && !aimsAtEntity) {
     return undefined;
   }
   const defaultCommandInput = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
   return (ctx: GameContext) => {
     const subjectError = verifyLookSubject(resolvedLook(), (id) => ctx.scene.entity.get(id) !== null);
     if (subjectError !== null && captureArmed()) setCaptureStatus("error", `look override rejected: ${subjectError}`);
-    if (probe !== undefined) installPlaytestProbe(() => probe(ctx));
     stageScenario?.(ctx);
     for (const entry of captureRun) {
       const name = typeof entry === "string" ? entry : entry.name;

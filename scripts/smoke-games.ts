@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { spawn } from "node:child_process";
 import { resolve } from "node:path";
 
-const GAMES = ["vice-isle", "the-robots", "wreckway", "spire-cards"];
+const GAMES = ["harbor-heat", "scrap-signal", "drift-foundry", "wayfarer-deck"];
 const root = resolve(import.meta.dir, "..");
 
 if (!existsSync(join(root, "Games"))) {
@@ -37,6 +37,8 @@ function boot(game: string): Promise<number> {
         game,
         "--mode",
         "play",
+        "--size",
+        "half",
         "--timeout",
         "90",
         "--out",

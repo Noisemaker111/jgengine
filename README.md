@@ -55,13 +55,13 @@ import { createWsBackend } from "@jgengine/ws/createWsBackend";
 Make a game that ... with jgengine
 ```
 
-Examples: *Make a game that is Mario Party with goo characters, with jgengine* · *Make a game that is a first-person voxel miner, with jgengine*.
+Examples: *Make a game where goo characters compete in playful challenges, with jgengine* · *Make a game that is a first-person voxel miner, with jgengine*.
 
 That is the whole product surface for humans. No install checklist, no “run skills first,” no required CLI.
 
 Under the hood the agent uses `npx jgengine` (create, skills, doctor) and the skills in [`.claude/skills/`](.claude/skills) — an intake router, game/level design playbooks, and focused API domains, staged into published tarballs at `skills/` so they travel with `node_modules`. Power users may call the CLI themselves; that is optional, not the entry.
 
-The game the agent builds is **its own project in its own repo/directory**, on the published npm packages. Agents must **never clone this monorepo** to build a game, and must **never copy code, assets, or content from the probe games** in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) — those are private probe games (some recreate well-known commercial titles for engine-gap probing), not templates, and their content is not licensed for reuse. `npx jgengine create` is the only starting point.
+The game the agent builds is **its own project in its own repo/directory**, on the published npm packages. Agents must **never clone this monorepo** to build a game, and must **never copy code, assets, or content from the probe games** in [`Noisemaker111/JGengine-games`](https://github.com/Noisemaker111/JGengine-games) — those are private original probe games, not templates, and their content is not licensed for reuse. `npx jgengine create` is the only starting point.
 
 ## Website — [jgengine.com](https://jgengine.com)
 
@@ -87,7 +87,7 @@ bun run games:clone  # once: clone Noisemaker111/JGengine-games into ephemeral .
 bun run games:update # move an existing clone to the pin; games:bump pins the games repo's latest stable
 bun dev              # jgengine.com locally, games playable at /games/<id> when Games/ is present
 # a cloned game standalone:
-bun run --cwd Games/vice-isle dev
+bun run --cwd Games/harbor-heat dev
 ```
 
 Windows: if `bun` is not recognized after installing, its install directory is missing from PATH — add `%USERPROFILE%\.bun\bin` (PowerShell: `[Environment]::SetEnvironmentVariable("Path", "$env:Path;$env:USERPROFILE\.bun\bin", "User")`) and reopen the terminal.

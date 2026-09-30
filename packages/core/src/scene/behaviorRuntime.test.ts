@@ -287,7 +287,7 @@ function insideWall(x: number, z: number, wallX: number, wallZ: number, size: nu
 describe("walking behaviors respect the geometry that blocks the player", () => {
   test("a patrolling NPC cannot end a tick inside an object the player collides with", () => {
     const c = ctx();
-    // Route drawn straight through the wall's footprint — the vice-isle pedestrian case.
+    // Route drawn straight through the wall's footprint — the harbor-heat pedestrian case.
     placeWall(c, "building", 0, 5, 6);
     c.scene.entity.spawn("civ", {
       id: "walker",

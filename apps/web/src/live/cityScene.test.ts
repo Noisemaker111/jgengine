@@ -30,13 +30,13 @@ describe("city road reveal ordering", () => {
 function raceFixture(): CircuitRoute {
   const city = generateCity(
     {
-      seed: "vice-isle",
+      seed: "harbor-heat",
       streets: { gridness: 0.7, loopiness: 0.5, connectivity: 0.55, branching: 0.3, boulevards: 0.35, segmentLength: 100 },
     },
     260,
     260,
   );
-  const route = extractCircuitRoute(city.network, { seed: "vice-isle", lapLength: 2400 });
+  const route = extractCircuitRoute(city.network, { seed: "harbor-heat", lapLength: 2400 });
   if (route === null) throw new Error("fixture city has no drivable lap");
   return route;
 }

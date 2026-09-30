@@ -38,8 +38,8 @@
       "@jgengine/shell/*": [
         "../../packages/shell/src/*"
       ],
-      "@games/world-of-warcraft": [
-        "../../Games/world-of-warcraft/src/index.ts"
+      "@games/wayfarer-deck": [
+        "../../Games/wayfarer-deck/src/index.tsx"
       ]
     }
   },

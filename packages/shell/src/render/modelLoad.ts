@@ -33,7 +33,7 @@ export function recordManagerLoadError(url: string): void {
  * Dedicated LoadingManager for every GLB load instead of THREE.DefaultLoadingManager.
  * The shared default manager is process-wide; under repeated dev-server navigations its
  * AbortController can already be aborted, which silently stalls GLTFLoader.fetch forever
- * with no thrown error. A private manager sidesteps that (ported from the duet-keys ship).
+ * with no thrown error. A private manager sidesteps that (ported from the resonant-crossing ship).
  * @internal
  */
 const modelLoadingManager = new THREE.LoadingManager();

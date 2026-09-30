@@ -8,14 +8,132 @@ import {
   renameSync,
   statSync,
   unlinkSync,
+  watch,
   writeFileSync,
 } from "node:fs";
+import { createConnection } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
 import { decodePng } from "./png-reader";
+
+/** Receive declared probe metrics from native state and simulation events. */
+export async function subscribeCaptureProbe(
+  session: Pick<CdpSession, "on" | "send" | "evaluate">,
+  listener: (sample: { t: number; metrics: Record<string, number> }) => void,
+  minimumSpacingMs = 250,
+): Promise<() => Promise<void>> {
+  const binding = "__jgDriveProbe";
+  const off = session.on("Runtime.bindingCalled", (event) => {
+    if (event.name !== binding || typeof event.payload !== "string") return;
+    try { listener(JSON.parse(event.payload)); } catch {}
+  });
+  try {
+    await session.send("Runtime.addBinding", { name: binding });
+    await session.evaluate(
+      "(function(){var unsubscribe;function attach(){if(unsubscribe)unsubscribe();" +
+      "var subscribe=globalThis.__jgSubscribeProbe;if(typeof subscribe==='function')" +
+      "unsubscribe=subscribe(function(sample){globalThis." + binding + "(JSON.stringify(sample));}," +
+      JSON.stringify(minimumSpacingMs) + ");}" +
+      "globalThis.__jgStopDriveProbe=function(){if(unsubscribe)unsubscribe();" +
+      "removeEventListener('jgengine:capture-probe-ready',attach);delete globalThis.__jgStopDriveProbe;};" +
+      "addEventListener('jgengine:capture-probe-ready',attach);attach();})()",
+    );
+  } catch (error) { off(); throw error; }
+  return async () => {
+    off();
+    await session.evaluate("globalThis.__jgStopDriveProbe?.()");
+  };
+}
+
+/** Resolve a visible click target after its DOM, size and finite animations settle. */
+export async function waitForClickPoint(
+  session: Pick<CdpSession, "evaluate">,
+  text: string,
+  timeoutMs = 5000,
+): Promise<{ x: number; y: number }> {
+  const point = await session.evaluate<{ x: number; y: number }>(
+    "(" + CLICK_POINT_ON_EVENTS + ")(" + JSON.stringify(text) + "," + JSON.stringify(timeoutMs) + ")",
+    { awaitPromise: true },
+  );
+  if (point === undefined) throw new Error(`drive: no visible element matching "${text}"`);
+  return point;
+}
+
+const CLICK_POINT_ON_EVENTS = String.raw`function clickPointOnEvents(text, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const needle = text.toLowerCase();
+    let generation = 0;
+    let closed = false;
+    let observed;
+    const frames = new Set();
+    const waiting = new WeakSet();
+    const finish = (point) => {
+      if (closed) return;
+      closed = true;
+      clearTimeout(timer);
+      observer.disconnect();
+      resize.disconnect();
+      for (const frame of frames) cancelAnimationFrame(frame);
+      if (point) resolve(point);
+      else reject(new Error('no visible element matching "' + text + '"'));
+    };
+    const target = () => {
+      let best;
+      let length = Infinity;
+      let interactive = false;
+      for (const node of document.querySelectorAll('button,[role=button],[role=switch],a,span,div,h1,h2,h3')) {
+        const own = (node.textContent?.trim() || node.getAttribute('aria-label') || '').toLowerCase();
+        const rect = node.getBoundingClientRect();
+        const clickable = node.matches('button,[role=button],[role=switch],a');
+        if (own.includes(needle) && (own.length < length || (own.length === length && clickable && !interactive)) && rect.width > 0 && rect.height > 0) {
+          best = node; length = own.length; interactive = clickable;
+        }
+      }
+      return best;
+    };
+    const point = (node) => {
+      const rect = node.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    };
+    const check = () => {
+      if (closed) return;
+      const revision = ++generation;
+      const node = target();
+      if (!node) return;
+      if (observed !== node) { resize.disconnect(); resize.observe(node); observed = node; }
+      const animations = document.getAnimations().filter(animation => {
+        const element = animation.effect?.target;
+        return element instanceof Element && (element === node || element.contains(node)) &&
+          animation.playState === 'running' && animation.effect.getComputedTiming().iterations !== Infinity;
+      });
+      if (animations.length) {
+        for (const animation of animations) {
+          if (waiting.has(animation)) continue;
+          waiting.add(animation);
+          animation.finished.then(check, check);
+        }
+        return;
+      }
+      const painted = requestAnimationFrame(() => {
+        frames.delete(painted);
+        const settled = requestAnimationFrame(() => {
+          frames.delete(settled);
+          if (revision === generation) finish(point(node));
+        });
+        frames.add(settled);
+      });
+      frames.add(painted);
+    };
+    const observer = new MutationObserver(check);
+    const resize = new ResizeObserver(check);
+    const timer = setTimeout(() => { const node = target(); finish(node ? point(node) : null); }, timeoutMs);
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
+    check();
+  });
+}`;
 
 /**
  * Default port when no worktree key is needed — kept for docs/bench that still
@@ -259,21 +377,26 @@ export async function isOurDevServer(port: number, identity: string): Promise<bo
  */
 export async function retireDriftedDevServer(port: number, cwd = process.cwd()): Promise<boolean> {
   const marker = readMarker(port);
-  if (marker === null) return false;
+  if (marker === null || marker.identity !== checkoutIdentity(cwd)) return false;
   if (!revisionDrifted(marker.head, headRevision(cwd))) return false;
   if (!(await isUp(`http://127.0.0.1:${port}`))) return false;
-  killPid(marker.pid, true);
+  if (marker.pid === undefined) throw new Error(`capture: stale Vite on :${port} has no owned process identity`);
+  await new Promise<void>((resolve, reject) => {
+    const socket = createConnection({ host: "127.0.0.1", port });
+    const timer = setTimeout(() => {
+      socket.destroy();
+      reject(new Error(`capture: stale Vite on :${port} did not close its connection`));
+    }, 10_000);
+    socket.once("connect", () => killPid(marker.pid, true));
+    socket.once("error", reject);
+    socket.once("close", () => { clearTimeout(timer); resolve(); });
+  });
+  if (await isUp(`http://127.0.0.1:${port}`)) throw new Error(`capture: stale Vite still serves :${port} after its owned process exited`);
   const cleared = clearViteCaches(cwd);
   console.error(
     `capture: warm Vite on :${port} booted from ${shortRevision(marker.head)} but HEAD is ${shortRevision(headRevision(cwd))} — restarting it${cleared.length > 0 ? " and clearing the dep cache" : ""}`,
   );
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    if (!(await isUp(`http://127.0.0.1:${port}`))) return true;
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  throw new Error(
-    `capture: the Vite on :${port} from ${shortRevision(marker.head)} would not die — kill it by hand, then retry`,
-  );
+  return true;
 }
 
 export interface EnsureDevServerResult {
@@ -284,27 +407,160 @@ export interface EnsureDevServerResult {
   base: string;
 }
 
+function waitForStartupOutput(
+  subscribe: (output: (text: string) => void, fail: (error: Error) => void) => () => void,
+  matches: (output: string) => boolean,
+  timeoutMs: number,
+  label: string,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let output = "";
+    let settled = false;
+    let cleanup = () => {};
+    const finish = (error?: Error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cleanup();
+      if (error !== undefined) reject(error); else resolve();
+    };
+    const timer = setTimeout(() => finish(new Error(`${label} did not announce readiness within ${timeoutMs}ms\n${output}`)), timeoutMs);
+    try {
+      cleanup = subscribe(text => {
+        output += text.replace(/\x1b\[[0-9;]*m/g, "");
+        if (matches(output)) finish();
+      }, error => finish(new Error(`${label}: ${error.message}\n${output}`)));
+    } catch (error) { finish(error instanceof Error ? error : new Error(String(error))); }
+    if (settled) cleanup();
+  });
+}
+
+/** @internal Await the launched process's announcement, failure, or one deadline. */
+export function waitForProcessOutput(child: ChildProcess, matches: (output: string) => boolean, timeoutMs: number, label: string): Promise<void> {
+  return waitForStartupOutput((output, fail) => {
+    const data = (chunk: Buffer) => output(chunk.toString());
+    const exited = (code: number | null) => fail(new Error(`process exited before readiness (code ${code})`));
+    child.stdout?.on("data", data);
+    child.stderr?.on("data", data);
+    child.once("error", fail);
+    child.once("exit", exited);
+    return () => {
+      child.stdout?.off("data", data).resume();
+      child.stderr?.off("data", data).resume();
+      child.off("error", fail);
+      child.off("exit", exited);
+    };
+  }, matches, timeoutMs, label);
+}
+
 function launchPersistentCommand(
   file: string,
   args: readonly string[],
   cwd: string,
   env: Record<string, string>,
-): number {
+  matches: (output: string) => boolean,
+  timeoutMs: number,
+  label: string,
+): { pid: number; ready: Promise<void> } {
+  const logs = mkdtempSync(join(tmpdir(), "jg-startup-"));
+  const stdout = join(logs, "stdout.log");
+  const stderr = join(logs, "stderr.log");
+  let failStartup = (_error: Error) => {};
+  let scanAfterLaunch = () => {};
+  let observer: ChildProcess | undefined;
+  const ready = waitForStartupOutput((output, fail) => {
+    failStartup = fail;
+    const positions = new Map<string, number>();
+    const scan = () => {
+      try {
+        for (const path of [stdout, stderr]) {
+          if (!existsSync(path)) continue;
+          const bytes = readFileSync(path);
+          output(bytes.subarray(positions.get(path) ?? 0).toString());
+          positions.set(path, bytes.length);
+        }
+      } catch (error) { fail(error instanceof Error ? error : new Error(String(error))); }
+    };
+    const watcher = watch(logs, scan);
+    watcher.once("error", fail);
+    scanAfterLaunch = scan;
+    scan();
+    return () => { watcher.close(); observer?.kill(); };
+  }, matches, timeoutMs, label);
+  ready.catch(() => {});
   const assignments = Object.entries(env)
     .map(([key, value]) => `$env:${key}=${powershellQuote(value)}`)
     .join(";");
-  const command = `${assignments};$p=Start-Process -FilePath ${powershellQuote(file)} -ArgumentList @(${powershellArgumentList(args)}) -WorkingDirectory ${powershellQuote(cwd)} -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
+  // Windows does not notify file watchers for writes through an open redirect handle.
+  // Closing each event's append keeps warm output intact and makes readiness observable.
+  const relay = `${assignments};try { Add-Type -ErrorAction Stop -TypeDefinition @'
+using System;
+using System.Diagnostics;
+using System.IO;
+public static class JgStartupOutput {
+  public static int Run(string file, string args, string cwd, string stdout, string stderr) {
+    var gate = new object();
+    using (var process = new Process()) {
+      process.StartInfo = new ProcessStartInfo(file, args) {
+        WorkingDirectory = cwd, UseShellExecute = false, CreateNoWindow = true,
+        RedirectStandardOutput = true, RedirectStandardError = true
+      };
+      process.OutputDataReceived += (sender, line) => {
+        if (line.Data != null) lock (gate) File.AppendAllText(stdout, line.Data + "\\n");
+      };
+      process.ErrorDataReceived += (sender, line) => {
+        if (line.Data != null) lock (gate) File.AppendAllText(stderr, line.Data + "\\n");
+      };
+      process.Start();
+      process.BeginOutputReadLine();
+      process.BeginErrorReadLine();
+      process.WaitForExit();
+      return process.ExitCode;
+    }
+  }
+}
+'@
+exit ([JgStartupOutput]::Run(${powershellQuote(file)}, ${powershellQuote(args.map(windowsCommandLineArg).join(" "))}, ${powershellQuote(cwd)}, ${powershellQuote(stdout)}, ${powershellQuote(stderr)}))
+} catch { [IO.File]::AppendAllText(${powershellQuote(stderr)}, $_.ToString()); exit 1 }`;
+  const relayArgs = ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", Buffer.from(relay, "utf16le").toString("base64")];
+  const command = `$p=Start-Process -FilePath 'powershell.exe' -ArgumentList @(${powershellArgumentList(relayArgs)}) -WorkingDirectory ${powershellQuote(cwd)} -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
   const encoded = Buffer.from(command, "utf16le").toString("base64");
   const launched = spawnSync(
     "powershell.exe",
     ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
     { encoding: "utf8", windowsHide: true, timeout: 10_000 },
   );
-  const pid = Number(launched.stdout.trim());
+  const pid = Number(launched.stdout?.trim());
   if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
+    failStartup(new Error(`Persistent process launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`));
     throw new Error(`Persistent process launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
   }
-  return pid;
+  scanAfterLaunch();
+  observer = spawn("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", `$p=Get-Process -Id ${pid} -ErrorAction Stop;$p.WaitForExit()`], { stdio: "ignore", windowsHide: true });
+  observer.once("error", failStartup);
+  observer.once("exit", () => failStartup(new Error("process exited before readiness")));
+  void ready.then(() => observer?.kill(), () => observer?.kill());
+  return { pid, ready };
+}
+
+async function bootManagedServer(args: string[], cwd: string, env: Record<string, string>, port: number, timeoutMs: number, label: string): Promise<EnsureDevServerResult> {
+  const base = `http://127.0.0.1:${port}`;
+  const child = process.platform === "win32" ? null : spawn(process.execPath, args, {
+    cwd, stdio: ["ignore", "pipe", "pipe"], detached: true,
+    env: { ...process.env, ...env }, windowsHide: true,
+  });
+  const persistent = child === null ? launchPersistentCommand(process.execPath, args, cwd, env, output => output.includes(base), timeoutMs, label) : null;
+  const pid = child?.pid ?? persistent!.pid;
+  try {
+    await (persistent?.ready ?? waitForProcessOutput(child!, output => output.includes(base), timeoutMs, label));
+    if (!(await isUp(base))) throw new Error(`${label} announced readiness but did not serve ${base}`);
+    writeMarker(port, checkoutIdentity(cwd), pid, headRevision(cwd));
+    child?.unref();
+    return { child, pid, port, base };
+  } catch (error) {
+    killPid(pid, true);
+    throw error;
+  }
 }
 
 /**
@@ -318,18 +574,20 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   const base = `http://127.0.0.1:${port}`;
 
   await retireDriftedDevServer(port, cwd);
-  if (await isOurDevServer(port, identity)) {
+  const live = await isUp(base);
+  if (live && readMarker(port)?.identity === identity) {
     return { child: null, port, base };
   }
 
-  if (await isUp(base)) {
+  if (live) {
     // Something else owns this port — try a few offsets rather than attach wrong.
     for (let step = 1; step <= 20; step += 1) {
       const candidate = 4517 + ((port - 4517 + step * 17) % 483);
-      if (await isOurDevServer(candidate, identity)) {
+      const candidateLive = await isUp(`http://127.0.0.1:${candidate}`);
+      if (candidateLive && readMarker(candidate)?.identity === identity) {
         return { child: null, port: candidate, base: `http://127.0.0.1:${candidate}` };
       }
-      if (!(await isUp(`http://127.0.0.1:${candidate}`))) {
+      if (!candidateLive) {
         port = candidate;
         break;
       }
@@ -337,36 +595,7 @@ export async function ensureDevServer(cwd = process.cwd()): Promise<EnsureDevSer
   }
 
   const args = ["--cwd=apps/dev", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"];
-  const child = process.platform === "win32"
-    ? null
-    : spawn(process.execPath, args, {
-        cwd,
-        stdio: "ignore",
-        detached: true,
-        env: { ...process.env, JG_DEV_PORT: String(port) },
-        windowsHide: true,
-      });
-  const pid = child?.pid ?? launchPersistentCommand(process.execPath, args, cwd, { JG_DEV_PORT: String(port) });
-  child?.unref();
-  writeMarker(port, identity, pid, headRevision(cwd));
-
-  const finalBase = `http://127.0.0.1:${port}`;
-  for (let attempt = 0; attempt < 60; attempt += 1) {
-    await new Promise((r) => setTimeout(r, 500));
-    if (await isUp(finalBase)) return { child, pid, port, base: finalBase };
-    if (child?.exitCode !== null && child?.exitCode !== undefined) {
-      throw new Error(`Dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
-    }
-  }
-  if (child !== null) child.kill();
-  else killPid(pid, true);
-  const viteInstalled =
-    existsSync(join(cwd, "node_modules", ".bin", "vite")) ||
-    existsSync(join(cwd, "node_modules", "vite"));
-  const hint = viteInstalled
-    ? "the apps/dev Vite server never became reachable — check for a port conflict or a Vite boot error"
-    : "node_modules looks incomplete (vite is missing) — run `bun scripts/ensure-ready.ts` (or `bun install`) first";
-  throw new Error(`Dev server failed to start on :${port} for ${identity} — ${hint}`);
+  return bootManagedServer(args, cwd, { JG_DEV_PORT: String(port) }, port, 30_000, "Dev server");
 }
 
 /** Boot or reuse this checkout's website Vite server for `shoot --site` captures. */
@@ -375,15 +604,17 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
   let port = resolveWebPort(cwd);
   const base = `http://127.0.0.1:${port}`;
   await retireDriftedDevServer(port, cwd);
-  if (await isOurDevServer(port, identity)) return { child: null, port, base };
+  const live = await isUp(base);
+  if (live && readMarker(port)?.identity === identity) return { child: null, port, base };
 
-  if (await isUp(base)) {
+  if (live) {
     for (let step = 1; step <= 20; step += 1) {
       const candidate = 5517 + ((port - 5517 + step * 17) % 400);
-      if (await isOurDevServer(candidate, identity)) {
+      const candidateLive = await isUp(`http://127.0.0.1:${candidate}`);
+      if (candidateLive && readMarker(candidate)?.identity === identity) {
         return { child: null, port: candidate, base: `http://127.0.0.1:${candidate}` };
       }
-      if (!(await isUp(`http://127.0.0.1:${candidate}`))) {
+      if (!candidateLive) {
         port = candidate;
         break;
       }
@@ -391,33 +622,10 @@ export async function ensureWebServer(cwd = process.cwd()): Promise<EnsureDevSer
   }
 
   const args = ["--cwd=apps/web", "run", "dev", "--", "--host", "127.0.0.1", "--port", String(port), "--strictPort"];
-  const child = process.platform === "win32"
-    ? null
-    : spawn(process.execPath, args, {
-        cwd,
-        stdio: "ignore",
-        detached: true,
-        env: { ...process.env, JG_WEB_PORT: String(port), JG_CAPTURE_SITE: "1" },
-        windowsHide: true,
-      });
-  const pid = child?.pid ?? launchPersistentCommand(process.execPath, args, cwd, {
+  return bootManagedServer(args, cwd, {
     JG_WEB_PORT: String(port),
     JG_CAPTURE_SITE: "1",
-  });
-  child?.unref();
-  writeMarker(port, identity, pid, headRevision(cwd));
-
-  const finalBase = `http://127.0.0.1:${port}`;
-  for (let attempt = 0; attempt < 120; attempt += 1) {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    if (await isUp(finalBase)) return { child, pid, port, base: finalBase };
-    if (child?.exitCode !== null && child?.exitCode !== undefined) {
-      throw new Error(`Website dev server exited with code ${child.exitCode} before becoming reachable on :${port}`);
-    }
-  }
-  if (child !== null) killProcessTree(child);
-  else killPid(pid, true);
-  throw new Error(`Website dev server failed to start on :${port} for ${identity}`);
+  }, port, 60_000, "Website dev server");
 }
 
 /**
@@ -454,20 +662,15 @@ export function pickDebugPort(): number {
   return 9200 + Math.floor(Math.random() * 700);
 }
 
+const debuggerStartup = new Map<number, Promise<void>>();
+
 export async function waitForDebugger(port: number, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    try {
-      const response = await fetch(`http://127.0.0.1:${port}/json/version`, {
-        signal: AbortSignal.timeout(500),
-      });
-      if (response.ok) return;
-    } catch {
-      /* retry */
-    }
-    await new Promise((r) => setTimeout(r, 150));
+  const startup = debuggerStartup.get(port);
+  if (startup !== undefined) {
+    try { await startup; } finally { debuggerStartup.delete(port); }
   }
-  throw new Error(`Chrome debugger not ready on :${port} within ${timeoutMs}ms`);
+  const response = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(timeoutMs) });
+  if (!response.ok) throw new Error(`Chrome debugger unavailable on :${port}: HTTP ${response.status}`);
 }
 
 type CdpMessage = {
@@ -514,6 +717,12 @@ export class CdpSession {
       if (message.error !== undefined) waiter.reject(new Error(message.error.message));
       else waiter.resolve(message.result ?? {});
     });
+    const disconnected = () => {
+      for (const waiter of this.pending.values()) waiter.reject(new Error("Chrome debugger disconnected"));
+      this.pending.clear();
+    };
+    ws.addEventListener("close", disconnected);
+    ws.addEventListener("error", disconnected);
   }
 
   static connect(
@@ -553,6 +762,7 @@ export class CdpSession {
   }
 
   send(method: string, params?: Record<string, unknown>): Promise<Record<string, unknown>> {
+    if (this.ws.readyState !== WebSocket.OPEN) return Promise.reject(new Error("Chrome debugger disconnected"));
     const id = ++this.nextId;
     return new Promise((resolvePromise, reject) => {
       this.pending.set(id, { resolve: resolvePromise, reject });
@@ -640,7 +850,7 @@ export function launchChrome(
 ): ChildProcess {
   const chrome = findChromeExecutable();
   const userDataDir = mkdtempSync(join(tmpdir(), prefix));
-  return spawn(
+  const child = spawn(
     chrome,
     [
       `--remote-debugging-port=${debugPort}`,
@@ -667,13 +877,17 @@ export function launchChrome(
       "about:blank",
     ],
     {
-      stdio: "ignore",
+      stdio: ["ignore", "ignore", "pipe"],
       windowsHide: true,
       // A daemon Chrome must outlive the Bun command that starts it. Chrome is a GUI-subsystem
       // executable on Windows, so detaching it does not create a console window.
       detached: options.persistent === true || process.platform !== "win32",
     },
   );
+  const ready = waitForProcessOutput(child, output => output.includes(`DevTools listening on ws://127.0.0.1:${debugPort}/`), 30_000, "Chrome debugger");
+  ready.catch(() => {});
+  debuggerStartup.set(debugPort, ready);
+  return child;
 }
 
 function powershellQuote(value: string): string {
@@ -688,12 +902,6 @@ function windowsCommandLineArg(value: string): string {
 
 function powershellArgumentList(args: readonly string[]): string {
   return args.map((arg) => powershellQuote(windowsCommandLineArg(arg))).join(",");
-}
-
-/** Hidden native Windows launcher used when Chrome must outlive the Bun process that starts it. */
-export function windowsPersistentChromeCommand(chrome: string, args: readonly string[]): string {
-  const argumentList = powershellArgumentList(args);
-  return `$p=Start-Process -FilePath ${powershellQuote(chrome)} -ArgumentList @(${argumentList}) -WindowStyle Hidden -PassThru; [Console]::Out.Write($p.Id)`;
 }
 
 /** Launch persistent headless Chrome without retaining a Windows child-process handle in Bun. */
@@ -731,17 +939,9 @@ export function launchPersistentChrome(
     "--disable-dev-shm-usage",
     "about:blank",
   ];
-  const encoded = Buffer.from(windowsPersistentChromeCommand(chrome, args), "utf16le").toString("base64");
-  const launched = spawnSync(
-    "powershell.exe",
-    ["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encoded],
-    { encoding: "utf8", windowsHide: true, timeout: 10_000 },
-  );
-  const pid = Number(launched.stdout.trim());
-  if (launched.status !== 0 || !Number.isFinite(pid) || pid <= 0) {
-    throw new Error(`Persistent Chrome launch failed: ${launched.stderr.trim() || `exit ${launched.status}`}`);
-  }
-  return { pid, child: null };
+  const launched = launchPersistentCommand(chrome, args, process.cwd(), {}, output => output.includes(`DevTools listening on ws://127.0.0.1:${debugPort}/`), 30_000, "Chrome debugger");
+  debuggerStartup.set(debugPort, launched.ready);
+  return { pid: launched.pid, child: null };
 }
 
 export type CaptureVia = "screencast" | "screenshot";
@@ -926,24 +1126,35 @@ export async function captureViewportPng(
   return { bytes: Buffer.from(data, "base64"), via: "screenshot" };
 }
 
-/**
- * Poll `data-jg-capture` until the page reports an honest frame (`ready`) or
- * surfaces an error, shared by shoot and drive. Throws with the page-reported
- * detail on error, or on timeout.
- */
+/** Wait for a page readiness mutation once; no browser round-trip polling. */
 export async function waitCaptureReady(session: CdpSession, timeoutMs: number): Promise<void> {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    const remote = await session.evaluate<{ status: string | null; error: string | null }>(`({
-      status: document.documentElement.dataset.jgCapture ?? null,
-      error: document.documentElement.dataset.jgCaptureError ?? null
-    })`);
-    const status = remote?.status;
-    if (status === "ready") return;
-    if (status === "error") throw new Error(`capture error: ${remote?.error ?? "unknown"}`);
-    await new Promise((r) => setTimeout(r, 100));
-  }
+  const remote = await session.evaluate<{ status: string; error: string | null }>(`new Promise((resolve) => {
+    const root = document.documentElement;
+    const finish = (status) => {
+      observer.disconnect();
+      clearTimeout(timer);
+      resolve({ status, error: root.dataset.jgCaptureError ?? null });
+    };
+    const check = () => {
+      const status = root.dataset.jgCapture;
+      if (status === "ready" || status === "error") finish(status);
+    };
+    const observer = new MutationObserver(check);
+    observer.observe(root, { attributes: true, attributeFilter: ["data-jg-capture"] });
+    const timer = setTimeout(() => finish("timeout"), ${timeoutMs});
+    check();
+  })`, { awaitPromise: true });
+  if (remote?.status === "ready") return;
+  if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
   throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+}
+
+/** Clear saved worlds before shoot/drive navigation; a warm browser must still start a clean run. */
+export async function clearOriginStorage(session: CdpSession, origin: string): Promise<void> {
+  await session.send("Storage.clearDataForOrigin", {
+    origin,
+    storageTypes: "local_storage,indexeddb,websql,cache_storage,service_workers",
+  });
 }
 
 function exceptionMessage(params: Record<string, unknown>): string {
@@ -1085,18 +1296,59 @@ export function forwardPageConsole(session: CdpSession, prefix: string): () => v
 }
 
 const CAPTURE_SIGNAL_BINDING = "__jgCaptureSignal";
+
+/** Observe metadata in the new document before navigation can replace the old one. @internal */
+export async function navigateForPageAttribute(session: CdpSession, url: string, attribute: string, timeoutMs: number): Promise<string> {
+  const binding = "__jgMetadataSignal";
+  let finish!: (value?: string) => void;
+  const value = new Promise<string | undefined>(resolve => { finish = resolve; });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const off = session.on("Runtime.bindingCalled", params => {
+    if (params.name === binding && typeof params.payload === "string") finish(params.payload);
+  });
+  try {
+    await session.send("Runtime.addBinding", { name: binding });
+    await session.send("Page.addScriptToEvaluateOnNewDocument", { source: `(() => {
+      const attach = () => {
+        const root = document.documentElement;
+        if (root === null) return false;
+        const check = () => {
+          const value = root.getAttribute(${JSON.stringify(attribute)});
+          if (value === null) return false;
+          window.${binding}(value);
+          return true;
+        };
+        if (!check()) {
+          const observer = new MutationObserver(() => { if (check()) observer.disconnect(); });
+          observer.observe(root, { attributes: true, attributeFilter: [${JSON.stringify(attribute)}] });
+        }
+        return true;
+      };
+      if (attach()) return;
+      const pending = new MutationObserver(() => { if (attach()) pending.disconnect(); });
+      pending.observe(document, { childList: true });
+    })()` });
+    timer = setTimeout(() => finish(), timeoutMs);
+    const navigation = await session.send("Page.navigate", { url });
+    if (typeof navigation.errorText === "string" && navigation.errorText.length > 0) throw new Error(`navigation failed: ${navigation.errorText}`);
+    const result = await value;
+    if (result === undefined) throw new Error(`timed out waiting for ${attribute} (${timeoutMs}ms)`);
+    return result;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    off();
+  }
+}
 /** Sessions whose readiness binding is already installed — re-registering duplicates it per navigation. */
 const readinessInstalled = new WeakSet<CdpSession>();
 
 /**
  * Push readiness instead of polling for it. Every `Runtime.evaluate` poll queues behind the
  * page's own rAF work, so on a heavy WebGL page the flag is seen up to a frame time after it
- * is set; a MutationObserver reports it in the task that sets it. Installation is best-effort —
- * the poll below stays as the backstop, so an older page or a failed binding still works.
+ * is set; a MutationObserver reports it in the task that sets it.
  */
 async function installReadinessSignal(session: CdpSession): Promise<void> {
   if (readinessInstalled.has(session)) return;
-  readinessInstalled.add(session);
   // Runs at document start, before <html> exists — hence the two-stage attach.
   const source = `(() => {
     const check = () => {
@@ -1125,6 +1377,7 @@ async function installReadinessSignal(session: CdpSession): Promise<void> {
   })()`;
   await session.send("Runtime.addBinding", { name: CAPTURE_SIGNAL_BINDING });
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source });
+  readinessInstalled.add(session);
 }
 
 /** Navigate and surface browser/page failures instead of waiting for the capture timeout. */
@@ -1135,37 +1388,67 @@ export async function navigateCapturePage(
 ): Promise<void> {
   let pageFailure: string | undefined;
   let frameId: string | undefined;
+  let settle!: () => void;
+  const changed = new Promise<void>((resolve) => { settle = resolve; });
   let signalled: { status: string | null; error: string | null } | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   const requestFrames = new Map<string, string>();
+  const requests = new Map<string, { url: string; type: string; startedAt: number; status?: number }>();
+  const failedResources: Array<{ url: string; status?: number; error?: string }> = [];
   const pendingDocumentFailures: Array<{ frameId?: string; message: string }> = [];
   const offSignal = session.on("Runtime.bindingCalled", (params) => {
     if (params.name !== CAPTURE_SIGNAL_BINDING || typeof params.payload !== "string") return;
     try {
       signalled = JSON.parse(params.payload) as { status: string | null; error: string | null };
+      if (signalled.status === "ready" || signalled.status === "error") settle();
     } catch {
-      /* malformed payload — the poll below still reads the real flag */
+      /* ignore malformed binding payloads */
     }
   });
   const offException = session.on("Runtime.exceptionThrown", (params) => {
     pageFailure ??= exceptionMessage(params);
+    settle();
   });
   const offRequest = session.on("Network.requestWillBeSent", (params) => {
+    const request = params.request as { url?: string } | undefined;
+    if (typeof params.requestId === "string" && typeof request?.url === "string") {
+      requests.set(params.requestId, { url: request.url, type: String(params.type ?? "unknown"), startedAt: performance.now() });
+    }
     if (params.type !== "Document") return;
     if (typeof params.requestId === "string" && typeof params.frameId === "string") {
       requestFrames.set(params.requestId, params.frameId);
     }
   });
+  const offResponse = session.on("Network.responseReceived", (params) => {
+    const response = params.response as { status?: number } | undefined;
+    const request = typeof params.requestId === "string" ? requests.get(params.requestId) : undefined;
+    if (request !== undefined && typeof response?.status === "number") {
+      request.status = response.status;
+      if (response.status >= 400) failedResources.push({ url: request.url, status: response.status });
+    }
+  });
+  const offFinished = session.on("Network.loadingFinished", (params) => {
+    if (typeof params.requestId === "string") requests.delete(params.requestId);
+  });
   const offLoadingFailed = session.on("Network.loadingFailed", (params) => {
-    if (params.type !== "Document") return;
     const errorText = typeof params.errorText === "string" ? params.errorText : "unknown error";
+    if (typeof params.requestId === "string") {
+      const request = requests.get(params.requestId);
+      if (request !== undefined) failedResources.push({ url: request.url, error: errorText });
+      requests.delete(params.requestId);
+    }
+    if (params.type !== "Document") return;
     const failedFrameId = typeof params.requestId === "string" ? requestFrames.get(params.requestId) : undefined;
     const message = `page load failed: ${errorText}`;
     if (frameId === undefined) pendingDocumentFailures.push({ frameId: failedFrameId, message });
-    else if (failedFrameId === undefined || failedFrameId === frameId) pageFailure ??= message;
+    else if (failedFrameId === undefined || failedFrameId === frameId) {
+      pageFailure ??= message;
+      settle();
+    }
   });
   try {
     await session.send("Network.enable");
-    await installReadinessSignal(session).catch(() => {});
+    await installReadinessSignal(session);
     const navigation = await session.send("Page.navigate", { url });
     if (typeof navigation.errorText === "string" && navigation.errorText.length > 0) {
       throw new Error(`navigation failed for ${url}: ${navigation.errorText}`);
@@ -1176,33 +1459,54 @@ export async function navigateCapturePage(
     );
     if (matchingFailure !== undefined) pageFailure ??= matchingFailure.message;
 
-    const deadline = Date.now() + timeoutMs;
-    // The pushed signal is the fast path; the evaluate below is the backstop, polled slowly
-    // so it does not itself compete with the page for the main thread.
-    let nextPollAt = Date.now();
-    while (Date.now() < deadline) {
-      if (pageFailure !== undefined) throw new Error(pageFailure);
-      const remote =
-        signalled ??
-        (Date.now() >= nextPollAt
-          ? ((nextPollAt = Date.now() + 500),
-            await session.evaluate<{ status: string | null; error: string | null }>(`({
-              status: document.documentElement.dataset.jgCapture ?? null,
-              error: document.documentElement.dataset.jgCaptureError ?? null
-            })`))
-          : undefined);
-      if (remote?.status === "ready") return;
-      if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
-      await new Promise((resolve) => setTimeout(resolve, 25));
-    }
     if (pageFailure !== undefined) throw new Error(pageFailure);
+    timer = setTimeout(settle, timeoutMs);
+    await changed;
+    if (pageFailure !== undefined) throw new Error(pageFailure);
+    if (signalled?.status === "ready") return;
+    if (signalled?.status === "error") throw new Error(`capture error: ${signalled.error ?? "unknown"}`);
     throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+  } catch (error) {
+    // Network events remain available even when a software-GL draw blocks page JavaScript.
+    console.error("[jgengine:capture-network]", JSON.stringify({
+      url, timeoutMs,
+      pending: Array.from(requests.values(), request => ({ ...request, ageMs: performance.now() - request.startedAt })),
+      failed: failedResources,
+    }));
+    console.error("[jgengine:capture-frame]", JSON.stringify(await captureFailureFrame(session)));
+    throw error;
   } finally {
+    if (timer !== undefined) clearTimeout(timer);
     offSignal();
     offException();
     offRequest();
+    offResponse();
+    offFinished();
     offLoadingFailed();
   }
+}
+
+/** One bounded diagnostic read; a blocked renderer must not hold failure cleanup open. */
+async function captureFailureFrame(session: CdpSession): Promise<unknown> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve({ unavailable: "page diagnostic read exceeded 2000ms" }), 2_000);
+    session.evaluate(`(() => ({
+      capture: document.documentElement.dataset.jgCapture ?? null,
+      phase: document.documentElement.dataset.jgPhase ?? null,
+      canvases: Array.from(document.querySelectorAll("canvas"), canvas => ({
+        width: canvas.width, height: canvas.height,
+        cssWidth: canvas.getBoundingClientRect().width, cssHeight: canvas.getBoundingClientRect().height,
+        ready: canvas.hasAttribute("data-jg-frame-ready"),
+        frame: typeof canvas.__jgFrameReadiness === "function" ? canvas.__jgFrameReadiness() : null
+      }))
+    }))()`).then(value => {
+      clearTimeout(timer);
+      resolve(value ?? { unavailable: "page returned no diagnostics" });
+    }, error => {
+      clearTimeout(timer);
+      resolve({ unavailable: String(error) });
+    });
+  });
 }
 
 /** Navigate with one cache-bypassed retry for a transient post-HMR stale page. */
@@ -1225,10 +1529,7 @@ export async function navigateCapturePageWithRetry(
         `capture attempt ${attempt} hit a stale page after HMR (${message}) - settling ${settleMs}ms, then reloading fresh`,
       );
       await new Promise((resolve) => setTimeout(resolve, settleMs));
-      const deadline = Date.now() + 5_000;
-      while (Date.now() < deadline && !(await isUp(serverBase))) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-      }
+      if (!(await isUp(serverBase))) throw new Error(`capture dev server unavailable after HMR: ${serverBase}`);
       await session.send("Network.setCacheDisabled", { cacheDisabled: true });
     }
   }

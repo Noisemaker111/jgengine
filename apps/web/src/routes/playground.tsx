@@ -68,7 +68,7 @@ interface Dials {
 }
 
 export const DEFAULTS: Dials = {
-  seed: "vice-isle",
+  seed: "harbor-heat",
   size: 260,
   gridness: 0.85,
   loopiness: 0.35,

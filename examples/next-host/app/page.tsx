@@ -9,7 +9,7 @@ export default function HomePage() {
         host stays a standalone process (see examples/express-host).
       </p>
       <Link href="/play" className="text-emerald-400 underline">
-        Play the WoW slice
+        Play Wayfarer Deck
       </Link>
       <code className="text-xs text-neutral-500">
         GET /api/servers · /api/leaderboard/:stat · /api/leaderboard-profile/:userId ·

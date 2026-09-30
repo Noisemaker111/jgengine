@@ -2,11 +2,23 @@ import { describe, expect, test } from "bun:test";
 
 import type { EditorDocument } from "@jgengine/core/editor/types";
 
-import { withDocumentSky } from "./defineGame";
+import { defineGame, withDocumentSky } from "./defineGame";
 
 function doc(environment: EditorDocument["environment"]): EditorDocument {
   return { version: 1, markers: [], volumes: [], paths: [], annotations: [], prefabs: [], collections: [], environment } as EditorDocument;
 }
+
+describe("defineGame settings", () => {
+  test("preserves the authored settings surface for GameHost", () => {
+    const settings = { surface: "quick" as const };
+    expect(defineGame({ name: "Settings surface", settings }).settings).toBe(settings);
+  });
+
+  test("preserves explicit opt-out and absent settings", () => {
+    expect(defineGame({ name: "Settings disabled", settings: false }).settings).toBe(false);
+    expect(defineGame({ name: "Settings default" }).settings).toBeUndefined();
+  });
+});
 
 describe("withDocumentSky", () => {
   test("an authored document sky fills an empty backdrop", () => {

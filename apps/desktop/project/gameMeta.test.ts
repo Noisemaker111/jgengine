@@ -16,7 +16,7 @@ import {
 const SAMPLE_CONFIG = `import { defineGame } from "@jgengine/shell/defineGame";
 
 export const game = defineGame({
-  name: "Tower Guard",
+  name: "Beacon Bastion",
   world,
   capture: {
     play: ["startRun", "skipIntro"],
@@ -28,7 +28,7 @@ export const game = defineGame({
 
 describe("gameMeta", () => {
   test("parses display name, capture play, settle, and state names", () => {
-    expect(parseDisplayName(SAMPLE_CONFIG, "tower-guard")).toBe("Tower Guard");
+    expect(parseDisplayName(SAMPLE_CONFIG, "beacon-bastion")).toBe("Beacon Bastion");
     const capture = parseCaptureSettings(SAMPLE_CONFIG);
     expect(capture.play).toEqual(["startRun", "skipIntro"]);
     expect(capture.settleMs).toBe(1200);
@@ -38,7 +38,7 @@ describe("gameMeta", () => {
   test("patches display name and capture.play in place", () => {
     const named = patchDisplayName(SAMPLE_CONFIG, "Keep Watch");
     expect(named).toContain('name: "Keep Watch"');
-    expect(named).not.toContain('name: "Tower Guard"');
+    expect(named).not.toContain('name: "Beacon Bastion"');
 
     const captured = patchCapturePlay(SAMPLE_CONFIG, ["boot", "play"]);
     expect(captured).toContain('play: ["boot", "play"]');
@@ -73,7 +73,7 @@ describe("gameMeta", () => {
       {
         name: "@games/demo",
         jgengine: {
-          credit: "Classic homage",
+          credit: "Original exploration game",
           url: "https://example.com",
           handle: "demo",
         },
@@ -82,7 +82,7 @@ describe("gameMeta", () => {
       2,
     );
     expect(parseCreditFromPackageJson(pkg)).toEqual({
-      text: "Classic homage",
+      text: "Original exploration game",
       url: "https://example.com",
       handle: "demo",
     });

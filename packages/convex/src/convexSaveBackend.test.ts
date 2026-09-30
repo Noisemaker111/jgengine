@@ -21,12 +21,12 @@ function stubClient(): { client: ConvexReactClient; table: Map<string, string> }
 describe("createConvexSaveBackend", () => {
   test("round-trips a save through the Convex client", async () => {
     const { client, table } = stubClient();
-    const backend = createConvexSaveBackend({ client, namespace: "tower-guard:u1" });
+    const backend = createConvexSaveBackend({ client, namespace: "beacon-bastion:u1" });
     const store = createSaveStore({ backend, initial: { wave: 0 } });
 
     store.set({ wave: 12 });
     await store.save();
-    expect([...table.keys()].some((key) => key.startsWith("tower-guard:u1:"))).toBe(true);
+    expect([...table.keys()].some((key) => key.startsWith("beacon-bastion:u1:"))).toBe(true);
 
     const reopened = createSaveStore({ backend, initial: { wave: 0 } });
     expect(await reopened.load()).toEqual({ wave: 12 });

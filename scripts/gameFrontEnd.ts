@@ -20,7 +20,7 @@ const REQUIREMENTS = [
   {
     id: "credits",
     pattern: /CreditsScreen|creditsFor(?:Source|Asset)Ids|creditsForSources|<Credits\b/,
-    fix: "add a credits screen — `creditsForSourceIds(ids)` generates the asset attribution, `CreditsScreen` renders it; see `Games/wreckway`",
+    fix: "add a credits screen — `creditsForSourceIds(ids)` generates the asset attribution, `CreditsScreen` renders it; see `Games/drift-foundry`",
   },
 ] as const;
 

@@ -4,7 +4,7 @@ import { ENTRY_PROMPT } from "../lib/site";
 import { CopyButton } from "./Copy";
 
 const EXAMPLE =
-  "Make a game that is Mario Party with gooey slime characters, with jgengine";
+  "Make a game where gooey slime friends compete in playful challenges, with jgengine";
 
 type TermLine = {
   mode: "type" | "print";

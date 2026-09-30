@@ -8,8 +8,7 @@
  *     --key KeyW:2500 --shot walked
  *
  * Clicks resolve the first visible element whose text matches (case-
- * insensitive), wait for its center to hold still across consecutive
- * samples (entrance animations and hydration shift positions for ~2s),
+ * insensitive), observe DOM/size changes and finite animation completion,
  * then dispatch a raw CDP mouse press at that center — no actionability
  * checks to time out on hover overlays. Keys dispatch
  * keyDown/keyUp with the given code, held for the given milliseconds.
@@ -20,11 +19,13 @@
  */
 import { existsSync, mkdirSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   CdpSession,
   DEVICES,
   applyDevice,
   captureViewportPng,
+  clearOriginStorage,
   ensureDevServer,
   ensureWebServer,
   navigateCapturePageWithRetry,
@@ -34,6 +35,8 @@ import {
   scaleProfile,
   screencastCapturesFully,
   sizeSuffix,
+  subscribeCaptureProbe,
+  waitForClickPoint,
   withBrowserSession,
   writePngAtomic,
   type SizeMode,
@@ -44,7 +47,7 @@ import { decodePng } from "./png-reader";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord } from "./shotProvenance";
 import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
-import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
+import { focusGameSurface } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
 import { assembleGif } from "./gif";
 import { assembleMp4 } from "./video";
@@ -180,8 +183,7 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       capture.probe). No screenshot unless one is asked for.
   --strict            with --playtest, exit nonzero on a softlock or missing probe
   --seed <n>          playtest seed, forwarded as ?seed=n and echoed (default 1)
-  --sample <ms>       playtest probe sampling interval (default 250; lower over-samples
-                      and can starve a heavy scene's render thread into a false softlock)
+  --sample <ms>       minimum spacing between native probe events (default 250)
   --softlock <ms>     flat-progress span under input that counts as a softlock (default 2000)
   --epsilon <n>       smallest metric change that counts as progress (default 0.001)
   --help              show this text
@@ -286,7 +288,7 @@ function parseArgs(argv: string[]): Args {
   }
   if (args.help) return args;
   if (args.game === "" && args.site === undefined) {
-    throw new Error("drive: pass a game id or --site <path>, e.g. bun run drive the-robots --click START");
+    throw new Error("drive: pass a game id or --site <path>, e.g. bun run drive scrap-signal --click START");
   }
   if (args.game === "") args.game = "site";
   if (args.site !== undefined && !args.timeoutExplicit) {
@@ -302,58 +304,8 @@ function parseArgs(argv: string[]): Args {
   return args;
 }
 
-const SETTLE_EPSILON_PX = 0.5;
-const SETTLE_SAMPLES = 3;
-const SETTLE_INTERVAL_MS = 100;
-const SETTLE_TIMEOUT_MS = 5_000;
-
-async function measureClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number } | null> {
-  const expression = `(() => {
-      const needle = ${JSON.stringify(text)}.toLowerCase();
-      const nodes = Array.from(document.querySelectorAll("button, [role=button], a, span, div, h1, h2, h3"));
-      let best = null;
-      for (const node of nodes) {
-        const own = ((node.textContent ?? "").trim() || node.getAttribute("aria-label") || "").toLowerCase();
-        if (own === "" || !own.includes(needle)) continue;
-        const interactive = node.matches("button, [role=button], [role=switch], a");
-        if (best === null || own.length < best.len || (own.length === best.len && interactive && !best.interactive)) {
-          const rect = node.getBoundingClientRect();
-          if (rect.width > 0 && rect.height > 0) {
-            best = { len: own.length, interactive, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-          }
-        }
-      }
-      return best === null ? null : { x: best.x, y: best.y };
-    })()`;
-  return (await session.evaluate<{ x: number; y: number } | null>(expression)) ?? null;
-}
-
-async function findClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number }> {
-  const deadline = Date.now() + SETTLE_TIMEOUT_MS;
-  let last: { x: number; y: number } | null = null;
-  let stableRuns = 0;
-  while (Date.now() < deadline) {
-    const point = await measureClickPoint(session, text);
-    if (
-      point !== null &&
-      last !== null &&
-      Math.abs(point.x - last.x) <= SETTLE_EPSILON_PX &&
-      Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
-    ) {
-      stableRuns += 1;
-      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
-    } else {
-      stableRuns = 0;
-    }
-    last = point;
-    await new Promise((r) => setTimeout(r, SETTLE_INTERVAL_MS));
-  }
-  if (last === null) throw new Error(`drive: no visible element matching "${text}"`);
-  return last;
-}
-
 async function click(session: CdpSession, text: string): Promise<void> {
-  const point = await findClickPoint(session, text);
+  const point = await waitForClickPoint(session, text);
   for (const type of ["mousePressed", "mouseReleased"] as const) {
     await session.send("Input.dispatchMouseEvent", {
       type,
@@ -407,17 +359,18 @@ async function sendKeys(session: CdpSession, chord: string, type: "keyDown" | "k
 
 async function holdKey(session: CdpSession, chord: string, holdMs: number): Promise<void> {
   await focusSurface(session);
-  const startFrames = await readFrames(session);
-  const start = Date.now();
-  const deadlineMs = start + holdMs;
-  const hardCapMs = deadlineMs + FRAME_STARVE_GRACE_MS;
   await sendKeys(session, chord, "keyDown");
-  for (;;) {
-    await new Promise((r) => setTimeout(r, 100));
-    const framesElapsed = (await readFrames(session)) - startFrames;
-    if (holdComplete({ nowMs: Date.now(), deadlineMs, hardCapMs, framesElapsed })) break;
+  try {
+    await session.evaluate(`new Promise(resolve => {
+      let rendered = false, elapsed = false;
+      const finish = () => { clearTimeout(duration); clearTimeout(cap); cancelAnimationFrame(frame); resolve(true); };
+      const frame = requestAnimationFrame(() => { rendered = true; if (elapsed) finish(); });
+      const duration = setTimeout(() => { elapsed = true; if (rendered) finish(); }, ${Math.max(0, holdMs)});
+      const cap = setTimeout(finish, ${Math.max(0, holdMs) + FRAME_STARVE_GRACE_MS});
+    })`, { awaitPromise: true });
+  } finally {
+    await sendKeys(session, chord, "keyUp");
   }
-  await sendKeys(session, chord, "keyUp");
 }
 
 async function rpc(session: CdpSession, json: string): Promise<void> {
@@ -451,27 +404,6 @@ async function readProbe(session: CdpSession): Promise<Record<string, number> | 
       }
     })()`);
   return value ?? null;
-}
-
-/**
- * Clear localStorage / IndexedDB / origin storage for the capture target BEFORE
- * navigating to it, so a game that auto-restores a save boots clean instead of
- * resuming a prior drive's session off a warm/persistent Chrome profile (issue
- * #1505). `Storage.clearDataForOrigin` takes an explicit origin, so it works
- * from the initial `about:blank` page without a round-trip navigation. Best
- * effort: a Chrome build that lacks the verb must not abort the drive.
- */
-async function clearOriginStorage(session: CdpSession, origin: string): Promise<void> {
-  try {
-    await session.send("Storage.clearDataForOrigin", {
-      origin,
-      storageTypes: "local_storage,indexeddb,websql,cache_storage,service_workers",
-    });
-  } catch (error) {
-    console.error(
-      `drive: could not clear ${origin} storage before capture (${error instanceof Error ? error.message : error}) — a restored save may corrupt the probe; pass --reuse-storage to silence`,
-    );
-  }
 }
 
 /**
@@ -651,7 +583,7 @@ if (args.help) {
   process.exit(0);
 }
 
-const outDir = resolve(import.meta.dir, "../shots");
+const outDir = fileURLToPath(new URL("../shots", import.meta.url));
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
 const daemon = args.connect === undefined ? await attachDaemon() : null;
@@ -683,6 +615,7 @@ const exitCode = await withBrowserSession(
   async ({ debugPort }) => {
     let code = 0;
     const session = await openPageSession(debugPort);
+    let stopProbe = async () => {};
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
@@ -760,19 +693,12 @@ const exitCode = await withBrowserSession(
       // flat progress probe cannot be trusted as a genuine softlock (#1506).
       const gl = args.playtest ? await detectSoftwareGl(session) : { renderer: null, software: false };
       const samples: ProbeSample[] = [];
-      let sampling = args.playtest;
-      const sampleStart = Date.now();
       const framesAtStart = args.playtest ? await readFrames(session) : 0;
-      const sampler = args.playtest
-        ? (async () => {
-            while (sampling) {
-              const metrics = await readProbe(session);
-              if (metrics !== null) samples.push({ t: Date.now() - sampleStart, metrics });
-              await new Promise((r) => setTimeout(r, args.sampleMs));
-            }
-          })()
-        : Promise.resolve();
-
+      stopProbe = args.playtest
+        ? await subscribeCaptureProbe(session, sample => {
+            if (Object.keys(sample.metrics).length > 0) samples.push(sample);
+          }, args.sampleMs)
+        : async () => {};
       for (const step of args.steps) {
         if (step.kind === "click") {
           await click(session, step.text);
@@ -859,8 +785,7 @@ const exitCode = await withBrowserSession(
       }
 
       if (args.playtest) {
-        sampling = false;
-        await sampler;
+        await stopProbe();
         const framesRendered = (await readFrames(session)) - framesAtStart;
         const result = summarizePlaytest(samples, {
           seed: args.seed,
@@ -910,7 +835,7 @@ const exitCode = await withBrowserSession(
         console.error(`drive: next drive → bun run drive ${args.game} --mode ${args.mode} --connect ${debugPort} --size half ...`);
       }
     } finally {
-      await session.close();
+      try { await stopProbe(); } finally { await session.close(); }
     }
     return code;
   },

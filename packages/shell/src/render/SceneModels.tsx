@@ -1,3 +1,4 @@
+import { PendingFrame } from "./frameReady";
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Component, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
@@ -121,7 +122,7 @@ export function IsolatedModelPart({
 }) {
   return (
     <ModelFallbackBoundary fallback={null} url={model.url} seam={seam}>
-      <Suspense fallback={null}>{children}</Suspense>
+      <Suspense fallback={<PendingFrame />}>{children}</Suspense>
     </ModelFallbackBoundary>
   );
 }
@@ -139,7 +140,7 @@ export function IsolatedEntityModel({
 }) {
   return (
     <ModelFallbackBoundary fallback={fallback ?? null} url={model.url} seam={measure?.target}>
-      <Suspense fallback={null}>
+      <Suspense fallback={<PendingFrame />}>
         <EntityModel model={model} instanceId={instanceId} measure={measure} />
       </Suspense>
     </ModelFallbackBoundary>

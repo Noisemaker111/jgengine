@@ -28,7 +28,7 @@ export function eachGameSource(root: string): { rel: string; source: string }[] 
   }
   for (const game of games) {
     // Only real games have a src/index.tsx barrel (the dev harness entry). This excludes
-    // helper packages like `studios` (src/index.ts) and design-only folders like `vaultbreak`.
+    // helper packages like `studios` (src/index.ts) and design-only folders like `deepward`.
     if (!existsSync(join(gamesDir, game, "src/index.tsx"))) continue;
     const src = join(gamesDir, game, "src");
     try {

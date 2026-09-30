@@ -16,7 +16,7 @@ function Bar({ value }: { value: number }) {
   });
 
   test("a thin wrapper over the shipped module is adoption, not debt", () => {
-    // claudecraft's real shape: a local `Bar` that exists only to apply game tokens to HealthBar.
+    // lantern-reach's real shape: a local `Bar` that exists only to apply game tokens to HealthBar.
     const source = `import { HealthBar, barTokens } from "@jgengine/react/bars";
 
 function Bar({ value, max }: { value: number; max: number }) {
@@ -28,7 +28,7 @@ function Bar({ value, max }: { value: number; max: number }) {
 
   test("each widget name is cleared only by its OWN owning module", () => {
     // Importing bars must not excuse a hand-rolled Slot — the mistake a blanket
-    // "imports something from @jgengine/react" check would make on ironhold's Hud.
+    // "imports something from @jgengine/react" check would make on ember-command's Hud.
     const source = `import { HealthBar } from "@jgengine/react/bars";
 
 function Slot({ icon }: { icon: string }) {

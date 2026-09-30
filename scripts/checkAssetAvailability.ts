@@ -90,7 +90,7 @@ const MODELS_LITERAL = /\/models\/([a-zA-Z0-9_-]+)\//g;
 /**
  * Extract every model-pack reference from a single game's source: the string
  * literals of any `buildCatalog({ sources: [...] })` array, plus every
- * `/models/<pack>/` served-path literal (how packs like `claudecraft` that skip
+ * `/models/<pack>/` served-path literal (how packs like `lantern-reach` that skip
  * `buildCatalog` still declare their folder dependency).
  */
 export function packReferencesForGame(game: string, srcDir: string): PackReference[] {

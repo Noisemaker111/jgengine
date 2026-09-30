@@ -8,7 +8,7 @@
  * The shipped module each flagged widget name shadows. A local component that already imports its
  * owning module is a thin wrapper over the engine building block — a game applying its own tokens
  * and defaults, which is adoption working as intended — not a re-derivation. Keying the smell on the
- * name alone flagged those wrappers (claudecraft's `Bar` delegates to `HealthBar`/`ManaBar` and was
+ * name alone flagged those wrappers (lantern-reach's `Bar` delegates to `HealthBar`/`ManaBar` and was
  * still listed as debt) while a plain rename would have silently cleared a genuine offender.
  */
 export const WIDGET_OWNERS: Readonly<Record<string, string>> = {

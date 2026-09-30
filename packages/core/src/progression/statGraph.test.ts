@@ -160,7 +160,7 @@ describe("stat graph — core seam", () => {
 
 describe("stat graph — first adopters (issue #914)", () => {
   // Adopter 1: a hero-style attribute mapping. STR/AGI/INT drive combat outputs,
-  // reproducing claudecraft's constants (ATTACK_POWER_PER_STR=1, HP_PER_STA=10, SPELL_POWER_PER_INT=0.5).
+  // reproducing lantern-reach's constants (ATTACK_POWER_PER_STR=1, HP_PER_STA=10, SPELL_POWER_PER_INT=0.5).
   const heroGraph = createStatGraph({
     inputs: [
       { id: "str", base: 0, min: 0 },

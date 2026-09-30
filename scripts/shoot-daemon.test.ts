@@ -23,7 +23,7 @@ describe("shoot daemon CLI routing", () => {
   test("isDaemonArgv recognizes daemon subcommand and --serve", () => {
     expect(isDaemonArgv(["daemon", "start"])).toBe(true);
     expect(isDaemonArgv(["--serve"])).toBe(true);
-    expect(isDaemonArgv(["wreckway", "--mode", "play"])).toBe(false);
+    expect(isDaemonArgv(["drift-foundry", "--mode", "play"])).toBe(false);
     expect(isDaemonArgv(["--keep"])).toBe(false);
   });
 
