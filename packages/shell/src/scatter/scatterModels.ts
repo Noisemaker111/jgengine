@@ -3,7 +3,7 @@ import * as THREE from "three";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { applyMaterialOverride } from "../materialOverride";
-import { cloneModelScene, disposeClonedMaterials } from "../render/modelRender";
+import { cloneModelScene, disposeModelScene } from "../render/modelRender";
 
 /** One instanceable draw source harvested from a resolved GLB — geometry stays shared with the loader cache, `localMatrix` bakes the model's own transform (from its scene root) plus scale/anchor normalization. */
 export interface ScatterModelSource {
@@ -69,10 +69,9 @@ export function buildScatterModelSources(
 }
 
 /**
- * Disposes the cloned materials harvested by {@link buildScatterModelSources}; never disposes geometry
- * (still owned by the loader cache).
+ * Releases the instance resources harvested by {@link buildScatterModelSources}, retaining cached assets.
  * @internal
  */
 export function disposeScatterModelSources(root: THREE.Object3D): void {
-  disposeClonedMaterials(root);
+  disposeModelScene(root);
 }

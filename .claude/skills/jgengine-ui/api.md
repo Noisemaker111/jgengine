@@ -2370,6 +2370,8 @@
 - `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`.
 - `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — ⚠ undocumented
 - `PaintCanvas` (interface): interface PaintCanvas { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; texture: THREE.CanvasTexture } — ⚠ undocumented
+- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
+- `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
 
 ## @jgengine/shell/render/resolveModel
 

@@ -362,6 +362,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `modelLoadFallbacks` (function) · `import { modelLoadFallbacks } from "@jgengine/shell/render/modelLoad"`
 
+## model-instance — clone a loaded model for independent styling and animation
+
+- `cloneModelScene` (function) · `import { cloneModelScene } from "@jgengine/shell/render/modelRender"`
+- `disposeModelScene` (function) · `import { disposeModelScene } from "@jgengine/shell/render/modelRender"`
+
 ## model-load-idle — how long the shared GLB loader has been idle, for capture settle waits
 
 - `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad"`

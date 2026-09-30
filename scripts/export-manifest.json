@@ -851,6 +851,7 @@
     "./render/modelRender",
     "./render/resolveModel",
     "./render/sceneCapture",
+    "./render/spriteRender",
     "./render/useDisposable",
     "./render/useEntityRenderCues",
     "./render/useFootIk",
