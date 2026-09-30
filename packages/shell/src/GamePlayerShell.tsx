@@ -65,6 +65,7 @@ import { resolveInputSink } from "./inputSink";
 import { observableShellTracker, attachShellInputPublication } from "./shellInputPublication";
 import { attachShellControlSuspension } from "./shellControlSuspension";
 import { LazyShell3dPresentation } from "./lazyShell3dPresentation";
+import { PhotoControls } from "./PhotoControls";
 import { createPresentationDiagnosticOwnership, createPlaySurfaceFocusOwnership, PresentationRecovery, type PresentationRecoveryEvent } from "./presentationRecovery";
 
 const DEV_USER_ID = "dev-player";
@@ -457,6 +458,7 @@ export function GamePlayerShell({
         }}
         authoritativeFrameRef={authoritativeFrameRef}
       />
+      <PhotoControls ctx={ctx} playSurface={wrapperRef} />
     </PresentationRecovery>
   );
 }

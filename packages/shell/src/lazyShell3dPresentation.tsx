@@ -1,4 +1,4 @@
-import { lazy, Suspense, useLayoutEffect, useState, type ComponentProps, type LazyExoticComponent } from "react";
+import { lazy, Suspense, useLayoutEffect, useMemo, useState, type ComponentProps, type LazyExoticComponent } from "react";
 
 import { suspendPlayControls } from "@jgengine/core/game/controlGate";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
@@ -11,8 +11,15 @@ let loadedPresentation: LazyExoticComponent<Presentation> | undefined;
 
 function getPresentation(): LazyExoticComponent<Presentation> {
   return loadedPresentation ??= lazy(() =>
-    import("./Shell3dPresentation").then(
-      (module) => ({ default: module.Shell3dPresentation }),
+    Promise.all([import("./Shell3dPresentation"), import("./render/sceneCapture")]).then(
+      ([module, capture]) => ({ default: function CapturablePresentation(props: ComponentProps<Presentation>) {
+        const OriginalOverlay = props.playable.WorldOverlay;
+        const WorldOverlay = useMemo(() => function PhotographWorldOverlay(overlayProps: { ctx: GameContext }) {
+          return <><capture.SceneCaptureBinding />{OriginalOverlay !== undefined ? <OriginalOverlay {...overlayProps} /> : null}</>;
+        }, [OriginalOverlay]);
+        const playable = useMemo(() => ({ ...props.playable, WorldOverlay }), [props.playable, WorldOverlay]);
+        return <module.Shell3dPresentation {...props} playable={playable} />;
+      } }),
       (error: unknown) => {
         throw markPresentationCodeLoadFailure(error);
       },

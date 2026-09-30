@@ -1778,6 +1778,10 @@
 
 - `JoinGate` (function): function JoinGate({ status, failureReason, retry, joiningLabel = "Joining world…", failedLabel = "Unable to join", retryLabel = "Retry", className, children, renderJoining, renderFailure }: { status: "joining" | "joined" | "failed"; failureReason?: string | null; retry: () => void; joiningLabel?: Re… — Blocking join feedback; callers may supply their own copy and classes.
 
+## @jgengine/shell/PhotoControls
+
+- `PhotoControls` (function): function PhotoControls({ ctx, playSurface }: { ctx: GameContext; playSurface: RefObject<HTMLElement | null> }): React.JSX.Element — Default photograph controls for the current rendered game.
+
 ## @jgengine/shell/TerritoryOverlay
 
 - `TerritoryOverlay` (function): function TerritoryOverlay({ cells, cost, affordable, formatCost = String, renderCell, className, style }: { cells: readonly TerritoryPreviewCell[]; cost: number; affordable: boolean; formatCost?: (cost: number) => ReactNode; renderCell?: (cell: TerritoryPreviewCell) => ReactNode; className?: string;… — Placement footprint feedback with inline claim cost and affordability.
@@ -2381,9 +2385,30 @@
 ## @jgengine/shell/render/sceneCapture
 
 - `CaptureRenderer` (interface): interface CaptureRenderer — The bit of a WebGL renderer scene capture needs — its backing `<canvas>`.
-- `SceneCaptureBinding` (function): function SceneCaptureBinding({ bind }: { bind: (capture: () => string | null) => void }): null — In-`<Canvas>` binder that hands the scene-capture function out to HUD code living outside the reconciler (a photo-mode Capture button). Mount it inside the game's `WorldOverlay`; call `bind` receives a `() => string | null` that grabs the current frame. Renders nothing.
+- `SceneCapture` (interface): interface SceneCapture — A single renderer's photograph operation, shared between its canvas and HUD.
+- `SceneCaptureBinding` (function): function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void } = {}): null — In-`<Canvas>` binder that hands the scene-capture function out to HUD code living outside the reconciler (a photo-mode Capture button). Mount it inside the game's `WorldOverlay` and use `useSceneCapture` in its HUD. Optional `bind` preserves direct current-frame access for existing consumers. Renders nothing.
+- `SceneCaptureOptions` (interface): interface SceneCaptureOptions — Inject photo preferences, frame scheduling or download policy. Scheduling returns cancellation.
+- `SceneCaptureRequest` (interface): interface SceneCaptureRequest — Presentation to hide while taking a photograph. Its inline visibility is restored exactly.
+- `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; dataUrl: string } | { ok: false; reason: "not-ready" | "busy" | "unmounted" | "capture-failed" | "download-failed"; message: string } — Pixel read and browser download dispatch outcome; failure never substitutes an image.
+- `SceneCaptureState` (interface): interface SceneCaptureState — Live renderer availability and the current photograph operation.
 - `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
+- `createSceneCapture` (function): function createSceneCapture(options: SceneCaptureOptions = {}): SceneCapture — Capture one freshly rendered game frame, restore presentation and download its PNG. Renderer replacement cancels the old operation; overlapping requests fail as busy.
 - `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
+- `sceneCaptureFor` (function): function sceneCaptureFor(instance: object): SceneCapture — Share photograph state between one game's renderer and controls.
+- `useSceneCapture` (function): function useSceneCapture(): SceneCaptureState & Pick<SceneCapture, "photoMode" | "capture"> — Observe and capture the renderer attached to the current GameProvider.
+
+## @jgengine/shell/render/sceneCaptureRuntime
+
+- `CaptureRenderer` (interface): interface CaptureRenderer — The bit of a WebGL renderer scene capture needs — its backing `<canvas>`.
+- `SceneCapture` (interface): interface SceneCapture — A single renderer's photograph operation, shared between its canvas and HUD.
+- `SceneCaptureOptions` (interface): interface SceneCaptureOptions — Inject photo preferences, frame scheduling or download policy. Scheduling returns cancellation.
+- `SceneCaptureRequest` (interface): interface SceneCaptureRequest — Presentation to hide while taking a photograph. Its inline visibility is restored exactly.
+- `SceneCaptureResult` (type): type SceneCaptureResult = | { ok: true; dataUrl: string } | { ok: false; reason: "not-ready" | "busy" | "unmounted" | "capture-failed" | "download-failed"; message: string } — Pixel read and browser download dispatch outcome; failure never substitutes an image.
+- `SceneCaptureState` (interface): interface SceneCaptureState — Live renderer availability and the current photograph operation.
+- `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
+- `createSceneCapture` (function): function createSceneCapture(options: SceneCaptureOptions = {}): SceneCapture — Capture one freshly rendered game frame, restore presentation and download its PNG. Renderer replacement cancels the old operation; overlapping requests fail as busy.
+- `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
+- `sceneCaptureFor` (function): function sceneCaptureFor(instance: object): SceneCapture — Share photograph state between one game's renderer and controls.
 
 ## @jgengine/shell/render/testFixtures/proceduralTileLayer
 
