@@ -12,7 +12,7 @@ import {
   resizePanelSize,
   type EditorUiPanelLayout,
 } from "@jgengine/core/ui/hudDocument";
-import { buildFullReport, buildLeanReport } from "./DevtoolsOverlay";
+import { buildFullReport, buildLeanReport } from "./devtoolsReports";
 
 /** One RPC call into the agent bridge: a verb name plus its verb-specific fields. */
 export type AgentBridgeRequest = { method: string } & Record<string, unknown>;
