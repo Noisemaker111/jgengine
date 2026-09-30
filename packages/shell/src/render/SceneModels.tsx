@@ -1,6 +1,5 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
-import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig, ModelMaterialMaps } from "@jgengine/core/game/playableGame";
@@ -9,6 +8,7 @@ import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/f
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 import { sharedGltfLoader } from "./modelLoad";
+import { modelAssetRequests, modelMapEntries } from "./modelAssets";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
 import { useModelAnimation } from "./useModelAnimation";
@@ -215,19 +215,10 @@ function ModelPartGroup({
 }
 
 function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps: ModelMaterialMaps }) {
-  const entries = useMemo(() => {
-    const record: Record<string, string> = {};
-    if (maps.color !== undefined) record.color = maps.color;
-    if (maps.normal !== undefined) record.normal = maps.normal;
-    if (maps.roughness !== undefined) record.roughness = maps.roughness;
-    if (maps.ao !== undefined) record.ao = maps.ao;
-    if (maps.metalness !== undefined) record.metalness = maps.metalness;
-    if (maps.emissive !== undefined) record.emissive = maps.emissive;
-    if (maps.height !== undefined) record.height = maps.height;
-    return record;
-  }, [maps.color, maps.normal, maps.roughness, maps.ao, maps.metalness, maps.emissive, maps.height]);
-  const textures = useTexture(entries) as Partial<Record<"color" | "normal" | "roughness" | "ao" | "metalness" | "emissive" | "height", THREE.Texture>>;
-  useEffect(() => {
+  const entries = useMemo(() => modelMapEntries(maps), [maps.color, maps.normal, maps.roughness, maps.ao, maps.metalness, maps.emissive, maps.height]);
+  const loaded = useLoader(THREE.TextureLoader, Object.values(entries));
+  const textures = useMemo(() => Object.fromEntries(Object.keys(entries).map((key, index) => [key, loaded[index]!])), [entries, loaded]);
+  useLayoutEffect(() => {
     if (textures.color !== undefined) textures.color.colorSpace = THREE.SRGBColorSpace;
     applyMaterialOverride(scene, {}, { clone: false, textures });
   }, [scene, textures]);
@@ -249,6 +240,9 @@ export function EntityModel({
   instanceId?: string;
   measure?: MeasureTarget;
 }) {
+  const assets = modelAssetRequests(model);
+  for (const url of assets.models) useLoader.preload(sharedGltfLoader, url);
+  for (const urls of assets.textureGroups) useLoader.preload(THREE.TextureLoader, urls);
   const gltf = useLoader(sharedGltfLoader, model.url);
   // Optional, not required: measured bounds and paint strokes are live-world extras, and a model
   // that threw without a running game could not be inspected outside one — which is how a broken

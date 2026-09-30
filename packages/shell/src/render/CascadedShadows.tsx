@@ -22,7 +22,6 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
   const camera = useThree((s) => s.camera);
   const scene = useThree((s) => s.scene);
   const csmRef = useRef<CSM | null>(null);
-  const patchedRef = useRef(new WeakSet<THREE.Material>());
 
   useEffect(() => {
     const cascades = Math.max(2, Math.min(4, Math.floor(entry.cascades ?? 3)));
@@ -52,11 +51,11 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
       light.color = new THREE.Color(entry.color ?? "#ffffff");
       light.castShadow = true;
     }
-    patchedRef.current = new WeakSet();
-    patchSceneMaterials(scene, csm, patchedRef.current);
+    const unbind = bindCsmMaterials(scene, csm);
     csmRef.current = csm;
     return () => {
-      csm.dispose();
+      unbind();
+      releaseCascadedShadows(csm);
       csmRef.current = null;
     };
   }, [
@@ -78,9 +77,6 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
     const csm = csmRef.current;
     if (csm === null) return;
     csm.camera = camera;
-    // Every frame: a mesh that renders before setupMaterial receives all cascade
-    // lights at once (a cascades× sun) — the WeakSet keeps the traverse cheap.
-    patchSceneMaterials(scene, csm, patchedRef.current);
     csm.update();
   });
 
@@ -90,12 +86,94 @@ export function CascadedShadows({ entry }: { entry: DirectionalLightingConfig })
 /** Structural slice of CSM so the patcher is testable without a renderer. */
 export interface CsmMaterialSetup {
   setupMaterial(material: THREE.Material): void;
+  shaders?: Map<unknown, unknown>;
+}
+
+/** Release the lights and GPU targets that three.js CSM.dispose does not own. @internal */
+export function releaseCascadedShadows(csm: Pick<CSM, "remove" | "dispose" | "lights">): void {
+  csm.remove();
+  for (const light of csm.lights) light.shadow.dispose();
+  csm.dispose();
+}
+
+function setupMaterial(material: THREE.Material, csm: CsmMaterialSetup): void {
+  const prior = material.onBeforeCompile;
+  csm.setupMaterial(material);
+  const csmHook = material.onBeforeCompile;
+  if (prior !== THREE.Material.prototype.onBeforeCompile && prior !== csmHook) {
+    material.onBeforeCompile = function (shader, renderer) {
+      prior.call(this, shader, renderer);
+      csmHook.call(this, shader, renderer);
+    };
+  }
+  material.needsUpdate = true;
+}
+
+/** Patch streamed meshes on attachment and material replacement without scanning the world each frame. @internal */
+export function bindCsmMaterials(scene: THREE.Scene, csm: CsmMaterialSetup): () => void {
+  const nodes = new Map<THREE.Object3D, () => void>();
+  const materials = new Map<THREE.Material, () => void>();
+  const patch = (material: THREE.Material) => {
+    if (!isStandardMaterial(material) || materials.has(material)) return;
+    const prior = material.onBeforeCompile;
+    const priorDefines = { ...material.defines };
+    setupMaterial(material, csm);
+    const hook = material.onBeforeCompile;
+    const release = () => {
+      material.removeEventListener("dispose", release);
+      csm.shaders?.delete(material);
+      if (material.onBeforeCompile === hook) material.onBeforeCompile = prior;
+      for (const key of ["USE_CSM", "CSM_CASCADES", "CSM_FADE"]) {
+        if (key in priorDefines) (material.defines ??= {})[key] = priorDefines[key];
+        else if (material.defines !== undefined) delete material.defines[key];
+      }
+      material.needsUpdate = true;
+      materials.delete(material);
+    };
+    materials.set(material, release);
+    material.addEventListener("dispose", release);
+  };
+  const patchMesh = (node: THREE.Object3D) => {
+    const mesh = node as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    if (Array.isArray(mesh.material)) mesh.material.forEach(patch);
+    else patch(mesh.material);
+  };
+  const detach = (node: THREE.Object3D) => {
+    nodes.get(node)?.();
+    nodes.delete(node);
+    for (const child of node.children) detach(child);
+  };
+  const attach = (node: THREE.Object3D) => {
+    if (nodes.has(node)) return;
+    patchMesh(node);
+    const added = ({ child }: THREE.Object3DEventMap["childadded"]) => attach(child);
+    const removed = ({ child }: THREE.Object3DEventMap["childremoved"]) => detach(child);
+    const prior = node.onBeforeRender;
+    const before: typeof prior = function (this: THREE.Object3D, ...args) {
+      prior.apply(this, args);
+      patchMesh(this);
+    };
+    node.addEventListener("childadded", added);
+    node.addEventListener("childremoved", removed);
+    if ((node as THREE.Mesh).isMesh) node.onBeforeRender = before;
+    nodes.set(node, () => {
+      node.removeEventListener("childadded", added);
+      node.removeEventListener("childremoved", removed);
+      if (node.onBeforeRender === before) node.onBeforeRender = prior;
+    });
+    for (const child of node.children) attach(child);
+  };
+  attach(scene);
+  return () => {
+    detach(scene);
+    for (const release of materials.values()) release();
+  };
 }
 
 /**
  * Run CSM's `setupMaterial` over every unpatched standard material in the scene,
- * chaining rather than clobbering a material's own `onBeforeCompile`. Called every
- * frame (WeakSet-guarded) so streamed meshes never render lit by all cascades at once.
+ * chaining rather than clobbering a material's own `onBeforeCompile`.
  */
 export function patchSceneMaterials(
   scene: THREE.Scene,
@@ -108,17 +186,7 @@ export function patchSceneMaterials(
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const mat of materials) {
       if (!isStandardMaterial(mat) || patched.has(mat)) continue;
-      const prior = mat.onBeforeCompile;
-      csm.setupMaterial(mat);
-      const csmHook = mat.onBeforeCompile;
-      if (prior !== THREE.Material.prototype.onBeforeCompile && prior !== csmHook) {
-        // setupMaterial assigns onBeforeCompile, which would drop a material's own
-        // shader surgery (rim light, detail maps) — run both, the material's first.
-        mat.onBeforeCompile = function (shader, renderer) {
-          prior.call(this, shader, renderer);
-          csmHook.call(this, shader, renderer);
-        };
-      }
+      setupMaterial(mat, csm);
       patched.add(mat);
     }
   });
