@@ -275,7 +275,7 @@ export function advanceLedger(
 
       // Reserve-capped nominal amount per candidate cycle, in chronological order.
       const nominal = reserveCappedAmounts(dueCount, rule.amount, cursor.reserveRemaining);
-      const depleted = cursor.reserveRemaining !== undefined && nominal.remaining <= EPSILON;
+      const depleted = cursor.reserveRemaining !== undefined && nominal.remaining <= 0;
 
       const cycles = buildCycles(catchUp, nominal.amounts, firstDue, rule.everySeconds, perRuleLimit, maxCycles);
 
@@ -381,12 +381,12 @@ function reserveCappedAmounts(
   }
   const amounts: number[] = [];
   let remaining = reserveRemaining;
-  for (let i = 0; i < count && remaining > EPSILON; i += 1) {
+  for (let i = 0; i < count && remaining > 0; i += 1) {
     const take = Math.min(amount, remaining);
     amounts.push(take);
     remaining -= take;
   }
-  if (remaining < EPSILON) remaining = 0;
+  if (remaining < 0) remaining = 0;
   return { amounts, remaining, consumed: reserveRemaining - remaining };
 }
 
