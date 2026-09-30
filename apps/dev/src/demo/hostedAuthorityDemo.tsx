@@ -1,4 +1,5 @@
-import { useState, type CSSProperties } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore, type CSSProperties } from "react";
+import { actionContextStack, playControlsActive, suspendPlayControls } from "@jgengine/core/game/controlGate";
 import { useGame, useGameContext, useGameStoreValue } from "@jgengine/react";
 import type { PlayableGame } from "@jgengine/shell/registry";
 import type { GameSettingDef } from "@jgengine/core/settings/settingsModel";
@@ -8,16 +9,24 @@ import { authorityContent, authorityDefinition, authorityLoop, type AuthorityVie
 const buttonStyle: CSSProperties = { padding: "12px 18px", border: "1px solid #6faaa7", borderRadius: 8, background: "#193b40", color: "#e9f6ee", fontWeight: 600, cursor: "pointer" };
 
 const READOUT_STYLE_ID = "relay.readoutStyle";
+const CONTROLS_PAUSED_ID = "relay.controlsPaused";
 const displaySettings: readonly GameSettingDef[] = [{
   id: READOUT_STYLE_ID, label: "Readout style", category: "gameplay", kind: "select", default: "detailed",
   options: [{ value: "detailed", label: "Detailed" }, { value: "compact", label: "Compact" }],
-}];
+}, { id: CONTROLS_PAUSED_ID, label: "Pause courier controls", category: "gameplay", kind: "toggle", default: false }];
 
 function AuthorityUI() {
   const ctx = useGameContext();
   const { commands } = useGame();
   const view = useGameStoreValue<AuthorityView | null>(`relay.view:${ctx.player.userId}`, null);
   const [result, setResult] = useState("Awaiting a command");
+  const [controlsPaused, setControlsPaused] = useSetting<boolean>(CONTROLS_PAUSED_ID, false);
+  const contexts = actionContextStack(ctx);
+  useSyncExternalStore(contexts.subscribe, contexts.version, contexts.version);
+  useLayoutEffect(() => {
+    if (!controlsPaused) return;
+    return suspendPlayControls(ctx);
+  }, [ctx, controlsPaused]);
   const [readoutStyle] = useSetting<"detailed" | "compact">(READOUT_STYLE_ID, "detailed");
   const compact = readoutStyle === "compact";
   async function run(name: string) {
@@ -31,6 +40,8 @@ function AuthorityUI() {
       <div><p style={{ color: "#95d4bc", margin: 0 }}>JG ENGINE · SHARED AUTHORITY</p><h1 style={{ margin: "6px 0", fontSize: 34 }}>Relay Courtyard</h1><p style={{ margin: 0 }}>Send a signal. Keep your progress across a host restart.</p></div>
     </header>
     <SettingsTrigger className="mt-5 rounded-lg border border-[#6faaa7] px-4 py-2 text-sm font-semibold" label="Display settings">Display settings</SettingsTrigger>
+    <button style={{ ...buttonStyle, marginLeft: 10 }} onClick={() => setControlsPaused(!controlsPaused)}>{controlsPaused ? "Resume controls" : "Pause controls"}</button>
+    <p><output data-testid="controls-state">{playControlsActive(ctx) ? "Controls active" : "Controls paused"}</output> · The shared host keeps running.</p>
     <p>Actor <strong data-testid="actor">{ctx.player.userId}</strong> · <span data-testid="members">{view?.members ?? 0}</span> couriers connected</p>
     <section style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 16, margin: "28px 0" }}>
       {([ ["Copper", view?.coins], ["XP", view?.xp], ["Tokens", view?.loot], ["Signals", view?.casts], ["Host time", view?.time], ["Host tick", view?.ticks] ] as const).map(([label, value]) => <div key={label} style={{ border: "1px solid #41606a", padding: compact ? 12 : 20, borderRadius: 12, background: "#102735" }}><div style={{ color: "#aac5c9", fontSize: 13 }}>{label}</div><output data-testid={label.toLowerCase().replaceAll(" ", "-")} style={{ display: "block", fontSize: compact ? 22 : 30 }}>{value ?? "—"}</output></div>)}

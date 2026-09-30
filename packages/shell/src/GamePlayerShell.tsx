@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -57,6 +58,7 @@ import { EMPTY_RESERVED } from "./shellConstants";
 import { JoinGate } from "./JoinGate";
 import { useShellMultiplayerSync } from "./useShellMultiplayerSync";
 import { ShellHudPresentation } from "./ShellHudPresentation";
+import { attachShellControlSuspension } from "./shellControlSuspension";
 import { Shell3dPresentation } from "./Shell3dPresentation";
 
 const DEV_USER_ID = "dev-player";
@@ -212,6 +214,12 @@ export function GamePlayerShell({
     }),
     [tracker],
   );
+  useLayoutEffect(() => {
+    if (ctx === null) return;
+    return attachShellControlSuspension({
+      ctx, tracker, pointerAxisRef, analogRef, primaryClickRef, cameraDraggingRef, f2HeldRef,
+    });
+  }, [ctx, tracker]);
   const gateRef = useRef(false);
   const orientationPlatform = coarsePointer ? "mobile" : "desktop";
   const orientationRequirement = useMemo(

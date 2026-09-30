@@ -882,6 +882,7 @@
     "./settings/appliedSettings",
     "./settings/settingsController",
     "./shellConstants",
+    "./shellControlSuspension",
     "./shellMovement",
     "./shellPointer",
     "./structures",

@@ -65,6 +65,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createItemUse` (function) · `import { createItemUse } from "@jgengine/core/gameplay"`
 
+## control-suspension — Suspend player input across overlapping menus without stopping shared simulation.
+
+- `suspendPlayControls` (function) · `import { suspendPlayControls } from "@jgengine/core/game/controlGate"`
+
 ## cosmetics — equip cosmetic skins and customizations by slot
 
 - `createCosmetics` (function) · `import { createCosmetics } from "@jgengine/core/gameplay"`
