@@ -848,6 +848,7 @@
     "./render/displayColor",
     "./render/measureBounds",
     "./render/measureCollisionMesh",
+    "./render/modelAssets",
     "./render/modelLoad",
     "./render/modelRender",
     "./render/resolveModel",

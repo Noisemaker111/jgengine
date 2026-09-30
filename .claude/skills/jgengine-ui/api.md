@@ -2295,7 +2295,7 @@
 ## @jgengine/shell/render/CascadedShadows
 
 - `CsmMaterialSetup` (interface): interface CsmMaterialSetup — Structural slice of CSM so the patcher is testable without a renderer.
-- `patchSceneMaterials` (function): function patchSceneMaterials(scene: THREE.Scene, csm: CsmMaterialSetup, patched: WeakSet<THREE.Material>): void — Run CSM's `setupMaterial` over every unpatched standard material in the scene, chaining rather than clobbering a material's own `onBeforeCompile`. Called every frame (WeakSet-guarded) so streamed meshes never render lit by all cascades at once.
+- `patchSceneMaterials` (function): function patchSceneMaterials(scene: THREE.Scene, csm: CsmMaterialSetup, patched: WeakSet<THREE.Material>): void — Run CSM's `setupMaterial` over every unpatched standard material in the scene, chaining rather than clobbering a material's own `onBeforeCompile`.
 
 ## @jgengine/shell/render/EntityPreview
 
