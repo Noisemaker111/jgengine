@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, type Dispatch, type SetStateAction } 
 
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { isServerAuthoritative } from "@jgengine/core/runtime/adapter";
+import { bindCommandTransport } from "@jgengine/core/runtime/commandDispatch";
 import { createTransportSessionId, type PresencePoseRow } from "@jgengine/core/runtime/transport";
 
 import { attachWorldSync, type AuthoritativeFrameHandler } from "./worldSync";
@@ -27,6 +28,9 @@ export function useShellMultiplayerSync(
     setFailureReason(null);
     let disposed = false;
     const cleanups: (() => void)[] = [];
+    if (isServerAuthoritative(playable.game.multiplayer)) {
+      cleanups.push(bindCommandTransport(ctx, { transport: multiplayer.backend.transport, serverId: () => serverIdRef.current }));
+    }
     const sessionId = createTransportSessionId();
 
     void multiplayer.backend.transport

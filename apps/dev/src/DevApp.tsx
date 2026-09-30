@@ -95,6 +95,7 @@ export function DevApp({ gameId }: { gameId: string }) {
               resolveShellMultiplayer({
                 game: loaded.game,
                 gameId,
+                userId: gameId === "hosted-authority" ? new URLSearchParams(window.location.search).get("actor") ?? undefined : undefined,
                 url: WS_URL,
                 force: WS_URL !== undefined,
               }),

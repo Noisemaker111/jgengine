@@ -147,8 +147,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
       if (input !== undefined) publishInput(input);
       const dt = Math.min(dtSeconds, maxStep);
       let total = 0;
-      ctx.sim.advance(dt, (stepDt) => {
-        const gameDt = ctx.time.advance(stepDt);
+      ctx.sim.advance(dt, (stepDt, _tick, gameDt) => {
         total += gameDt;
         ctx.sim.runStages("beforeMovement", stepDt);
         if (tuning !== null) {

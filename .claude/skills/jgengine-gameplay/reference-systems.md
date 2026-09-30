@@ -8,6 +8,8 @@ Use `ctx.state()` / `ctx.restore(state)` for detached whole-world persistence, i
 
 Restore after initialization has registered every system. Missing keys in older saves retain initialized values; unavailable historical economy/progression cannot be recovered by the engine. Keep a game's legacy migration until its older saves have been converted. Simulation tick and pose-buffer state persist, but callbacks, timers and game-owned closures must be registered/reconstructed at boot or exposed through a system save module.
 
+`ctx.sim.advance(realDt, (stepDt, tick, gameDt) => ...)` owns advancement of `ctx.time` once per simulation step. Use the third argument for scaled gameplay time and `stepDt` for movement; remove manual `ctx.time.advance` calls inside simulation callbacks. Movement prediction opts out with `{ advanceTime: false }` and must not run authoritative gameplay stages. Standalone clocks retain their explicit `advance` API.
+
 ## Portable XP and leveling
 
 `leveling` (`@jgengine/core/game/progression`) is usable without a scheduled

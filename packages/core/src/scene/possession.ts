@@ -29,6 +29,8 @@ export interface Possession {
   own(userId: string, entityId: string): void;
   disown(userId: string, entityId: string): void;
   owns(userId: string, entityId: string): boolean;
+  /** Unique owner of an explicitly owned pawn, or undefined when absent or shared. Does not create ownership. */
+  ownerOf(entityId: string): string | undefined;
   listOwned(userId: string): readonly string[];
   active(userId: string): string;
   possess(userId: string, entityId: string): { reason: string } | null;
@@ -41,12 +43,20 @@ export interface Possession {
 export function createPossession(deps: PossessionDeps): Possession {
   const owned = new Map<string, Set<string>>();
   const activeByUser = new Map<string, string>();
+  const ownersByEntity = new Map<string, Set<string>>();
+
+  function addOwner(userId: string, entityId: string): void {
+    const owners = ownersByEntity.get(entityId) ?? new Set<string>();
+    owners.add(userId);
+    ownersByEntity.set(entityId, owners);
+  }
 
   function ownedSet(userId: string): Set<string> {
     let set = owned.get(userId);
     if (set === undefined) {
       set = new Set([userId]);
       owned.set(userId, set);
+      addOwner(userId, userId);
     }
     return set;
   }
@@ -54,14 +64,22 @@ export function createPossession(deps: PossessionDeps): Possession {
   return {
     own(userId, entityId) {
       ownedSet(userId).add(entityId);
+      addOwner(userId, entityId);
     },
     disown(userId, entityId) {
       if (entityId === userId) return;
       ownedSet(userId).delete(entityId);
+      const owners = ownersByEntity.get(entityId);
+      owners?.delete(userId);
+      if (owners?.size === 0) ownersByEntity.delete(entityId);
       if (activeByUser.get(userId) === entityId) activeByUser.delete(userId);
     },
     owns(userId, entityId) {
       return ownedSet(userId).has(entityId);
+    },
+    ownerOf(entityId) {
+      const owners = ownersByEntity.get(entityId);
+      return owners?.size === 1 ? owners.values().next().value : undefined;
     },
     listOwned(userId) {
       return Array.from(ownedSet(userId));
@@ -94,7 +112,11 @@ export function createPossession(deps: PossessionDeps): Possession {
     },
     hydrateAll(state) {
       owned.clear();
-      for (const [userId, ids] of Object.entries(state.owned)) owned.set(userId, new Set(ids));
+      ownersByEntity.clear();
+      for (const [userId, ids] of Object.entries(state.owned)) {
+        owned.set(userId, new Set(ids));
+        for (const entityId of ids) addOwner(userId, entityId);
+      }
       activeByUser.clear();
       for (const [userId, entityId] of Object.entries(state.active)) activeByUser.set(userId, entityId);
     },

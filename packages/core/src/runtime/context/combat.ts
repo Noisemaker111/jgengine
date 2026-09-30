@@ -24,7 +24,7 @@ import type {
   GameContextLoot,
 } from "../gameContext";
 import { createCombatFx, type CombatFx } from "./combatFx";
-import { applyLethalLoot, isLocalPlayerKill } from "./deathLoot";
+import { applyLethalLoot } from "./deathLoot";
 
 /** @internal Wiring combat needs from the live scene, loot, and command seams. */
 export interface CombatSubsystemDeps {
@@ -46,8 +46,8 @@ export interface CombatSubsystemDeps {
   lootRegistry: LootRegistry;
   spawnWorldItem: (input: WorldItemSpawnInput) => WorldItemRecord;
   despawnEntity: (instanceId: string) => boolean;
-  runCommand: (name: string, args: unknown) => void;
-  localUserId: string;
+  runCommand: (name: string, args: unknown, actorUserId?: string) => void;
+  userIdOf: (instanceId: string) => string | undefined;
   rng: () => number;
   physics?: PhysicsConfig;
 }
@@ -84,7 +84,7 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
     spawnWorldItem,
     despawnEntity,
     runCommand,
-    localUserId,
+    userIdOf,
     rng,
   } = d;
 
@@ -93,15 +93,17 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
     resolveIdentity(instanceId) {
       const entity = entities.get(instanceId);
       if (entity === null) return null;
+      const userId = userIdOf(instanceId);
       return {
         catalogId: entity.name,
         position: [entity.position[0], entity.position[1], entity.position[2]],
+        ...(userId === undefined ? {} : { userId }),
       };
     },
     loot: { roll: (tableId) => (lootRegistry.has(tableId) ? lootRegistry.roll(tableId) : []) },
     events,
-    runCommand(name, args) {
-      runCommand(name, args);
+    runCommand(name, args, reason) {
+      runCommand(name, args, reason?.kind === "player_kill" ? reason.killerUserId : undefined);
     },
     despawn(instanceId) {
       despawnEntity(instanceId);
@@ -118,7 +120,8 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
         const entity = entities.get(instanceId);
         if (entity === null) return null;
         // `entity.name` is the spawn kind/catalog id, matching the `entity.died` event.
-        return { catalogId: entity.name, name: entity.name };
+        const userId = userIdOf(instanceId);
+        return { catalogId: entity.name, name: entity.name, ...(userId === undefined ? {} : { userId }) };
       },
       onLethal(instanceId, lethalCtx) {
         // Capture identity + onDeath *before* resolveDeath despawns the entity.
@@ -128,20 +131,19 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
         const onDeath = catalogEntry(instanceId)?.onDeath;
         const reason = deathReasonFromEffect({
           ...lethalCtx,
-          userIdOf: (id) => (id === localUserId ? localUserId : undefined),
+          userIdOf,
         });
         const resolution = death.resolveDeath(instanceId, reason);
         if (resolution.status !== "resolved") return;
         applyLethalLoot({
           drops: resolution.drops,
-          grantToLocalPlayer: isLocalPlayerKill(lethalCtx, localUserId),
+          recipientUserId: reason.kind === "player_kill" ? reason.killerUserId : undefined,
           onDeath,
           position,
           catalogId,
           content,
           spawnWorldItem,
           grantToPlayer: loot.grantToPlayer,
-          localUserId,
           rng,
         });
       },

@@ -40,6 +40,11 @@ describe("ctx.game.save", () => {
     resumed.restore(state);
     expect(resumed.game.economy.balance("p1", "gold")).toBe(42);
     expect(resumed.time.now()).toBe(5);
+    const replica = create();
+    replica.hydrate(resumed.snapshot());
+    expect(replica.time.now()).toBe(5);
+    replica.sim.advance(0.02, () => {}, { advanceTime: false });
+    expect(replica.time.now()).toBe(5);
     expect(resumed.snapshot()).not.toHaveProperty("economy");
     const backend = memorySaveBackend();
     await createRuntimeSave({ target: resumed, backend, mode: "manual" }).save();
@@ -325,7 +330,8 @@ describe("ctx.game.save", () => {
     ctx.player.motion.impulse(2);
 
     const replication = ctx.snapshot();
-    for (const key of ["time", "pose", "possession", "motion", "cosmetics", "cards", "turn"]) {
+    expect(replication["time"]).toEqual(ctx.time.snapshot());
+    for (const key of ["pose", "possession", "motion", "cosmetics", "cards", "turn"]) {
       expect(replication).not.toHaveProperty(key);
     }
   });

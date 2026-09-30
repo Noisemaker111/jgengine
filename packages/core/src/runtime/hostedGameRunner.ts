@@ -102,12 +102,14 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       if (members.has(userId)) return;
       const player: LoopPlayer = { userId, isNew };
       members.set(userId, player);
+      ctx.player.possession.own(userId, userId);
       ctx.game.players?.join(userId, isNew);
       loop.onNewPlayer?.(ctx, player);
       syncLifecyclePhase(ctx, definition.lifecycle);
     },
     resume(userId) {
       members.set(userId, { userId, isNew: false });
+      ctx.player.possession.own(userId, userId);
       ctx.game.players?.join(userId, false);
     },
     leave(userId) {
@@ -143,8 +145,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     },
     tick(dt) {
       hostTick += 1;
-      ctx.sim.advance(dt, (stepDt, tick) => {
-        const gameDt = ctx.time.advance(stepDt);
+      ctx.sim.advance(dt, (stepDt, tick, gameDt) => {
         for (const [userId, recorder] of inputs) {
           const frame = recorder.frameAt(tick);
           if (frame !== null) ctx.game.players?.setInput(userId, frame);
