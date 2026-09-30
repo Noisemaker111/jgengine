@@ -121,8 +121,14 @@ export function createShellKeyHandlers({
         }
         return;
       }
-      if (event.code === "Tab" || event.code === "Space") event.preventDefault();
-      if (controlsActive()) tracker.handleDown(event.code);
+      if (target?.closest?.('button, a[href], [role="button"], [role="link"], [role="dialog"], [role="menu"], [role="listbox"]')) {
+        tracker.reset();
+        return;
+      }
+      if (controlsActive()) {
+        if (event.code === "Tab" || event.code === "Space") event.preventDefault();
+        tracker.handleDown(event.code);
+      }
     },
     onKeyUp: (event) => {
       if (event.code === "F2") {

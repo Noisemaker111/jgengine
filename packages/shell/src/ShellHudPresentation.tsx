@@ -4,6 +4,9 @@ import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
 import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
 import { playControlsActive } from "@jgengine/core/game/controlGate";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
+import { BUILT_IN_SETTING_CATEGORIES, type GameSettingsConfig, type SettingsStore } from "@jgengine/core/settings/settingsModel";
+import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings";
 import { GameViewportProvider } from "@jgengine/react/gameViewport";
 import type { TouchScheme } from "@jgengine/core/input/touchScheme";
 
@@ -12,6 +15,10 @@ import type { RuntimeDiagnostic } from "./diagnostics/RuntimeDiagnostics";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 import { createShellKeyHandlers, ShellDebugOverlays, ShellGameUiChrome } from "./ShellChrome";
+import type { AudioEngine } from "./audio/audioEngine";
+import { AudioSettingsBridge } from "./settings/appliedSettings";
+import { SettingsRuntime } from "./settings/SettingsRuntime";
+import { SettingsChrome } from "./settings/SettingsChrome";
 import { TouchPlaySurface } from "./touch/TouchControlsOverlay";
 
 /**
@@ -50,6 +57,12 @@ export function ShellHudPresentation({
   trackPointerAxis,
   deactivatePointerAxis,
   onPointerResumeAudio,
+  settingsStore,
+  bindingOverrides,
+  rebindAction,
+  resetActionBinding,
+  audioEngine,
+  poster,
 }: {
   playable: PlayableGame;
   ctx: GameContext;
@@ -76,6 +89,12 @@ export function ShellHudPresentation({
   trackPointerAxis: (event: { clientX: number; clientY: number }) => void;
   deactivatePointerAxis: () => void;
   onPointerResumeAudio: () => void;
+  settingsStore: SettingsStore;
+  bindingOverrides: BindingOverrides;
+  rebindAction: (action: string, code: string) => void;
+  resetActionBinding: (action: string) => void;
+  audioEngine: AudioEngine;
+  poster: boolean;
 }) {
   const GameUI = playable.GameUI;
   useEffect(() => {
@@ -97,62 +116,94 @@ export function ShellHudPresentation({
     controlsActive: () => playControlsActive(ctx),
   });
 
+  const settingsDisabled = playable.settings === false;
+  const settingsConfig: GameSettingsConfig = playable.settings === false || playable.settings === undefined ? {} : playable.settings;
+  const settingsActions: SettingsActionView[] = (settingsConfig.actions ?? []).map((action) => ({
+    id: action.id,
+    label: action.label,
+    kind: action.kind ?? "default",
+    description: action.description,
+    run: () => action.run(ctx),
+  }));
+
   return (
-    <div
-      ref={wrapperRef}
-      tabIndex={0}
-      className="relative h-full w-full bg-neutral-950 outline-none"
-      onKeyDown={keys.onKeyDown}
-      onKeyUp={keys.onKeyUp}
-      onBlur={keys.onBlur}
-      onPointerDown={onPointerResumeAudio}
-      onPointerMove={trackPointerAxis}
-      onPointerLeave={deactivatePointerAxis}
-      onPointerCancel={deactivatePointerAxis}
-    >
-      <GameViewportProvider platforms={playable.platforms}>
-        <HudOnlyDriver
-          ctx={ctx}
-          multiplayer={multiplayer}
-          serverIdRef={serverIdRef}
-          playable={playable}
-          tracker={tracker}
-          pointerAxisRef={pointerAxisRef}
-          gateRef={gateRef}
-          onRuntimeError={reportRuntimeError}
-        />
-        {!orientationGate &&
-        coarsePointer &&
-        touchScheme !== null &&
-        touchScheme.gestures !== null &&
-        playControlsActive(ctx) ? (
-          <TouchPlaySurface
-            scheme={touchScheme}
-            sink={touchSink}
-            yawRef={yawRef}
-            pitchRef={pitchRef}
-            maxPitch={0}
-            onPrimaryTap={() => undefined}
-          />
-        ) : null}
-        <ShellGameUiChrome
-          ctx={ctx}
-          playable={playable}
-          GameUI={GameUI}
-          uiScale={uiScale}
-          orientationGate={orientationGate}
-          onRuntimeError={reportRuntimeError}
-        />
-        {orientationGateEl}
-        <ShellDebugOverlays
-          ctx={ctx}
-          playable={playable}
-          multiplayer={multiplayer}
-          diagnostics={diagnostics}
-          devtoolsEnabled={devtoolsEnabled}
-          devtoolsOpen={devtoolsOpen}
-        />
-      </GameViewportProvider>
-    </div>
+    <SettingsProvider store={settingsStore}>
+      <AudioSettingsBridge store={settingsStore} engine={audioEngine} buses={playable.audio?.buses} />
+      <SettingsRuntime
+        variant={settingsConfig.variant ?? "panel"}
+        surface={settingsDisabled ? false : settingsConfig.surface ?? false}
+        actions={settingsActions}
+        input={playable.game.input ?? {}}
+        buses={playable.audio?.buses}
+        extra={settingsConfig.extra ?? []}
+        categories={settingsConfig.categories ?? []}
+        hide={settingsDisabled ? BUILT_IN_SETTING_CATEGORIES : settingsConfig.hide ?? []}
+        fovEnabled={false}
+        graphics={playable.graphics}
+        hideBindings={settingsConfig.hideBindings ?? []}
+        touchStyle={coarsePointer && touchScheme !== null && (touchScheme.joystick !== null || touchScheme.buttons.length > 0)}
+        overrides={bindingOverrides}
+        rebind={rebindAction}
+        resetBinding={resetActionBinding}
+      >
+        <div
+          ref={wrapperRef}
+          tabIndex={0}
+          className="relative h-full w-full bg-neutral-950 outline-none"
+          onKeyDown={keys.onKeyDown}
+          onKeyUp={keys.onKeyUp}
+          onBlur={keys.onBlur}
+          onPointerDown={onPointerResumeAudio}
+          onPointerMove={trackPointerAxis}
+          onPointerLeave={deactivatePointerAxis}
+          onPointerCancel={deactivatePointerAxis}
+        >
+          <GameViewportProvider platforms={playable.platforms}>
+            <HudOnlyDriver
+              ctx={ctx}
+              multiplayer={multiplayer}
+              serverIdRef={serverIdRef}
+              playable={playable}
+              tracker={tracker}
+              pointerAxisRef={pointerAxisRef}
+              gateRef={gateRef}
+              onRuntimeError={reportRuntimeError}
+            />
+            {!orientationGate &&
+            coarsePointer &&
+            touchScheme !== null &&
+            touchScheme.gestures !== null &&
+            playControlsActive(ctx) ? (
+              <TouchPlaySurface
+                scheme={touchScheme}
+                sink={touchSink}
+                yawRef={yawRef}
+                pitchRef={pitchRef}
+                maxPitch={0}
+                onPrimaryTap={() => undefined}
+              />
+            ) : null}
+            <ShellGameUiChrome
+              ctx={ctx}
+              playable={playable}
+              GameUI={GameUI}
+              uiScale={uiScale}
+              orientationGate={orientationGate}
+              onRuntimeError={reportRuntimeError}
+            />
+            {orientationGateEl}
+            <ShellDebugOverlays
+              ctx={ctx}
+              playable={playable}
+              multiplayer={multiplayer}
+              diagnostics={diagnostics}
+              devtoolsEnabled={devtoolsEnabled}
+              devtoolsOpen={devtoolsOpen}
+            />
+            {poster ? null : <SettingsChrome />}
+          </GameViewportProvider>
+        </div>
+      </SettingsRuntime>
+    </SettingsProvider>
   );
 }

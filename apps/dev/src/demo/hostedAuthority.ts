@@ -104,7 +104,7 @@ export const authorityLoop: GameLoop<GameContext> = {
 
 export const authorityDefinition = defineGameDefinition({
   name: "Relay Courtyard", assets: createAssetCatalog(),
-  multiplayer: ws({ authority: "server", topology: "shared", url: "ws://127.0.0.1:4625/ws" }),
+  multiplayer: ws({ authority: "server", topology: "shared", url: import.meta.env?.VITE_JG_AUTHORITY_WS_URL ?? "ws://127.0.0.1:4625/ws" }),
   server: "persistent", features: { players: true, quest: true }, inventories: { backpack: { slots: 8 } },
   simulation: { hz: 30 }, loop: authorityLoop,
   input: { cast: ["Space"], moveForward: ["KeyW"], moveBack: ["KeyS"], moveLeft: ["KeyA"], moveRight: ["KeyD"] },
