@@ -786,6 +786,7 @@
     "./devtools/PerfPanel",
     "./devtools/TunePanel",
     "./devtools/agentBridge",
+    "./devtools/captureProbe",
     "./devtools/collisionDebug",
     "./devtools/collisionDebugMath",
     "./devtools/devtoolsOverrides",

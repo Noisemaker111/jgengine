@@ -42,6 +42,7 @@ import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/d
 import { createAudioEngine } from "./audio/audioEngine";
 import { attachAudioEventWire } from "./audio/audioWire";
 import { installAgentBridge } from "./devtools/agentBridge";
+import { installCaptureProbe } from "./devtools/captureProbe";
 import { withDevtoolsLatency } from "./devtools/DevtoolsOverlay";
 import { resolveRigKind } from "./camera";
 import { contextModels } from "./render/resolveModel";
@@ -296,6 +297,11 @@ export function GamePlayerShell({
   }, [playable, userId]);
 
   const authoritativeFrameRef = useRef<import("./worldSync").AuthoritativeFrameHandler | null>(null);
+  useEffect(() => {
+    const probe = playable.capture?.probe;
+    if (ctx === null || probe === undefined || !readUrlFlag("capture")) return;
+    return installCaptureProbe(ctx, probe, window);
+  }, [ctx, playable]);
   const join = useShellMultiplayerSync(ctx, multiplayer, playable, serverIdRef, setRemotePlayers, authoritativeFrameRef);
 
   useEffect(() => {

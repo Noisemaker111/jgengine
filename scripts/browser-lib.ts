@@ -19,6 +19,122 @@ import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
 import { decodePng } from "./png-reader";
 
+/** Receive declared probe metrics from native state and simulation events. */
+export async function subscribeCaptureProbe(
+  session: Pick<CdpSession, "on" | "send" | "evaluate">,
+  listener: (sample: { t: number; metrics: Record<string, number> }) => void,
+  minimumSpacingMs = 250,
+): Promise<() => Promise<void>> {
+  const binding = "__jgDriveProbe";
+  const off = session.on("Runtime.bindingCalled", (event) => {
+    if (event.name !== binding || typeof event.payload !== "string") return;
+    try { listener(JSON.parse(event.payload)); } catch {}
+  });
+  try {
+    await session.send("Runtime.addBinding", { name: binding });
+    await session.evaluate(
+      "(function(){var unsubscribe;function attach(){if(unsubscribe)unsubscribe();" +
+      "var subscribe=globalThis.__jgSubscribeProbe;if(typeof subscribe==='function')" +
+      "unsubscribe=subscribe(function(sample){globalThis." + binding + "(JSON.stringify(sample));}," +
+      JSON.stringify(minimumSpacingMs) + ");}" +
+      "globalThis.__jgStopDriveProbe=function(){if(unsubscribe)unsubscribe();" +
+      "removeEventListener('jgengine:capture-probe-ready',attach);delete globalThis.__jgStopDriveProbe;};" +
+      "addEventListener('jgengine:capture-probe-ready',attach);attach();})()",
+    );
+  } catch (error) { off(); throw error; }
+  return async () => {
+    off();
+    await session.evaluate("globalThis.__jgStopDriveProbe?.()");
+  };
+}
+
+/** Resolve a visible click target after its DOM, size and finite animations settle. */
+export async function waitForClickPoint(
+  session: Pick<CdpSession, "evaluate">,
+  text: string,
+  timeoutMs = 5000,
+): Promise<{ x: number; y: number }> {
+  const point = await session.evaluate<{ x: number; y: number }>(
+    "(" + CLICK_POINT_ON_EVENTS + ")(" + JSON.stringify(text) + "," + JSON.stringify(timeoutMs) + ")",
+    { awaitPromise: true },
+  );
+  if (point === undefined) throw new Error(`drive: no visible element matching "${text}"`);
+  return point;
+}
+
+const CLICK_POINT_ON_EVENTS = String.raw`function clickPointOnEvents(text, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const needle = text.toLowerCase();
+    let generation = 0;
+    let closed = false;
+    let observed;
+    const frames = new Set();
+    const waiting = new WeakSet();
+    const finish = (point) => {
+      if (closed) return;
+      closed = true;
+      clearTimeout(timer);
+      observer.disconnect();
+      resize.disconnect();
+      for (const frame of frames) cancelAnimationFrame(frame);
+      if (point) resolve(point);
+      else reject(new Error('no visible element matching "' + text + '"'));
+    };
+    const target = () => {
+      let best;
+      let length = Infinity;
+      let interactive = false;
+      for (const node of document.querySelectorAll('button,[role=button],[role=switch],a,span,div,h1,h2,h3')) {
+        const own = (node.textContent?.trim() || node.getAttribute('aria-label') || '').toLowerCase();
+        const rect = node.getBoundingClientRect();
+        const clickable = node.matches('button,[role=button],[role=switch],a');
+        if (own.includes(needle) && (own.length < length || (own.length === length && clickable && !interactive)) && rect.width > 0 && rect.height > 0) {
+          best = node; length = own.length; interactive = clickable;
+        }
+      }
+      return best;
+    };
+    const point = (node) => {
+      const rect = node.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    };
+    const check = () => {
+      if (closed) return;
+      const revision = ++generation;
+      const node = target();
+      if (!node) return;
+      if (observed !== node) { resize.disconnect(); resize.observe(node); observed = node; }
+      const animations = document.getAnimations().filter(animation => {
+        const element = animation.effect?.target;
+        return element instanceof Element && (element === node || element.contains(node)) &&
+          animation.playState === 'running' && animation.effect.getComputedTiming().iterations !== Infinity;
+      });
+      if (animations.length) {
+        for (const animation of animations) {
+          if (waiting.has(animation)) continue;
+          waiting.add(animation);
+          animation.finished.then(check, check);
+        }
+        return;
+      }
+      const painted = requestAnimationFrame(() => {
+        frames.delete(painted);
+        const settled = requestAnimationFrame(() => {
+          frames.delete(settled);
+          if (revision === generation) finish(point(node));
+        });
+        frames.add(settled);
+      });
+      frames.add(painted);
+    };
+    const observer = new MutationObserver(check);
+    const resize = new ResizeObserver(check);
+    const timer = setTimeout(() => { const node = target(); finish(node ? point(node) : null); }, timeoutMs);
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
+    check();
+  });
+}`;
+
 /**
  * Default port when no worktree key is needed — kept for docs/bench that still
  * want a predictable single-session port. Prefer {@link resolveDevPort}.
@@ -601,6 +717,12 @@ export class CdpSession {
       if (message.error !== undefined) waiter.reject(new Error(message.error.message));
       else waiter.resolve(message.result ?? {});
     });
+    const disconnected = () => {
+      for (const waiter of this.pending.values()) waiter.reject(new Error("Chrome debugger disconnected"));
+      this.pending.clear();
+    };
+    ws.addEventListener("close", disconnected);
+    ws.addEventListener("error", disconnected);
   }
 
   static connect(
@@ -640,6 +762,7 @@ export class CdpSession {
   }
 
   send(method: string, params?: Record<string, unknown>): Promise<Record<string, unknown>> {
+    if (this.ws.readyState !== WebSocket.OPEN) return Promise.reject(new Error("Chrome debugger disconnected"));
     const id = ++this.nextId;
     return new Promise((resolvePromise, reject) => {
       this.pending.set(id, { resolve: resolvePromise, reject });

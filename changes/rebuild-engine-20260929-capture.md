@@ -8,3 +8,5 @@
 - The native shell supplies screenshot readiness for custom hosts; monorepo `shoot --view` selects live play by default instead of rendering only preview HUD.
 - Monorepo shoot passes its readiness timeout to the page; canvas, settle, and native frame stages share that budget instead of failing software-GL renders at an unrelated 30-second deadline. Failure logs include pending/failed resource URLs, canvas dimensions, pending subtree count, age and supplied source, and started/completed draw counters without accepting an unrendered frame.
 - Named capture view discovery observes the metadata publication once instead of polling the page.
+- Generated GameHost playtests receive declared probe metrics from native state/frame events; standalone and monorepo drive observe click targets and probe updates instead of polling. Standalone capture failures include bounded source diagnostics, debugger disconnects reject pending commands, and owned Windows Vite/Chrome process trees stop on failure or completion.
+- `defineGame` preserves authored player settings, including the quick settings surface and explicit opt-out, when creating the playable definition for GameHost.

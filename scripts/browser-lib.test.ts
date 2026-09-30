@@ -5,9 +5,10 @@ import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { PassThrough } from "node:stream";
 import { deflateSync } from "node:zlib";
+import { runInNewContext } from "node:vm";
 
 import {
-  type CdpSession,
+  CdpSession,
   DEVICES,
   MAX_FLAT_SCREENCAST_FRAMES,
   captureViewportPng,
@@ -24,7 +25,93 @@ import {
   screencastCapturesFully,
   waitForDebugger,
   waitForProcessOutput,
+  subscribeCaptureProbe,
+  waitForClickPoint,
 } from "./browser-lib";
+
+test("probe subscriptions forward native events and detach from a reused page", async () => {
+  const events = new EventTarget();
+  let receive: ((params: Record<string, unknown>) => void) | undefined;
+  let publish: ((sample: unknown) => void) | undefined;
+  let unsubscribed = false;
+  const page: Record<string, unknown> = {
+    addEventListener: events.addEventListener.bind(events),
+    removeEventListener: events.removeEventListener.bind(events),
+    __jgSubscribeProbe: (callback: (sample: unknown) => void) => {
+      publish = callback;
+      return () => { unsubscribed = true; };
+    },
+  };
+  const session = {
+    on: (_method: string, listener: (params: Record<string, unknown>) => void) => {
+      receive = listener;
+      return () => { receive = undefined; };
+    },
+    send: async (_method: string, params?: Record<string, unknown>) => {
+      const name = String(params?.name);
+      page[name] = (payload: string) => receive?.({ name, payload });
+      return {};
+    },
+    evaluate: async <T>(expression: string): Promise<T | undefined> => runInNewContext(expression, page),
+  };
+  const samples: unknown[] = [];
+  const stop = await subscribeCaptureProbe(session, sample => samples.push(sample));
+  publish!({ t: 10, metrics: { x: 4 } });
+  publish!({ t: 20, metrics: { x: 0 } });
+  expect(samples).toEqual([{ t: 10, metrics: { x: 4 } }, { t: 20, metrics: { x: 0 } }]);
+  await stop();
+  expect(unsubscribed).toBe(true);
+  expect(receive).toBeUndefined();
+  expect(page.__jgStopDriveProbe).toBeUndefined();
+});
+
+test("closing a debugger rejects commands still awaiting a page response", async () => {
+  const events = new EventTarget();
+  const socket = Object.assign(events, { readyState: WebSocket.OPEN, send: () => {} });
+  const session = Reflect.construct(CdpSession, [socket]) as CdpSession;
+  const response = session.send("Page.navigate", { url: "http://localhost/" });
+  events.dispatchEvent(new Event("close"));
+  await expect(response).rejects.toThrow("Chrome debugger disconnected");
+});
+
+test("click targets appear through DOM events and resolve after two actual paints", async () => {
+  let mutation = () => {};
+  let disconnected = 0;
+  let nodes: unknown[] = [];
+  let queries = 0;
+  let nextFrame = 0;
+  const frames = new Map<number, () => void>();
+  const page = {
+    document: {
+      documentElement: {},
+      querySelectorAll: () => { queries++; return nodes; },
+      getAnimations: () => [],
+    },
+    MutationObserver: class {
+      constructor(callback: () => void) { mutation = callback; }
+      observe() {}
+      disconnect() { disconnected++; }
+    },
+    ResizeObserver: class { observe() {} disconnect() { disconnected++; } },
+    requestAnimationFrame: (callback: () => void) => { const id = ++nextFrame; frames.set(id, callback); return id; },
+    cancelAnimationFrame: (id: number) => frames.delete(id),
+    setTimeout, clearTimeout,
+  };
+  const session = { evaluate: async <T>(expression: string): Promise<T | undefined> => runInNewContext(expression, page) };
+  const point = waitForClickPoint(session, "START", 1000);
+  expect(queries).toBe(1);
+  nodes = [{ textContent: "START", matches: () => true, getAttribute: () => null,
+    getBoundingClientRect: () => ({ left: 10, top: 20, width: 40, height: 30 }) }];
+  mutation();
+  for (let paint = 0; paint < 2; paint++) {
+    const scheduled = [...frames.values()]; frames.clear();
+    for (const callback of scheduled) callback();
+  }
+  expect(await point).toEqual({ x: 30, y: 35 });
+  expect(queries).toBe(2);
+  expect(disconnected).toBeGreaterThanOrEqual(2);
+  expect(frames.size).toBe(0);
+});
 
 describe("process startup events", () => {
   test("accepts a split announcement and removes startup listeners", async () => {

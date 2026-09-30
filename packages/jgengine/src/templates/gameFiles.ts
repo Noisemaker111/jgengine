@@ -250,7 +250,7 @@ const browserLibMjs = `/**
  * Node 22+ (or Bun). If Chrome is not auto-detected, set CHROME_PATH.
  * Not a CLI; run shoot.mjs or drive.mjs instead.
  */
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -329,7 +329,7 @@ export function launchChrome(port, prefix) {
       "--disable-dev-shm-usage",
       "about:blank",
     ],
-    { stdio: ["ignore", "ignore", "pipe"], windowsHide: true },
+    { stdio: ["ignore", "ignore", "pipe"], windowsHide: true, detached: process.platform !== "win32" },
   );
   child.debuggerReady = new Promise((resolve, reject) => {
     let output = "";
@@ -429,9 +429,15 @@ export class Cdp {
       const waiter = this.pending.get(msg.id);
       if (waiter === undefined) return;
       this.pending.delete(msg.id);
-      if (msg.error !== undefined) waiter.reject(new Error(msg.error.message));
+      if (msg.error !== undefined) waiter.reject(new Error(waiter.method + ": " + msg.error.message));
       else waiter.resolve(msg.result ?? {});
     });
+    const disconnected = () => {
+      for (const waiter of this.pending.values()) waiter.reject(new Error("Chrome debugger disconnected"));
+      this.pending.clear();
+    };
+    ws.addEventListener("close", disconnected);
+    ws.addEventListener("error", disconnected);
   }
 
   static connect(url, timeoutMs) {
@@ -460,9 +466,10 @@ export class Cdp {
   }
 
   send(method, params) {
+    if (this.ws.readyState !== WebSocket.OPEN) return Promise.reject(new Error("Chrome debugger disconnected"));
     const id = ++this.nextId;
     return new Promise((res, rej) => {
-      this.pending.set(id, { resolve: res, reject: rej });
+      this.pending.set(id, { method, resolve: res, reject: rej });
       this.ws.send(JSON.stringify({ id, method, params }));
     });
   }
@@ -473,6 +480,7 @@ export class Cdp {
       returnByValue: true,
       ...(opts && opts.awaitPromise ? { awaitPromise: true } : {}),
     });
+    if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? result.exceptionDetails.text ?? "page evaluation failed");
     return result.result ? result.result.value : undefined;
   }
 
@@ -506,12 +514,133 @@ export async function openPage(debugPort) {
 export const RAF_EXPR =
   "new Promise(function(res){requestAnimationFrame(function(){requestAnimationFrame(function(){res(1);});});})";
 
+export async function subscribeCaptureProbe(session, listener, minimumSpacingMs = 250) {
+  const binding = "__jgDriveProbe";
+  const off = session.on("Runtime.bindingCalled", (event) => {
+    if (event.name !== binding) return;
+    try { listener(JSON.parse(event.payload)); } catch {}
+  });
+  try {
+    await session.send("Runtime.addBinding", { name: binding });
+    await session.evaluate(
+      "(function(){var unsubscribe;function attach(){if(unsubscribe)unsubscribe();" +
+      "var subscribe=globalThis.__jgSubscribeProbe;if(typeof subscribe==='function')" +
+      "unsubscribe=subscribe(function(sample){globalThis." + binding + "(JSON.stringify(sample));}," +
+      JSON.stringify(minimumSpacingMs) + ");}" +
+      "globalThis.__jgStopDriveProbe=function(){if(unsubscribe)unsubscribe();" +
+      "removeEventListener('jgengine:capture-probe-ready',attach);delete globalThis.__jgStopDriveProbe;};" +
+      "addEventListener('jgengine:capture-probe-ready',attach);attach();})()",
+    );
+  } catch (error) { off(); throw error; }
+  return async () => {
+    off();
+    await session.evaluate("globalThis.__jgStopDriveProbe?.()");
+  };
+}
+
+export async function waitForClickPoint(session, text, timeoutMs = 5000) {
+  return session.evaluate("(" + clickPointOnEvents.toString() + ")(" +
+    JSON.stringify(text) + "," + JSON.stringify(timeoutMs) + ")", { awaitPromise: true });
+}
+
+function clickPointOnEvents(text, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    const needle = text.toLowerCase();
+    let generation = 0;
+    let closed = false;
+    let observed;
+    const frames = new Set();
+    const waiting = new WeakSet();
+    const finish = (point) => {
+      if (closed) return;
+      closed = true;
+      clearTimeout(timer);
+      observer.disconnect();
+      resize.disconnect();
+      for (const frame of frames) cancelAnimationFrame(frame);
+      if (point) resolve(point);
+      else reject(new Error('no visible element matching "' + text + '"'));
+    };
+    const target = () => {
+      let best;
+      let length = Infinity;
+      let interactive = false;
+      for (const node of document.querySelectorAll('button,[role=button],[role=switch],a,span,div,h1,h2,h3')) {
+        const own = (node.textContent?.trim() || node.getAttribute('aria-label') || '').toLowerCase();
+        const rect = node.getBoundingClientRect();
+        const clickable = node.matches('button,[role=button],[role=switch],a');
+        if (own.includes(needle) && (own.length < length || (own.length === length && clickable && !interactive)) && rect.width > 0 && rect.height > 0) {
+          best = node; length = own.length; interactive = clickable;
+        }
+      }
+      return best;
+    };
+    const point = (node) => {
+      const rect = node.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    };
+    const check = () => {
+      if (closed) return;
+      const revision = ++generation;
+      const node = target();
+      if (!node) return;
+      if (observed !== node) { resize.disconnect(); resize.observe(node); observed = node; }
+      const animations = document.getAnimations().filter(animation => {
+        const element = animation.effect?.target;
+        return element instanceof Element && (element === node || element.contains(node)) &&
+          animation.playState === 'running' && animation.effect.getComputedTiming().iterations !== Infinity;
+      });
+      if (animations.length) {
+        for (const animation of animations) {
+          if (waiting.has(animation)) continue;
+          waiting.add(animation);
+          animation.finished.then(check, check);
+        }
+        return;
+      }
+      const painted = requestAnimationFrame(() => {
+        frames.delete(painted);
+        const settled = requestAnimationFrame(() => {
+          frames.delete(settled);
+          if (revision === generation) finish(point(node));
+        });
+        frames.add(settled);
+      });
+      frames.add(painted);
+    };
+    const observer = new MutationObserver(check);
+    const resize = new ResizeObserver(check);
+    const timer = setTimeout(() => { const node = target(); finish(node ? point(node) : null); }, timeoutMs);
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, characterData: true });
+    check();
+  });
+}
+
 export function writePngAtomic(outPath, bytes) {
   mkdirSync(dirname(outPath), { recursive: true });
   const tmp = outPath + ".tmp";
   writeFileSync(tmp, bytes);
   if (existsSync(outPath)) unlinkSync(outPath);
   renameSync(tmp, outPath);
+}
+
+export async function captureFrameDiagnostics(session, timeoutMs = 2000) {
+  let timer;
+  try {
+    return await Promise.race([
+      session.evaluate("(function(){var root=document.documentElement;return {phase:root&&root.dataset.jgPhase," +
+        "capture:root&&root.dataset.jgCapture,error:root&&root.dataset.jgCaptureError," +
+        "canvases:Array.from(document.querySelectorAll('canvas'),function(c){return {width:c.width,height:c.height," +
+        "cssWidth:c.clientWidth,cssHeight:c.clientHeight,ready:c.hasAttribute('data-jg-frame-ready')," +
+        "frame:typeof c.__jgFrameReadiness==='function'?c.__jgFrameReadiness():null};})," +
+        "resources:performance.getEntriesByType('resource').map(function(r){return {url:r.name,status:r.responseStatus,durationMs:r.duration};})};})()"),
+      new Promise(resolve => { timer = setTimeout(() => resolve({ unavailable: "page diagnostic read exceeded " + timeoutMs + "ms" }), timeoutMs); }),
+    ]);
+  } catch (error) {
+    return { unavailable: error instanceof Error ? error.message : String(error) };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function navigateToFrame(session, url, timeoutMs) {
@@ -534,16 +663,24 @@ export async function navigateToFrame(session, url, timeoutMs) {
     "hasCanvas:!!c,cw:c?c.clientWidth:0,ch:c?c.clientHeight:0,bw:c?c.width:0,bh:c?c.height:0}));}check();})()";
   let timer;
   try {
-    await session.send("Runtime.addBinding", { name: "__jgFrameSignal" });
-    await session.send("Page.addScriptToEvaluateOnNewDocument", { source });
-    const result = await session.send("Page.navigate", { url });
-    if (result.errorText) throw new Error("navigation failed: " + result.errorText);
     timer = setTimeout(() => complete({ cap: "timeout" }), timeoutMs);
+    const result = await Promise.race([
+      (async () => {
+        await session.send("Runtime.addBinding", { name: "__jgFrameSignal" });
+        await session.send("Page.addScriptToEvaluateOnNewDocument", { source });
+        return session.send("Page.navigate", { url });
+      })(),
+      ready.then(() => ({})),
+    ]);
+    if (result.errorText) throw new Error("navigation failed: " + result.errorText);
     const frame = await ready;
     if (frame.cap === "error") throw new Error("page reported a capture error: " + (frame.err || "unknown"));
     if (frame.cap !== "ready") throw new Error("timed out waiting for a rendered frame at " + url +
       " — use the current @jgengine/shell or set data-jg-capture=ready after your renderer draws");
     return frame;
+  } catch (error) {
+    console.error("[jgengine:capture-frame] " + JSON.stringify(await captureFrameDiagnostics(session)));
+    throw error;
   } finally {
     clearTimeout(timer);
     detach();
@@ -647,15 +784,16 @@ export async function screenshotTo(session, outPath) {
 
 /** Kill the launched Chrome and (when we started it) the dev server tree. */
 export function shutdown(chrome, server) {
-  try {
-    chrome.kill();
-  } catch {
-    /* ignore */
-  }
-  if (server) {
+  for (const child of [chrome, server]) {
+    if (!child || child.exitCode !== null && child.exitCode !== undefined) continue;
     try {
-      if (process.platform !== "win32" && server.pid) process.kill(-server.pid, "SIGKILL");
-      else server.kill();
+      if (Number.isInteger(child.pid) && child.pid > 0) {
+        if (process.platform === "win32") {
+          spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true, timeout: 10000 });
+        } else {
+          try { process.kill(-child.pid, "SIGKILL"); } catch { child.kill("SIGKILL"); }
+        }
+      } else child.kill();
     } catch {
       /* ignore */
     }
@@ -769,10 +907,11 @@ async function main() {
 
   const server = await ensureDevServer(args.url ?? base, args.port);
   const debugPort = 9200 + Math.floor(Date.now() % 700);
-  const chrome = launchChrome(debugPort, "jg-shoot-");
+  let chrome;
 
   let exitCode = 0;
   try {
+    chrome = launchChrome(debugPort, "jg-shoot-");
     await waitForDebugger(debugPort, 30_000, chrome);
     const session = await openPage(debugPort);
     try {
@@ -845,6 +984,8 @@ import {
   launchChrome,
   openPage,
   RAF_EXPR,
+  subscribeCaptureProbe,
+  waitForClickPoint,
   screenshotTo,
   shutdown,
   sleep,
@@ -875,7 +1016,7 @@ const HELP = [
   "  --playtest          sample probe metrics while steps run; print JSON verdict",
   "  --strict            exit nonzero on a softlock or missing probe",
   "  --seed <n>          forwarded as ?seed=n and echoed (default 1)",
-  "  --sample <ms>       probe sampling interval (default 250)",
+  "  --sample <ms>       minimum probe event spacing (default 250)",
   "  --softlock <ms>     flat-progress span under input that counts as a softlock (default 2000)",
   "  --epsilon <n>       smallest metric change that counts as progress (default 0.001)",
   "  --help              show this text",
@@ -938,55 +1079,8 @@ function parseArgs(argv) {
   return args;
 }
 
-// Clicks wait for the element's center to hold still across consecutive samples
-// (entrance animations and hydration shift positions for ~2s), then dispatch a
-// raw CDP mouse press at that center — no actionability checks to time out on
-// hover overlays.
-const SETTLE_EPSILON_PX = 0.5;
-const SETTLE_SAMPLES = 3;
-const SETTLE_INTERVAL_MS = 100;
-const SETTLE_TIMEOUT_MS = 5_000;
-
-function clickPointExpr(text) {
-  return (
-    "(function(){var needle=" + JSON.stringify(text) + ".toLowerCase();" +
-    "var nodes=Array.prototype.slice.call(document.querySelectorAll('button, [role=button], a, span, div, h1, h2, h3'));" +
-    "var best=null;" +
-    "for (var i=0;i<nodes.length;i+=1){var node=nodes[i];" +
-    "var own=(node.textContent||'').trim().toLowerCase();" +
-    "if(own===''||own.indexOf(needle)===-1)continue;" +
-    "if(best===null||own.length<best.len){var rect=node.getBoundingClientRect();" +
-    "if(rect.width>0&&rect.height>0){best={len:own.length,x:rect.left+rect.width/2,y:rect.top+rect.height/2};}}}" +
-    "return best===null?null:{x:best.x,y:best.y};})()"
-  );
-}
-
-async function findClickPoint(session, text) {
-  const deadline = Date.now() + SETTLE_TIMEOUT_MS;
-  let last = null;
-  let stableRuns = 0;
-  while (Date.now() < deadline) {
-    const point = (await session.evaluate(clickPointExpr(text))) ?? null;
-    if (
-      point !== null &&
-      last !== null &&
-      Math.abs(point.x - last.x) <= SETTLE_EPSILON_PX &&
-      Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
-    ) {
-      stableRuns += 1;
-      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
-    } else {
-      stableRuns = 0;
-    }
-    last = point;
-    await sleep(SETTLE_INTERVAL_MS);
-  }
-  if (last === null) throw new Error('no visible element matching "' + text + '"');
-  return last;
-}
-
 async function click(session, text) {
-  const point = await findClickPoint(session, text);
+  const point = await waitForClickPoint(session, text);
   for (const type of ["mousePressed", "mouseReleased"]) {
     await session.send("Input.dispatchMouseEvent", {
       type,
@@ -999,10 +1093,11 @@ async function click(session, text) {
 }
 
 async function holdKey(session, code, holdMs) {
+  await session.evaluate("(document.querySelector('canvas')?.closest('[tabindex]') ?? document.querySelector('[tabindex]'))?.focus({preventScroll:true})");
   const key = code.startsWith("Key") ? code.slice(3).toLowerCase() : code;
   await session.send("Input.dispatchKeyEvent", { type: "keyDown", code, key });
-  await sleep(holdMs);
-  await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key });
+  try { await sleep(holdMs); }
+  finally { await session.send("Input.dispatchKeyEvent", { type: "keyUp", code, key }); }
 }
 
 async function rpc(session, json) {
@@ -1014,17 +1109,6 @@ async function rpc(session, json) {
     { awaitPromise: true },
   );
   console.log(value ?? JSON.stringify({ ok: false, error: "rpc evaluation returned nothing" }));
-}
-
-async function readProbe(session) {
-  const value = await session.evaluate(
-    "(function(){var probe=globalThis.__jgProbe;" +
-      "if(typeof probe!=='function')return null;" +
-      "try{var v=probe();if(v===null||typeof v!=='object')return null;" +
-      "var out={};for(var k in v){var n=v[k];if(typeof n==='number'&&isFinite(n))out[k]=n;}return out;}" +
-      "catch(e){return null;}})()",
-  );
-  return value ?? null;
 }
 
 // Playtest verdict logic, mirroring the engine's playtest rung: progress is any
@@ -1125,12 +1209,14 @@ async function main() {
 
   const server = await ensureDevServer(args.url ?? base, args.port);
   const debugPort = 9200 + Math.floor(Date.now() % 700);
-  const chrome = launchChrome(debugPort, "jg-drive-");
+  let chrome;
 
   let exitCode = 0;
   try {
+    chrome = launchChrome(debugPort, "jg-drive-");
     await waitForDebugger(debugPort, 30_000, chrome);
     const session = await openPage(debugPort);
+    let stopProbe = async () => {};
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
@@ -1146,18 +1232,11 @@ async function main() {
       await sleep(500);
 
       const samples = [];
-      let sampling = args.playtest;
-      const sampleStart = Date.now();
-      const sampler = args.playtest
-        ? (async () => {
-            while (sampling) {
-              const metrics = await readProbe(session);
-              if (metrics !== null) samples.push({ t: Date.now() - sampleStart, metrics });
-              await sleep(args.sampleMs);
-            }
-          })()
-        : Promise.resolve();
-
+      stopProbe = args.playtest
+        ? await subscribeCaptureProbe(session, sample => {
+            if (Object.keys(sample.metrics).length > 0) samples.push(sample);
+          }, args.sampleMs)
+        : async () => {};
       for (const step of args.steps) {
         if (step.kind === "click") await click(session, step.text);
         else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
@@ -1171,8 +1250,7 @@ async function main() {
       }
 
       if (args.playtest) {
-        sampling = false;
-        await sampler;
+        await stopProbe();
         const result = summarizePlaytest(samples, {
           seed: args.seed,
           softlockThresholdMs: args.softlockMs,
@@ -1196,7 +1274,7 @@ async function main() {
         }
       }
     } finally {
-      session.close();
+      try { await stopProbe(); } finally { session.close(); }
     }
   } catch (error) {
     exitCode = 1;

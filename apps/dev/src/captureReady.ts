@@ -30,24 +30,6 @@ export function captureArmed(): boolean {
   return new URLSearchParams(window.location.search).get("capture") === "1";
 }
 
-/**
- * Bot-playtest read hook, part of the capture handshake: exposes the game's
- * `capture.probe` as `window.__jgProbe`, a live read the `drive --playtest`
- * host samples over time to prove the loop advances under input. Returns `{}`
- * on any error so a probe throw never softlocks the whole harness.
- */
-export function installPlaytestProbe(read: () => Record<string, number>): void {
-  if (typeof window === "undefined") return;
-  (window as { __jgProbe?: () => Record<string, number> }).__jgProbe = () => {
-    try {
-      const value = read();
-      return value !== null && typeof value === "object" ? value : {};
-    } catch {
-      return {};
-    }
-  };
-}
-
 export function readCaptureQuery(): { game: string; mode: string; device: string; settle: number | null } {
   const params = new URLSearchParams(window.location.search);
   const settleRaw = params.get("settle");
@@ -239,26 +221,24 @@ export function resolveCaptureRun(args: {
 
 /**
  * Build the `onContextReady` callback the shell fires once the game context is
- * live: install the playtest probe, run any staged scenario, then dispatch each
+ * live: run any staged scenario, then dispatch each
  * capture command. Returns `undefined` when there is nothing to do so the shell
  * skips the hook entirely.
  */
 export function createCaptureContextReady(opts: {
   captureRun: readonly CaptureRunEntry[];
-  probe?: (ctx: GameContext) => Record<string, number>;
   stageScenario?: (ctx: GameContext) => void;
   gameId: string;
 }): ((ctx: GameContext) => void) | undefined {
-  const { captureRun, probe, stageScenario, gameId } = opts;
+  const { captureRun, stageScenario, gameId } = opts;
   const aimsAtEntity = typeof window !== "undefined" && (resolvedLook() ?? "").startsWith("@entity:");
-  if (stageScenario === undefined && captureRun.length === 0 && probe === undefined && !aimsAtEntity) {
+  if (stageScenario === undefined && captureRun.length === 0 && !aimsAtEntity) {
     return undefined;
   }
   const defaultCommandInput = { yaw: 0, pitch: 0, aim: { yaw: 0, pitch: 0 } };
   return (ctx: GameContext) => {
     const subjectError = verifyLookSubject(resolvedLook(), (id) => ctx.scene.entity.get(id) !== null);
     if (subjectError !== null && captureArmed()) setCaptureStatus("error", `look override rejected: ${subjectError}`);
-    if (probe !== undefined) installPlaytestProbe(() => probe(ctx));
     stageScenario?.(ctx);
     for (const entry of captureRun) {
       const name = typeof entry === "string" ? entry : entry.name;

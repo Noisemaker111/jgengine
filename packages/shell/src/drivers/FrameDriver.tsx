@@ -1,4 +1,5 @@
 import { useFrame } from "@react-three/fiber";
+import { publishCaptureProbe } from "../devtools/captureProbe";
 import { useMemo, useRef } from "react";
 
 import { RESERVED_INPUT_ACTIONS, dispatchBoundAction, heldActionsFor, shouldFireBoundAction } from "../boundActionDispatch";
@@ -171,6 +172,7 @@ export function FrameDriver({
       ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
       ctx.input.publishAnalog(null);
       sendInput();
+      publishCaptureProbe(ctx);
       return;
     }
     const simStart = performance.now();
@@ -350,6 +352,7 @@ export function FrameDriver({
       }
     }
     devtools.frame.record({ frameMs: rawDt * 1000, simMs: performance.now() - simStart });
+    publishCaptureProbe(ctx);
   }, GAME_SIM_FRAME_PRIORITY);
   return null;
 }

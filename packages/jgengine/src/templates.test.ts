@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
+import { runInNewContext } from "node:vm";
 
 import { isAllowedGameSrcEntry } from "./gameShape";
 import {
@@ -62,6 +63,88 @@ test("generated capture uses native graphics locally and retains explicit softwa
   expect(generated.chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }, "win32")).toContain("--use-angle=swiftshader");
   expect(generated.chromeGraphicsArgs({ CI: "true", JG_CAPTURE_SOFTWARE_GL: "0" }, "win32")).toEqual(["--ignore-gpu-blocklist"]);
   expect(generated.chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "0" }, "linux")).toEqual(["--ignore-gpu-blocklist"]);
+});
+
+describe("generated capture lifecycle", () => {
+  async function helper() {
+    const source = fileOf(render("standalone"), "scripts/browser.mjs");
+    return import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
+  }
+
+  test("a blocked navigation still obeys one deadline and removes observers", async () => {
+    const generated = await helper();
+    const handlers = new Map();
+    const session = {
+      on: (method: string, callback: unknown) => { handlers.set(method, callback); return () => handlers.delete(method); },
+      send: (method: string) => method === "Page.navigate" ? new Promise(() => {}) : Promise.resolve({}),
+      evaluate: async () => ({ pending: "instrumented" }),
+    };
+    const log = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await expect(generated.navigateToFrame(session, "http://localhost/", 10)).rejects.toThrow("timed out waiting for a rendered frame");
+      expect(handlers.size).toBe(0);
+      expect(log.mock.calls[0]?.[0]).toContain("instrumented");
+    } finally { log.mockRestore(); }
+  });
+
+  test("a blocked diagnostic read is bounded", async () => {
+    const generated = await helper();
+    let reads = 0;
+    const diagnostic = await generated.captureFrameDiagnostics({ evaluate: () => { reads++; return new Promise(() => {}); } }, 10);
+    expect(diagnostic.unavailable).toContain("exceeded 10ms");
+    expect(reads).toBe(1);
+  });
+
+  test("debugger disconnect rejects outstanding commands", async () => {
+    const generated = await helper();
+    const handlers = new Map();
+    const socket = { readyState: WebSocket.OPEN, send: () => {}, addEventListener: (name: string, callback: () => void) => handlers.set(name, callback) };
+    const session = new generated.Cdp(socket);
+    const outstanding = session.send("Page.navigate", { url: "http://localhost/" });
+    handlers.get("close")();
+    await expect(outstanding).rejects.toThrow("Chrome debugger disconnected");
+    expect(session.pending.size).toBe(0);
+  });
+
+  test("page evaluation exceptions retain the original failure", async () => {
+    const generated = await helper();
+    const session = new generated.Cdp({ addEventListener: () => {} });
+    session.send = async () => ({ exceptionDetails: { exception: { description: "no visible element matching START" } } });
+    await expect(session.evaluate("missingTarget()", { awaitPromise: true })).rejects.toThrow("no visible element matching START");
+  });
+
+  test("native probe events cross the debugger binding and stop on cleanup", async () => {
+    const generated = await helper();
+    const handlers = new Map();
+    const pageEvents = new EventTarget();
+    let publish: ((sample: unknown) => void) | undefined;
+    let detached = false;
+    let spacing = 0;
+    const page: Record<string, unknown> = {
+      addEventListener: pageEvents.addEventListener.bind(pageEvents),
+      removeEventListener: pageEvents.removeEventListener.bind(pageEvents),
+      __jgSubscribeProbe: (listener: (sample: unknown) => void, minimum: number) => {
+        publish = listener; spacing = minimum;
+        return () => { detached = true; };
+      },
+    };
+    const session = {
+      on: (method: string, callback: unknown) => { handlers.set(method, callback); return () => handlers.delete(method); },
+      send: async (_method: string, { name }: { name: string }) => {
+        page[name] = (payload: string) => handlers.get("Runtime.bindingCalled")?.({ name, payload });
+      },
+      evaluate: async (expression: string) => runInNewContext(expression, page),
+    };
+    const samples: unknown[] = [];
+    const stop = await generated.subscribeCaptureProbe(session, (sample: unknown) => samples.push(sample), 17);
+    publish!({ t: 25, metrics: { position: 4 } });
+    expect(samples).toEqual([{ t: 25, metrics: { position: 4 } }]);
+    expect(spacing).toBe(17);
+    await stop();
+    expect(detached).toBe(true);
+    expect(handlers.size).toBe(0);
+    expect(page.__jgStopDriveProbe).toBeUndefined();
+  });
 });
 
 describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
@@ -175,7 +258,7 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(script).toContain("Input.dispatchKeyEvent");
       expect(script).toContain("__jgengineAgent");
       // The playtest rung travels: probe sampling + softlock verdict.
-      expect(script).toContain("__jgProbe");
+      expect(script).toContain("subscribeCaptureProbe");
       expect(script).toContain("--playtest");
       expect(script).toContain("softlock");
     });
