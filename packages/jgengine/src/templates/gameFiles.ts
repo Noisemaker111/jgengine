@@ -300,6 +300,14 @@ export function findChrome() {
   throw new Error("No Chrome/Chromium found. Install Chrome or set CHROME_PATH.");
 }
 
+export function chromeGraphicsArgs(env = process.env, platform = process.platform) {
+  const software = env.JG_CAPTURE_SOFTWARE_GL === "1" ||
+    (env.JG_CAPTURE_SOFTWARE_GL !== "0" && (env.CI !== undefined || platform === "linux"));
+  return software
+    ? ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
+    : ["--ignore-gpu-blocklist"];
+}
+
 export function launchChrome(port, prefix) {
   const chrome = findChrome();
   const userDataDir = join(tmpdir(), (prefix ?? "jg-shoot-") + process.pid + "-" + port);
@@ -316,10 +324,7 @@ export function launchChrome(port, prefix) {
       "--disable-renderer-backgrounding",
       "--mute-audio",
       "--hide-scrollbars",
-      // Software WebGL so the scene renders even with no GPU (headless/CI).
-      "--use-angle=swiftshader",
-      "--enable-unsafe-swiftshader",
-      "--ignore-gpu-blocklist",
+      ...chromeGraphicsArgs(),
       "--no-sandbox",
       "--disable-dev-shm-usage",
       "about:blank",

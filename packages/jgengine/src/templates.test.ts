@@ -52,6 +52,18 @@ const THIN_FILES = [
 /** The default set: the thin skeleton plus the world scaffold, which is now on unless --no-world. */
 const WORLD_FILES = [...THIN_FILES, "src/world.ts", "src/game/assets.ts", "src/game/models.ts"];
 
+test("generated capture uses native graphics locally and retains explicit software GL policy", async () => {
+  const source = fileOf(render("standalone"), "scripts/browser.mjs");
+  const generated = await import(`data:text/javascript;base64,${Buffer.from(source).toString("base64")}`);
+  expect(generated.chromeGraphicsArgs({}, "win32")).toEqual(["--ignore-gpu-blocklist"]);
+  expect(generated.chromeGraphicsArgs({}, "darwin")).toEqual(["--ignore-gpu-blocklist"]);
+  expect(generated.chromeGraphicsArgs({}, "linux")).toContain("--use-angle=swiftshader");
+  expect(generated.chromeGraphicsArgs({ CI: "true" }, "win32")).toContain("--use-angle=swiftshader");
+  expect(generated.chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "1" }, "win32")).toContain("--use-angle=swiftshader");
+  expect(generated.chromeGraphicsArgs({ CI: "true", JG_CAPTURE_SOFTWARE_GL: "0" }, "win32")).toEqual(["--ignore-gpu-blocklist"]);
+  expect(generated.chromeGraphicsArgs({ JG_CAPTURE_SOFTWARE_GL: "0" }, "linux")).toEqual(["--ignore-gpu-blocklist"]);
+});
+
 describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
   for (const variant of ["standalone", "in-repo"] as const) {
     test(`${variant}: default is the editor-first file set plus the world scaffold`, () => {
