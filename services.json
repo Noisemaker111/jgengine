@@ -2,12 +2,14 @@
   "services": [
     {
       "name": "JG Engine authority frontend",
+      "managedCheckouts": [".claude/worktrees/engine-beta-runtime-20260930"],
       "serves": "compiled beta engine fixture on 4624",
       "running": { "http": "http://127.0.0.1:4624/__version", "field": "revision" },
       "reload": ["node", "--input-type=module", "-e", "import {execFileSync} from 'node:child_process'; process.env.JG_FIXTURE_REVISION=execFileSync('git',['rev-parse',process.argv[1]],{encoding:'utf8',windowsHide:true}).trim(); await import('data:text/javascript;base64,'+Buffer.from(execFileSync('git',['show',process.argv[1]+':scripts/authority-fixture.mjs'],{windowsHide:true})).toString('base64'));", "{landed}"]
     },
     {
       "name": "JG Engine authority realm",
+      "managedCheckouts": [".claude/worktrees/engine-beta-runtime-20260930"],
       "serves": "compiled beta authoritative engine fixture on 4625",
       "running": { "http": "http://127.0.0.1:4625/__version", "field": "revision" },
       "reload": ["node", "--input-type=module", "-e", "import {execFileSync} from 'node:child_process'; process.env.JG_FIXTURE_REVISION=execFileSync('git',['rev-parse',process.argv[1]],{encoding:'utf8',windowsHide:true}).trim(); await import('data:text/javascript;base64,'+Buffer.from(execFileSync('git',['show',process.argv[1]+':scripts/authority-fixture.mjs'],{windowsHide:true})).toString('base64'));", "{landed}"]
