@@ -138,6 +138,7 @@ const startBootstrap = () => {
     const child = spawn("bun", ["scripts/agent-bootstrap.ts"], {
       cwd: process.cwd(),
       detached: true,
+      windowsHide: true,
       stdio: ["ignore", fd, fd],
     });
     child.unref();
@@ -150,7 +151,12 @@ const startBootstrap = () => {
 const cold =
   !existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo")) &&
   !existsSync(join(process.cwd(), "node_modules", ".bin", "tsgo.exe"));
-if (cold) {
+if (cold && process.env.JG_PARENT_SOURCE_ONLY === "1") {
+  notes.push(
+    "Parent-prepared source-only session: dependency bootstrap was not started. " +
+      "Reads and source edits may proceed; the parent owns readiness before dependency-dependent checks.",
+  );
+} else if (cold) {
   const pid = startBootstrap();
   if (pid) {
     notes.push(
