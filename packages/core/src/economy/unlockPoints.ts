@@ -109,8 +109,7 @@ export function createUnlockPoints(config: UnlockPointsConfig = {}): UnlockPoint
     unlocked.clear();
     earned = sanitizeAmount(state.earned);
     for (const [id, cost] of Object.entries(state.unlocked)) {
-      const paid = Number.isFinite(cost) && cost >= 0 ? cost : 0;
-      unlocked.set(id, paid);
+      if (Number.isFinite(cost) && cost >= 0) unlocked.set(id, cost);
     }
   };
 
@@ -178,9 +177,7 @@ export function createUnlockPoints(config: UnlockPointsConfig = {}): UnlockPoint
       return refunded;
     },
     snapshot() {
-      const map: Record<string, number> = {};
-      for (const [id, cost] of unlocked) map[id] = cost;
-      return { earned, unlocked: map };
+      return { earned, unlocked: Object.fromEntries(unlocked) };
     },
     hydrate(state) {
       load(state);

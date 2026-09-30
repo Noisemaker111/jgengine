@@ -38,7 +38,8 @@ export type PostListingReason =
   | "invalid-price"
   | "price-too-low"
   | "price-too-high"
-  | "listing-cap-reached";
+  | "listing-cap-reached"
+  | "duplicate-id";
 
 /** Result of {@link ListingBook.post}. */
 export type PostListingResult =
@@ -146,7 +147,14 @@ export function createListingBook(config: ListingBookConfig): ListingBook {
       if (countOf(input.sellerId) >= config.maxListingsPerSeller) {
         return { status: "rejected", reason: "listing-cap-reached" };
       }
-      const id = input.id ?? `listing_${(counter += 1)}`;
+      let id = input.id;
+      if (id === undefined) {
+        do {
+          id = `listing_${(counter += 1)}`;
+        } while (listings.has(id));
+      } else if (listings.has(id)) {
+        return { status: "rejected", reason: "duplicate-id" };
+      }
       const listing: Listing = {
         id,
         sellerId: input.sellerId,
@@ -211,6 +219,7 @@ export function createListingBook(config: ListingBookConfig): ListingBook {
       return claimed;
     },
     claimItem(sellerId, itemId, count) {
+      if (!Number.isInteger(count) || count < 0) return false;
       const box = boxOf(sellerId);
       const index = box.items.findIndex((stack) => stack.itemId === itemId);
       if (index === -1) return false;

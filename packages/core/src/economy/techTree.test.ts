@@ -46,6 +46,58 @@ describe("tech tree (pure)", () => {
 });
 
 describe("tech tree (stateful, per-user, built on unlocks)", () => {
+  test("duplicate ids use the last definition for eligibility and payloads", () => {
+    const replacement: TechNodeDef = {
+      id: "forge", category: "advanced", requires: ["metallurgy"],
+      cost: { research: 10 }, grants: ["hot-forge"], recipe: "advanced-forge",
+    };
+    const tree = createTechTree([
+      { id: "forge", category: "basic", grants: ["cold-forge"], recipe: "basic-forge" },
+      { id: "metallurgy" },
+      replacement,
+    ]);
+    const blocked = { ok: false, reason: "missing-prerequisites", missing: ["metallurgy"] };
+
+    expect(tree.node("forge")).toEqual(replacement);
+    expect(tree.canUnlock("alice", "forge")).toEqual(blocked);
+    expect(tree.unlock("alice", "forge")).toEqual(blocked);
+    expect(tree.snapshot("alice")).toEqual([]);
+    expect(tree.available("alice").map((node) => node.id)).toEqual(["metallurgy"]);
+    expect(tree.tree("basic")).toEqual([]);
+    expect(tree.tree("advanced")).toEqual([replacement]);
+
+    expect(tree.unlock("alice", "metallurgy")).toEqual({ ok: true });
+    expect(tree.available("alice")).toEqual([replacement]);
+    expect(tree.unlock("alice", "forge")).toEqual({ ok: true });
+    expect(tree.snapshot("alice")).toEqual(["metallurgy", "forge", "hot-forge"]);
+    expect(tree.has("alice", "cold-forge")).toBe(false);
+    expect(tree.recipes("alice")).toEqual(["advanced-forge"]);
+    expect(tree.unlock("alice", "forge")).toEqual({ ok: false, reason: "already-unlocked" });
+    expect(tree.snapshot("bob")).toEqual([]);
+  });
+
+  test("JSON reload preserves valid node grants, saved ids and repeated-unlock rejection", () => {
+    const tree = createTechTree(defs);
+    expect(tree.unlock("alice", "tech_basics")).toEqual({ ok: true });
+    expect(tree.unlock("alice", "tech_smithing")).toEqual({ ok: true });
+    expect(tree.unlock("alice", "tech_metallurgy")).toEqual({ ok: true });
+    const saved = [...tree.snapshot("alice"), "retired-capability"];
+    const restored = createTechTree(defs);
+    restored.hydrate("alice", JSON.parse(JSON.stringify(saved)));
+
+    expect(restored.snapshot("alice")).toEqual(saved);
+    expect(restored.has("alice", "perm_hot_forge")).toBe(true);
+    expect(restored.has("alice", "retired-capability")).toBe(true);
+    expect(restored.node("tech_smithing")?.cost).toEqual({ research: 10 });
+    expect(restored.recipes("alice")).toEqual(["recipe_campfire", "recipe_blade", "recipe_plate"]);
+    expect(restored.available("alice")).toEqual([]);
+    expect(restored.canUnlock("alice", "tech_metallurgy")).toEqual({ ok: false, reason: "already-unlocked" });
+    expect(restored.unlock("alice", "tech_metallurgy")).toEqual({ ok: false, reason: "already-unlocked" });
+    expect(restored.unlock("alice", "unknown-node")).toEqual({ ok: false, reason: "unknown-node" });
+    expect(restored.snapshot("alice")).toEqual(saved);
+    expect(restored.snapshot("bob")).toEqual([]);
+  });
+
   test("unlock is refused until prerequisites are met, then succeeds", () => {
     const tree = createTechTree(defs);
     const blocked = tree.unlock("alice", "tech_smithing");

@@ -64,6 +64,7 @@ export function wearAmount(spec: DurabilitySpec, kind: WearKind): number {
  * @capability durability track item wear, breakage, and repair
  */
 export function applyWear(state: DurabilityState, amount: number): DurabilityState {
+  if (Number.isNaN(amount)) throw new RangeError("Wear amount must not be NaN.");
   if (amount <= 0) return state;
   return { current: clamp(state.current - amount, 0, state.max), max: state.max };
 }
@@ -86,6 +87,7 @@ export function repairQuote(
   const repair = spec.repair;
   if (repair === undefined) return null;
   if (repair.station !== undefined && repair.station !== options?.station) return null;
+  if (options?.to !== undefined && !Number.isFinite(options.to)) return null;
 
   const loss = repair.qualityLossPerRepair ?? 0;
   const newMax = Math.max(1, state.max - loss);
