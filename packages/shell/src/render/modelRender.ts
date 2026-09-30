@@ -8,7 +8,12 @@ export const PAINT_TEXTURE_SIZE = 512;
 /** Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`. */
 export type ModelShadowMode = "cast" | "receive" | "both" | "none";
 
-/** @internal */
+const modelResources = new WeakMap<THREE.Object3D, { materials: Set<THREE.Material>; skeletons: Set<THREE.Skeleton> }>();
+
+/**
+ * Clone a model with independent pose and materials, retaining shared geometry and textures.
+ * @capability model-instance clone a loaded model for independent styling and animation
+ */
 export function cloneModelScene(
   source: THREE.Object3D,
   options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode },
@@ -16,17 +21,52 @@ export function cloneModelScene(
   const clone = cloneSkinned(source) as THREE.Object3D;
   const shadows = options?.shadows ?? "both";
   const cloneMaterials = options?.cloneMaterials !== false;
+  const materials = new Map<THREE.Material, THREE.Material>();
+  const sourceSkeletons: THREE.Skeleton[] = [];
+  source.traverse((node) => {
+    if ((node as THREE.SkinnedMesh).isSkinnedMesh === true) sourceSkeletons.push((node as THREE.SkinnedMesh).skeleton);
+  });
+  const skeletons = new Map<THREE.Skeleton, THREE.Skeleton>();
+  let skinnedIndex = 0;
+  const cloneMaterial = (source: THREE.Material): THREE.Material => {
+    let material = materials.get(source);
+    if (material === undefined) {
+      material = source.clone();
+      materials.set(source, material);
+    }
+    return material;
+  };
   clone.traverse((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
+    if ((mesh as THREE.SkinnedMesh).isSkinnedMesh === true) {
+      const skinned = mesh as THREE.SkinnedMesh;
+      const sourceSkeleton = sourceSkeletons[skinnedIndex++]!;
+      const shared = skeletons.get(sourceSkeleton);
+      if (shared === undefined) skeletons.set(sourceSkeleton, skinned.skeleton);
+      else skinned.skeleton = shared;
+    }
     mesh.castShadow = shadows === "cast" || shadows === "both";
     mesh.receiveShadow = shadows === "receive" || shadows === "both";
     if (!cloneMaterials) return;
     mesh.material = Array.isArray(mesh.material)
-      ? mesh.material.map((material) => material.clone())
-      : mesh.material.clone();
+      ? mesh.material.map(cloneMaterial)
+      : cloneMaterial(mesh.material);
   });
+  modelResources.set(clone, { materials: new Set(materials.values()), skeletons: new Set(skeletons.values()) });
   return clone;
+}
+
+/**
+ * Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
+ * @capability model-instance release a cloned model without disposing cached geometry or textures
+ */
+export function disposeModelScene(root: THREE.Object3D): void {
+  const resources = modelResources.get(root);
+  if (resources === undefined) return;
+  for (const material of resources.materials) material.dispose();
+  // Effect replay can recreate a bone texture on this same scene, so retain its ownership record.
+  for (const skeleton of resources.skeletons) skeleton.dispose();
 }
 
 /** @internal */

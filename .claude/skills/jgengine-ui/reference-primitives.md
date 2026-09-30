@@ -87,3 +87,11 @@ The shipped building blocks — inventory grids, toggleable windows, character s
 ## 2D sprite presentation
 
 Core owns renderer-independent atlas data and animation state. Convert Aseprite or TexturePacker JSON with `fromAseprite` / `fromTexturePacker` from `@jgengine/core/assets/spriteAtlas`, then drive a clip with `createSpriteClipPlayer` from `@jgengine/core/render/sprite2d`. Persist `snapshot()` and restore it on load; use `retune({ speed })` for runtime playback changes. Use `sortingOrder(layers, layer, offset)` when a game maps named presentation layers to renderer order.
+
+The shell's `EntitySprite` changes atlas UVs without uploading the image again. Configuration changes request a frame; frozen shell posters keep their demand rendering behavior.
+
+## Model instances
+
+Custom R3F model components use `cloneModelScene` and pair it with `disposeModelScene` on unmount (`@jgengine/shell/render/modelRender`). Each clone owns its pose, bone textures and cloned materials, with one skeleton/material per shared source skeleton/material. Geometry and image textures stay in the loader cache. `cloneMaterials: false` borrows source materials; do not mutate them. Attachments own their separate cleanup. Apply material overrides with `clone: false` to an instance that already owns its materials.
+
+Use `useModelAnimation` (`@jgengine/shell/render/useModelAnimation`) for animation instead of creating a mixer in game code. It releases mixer bindings on replacement/unmount and skips updates for paused or completed single clips. Configuration and animation events request a frame without continuously waking a frozen poster.
