@@ -17,7 +17,7 @@ export function fileWorldStore(path: string): HostedWorldStore {
     },
     async save(record) {
       await mkdir(dirname(path), { recursive: true });
-      const temporary = `${path}.${process.pid}.${Date.now()}.tmp`;
+      const temporary = `${path}.${process.pid}.${crypto.randomUUID()}.tmp`;
       await writeFile(temporary, JSON.stringify(record), "utf8");
       await rename(temporary, path);
     },

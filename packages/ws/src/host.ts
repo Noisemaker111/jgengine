@@ -47,6 +47,7 @@ import type {
   WorldSyncFrame,
 } from "@jgengine/core/runtime/transport";
 import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
+import { unwrapOpEnvelope } from "@jgengine/core/runtime/hostedWorldSession";
 
 /** A change notification emitted by a `GameHost` for a server, player, or feed mutation. */
 export type HostChangeEvent =
@@ -133,18 +134,7 @@ const builtinCommands = {
 /** Max recently-applied `runCommand` op IDs retained per (serverId, userId), oldest evicted first. */
 export const OP_LEDGER_LIMIT = 64;
 
-const WS_OP_ID_FIELD = "__jgWsOpId";
-
 type OpLedgerEntry = { opId: string; result: TransportRunCommandResult };
-
-function unwrapOpEnvelope(input: unknown): { opId: string; input: unknown } | null {
-  if (typeof input !== "object" || input === null || Array.isArray(input)) return null;
-  const record = input as Record<string, unknown>;
-  const opId = record[WS_OP_ID_FIELD];
-  if (typeof opId !== "string") return null;
-  const { [WS_OP_ID_FIELD]: _opId, ...rest } = record;
-  return { opId, input: rest };
-}
 
 function opLedgerKey(serverId: string, userId: string): string {
   return `${serverId}|${userId}`;

@@ -29,6 +29,8 @@ export interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMulti
    * snapshot overlays the world state it seeded. Omit for a long-lived stateful host (ws) that keeps one runner.
    */
   restore?: WorldSnapshot;
+  /** Persisted replication cursor; restored hosts continue above it. */
+  revision?: number;
   /** Render-model lookup for collider auto-fit — pass the same lookup the shell derives from `entityModels`/`objectModels` so host and clients resolve identical hitboxes. */
   models?: GameContextModels;
 }
@@ -54,6 +56,10 @@ export interface HostedGameRunner {
   revision(): number;
   /** The full world baseline — projected to only what `viewer` may see when the context carries a replication policy, else the whole world. */
   snapshot(viewer?: SnapshotViewer): WorldSnapshot;
+  /** Complete detached authoritative state for persistence, including save-only modules. */
+  state(): WorldSnapshot;
+  /** Commit replication without advancing simulation or running game ticks. */
+  commit(): number;
   /** True when {@link snapshot} is viewer-dependent (a replication policy projects private/AOI state); a host must then serve each viewer its own frame. */
   projectsViewers(): boolean;
   members(): readonly string[];
@@ -78,6 +84,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   const loop = definition.loop ?? {};
   const replicator = createWorldReplicator(() => ctx.snapshot(), {
     worldVersion: () => ctx.replicationVersion(),
+    initialRevision: options.revision ?? 0,
   });
   const members = new Map<string, LoopPlayer>();
   const inputs = new Map<string, InputRecorder>();
@@ -88,7 +95,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
 
   loop.onInit?.(ctx);
   syncLifecyclePhase(ctx, definition.lifecycle);
-  if (restore !== undefined) ctx.hydrate(restore);
+  if (restore !== undefined) ctx.restore(restore);
 
   return {
     join(userId, isNew) {
@@ -137,6 +144,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     tick(dt) {
       hostTick += 1;
       ctx.sim.advance(dt, (stepDt, tick) => {
+        const gameDt = ctx.time.advance(stepDt);
         for (const [userId, recorder] of inputs) {
           const frame = recorder.frameAt(tick);
           if (frame !== null) ctx.game.players?.setInput(userId, frame);
@@ -147,8 +155,8 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
           if (frame !== null) serverStep(ctx, userId, frame, stepDt, movementTuning);
         }
         ctx.sim.runStages("afterMovement", stepDt);
-        loop.onTick?.(ctx, stepDt);
-        advanceBehaviors(ctx, stepDt);
+        loop.onTick?.(ctx, gameDt);
+        advanceBehaviors(ctx, gameDt);
         ctx.sim.runStages("afterTick", stepDt);
       });
       syncLifecyclePhase(ctx, definition.lifecycle);
@@ -157,6 +165,8 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
     diff: (sinceRevision) => replicator.diff(sinceRevision),
     revision: () => replicator.revision(),
     snapshot: (viewer) => ctx.snapshot(viewer === undefined ? undefined : { ...viewer, tick: hostTick }),
+    state: ctx.state,
+    commit: () => replicator.commit(),
     projectsViewers: () => ctx.replicatesPerViewer(),
     members: () => Array.from(members.keys()),
     context: () => ctx,

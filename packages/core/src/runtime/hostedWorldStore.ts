@@ -16,8 +16,8 @@ export interface HostedWorldStore {
   save(record: HostedWorldRecord): Promise<void>;
 }
 
-/** Synchronous store adapter retained for deterministic in-process tests. */
+/** Already-loaded store adapter: synchronous reads, with synchronous or asynchronous writes. */
 export interface SyncHostedWorldStore {
   load(): HostedWorldRecord | null;
-  save(record: HostedWorldRecord): void;
+  save(record: HostedWorldRecord): void | Promise<void>;
 }

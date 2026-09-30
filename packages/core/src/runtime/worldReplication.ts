@@ -44,6 +44,8 @@ interface Tracked {
  */
 export interface WorldReplicatorOptions {
   worldVersion?: () => number;
+  /** Cursor loaded with a persisted baseline; new commits continue above it. Default `0`. */
+  initialRevision?: number;
 }
 
 /**
@@ -60,7 +62,7 @@ export function createWorldReplicator(
 ) {
   const worldVersion = options.worldVersion;
   let committedVersion: number | undefined;
-  let revision = 0;
+  let revision = options.initialRevision ?? 0;
   const entities = new Map<string, Tracked>();
   const removedEntities = new Map<string, number>();
   const stats = new Map<string, Tracked>();

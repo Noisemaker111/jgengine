@@ -1,4 +1,4 @@
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
@@ -222,6 +222,7 @@ export function useModelAnimation(
   animationInput: ModelAnimationConfig | "auto" | "none" | undefined,
   instanceId?: string,
 ): void {
+  const invalidate = useThree((state) => state.invalidate);
   // Optional: a model must still animate its bind pose / auto clip in a preview or inspector that
   // has no running game — a hard context requirement made every part composition unviewable outside
   // the world, which is half of why #1588 took a session to see.
@@ -239,6 +240,7 @@ export function useModelAnimation(
   );
 
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const actionRef = useRef<THREE.AnimationAction | null>(null);
   const animationPausedRef = useRef(false);
   const graphRef = useRef<GraphPlayback | null>(null);
   const states = animation?.states;
@@ -249,6 +251,7 @@ export function useModelAnimation(
   useEffect(() => {
     if (animation === undefined || clips.length === 0) {
       mixerRef.current = null;
+      actionRef.current = null;
       graphRef.current = null;
       return;
     }
@@ -258,9 +261,11 @@ export function useModelAnimation(
       graphRef.current = buildGraphPlayback(scene, mixer, graph, clips);
       mixer.update(0);
       mixerRef.current = mixer;
-      animationPausedRef.current = false;
+      animationPausedRef.current = animation.paused === true;
+      invalidate();
       return () => {
         mixer.stopAllAction();
+        mixer.uncacheRoot(scene);
         mixerRef.current = null;
         graphRef.current = null;
       };
@@ -278,10 +283,14 @@ export function useModelAnimation(
     if (animation.time !== undefined) action.time = animation.time;
     mixer.update(0);
     mixerRef.current = mixer;
+    actionRef.current = action;
     animationPausedRef.current = animation.paused === true;
+    invalidate();
     return () => {
       mixer.stopAllAction();
+      mixer.uncacheRoot(scene);
       mixerRef.current = null;
+      actionRef.current = null;
     };
   }, [
     scene,
@@ -294,13 +303,17 @@ export function useModelAnimation(
     states,
     oneShots,
     graph,
+    invalidate,
   ]);
 
   useEffect(() => {
     if (ctx === null || instanceId === undefined || (oneShots === undefined && graph === undefined)) return;
     const fire = (event: string) => {
       const playback = graphRef.current;
-      if (playback !== null) playback.runtime.trigger(event);
+      if (playback !== null) {
+        playback.runtime.trigger(event);
+        invalidate();
+      }
     };
     const offAnimation = ctx.game.events.on("entity.animation", (event) => {
       if (event.instanceId === instanceId) fire(event.event);
@@ -316,9 +329,10 @@ export function useModelAnimation(
       offHit();
       offDied();
     };
-  }, [ctx, instanceId, oneShots, graph]);
+  }, [ctx, instanceId, oneShots, graph, invalidate]);
 
   useFrame((_state, delta) => {
+    if (animationPausedRef.current || animation?.timeScale === 0) return;
     const playback = graphRef.current;
     if (playback !== null && mixerRef.current !== null) {
       const params: Record<string, AnimParamValue> = {};
@@ -354,6 +368,8 @@ export function useModelAnimation(
       }
       return;
     }
-    if (mixerRef.current !== null && !animationPausedRef.current) mixerRef.current.update(delta);
+    if (mixerRef.current !== null && actionRef.current?.isRunning()) {
+      mixerRef.current.update(delta);
+    }
   });
 }

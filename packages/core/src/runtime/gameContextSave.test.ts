@@ -6,6 +6,7 @@ import { createAssetCatalog } from "../scene/assetCatalog";
 import { defineStore } from "../store/defineStore";
 import { convex } from "./adapter";
 import { createGameContext } from "./gameContext";
+import { createRuntimeSave } from "./runtimeSave";
 
 const progress = defineStore<{ level: number }>("save.progress", { level: 1 });
 
@@ -28,6 +29,56 @@ const QUESTS = [
 ];
 
 describe("ctx.game.save", () => {
+  test("state/restore and direct runtime saves retain private state without persist config", async () => {
+    const create = () => createGameContext({ definition: offlineGame(false), content: {}, player: { userId: "p1", isNew: true } });
+    const origin = create();
+    origin.game.economy.grant("p1", "gold", 42);
+    origin.time.advance(5);
+    const state = origin.state();
+    origin.game.economy.grant("p1", "gold", 10);
+    const resumed = create();
+    resumed.restore(state);
+    expect(resumed.game.economy.balance("p1", "gold")).toBe(42);
+    expect(resumed.time.now()).toBe(5);
+    expect(resumed.snapshot()).not.toHaveProperty("economy");
+    const backend = memorySaveBackend();
+    await createRuntimeSave({ target: resumed, backend, mode: "manual" }).save();
+    const fresh = create();
+    expect(await createRuntimeSave({ target: fresh, backend, mode: "manual" }).load()).toBe(true);
+    expect(fresh.game.economy.balance("p1", "gold")).toBe(42);
+    fresh.restore(origin.snapshot());
+    expect(fresh.game.economy.balance("p1", "gold")).toBe(42);
+  });
+
+  test("authoritative capture restores pose, progression and registered save-only systems", () => {
+    const create = () => {
+      const ctx = createGameContext({ definition: progressionGame(), content: heroContent, player: { userId: "p1", isNew: true } });
+      let score = 1;
+      ctx.game.registerSave!({ key: "privateScore", snapshot: () => score, hydrate: (raw) => { score = raw as number; } });
+      ctx.game.quest!.register(QUESTS);
+      return { ctx, score: () => score, setScore: (next: number) => { score = next; } };
+    };
+    const origin = create();
+    origin.ctx.scene.entity.spawn("hero", { id: "p1", position: [3, 0, 4] });
+    origin.ctx.player.movement.setPose("p1", "crouch");
+    origin.ctx.player.movement.setAim("p1", "ads");
+    origin.ctx.game.quest!.accept("p1", "q_intro");
+    origin.ctx.game.quest!.progress("p1", "q_intro", "o1", 2);
+    origin.ctx.game.unlocks!.grant("p1", "double_jump");
+    origin.setScore(7);
+    const saved = origin.ctx.state();
+    origin.setScore(9);
+    const restored = create();
+    restored.ctx.restore(saved);
+    expect(restored.ctx.scene.entity.get("p1")?.position).toEqual([3, 0, 4]);
+    expect(restored.ctx.player.movement.getPose("p1")).toBe("crouch");
+    expect(restored.ctx.player.movement.getAim("p1")).toBe("ads");
+    expect(restored.ctx.game.quest!.snapshot("p1")[0]?.progress).toEqual({ o1: 2 });
+    expect(restored.ctx.game.unlocks!.has("p1", "double_jump")).toBe(true);
+    expect(restored.score()).toBe(7);
+    for (const key of ["quest", "unlocks", "privateScore", "pose"]) expect(restored.ctx.snapshot()).not.toHaveProperty(key);
+  });
+
   test("whole-world round-trips across a fresh context through a shared backend", async () => {
     const backend = memorySaveBackend();
 

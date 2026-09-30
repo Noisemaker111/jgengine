@@ -59,8 +59,8 @@ function spyPersistence() {
   const persistence: WorldPersistence = {
     store(key) {
       const store: HostedWorldStore = {
-        load: () => null,
-        save: (record) => saves.push({ key, record }),
+        load: async () => null,
+        async save(record) { saves.push({ key, record }); },
       };
       return store;
     },
@@ -158,13 +158,15 @@ describe("createWorldGameServer", () => {
     const s = server(undefined, persistence);
     try {
       await s.host.joinServer({ userId: "alice", gameId: "shared" });
-      expect(saves.length).toBe(0);
-      s.tick(1);
       expect(saves.length).toBe(1);
+      s.tick(1);
+      await s.flush();
+      expect(saves.length).toBe(3);
       expect(saves[0]?.key).toEqual({ gameId: "shared", serverId: "shared" });
       expect(saves[0]?.record.revision).toBeGreaterThan(0);
       s.tick(1);
-      expect(saves.length).toBe(2);
+      await s.flush();
+      expect(saves.length).toBe(5);
     } finally {
       await s.close();
     }
@@ -175,11 +177,11 @@ describe("createWorldGameServer", () => {
     const s = server(undefined, persistence);
     try {
       await s.host.joinServer({ userId: "alice", gameId: "shared" });
-      expect(saves.length).toBe(0);
-      s.flush();
       expect(saves.length).toBe(1);
-      s.flush();
+      await s.flush();
       expect(saves.length).toBe(2);
+      await s.flush();
+      expect(saves.length).toBe(3);
     } finally {
       await s.close();
     }
@@ -189,8 +191,8 @@ describe("createWorldGameServer", () => {
     const { persistence, saves } = spyPersistence();
     const s = server(undefined, persistence);
     await s.host.joinServer({ userId: "alice", gameId: "shared" });
-    expect(saves.length).toBe(0);
-    await s.close();
     expect(saves.length).toBe(1);
+    await s.close();
+    expect(saves.length).toBe(2);
   });
 });

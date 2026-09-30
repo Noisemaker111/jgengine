@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
-import { memoryWorldStore, type HostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
+import { memoryWorldStore, type SyncHostedWorldStore } from "@jgengine/core/runtime/hostedWorldSession";
 import { diffSnapshots } from "@jgengine/core/runtime/worldReplication";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
@@ -54,7 +54,7 @@ function game(): HostedGameConfig {
   };
 }
 
-function heroX(store: HostedWorldStore, userId: string): number | undefined {
+function heroX(store: SyncHostedWorldStore, userId: string): number | undefined {
   const snapshot = store.load()?.snapshot as WorldSnapshot | undefined;
   const entities = (snapshot?.["entities"] ?? []) as { id: string; position: number[] }[];
   return entities.find((e) => e.id === userId)?.position[0];
@@ -138,7 +138,7 @@ describe("invokeHostedWorld", () => {
     });
     expect(tick.changed).toBe(false);
     expect(tick.revision).toBe(join.revision);
-    expect(store.load()).toBe(savedBefore);
+    expect(store.load()).toEqual(savedBefore);
   });
 
   test("a reconstructed leave fires onPlayerLeave and despawns the member", async () => {
@@ -172,7 +172,7 @@ describe("invokeHostedWorld", () => {
     });
     expect(unknown.value.status).toBe("unknown-command");
     expect(unknown.changed).toBe(false);
-    expect(store.load()).toBe(savedBefore);
+    expect(store.load()).toEqual(savedBefore);
   });
 
   test("a second player joins an already-reconstructed world without disturbing the first", async () => {

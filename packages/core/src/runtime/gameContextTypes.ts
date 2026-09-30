@@ -609,6 +609,10 @@ export interface GameContext {
   snapshot(viewer?: SnapshotViewer): WorldSnapshot;
   /** Apply a {@link WorldSnapshot} from an authoritative host, hydrating each subsystem key present in it. */
   hydrate(snapshot: WorldSnapshot): void;
+  /** Detached authoritative state, including save-only modules. Use for persistence, never client replication; available without `persist` or a save backend. */
+  state(): WorldSnapshot;
+  /** Restore authoritative state after initialization. Missing keys retain their initialized values, including in legacy replication-only saves. */
+  restore(state: WorldSnapshot): void;
   /** Aggregate world-dirty version summed across replicated modules; the host replicator skips an unchanged commit. @internal */
   replicationVersion(): number;
   /** True when a {@link GameContextOptions.replication} policy makes {@link snapshot} viewer-dependent (private/AOI projection is active). @internal */

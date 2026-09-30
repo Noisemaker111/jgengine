@@ -1,7 +1,6 @@
 import { PendingFrame } from "./frameReady";
-import { useFrame, useLoader } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
-import { Component, Suspense, useEffect, useMemo, useRef, type ReactNode } from "react";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
+import { Component, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig, ModelMaterialMaps } from "@jgengine/core/game/playableGame";
@@ -10,18 +9,20 @@ import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/f
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
 import { sharedGltfLoader } from "./modelLoad";
+import { modelAssetRequests, modelMapEntries } from "./modelAssets";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
 import { useModelAnimation } from "./useModelAnimation";
 import { useFootIk } from "./useFootIk";
 import { PartMotionRig } from "./PartMotion";
+import { syncSpriteFrame } from "./spriteRender";
 import { applyMaterialOverride } from "../materialOverride";
 import {
   applyPaintTextureToMaterials,
   cacheStandardMaterials,
   cloneModelScene,
   createPaintCanvas,
-  disposeClonedMaterials,
+  disposeModelScene,
   disposePaintCanvas,
   syncPaintCanvas,
   type MaterialCache,
@@ -29,6 +30,7 @@ import {
 } from "./modelRender";
 
 export function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
+  const invalidate = useThree((state) => state.invalidate);
   const texture = useLoader(THREE.TextureLoader, sprite.clip?.atlas.image ?? sprite.url);
   const map = useMemo(() => texture.clone(), [texture]);
   const player = useMemo(
@@ -46,17 +48,17 @@ export function EntitySprite({ sprite }: { sprite: EntitySpriteConfig }) {
 
   useEffect(() => {
     if (player !== null && animation !== undefined) player.play(animation);
-  }, [player, animation]);
+    const frame = player?.frame();
+    if (frame !== undefined && sprite.clip !== undefined) syncSpriteFrame(map, frame, sprite.clip.atlas.size);
+    invalidate();
+  }, [player, animation, map, sprite.clip, invalidate]);
 
   useFrame((_state, delta) => {
     if (player === null || sprite.clip === undefined) return;
     player.advance(delta);
     const frame = player.frame();
     if (frame === undefined) return;
-    const [atlasWidth, atlasHeight] = sprite.clip.atlas.size;
-    map.repeat.set(frame.w / atlasWidth, frame.h / atlasHeight);
-    map.offset.set(frame.x / atlasWidth, 1 - (frame.y + frame.h) / atlasHeight);
-    map.needsUpdate = true;
+    syncSpriteFrame(map, frame, sprite.clip.atlas.size);
   });
 
   useEffect(() => {
@@ -187,7 +189,7 @@ function BoneAttachment({
     };
   }, [rig, weaponScene, slot, px, py, pz, rx, ry, rz, s]);
 
-  useEffect(() => () => disposeClonedMaterials(weaponScene), [weaponScene]);
+  useEffect(() => () => disposeModelScene(weaponScene), [weaponScene]);
 
   return null;
 }
@@ -214,19 +216,10 @@ function ModelPartGroup({
 }
 
 function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps: ModelMaterialMaps }) {
-  const entries = useMemo(() => {
-    const record: Record<string, string> = {};
-    if (maps.color !== undefined) record.color = maps.color;
-    if (maps.normal !== undefined) record.normal = maps.normal;
-    if (maps.roughness !== undefined) record.roughness = maps.roughness;
-    if (maps.ao !== undefined) record.ao = maps.ao;
-    if (maps.metalness !== undefined) record.metalness = maps.metalness;
-    if (maps.emissive !== undefined) record.emissive = maps.emissive;
-    if (maps.height !== undefined) record.height = maps.height;
-    return record;
-  }, [maps.color, maps.normal, maps.roughness, maps.ao, maps.metalness, maps.emissive, maps.height]);
-  const textures = useTexture(entries) as Partial<Record<"color" | "normal" | "roughness" | "ao" | "metalness" | "emissive" | "height", THREE.Texture>>;
-  useEffect(() => {
+  const entries = useMemo(() => modelMapEntries(maps), [maps.color, maps.normal, maps.roughness, maps.ao, maps.metalness, maps.emissive, maps.height]);
+  const loaded = useLoader(THREE.TextureLoader, Object.values(entries));
+  const textures = useMemo(() => Object.fromEntries(Object.keys(entries).map((key, index) => [key, loaded[index]!])), [entries, loaded]);
+  useLayoutEffect(() => {
     if (textures.color !== undefined) textures.color.colorSpace = THREE.SRGBColorSpace;
     applyMaterialOverride(scene, {}, { clone: false, textures });
   }, [scene, textures]);
@@ -248,6 +241,9 @@ export function EntityModel({
   instanceId?: string;
   measure?: MeasureTarget;
 }) {
+  const assets = modelAssetRequests(model);
+  for (const url of assets.models) useLoader.preload(sharedGltfLoader, url);
+  for (const urls of assets.textureGroups) useLoader.preload(THREE.TextureLoader, urls);
   const gltf = useLoader(sharedGltfLoader, model.url);
   // Optional, not required: measured bounds and paint strokes are live-world extras, and a model
   // that threw without a running game could not be inspected outside one — which is how a broken
@@ -288,7 +284,7 @@ export function EntityModel({
 
   useEffect(
     () => () => {
-      disposeClonedMaterials(scene);
+      disposeModelScene(scene);
     },
     [scene],
   );

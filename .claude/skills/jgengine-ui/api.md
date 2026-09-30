@@ -2295,7 +2295,7 @@
 ## @jgengine/shell/render/CascadedShadows
 
 - `CsmMaterialSetup` (interface): interface CsmMaterialSetup — Structural slice of CSM so the patcher is testable without a renderer.
-- `patchSceneMaterials` (function): function patchSceneMaterials(scene: THREE.Scene, csm: CsmMaterialSetup, patched: WeakSet<THREE.Material>): void — Run CSM's `setupMaterial` over every unpatched standard material in the scene, chaining rather than clobbering a material's own `onBeforeCompile`. Called every frame (WeakSet-guarded) so streamed meshes never render lit by all cascades at once.
+- `patchSceneMaterials` (function): function patchSceneMaterials(scene: THREE.Scene, csm: CsmMaterialSetup, patched: WeakSet<THREE.Material>): void — Run CSM's `setupMaterial` over every unpatched standard material in the scene, chaining rather than clobbering a material's own `onBeforeCompile`.
 
 ## @jgengine/shell/render/EntityPreview
 
@@ -2370,6 +2370,8 @@
 - `ModelShadowMode` (type): type ModelShadowMode = "cast" | "receive" | "both" | "none" — Shadow participation applied to every mesh of a cloned model; mirrors `ModelConfig.shadows`.
 - `PAINT_TEXTURE_SIZE` (const): const PAINT_TEXTURE_SIZE: 512 — ⚠ undocumented
 - `PaintCanvas` (interface): interface PaintCanvas { canvas: HTMLCanvasElement; context: CanvasRenderingContext2D; texture: THREE.CanvasTexture } — ⚠ undocumented
+- `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
+- `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
 
 ## @jgengine/shell/render/resolveModel
 
