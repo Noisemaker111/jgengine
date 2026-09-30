@@ -11,6 +11,7 @@ import {
   repairQuote,
   wear,
   type DurabilitySpec,
+  type DurabilityState,
 } from "./durability";
 
 const sword: DurabilitySpec = {
@@ -34,6 +35,53 @@ describe("durability", () => {
     expect(state.current).toBe(89);
     state = applyWear(state, 1000);
     expect(state).toEqual({ current: 0, max: 100 });
+  });
+
+  test("NaN wear is rejected before changing a broken state", () => {
+    const broken = applyWear(createDurability(sword), 100);
+    expect(() => applyWear(broken, Number.NaN)).toThrow();
+    expect(() => wear(sword, broken, "use", Number.NaN)).toThrow();
+    expect(() => wear({ ...sword, wearPerUse: Number.NaN }, broken, "use")).toThrow();
+    expect(() => wear({ ...sword, wearPerHit: Number.NaN }, broken, "hit")).toThrow();
+    expect(broken).toEqual({ current: 0, max: 100 });
+    expect(isBroken(broken)).toBe(true);
+    expect(isDisabled(sword, broken)).toBe(true);
+  });
+
+  test("finite nonpositive wear remains a no-op", () => {
+    const state = wear(sword, createDurability(sword), "use");
+    for (const amount of [0, -1, -0.5]) {
+      expect(applyWear(state, amount)).toBe(state);
+      expect(wear(sword, state, "use", amount)).toBe(state);
+    }
+    expect(wear({ ...sword, wearPerUse: 0 }, state, "use")).toBe(state);
+    expect(wear({ ...sword, wearPerHit: -2 }, state, "hit")).toBe(state);
+    expect(state).toEqual({ current: 95, max: 100 });
+  });
+
+  test("tracker rejects NaN wear without enabling a broken item and survives JSON reload", () => {
+    const tracker = createDurabilityTracker();
+    const instanceId = "sword#1";
+    tracker.init(instanceId, sword);
+    expect(tracker.wear(instanceId, sword, "use", 20)).toEqual({ current: 0, max: 100 });
+    const broken = tracker.get(instanceId);
+
+    expect(() => tracker.wear(instanceId, sword, "use", Number.NaN)).toThrow();
+    expect(tracker.get(instanceId)).toBe(broken);
+    expect(tracker.isDisabled(instanceId, sword)).toBe(true);
+    expect(tracker.isDisabled(instanceId, { ...sword, disableAtZero: false })).toBe(false);
+
+    const saved = JSON.parse(JSON.stringify({ instanceId, state: tracker.get(instanceId) })) as {
+      instanceId: string;
+      state: DurabilityState;
+    };
+    expect(saved).toEqual({ instanceId: "sword#1", state: { current: 0, max: 100 } });
+    const reloaded = createDurabilityTracker();
+    reloaded.set(saved.instanceId, saved.state);
+    expect(reloaded.get(instanceId)).toEqual({ current: 0, max: 100 });
+    expect(isBroken(reloaded.get(instanceId)!)).toBe(true);
+    expect(reloaded.isDisabled(instanceId, sword)).toBe(true);
+    expect(reloaded.isDisabled(instanceId, { ...sword, disableAtZero: false })).toBe(false);
   });
 
   test("isBroken and isDisabled respect disableAtZero", () => {
@@ -75,6 +123,40 @@ describe("durability", () => {
     expect(quote!.state.current).toBe(70);
     expect(quote!.restored).toBe(30);
   });
+
+  for (const to of [Number.NaN, Infinity, -Infinity]) {
+    test(`repair rejects target ${to} without committing invalid state or material quantities`, () => {
+      const tracker = createDurabilityTracker();
+      const instanceId = "sword#1";
+      tracker.init(instanceId, sword);
+      tracker.wear(instanceId, sword, "use", 20);
+      const quote = repairQuote(sword, tracker.get(instanceId)!, { station: "anvil", to });
+      if (quote !== null) tracker.set(instanceId, quote.state);
+      expect(quote).toBeNull();
+      expect(tracker.get(instanceId)).toEqual({ current: 0, max: 100 });
+      expect(tracker.isDisabled(instanceId, sword)).toBe(true);
+
+      const saved = JSON.parse(JSON.stringify({ instanceId, state: tracker.get(instanceId) })) as {
+        instanceId: string;
+        state: DurabilityState;
+      };
+      expect(saved).toEqual({ instanceId: "sword#1", state: { current: 0, max: 100 } });
+      const reloaded = createDurabilityTracker();
+      reloaded.set(saved.instanceId, saved.state);
+      expect(reloaded.isDisabled(instanceId, sword)).toBe(true);
+      expect(reloaded.get(instanceId)).toEqual({ current: 0, max: 100 });
+
+      expect(repairQuote(sword, saved.state, { station: "campfire" })).toBeNull();
+      const valid = repairQuote(sword, saved.state, { station: "anvil", to: 40 });
+      expect(valid).toEqual({
+        materials: [{ item: "iron_ingot", count: 4 }],
+        restored: 40,
+        state: { current: 40, max: 96 },
+      });
+      reloaded.set(saved.instanceId, valid!.state);
+      expect(reloaded.isDisabled(instanceId, sword)).toBe(false);
+    });
+  }
 
   test("tracker stores per-instance state and reports disabled", () => {
     const tracker = createDurabilityTracker();
