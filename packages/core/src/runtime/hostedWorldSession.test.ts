@@ -7,7 +7,7 @@ import {
   createHostedWorldSession,
   memoryWorldStore,
   type HostedWorldSession,
-  type HostedWorldStore,
+  type SyncHostedWorldStore,
 } from "./hostedWorldSession";
 import type { GameContext, GameContextContent } from "./gameContext";
 
@@ -15,7 +15,7 @@ const CONTENT: GameContextContent = {
   entityById: (catalogId) => (catalogId === "mover" ? {} : null),
 };
 
-function session(opts: { store?: HostedWorldStore; now?: () => number; saveIntervalMs?: number } = {}): HostedWorldSession {
+function session(opts: { store?: SyncHostedWorldStore; now?: () => number; saveIntervalMs?: number } = {}): HostedWorldSession {
   return createHostedWorldSession({
     ...(opts.store === undefined ? {} : { store: opts.store }),
     ...(opts.now === undefined ? {} : { now: opts.now }),
@@ -30,6 +30,7 @@ function session(opts: { store?: HostedWorldStore; now?: () => number; saveInter
         },
         onNewPlayer(ctx: GameContext, player) {
           ctx.game.store.set("lastJoin", player!.userId);
+          ctx.game.store.set("lastNew", player!.isNew);
         },
         onTick(ctx: GameContext, dt) {
           const mover = ctx.scene.entity.get("mover");
@@ -42,6 +43,123 @@ function session(opts: { store?: HostedWorldStore; now?: () => number; saveInter
 }
 
 describe("hosted world session", () => {
+  test("malformed persisted receipts cannot silently reset deduplication", () => {
+    const store = memoryWorldStore({ revision: 1, snapshot: { hostSession: { players: ["alice"], operations: [["alice", [{ id: 1 }]]] } } });
+    expect(() => session({ store })).toThrow("Invalid hosted player/retry state");
+    expect(store.load()?.snapshot["hostSession"]).toEqual({ players: ["alice"], operations: [["alice", [{ id: 1 }]]] });
+  });
+
+  test("authoritative saves retain detached private state and identity without exposing it to clients", () => {
+    const store = memoryWorldStore();
+    const origin = session({ store });
+    origin.join("alice", true);
+    const ctx = origin.runner().context();
+    ctx.game.economy.grant("alice", "copper", 42);
+    ctx.time.advance(7);
+    origin.save();
+    ctx.game.economy.grant("alice", "copper", 10);
+    const saved = store.load()!;
+    const resumed = session({ store });
+    expect(resumed.runner().context().game.economy.balance("alice", "copper")).toBe(42);
+    expect(resumed.runner().context().time.now()).toBe(7);
+    expect(resumed.hasPlayer("alice")).toBe(true);
+    expect(resumed.snapshotFor({ userId: "bob" })).not.toHaveProperty("economy");
+    expect(resumed.snapshotFor({ userId: "bob" })).not.toHaveProperty("hostSession");
+    saved.snapshot["economy"] = {};
+    expect(session({ store }).runner().context().game.economy.balance("alice", "copper")).toBe(42);
+    resumed.join("alice", true);
+    expect(resumed.runner().context().game.store.get("lastNew")).toBe(false);
+    expect(resumed.revision()).toBeGreaterThan(origin.revision());
+  });
+
+  test("private clock changes auto-save even when replication does not change", () => {
+    const store = memoryWorldStore();
+    const s = createHostedWorldSession({
+      definition: defineGameDefinition({ name: "Clock", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: {}, store,
+    });
+    s.tick(1);
+    s.tick(1);
+    expect(createHostedWorldSession({
+      definition: defineGameDefinition({ name: "Clock", assets: createAssetCatalog(), multiplayer: "off" }),
+      content: {}, store,
+    }).runner().context().time.now()).toBe(2);
+  });
+
+  test("restart sends a baseline to stale cursors because removal history is not persisted", () => {
+    const store = memoryWorldStore();
+    const first = session({ store });
+    first.tick(1);
+    const cursor = first.revision();
+    first.runner().context().scene.entity.despawn("mover");
+    first.tick(1);
+    const resumed = session({ store });
+    const sync = resumed.pull(cursor);
+    expect(sync.kind).toBe("baseline");
+    if (sync.kind !== "baseline") throw new Error("expected restart baseline");
+    expect(sync.snapshot["entities"]).toEqual([]);
+  });
+
+  test("purchase receipts survive restart and partial failing commands roll back registered state", () => {
+    const store = memoryWorldStore();
+    const build = () => {
+      const s = session({ store });
+      s.runner().context().game.commands.define<{ amount: number }>("buy", {
+        apply(ctx, input) {
+          ctx.game.economy.charge("alice", "copper", input.amount);
+          ctx.game.store.set("purchases", Number(ctx.game.store.get("purchases") ?? 0) + 1);
+        },
+      });
+      s.runner().context().game.commands.define("broken", {
+        apply(ctx) {
+          ctx.game.economy.charge("alice", "copper", 10);
+          ctx.game.store.set("partial", true);
+          throw new Error("failed delivery");
+        },
+      });
+      return s;
+    };
+    const first = build();
+    first.runner().context().game.economy.grant("alice", "copper", 100);
+    expect(first.command("alice", "buy", { amount: 10 }, "purchase-1").status).toBe("applied");
+    first.save();
+    const resumed = build();
+    expect(resumed.command("alice", "buy", { amount: 10 }, "purchase-1").status).toBe("applied");
+    expect(resumed.command("alice", "buy", { amount: 20 }, "purchase-1")).toEqual({ status: "rejected", reason: "operation-conflict" });
+    expect(() => resumed.command("alice", "broken", {})).toThrow("failed delivery");
+    expect(resumed.runner().context().game.economy.balance("alice", "copper")).toBe(90);
+    expect(resumed.runner().context().game.store.get("purchases")).toBe(1);
+    expect(resumed.runner().context().game.store.get("partial")).toBeUndefined();
+  });
+
+  test("async saves serialize detached captures, report failures and can retry", async () => {
+    const records: number[] = [];
+    let finish!: () => void;
+    let writes = 0;
+    const s = session({ store: {
+      load: () => null,
+      async save(record) {
+        writes += 1;
+        if (writes === 1) await new Promise<void>((resolve) => { finish = resolve; });
+        if (writes === 3) throw new Error("disk unavailable");
+        records.push((record.snapshot["store"] as [string, number][]).find(([key]) => key === "amount")![1]);
+      },
+    } });
+    const ctx = s.runner().context();
+    ctx.game.store.set("amount", 1);
+    const first = s.save();
+    ctx.game.store.set("amount", 2);
+    const second = s.save();
+    expect(writes).toBe(1);
+    finish();
+    await Promise.all([first, second]);
+    expect(records).toEqual([1, 2]);
+    await expect(s.save()).rejects.toThrow("disk unavailable");
+    expect(s.persistenceError()).toBeInstanceOf(Error);
+    await s.save();
+    expect(s.persistenceError()).toBeNull();
+  });
+
   test("sync serves a baseline for a fresh client and a diff for a returning one", () => {
     const s = session();
     s.join("alice", true);

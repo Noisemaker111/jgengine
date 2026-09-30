@@ -145,6 +145,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
   let wantConnection = false;
   let nextId = 1;
   let nextOpId = 1;
+  const operationSession = crypto.randomUUID();
   let reconnectAttempt = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   const pending = new Map<number, PendingRequest>();
@@ -462,7 +463,7 @@ export function createWsBackend(options: WsBackendOptions): WsBackend {
       resumeTickets.delete(args.serverId);
     },
     async runCommand(args) {
-      const opId = String(nextOpId++);
+      const opId = `${operationSession}:${nextOpId++}`;
       try {
         const result = await request((id) => ({
           v: 1,

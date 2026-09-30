@@ -8,7 +8,7 @@ import type { WorldSnapshot } from "./worldSnapshot";
 
 /**
  * The narrow slice of a live `GameContext` a runtime save reads and writes — a
- * `GameContext` satisfies it directly (`ctx.snapshot`/`ctx.hydrate`/`ctx.subscribe`).
+ * `GameContext` satisfies it directly (`ctx.state`/`ctx.restore`/`ctx.subscribe`).
  * Depending on this instead of the full context keeps the save controller a deep,
  * decoupled module: it captures and restores the *whole* opted-in world without
  * knowing any subsystem.
@@ -16,6 +16,10 @@ import type { WorldSnapshot } from "./worldSnapshot";
 export interface RuntimeSaveTarget {
   snapshot(): WorldSnapshot;
   hydrate(snapshot: WorldSnapshot): void;
+  /** Complete authoritative capture when the target distinguishes persistence from replication. */
+  state?(): WorldSnapshot;
+  /** Authoritative inverse of `state`; used together with it instead of replication hydration. */
+  restore?(state: WorldSnapshot): void;
   subscribe(listener: () => void): () => void;
 }
 
@@ -49,8 +53,8 @@ export type RuntimeSaveOptions = Omit<RuntimeSaveConfig, "target">;
 
 /**
  * Whole-world save/load bound to a live world and a pluggable backend. `save()`
- * captures `target.snapshot()` and writes it; `load()` reads it back and
- * `target.hydrate()`s the whole world. In `autosave` mode it also writes on a
+ * captures `target.state()` and writes it; `load()` reads it back and
+ * calls `target.restore()`. Older targets use `snapshot()`/`hydrate()`. In `autosave` mode it also writes on a
  * trailing timer while the world keeps changing. Named slots, versioned migration, and offline↔cloud
  * (backend swap) all come for free from the underlying save store.
  */
@@ -129,7 +133,7 @@ export function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave {
 
   function persist(): Promise<void> {
     clearTimer();
-    store.set(config.target.snapshot());
+    store.set(config.target.state?.() ?? config.target.snapshot());
     return store.save();
   }
 
@@ -159,7 +163,8 @@ export function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave {
     if (!hasContent(snapshot)) return false;
     restoring = true;
     try {
-      config.target.hydrate(snapshot);
+      if (config.target.restore !== undefined) config.target.restore(snapshot);
+      else config.target.hydrate(snapshot);
     } finally {
       restoring = false;
     }

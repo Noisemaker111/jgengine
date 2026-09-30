@@ -15,12 +15,13 @@ import type {
 import { ConvexError, v } from "convex/values";
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContextContent, GameContextModels } from "@jgengine/core/runtime/gameContext";
-import { INPUT_COMMAND, type InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
+import { createHostedGameRunner, INPUT_COMMAND, type InputFrame } from "@jgengine/core/runtime/hostedGameRunner";
 import {
   createHostedWorldSessionAsync,
   type HostedWorldRecord,
   type HostedWorldSession,
   type HostedWorldStore,
+  type SyncHostedWorldStore,
 } from "@jgengine/core/runtime/hostedWorldSession";
 import type { WorldSnapshot } from "@jgengine/core/runtime/worldSnapshot";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
@@ -41,7 +42,7 @@ export interface HostedGameConfig {
  */
 export interface HostedWorldInvocation<T> {
   game: HostedGameConfig;
-  store: HostedWorldStore;
+  store: HostedWorldStore | SyncHostedWorldStore;
   members?: readonly string[];
   inputs?: Readonly<Record<string, InputFrame>>;
   now?: () => number;
@@ -76,7 +77,7 @@ export async function invokeHostedWorld<T>(invocation: HostedWorldInvocation<T>)
   for (const userId of members) session.runner().resume(userId);
   for (const [userId, frame] of Object.entries(inputs)) session.input(userId, frame);
   const value = op(session);
-  const snapshot = session.runner().snapshot();
+  const snapshot = session.runner().state();
   const baseRevision = loaded?.revision ?? 0;
   if (loadedJson !== null && JSON.stringify(snapshot) === loadedJson) {
     return { value, revision: baseRevision, changed: false, members: session.members() };
@@ -216,11 +217,15 @@ export function createHostedGameServerFunctions(options: {
       if (!row) return null;
       if (!row.memberUserIds.includes(actorUserId)) return null;
 
+      const game = resolveGame(row.gameId);
+      const runner = createHostedGameRunner({ ...game, restore: row.snapshot as WorldSnapshot });
+      for (const userId of row.memberUserIds) runner.resume(userId);
+
       return {
         serverId: row.serverId,
         gameId: row.gameId,
         revision: row.revision,
-        serverState: row.snapshot,
+        serverState: runner.snapshot({ userId: actorUserId }),
         memberUserIds: row.memberUserIds,
       };
     },
@@ -242,15 +247,17 @@ export function createHostedGameServerFunctions(options: {
       const game = resolveGame(args.gameId);
       const serverId = args.serverId ?? args.gameId;
       const row = await getWorldRow(ctx, args.gameId, serverId);
-      const isNew = !(row?.memberUserIds ?? []).includes(actorUserId);
-
       const { store, captured } = worldStoreForRow(row);
       const outcome = await invokeHostedWorld({
         game,
         store,
         members: row?.memberUserIds ?? [],
         inputs: heldInputsOf(row),
-        op: (session) => session.join(actorUserId, isNew),
+        op: (session) => {
+          const isNew = !session.hasPlayer(actorUserId) && !session.members().includes(actorUserId);
+          session.join(actorUserId, isNew);
+          return isNew;
+        },
       });
 
       await persistWorldRow(ctx, {
@@ -262,7 +269,7 @@ export function createHostedGameServerFunctions(options: {
         inputs: heldInputsOf(row),
       });
 
-      return { serverId, isNew };
+      return { serverId, isNew: outcome.value };
     },
   });
 

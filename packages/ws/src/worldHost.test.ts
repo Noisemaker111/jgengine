@@ -73,6 +73,83 @@ function channel<T>() {
 }
 
 describe("createWorldGameHost", () => {
+  test("failed persistence withholds a purchase event, then its retry saves and broadcasts once", async () => {
+    let failing = false;
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT, store: {
+      load: () => null,
+      async save() { if (failing) throw new Error("disk unavailable"); },
+    } });
+    const host = createWorldGameHost({ session: () => session });
+    await host.joinServer({ userId: "alice", gameId: "shared" });
+    const events: string[] = [];
+    host.subscribe((event) => events.push(event.type));
+    const ctx = session.runner().context();
+    ctx.game.economy.grant("alice", "copper", 100);
+    ctx.game.commands.define("buy", { apply(state) {
+      state.game.economy.charge("alice", "copper", 10);
+      state.game.store.set("delivered", true);
+    } });
+    const args = { userId: "alice", serverId: "shared", command: "buy", input: { __jgWsOpId: "retry-me" } };
+    failing = true;
+    await expect(host.runCommand(args)).rejects.toThrow("disk unavailable");
+    expect(events).toEqual([]);
+    failing = false;
+    expect(await host.runCommand(args)).toEqual({ ok: true });
+    expect(ctx.game.economy.balance("alice", "copper")).toBe(90);
+    expect(events).toEqual(["server"]);
+    expect(await host.runCommand(args)).toEqual({ ok: true });
+    expect(events).toEqual(["server"]);
+  });
+
+  test("concurrent joins resolve one world and wait for storage before broadcasting", async () => {
+    let release!: () => void;
+    let began!: () => void;
+    const started = new Promise<void>((resolve) => { began = resolve; });
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    let writes = 0;
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT, store: {
+      load: () => null,
+      async save() { writes += 1; if (writes === 1) { began(); await gate; } },
+    } });
+    let resolutions = 0;
+    const host = createWorldGameHost({ async session() { resolutions += 1; return session; } });
+    const events: string[] = [];
+    host.subscribe((event) => events.push(event.type));
+    const alice = host.joinServer({ userId: "alice", gameId: "shared" });
+    const bob = host.joinServer({ userId: "bob", gameId: "shared" });
+    await started;
+    expect(events).toEqual([]);
+    expect(resolutions).toBe(1);
+    expect(session.members()).toEqual(["alice"]);
+    host.tick(1);
+    expect(session.runner().context().time.now()).toBe(0);
+    release();
+    await Promise.all([alice, bob]);
+    expect(resolutions).toBe(1);
+    expect(session.members()).toEqual(["alice", "bob"]);
+    expect(events.filter((type) => type === "server")).toHaveLength(2);
+  });
+
+  test("concurrent purchase retries apply once and non-players cannot command the world", async () => {
+    const { host, session } = sharedHost();
+    await host.joinServer({ userId: "alice", gameId: "shared" });
+    await host.joinServer({ userId: "observer", gameId: "shared", role: "spectator" });
+    const ctx = session.runner().context();
+    ctx.game.economy.grant("alice", "copper", 100);
+    ctx.game.commands.define("buy", { apply(state) {
+      state.game.economy.charge(state.player.userId, "copper", 10);
+      state.game.store.set("deliveries", Number(state.game.store.get("deliveries") ?? 0) + 1);
+    } });
+    const command = { serverId: "shared", command: "buy", input: { __jgWsOpId: "client:1" } };
+    const results = await Promise.all([host.runCommand({ ...command, userId: "alice" }), host.runCommand({ ...command, userId: "alice" })]);
+    expect(results).toEqual([{ ok: true }, { ok: true }]);
+    expect(ctx.game.economy.balance("alice", "copper")).toBe(90);
+    expect(ctx.game.store.get("deliveries")).toBe(1);
+    for (const userId of ["stranger", "observer"]) {
+      expect(await host.runCommand({ ...command, userId })).toEqual({ ok: false, reason: "not-a-player" });
+    }
+  });
+
   test("serves the world snapshot as serverState and broadcasts on join/command/tick", async () => {
     const { host } = sharedHost();
     const events: string[] = [];

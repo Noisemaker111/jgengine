@@ -33,25 +33,47 @@ export interface WorldGameHost extends GameHost {
  */
 export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost {
   const live = new Map<string, { gameId: string; session: HostedWorldSession }>();
+  const loading = new Map<string, Promise<{ gameId: string; session: HostedWorldSession } | null>>();
+  const queues = new Map<string, Promise<unknown>>();
   const roles = new Map<string, Map<string, SnapshotViewer["role"]>>();
+  const announcedRevisions = new Map<string, number>();
   const listeners = new Set<(event: HostChangeEvent) => void>();
   const now = options.now ?? (() => Date.now());
 
   function emit(event: HostChangeEvent): void {
+    if (event.type === "server") {
+      const entry = live.get(event.serverId);
+      if (entry !== undefined) announcedRevisions.set(event.serverId, entry.session.revision());
+    }
     for (const listener of listeners) listener(event);
+  }
+
+  function enqueue<T>(serverId: string, operation: () => Promise<T>): Promise<T> {
+    const previous = queues.get(serverId) ?? Promise.resolve();
+    const run = previous.catch(() => {}).then(operation);
+    queues.set(serverId, run);
+    void run.catch(() => {}).finally(() => {
+      if (queues.get(serverId) === run) queues.delete(serverId);
+    });
+    return run;
   }
 
   function ensure(gameId: string, serverId: string): { gameId: string; session: HostedWorldSession } | Promise<{ gameId: string; session: HostedWorldSession } | null> | null {
     const existing = live.get(serverId);
-    if (existing !== undefined) return existing;
+    if (existing !== undefined) return existing.gameId === gameId ? existing : null;
+    const pending = loading.get(serverId);
+    if (pending !== undefined) return pending.then((entry) => entry?.gameId === gameId ? entry : null);
     const resolved = options.session({ gameId, serverId });
     if (resolved instanceof Promise) {
-      return resolved.then((session) => {
+      const pending = resolved.then((session) => {
         if (session === null) return null;
         const entry = { gameId, session };
         live.set(serverId, entry);
         return entry;
       });
+      loading.set(serverId, pending);
+      void pending.catch(() => {}).finally(() => loading.delete(serverId));
+      return pending;
     }
     if (resolved === null) return null;
     const entry = { gameId, session: resolved };
@@ -61,6 +83,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
 
   function tickAll(dtSeconds: number): void {
     for (const [serverId, entry] of live) {
+      if (queues.has(serverId)) continue;
       const before = entry.session.revision();
       entry.session.tick(dtSeconds);
       if (entry.session.revision() !== before) emit({ type: "server", serverId });
@@ -70,41 +93,50 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
   return {
     async joinServer({ userId, gameId, serverId, role }): Promise<JoinServerResult> {
       const id = serverId ?? gameId;
-      const pending = ensure(gameId, id);
-      const entry = pending instanceof Promise ? await pending : pending;
-      if (entry === null) throw new Error(`no hosted world for game "${gameId}"`);
-      const isNew = !entry.session.members().includes(userId);
-      let serverRoles = roles.get(id);
-      if (serverRoles === undefined) {
-        serverRoles = new Map();
-        roles.set(id, serverRoles);
-      }
-      serverRoles.set(userId, role ?? "player");
-      if (role !== "spectator") entry.session.join(userId, isNew);
-      emit({ type: "server", serverId: id });
-      emit({ type: "player", serverId: id, userId });
-      return { serverId: id, isNew };
+      return enqueue(id, async () => {
+        const pending = ensure(gameId, id);
+        const entry = pending instanceof Promise ? await pending : pending;
+        if (entry === null) throw new Error(`no hosted world for game "${gameId}"`);
+        const isNew = !entry.session.hasPlayer(userId);
+        let serverRoles = roles.get(id);
+        if (serverRoles === undefined) {
+          serverRoles = new Map();
+          roles.set(id, serverRoles);
+        }
+        serverRoles.set(userId, role ?? "player");
+        if (role !== "spectator") entry.session.join(userId, isNew);
+        await entry.session.save();
+        emit({ type: "server", serverId: id });
+        emit({ type: "player", serverId: id, userId });
+        return { serverId: id, isNew };
+      });
     },
     async leaveServer({ userId, serverId }): Promise<void> {
-      const entry = live.get(serverId);
-      if (entry === undefined) return;
-      if (entry.session.members().includes(userId)) entry.session.leave(userId);
-      roles.get(serverId)?.delete(userId);
-      emit({ type: "server", serverId });
+      return enqueue(serverId, async () => {
+        const entry = live.get(serverId);
+        if (entry === undefined) return;
+        if (entry.session.members().includes(userId)) entry.session.leave(userId);
+        roles.get(serverId)?.delete(userId);
+        await entry.session.save();
+        emit({ type: "server", serverId });
+      });
     },
     async runCommand({ userId, serverId, command, input }): Promise<TransportRunCommandResult> {
-      const entry = live.get(serverId);
-      if (entry === undefined) return { ok: false, reason: "no-server" };
-      if (command === INPUT_COMMAND) {
-        entry.session.input(userId, input as InputFrame);
+      return enqueue(serverId, async () => {
+        const entry = live.get(serverId);
+        if (entry === undefined) return { ok: false, reason: "no-server" };
+        if (!entry.session.members().includes(userId) || roles.get(serverId)?.get(userId) === "spectator") return { ok: false, reason: "not-a-player" };
+        if (command === INPUT_COMMAND) {
+          entry.session.input(userId, input as InputFrame);
+          return { ok: true };
+        }
+        const result = entry.session.command(userId, command, input);
+        await entry.session.save();
+        if (result.status === "rejected") return { ok: false, reason: result.reason };
+        if (result.status === "unknown-command") return { ok: false, reason: "unknown-command" };
+        if (entry.session.revision() !== announcedRevisions.get(serverId)) emit({ type: "server", serverId });
         return { ok: true };
-      }
-      const before = entry.session.revision();
-      const result = entry.session.command(userId, command, input);
-      if (result.status === "rejected") return { ok: false, reason: result.reason };
-      if (result.status === "unknown-command") return { ok: false, reason: "unknown-command" };
-      if (entry.session.revision() !== before) emit({ type: "server", serverId });
-      return { ok: true };
+      });
     },
     async isMember({ userId, serverId }): Promise<boolean> {
       return live.get(serverId)?.session.members().includes(userId) || roles.get(serverId)?.has(userId) === true;
@@ -158,7 +190,9 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
       return { ticked: live.size, saved: 0 };
     },
     async flushAll() {
-      return 0;
+      await Promise.allSettled([...queues.values()]);
+      await Promise.all([...live.values()].map((entry) => entry.session.save()));
+      return live.size;
     },
     start() {},
     async stop() {},
