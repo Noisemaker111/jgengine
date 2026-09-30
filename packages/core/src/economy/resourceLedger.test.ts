@@ -156,6 +156,78 @@ describe("resourceLedger catch-up policies", () => {
 });
 
 describe("resourceLedger reserve / depletion", () => {
+  test("delivers a tiny finite reserve once across JSON reload", () => {
+    const amount = 5e-10;
+    const input = addScheduledRule(createResourceLedger(), {
+      id: "vein",
+      currency: "ore",
+      amount,
+      everySeconds: 1,
+      startSeconds: 1,
+      recipient: "cart",
+      reserve: amount,
+    });
+
+    for (const ledger of [input, createResourceLedger(JSON.parse(JSON.stringify(input)))]) {
+      const res = advanceLedger(ledger, 1, { policies: [annotate("harvest")] });
+      expect(balanceOf(res.ledger, "cart", "ore")).toBe(amount);
+      expect(res.applied).toEqual([
+        {
+          ruleId: "vein",
+          currency: "ore",
+          amount,
+          source: undefined,
+          recipient: "cart",
+          cycleIndex: 0,
+          atSeconds: 1,
+          provenance: ["harvest"],
+        },
+      ]);
+      expect(res.ledger.rules).toEqual(input.rules);
+      expect(res.ledger.cursors.vein!.reserveRemaining).toBe(0);
+      expect(res.ledger.cursors.vein!.done).toBe(true);
+      expect(res.events.find((event) => event.kind === "depleted")?.detail).toBe(amount);
+
+      const restored = createResourceLedger(JSON.parse(JSON.stringify(res.ledger)));
+      const again = advanceLedger(restored, 2);
+      expect(again.applied).toEqual([]);
+      expect(balanceOf(again.ledger, "cart", "ore")).toBe(amount);
+    }
+  });
+
+  test("retains a tiny remainder for the next cycle after JSON reload", () => {
+    const unit = 2 ** -32;
+    const input = addScheduledRule(createResourceLedger(), {
+      id: "vein",
+      currency: "ore",
+      amount: 2 * unit,
+      everySeconds: 1,
+      startSeconds: 1,
+      recipient: "cart",
+      reserve: 3 * unit,
+    });
+    const first = advanceLedger(input, 1);
+    expect(balanceOf(first.ledger, "cart", "ore")).toBe(2 * unit);
+    expect(first.ledger.cursors.vein!.reserveRemaining).toBe(unit);
+    expect(first.ledger.cursors.vein!.done).toBe(false);
+    expect(first.events.some((event) => event.kind === "depleted")).toBe(false);
+
+    const restored = createResourceLedger(JSON.parse(JSON.stringify(first.ledger)));
+    const second = advanceLedger(restored, 2);
+    expect(second.applied.length).toBe(1);
+    expect(second.applied[0]!.amount).toBe(unit);
+    expect(second.applied[0]!.cycleIndex).toBe(1);
+    expect(balanceOf(second.ledger, "cart", "ore")).toBe(3 * unit);
+    expect(second.ledger.rules).toEqual(input.rules);
+    expect(second.ledger.cursors.vein!.reserveRemaining).toBe(0);
+    expect(second.ledger.cursors.vein!.done).toBe(true);
+
+    const depleted = createResourceLedger(JSON.parse(JSON.stringify(second.ledger)));
+    const again = advanceLedger(depleted, 3);
+    expect(again.applied).toEqual([]);
+    expect(balanceOf(again.ledger, "cart", "ore")).toBe(3 * unit);
+  });
+
   test("finite reserve depletes and marks the rule done", () => {
     let ledger = createResourceLedger();
     ledger = addScheduledRule(ledger, {
