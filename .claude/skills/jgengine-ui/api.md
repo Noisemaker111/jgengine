@@ -2271,7 +2271,7 @@
 
 ## @jgengine/shell/postfx/gradeShader
 
-- `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass (lift/gain/gamma, saturation, vignette, grain). Advance `uniforms.uTime.value` each frame to animate the grain.
+- `createGradePass` (function): function createGradePass(config: GradeConfig = {}): ShaderPass — Build the display-space colour-grade pass and load its optional LUT. Dispose the pass to release its LUT; advance `uniforms.uTime.value` each frame to animate grain.
 
 ## @jgengine/shell/postfx/postfxOverlay
 
