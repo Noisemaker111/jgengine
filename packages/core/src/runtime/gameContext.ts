@@ -642,10 +642,24 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       applyWorldSnapshot(replicationModules, snapshot);
       signal.notify();
     },
+    state: () => structuredClone(composeWorldSnapshot(saveModules)),
+    restore(state) {
+      applyWorldSnapshot(saveModules, structuredClone(state));
+      signal.notify();
+    },
     replicationVersion,
     replicatesPerViewer: () => projectsViewers,
   };
   ctxRef = ctx;
+  registerSave({
+    key: "sim",
+    snapshot: () => ctx.sim.snapshot(),
+    hydrate: (state) => ctx.sim.restore(state as ReturnType<GameContext["sim"]["snapshot"]>),
+    decode: (raw) => {
+      if (raw === null || typeof raw !== "object" || !("loop" in raw) || !("poses" in raw)) return null;
+      return raw;
+    },
+  });
 
   const physicsBackend = definition.physics?.backend;
   if (physicsBackend !== undefined) {
@@ -655,11 +669,8 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const saveOptions = resolveSaveOptions(definition, options);
   if (saveOptions !== undefined) {
     const saveTarget: RuntimeSaveTarget = {
-      snapshot: () => composeWorldSnapshot(saveModules),
-      hydrate: (snapshot) => {
-        applyWorldSnapshot(saveModules, snapshot);
-        signal.notify();
-      },
+      snapshot: ctx.state,
+      hydrate: ctx.restore,
       subscribe: signal.subscribe,
     };
     ctx.game.save = createRuntimeSave({ target: saveTarget, ...saveOptions });

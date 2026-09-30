@@ -2,6 +2,12 @@
 
 Single public authoring path: `defineGame({ systems, loop?, … })` from `@jgengine/shell/defineGame`. Systems are meaningful capabilities — not micro-ticks.
 
+## Authoritative state
+
+Use `ctx.state()` / `ctx.restore(state)` for detached whole-world persistence, including economy, clock, movement pose, possession, progression and registered system saves. These work without `persist` or a save backend. `ctx.snapshot()` / `ctx.hydrate()` remain client replication and omit save-only modules. `createRuntimeSave({ target: ctx, backend })` selects the authoritative pair automatically; existing snapshot-only targets still work.
+
+Restore after initialization has registered every system. Missing keys in older saves retain initialized values; unavailable historical economy/progression cannot be recovered by the engine. Keep a game's legacy migration until its older saves have been converted. Simulation tick and pose-buffer state persist, but callbacks, timers and game-owned closures must be registered/reconstructed at boot or exposed through a system save module.
+
 ## Portable XP and leveling
 
 `leveling` (`@jgengine/core/game/progression`) is usable without a scheduled

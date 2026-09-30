@@ -1,6 +1,6 @@
 import type { GameDefinition } from "@jgengine/core/game/defineGame";
 import type { GameContextContent, GameContextModels } from "@jgengine/core/runtime/gameContext";
-import { createHostedWorldSessionAsync, type HostedWorldSession } from "@jgengine/core/runtime/hostedWorldSession";
+import { createHostedWorldSessionAsync } from "@jgengine/core/runtime/hostedWorldSession";
 import type { ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import { createWorldGameHost, type WorldGameHost } from "@jgengine/ws/worldHost";
 import { memoryWorldPersistence, type WorldPersistence } from "./persistence";
@@ -35,7 +35,7 @@ export interface WorldGameServer {
   /** Stop the tick interval (idempotent). */
   stop(): void;
   /** Force-persist every live world's current state via the injected {@link WorldPersistence} (idempotent — safe to call repeatedly). */
-  flush(): void;
+  flush(): Promise<void>;
   /** Stop the tick loop, flush persistence, and tear down the ws server — the clean-shutdown path for a SIGINT/SIGTERM handler. */
   close(): Promise<void>;
   /** The bound ws port. */
@@ -54,8 +54,6 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
   } = options;
   const clock = options.now ?? (() => Date.now());
 
-  const liveSessions = new Map<string, HostedWorldSession>();
-
   const host = createWorldGameHost({
     now: clock,
     session: async ({ gameId, serverId }) => {
@@ -68,7 +66,6 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
         store: persistence.store({ gameId, serverId }),
         ...(resolved.models === undefined ? {} : { models: resolved.models }),
       });
-      liveSessions.set(serverId, session);
       return session;
     },
   });
@@ -89,7 +86,7 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
   }
 
   async function flush(): Promise<void> {
-    await Promise.all([...liveSessions.values()].map((session) => session.save()));
+    await host.flushAll();
   }
 
   return {
@@ -110,8 +107,7 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
     },
     async close() {
       stop();
-      await flush();
-      await ws.close();
+      try { await flush(); } finally { await ws.close(); }
     },
   };
 }

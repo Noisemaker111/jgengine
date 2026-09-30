@@ -33,6 +33,8 @@ or infer the next id from the surviving items.
 
 Prefer `defineSystem` and `defineGame({ systems })` for scheduled capabilities. Keep boot/join in the game loop only when it is truly lifecycle glue. System ordering, frequency, and serialization are explicit; avoid a giant per-frame callback.
 
+For whole-world saves, follow [authoritative state](reference-systems.md#authoritative-state); persistence and client replication use separate context methods.
+
 ## Design rules
 
 - Caller data owns nouns, formulas, tables, costs, tiers, and content.

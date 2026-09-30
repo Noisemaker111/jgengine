@@ -59,6 +59,23 @@ function runner(restore?: WorldSnapshot): HostedGameRunner {
 }
 
 describe("hosted game runner", () => {
+  test("scaled game time, pause and simulation cursor survive authoritative restore", () => {
+    const host = runner();
+    host.context().time.setSpeed(2);
+    host.tick(1);
+    expect(host.context().time.now()).toBe(2);
+    expect(host.context().scene.entity.get("mover")?.position[0]).toBe(2);
+    host.context().time.pause();
+    host.tick(1);
+    const saved = host.state();
+    const restored = runner(saved);
+    expect(restored.context().time.isPaused()).toBe(true);
+    expect(restored.context().sim.tick()).toBe(host.context().sim.tick());
+    restored.tick(1);
+    expect(restored.context().time.now()).toBe(2);
+    expect(restored.context().scene.entity.get("mover")?.position[0]).toBe(2);
+  });
+
   test("onInit runs once at construction", () => {
     const host = runner();
     expect(host.context().game.store.get("started")).toBe(true);
