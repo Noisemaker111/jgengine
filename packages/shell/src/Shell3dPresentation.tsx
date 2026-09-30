@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import {
   useMemo,
+  useEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -52,6 +53,7 @@ import { SettingsProvider, type SettingsActionView } from "@jgengine/react/setti
 
 import { resolveWorldSky } from "./worldSky";
 import { pointerAimFor, pointerContextMenu } from "./shellPointer";
+import { shellPointerInput } from "./shellPointerInput";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import type { AudioEngine } from "./audio/audioEngine";
 import { PostProcessing } from "./postfx/PostProcessing";
@@ -302,7 +304,29 @@ export function Shell3dPresentation({
   const isWorldPointerTarget = (event: { target: EventTarget | null }) =>
     event.target instanceof HTMLCanvasElement;
 
+  const pointerInput = useMemo(() => shellPointerInput(tracker, () => playControlsActive(ctx)), [tracker, ctx]);
+  useEffect(() => {
+    const clearGesture = () => { pointerDownRef.current = null; marqueeStartRef.current = null; setMarquee(null); };
+    const up = (event: PointerEvent) => {
+      pointerInput.up(event);
+      if (!(event.target instanceof Node) || !wrapperRef.current?.contains(event.target)) clearGesture();
+    };
+    const cancel = (event: PointerEvent) => { pointerInput.cancel(event.pointerId); clearGesture(); };
+    const blur = () => { pointerInput.cancel(); clearGesture(); };
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", cancel);
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", cancel);
+      window.removeEventListener("blur", blur);
+      pointerInput.cancel();
+    };
+  }, [pointerInput]);
+
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    pointerInput.down(event, isWorldPointerTarget(event));
+    if (!playControlsActive(ctx)) return;
     if (isWorldPointerTarget(event)) wrapperRef.current?.focus();
     trackPointerAxis(event);
     audioEngine.resume();
@@ -324,6 +348,8 @@ export function Shell3dPresentation({
   };
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const boundPointer = pointerInput.up(event);
+    if (!playControlsActive(ctx)) { pointerDownRef.current = null; marqueeStartRef.current = null; setMarquee(null); return; }
     if (event.button !== 0 || pointerDownRef.current === null) return;
     const start = pointerDownRef.current;
     pointerDownRef.current = null;
@@ -376,7 +402,7 @@ export function Shell3dPresentation({
       return;
     }
     const moved = (end.x - start.x) ** 2 + (end.y - start.y) ** 2;
-    if (moved <= PRIMARY_CLICK_MOVE_THRESHOLD_PX * PRIMARY_CLICK_MOVE_THRESHOLD_PX) primaryClickRef.current = true;
+    if (!boundPointer && moved <= PRIMARY_CLICK_MOVE_THRESHOLD_PX * PRIMARY_CLICK_MOVE_THRESHOLD_PX) primaryClickRef.current = true;
   };
 
   const handleContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {

@@ -5,7 +5,7 @@ import { gamePhase } from "../game/gamePhase";
 import { defineStore } from "../store/defineStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { applyWorldDiff } from "./worldReplication";
-import { createHostedGameRunner, type HostedGameRunner } from "./hostedGameRunner";
+import { createHostedGameRunner, type HostedGameRunner, type InputFrame } from "./hostedGameRunner";
 import type { GameContext, GameContextContent } from "./gameContext";
 import type { WorldSnapshot } from "./worldSnapshot";
 
@@ -59,6 +59,31 @@ function runner(restore?: WorldSnapshot): HostedGameRunner {
 }
 
 describe("hosted game runner", () => {
+  test("neutral-before-down admits one press, keeps movement neutral and rejects repeated or older press identities", () => {
+    const seen: InputFrame[] = [];
+    const game = defineGameDefinition({ name: "hosted-tap", assets: createAssetCatalog(), features: { players: true }, simulation: { hz: 60 }, loop: { onTick(ctx) { const input = ctx.game.players?.input("alice"); if (input) seen.push(input); } } });
+    const host = createHostedGameRunner({ definition: game, content: {} });
+    host.join("alice", true);
+    const press = { action: "fire", seq: 100 };
+    host.input("alice", { held: [], pointer: null, presses: [press], seq: 2 } as never);
+    host.input("alice", { held: ["fire"], pointer: null, presses: [press], seq: 1 } as never);
+    host.tick(1 / 60);
+    expect(seen.at(-1)).toMatchObject({ held: [], presses: [press] });
+    host.input("alice", { held: [], pointer: null, presses: [press], seq: 3 } as never);
+    host.tick(1 / 60);
+    expect(seen.at(-1)?.presses ?? []).toEqual([]);
+    host.leave("alice"); host.join("alice", false);
+    host.input("alice", { held: ["fire"], pointer: null, presses: [press], seq: 1 } as never);
+    expect(host.heldInput("alice")).toBeNull();
+    host.input("alice", { held: [], pointer: null, presses: [press], seq: 4 } as never);
+    host.tick(1 / 60);
+    expect(seen.at(-1)?.presses ?? []).toEqual([]);
+    host.input("alice", { held: [], pointer: null, presses: [{ action: "fire", seq: 101 }], seq: 5 } as never);
+    host.tick(1 / 60);
+    expect(seen.at(-1)?.presses).toEqual([{ action: "fire", seq: 101 }]);
+    host.tick(1 / 60);
+    expect(seen.at(-1)?.presses).toBeUndefined();
+  });
   test("scaled game time, pause and simulation cursor survive authoritative restore", () => {
     const host = runner();
     host.context().time.setSpeed(2);

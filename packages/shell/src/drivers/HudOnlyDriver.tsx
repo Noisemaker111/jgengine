@@ -57,7 +57,7 @@ export function HudOnlyDriver({
         resolveInputSink({ serverAuthoritative, backend: multiplayer?.backend ?? null, serverId: serverIdRef.current }).send(frame);
       };
       if (gateRef.current || !playControlsActive(ctx)) {
-        ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
+        ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS), { reset: true });
         ctx.input.publishAnalog(null);
         sendInput();
         return;
@@ -67,11 +67,12 @@ export function HudOnlyDriver({
       try {
         let endPhase = devtools.profile.begin("time+input");
         const dt = Math.min(rawDt, 0.05);
-        ctx.input.publish(heldActionsFor(tracker, tracker.actions()));
+        ctx.input.publish(heldActionsFor(tracker, tracker.actions()), {});
         ctx.input.publishPointer(pointerAxisRef.current);
         sendInput();
         endPhase();
         if (!serverAuthoritative) ctx.sim.advance(dt, (stepDt, _tick, gameDt) => {
+          ctx.input.beginStep();
           ctx.sim.runStages("beforeMovement", stepDt);
           ctx.sim.runStages("afterMovement", stepDt);
           devtools.profile.measure("onTick", () => {

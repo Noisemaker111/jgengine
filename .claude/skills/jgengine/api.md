@@ -426,7 +426,7 @@
 - `HostedGameRunner` (interface): interface HostedGameRunner — The GameContext-loop equivalent of the pure-reducer `createGameHost`: one authoritative `createGameContext` per world, driven server-side. `onInit` runs once at construction; `onNewPlayer`/`onPlayerLeave` fire per join/leave; `tick` advances `onTick` then commits a revision. Clients pull a full {@link WorldSnapshot} baseline once, then per-tick {@link WorldDiff}s from their last revision. Games ship only normal GameContext code — the runner adds no per-game surface.
 - `HostedGameRunnerOptions` (interface): interface HostedGameRunnerOptions<TAssetRef extends ModelAssetRef, TMultiplayer> — Config for {@link createHostedGameRunner}: the game definition, its content lookup, and an optional host identity.
 - `INPUT_COMMAND` (const): const INPUT_COMMAND: "engine.input" — Reserved command name the authoritative host intercepts on the existing `runCommand` transport to route a client's {@link InputFrame} to `session.input`, so per-tick input needs no separate wire.
-- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
+- `InputFrame` (interface): interface InputFrame — One client's serializable held state and discrete edges for a simulation tick.
 
 ## @jgengine/core/runtime/hostedWorldSession
 
@@ -454,8 +454,9 @@
 
 ## @jgengine/core/runtime/inputSnapshot
 
-- `InputFrame` (interface): interface InputFrame — One client's input for a tick — the semantic held-action set plus pointer state, the serializable, over-the-wire counterpart of {@link InputSnapshot} the host stores per connected player.
-- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; haptics(userId: string): HapticChannels; publish(held: readonly string[]): void; publishPointer(state: PointerAxisState | null): void; publishA… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
+- `InputFrame` (interface): interface InputFrame — One client's serializable held state and discrete edges for a simulation tick.
+- `InputPress` (interface): interface InputPress — One discrete press, identified across retransmitted live input frames.
+- `InputSnapshot` (interface): interface InputSnapshot { rumble(userId: string, options: {strong: number; weak: number; ms: number}): Promise<boolean>; haptics(userId: string): HapticChannels; publish(held: readonly string[], edges?: {pressed?: readonly string[]; reset?: boolean}): void; beginS… — ⚠ undocumented · used by `GamepadSource` (@jgengine/shell/input/gamepadSource): Poll browser gamepads and feed semantic actions into the shell tracker.
 - `createInputSnapshot` (function): function createInputSnapshot(): InputSnapshot — ⚠ undocumented
 
 ## @jgengine/core/runtime/localPlayers

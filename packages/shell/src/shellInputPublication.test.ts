@@ -21,6 +21,27 @@ function fixture() {
   return { ctx, tracker, frames, analogRef, attach, detachSuspension };
 }
 
+test("a native down/up tap survives render starvation as one local press and an immutable wire identity", () => {
+  const f = fixture(); const detach = f.attach();
+  f.tracker.handleDown("KeyW");
+  const down = f.frames.at(-1)!.frame;
+  expect(down.presses).toHaveLength(1);
+  f.tracker.handleDown("KeyW");
+  expect(f.frames.at(-1)!.frame).toBe(down);
+  f.tracker.handleUp("KeyW");
+  f.ctx.input.beginStep();
+  expect(f.ctx.input.isDown("moveForward")).toBe(false);
+  expect(f.ctx.input.justPressed("moveForward")).toBe(true);
+  f.ctx.input.beginStep();
+  expect(f.ctx.input.justPressed("moveForward")).toBe(false);
+  f.tracker.handleDown("KeyW");
+  expect(f.frames.at(-1)!.frame.presses![0]!.seq).toBeGreaterThan(down.presses![0]!.seq);
+  detach();
+  f.ctx.input.beginStep();
+  expect(f.ctx.input.justPressed("moveForward")).toBe(false);
+  f.detachSuspension();
+});
+
 test("native tracker release and a failure lease publish neutral without any render frame", () => {
   const f = fixture(); const detach = f.attach();
   f.tracker.handleDown("KeyW");

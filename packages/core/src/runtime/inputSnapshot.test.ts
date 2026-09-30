@@ -2,6 +2,22 @@ import { describe, expect, test } from "bun:test";
 
 import { createInputSnapshot } from "@jgengine/core/runtime/inputSnapshot";
 
+test("released taps survive zero-step frames and are sampled on only one simulation step", () => {
+  const input = createInputSnapshot();
+  input.publish(["fire"], { pressed: ["fire"] });
+  input.publish([], {});
+  input.publish([], {});
+  input.beginStep();
+  expect(input.isDown("fire")).toBe(false);
+  expect(input.justPressed("fire")).toBe(true);
+  input.beginStep();
+  expect(input.justPressed("fire")).toBe(false);
+  input.publish(["fire"], { pressed: ["fire"] });
+  input.publish([], { reset: true });
+  input.beginStep();
+  expect(input.justPressed("fire")).toBe(false);
+});
+
 describe("createInputSnapshot", () => {
   test("publish replaces the held-action set", () => {
     const input = createInputSnapshot();

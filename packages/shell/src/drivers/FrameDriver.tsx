@@ -168,7 +168,7 @@ export function FrameDriver({
       inputSink.send(frame);
     };
     if (gateRef.current || !playControlsActive(ctx)) {
-      ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS));
+      ctx.input.publish(heldActionsFor(tracker, NO_ACTIONS), { reset: true });
       ctx.input.publishAnalog(null);
       sendInput();
       return;
@@ -177,7 +177,7 @@ export function FrameDriver({
     try {
     let endPhase = devtools.profile.begin("time+input");
     const dt = Math.min(rawDt, 0.05);
-    ctx.input.publish(heldActionsFor(tracker, tracker.actions()));
+    ctx.input.publish(heldActionsFor(tracker, tracker.actions()), {});
     ctx.input.publishPointer(pointerAxisRef.current);
     ctx.input.publishAnalog(analogRef.current);
     sendInput();
@@ -187,6 +187,7 @@ export function FrameDriver({
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
     ctx.sim.advance(dt, (stepDt, _tick, gameDt) => {
+      ctx.input.beginStep();
       if (!serverAuthoritative) ctx.sim.runStages("beforeMovement", stepDt);
       const player = ctx.scene.entity.get(playerId);
       // Server-authoritative sessions still run the deterministic local step as a prediction; the

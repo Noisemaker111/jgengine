@@ -91,6 +91,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   const latestInputs = new Map<string, InputFrame>();
   const movementTuning = resolvePlayerMovementTuning({ world: definition.world, physics: definition.physics });
   const inputSeq = new Map<string, number>();
+  const inputPressSeq = new Map<string, number>();
   let hostTick = 0;
 
   loop.onInit?.(ctx);
@@ -118,7 +119,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
       members.delete(userId);
       inputs.delete(userId);
       latestInputs.delete(userId);
-      inputSeq.delete(userId);
+      // A reconnect must not admit delayed input from the departed client.
       loop.onPlayerLeave?.(ctx, player);
       ctx.game.players?.leave(userId);
     },
@@ -134,8 +135,19 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
         recorder = createInputRecorder();
         inputs.set(userId, recorder);
       }
-      recorder.record(frame.tick ?? ctx.sim.tick() + 1, frame);
-      latestInputs.set(userId, frame);
+      let admitted = frame;
+      if (frame.presses !== undefined) {
+        let lastPress = inputPressSeq.get(userId) ?? -Infinity;
+        const presses = [...frame.presses].sort((a, b) => a.seq - b.seq).filter(press => {
+          if (!Number.isFinite(press.seq) || press.seq <= lastPress) return false;
+          lastPress = press.seq;
+          return true;
+        });
+        if (presses.length > 0) inputPressSeq.set(userId, lastPress);
+        admitted = { ...frame, presses };
+      }
+      recorder.record(frame.tick ?? ctx.sim.tick() + 1, admitted);
+      latestInputs.set(userId, admitted);
     },
     heldInput(userId) {
       return latestInputs.get(userId) ?? null;
