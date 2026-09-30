@@ -81,7 +81,8 @@ export interface TechTree {
 export function createTechTree(defs: readonly TechNodeDef[] = []): TechTree {
   const nodes = new Map<string, TechNodeDef>();
   for (const def of defs) nodes.set(def.id, def);
-  const unlocks = createUnlocks(defs.map((d) => ({ id: d.id, category: d.category })));
+  const definitions = Array.from(nodes.values());
+  const unlocks = createUnlocks(definitions.map((d) => ({ id: d.id, category: d.category })));
 
   function stateOf(userId: string): TechState {
     return unlocks.list(userId);
@@ -89,19 +90,19 @@ export function createTechTree(defs: readonly TechNodeDef[] = []): TechTree {
 
   return {
     has: (userId, id) => unlocks.has(userId, id),
-    canUnlock: (userId, id) => canUnlockTech(defs, stateOf(userId), id),
+    canUnlock: (userId, id) => canUnlockTech(definitions, stateOf(userId), id),
     unlock(userId, id) {
-      const check = canUnlockTech(defs, stateOf(userId), id);
+      const check = canUnlockTech(definitions, stateOf(userId), id);
       if (!check.ok) return check;
       const node = nodes.get(id)!;
       unlocks.grant(userId, node.id);
       for (const extra of node.grants ?? []) unlocks.grant(userId, extra);
       return { ok: true };
     },
-    available: (userId) => availableTech(defs, stateOf(userId)),
-    recipes: (userId) => unlockedRecipes(defs, stateOf(userId)),
+    available: (userId) => availableTech(definitions, stateOf(userId)),
+    recipes: (userId) => unlockedRecipes(definitions, stateOf(userId)),
     list: (userId) => unlocks.list(userId),
-    tree: (categoryId) => unlockTree(defs, categoryId),
+    tree: (categoryId) => unlockTree(definitions, categoryId),
     node: (id) => nodes.get(id) ?? null,
     snapshot: (userId) => unlocks.snapshot(userId),
     hydrate: (userId, ids) => unlocks.hydrate(userId, ids),
