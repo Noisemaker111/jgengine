@@ -247,4 +247,80 @@ describe("createInventorySet", () => {
     expect(inventories.state("toolbelt").slots[1]).toEqual({ itemId: "sword", count: 1 });
     expect(inventories.state("toolbelt").slots[0]).toBeNull();
   });
+
+  test("rejects invalid moves without changing a saved inventory after reload", () => {
+    const inventories = createInventorySet({ backpack: backpackLayout }, traits);
+    inventories.put("backpack", "stone", 10.5);
+    const saved = JSON.stringify(inventories.state("backpack"));
+    const reloaded = createInventorySet({ backpack: backpackLayout }, traits);
+    reloaded.replaceState("backpack", JSON.parse(saved));
+
+    expect(reloaded.move("backpack", Number.NaN, "backpack", 1)).toEqual({ status: "rejected", reason: "invalid-slot" });
+    expect(reloaded.move("backpack", 0, "backpack", 0.5)).toEqual({ status: "rejected", reason: "invalid-slot" });
+    expect(JSON.stringify(reloaded.state("backpack"))).toBe(saved);
+    expect(reloaded.count("backpack", "stone")).toBe(10.5);
+    expect(reloaded.move("backpack", 0, "backpack", 1).status).toBe("ok");
+    expect(reloaded.state("backpack").slots).toEqual([null, { itemId: "stone", count: 10.5 }, null]);
+  });
+});
+
+describe("invalid inventory inputs", () => {
+  const invalidIndices = [Number.NaN, Infinity, -Infinity, -1, 0.5, 3];
+
+  test("rejects non-integer and out-of-range put slots without mutation", () => {
+    const state: InventoryState = { slots: [{ itemId: "stone", count: 10 }, null, null] };
+    const saved = JSON.stringify(state);
+    for (const slot of invalidIndices) {
+      expect(putItem(state, backpackLayout, traits, "stone", 1, { slot })).toEqual({ status: "rejected", reason: "invalid-slot" });
+      expect(JSON.stringify(state)).toBe(saved);
+    }
+  });
+
+  test("rejects invalid move sources and targets in the same or another inventory", () => {
+    const from: InventoryState = { slots: [{ itemId: "stone", count: 10 }, null, null] };
+    const to = createEmptyInventory(backpackLayout);
+    const saved = JSON.stringify({ from, to });
+    for (const slot of invalidIndices) {
+      expect(moveItem(from, slot, to, backpackLayout, traits, 1)).toEqual({ status: "rejected", reason: "invalid-slot" });
+      expect(moveItem(from, 0, to, backpackLayout, traits, slot)).toEqual({ status: "rejected", reason: "invalid-slot" });
+      expect(moveItem(from, 0, from, backpackLayout, traits, slot)).toEqual({ status: "rejected", reason: "invalid-slot" });
+      expect(JSON.stringify({ from, to })).toBe(saved);
+    }
+  });
+
+  test("rejects invalid split sources and targets without mutation", () => {
+    const state: InventoryState = { slots: [{ itemId: "stone", count: 10 }, null, null] };
+    const saved = JSON.stringify(state);
+    for (const slot of invalidIndices) {
+      expect(splitStack(state, slot, 2, 1)).toEqual({ status: "rejected", reason: "invalid-slot" });
+      expect(splitStack(state, 0, 2, slot)).toEqual({ status: "rejected", reason: "invalid-slot" });
+      expect(JSON.stringify(state)).toBe(saved);
+    }
+  });
+
+  test("rejects non-finite split amounts before corrupt counts can be saved", () => {
+    const state: InventoryState = { slots: [{ itemId: "stone", count: 10 }, null, null] };
+    const saved = JSON.stringify(state);
+    for (const amount of [Number.NaN, Infinity, -Infinity]) {
+      expect(splitStack(state, 0, amount)).toEqual({ status: "rejected", reason: "invalid-amount" });
+      expect(splitStack(state, 0, amount, 1)).toEqual({ status: "rejected", reason: "invalid-amount" });
+      expect(JSON.stringify(state)).toBe(saved);
+    }
+  });
+
+  test("preserves fractional quantities through split, merge and JSON reload", () => {
+    const state: InventoryState = { slots: [{ itemId: "stone", count: 10.5 }, { itemId: "stone", count: 5 }, null] };
+    const split = splitStack(state, 0, 2.5, 1);
+    expect(split.status).toBe("ok");
+    if (split.status !== "ok") throw new Error("valid split rejected");
+    const reloaded: InventoryState = JSON.parse(JSON.stringify(split.state));
+    expect(reloaded.slots).toEqual([{ itemId: "stone", count: 8 }, { itemId: "stone", count: 7.5 }, null]);
+    expect(countItem(reloaded, "stone")).toBe(15.5);
+    const moved = moveItem(reloaded, 0, reloaded, backpackLayout, traits, 1);
+    expect(moved.status).toBe("ok");
+    if (moved.status !== "ok") throw new Error("valid move rejected");
+    expect(moved.to.slots).toEqual([null, { itemId: "stone", count: 15.5 }, null]);
+    expect(countItem(moved.to, "stone")).toBe(15.5);
+    expect(state.slots[0]).toEqual({ itemId: "stone", count: 10.5 });
+  });
 });
