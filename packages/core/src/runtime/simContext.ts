@@ -1,4 +1,5 @@
 import type { EntityStore } from "../scene/entityStore";
+import type { SimClock } from "../time/simClock";
 import { createPoseHistory, type PoseHistory, type RenderPose } from "./poseInterpolation";
 import { createSimLoop, type SimAdvanceResult, type SimLoop, type SimulationConfig } from "./simLoop";
 
@@ -25,8 +26,8 @@ export interface SimContextState {
  */
 export interface SimContext {
   readonly loop: SimLoop;
-  /** Advance the loop; `body` runs once per simulation step with that step's dt. Pose history is captured before each step. */
-  advance(realDt: number, body: (dt: number, tick: number) => void): SimAdvanceResult;
+  /** Advance simulation and its game clock once per step. The callback receives real dt, tick and scaled game dt. Prediction can opt out of clock advancement. */
+  advance(realDt: number, body: (dt: number, tick: number, gameDt: number) => void, options?: { advanceTime?: boolean }): SimAdvanceResult;
   tick(): number;
   /** Interpolation fraction for the current frame, 1 on a variable loop. */
   alpha(): number;
@@ -44,7 +45,7 @@ export interface SimContext {
 }
 
 /** Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`. */
-export function createSimContext(options: { config?: SimulationConfig; entities: EntityStore }): SimContext {
+export function createSimContext(options: { config?: SimulationConfig; entities: EntityStore; time?: Pick<SimClock, "advance"> }): SimContext {
   const { entities } = options;
   const loop = createSimLoop(options.config);
   const poses = createPoseHistory({ snapDistance: loop.config().snapDistance });
@@ -53,13 +54,14 @@ export function createSimContext(options: { config?: SimulationConfig; entities:
 
   return {
     loop,
-    advance(realDt, body) {
+    advance(realDt, body, stepOptions) {
       if (advancing) throw new Error("ctx.sim.advance is not reentrant");
       advancing = true;
       try {
         return loop.advance(realDt, (dt, tick) => {
           if (loop.isFixed()) poses.beginStep(entities);
-          body(dt, tick);
+          const gameDt = stepOptions?.advanceTime === false ? 0 : options.time?.advance(dt) ?? dt;
+          body(dt, tick, gameDt);
         });
       } finally {
         advancing = false;

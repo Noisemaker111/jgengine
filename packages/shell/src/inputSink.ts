@@ -18,13 +18,18 @@ interface RemoteInputSource {
   inFlight: boolean;
 }
 
-const remoteInputSources = new Map<string, RemoteInputSource>();
+const remoteInputSources = new WeakMap<LiveGameBackend["transport"], Map<string, RemoteInputSource>>();
 
-function remoteInputSourceFor(serverId: string): RemoteInputSource {
-  let source = remoteInputSources.get(serverId);
+function remoteInputSourceFor(backend: Pick<LiveGameBackend, "transport">, serverId: string): RemoteInputSource {
+  let sources = remoteInputSources.get(backend.transport);
+  if (sources === undefined) {
+    sources = new Map();
+    remoteInputSources.set(backend.transport, sources);
+  }
+  let source = sources.get(serverId);
   if (source === undefined) {
     source = { pending: null, inFlight: false };
-    remoteInputSources.set(serverId, source);
+    sources.set(serverId, source);
   }
   return source;
 }
@@ -41,7 +46,7 @@ function pumpRemoteInput(
   if (source.inFlight) return;
   const frame = source.pending;
   if (frame === null) {
-    remoteInputSources.delete(serverId);
+    remoteInputSources.get(backend.transport)?.delete(serverId);
     return;
   }
   source.pending = null;
@@ -73,7 +78,7 @@ function pumpRemoteInput(
 export function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, serverId: string): InputSink {
   return {
     send(frame) {
-      const source = remoteInputSourceFor(serverId);
+      const source = remoteInputSourceFor(backend, serverId);
       source.pending = frame;
       pumpRemoteInput(backend, serverId, source);
     },

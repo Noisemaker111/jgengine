@@ -28,6 +28,7 @@ export function ShellHudPresentation({
   playable,
   ctx,
   multiplayer,
+  serverIdRef,
   tracker,
   pointerAxisRef,
   gateRef,
@@ -53,6 +54,7 @@ export function ShellHudPresentation({
   playable: PlayableGame;
   ctx: GameContext;
   multiplayer: ShellMultiplayer | null;
+  serverIdRef: MutableRefObject<string | null>;
   tracker: ActionStateTracker<string>;
   pointerAxisRef: MutableRefObject<PointerAxisState | null>;
   gateRef: MutableRefObject<boolean>;
@@ -111,6 +113,8 @@ export function ShellHudPresentation({
       <GameViewportProvider platforms={playable.platforms}>
         <HudOnlyDriver
           ctx={ctx}
+          multiplayer={multiplayer}
+          serverIdRef={serverIdRef}
           playable={playable}
           tracker={tracker}
           pointerAxisRef={pointerAxisRef}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { AxisChannel, type AxisChannelConfig } from "@jgengine/core/input/axisInput";
 import { createMarkerSet, type MarkerSet } from "@jgengine/core/world/markers";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { dispatchCommand, type DispatchedCommandResult } from "@jgengine/core/runtime/commandDispatch";
 import type { AbilityKit, AbilitySlotSnapshot } from "@jgengine/core/combat/abilityKit";
 import type { EventMeter } from "@jgengine/core/stats/eventMeter";
 import type { GameEvents } from "@jgengine/core/game/events";
@@ -69,9 +70,10 @@ export function useGameStoreValue<T>(key: string, fallback: T): T {
   return useGameStore((ctx) => (ctx.game.store.get(key) as T | undefined) ?? fallback);
 }
 
-export function useGame(): { commands: GameContext["game"]["commands"]; events: GameEvents } {
+/** UI command surface. Hosted commands return a promise; await it to display acknowledgement or rejection. Registration and runAs remain trusted local APIs. */
+export function useGame(): { commands: Omit<GameContext["game"]["commands"], "run"> & { run(name: string, input: unknown): DispatchedCommandResult }; events: GameEvents } {
   const ctx = useGameContext();
-  return useMemo(() => ({ commands: ctx.game.commands, events: ctx.game.events }), [ctx]);
+  return useMemo(() => ({ commands: { ...ctx.game.commands, run: (name: string, input: unknown) => dispatchCommand(ctx, name, input) }, events: ctx.game.events }), [ctx]);
 }
 
 export function usePlayer(): { userId: string; isNew: boolean } {

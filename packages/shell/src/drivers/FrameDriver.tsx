@@ -186,9 +186,8 @@ export function FrameDriver({
     endPhase();
 
     const playerId = ctx.player.possession.active(ctx.player.userId);
-    ctx.sim.advance(dt, (stepDt) => {
-      const gameDt = ctx.time.advance(stepDt);
-      ctx.sim.runStages("beforeMovement", stepDt);
+    ctx.sim.advance(dt, (stepDt, _tick, gameDt) => {
+      if (!serverAuthoritative) ctx.sim.runStages("beforeMovement", stepDt);
       const player = ctx.scene.entity.get(playerId);
       // Server-authoritative sessions still run the deterministic local step as a prediction; the
       // replicated pose is the confirmation that the transport reconciles on the next world diff.
@@ -229,7 +228,7 @@ export function FrameDriver({
           );
         }
       }
-      ctx.sim.runStages("afterMovement", stepDt);
+      if (!serverAuthoritative) ctx.sim.runStages("afterMovement", stepDt);
 
       if (autoPickupRadius !== null && !serverAuthoritative) {
         const endPickup = devtools.profile.begin("pickup");
@@ -247,16 +246,16 @@ export function FrameDriver({
         });
         advanceBehaviors(ctx, gameDt);
       }
-      ctx.sim.runStages("afterTick", stepDt);
-    });
+      if (!serverAuthoritative) ctx.sim.runStages("afterTick", stepDt);
+    }, { advanceTime: !serverAuthoritative });
 
     endPhase = devtools.profile.begin("actions");
     if (tracker.wasPressed("tabTarget")) {
-      if (ctx.game.commands.has("target.cycle")) ctx.game.commands.run("target.cycle", {});
+      if (ctx.game.commands.has("target.cycle")) commandSink.run("target.cycle", {});
       else ctx.scene.entity.cycleTarget(playerId, { filter: "hostile" });
     }
     if (tracker.wasPressed("clearTarget")) {
-      if (ctx.game.commands.has("target.clear")) ctx.game.commands.run("target.clear", {});
+      if (ctx.game.commands.has("target.clear")) commandSink.run("target.clear", {});
       else ctx.scene.entity.setTarget(playerId, null);
     }
     if (pingCommand !== undefined && tracker.wasPressed("ping")) {

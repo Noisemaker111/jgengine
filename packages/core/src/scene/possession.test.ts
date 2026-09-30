@@ -5,6 +5,20 @@ import { createEntityStore } from "./entityStore";
 import { createPossession } from "./possession";
 
 describe("possession", () => {
+  test("unique actor lookup survives restore and refuses shared attribution without creating owners", () => {
+    const possession = createPossession({ entities: createEntityStore() });
+    expect(possession.ownerOf("missing")).toBeUndefined();
+    expect(possession.snapshotAll().owned).toEqual({});
+    possession.own("bob", "pawn");
+    const saved = possession.snapshotAll();
+    possession.own("alice", "pawn");
+    expect(possession.ownerOf("pawn")).toBeUndefined();
+    possession.disown("alice", "pawn");
+    expect(possession.ownerOf("pawn")).toBe("bob");
+    possession.hydrateAll(saved);
+    expect(possession.ownerOf("pawn")).toBe("bob");
+    expect(possession.ownerOf("alice")).toBeUndefined();
+  });
   test("active defaults to the userId when nothing has been possessed", () => {
     const entities = createEntityStore();
     const possession = createPossession({ entities });

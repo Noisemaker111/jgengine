@@ -45,6 +45,6 @@ describe("command sink", () => {
     resolveCommandSink(ctx, { serverAuthoritative: true, backend, serverId: null }).run("d", 4);
 
     expect(remote).toEqual([{ serverId: "s1", command: "a", input: 1 }]);
-    expect(local).toEqual([["b", 2], ["c", 3], ["d", 4]]);
+    expect(local).toEqual([["b", 2]]);
   });
 });

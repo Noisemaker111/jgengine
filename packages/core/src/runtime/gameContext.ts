@@ -317,11 +317,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     lootRegistry,
     spawnWorldItem,
     despawnEntity,
-    runCommand(name, args) {
+    runCommand(name, args, actorUserId) {
       if (ctxRef === null) return;
-      commandRegistry.run(ctxRef, name, args);
+      if (actorUserId === undefined) ctxRef.game.commands.run(name, args);
+      else ctxRef.game.commands.runAs(actorUserId, name, args);
     },
-    localUserId: player.userId,
+    userIdOf: (instanceId) => instanceId === player.userId || featureValue<import("../game/connectedPlayers").ConnectedPlayers>("players")?.has(instanceId)
+      ? instanceId : possession.ownerOf(instanceId),
     rng,
     ...(definition.physics !== undefined ? { physics: definition.physics } : {}),
   });
@@ -630,7 +632,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       weapon,
     },
     time,
-    sim: createSimContext({ config: definition.simulation, entities }),
+    sim: createSimContext({ config: definition.simulation, entities, time }),
     camera,
     particles,
     input,

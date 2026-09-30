@@ -1,9 +1,4 @@
-import {
-  deathReasonFromEffect,
-  normalizeOnDeath,
-  type EffectDeathContext,
-  type OnDeathSpec,
-} from "../../combat/death";
+import { normalizeOnDeath, type OnDeathSpec } from "../../combat/death";
 import type { Drop } from "../../game/lootTable";
 import {
   DEFAULT_RARITY,
@@ -16,8 +11,8 @@ import type { GameContextContent } from "../gameContext";
 export interface LethalLootInput {
   /** Drops produced by the death system's resolution (already rolled). */
   drops: readonly Drop[];
-  /** True when the killer is the local/host player this context is resolving loot for. */
-  grantToLocalPlayer: boolean;
+  /** Resolved killer identity; environmental kills have no player recipient. */
+  recipientUserId: string | undefined;
   /** Catalog `onDeath` for the dying entity (drop mode + scatter). */
   onDeath: OnDeathSpec | undefined;
   /** World position of the dying entity — required for `dropMode: "world"`. */
@@ -27,19 +22,18 @@ export interface LethalLootInput {
   content: GameContextContent;
   spawnWorldItem: (input: WorldItemSpawnInput) => void;
   grantToPlayer: (userId: string, drops: Drop[], source?: string) => void;
-  localUserId: string;
   /** The world's seeded stream — scatter positions must replay with the rest of the simulation. */
   rng: () => number;
 }
 
 /**
- * Pure death→loot policy: when a kill yields drops for the local player, either scatter them as
+ * Pure death→loot policy: when a kill yields drops for a player, either scatter them as
  * world items (`dropMode: "world"`) or grant straight into bags. Extracted from `createGameContext`
  * so combat install stays free of nested loot branching.
  * @internal
  */
 export function applyLethalLoot(input: LethalLootInput): void {
-  if (input.drops.length === 0 || !input.grantToLocalPlayer) return;
+  if (input.drops.length === 0 || input.recipientUserId === undefined) return;
 
   const normalizedOnDeath = normalizeOnDeath(input.onDeath);
   if (normalizedOnDeath.dropMode === "world" && input.position !== undefined) {
@@ -54,18 +48,9 @@ export function applyLethalLoot(input: LethalLootInput): void {
     });
     for (const spawn of resolved.worldSpawns) input.spawnWorldItem(spawn);
     if (resolved.grants.length > 0) {
-      input.grantToPlayer(input.localUserId, resolved.grants, input.catalogId);
+      input.grantToPlayer(input.recipientUserId, resolved.grants, input.catalogId);
     }
   } else {
-    input.grantToPlayer(input.localUserId, [...input.drops], input.catalogId);
+    input.grantToPlayer(input.recipientUserId, [...input.drops], input.catalogId);
   }
-}
-
-/** @internal Build the grant-to-local-player flag from a lethal effect context + local user id. */
-export function isLocalPlayerKill(lethalCtx: EffectDeathContext, localUserId: string): boolean {
-  const reason = deathReasonFromEffect({
-    ...lethalCtx,
-    userIdOf: (id) => (id === localUserId ? localUserId : undefined),
-  });
-  return reason.kind === "player_kill" && reason.killerUserId === localUserId;
 }

@@ -935,7 +935,7 @@
 - `useFog` (function): function useFog(fog: FogField): ReturnType<FogField["cells"]> — ⚠ undocumented
 - `useFriendRequests` (function): function useFriendRequests(): FriendRequestEntry[] — ⚠ undocumented
 - `useFriends` (function): function useFriends(): FriendEntry[] — ⚠ undocumented
-- `useGame` (function): function useGame(): { commands: GameContext["game"]["commands"]; events: GameEvents } — ⚠ undocumented
+- `useGame` (function): function useGame(): { commands: Omit<GameContext["game"]["commands"], "run"> & { run(name: string, input: unknown): DispatchedCommandResult }; events: GameEvents } — UI command surface. Hosted commands return a promise; await it to display acknowledgement or rejection. Registration and runAs remain trusted local APIs.
 - `useGameClock` (function): function useGameClock(): ClockSnapshot & { controls: SimClock } — ⚠ undocumented
 - `useGameContext` (function): function useGameContext(): GameContext — ⚠ undocumented
 - `useGameLayoutMode` (function): function useGameLayoutMode(): GameLayoutMode — The resolved explicit composition mode (`desktop-wide` … `mobile-portrait`).
@@ -1277,7 +1277,7 @@
 - `useFeed` (function): function useFeed({ action, limit }: { action: string; limit?: number }): FeedEntry[] — ⚠ undocumented
 - `useFriendRequests` (function): function useFriendRequests(): FriendRequestEntry[] — ⚠ undocumented
 - `useFriends` (function): function useFriends(): FriendEntry[] — ⚠ undocumented
-- `useGame` (function): function useGame(): { commands: GameContext["game"]["commands"]; events: GameEvents } — ⚠ undocumented
+- `useGame` (function): function useGame(): { commands: Omit<GameContext["game"]["commands"], "run"> & { run(name: string, input: unknown): DispatchedCommandResult }; events: GameEvents } — UI command surface. Hosted commands return a promise; await it to display acknowledgement or rejection. Registration and runAs remain trusted local APIs.
 - `useGameClock` (function): function useGameClock(): ClockSnapshot & { controls: SimClock } — ⚠ undocumented
 - `useGamePhase` (function): function useGamePhase(): { phase: GamePhase; setPhase: (phase: GamePhase) => void } — Live run phase + a setter that also gates the shell's touch controls. `menu`/`paused`/`ended` hide the touch dock; `playing` shows it.
 - `useGameStore` (function): function useGameStore<T>(selector: (ctx: GameContext) => T, isEqual: (previous: T, next: T) => boolean = Object.is): T — ⚠ undocumented
@@ -2077,7 +2077,7 @@
 
 ## @jgengine/shell/drivers/HudOnlyDriver
 
-- `HudOnlyDriver` (function): function HudOnlyDriver({ ctx, playable, tracker, pointerAxisRef, gateRef, onRuntimeError, }: { ctx: GameContext; playable: PlayableGame; tracker: ActionStateTracker<string>; pointerAxisRef: { current: PointerAxisState | null }; gateRef: { current: boolean }; onRuntimeError: (error: unknown, phase: s… — ⚠ undocumented
+- `HudOnlyDriver` (function): function HudOnlyDriver({ ctx, multiplayer, serverIdRef, playable, tracker, pointerAxisRef, gateRef, onRuntimeError, }: { ctx: GameContext; multiplayer: ShellMultiplayer | null; serverIdRef: { current: string | null }; playable: PlayableGame; tracker: ActionStateTracker<string>; pointerAxisRef: { cur… — ⚠ undocumented
 
 ## @jgengine/shell/environment
 
