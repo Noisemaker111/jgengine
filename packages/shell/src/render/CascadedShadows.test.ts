@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
+import { CSM } from "three/examples/jsm/csm/CSM.js";
 
-import { patchSceneMaterials, type CsmMaterialSetup } from "./CascadedShadows";
+import { bindCsmMaterials, patchSceneMaterials, releaseCascadedShadows, type CsmMaterialSetup } from "./CascadedShadows";
 
 function fakeCsm(calls: THREE.Material[]): CsmMaterialSetup {
   return {
@@ -53,5 +54,98 @@ describe("patchSceneMaterials", () => {
     const renderer = {} as Parameters<THREE.Material["onBeforeCompile"]>[1];
     material.onBeforeCompile(shader, renderer);
     expect(order).toEqual(["own", "csm"]);
+  });
+});
+
+describe("CSM lifecycle", () => {
+  test("streamed descendants and replacement materials are patched before drawing, without a frame scan", () => {
+    const scene = new THREE.Scene();
+    const group = new THREE.Group();
+    scene.add(group);
+    const calls: THREE.Material[] = [];
+    const unbind = bindCsmMaterials(scene, fakeCsm(calls));
+    const material = new THREE.MeshStandardMaterial();
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), material);
+    let authoredDraws = 0;
+    const prior = () => { authoredDraws++; };
+    mesh.onBeforeRender = prior;
+    group.add(mesh);
+    expect(calls).toEqual([material]);
+    const replacement = new THREE.MeshStandardMaterial();
+    mesh.material = replacement;
+    const draw = () => mesh.onBeforeRender({} as THREE.WebGLRenderer, scene, new THREE.Camera(), mesh.geometry, replacement, null);
+    for (let frame = 0; frame < 100; frame++) draw();
+    expect(calls).toEqual([material, replacement]);
+    expect(authoredDraws).toBe(100);
+    group.remove(mesh);
+    expect(mesh.onBeforeRender).toBe(prior);
+    const afterRemoval = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial());
+    mesh.add(afterRemoval);
+    expect(calls).toHaveLength(2);
+    group.add(mesh);
+    expect(calls).toHaveLength(3);
+    unbind();
+    expect(mesh.onBeforeRender).toBe(prior);
+    group.add(new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshStandardMaterial()));
+    expect(calls).toHaveLength(3);
+  });
+
+  test("disposed instance materials leave CSM's strong shader registry and retain their authored shader", () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
+    const chunks = { begin: THREE.ShaderChunk.lights_fragment_begin, pars: THREE.ShaderChunk.lights_pars_begin };
+    const csm = new CSM({ parent: scene, camera, cascades: 3, shadowMapSize: 2048 });
+    const material = new THREE.MeshStandardMaterial();
+    const authored = () => {};
+    material.onBeforeCompile = authored;
+    scene.add(new THREE.Mesh(new THREE.BoxGeometry(), material));
+    const unbind = bindCsmMaterials(scene, csm);
+    try {
+      expect(csm.shaders.has(material)).toBe(true);
+      expect(material.defines?.USE_CSM).toBe(1);
+      material.dispose();
+      expect(csm.shaders.has(material)).toBe(false);
+      expect(material.onBeforeCompile).toBe(authored);
+      expect(material.defines?.USE_CSM).toBeUndefined();
+    } finally {
+      unbind();
+      releaseCascadedShadows(csm);
+      THREE.ShaderChunk.lights_fragment_begin = chunks.begin;
+      THREE.ShaderChunk.lights_pars_begin = chunks.pars;
+    }
+  });
+
+  test("rebuilding three 2048 cascades removes every old light, target, shadow map and shader binding", () => {
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera();
+    const material = new THREE.MeshStandardMaterial();
+    const authored = () => {};
+    material.onBeforeCompile = authored;
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(), material);
+    scene.add(mesh);
+    const chunks = { begin: THREE.ShaderChunk.lights_fragment_begin, pars: THREE.ShaderChunk.lights_pars_begin };
+    let disposed = 0;
+    try {
+      for (let cycle = 0; cycle < 3; cycle++) {
+        const csm = new CSM({ parent: scene, camera, cascades: 3, shadowMapSize: 2048 });
+        const unbind = bindCsmMaterials(scene, csm);
+        expect(scene.children).toHaveLength(7);
+        for (const light of csm.lights) {
+          expect(light.shadow.mapSize.toArray()).toEqual([2048, 2048]);
+          light.shadow.map = new THREE.WebGLRenderTarget(2048, 2048);
+          light.shadow.map.addEventListener("dispose", () => { disposed++; });
+        }
+        unbind();
+        releaseCascadedShadows(csm);
+        expect(scene.children).toEqual([mesh]);
+        expect(csm.shaders.size).toBe(0);
+        expect(material.onBeforeCompile).toBe(authored);
+        expect(material.defines?.USE_CSM).toBeUndefined();
+      }
+      expect(disposed).toBe(9);
+    } finally {
+      THREE.ShaderChunk.lights_fragment_begin = chunks.begin;
+      THREE.ShaderChunk.lights_pars_begin = chunks.pars;
+    }
   });
 });
