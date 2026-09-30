@@ -36,7 +36,7 @@ test("diagnostics distinguish a pending model, an unfinished draw, and a complet
   const frame = new FrameReadiness(next => published.push(next), () => time);
   const loaded = frame.begin();
   frame.started();
-  expect(frame.snapshot()).toEqual({ ready: false, pending: 1, framesStarted: 1, framesCompleted: 0, lastFrameStartedAt: 10, lastFrameCompletedAt: null });
+  expect(frame.snapshot()).toEqual({ ready: false, pending: 1, pendingSubtrees: [{ source: undefined, elapsedMs: 0 }], framesStarted: 1, framesCompleted: 0, lastFrameStartedAt: 10, lastFrameCompletedAt: null });
   expect(published).toEqual([]);
   time = 40;
   frame.drawn();
@@ -50,6 +50,28 @@ test("diagnostics distinguish a pending model, an unfinished draw, and a complet
   frame.started();
   time = 80;
   frame.drawn();
-  expect(frame.snapshot()).toEqual({ ready: true, pending: 0, framesStarted: 2, framesCompleted: 2, lastFrameStartedAt: 50, lastFrameCompletedAt: 80 });
+  expect(frame.snapshot()).toEqual({ ready: true, pending: 0, pendingSubtrees: [], framesStarted: 2, framesCompleted: 2, lastFrameStartedAt: 50, lastFrameCompletedAt: 80 });
   expect(published).toEqual([true]);
+});
+
+test("failure diagnostics identify mounted fallback owners and release them independently", () => {
+  let time = 10;
+  const frame = new FrameReadiness(() => {}, () => time);
+  const first = frame.begin("/models/rig.glb");
+  time = 20;
+  const second = frame.begin("/models/weapon.glb");
+  time = 90;
+  expect(frame.snapshot().pendingSubtrees).toEqual([
+    { source: "/models/rig.glb", elapsedMs: 80 },
+    { source: "/models/weapon.glb", elapsedMs: 70 },
+  ]);
+  first();
+  expect(frame.snapshot().pendingSubtrees).toEqual([{ source: "/models/weapon.glb", elapsedMs: 70 }]);
+  frame.drawn();
+  expect(frame.snapshot().ready).toBe(false);
+  second();
+  expect(frame.snapshot().pendingSubtrees).toEqual([]);
+  expect(frame.snapshot().ready).toBe(false);
+  frame.drawn();
+  expect(frame.snapshot().ready).toBe(true);
 });

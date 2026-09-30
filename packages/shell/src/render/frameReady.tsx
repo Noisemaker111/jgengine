@@ -3,7 +3,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 
 /** A frame is honest only after every mounted loading fallback has left and a render completes. @internal */
 export class FrameReadiness {
-  private pending = new Set<object>();
+  private pending = new Map<object, { source: string | undefined; startedAt: number }>();
   private ready = false;
   private framesStarted = 0;
   private framesCompleted = 0;
@@ -13,9 +13,11 @@ export class FrameReadiness {
   constructor(private publish: (ready: boolean) => void, private now: () => number = () => performance.now()) {}
 
   /** Read once when a capture fails, without marking or invalidating a frame. @internal */
-  snapshot(): { ready: boolean; pending: number; framesStarted: number; framesCompleted: number; lastFrameStartedAt: number | null; lastFrameCompletedAt: number | null } {
+  snapshot(): { ready: boolean; pending: number; pendingSubtrees: Array<{ source?: string; elapsedMs: number }>; framesStarted: number; framesCompleted: number; lastFrameStartedAt: number | null; lastFrameCompletedAt: number | null } {
+    const time = this.now();
     return {
       ready: this.ready, pending: this.pending.size,
+      pendingSubtrees: [...this.pending.values()].map(({ source, startedAt }) => ({ source, elapsedMs: Math.max(0, time - startedAt) })),
       framesStarted: this.framesStarted, framesCompleted: this.framesCompleted,
       lastFrameStartedAt: this.lastFrameStartedAt, lastFrameCompletedAt: this.lastFrameCompletedAt,
     };
@@ -27,9 +29,9 @@ export class FrameReadiness {
     this.lastFrameStartedAt = this.now();
   }
 
-  begin(): () => void {
+  begin(source?: string): () => void {
     const token = {};
-    this.pending.add(token);
+    this.pending.set(token, { source, startedAt: this.now() });
     this.invalidate();
     return () => { this.pending.delete(token); };
   }
@@ -69,9 +71,9 @@ function readinessFor(canvas: HTMLCanvasElement): FrameReadiness {
 }
 
 /** Loading fallback that keeps the canvas unready until its Suspense subtree commits. @internal */
-export function PendingFrame(): null {
+export function PendingFrame({ source }: { source?: string } = {}): null {
   const canvas = useThree((state) => state.gl.domElement);
-  useLayoutEffect(() => readinessFor(canvas).begin(), [canvas]);
+  useLayoutEffect(() => readinessFor(canvas).begin(source), [canvas, source]);
   return null;
 }
 
