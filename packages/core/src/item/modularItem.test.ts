@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
+import { captureProvenance, identityOf } from "./itemIdentity";
 import {
   computeEffectiveStats,
   createModularItem,
@@ -8,6 +9,7 @@ import {
   missingRequiredSlots,
   slotAccepts,
   uninstall,
+  type InstalledPart,
   type ModularItemDef,
   type PartDef,
 } from "./modularItem";
@@ -80,5 +82,67 @@ describe("modular item", () => {
     expect(item.partInSlot("core")).toBe(reactor);
     item.uninstall("legs");
     expect(item.missingRequired()).toEqual(["legs"]);
+  });
+
+  for (const { reason, initial } of [
+    { reason: "unknown-slot", initial: [{ slotId: "missing", part: reactor }] },
+    { reason: "wrong-category", initial: [{ slotId: "core", part: rifle }] },
+    {
+      reason: "slot-occupied",
+      initial: [
+        { slotId: "core", part: reactor },
+        { slotId: "core", part: { ...reactor, id: "spare_reactor" } },
+      ],
+    },
+  ]) {
+    test(`JSON reload rejects initial parts with ${reason}`, () => {
+      const saved = JSON.parse(JSON.stringify(initial)) as InstalledPart[];
+      const last = saved[saved.length - 1]!;
+      expect(install(mech, saved.slice(0, -1), last.slotId, last.part)).toEqual({ status: "rejected", reason });
+      expect(() => createModularItem(mech, saved)).toThrow();
+      expect(saved).toEqual(initial);
+    });
+  }
+
+  test("valid JSON reload preserves definition, part IDs, stats, and provenance", () => {
+    const item = createModularItem(mech);
+    expect(item.install("core", reactor).status).toBe("ok");
+    expect(item.install("legs", boosters).status).toBe("ok");
+    expect(item.install("rightArm", rifle).status).toBe("ok");
+    const provenance = captureProvenance(identityOf("mech", ["salvaged"], item.parts()), [], 42);
+    const saved = JSON.parse(JSON.stringify({ def: item.def, parts: item.parts(), provenance })) as {
+      def: ModularItemDef;
+      parts: InstalledPart[];
+      provenance: typeof provenance;
+    };
+    const reloaded = createModularItem(saved.def, saved.parts);
+    expect(reloaded.def).toEqual(mech);
+    expect(reloaded.parts()).toEqual(item.parts());
+    expect(reloaded.effectiveStats()).toEqual({ weight: 1900, en: 500, mobility: 75, damage: 80 });
+    expect(reloaded.isComplete()).toBe(true);
+    expect(
+      captureProvenance(identityOf(saved.provenance.family, saved.provenance.tags, reloaded.parts()), [], saved.provenance.seed),
+    ).toEqual(provenance);
+    reloaded.uninstall("legs");
+    expect(reloaded.missingRequired()).toEqual(["legs"]);
+    expect(reloaded.effectiveStats()).toEqual({ weight: 1500, en: 500, mobility: 50, damage: 80 });
+    expect(reloaded.install("legs", boosters).status).toBe("ok");
+    expect(reloaded.effectiveStats()).toEqual(item.effectiveStats());
+  });
+
+  test("rejected installs preserve a valid reloaded build", () => {
+    const saved = JSON.parse(JSON.stringify([
+      { slotId: "core", part: reactor },
+      { slotId: "legs", part: boosters },
+    ])) as InstalledPart[];
+    const item = createModularItem(mech, saved);
+    const before = JSON.stringify(item.parts());
+    expect(item.install("core", rifle)).toEqual({ status: "rejected", reason: "wrong-category" });
+    expect(item.install("core", { ...reactor, id: "spare_reactor" })).toEqual({ status: "rejected", reason: "slot-occupied" });
+    expect(item.install("missing", rifle)).toEqual({ status: "rejected", reason: "unknown-slot" });
+    expect(JSON.stringify(item.parts())).toBe(before);
+    expect(item.partInSlot("core")?.id).toBe("reactor");
+    expect(item.isComplete()).toBe(true);
+    expect(item.effectiveStats()).toEqual({ weight: 1700, en: 500, mobility: 75 });
   });
 });

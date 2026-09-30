@@ -93,7 +93,12 @@ export interface ModularItem {
 }
 
 export function createModularItem(def: ModularItemDef, initial: readonly InstalledPart[] = []): ModularItem {
-  let installed: readonly InstalledPart[] = initial;
+  let installed: readonly InstalledPart[] = [];
+  for (const { slotId, part } of initial) {
+    const result = install(def, installed, slotId, part);
+    if (result.status === "rejected") throw new Error(`Invalid initial part in slot ${slotId}: ${result.reason}`);
+    installed = result.installed;
+  }
   return {
     def,
     parts() {
