@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { spawn, type ChildProcess } from "node:child_process";
 import { EventEmitter } from "node:events";
 import { createServer } from "node:http";
@@ -15,6 +15,7 @@ import {
   chromeGraphicsArgs,
   closePageTarget,
   navigateCapturePage,
+  navigateForPageAttribute,
   normalizeLoopbackUrl,
   resolveDevPort,
   resolveWebPort,
@@ -208,6 +209,18 @@ describe("page target cleanup", () => {
 });
 
 describe("capture navigation failures", () => {
+  test("view discovery consumes metadata pushed during navigation without reading the old page", async () => {
+    const session = fakeSession({ onNavigate(emit) {
+      emit("Runtime.bindingCalled", { name: "__jgMetadataSignal", payload: '["courtyard"]' });
+    } });
+    session.evaluate = async () => { throw new Error("view discovery must not poll"); };
+    await expect(navigateForPageAttribute(session, "http://host/?game=demo", "data-jg-views", 1000)).resolves.toBe('["courtyard"]');
+  });
+
+  test("missing view metadata fails at one bounded deadline", async () => {
+    await expect(navigateForPageAttribute(fakeSession({}), "http://host/", "data-jg-views", 1)).rejects.toThrow("timed out waiting for data-jg-views (1ms)");
+  });
+
   test("surfaces Chrome navigation errors immediately", async () => {
     const session = fakeSession({ navigation: { errorText: "net::ERR_UNSAFE_PORT" } });
     await expect(navigateCapturePage(session, "http://127.0.0.1:5060/playground", 60_000)).rejects.toThrow(
@@ -249,6 +262,30 @@ describe("capture navigation failures", () => {
     await expect(navigateCapturePage(fakeSession({}), "http://127.0.0.1:5712/playground", 1)).rejects.toThrow(
       "timed out waiting for data-jg-capture=ready (1ms)",
     );
+  });
+
+  test("failure diagnostics separate unfinished assets from failed or completed requests and read the frame only once", async () => {
+    const log = spyOn(console, "error").mockImplementation(() => {});
+    let reads = 0;
+    const session = fakeSession({ onNavigate(emit) {
+      emit("Network.requestWillBeSent", { type: "Fetch", requestId: "pending", request: { url: "http://host/model.glb" } });
+      emit("Network.requestWillBeSent", { type: "Image", requestId: "missing", request: { url: "http://host/missing.png" } });
+      emit("Network.responseReceived", { requestId: "missing", response: { status: 404 } });
+      emit("Network.loadingFinished", { requestId: "missing" });
+      emit("Network.requestWillBeSent", { type: "Script", requestId: "done", request: { url: "http://host/module.js" } });
+      emit("Network.loadingFinished", { requestId: "done" });
+    } });
+    session.evaluate = async <T>() => {
+      reads++;
+      return { canvases: [{ frame: { pending: 1, framesStarted: 2, framesCompleted: 2 } }] } as T;
+    };
+    try {
+      await expect(navigateCapturePage(session, "http://host/", 1)).rejects.toThrow("timed out waiting");
+      const network = JSON.parse(log.mock.calls.find(call => call[0] === "[jgengine:capture-network]")![1] as string);
+      expect(network.pending.map((request: { url: string }) => request.url)).toEqual(["http://host/model.glb"]);
+      expect(network.failed).toEqual([{ url: "http://host/missing.png", status: 404 }]);
+      expect(reads).toBe(1);
+    } finally { log.mockRestore(); }
   });
 
   test("ignores a failed document request from a subframe", async () => {

@@ -1173,14 +1173,56 @@ export function forwardPageConsole(session: CdpSession, prefix: string): () => v
 }
 
 const CAPTURE_SIGNAL_BINDING = "__jgCaptureSignal";
+
+/** Observe metadata in the new document before navigation can replace the old one. @internal */
+export async function navigateForPageAttribute(session: CdpSession, url: string, attribute: string, timeoutMs: number): Promise<string> {
+  const binding = "__jgMetadataSignal";
+  let finish!: (value?: string) => void;
+  const value = new Promise<string | undefined>(resolve => { finish = resolve; });
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const off = session.on("Runtime.bindingCalled", params => {
+    if (params.name === binding && typeof params.payload === "string") finish(params.payload);
+  });
+  try {
+    await session.send("Runtime.addBinding", { name: binding });
+    await session.send("Page.addScriptToEvaluateOnNewDocument", { source: `(() => {
+      const attach = () => {
+        const root = document.documentElement;
+        if (root === null) return false;
+        const check = () => {
+          const value = root.getAttribute(${JSON.stringify(attribute)});
+          if (value === null) return false;
+          window.${binding}(value);
+          return true;
+        };
+        if (!check()) {
+          const observer = new MutationObserver(() => { if (check()) observer.disconnect(); });
+          observer.observe(root, { attributes: true, attributeFilter: [${JSON.stringify(attribute)}] });
+        }
+        return true;
+      };
+      if (attach()) return;
+      const pending = new MutationObserver(() => { if (attach()) pending.disconnect(); });
+      pending.observe(document, { childList: true });
+    })()` });
+    timer = setTimeout(() => finish(), timeoutMs);
+    const navigation = await session.send("Page.navigate", { url });
+    if (typeof navigation.errorText === "string" && navigation.errorText.length > 0) throw new Error(`navigation failed: ${navigation.errorText}`);
+    const result = await value;
+    if (result === undefined) throw new Error(`timed out waiting for ${attribute} (${timeoutMs}ms)`);
+    return result;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    off();
+  }
+}
 /** Sessions whose readiness binding is already installed — re-registering duplicates it per navigation. */
 const readinessInstalled = new WeakSet<CdpSession>();
 
 /**
  * Push readiness instead of polling for it. Every `Runtime.evaluate` poll queues behind the
  * page's own rAF work, so on a heavy WebGL page the flag is seen up to a frame time after it
- * is set; a MutationObserver reports it in the task that sets it. Installation is best-effort —
- * the poll below stays as the backstop, so an older page or a failed binding still works.
+ * is set; a MutationObserver reports it in the task that sets it.
  */
 async function installReadinessSignal(session: CdpSession): Promise<void> {
   if (readinessInstalled.has(session)) return;
@@ -1228,6 +1270,8 @@ export async function navigateCapturePage(
   let signalled: { status: string | null; error: string | null } | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const requestFrames = new Map<string, string>();
+  const requests = new Map<string, { url: string; type: string; startedAt: number; status?: number }>();
+  const failedResources: Array<{ url: string; status?: number; error?: string }> = [];
   const pendingDocumentFailures: Array<{ frameId?: string; message: string }> = [];
   const offSignal = session.on("Runtime.bindingCalled", (params) => {
     if (params.name !== CAPTURE_SIGNAL_BINDING || typeof params.payload !== "string") return;
@@ -1243,14 +1287,34 @@ export async function navigateCapturePage(
     settle();
   });
   const offRequest = session.on("Network.requestWillBeSent", (params) => {
+    const request = params.request as { url?: string } | undefined;
+    if (typeof params.requestId === "string" && typeof request?.url === "string") {
+      requests.set(params.requestId, { url: request.url, type: String(params.type ?? "unknown"), startedAt: performance.now() });
+    }
     if (params.type !== "Document") return;
     if (typeof params.requestId === "string" && typeof params.frameId === "string") {
       requestFrames.set(params.requestId, params.frameId);
     }
   });
+  const offResponse = session.on("Network.responseReceived", (params) => {
+    const response = params.response as { status?: number } | undefined;
+    const request = typeof params.requestId === "string" ? requests.get(params.requestId) : undefined;
+    if (request !== undefined && typeof response?.status === "number") {
+      request.status = response.status;
+      if (response.status >= 400) failedResources.push({ url: request.url, status: response.status });
+    }
+  });
+  const offFinished = session.on("Network.loadingFinished", (params) => {
+    if (typeof params.requestId === "string") requests.delete(params.requestId);
+  });
   const offLoadingFailed = session.on("Network.loadingFailed", (params) => {
-    if (params.type !== "Document") return;
     const errorText = typeof params.errorText === "string" ? params.errorText : "unknown error";
+    if (typeof params.requestId === "string") {
+      const request = requests.get(params.requestId);
+      if (request !== undefined) failedResources.push({ url: request.url, error: errorText });
+      requests.delete(params.requestId);
+    }
+    if (params.type !== "Document") return;
     const failedFrameId = typeof params.requestId === "string" ? requestFrames.get(params.requestId) : undefined;
     const message = `page load failed: ${errorText}`;
     if (frameId === undefined) pendingDocumentFailures.push({ frameId: failedFrameId, message });
@@ -1279,13 +1343,47 @@ export async function navigateCapturePage(
     if (signalled?.status === "ready") return;
     if (signalled?.status === "error") throw new Error(`capture error: ${signalled.error ?? "unknown"}`);
     throw new Error(`timed out waiting for data-jg-capture=ready (${timeoutMs}ms)`);
+  } catch (error) {
+    // Network events remain available even when a software-GL draw blocks page JavaScript.
+    console.error("[jgengine:capture-network]", JSON.stringify({
+      url, timeoutMs,
+      pending: Array.from(requests.values(), request => ({ ...request, ageMs: performance.now() - request.startedAt })),
+      failed: failedResources,
+    }));
+    console.error("[jgengine:capture-frame]", JSON.stringify(await captureFailureFrame(session)));
+    throw error;
   } finally {
     if (timer !== undefined) clearTimeout(timer);
     offSignal();
     offException();
     offRequest();
+    offResponse();
+    offFinished();
     offLoadingFailed();
   }
+}
+
+/** One bounded diagnostic read; a blocked renderer must not hold failure cleanup open. */
+async function captureFailureFrame(session: CdpSession): Promise<unknown> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve({ unavailable: "page diagnostic read exceeded 2000ms" }), 2_000);
+    session.evaluate(`(() => ({
+      capture: document.documentElement.dataset.jgCapture ?? null,
+      phase: document.documentElement.dataset.jgPhase ?? null,
+      canvases: Array.from(document.querySelectorAll("canvas"), canvas => ({
+        width: canvas.width, height: canvas.height,
+        cssWidth: canvas.getBoundingClientRect().width, cssHeight: canvas.getBoundingClientRect().height,
+        ready: canvas.hasAttribute("data-jg-frame-ready"),
+        frame: typeof canvas.__jgFrameReadiness === "function" ? canvas.__jgFrameReadiness() : null
+      }))
+    }))()`).then(value => {
+      clearTimeout(timer);
+      resolve(value ?? { unavailable: "page returned no diagnostics" });
+    }, error => {
+      clearTimeout(timer);
+      resolve({ unavailable: String(error) });
+    });
+  });
 }
 
 /** Navigate with one cache-bypassed retry for a transient post-HMR stale page. */

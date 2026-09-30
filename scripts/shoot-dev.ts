@@ -27,6 +27,7 @@ import {
   isUp,
   normalizeLoopbackUrl,
   navigateCapturePageWithRetry,
+  navigateForPageAttribute,
   openPageSession,
   parseSizeArg,
   sizeSuffix,
@@ -320,6 +321,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   if (args.url !== undefined) {
     const url = new URL(args.url);
     url.searchParams.set("capture", "1");
+    url.searchParams.set("captureTimeout", String(args.timeoutMs));
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
     return url.toString();
   }
@@ -327,6 +329,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
     const path = args.site.startsWith("/") ? args.site : `/${args.site}`;
     const url = new URL(path, devBase);
     url.searchParams.set("capture", "1");
+    url.searchParams.set("captureTimeout", String(args.timeoutMs));
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
     return url.toString();
   }
@@ -335,6 +338,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
     url.searchParams.set("fixture", args.fixture);
     url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
     url.searchParams.set("capture", "1");
+    url.searchParams.set("captureTimeout", String(args.timeoutMs));
     return url.toString();
   }
   const url = new URL(devBase);
@@ -342,6 +346,7 @@ function targetUrl(args: Args, device: Device, devBase: string): string {
   url.searchParams.set("mode", args.mode);
   url.searchParams.set("device", device === "mobile-landscape" ? "mobile" : device);
   url.searchParams.set("capture", "1");
+  url.searchParams.set("captureTimeout", String(args.timeoutMs));
   if (args.stage === true) url.searchParams.set("stage", "1");
   if (args.state !== undefined) url.searchParams.set("state", args.state);
   if (args.preview !== undefined) url.searchParams.set("preview", args.preview);
@@ -610,23 +615,15 @@ async function listViews(debugPort: number, base: string, game: string): Promise
     await session.send("Runtime.enable");
     const url = new URL(base);
     url.searchParams.set("game", game);
-    await session.send("Page.navigate", { url: url.toString() });
-    const deadline = Date.now() + 30_000;
-    while (Date.now() < deadline) {
-      const raw = await session.evaluate<string | null>(`document.documentElement.dataset.jgViews ?? null`);
-      if (typeof raw === "string") {
-        const shots = JSON.parse(raw) as string[];
-        if (shots.length === 0) {
-          console.log(`${game} declares no capture.views — add them to defineGame({ capture: { views } })`);
-          return 0;
-        }
-        console.log(`declared views (bun run shoot ${game} --view <name>):`);
-        for (const shot of shots) console.log(`  ${shot}`);
-        return 0;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    const raw = await navigateForPageAttribute(session, url.toString(), "data-jg-views", 30_000);
+    const shots = JSON.parse(raw) as string[];
+    if (shots.length === 0) {
+      console.log(`${game} declares no capture.views — add them to defineGame({ capture: { views } })`);
+      return 0;
     }
-    throw new Error(`timed out reading ${game}'s declared views`);
+    console.log(`declared views (bun run shoot ${game} --view <name>):`);
+    for (const shot of shots) console.log(`  ${shot}`);
+    return 0;
   } finally {
     await session.close();
   }
