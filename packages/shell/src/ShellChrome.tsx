@@ -11,6 +11,7 @@ import {
   type RuntimeDiagnostic,
 } from "./diagnostics/RuntimeDiagnostics";
 import { GamePhaseStamp } from "./GamePhaseStamp";
+import { SettingsPlayControlGate } from "./settings/SettingsRuntime";
 import type { ShellMultiplayer } from "./multiplayer";
 import type { PlayableGame } from "./registry";
 
@@ -33,6 +34,7 @@ export function ShellGameUiChrome({
   return (
     <GameUiErrorBoundary onRuntimeError={onRuntimeError}>
       <GameProvider context={ctx}>
+        <SettingsPlayControlGate ctx={ctx} />
         <GamePhaseStamp />
         <HudViewportProvider
           platforms={playable.platforms}

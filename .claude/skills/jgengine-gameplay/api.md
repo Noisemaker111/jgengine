@@ -398,6 +398,7 @@
 - `activeActionCodes` (function): function activeActionCodes(ctx: GameContext, base: ActionCodesMap): ActionCodesMap — Applies active contexts to a base action map for shell input tracking.
 - `playControlsActive` (function): function playControlsActive(ctx: GameContext): boolean — ⚠ undocumented
 - `setPlayControlsActive` (function): function setPlayControlsActive(ctx: GameContext, active: boolean): void — ⚠ undocumented
+- `suspendPlayControls` (function): function suspendPlayControls(ctx: GameContext): () => void — Suspends this context's player controls until the returned release function is called. Independent owners compose; repeated release is safe and preserves the existing play gate. Dispose the lease when its menu closes or its owning context unmounts. Leases survive this context's binding restore and are excluded from saved binding state.
 
 ## @jgengine/core/game/cosmetics
 

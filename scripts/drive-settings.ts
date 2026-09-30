@@ -106,6 +106,74 @@ try {
   const keyboard = await snapshot("keyboard-detailed", "detailed", "30px");
   assert.equal(keyboard.saved, JSON.stringify("detailed"));
   await page.getByRole("button", { name: "Close settings", exact: true }).click();
+  const telemetry = () => page.evaluate(() => ({
+    tick: Number(document.querySelector('[data-testid="host-tick"]')?.textContent),
+    pose: (document.querySelector('[data-testid="pose"]')?.textContent ?? "").split(",").map(Number),
+    controls: document.querySelector('[data-testid="controls-state"]')?.textContent,
+    casts: Number(document.querySelector('[data-testid="signals"]')?.textContent),
+  }));
+  const advanceHost = async (ticks: number) => {
+    const initial = await telemetry();
+    await page.evaluate(({ target }) => new Promise<void>((resolve, reject) => {
+      const tick = document.querySelector('[data-testid="host-tick"]');
+      if (!tick) throw Error("The live host tick readout is required");
+      const observer = new MutationObserver(() => {
+        if (Number(tick.textContent) < target) return;
+        observer.disconnect(); clearTimeout(deadline); resolve();
+      });
+      const deadline = setTimeout(() => { observer.disconnect(); reject(Error("Host tick event did not advance")); }, 5000);
+      observer.observe(tick, { childList: true, characterData: true, subtree: true });
+      if (Number(tick.textContent) >= target) { observer.disconnect(); clearTimeout(deadline); resolve(); }
+    }), { target: initial.tick + ticks });
+    return telemetry();
+  };
+  const distance = (a: readonly number[], b: readonly number[]) => Math.hypot(...a.map((value, index) => value - b[index]!));
+  const heading = page.getByRole("heading", { name: "Relay Courtyard", exact: true });
+  await page.getByRole("button", { name: "Choose courier · 3 copper", exact: true }).click();
+  await page.getByTestId("command-result").filter({ hasText: "class.choose: applied" }).waitFor({ state: "visible" });
+  await heading.click();
+  const beforeMove = await telemetry();
+  assert.equal(beforeMove.controls, "Controls active");
+  await page.keyboard.down("KeyW");
+  const moved = await advanceHost(10);
+  assert.ok(distance(beforeMove.pose, moved.pose) > 0.1, "Real keyboard input must move the hosted courier");
+  await page.getByRole("button", { name: "Display settings", exact: true }).click();
+  await group.getByRole("button", { name: "Detailed", pressed: true, exact: true }).waitFor({ state: "visible" });
+  const suspended = await advanceHost(6);
+  assert.equal(suspended.controls, "Controls paused");
+  const stillSuspended = await advanceHost(20);
+  assert.ok(distance(suspended.pose, stillSuspended.pose) < 0.01, "Settings must suppress movement while host ticks continue");
+  assert.equal(stillSuspended.casts, suspended.casts);
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
+  const resumedWithoutPress = await advanceHost(12);
+  assert.equal(resumedWithoutPress.controls, "Controls active");
+  assert.ok(distance(stillSuspended.pose, resumedWithoutPress.pose) < 0.01, "A physically held key must not leak back into play after close");
+  await page.keyboard.up("KeyW");
+  await heading.click();
+  await page.keyboard.down("KeyW");
+  const freshMovement = await advanceHost(10);
+  assert.ok(distance(resumedWithoutPress.pose, freshMovement.pose) > 0.1, "Fresh keyboard input must resume movement");
+  await page.keyboard.up("KeyW");
+  await advanceHost(6);
+  await page.getByRole("button", { name: "Pause controls", exact: true }).click();
+  await page.getByRole("button", { name: "Display settings", exact: true }).click();
+  await page.getByRole("switch", { name: "Pause courier controls", checked: true, exact: true }).click();
+  await page.getByRole("switch", { name: "Pause courier controls", checked: false, exact: true }).waitFor({ state: "visible" });
+  const nested = await advanceHost(6);
+  assert.equal(nested.controls, "Controls paused", "Releasing the courier owner must preserve settings' independent lease");
+  const nestedStill = await advanceHost(20);
+  assert.ok(distance(nested.pose, nestedStill.pose) < 0.01);
+  await page.screenshot({ animations: "disabled", path: resolve(evidence, "settings-nested-suspension.png"), timeout: 10000 });
+  await page.getByRole("button", { name: "Close settings", exact: true }).click();
+  const finalRelease = await telemetry();
+  assert.equal(finalRelease.controls, "Controls active");
+  await heading.click();
+  await page.keyboard.down("KeyW");
+  const finalMovement = await advanceHost(10);
+  assert.ok(distance(finalRelease.pose, finalMovement.pose) > 0.1, "Final owner release must permit real keyboard movement");
+  await page.keyboard.up("KeyW");
+  snapshots.push({ step: "control-suspension", beforeMove, moved, suspended, stillSuspended, resumedWithoutPress, freshMovement, nested, nestedStill, finalRelease, finalMovement });
+  await page.screenshot({ animations: "disabled", path: resolve(evidence, "courtyard-controls-resumed.png"), timeout: 10000 });
   await page.getByRole("button", { name: "Accept first signal", exact: true }).click();
   await page.getByTestId("command-result").filter({ hasText: "quest.accept: applied" }).waitFor({ state: "visible" });
   snapshots.push({ step: "existing-authority-command", result: await page.getByTestId("command-result").textContent() });
