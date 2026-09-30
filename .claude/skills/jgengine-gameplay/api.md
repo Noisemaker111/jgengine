@@ -185,7 +185,7 @@
 - `ListingBook` (interface): interface ListingBook — A player-driven marketplace of {@link Listing}s plus the per-seller collection boxes behind it. See {@link createListingBook}.
 - `ListingBookConfig` (interface): interface ListingBookConfig — Tunables for {@link createListingBook} — per-seller listing cap, expiry window, house cut, and optional price bounds.
 - `PostListingInput` (interface): interface PostListingInput — Input to {@link ListingBook.post} — the goods, asking price, and current game-time to stamp the listing with.
-- `PostListingReason` (type): type PostListingReason = | "invalid-count" | "invalid-price" | "price-too-low" | "price-too-high" | "listing-cap-reached" — Why {@link ListingBook.post} refused a listing.
+- `PostListingReason` (type): type PostListingReason = | "invalid-count" | "invalid-price" | "price-too-low" | "price-too-high" | "listing-cap-reached" | "duplicate-id" — Why {@link ListingBook.post} refused a listing.
 - `PostListingResult` (type): type PostListingResult = | { status: "ok"; listing: Listing } | { status: "rejected"; reason: PostListingReason } — Result of {@link ListingBook.post}.
 - `createListingBook` (function): function createListingBook(config: ListingBookConfig): ListingBook — A player-driven listing marketplace: post/cancel/buy against a shared book with a house cut on every sale, an expiry sweep that pulls unsold goods out of circulation, and a per-seller collection box holding sale proceeds and returned items until claimed. Buyer/seller wallet and inventory movement is the caller's job (mirrors `game/trade`'s split) — this primitive owns only the listing lifecycle and the escrowed collection-box bookkeeping behind it.
 
