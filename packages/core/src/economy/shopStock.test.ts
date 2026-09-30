@@ -166,4 +166,80 @@ describe("createShopStock", () => {
     expect(restored.list()).toEqual(shop.list());
     expect(restored.get("potion")!.qty).toBe(2);
   });
+
+  test("restore rejects invalid entries without replacing stock or notifying", () => {
+    const shop = createShopStock({ entries: sampleEntries() });
+    const before = shop.snapshot();
+    let notifications = 0;
+    shop.subscribe(() => notifications += 1);
+    const replacement: ShopStockEntry = {
+      id: "replacement", kind: "replacement", price: { currency: "gold", amount: 0.25 }, qty: 2,
+    };
+    const invalidEntries: ShopStockEntry[] = [
+      { ...replacement, id: "bad-price", price: { currency: "gold", amount: -1 } },
+      { ...replacement, id: "bad-qty", qty: 1.5 },
+      { ...replacement, id: "bad-sell-price", sellPrice: { currency: "gold", amount: -1 } },
+      { ...replacement, id: "" },
+    ];
+
+    for (const invalid of invalidEntries) {
+      const saved = JSON.parse(JSON.stringify({ entries: [replacement, invalid] }));
+      expect(() => shop.restore(saved)).toThrow();
+      expect(shop.snapshot()).toEqual(before);
+      expect(notifications).toBe(0);
+    }
+  });
+
+  test("restore rejects duplicate saved ids without replacing stock or notifying", () => {
+    const shop = createShopStock({ entries: sampleEntries() });
+    const before = shop.snapshot();
+    let notifications = 0;
+    shop.subscribe(() => notifications += 1);
+    const saved = JSON.parse(JSON.stringify({ entries: [sampleEntries()[1], sampleEntries()[1]] }));
+
+    expect(() => shop.restore(saved)).toThrow("duplicate shop entry id: blade");
+    expect(shop.snapshot()).toEqual(before);
+    expect(notifications).toBe(0);
+  });
+
+  test("JSON resume preserves fractional purchases and sales after a rejected restore", () => {
+    const entry: ShopStockEntry = {
+      id: "ore", kind: "ore", price: { currency: "gold", amount: 0.25 }, qty: 2,
+      sellPrice: { currency: "gold", amount: 0.125 },
+    };
+    const shop = createShopStock({ entries: [entry] });
+    const purchase = shop.buy("ore", grant(createEmptyWallet(), "gold", 0.5));
+    expect(purchase.ok).toBe(true);
+    if (!purchase.ok) throw new Error("expected purchase");
+    const saved = JSON.parse(JSON.stringify({ stock: shop.snapshot(), wallet: purchase.wallet }));
+    const resumed = createShopStock({ entries: sampleEntries() });
+    let notifications = 0;
+    resumed.subscribe(() => notifications += 1);
+    resumed.restore(saved.stock);
+    expect(resumed.snapshot()).toEqual(shop.snapshot());
+    expect(resumed.get("potion")).toBeNull();
+    expect(notifications).toBe(1);
+
+    expect(() => resumed.restore({ entries: [entry, { ...entry, qty: -1 }] })).toThrow(RangeError);
+    expect(resumed.snapshot()).toEqual(saved.stock);
+    expect(notifications).toBe(1);
+    const second = resumed.buy("ore", saved.wallet);
+    expect(second).toEqual(shop.buy("ore", purchase.wallet));
+    if (!second.ok) throw new Error("expected resumed purchase");
+    expect(balance(second.wallet, "gold")).toBe(0);
+    const sold = resumed.sell("ore", second.wallet);
+    expect(sold).toEqual(shop.sell("ore", second.wallet));
+    if (!sold.ok) throw new Error("expected resumed sale");
+    expect(balance(sold.wallet, "gold")).toBe(0.125);
+    const beforeRejectedBuy = resumed.snapshot();
+    const beforeRejectedWallet = JSON.parse(JSON.stringify(sold.wallet));
+    expect(resumed.buy("ore", sold.wallet)).toEqual({ ok: false, reason: "insufficient-funds" });
+    expect(resumed.snapshot()).toEqual(beforeRejectedBuy);
+    expect(sold.wallet).toEqual(beforeRejectedWallet);
+    expect(notifications).toBe(3);
+
+    saved.stock.entries[0].price.amount = 99;
+    saved.stock.entries[0].qty = 99;
+    expect(resumed.get("ore")).toEqual({ ...entry, qty: 1 });
+  });
 });

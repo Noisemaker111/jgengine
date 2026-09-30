@@ -151,17 +151,17 @@ function validateEntry(entry: ShopStockEntry): void {
  */
 export function createShopStock(config: ShopStockConfig = {}): ShopStock {
   // Insertion-ordered map of live records (Map preserves insertion order for list()/snapshot()).
-  const entries = new Map<string, ShopStockEntry>();
+  let entries = new Map<string, ShopStockEntry>();
   const listeners = new Set<() => void>();
 
   function notify(): void {
     for (const listener of listeners) listener();
   }
 
-  function ingest(entry: ShopStockEntry): void {
+  function ingest(entry: ShopStockEntry, target = entries): void {
     validateEntry(entry);
-    if (entries.has(entry.id)) throw new Error(`duplicate shop entry id: ${entry.id}`);
-    entries.set(entry.id, cloneEntry(entry));
+    if (target.has(entry.id)) throw new Error(`duplicate shop entry id: ${entry.id}`);
+    target.set(entry.id, cloneEntry(entry));
   }
 
   for (const entry of config.entries ?? []) ingest(entry);
@@ -233,8 +233,9 @@ export function createShopStock(config: ShopStockConfig = {}): ShopStock {
       return { entries: Array.from(entries.values(), cloneEntry) };
     },
     restore(snapshot) {
-      entries.clear();
-      for (const entry of snapshot.entries) ingest(entry);
+      const next = new Map<string, ShopStockEntry>();
+      for (const entry of snapshot.entries) ingest(entry, next);
+      entries = next;
       notify();
     },
   };
