@@ -21,7 +21,7 @@ if (files.size >= 3) {
     JSON.stringify({
       hookSpecificOutput: {
         hookEventName: "PostToolUse",
-        additionalContext: `You have now applied the same edit manually in ${files.size} files. Stop hand-editing: build one regex find-and-replace instead — dry-run with rg '<pattern>', then rg -l '<pattern>' | xargs sed -i -E 's/<pattern>/<replacement>/g' (or perl -pi -e for multiline), then git diff --stat to confirm scope. See CLAUDE.md → Style.`,
+        additionalContext: `You have now applied the same edit manually in ${files.size} files. Stop hand-editing: build one regex find-and-replace instead — dry-run with rg '<pattern>', then rg -l '<pattern>' | xargs sed -i -E 's/<pattern>/<replacement>/g' (or perl -pi -e for multiline), then git diff --stat to confirm scope.`,
       },
     }),
   );

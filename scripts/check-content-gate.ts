@@ -338,8 +338,8 @@ function main(argv: string[]): number {
         problems.map((p) => `  - ${p}`).join("\n") +
         `\n\nRule: scene/level geometry and placement are authored in the scene editor and saved into\n` +
         `editor.scene.json, then rendered at runtime by <AuthoredScene>/<AuthoredPaths> — never hand-rolled\n` +
-        `as mesh generation or magic-number placement arrays in game code (CLAUDE.md → "Author scenes in\n` +
-        `the editor"). Parameterized content fills (grass()/building()/road()/pad()/bounded ocean()) in an\n` +
+        `as mesh generation or magic-number placement arrays in game code (AGENTS.md → "World content is\n` +
+        `authored in the editor"). Parameterized content fills (grass()/building()/road()/pad()/bounded ocean()) in an\n` +
         `authored game are the same violation with no scoreable coordinates and are caught independently.\n` +
         `Three shrinking baselines pin today's known offenders so main stays green while the per-game\n` +
         `migrations land; all may only lose entries, never gain them. After a migration reseed with\n` +
