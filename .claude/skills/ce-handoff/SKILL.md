@@ -25,7 +25,7 @@ Create one immutable handoff at the destination the user requested, or use the m
 ### Build the handoff
 
 1. Distill the current objective and the user's latest intent. If a focus was supplied, make it the `resume_focus`.
-2. Inspect only the workspace state needed to explain what exists now. Use JGengine project instructions already in context (`AGENTS.md` / `CLAUDE.md`, `workflow`, domain skills).
+2. Inspect only the workspace state needed to explain what exists now. Use JGengine project instructions already in context (`AGENTS.md`, `workflow`, domain skills).
 3. Point to plans, issues, commits, diffs, documentation, and relevant files instead of reproducing their contents. Prefer repository-relative paths (`docs/plans/…`, `packages/…`, `Games/…`).
 4. Redact secrets, credentials, tokens, and unrelated personal information. Preserve operational paths only when the next agent needs them.
 5. Write or publish with existing tools. If the user named another path, folder, format, or publication destination, honor it. Do not also create a managed-store copy unless asked.

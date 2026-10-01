@@ -21,7 +21,7 @@ runRatchet(
       "that cannot pin the outcome. Every game context carries `ctx.rng`, the per-world seeded\n" +
       "stream; use it on any path that touches simulation. For a helper called outside a context,\n" +
       "take `rng: () => number` as a parameter and let the caller pass `ctx.rng`.\n" +
-      "See CLAUDE.md — Scale by default.",
+      "See AGENTS.md — Scale by default.",
   },
   fileURLToPath(new URL("..", import.meta.url)),
   process.argv,

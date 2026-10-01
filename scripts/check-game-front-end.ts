@@ -21,7 +21,7 @@ runRatchet(
     baselineRel: "scripts/game-front-end-baseline.json",
     scan: findFrontEndGaps,
     guidance:
-      "Every game owns a settings surface and reachable in-game credits — see CLAUDE.md, and the\n" +
+      "Every game owns a settings surface and reachable in-game credits — see AGENTS.md, and the\n" +
       "`jgengine-ui` skill for the parts. Neither is expensive: `Games/wreckway` routes both from its\n" +
       "title screen with `useMenuRouter`, and its credits are generated from the asset packs it ships.",
   },

@@ -5,7 +5,7 @@ import { eachGameSource } from "./gameSourceScan";
 import type { RatchetFinding } from "./ratchet";
 
 /**
- * #1585: CLAUDE.md requires every game to ship a settings surface and reachable in-game credits.
+ * #1585: AGENTS.md requires every game to ship a settings surface and reachable in-game credits.
  * Both are detected by what the game's UI actually references — the shipped building blocks, or a
  * game-owned screen named for the job.
  */

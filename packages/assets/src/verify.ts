@@ -10,7 +10,7 @@ export interface VerifyResult {
   errors: string[];
 }
 
-/** Providers allowed repo-wide; Kenney.nl is permanently barred — see CLAUDE.md "Never Kenney". */
+/** Providers allowed repo-wide; Kenney.nl is permanently barred — see AGENTS.md "Never use Kenney assets". */
 const ALLOWED_PROVIDERS: readonly AssetProvider[] = ["quaternius", "kaykit", "ambientcg", "gameicons"];
 
 function containsKenney(value: string): boolean {
@@ -32,7 +32,7 @@ export function verifyData(input: VerifyInput): VerifyResult {
     if (source.license.trim().length === 0) errors.push(`source ${source.id}: missing license`);
     if (source.author.trim().length === 0) errors.push(`source ${source.id}: missing author`);
     if (!ALLOWED_PROVIDERS.includes(source.provider)) {
-      errors.push(`source ${source.id}: provider "${source.provider}" is not allowlisted (Never Kenney — see CLAUDE.md)`);
+      errors.push(`source ${source.id}: provider "${source.provider}" is not allowlisted (Never Kenney — see AGENTS.md)`);
     }
     if (containsKenney(source.id)) errors.push(`source ${source.id}: id contains banned "kenney" substring`);
   }

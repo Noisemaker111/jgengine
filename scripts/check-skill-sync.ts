@@ -39,7 +39,7 @@ if (existsSync(join(root, "skills"))) {
 
 // Guidance lives in AGENTS.md, a README, a skill, or the PR/issue that motivated it. Plans, audits,
 // decision records, logs and docs/ trees go stale and get re-read by every agent, so they fail here.
-const ROOT_MARKDOWN = new Set(["README.md", "AGENTS.md", "CLAUDE.md", "CHANGELOG.md", "CREDITS.md", "LICENSING.md"]);
+const ROOT_MARKDOWN = new Set(["README.md", "AGENTS.md", "CHANGELOG.md", "CREDITS.md", "LICENSING.md"]);
 const allowedMarkdown = (path: string): boolean =>
   ROOT_MARKDOWN.has(path) ||
   path.endsWith("/README.md") ||
@@ -54,9 +54,8 @@ for (const path of tracked) {
   }
 }
 
-const claude = readFileSync(join(root, "CLAUDE.md"), "utf8");
 const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
-if (claude.trim() !== "@AGENTS.md") problems.push("CLAUDE.md must only import AGENTS.md (`@AGENTS.md`); governance lives in AGENTS.md");
+if (existsSync(join(root, "CLAUDE.md"))) problems.push("CLAUDE.md must not exist; Claude Code reads AGENTS.md directly and governance lives there");
 
 const skillDirs = readdirSync(skillsRoot)
   .filter((name) => existsSync(join(skillsRoot, name, "SKILL.md")))
@@ -186,5 +185,5 @@ if (problems.length > 0) {
 
 console.log(
   `check-skill-sync: ${skillDirs.length} skills, router ${lines(router)} lines/${bytes(router)} bytes, ` +
-    `total ${totalSkillBytes} bytes, normal intake ${normalIntakeBytes} bytes, CLAUDE.md imports AGENTS.md`,
+    `total ${totalSkillBytes} bytes, normal intake ${normalIntakeBytes} bytes, no CLAUDE.md`,
 );

@@ -10,7 +10,7 @@ import type { HandlerTable } from "./context";
  * inserts them as one undoable edit with stable, seed-derived ids so a re-run replaces its own prior
  * output instead of duplicating.
  *
- * Product invariant (CLAUDE.md): generator output is BAKED into `editor.scene.json`, never consumed at
+ * Product invariant (AGENTS.md): generator output is BAKED into `editor.scene.json`, never consumed at
  * runtime — so the baked paths become ordinary authored content the designer can move, restyle, delete,
  * or hand-edit afterwards.
  */
