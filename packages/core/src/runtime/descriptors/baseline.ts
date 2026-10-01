@@ -55,6 +55,25 @@ export interface BaselineDescriptor {
   create(deps: BaselineDeps): BaselineBuild;
 }
 
+// A store slot whose value carries functions (a closure-based run store, an input handle) is that
+// world's runtime object, not world state: it cannot be cloned, persisted or sent, so it stays out of
+// snapshots and survives hydration in place.
+function holdsLiveCode(value: unknown, seen: Set<object> = new Set()): boolean {
+  if (typeof value === "function") return true;
+  if (value === null || typeof value !== "object" || seen.has(value) || ArrayBuffer.isView(value)) return false;
+  seen.add(value);
+  if (value instanceof Map) {
+    for (const [key, entry] of value) if (holdsLiveCode(key, seen) || holdsLiveCode(entry, seen)) return true;
+    return false;
+  }
+  if (value instanceof Set) {
+    for (const entry of value) if (holdsLiveCode(entry, seen)) return true;
+    return false;
+  }
+  for (const key in value) if (holdsLiveCode((value as Record<string, unknown>)[key], seen)) return true;
+  return false;
+}
+
 /** @internal */
 export const baselineDescriptors: readonly BaselineDescriptor[] = [
   {
@@ -84,9 +103,14 @@ export const baselineDescriptors: readonly BaselineDescriptor[] = [
     create: (d) => ({
       replicate: {
         key: "store",
-        snapshot: () => d.store.snapshot(),
+        snapshot: () => d.store.snapshot().filter(([, value]) => !holdsLiveCode(value)),
         decode: (raw) => decodeEntries(raw),
-        hydrate: (data) => d.store.hydrate(data as readonly (readonly [string, unknown])[]),
+        hydrate: (data) => {
+          const incoming = data as readonly (readonly [string, unknown])[];
+          const incomingKeys = new Set(incoming.map(([key]) => key));
+          const localLive = d.store.snapshot().filter(([key, value]) => !incomingKeys.has(key) && holdsLiveCode(value));
+          d.store.hydrate(localLive.length === 0 ? incoming : [...incoming, ...localLive]);
+        },
       },
     }),
   },
