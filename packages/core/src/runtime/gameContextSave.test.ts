@@ -109,6 +109,23 @@ describe("ctx.game.save", () => {
     expect(reboot.scene.entity.get("p1")?.position).toEqual([1, 0, 2]);
   });
 
+  test("a store slot holding a live object stays out of state and survives restore in place", () => {
+    const runStore = defineStore<{ turn(): number; subscribe(listener: () => void): () => void }>("save.run", () => ({ turn: () => 1, subscribe: () => () => {} }));
+    const ctx = createGameContext({ definition: offlineGame(false), content: {}, player: { userId: "p1", isNew: true } });
+    const live = { turn: () => 3, subscribe: () => () => {} };
+    runStore.write(ctx, live);
+    progress.write(ctx, { level: 4 });
+    const state = ctx.state();
+    expect(JSON.parse(JSON.stringify(state))).toEqual(state);
+    progress.write(ctx, { level: 9 });
+    ctx.restore(state);
+    expect(progress.read(ctx)).toEqual({ level: 4 });
+    expect(runStore.read(ctx)).toBe(live);
+    const replica = createGameContext({ definition: offlineGame(false), content: {}, player: { userId: "p1", isNew: true } });
+    replica.hydrate(ctx.snapshot());
+    expect(runStore.peek(replica)).toBeUndefined();
+  });
+
   test("persist:true auto-wires ctx.game.save for an offline game", () => {
     const ctx = createGameContext({
       definition: offlineGame(true),

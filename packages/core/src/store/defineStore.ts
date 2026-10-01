@@ -28,7 +28,9 @@ export interface StoreHandle<T> {
  * with the value type it means, and the `unknown → T` cast lives once, here, behind the boundary. Pass
  * a factory for `initial` when the fallback is a fresh mutable object; the factory runs at most once and
  * its result is reused, so an unwritten slot keeps a stable identity across reads (no per-read churn for
- * a React selector, no allocation on a hot path).
+ * a React selector, no allocation on a hot path). A value that carries functions (a closure-based run
+ * store, an input handle) is runtime-only: snapshots, saves and replication skip it and hydration keeps
+ * it in place. Hold such objects with `perContext` when they need no store notifications.
  *
  * @capability typed-store a cast-free typed handle onto one reactive game-store slot, replayable and host-authoritative
  */
