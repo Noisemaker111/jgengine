@@ -1,4 +1,5 @@
 import type { AxisInput } from "../input/axisInput";
+import type { KinematicVehicleOptions } from "./kinematicVehicle";
 import type { GripCurve } from "./vehicleBody";
 import { sampleGripCurve } from "./vehicleBody";
 
@@ -258,8 +259,8 @@ export interface VehicleDynamicsOptions {
   heading?: number;
   /** Grip multiplier by world position (gravel, ice, wet paint); default `1`. */
   surfaceFriction?: (x: number, z: number) => number;
-  /** Clamp a planar move (walls, bounds); velocity is rederived from the allowed displacement. */
-  clampMove?: (from: readonly [number, number], to: readonly [number, number]) => readonly [number, number];
+  /** Clamp a planar move; optional result `motion` separates permitted displacement from position recovery. Called once per physics substep. */
+  clampMove?: KinematicVehicleOptions["clampMove"];
   /** Terrain height under a point; read per wheel when `suspension` is set (ramps, hills, ledges). Default flat at the spawn height. */
   groundHeight?: (x: number, z: number) => number;
 }
@@ -792,8 +793,8 @@ export function createVehicleDynamics(
     const toZ = state.z + nvz * h;
     if (clampMove !== undefined && h > 0) {
       const allowed = clampMove([state.x, state.z], [toX, toZ]);
-      nvx = (allowed[0] - state.x) / h;
-      nvz = (allowed[1] - state.z) / h;
+      nvx = (allowed.motion?.[0] ?? allowed[0] - state.x) / h;
+      nvz = (allowed.motion?.[1] ?? allowed[1] - state.z) / h;
       state.x = allowed[0];
       state.z = allowed[1];
     } else {

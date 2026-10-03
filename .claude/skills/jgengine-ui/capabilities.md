@@ -61,6 +61,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAudioEngine` (function) · `import { createAudioEngine } from "@jgengine/shell/audio/audioEngine"`
 
+## browser-suspension — observe blur, hidden-page and pointer-lock loss while the game owns pause and input policy
+
+- `useBrowserSuspension` (function) · `import { useBrowserSuspension } from "@jgengine/react"`
+
+## browser-suspension-observer — observe browser interruptions outside React with caller-owned pause policy and event sources
+
+- `observeBrowserSuspension` (function) · `import { observeBrowserSuspension } from "@jgengine/react"`
+
 ## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
 
 - `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/react"`
@@ -84,6 +92,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## character-statlist — derived-stat readout — grouped small-caps label→value rows, token-themed
 
 - `StatList` (function) · `import { StatList } from "@jgengine/react"`
+
+## chase-heading — keep camera-relative input heading independent of body facing while retaining vehicle and seat camera follow
+
+- `resolveChaseHeading` (function) · `import { resolveChaseHeading } from "@jgengine/shell/camera/chaseHeading"`
 
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 

@@ -159,6 +159,8 @@ export type ChaseView = "chase" | "cockpit" | "hood" | "rear";
 
 /** Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views. */
 export interface ChaseCameraConfig {
+  /** Heading the chase boom follows: target body (default), or independent input/aim yaw for camera-relative walking. Seat views always follow the body. */
+  headingSource?: "body" | "input";
   /** Boom distance behind the vehicle. Default 6. */
   distance?: number;
   /** Camera height above the follow point. Default 2.6. */
@@ -392,7 +394,7 @@ export interface GameCameraConfig {
   targetOffset?: { x?: number; y?: number; z?: number };
   initialDistance?: number;
   initialHeight?: number;
-  /** Initial horizontal boom facing (radians): 0 = camera behind on -Z, PI = camera on +Z. Seeds the orbit rig; unset keeps the legacy -Z placement. */
+  /** Initial horizontal boom facing (radians): 0 = camera behind on -Z, PI = camera on +Z. Seeds orbit and input-owned chase once; unset keeps orbit's -Z placement or seeds chase from its first acquired target's heading. */
   initialYaw?: number;
   /** Initial boom elevation (radians): 0 = level, positive = camera above the target looking down. Seeds the orbit rig; unset derives elevation from `initialHeight`/`initialDistance`. */
   initialPitch?: number;

@@ -556,6 +556,9 @@
 - `BetterAuthSessionState` (interface): interface BetterAuthSessionState { data: {user: BetterAuthUserShape} | null | undefined; isPending: boolean } — ⚠ undocumented
 - `BetterAuthUserShape` (interface): interface BetterAuthUserShape { id: string; name?: string | null; email?: string | null; image?: string | null } — ⚠ undocumented
 - `BossBar` (function): function BossBar(props: AtomicBarProps & { name?: string }): React.JSX.Element — A wide encounter/boss health bar with the boss name at the start.
+- `BrowserSuspensionOptions` (interface): interface BrowserSuspensionOptions — Select suspension events; all are observed by default. No callback runs on attachment.
+- `BrowserSuspensionReason` (type): type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost" — Browser events that can interrupt active play. The caller decides whether to pause.
+- `BrowserSuspensionSources` (interface): interface BrowserSuspensionSources — Event sources for a browser window, an iframe, or a test.
 - `CameraShakeMeter` (function): function CameraShakeMeter({ controller, animate = false, title = "CAMERA SHAKE", kindLabels, variation = "glass", className, style, }: CameraShakeMeterProps): ReactNode — A drop-in HUD panel that visualizes a core {@link CameraShakeController}: a trauma meter (reusing the shared {@link StaminaBar} building block) plus a live percentage and the current impact `kind` label. Presentation only — it reads the controller and never interprets `kind`, mapping it through `kindLabels` for display. A shell component applies the same controller's `offset()` to the camera; this panel is the on-screen readout of how much shake is in flight.
 - `CameraShakeMeterProps` (interface): interface CameraShakeMeterProps — Props for {@link CameraShakeMeter}.
 - `CameraShakeReadout` (interface): interface CameraShakeReadout — A live read of a camera-shake controller: current trauma `0..1` and the last game-owned `kind`.
@@ -895,6 +898,7 @@
 - `layoutEntityFrames` (function): function layoutEntityFrames<E extends EntityFrameEntry>(entries: readonly E[], project: ProjectEntity, options: EntityFrameLayoutOptions = {}): EntityFramePlacement<E>[] — Pure layout core: projects each entry, drops the ones behind the camera, off-screen (when `viewport` is set), or beyond `maxCount`, and returns the survivors sorted farthest-first so nearer frames render last (on top). Stable for equal depths via `id`. No React, no DOM — unit-testable in isolation.
 - `layoutFloatingText` (function): function layoutFloatingText(views: readonly FloatingTextView[], project: ProjectEntity, options: FloatingTextLayoutOptions = {}): FloatingTextPlacement[] — Pure layout core: projects each view, drops the ones behind the camera or (when `viewport` is set) off-screen, and returns the survivors sorted farthest-first so nearer text paints on top. No React, no DOM — unit-testable.
 - `localPlayerEntity` (function): function localPlayerEntity(ctx: GameContext): SceneEntity | null — ⚠ undocumented
+- `observeBrowserSuspension` (function): function observeBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}, sources: BrowserSuspensionSources | null = typeof window === "undefined" || typeof document === "undefined" ? null : { window, document }): () => void — Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing.
 - `panelKeyAction` (function): function panelKeyAction(defs: readonly PanelDef[], state: PanelState, event: { code?: string; key?: string }): PanelKeyResult — Pure keybind resolver for a panel set: ESC resolves to `closeTop` when a closable window is open, and any other key routes through {@link panelByHotkey} (trying `code` then `key`) to a `toggle`. Returns the intent without touching the DOM, so it unit-tests headless and `usePanels` is a thin shell over it.
 - `previewFixtureNames` (function): function previewFixtureNames(): string[] — Sorted list of registered fixture names, for discovery/listing.
 - `relativeSavedAt` (function): function relativeSavedAt(savedAt: number, nowMs = Date.now()): string — Turn a `savedAt` timestamp into a compact relative label ("just now", "4m ago", "2d ago"). Presentation-only helper — the model stores raw ms.
@@ -915,6 +919,7 @@
 - `useAuthedPlayer` (function): function useAuthedPlayer(options?: { guestSeed?: string }): PlayerIdentity | null — ⚠ undocumented
 - `useAutoScroll` (function): function useAutoScroll<T extends HTMLElement>(dep: unknown): React.RefObject<T | null> — Pin a scrollable element to its bottom whenever `dep` changes (typically a length or the list itself). Attach the returned ref to the scroll container. Owns the log/chat/console scroll-to-bottom effect so panels don't hand-roll it.
 - `useAxisChannel` (function): function useAxisChannel(config: AxisChannelConfig): UseAxisChannelResult — Wires useHeldKeys into a fresh AxisChannel, ready for a per-frame `channel.sample(dt, isDown)`. The channel is recreated when `config` identity changes, so pass a stable config (useMemo/module constant at the call site) unless a rebind is intended.
+- `useBrowserSuspension` (function): function useBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}): void — Observe browser interruptions while mounted, invoking the latest callback without replacing listeners.
 - `useCameraShake` (function): function useCameraShake(controller: CameraShakeController, animate = true): CameraShakeReadout — Subscribe to a camera-shake controller and re-render on every change (add / decay / clear). Optionally drives `update()` on an animation frame so the trauma meter bleeds down live even when no game loop ticks the controller. Returns the current trauma + kind for a HUD readout.
 - `useChat` (function): function useChat(channelId: string, options?: { limit?: number }): ChatMessage[] — ⚠ undocumented
 - `useChatBubbles` (function): function useChatBubbles(options?: ChatBubblesOptions): readonly ChatBubble[] — ⚠ undocumented
@@ -1058,6 +1063,14 @@
 ## @jgengine/react/barsPreview
 
 - `BarsPreview` (function): function BarsPreview({ className }: { className?: string }): React.JSX.Element — Renders atomic bars under token blocks and nested themes to prove fill and skin precedence.
+
+## @jgengine/react/browserLifecycle
+
+- `BrowserSuspensionOptions` (interface): interface BrowserSuspensionOptions — Select suspension events; all are observed by default. No callback runs on attachment.
+- `BrowserSuspensionReason` (type): type BrowserSuspensionReason = "blur" | "hidden" | "pointer-lock-lost" — Browser events that can interrupt active play. The caller decides whether to pause.
+- `BrowserSuspensionSources` (interface): interface BrowserSuspensionSources — Event sources for a browser window, an iframe, or a test.
+- `observeBrowserSuspension` (function): function observeBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}, sources: BrowserSuspensionSources | null = typeof window === "undefined" || typeof document === "undefined" ? null : { window, document }): () => void — Observe interruption events until detached. Lock loss requires a preceding lock; SSR attaches nothing.
+- `useBrowserSuspension` (function): function useBrowserSuspension(onSuspend: (reason: BrowserSuspensionReason) => void, options: BrowserSuspensionOptions = {}): void — Observe browser interruptions while mounted, invoking the latest callback without replacing listeners.
 
 ## @jgengine/react/cameraShake
 
@@ -1919,6 +1932,10 @@
 - `ShoulderRig` (function): function ShoulderRig(props: RigProps): null — ⚠ undocumented
 - `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
 - `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented
+
+## @jgengine/shell/camera/chaseHeading
+
+- `resolveChaseHeading` (function): function resolveChaseHeading(config: Pick<ChaseCameraConfig, "headingSource" | "view"> | undefined, bodyYaw: number, inputYaw: number | undefined, initialYaw?: number): number — Select a chase heading without feeding target facing or camera smoothing back into input-owned yaw. An undefined input yaw seeds from `initialYaw`, or the acquired target's body heading. Seat views always use body heading; omitting `headingSource` preserves body follow.
 
 ## @jgengine/shell/camera/fovPreference
 

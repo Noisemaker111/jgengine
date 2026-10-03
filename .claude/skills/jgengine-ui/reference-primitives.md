@@ -2,6 +2,18 @@
 
 On-demand detail behind [reference.md](reference.md) §6. Search [capabilities.md](capabilities.md) by intent first; open this file when you need how a shipped block composes.
 
+## Browser interruptions
+
+`useBrowserSuspension(onSuspend, { blur, hidden, pointerLockLost })` from
+`@jgengine/react/browserLifecycle` observes all three triggers by default and
+calls the latest callback with `"blur"`, `"hidden"`, or `"pointer-lock-lost"`.
+Pointer lock acquisition and visible-page events do not notify. Mounting while
+unlocked or hidden does not notify either. The game owns its pause guards,
+modal handling, input reset and multiplayer policy; this hook never changes
+simulation state. `observeBrowserSuspension` offers the same behavior outside
+React and returns listener cleanup; its optional sources support iframe windows
+and isolated tests.
+
 ## 6. Game UI primitives
 
 Prefer small headless or lightly styled primitives over a giant universal design system. Useful concepts include:

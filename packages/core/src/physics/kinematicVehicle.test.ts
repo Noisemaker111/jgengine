@@ -6,6 +6,9 @@ import {
   type KinematicChassisTuning,
   type KinematicVehicleTuning,
 } from "./kinematicVehicle";
+import { createVehicleObstacleClamp } from "./vehicleObstacles";
+import { createPhysicsWorldBackend } from "./physicsWorldBackend";
+import { createVehicleBackendLink } from "./vehicleBackendLink";
 
 const DT = 1 / 60;
 
@@ -194,6 +197,80 @@ describe("createKinematicVehicle — per-tick modifiers", () => {
 });
 
 describe("createKinematicVehicle — clampMove", () => {
+  test("an overlapping solid recovers position without reverse launch or false impact", () => {
+    let overlapping = true;
+    const clamp = createVehicleObstacleClamp({
+      obstacles: () => overlapping ? [{ position: [0, 0, 0.3], halfExtents: [1.4, 1.2, 1.4] }] : [],
+      radius: 1.4, dt: () => DT,
+    });
+    const vehicle = createKinematicVehicle(TUNING, { heading: -Math.PI, clampMove: clamp.clampMove });
+    const reference = createKinematicVehicle(TUNING, { heading: -Math.PI });
+    const expected = reference.tick(DT, axis({ brake: 1 }));
+    const recovered = vehicle.tick(DT, axis({ brake: 1 }));
+    expect(recovered.position[2]).toBeLessThan(-2.4);
+    expect(vehicle.velocity()[1]).toBeGreaterThanOrEqual(0);
+    expect(vehicle.velocity()[1]).toBeLessThanOrEqual(reference.velocity()[1]);
+    expect(Math.abs(recovered.forwardSpeed)).toBeLessThanOrEqual(Math.abs(expected.forwardSpeed));
+    expect(clamp.takeImpact()?.closingSpeed ?? 0).toBeLessThanOrEqual(Math.abs(expected.forwardSpeed));
+    overlapping = false;
+    const startZ = recovered.position[2];
+    for (let i = 0; i < 1800; i++) {
+      const step = vehicle.tick(DT, axis({ brake: 1 }));
+      expect(step.forwardSpeed).toBeLessThanOrEqual(0);
+      expect(Math.hypot(...vehicle.velocity())).toBeLessThan(TUNING.reverseSpeed + 1);
+      expect(clamp.takeImpact()).toBeNull();
+    }
+    expect(vehicle.pose().position[2] - startZ).toBeGreaterThan(TUNING.reverseSpeed * 25);
+  });
+
+  test("plain side-effecting diagonal clamps run once and keep their projected velocity", () => {
+    let calls = 0;
+    const vehicle = createKinematicVehicle(TUNING, {
+      heading: Math.PI / 2,
+      clampMove: (from, to) => {
+        calls++;
+        const dx = (to[0] - from[0]) / 2;
+        return [from[0] + dx, from[1] - dx];
+      },
+    });
+    vehicle.tick(DT, axis({ throttle: 1 }));
+    expect(calls).toBe(1);
+    const [vx, vz] = vehicle.velocity();
+    expect(vx).toBeGreaterThan(0);
+    expect(vz).toBeCloseTo(-vx, 9);
+  });
+
+  test("explicit motion keeps diagonal sliding independent of endpoint recovery", () => {
+    const vehicle = createKinematicVehicle(TUNING, {
+      heading: Math.PI / 2,
+      clampMove: (from, to) => {
+        const dx = (to[0] - from[0]) / 2;
+        return Object.assign([from[0] + dx + 100, from[1] - dx - 100] as const, { motion: [dx, -dx] as const });
+      },
+    });
+    const step = vehicle.tick(DT, axis({ throttle: 1 }));
+    expect(step.position[0]).toBeGreaterThan(100);
+    const [vx, vz] = vehicle.velocity();
+    expect(vx).toBeGreaterThan(0);
+    expect(vz).toBeCloseTo(-vx, 9);
+    expect(Math.hypot(vx, vz)).toBeLessThan(TUNING.engineAccel * DT);
+  });
+
+  test("physics backend wall telemetry survives the sim's single clamp call", () => {
+    const backend = createPhysicsWorldBackend({ capacity: 4, bounds: { min: [-20, -5, -20], max: [20, 10, 20] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [10, 2, 0.5] }, position: [0, 2, 5], kind: "static" });
+    const link = createVehicleBackendLink(backend, { halfExtents: [0.9, 0.7, 1] });
+    const vehicle = createKinematicVehicle(TUNING, { clampMove: link.clampMove });
+    for (let i = 0; i < 300; i++) {
+      const step = vehicle.tick(DT, axis({ throttle: 1 }));
+      link.sync(step);
+      backend.step(DT);
+    }
+    expect(vehicle.pose().position[2]).toBeLessThan(3.6);
+    expect(link.lastHit()?.normal[2]).toBeCloseTo(-1, 6);
+    expect(link.lastHit()?.blocked).toBeGreaterThan(0);
+  });
+
   test("a clamp that blocks the z-axis stops z motion and zeroes z velocity", () => {
     const vehicle = createKinematicVehicle(TUNING, {
       heading: 0,
