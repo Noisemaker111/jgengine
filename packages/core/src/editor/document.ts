@@ -1,3 +1,4 @@
+import { decodeEditorSimulation, type EditorSimulation } from "./simulation";
 import { parseMaterialAssignments, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset } from "../material/materialAsset";
 import { parseStaticPrefabBake } from "./staticPrefab";
 import type { ParamField, ParamSchema } from "../scene/sceneKinds";
@@ -77,7 +78,7 @@ function cloneDirective(directive: EditorDirective): EditorDirective {
     ...(directive.region === undefined ? {} : { region: directive.region }),
     ...(area === undefined ? {} : { area }),
     ...(directive.seed === undefined ? {} : { seed: directive.seed }),
-    ...(directive.meta === undefined ? {} : { meta: { ...directive.meta } }),
+    ...(directive.meta === undefined ? {} : { meta: structuredClone(directive.meta) }),
   };
   if (directive.kind === "scatter") {
     return { ...base, kind: "scatter", asset: directive.asset, density: directive.density,
@@ -123,8 +124,10 @@ export function editorDocumentExtras(doc: EditorDocument): {
   minimap?: EditorMinimapBake;
   bakes?: EditorBake[];
   environment?: EditorEnvironment;
+  simulation?: EditorSimulation;
 } {
   return {
+    ...(doc.simulation === undefined ? {} : { simulation: structuredClone(doc.simulation) }),
     ...(doc.materialAssets === undefined ? {} : { materialAssets: doc.materialAssets }),
     prefabs: doc.prefabs,
     collections: doc.collections,
@@ -159,7 +162,7 @@ function cloneCatalogEntry(entry: EditorCatalogEntry): EditorCatalogEntry {
   return {
     id: entry.id,
     ...(entry.label === undefined ? {} : { label: entry.label }),
-    ...(entry.meta === undefined ? {} : { meta: { ...entry.meta } }),
+    ...(entry.meta === undefined ? {} : { meta: structuredClone(entry.meta) }),
   };
 }
 
@@ -167,7 +170,7 @@ function cloneCatalogs(catalogs: readonly EditorCatalogData[] | undefined): Edit
   return (catalogs ?? []).map((catalog) => ({
     id: catalog.id,
     ...(catalog.label === undefined ? {} : { label: catalog.label }),
-    ...(catalog.schema === undefined ? {} : { schema: catalog.schema }),
+    ...(catalog.schema === undefined ? {} : { schema: structuredClone(catalog.schema) }),
     entries: catalog.entries.map(cloneCatalogEntry),
   }));
 }
@@ -183,6 +186,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
   const directives = cloneDirectives(doc.directives);
   return {
     version: 1,
+    ...(doc.simulation === undefined ? {} : { simulation: structuredClone(doc.simulation) }),
     markers: doc.markers.map((marker) => ({
       ...marker,
       position: { ...marker.position },
@@ -243,7 +247,7 @@ function upsertCatalogs(
       {
         id: catalog.id,
         ...(catalog.label === undefined ? {} : { label: catalog.label }),
-        ...(catalog.schema === undefined ? {} : { schema: catalog.schema }),
+        ...(catalog.schema === undefined ? {} : { schema: structuredClone(catalog.schema) }),
         entries: catalog.entries.map(cloneCatalogEntry),
       } as EditorCatalogData,
     ]),
@@ -274,6 +278,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
   const directives = cloneDirectives(resolved.directives);
   return {
     version: 1,
+    ...(resolved.simulation === undefined ? {} : { simulation: decodeEditorSimulation(resolved.simulation, { paths: asArray(resolved.paths) }) }),
     markers: asArray(resolved.markers),
     volumes: asArray(resolved.volumes),
     paths: asArray(resolved.paths),
@@ -341,6 +346,7 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
     if (doc.minimap !== undefined) out.minimap = cloneMinimapBake(doc.minimap);
     if (doc.environment !== undefined) out.environment = cloneEnvironment(doc.environment);
+    if (doc.simulation !== undefined) out.simulation = structuredClone(doc.simulation);
     if (doc.directives !== undefined) {
       out.directives = upsertById(out.directives ?? [], doc.directives);
     }
@@ -1337,6 +1343,11 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
   const bakes = raw.bakes === undefined ? undefined : decodeBakes(raw.bakes, "$.bakes", errors);
   const environment =
     raw.environment === undefined ? undefined : decodeEnvironment(raw.environment, "$.environment", errors);
+  let simulation: EditorSimulation | undefined;
+  if (raw.simulation !== undefined) {
+    try { simulation = decodeEditorSimulation(raw.simulation, { paths }); }
+    catch (error) { errors.push({ path: "$.simulation", message: error instanceof Error ? error.message : String(error) }); }
+  }
   // Placeable object ids form one document-global namespace (selection, parenting, and removal all
   // treat them that way), so a document that reuses an id — even across two different collections —
   // is malformed and rejected here with the offending path, rather than silently loading a scene
@@ -1365,6 +1376,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
     ok: true,
     document: {
       version: 1,
+      ...(simulation === undefined ? {} : { simulation }),
       ...(materialAssets === undefined ? {} : { materialAssets }),
       markers,
       volumes,
@@ -1415,6 +1427,7 @@ export function applyEditorDocumentOverlay(
   const terrain = overlay.terrain ?? base.terrain;
   const minimap = overlay.minimap ?? base.minimap;
   const environment = overlay.environment ?? base.environment;
+  const simulation = overlay.simulation ?? base.simulation;
   const ui =
     overlay.ui === undefined
       ? cloneEditorUiDocument(base.ui)
@@ -1427,6 +1440,7 @@ export function applyEditorDocumentOverlay(
   const grids = upsertGrids(base.grids, overlay.grids);
   return {
     version: 1,
+    ...(simulation === undefined ? {} : { simulation: structuredClone(simulation) }),
     markers: upsertById(base.markers, overlay.markers),
     volumes: upsertById(base.volumes, overlay.volumes),
     paths: upsertById(base.paths, overlay.paths),

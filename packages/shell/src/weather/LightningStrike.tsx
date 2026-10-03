@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 import { useDisposable } from "../render/useDisposable";
+import { lightningStrikeEnvelope } from "./weatherMath";
 import type { WeatherVector } from "./weatherUniforms";
 
 export interface LightningStrikeProps {
@@ -18,6 +19,9 @@ export interface LightningStrikeProps {
   jaggedness?: number;
   impactLight?: number;
   renderOrder?: number;
+  /** Supply both fields to replay the strike from authoritative simulation state. */
+  timeSeconds?: () => number;
+  startedAt?: number;
 }
 
 interface LightningSegment {
@@ -83,7 +87,7 @@ function createLightningSegments(
     segments.push({ from: points[index]!, to: points[index + 1]! });
   }
 
-  const branchCount = Math.max(0, Math.floor(branches));
+  const branchCount = Math.max(0, Math.min(64, Math.floor(branches)));
   for (let index = 0; index < branchCount; index += 1) {
     const sourceIndex = 2 + Math.floor(random() * Math.max(1, points.length - 5));
     const source = points[sourceIndex]!;
@@ -130,8 +134,11 @@ export function LightningStrike({
   jaggedness = 0.08,
   impactLight = 26,
   renderOrder = 20,
+  timeSeconds,
+  startedAt,
 }: LightningStrikeProps) {
-  const lifeRef = useRef(0);
+  const localTime = useRef(0);
+  const startRef = useRef<number | null>(null);
   const lightRef = useRef<THREE.PointLight | null>(null);
   const geometry = useDisposable(() => new THREE.BufferGeometry(), []);
   const material = useDisposable(
@@ -154,7 +161,7 @@ export function LightningStrike({
 
   useEffect(() => {
     if (!visible) {
-      lifeRef.current = 0;
+      startRef.current = null;
       material.opacity = 0;
       if (lightRef.current !== null) lightRef.current.intensity = 0;
       return;
@@ -163,20 +170,15 @@ export function LightningStrike({
       geometry,
       createLightningSegments(origin, target, seed ^ hashStrikeKey(strikeKey), branches, jaggedness),
     );
-    lifeRef.current = duration;
-  }, [branches, duration, geometry, jaggedness, material, origin, seed, strikeKey, target, visible]);
+    startRef.current = startedAt ?? timeSeconds?.() ?? localTime.current;
+  }, [branches, duration, geometry, jaggedness, material, origin, seed, strikeKey, target, visible, startedAt, timeSeconds]);
 
   useFrame((_state, delta) => {
-    if (!visible || lifeRef.current <= 0) {
-      material.opacity = 0;
-      if (lightRef.current !== null) lightRef.current.intensity = 0;
-      return;
-    }
-    lifeRef.current = Math.max(0, lifeRef.current - delta);
-    const amount = duration <= 0 ? 0 : lifeRef.current / duration;
-    const flicker = 0.62 + Math.random() * 0.38;
-    material.opacity = amount * glow * flicker;
-    if (lightRef.current !== null) lightRef.current.intensity = amount * impactLight * flicker;
+    localTime.current += delta;
+    const now = timeSeconds?.() ?? localTime.current;
+    const amount = visible && startRef.current !== null ? lightningStrikeEnvelope(now, startRef.current, duration, seed ^ hashStrikeKey(strikeKey)) : 0;
+    material.opacity = amount * glow;
+    if (lightRef.current !== null) lightRef.current.intensity = amount * impactLight;
   });
 
   return (

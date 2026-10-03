@@ -74,6 +74,8 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   camera_goto: [s("id"), n("x"), n("y"), n("z"), n("distance"), n("pitch"), n("yaw"), n("height")],
   camera_frame: [n("distance"), n("pitch"), n("yaw"), n("height")],
   scene_summary: [],
+  get_simulation: [],
+  set_simulation: [req(val("simulation"))],
   export_document: [],
   import_document: [req(s("json"))],
   dispatch: [req(o("command"))],

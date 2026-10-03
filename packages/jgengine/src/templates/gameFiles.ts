@@ -1,5 +1,6 @@
 import { dispatchClickAt, parseClickAt } from "../clickInput";
 import { escapeHtml } from "../escapeHtml";
+import { driveInputPointExpr, parseDriveFill } from "./driveInput";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
 
 const indexHtml = (name: string) => `<!doctype html>
@@ -280,78 +281,35 @@ export async function emulateDevice(session, profile, width = profile.width, hei
   });
 }
 
+export const driveInputPointExpr = ${driveInputPointExpr.toString()};
+
 export function clickPointExpr(text) {
-  return "(" + function (needle) {
-    if (!needle) return null;
-    var selector = 'button, [role=button], a';
-    var nodes = Array.from(document.querySelectorAll(selector + ', span, div, h1, h2, h3'));
-    var candidates = nodes.flatMap(function (node) {
-      return [(node.textContent || '').trim(), node.getAttribute('aria-label') || '']
-        .map(function (name) { return name.toLowerCase(); })
-        .filter(function (name) { return name.includes(needle); })
-        .map(function (name) { return { node: node.closest(selector) || node, own: name }; });
-    });
-    candidates.sort(function (a, b) {
-      return a.own.length - b.own.length || Number(b.node.matches(selector)) - Number(a.node.matches(selector));
-    });
-    if (!candidates.length) return null;
-    var shortest = candidates[0].own.length;
-    var interactive = candidates[0].node.matches(selector);
-    for (var item of candidates) {
-      if (item.own.length !== shortest || item.node.matches(selector) !== interactive) break;
-      var node = item.node;
-      if (node.matches(':disabled') || node.closest('[aria-disabled="true"], [inert]')) continue;
-      if (!node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
-      node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
-      var rect = node.getBoundingClientRect();
-      var left = Math.max(0, rect.left), top = Math.max(0, rect.top);
-      var right = Math.min(innerWidth, rect.right), bottom = Math.min(innerHeight, rect.bottom);
-      for (var parent = node.parentElement; parent; parent = parent.parentElement) {
-        var style = getComputedStyle(parent), clip = parent.getBoundingClientRect();
-        if (/(auto|scroll|hidden|clip)/.test(style.overflowX)) {
-          left = Math.max(left, clip.left + parent.clientLeft);
-          right = Math.min(right, clip.left + parent.clientLeft + parent.clientWidth);
-        }
-        if (/(auto|scroll|hidden|clip)/.test(style.overflowY)) {
-          top = Math.max(top, clip.top + parent.clientTop);
-          bottom = Math.min(bottom, clip.top + parent.clientTop + parent.clientHeight);
-        }
-      }
-      if (right <= left || bottom <= top) continue;
-      for (var fy of [0.5, 0.1, 0.9]) for (var fx of [0.5, 0.1, 0.9]) {
-        var x = left + (right - left) * fx, y = top + (bottom - top) * fy;
-        var hit = document.elementFromPoint(x, y);
-        if (hit && (hit === node || node.contains(hit))) return { x: x, y: y };
-      }
-    }
-    return null;
-  }.toString() + ")(" + JSON.stringify(text.toLowerCase()) + ")";
+  return driveInputPointExpr(text);
 }
 
 const SETTLE_EPSILON_PX = 0.5;
 const SETTLE_SAMPLES = 3;
 const SETTLE_INTERVAL_MS = 100;
-const SETTLE_TIMEOUT_MS = 15_000;
+const SETTLE_TIMEOUT_MS = 45_000;
+const SETTLE_MAX_SAMPLES = 10;
 
 export async function findClickPoint(session, text, options = {}) {
   const deadline = (options.now || Date.now)() + (options.timeoutMs || SETTLE_TIMEOUT_MS);
   let last = null;
   let stableRuns = 0;
-  while ((options.now || Date.now)() < deadline) {
-    const point = (await session.evaluate(clickPointExpr(text), { timeoutMs: Math.max(1, deadline - (options.now || Date.now)()) })) ?? null;
-    if (
-      point !== null &&
-      last !== null &&
-      Math.abs(point.x - last.x) <= SETTLE_EPSILON_PX &&
-      Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
-    ) {
+  for (let samples = 0; samples < SETTLE_MAX_SAMPLES && (options.now || Date.now)() < deadline; samples += 1) {
+    const point = (await session.evaluate(driveInputPointExpr(text, options.input), { timeoutMs: Math.max(1, deadline - (options.now || Date.now)()) })) ?? null;
+    if ((options.now || Date.now)() >= deadline) break;
+    const moved = point !== null && last !== null &&
+      (Math.abs(point.x - last.x) > SETTLE_EPSILON_PX || Math.abs(point.y - last.y) > SETTLE_EPSILON_PX);
+    if (point !== null && last !== null && !moved) {
       stableRuns += 1;
       if (stableRuns >= SETTLE_SAMPLES - 1) return point;
     } else {
       stableRuns = 0;
     }
     last = point;
-    await (options.sleep || sleep)(SETTLE_INTERVAL_MS);
+    await (options.sleep || sleep)(Math.min(deadline - (options.now || Date.now)(), point === null || moved ? 1_000 : SETTLE_INTERVAL_MS));
   }
   if (last === null) throw new Error('no actionable element matching "' + text + '"');
   throw new Error('element matching "' + text + '" did not settle');
@@ -911,6 +869,7 @@ import {
   dispatchClickAt,
   parseClickAt,
   findClickPoint,
+  driveInputPointExpr,
   emulateDevice,
   ensureDevServer,
   launchChrome,
@@ -929,6 +888,8 @@ const HELP = [
   "Steps run in the order given:",
   '  --click "<text>"    scroll to and click actionable text (case-insensitive)',
   "  --click-at <x,y>    native left click in CSS viewport pixels (within width/height)",
+  '  --double-click "<text>"  double-click actionable text',
+  '  --fill "<label>=<value>" replace a text field by its accessible label',
   "  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds",
   "  --wait <ms>         pause before the next step",
   "  --shot <name>       screenshot to shots/<name>.png (default step if none given)",
@@ -952,6 +913,8 @@ const HELP = [
   "",
   "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
 ].join("\\n");
+
+const parseDriveFill = ${parseDriveFill.toString()};
 
 function parseArgs(argv) {
   const args = {
@@ -978,7 +941,12 @@ function parseArgs(argv) {
     else if (v === "--width") args.width = Number(argv[++i]);
     else if (v === "--height") args.height = Number(argv[++i]);
     else if (v === "--timeout") args.timeoutMs = Number(argv[++i]) * 1000;
-    else if (v === "--click") args.steps.push({ kind: "click", text: argv[++i] ?? "" });
+    else if (v === "--click" || v === "--double-click") {
+      const text = argv[++i];
+      if (!text || text.startsWith("--")) throw new Error(v + " requires target text");
+      args.steps.push({ kind: v === "--click" ? "click" : "double-click", text });
+    }
+    else if (v === "--fill") args.steps.push({ kind: "fill", ...parseDriveFill(argv[++i]) });
     else if (v === "--click-at") args.steps.push({ kind: "clickAt", spec: argv[++i] ?? "" });
     else if (v === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++i] ?? 500) });
     else if (v === "--key") {
@@ -1007,17 +975,30 @@ function parseArgs(argv) {
   return args;
 }
 
-async function click(session, text) {
-  const point = await findClickPoint(session, text);
-  for (const type of ["mousePressed", "mouseReleased"]) {
-    await session.send("Input.dispatchMouseEvent", {
-      type,
-      x: point.x,
-      y: point.y,
-      button: "left",
-      clickCount: 1,
-    });
+async function click(session, text, count = 1, input = false) {
+  await session.send("Page.bringToFront");
+  const point = await findClickPoint(session, text, { input });
+  for (let clickCount = 1; clickCount <= count; clickCount += 1) {
+    for (const type of ["mousePressed", "mouseReleased"]) {
+      await session.send("Input.dispatchMouseEvent", {
+        type, x: point.x, y: point.y, button: "left", clickCount,
+      });
+    }
   }
+}
+
+async function fill(session, label, value) {
+  await click(session, label, 1, true);
+  if (!await session.evaluate(driveInputPointExpr(label, true, true))) {
+    throw new Error('text field "' + label + '" did not receive focus');
+  }
+  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "a", code: "KeyA", modifiers: 2, commands: ["selectAll"] });
+  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "a", code: "KeyA", modifiers: 2 });
+  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 });
+  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 });
+  if (value) await session.send("Input.insertText", { text: value });
+  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
 }
 
 async function holdKey(session, code, holdMs) {
@@ -1179,7 +1160,8 @@ async function main() {
         : Promise.resolve();
 
       for (const step of args.steps) {
-        if (step.kind === "click") await click(session, step.text);
+        if (step.kind === "click" || step.kind === "double-click") await click(session, step.text, step.kind === "double-click" ? 2 : 1);
+        else if (step.kind === "fill") await fill(session, step.label, step.value);
         else if (step.kind === "clickAt") await dispatchClickAt(session, step.point);
         else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
         else if (step.kind === "wait") await sleep(step.ms);
@@ -1703,7 +1685,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
 - Models live in \`public/models\`, pulled — not shipped inside the package. \`jgengine create\` pulls them for you; if that was skipped (offline, \`--no-assets\`, \`--no-install\`) run \`npx assets pull starter\` in this folder, or every \`asset:\` id falls back to an untextured placeholder primitive and fails the bar above.
 - Screenshots: \`bun run shoot\` (or \`node scripts/shoot.mjs\`) captures the running game to \`shots/shot.png\` — it starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at 300x150, waits for an honest frame, and works headless. Add \`--device mobile\`, \`--out shots/hud.png\`, \`--settle <ms>\`, or \`--url <page>\`; \`--help\` for all flags. Do **not** rely on a browser tool's "screenshot" button for the 3D canvas — it captures before the GPU draws.
-- Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels), \`--key KeyW:2500\`, \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
+- Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\`, \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;
 
 const artDirectionMd = `# Art direction

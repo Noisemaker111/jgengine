@@ -12,7 +12,6 @@
   "packages/core/src/combat/defensiveWindow.ts#createDefensiveWindow",
   "packages/core/src/combat/dotField.ts#createDotField",
   "packages/core/src/combat/downed.ts#createDownedState",
-  "packages/core/src/combat/projectiles.ts#createProjectileSystem",
   "packages/core/src/combat/weaponFire.ts#createFireCadence",
   "packages/core/src/commands/commandRegistry.ts#createCommandRegistry",
   "packages/core/src/crafting/crop.ts#createDayTicker",
@@ -20,7 +19,6 @@
   "packages/core/src/economy/auctionBook.ts#createAuctionBook",
   "packages/core/src/economy/listingBook.ts#createListingBook",
   "packages/core/src/economy/priceHistory.ts#createPriceHistory",
-  "packages/core/src/editor/commands.ts#createEditorSession",
   "packages/core/src/editor/liveSync.ts#createDocumentLiveSync",
   "packages/core/src/editor/streamer.ts#createWorldStreamer",
   "packages/core/src/faction/factions.ts#createFactionGraph",
@@ -102,6 +100,5 @@
   "packages/core/src/world/sharedAnnotations.ts#createSharedAnnotations",
   "packages/core/src/world/visibilityField.ts#createVisibilityField",
   "packages/core/src/world/voxelField.ts#createVoxelField",
-  "packages/core/src/world/weather.ts#createFireGrid",
   "packages/core/src/world/windZones.ts#createWindZones"
 ]

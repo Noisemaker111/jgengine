@@ -7,12 +7,9 @@
  *     --click "SALVADOR" --wait 2000 --shot picked \
  *     --key KeyW:2500 --shot walked
  *
- * Clicks resolve the first visible element whose text matches (case-
- * insensitive), wait for its center to hold still across consecutive
- * samples (entrance animations and hydration shift positions for ~2s),
- * then dispatch a raw CDP mouse press at that center — no actionability
- * checks to time out on hover overlays. Keys dispatch
- * keyDown/keyUp with the given code, held for the given milliseconds.
+ * Clicks and double-clicks require stable, enabled, unobstructed targets.
+ * Fill matches a text field's accessible label and uses native keyboard/text
+ * input, then Tab to commit changes. Keys hold for the given milliseconds.
  *
  * Managed warm loop: `shoot daemon start` keeps Chrome warm and lazily retains
  * the requested game or website Vite target. Manual `--keep`/`--connect` also
@@ -43,7 +40,8 @@ import {
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
-import { captureClickPoint, driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
+import { driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
+import { driveInputPointExpr, parseDriveFill } from "../packages/jgengine/src/templates/driveInput";
 import { decodePng } from "./png-reader";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";
@@ -54,7 +52,8 @@ import { assembleGif } from "./gif";
 import { assembleMp4 } from "./video";
 
 type Step =
-  | { kind: "click"; text: string }
+  | { kind: "click" | "double-click"; text: string }
+  | { kind: "fill"; label: string; value: string }
   | { kind: "key"; code: string; holdMs: number }
   | { kind: "wait"; ms: number }
   | { kind: "reload" }
@@ -121,6 +120,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       mid-loop judge shots — use full (default) for final/PR shots
   --click "<text>"    click the first visible element containing this text (or, for
                       icon-only buttons, this aria-label — e.g. "Settings")
+  --double-click "<text>"  double-click an actionable text target
+  --fill "<label>=<value>" replace a text field by its accessible label
   --wait <ms>         pause before the next step
   --reload            reload this page and await readiness, keeping this run's storage
                       (not available with lockstep recording or --playtest)
@@ -252,7 +253,12 @@ function parseArgs(argv: string[]): Args {
       args.timeoutMs = Number(argv[++index]) * 1000;
       args.timeoutExplicit = true;
     }
-    else if (value === "--click") args.steps.push({ kind: "click", text: argv[++index] ?? "" });
+    else if (value === "--click" || value === "--double-click") {
+      const text = argv[++index];
+      if (!text || text.startsWith("--")) throw new Error(`${value} requires target text`);
+      args.steps.push({ kind: value === "--click" ? "click" : "double-click", text });
+    }
+    else if (value === "--fill") args.steps.push({ kind: "fill", ...parseDriveFill(argv[++index]) });
     else if (value === "--reload") args.steps.push({ kind: "reload" });
     else if (value === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++index] ?? 500) });
     else if (value === "--key") {
@@ -339,54 +345,56 @@ function parseArgs(argv: string[]): Args {
 const SETTLE_EPSILON_PX = 0.5;
 const SETTLE_SAMPLES = 3;
 const SETTLE_INTERVAL_MS = 100;
-const SETTLE_TIMEOUT_MS = 5_000;
+// Match the portable drive: software GL can queue each DOM sample behind a
+// multi-second rendered frame, even when the control is already actionable.
+const SETTLE_TIMEOUT_MS = 45_000;
+const SETTLE_MAX_SAMPLES = 10;
 
-async function measureClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number; offscreen: boolean } | null> {
-  const point = await session.evaluate<{ x: number; y: number; offscreen: boolean } | null>(
-    `(${captureClickPoint.toString()})(document, ${JSON.stringify(text)})`,
-  );
-  return point ?? null;
-}
-
-async function findClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number }> {
+async function findClickPoint(session: CdpSession, text: string, input = false): Promise<{ x: number; y: number }> {
   const deadline = Date.now() + SETTLE_TIMEOUT_MS;
-  let last: { x: number; y: number; offscreen: boolean } | null = null;
+  let last: { x: number; y: number } | null = null;
   let stableRuns = 0;
-  while (Date.now() < deadline) {
-    const point = await measureClickPoint(session, text);
-    if (
-      point !== null &&
-      last !== null &&
-      Math.abs(point.x - last.x) <= SETTLE_EPSILON_PX &&
-      Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
-    ) {
+  for (let samples = 0; samples < SETTLE_MAX_SAMPLES && Date.now() < deadline; samples += 1) {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const point = (await Promise.race([
+      session.evaluate<{ x: number; y: number } | null>(driveInputPointExpr(text, input)),
+      new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), Math.max(1, deadline - Date.now())); }),
+    ]).finally(() => { if (timer !== undefined) clearTimeout(timer); })) ?? null;
+    if (Date.now() >= deadline) break;
+    const moved = point !== null && last !== null &&
+      (Math.abs(point.x - last.x) > SETTLE_EPSILON_PX || Math.abs(point.y - last.y) > SETTLE_EPSILON_PX);
+    if (point !== null && last !== null && !moved) {
       stableRuns += 1;
-      if (stableRuns >= SETTLE_SAMPLES - 1 && !point.offscreen) return point;
-    } else {
-      stableRuns = 0;
-    }
+      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
+    } else stableRuns = 0;
     last = point;
-    await new Promise((r) => setTimeout(r, SETTLE_INTERVAL_MS));
+    await new Promise((r) => setTimeout(r, Math.min(deadline - Date.now(), point === null || moved ? 1_000 : SETTLE_INTERVAL_MS)));
   }
-  if (last === null) throw new Error(`drive: no visible element matching "${text}"`);
-  if (last.offscreen) {
-    throw new Error(`drive: matching element "${text}" is outside the viewport at (${last.x}, ${last.y}); fix the layout or scroll it into view before clicking`);
-  }
-  return last;
+  throw new Error(`drive: no settled actionable element matching "${text}"`);
 }
 
-async function click(session: CdpSession, text: string): Promise<void> {
+async function click(session: CdpSession, text: string, count = 1, input = false): Promise<void> {
   await session.send("Page.bringToFront");
-  const point = await findClickPoint(session, text);
-  for (const type of ["mousePressed", "mouseReleased"] as const) {
-    await session.send("Input.dispatchMouseEvent", {
-      type,
-      x: point.x,
-      y: point.y,
-      button: "left",
-      clickCount: 1,
-    });
+  const point = await findClickPoint(session, text, input);
+  for (let clickCount = 1; clickCount <= count; clickCount += 1) {
+    for (const type of ["mousePressed", "mouseReleased"] as const) {
+      await session.send("Input.dispatchMouseEvent", { type, x: point.x, y: point.y, button: "left", clickCount });
+    }
   }
+}
+
+async function fill(session: CdpSession, label: string, value: string): Promise<void> {
+  await click(session, label, 1, true);
+  if (!await session.evaluate<boolean>(driveInputPointExpr(label, true, true))) {
+    throw new Error(`drive: text field "${label}" did not receive focus`);
+  }
+  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "a", code: "KeyA", modifiers: 2, commands: ["selectAll"] });
+  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "a", code: "KeyA", modifiers: 2 });
+  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 });
+  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Backspace", code: "Backspace", windowsVirtualKeyCode: 8 });
+  if (value) await session.send("Input.insertText", { text: value });
+  await session.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+  await session.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
 }
 
 /**
@@ -809,9 +817,12 @@ const exitCode = await withBrowserSession(
         : Promise.resolve();
 
       for (const step of args.steps) {
-        if (step.kind === "click") {
-          await click(session, step.text);
+        if (step.kind === "click" || step.kind === "double-click") {
+          await click(session, step.text, step.kind === "double-click" ? 2 : 1);
           // Let the UI react on the virtual clock so the click's effect is in frame.
+          if (recorder !== null) await recorder.advance(300);
+        } else if (step.kind === "fill") {
+          await fill(session, step.label, step.value);
           if (recorder !== null) await recorder.advance(300);
         } else if (step.kind === "key") {
           if (recorder !== null) {

@@ -1,10 +1,13 @@
 import { describe, expect, test } from "bun:test";
+import type { ProjectileSettledEvent } from "../game/events";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { createGameContext } from "@jgengine/core/runtime/gameContext";
+import { createHeadlessRunner } from "@jgengine/core/runtime/headlessRunner";
+import { createEmptyEditorDocument } from "@jgengine/core/editor/document";
 import { createEffectSystem, type CombatSpatialDeps, type ReceiveMap } from "@jgengine/core/combat/effects";
 import { createProjectileSystem, type ProjectileSystemDeps, type ProjectileSettleReport } from "@jgengine/core/combat/projectiles";
-import { createBallisticSweep, type BallisticSweep } from "@jgengine/core/physics/ballisticSweep";
+import { createBallisticSweep, sweepMovingSphere, type BallisticSweep } from "@jgengine/core/physics/ballisticSweep";
 import { PhysicsWorld } from "@jgengine/core/physics/physicsWorld";
 import { seedStatValues, type StatCatalog, type StatValueMap } from "@jgengine/core/scene/entityStats";
 import { distanceBetween } from "@jgengine/core/scene/spatial";
@@ -84,7 +87,203 @@ const target = (position: [number, number, number]): RangeEntity => ({
   position,
 });
 
+describe("authoritative live projectile travel", () => {
+  const aim = { origin: [0, 0.9, 0] as [number, number, number], direction: [0, 0, 1] as [number, number, number] };
+  const input = () => ({ from: "shooter", via: { item: "pistol" }, aim: structuredClone(aim), effect: "damage", travel: { speed: 10, lifetime: 2 } });
+
+  test("travels only when authority advances, rechecks moving poses, hits once and expires misses once", () => {
+    const entities = { enemy: target([5, 0, 5]) };
+    const { projectiles, reports, stats } = createRange(entities, [], undefined, undefined, undefined, { travel: { now: () => 0 } });
+    const shot = projectiles.fireProjectile(input());
+    expect(projectiles.settleProjectile(shot)).toEqual({ status: "rejected", shotId: shot, reason: "in-flight" });
+    projectiles.advanceProjectiles(0.4, 0.4);
+    expect(projectiles.activeProjectiles()[0]?.position).toEqual([0, 0.9, 4]);
+    entities.enemy.position = [0, 0, 5];
+    projectiles.advanceProjectiles(0.2, 0.6);
+    expect(stats.enemy?.health?.current).toBe(90);
+    expect(reports).toHaveLength(1);
+    expect(projectiles.activeProjectiles()).toEqual([]);
+    expect(projectiles.advanceProjectiles(10, 10)).toEqual([]);
+    expect(reports).toHaveLength(1);
+    const miss = projectiles.fireProjectile({ ...input(), aim: { origin: [20, 0.9, 0], direction: [0, 0, 1] } });
+    projectiles.advanceProjectiles(2, 2);
+    expect(reports).toHaveLength(2);
+    expect(reports[1]?.hit).toBe(false);
+    expect(projectiles.settleProjectile(miss)).toEqual({ status: "rejected", shotId: miss, reason: "already-settled" });
+  });
+
+  test("launch origin freezes before the shooter moves and cover wins before a receiver", () => {
+    const entities = { shooter: target([0, 0, 0]), enemy: target([0, 0, 5]) };
+    const { projectiles, stats, reports } = createRange(entities, [], [{ instanceId: "cover", catalogId: "wall", position: [0, 0.9, 2] }], undefined, undefined, { travel: { now: () => 0 } });
+    const shot = input();
+    shot.aim = { origin: [0, 0.9, 0], direction: [0, 0, 1] };
+    projectiles.fireProjectile(shot);
+    shot.travel.speed = 1000;
+    shot.aim.origin[0] = 200;
+    entities.shooter.position[0] = 200;
+    projectiles.advanceProjectiles(1, 1);
+    expect(stats.enemy?.health?.current).toBe(100);
+    expect(reports[0]?.origin).toEqual([0, 0.9, 0]);
+    expect(reports[0]?.at[2]).toBeCloseTo(1.5);
+  });
+
+  test("an injected relative sweep catches targets crossing between endpoints", () => {
+    const { projectiles, stats } = createRange({ enemy: target([5, 0, 5]) }, [], undefined, undefined, undefined, {
+      travel: { now: () => 0, sweep(from, to) {
+        const fraction = sweepMovingSphere(from, to, [-5, 0.9, 5], [5, 0.9, 5], 0.5);
+        return fraction === null ? null : { fraction, at: [0, 0.9, to[2] * fraction], target: { kind: "entity", instanceId: "enemy", distance: to[2] * fraction } };
+      } },
+    });
+    projectiles.fireProjectile(input());
+    projectiles.advanceProjectiles(1, 1);
+    expect(stats.enemy?.health?.current).toBe(90);
+  });
+
+  test("snapshot and restore detach live state and reproduce force-driven travel", () => {
+    const config: Partial<ProjectileSystemDeps> = { travel: { now: () => 0, acceleration: () => [2, 0, 0], sweep: () => null } };
+    const { projectiles } = createRange({}, [], undefined, undefined, undefined, config);
+    projectiles.fireProjectile({ ...input(), travel: { speed: 10, lifetime: 2, gravity: [0, -4, 0] } });
+    projectiles.advanceProjectiles(0.5, 0.5);
+    const state = projectiles.snapshot();
+    projectiles.advanceProjectiles(0.5, 1);
+    const expected = projectiles.snapshot();
+    projectiles.restore(state);
+    state.shots[0]!.flights![0]!.position = [999, 999, 999];
+    projectiles.advanceProjectiles(0.5, 1);
+    expect(projectiles.snapshot()).toEqual(expected);
+    const views = projectiles.activeProjectiles();
+    (views[0]!.position as number[])[0] = 999;
+    expect(projectiles.activeProjectiles()[0]!.position[0]).toBe(1);
+  });
+
+  test("malicious finite environmental coupling cannot launch or atomically replace valid live flights", () => {
+    let accelerationCalls = 0;
+    const { projectiles, reports } = createRange({}, [], undefined, undefined, undefined, {
+      travel: { now: () => 0, acceleration: () => { accelerationCalls += 1; return [2, 0, 0]; }, sweep: () => null },
+    });
+    const valid = { ...input(), travel: { speed: 10, lifetime: 2, windResponse: 1, maxAcceleration: 4 } };
+    projectiles.fireProjectile(valid);
+    projectiles.fireProjectile(valid);
+    projectiles.advanceProjectiles(0.25, 0.25);
+    const before = projectiles.snapshot();
+    for (const field of ["windResponse", "maxAcceleration"] as const) {
+      for (const malicious of [1e12 + 1, 1e308]) {
+        expect(() => projectiles.fireProjectile({ ...valid, travel: { ...valid.travel, [field]: malicious } })).toThrow("between 0 and 1e12");
+        expect(projectiles.snapshot()).toEqual(before);
+        const poisoned = structuredClone(before);
+        poisoned.shots[0]!.flights![0]!.position = [123, 456, 789];
+        poisoned.shots[1]!.input.travel![field] = malicious;
+        expect(() => projectiles.restore(poisoned)).toThrow("between 0 and 1e12");
+        expect(projectiles.snapshot()).toEqual(before);
+      }
+    }
+    expect(accelerationCalls).toBe(2);
+    projectiles.advanceProjectiles(0.25, 0.5);
+    expect(accelerationCalls).toBe(4);
+    expect(projectiles.activeProjectiles().map(flight => flight.position)).toEqual([[0.25, 0.9, 5], [0.25, 0.9, 5]]);
+    expect(reports).toEqual([]);
+    expect(projectiles.fireProjectile({ ...valid, travel: { ...valid.travel, windResponse: 1e12, maxAcceleration: 1e12 } })).toBe("shot_3");
+  });
+
+  test("caps environmental acceleration without changing gravity or depending on presentation", () => {
+    const { projectiles } = createRange({}, [], undefined, undefined, undefined, { travel: { now: () => 0, acceleration: () => [100, 0, 0], sweep: () => null } });
+    projectiles.fireProjectile({ ...input(), travel: { speed: 10, lifetime: 2, maxAcceleration: 2, gravity: [0, -4, 0] } });
+    projectiles.advanceProjectiles(1, 1);
+    expect(projectiles.activeProjectiles()[0]?.position).toEqual([1, -1.1, 10]);
+    expect(projectiles.activeProjectiles()[0]?.velocity).toEqual([2, -4, 10]);
+  });
+
+  test("shot and settlement budgets bound memory; new travel never uses a wall clock", () => {
+    const { projectiles } = createRange({}, [], undefined, undefined, undefined, { now: () => { throw new Error("wall clock"); }, travel: { now: () => 0, maxActive: 1, maxRetained: 1 } });
+    const first = projectiles.fireProjectile(input());
+    expect(() => projectiles.fireProjectile(input())).toThrow("budget");
+    projectiles.advanceProjectiles(2, 2);
+    projectiles.fireProjectile(input());
+    projectiles.advanceProjectiles(2, 2);
+    expect(projectiles.snapshot().shots).toHaveLength(1);
+    expect(projectiles.settleProjectile(first)).toEqual({ status: "rejected", shotId: first, reason: "unknown-shot" });
+    expect(() => createRange({}).projectiles.fireProjectile(input())).toThrow("authoritative");
+  });
+
+  test("the actual fixed-step context sweeps onTick target motion, pauses, and restores live arrows", () => {
+    const runner = createHeadlessRunner({
+      definition: defineGameDefinition({ name: "Live moving targets", assets: createAssetCatalog(), multiplayer: "off", simulation: { hz: 10 }, physics: { gravity: 0, jumpVelocity: 0, projectileObstacles: true } }),
+      maxStepSeconds: 1,
+      content: {
+        itemById: () => ({ weapon: { damage: 10, range: 50 } }),
+        entityById: () => ({ stats: { health: { max: 100 } }, receive: { damage: { order: ["health"] } }, colliders: { hitboxes: [{ name: "body", purpose: "damage", shape: { kind: "sphere", radius: 0.1 }, damageEligible: true }] } }),
+      },
+      loop: { onTick(ctx, dt) {
+        const enemy = ctx.scene.entity.get("enemy");
+        if (enemy !== null) ctx.scene.entity.setPose("enemy", { position: [enemy.position[0] + 10 * dt, 0.9, 0.5] });
+      } },
+    });
+    const ctx = runner.ctx;
+    ctx.scene.entity.spawn("enemy", { id: "enemy", position: [-0.5, 0.9, 0.5] });
+    const reports: ProjectileSettledEvent[] = [];
+    ctx.game.events.on("projectile.settled", report => reports.push(report));
+    const shotId = ctx.scene.entity.fireProjectile(input());
+    const state = ctx.state();
+    const replay = runner.snapshot();
+    ctx.time.pause();
+    runner.step(0.1);
+    expect(reports).toHaveLength(0);
+    ctx.time.play();
+    runner.step(0.1);
+    expect(ctx.scene.entity.stats.get("enemy", "health")?.current).toBe(90);
+    expect(reports).toHaveLength(1);
+    expect(reports[0]!.shotId).toBe(shotId);
+    expect(reports[0]!.hits).toEqual([{ instanceId: "enemy", effect: "damage", applied: [{ statId: "health", delta: -10 }], lethal: false }]);
+    const retainedHits = structuredClone(ctx.scene.entity.projectileState().shots[0]!.hits);
+    reports[0]!.hits[0]!.applied[0]!.delta = -999;
+    expect(ctx.scene.entity.projectileState().shots[0]!.hits).toEqual(retainedHits);
+    ctx.restore(state);
+    runner.step(0.1);
+    expect(ctx.scene.entity.stats.get("enemy", "health")?.current).toBe(90);
+    expect(reports).toHaveLength(2);
+    runner.step(0.1);
+    expect(reports).toHaveLength(2);
+    runner.restore(replay);
+    runner.step(0.1);
+    expect(ctx.scene.entity.stats.get("enemy", "health")?.current).toBe(90);
+    expect(reports).toHaveLength(3);
+  });
+
+  test("authored wind and force authority bends live arrows identically with cosmetic emitters disabled", () => {
+    const run = (active: boolean, forceMask: number) => {
+      const document = createEmptyEditorDocument();
+      document.simulation = {
+        weather: { wind: { direction: [1, 0], speed: 4, seed: "shared-clock" } },
+        forces: [{ center: [0, 0, 0], shape: { kind: "sphere", radius: 100 }, strength: 2, attenuation: 0, directionality: 1, direction: [0, 1, 0], mask: 1 }],
+        emitters: [{ id: "cosmetic", position: { x: 0, y: 0, z: 0 }, config: { max: active ? 64 : 1, rate: active ? 32 : 0 }, options: { active } }],
+      };
+      const runner = createHeadlessRunner({ definition: defineGameDefinition({ name: "Wind authority", assets: createAssetCatalog(), multiplayer: "off", simulation: { hz: 10 }, authoredDocument: document }), maxStepSeconds: 1 });
+      runner.ctx.scene.entity.fireProjectile({ ...input(), travel: { speed: 10, lifetime: 2, windResponse: 1, maxAcceleration: 10, forceMask, gravity: [0, -4, 0] } });
+      runner.step(0.1);
+      return runner.ctx.scene.entity.activeProjectiles()[0]!;
+    };
+    const visible = run(true, 1);
+    expect(run(false, 1)).toEqual(visible);
+    expect(visible.position[0]).toBeCloseTo(0.02);
+    expect(visible.position[1]).toBeCloseTo(0.89);
+    expect(visible.position[2]).toBeCloseTo(1);
+    expect(run(false, 0).position[1]).toBeCloseTo(0.88);
+  });
+});
+
 describe("projectile system", () => {
+  test("zero-magnitude live contacts defer game damage policy until the actual impact target", () => {
+    const { projectiles, stats, reports } = createRange({ interceptor: target([0, 0, 3]), intended: target([0, 0, 8]) }, [], undefined, undefined, undefined, { travel: { now: () => 0 } });
+    const id = projectiles.fireProjectile({ from: "shooter", effect: "damage", via: { item: "pistol", amount: 0 }, aim: { origin: [0, 0.9, 0], direction: [0, 0, 1] }, travel: { speed: 10, lifetime: 2 } });
+    projectiles.advanceProjectiles(0.5, 0.5);
+    expect(reports).toHaveLength(1);
+    expect(reports[0]!.shotId).toBe(id);
+    expect(reports[0]!.hits).toEqual([{ instanceId: "interceptor", effect: "damage", applied: [], lethal: false }]);
+    expect(stats.interceptor!.health!.current).toBe(100);
+    expect(stats.intended!.health!.current).toBe(100);
+    projectiles.advanceProjectiles(1, 1.5);
+    expect(reports).toHaveLength(1);
+  });
   test("willHitProjectile predicts without changing state", () => {
     const { projectiles, stats } = createRange({ enemy: target([0, 0, 10]) });
     const prediction = projectiles.willHitProjectile({

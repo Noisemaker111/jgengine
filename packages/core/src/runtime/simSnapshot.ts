@@ -69,6 +69,8 @@ export function createContextSimSnapshot(ctx: GameContext): SimSnapshotRegistry 
     capture: () => structuredClone(ctx.snapshot()),
     restore: (data) => ctx.hydrate(structuredClone(data)),
   });
+  registry.register({ id: "projectiles", capture: ctx.scene.entity.projectileState, restore: ctx.scene.entity.restoreProjectiles });
+  registry.register({ id: "environment", capture: ctx.environment.snapshot, restore: ctx.environment.restore });
   registry.register({ id: "clock", capture: () => ctx.time.snapshot(), restore: (data) => ctx.time.hydrate(data) });
   registry.register({ id: "sim", capture: () => ctx.sim.snapshot(), restore: (data) => ctx.sim.restore(data) });
   if (rngStateOf(ctx.rng) !== null) {

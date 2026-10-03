@@ -213,3 +213,15 @@ describe("stepFlock", () => {
     expect(Number.isFinite(agents[0]!.position[0])).toBe(true);
   });
 });
+
+test("external acceleration composes before velocity clamp and rejects malformed vectors atomically", async () => {
+  const { stepFlock: step } = await import("./flock");
+  const agents = [{ position: [0, 0, 0] as FlockVec3, velocity: [0, 0, 0] as FlockVec3 }];
+  const config = { maxSpeed: 2, separationRadius: 1, neighborRadius: 4, seekWeight: 0 };
+  step(agents, config, 0.1, undefined, () => [100, 0, 0]);
+  expect(agents[0]!.velocity).toEqual([2, 0, 0]);
+  expect(agents[0]!.position).toEqual([0.2, 0, 0]);
+  const saved = structuredClone(agents);
+  expect(() => step(agents, config, 0.1, undefined, () => [NaN, 0, 0])).toThrow();
+  expect(agents).toEqual(saved);
+});

@@ -1,4 +1,6 @@
-import { Fragment, useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { AuthoredFlocks } from "../world/AuthoredFlocks";
+import { AuthoredWeatherLayer } from "../weather/AuthoredWeatherLayer";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import * as THREE from "three";
 
 import type { EditorDocument, EditorMarker, EditorPath, EditorVolume } from "@jgengine/core/editor/index";
@@ -12,6 +14,7 @@ import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import {
   placeAuthoredObjects,
   resolveAuthoredObjects,
+  syncAuthoredObjects,
 } from "@jgengine/core/world/authoredObjects";
 import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids";
 import { buildRoadRibbon, GROUND_DECAL_LAYERS, roundPathCorners } from "@jgengine/core/world/roads";
@@ -212,6 +215,8 @@ export interface AuthoredObjectsProps {
    * `placeAuthoredObjects` call wins and remounts stay remount-safe.
    */
   onExisting?: "throw" | "replace" | "keep";
+  /** Synchronize authored edits and remove previously owned placements absent from the document. */
+  synchronize?: boolean;
 }
 
 /**
@@ -224,16 +229,23 @@ export function AuthoredObjects({
   field,
   verticalOffset = 0,
   onExisting = "keep",
+  synchronize = false,
 }: AuthoredObjectsProps) {
   const ctx = useGameContext();
+  const previousObjects = useRef<ReturnType<typeof resolveAuthoredObjects>>([]);
+  const previousStore = useRef(ctx.scene.object);
   const objects = useMemo(() => resolveAuthoredObjects(document), [document]);
   useEffect(() => {
-    if (objects.length === 0) return;
+    if (previousStore.current !== ctx.scene.object) { previousObjects.current = []; previousStore.current = ctx.scene.object; }
+    if (synchronize) {
+      previousObjects.current = syncAuthoredObjects(ctx.scene.object, objects, previousObjects.current, (x, z) => field.sampleHeight(x, z), { verticalOffset });
+      return;
+    }
     placeAuthoredObjects(ctx.scene.object, objects, (x, z) => field.sampleHeight(x, z), {
       verticalOffset,
       onExisting,
     });
-  }, [ctx.scene.object, field, objects, onExisting, verticalOffset]);
+  }, [ctx.scene.object, field, objects, onExisting, verticalOffset, synchronize]);
   return null;
 }
 
@@ -259,6 +271,8 @@ export function AuthoredSolids({ document, field }: { document: EditorDocument; 
 /** Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on. */
 export interface AuthoredSceneProps {
   document: EditorDocument;
+  /** Register bounded procedural weather counts in the supported diagnostics probes. */
+  diagnostics?: boolean;
   field: TerrainField;
   /** Restrict rendered path kinds; default renders every non-scatter path. */
   pathKinds?: readonly string[];
@@ -268,6 +282,8 @@ export interface AuthoredSceneProps {
    * dedicated map even if it shares entries with `entityModels`). Requires `assets`.
    */
   scatterModels?: Record<string, string | ModelConfig>;
+  /** Animated models keyed by authored cosmetic habitat species. */
+  flockModels?: Record<string, string | ModelConfig>;
   /** Catalog `scatterModels` string ids resolve through; required together with `scatterModels`. */
   assets?: AssetCatalog;
   /**
@@ -298,15 +314,20 @@ export interface AuthoredSceneProps {
  */
 export function AuthoredScene({
   document,
+  diagnostics = false,
   field,
   pathKinds,
   scatterModels,
+  flockModels,
   assets,
   live = true,
   placeObjects,
   groundColorAt,
 }: AuthoredSceneProps) {
+  const ctx = useGameContext();
   const liveDocument = useLiveEditorDocument(document, live);
+  // Authoring updates configuration only. Physics remains owned by the fixed game-time stages.
+  useEffect(() => { ctx.environment.retune(liveDocument); }, [ctx.environment, liveDocument]);
   const instances = useMemo(() => resolveScatter(liveDocument, field), [liveDocument, field]);
   const resolveItem = useMemo(
     () => createModelMapResolver(scatterModels, assets, "scatterModels"),
@@ -316,6 +337,8 @@ export function AuthoredScene({
   const objectVerticalOffset = typeof placeObjects === "object" && placeObjects !== null ? (placeObjects.verticalOffset ?? 0) : 0;
   return (
     <>
+      <AuthoredWeatherLayer document={liveDocument} heightAt={field.sampleHeight} diagnostics={diagnostics} />
+      {flockModels === undefined ? null : <AuthoredFlocks models={flockModels} assets={assets} />}
       <AuthoredPaths document={liveDocument} field={field} {...(pathKinds === undefined ? {} : { kinds: pathKinds })} />
       <InstancedScatter instances={instances} {...(resolveItem === undefined ? {} : { resolveItem })} />
       <AuthoredStudios
@@ -330,7 +353,7 @@ export function AuthoredScene({
       <AuthoredGenerators document={liveDocument} field={field} />
       <AuthoredSolids document={liveDocument} field={field} />
       {shouldPlaceObjects ? (
-        <AuthoredObjects document={liveDocument} field={field} verticalOffset={objectVerticalOffset} />
+        <AuthoredObjects document={liveDocument} field={field} verticalOffset={objectVerticalOffset} synchronize={live && getDocumentLiveSync() !== null} />
       ) : null}
     </>
   );

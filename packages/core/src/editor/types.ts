@@ -1,3 +1,4 @@
+import type { EditorSimulation } from "./simulation";
 import type { MaterialAsset } from "../material/materialAsset";
 import type { StaticPrefabBake } from "./staticPrefab";
 import type { ParamSchema } from "../scene/sceneKinds";
@@ -255,6 +256,8 @@ export interface EditorDocument {
   /** Reusable material library; per-marker named assignments live in meta.materialAssignments. */
   materialAssets?: MaterialAsset[];
   version: 1;
+  /** Authored weather, emitter, fire and habitat inputs; runtime state saves separately. */
+  simulation?: EditorSimulation;
   markers: EditorMarker[];
   volumes: EditorVolume[];
   paths: EditorPath[];

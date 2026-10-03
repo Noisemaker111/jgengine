@@ -35,6 +35,10 @@ type PresentationFields = Omit<PlayableGame, "game" | "content" | "loop" | "Game
   scenePlacement?: boolean | { verticalOffset?: number };
   /** GLB models for the auto-mounted scene's scatter palette items, keyed by palette item id; string ids resolve through the game's asset catalog. Unmatched items keep the built-in proxy meshes. */
   sceneScatterModels?: Record<string, string | ModelConfig>;
+  /** Animated species models for cosmetic authored habitats; gameplay actors remain game-owned. */
+  sceneFlockModels?: Record<string, string | ModelConfig>;
+  /** Visible ground path kinds; omit to draw every non-scatter path, or restrict to keep flight/patrol guides out of world roads. */
+  scenePathKinds?: readonly string[];
 };
 
 export type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> &
@@ -75,8 +79,11 @@ function isEnvironmentSource(value: unknown): value is EnvironmentSource {
 
 function authoredSceneOverlay(
   document: EditorDocument,
+  diagnostics: boolean,
   placement: boolean | { verticalOffset?: number },
   scatterModels: Record<string, string | ModelConfig> | undefined,
+  flockModels: Record<string, string | ModelConfig> | undefined,
+  pathKinds: readonly string[] | undefined,
   assets: AssetCatalog,
   world: GameDefinitionConfig<ModelAssetRef>["world"],
   Vfx: ComponentType<WorldOverlayProps> | undefined,
@@ -91,9 +98,13 @@ function authoredSceneOverlay(
       <>
         <AuthoredScene
           document={document}
+          diagnostics={diagnostics}
           field={props.ctx.world.ground}
           placeObjects={placement}
-          {...(scatterModels === undefined ? {} : { scatterModels, assets })}
+          assets={assets}
+          {...(scatterModels === undefined ? {} : { scatterModels })}
+          {...(flockModels === undefined ? {} : { flockModels })}
+          {...(pathKinds === undefined ? {} : { pathKinds })}
           {...(groundColorAt === undefined ? {} : { groundColorAt })}
         />
         {Vfx === undefined ? null : <Vfx {...props} />}
@@ -125,6 +136,8 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     editorCatalogs,
     scenePlacement,
     sceneScatterModels,
+    sceneFlockModels,
+    scenePathKinds,
     WorldOverlay,
     viewmodel,
     renderEntity,
@@ -168,8 +181,9 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
 
   const game = defineEngineGame({
     ...engineFields,
+    ...(editorLayers === undefined ? {} : { authoredDocument: editorLayers }),
     multiplayer: multiplayer ?? offline(),
-    loop,
+    loop: { ...loop, onDispose(ctx) { try { loop?.onDispose?.(ctx); } finally { ctx.environment.dispose(); } } },
   });
   const resolvedLook = resolveGameLook({
     look,
@@ -213,8 +227,11 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
         ? WorldOverlay
         : authoredSceneOverlay(
             editorLayers,
+            devtools !== false,
             scenePlacement ?? true,
             sceneScatterModels,
+            sceneFlockModels,
+            scenePathKinds,
             game.assets,
             game.world,
             WorldOverlay,

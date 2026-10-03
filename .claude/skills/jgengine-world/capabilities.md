@@ -110,6 +110,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `authoredEntitySpawns` (function) · `import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities"`
 
+## authored-environment — compose authored weather, shelter, accumulation, fire, flocks and effects using one simulation clock
+
+- `createAuthoredSimulation` (function) · `import { createAuthoredSimulation } from "@jgengine/core/world/authoredSimulation"`
+
 ## authored-objects — marker kinds resolved as entity spawns, not static props
 
 - `ENTITY_MARKER_KINDS` (const) · `import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects"`
@@ -137,6 +141,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `createTriggerOutcome` (function) · `import { createTriggerOutcome } from "@jgengine/core/scene/authoredTriggers"`
 - `registerBuiltinTriggerActions` (function) · `import { registerBuiltinTriggerActions } from "@jgengine/core/scene/authoredTriggers"`
 - `registerTriggerAction` (function) · `import { registerTriggerAction } from "@jgengine/core/world"`
+
+## authored-weather — Sample scheduled precipitation and local wind from one authored document and simulation clock.
+
+- `createAuthoredWeather` (function) · `import { createAuthoredWeather } from "@jgengine/core/world/authoredWeather"`
+
+## authored-weather-validation — Reject invalid weather profiles, schedules, zones and wind before authoring mutations.
+
+- `validateAuthoredWeather` (function) · `import { validateAuthoredWeather } from "@jgengine/core/world/authoredWeather"`
 
 ## axis-shaping — shape raw input per axis — deadzone, response curve, keyboard ramp, self-centring, speed-sensitive scaling
 
@@ -304,6 +316,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `entityMetaOf` (function) · `import { entityMetaOf } from "@jgengine/core/world"`
 
+## environment-motion — apply capped spatial wind and vortex forces to game-selected actors through shared motion intents
+
+- `installEnvironmentMotion` (function) · `import { installEnvironmentMotion } from "@jgengine/core/world/environmentForces"`
+
 ## fast-travel — network of fast-travel destinations with discovery, distance-sorted queries, nearest lookup, a travel gate, and serializable state
 
 - `createFastTravelNetwork` (function) · `import { createFastTravelNetwork } from "@jgengine/core/world"`
@@ -327,6 +343,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## footprint-grid — multi-cell footprint occupancy/reservation on a shared build grid
 
 - `createFootprintGrid` (function) · `import { createFootprintGrid } from "@jgengine/core/world"`
+
+## force-field-validation — reject invalid localized force authoring before simulation
+
+- `validateForceField` (function) · `import { validateForceField } from "@jgengine/core/physics/forceVolume"`
 
 ## formation-assignment — stable deterministic member-to-slot matching for a group formation
 
@@ -442,6 +462,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `resolveLocalAvoidance` (function) · `import { resolveLocalAvoidance } from "@jgengine/core/world"`
 
+## localized-forces — sample signed attraction, directional force, vortex spin and axial lift with target masks and caps
+
+- `sampleForceField` (function) · `import { sampleForceField } from "@jgengine/core/physics/forceVolume"`
+
 ## lockpick — a solvable grid depth-puzzle with fog-of-war, gates, and hidden traps
 
 - `generateLock` (function) · `import { generateLock } from "@jgengine/core/world"`
@@ -497,6 +521,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `measureMovement` (function) · `import { measureMovement } from "@jgengine/core/movement/movementProbe"`
 
+## moving-box-sweep — detect contact with boxes crossing a projectile segment between simulation poses
+
+- `sweepMovingBounds` (function) · `import { sweepMovingBounds } from "@jgengine/core/physics/ballisticSweep"`
+
+## moving-sphere-sweep — detect contact with spheres crossing a projectile segment between simulation poses
+
+- `sweepMovingSphere` (function) · `import { sweepMovingSphere } from "@jgengine/core/physics/ballisticSweep"`
+
 ## nav-from-solids — block world solids on a nav grid
 
 - `populateNavGridFromSolids` (function) · `import { populateNavGridFromSolids } from "@jgengine/core/nav/navFromEnvironment"`
@@ -521,11 +553,19 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createOrderRegistry` (function) · `import { createOrderRegistry } from "@jgengine/core/world"`
 
-## particle-director — game-reachable VFX seam: queue one-shot particle bursts and keyed follow-capable standing emitters as serializable data for the shell to render
+## particle-binding-validation — validate named particle follow spaces, render outputs, environment influence, and bounded collision child effects
+
+- `validateParticleAttachOptions` (function) · `import { validateParticleAttachOptions } from "@jgengine/core/vfx/particleDirector"`
+
+## particle-director — named particle start/stop/burst/retune lifecycle, local/world following, render outputs, bounded cosmetic event exchange, and serializable emitter definitions
 
 - `createParticleDirector` (function) · `import { createParticleDirector } from "@jgengine/core/vfx/particleDirector"`
 
-## particle-system — deterministic pooled particle emitter with SoA render buffers, burst/continuous emission, gravity/drag, size/color/alpha-over-life, and serializable state
+## particle-emitter-validation — validate finite spawn volumes, force fields, lifetimes, appearance curves, and bounded particle collision policies
+
+- `validateEmitterConfig` (function) · `import { validateEmitterConfig } from "@jgengine/core/vfx/particles"`
+
+## particle-system — deterministic pooled particle emitter with spawn volumes, force fields, bounded collision/death events, live tuning, SoA render buffers, and serializable state
 
 - `createParticleSystem` (function) · `import { createParticleSystem } from "@jgengine/core/world"`
 
@@ -756,6 +796,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `surfaceRing` (function) · `import { surfaceRing } from "@jgengine/core/world"`
 
+## sync-authored-objects — synchronize edited catalog prop poses, elevation and removal through the existing object store
+
+- `syncAuthoredObjects` (function) · `import { syncAuthoredObjects } from "@jgengine/core/world/authoredObjects"`
+
 ## tactical-cover-points — derive cover candidates from navigation-mesh boundaries
 
 - `coverPoints` (function) · `import { coverPoints } from "@jgengine/core/ai/tacticalQueries"`
@@ -852,6 +896,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## waypoint-store — serializable player waypoint layer — place/track/clear pins, mirror to a MarkerSet, and on-screen bearing/distance guidance for the tracked waypoint
 
 - `createWaypointStore` (function) · `import { createWaypointStore } from "@jgengine/core/world"`
+
+## weather-environment-field — Connect authored precipitation and temperature changes to spatial environment queries.
+
+- `createWeatherEnvironmentField` (function) · `import { createWeatherEnvironmentField } from "@jgengine/core/world/authoredWeather"`
+
+## weather-surface-accumulation — Persist and retune bounded surface wetness, snow, temperature and exposure independently of rendering.
+
+- `createWeatherExposure` (function) · `import { createWeatherExposure } from "@jgengine/core/world/authoredWeather"`
 
 ## world-environment — compose editor/preset-derived outdoor dressing — terrain, weather, water, structures — into a legacy environment feature
 

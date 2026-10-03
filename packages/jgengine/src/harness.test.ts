@@ -286,13 +286,19 @@ describe("portable click settling on slow rendered pages", () => {
     let now = 0;
     const budgets: number[] = [];
     try {
-      const point = await lib.findClickPoint({ async evaluate(_: string, opts: { timeoutMs: number }) { budgets.push(opts.timeoutMs); now += 2500; return { x: 12, y: 34 }; } }, "Begin", { now: () => now, sleep: async (ms: number) => { now += ms; } });
+      const point = await lib.findClickPoint({ async evaluate(_: string, opts: { timeoutMs: number }) { budgets.push(opts.timeoutMs); now += 9000; return { x: 12, y: 34 }; } }, "Begin", { now: () => now, sleep: async (ms: number) => { now += ms; } });
       expect(point).toEqual({ x: 12, y: 34 });
-      expect(budgets).toEqual([15000, 12400, 9800]);
-      expect(now).toBeLessThan(15000);
+      expect(budgets).toEqual([45000, 35900, 26800]);
+      expect(now).toBeLessThan(45000);
       now = 0;
       await expect(lib.findClickPoint({ async evaluate() { now += 1000; return { x: now, y: 34 }; } }, "Moving", { timeoutMs: 3000, now: () => now, sleep: async (ms: number) => { now += ms; } })).rejects.toThrow("did not settle");
       expect(now).toBeLessThan(4500);
+      now = 0;
+      let samples = 0;
+      await expect(lib.findClickPoint({ async evaluate() { samples += 1; return null; } }, "Missing", { now: () => now, sleep: async (ms: number) => { now += ms; } })).rejects.toThrow("no actionable");
+      expect(samples).toBe(10);
+      now = 0;
+      await expect(lib.findClickPoint({ async evaluate() { now += 16000; return { x: 12, y: 34 }; } }, "Too slow", { now: () => now, sleep: async (ms: number) => { now += ms; } })).rejects.toThrow("did not settle");
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });

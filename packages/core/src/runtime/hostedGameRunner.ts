@@ -98,7 +98,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
   const members = new Map<string, LoopPlayer>();
   const inputs = new Map<string, InputRecorder>();
   const latestInputs = new Map<string, InputFrame>();
-  const movementTuning = resolvePlayerMovementTuning({ world: definition.world, physics: definition.physics });
+  const movementTuning = { ...resolvePlayerMovementTuning({ world: definition.world, physics: definition.physics }), authoritativeStep: true };
   const inputSeq = new Map<string, number>();
   const inputPressSeq = new Map<string, number>();
   const departed = new Map<string, number>();
@@ -280,7 +280,7 @@ export function createHostedGameRunner<TAssetRef extends ModelAssetRef, TMultipl
         ctx.sim.runStages("beforeMovement", stepDt);
         for (const userId of members.keys()) {
           const frame = inputs.get(userId)?.frameAt(tick) ?? null;
-          if (frame !== null) serverStep(ctx, userId, frame, stepDt, movementTuning);
+          if (frame !== null && gameDt > 0) serverStep(ctx, userId, frame, gameDt, movementTuning);
         }
         ctx.sim.runStages("afterMovement", stepDt);
         loop.onTick?.(ctx, gameDt);

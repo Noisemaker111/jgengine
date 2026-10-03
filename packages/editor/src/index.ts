@@ -1,4 +1,5 @@
 export { EditorApp, type EditorAppProps, type EditorSaveFn } from "./EditorApp";
+export { CreatorApp, type CreatorConfig } from "./CreatorApp";
 export {
   buildEditorNetworkSnapshot,
   isNetworkMultiplayerConfigured,

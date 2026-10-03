@@ -40,7 +40,6 @@ import { createTerrainDetailMaterial } from "../terrain/terrainDetailMaterial";
 import { Ocean } from "../water/Ocean";
 import { RainField } from "../weather/RainField";
 import { SnowField } from "../weather/SnowField";
-import { WeatherUniformProvider } from "../weather/weatherUniforms";
 
 export interface EnvironmentSceneProps {
   feature: EnvironmentWorldFeature;
@@ -235,11 +234,13 @@ function weatherVolume(area: { w: number; d: number; h?: number }): readonly [nu
 }
 
 function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowEnvironmentDescriptor; index: number }) {
+  const ctx = useGameContext();
   const [cx, cz] = areaCenter(weather.area);
   if (weather.kind === "rain") {
     return (
       <group position={[cx, 0, cz]}>
         <RainField
+          timeSeconds={ctx.time.now}
           density={weather.density}
           speed={weather.speed}
           length={weather.dropLength}
@@ -255,6 +256,7 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
   return (
     <group position={[cx, 0, cz]}>
       <SnowField
+        timeSeconds={ctx.time.now}
         density={weather.density}
         speed={weather.speed}
         size={weather.flakeSize}
@@ -270,11 +272,11 @@ function Precipitation({ weather }: { weather: RainEnvironmentDescriptor | SnowE
 
 function Weather({ weather }: { weather: readonly WeatherEnvironmentDescriptor[] }) {
   return (
-    <WeatherUniformProvider>
+    <>
       {weather.map((entry, index) => (
         <Precipitation key={`${entry.kind}-${index}`} weather={entry} index={index} />
       ))}
-    </WeatherUniformProvider>
+    </>
   );
 }
 

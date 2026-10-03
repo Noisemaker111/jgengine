@@ -1,4 +1,4 @@
-import { MOVEMENT_TUNING, type AnalogMoveIntent, type CollisionObstacle, type MovementKeysState } from "./movementModel";
+import { motionStepSeconds, type AnalogMoveIntent, type CollisionObstacle, type MovementKeysState, type MotionFrameOptions } from "./movementModel";
 import { DEFAULT_OBSTACLE_PLAYER_RADIUS } from "./movementModel";
 import { sampleAxisBindings, type AxisBinding } from "../input/axisInput";
 import type { PointerAxisState } from "../input/pointerAxis";
@@ -150,8 +150,9 @@ export function advanceFreeFlight(
   pitch: number | undefined,
   dt: number,
   tuning: FreeFlightTuning,
+  options?: Pick<MotionFrameOptions, "authoritativeStep">,
 ): FreeFlightStep {
-  const delta = Math.min(dt, MOVEMENT_TUNING.maxFrameSeconds);
+  const delta = motionStepSeconds(dt, options?.authoritativeStep);
   if (delta <= 0) return { stepX: 0, stepY: 0, stepZ: 0 };
   const speed = tuning.speed ?? 8;
   const verticalSpeed = tuning.verticalSpeed ?? speed;

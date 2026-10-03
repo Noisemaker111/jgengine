@@ -205,3 +205,35 @@ describe("authored animation (marker.meta.animation → placed ModelConfig.anima
     expect(store.get("plain")!.animation).toBeUndefined();
   });
 });
+
+test("document synchronization updates authored poses and removes ghosts without touching game objects", async () => {
+  const { syncAuthoredObjects } = await import("./authoredObjects");
+  const store = createObjectStore();
+  store.place("game_loot", 12, 0, 12, { instanceId: "runtime" });
+  let owned = syncAuthoredObjects(store, resolveAuthoredObjects(doc), [], () => 2);
+  const edited = structuredClone(doc);
+  edited.markers[0]!.position.x = 25;
+  edited.markers[0]!.rotationY = 2.5;
+  edited.markers[0]!.meta = { catalogId: "wood_crate", verticalOffset: 3 };
+  owned = syncAuthoredObjects(store, resolveAuthoredObjects(edited), owned, () => 4);
+  expect(store.get("crate_a")!.position).toEqual([25, 7, -4]);
+  expect(store.get("crate_a")!.rotationY).toBe(2.5);
+  owned = syncAuthoredObjects(store, [], owned, () => 4);
+  expect(owned).toEqual([]);
+  expect(store.get("crate_a")).toBeNull();
+  expect(store.get("barrel_b")).toBeNull();
+  expect(store.get("runtime")!.catalogId).toBe("game_loot");
+});
+
+
+test("initial sync and unrelated edits preserve game initialized prop state", async () => {
+  const { syncAuthoredObjects } = await import("./authoredObjects");
+  const store = createObjectStore();
+  store.place("wood_crate", 91, 8, 43, { instanceId: "crate_a", rotation: 0.7 });
+  const objects = resolveAuthoredObjects(doc);
+  const previous = syncAuthoredObjects(store, objects, [], () => 2);
+  expect(store.get("crate_a")!.position).toEqual([91, 8, 43]);
+  syncAuthoredObjects(store, resolveAuthoredObjects(structuredClone(doc)), previous, () => 9);
+  expect(store.get("crate_a")!.position).toEqual([91, 8, 43]);
+  expect(store.get("crate_a")!.rotationY).toBe(0.7);
+});

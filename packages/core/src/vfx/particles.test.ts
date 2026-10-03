@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createParticleSystem } from "./particles";
+import { createParticleSystem, validateEmitterConfig } from "./particles";
 
 describe("createParticleSystem", () => {
   test("burst emit fills the pool up to max and no further", () => {
@@ -104,4 +104,162 @@ describe("createParticleSystem", () => {
     sys.emit(1);
     expect(hits).toBe(2); // emit + clear, not the post-unsubscribe emit
   });
+});
+
+describe("particle lifecycle and contacts", () => {
+  test("stop preserves the pool, named manual emissions work, restart resumes the rate", () => {
+    const sys = createParticleSystem({ max: 8, rate: 2, lifetime: { min: 3, max: 3 }, speed: { min: 0, max: 0 } });
+    sys.update(1);
+    sys.stop();
+    sys.update(1);
+    expect(sys.count()).toBe(2);
+    sys.emit(1);
+    expect(sys.count()).toBe(3);
+    sys.start();
+    sys.update(0.5);
+    expect(sys.count()).toBe(4);
+  });
+
+  test("capacity bounds emission work for huge counts and rates", () => {
+    const sys = createParticleSystem({ max: 3, rate: 1e30, lifetime: { min: 10, max: 10 } });
+    sys.update(0.1);
+    sys.emit(1e30);
+    sys.emit(Infinity);
+    sys.update(NaN);
+    expect(sys.count()).toBe(3);
+    expect(Number.isFinite(sys.snapshot().accumulator)).toBe(true);
+  });
+
+  test("seed retunes reset future randomness and restore preserves retuned config and stopped state", () => {
+    const sys = createParticleSystem({ max: 4, seed: "before", rate: 2, spawnJitter: [2, 2, 2] });
+    sys.configure({ seed: "after", gravity: [1, 2, 3] });
+    sys.emit(1);
+    const twin = createParticleSystem({ max: 4, seed: "after", spawnJitter: [2, 2, 2] });
+    twin.emit(1);
+    expect(Array.from(sys.buffers().positions)).toEqual(Array.from(twin.buffers().positions));
+    sys.stop();
+    twin.restore(JSON.parse(JSON.stringify(sys.snapshot())));
+    sys.update(0.2);
+    twin.update(0.2);
+    expect(twin.snapshot()).toEqual(sys.snapshot());
+  });
+
+  test("plane contacts kill at the exact intersection and events drain once", () => {
+    const sys = createParticleSystem({ max: 3, position: [0, 1, 0], direction: [0, -1, 0], speed: { min: 2, max: 2 }, lifetime: { min: 5, max: 5 }, collision: { planeY: 0 } });
+    sys.emit(1);
+    sys.update(1);
+    expect(sys.count()).toBe(0);
+    expect(sys.drainEvents()).toEqual([{ type: "collision", particleId: 1, position: [0, 0, 0], velocity: [0, -2, 0], normal: [0, 1, 0] }]);
+    expect(sys.drainEvents()).toEqual([]);
+  });
+
+  test("contact queries and retained events remain bounded without draining", () => {
+    let queries = 0;
+    const sys = createParticleSystem({ max: 5, lifetime: { min: 5, max: 5 }, collision: { response: "bounce", maxQueries: 2, maxEvents: 1 } }, {
+      collision: (_from, to) => { queries++; return { position: to, normal: [0, -2, 0] }; },
+    });
+    sys.emit(5);
+    sys.update(0.1);
+    sys.update(0.1);
+    expect(queries).toBe(4);
+    expect(sys.drainEvents()).toHaveLength(1);
+    expect(sys.count()).toBe(5);
+  });
+
+  test("bounce normal is normalized and restitution sets reflected velocity", () => {
+    const sys = createParticleSystem({ max: 1, position: [0, 1, 0], direction: [0, -1, 0], speed: { min: 2, max: 2 }, lifetime: { min: 5, max: 5 }, collision: { response: "bounce", restitution: 0.5 } }, {
+      collision: () => ({ position: [0, 0, 0], normal: [0, 3, 0] }),
+    });
+    sys.emit(1);
+    sys.update(1);
+    expect(sys.buffers().velocities[1]).toBeCloseTo(1);
+    expect(sys.count()).toBe(1);
+  });
+
+  test("birth ids and history survive swap removal and replay", () => {
+    const sys = createParticleSystem({ max: 3, lifetime: { min: 0.2, max: 0.2 } });
+    sys.emit(1);
+    sys.configure({ lifetime: { min: 5, max: 5 } });
+    sys.emit(2);
+    sys.update(0.3);
+    expect(Array.from(sys.buffers().ids.subarray(0, sys.count())).sort()).toEqual([2, 3]);
+    const twin = createParticleSystem({ max: 3 });
+    twin.restore(sys.snapshot());
+    expect(twin.snapshot()).toEqual(sys.snapshot());
+  });
+});
+
+
+describe("authored particle validation and shared forces", () => {
+  test("shared directional and vortex fields update the existing simulation", () => {
+    const sys = createParticleSystem({ max: 1, position: [1, 0, 0], speed: { min: 0, max: 0 }, lifetime: { min: 10, max: 10 }, forces: [{ center: [0, 0, 0], shape: { kind: "sphere", radius: 10 }, strength: 2, attenuation: 0, directionality: 1, direction: [0, 1, 0], vortex: { axis: [0, 1, 0], strength: 3 } }] });
+    sys.emit(1); sys.update(1);
+    expect(Array.from(sys.buffers().velocities)).toEqual([0, 2, -3]);
+    expect(Array.from(sys.buffers().positions)).toEqual([1, 2, -3]);
+  });
+
+  test("invalid renderable data returns diagnostics without NaN propagation", () => {
+    expect(validateEmitterConfig({ rate: NaN, max: Infinity, position: [0, 1], lifetime: { min: -1, max: 0 }, forces: [{ center: [0, 0, 0], strength: 2, shape: { kind: "sphere", radius: -1 } }], collision: { response: "slide", maxEvents: 100000 } })).toHaveLength(7);
+    expect(validateEmitterConfig({ rate: 10, max: 512, seed: "saved", collision: { planeY: 0, response: "kill", maxEvents: 16 } })).toEqual([]);
+    expect(validateEmitterConfig(null)).toEqual(["emitter must be an object"]);
+  });
+
+  test("all render buffers retain their allocation across updates and bursts", () => {
+    const sys = createParticleSystem({ max: 32, rate: 5 });
+    const initial = sys.buffers();
+    sys.update(0.5); sys.emit(5); sys.update(0.1);
+    const current = sys.buffers();
+    expect(current.positions).toBe(initial.positions);
+    expect(current.previousPositions).toBe(initial.previousPositions);
+    expect(current.velocities).toBe(initial.velocities);
+    expect(current.sizes).toBe(initial.sizes);
+    expect(current.colors).toBe(initial.colors);
+    expect(current.alphas).toBe(initial.alphas);
+    expect(current.ids).toBe(initial.ids);
+  });
+});
+
+test("surface cone births form a deterministic bounded funnel", () => {
+  const config = { max: 32, seed: "funnel", position: [4, 0, 5] as const, spawnShape: { kind: "cone" as const, radius: 3, height: 8, surface: true }, speed: { min: 0, max: 0 } };
+  const sys = createParticleSystem(config);
+  const twin = createParticleSystem(config);
+  sys.emit(32); twin.emit(32);
+  const positions = sys.buffers().positions;
+  expect(Array.from(positions)).toEqual(Array.from(twin.buffers().positions));
+  for (let i = 0; i < sys.count(); i++) {
+    const height = positions[i * 3 + 1]!;
+    expect(height).toBeGreaterThanOrEqual(0);
+    expect(height).toBeLessThanOrEqual(8);
+    expect(Math.hypot(positions[i * 3]! - 4, positions[i * 3 + 2]! - 5)).toBeCloseTo(height / 8 * 3, 5);
+  }
+  expect(validateEmitterConfig({ spawnShape: { kind: "cone", radius: -1, height: Infinity } })).toHaveLength(2);
+});
+
+test("complete descriptor replacement clears omitted tuning without clearing live particles", () => {
+  const sys = createParticleSystem({ max: 4, rate: 2, gravity: [0, -10, 0], lifetime: { min: 10, max: 10 }, speed: { min: 0, max: 0 } });
+  sys.emit(1);
+  sys.configure({ max: 4 }, true);
+  sys.update(0.1);
+  expect(sys.count()).toBe(1);
+  expect(sys.buffers().velocities[1]).toBe(0);
+  expect(sys.snapshot().config?.rate).toBe(0);
+});
+
+test("injected cosmetic forces preserve pause and use retunable caller policy", () => {
+  let strength = 2;
+  let queries = 0;
+  const sys = createParticleSystem({ max: 1, speed: { min: 0, max: 0 }, lifetime: { min: 5, max: 5 } }, {
+    acceleration: (_position, _velocity, out) => { queries++; out[0] = strength; out[1] = out[2] = 0; return out; },
+  });
+  sys.emit(1);
+  sys.update(0);
+  expect(queries).toBe(0);
+  sys.update(0.5);
+  expect(sys.buffers().velocities[0]).toBe(1);
+  strength = 4;
+  sys.update(0.5);
+  expect(sys.buffers().velocities[0]).toBe(3);
+  const before = sys.snapshot();
+  sys.update(0);
+  expect(sys.snapshot()).toEqual(before);
 });

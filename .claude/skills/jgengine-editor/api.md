@@ -169,6 +169,17 @@
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `EditorTransactionResult` (type): type EditorTransactionResult = | { ok: true; state: EditorSessionState; changed: boolean } | { ok: false; error: string; commandIndex?: number } — Atomic command-batch outcome; a failure identifies the zero-based command index.
 
+## @jgengine/core/editor/creatorStorage
+
+- `CreatorConfig` (interface): interface CreatorConfig<TPlayable> — Creator configuration shared by a host and its lazily loaded editor.
+- `CreatorDocument` (interface): interface CreatorDocument — A named scene save with a storage-format version and optimistic revision.
+- `CreatorDocumentStorage` (interface): interface CreatorDocumentStorage — Injected durable storage. Save rejects stale revisions; null creates a new id.
+- `CreatorPolicy` (interface): interface CreatorPolicy — Bounds and catalog permissions for player-authored documents.
+- `createCreatorDocumentStorage` (function): function createCreatorDocumentStorage(config: { storage: KeyValueStorage; key: string; policy: CreatorPolicy }): CreatorDocumentStorage — Durable browser-compatible adapter over injected key/value storage; one atomic catalog write.
+- `exportCreatorDocument` (function): function exportCreatorDocument(document: EditorDocument, policy: CreatorPolicy): string — Exports validated, schema-versioned scene JSON.
+- `importCreatorDocument` (function): function importCreatorDocument(json: string, policy: CreatorPolicy): EditorDocument — Imports scene JSON using the same validation as commands and durable saves.
+- `validateCreatorDocument` (function): function validateCreatorDocument(value: unknown, policy: CreatorPolicy): EditorDocument — Validates schema, finite work budgets, and approved catalog references before cloning.
+
 ## @jgengine/core/editor/directives
 
 - `DirectiveFootprint` (interface): interface DirectiveFootprint — A resolved directive footprint: the XZ bounds to scatter within, plus an optional clip polygon.
@@ -292,6 +303,14 @@
 - `runtimeEntityMetaWriteBackCommand` (function): function runtimeEntityMetaWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Promotes ephemeral runtime `values` into an undoable meta patch on a document-linked object. Returns null when the id is not in the document or there are no values.
 - `summarizeRuntimeInspector` (function): function summarizeRuntimeInspector(snapshot: RuntimeStateSnapshot, overrides: Readonly<Record<string, RuntimeEntityState>>, play: RuntimePlayControl): RuntimeInspectorSummary — Builds the compact reverse-channel summary used by the play-mode inspector panel and the `runtime_summary` bridge RPC.
 
+## @jgengine/core/editor/simulation
+
+- `AuthoredEmitter` (interface): interface AuthoredEmitter — A named emitter authored in metres, with game-owned appearance and attachment ids.
+- `AuthoredFireArea` (interface): interface AuthoredFireArea — A bounded fire grid; fuel and damage policy remain game content.
+- `AuthoredFlockHabitat` (interface): interface AuthoredFlockHabitat — An authored habitat selects a game species and optionally follows a document path.
+- `EditorSimulation` (interface): interface EditorSimulation — Authored simulation inputs. Runtime particles, heat, accumulation and actors save separately.
+- `decodeEditorSimulation` (function): function decodeEditorSimulation(value: unknown, document?: Pick<EditorDocument, "paths">): EditorSimulation — Decode authoring inputs with located diagnostics and bounded work before any document mutation.
+
 ## @jgengine/core/editor/staticPrefab
 
 - `StaticPrefabBake` (interface): interface StaticPrefabBake — Persisted static export settings; source parts remain editable in the prefab fragment.
@@ -407,13 +426,15 @@
 - `AssetBrowser` (function): function AssetBrowser({ assets, session, onPlace, }: { assets: readonly EditorAssetEntry[]; session: EditorSession; onPlace: (entry: EditorAssetEntry) => void; }): React.JSX.Element — Searchable panel for placing catalog assets or an empty marker into the scene.
 - `AssetImporter` (type): type AssetImporter = (file: File) => Promise<StandaloneAsset | null> — Persists a dropped model file through the editor host so it survives reload as a durable catalog asset, returning the host-assigned id/url (which the manifest scan re-lists on reload). Resolves `null` when no host is listening — a plain browser mount with no dev server — so the caller can fall back to a blob URL.
 - `BlankPlayableOptions` (interface): interface BlankPlayableOptions — Options for the blank, gameless world the standalone editor authors over.
+- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig; onExit: () => void }): React.JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
+- `CreatorConfig` (type): type CreatorConfig = CoreCreatorConfig<PlayableGame> — Game-owned creator policy, durable storage and document-to-runtime composition.
 - `DEFAULT_PAINT_SETTINGS` (const): const DEFAULT_PAINT_SETTINGS: PaintSettings — The terrain tool's default paint controls.
 - `DEFAULT_SCULPT_SETTINGS` (const): const DEFAULT_SCULPT_SETTINGS: SculptSettings — The terrain tool's default brush controls.
 - `EDITOR_AGENT_KEY_ENV` (const): const EDITOR_AGENT_KEY_ENV: "JGENGINE_EDITOR_AGENT_KEY" — Env var name for the optional Bearer token (`JGENGINE_EDITOR_AGENT_KEY`).
 - `EDITOR_AGENT_KEY_FALLBACK_ENV` (const): const EDITOR_AGENT_KEY_FALLBACK_ENV: "ANTHROPIC_API_KEY" — Fallback API-key env when `JGENGINE_EDITOR_AGENT_KEY` is unset (`ANTHROPIC_API_KEY`).
 - `EDITOR_AGENT_URL_ENV` (const): const EDITOR_AGENT_URL_ENV: "JGENGINE_EDITOR_AGENT_URL" — Env var name for the remote agent HTTP URL (`JGENGINE_EDITOR_AGENT_URL`).
 - `EDITOR_MCP_TOOLS` (const): const EDITOR_MCP_TOOLS: readonly EditorMcpTool[] — Full set of MCP tools an agent can call to drive the live scene editor.
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor, createPlaytest, validateDocument, playerCreator, allowedAssets, allowedKinds, maxImportBytes, creatorPolicy }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorAssetEntry` (interface): interface EditorAssetEntry — A searchable, placeable asset shown in the editor's asset browser panel.
 - `EditorAssetInfo` (interface): interface EditorAssetInfo — A placeable asset entry offered in the editor's asset browser.
@@ -422,7 +443,7 @@
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
 - `EditorBridgeServerOptions` (interface): interface EditorBridgeServerOptions — Options for starting the editor's HTTP bridge server: host api, port, hostname.
 - `EditorCameraDriver` (const): const EditorCameraDriver: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — Drives the editor orbit camera from the host's focus target. When the target carries only a point, the camera pans to keep it centered (the historical behavior). When it also carries placement (`distance`/`pitch`/`yaw`/`height`), the camera is repositioned to that orbit pose — how `camera_goto`/`camera_frame` compose an aerial without the KeyF-buries-in-terrain problem.
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, }: { gameId: string; session: EditorSession; … — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already select… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
 - `EditorMaterialSlotInfo` (type): type EditorMaterialSlotInfo = Readonly<Omit<ModelMaterialSlotInfo, "uvSets">> & { readonly uvSets: readonly number[] } — Canonical imported slot names and mesh prerequisites reported by the loaded model.
@@ -486,6 +507,11 @@
 - `MATERIAL_DRAG_MIME` (const): const MATERIAL_DRAG_MIME: "application/x-jgengine-material" — Custom drag mime carrying a material id — read by hierarchy rows and the viewport drop zone.
 - `assetsFromCatalog` (function): function assetsFromCatalog(ids: readonly string[], resolve?: (id: string) => { url?: string; clips?: readonly string[] } | null): EditorAssetEntry[] — Turns a game's asset catalog ids into editor asset entries for the browser panel.
 
+## @jgengine/editor/CreatorApp
+
+- `CreatorApp` (function): function CreatorApp({ gameId, config, onExit }: { gameId: string; config: CreatorConfig; onExit: () => void }): React.JSX.Element — Production creator catalog and embedded editor, reached through the game's menu.
+- `CreatorConfig` (type): type CreatorConfig = CoreCreatorConfig<PlayableGame> — Game-owned creator policy, durable storage and document-to-runtime composition.
+
 ## @jgengine/editor/DebugDraw
 
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already select… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
@@ -493,7 +519,7 @@
 
 ## @jgengine/editor/EditorApp
 
-- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
+- `EditorApp` (function): function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor, createPlaytest, validateDocument, playerCreator, allowedAssets, allowedKinds, maxImportBytes, creatorPolicy }: EditorAppProps): React.JSX.Element — Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes.
 - `EditorAppProps` (interface): interface EditorAppProps — Props for mounting the scene editor over a playable game.
 - `EditorSaveFn` (type): type EditorSaveFn = (json: string) => Promise<{ ok: boolean; path?: string; error?: string }> — Persists an exported document JSON; resolves with where it landed or why it failed.
 
@@ -503,7 +529,7 @@
 
 ## @jgengine/editor/EditorChrome
 
-- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+- `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, }: { gameId: string; session: EditorSession; … — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 
 ## @jgengine/editor/MaterialAssetEditor
 
@@ -522,6 +548,10 @@
 - `GizmoMode` (type): type GizmoMode = "translate" | "rotate" | "scale" — Which transform gizmo is active for the current selection.
 - `SelectionGizmo` (const): const SelectionGizmo: React.MemoExoticComponent<({ session, ui, groundSnap, }: { session: EditorSession; ui: EditorUiStore; groundSnap?: ((x: number, z: number) => number) | undefined; }) => React.JSX.Element | null> — Drag-to-transform gizmo bound to the current selection, dispatching editor commands on release. Mounts the shared shell `TransformGizmo` and maps release poses onto editor commands (multi-select translate, volume scale, path vertex move).
 - `ViewportSelect` (const): const ViewportSelect: React.MemoExoticComponent<({ api, ui }: { api: EditorHostApi; ui: EditorUiStore; }) => null> — Canvas click-to-select and click-to-place. Document objects pick by screen proximity (registration always matches what you see) with click-cycling through stacked candidates and shift/ctrl additive selection; everything else picks by occlusion-ordered raycast against the tagged scene graph. When a placement tool is armed, clicks author new markers, volumes, notes, or path points at the ground hit instead of selecting.
+
+## @jgengine/editor/SimulationInspector
+
+- `SimulationInspector` (function): function SimulationInspector({ session, creatorPolicy }: { session: EditorSession; creatorPolicy?: CreatorPolicy }): React.JSX.Element — Production authoring controls share the same validated command and undo history as RPC.
 
 ## @jgengine/editor/StandaloneEditor
 
@@ -844,7 +874,7 @@
 
 ## @jgengine/editor/shell/TopAppBar
 
-- `TopAppBar` (function): function TopAppBar({ gameId, onExitToGame, dirty, saveState, lastSavedAt = null, saveAvailable, saveError, canUndo, canRedo, onUndo, onRedo, onSave, onPlay, onWalk, onHud, onImport, onExport, onCopyJson, onOpenPalette, onToggleHelp, onResetLayout, }: { gameId: string; /** When set (editor summoned o… — Global application bar: identity + save state on the left, command palette in the center, history / run controls / document actions on the right. Pause and Step stay disabled in edit mode; Play mode mounts {@link PlayModeBar}, which wires the same controls to the runtime pause/step RPCs so mode switches keep shell chrome.
+- `TopAppBar` (function): function TopAppBar({ gameId, onExitToGame, exitLabel = "Exit to game", dirty, saveState, lastSavedAt = null, saveAvailable, saveError, canUndo, canRedo, onUndo, onRedo, onSave, onPlay, onWalk, onHud, onImport, onExport, onCopyJson, onOpenPalette, onToggleHelp, onResetLayout, }: { gameId: string; /**… — Global application bar: identity + save state on the left, command palette in the center, history / run controls / document actions on the right. Pause and Step stay disabled in edit mode; Play mode mounts {@link PlayModeBar}, which wires the same controls to the runtime pause/step RPCs so mode switches keep shell chrome.
 - `TopBarSaveState` (type): type TopBarSaveState = "idle" | "saving" | "saved" | "error" — Document save lifecycle mirrored from `useDocumentSave`.
 
 ## @jgengine/editor/shell/ViewportOverlays
@@ -1018,6 +1048,10 @@
 - `TerrainMode` (type): type TerrainMode = "sculpt" | "paint" — The terrain tool's active sub-mode: reshape the heightfield, or paint material layers onto it.
 - `createEditorUiStore` (function): function createEditorUiStore(): EditorUiStore — Creates the shared UI store the editor chrome and viewport both drive.
 - `newPlacementId` (function): function newPlacementId(prefix: string): string — Generates a fresh scene-object id for a placement tool click.
+
+## @jgengine/editor/useDocumentSave
+
+- `EditorDocumentSave` (interface): interface EditorDocumentSave — Document save lifecycle owned by the mounted authoring session, across viewport modes.
 
 ## @jgengine/editor/useF2Chord
 

@@ -40,6 +40,8 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "select", description: "Select editor object ids." },
   { name: "camera_goto", description: "Focus the editor camera on an id or world x/z. Optional distance/pitch/yaw/height reposition the orbit camera (pitch is degrees above the horizon; 90 = straight-down aerial) so an aerial composes in one call." },
   { name: "camera_frame", description: "Frame the whole editor document. Optional distance/pitch/yaw/height compose an aerial; when pitch is set without distance the region is auto-fit into view so the camera never buries in terrain." },
+  { name: "get_simulation", description: "Read authored weather profiles/schedules, wind zones, named emitters, fire areas and flock habitats. Distances are metres, time is game seconds, wind is XZ metres/second." },
+  { name: "set_simulation", description: "Replace validated authored simulation inputs atomically as one undo step. Pass null to clear. Runtime heat, particles and accumulation never overwrite authored inputs." },
   { name: "scene_summary", description: "Compact summary of the editor document and bounds." },
   { name: "export_document", description: "Export the editor document as JSON text." },
   { name: "import_document", description: "Replace the session document from JSON text." },

@@ -227,6 +227,8 @@ export interface MovementTuningOverrides {
  * fields leave the integrator at its default behavior.
  */
 export interface MotionFrameOptions {
+  /** Integrate a caller-clamped simulation step in full, including scaled game time. Default false. */
+  authoritativeStep?: boolean;
   /** Extra multiplier applied on top of the resolved target speed (e.g. swimming). Default 1. */
   speedScale?: number;
   /** Suppress gravity/jump integration and hold the avatar afloat this frame (e.g. swimming). Default false. */
@@ -256,7 +258,7 @@ export function advancePlayerMotion(
   tuning?: MovementTuningOverrides,
   options?: MotionFrameOptions,
 ): MovementFrameStep {
-  const deltaSeconds = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
+  const deltaSeconds = motionStepSeconds(rawDeltaSeconds, options?.authoritativeStep);
   const now = (motion.clockMs ?? 0) + deltaSeconds * 1000;
   motion.clockMs = now;
   if (motion.grounded && motion.wasAirborne) motion.landedAtMs = now;
@@ -381,6 +383,12 @@ export function advancePlayerMotion(
     stepX: motion.horizontalVelocityX * deltaSeconds,
     stepZ: motion.horizontalVelocityZ * deltaSeconds,
   };
+}
+
+/** @internal Validate trusted simulation time or apply the standalone frame-stall clamp. */
+export function motionStepSeconds(seconds: number, authoritativeStep = false): number {
+  if (!Number.isFinite(seconds) || seconds < 0) throw new RangeError("Movement step seconds must be finite and nonnegative");
+  return authoritativeStep ? seconds : Math.min(seconds, MOVEMENT_TUNING.maxFrameSeconds);
 }
 
 /** A placed scene object the walking player collides against as a circle-vs-AABB obstacle. */

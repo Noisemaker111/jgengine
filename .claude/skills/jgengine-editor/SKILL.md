@@ -44,6 +44,12 @@ Scaffolded games start editor-wired: `npx jgengine create` (also what `bun run n
 
 Use `capabilities.md` to discover editor/runtime imports and `api.md` for signatures. Open [reference.md](reference.md) for RPC/CLI operations, embedded-agent behavior, scene schema details, and troubleshooting. Use [live-sync reconnect](references/live-sync.md) when a client resumes beyond retained patch or runtime-delta history.
 
+### Player creation and durable playtests
+
+For a production Create/Edit surface, use `GameHost`'s controlled `creatorOpen`/`onCreatorOpenChange` from the game's own menu and pass `creator` configuration with injected `CreatorDocumentStorage`, `CreatorPolicy`, `initialDocument`, and `createPlayable(document)`. `createCreatorDocumentStorage` (`@jgengine/core/editor/creatorStorage`) adapts an injected key/value backend to named versioned saves with optimistic revision checks. Save failure and stale revisions stay visible; reopening loads durable content, independently of developer recovery drafts. The policy bounds documents, bytes, objects, paths, grids, terrain and approved kinds/assets/catalog ids; optional simulation budgets and `validate` apply game rules. Creator documents use explicit placements, without prefab/directive expansion or external asset URLs.
+
+Build each playtest through `createPlayable` from the captured current document, including unsaved edits. The editor retains its authored document and undo history, and each playtest gets a fresh shell and runtime live-sync bus. Returning discards that runtime state. The player flow uses normal buttons and does not require the developer global host, keyboard chords, agent RPC or a development save server. See [reference.md](reference.md#production-creator) for the host composition.
+
 ## Traps
 
 - Selection and camera state are not authored world data. Terrain-readability guides (contours, surface-draped grid, elevation HUD) are editor visualization built from the live heightfield via headless `@jgengine/core/world/terrainGuides`; their toggles persist as editor prefs, never scene content.

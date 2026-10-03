@@ -44,6 +44,9 @@ import {
 } from "./uiStore";
 import { useF2Chord } from "./useF2Chord";
 import { shallowArrayEqual, useStoreSelector } from "./useStoreSelector";
+import { EditorDocumentSaveContext, useDocumentSave } from "./useDocumentSave";
+import { PlayModeBar } from "./shell/PlayModeBar";
+import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
 
 /** Props for mounting the scene editor over a playable game. */
 export interface EditorAppProps {
@@ -68,6 +71,17 @@ export interface EditorAppProps {
    * standalone editor, which has no game to return to.
    */
   onExitEditor?: () => void;
+  /** Build a fresh playable from a captured document for each isolated playtest. */
+  createPlaytest?: (document: EditorDocument) => PlayableGame;
+  /** Reject document edits before they enter history, live sync, or saves. */
+  validateDocument?: (document: EditorDocument) => void;
+  /** Disable developer host publication and recovery drafts for a player creator. */
+  playerCreator?: boolean;
+  /** Catalog entries the player creator may place. */
+  allowedAssets?: readonly string[];
+  allowedKinds?: readonly string[];
+  maxImportBytes?: number;
+  creatorPolicy?: CreatorPolicy;
 }
 
 /** Persists an exported document JSON; resolves with where it landed or why it failed. */
@@ -398,7 +412,7 @@ function resolveEditorCamera(document: EditorDocument): {
 }
 
 /** Top-level scene editor: author spawns/zones/paths/notes visually over edit, walk, or play modes. */
-export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor }: EditorAppProps) {
+export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, networkPresence, onExitEditor, createPlaytest, validateDocument, playerCreator, allowedAssets, allowedKinds, maxImportBytes, creatorPolicy }: EditorAppProps) {
   const resolvedModeChip = modeChip === undefined ? EditorModeChip : modeChip;
   const saveFn = useMemo(() => save ?? endpointSaver(gameId), [save, gameId]);
   const networkSnapshot = useMemo(
@@ -419,12 +433,12 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
 
   const catalogAssets = useMemo(() => {
     try {
-      const ids = playable.game.assets.ids();
+      const ids = playable.game.assets.ids().filter((id) => allowedAssets === undefined || allowedAssets.includes(id));
       return assetsFromCatalog(ids, (id) => playable.game.assets.resolve(id));
     } catch {
       return [] as EditorAssetEntry[];
     }
-  }, [playable]);
+  }, [playable, allowedAssets]);
 
   const resolvedLayers = layers ?? playable.editorLayers;
   const host = useMemo(() => {
@@ -433,15 +447,20 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
       layers: resolvedLayers,
       catalogs,
       assets: catalogAssets,
+      validateDocument,
+      isolatedPlaytest: createPlaytest !== undefined,
+      publishGlobal: playerCreator !== true,
+      persistAssetUrls: playerCreator !== true,
     });
     return {
       ...created,
       baselineJson: created.session.exportJson(true),
       baselineDocument: created.session.getState().document,
     };
-  }, [gameId, resolvedLayers, catalogs, catalogAssets]);
+  }, [gameId, resolvedLayers, catalogs, catalogAssets, createPlaytest, validateDocument, playerCreator]);
 
   useEffect(() => host.dispose, [host]);
+  const documentSave = useDocumentSave(host.session, saveFn);
 
   const modeStore = useMemo(
     () => ({ getState: host.api.getMode, subscribe: host.api.subscribeMode }),
@@ -452,6 +471,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
   const [pendingDraft, setPendingDraft] = useState<string | null>(null);
 
   useEffect(() => {
+    if (playerCreator) return;
     const draft = readDraft(gameId);
     if (draft !== null && draft !== host.baselineJson) setPendingDraft(draft);
     let timer: ReturnType<typeof setTimeout> | null = null;
@@ -466,7 +486,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
       if (timer !== null) clearTimeout(timer);
       unsubscribe();
     };
-  }, [gameId, host]);
+  }, [gameId, host, playerCreator]);
 
   const restoreDraft = () => {
     if (pendingDraft === null) return;
@@ -549,6 +569,10 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
     [host],
   );
   const cameraProjection = useStoreSelector(ui, (state) => state.cameraProjection);
+  const playtestPlayable = useMemo(() => {
+    const snapshot = host.api.getPlayDocument();
+    return mode === "play" && createPlaytest !== undefined && snapshot !== null ? createPlaytest(snapshot) : playable;
+  }, [mode, host, createPlaytest, playable]);
 
   const editorPlayable: PlayableGame = useMemo(() => {
     const frozenLoop = {
@@ -617,18 +641,21 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
     }
 
     if (mode === "play") {
-      const BaseUI = playable.GameUI;
-      const BaseOverlay = playable.WorldOverlay;
+      const playtest = playtestPlayable;
+      const BaseUI = playtest.GameUI;
+      const BaseOverlay = playtest.WorldOverlay;
       const useBuiltinPlayChrome = resolvedModeChip === EditorModeChip;
       return {
-        ...playable,
+        ...playtest,
         GameUI: function EditorPlayUi() {
           const onExit = useCallback(() => host.api.setMode("edit"), []);
           useF2Chord("KeyE", onExit);
           return (
             <>
               {BaseUI !== undefined ? <BaseUI /> : null}
-              {useBuiltinPlayChrome ? (
+              {playerCreator ? (
+                <PlayModeBar gameId={gameId} api={host.api} onExit={onExit} exitLabel="Return to editor" />
+              ) : useBuiltinPlayChrome ? (
                 <RuntimePlayInspectorChrome gameId={gameId} api={host.api} onExit={onExit} />
               ) : (
                 <EditorModeChipHost api={host.api} mode="play" chip={resolvedModeChip} />
@@ -673,8 +700,12 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
       };
     }
 
-    const WorldOverlay: ComponentType = function EditorOverlay() {
-      return <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} />;
+    const BaseOverlay = playable.WorldOverlay;
+    const WorldOverlay: ComponentType<WorldOverlayProps> = function EditorOverlay({ ctx }) {
+      return <>
+        {BaseOverlay !== undefined ? <BaseOverlay ctx={ctx} /> : null}
+        <EditorWorldOverlay api={host.api} ui={ui} world={playable.game.world} readout={readout} />
+      </>;
     };
     const registerImportedAsset = (id: string, url: string) => {
       try {
@@ -696,6 +727,12 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
           networkSnapshot={networkSnapshot}
           onRegisterAsset={registerImportedAsset}
           onExitEditor={onExitEditor}
+          allowedKinds={allowedKinds}
+          exitLabel={playerCreator ? "Return to saved scenes" : undefined}
+          maxImportBytes={maxImportBytes}
+          draftAutosave={playerCreator !== true}
+          creatorPolicy={creatorPolicy}
+          {...(playerCreator ? { importAsset: async () => { throw new Error("Choose an asset from the approved catalog"); } } : {})}
         />
       );
     };
@@ -709,7 +746,7 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
       // WorldOverlay above is the editor layers, not PandoraViewmodel.
       camera: inspectionCamera,
     };
-  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip, networkSnapshot, onExitEditor]);
+  }, [playable, host, gameId, initialCamera, cameraProjection, catalogAssets, ui, readout, mode, saveFn, resolvedModeChip, networkSnapshot, onExitEditor, playtestPlayable, allowedKinds, playerCreator, maxImportBytes, creatorPolicy]);
 
   const showElevation = useStoreSelector(ui, (s) => s.showElevation);
 
@@ -723,7 +760,9 @@ export function EditorApp({ gameId, playable, layers, catalogs, save, modeChip, 
   return (
     <div className="relative h-full w-full bg-neutral-950" data-jg-editor="1" data-jg-editor-game={gameId}>
       <HudLayoutPersistProvider onPanelCommit={onPanelCommit}>
-        <GamePlayerShell playable={editorPlayable} />
+        <EditorDocumentSaveContext.Provider value={documentSave}>
+          <GamePlayerShell key={mode} playable={editorPlayable} />
+        </EditorDocumentSaveContext.Provider>
       </HudLayoutPersistProvider>
       {mode === "edit" && showElevation ? <TerrainReadoutHud readout={readout} /> : null}
       {pendingDraft !== null && mode === "edit" ? (

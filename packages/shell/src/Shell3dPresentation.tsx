@@ -660,7 +660,7 @@ export function Shell3dPresentation({
                     </group>
                   ) : null}
                   <WorldItems config={playable.worldItem} />
-                  <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} />
+                  <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} diagnostics={devtoolsEnabled} />
                   <CombatPresentation effects={effects} />
                   {devtoolsEnabled ? <CollisionDebugWorld /> : null}
                   <AudioListener engine={audioEngine} />

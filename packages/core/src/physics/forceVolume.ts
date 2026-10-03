@@ -2,6 +2,114 @@ import type { PhysicsBounds, PhysicsWorld } from "./physicsWorld";
 
 export type ForceMode = "impulse" | "velocity" | "accelerate";
 
+/** World-space force position, axis or acceleration vector. */
+export type ForceVector = readonly [number, number, number];
+const DEFAULT_FORCE_DIRECTION: ForceVector = [0, 0, -1];
+
+/** Renderer-free localized acceleration shared by physical actors and cosmetic particles. */
+export interface ForceFieldConfig {
+  center: ForceVector;
+  shape: { kind: "sphere"; radius: number } | { kind: "box"; halfExtents: ForceVector };
+  /** Positive attracts toward the center; negative repels. Units/s². */
+  strength: number;
+  /** Edge-to-center falloff exponent; zero is uniform. Default 1. */
+  attenuation?: number;
+  /** Blend radial attraction with `direction`, from 0 to 1. */
+  directionality?: number;
+  /** World-space direction; default [0, 0, -1]. */
+  direction?: ForceVector;
+  /** Signed tangential acceleration around a world-space axis. */
+  vortex?: {
+    axis: ForceVector;
+    strength: number;
+    /** Independent signed acceleration along the normalized axis, in units/s². */
+    lift?: number;
+  };
+  /** Affected target bits; omission affects every target. */
+  mask?: number;
+  /** Cap the combined acceleration magnitude. */
+  maxAcceleration?: number;
+}
+
+/** Validate force authoring once before sampling in a hot loop.
+ * Coordinates stay within the safe integer range; acceleration magnitudes stay within 1e12 units/s².
+ * @capability force-field-validation reject invalid localized force authoring before simulation
+ */
+export function validateForceField(config: ForceFieldConfig): void {
+  const vector = (value: unknown) => Array.isArray(value) && value.length === 3 && value.every(component => typeof component === "number" && Number.isFinite(component) && Math.abs(component) <= Number.MAX_SAFE_INTEGER);
+  const finite = (value: unknown, min = -1e12, max = 1e12) => typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+  if (config === null || typeof config !== "object" || !vector(config.center) || !finite(config.strength)) throw new RangeError("Force field requires safe finite coordinates and strength in -1e12..1e12");
+  if (config.shape?.kind === "sphere") {
+    if (!finite(config.shape.radius, Number.MIN_VALUE)) throw new RangeError("Force sphere radius must be finite and positive");
+  } else if (config.shape?.kind === "box") {
+    if (!vector(config.shape.halfExtents) || !config.shape.halfExtents.every(value => value > 0)) throw new RangeError("Force box extents must be finite and positive");
+  } else throw new RangeError("Force field requires sphere or box shape");
+  if (config.attenuation !== undefined && !finite(config.attenuation, 0)) throw new RangeError("Force attenuation must be finite and nonnegative");
+  if (config.directionality !== undefined && !finite(config.directionality, 0, 1)) throw new RangeError("Force directionality must be in 0..1");
+  if (config.direction !== undefined && (!vector(config.direction) || Math.hypot(...config.direction) === 0)) throw new RangeError("Force direction must be finite and nonzero");
+  if (config.vortex !== undefined && (!vector(config.vortex.axis) || Math.hypot(...config.vortex.axis) === 0 || !finite(config.vortex.strength))) throw new RangeError("Force vortex requires a finite nonzero axis and finite strength");
+  if (config.vortex?.lift !== undefined && !finite(config.vortex.lift)) throw new RangeError("Force vortex lift must be finite");
+  if (config.mask !== undefined && (!finite(config.mask, 0, 0xffffffff) || !Number.isInteger(config.mask))) throw new RangeError("Force mask must be an unsigned 32-bit integer");
+  if (config.maxAcceleration !== undefined && !finite(config.maxAcceleration, 0)) throw new RangeError("Force acceleration cap must be finite and nonnegative");
+}
+
+/** Sample localized acceleration; `out` permits allocation-free integration.
+ * @capability localized-forces sample signed attraction, directional force, vortex spin and axial lift with target masks and caps
+ */
+export function sampleForceField(
+  config: ForceFieldConfig,
+  position: ForceVector,
+  targetMask = 0xffffffff,
+  out: [number, number, number] = [0, 0, 0],
+): [number, number, number] {
+  out[0] = out[1] = out[2] = 0;
+  if (((config.mask ?? 0xffffffff) & targetMask) === 0) return out;
+  const x = position[0] - config.center[0];
+  const y = position[1] - config.center[1];
+  const z = position[2] - config.center[2];
+  const distance = Math.hypot(x, y, z);
+  const extent = config.shape.kind === "sphere"
+    ? distance / config.shape.radius
+    : Math.max(Math.abs(x) / config.shape.halfExtents[0], Math.abs(y) / config.shape.halfExtents[1], Math.abs(z) / config.shape.halfExtents[2]);
+  if (!Number.isFinite(extent) || extent >= 1) return out;
+  const envelope = Math.pow(1 - extent, Math.max(0, config.attenuation ?? 1));
+  const directional = Math.max(0, Math.min(1, config.directionality ?? 0));
+  const direction = config.direction ?? DEFAULT_FORCE_DIRECTION;
+  const directionLength = Math.hypot(...direction);
+  const radialScale = distance > 1e-9 ? -config.strength * (1 - directional) / distance : 0;
+  const directionScale = directionLength > 1e-9 ? config.strength * directional / directionLength : 0;
+  out[0] = x * radialScale + direction[0] * directionScale;
+  out[1] = y * radialScale + direction[1] * directionScale;
+  out[2] = z * radialScale + direction[2] * directionScale;
+  if (config.vortex !== undefined) {
+    const [ax, ay, az] = config.vortex.axis;
+    const axisLength = Math.hypot(ax, ay, az);
+    if (axisLength > 1e-9) {
+      const liftScale = (config.vortex.lift ?? 0) / axisLength;
+      out[0] += ax * liftScale;
+      out[1] += ay * liftScale;
+      out[2] += az * liftScale;
+    }
+    const tx = ay * z - az * y;
+    const ty = az * x - ax * z;
+    const tz = ax * y - ay * x;
+    const tangentLength = Math.hypot(tx, ty, tz);
+    if (tangentLength > 1e-9) {
+      const scale = config.vortex.strength / tangentLength;
+      out[0] += tx * scale;
+      out[1] += ty * scale;
+      out[2] += tz * scale;
+    }
+  }
+  const magnitude = Math.hypot(...out) * envelope;
+  const cap = Math.max(0, config.maxAcceleration ?? Number.POSITIVE_INFINITY);
+  const scale = magnitude > cap ? envelope * cap / magnitude : envelope;
+  out[0] = out[0] === 0 ? 0 : out[0] * scale;
+  out[1] = out[1] === 0 ? 0 : out[1] * scale;
+  out[2] = out[2] === 0 ? 0 : out[2] * scale;
+  return out;
+}
+
 export interface ForceVolumeConfig {
   /** Region a body's center must be inside to be affected. */
   bounds: PhysicsBounds;

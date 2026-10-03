@@ -2018,6 +2018,12 @@
 
 - `CameraShakeChannel` (interface): interface CameraShakeChannel { shake(amplitude: number, decayPerSecond?: number): void; step(dt: number): void; sample(config?: Parameters<typeof shakeOffset>[1]): ShakeOffset; trauma(): number } — ⚠ undocumented · used by `defaultCameraShakeChannel` (@jgengine/shell/camera): Process-wide default channel.
 
+## @jgengine/shell/combat/ProjectileModels
+
+- `ProjectileModels` (function): function ProjectileModels({ model, fallback, forward = [0, 1, 0], maxInstances = 256, source }: ProjectileModelsProps): ReactElement — Mount caller-owned models at authoritative projectile positions. Flight ids determine lifetime; each frame only updates transforms, and settlement removes the model. Optional shaft/head geometry is enabled only by the caller.
+- `ProjectileModelsProps` (interface): interface ProjectileModelsProps — Render simulated flights without owning their travel or settlement.
+- `ProjectileShaft` (interface): interface ProjectileShaft — Explicit opt-in shaft/head geometry when a game has no projectile model.
+
 ## @jgengine/shell/commandSink
 
 - `CommandSink` (interface): interface CommandSink — Where a gameplay command goes when the shell dispatches it — run locally, or sent to the authoritative host.
@@ -2526,21 +2532,21 @@
 
 ## @jgengine/shell/scene
 
-- `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
+- `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", synchronize = false, }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
 - `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
 - `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, diagnostics = false, field, pathKinds, scatterModels, flockModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 - `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
 
 ## @jgengine/shell/scene/AuthoredScene
 
-- `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
+- `AuthoredObjects` (function): function AuthoredObjects({ document, field, verticalOffset = 0, onExisting = "keep", synchronize = false, }: AuthoredObjectsProps): null — Places every editor marker with a catalog id into `ctx.scene.object`, grounded on `field`. WorldScene renders them through the game's `objectModels` seam — no bespoke place loop. Pure headless twin: `resolveAuthoredObjects` / `placeAuthoredObjects`.
 - `AuthoredObjectsProps` (interface): interface AuthoredObjectsProps — Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting.
 - `AuthoredPaths` (function): function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps): React.JSX.Element — Renders a document's non-scatter paths (roads, routes, corridors) as ground-draped ribbons — the editor authors the polyline, the engine drapes it over the live terrain at runtime. Width comes from `path.width`, color from `path.meta.color`/`path.color`. A game never hand-rolls path meshes.
 - `AuthoredPathsProps` (interface): interface AuthoredPathsProps — Props for {@link AuthoredPaths}: the document, the ground field to drape over, and a kind filter.
-- `AuthoredScene` (function): function AuthoredScene({ document, field, pathKinds, scatterModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
+- `AuthoredScene` (function): function AuthoredScene({ document, diagnostics = false, field, pathKinds, scatterModels, flockModels, assets, live = true, placeObjects, groundColorAt, }: AuthoredSceneProps): React.JSX.Element — Renders an editor document's scene content — draped paths plus GPU-instanced foliage — from one mount, grounded on the live `field`. The runtime counterpart to authoring a scene in the editor: drag paths and foliage regions, save `editor.scene.json`, and the game plays them with no bespoke render code. When a live-sync bus is installed (editor host), document patches stream in and re-render automatically — document is authoritative; runtime overrides stay ephemeral unless written back. Terrain/collision come from the world's ground field (`environment({ sculpt })`); place markers with your own entity spawns. Pass `scatterModels`+`assets` to resolve palette items to real catalog GLBs; unmapped items keep the stylized proxy.
 - `AuthoredSceneProps` (interface): interface AuthoredSceneProps — Props for {@link AuthoredScene}: the document to render and the ground field to drape/ground on.
 - `AuthoredSolids` (function): function AuthoredSolids({ document, field }: { document: EditorDocument; field: TerrainField }): null — Writes the document's studio solids (city buildings and any kind with a `solids` hook) into `ctx.world.solids`, so what the studios draw also blocks the player, NPCs and physics.
 
@@ -2860,9 +2866,9 @@
 
 ## @jgengine/shell/vfx/ParticleField
 
-- `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite: `additive` for fire/sparks/magic glow, `normal` for smoke/dust.
-- `ParticleField` (function): function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, }: ParticleFieldProps): ReactElement — Renders a core `ParticleSystem` as a GPU point cloud: one draw call, per-particle size / color / alpha via a soft-round shader, and a `drawRange` clamped to the live count so dead particles cost nothing. The simulation stays engine-side and genre-agnostic; this is purely how it reaches the screen. By default it advances the sim with the frame delta — pass `advance={false}` to drive it from your own fixed loop instead.
-- `ParticleFieldProps` (interface): interface ParticleFieldProps — Props for {@link ParticleField}.
+- `ParticleBlending` (type): type ParticleBlending = "additive" | "normal" — How particle fragments composite on screen.
+- `ParticleField` (function): function ParticleField({ system, advance = true, blending = "additive", scale = 300, depthWrite = false, render, metrics }: ParticleFieldProps): ReactElement — Render one pooled simulation through a point cloud or instanced quads. Output selection does not replace spawn, forces, collisions, or deterministic state.
+- `ParticleFieldProps` (interface): interface ParticleFieldProps — Props for the existing pooled particle renderer.
 
 ## @jgengine/shell/vfx/WorldFloatingText
 
@@ -2985,53 +2991,67 @@
 
 ## @jgengine/shell/weather
 
-- `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, seed = 51407, renderOrd… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
+- `AuthoredWeatherLayer` (function): function AuthoredWeatherLayer({ document, rain, snow, dust, heightAt, diagnostics = false }: AuthoredWeatherLayerProps): React.JSX.Element | null — Render pooled precipitation from the same authored document and clock as gameplay.
+- `AuthoredWeatherLayerProps` (interface): interface AuthoredWeatherLayerProps — Authored weather document and optional precipitation appearance and ground sampling.
+- `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, timeSeconds, seed = 514… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
 - `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
-- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
-- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps { grid: FireGrid; cellSize: number; origin?: readonly [number, number]; heightAt?: (x: number, z: number) => number; flameHeight?: number; burningColor?: THREE.ColorRepresentation; emberColor?: THREE.ColorRepresentation } — ⚠ undocumented
-- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
+- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize = grid.cellSize, origin = grid.origin, heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", timeSeconds, }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
+- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps { grid: FireGrid; cellSize?: number; origin?: readonly [number, number]; heightAt?: (x: number, z: number) => number; flameHeight?: number; burningColor?: THREE.ColorRepresentation; emberColor?: THREE.ColorRepresentation; timeSeconds?: () =… — ⚠ undocumented
+- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, timeSeconds, startedAt, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
 - `LightningStrikeProps` (interface): interface LightningStrikeProps { origin: WeatherVector; target: WeatherVector; strikeKey?: string | number; seed?: number; visible?: boolean; duration?: number; color?: THREE.ColorRepresentation; glow?: number; branches?: number; jaggedness?: number; impactLight?: number… — ⚠ undocumented
-- `RainField` (function): function RainField({ count = DEFAULT_RAIN_COUNT, density = DEFAULT_RAIN_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 22, length = 1.35, width = 0.018, opacity = 0.48, color = DEFAULT_RAIN_COLOR, lightning, timeScale, seed = 11939, renderOrder … — ⚠ undocumented
+- `RainField` (function): function RainField({ count = DEFAULT_RAIN_COUNT, density = DEFAULT_RAIN_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 22, length = 1.35, width = 0.018, opacity = 0.48, color = DEFAULT_RAIN_COLOR, lightning, timeScale, timeSeconds, seed = 11939,… — ⚠ undocumented
 - `RainFieldProps` (interface): interface RainFieldProps { count?: number; density?: number; budget?: number; volume?: WeatherVector; wind?: WeatherVector; origin?: WeatherVector; followCamera?: boolean; speed?: number; length?: number; width?: number; opacity?: number; color?: THREE.ColorReprese… — ⚠ undocumented
-- `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, seed = 72931, renderOrder = 11, frustumC… — ⚠ undocumented
+- `RainImpactField` (function): function RainImpactField({ count = 64, extent = 48, heightAt, exposureAt, seed = 11939, color = "#b8c4d8" }: RainImpactFieldProps): React.JSX.Element — Bounded ground ripples sharing precipitation intensity and authoritative animation time.
+- `RainImpactFieldProps` (interface): interface RainImpactFieldProps — Bounded ripple pool with terrain height and sky exposure query adapters.
+- `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, timeSeconds, seed = 72931, renderOrder =… — ⚠ undocumented
 - `SnowFieldProps` (interface): interface SnowFieldProps { count?: number; density?: number; budget?: number; volume?: WeatherVector; wind?: WeatherVector; origin?: WeatherVector; followCamera?: boolean; speed?: number; size?: number; sway?: number; opacity?: number; color?: THREE.ColorRepresenta… — ⚠ undocumented
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, dust, dustAlways = false, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
-- `WeatherLayerProps` (interface): interface WeatherLayerProps { mode?: WeatherLayerMode; intensity?: number; wind?: WeatherVector; lightning?: number; timeScale?: number; rain?: Omit<RainFieldProps, "wind" | "lightning" | "timeScale"> | false; snow?: Omit<SnowFieldProps, "wind" | "timeScale"> | false;… — ⚠ undocumented
-- `WeatherUniformOptions` (interface): interface WeatherUniformOptions { wind?: WeatherVector; lightning?: number; timeScale?: number } — ⚠ undocumented
-- `WeatherUniformSet` (interface): interface WeatherUniformSet { time: THREE.IUniform<number>; wind: THREE.IUniform<THREE.Vector3>; lightning: THREE.IUniform<number> } — ⚠ undocumented
+- `WeatherLayerProps` (interface): interface WeatherLayerProps { mode?: WeatherLayerMode; intensity?: number; wind?: WeatherVector; lightning?: number; timeScale?: number; timeSeconds?: number | (() => number); sample?: (x: number, z: number) => AuthoredWeatherSample; shelters?: readonly EditorVolume[]… — ⚠ undocumented
+- `WeatherUniformOptions` (interface): interface WeatherUniformOptions { wind?: WeatherVector; lightning?: number; timeScale?: number; timeSeconds?: number | (() => number); sample?: (x: number, z: number) => AuthoredWeatherSample; shelters?: readonly EditorVolume[]; metrics?: WeatherParticleMetrics } — ⚠ undocumented
+- `WeatherUniformSet` (interface): interface WeatherUniformSet extends WeatherShelterUniforms { time: THREE.IUniform<number>; wind: THREE.IUniform<THREE.Vector3>; lightning: THREE.IUniform<number>; rain: THREE.IUniform<number>; snow: THREE.IUniform<number>; dust: THREE.IUniform<number>; controlsWind: boolean; metrics?: WeatherPartic… — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
+
+## @jgengine/shell/weather/AuthoredWeatherLayer
+
+- `AuthoredWeatherLayer` (function): function AuthoredWeatherLayer({ document, rain, snow, dust, heightAt, diagnostics = false }: AuthoredWeatherLayerProps): React.JSX.Element | null — Render pooled precipitation from the same authored document and clock as gameplay.
+- `AuthoredWeatherLayerProps` (interface): interface AuthoredWeatherLayerProps — Authored weather document and optional precipitation appearance and ground sampling.
 
 ## @jgengine/shell/weather/DustField
 
-- `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, seed = 51407, renderOrd… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
+- `DustField` (function): function DustField({ count = DEFAULT_DUST_COUNT, density = DEFAULT_DUST_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 2.4, size = 0.16, sway = 0.5, opacity = 0.3, color = DEFAULT_DUST_COLOR, groundBias = 0.65, timeScale, timeSeconds, seed = 514… — Renders wind-borne particulate as camera-facing motes. Reach for it whenever the air itself should read as weather — a desert gale, ash off a volcano, pollen in a meadow, grain dust in a silo. Compose it through {@link WeatherLayer}'s `"dust"` mode (or `dustAlways` alongside rain and snow) rather than mounting it directly, so it shares one wind and time source with the other layers.
 - `DustFieldProps` (interface): interface DustFieldProps — Wind-borne particulate: dust, sand, ash, pollen, spores. Unlike rain and snow this is not falling — motion is dominated by horizontal wind with a slow vertical bob, and density thins with height so the air near the ground carries the most grit. Any arid, volcanic, or blown-out world needs it.
 
 ## @jgengine/shell/weather/FireSpreadLayer
 
-- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize, origin = [0, 0], heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
-- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps { grid: FireGrid; cellSize: number; origin?: readonly [number, number]; heightAt?: (x: number, z: number) => number; flameHeight?: number; burningColor?: THREE.ColorRepresentation; emberColor?: THREE.ColorRepresentation } — ⚠ undocumented
+- `FireSpreadLayer` (function): function FireSpreadLayer({ grid, cellSize = grid.cellSize, origin = grid.origin, heightAt, flameHeight = 1.6, burningColor = "#ff6a1a", emberColor = "#4a1206", timeSeconds, }: FireSpreadLayerProps): React.JSX.Element — ⚠ undocumented
+- `FireSpreadLayerProps` (interface): interface FireSpreadLayerProps { grid: FireGrid; cellSize?: number; origin?: readonly [number, number]; heightAt?: (x: number, z: number) => number; flameHeight?: number; burningColor?: THREE.ColorRepresentation; emberColor?: THREE.ColorRepresentation; timeSeconds?: () =… — ⚠ undocumented
 
 ## @jgengine/shell/weather/LightningStrike
 
-- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
+- `LightningStrike` (function): function LightningStrike({ origin, target, strikeKey = 0, seed = 451, visible = true, duration = 0.18, color = DEFAULT_COLOR, glow = 2.4, branches = 5, jaggedness = 0.08, impactLight = 26, renderOrder = 20, timeSeconds, startedAt, }: LightningStrikeProps): React.JSX.Element — ⚠ undocumented
 - `LightningStrikeProps` (interface): interface LightningStrikeProps { origin: WeatherVector; target: WeatherVector; strikeKey?: string | number; seed?: number; visible?: boolean; duration?: number; color?: THREE.ColorRepresentation; glow?: number; branches?: number; jaggedness?: number; impactLight?: number… — ⚠ undocumented
 
 ## @jgengine/shell/weather/RainField
 
-- `RainField` (function): function RainField({ count = DEFAULT_RAIN_COUNT, density = DEFAULT_RAIN_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 22, length = 1.35, width = 0.018, opacity = 0.48, color = DEFAULT_RAIN_COLOR, lightning, timeScale, seed = 11939, renderOrder … — ⚠ undocumented
+- `RainField` (function): function RainField({ count = DEFAULT_RAIN_COUNT, density = DEFAULT_RAIN_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 22, length = 1.35, width = 0.018, opacity = 0.48, color = DEFAULT_RAIN_COLOR, lightning, timeScale, timeSeconds, seed = 11939,… — ⚠ undocumented
 - `RainFieldProps` (interface): interface RainFieldProps { count?: number; density?: number; budget?: number; volume?: WeatherVector; wind?: WeatherVector; origin?: WeatherVector; followCamera?: boolean; speed?: number; length?: number; width?: number; opacity?: number; color?: THREE.ColorReprese… — ⚠ undocumented
+
+## @jgengine/shell/weather/RainImpactField
+
+- `RainImpactField` (function): function RainImpactField({ count = 64, extent = 48, heightAt, exposureAt, seed = 11939, color = "#b8c4d8" }: RainImpactFieldProps): React.JSX.Element — Bounded ground ripples sharing precipitation intensity and authoritative animation time.
+- `RainImpactFieldProps` (interface): interface RainImpactFieldProps — Bounded ripple pool with terrain height and sky exposure query adapters.
 
 ## @jgengine/shell/weather/SnowField
 
-- `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, seed = 72931, renderOrder = 11, frustumC… — ⚠ undocumented
+- `SnowField` (function): function SnowField({ count = DEFAULT_SNOW_COUNT, density = DEFAULT_SNOW_DENSITY, budget, volume = DEFAULT_VOLUME, wind, origin = DEFAULT_ORIGIN, followCamera = true, speed = 3.2, size = 0.11, sway = 0.62, opacity = 0.86, color = DEFAULT_SNOW_COLOR, timeScale, timeSeconds, seed = 72931, renderOrder =… — ⚠ undocumented
 - `SnowFieldProps` (interface): interface SnowFieldProps { count?: number; density?: number; budget?: number; volume?: WeatherVector; wind?: WeatherVector; origin?: WeatherVector; followCamera?: boolean; speed?: number; size?: number; sway?: number; opacity?: number; color?: THREE.ColorRepresenta… — ⚠ undocumented
 
 ## @jgengine/shell/weather/WeatherLayer
 
-- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, rain, snow, dust, dustAlways = false, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
+- `WeatherLayer` (function): function WeatherLayer({ mode = "clear", intensity = 1, wind, lightning, timeScale, timeSeconds, sample, shelters, metrics, rain, snow, dust, dustAlways = false, impacts, enabled = true, children, }: WeatherLayerProps): React.JSX.Element | null — ⚠ undocumented
 - `WeatherLayerMode` (type): type WeatherLayerMode = "clear" | "rain" | "snow" | "mixed" | "dust" — `"mixed"` runs rain and snow together; `"dust"` is airborne particulate and composes with either via `dust`.
-- `WeatherLayerProps` (interface): interface WeatherLayerProps { mode?: WeatherLayerMode; intensity?: number; wind?: WeatherVector; lightning?: number; timeScale?: number; rain?: Omit<RainFieldProps, "wind" | "lightning" | "timeScale"> | false; snow?: Omit<SnowFieldProps, "wind" | "timeScale"> | false;… — ⚠ undocumented
+- `WeatherLayerProps` (interface): interface WeatherLayerProps { mode?: WeatherLayerMode; intensity?: number; wind?: WeatherVector; lightning?: number; timeScale?: number; timeSeconds?: number | (() => number); sample?: (x: number, z: number) => AuthoredWeatherSample; shelters?: readonly EditorVolume[]… — ⚠ undocumented
 
 ## @jgengine/shell/weather/weatherMath
 
@@ -3043,11 +3063,22 @@
 - `DEFAULT_SNOW_DENSITY` (const): const DEFAULT_SNOW_DENSITY: 0.5 — ⚠ undocumented
 - `WeatherSeedAttributes` (interface): interface WeatherSeedAttributes { spawn: Float32Array; drift: Float32Array } — ⚠ undocumented
 
+## @jgengine/shell/weather/weatherShelter
+
+- `WEATHER_SHELTER_BUDGET` (const): const WEATHER_SHELTER_BUDGET: 32 — Cosmetic roof clipping is bounded independently of authoritative shelter queries.
+- `WeatherShelterUniforms` (interface): interface WeatherShelterUniforms — Reusable buffers for the nearest authored shelters submitted to weather shaders.
+
 ## @jgengine/shell/weather/weatherUniforms
 
-- `WeatherUniformOptions` (interface): interface WeatherUniformOptions { wind?: WeatherVector; lightning?: number; timeScale?: number } — ⚠ undocumented
-- `WeatherUniformSet` (interface): interface WeatherUniformSet { time: THREE.IUniform<number>; wind: THREE.IUniform<THREE.Vector3>; lightning: THREE.IUniform<number> } — ⚠ undocumented
+- `WeatherParticleMetrics` (interface): interface WeatherParticleMetrics — Actual procedural weather submissions and per-frame impact query work.
+- `WeatherUniformOptions` (interface): interface WeatherUniformOptions { wind?: WeatherVector; lightning?: number; timeScale?: number; timeSeconds?: number | (() => number); sample?: (x: number, z: number) => AuthoredWeatherSample; shelters?: readonly EditorVolume[]; metrics?: WeatherParticleMetrics } — ⚠ undocumented
+- `WeatherUniformSet` (interface): interface WeatherUniformSet extends WeatherShelterUniforms { time: THREE.IUniform<number>; wind: THREE.IUniform<THREE.Vector3>; lightning: THREE.IUniform<number>; rain: THREE.IUniform<number>; snow: THREE.IUniform<number>; dust: THREE.IUniform<number>; controlsWind: boolean; metrics?: WeatherPartic… — ⚠ undocumented
 - `WeatherVector` (type): type WeatherVector = readonly [number, number, number] — ⚠ undocumented
+
+## @jgengine/shell/world/AuthoredFlocks
+
+- `AuthoredFlocks` (function): function AuthoredFlocks({ models, assets, forward = [0, 0, -1], maxInstances = 256 }: AuthoredFlocksProps): ReactElement — Render bounded authored habitat agents with game-selected species models. The environment owns movement and lifetime; existing model owners load, animate, and dispose the native GLB. Unmapped species have no substitute geometry.
+- `AuthoredFlocksProps` (interface): interface AuthoredFlocksProps — Caller-owned species models for authored habitat agents.
 
 ## @jgengine/shell/world/DataObjects
 
@@ -3108,7 +3139,7 @@
 
 ## @jgengine/shell/world/WorldParticles
 
-- `resolveParticleBudget` (function): function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined, particleCap?: number): number — The per-effect particle pool a graphics tier allows: the requested `max` clamped to the tier cap, so lower tiers degrade density instead of dropping effects entirely.
+- `resolveParticleBudget` (function): function resolveParticleBudget(quality: GraphicsQuality, requested: number | undefined, particleCap?: number): number — The requested visual pool clamped to the graphics tier.
 
 ## @jgengine/shell/world/WorldPings
 

@@ -18,6 +18,17 @@ import {
 
 const DT = 1 / 60;
 
+test("authoritative movement integrates full game-time steps while standalone frames retain the stall clamp", () => {
+  const move = (authoritativeStep: boolean) => {
+    const motion = createPlayerMotionState();
+    motion.horizontalVelocityX = 4;
+    return { step: advancePlayerMotion(motion, idleIntent(), 0, 1, 4, 0.2, { groundAcceleration: 0, groundFriction: 0 }, { authoritativeStep }), clock: motion.clockMs };
+  };
+  expect(move(true)).toEqual({ step: { stepX: 0.8, stepZ: 0 }, clock: 200 });
+  expect(move(false)).toEqual({ step: { stepX: 0.2, stepZ: 0 }, clock: 50 });
+  for (const dt of [-1, Infinity, NaN]) expect(() => advancePlayerMotion(createPlayerMotionState(), idleIntent(), 0, 1, 4, dt, undefined, { authoritativeStep: true })).toThrow();
+});
+
 function jumpIntent() {
   const keys = createEmptyMovementKeys();
   keys.space = true;

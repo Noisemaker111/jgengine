@@ -72,15 +72,9 @@ export function RuntimePlayPublisher({ api }: { api: EditorHostApi }) {
       api.setPlayControl({ paused: true, pendingSteps: play.pendingSteps - 1 });
       return;
     }
+    // Freeze before the next simulation frame; positive priorities would take over canvas rendering.
     if (!ctx.time.isPaused()) ctx.time.pause();
   }, -1);
-
-  useFrame(() => {
-    const play = api.getPlayControl();
-    if (play.paused && play.pendingSteps === 0 && !ctx.time.isPaused()) {
-      ctx.time.pause();
-    }
-  }, 1);
 
   return null;
 }

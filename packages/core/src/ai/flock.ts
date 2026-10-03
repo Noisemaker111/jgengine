@@ -187,6 +187,7 @@ export function stepFlock(
   config: FlockConfig,
   dt: number,
   target?: FlockVec3,
+  acceleration?: (agent: Readonly<FlockStepAgent>, index: number) => FlockVec3,
 ): void {
   const count = agents.length;
   if (count === 0) return;
@@ -202,9 +203,11 @@ export function stepFlock(
     fillNeighbors(agents, i, invCell, gridCells, neighborScratch);
     const steer = flockSteer(agents[i]!, neighborScratch, config, target);
     const base = i * 3;
-    steerScratch[base] = steer[0];
-    steerScratch[base + 1] = steer[1];
-    steerScratch[base + 2] = steer[2];
+    const external = acceleration?.(agents[i]!, i);
+    if (external !== undefined && (external.length !== 3 || external.some((axis) => !Number.isFinite(axis)))) throw new Error("flock acceleration must contain three finite components");
+    steerScratch[base] = steer[0] + (external?.[0] ?? 0);
+    steerScratch[base + 1] = steer[1] + (external?.[1] ?? 0);
+    steerScratch[base + 2] = steer[2] + (external?.[2] ?? 0);
   }
 
   for (let i = 0; i < count; i += 1) {

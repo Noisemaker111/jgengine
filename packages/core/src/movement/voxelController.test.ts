@@ -7,6 +7,19 @@ import {
   type SolidQuery,
 } from "./voxelController";
 
+test("voxel authority uses the full trusted tick and preserves standalone clamping", () => {
+  const intent = resolveMovementIntent(createEmptyMovementKeys(), true);
+  const move = (authoritativeStep: boolean) => {
+    const body = createVoxelPlayerBody(0, 0, 0);
+    body.velocityX = 4;
+    body.grounded = true;
+    advanceVoxelPlayer(body, intent, 0, 1, 4, 0.2, () => false, DEFAULT_VOXEL_DIMS, { gravityAcceleration: 0, groundAcceleration: 0, groundFriction: 0 }, () => 0, { authoritativeStep });
+    return body.x;
+  };
+  expect(move(true)).toBeCloseTo(0.8);
+  expect(move(false)).toBeCloseTo(0.2);
+});
+
 function solidFrom(cells: Iterable<readonly [number, number, number]>): {
   isSolid: SolidQuery;
   set: Set<string>;
