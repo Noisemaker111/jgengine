@@ -2,6 +2,9 @@ import * as THREE from "three";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import type { PaintStroke } from "@jgengine/core/scene/paintLayer";
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
+
+import { measureLocalBounds } from "./measureBounds";
 
 export const PAINT_TEXTURE_SIZE = 512;
 
@@ -9,6 +12,27 @@ export const PAINT_TEXTURE_SIZE = 512;
 export type ModelShadowMode = "cast" | "receive" | "both" | "none";
 
 const modelResources = new WeakMap<THREE.Object3D, { materials: Set<THREE.Material>; skeletons: Set<THREE.Skeleton> }>();
+
+/** Resolve placement from bind bounds in the frame containing the imported root, shared by rendering and collider measurement. @internal */
+export function modelPlacementTransform(root: THREE.Object3D, model: ModelConfig): { scale: number; position: [number, number, number] } {
+  let scale = model.scale ?? 1;
+  let minY = 0;
+  let centerX = 0;
+  let centerZ = 0;
+  const bounds = model.targetHeight === undefined ? null : measureLocalBounds(root);
+  const height = bounds === null ? 0 : bounds.max[1] - bounds.min[1];
+  if (bounds !== null && Number.isFinite(height) && height > 0) {
+    scale *= model.targetHeight! / height;
+    minY = bounds.min[1];
+    centerX = (bounds.min[0] + bounds.max[0]) / 2;
+    centerZ = (bounds.min[2] + bounds.max[2]) / 2;
+  } else if ((model.anchor ?? "center") === "center" && model.dims !== undefined) {
+    minY = model.dims.minY;
+    centerX = model.dims.center.x;
+    centerZ = model.dims.center.z;
+  }
+  return { scale, position: [-scale * centerX, (model.y ?? 0) - scale * minY, -scale * centerZ] };
+}
 
 /**
  * Clone a model with independent pose and materials, retaining shared geometry and textures.

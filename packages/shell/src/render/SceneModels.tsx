@@ -23,6 +23,7 @@ import {
   createPaintCanvas,
   disposeModelScene,
   disposePaintCanvas,
+  modelPlacementTransform,
   syncPaintCanvas,
   type MaterialCache,
   type PaintCanvas,
@@ -253,39 +254,22 @@ export function EntityModel({
   const dims = model.dims;
 
   const shadows = model.shadows;
-  const scene = useMemo(() => {
+  const { content, scene } = useMemo(() => {
     const cloned = cloneModelScene(gltf.scene, { shadows });
     if (material !== undefined) applyMaterialOverride(cloned, material, { clone: false });
-    return cloned;
+    return { content: cloned, scene: new THREE.Group().add(cloned) };
   }, [gltf, material, shadows]);
 
-  const measured = useMemo(() => {
-    if (model.targetHeight === undefined) return null;
-    const box = new THREE.Box3().setFromObject(scene);
-    const height = box.max.y - box.min.y;
-    if (!Number.isFinite(height) || height <= 0) return null;
-    return {
-      normalize: model.targetHeight / height,
-      minY: box.min.y,
-      centerX: (box.min.x + box.max.x) / 2,
-      centerZ: (box.min.z + box.max.z) / 2,
-    };
-  }, [scene, model.targetHeight]);
-
-  const scale = (model.scale ?? 1) * (measured?.normalize ?? 1);
-  const centered = (model.anchor ?? "center") === "center" && dims !== undefined;
-  const position: [number, number, number] =
-    measured !== null
-      ? [-scale * measured.centerX, baseY - scale * measured.minY, -scale * measured.centerZ]
-      : centered
-        ? [-scale * dims!.center.x, baseY - scale * dims!.minY, -scale * dims!.center.z]
-        : [0, baseY, 0];
+  const { scale, position } = useMemo(
+    () => modelPlacementTransform(scene, model),
+    [scene, model.scale, model.targetHeight, model.y, model.anchor, dims],
+  );
 
   useEffect(
     () => () => {
-      disposeModelScene(scene);
+      disposeModelScene(content);
     },
-    [scene],
+    [content],
   );
 
   // A model without index-measured dims can't drive the fitted-collider path, so report the live
@@ -317,7 +301,7 @@ export function EntityModel({
     if (triangles !== null) reportMeasuredCollisionMesh(ctx, measureTarget, measureKey, triangles);
   }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey]);
 
-  useModelAnimation(scene, gltf.animations, model.animation, instanceId);
+  useModelAnimation(content, gltf.animations, model.animation, instanceId);
   useFootIk(scene, model.ik, ctx, instanceId, baseY);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);

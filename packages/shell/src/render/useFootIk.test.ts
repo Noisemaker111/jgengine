@@ -6,6 +6,9 @@ import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js"
 
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { applyFootIk, resolveFootIkRig, type FootIkState } from "./useFootIk";
+import { modelPlacementTransform } from "./modelRender";
+import { measureLocalBounds } from "./measureBounds";
+import { measureLocalCollisionTriangles } from "./measureCollisionMesh";
 
 function ground(height: (x: number, z: number) => number, normal: readonly [number, number, number] = [0, 1, 0]) {
   const calls: SceneRaycastInput[] = [];
@@ -139,7 +142,64 @@ async function loadKnight(): Promise<GLTF> {
   }
 }
 
+function placeModelScene(content: THREE.Object3D, model: import("@jgengine/core/game/playableGame").ModelConfig): THREE.Group {
+  const root = new THREE.Group().add(content);
+  const transform = modelPlacementTransform(root, model);
+  root.scale.setScalar(transform.scale);
+  root.position.fromArray(transform.position);
+  return root;
+}
+
 describe("foot IK on a KayKit Knight", () => {
+  test("a transformed imported rig normalizes once and keeps mixer, bind collision and IK in the placement frame", async () => {
+    const gltf = await loadKnight();
+    const content = gltf.scene;
+    content.position.set(4, 6, -3);
+    content.scale.setScalar(3);
+    content.rotation.y = 0.7;
+    const placement = placeModelScene(content, { url: "Knight.glb", targetHeight: 1.8, scale: 1.2, y: 0.15 });
+    const raw = measureLocalBounds(placement)!;
+    expect((raw.max[1] - raw.min[1]) * placement.scale.y).toBeCloseTo(2.16, 6);
+    expect(raw.min[1] * placement.scale.y + placement.position.y).toBeCloseTo(0.15, 6);
+    const triangles = measureLocalCollisionTriangles(placement, { scale: placement.scale.y, offset: placement.position.toArray() })!;
+    let lowestVertex = Infinity;
+    for (let index = 1; index < triangles.positions.length; index += 3) lowestVertex = Math.min(lowestVertex, triangles.positions[index]!);
+    expect(lowestVertex).toBeCloseTo(0.15, 5);
+
+    const entity = new THREE.Group();
+    entity.position.set(-2, 1.2, 5);
+    entity.rotation.y = -0.3;
+    entity.add(placement);
+    entity.updateMatrixWorld(true);
+    const rig = resolveFootIkRig(placement, "auto")!;
+    const mixer = new THREE.AnimationMixer(content);
+    mixer.clipAction(THREE.AnimationClip.findByName(gltf.animations, "Walking_A")!).play();
+    const state: FootIkState = { weight: 1, pelvis: 0 };
+    let lowestSole = Infinity;
+    let highestSole = -Infinity;
+    for (const entityY of [1.2, 2.5, 1.2]) {
+      entity.position.y = entityY;
+      const groundY = entityY + 0.15;
+      for (let frame = 0; frame < 60; frame += 1) {
+        mixer.update(1 / 60);
+        entity.updateMatrixWorld(true);
+        applyFootIk(rig, groundY, ground(() => groundY).probe, state, 1 / 60);
+        for (const leg of rig.legs) {
+          const root = leg.root.getWorldPosition(new THREE.Vector3());
+          const mid = leg.mid.getWorldPosition(new THREE.Vector3());
+          const tip = leg.tip.getWorldPosition(new THREE.Vector3());
+          const sole = tip.y - leg.ankleRatio * (root.distanceTo(mid) + mid.distanceTo(tip)) - groundY;
+          lowestSole = Math.min(lowestSole, sole);
+          highestSole = Math.max(highestSole, sole);
+        }
+      }
+    }
+    expect(lowestSole).toBeGreaterThan(-0.005);
+    expect(highestSole).toBeLessThan(0.25);
+    expect(content.position.toArray()).toEqual([4, 6, -3]);
+    expect(content.scale.toArray()).toEqual([3, 3, 3]);
+  });
+
   test("auto finds both legs and measures the rest ankle height from the skin", async () => {
     const gltf = await loadKnight();
     const rig = resolveFootIkRig(gltf.scene, "auto")!;

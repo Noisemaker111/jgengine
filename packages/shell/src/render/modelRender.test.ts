@@ -8,9 +8,113 @@ import {
   disposeClonedMaterials,
   disposeModelScene,
   disposePaintCanvas,
+  modelPlacementTransform,
   standardMaterialsOf,
   type PaintCanvas,
 } from "./modelRender";
+import { measureLocalBounds } from "./measureBounds";
+import { measureLocalCollisionTriangles } from "./measureCollisionMesh";
+
+function placeModelScene(content: THREE.Object3D, model: import("@jgengine/core/game/playableGame").ModelConfig): THREE.Group {
+  const root = new THREE.Group().add(content);
+  const transform = modelPlacementTransform(root, model);
+  root.scale.setScalar(transform.scale);
+  root.position.fromArray(transform.position);
+  return root;
+}
+
+describe("model placement frame", () => {
+  function importedRoot() {
+    const content = new THREE.Group();
+    content.position.set(7, 5, -4);
+    content.scale.set(2, 3, 4);
+    content.rotation.y = Math.PI / 4;
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(2, 3, 4));
+    mesh.position.set(1, 2, -1);
+    content.add(mesh);
+    return { content, mesh };
+  }
+
+  test("normalization preserves imported transforms and grounds the same bounds and triangles", () => {
+    const { content, mesh } = importedRoot();
+    content.updateMatrix();
+    const authored = content.matrix.clone();
+    const root = placeModelScene(content, { url: "fixture", targetHeight: 1.8, scale: 1.5, y: 0.3 });
+    root.updateMatrixWorld(true);
+    const rendered = new THREE.Box3().setFromObject(root);
+    expect(rendered.min.y).toBeCloseTo(0.3, 6);
+    expect(rendered.max.y - rendered.min.y).toBeCloseTo(2.7, 6);
+    expect((rendered.min.x + rendered.max.x) / 2).toBeCloseTo(0, 6);
+    expect((rendered.min.z + rendered.max.z) / 2).toBeCloseTo(0, 6);
+    expect(content.matrix.equals(authored)).toBe(true);
+
+    const bounds = measureLocalBounds(root)!;
+    for (let axis = 0; axis < 3; axis += 1) {
+      expect(bounds.min[axis]! * root.scale.x + root.position.getComponent(axis)).toBeCloseTo(rendered.min.getComponent(axis), 6);
+      expect(bounds.max[axis]! * root.scale.x + root.position.getComponent(axis)).toBeCloseTo(rendered.max.getComponent(axis), 6);
+    }
+    const triangles = measureLocalCollisionTriangles(root, { scale: root.scale.x, offset: root.position.toArray() })!;
+    const vertices = mesh.geometry.getAttribute("position");
+    for (let index = 0; index < vertices.count; index += 1) {
+      const renderedVertex = new THREE.Vector3().fromBufferAttribute(vertices, index).applyMatrix4(mesh.matrixWorld);
+      for (let axis = 0; axis < 3; axis += 1) {
+        expect(triangles.positions[index * 3 + axis]!).toBeCloseTo(renderedVertex.getComponent(axis), 5);
+      }
+    }
+  });
+
+  test("placement resolution can repeat without reparenting or changing the imported pose", () => {
+    const { content } = importedRoot();
+    const root = new THREE.Group().add(content);
+    const model = { url: "fixture", targetHeight: 1.8 };
+    const first = modelPlacementTransform(root, model);
+    expect(modelPlacementTransform(root, model)).toEqual(first);
+    expect(content.parent).toBe(root);
+    expect(content.position.toArray()).toEqual([7, 5, -4]);
+    expect(root.position.toArray()).toEqual([0, 0, 0]);
+    expect(root.scale.toArray()).toEqual([1, 1, 1]);
+  });
+
+  test("origin anchoring adds model placement without replacing the imported pivot", () => {
+    const { content } = importedRoot();
+    const root = placeModelScene(content, { url: "fixture", anchor: "origin", scale: 0.5, y: 1 });
+    root.updateMatrixWorld(true);
+    expect(content.getWorldPosition(new THREE.Vector3()).toArray()).toEqual([3.5, 3.5, -2]);
+    expect(content.scale.toArray()).toEqual([2, 3, 4]);
+  });
+
+  test("root animation remains bound to imported content rather than the placement frame", () => {
+    const { content } = importedRoot();
+    const root = placeModelScene(content, { url: "fixture", anchor: "origin", scale: 0.5, y: 1 });
+    const placement = root.position.clone();
+    const mixer = new THREE.AnimationMixer(content);
+    mixer.clipAction(new THREE.AnimationClip("root", 1, [
+      new THREE.VectorKeyframeTrack(".position", [0, 1], [7, 5, -4, 9, 5, -4]),
+    ])).play();
+    mixer.update(0.5);
+    root.updateMatrixWorld(true);
+    expect(content.position.toArray()).toEqual([8, 5, -4]);
+    expect(root.position.equals(placement)).toBe(true);
+    expect(content.getWorldPosition(new THREE.Vector3()).x).toBeCloseTo(4, 6);
+  });
+
+  test("indexed centering uses the imported footprint once", () => {
+    const { content } = importedRoot();
+    const box = new THREE.Box3().setFromObject(content);
+    const root = placeModelScene(content, {
+      url: "fixture", scale: 0.5, y: 0.1,
+      dims: {
+        footprint: { w: box.max.x - box.min.x, d: box.max.z - box.min.z },
+        center: { x: (box.min.x + box.max.x) / 2, z: (box.min.z + box.max.z) / 2 },
+        minY: box.min.y, maxY: box.max.y,
+      },
+    });
+    const rendered = new THREE.Box3().setFromObject(root);
+    expect(rendered.min.y).toBeCloseTo(0.1, 6);
+    expect((rendered.min.x + rendered.max.x) / 2).toBeCloseTo(0, 6);
+    expect(rendered.max.y - rendered.min.y).toBeCloseTo((box.max.y - box.min.y) * 0.5, 6);
+  });
+});
 
 function standardMesh(color = "#ffffff"): THREE.Mesh {
   return new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial({ color }));
