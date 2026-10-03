@@ -143,10 +143,26 @@ test("Escape and lost capture cancel the drag without consuming the card", async
   const start = await center('[data-card="ace"]');
   await page.mouse.move(start.x, start.y); await page.mouse.down(); await page.keyboard.press("Escape");
   await idle(); await page.mouse.up(); expect(await drops()).toHaveLength(0);
-  await page.evaluate(() => window.addEventListener("pointerdown", event => { (window as any).ownerPointer = event.pointerId; }, { once: true }));
+  await page.locator('[data-card="ace"]').evaluate(element => {
+    const card = element as HTMLElement;
+    const capture = { owner: 0, got: null as null | { pointerId: number; trusted: boolean; onCard: boolean }, lost: null as null | { pointerId: number; trusted: boolean; onCard: boolean } };
+    (window as any).capture = capture;
+    card.addEventListener("pointerdown", event => { capture.owner = event.pointerId; }, { once: true });
+    card.addEventListener("gotpointercapture", event => { capture.got = { pointerId: event.pointerId, trusted: event.isTrusted, onCard: event.target === card }; }, { once: true });
+    card.addEventListener("lostpointercapture", event => { capture.lost = { pointerId: event.pointerId, trusted: event.isTrusted, onCard: event.target === card }; }, { once: true });
+  });
   await page.mouse.down();
-  await page.locator('[data-card="ace"]').evaluate(element => element.releasePointerCapture((window as any).ownerPointer));
-  await page.mouse.move(650, 400); await idle(); await page.mouse.up();
+  // Capture becomes active when the browser processes another pointer event.
+  await page.mouse.move(start.x + 1, start.y + 1);
+  await page.waitForFunction(() => (window as any).capture.got?.pointerId === (window as any).capture.owner, undefined, { timeout: 1000 });
+  const captured = await page.evaluate(() => (window as any).capture);
+  expect(captured.got).toEqual({ pointerId: captured.owner, trusted: true, onCard: true });
+  await page.locator('[data-card="ace"]').evaluate(element => element.releasePointerCapture((window as any).capture.owner));
+  await page.mouse.move(650, 400);
+  await page.waitForFunction(() => (window as any).capture.lost?.pointerId === (window as any).capture.owner, undefined, { timeout: 1000 });
+  const released = await page.evaluate(() => (window as any).capture);
+  expect(released.lost).toEqual({ pointerId: released.owner, trusted: true, onCard: true });
+  await idle(); await page.mouse.up();
   expect(await drops()).toHaveLength(0); expect(await page.locator('[data-card="ace"]').count()).toBe(1);
 });
 
