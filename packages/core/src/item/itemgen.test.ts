@@ -151,6 +151,43 @@ describe("itemgen — deterministic composable generation", () => {
     expect(again).toEqual(forced);
   });
 
+  test("pins cannot bypass constraints, even for optional steps", () => {
+    const outcome = generate({ ...RELIC_SCHEMA, maxAttempts: 1 }, () => {
+      throw new Error("pinned choices must not consume randomness");
+    }, { pin: { rarity: "common", material: "iron", gem: "ruby" } });
+
+    expect(outcome).toEqual({ ok: false, reason: "unsatisfiable", attempts: 1 });
+  });
+
+  test("compatible pins preserve values and provenance without consuming randomness", () => {
+    const outcome = generate(RELIC_SCHEMA, () => {
+      throw new Error("pinned choices must not consume randomness");
+    }, { pin: { rarity: "legendary", material: "iron", gem: "ruby" } });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.result.choices).toEqual({ rarity: "legendary", material: "iron", gem: "ruby" });
+    expect(outcome.result.fields.power).toBe(30);
+    expect(outcome.result.provenance.choices.every((choice) => choice.eligible === 1 && choice.rerolls === 0)).toBe(true);
+  });
+
+  test("a constrained pin backtracks earlier choices to find a compatible assignment", () => {
+    const outcome = generate({ ...QUEST_SCHEMA, maxAttempts: 1 }, () => 0, { pin: { sigil: "crescent" } });
+
+    expect(outcome.ok).toBe(true);
+    if (!outcome.ok) return;
+    expect(outcome.result.choices).toEqual({ omen: "moon", giver: "elder", sigil: "crescent" });
+    expect(outcome.result.provenance.choices.find((choice) => choice.step === "omen")?.rerolls).toBe(1);
+  });
+
+  test("an unknown pinned option fails rather than skipping an optional step", () => {
+    const outcome = generate({ ...RELIC_SCHEMA, maxAttempts: 1 }, () => {
+      throw new Error("pinned choices must not consume randomness");
+    }, { pin: { rarity: "legendary", material: "iron", gem: "missing" } });
+
+    expect(outcome).toEqual({ ok: false, reason: "unsatisfiable", attempts: 1 });
+  });
+
   test("validation rerolls until a draft passes, and reports rejection when impossible", () => {
     let attempts = 0;
     const rerollSchema: GenSchema = {

@@ -22,6 +22,12 @@ definitions structured-cloneable and JSON-compatible for JSON saves. Save the
 inventory's returned runtime ids alongside this state; do not regenerate rolls
 or infer the next id from the surviving items.
 
+Generate coherent combinations with `generate` (`item/itemgen`): dependent
+pools and `GenStep.accept` constrain later choices using earlier picks.
+Pins consume no choice RNG and must satisfy the same pool and constraints;
+incompatible pins backtrack earlier unpinned choices or return `unsatisfiable`
+within the configured attempt and pick budgets.
+
 ## Canonical workflow
 
 1. Define plain serializable state and stable ids.

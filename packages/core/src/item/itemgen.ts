@@ -159,7 +159,7 @@ export interface GenSchema {
 
 /** Per-call options for {@link generate}. */
 export interface GenerateOptions {
-  /** Force a step to a specific option id, consuming no rng for it (a requested rarity or family). */
+  /** Fix a step to an option id that still must satisfy its pool and constraint, consuming no rng for it. */
   pin?: Readonly<Record<string, string>>;
 }
 
@@ -218,7 +218,7 @@ export function generate(schema: GenSchema, rng: () => number, options: Generate
       const pinId = pin?.[step.id];
       if (pinId !== undefined) {
         const option = poolFor(step.pool, view).find((candidate) => candidate.id === pinId);
-        if (option === undefined) return false;
+        if (option === undefined || (step.accept !== undefined && !step.accept(option, view))) return false;
         chosen.push({
           step: step.id,
           optionId: option.id,
