@@ -89,7 +89,7 @@ export function ShellDebugOverlays({
 
 /** Key handler bundle shared by HUD and 3D presentation paths. @internal */
 export type ShellKeyHandlers = {
-  onKeyDown: (event: { code: string; target?: EventTarget | null; preventDefault: () => void }) => void;
+  onKeyDown: (event: { code: string; target?: EventTarget | null; defaultPrevented?: boolean; preventDefault: () => void }) => void;
   onKeyUp: (event: { code: string; target?: EventTarget | null }) => void;
   onBlur: () => void;
 };
@@ -113,6 +113,11 @@ export function createShellKeyHandlers({
 }): ShellKeyHandlers {
   return {
     onKeyDown: (event) => {
+      if (event.defaultPrevented) {
+        f2HeldRef.current = false;
+        tracker.reset();
+        return;
+      }
       const target = event.target as HTMLElement | null | undefined;
       if (target?.closest?.("input, textarea, select, [contenteditable]:not([contenteditable=false])")) {
         f2HeldRef.current = false;
@@ -132,7 +137,7 @@ export function createShellKeyHandlers({
         }
         return;
       }
-      if (target?.closest?.('button, a[href], [role="button"], [role="link"], [role="dialog"], [role="menu"], [role="listbox"]')) {
+      if (target?.closest?.('button, a[href], [role="button"], [role="link"], [role="dialog"], [role="menu"], [role="listbox"], [role="grid"], [role="gridcell"], [role="toolbar"]')) {
         tracker.reset();
         return;
       }

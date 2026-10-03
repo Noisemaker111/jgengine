@@ -42,7 +42,7 @@ describe("shell keyboard ownership", () => {
   });
 
   test("leaves keyboard navigation and activation to interactive HUD controls", () => {
-    for (const selector of ["button", "a[href]", '[role="dialog"]', '[role="menu"]', '[role="listbox"]']) {
+    for (const selector of ["button", "a[href]", '[role="dialog"]', '[role="menu"]', '[role="listbox"]', '[role="grid"]', '[role="gridcell"]', '[role="toolbar"]']) {
       const keys = keyboard(true);
       keys.press("Tab", within(selector));
       keys.press("Space", within(selector));
@@ -51,6 +51,16 @@ describe("shell keyboard ownership", () => {
       expect(keys.down).toEqual([]);
       expect(keys.counts().resets).toBe(3);
     }
+  });
+
+  test("a consumer's prevented key retires gameplay input without claiming the key again", () => {
+    const keys = keyboard(true);
+    keys.press("KeyA");
+    keys.handlers.onKeyDown({ code: "Space", defaultPrevented: true, preventDefault: () => { throw new Error("Key already owned"); } });
+    expect(keys.down).toEqual(["KeyA"]);
+    expect(keys.counts().resets).toBe(1);
+    keys.handlers.onKeyDown({ code: "F2", defaultPrevented: true, preventDefault: () => { throw new Error("Chord already owned"); } });
+    expect(keys.held.current).toBe(false);
   });
 
   test("retains text entry suspension and the F2 devtools chord", () => {

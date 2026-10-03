@@ -14,6 +14,8 @@ simulation state. `observeBrowserSuspension` offers the same behavior outside
 React and returns listener cleanup; its optional sources support iframe windows
 and isolated tests.
 
+**Keyboard ownership.** The shell leaves prevented key events and focused text, dialog, grid, gridcell, and toolbar controls to the HUD, clearing held gameplay input at that boundary. Custom keyboard widgets call `preventDefault()` for the keys they handle. Opening a window does not pause simulation or change pointer lock; keep those policies in the game and use `suspendPlayControls(ctx)` when the window should suspend player controls.
+
 ## 6. Game UI primitives
 
 Prefer small headless or lightly styled primitives over a giant universal design system. Useful concepts include:
