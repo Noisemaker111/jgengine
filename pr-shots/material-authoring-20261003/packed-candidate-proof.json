@@ -1,0 +1,110 @@
+{
+  "status": "Unpublished packed candidate validation; no Games dependency/source changes",
+  "artifacts": [
+    {
+      "name": "@jgengine/assets",
+      "version": "0.19.0",
+      "sha256": "528634593138f825c4e69dcb729555b6a9aab3b8e7aecb497907356aa1c88d36",
+      "status": "unpublished packed candidate"
+    },
+    {
+      "name": "@jgengine/core",
+      "version": "0.19.0",
+      "sha256": "c62fc845e6f2e6f8115ed7ef9bfafc4dea31aecfc9fbde50d5e3591c361676c2",
+      "status": "unpublished packed candidate"
+    },
+    {
+      "name": "@jgengine/editor",
+      "version": "0.19.0",
+      "sha256": "5dd8aa307be1fa2c8ffea71f05c7e729a7f8051db2883be759bec3392e8de7e7",
+      "status": "unpublished packed candidate"
+    },
+    {
+      "name": "@jgengine/navbake",
+      "version": "0.19.0",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "status": "unpublished packed candidate"
+    },
+    {
+      "name": "@jgengine/node",
+      "version": "0.19.0",
+      "sha256": "6796cdc399fdc6f1bcc08862550c702f41800beebdd60fe28e9df3ac6a727775",
+      "status": "unpublished packed candidate"
+    },
+    {
+      "name": "@jgengine/react",
+      "version": "0.19.0",
+      "sha256": "86387dae91c708a545ba4d3e5a5bef39447329c005e7e98126af604403529ccb",
+      "status": "unpublished packed candidate"
+    },
+    {
+      "name": "@jgengine/shell",
+      "version": "0.19.0",
+      "sha256": "72dbb8925e0d7199d02548d01ef13d61cee9f2cce3993743f656921aff2edb4e",
+      "status": "unpublished packed candidate"
+    },
+    {
+      "name": "@jgengine/ws",
+      "version": "0.19.0",
+      "sha256": "5d406faa8db9a9f6eb01e4221c59f30770a1ed985ea25954faf20659431b43eb",
+      "status": "unpublished packed candidate"
+    }
+  ],
+  "renderer": {
+    "three": "0.182.0",
+    "bun": "1.4.2",
+    "vite": "6.4.3"
+  },
+  "checks": {
+    "focusedAssets": {
+      "tests": 5,
+      "assertions": 162,
+      "result": "PASS"
+    },
+    "deepward": {
+      "types": "PASS",
+      "build": "PASS",
+      "tests": 40,
+      "assertions": 1773
+    },
+    "brightway": {
+      "types": "PASS",
+      "build": "PASS",
+      "tests": 29,
+      "assertions": 128
+    }
+  },
+  "warnings": [
+    "Directional materials emit direction-prerequisite warnings; real selected geometry UVs and normals were asserted",
+    "Both production bundles retain pre-existing large chunk warnings"
+  ],
+  "claims": [
+    "Imported map pointers preserved in metadata-only decoder test; no texture rendering claim for that test",
+    "All five Brightway original guest colors and omitted slot objects unchanged",
+    "No per-game source pin or root catalog/lock edit"
+  ],
+  "nativeDeepward": {
+    "status": "Captured and inspected shared station surface renderer in actual native packed adopter",
+    "artifact": "deepward-packed-candidate.png",
+    "render": {
+      "drawCalls": 37,
+      "triangles": 9892,
+      "geometries": 31,
+      "textures": 22
+    },
+    "frame": {
+      "fps": 0.6,
+      "avgFrameMs": 1613.4,
+      "samples": 11,
+      "rendererLimit": "software GL/no hardware speed claim"
+    },
+    "fallbacks": {},
+    "textureErrors": [],
+    "limitations": [
+      "Legacy capture readiness fallback; no SDK asset-ready handshake",
+      "Starting Marrow view does not show Fitter glass/wool slots",
+      "Same lower-left/center HUD occlusion as baseline",
+      "Baseline captured no matched render metric snapshot; no cost delta claim"
+    ]
+  }
+}

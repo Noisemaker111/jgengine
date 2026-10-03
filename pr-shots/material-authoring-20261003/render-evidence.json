@@ -1,0 +1,86 @@
+{
+  "threeRevision": "182",
+  "captureRuntime": "Chromium SwiftShader software GL; timings are not hardware FPS",
+  "claims": {
+    "rendered": [
+      "native imported multi-material SheenChair",
+      "named upholstery edit preserves visible wood and metal",
+      "fuzzy sheen versus directional woven material",
+      "physical glass transmission versus masked card coverage",
+      "rough natural PBR maps",
+      "front, grazing, back light"
+    ],
+    "pending": [
+      "GPU pixel overdraw and hardware GPU timing",
+      "native Brightway material play proof",
+      "published SDK and central Games dependency upgrade",
+      "production groom or hair BSDF; current cards are an approximation"
+    ]
+  },
+  "baseline": {
+    "render": {
+      "drawCalls": 31,
+      "triangles": 179343,
+      "geometries": 24,
+      "textures": 11
+    },
+    "frame": {
+      "fps": 2.8,
+      "avgFrameMs": 356.5,
+      "p95FrameMs": 362.2,
+      "maxFrameMs": 362.2,
+      "avgSimMs": 0.4,
+      "maxSimMs": 0.5,
+      "avgOutsideMs": 356,
+      "maxOutsideMs": 361.8,
+      "longFrames": 3,
+      "samples": 3,
+      "phases": [
+        {
+          "name": "pose",
+          "avgMs": 0.4,
+          "maxMs": 0.5,
+          "pctOfSim": 100
+        }
+      ]
+    },
+    "fallbacks": {},
+    "textureErrors": []
+  },
+  "physical": {
+    "render": {
+      "drawCalls": 46,
+      "triangles": 265505,
+      "geometries": 24,
+      "textures": 16
+    },
+    "frame": {
+      "fps": 1.1,
+      "avgFrameMs": 872.4,
+      "p95FrameMs": 888.9,
+      "maxFrameMs": 888.9,
+      "avgSimMs": 0.4,
+      "maxSimMs": 0.5,
+      "avgOutsideMs": 871.9,
+      "maxOutsideMs": 888.4,
+      "longFrames": 2,
+      "samples": 2,
+      "phases": [
+        {
+          "name": "pose",
+          "avgMs": 0.3,
+          "maxMs": 0.4,
+          "pctOfSim": 67
+        },
+        {
+          "name": "actions",
+          "avgMs": 0.1,
+          "maxMs": 0.1,
+          "pctOfSim": 22
+        }
+      ]
+    },
+    "fallbacks": {},
+    "textureErrors": []
+  }
+}

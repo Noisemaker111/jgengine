@@ -1,0 +1,357 @@
+[
+  {
+    "name": "SheenChair",
+    "selectiveAssignment": {
+      "selector": {
+        "mesh": "SheenChair_fabric",
+        "slot": "fabric Mystere Mango Velvet",
+        "slotIndex": 0,
+        "materialType": "MeshPhysicalMaterial",
+        "uvSets": [
+          0,
+          1
+        ],
+        "tangents": false,
+        "physical": true
+      },
+      "untouchedSlots": 3,
+      "materialAccounting": {
+        "materials": 4,
+        "textures": 10,
+        "textureBytes": 19573408,
+        "unknownTextureSizes": 0,
+        "blendedMaterials": 0,
+        "maskedMaterials": 0,
+        "transmissionMaterials": 0,
+        "doubleSidedMaterials": 0,
+        "physicalMaterials": 1
+      }
+    },
+    "threeRevision": "182",
+    "imageDecode": "stubbed; no rendered proof",
+    "meshes": [
+      {
+        "name": "SheenChair_fabric",
+        "material": "fabric Mystere Mango Velvet",
+        "attributes": [
+          "position",
+          "normal",
+          "uv",
+          "uv1"
+        ]
+      },
+      {
+        "name": "SheenChair_wood",
+        "material": "wood Brown",
+        "attributes": [
+          "position",
+          "normal",
+          "uv",
+          "uv1"
+        ]
+      },
+      {
+        "name": "SheenChair_metal",
+        "material": "metal",
+        "attributes": [
+          "position",
+          "normal",
+          "uv",
+          "uv1"
+        ]
+      },
+      {
+        "name": "SheenChair_label",
+        "material": "label",
+        "attributes": [
+          "position",
+          "normal",
+          "uv",
+          "uv1"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "fabric Mystere Mango Velvet",
+        "type": "MeshPhysicalMaterial",
+        "sheen": 1,
+        "anisotropy": 0,
+        "clearcoat": 0,
+        "transmission": 0,
+        "thickness": 0,
+        "ior": 1.5,
+        "maps": [
+          {
+            "key": "map",
+            "colorSpace": "srgb",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "aoMap",
+            "colorSpace": "",
+            "channel": 1,
+            "flipY": false
+          },
+          {
+            "key": "normalMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          }
+        ]
+      },
+      {
+        "name": "wood Brown",
+        "type": "MeshStandardMaterial",
+        "maps": [
+          {
+            "key": "map",
+            "colorSpace": "srgb",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "aoMap",
+            "colorSpace": "",
+            "channel": 1,
+            "flipY": false
+          },
+          {
+            "key": "roughnessMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "metalnessMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          }
+        ]
+      },
+      {
+        "name": "metal",
+        "type": "MeshStandardMaterial",
+        "maps": [
+          {
+            "key": "aoMap",
+            "colorSpace": "",
+            "channel": 1,
+            "flipY": false
+          }
+        ]
+      },
+      {
+        "name": "label",
+        "type": "MeshStandardMaterial",
+        "maps": [
+          {
+            "key": "map",
+            "colorSpace": "srgb",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "aoMap",
+            "colorSpace": "",
+            "channel": 1,
+            "flipY": false
+          }
+        ]
+      },
+      {
+        "name": "fabric Mystere Peacock Velvet",
+        "type": "MeshPhysicalMaterial",
+        "sheen": 1,
+        "anisotropy": 0,
+        "clearcoat": 0,
+        "transmission": 0,
+        "thickness": 0,
+        "ior": 1.5,
+        "maps": [
+          {
+            "key": "map",
+            "colorSpace": "srgb",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "aoMap",
+            "colorSpace": "",
+            "channel": 1,
+            "flipY": false
+          },
+          {
+            "key": "normalMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          }
+        ]
+      },
+      {
+        "name": "wood Black",
+        "type": "MeshStandardMaterial",
+        "maps": [
+          {
+            "key": "map",
+            "colorSpace": "srgb",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "aoMap",
+            "colorSpace": "",
+            "channel": 1,
+            "flipY": false
+          },
+          {
+            "key": "roughnessMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "metalnessMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "AnisotropyBarnLamp",
+    "selectiveAssignment": {
+      "selector": {
+        "mesh": "Lamp_Metal",
+        "slot": "Lamp Metal",
+        "slotIndex": 0,
+        "materialType": "MeshPhysicalMaterial",
+        "uvSets": [
+          0
+        ],
+        "tangents": true,
+        "physical": true
+      },
+      "untouchedSlots": 2,
+      "materialAccounting": {
+        "materials": 3,
+        "textures": 4,
+        "textureBytes": 89478480,
+        "unknownTextureSizes": 0,
+        "blendedMaterials": 0,
+        "maskedMaterials": 0,
+        "transmissionMaterials": 1,
+        "doubleSidedMaterials": 0,
+        "physicalMaterials": 2
+      }
+    },
+    "threeRevision": "182",
+    "imageDecode": "stubbed; no rendered proof",
+    "meshes": [
+      {
+        "name": "Lamp_Metal",
+        "material": "Lamp Metal",
+        "attributes": [
+          "position",
+          "normal",
+          "tangent",
+          "uv"
+        ]
+      },
+      {
+        "name": "Lamp_Filament",
+        "material": "Lamp Filament",
+        "attributes": [
+          "position",
+          "normal"
+        ]
+      },
+      {
+        "name": "Lamp_Glass",
+        "material": "Lamp Glass",
+        "attributes": [
+          "position",
+          "normal"
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "name": "Lamp Metal",
+        "type": "MeshPhysicalMaterial",
+        "sheen": 0,
+        "anisotropy": 1,
+        "clearcoat": 0.25,
+        "transmission": 0,
+        "thickness": 0,
+        "ior": 1.5,
+        "maps": [
+          {
+            "key": "map",
+            "colorSpace": "srgb",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "aoMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "normalMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "roughnessMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "metalnessMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "anisotropyMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          },
+          {
+            "key": "clearcoatNormalMap",
+            "colorSpace": "",
+            "channel": 0,
+            "flipY": false
+          }
+        ]
+      },
+      {
+        "name": "Lamp Filament",
+        "type": "MeshStandardMaterial",
+        "maps": []
+      },
+      {
+        "name": "Lamp Glass",
+        "type": "MeshPhysicalMaterial",
+        "sheen": 0,
+        "anisotropy": 0,
+        "clearcoat": 0,
+        "transmission": 1,
+        "thickness": 0.01,
+        "ior": 1.5,
+        "maps": []
+      }
+    ]
+  }
+]

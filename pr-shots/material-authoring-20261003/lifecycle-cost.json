@@ -1,0 +1,10 @@
+{
+  "threeRevision": "182",
+  "cycles": 1000,
+  "ownedMaterialsAllocated": 3000,
+  "ownedMaterialsDisposed": 3000,
+  "sourceMaterialDisposals": 0,
+  "elapsedMs": 111.69089199999999,
+  "meanCpuMsPerCloneAssignDispose": 0.11169089199999999,
+  "gpuTiming": "not measured"
+}

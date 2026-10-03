@@ -1,0 +1,144 @@
+--- a/deepward/src/game/materials.ts
++++ b/deepward/src/game/materials.ts
+@@ -0,0 +1,35 @@
++import type { MaterialAsset, MaterialAssignment } from "@jgengine/core/material/materialAsset";
++import { INDUSTRIAL } from "./industrialMaterials";
++
++const provenance = {
++  author: "Deepward project contributors", license: "CC0-1.0",
++  sourceUrl: "https://github.com/Noisemaker111/JGengine-games/tree/beta/deepward",
++};
++export const fitterMaterials: readonly MaterialAsset[] = [
++  { schemaVersion: 1, id: "deepward/workcoat-wool", name: "Fitter wool workcoat", family: "fabric", capabilities: ["pbr", "sheen"], provenance,
++    surface: { sheen: 0.7, sheenColor: "#bcb5a2", sheenRoughness: 0.85 }, fabric: { construction: "fuzzy" } },
++  { schemaVersion: 1, id: "deepward/amber-visor", name: "Amber protective visor", family: "glass", capabilities: ["pbr", "specular", "transmission", "volume", "alpha"], provenance,
++    surface: { metalness: 0, roughness: 0.14, ior: 1.48, transmission: 0.65, thickness: 0.012, attenuationColor: "#b58b51", attenuationDistance: 0.25, alphaMode: "opaque" } },
++  { schemaVersion: 1, id: "deepward/machined-steel", name: "Directional machined steel", family: "metal", capabilities: ["pbr", "anisotropy"], provenance,
++    surface: { anisotropy: 0.45, anisotropyRotation: Math.PI / 2 } },
++];
++export const fitterMaterialAssignments: readonly MaterialAssignment[] = [
++  { materialId: "deepward/workcoat-wool", selector: { slot: "Workcoat textile" } },
++  { materialId: "deepward/amber-visor", selector: { slot: "Amber visor" } },
++  { materialId: "deepward/machined-steel", selector: { slot: "Machined steel" } },
++];
++
++export const stationSurfaceMaterials: Readonly<Record<"floor" | "enamel", MaterialAsset>> = {
++  floor: { schemaVersion: 1, id: "deepward/station-floor", name: "Marrow mineral floor", family: "stone", capabilities: ["pbr"], provenance,
++    surface: { ...INDUSTRIAL.floor, normalScale: [0.22, 0.22] }, textures: {
++      color: { url: "/models/imported/deepward/surfaces/station-floor-color.png", colorSpace: "srgb", physicalSize: [1, 1], sampler: { wrapS: "repeat", wrapT: "repeat", anisotropy: 4 } },
++      roughness: { url: "/models/imported/deepward/surfaces/station-floor-roughness.png", colorSpace: "linear", channel: "g", physicalSize: [1, 1], sampler: { wrapS: "repeat", wrapT: "repeat", anisotropy: 4 } },
++      normal: { url: "/models/imported/deepward/surfaces/station-floor-normal.png", colorSpace: "linear", normalConvention: "opengl", physicalSize: [1, 1], sampler: { wrapS: "repeat", wrapT: "repeat", anisotropy: 4 } },
++    } },
++  enamel: { schemaVersion: 1, id: "deepward/station-enamel", name: "Marrow worn enamel", family: "plastic", capabilities: ["pbr", "clearcoat"], provenance,
++    surface: { ...INDUSTRIAL.paint, clearcoat: 0.22, clearcoatRoughness: 0.45, normalScale: [0.22, 0.22] }, textures: {
++      color: { url: "/models/imported/deepward/surfaces/station-enamel-color.png", colorSpace: "srgb", physicalSize: [1.2, 1.2], sampler: { wrapS: "repeat", wrapT: "repeat", anisotropy: 4 } },
++      roughness: { url: "/models/imported/deepward/surfaces/station-enamel-roughness.png", colorSpace: "linear", channel: "g", physicalSize: [1.2, 1.2], sampler: { wrapS: "repeat", wrapT: "repeat", anisotropy: 4 } },
++      normal: { url: "/models/imported/deepward/surfaces/station-enamel-normal.png", colorSpace: "linear", normalConvention: "opengl", physicalSize: [1.2, 1.2], sampler: { wrapS: "repeat", wrapT: "repeat", anisotropy: 4 } },
++    } },
++};
+--- a/deepward/src/game/fitterArt.tsx
++++ b/deepward/src/game/fitterArt.tsx
+@@ -3,6 +3,7 @@
+ import type { Dive } from './state';
+ import { PRINT_ID } from '../world';
+ import { stationAssets } from './assets';
++import { fitterMaterials, fitterMaterialAssignments } from './materials';
+ 
+ /** The accepted attack countdown owns the windup pose; SDK position sampling owns gait. */
+ export function fitterAnimation(print: Dive['print']): ModelAnimationConfig {
+@@ -15,7 +16,7 @@
+  const asset=stationAssets.resolve('deepward/fitter-salvage-operator');
+  if(!asset)throw Error('Missing original Fitter catalog asset');
+  return <>
+-  <IsolatedEntityModel instanceId={PRINT_ID} model={{...asset,anchor:'origin',shadows:'both',animation:fitterAnimation(print)}} />
++  <IsolatedEntityModel instanceId={PRINT_ID} model={{...asset,anchor:'origin',shadows:'both',animation:fitterAnimation(print),materialAssets:fitterMaterials,materialAssignments:fitterMaterialAssignments}} />
+   {hit && <pointLight position={[0,1.25,0.3]} color='#ff6654' intensity={3} distance={2.2} />}
+  </>;
+ }
+--- a/deepward/src/game/stationSurface.tsx
++++ b/deepward/src/game/stationSurface.tsx
+@@ -1,33 +1,9 @@
+-import { useLoader } from '@react-three/fiber';
+-import { useCallback, useMemo } from 'react';
+-import { RepeatWrapping, SRGBColorSpace, TextureLoader, type MeshStandardMaterial } from 'three';
+-import { surfaceMaterial, type IndustrialSurface } from './industrialMaterials';
++import { MaterialAssetSurface } from "@jgengine/shell/render/materialAsset";
++import { INDUSTRIAL, type IndustrialSurface } from "./industrialMaterials";
++import { stationSurfaceMaterials } from "./materials";
+ 
+-/** Original imported maps retain metre-scale detail on editor-sized instanced boxes. */
+-export function StationSurface({surface,color}:{surface:IndustrialSurface;color?:string}) {
+- const family=surface==='floor'?'station-floor':'station-enamel';
+- const tile=surface==='floor'?1:1.2;
+- const textures=useLoader(TextureLoader,['color','roughness','normal'].map(role=>`/models/imported/deepward/surfaces/${family}-${role}.png`));
+- const maps=useMemo(()=>{
+-  textures.forEach(texture=>{texture.wrapS=RepeatWrapping;texture.wrapT=RepeatWrapping;texture.anisotropy=4;});
+-  textures[0]!.colorSpace=SRGBColorSpace;
+-  return {map:textures[0]!,roughnessMap:textures[1]!,normalMap:textures[2]!};
+- },[textures]);
+- const scaleUv=useCallback< MeshStandardMaterial['onBeforeCompile'] >((shader)=>{
+-  shader.vertexShader=shader.vertexShader.replace('#include <uv_vertex>',`#include <uv_vertex>
+-#ifdef USE_INSTANCING
+- vec3 stationExtent=vec3(length(instanceMatrix[0].xyz),length(instanceMatrix[1].xyz),length(instanceMatrix[2].xyz));
+- vec2 stationRepeat=(abs(normal.x)>0.5?stationExtent.zy:abs(normal.y)>0.5?stationExtent.xz:stationExtent.xy)/${tile.toFixed(1)};
+- #ifdef USE_MAP
+-  vMapUv*=stationRepeat;
+- #endif
+- #ifdef USE_ROUGHNESSMAP
+-  vRoughnessMapUv*=stationRepeat;
+- #endif
+- #ifdef USE_NORMALMAP
+-  vNormalMapUv*=stationRepeat;
+- #endif
+-#endif`);
+- },[tile]);
+- return <meshStandardMaterial {...surfaceMaterial(surface,color)} {...maps} normalScale={[0.22,0.22]} onBeforeCompile={scaleUv} customProgramCacheKey={()=>`deepward-original-surface-${tile}`} />;
++export function StationSurface({ surface, color }: { surface: IndustrialSurface; color?: string }) {
++  const floor = surface === "floor";
++  return <MaterialAssetSurface asset={stationSurfaceMaterials[floor ? "floor" : "enamel"]} shape="box" repeatMetres={floor ? 1 : 1.2}
++    overrides={{ ...INDUSTRIAL[surface], ...(color === undefined ? {} : { color }) }} />;
+ }
+--- a/brightway-park/src/game/materials.ts
++++ b/brightway-park/src/game/materials.ts
+@@ -0,0 +1,23 @@
++import type { MaterialAsset, MaterialAssignment } from "@jgengine/core/material/materialAsset";
++
++export const parkMaterials: readonly MaterialAsset[] = [
++  { schemaVersion: 1, id: "brightway/guest-satin", name: "Brightway summer satin", family: "fabric", capabilities: ["pbr", "sheen", "anisotropy"],
++    provenance: { author: "Brightway Park contributors", license: "Apache-2.0", sourceUrl: "https://github.com/Noisemaker111/JGengine-games/tree/beta/brightway-park" },
++    surface: { roughness: 0.38, sheen: 0.28, sheenColor: "#fff1cf", sheenRoughness: 0.3, anisotropy: 0.65 },
++    fabric: { construction: "woven", weaveDirection: 0, threadScale: 40, normalStrength: 0.07, variation: 0.035 } },
++  { schemaVersion: 1, id: "brightway/fairground-gold", name: "Lacquered fairground gold", family: "metal", capabilities: ["pbr", "clearcoat"],
++    provenance: { author: "Brightway Park contributors", license: "Apache-2.0", sourceUrl: "https://github.com/Noisemaker111/JGengine-games/tree/beta/brightway-park" },
++    surface: { metalness: 0.55, roughness: 0.3, clearcoat: 0.65, clearcoatRoughness: 0.2 } },
++];
++
++/** Imported r182 names from the original committed guest meshes; omitted skin, shoes, hair and backpack retain their original materials. */
++const guestMaterialAssignments: readonly MaterialAssignment[] = [
++  { materialId: "brightway/guest-satin", selector: { mesh: "mesh_4", slotIndex: 0 } },
++  { materialId: "brightway/fairground-gold", selector: { mesh: "mesh_9", slotIndex: 0 } },
++];
++export function guestMaterialAssignmentsFor(id: string): readonly MaterialAssignment[] {
++  return ["guest_a", "guest_c", "guest_e"].includes(id) ? guestMaterialAssignments : guestMaterialAssignments.slice(0, 1);
++}
++export const carouselMaterialAssignments: readonly MaterialAssignment[] = [
++  { materialId: "brightway/fairground-gold", selector: { mesh: "mesh_2", slotIndex: 0 } },
++];
+--- a/brightway-park/src/game/models.ts
++++ b/brightway-park/src/game/models.ts
+@@ -1,12 +1,15 @@
+ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ import { BUILD_IDS } from "./objects/catalog";
+ import { GUEST_KINDS } from "./entities/guests/catalog";
++import { parkMaterials, guestMaterialAssignmentsFor, carouselMaterialAssignments } from "./materials";
+ 
+ // Original geometry uses world units and a deliberately authored ground origin.
+ const original = (id: string): ModelConfig => ({
+   url: new URL(`../../public/art/models/${id}.glb`, import.meta.url).href,
+   scale: 1,
+   anchor: "origin",
++  ...(id.startsWith("guest_") ? { materialAssets: parkMaterials, materialAssignments: guestMaterialAssignmentsFor(id) }
++    : id === "ride_carousel" ? { materialAssets: parkMaterials, materialAssignments: carouselMaterialAssignments } : {}),
+ });
+ export const objectModels = Object.fromEntries(BUILD_IDS.map(id => [id, original(id)]));
+ export const entityModels = Object.fromEntries(GUEST_KINDS.map(id => [id, original(id)]));
