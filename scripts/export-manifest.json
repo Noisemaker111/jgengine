@@ -503,6 +503,7 @@
     "./visibility/spatialIndex",
     "./visibility/visibilitySystem",
     "./work/jobQueue",
+    "./work/staffedStation",
     "./work/unitTraining",
     "./world",
     "./world/authoredEntities",

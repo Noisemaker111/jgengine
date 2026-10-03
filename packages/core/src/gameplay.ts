@@ -630,6 +630,12 @@ export {
   type WorkQueueState,
 } from "./work/jobQueue";
 export {
+  stationOutputRate,
+  type StaffedStation,
+  type StationRateTuning,
+  type StationWorker,
+} from "./work/staffedStation";
+export {
   unitTrainingConfig,
   type ResourceCost,
   type TrainableUnitDef,

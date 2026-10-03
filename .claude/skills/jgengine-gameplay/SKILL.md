@@ -63,6 +63,12 @@ bounded batches, repair located issues and require explicit semantic approval.
 
 Prefer `defineSystem` and `defineGame({ systems })` for scheduled capabilities. Keep boot/join in the game loop only when it is truly lifecycle glue. System ordering, frequency, and serialization are explicit; avoid a giant per-frame callback.
 
+For staffed production, use `stationOutputRate` (`work/staffedStation`) to resolve
+caller-owned worker stats and efficiency, then feed the rate to `tickProduction`.
+Keep staffing and production progress in the same serializable store; the
+[staffed production example](reference-systems.md#staffed-production) composes
+the existing scheduler and save/reset boundaries without a separate manager.
+
 For whole-world saves, follow [authoritative state](reference-systems.md#authoritative-state); persistence and client replication use separate context methods.
 Follow [truthful device saves](recipes/device-save-status.md) for denied storage,
 quota errors, checkpoint retry, and save status UI.

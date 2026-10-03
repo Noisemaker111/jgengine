@@ -503,6 +503,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `splitViewports` (function) · `import { splitViewports } from "@jgengine/core/game/viewports"`
 
+## staffed-station-rate — turn bounded caller-owned worker stats and efficiency into a production rate
+
+- `stationOutputRate` (function) · `import { stationOutputRate } from "@jgengine/core/gameplay"`
+
 ## stat-graph — derive game-defined stats from named inputs with provenance and preview
 
 - `createStatGraph` (function) · `import { createStatGraph } from "@jgengine/core/gameplay"`
