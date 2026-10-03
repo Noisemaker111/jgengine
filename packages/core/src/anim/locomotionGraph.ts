@@ -13,11 +13,17 @@ export interface LocomotionGraphInput {
   /** Crossfade seconds between locomotion states. Default 0.2. */
   fadeSec?: number;
   /** One-shot clips keyed by trigger name; `death` holds its last frame instead of returning. */
-  oneShots?: Readonly<Record<string, string>>;
+  oneShots?: Readonly<Record<string, string | readonly string[]>>;
 }
 
 /** The parameter name the shell feeds with the entity's smoothed ground speed. */
 export const LOCOMOTION_SPEED_PARAM = "speed";
+/** Ground contact reported by the shared player motor; absent for custom movers without authored parameters. */
+export const LOCOMOTION_GROUNDED_PARAM = "grounded";
+/** Resolved vertical velocity from the shared player motor, in world units/sec. */
+export const LOCOMOTION_VERTICAL_SPEED_PARAM = "verticalSpeed";
+/** Physically resolved crouch stance from the shared player motor. */
+export const LOCOMOTION_CROUCHED_PARAM = "crouched";
 /** Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`. */
 export const LOCOMOTION_LAYER = "base";
 
@@ -39,10 +45,17 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
   const states: Record<string, AnimLayer["states"][string]> = {
     locomotion: { kind: "blend1D", param: LOCOMOTION_SPEED_PARAM, points },
   };
+  const oneShots = Object.entries(input.oneShots ?? {}).filter(([, spec]) => typeof spec === "string" || spec.length > 0);
+  for (const [name, spec] of oneShots) {
+    const clip = typeof spec === "string" ? spec : spec[0]!;
+    states[name] = { kind: "clip", clip, loop: false, ...(typeof spec === "string" || spec.length < 2 ? {} : { variants: [...spec] }) };
+  }
   const transitions: AnimTransition[] = [];
-  for (const [name, clip] of Object.entries(input.oneShots ?? {})) {
-    states[name] = { kind: "clip", clip, loop: false };
-    transitions.push({ from: "*", to: name, trigger: name, duration: 0.1 });
+  oneShots.sort(([a], [b]) => Number(b === "death") - Number(a === "death"));
+  for (const [name] of oneShots) {
+    for (const from of Object.keys(states)) {
+      if (from !== "death") transitions.push({ from, to: name, trigger: name, duration: 0.1 });
+    }
     if (name !== "death") transitions.push({ from: name, to: "locomotion", exitTime: 1, duration: fade });
   }
   return {
@@ -52,27 +65,24 @@ export function locomotionGraph(input: LocomotionGraphInput): AnimGraph {
 
 /**
  * The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its
- * `states` and `oneShots` describe (a `string[]` one-shot uses its first variant). `undefined` for a
- * single-clip config. The shell plays this and the editor inspects it, so both see the same graph.
+ * `states` and `oneShots` describe, retaining every one-shot variant. `undefined` for a
+ * single-clip config or incomplete locomotion roles. Idle must name a clip; an absent or blank
+ * walk role holds that idle clip at walking speeds until configured. The shell plays this and
+ * the editor inspects it, so both see the same graph.
  *
  * @capability locomotion-graph resolve the animation graph a model config plays
  */
 export function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined {
   if (config.graph !== undefined) return config.graph;
   const states = config.states;
-  if (states === undefined) return undefined;
-  const oneShots: Record<string, string> = {};
-  for (const [event, spec] of Object.entries(config.oneShots ?? {})) {
-    const clip = typeof spec === "string" ? spec : spec[0];
-    if (clip !== undefined) oneShots[event] = clip;
-  }
+  if (states === undefined || typeof states.idle !== "string" || states.idle.trim().length === 0) return undefined;
   return locomotionGraph({
     idle: states.idle,
-    walk: states.walk,
-    ...(states.run === undefined ? {} : { run: states.run }),
+    walk: typeof states.walk === "string" && states.walk.trim().length > 0 ? states.walk : states.idle,
+    ...(typeof states.run !== "string" || states.run.trim().length === 0 ? {} : { run: states.run }),
     walkSpeed: states.walkSpeed,
     runSpeed: states.runSpeed,
     fadeSec: states.fadeSec,
-    ...(Object.keys(oneShots).length === 0 ? {} : { oneShots }),
+    ...(config.oneShots === undefined ? {} : { oneShots: config.oneShots }),
   });
 }

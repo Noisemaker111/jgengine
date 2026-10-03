@@ -20,6 +20,12 @@ import {
 } from "./physicsBackend";
 import { PhysicsWorld, type PhysicsBounds, type PhysicsPrecision } from "./physicsWorld";
 
+/** Exact touching is not overlap; account for the same few-ulp face rounding as shapecast. */
+function axisOverlaps(center: number, bodyCenter: number, combinedHalf: number): boolean {
+  const tolerance = Number.EPSILON * 8 * Math.max(1, Math.abs(center), Math.abs(bodyCenter - combinedHalf), Math.abs(bodyCenter + combinedHalf));
+  return combinedHalf - Math.abs(bodyCenter - center) > tolerance;
+}
+
 /** Construction options: the `PhysicsWorld` capacity and bounds plus the shared backend config. */
 export interface PhysicsWorldBackendOptions extends PhysicsBackendConfig {
   capacity: number;
@@ -496,6 +502,16 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
             least === 2 ? -1 : least === 3 ? 1 : 0,
             least === 4 ? -1 : least === 5 ? 1 : 0,
           ];
+          // Expanding an AABB by a capsule's half-height can round exact floor contact inside
+          // by a few ulps. Keep entering contacts and real penetration, but allow departing or
+          // tangent motion through this numerical touch so it cannot mask a later wall/ceiling.
+          const faceScale = least < 2
+            ? Math.max(1, Math.abs(ox), Math.abs(minX), Math.abs(maxX))
+            : least < 4
+              ? Math.max(1, Math.abs(oy), Math.abs(minY), Math.abs(maxY))
+              : Math.max(1, Math.abs(oz), Math.abs(minZ), Math.abs(maxZ));
+          const touchTolerance = Number.EPSILON * 8 * faceScale;
+          if (motionLen > 0 && pens[least]! <= touchTolerance && mx * normal[0] + my * normal[1] + mz * normal[2] >= 0) continue;
         } else {
           if (!(motionLen > 0)) continue;
           const hit = slabRay(ox, oy, oz, mx, my, mz, minX, minY, minZ, maxX, maxY, maxZ);
@@ -520,9 +536,9 @@ export function createPhysicsWorldBackend(options: PhysicsWorldBackendOptions): 
       for (const [handle, rec] of records) {
         if (!bodyMatches(rec, desc.mask, desc.exclude, handle)) continue;
         const i = rec.index;
-        if (Math.abs(world.posX[i]! - desc.position[0]) >= rec.half[0] + half[0]) continue;
-        if (Math.abs(world.posY[i]! - desc.position[1]) >= rec.half[1] + half[1]) continue;
-        if (Math.abs(world.posZ[i]! - desc.position[2]) >= rec.half[2] + half[2]) continue;
+        if (!axisOverlaps(desc.position[0], world.posX[i]!, rec.half[0] + half[0])) continue;
+        if (!axisOverlaps(desc.position[1], world.posY[i]!, rec.half[1] + half[1])) continue;
+        if (!axisOverlaps(desc.position[2], world.posZ[i]!, rec.half[2] + half[2])) continue;
         out.push(handle);
       }
       return out;

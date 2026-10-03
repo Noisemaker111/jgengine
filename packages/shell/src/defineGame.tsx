@@ -16,6 +16,7 @@ import type { EnvironmentWorldFeature, SkyEnvironmentConfig } from "@jgengine/co
 import type { EnvironmentSource } from "@jgengine/core/render/environment";
 import { lightingFromDocument, skyFromDocument } from "@jgengine/core/editor/environment";
 import { resolveGameLook } from "@jgengine/core/render/lookPreset";
+import type { ResolveAuthoredObjectsOptions } from "@jgengine/core/world/authoredObjects";
 
 import { EnvironmentScene } from "./environment";
 import { terrainGroundColorSampler } from "./environment/terrainGroundColor";
@@ -31,8 +32,8 @@ type PresentationFields = Omit<PlayableGame, "game" | "content" | "loop" | "Game
   content?: GameContextContent;
   loop?: Partial<GameLoop<GameContext>>;
   GameUI?: ComponentType;
-  /** Tunes how the auto-mounted `AuthoredScene` places the document's catalog-id markers into the object store. Default `true`; pass `false` when the game spawns its placed content as entities itself (`placeAuthoredObjects`) to avoid a double render. */
-  scenePlacement?: boolean | { verticalOffset?: number };
+  /** Tunes how the auto-mounted `AuthoredScene` places catalog-id markers into the object store. Default `true`; `excludeKinds` replaces the resolver's mob/boss exclusions, so include those when adding game-owned spawn kinds. Pass `false` when the game places all content itself. */
+  scenePlacement?: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions);
   /** GLB models for the auto-mounted scene's scatter palette items, keyed by palette item id; string ids resolve through the game's asset catalog. Unmatched items keep the built-in proxy meshes. */
   sceneScatterModels?: Record<string, string | ModelConfig>;
   /** Animated species models for cosmetic authored habitats; gameplay actors remain game-owned. */
@@ -80,7 +81,7 @@ function isEnvironmentSource(value: unknown): value is EnvironmentSource {
 function authoredSceneOverlay(
   document: EditorDocument,
   diagnostics: boolean,
-  placement: boolean | { verticalOffset?: number },
+  placement: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions),
   scatterModels: Record<string, string | ModelConfig> | undefined,
   flockModels: Record<string, string | ModelConfig> | undefined,
   pathKinds: readonly string[] | undefined,

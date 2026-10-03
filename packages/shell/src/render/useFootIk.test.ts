@@ -1,11 +1,13 @@
 import { describe, expect, test } from "bun:test";
+import { act, createRoot, type RootStore } from "@react-three/fiber";
+import { createElement } from "react";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
-import { applyFootIk, resolveFootIkRig, type FootIkState } from "./useFootIk";
+import { applyFootIk, resolveFootIkRig, useFootIk, type FootIkState } from "./useFootIk";
 import { modelPlacementTransform } from "./modelRender";
 import { measureLocalBounds } from "./measureBounds";
 import { measureLocalCollisionTriangles } from "./measureCollisionMesh";
@@ -73,6 +75,92 @@ const settle = (run: (state: FootIkState) => void) => {
   return state;
 };
 
+function diagnostics(run: () => void): string[] {
+  const messages: string[] = [];
+  const warn = console.warn;
+  console.warn = (message: unknown) => messages.push(String(message));
+  try {
+    run();
+  } finally {
+    console.warn = warn;
+  }
+  return messages;
+}
+
+describe("resolveFootIkRig diagnostics", () => {
+  test("missing and ambiguous names explain why their chains cannot be applied", () => {
+    const { scene } = syntheticRig();
+    const duplicate = new THREE.Object3D();
+    duplicate.name = "Thigh_L";
+    scene.add(duplicate);
+    const messages = diagnostics(() => {
+      expect(resolveFootIkRig(scene, { feet: [{ root: "Thigh_L", mid: "Shin_L", tip: "absent" }] })).toBeNull();
+    });
+    expect(messages.some((message) => message.includes('"Thigh_L" matches multiple objects'))).toBe(true);
+    expect(messages.some((message) => message.includes('"absent" was not found'))).toBe(true);
+  });
+
+  test("overlapping chains are corrected only once", () => {
+    const { scene } = syntheticRig();
+    const chain = { root: "Thigh_L", mid: "Shin_L", tip: "Foot_L" };
+    const messages = diagnostics(() => {
+      expect(resolveFootIkRig(scene, { feet: [chain, chain] })!.legs).toHaveLength(1);
+    });
+    expect(messages[0]).toContain("already corrected by another foot chain");
+  });
+
+  test("descendant joints separated by helper transforms remain supported", () => {
+    const { scene } = syntheticRig();
+    const thigh = scene.getObjectByName("Thigh_L")!;
+    const shin = scene.getObjectByName("Shin_L")!;
+    const helper = new THREE.Object3D();
+    thigh.add(helper);
+    helper.add(shin);
+    const messages = diagnostics(() => {
+      expect(resolveFootIkRig(scene, { feet: [{ root: "Thigh_L", mid: "Shin_L", tip: "Foot_L" }] })!.legs).toHaveLength(1);
+    });
+    expect(messages).toEqual([]);
+  });
+
+  test("automatic pelvis contains both leg branches instead of moving only the first", () => {
+    const { scene } = syntheticRig();
+    for (const side of ["L", "R"]) {
+      const thigh = scene.getObjectByName(`Thigh_${side}`)!;
+      const branch = new THREE.Object3D();
+      thigh.parent!.add(branch);
+      branch.add(thigh);
+    }
+    const rig = resolveFootIkRig(scene, { feet: [
+      { root: "Thigh_L", mid: "Shin_L", tip: "Foot_L" },
+      { root: "Thigh_R", mid: "Shin_R", tip: "Foot_R" },
+    ] })!;
+    expect(rig.pelvis?.name).toBe("hips");
+  });
+
+  test("missing pelvis and look-at names are reported without disabling valid feet", () => {
+    const { scene } = syntheticRig();
+    const messages = diagnostics(() => {
+      const rig = resolveFootIkRig(scene, { feet: [{ root: "Thigh_L", mid: "Shin_L", tip: "Foot_L" }], pelvis: "absentHips", lookAt: { bone: "absentHead" } })!;
+      expect(rig.legs).toHaveLength(1);
+      expect(rig.pelvis).toBeNull();
+      expect(rig.head).toBeNull();
+    });
+    expect(messages.some((message) => message.includes('Look-at bone "absentHead"'))).toBe(true);
+    expect(messages.some((message) => message.includes('Pelvis "absentHips"'))).toBe(true);
+  });
+
+  test("look-at-only configuration does not report absent legs", () => {
+    const scene = new THREE.Group();
+    const head = new THREE.Object3D();
+    head.name = "head";
+    scene.add(head);
+    const messages = diagnostics(() => {
+      expect(resolveFootIkRig(scene, { feet: [], lookAt: { bone: "head" } })!.head).toBe(head);
+    });
+    expect(messages).toEqual([]);
+  });
+});
+
 describe("applyFootIk", () => {
   test("flat ground leaves the authored stance in place", () => {
     const { scene, rig } = syntheticRig();
@@ -123,12 +211,15 @@ describe("applyFootIk", () => {
   });
 
   test("a rig without legs resolves to null", () => {
-    expect(resolveFootIkRig(new THREE.Group(), "auto")).toBeNull();
+    const messages = diagnostics(() => {
+      expect(resolveFootIkRig(new THREE.Group(), "auto")).toBeNull();
+    });
+    expect(messages[0]).toContain("No thigh → shin → foot chain was recognized");
   });
 });
 
-async function loadKnight(): Promise<GLTF> {
-  const file = fileURLToPath(new URL("../../../../apps/dev/public/models/kaykit-adventurers/Knight.glb", import.meta.url));
+async function loadKnight(name = "Knight"): Promise<GLTF> {
+  const file = fileURLToPath(new URL(`../../../../apps/dev/public/models/kaykit-adventurers/${name}.glb`, import.meta.url));
   const bytes = readFileSync(file);
   const originalWarn = console.warn;
   const originalError = console.error;
@@ -142,6 +233,94 @@ async function loadKnight(): Promise<GLTF> {
   }
 }
 
+async function footIkHarness(scene: THREE.Object3D) {
+  const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  const previous = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
+  actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
+  const root = createRoot({} as HTMLCanvasElement);
+  await root.configure({
+    frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
+    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {} }) as unknown as THREE.WebGLRenderer,
+  });
+  const ctx = { scene: { raycast: ground((x) => x > 0 ? 0.12 : -0.1).probe } } as unknown as import("@jgengine/core/runtime/gameContextTypes").GameContext;
+  let store: RootStore;
+  function Model({ config }: { config: import("@jgengine/core/game/playableGame").ModelConfig["ik"] }) {
+    useFootIk(scene, config, ctx, "hero");
+    return createElement("primitive", { object: scene });
+  }
+  const render = async (config: import("@jgengine/core/game/playableGame").ModelConfig["ik"]) => {
+    await act(async () => { store = root.render(createElement(Model, { config })); });
+  };
+  const frames = (count: number) => {
+    for (let frame = 0; frame < count; frame++) {
+      const state = store.getState();
+      state.advance(state.clock.elapsedTime + 1 / 60, false);
+    }
+  };
+  return { render, frames, unmount: async () => {
+    await act(async () => root.unmount());
+    actEnvironment.IS_REACT_ACT_ENVIRONMENT = previous;
+  } };
+}
+
+describe("useFootIk lifecycle", () => {
+  test("disabling IK restores untouched imported rig joints", async () => {
+    const { scene } = await loadKnight();
+    const hips = scene.getObjectByName("hips")!;
+    const originalPosition = hips.position.clone();
+    const originalRotation = scene.getObjectByName("upperlegl")!.quaternion.clone();
+    const h = await footIkHarness(scene);
+    try {
+      await h.render("auto");
+      h.frames(90);
+      expect(hips.position.distanceTo(originalPosition)).toBeGreaterThan(0.05);
+      await h.render(undefined);
+      expect(hips.position.distanceTo(originalPosition)).toBeLessThan(1e-6);
+      expect(scene.getObjectByName("upperlegl")!.quaternion.angleTo(originalRotation)).toBeLessThan(1e-6);
+      await h.render("auto");
+      h.frames(1);
+      expect(hips.position.distanceTo(originalPosition)).toBeGreaterThan(0);
+      expect(hips.position.distanceTo(originalPosition)).toBeLessThan(0.01);
+    } finally {
+      await h.unmount();
+    }
+  });
+
+  test("replacing chains restores joints no longer corrected and resets smoothing", async () => {
+    const { scene } = await loadKnight();
+    const leftThigh = scene.getObjectByName("upperlegl")!;
+    const originalRotation = leftThigh.quaternion.clone();
+    const hips = scene.getObjectByName("hips")!;
+    const originalPosition = hips.position.clone();
+    const h = await footIkHarness(scene);
+    try {
+      await h.render("auto");
+      h.frames(90);
+      expect(leftThigh.quaternion.angleTo(originalRotation)).toBeGreaterThan(0.01);
+      await h.render({ feet: [{ root: "upperlegr", mid: "lowerlegr", tip: "footr" }] });
+      h.frames(1);
+      expect(leftThigh.quaternion.angleTo(originalRotation)).toBeLessThan(1e-6);
+      expect(hips.position.distanceTo(originalPosition)).toBeLessThan(0.01);
+    } finally {
+      await h.unmount();
+    }
+  });
+
+  test("unmount restores IK writes while preserving a newer animation pose", async () => {
+    const { scene } = await loadKnight();
+    const leftThigh = scene.getObjectByName("upperlegl")!;
+    const originalRotation = leftThigh.quaternion.clone();
+    const hips = scene.getObjectByName("hips")!;
+    const h = await footIkHarness(scene);
+    await h.render("auto");
+    h.frames(90);
+    hips.position.set(0.1, 1.3, -0.2);
+    await h.unmount();
+    expect(leftThigh.quaternion.angleTo(originalRotation)).toBeLessThan(1e-6);
+    expect(hips.position.toArray()).toEqual([0.1, 1.3, -0.2]);
+  });
+});
+
 function placeModelScene(content: THREE.Object3D, model: import("@jgengine/core/game/playableGame").ModelConfig): THREE.Group {
   const root = new THREE.Group().add(content);
   const transform = modelPlacementTransform(root, model);
@@ -151,6 +330,47 @@ function placeModelScene(content: THREE.Object3D, model: import("@jgengine/core/
 }
 
 describe("foot IK on a KayKit Knight", () => {
+  test("a cross-leg configuration cannot deform an imported Knight", async () => {
+    const { scene } = await loadKnight();
+    const before: number[][] = [];
+    scene.traverse((object) => before.push(object.quaternion.toArray()));
+    const messages = diagnostics(() => {
+      expect(resolveFootIkRig(scene, { feet: [{ root: "upperlegl", mid: "lowerlegr", tip: "footr" }] })).toBeNull();
+    });
+    const after: number[][] = [];
+    scene.traverse((object) => after.push(object.quaternion.toArray()));
+    expect(after).toEqual(before);
+    expect(messages[0]).toContain('"upperlegl" → "lowerlegr" → "footr"');
+    expect(messages[0]).toContain("each joint must descend");
+    expect(messages[0]).toContain("Available bones include:");
+  });
+
+  test("Rogue resolves without diagnostics and keeps walking soles above a slope", async () => {
+    const { scene, animations } = await loadKnight("Rogue");
+    let rig: ReturnType<typeof resolveFootIkRig> = null;
+    expect(diagnostics(() => { rig = resolveFootIkRig(scene, "auto"); })).toEqual([]);
+    const resolved = rig!;
+    expect(resolved.legs).toHaveLength(2);
+    expect(resolved.pelvis?.name).toBe("hips");
+    const mixer = new THREE.AnimationMixer(scene);
+    mixer.clipAction(THREE.AnimationClip.findByName(animations, "Walking_A")!).play();
+    const state: FootIkState = { weight: 1, pelvis: 0 };
+    const { probe } = ground((_x, z) => z * 0.2);
+    let lowestSole = Infinity;
+    for (let frame = 0; frame < 120; frame += 1) {
+      mixer.update(1 / 60);
+      scene.updateMatrixWorld(true);
+      applyFootIk(resolved, 0, probe, state, 1 / 60);
+      for (const leg of resolved.legs) {
+        const root = leg.root.getWorldPosition(new THREE.Vector3());
+        const mid = leg.mid.getWorldPosition(new THREE.Vector3());
+        const tip = leg.tip.getWorldPosition(new THREE.Vector3());
+        const length = root.distanceTo(mid) + mid.distanceTo(tip);
+        lowestSole = Math.min(lowestSole, tip.y - leg.ankleRatio * length - tip.z * 0.2);
+      }
+    }
+    expect(lowestSole).toBeGreaterThan(-0.005);
+  });
   test("a transformed imported rig normalizes once and keeps mixer, bind collision and IK in the placement frame", async () => {
     const gltf = await loadKnight();
     const content = gltf.scene;

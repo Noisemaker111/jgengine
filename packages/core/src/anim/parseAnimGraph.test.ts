@@ -59,7 +59,7 @@ describe("animGraphFromConfig", () => {
 
   test("states and one-shot variants become the locomotion graph", () => {
     expect(animGraphFromConfig({ states: { idle: "Idle", walk: "Walk", runSpeed: 5 }, oneShots: { hit: ["HitA", "HitB"] } })).toEqual(
-      locomotionGraph({ idle: "Idle", walk: "Walk", runSpeed: 5, oneShots: { hit: "HitA" } }),
+      locomotionGraph({ idle: "Idle", walk: "Walk", runSpeed: 5, oneShots: { hit: ["HitA", "HitB"] } }),
     );
   });
 

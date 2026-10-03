@@ -15,6 +15,7 @@ import {
   placeAuthoredObjects,
   resolveAuthoredObjects,
   syncAuthoredObjects,
+  type ResolveAuthoredObjectsOptions,
 } from "@jgengine/core/world/authoredObjects";
 import { syncAuthoredSolids } from "@jgengine/core/world/authoredSolids";
 import { buildRoadRibbon, GROUND_DECAL_LAYERS, roundPathCorners } from "@jgengine/core/world/roads";
@@ -205,7 +206,7 @@ export function AuthoredPaths({ document, field, kinds }: AuthoredPathsProps) {
 }
 
 /** Props for {@link AuthoredObjects}: document, ground field, and optional lift / onExisting. */
-export interface AuthoredObjectsProps {
+export interface AuthoredObjectsProps extends ResolveAuthoredObjectsOptions {
   document: EditorDocument;
   field: TerrainField;
   /** Extra lift in meters on top of each marker's own verticalOffset (default 0). */
@@ -230,11 +231,15 @@ export function AuthoredObjects({
   verticalOffset = 0,
   onExisting = "keep",
   synchronize = false,
+  excludeKinds,
 }: AuthoredObjectsProps) {
   const ctx = useGameContext();
   const previousObjects = useRef<ReturnType<typeof resolveAuthoredObjects>>([]);
   const previousStore = useRef(ctx.scene.object);
-  const objects = useMemo(() => resolveAuthoredObjects(document), [document]);
+  const objects = useMemo(
+    () => resolveAuthoredObjects(document, excludeKinds === undefined ? {} : { excludeKinds }),
+    [document, excludeKinds],
+  );
   useEffect(() => {
     if (previousStore.current !== ctx.scene.object) { previousObjects.current = []; previousStore.current = ctx.scene.object; }
     if (synchronize) {
@@ -295,9 +300,10 @@ export interface AuthoredSceneProps {
   /**
    * Place the document's catalog-id markers into the object
    * store — WorldScene renders them via the game's `objectModels` seam. Omit when the game places
-   * props itself in onInit with `placeAuthoredObjects`.
+   * props itself in onInit with `placeAuthoredObjects`. `excludeKinds` replaces the resolver's
+   * default mob/boss exclusions; include those when adding other game-owned entity spawn kinds.
    */
-  placeObjects?: boolean | { verticalOffset?: number };
+  placeObjects?: boolean | ({ verticalOffset?: number } & ResolveAuthoredObjectsOptions);
   /** Terrain surface color sampler forwarded to studio renderers (see `SceneKindRenderContext.groundColorAt`). */
   groundColorAt?: (x: number, z: number) => string;
 }
@@ -335,6 +341,7 @@ export function AuthoredScene({
   );
   const shouldPlaceObjects = placeObjects === true || (typeof placeObjects === "object" && placeObjects !== null);
   const objectVerticalOffset = typeof placeObjects === "object" && placeObjects !== null ? (placeObjects.verticalOffset ?? 0) : 0;
+  const objectExcludeKinds = typeof placeObjects === "object" && placeObjects !== null ? placeObjects.excludeKinds : undefined;
   return (
     <>
       <AuthoredWeatherLayer document={liveDocument} heightAt={field.sampleHeight} diagnostics={diagnostics} />
@@ -353,7 +360,8 @@ export function AuthoredScene({
       <AuthoredGenerators document={liveDocument} field={field} />
       <AuthoredSolids document={liveDocument} field={field} />
       {shouldPlaceObjects ? (
-        <AuthoredObjects document={liveDocument} field={field} verticalOffset={objectVerticalOffset} synchronize={live && getDocumentLiveSync() !== null} />
+        <AuthoredObjects document={liveDocument} field={field} verticalOffset={objectVerticalOffset} synchronize={live && getDocumentLiveSync() !== null}
+          {...(objectExcludeKinds === undefined ? {} : { excludeKinds: objectExcludeKinds })} />
       ) : null}
     </>
   );

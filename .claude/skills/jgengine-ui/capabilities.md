@@ -44,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
 
+## animation-motion-params — read resolved player movement into reusable animation graph parameters
+
+- `readModelAnimationParams` (function) · `import { readModelAnimationParams } from "@jgengine/shell/render/useModelAnimation"`
+
 ## authored-flocks — render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime
 
 - `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/shell/world/AuthoredFlocks"`
@@ -425,6 +429,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## modal-stack — serializable, observable stack of opaque modal/dialog records — push/pop/resolve blocking overlays (pause menu, confirm dialog) with optional auto-dismiss; never interprets kind or result
 
 - `createModalStack` (function) · `import { createModalStack } from "@jgengine/core/ui"`
+
+## model-animation-diagnostics — inspect imported clip mappings, layer masks and root-track compatibility
+
+- `diagnoseModelAnimation` (function) · `import { diagnoseModelAnimation } from "@jgengine/shell/render/useModelAnimation"`
 
 ## model-fallbacks — models the loader replaced with a placeholder, for capture and smoke assertions
 

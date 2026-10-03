@@ -1,3 +1,5 @@
+import { resolveOneShotClip } from "../game/modelAnimation";
+
 /** Parameter value a graph reads: floats for blends and comparisons, booleans for gates. */
 export type AnimParamValue = number | boolean;
 /** The parameter set a graph evaluates against each advance. */
@@ -5,7 +7,7 @@ export type AnimParams = Readonly<Record<string, AnimParamValue>>;
 
 /** A state plays one clip, or blends clips by one or two parameters. */
 export type AnimState =
-  | { kind: "clip"; clip: string; speed?: number; loop?: boolean; rootMotion?: boolean }
+  | { kind: "clip"; clip: string; variants?: readonly string[]; speed?: number; loop?: boolean; rootMotion?: boolean }
   | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean; rootMotion?: boolean }
   | {
       kind: "blend2D";
@@ -75,12 +77,14 @@ interface LayerTransitionState {
   duration: number;
   fromWeights: Record<string, number>;
   fromTimes: Record<string, number>;
+  fromPlayback?: Record<string, { speed: number; loop: boolean; rootMotion?: boolean }>;
 }
 
 interface LayerState {
   current: string;
   time: number;
   transition: LayerTransitionState | null;
+  selectedClip?: string;
 }
 
 /** Serializable evaluator state. */
@@ -103,7 +107,7 @@ export interface AnimGraphOutput {
   events: { name: string; clip: string }[];
   /** Root-bone travel over this advance from `rootMotion` states, in the rig's local units. */
   rootDelta?: [number, number, number];
-  /** `true` while any layer's current state has `rootMotion`, even on an advance with no travel. */
+  /** `true` while an influencing current or fading-out state has `rootMotion`, even with no travel. */
   rootMotion?: true;
 }
 
@@ -119,6 +123,11 @@ export interface AnimGraphRuntime {
   /** Current state id of a layer. */
   stateOf(layerId: string): string | null;
   advance(dt: number, params: AnimParams, clips: AnimGraphClipInfo): AnimGraphOutput;
+}
+
+/** Randomness used only when entering a clip state with variants. Omit to choose the first variant. */
+export interface AnimGraphRuntimeOptions {
+  rng?: () => number;
 }
 
 const DEFAULT_FADE = 0.2;
@@ -252,7 +261,7 @@ function clipTimeFor(time: number, duration: number, loop: boolean): number {
  *
  * @capability anim-graph data-first animation state machine with blend trees, crossfades, layers, and clip events
  */
-export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
+export function createAnimGraphRuntime(initial: AnimGraph, options: AnimGraphRuntimeOptions = {}): AnimGraphRuntime {
   let graph = initial;
   let triggers = new Set<string>();
   let layers: Record<string, LayerState> = {};
@@ -262,6 +271,14 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
     for (const layer of graph.layers) layers[layer.id] = { current: layer.entry, time: 0, transition: null };
   }
   reset();
+
+  function chooseClip(state: LayerState, def: AnimState): void {
+    if (def.kind === "clip" && def.variants !== undefined && def.variants.length > 0) {
+      state.selectedClip = resolveOneShotClip({ choice: def.variants }, "choice", options.rng?.() ?? 0) ?? def.clip;
+    } else {
+      delete state.selectedClip;
+    }
+  }
 
   function pickTransition(layer: AnimLayer, state: LayerState, params: AnimParams, normalized: number): AnimTransition | null {
     for (const transition of layer.transitions) {
@@ -289,8 +306,7 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
       if (event.clip !== clip) continue;
       const at = event.atSec;
       if (loop) {
-        const wrapped = after < before;
-        const hit = wrapped ? at > before || at <= after : at > before && at <= after;
+        const hit = at >= 0 && at <= duration && Math.floor((after - at) / duration) > Math.floor((before - at) / duration);
         if (hit) out.push({ name: event.name, clip });
       } else if (at > before && at <= after) {
         out.push({ name: event.name, clip });
@@ -328,23 +344,27 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
         if (state === undefined) continue;
         const def = layer.states[state.current];
         if (def === undefined) continue;
+        if (def.kind === "clip" && def.variants !== undefined && state.selectedClip === undefined) chooseClip(state, def);
         const layerWeight = layer.weight ?? 1;
         if (def.rootMotion === true && layerWeight > 0) rootMotion = true;
 
         const before = state.time;
         state.time += dt * stateSpeed(def);
-        const weights = stateClipWeights(def, params);
+        const weights = def.kind === "clip" && state.selectedClip !== undefined && def.variants?.includes(state.selectedClip)
+          ? { [state.selectedClip]: 1 }
+          : stateClipWeights(def, params);
         const duration = stateDuration(weights, clips);
         const loop = stateLoops(def);
         const normalized = duration > 0 ? (loop ? (state.time % duration) / duration : Math.min(1, state.time / duration)) : 1;
 
         for (const clip of Object.keys(weights)) {
+          if (!(weights[clip]! * layerWeight > 0)) continue;
           const duration = clipDuration(clips[clip]);
           collectEvents(
             output.events,
             clip,
-            clipTimeFor(before, duration, loop),
-            clipTimeFor(state.time, duration, loop),
+            before,
+            state.time,
             duration,
             loop,
           );
@@ -366,7 +386,12 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
           const times: Record<string, number> = {};
           for (const [clip, w] of Object.entries(transition.fromWeights)) {
             merged[clip] = (merged[clip] ?? 0) + w * (1 - t);
-            times[clip] = transition.fromTimes[clip] ?? 0;
+            const playback = transition.fromPlayback?.[clip];
+            if (w * (1 - t) * layerWeight > 0 && playback?.rootMotion === true) rootMotion = true;
+            const time = transition.fromTimes[clip] ?? 0;
+            const nextTime = playback === undefined ? time : clipTimeFor(time + dt * playback.speed, clipDuration(clips[clip]), playback.loop);
+            transition.fromTimes[clip] = nextTime;
+            times[clip] = nextTime;
           }
           for (const [clip, w] of Object.entries(weights)) {
             merged[clip] = (merged[clip] ?? 0) + w * t;
@@ -385,25 +410,36 @@ export function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime {
         }
 
         const next = pickTransition(layer, state, params, normalized);
-        if (next !== null && next.to !== state.current) {
+        if (next !== null) {
           const fromWeights: Record<string, number> = {};
           const fromTimes: Record<string, number> = {};
+          const fromPlayback: Record<string, { speed: number; loop: boolean; rootMotion?: boolean }> = {};
           for (const entry of output.clips) {
             if (entry.layer !== layer.id) continue;
             fromWeights[entry.clip] = (fromWeights[entry.clip] ?? 0) + entry.weight / (layerWeight || 1);
             fromTimes[entry.clip] = entry.time;
+            const previous = transition?.fromPlayback?.[entry.clip];
+            const outgoingRoot = previous?.rootMotion === true && transition !== null &&
+              transition.duration > 0 && transition.elapsed < transition.duration &&
+              (transition.fromWeights[entry.clip] ?? 0) > 0;
+            const playback = weights[entry.clip] === undefined && previous !== undefined
+              ? previous : { speed: stateSpeed(def), loop };
+            // Same-clip states share one clock, but an interrupted fade must retain either
+            // influencing source's in-place policy until that source leaves the pose.
+            fromPlayback[entry.clip] = { ...playback, ...(def.rootMotion === true || outgoingRoot ? { rootMotion: true } : {}) };
           }
           state.current = next.to;
           state.time = 0;
+          const target = layer.states[next.to];
+          if (target !== undefined) chooseClip(state, target);
           state.transition = {
             to: next.to,
             elapsed: 0,
             duration: next.duration ?? DEFAULT_FADE,
             fromWeights,
             fromTimes,
+            fromPlayback,
           };
-        } else if (next !== null && next.to === state.current) {
-          state.time = 0;
         }
       }
       triggers.clear();
@@ -432,7 +468,10 @@ function parseState(value: unknown): AnimState | null {
     ...(typeof raw.loop === "boolean" ? { loop: raw.loop } : {}),
     ...(typeof raw.rootMotion === "boolean" ? { rootMotion: raw.rootMotion } : {}),
   };
-  if (raw.kind === "clip" && typeof raw.clip === "string") return { kind: "clip", clip: raw.clip, ...extra };
+  if (raw.kind === "clip" && typeof raw.clip === "string") {
+    const variants = Array.isArray(raw.variants) ? raw.variants.filter((clip): clip is string => typeof clip === "string" && clip.length > 0) : undefined;
+    return { kind: "clip", clip: raw.clip, ...(variants === undefined || variants.length === 0 ? {} : { variants }), ...extra };
+  }
   if (!Array.isArray(raw.points)) return null;
   if (raw.kind === "blend1D" && typeof raw.param === "string") {
     const points = raw.points.flatMap((point) => {

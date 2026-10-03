@@ -235,6 +235,8 @@ export interface MotionFrameOptions {
   floating?: boolean;
   /** Buffers jump presses for `jumpBufferMs`. Without it a jump fires only on the press frame. */
   buffer?: InputBuffer;
+  /** A collision controller supplies grounded state; integrate jump velocity without landing on the synthetic offset origin. */
+  externalGrounding?: boolean;
 }
 
 /**
@@ -370,7 +372,7 @@ export function advancePlayerMotion(
     motion.verticalVelocity -= gravityAcceleration * gravityScale * deltaSeconds;
     if (motion.verticalVelocity <= 0) motion.jumpRising = false;
     motion.jumpOffset += motion.verticalVelocity * deltaSeconds;
-    if (motion.jumpOffset <= 0) {
+    if (motion.jumpOffset <= 0 && options?.externalGrounding !== true) {
       motion.jumpOffset = 0;
       motion.verticalVelocity = 0;
       motion.grounded = true;

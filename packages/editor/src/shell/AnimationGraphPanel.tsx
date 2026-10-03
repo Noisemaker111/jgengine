@@ -143,7 +143,7 @@ function GraphInspector({
       if (current.graphPose !== undefined) ui.patch({ clipPreview: { ...current, graphPose: undefined } });
       return;
     }
-    ui.patch({ clipPreview: { ...current, graphPose: { graph, clips: frame.clips } } });
+    ui.patch({ clipPreview: { ...current, graphPose: { graph, clips: frame.clips, ...(frame.rootMotion === true ? { rootMotion: true } : {}) } } });
   }, [graph, frame, asset.id, ui, durations]);
 
   const timeRef = useRef(time);

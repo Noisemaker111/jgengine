@@ -40,6 +40,8 @@ export interface GraphPreviewFrame {
   clips: AnimClipOutput[];
   /** Clip events fired from zero to `time`, with when they fired. */
   events: { at: number; name: string; clip: string }[];
+  /** Active root-motion playback stays in place in the editor, matching the collision-authoritative shell. */
+  rootMotion?: true;
 }
 
 /** Longest preview timeline the scrubber offers, in seconds. */
@@ -70,7 +72,7 @@ export function simulateGraphPreview(input: GraphPreviewInput): GraphPreviewFram
   }
   const states: Record<string, string> = {};
   for (const layer of input.graph.layers) states[layer.id] = runtime.stateOf(layer.id) ?? layer.entry;
-  return { time, states, clips: out.clips, events };
+  return { time, states, clips: out.clips, events, ...(out.rootMotion === true ? { rootMotion: true as const } : {}) };
 }
 
 /** Every clip name a graph plays. */
@@ -78,7 +80,10 @@ export function graphClipNames(graph: AnimGraph): string[] {
   const names = new Set<string>();
   for (const layer of graph.layers) {
     for (const state of Object.values(layer.states)) {
-      if (state.kind === "clip") names.add(state.clip);
+      if (state.kind === "clip") {
+        names.add(state.clip);
+        for (const clip of state.variants ?? []) names.add(clip);
+      }
       else for (const point of state.points) names.add(point.clip);
     }
   }

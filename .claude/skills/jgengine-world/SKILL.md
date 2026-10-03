@@ -43,7 +43,7 @@ For environment-driven surface appearance, sample only selected targets through 
 
 Choose input intent, controller/motor, collision/navigation, and camera as separate seams. Commands express game intent; world systems resolve motion. Interaction targets come from bounded spatial/sensor queries, not full-world scans.
 
-Walk feel is data, not code. `movement.feel` sets `groundAcceleration`, `airAcceleration` and `groundFriction` (response rates, 1/s) plus `runMultiplier`, `crouchMultiplier`, jump forgiveness (`jumpBufferMs`, `coyoteMs`) and jump shape (`jumpCutFactor`, `apexGravityScale`, `fallGravityScale`, `landingRecoveryMs`), and `physics` sets `gravity` and `jumpVelocity`. A floaty platformer and a weighty shooter differ only in these numbers; pin them with `measureMovement` (`movement/movementProbe`) in a test.
+Walk feel is data, not code. `movement.feel` sets `groundAcceleration`, `airAcceleration` and `groundFriction` (response rates, 1/s) plus `runMultiplier`, `crouchMultiplier`, jump forgiveness (`jumpBufferMs`, `coyoteMs`) and jump shape (`jumpCutFactor`, `apexGravityScale`, `fallGravityScale`, `landingRecoveryMs`), and `physics` sets `gravity` and `jumpVelocity`. The heightfield and capsule paths share these feel controls; voxel jumping retains its press-frame policy. Crouch follows supported catalog poses, and capsule standing requires headroom. Pin numeric movement behavior with `measureMovement` (`movement/movementProbe`) in a test.
 
 ### Stateful placed objects
 

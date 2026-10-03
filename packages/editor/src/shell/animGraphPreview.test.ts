@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph";
 import type { AnimGraph } from "@jgengine/core/anim/animGraph";
-import { graphParamControls, graphTriggers, recordTrigger, simulateGraphPreview } from "./animGraphPreview";
+import { graphClipNames, graphParamControls, graphTriggers, recordTrigger, simulateGraphPreview } from "./animGraphPreview";
 
 const graph: AnimGraph = {
   ...locomotionGraph({ idle: "Idle", walk: "Walk", run: "Run", walkSpeed: 0.5, runSpeed: 6, oneShots: { attack: "Slash", death: "Die" } }),
@@ -39,6 +39,24 @@ describe("simulateGraphPreview", () => {
     const frame = simulateGraphPreview({ graph, durations: {}, time: 1.25, params: { speed: 0 }, triggers: [] });
     expect(frame.clips.find((clip) => clip.clip === "Idle")!.time).toBeCloseTo(0.25, 6);
   });
+
+  test("variant scrubbing uses the selected clip's measured duration and replays deterministically", () => {
+    const variants = locomotionGraph({ idle: "Idle", walk: "Walk", oneShots: { attack: ["Heavy", "Quick"] } });
+    variants.layers[0]!.states.attack = { kind: "clip", clip: "Fallback", variants: ["Heavy", "Quick"], loop: false };
+    expect(graphClipNames(variants)).toEqual(["Idle", "Walk", "Fallback", "Heavy", "Quick"]);
+    const input = { graph: variants, durations: { Idle: 2, Walk: 1, Heavy: 2, Quick: 0.5 }, time: 1.3, params: { speed: 0 }, triggers: recordTrigger([], "attack", 0.2) };
+    const first = simulateGraphPreview(input);
+    expect(first.states.base).toBe("attack");
+    expect(first.clips.find((clip) => clip.clip === "Heavy")!.time).toBeGreaterThan(1);
+    expect(first.clips.find((clip) => clip.clip === "Heavy")!.time).toBeLessThan(1.15);
+    expect(simulateGraphPreview(input)).toEqual(first);
+    expect(simulateGraphPreview({ ...input, time: 2.5 }).states.base).toBe("locomotion");
+  });
+
+  test("a root-motion preview carries the collision-authoritative in-place policy", () => {
+    const graph: AnimGraph = { layers: [{ id: "base", entry: "walk", states: { walk: { kind: "clip", clip: "Walk", rootMotion: true } }, transitions: [] }] };
+    expect(simulateGraphPreview({ graph, durations: { Walk: 1 }, time: 0.4, params: {}, triggers: [] }).rootMotion).toBe(true);
+  });
 });
 
 describe("graph controls", () => {
@@ -54,7 +72,7 @@ describe("graph controls", () => {
         },
       ],
     };
-    expect(graphTriggers(withAim)).toEqual(["attack", "death"]);
+    expect(graphTriggers(withAim)).toEqual(["death", "attack"]);
     const controls = graphParamControls(withAim);
     expect(controls.map((control) => [control.name, control.kind])).toEqual([
       ["speed", "number"],

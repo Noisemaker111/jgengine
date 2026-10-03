@@ -216,13 +216,14 @@
 - `AnimGraphClipInfo` (type): type AnimGraphClipInfo = Readonly<Record<string, number | { duration: number; rootTrack?: { times: Float32Array; values: Float32Array } }>> — Per-clip duration in seconds, read from the loaded rig.
 - `AnimGraphOutput` (interface): interface AnimGraphOutput — What one advance asks the rig to show.
 - `AnimGraphRuntime` (interface): interface AnimGraphRuntime — The evaluator handle: arm triggers, advance, inspect, snapshot and restore.
+- `AnimGraphRuntimeOptions` (interface): interface AnimGraphRuntimeOptions — Randomness used only when entering a clip state with variants. Omit to choose the first variant.
 - `AnimGraphState` (interface): interface AnimGraphState — Serializable evaluator state.
 - `AnimLayer` (interface): interface AnimLayer — A blend layer with its own state machine. Masked layers apply only to bones whose track names start with a prefix.
 - `AnimParamValue` (type): type AnimParamValue = number | boolean — Parameter value a graph reads: floats for blends and comparisons, booleans for gates.
 - `AnimParams` (type): type AnimParams = Readonly<Record<string, AnimParamValue>> — The parameter set a graph evaluates against each advance.
-- `AnimState` (type): type AnimState = | { kind: "clip"; clip: string; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend2D"; params: readonly [string, string]; … — A state plays one clip, or blends clips by one or two parameters.
+- `AnimState` (type): type AnimState = | { kind: "clip"; clip: string; variants?: readonly string[]; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend1D"; param: string; points: readonly { at: number; clip: string }[]; speed?: number; loop?: boolean; rootMotion?: boolean } | { kind: "blend2D"; param… — A state plays one clip, or blends clips by one or two parameters.
 - `AnimTransition` (interface): interface AnimTransition — Edge between states. `from: "*"` matches any state except `to`.
-- `createAnimGraphRuntime` (function): function createAnimGraphRuntime(initial: AnimGraph): AnimGraphRuntime — Headless animation state machine and blend evaluator. It owns every clip's playback time and weight, so the renderer only seeks and weights actions on a mixer, and headless hosts, replays, and tests advance the same graph without three.js. Transitions are data (parameter comparisons and consumed triggers), layers can be masked or additive, and events fire by clip time, including across loop wraps.
+- `createAnimGraphRuntime` (function): function createAnimGraphRuntime(initial: AnimGraph, options: AnimGraphRuntimeOptions = {}): AnimGraphRuntime — Headless animation state machine and blend evaluator. It owns every clip's playback time and weight, so the renderer only seeks and weights actions on a mixer, and headless hosts, replays, and tests advance the same graph without three.js. Transitions are data (parameter comparisons and consumed triggers), layers can be masked or additive, and events fire by clip time, including across loop wraps.
 - `parseAnimGraph` (function): function parseAnimGraph(value: unknown): AnimGraph | undefined — Validates untrusted JSON (a saved scene document, a network payload) as an {@link AnimGraph}. Malformed states, transitions to unknown states, and bad conditions are dropped; a layer whose entry state is missing is dropped; the result is `undefined` when no layer survives.
 - `stateClipWeights` (function): function stateClipWeights(state: AnimState, params: AnimParams): Record<string, number> — Static clip weights of a state at `params`, before any crossfade.
 
@@ -265,10 +266,13 @@
 
 ## @jgengine/core/anim/locomotionGraph
 
+- `LOCOMOTION_CROUCHED_PARAM` (const): const LOCOMOTION_CROUCHED_PARAM: "crouched" — Physically resolved crouch stance from the shared player motor.
+- `LOCOMOTION_GROUNDED_PARAM` (const): const LOCOMOTION_GROUNDED_PARAM: "grounded" — Ground contact reported by the shared player motor; absent for custom movers without authored parameters.
 - `LOCOMOTION_LAYER` (const): const LOCOMOTION_LAYER: "base" — Layer id the locomotion graph uses; query `runtime.stateOf(LOCOMOTION_LAYER)`.
 - `LOCOMOTION_SPEED_PARAM` (const): const LOCOMOTION_SPEED_PARAM: "speed" — The parameter name the shell feeds with the entity's smoothed ground speed.
+- `LOCOMOTION_VERTICAL_SPEED_PARAM` (const): const LOCOMOTION_VERTICAL_SPEED_PARAM: "verticalSpeed" — Resolved vertical velocity from the shared player motor, in world units/sec.
 - `LocomotionGraphInput` (interface): interface LocomotionGraphInput — Inputs for {@link locomotionGraph}: the idle/walk/run clip names and the one-shot table a rig config already carries.
-- `animGraphFromConfig` (function): function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined — The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its `states` and `oneShots` describe (a `string[]` one-shot uses its first variant). `undefined` for a single-clip config. The shell plays this and the editor inspects it, so both see the same graph.
+- `animGraphFromConfig` (function): function animGraphFromConfig(config: ModelAnimationConfig): AnimGraph | undefined — The graph a model animation config plays: its `graph`, or the {@link locomotionGraph} its `states` and `oneShots` describe, retaining every one-shot variant. `undefined` for a single-clip config or incomplete locomotion roles. Idle must name a clip; an absent or blank walk role holds that idle clip at walking speeds until configured. The shell plays this and the editor inspects it, so both see the same graph.
 - `locomotionGraph` (function): function locomotionGraph(input: LocomotionGraphInput): AnimGraph — The engine's default locomotion as an authored graph: a speed-driven blend between idle, walk, and run, plus a state per one-shot that plays once and returns (or clamps for `death`). What `useModelAnimation` used to hardcode.
 
 ## @jgengine/core/area/areaEffectField
@@ -694,7 +698,7 @@
 - `CharacterControllerState` (interface): interface CharacterControllerState — The controller's serializable state. `position` is the feet point; the capsule stands above it.
 - `CharacterMoveInput` (interface): interface CharacterMoveInput — One step of intent for {@link CharacterController.move}.
 - `CharacterMoveResult` (interface): interface CharacterMoveResult — What one move did.
-- `createCharacterController` (function): function createCharacterController(initial: CharacterControllerConfig): CharacterController — Collide-and-slide capsule controller over any {@link PhysicsBackend}: horizontal slide along walls, step-up over ledges, slope limit, ceiling test, crouch with headroom check, ground snapping, and moving-platform carry read from the ground body's velocity. Pure over the backend's `shapecast`/`overlap`; the caller owns input and gravity policy.
+- `createCharacterController` (function): function createCharacterController(initial: CharacterControllerConfig): CharacterController — Collide-and-slide capsule controller over any {@link PhysicsBackend}: horizontal slide along walls, step-up over ledges, slope limit, ceiling test, crouch with headroom check, ground snapping, and moving-platform carry read from the ground body's velocity. Pure over the backend's `shapecast`/`overlap`; the caller owns input and gravity policy. Invalid dimensions or control ranges throw before configuration changes.
 
 ## @jgengine/core/movement/dash
 
@@ -791,9 +795,11 @@
 ## @jgengine/core/movement/playerMovement
 
 - `PlayerMovementSnapshot` (interface): interface PlayerMovementSnapshot — One player's serializable movement state: heading, facing, velocities, jump latch and controller capsule. The entity pose lives in the entity store.
+- `PlayerMovementTelemetry` (interface): interface PlayerMovementTelemetry — Last completed shared movement step for one entity; a live read-only view, not a save snapshot.
 - `PlayerMovementTuning` (interface): interface PlayerMovementTuning — The resolved, per-world movement configuration {@link stepPlayerMovement} integrates against — the same inputs the shell FrameDriver used to read piecemeal, gathered into one struct so single-player and host movement run identical math.
 - `forgetPlayerMovement` (function): function forgetPlayerMovement(ctx: GameContext, userId: string): void — Drop a player's retained movement state (heading + kinematic body) — call on leave so a rejoin starts fresh instead of resuming stale velocity.
 - `playerMovementHeading` (function): function playerMovementHeading(ctx: GameContext, userId: string): number — One player's current heading (radians), integrated by {@link stepPlayerMovement} — the shell reads it back into its camera/aim yaw.
+- `playerMovementTelemetry` (function): function playerMovementTelemetry(ctx: GameContext, entityId: string): Readonly<PlayerMovementTelemetry> | null — Read the entity's last shared movement result through indexed possession ownership. Returns `null` before a step, after movement restore/forget, when a commit policy replaces the motor proposal, or for an entity not currently driven by this motor. Reuses one live view; custom movers supply their own animation parameters. Flight never reports ground contact or a walking crouch.
 - `resolvePhysicsTuning` (function): function resolvePhysicsTuning(physics: PhysicsConfig | undefined): MovementTuningOverrides | undefined — Maps a game's declared `physics` onto the movement controllers' tuning. `PhysicsConfig.gravity` is a signed world acceleration (negative points down), but the controllers integrate `velocityY -= gravityAcceleration * dt` and expect a positive downward magnitude — so gravity is negated here to keep down-pointing gravity pulling down.
 - `resolvePlayerMovementTuning` (function): function resolvePlayerMovementTuning(opts: { collision?: VoxelCollisionConfig; movement?: PlayerMovementConfig; physics?: PhysicsConfig; world?: WorldFeature; }): PlayerMovementTuning — Gather a game's collision/movement/physics/world config into a {@link PlayerMovementTuning} — call once per world; both the shell and a host pass the result to {@link stepPlayerMovement}.
 - `restorePlayerMovement` (function): function restorePlayerMovement(ctx: GameContext, userId: string, snapshot: PlayerMovementSnapshot): void — Put a player's movement state back to a {@link snapshotPlayerMovement} copy, so the next {@link stepPlayerMovement} replays from there.
@@ -837,6 +843,10 @@
 - `steerYaw` (function): function steerYaw(yaw: number, steerRight: number, turnRatePerSecond: number, dt: number): number — Integrate one steering step. `steerRight` is the signed steer input (+1 = turn right, matching `DRIVE_AXIS_BINDINGS`' KeyD/ArrowRight), `turnRatePerSecond` is radians per second at full lock. Steering right decreases yaw in the engine frame; this helper owns that sign so game code never re-derives it.
 - `yawForward` (function): function yawForward(yaw: number): YawVectorXZ — XZ forward direction of a yaw (`rotationY`): `(sin yaw, cos yaw)`.
 - `yawRight` (function): function yawRight(yaw: number): YawVectorXZ — XZ screen-right of a yaw — `forward × up` with up = +Y: `(-cos yaw, sin yaw)`.
+
+## @jgengine/core/movement/terrainGrade
+
+- `resolveTerrainGradeStep` (function): function resolveTerrainGradeStep(sampler: { sampleHeight(x: number, z: number): number } | ((x: number, z: number) => number), position: readonly [number, number, number], stepX: number, stepZ: number, maxClimbGrade: number): { stepX: number; stepZ: number } — Constrain an uphill heightfield step by its sampled rise/run grade. Try the full step, then X-only, then Z-only, preserving downhill travel and sliding along a traversable axis. The sampler can represent a game's terrain policy independently of the ground used for feet. This endpoint test also applies while jumping; it is not continuous terrain collision.
 
 ## @jgengine/core/movement/voxelController
 

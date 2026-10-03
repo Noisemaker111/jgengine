@@ -1,6 +1,15 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import { createEditorSession, createEmptyEditorDocument } from "@jgengine/core/editor/index";
+import { markerAnimation, placeAuthoredObjectsFromDocument } from "@jgengine/core/world/authoredObjects";
+import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph";
+import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph";
+import { diagnoseModelAnimation } from "@jgengine/shell/render/useModelAnimation";
+
+import { createEditorHost } from "./session";
 
 import {
   animationMetaPatch,
@@ -15,6 +24,9 @@ import {
   setLocomotionClip,
   setLocomotionNumber,
   setOneShotClip,
+  setPlaybackBoolean,
+  setPlaybackClip,
+  setPlaybackNumber,
   type AnimationSetting,
 } from "./modelAnimationAuthoring";
 
@@ -32,10 +44,23 @@ describe("readAnimationSetting / animationMode", () => {
     expect(cfg).toEqual({ states: { idle: "Idle", walk: "Walking_A", walkSpeed: 0.4 }, oneShots: { hit: "Hit_A" } });
   });
 
-  test("normalizes a one-shot array to its first variant when read back", () => {
+  test("preserves one-shot variants when read back", () => {
     expect(readAnimationSetting({ animation: { oneShots: { attack: ["Slice", "Chop"] } } })).toEqual({
-      oneShots: { attack: "Slice" },
+      oneShots: { attack: ["Slice", "Chop"] },
     });
+  });
+
+  test("an unrelated inspector edit preserves held-pose playback", () => {
+    const stored = { clip: "Idle", paused: true, time: 0.75, timeScale: 0.5, loop: false };
+    const edited = setOneShotClip(readAnimationSetting({ animation: stored }), "hit", "Hit_A");
+    expect(edited).toEqual({ ...stored, oneShots: { hit: "Hit_A" } });
+  });
+
+  test("empty locomotion intent survives reading and clearing the last role", () => {
+    expect(readAnimationSetting({ animation: { states: {} } })).toEqual({ states: {} });
+    expect(setLocomotionClip({ states: { idle: "Idle" } }, "idle", null)).toEqual({ states: {} });
+    expect(setLocomotionNumber({ states: { fadeSec: 0.2 } }, "fadeSec", null)).toEqual({ states: {} });
+    expect(setPlaybackClip({ states: {} }, "Idle")).toEqual({ clip: "Idle" });
   });
 
   test("classifies mode", () => {
@@ -52,6 +77,29 @@ describe("authoring reducers", () => {
       states: { idle: "Idle", walk: "Walking_A", run: "Running_A" },
       oneShots: { attack: "1H_Melee_Attack_Slice", hit: "Hit_A", death: "Death_A", jump: "Jump" },
     });
+  });
+
+  test("entering custom from auto retains the asset's one-shot identities", () => {
+    const config = setAnimationMode("auto", "custom", [...CLIPS, "Hit_B"]);
+    expect(typeof config === "object" ? config.oneShots?.hit : undefined).toEqual(["Hit_A", "Hit_B"]);
+  });
+
+  test("the first locomotion edit after single-clip playback seeds actual rig roles", () => {
+    const held = { ...setPlaybackClip(undefined, "Idle"), paused: true, time: 0.75, oneShots: { attack: ["Slice", "Chop"] } };
+    const edited = setLocomotionClip(held, "run", "Running_A", CLIPS);
+    expect(edited).toEqual({ ...held, states: { idle: "Idle", walk: "Walking_A", run: "Running_A" } });
+    const runtime = animGraphFromConfig(edited);
+    expect(effectiveAnimGraph(edited, CLIPS)?.graph).toEqual(runtime);
+    expect(setLocomotionNumber(held, "runSpeed", 8, CLIPS).states).toEqual({ idle: "Idle", walk: "Walking_A", run: "Running_A", runSpeed: 8 });
+  });
+
+  test("first locomotion edits never invent roles for an unsupported rig", () => {
+    const held = setPlaybackClip(undefined, "Wave");
+    const edited = setLocomotionClip(held, "run", "Sprint", ["Wave", "Sprint"]);
+    expect(edited).toEqual({ clip: "Wave", states: { run: "Sprint" } });
+    expect(effectiveAnimGraph(edited, ["Wave", "Sprint"])).toBeNull();
+    expect(setLocomotionClip(held, "run", null, CLIPS)).toEqual(held);
+    expect(setLocomotionNumber(held, "runSpeed", null, CLIPS)).toEqual(held);
   });
 
   test("setAnimationMode maps modes and seeds custom from clips", () => {
@@ -82,6 +130,26 @@ describe("authoring reducers", () => {
     expect(cfg.oneShots).toEqual({ hit: "Hit_A" });
     cfg = setOneShotClip(cfg, "hit", null);
     expect(cfg.oneShots).toBeUndefined();
+  });
+
+  test("playback adjustments preserve variants; replacing the playback source is explicit", () => {
+    const graph = effectiveAnimGraph("auto", CLIPS)!.graph;
+    const original: AnimationSetting = { states: { idle: "Idle" }, graph, oneShots: { attack: ["Slice", "Chop"] } };
+    const held = setPlaybackNumber(setPlaybackBoolean(original, "paused", true), "time", 0.75);
+    expect(held.graph).toBe(graph);
+    expect(held.states).toEqual(original.states);
+    expect(held.oneShots).toEqual(original.oneShots);
+    expect(setPlaybackClip(held, "Idle")).toEqual({ clip: "Idle", paused: true, time: 0.75, oneShots: original.oneShots });
+    expect(setPlaybackNumber(held, "time", -1).time).toBe(0);
+    expect(setPlaybackNumber(held, "time", null).time).toBeUndefined();
+    expect(setPlaybackNumber(held, "timeScale", Number.NaN).timeScale).toBeUndefined();
+    expect(setOneShotClip(held, "attack", ["Chop", "Slice"]).oneShots?.attack).toEqual(["Chop", "Slice"]);
+    expect(setOneShotClip(held, "attack", ["Chop"]).oneShots?.attack).toBe("Chop");
+    expect(setOneShotClip(held, "attack", []).oneShots).toBeUndefined();
+  });
+
+  test("non-finite playback and malformed variants are rejected on read", () => {
+    expect(readAnimationSetting({ animation: { time: Infinity, timeScale: NaN, states: { idle: "Idle", walkSpeed: NaN }, oneShots: { hit: ["Hit_A", 3], attack: [] } } })).toEqual({ states: { idle: "Idle" } });
   });
 });
 
@@ -147,6 +215,89 @@ describe("document round-trip (undo/redo safe)", () => {
     // Override key drops to undefined (removed from the saved JSON document).
     expect(readAnimationSetting(markerMeta(session))).toBeUndefined();
   });
+
+  test("RPC placement, inspector adjustment, undo/redo and document reload preserve the runtime override", () => {
+    const host = createEditorHost({ gameId: "character-proof", layers: {} });
+    expect(host.api.handle({ method: "add_marker", id: "hero", kind: "prop", catalogId: "knight", x: 2, y: 0, z: 3 }).ok).toBe(true);
+    const original = { clip: "Idle", paused: true, time: 0.75, timeScale: 0.5, loop: false, oneShots: { attack: ["Slice", "Chop"] } };
+    expect(host.api.handle({ method: "set_meta", id: "hero", patch: animationMetaPatch(original) }).ok).toBe(true);
+    expect(host.api.handle({ method: "set_mode", mode: "play" }).ok).toBe(true);
+    expect(host.api.handle({ method: "set_mode", mode: "edit" }).ok).toBe(true);
+    const session = host.api.getSession();
+    const marker = () => session.getState().document.markers.find((entry) => entry.id === "hero")!;
+    const adjusted = setPlaybackNumber(readAnimationSetting(marker().meta), "timeScale", 0.8);
+    session.dispatch({ type: "setMarker", id: "hero", patch: { meta: { ...marker().meta, ...animationMetaPatch(adjusted) } } });
+    expect(markerAnimation(marker())).toEqual({ ...original, timeScale: 0.8 });
+    session.dispatch({ type: "undo" });
+    expect(markerAnimation(marker())).toEqual(original);
+    session.dispatch({ type: "redo" });
+    const exported = host.api.handle({ method: "export_document" });
+    expect(exported.ok).toBe(true);
+    const json = (exported.result as { json: string }).json;
+    const reopened = createEditorHost({ gameId: "character-proof", layers: {} });
+    expect(reopened.api.handle({ method: "import_document", json }).ok).toBe(true);
+    const document = reopened.api.getSession().getState().document;
+    expect(readAnimationSetting(document.markers[0]!.meta)).toEqual(adjusted);
+    const placed: unknown[] = [];
+    placeAuthoredObjectsFromDocument({ place: (...args) => { placed.push(args); return args[4]!.instanceId!; } }, document, () => 0);
+    expect(placed).toEqual([["knight", 2, 0, 3, { instanceId: "hero", rotation: 0, animation: { ...original, timeScale: 0.8 } }]]);
+    host.dispose();
+    reopened.dispose();
+  });
+
+  test("a real Knight's first locomotion edit survives saved reload and plays valid imported clips", async () => {
+    const bytes = readFileSync(new URL("../../../apps/dev/public/models/kaykit-adventurers/Knight.glb", import.meta.url));
+    const imported = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "");
+    const clips = imported.animations.map((clip) => clip.name);
+    const host = createEditorHost({ gameId: "character-proof", layers: {} });
+    expect(host.api.handle({ method: "add_marker", id: "hero", kind: "prop", catalogId: "knight", x: 0, z: 0 }).ok).toBe(true);
+    expect(host.api.handle({ method: "set_meta", id: "hero", patch: animationMetaPatch(setPlaybackClip(undefined, "Idle")) }).ok).toBe(true);
+    const marker = host.api.getSession().getState().document.markers[0]!;
+    const edited = setLocomotionClip(readAnimationSetting(marker.meta), "run", "Running_A", clips);
+    host.api.getSession().dispatch({ type: "setMarker", id: "hero", patch: { meta: { ...marker.meta, ...animationMetaPatch(edited) } } });
+    const exported = host.api.handle({ method: "export_document" });
+    const reopened = createEditorHost({ gameId: "character-proof", layers: {} });
+    expect(reopened.api.handle({ method: "import_document", json: (exported.result as { json: string }).json }).ok).toBe(true);
+    const restored = markerAnimation(reopened.api.getSession().getState().document.markers[0]!);
+    expect(restored).toEqual(edited);
+    if (typeof restored !== "object") throw new Error("expected an authored config");
+    const graph = animGraphFromConfig(restored);
+    expect(graph).toEqual(effectiveAnimGraph(readAnimationSetting({ animation: restored }), clips)?.graph);
+    if (graph === undefined) throw new Error("expected the edited locomotion graph");
+    const output = createAnimGraphRuntime(graph).advance(0.25, { speed: 2 }, Object.fromEntries(imported.animations.map((clip) => [clip.name, clip.duration])));
+    expect(output.clips.some((clip) => clip.clip === "Walking_A" && clip.weight > 0)).toBe(true);
+    expect(output.clips.every((clip) => clips.includes(clip.clip) && Number.isFinite(clip.time) && Number.isFinite(clip.weight))).toBe(true);
+    host.dispose();
+    reopened.dispose();
+  });
+
+  test("empty Knight locomotion stays pending after a playback edit and saved reload", async () => {
+    const bytes = readFileSync(new URL("../../../apps/dev/public/models/kaykit-adventurers/Knight.glb", import.meta.url));
+    const imported = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "");
+    const host = createEditorHost({ gameId: "empty-locomotion-proof", layers: {} });
+    const reopened = createEditorHost({ gameId: "empty-locomotion-proof", layers: {} });
+    try {
+      expect(imported.animations.length).toBeGreaterThan(0);
+      expect(host.api.handle({ method: "add_marker", id: "hero", kind: "prop", catalogId: "knight", x: 0, z: 0 }).ok).toBe(true);
+      expect(host.api.handle({ method: "set_meta", id: "hero", patch: { animation: { states: {} } } }).ok).toBe(true);
+      const marker = host.api.getSession().getState().document.markers[0]!;
+      const edited = setPlaybackNumber(readAnimationSetting(marker.meta), "timeScale", 0.8);
+      expect(edited).toEqual({ states: {}, timeScale: 0.8 });
+      host.api.getSession().dispatch({ type: "setMarker", id: "hero", patch: { meta: { ...marker.meta, ...animationMetaPatch(edited) } } });
+      const exported = host.api.handle({ method: "export_document" });
+      expect(reopened.api.handle({ method: "import_document", json: (exported.result as { json: string }).json }).ok).toBe(true);
+      const restored = markerAnimation(reopened.api.getSession().getState().document.markers[0]!);
+      expect(restored).toEqual(edited);
+      if (typeof restored !== "object") throw new Error("expected an authored config");
+      expect(animGraphFromConfig(restored)).toBeUndefined();
+      expect(effectiveAnimGraph(readAnimationSetting({ animation: restored }), imported.animations.map((clip) => clip.name))).toBeNull();
+      expect(diagnoseModelAnimation(imported.scene, restored, imported.animations)).toContainEqual({ code: "incomplete-locomotion", message: "locomotion needs a nonempty idle clip. Configure this rig's idle role; the bind pose is retained until then." });
+      expect(setPlaybackClip(readAnimationSetting({ animation: restored }), "Idle")).toEqual({ clip: "Idle", timeScale: 0.8 });
+    } finally {
+      host.dispose();
+      reopened.dispose();
+    }
+  });
 });
 
 describe("animation graph authoring", () => {
@@ -160,6 +311,14 @@ describe("animation graph authoring", () => {
     expect(custom?.source).toBe("locomotion");
     expect(Object.keys(custom!.graph.layers[0]!.states)).toEqual(["locomotion", "cheer"]);
     expect(effectiveAnimGraph({ clip: "Idle" }, clips)).toBeNull();
+  });
+
+  test("partial persisted roles have consistent editor and runtime graph policies", () => {
+    expect(effectiveAnimGraph({ clip: "Idle", states: { run: "Running_A" } }, clips)).toBeNull();
+    expect(effectiveAnimGraph({ states: { idle: "", walk: "Walking_A" } }, clips)).toBeNull();
+    expect(effectiveAnimGraph({ states: { idle: "   ", walk: "Walking_A" } }, clips)).toBeNull();
+    const heldWalk = effectiveAnimGraph({ states: { idle: "Idle", walk: "" } }, clips)?.graph;
+    expect(heldWalk?.layers[0]!.states.locomotion).toEqual({ kind: "blend1D", param: "speed", points: [{ at: 0, clip: "Idle" }, { at: 0.5, clip: "Idle" }] });
   });
 
   test("editing a transition stores the graph, which survives a meta round trip", () => {

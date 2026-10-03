@@ -3,7 +3,7 @@ import type { BodyHandle, BodyShape, PhysicsBackend, PhysicsVec3 } from "../phys
 /** Capsule dimensions and the walk rules a controller applies; every field is retunable during play. */
 export interface CharacterControllerConfig {
   radius: number;
-  /** Standing height from feet to crown. */
+  /** Standing height from feet to crown, at least twice `radius`. */
   height: number;
   /** Height the feet may pop up to clear a ledge in one move. Default 0.35. */
   stepHeight?: number;
@@ -11,7 +11,7 @@ export interface CharacterControllerConfig {
   maxSlopeDeg?: number;
   /** Gap kept between the capsule and any surface so casts never start inside geometry. Default 0.02. */
   skinWidth?: number;
-  /** Height while crouched. Default `height * 0.6`. */
+  /** Height while crouched, between the capsule diameter and standing height. Default max(`height * 0.6`, diameter). */
   crouchHeight?: number;
   /** How far below the feet the ground may be while still counting as grounded (stairs down, small bumps). Default 0.3. */
   snapDistance?: number;
@@ -69,32 +69,49 @@ export interface CharacterController {
   shape(): BodyShape;
   /** Capsule center for the current state. */
   center(): [number, number, number];
+  /** Set stance before resolving movement intent. Returns false only when standing lacks headroom. */
+  setCrouch(backend: PhysicsBackend, crouch: boolean, self?: BodyHandle): boolean;
   move(backend: PhysicsBackend, input: CharacterMoveInput): CharacterMoveResult;
 }
 
 function resolve(config: CharacterControllerConfig): Required<CharacterControllerConfig> {
-  return {
+  const cfg = {
     radius: config.radius,
     height: config.height,
     stepHeight: config.stepHeight ?? 0.35,
     maxSlopeDeg: config.maxSlopeDeg ?? 50,
     skinWidth: config.skinWidth ?? 0.02,
-    crouchHeight: config.crouchHeight ?? config.height * 0.6,
+    crouchHeight: config.crouchHeight ?? Math.max(config.radius * 2, config.height * 0.6),
     snapDistance: config.snapDistance ?? 0.3,
     maxSlides: config.maxSlides ?? 4,
     mask: config.mask ?? 0xffffffff,
   };
+  for (const field of ["radius", "height", "crouchHeight"] as const) {
+    if (!Number.isFinite(cfg[field]) || cfg[field] <= 0) throw new RangeError(`CharacterController.${field} must be finite and greater than zero.`);
+  }
+  const diameter = cfg.radius * 2;
+  if (cfg.height < diameter) throw new RangeError(`CharacterController.height must be at least the capsule diameter (${diameter}). Increase height or reduce radius.`);
+  if (cfg.crouchHeight < diameter) throw new RangeError(`CharacterController.crouchHeight must be at least the capsule diameter (${diameter}). Increase crouchHeight or reduce radius.`);
+  if (cfg.crouchHeight > cfg.height) throw new RangeError("CharacterController.crouchHeight must not exceed standing height.");
+  for (const field of ["stepHeight", "skinWidth", "snapDistance"] as const) {
+    if (!Number.isFinite(cfg[field]) || cfg[field] < 0) throw new RangeError(`CharacterController.${field} must be finite and nonnegative.`);
+  }
+  if (!Number.isFinite(cfg.maxSlopeDeg) || cfg.maxSlopeDeg < 0 || cfg.maxSlopeDeg >= 90) throw new RangeError("CharacterController.maxSlopeDeg must be finite and between 0 (inclusive) and 90 (exclusive).");
+  if (!Number.isInteger(cfg.maxSlides) || cfg.maxSlides < 1) throw new RangeError("CharacterController.maxSlides must be a positive integer.");
+  return cfg;
 }
 
 /**
  * Collide-and-slide capsule controller over any {@link PhysicsBackend}: horizontal slide along walls, step-up over
  * ledges, slope limit, ceiling test, crouch with headroom check, ground snapping, and moving-platform carry read from
  * the ground body's velocity. Pure over the backend's `shapecast`/`overlap`; the caller owns input and gravity policy.
+ * Invalid dimensions or control ranges throw before configuration changes.
  *
  * @capability character-controller capsule walk over the physics backend — slide, step-up, slopes, crouch, platforms
  */
 export function createCharacterController(initial: CharacterControllerConfig): CharacterController {
-  let cfg = resolve(initial);
+  let declaration = { ...initial };
+  let cfg = resolve(declaration);
   let state: CharacterControllerState = {
     position: [0, 0, 0],
     verticalVelocity: 0,
@@ -150,10 +167,25 @@ export function createCharacterController(initial: CharacterControllerConfig): C
     return { fraction, hit };
   }
 
+  function setCrouch(backend: PhysicsBackend, crouch: boolean, self?: BodyHandle): boolean {
+    if (crouch === state.crouching) return true;
+    if (!crouch && backend.overlap({
+      shape: shapeFor(cfg.height),
+      position: centerFor(state.position, cfg.height),
+      mask: cfg.mask,
+      ...(self === undefined ? {} : { exclude: self }),
+    }).length > 0) return false;
+    state.crouching = crouch;
+    return true;
+  }
+
   return {
     config: () => cfg,
     retune(next) {
-      cfg = resolve({ ...cfg, ...next });
+      const updated = { ...declaration, ...next };
+      const resolved = resolve(updated);
+      declaration = updated;
+      cfg = resolved;
     },
     state: () => state,
     snapshot: () => ({
@@ -176,6 +208,7 @@ export function createCharacterController(initial: CharacterControllerConfig): C
     },
     shape: () => shapeFor(currentHeight()),
     center: () => centerFor(state.position, currentHeight()),
+    setCrouch,
     move(backend, input) {
       const { dt, self } = input;
       const result: CharacterMoveResult = {
@@ -190,18 +223,7 @@ export function createCharacterController(initial: CharacterControllerConfig): C
       const start: [number, number, number] = [state.position[0], state.position[1], state.position[2]];
       const pos: [number, number, number] = [start[0], start[1], start[2]];
 
-      if (input.crouch === true && !state.crouching) {
-        state.crouching = true;
-      } else if (input.crouch === false && state.crouching) {
-        const standing = backend.overlap({
-          shape: shapeFor(cfg.height),
-          position: centerFor(pos, cfg.height),
-          mask: cfg.mask,
-          ...(self === undefined ? {} : { exclude: self }),
-        });
-        if (standing.length === 0) state.crouching = false;
-        else result.crouchBlocked = true;
-      }
+      if (input.crouch !== undefined) result.crouchBlocked = !setCrouch(backend, input.crouch, self);
       const height = currentHeight();
 
       let carry: [number, number, number] = [0, 0, 0];
@@ -224,7 +246,10 @@ export function createCharacterController(initial: CharacterControllerConfig): C
         if (!walkable(hit.normal)) {
           result.hitWall = true;
           slid[1] = 0;
-          if (cfg.stepHeight > 0 && !result.steppedUp && tryStepUp(backend, pos, height, remaining, self)) {
+          if (
+            state.grounded && state.verticalVelocity <= 0 && input.jumpVelocity === undefined &&
+            cfg.stepHeight > 0 && !result.steppedUp && tryStepUp(backend, pos, height, remaining, self)
+          ) {
             result.steppedUp = true;
             result.hitWall = false;
             break;
@@ -253,8 +278,8 @@ export function createCharacterController(initial: CharacterControllerConfig): C
         state.groundNormal = [verticalHit.normal[0], verticalHit.normal[1], verticalHit.normal[2]];
         state.groundBody = verticalHit.body;
         if (state.verticalVelocity < 0) state.verticalVelocity = 0;
-        // A contact at t=0 means touching or already inside; lift by the skin so the next casts start clear.
-        if (verticalHit.toi <= 0) pos[1] += cfg.skinWidth;
+        const initialGap = Math.max(0, verticalHit.toi * Math.abs(vertical));
+        if (initialGap < cfg.skinWidth) pos[1] += cfg.skinWidth - initialGap;
       } else {
         state.grounded = false;
         state.groundBody = null;

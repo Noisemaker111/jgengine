@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 import { inferLegChains, placeFeet, type FootGroundSample, type FootPlacement } from "@jgengine/core/anim/footPlacement";
@@ -82,12 +82,34 @@ function restAnkleRatio(scene: THREE.Object3D, leg: Omit<IkLeg, "ankleRatio">): 
   return ratio;
 }
 
+function isAncestor(ancestor: THREE.Object3D, child: THREE.Object3D): boolean {
+  for (let parent = child.parent; parent !== null; parent = parent.parent) {
+    if (parent === ancestor) return true;
+  }
+  return false;
+}
+
 /**
  * Resolves foot-IK bones on a loaded rig: explicit chains, or legs found by bone name for `"auto"`
  * and configs without `feet`. Returns `null` when no leg resolves.
  */
 export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): FootIkRig | null {
   const options: ModelIkConfig = config === "auto" ? {} : config;
+  const named = new Map<string, THREE.Object3D[]>();
+  scene.traverse((object) => {
+    if (object.name.length === 0) return;
+    const matches = named.get(object.name);
+    if (matches === undefined) named.set(object.name, [object]);
+    else matches.push(object);
+  });
+  const available = [...named.keys()].filter((name) => named.get(name)!.some((object) => (object as THREE.Bone).isBone === true)).slice(0, 12).join(", ");
+  const warn = (message: string) => console.warn(`[jgengine foot IK] ${message}${available.length > 0 ? ` Available bones include: ${available}.` : ""}`);
+  const resolve = (name: string, role: string): THREE.Object3D | null => {
+    const matches = named.get(name);
+    if (matches?.length === 1) return matches[0]!;
+    warn(`${role} "${name}" ${matches === undefined ? "was not found" : "matches multiple objects"}; use a unique rig name.`);
+    return null;
+  };
   let chains = options.feet;
   if (chains === undefined) {
     const bones: { name: string; parent: string | null }[] = [];
@@ -95,18 +117,32 @@ export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): F
       if ((object as THREE.Bone).isBone === true) bones.push({ name: object.name, parent: (object.parent as THREE.Bone | null)?.isBone === true ? object.parent!.name : null });
     });
     chains = inferLegChains(bones);
+    if (chains.length === 0 && options.lookAt === undefined) warn("No thigh → shin → foot chain was recognized. Configure feet with the rig's bone names, or disable IK for this model.");
   }
   const legs: IkLeg[] = [];
+  const used = new Set<THREE.Object3D>();
   for (const chain of chains) {
-    const root = scene.getObjectByName(chain.root);
-    const mid = scene.getObjectByName(chain.mid);
-    const tip = scene.getObjectByName(chain.tip);
-    if (root === undefined || mid === undefined || tip === undefined) continue;
+    const root = resolve(chain.root, "Foot-chain root");
+    const mid = resolve(chain.mid, "Foot-chain middle");
+    const tip = resolve(chain.tip, "Foot-chain tip");
+    if (root === null || mid === null || tip === null) continue;
+    if (!isAncestor(root, mid) || !isAncestor(mid, tip)) {
+      warn(`Skipped chain "${chain.root}" → "${chain.mid}" → "${chain.tip}": each joint must descend from the previous joint.`);
+      continue;
+    }
+    if ([root, mid, tip].some((bone) => used.has(bone))) {
+      warn(`Skipped chain "${chain.root}" → "${chain.mid}" → "${chain.tip}": a joint is already corrected by another foot chain.`);
+      continue;
+    }
+    for (const bone of [root, mid, tip]) used.add(bone);
     legs.push({ root, mid, tip, ankleRatio: restAnkleRatio(scene, { root, mid, tip }) });
   }
-  const head = options.lookAt === undefined ? null : (scene.getObjectByName(options.lookAt.bone) ?? null);
+  const head = options.lookAt === undefined ? null : resolve(options.lookAt.bone, "Look-at bone");
   if (legs.length === 0 && head === null) return null;
-  const found = options.pelvis !== undefined ? (scene.getObjectByName(options.pelvis) ?? null) : (legs[0]?.root.parent ?? null);
+  let found = options.pelvis !== undefined ? resolve(options.pelvis, "Pelvis") : (legs[0]?.root.parent ?? null);
+  if (options.pelvis === undefined) {
+    while (found !== null && !legs.every((leg) => isAncestor(found!, leg.root))) found = found.parent;
+  }
   const pelvis = found === scene ? null : found;
   const bones = new Set<THREE.Object3D>(legs.flatMap((leg) => [leg.root, leg.mid, leg.tip]));
   if (pelvis !== null) bones.add(pelvis);
@@ -146,6 +182,13 @@ function legLength(leg: IkLeg): number {
   return scratch.root.distanceTo(scratch.mid) + scratch.mid.distanceTo(scratch.tip);
 }
 
+function restoreFootIkPose(rig: FootIkRig): void {
+  for (const record of rig.poses) {
+    if (record.bone.quaternion.equals(record.written.q)) record.bone.quaternion.copy(record.animated.q);
+    if (record.bone.position.equals(record.written.p)) record.bone.position.copy(record.animated.p);
+  }
+}
+
 /**
  * Applies one frame of foot IK after the animation mixer: probes the ground under each foot,
  * resolves targets with `placeFeet`, lowers the pelvis, solves each leg with `solveTwoBone` bending
@@ -160,9 +203,8 @@ export function applyFootIk(
   delta: number,
   cameraTarget?: readonly [number, number, number],
 ): boolean {
+  restoreFootIkPose(rig);
   for (const record of rig.poses) {
-    if (record.bone.quaternion.equals(record.written.q)) record.bone.quaternion.copy(record.animated.q);
-    if (record.bone.position.equals(record.written.p)) record.bone.position.copy(record.animated.p);
     record.animated.q.copy(record.bone.quaternion);
     record.animated.p.copy(record.bone.position);
   }
@@ -248,6 +290,15 @@ export function useFootIk(
   const camera = useThree((three) => three.camera);
   const rig = useMemo(() => (config === undefined ? null : resolveFootIkRig(scene, config)), [scene, config]);
   const state = useRef<FootIkState>({ weight: 0, pelvis: 0 });
+  useLayoutEffect(() => {
+    state.current = { weight: 0, pelvis: 0 };
+    return () => {
+      if (rig !== null) {
+        restoreFootIkPose(rig);
+        scene.updateMatrixWorld(true);
+      }
+    };
+  }, [rig, scene]);
   useFrame((_three, delta) => {
     if (rig === null || ctx === null || instanceId === undefined) return;
     const parent = scene.parent;
