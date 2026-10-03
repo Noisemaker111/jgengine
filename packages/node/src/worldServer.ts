@@ -32,11 +32,11 @@ export interface WorldGameServer {
   tick(dtSeconds: number): void;
   /** Begin driving {@link tick} on a real-clock interval at `tickHz` (idempotent). */
   start(): void;
-  /** Stop the tick interval (idempotent). */
+  /** Stop the tick interval (idempotent); `start()` can resume it until the server closes. */
   stop(): void;
   /** Force-persist every live world's current state via the injected {@link WorldPersistence} (idempotent — safe to call repeatedly). */
   flush(): Promise<void>;
-  /** Stop the tick loop, flush persistence, and tear down the ws server — the clean-shutdown path for a SIGINT/SIGTERM handler. */
+  /** Permanently fence ticks and socket intake, drain accepted work, and stop/save the host. Repeated calls share completion, including final save failure. */
   close(): Promise<void>;
   /** The bound ws port. */
   port(): number;
@@ -72,9 +72,11 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
   const ws = createGameWsServer({ ...serverOptions, host });
 
   let interval: ReturnType<typeof setInterval> | null = null;
+  let closing: Promise<void> | null = null;
   let last = clock();
 
   function tick(dtSeconds: number): void {
+    if (closing !== null) return;
     host.tick(dtSeconds);
   }
 
@@ -97,7 +99,7 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
     flush,
     port: ws.port,
     start() {
-      if (interval !== null) return;
+      if (closing !== null || interval !== null) return;
       last = clock();
       interval = setInterval(() => {
         const current = clock();
@@ -105,9 +107,14 @@ export function createWorldGameServer(options: WorldGameServerOptions): WorldGam
         last = current;
       }, 1000 / tickHz);
     },
-    async close() {
+    close() {
+      if (closing !== null) return closing;
       stop();
-      try { await flush(); } finally { await ws.close(); }
+      closing = (async () => {
+        try { await ws.close(); }
+        finally { await host.stop(); }
+      })();
+      return closing;
     },
   };
 }

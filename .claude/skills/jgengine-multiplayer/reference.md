@@ -12,6 +12,13 @@ Reference module for the [`jgengine-multiplayer` API](SKILL.md) skill. Load this
 
 The world WS host serializes joins/commands per world and awaits durable storage before replying or broadcasting. Ticks defer while a command is saving. `session.save()` returns `void | Promise<void>`; always await it at a shutdown or acknowledgement boundary. Automatic saves defer while a write is pending, and `persistenceError()` exposes failure until a successful retry. Node `flush()`/`close()` await persistence. Convex stores complete state atomically but queries return only viewer-projected replication. See [gameplay save semantics](../jgengine-gameplay/reference-systems.md#authoritative-state).
 
+Node `WorldGameServer.close()` permanently fences ticks and socket intake, drains
+accepted router work, then stops and saves the world host. Repeated calls share
+the same completion, including a final persistence failure. `stop()` only pauses
+the interval; `start()` can resume it until `close()`. Standalone
+`GameWsServer.close()` drains its router before retiring sockets; callers still
+own their host's final flush or stop.
+
 **Player UI commands.** `useGame().commands.run(name, input)` dispatches through the shell's bound authoritative transport. Await its result before displaying success; rejection before join never mutates the replica. Offline dispatch stays synchronous. `ctx.game.commands.run` and `runAs` remain trusted local execution for hosts and game initialization. A custom host can bind the same UI seam with `bindCommandTransport` from `@jgengine/core/runtime/commandDispatch`; dispose the returned binding on teardown. Registered target commands and HUD-only input use the host too. Input coalescing is scoped to each transport and realm, so two actors never share a pending input queue.
 
 The authoritative clock replicates through `time`; client clock hooks read that hydrated clock. Predictive movement never advances it or runs authoritative game stages.

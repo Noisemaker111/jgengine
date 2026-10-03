@@ -187,7 +187,7 @@ describe("createWorldGameServer", () => {
     }
   });
 
-  test("close() flushes persistence before tearing down the ws server", async () => {
+  test("close() retires socket intake and persists the final hosted world", async () => {
     const { persistence, saves } = spyPersistence();
     const s = server(undefined, persistence);
     await s.host.joinServer({ userId: "alice", gameId: "shared" });

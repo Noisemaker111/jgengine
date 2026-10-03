@@ -29,6 +29,7 @@ export type GameWsServer = {
   wss: WebSocketServer;
   port: () => number;
   rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[];
+  /** Fence new messages, drain accepted router work, and close sockets. Repeated calls share completion; host persistence remains caller-owned. */
   close: () => Promise<void>;
 };
 
@@ -39,6 +40,7 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
   const maxPayload = options.maxPayloadBytes ?? DEFAULT_MAX_PAYLOAD_BYTES;
   const maxConnections = options.maxConnections ?? DEFAULT_MAX_CONNECTIONS;
   const heartbeatIntervalMs = options.heartbeatIntervalMs ?? DEFAULT_HEARTBEAT_INTERVAL_MS;
+  let closing: Promise<void> | null = null;
 
   const wss =
     options.server !== undefined
@@ -59,6 +61,10 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
   wss.on("close", () => clearInterval(heartbeat));
 
   wss.on("connection", (socket: HeartbeatSocket) => {
+    if (closing !== null) {
+      socket.terminate();
+      return;
+    }
     if (wss.clients.size > maxConnections) {
       socket.close(1013, "Server at capacity");
       return;
@@ -91,21 +97,28 @@ export function createGameWsServer(options: GameWsServerOptions): GameWsServer {
       return address.port;
     },
     rewind: router.rewind,
-    close: () =>
-      new Promise((resolve) => {
-        clearInterval(heartbeat);
-        router.close();
+    close: () => {
+      if (closing !== null) return closing;
+      clearInterval(heartbeat);
+      router.close();
+      closing = (async () => {
+        await router.drain();
         for (const client of wss.clients) {
           client.terminate();
         }
-        let settled = false;
-        const finish = () => {
-          if (settled) return;
-          settled = true;
-          resolve();
-        };
-        wss.close(finish);
-        setTimeout(finish, 500);
-      }),
+        await new Promise<void>((resolve) => {
+          let settled = false;
+          const timer = setTimeout(finish, 500);
+          function finish() {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            resolve();
+          }
+          wss.close(finish);
+        });
+      })();
+      return closing;
+    },
   };
 }
