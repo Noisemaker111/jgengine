@@ -2,6 +2,8 @@ import type { ModelDims } from "@jgengine/core/scene/assetCatalog";
 import type { AssetSpace } from "@jgengine/core/scene/assetSpace";
 import type { CollisionMeshData } from "@jgengine/core/scene/collisionMesh";
 
+import type { GlbMetrics } from "./glbMetrics";
+
 export type { ModelDims };
 export type { AssetSpace };
 export type { CollisionMeshData };
@@ -59,11 +61,14 @@ export interface AssetSource {
   unpulled?: string;
 }
 
+/** A source-owned model or sprite id, with optional offline model measurements. */
 export interface IndexEntry {
   id: string;
   source: string;
   categories: readonly string[];
   file: string;
+  /** Offline byte, stored-triangle, and image inventory measured at reindex; absent if inspection fails. */
+  metrics?: GlbMetrics;
   /** Footprint/center/minY measured from the GLB at reindex; absent when the model could not be read. */
   dims?: ModelDims;
   /** Opt-in compact triangle mesh extracted at reindex (see {@link "@jgengine/core/scene/collisionMesh".CollisionMeshData}); present only for ids in `COLLISION_MESH_ASSET_IDS` whose geometry extracted. */

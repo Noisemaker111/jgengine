@@ -76,3 +76,5 @@ export {
   type ValidateAssetReferencesOptions,
   type ValidateAssetReferencesResult,
 } from "./provisioning";
+
+export { readGlbMetrics, type GlbMetrics, type GlbTextureMetrics } from "./glbMetrics";

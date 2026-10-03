@@ -57,9 +57,26 @@ assets register <path|url> --category <c> --license <l> [--author <a>]
                                                # register a one-off single into the shipped index
 assets reindex [public/models]                # regenerate generated/*.json (dims + animation clip names) from pulled model packs
 assets reindex-sprites [public/sprites]       # regenerate generated-sprites/*.json from pulled sprite packs
+assets budget <file|directory> [--max-bytes <n>] [--max-triangles <n>] [--max-texture-dimension <n>] [--json]
+                                               # offline per-model inventory and CI budget check for any local GLBs
 assets verify                                 # license + alias-integrity gate
 assets provenance <id> [<id>...]              # resolve each id's owner (committed/provisioned/dangling); non-zero on any dangling
 ```
+
+### Offline model budgets
+
+Check the actual GLBs in your game's served directory, including your own imported art:
+
+```bash
+assets budget public/models --max-bytes 2097152 --max-triangles 50000 --max-texture-dimension 2048 --json
+assets budget public/imported/hero.glb --json
+```
+
+Limits are per model, inclusive, and chosen by the game. Omitting limits produces an inventory. The deterministic report includes each relative filename, measurements, and actionable errors; any violation, unreadable model, missing resource, or empty scan exits non-zero. The command never fetches, writes models, or changes catalog/provisioning data.
+
+`glbBytes` is the file size; `byteLength` adds unique external buffer/image URIs, counting shared files once **per model**. Triangle counts cover every stored mesh primitive once (indexed/non-indexed triangles, strips, and fans), regardless of scene instances; they are not a rendered scene or GPU-memory budget. Texture dimensions are read from PNG, JPEG, WebP, and KTX2 headers without decoding pixels. Local references must stay within the scanned directory; symlink directories fail rather than hiding models. Remote resources and geometry requiring Draco/meshopt decoding fail inspection. An already compressed asset needs a decoder before this tool can verify its geometry.
+
+Programmatic inspection is available through `readGlbMetrics` from `@jgengine/assets/glbMetrics`, with an injected resource reader, or `createAssetBudgetReport` / `checkAssetBudget` from the Node subpath `@jgengine/assets/assetBudget`. Reindex stores successful measurements in optional `IndexEntry.metrics`, preserving existing ids, bounds, clips, and ownership. Existing entries without metrics still work; budget checks always inspect the current served bytes.
 
 ### Reference integrity
 

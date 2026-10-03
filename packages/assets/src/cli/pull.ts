@@ -4,6 +4,7 @@ import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFi
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { createAssetBudgetReport, type AssetBudget } from "../assetBudget";
 import { downloadPackArchive, extractGlbs, extractSpriteFiles } from "../download";
 import { type AssetKind, type AssetMatch, rankAssets } from "../find";
 import { generatedIndex } from "../generated";
@@ -462,6 +463,48 @@ async function cmdAdd(argv: string[]): Promise<void> {
   await performAdd(top.match, argv);
 }
 
+function cmdBudget(argv: string[]): void {
+  const target = argv[0];
+  if (target === undefined || target.startsWith("--")) {
+    fail("usage: budget <file|directory> [--max-bytes <n>] [--max-triangles <n>] [--max-texture-dimension <n>] [--json]");
+  }
+  const budget: AssetBudget = {};
+  const limits = {
+    "--max-bytes": "maxBytes",
+    "--max-triangles": "maxTriangles",
+    "--max-texture-dimension": "maxTextureDimension",
+  } as const;
+  for (let index = 1; index < argv.length; index += 1) {
+    const option = argv[index]!;
+    if (option === "--json") continue;
+    const key = limits[option as keyof typeof limits];
+    if (key === undefined) fail(`unknown budget option: ${option}`);
+    const raw = argv[++index];
+    if (raw === undefined || !/^\d+$/.test(raw) || !Number.isSafeInteger(Number(raw))) {
+      fail(`${option} requires a non-negative safe integer`);
+    }
+    if (budget[key] !== undefined) fail(`duplicate budget option: ${option}`);
+    budget[key] = Number(raw);
+  }
+  try {
+    const report = createAssetBudgetReport(target, budget);
+    if (argv.includes("--json")) console.log(JSON.stringify(report, null, 2));
+    else {
+      for (const entry of report.entries) {
+        const metrics = entry.metrics;
+        const detail = metrics === undefined ? "unreadable"
+          : `${metrics.byteLength} bytes, ${metrics.triangles} triangles, ${metrics.maxTextureDimension}px max texture`;
+        console.log(`${entry.file}: ${detail}`);
+      }
+      for (const error of report.errors) console.error(`error: ${error}`);
+      console.log(`budget: ${report.ok ? "ok" : "failed"} (${report.entries.length} models)`);
+    }
+    if (!report.ok) process.exitCode = 1;
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
+}
+
 function cmdReindex(argv: string[]): void {
   const modelsDir = resolve(argv[0] ?? resolveDefaultReindexDir(here, "models"));
   if (!existsSync(modelsDir)) fail(`models dir not found: ${modelsDir}`);
@@ -535,6 +578,9 @@ if (import.meta.main) {
     case "register":
       cmdRegisterSingle(rest);
       break;
+    case "budget":
+      cmdBudget(rest);
+      break;
     case "reindex":
       cmdReindex(rest);
       break;
@@ -549,7 +595,7 @@ if (import.meta.main) {
       break;
     default:
       console.log(
-        "usage: assets <add|list|search|pull|register|reindex|reindex-sprites|verify|provenance> [...args]\n" +
+        "usage: assets <add|list|search|pull|register|reindex|reindex-sprites|budget|verify|provenance> [...args]\n" +
         "  assets pull starter   # every pack the starter catalog needs, into ./public/models",
       );
       if (command !== undefined && command !== "help") process.exit(1);

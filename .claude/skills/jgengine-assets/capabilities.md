@@ -4,6 +4,13 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## asset-budgets — enforce game-owned per-model byte, triangle, and texture-dimension limits
+
+- `checkAssetBudget` (function) · `import { checkAssetBudget } from "@jgengine/assets/assetBudget"`
+- `createAssetBudgetReport` (function) · `import { createAssetBudgetReport } from "@jgengine/assets/assetBudget"`
+- `readGlbFileMetrics` (function) · `import { readGlbFileMetrics } from "@jgengine/assets/assetBudget"`
+- `readGlbMetrics` (function) · `import { readGlbMetrics } from "@jgengine/assets"`
+
 ## asset-reference-integrity — validate asset references against the provisioning contract (dangling / committed / provisioned)
 
 - `validateAssetReferences` (function) · `import { validateAssetReferences } from "@jgengine/assets"`

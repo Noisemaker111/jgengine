@@ -24,8 +24,10 @@
 - `ExtractedMaterialMap` (interface): interface ExtractedMaterialMap — One normalized map pulled out of a material archive by `extractMaterialMaps`.
 - `ExtractedSpriteFile` (interface): interface ExtractedSpriteFile — One SVG/PNG file pulled out of a sprite/icon-pack archive by `extractSpriteFiles`.
 - `FindOptions` (interface): interface FindOptions { kind?: AssetKind; limit?: number } — ⚠ undocumented · used by `findAssets`: The ranked matches for a query — models, packs, HUD components, and icons in one list.
+- `GlbMetrics` (interface): interface GlbMetrics — Stored geometry and image inventory; triangles count mesh primitives once, regardless of scene instances.
+- `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
 - `ImportSpecValidation` (type): type ImportSpecValidation = { ok: true; entry: AssetImportSpec } | { ok: false; reason: string } — Result of validating an import description.
-- `IndexEntry` (interface): interface IndexEntry { id: string; source: string; categories: readonly string[]; file: string; dims?: ModelDims; collisionMesh?: CollisionMeshData; clips?: readonly string[]; space?: AssetSpace } — ⚠ undocumented · used by `entryForSpriteFile`: Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
+- `IndexEntry` (interface): interface IndexEntry — A source-owned model or sprite id, with optional offline model measurements.
 - `MATERIAL_MAP_FILES` (const): const MATERIAL_MAP_FILES: { readonly color: "color.jpg"; readonly normal: "normal.jpg"; readonly roughness: "roughness.jpg"; readonly ao: "ao.jpg"; readonly displacement: "displacement.jpg"; readonly ktx2: "material.ktx2"; } — Normalized filenames a pulled material directory contains, keyed by map role.
 - `MaterialCatalog` (interface): interface MaterialCatalog — Resolves material ids and `material/…` aliases to `MaterialRef`s.
 - `MaterialMapRole` (type): type MaterialMapRole = keyof typeof MATERIAL_MAP_FILES — One PBR map's role within a material, including an optional compressed KTX2 asset.
@@ -82,6 +84,7 @@
 - `quaterniusSources` (const): const quaterniusSources: readonly AssetSource[] — ⚠ undocumented
 - `rankAssets` (function): function rankAssets(query: string, options: FindOptions = {}): RankedMatch[] — Rank every catalog entry — models, packs, HUD components, icons — against one query.
 - `readGlbDims` (function): function readGlbDims(bytes: Uint8Array): ModelDims | null — ⚠ undocumented
+- `readGlbMetrics` (function): function readGlbMetrics(bytes: Uint8Array, readResource?: (uri: string) => Uint8Array): GlbMetrics — Inspect GLB v2 geometry accessors and image headers offline. Throws on unreadable resources, malformed geometry, or required geometry compression; never silently reports missing data as zero. External resources are supplied by the caller; this function never fetches or decompresses bytes.
 - `registryCatalog` (const): const registryCatalog: RegistryCatalog — ⚠ undocumented
 - `reindexSprites` (function): function reindexSprites(spritesDir: string, outDir: string): ReindexSpritesResult — Same shape as `reindex` (models) but walks SVG/PNG files and skips dims measurement — sprites have no footprint.
 - `resolveProvenance` (function): function resolveProvenance(id: string, options: ResolveProvenanceOptions = {}): AssetProvenance — Resolve one logical asset id (a pack id, a single id, or an alias key) to its {@link AssetProvenance}. Aliases are followed one hop to their target. An id that matches no declared owner is `dangling` — the signal a clean-clone gate turns into a hard failure, because no provisioning step can ever satisfy it.
@@ -97,6 +100,15 @@
 ## @jgengine/assets/aliases
 
 - `aliases` (const): const aliases: readonly AssetAlias[] — Semantic keys → live catalog ids. Prefer these in games so re-homes only touch this table. Never point at kenney-*. Curated starter theme ids (`asset:person_casual`, `nature_tree`, …) come from {@link starterAliases}.
+
+## @jgengine/assets/assetBudget
+
+- `AssetBudget` (interface): interface AssetBudget — Per-model limits chosen by the game; equality passes and omitted limits only report.
+- `AssetBudgetEntry` (interface): interface AssetBudgetEntry — One model's measured inventory or actionable inspection/budget errors.
+- `AssetBudgetReport` (interface): interface AssetBudgetReport — Deterministic offline report; an empty directory or any unreadable model fails.
+- `checkAssetBudget` (function): function checkAssetBudget(metrics: GlbMetrics, budget: AssetBudget): string[] — Check measured per-model bytes, stored triangles, and maximum image dimension against caller-owned limits.
+- `createAssetBudgetReport` (function): function createAssetBudgetReport(target: string, budget: AssetBudget = {}): AssetBudgetReport — Scan a file or directory recursively for GLBs without changing their bytes or the catalog. Paths are relative to the scanned directory, sorted lexically; unknown/custom asset folders work equally.
+- `readGlbFileMetrics` (function): function readGlbFileMetrics(file: string, resourceRoot = dirname(file)): GlbMetrics — Read a GLB plus local resources under `resourceRoot`; remote URLs and symlink escapes fail without fetching.
 
 ## @jgengine/assets/catalogs/build
 
@@ -175,6 +187,12 @@
 - `generatedSpriteBySource` (const): const generatedSpriteBySource: Record<string, IndexEntry[]> — Pulled sprite/icon entries grouped by source id.
 - `generatedSpriteIndex` (const): const generatedSpriteIndex: IndexEntry[] — Every pulled sprite/icon entry across all sources, flattened.
 
+## @jgengine/assets/glbMetrics
+
+- `GlbMetrics` (interface): interface GlbMetrics — Stored geometry and image inventory; triangles count mesh primitives once, regardless of scene instances.
+- `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
+- `readGlbMetrics` (function): function readGlbMetrics(bytes: Uint8Array, readResource?: (uri: string) => Uint8Array): GlbMetrics — Inspect GLB v2 geometry accessors and image headers offline. Throws on unreadable resources, malformed geometry, or required geometry compression; never silently reports missing data as zero. External resources are supplied by the caller; this function never fetches or decompresses bytes.
+
 ## @jgengine/assets/importSpec
 
 - `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
@@ -186,7 +204,7 @@
 ## @jgengine/assets/indexGen
 
 - `ReindexResult` (interface): interface ReindexResult { perSource: {source: string; count: number}[]; total: number } — ⚠ undocumented
-- `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims, collisionMesh?: CollisionMeshData, clips?: readonly string[]): IndexEntry — ⚠ undocumented
+- `entryForFile` (function): function entryForFile(source: AssetSource, file: string, dims?: ModelDims, collisionMesh?: CollisionMeshData, clips?: readonly string[], metrics?: GlbMetrics): IndexEntry — Build a source-owned model entry, preserving optional measured bounds, collision, clips, and inventory.
 - `indexSourceDir` (function): function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] — ⚠ undocumented
 - `keyFromFile` (function): function keyFromFile(file: string): string — ⚠ undocumented
 - `reindex` (function): function reindex(modelsDir: string, outDir: string): ReindexResult — ⚠ undocumented
@@ -200,7 +218,7 @@
 - `AssetSourceKind` (type): type AssetSourceKind = "model" | "material" | "sprite" — What a source's archive contains: GLB models (default), one PBR material's texture maps, or a pack of individual 2D sprite/icon files (SVG/PNG).
 - `AssetSpace` (interface): interface AssetSpace — Catalog-level asset-space metadata: how a model is authored relative to the engine, owned by the catalog entry rather than re-derived per game. Every field is optional so an unmeasured asset stays valid; {@link resolveFacingRotationY}/{@link assetUnitScale}/{@link resolveAnchorOffset} supply the documented defaults.
 - `CollisionMeshData` (interface): interface CollisionMeshData — Compact, serializable triangle collision mesh measured at asset reindex — the renderer-free source of mesh-accurate hitboxes. Positions are welded onto a 16-bit grid spanning `min`..`max` (model space) and stored base64-encoded, so an opted-in catalog asset ships its collision triangles inside the generated index without the runtime ever touching the rendered scene graph.
-- `IndexEntry` (interface): interface IndexEntry { id: string; source: string; categories: readonly string[]; file: string; dims?: ModelDims; collisionMesh?: CollisionMeshData; clips?: readonly string[]; space?: AssetSpace } — ⚠ undocumented · used by `entryForSpriteFile` (@jgengine/assets): Builds one sprite/icon `IndexEntry` — same shape as a model entry, minus `dims`.
+- `IndexEntry` (interface): interface IndexEntry — A source-owned model or sprite id, with optional offline model measurements.
 - `ModelDims` (interface): interface ModelDims — Measured horizontal footprint, footprint center, and lowest Y of a model in model space.
 - `PinnedDownload` (interface): interface PinnedDownload { url: string; sha256?: string } — ⚠ undocumented
 - `ScrapeDownload` (interface): interface ScrapeDownload { scrape: string } — ⚠ undocumented

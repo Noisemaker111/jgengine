@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { readGlbFileMetrics } from "./assetBudget";
+import type { GlbMetrics } from "./glbMetrics";
 import { COLLISION_MESH_ASSET_IDS } from "./collisionMeshAssets";
 import { readGlbClips, readGlbCollisionMesh, readGlbDims } from "./dims";
 import type { AssetSource, CollisionMeshData, IndexEntry, ModelDims } from "./manifest";
@@ -10,18 +12,21 @@ export function keyFromFile(file: string): string {
   return file.replace(/\.gltf\.glb$/i, "").replace(/\.glb$/i, "");
 }
 
+/** Build a source-owned model entry, preserving optional measured bounds, collision, clips, and inventory. */
 export function entryForFile(
   source: AssetSource,
   file: string,
   dims?: ModelDims,
   collisionMesh?: CollisionMeshData,
   clips?: readonly string[],
+  metrics?: GlbMetrics,
 ): IndexEntry {
   return {
     id: `${source.id}/${keyFromFile(file)}`,
     source: source.id,
     categories: source.categories,
     file,
+    ...(metrics === undefined ? {} : { metrics }),
     ...(dims === undefined ? {} : { dims }),
     ...(collisionMesh === undefined ? {} : { collisionMesh }),
     ...(clips === undefined ? {} : { clips }),
@@ -65,7 +70,7 @@ function measureClips(bytes: Uint8Array): readonly string[] | undefined {
   }
 }
 
-function entryFromGlb(source: AssetSource, file: string, full: string): IndexEntry {
+function entryFromGlb(source: AssetSource, file: string, full: string, resourceRoot: string): IndexEntry {
   let bytes: Uint8Array;
   try {
     bytes = readFileSync(full);
@@ -74,7 +79,13 @@ function entryFromGlb(source: AssetSource, file: string, full: string): IndexEnt
   }
   const id = `${source.id}/${keyFromFile(file)}`;
   const collisionMesh = COLLISION_MESH_ASSET_IDS.has(id) ? measureCollisionMesh(bytes) : undefined;
-  return entryForFile(source, file, measureDims(bytes), collisionMesh, measureClips(bytes));
+  let metrics: GlbMetrics | undefined;
+  try {
+    metrics = readGlbFileMetrics(full, resourceRoot);
+  } catch {
+    metrics = undefined;
+  }
+  return entryForFile(source, file, measureDims(bytes), collisionMesh, measureClips(bytes), metrics);
 }
 
 export function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] {
@@ -83,7 +94,7 @@ export function indexSourceDir(source: AssetSource, dir: string): IndexEntry[] {
   for (const { file, full } of collectGlbFiles(dir).sort((a, b) => a.file.localeCompare(b.file))) {
     if (seen.has(file)) continue;
     seen.add(file);
-    entries.push(entryFromGlb(source, file, full));
+    entries.push(entryFromGlb(source, file, full, dir));
   }
   return entries;
 }

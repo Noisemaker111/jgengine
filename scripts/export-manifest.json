@@ -1082,6 +1082,7 @@
   "@jgengine/assets": [
     ".",
     "./aliases",
+    "./assetBudget",
     "./catalogs/build",
     "./catalogs/buildSprites",
     "./catalogs/starter",
@@ -1094,6 +1095,7 @@
     "./find",
     "./generated-sprites/index",
     "./generated/index",
+    "./glbMetrics",
     "./importSpec",
     "./index",
     "./indexGen",
