@@ -29,6 +29,7 @@ export const CORE_DOMAIN_SKILLS: Record<string, string> = {
   interaction: "jgengine-world",
   inventory: "jgengine-gameplay",
   item: "jgengine-gameplay",
+  material: "jgengine-assets",
   math: "jgengine-world",
   meta: MAIN,
   movement: "jgengine-world",
@@ -86,6 +87,7 @@ export const PACKAGE_DOMAIN_OVERRIDES: Record<string, Record<string, string>> = 
 
 /** Full module-path overrides when a file's domain folder would send it to the wrong skill. */
 export const CORE_MODULE_OVERRIDES: Record<string, string> = {
+  "material/appearanceSignals": "jgengine-world",
   "runtime/worldProjection": "jgengine-multiplayer",
   // The scene-ownership boundary is how the editor decides whether runtime world
   // content is authorable — an editor-authoring concern, not world runtime.

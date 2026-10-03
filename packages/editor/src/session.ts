@@ -1,3 +1,4 @@
+import type { MaterialAsset, MaterialSelector } from "@jgengine/core/material/materialAsset";
 import type { StaticPrefabBake } from "@jgengine/core/editor/staticPrefab";
 import {
   createDocumentLiveSync,
@@ -196,6 +197,11 @@ export type EditorBridgeRequest =
   | { method: "select_collection"; id: string }
   | { method: "set_object_flags"; ids: string[]; locked?: boolean; hidden?: boolean }
   | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
+  | { method: "list_material_assets" }
+  | { method: "upsert_material_asset"; asset: MaterialAsset; coalesce?: string }
+  | { method: "remove_material_asset"; id: string }
+  | { method: "assign_material_asset"; ids: string[]; materialId: string; selector: MaterialSelector }
+  | { method: "clear_material_assets"; ids: string[] }
   | { method: "assign_material"; ids: string[]; materialId: string }
   | { method: "list_grids" }
   | { method: "get_grid_cell"; id: string; col: number; row: number }

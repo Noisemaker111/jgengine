@@ -455,6 +455,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
 
+## material-appearance-signals — adapt selected surface response to sampled wetness and local card exposure
+
+- `resolveMaterialAppearance` (function) · `import { resolveMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
+- `sampleMaterialAppearance` (function) · `import { sampleMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
+
 ## mesh-hitboxes — shots pass through holes in concave models — opted-in catalog assets raycast their actual triangles instead of the fitted box.
 
 - `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`

@@ -14,6 +14,14 @@ export type ModelShadowMode = "cast" | "receive" | "both" | "none";
 
 const modelResources = new WeakMap<THREE.Object3D, { materials: Set<THREE.Material>; skeletons: Set<THREE.Skeleton> }>();
 
+/** Register an instance replacement without transferring borrowed geometry or textures. @internal */
+export function ownModelMaterial(root: THREE.Object3D, material: THREE.Material): boolean {
+  const resources = modelResources.get(root);
+  if (resources === undefined) return false;
+  resources.materials.add(material);
+  return true;
+}
+
 /** Resolve placement from bind bounds in the frame containing the imported root, shared by rendering and collider measurement. @internal */
 export function modelPlacementTransform(root: THREE.Object3D, model: ModelConfig, bindBounds?: MeasuredLocalBounds | null): { scale: number; position: [number, number, number] } {
   let scale = model.scale ?? 1;
@@ -58,6 +66,8 @@ export function cloneModelScene(
     let material = materials.get(source);
     if (material === undefined) {
       material = source.clone();
+      material.onBeforeCompile = source.onBeforeCompile;
+      material.customProgramCacheKey = source.customProgramCacheKey;
       materials.set(source, material);
     }
     return material;

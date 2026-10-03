@@ -254,6 +254,58 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
       rmSync(join(consumer, ".."), { recursive: true, force: true });
     }
   }, 120_000);
+
+  test("material assets, native inventory, slot rendering and authoring resolve from coordinated tarballs", () => {
+    const { consumer } = installTarballs(["core", "assets", "react", "ws", "shell", "editor"]);
+    try {
+      linkPeer(consumer, "react");
+      for (const peer of ["three", "@react-three/fiber"]) {
+        const target = join(consumer, "node_modules", peer);
+        mkdirSync(dirname(target), { recursive: true });
+        symlinkSync(join(packageDir("shell"), "node_modules", peer), target, "junction");
+      }
+      const script = [
+        "import * as THREE from 'three';",
+        "import { createMaterialTemplate, validateMaterialAsset } from '@jgengine/core/material/materialAsset';",
+        "import { createEditorSession } from '@jgengine/core/editor/commands';",
+        "import { createEmptyEditorDocument, importEditorDocumentJson } from '@jgengine/core/editor/document';",
+        "import { modelWithAuthoredMaterials } from '@jgengine/core/editor/materialAuthoring';",
+        "import { inspectGltfMaterials } from '@jgengine/assets/gltfMaterials';",
+        "import { applyMaterialAssignments, inspectModelMaterialSlots, materialResourceMetrics } from '@jgengine/shell/render/materialAsset';",
+        "import { cloneModelScene, disposeModelScene } from '@jgengine/shell/render/modelRender';",
+        "import { materialControlGroups } from '@jgengine/editor/materialControls';",
+        "const wool = createMaterialTemplate('wool', 'game/wool', 'Original upholstery');",
+        "if (validateMaterialAsset(wool).some(issue => issue.severity === 'error')) throw new Error('packaged material schema failed');",
+        "if (materialControlGroups('fabric').length !== 6) throw new Error('six authoring groups missing');",
+        "const source = new THREE.Group();",
+        "const skin = new THREE.MeshStandardMaterial({name:'Skin',color:'#b98667'});",
+        "const cloth = new THREE.MeshStandardMaterial({name:'Clothing',roughness:0.42});",
+        "const mesh = new THREE.Mesh(new THREE.BoxGeometry(), [skin,cloth]); mesh.name = 'Hero'; source.add(mesh);",
+        "const instance = cloneModelScene(source);",
+        "const slots = inspectModelMaterialSlots(instance);",
+        "if (slots.length !== 2 || slots[1].slot !== 'Clothing' || slots[1].slotIndex !== 1) throw new Error('loaded slot discovery failed');",
+        "const before = instance.children[0].material[0];",
+        "const authoring = createEditorSession({...createEmptyEditorDocument(),materialAssets:[wool],markers:[{id:'hero',kind:'prop',position:{x:0,y:0,z:0}}]});",
+        "if (!authoring.transaction([{type:'assignMaterialAsset',ids:['hero'],materialId:wool.id,selector:{mesh:'Hero',slot:'Clothing',slotIndex:1}}]).ok) throw new Error('packaged editor assignment failed');",
+        "const saved = authoring.exportJson(); authoring.dispatch({type:'undo'}); authoring.dispatch({type:'redo'});",
+        "if (authoring.exportJson() !== saved) throw new Error('packaged editor history round trip failed');",
+        "const reopened = modelWithAuthoredMaterials({url:'/hero.glb'},importEditorDocumentJson(saved),'hero');",
+        "applyMaterialAssignments(instance,reopened.materialAssets,reopened.materialAssignments);",
+        "if (instance.children[0].material[0] !== before) throw new Error('omitted slot override replaced imported skin');",
+        "const changed = instance.children[0].material[1];",
+        "if (!changed.isMeshPhysicalMaterial || changed.sheen !== wool.surface.sheen || changed.roughness !== wool.surface.roughness || cloth.roughness !== 0.42) throw new Error('packaged physical slot rendering failed');",
+        "const inventory = inspectGltfMaterials({asset:{version:'2.0',copyright:'Original artist'},materials:[{name:'Skin'},{name:'Clothing'}],meshes:[{name:'Hero',primitives:[{material:0,attributes:{POSITION:0}},{material:1,attributes:{POSITION:0}}]}]},'game/hero');",
+        "if (inventory.slots.length !== 2 || inventory.materials[1].id !== 'game/hero/material/1' || inventory.copyright !== 'Original artist') throw new Error('packaged native material inventory failed');",
+        "if (materialResourceMetrics([changed]).physicalMaterials !== 1) throw new Error('packaged material accounting failed');",
+        "disposeModelScene(instance); skin.dispose(); cloth.dispose(); mesh.geometry.dispose();",
+        "console.log('ok');",
+      ].join("\n");
+      const out = execFileSync("node", ["--input-type=module", "-e", script], { cwd: consumer, encoding: "utf8" });
+      expect(out.trim()).toBe("ok");
+    } finally {
+      rmSync(join(consumer, ".."), { recursive: true, force: true });
+    }
+  }, 120_000);
 });
 
 test.if(built)("node test fixtures exist in source but are build-excluded", () => {

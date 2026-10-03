@@ -4,17 +4,19 @@ import * as THREE from "three";
 
 import type { ModelMaterialOverride } from "@jgengine/core/game/playableGame";
 
-import { applyMaterialOverrideToMaterial, type MaterialOverrideTextures } from "../materialOverride";
+import { applyMaterialOverrideToMaterial, requiresPhysicalMaterial, type MaterialOverrideTextures } from "../materialOverride";
 import { modelMapEntries } from "./modelAssets";
 import { useDisposable } from "./useDisposable";
 
 /** Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract. */
-export interface AuthoredSurfaceConfig extends ModelMaterialOverride {
+export interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> {
   /** Physical metres per texture tile on unit boxes/cylinders, including instance and parent scale. Omit to retain authored UVs. */
   repeatMetres?: number;
   /** Texture sampler policy on owned clones; defaults to repeat on both axes and anisotropy 1. */
   wrapping?: "repeat" | "clamp" | "mirror";
   anisotropy?: number;
+  /** Physical directional highlight strength [0,1]; `anisotropy` remains the legacy texture sampler setting. */
+  surfaceAnisotropy?: number;
   normalScale?: readonly [number, number];
   /** Normalized [0,1] height maps displace in local shape units (Three defaults: scale 1, bias 0). */
   displacementScale?: number;
@@ -29,11 +31,7 @@ export type SurfaceShape = "box" | "cylinder";
 
 /** Stable material identity, independent of object/map property insertion order. @internal */
 export function authoredSurfaceKey(config: AuthoredSurfaceConfig): string {
-  return JSON.stringify([
-    config.color, config.metalness, config.roughness, config.emissive, config.emissiveIntensity,
-    Object.entries(modelMapEntries(config.maps ?? {})), config.rim?.color, config.rim?.strength, config.rim?.power,
-    config.repeatMetres, config.wrapping, config.anisotropy, config.normalScale, config.displacementScale, config.displacementBias, config.transparent, config.opacity, config.depthWrite,
-  ]);
+  return JSON.stringify(Object.entries({ ...config, maps: modelMapEntries(config.maps ?? {}) }).sort(([a], [b]) => a.localeCompare(b)));
 }
 
 /** Configure owned map clones without changing textures retained in a loader cache. @internal */
@@ -57,7 +55,9 @@ export function configureAuthoredSurface(material: THREE.MeshStandardMaterial, c
   if (config.normalScale?.some(value => !Number.isFinite(value))) throw new Error("normalScale must be finite");
   if (config.anisotropy !== undefined && (!Number.isFinite(config.anisotropy) || config.anisotropy < 1)) throw new Error("anisotropy must be finite and >= 1");
   if ([config.displacementScale, config.displacementBias].some(value => value !== undefined && !Number.isFinite(value))) throw new Error("displacement settings must be finite");
-  applyMaterialOverrideToMaterial(material, config, false, textures);
+  const { anisotropy: _samplerAnisotropy, surfaceAnisotropy, ...surface } = config;
+  if (requiresPhysicalMaterial({ ...surface, normalScale: surface.normalScale === undefined ? undefined : [...surface.normalScale], anisotropy: surfaceAnisotropy }, textures) && !(material as THREE.MeshPhysicalMaterial).isMeshPhysicalMaterial) throw new Error("Physical authored surface settings require MeshPhysicalMaterial");
+  applyMaterialOverrideToMaterial(material, { ...surface, normalScale: surface.normalScale === undefined ? undefined : [...surface.normalScale], anisotropy: surfaceAnisotropy }, false, textures);
   if (config.displacementScale !== undefined) material.displacementScale = config.displacementScale;
   if (config.displacementBias !== undefined) material.displacementBias = config.displacementBias;
   if (config.transparent !== undefined) material.transparent = config.transparent;
@@ -79,8 +79,7 @@ vec2 surfaceRepeat = ${shape === "box"
       ? "abs(normal.x) > 0.5 ? surfaceExtent.zy : abs(normal.y) > 0.5 ? surfaceExtent.xz : surfaceExtent.xy"
       : "abs(normal.y) > 0.5 ? surfaceExtent.xz * 2.0 : vec2(6.28318530718 * sqrt((surfaceExtent.x * surfaceExtent.x + surfaceExtent.z * surfaceExtent.z) * 0.5), surfaceExtent.y)"};
 surfaceRepeat /= ${tile.toExponential(8)};
-${["MAP", "NORMALMAP", "ROUGHNESSMAP", "AOMAP", "METALNESSMAP", "EMISSIVEMAP", "DISPLACEMENTMAP"].map(role => {
-      const name = { MAP: "vMapUv", NORMALMAP: "vNormalMapUv", ROUGHNESSMAP: "vRoughnessMapUv", AOMAP: "vAoMapUv", METALNESSMAP: "vMetalnessMapUv", EMISSIVEMAP: "vEmissiveMapUv", DISPLACEMENTMAP: "vDisplacementMapUv" }[role];
+${Object.entries({ MAP: "vMapUv", NORMALMAP: "vNormalMapUv", ROUGHNESSMAP: "vRoughnessMapUv", AOMAP: "vAoMapUv", METALNESSMAP: "vMetalnessMapUv", EMISSIVEMAP: "vEmissiveMapUv", DISPLACEMENTMAP: "vDisplacementMapUv", ALPHAMAP: "vAlphaMapUv", SHEENCOLORMAP: "vSheenColorMapUv", SHEENROUGHNESSMAP: "vSheenRoughnessMapUv", ANISOTROPYMAP: "vAnisotropyMapUv", CLEARCOATMAP: "vClearcoatMapUv", CLEARCOATROUGHNESSMAP: "vClearcoatRoughnessMapUv", CLEARCOATNORMALMAP: "vClearcoatNormalMapUv", SPECULARINTENSITYMAP: "vSpecularIntensityMapUv", SPECULARCOLORMAP: "vSpecularColorMapUv", TRANSMISSIONMAP: "vTransmissionMapUv", THICKNESSMAP: "vThicknessMapUv", IRIDESCENCEMAP: "vIridescenceMapUv", IRIDESCENCETHICKNESSMAP: "vIridescenceThicknessMapUv" }).map(([role, name]) => {
       return `#ifdef USE_${role}\n ${name} *= surfaceRepeat;\n#endif`;
     }).join("\n")}`);
   };
@@ -99,7 +98,8 @@ export function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape:
   const loaded = useLoader(THREE.TextureLoader, Object.values(entries));
   const resources = useDisposable(() => {
     const textures = authoredSurfaceTextures(entries, loaded, config);
-    const material = new THREE.MeshStandardMaterial();
+    const { anisotropy: _samplerAnisotropy, surfaceAnisotropy, ...surface } = config;
+    const material = requiresPhysicalMaterial({ ...surface, normalScale: surface.normalScale === undefined ? undefined : [...surface.normalScale], anisotropy: surfaceAnisotropy }, textures) ? new THREE.MeshPhysicalMaterial() : new THREE.MeshStandardMaterial();
     try {
       configureAuthoredSurface(material, config, textures, shape);
     } catch (error) {

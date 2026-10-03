@@ -39,10 +39,12 @@ export interface StaticPrefabBakeReport {
   byteLength: number;
   triangles: number;
   submissions: number;
+  /** Optimization merges source mesh primitives; original mesh/primitive selectors are not portable. */
+  materialLayout: "merged-by-source-material";
   bounds: StaticPrefabBox;
   sourcePrefabSha256: string;
   staticBakeSha256: string;
-  sources: readonly { catalogId: string; sha256: string; bytes: number; textures?: readonly Omit<StaticPrefabTextureSource, "path">[] }[];
+  sources: readonly { catalogId: string; sha256: string; bytes: number; copyright?: string; textures?: readonly Omit<StaticPrefabTextureSource, "path">[] }[];
   textures: readonly Omit<StaticPrefabTextureSource, "path">[];
 }
 
@@ -79,7 +81,7 @@ function markerTransform(marker: EditorMarker): { catalogId: string; translation
   if (marker.kind !== "prop") throw new Error(`Static prefab marker ${marker.id} requires kind prop; interactive or custom kind ${marker.kind} is unsupported`);
   const catalogId = markerCatalogId(marker);
   if (catalogId === null) throw new Error(`Static prefab marker ${marker.id} requires a pinned catalogId`);
-  const unsupported = ["scale", "scaleX", "scaleY", "scaleZ", "rotation", "rotationX", "rotationZ", "quaternion", "matrix", "offsetY", "yOffset", "targetHeight", "anchor", "animation", "interactive", "interaction", "behavior", "on", "action", "triggers", "triggerRadius", "generatorId", "params", "material", "materialId", "materials", "surface", "maps", "tint"];
+  const unsupported = ["scale", "scaleX", "scaleY", "scaleZ", "rotation", "rotationX", "rotationZ", "quaternion", "matrix", "offsetY", "yOffset", "targetHeight", "anchor", "animation", "interactive", "interaction", "behavior", "on", "action", "triggers", "triggerRadius", "generatorId", "params", "material", "materialId", "materials", "materialAssignments", "surface", "maps", "tint"];
   for (const key of unsupported) {
     if (marker.meta?.[key] !== undefined || (marker as unknown as Record<string, unknown>)[key] !== undefined)
       throw new Error(`Static prefab marker ${marker.id}: unsupported ${key}; keep this part outside the static bake`);
@@ -276,7 +278,7 @@ async function bakeStaticPrefabSnapshot(prefab: EditorPrefab, sources: readonly 
         if (pin !== undefined) texture.setURI(pin.url);
       }
       loaded.set(part.catalogId, sourceDocument);
-      usedSources.push({ catalogId: source.catalogId, sha256: source.sha256, bytes: source.bytes, ...(verifiedTextures.size === 0 ? {} : { textures: [...verifiedTextures.values()].map(textureProvenance) }) });
+      usedSources.push({ catalogId: source.catalogId, sha256: source.sha256, bytes: source.bytes, ...(input.json.asset.copyright === undefined ? {} : { copyright: input.json.asset.copyright }), ...(verifiedTextures.size === 0 ? {} : { textures: [...verifiedTextures.values()].map(textureProvenance) }) });
     }
     const mapping = mergeDocuments(document, sourceDocument);
     const pivot = document.createNode(fragment.markers[i]!.id).setTranslation(part.translation).setRotation([0, Math.sin(part.yaw / 2), 0, Math.cos(part.yaw / 2)]);
@@ -319,7 +321,10 @@ async function bakeStaticPrefabSnapshot(prefab: EditorPrefab, sources: readonly 
     center: { x: (bounds.max[0] + bounds.min[0]) / 2, z: (bounds.max[2] + bounds.min[2]) / 2 },
     minY: bounds.min[1], maxY: bounds.max[1],
   };
-  const bytes = encodeGlb(await io.writeJSON(document), document);
+  const output = await io.writeJSON(document);
+  const copyrights = [...new Set(usedSources.flatMap((source) => source.copyright === undefined ? [] : [source.copyright]))];
+  if (copyrights.length > 0) output.json.asset.copyright = copyrights.join("\n");
+  const bytes = encodeGlb(output, document);
   const metrics = readGlbMetrics(bytes, (url) => {
     const texture = usedTextures.get(url);
     if (texture === undefined) throw new Error(`Static prefab output has an unverified texture ${url}`);
@@ -329,7 +334,7 @@ async function bakeStaticPrefabSnapshot(prefab: EditorPrefab, sources: readonly 
     bytes, dims, space: { anchor: { x: 0, z: 0 }, unitScale: 1 }, anchor: "origin", collisionMesh,
     report: {
       assetId: config.assetId, prefabId: prefab.id, sha256: sha256(bytes), bytes: bytes.length, byteLength: metrics.byteLength,
-      triangles: metrics.triangles, submissions, bounds: { min: [...bounds.min], max: [...bounds.max] },
+      triangles: metrics.triangles, submissions, materialLayout: "merged-by-source-material", bounds: { min: [...bounds.min], max: [...bounds.max] },
       sourcePrefabSha256: sha256(JSON.stringify(fragment)), staticBakeSha256: sha256(JSON.stringify(config)),
       sources: usedSources, textures: [...usedTextures.values()].map(({ pin }) => textureProvenance(pin)),
     },

@@ -169,6 +169,7 @@ export const gameRegistry: GameRegistry = {
   "hosted-authority": () => new URLSearchParams(window.location.search).get("presentation") === "recovery"
     ? import("./demo/presentationRecoveryDemo").then((module) => module.presentationRecoveryDemoGame)
     : import("./demo/hostedAuthorityDemo").then((module) => module.hostedAuthorityDemoGame),
+  "material-showcase": () => import("./demo/materialShowcase").then((module) => module.materialShowcaseGame),
   demo: () => import("./demo/demoGame").then((module) => module.demoGame),
   "physics-probe": () => import("./demo/physicsProbeDemo").then((module) => module.physicsProbeGame),
   "guard-probe": () => import("./demo/guardProbeDemo").then((module) => module.guardProbeGame),

@@ -659,6 +659,16 @@
 - `skillCheckMarkerPosition` (function): function skillCheckMarkerPosition(config: SkillCheckConfig, elapsedSeconds: number): number — ⚠ undocumented
 - `skillCheckZoneAt` (function): function skillCheckZoneAt(config: SkillCheckConfig, elapsedSeconds: number): SkillCheckZone — A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 
+## @jgengine/core/material/appearanceSignals
+
+- `MaterialAppearanceBaseline` (interface): interface MaterialAppearanceBaseline — Resolved dry values from one assigned surface, after imported and instance edits. RGB is linear.
+- `MaterialAppearancePolicy` (interface): interface MaterialAppearancePolicy — Local appearance only. Wind is a separate geometry/simulation input, and no field creates motion.
+- `MaterialAppearanceResponse` (interface): interface MaterialAppearanceResponse — Sparse edits for one sample. Unrequested imported parameters, textures, coverage and transmission stay intact.
+- `MaterialAppearanceTarget` (interface): interface MaterialAppearanceTarget — Explicit sample position; callers schedule a bounded set of visible or relevant targets.
+- `MaterialWetnessPolicy` (interface): interface MaterialWetnessPolicy — Opt-in wet endpoints. Color retention multiplies linear albedo; it never replaces the authored hue.
+- `resolveMaterialAppearance` (function): function resolveMaterialAppearance(sample: EnvironmentSample, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Resolve one surface from an immutable dry baseline, avoiding cumulative drift. Wetness already includes field shelter; neither exposure nor sheltered is multiplied into it again. No accumulation or drying simulation.
+- `sampleMaterialAppearance` (function): function sampleMaterialAppearance(field: Pick<EnvironmentField, "sample">, target: MaterialAppearanceTarget, baseline: MaterialAppearanceBaseline, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Exactly one field sample per target; no traversal, subscription, hidden tick, or full-world scan.
+
 ## @jgengine/core/movement/avatarGait
 
 - `DEFAULT_GAIT_TUNING` (const): const DEFAULT_GAIT_TUNING: GaitTuning — ⚠ undocumented
@@ -3217,7 +3227,7 @@
 
 - `EnvironmentField` (interface): interface EnvironmentField { sample(x: number, z: number, time: number, y?: number): EnvironmentSample; temperature(x: number, z: number, time: number, y?: number): number; wetness(x: number, z: number, time: number): number; lightExposure(x: number, z: number, time:… — ⚠ undocumented · used by `createEnvironmentField`: A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time.
 - `EnvironmentFieldConfig` (interface): interface EnvironmentFieldConfig { dayLength?: number; baseTemperature?: number; nightDrop?: number; altitudeLapse?: number; seaLevel?: number; terrain?: TerrainField; rain?: ScalarField; occluders?: ShadeProvider; heatSources?: readonly HeatSource[]; ambientFloor?: number… — ⚠ undocumented · used by `createEnvironmentField`: A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time.
-- `EnvironmentSample` (interface): interface EnvironmentSample { temperature: number; wetness: number; lightExposure: number; ambientLight: number; sheltered: boolean } — ⚠ undocumented
+- `EnvironmentSample` (interface): interface EnvironmentSample { temperature: number; wetness: number; lightExposure: number; ambientLight: number; sheltered: boolean } — ⚠ undocumented · used by `resolveMaterialAppearance` (@jgengine/core/material/appearanceSignals): Resolve one surface from an immutable dry baseline, avoiding cumulative drift.
 - `HeatSource` (interface): interface HeatSource — A localized warmth source — campfire, forge, geothermal vent.
 - `OccluderRect` (interface): interface OccluderRect — A sky-occluding footprint — a roof, dense canopy, a cave mouth. `shade` 0..1 = fraction of sky blocked.
 - `ScalarField` (type): type ScalarField = number | ((x: number, z: number, time: number) => number) — ⚠ undocumented

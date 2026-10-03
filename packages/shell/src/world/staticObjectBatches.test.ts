@@ -57,6 +57,7 @@ describe("static authored object batching", () => {
       { model: { url: "a", ik: "auto" } }, { model: { url: "a", parts: [{ model: "b" }] } },
       { model: { url: "a", attachments: [{ model: "b", slot: "hand" }] } },
       { model: { url: "a", material: { maps: { color: "a.png" } } } }, { model: { url: "a", scale: -1 } },
+      { model: { url: "a", materialAssignments: [{ materialId: "cloth", selector: { slot: "Shirt" } }] } },
       { object: { ...candidate(0).object, state: { locked: true } } },
       { style: { hidden: true } }, { style: { color: "red", opacity: 0.4 } },
       { object: { ...candidate(0).object, visual: { scale: [2, 3, 0.5] } } },

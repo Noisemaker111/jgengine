@@ -267,6 +267,12 @@
 - `runtimeEntityWriteBackCommand` (function): function runtimeEntityWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Builds an undoable document command from an ephemeral runtime entity row (write-back). Returns null when there is nothing to promote. Does not mutate document or clear the override — the caller dispatches the command and then clears the override.
 - `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
 
+## @jgengine/core/editor/materialAuthoring
+
+- `authoredMaterialAssignments` (function): function authoredMaterialAssignments(meta: Record<string, unknown> | undefined): MaterialAssignment[] — Read named assignments from authored marker metadata without inferring whole-model overrides.
+- `modelWithAuthoredMaterials` (function): function modelWithAuthoredMaterials(model: ModelConfig | undefined, document: Pick<EditorDocument, "markers" | "materialAssets">, instanceId: string): ModelConfig | undefined — Apply authored references; document assets and selectors override model defaults of the same identity.
+- `parseEditorMaterialAsset` (function): function parseEditorMaterialAsset(value: unknown): MaterialAsset — Validate and copy a material asset at the editor boundary.
+
 ## @jgengine/core/editor/minimap
 
 - `DocumentBakeOptions` (interface): interface DocumentBakeOptions extends MinimapBakeOptions — Options for {@link bakeMinimapFromDocument}.
@@ -496,6 +502,10 @@
 
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, }: { gameId: string; session: EditorSession; api: EditorHostApi; assets: readonly EditorAssetEntry[]; ui: EditorUiStore; /** The document… — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 
+## @jgengine/editor/MaterialAssetEditor
+
+- `MaterialAssetEditorProps` (interface): interface MaterialAssetEditorProps — A callback-driven physical material editor; the host owns persistence, undo and preview rendering.
+
 ## @jgengine/editor/PerfProbe
 
 - `PerfProbe` (const): const PerfProbe: React.MemoExoticComponent<({ api }: { api: EditorHostApi; }) => null> — In-canvas frame counter: publishes fps/draw-call samples to the editor host every 500ms.
@@ -663,6 +673,14 @@
 - `MaterialAssignmentRow` (interface): interface MaterialAssignmentRow — One object row in the materials workspace browser.
 - `MaterialDocumentSlice` (interface): interface MaterialDocumentSlice — Minimal document slice the materials inventory needs.
 - `MaterialObjectKind` (type): type MaterialObjectKind = "marker" | "volume" | "path" — Document-wide material assignment inventory for the Materials workspace. Reads real `meta.materialId` stamps from placeables — no thumbnails or faked previews.
+
+## @jgengine/editor/materialControls
+
+- `MaterialControl` (interface): interface MaterialControl — One physical surface field in the material workspace.
+- `MaterialControlGroup` (interface): interface MaterialControlGroup — A family-specific group of primary controls; maps and full physical fields remain available.
+- `advancedMaterialControls` (const): const advancedMaterialControls: readonly MaterialControl[] — Complete supported physical scalar/color fields, independent of the six primary groups.
+- `materialAuthoringNotes` (function): function materialAuthoringNotes(asset: MaterialAsset): readonly string[] — Reports geometry prerequisites and renderer approximations to authors.
+- `materialControlGroups` (function): function materialControlGroups(family: MaterialFamily): readonly MaterialControlGroup[] — Returns six primary groups suited to the material family without hiding the physical model.
 
 ## @jgengine/editor/mcp/bridgeServer
 

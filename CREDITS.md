@@ -189,3 +189,7 @@ The fantasy sprite sheets under `apps/dev/public/game-assets/wow/` and
 icons, plus their slicing manifests) were AI-generated for this repository and
 sliced into sheets by its own tooling. They are first-party assets — no
 third-party artwork, asset pack, or outside artist is involved.
+
+### Material authoring proof assets
+
+The material showcase bundles [SheenChair](https://github.com/KhronosGroup/glTF-Sample-Assets/tree/edc7c9e67c639d230715049ee31f9a96a6babbbe/Models/SheenChair) by Eric Chadwick for Wayfair, LLC (2020), CC0-1.0. Its original embedded material maps and authorship are retained. Sample bytes are not distributed in the SDK. The strand coverage SVG and material parameter starting points are original JGengine contributor work under Apache-2.0. The rough-ground maps use the existing ambientCG Ground025 CC0 source already credited above.

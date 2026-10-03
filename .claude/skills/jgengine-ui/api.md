@@ -2270,7 +2270,7 @@
 
 ## @jgengine/shell/materialOverride
 
-- `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions { clone?: boolean; textures?: MaterialOverrideTextures } — ⚠ undocumented
+- `MaterialOverrideOptions` (interface): interface MaterialOverrideOptions { clone?: boolean; textures?: MaterialOverrideTextures; ownMaterial?: (material: THREE.Material) => void } — ⚠ undocumented
 - `MaterialOverrideTextures` (interface): interface MaterialOverrideTextures — Loaded PBR textures for `applyMaterialOverride`'s `textures` option — matches `ModelMaterialMaps`' roles.
 
 ## @jgengine/shell/multiplayer
@@ -2343,6 +2343,10 @@
 - `EntityPreview` (function): function EntityPreview({ children, model, instanceId, mood = "studio", backdrop, turntable = 0, faceCamera = false, forward, environment = true, cameraPosition = [0, 1, 3], fov = 35, dpr = [1, 2], className, style, }: EntityPreviewProps): React.JSX.Element — Drop-in live 3D preview of a single entity — the character-screen portrait, unit inspector, or loadout viewer. It owns all the plumbing a game would otherwise re-derive by hand: a nested `<Canvas>`, the {@link GameContextBridge} that carries the running `GameContext` across the R3F reconciler boundary (so the subject's `useEntityRenderCues` / `useGameContext` hooks resolve and it mirrors the live game), a {@link StudioStage} 3-point lighting rig with optional turntable / face-camera, and a capture-friendly GL surface. The game keeps ownership of its `renderEntity`: pass it as `children`, or hand a native `model` (+ `instanceId`) for an engine-composed body. Bound to a live `instanceId`, the portrait walks, flinches, and topples in lockstep with the world instead of a canned spin.
 - `EntityPreviewProps` (interface): interface EntityPreviewProps — Props for {@link EntityPreview}.
 
+## @jgengine/shell/render/HairCards
+
+- `HairCards` (function): function HairCards({ cards, material }: { cards: HairCardAuthoring; material: MaterialAsset }): React.JSX.Element — Render authored guide ribbons with explicit UVs and strand tangents; motion and collision remain caller-owned.
+
 ## @jgengine/shell/render/PartMotion
 
 - `PartMotionRig` (function): function PartMotionRig({ parts, model, instanceId, renderPart, children, }: { parts: readonly ModelPart[]; model: ModelConfig; instanceId?: string; /** Renders one part's model content (the shell passes its part renderer to avoid an import cycle). */ renderPart: (part: ModelPart, index: number) => R… — Procedural motion rig for a rig-less part-composed character (`ModelPart.role` — see `@jgengine/core/game/partAnimation`). Wraps the whole composition in a root group that bobs, breathes, flinches on `combat.hitReaction`, and topples on `entity.died`, while each role-tagged part swings around its authored transform — legs/arms counter-phase from the entity's live movement speed, head counter-sway, tail wag, wing flap. Untagged parts render as static kit pieces. Children are the base model content (primitive, attachments).
@@ -2381,10 +2385,31 @@
 
 ## @jgengine/shell/render/authoredSurfaceMaterial
 
-- `AuthoredSurfaceConfig` (interface): interface AuthoredSurfaceConfig extends ModelMaterialOverride — Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract.
+- `AuthoredSurfaceConfig` (interface): interface AuthoredSurfaceConfig extends Omit<ModelMaterialOverride, "anisotropy" | "normalScale"> — Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract.
 - `AuthoredSurfaceMaterial` (function): function AuthoredSurfaceMaterial({ surface, shape = "box" }: { surface: AuthoredSurfaceConfig; shape?: SurfaceShape }): React.JSX.Element — Mount an owned PBR surface material on a mesh.
 - `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
 - `useAuthoredSurfaceMaterial` (function): function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial — Load declared surface-map roles and own the material/map clones (cached textures remain untouched). Colour/emissive maps are sRGB; normal, AO, roughness, metalness and height are linear. Cylinder side metres use the RMS ellipse circumference approximation. Static batches and custom meshes share this lifecycle.
+
+## @jgengine/shell/render/materialAppearanceSignals
+
+- `RenderMaterialAppearanceBaseline` (interface): interface RenderMaterialAppearanceBaseline extends MaterialAppearanceBaseline — Immutable resolved baseline for one caller-owned assigned material, including its original card exposure.
+- `applyMaterialAppearanceSignals` (function): function applyMaterialAppearanceSignals(material: THREE.MeshStandardMaterial, baseline: MaterialAppearanceBaseline, sample: EnvironmentSample, policy: MaterialAppearancePolicy = {}): MaterialAppearanceResponse — Apply one sample to an already owned material. Imported/cache materials must be cloned before use. Allocates no textures or materials; clearcoat/sheen require an existing physical material and opt-in policy.
+- `captureMaterialAppearanceBaseline` (function): function captureMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial): RenderMaterialAppearanceBaseline — Capture once after assignment; recapture after an authored change. Never capture an already wet material.
+- `restoreMaterialAppearanceBaseline` (function): function restoreMaterialAppearanceBaseline(material: THREE.MeshStandardMaterial, baseline: RenderMaterialAppearanceBaseline): void — Restore the dry baseline when removing an appearance binding; maps and unrelated imported features remain borrowed.
+
+## @jgengine/shell/render/materialAsset
+
+- `MaterialAssetSurface` (function): function MaterialAssetSurface({ asset, ...options }: { asset: MaterialAsset } & MaterialAssetSurfaceOptions): React.JSX.Element — Mount a serializable material asset on an authored primitive, sharing model-slot rendering and owned resource cleanup.
+- `MaterialAssetSurfaceOptions` (interface): interface MaterialAssetSurfaceOptions — Reusable primitive surface options; physical metre UVs reuse the instanced surface renderer.
+- `ModelMaterialSlotInfo` (interface): interface ModelMaterialSlotInfo — Runtime imported-slot inventory for precise authoring selectors; indices address the mesh material array.
+- `applyMaterialAsset` (function): function applyMaterialAsset(material: THREE.Material, asset: MaterialAsset, textures?: MaterialOverrideTextures, overrides?: MaterialSurfaceParameters): THREE.MeshStandardMaterial — Apply one reusable material's parameters, map views and construction to an imported PBR slot.
+- `applyMaterialAssignments` (function): function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map()): THREE.Material[] — Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them for cleanup.
+- `configureMaterialTexture` (function): function configureMaterialTexture(role: MaterialTextureRole, metadata: MaterialTextureMetadata, source: THREE.Texture): THREE.Texture — Validate and configure an owned texture view while retaining the loader's immutable source.
+- `inspectModelMaterialSlots` (function): function inspectModelMaterialSlots(root: THREE.Object3D): ModelMaterialSlotInfo[] — Inspect imported names, local slot indices and directional/map prerequisites without mutating the source.
+- `materialAssetSurface` (function): function materialAssetSurface(asset: MaterialAsset, overrides: MaterialSurfaceParameters = {}): MaterialSurfaceParameters — Physical defaults adapt a declared construction; explicit authored parameters remain authoritative.
+- `materialResourceMetrics` (function): function materialResourceMetrics(materials: readonly THREE.Material[]): { materials: number; textures: number; textureBytes: number; unknownTextureSizes: number; blendedMaterials: number; maskedMaterials: number; transmissionMaterials: number; doubleSidedMaterials: number; physicalMaterials: number … — Estimate texture allocation from loaded dimensions/mips and report pass/coverage risks. Compressed maps count actual mip bytes; uncompressed bytes bound texture views that may share uploads. This does not measure pixel overdraw.
+- `setHairCardLightExposure` (function): function setHairCardLightExposure(material: THREE.Material, exposure: number): void — Gate the existing thin-sheet hair-card scatter by sampled local light exposure, without changing scene exposure.
+- `useMaterialAssetMaterial` (function): function useMaterialAssetMaterial(asset: MaterialAsset, options: MaterialAssetSurfaceOptions = {}): THREE.MeshStandardMaterial — Load map views, own their cleanup and build the same physical shader used by model assignments.
 
 ## @jgengine/shell/render/measureBounds
 
