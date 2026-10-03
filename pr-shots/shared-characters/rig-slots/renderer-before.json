@@ -1,0 +1,115 @@
+{
+  "label": "unreleased earlier public package actual attachment failure",
+  "cohort": "c2aa2e4b322e2061b0b7f1e3783e4c1e7f28a9a5",
+  "tree": "bbd290e4384184a1d3d45da4898c6c6c913ecef5",
+  "packageExports": [
+    {
+      "name": "@jgengine/shell/render/SceneModels",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/rig-slots/node_modules/@jgengine/shell/dist/render/SceneModels.js",
+      "sha256": "32b98e044a3614df3bc6d4c45bc443c0e63443f0838192b9ea4ea9bf432a56e1"
+    },
+    {
+      "name": "@jgengine/shell/render/modelLoad",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/rig-slots/node_modules/@jgengine/shell/dist/render/modelLoad.js",
+      "sha256": "5124b80ce1bb05d37c81a375151dad7d2d06b08a0104e463f99d2528f27e67e8"
+    }
+  ],
+  "sourceModelsUnchanged": true,
+  "sourceModelSha256": {
+    "gauge": "36543492011c4ac99319cd29f2e0666896222710fbd972dded38c461805de78d",
+    "reactor_hunter": "8b8807b0371531e3ed44526f1f741de4a916784b0ef796511de1736d368dabf6",
+    "lantern": "525f950d44c28c76d48abea559ab9d22bd5e3344173cf2045671e7352f00ef98"
+  },
+  "gameSourceFiles": [
+    {
+      "file": "scrap-signal/src/game/world/models.ts",
+      "sha256": "a2faf347f83bf2d78ef8b901cc9f3828707da999917558c09935cae21fa0d43f"
+    },
+    {
+      "file": "lantern-reach/src/game/models.ts",
+      "sha256": "11590e674ed0ec2a793fe07bc5e2ca3ac2bd3e3320e0a65ab8c1339a24802a1a"
+    }
+  ],
+  "importedImageDecodeSkipped": true,
+  "headlessR3FRendererNoPixelOrPerformanceClaim": true,
+  "hashes": [
+    {
+      "game": "scrap-signal",
+      "url": "/models/kaykit-adventurers/Knight.glb",
+      "path": "/workspace/JGengine-games/.claude/worktrees/character-proof/scrap-signal/public/models/kaykit-adventurers/Knight.glb",
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "clips": 76
+    },
+    {
+      "game": "scrap-signal",
+      "url": "/models/kaykit-adventurers/sword_1handed.glb",
+      "path": "/workspace/JGengine-games/.claude/worktrees/character-proof/scrap-signal/public/models/kaykit-adventurers/sword_1handed.glb",
+      "sha256": "2682f6e932b84c2513b4c26b82a627497e113322f4ae947797c285121f2e8a98",
+      "clips": 0
+    },
+    {
+      "game": "scrap-signal",
+      "url": "/models/kaykit-adventurers/Rogue_Hooded.glb",
+      "path": "/workspace/JGengine-games/.claude/worktrees/character-proof/scrap-signal/public/models/kaykit-adventurers/Rogue_Hooded.glb",
+      "sha256": "93e6e25213009952276d9cf34f5d96a243767334c66f280db0433ddfabb91545",
+      "clips": 76
+    },
+    {
+      "game": "scrap-signal",
+      "url": "/models/kaykit-adventurers/crossbow_1handed.glb",
+      "path": "/workspace/JGengine-games/.claude/worktrees/character-proof/scrap-signal/public/models/kaykit-adventurers/crossbow_1handed.glb",
+      "sha256": "22c9ee6a17e08a16444fbeb80ad56e56dcff510a1261852a616e1392a60f0171",
+      "clips": 0
+    },
+    {
+      "game": "lantern-reach",
+      "url": "/models/lantern-reach/players/knight.glb",
+      "path": "/workspace/JGengine-games/.claude/worktrees/character-proof/lantern-reach/public/models/lantern-reach/players/knight.glb",
+      "sha256": "ce0d0a5ec1d67594629ecac20a7576fde22a44456e7628e8eb100891bc6dda97",
+      "clips": 22
+    }
+  ],
+  "rawSlotFailures": [
+    {
+      "model": "gauge",
+      "slot": "handslot.r",
+      "runtimeName": "handslotr",
+      "directLookupMissing": true,
+      "importedOriginalNameUnique": true
+    },
+    {
+      "model": "reactor_hunter",
+      "slot": "handslot.r",
+      "runtimeName": "handslotr",
+      "directLookupMissing": true,
+      "importedOriginalNameUnique": true
+    }
+  ],
+  "record": {
+    "gaugeA": {
+      "slot": "handslot.r",
+      "runtimeName": "handslotr",
+      "attached": false
+    },
+    "gaugeB": {
+      "slot": "handslot.r",
+      "runtimeName": "handslotr",
+      "attached": false
+    },
+    "hunter": {
+      "slot": "handslot.r",
+      "runtimeName": "handslotr",
+      "attached": false
+    },
+    "lanternHasNoAttachments": true
+  },
+  "cachedRigTransformsHierarchyPreserved": true,
+  "cachedMaterialDisposals": 0,
+  "cachedGeometryDisposals": 0,
+  "ownedMaterialDisposals": 0,
+  "warnings": [
+    "[jgengine] entityModels attachment: bone/slot \"handslot.r\" not found on the rig",
+    "[jgengine] entityModels attachment: bone/slot \"handslot.r\" not found on the rig",
+    "[jgengine] entityModels attachment: bone/slot \"handslot.r\" not found on the rig"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "head": "4955a4444167b22650e929f807a7d4572375d261",
+  "tree": "399e4d76a29c416f41fc454c220afdf206736b84",
+  "worktreeStatus": "",
+  "initialSourceAttribution": ".scratch/characters/rig-slots-checks/source-attribution.json",
+  "verifiedSourceFilesUnchanged": {
+    "packages/shell/src/render/SceneModels.tsx": true,
+    "packages/shell/src/render/useFootIk.ts": true,
+    "packages/shell/src/render/useFootIk.test.ts": true,
+    "packages/shell/src/render/rigNode.ts": true,
+    "packages/shell/src/render/rigNode.test.ts": true,
+    ".claude/skills/jgengine-world/recipes/character-animation.md": true
+  },
+  "checks": {
+    "focused-tests": {
+      "exitCode": 0,
+      "log": ".scratch/characters/rig-slots-checks/focused-tests.log",
+      "tests": 39,
+      "assertions": 217,
+      "files": 4
+    },
+    "shell-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/rig-slots-checks/shell-types.log"
+    },
+    "gen": {
+      "exitCode": 0,
+      "log": ".scratch/characters/rig-slots-checks/gen.log"
+    },
+    "ship-preflight": {
+      "exitCode": 0,
+      "log": ".scratch/characters/rig-slots-checks/ship-preflight.log"
+    }
+  }
+}

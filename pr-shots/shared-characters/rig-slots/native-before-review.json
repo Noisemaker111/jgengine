@@ -1,0 +1,53 @@
+{
+  "scenario": "existing originalNPC Gauge in frozenEditorview before shared imported-slot fix",
+  "cohort": "validatedc2aa, unreleased; original c2aa install retained",
+  "attribution": "before-attribution.json",
+  "target": "npc_gauge",
+  "actualPublicInitPosition": [
+    2,
+    18.261346873407685,
+    20
+  ],
+  "camera": "camera-request.json",
+  "modelConfigSha256SortedJSON": "a150dfd2fd5d2dd68a7df27a4ce9ddd2f300915dad6740f4d0bd1e13f5efe91f",
+  "firstCaptureExit": 0,
+  "firstCaptureImage": "url-scrap-gauge-rig-before.png",
+  "inspection": "Gauge feet and lower hands visible, torso/head occluded by opaque logicalNPC glyph; no full-body or absent-sword visual proof accepted.",
+  "attachmentConsoleWarningCount": 28,
+  "snapshot": {
+    "entities": 112,
+    "fallbacks": {},
+    "textureErrors": [],
+    "render": {
+      "drawCalls": 417,
+      "triangles": 832363,
+      "geometries": 204,
+      "textures": 135
+    }
+  },
+  "sceneDocumentSHAUnchanged": true,
+  "beforeViewLimit": {
+    "observations": 2,
+    "cap": 2,
+    "state": "no more before retries",
+    "secondCaptureExit": 1,
+    "secondLog": "before-visible-native.log",
+    "reason": "normal Hide npc layer eye is CSSopacity0 untilgroup hover; officialdrive correctly rejected invisible target",
+    "nextNormalUIPath": "after newsource only: fill Search scene objects=gauge, click npc kindheader toplacepointerinrow, clickHide npc layer, preservingdocument and same camera"
+  },
+  "assetIdentity": {
+    "Knight.glb": {
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "bytes": 3659532
+    },
+    "sword_1handed.glb": {
+      "sha256": "2682f6e932b84c2513b4c26b82a627497e113322f4ae947797c285121f2e8a98",
+      "bytes": 14624
+    }
+  },
+  "limits": [
+    "No game/source/authoredcontent mutation; all camera positions derived from actual unchanged publicgame.loop.onInit.",
+    "FrozenEditorview attachmentpresence only, no livewalking or controlsfeel claim.",
+    "SoftwareGL, no hardwareperformance claim."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "claim": "Imported authored slot lookup only; no rendering or attachment pose claim",
+  "rows": [
+    {
+      "asset": "apps/dev/public/models/kaykit-adventurers/Knight.glb",
+      "slot": "handslot.r",
+      "exactLookupFound": false,
+      "aliases": [
+        {
+          "runtimeName": "handslotr",
+          "originalName": "handslot.r",
+          "type": "Bone"
+        }
+      ],
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168"
+    },
+    {
+      "asset": "apps/dev/public/models/kaykit-adventurers/Rogue_Hooded.glb",
+      "slot": "handslot.r",
+      "exactLookupFound": false,
+      "aliases": [
+        {
+          "runtimeName": "handslotr",
+          "originalName": "handslot.r",
+          "type": "Bone"
+        }
+      ],
+      "sha256": "93e6e25213009952276d9cf34f5d96a243767334c66f280db0433ddfabb91545"
+    }
+  ],
+  "engineCommit": "05b424d81174a9424705aaf271f15929a739629d",
+  "sourceLookup": "packages/shell/src/render/SceneModels.tsx: rig.getObjectByName(slot)"
+}
