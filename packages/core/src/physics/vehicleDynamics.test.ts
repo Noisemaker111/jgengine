@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import type { AxisInput } from "../input/axisInput";
 import { tickDrivableVehicle } from "./drivableVehicle";
+import { createVehicleObstacleClamp } from "./vehicleObstacles";
 import { measureAir, measureCourse, measureHandling, measureLean, measureRide } from "./handlingProbe";
 import {
   createVehicleDynamics,
@@ -87,6 +88,39 @@ const ballCar: VehicleDynamicsTuning = {
 function axis(partial: Partial<AxisInput>): AxisInput {
   return { throttle: 0, brake: 0, steer: 0, handbrake: 0, ...partial };
 }
+
+describe("vehicle dynamics collision recovery", () => {
+  test("an overlapping solid recovers a force-model car without injecting momentum", () => {
+    const clamp = createVehicleObstacleClamp({
+      obstacles: () => [{ position: [0, 0, 0.3], halfExtents: [1.4, 1.2, 1.4] }],
+      radius: 1.4, dt: () => DT,
+    });
+    const car = createVehicleDynamics(gripRwd, { heading: -Math.PI, clampMove: clamp.clampMove });
+    const step = car.tick(DT, axis({}));
+    expect(step.position[2]).toBeLessThan(-2.4);
+    expect(car.velocity()).toEqual([0, 0]);
+    expect(clamp.takeImpact()).toBeNull();
+    for (let i = 0; i < 60; i++) car.tick(DT, axis({}));
+    expect(car.pose().position[2]).toBeCloseTo(step.position[2], 9);
+  });
+
+  test("a plain diagonal clamp preserves motion and is called once per physics substep", () => {
+    let calls = 0;
+    const car = createVehicleDynamics(ballCar, {
+      heading: Math.PI / 2,
+      clampMove: (from, to) => {
+        calls++;
+        const dx = (to[0] - from[0]) / 2;
+        return [from[0] + dx, from[1] - dx];
+      },
+    });
+    car.tick(DT / 4, axis({ throttle: 1 }));
+    expect(calls).toBe(1);
+    const [vx, vz] = car.velocity();
+    expect(vx).toBeGreaterThan(0);
+    expect(vz).toBeCloseTo(-vx, 9);
+  });
+});
 
 function driveScript(tuning: VehicleDynamicsTuning, dt: number, seconds: number) {
   const car = createVehicleDynamics(tuning);

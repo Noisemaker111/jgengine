@@ -137,13 +137,16 @@ export interface KinematicVehicleOptions {
   /**
    * Veto or clamp a planar move before it commits — walls, closed gates, arena bounds. Given the
    * attempted `from`→`to` on the XZ plane, return the destination actually allowed; velocity is
-   * rederived from the permitted displacement, so motion blocked on an axis stops on that axis
-   * instead of grinding into the obstacle. Default: no clamp (the move always commits).
+   * rederived from the permitted displacement, so motion blocked on an axis stops on that axis.
+   * A result may carry `motion`, the permitted XZ displacement in world units before position
+   * recovery. Use it when the endpoint also depenetrates the body: recovery must not add velocity.
+   * Plain tuple results retain displacement-based velocity. Called once per tick; no purity required.
+   * Default: no clamp (the move always commits).
    */
   clampMove?: (
     from: readonly [number, number],
     to: readonly [number, number],
-  ) => readonly [number, number];
+  ) => readonly [number, number] & { readonly motion?: readonly [number, number] };
 }
 
 /**
@@ -505,8 +508,8 @@ export function createKinematicVehicle(
       const toZ = z + vz * dt;
       if (clampMove !== undefined && dt > 0) {
         const allowed = clampMove([x, z], [toX, toZ]);
-        vx = (allowed[0] - x) / dt;
-        vz = (allowed[1] - z) / dt;
+        vx = (allowed.motion?.[0] ?? allowed[0] - x) / dt;
+        vz = (allowed.motion?.[1] ?? allowed[1] - z) / dt;
         x = allowed[0];
         z = allowed[1];
       } else {

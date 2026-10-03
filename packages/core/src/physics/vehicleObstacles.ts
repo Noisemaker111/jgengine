@@ -1,4 +1,5 @@
 import { resolveObstacleStep, type CollisionObstacle } from "../movement/movementModel";
+import type { KinematicVehicleOptions } from "./kinematicVehicle";
 
 /**
  * A single blocked-move event a car can react to (#1051): crash damage, screen shake, a metal-crunch
@@ -19,8 +20,8 @@ export interface VehicleImpact {
  * {@link takeImpact} once per tick for the crash it produced.
  */
 export interface VehicleObstacleClamp {
-  /** Resolve an attempted `from`→`to` XZ move to the destination actually allowed (slide-along). */
-  clampMove(from: readonly [number, number], to: readonly [number, number]): readonly [number, number];
+  /** Resolve an attempted XZ move; recovery endpoints carry permitted world-unit displacement in `motion`. */
+  clampMove: NonNullable<KinematicVehicleOptions["clampMove"]>;
   /** Impact recorded since last take, consumed on read (null when none). Closing speed is the velocity component into the obstacle at block time, units/s. */
   takeImpact(): VehicleImpact | null;
 }
@@ -146,11 +147,31 @@ export function createVehicleObstacleClamp(options: {
 
       const attemptedX = to[0] - from[0];
       const attemptedZ = to[1] - from[1];
-      const step = resolveObstacleStep([from[0], CAR_BODY_MID_Y, from[1]], attemptedX, attemptedZ, vehicleView(obstacles), radius);
+      const current: readonly [number, number, number] = [from[0], CAR_BODY_MID_Y, from[1]];
+      const solids = vehicleView(obstacles);
+      const step = resolveObstacleStep(current, attemptedX, attemptedZ, solids, radius);
 
-      const blockedX = attemptedX - step.stepX;
-      const blockedZ = attemptedZ - step.stepZ;
-      if (blockedX === 0 && blockedZ === 0) return to;
+      if (attemptedX === step.stepX && attemptedZ === step.stepZ) return to;
+
+      // The resolver's zero-step escape is the same positional recovery included in `step`.
+      // Separate it from motion using this tick's already sampled solids, never a second callback.
+      // This preserves the resolver's tangential projection, including diagonal/compound contacts.
+      const escape = resolveObstacleStep(current, 0, 0, solids, radius);
+      const recovering = escape.stepX !== 0 || escape.stepZ !== 0;
+      // Recover first, then collide the motor move at that safe origin. Otherwise the resolver
+      // excludes the penetrated box and permits driving straight back into it on every tick.
+      const motion = recovering
+        ? resolveObstacleStep([from[0] + escape.stepX, CAR_BODY_MID_Y, from[1] + escape.stepZ], attemptedX, attemptedZ, solids, radius)
+        : step;
+      // One bounded recovery pass may meet another overlapping solid. Keep that second escape
+      // positional too; overlapping/inconsistent solids never become an unbounded recovery loop.
+      const secondaryEscape = recovering
+        ? resolveObstacleStep([from[0] + escape.stepX, CAR_BODY_MID_Y, from[1] + escape.stepZ], 0, 0, solids, radius)
+        : { stepX: 0, stepZ: 0 };
+      const motionX = motion.stepX - secondaryEscape.stepX;
+      const motionZ = motion.stepZ - secondaryEscape.stepZ;
+      const blockedX = attemptedX - motionX;
+      const blockedZ = attemptedZ - motionZ;
 
       const blockedMag = Math.hypot(blockedX, blockedZ);
       if (blockedMag > BLOCK_EPSILON) {
@@ -164,7 +185,12 @@ export function createVehicleObstacleClamp(options: {
           };
         }
       }
-      return [from[0] + step.stepX, from[1] + step.stepZ];
+      const result: ReturnType<VehicleObstacleClamp["clampMove"]> = [from[0] + escape.stepX + motion.stepX, from[1] + escape.stepZ + motion.stepZ];
+      if (recovering) {
+        // Per-result tuples stay stable if a host retains a prior result for diagnostics.
+        return Object.assign(result, { motion: [motionX, motionZ] as const });
+      }
+      return result;
     },
     takeImpact() {
       const impact = pending;
