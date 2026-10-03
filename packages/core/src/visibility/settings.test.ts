@@ -83,6 +83,7 @@ describe("mergeCullingSettings / mergeStreamingSettings", () => {
     const merged = mergeStreamingSettings(DEFAULT_STREAMING_SETTINGS, { maxLoadsPerFrame: 1 });
     expect(merged.maxLoadsPerFrame).toBe(1);
     expect(merged.preloadMargin).toBe(DEFAULT_STREAMING_SETTINGS.preloadMargin);
+    expect(merged.maxConcurrentLoads).toBe(DEFAULT_STREAMING_SETTINGS.maxConcurrentLoads);
   });
 });
 
@@ -103,6 +104,7 @@ describe("default settings sanity", () => {
     expect(DEFAULT_STREAMING_SETTINGS.preloadMargin).toBeGreaterThan(0);
     expect(DEFAULT_STREAMING_SETTINGS.unloadGraceSeconds).toBeGreaterThan(0);
     expect(DEFAULT_STREAMING_SETTINGS.maxLoadsPerFrame).toBeGreaterThan(0);
+    expect(DEFAULT_STREAMING_SETTINGS.maxConcurrentLoads).toBe(4);
     expect(DEFAULT_STREAMING_SETTINGS.maxUnloadsPerFrame).toBeGreaterThan(0);
     expect(DEFAULT_STREAMING_SETTINGS.keepResidentBytes).toBeGreaterThan(0);
   });

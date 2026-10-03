@@ -3,7 +3,164 @@ import type { AssetLoadResult } from "@jgengine/core/visibility/assetStreaming";
 import { createAssetStreamingSystem } from "@jgengine/core/visibility/assetStreaming";
 import { createVisibilityStats } from "@jgengine/core/visibility/diagnostics";
 
+function deferredLoad() {
+  let resolve!: (result: AssetLoadResult) => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<AssetLoadResult>((ok, fail) => { resolve = ok; reject = fail; });
+  return { promise, resolve, reject };
+}
+
 describe("assetStreaming", () => {
+  test("frame starts and retunable concurrency limits apply independently", async () => {
+    const loads = Array.from({ length: 4 }, deferredLoad);
+    let calls = 0;
+    const system = createAssetStreamingSystem({
+      settings: { maxLoadsPerFrame: 1, maxConcurrentLoads: 2 },
+      load: () => loads[calls++]!.promise,
+    });
+    for (let i = 0; i < 4; i++) system.request(`a${i}`);
+    system.tick(0);
+    expect(calls).toBe(1);
+    system.tick(0);
+    system.tick(0);
+    expect(calls).toBe(2);
+    system.retune({ maxConcurrentLoads: 1 });
+    system.tick(0);
+    expect(system.stats().inFlight).toBe(2);
+    loads[0]!.resolve({});
+    loads[1]!.resolve({});
+    await system.settle();
+    system.retune({ maxConcurrentLoads: 0 });
+    system.tick(0);
+    expect(calls).toBe(2);
+    system.retune({ maxConcurrentLoads: 2, maxLoadsPerFrame: 2 });
+    system.tick(0);
+    expect(calls).toBe(4);
+    loads[2]!.resolve({});
+    loads[3]!.resolve({});
+    await system.settle();
+  });
+
+  test("rejects invalid concurrency limits without changing live policy", async () => {
+    const pending = deferredLoad();
+    let calls = 0;
+    const system = createAssetStreamingSystem({
+      settings: { maxConcurrentLoads: 1 },
+      load: () => { calls++; return pending.promise; },
+    });
+    for (const limit of [-1, 0.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(() => createAssetStreamingSystem({ settings: { maxConcurrentLoads: limit }, load: async () => ({}) })).toThrow(RangeError);
+      expect(() => system.retune({ maxConcurrentLoads: limit })).toThrow(RangeError);
+    }
+    system.request("a");
+    system.request("b");
+    system.tick(0);
+    system.tick(0);
+    expect(calls).toBe(1);
+    pending.resolve({});
+    await system.settle();
+  });
+
+  test("stalled loads stay within the concurrency limit across repeated ticks", async () => {
+    const loads = Array.from({ length: 6 }, deferredLoad);
+    const started: string[] = [];
+    const system = createAssetStreamingSystem({
+      settings: { maxConcurrentLoads: 2 },
+      load: (id) => { started.push(id); return loads[started.length - 1]!.promise; },
+    });
+    for (let i = 0; i < 6; i++) system.request(`a${i}`, i);
+    for (let i = 0; i < 100; i++) system.tick(0);
+    expect(started).toEqual(["a5", "a4"]);
+    expect(system.stats().inFlight).toBe(2);
+    expect(system.stats().queued).toBe(4);
+    loads[0]!.resolve({ bytes: 1 });
+    loads[1]!.reject(new Error("failed"));
+    await system.settle();
+    system.tick(0);
+    expect(started).toEqual(["a5", "a4", "a3", "a2"]);
+    for (const load of loads) load.resolve({ bytes: 1 });
+    await system.settle();
+  });
+
+  test("cancelled work holds capacity and same-id retries until it settles", async () => {
+    const first = deferredLoad(), retry = deferredLoad();
+    const unloaded: string[] = [];
+    let calls = 0;
+    const system = createAssetStreamingSystem({
+      settings: { maxConcurrentLoads: 2 },
+      unload: (id) => unloaded.push(id),
+      load: () => (++calls === 1 ? first.promise : retry.promise),
+    });
+    system.request("a");
+    system.tick(0);
+    system.cancel("a");
+    system.cancel("a");
+    system.request("a");
+    system.tick(0);
+    expect(calls).toBe(1);
+    expect(system.stats().inFlight).toBe(1);
+    expect(system.stats().cancelled).toBe(1);
+    first.resolve({ bytes: 100, value: "stale" });
+    await system.settle();
+    expect(system.stateOf("a")).toBe("queued");
+    expect(unloaded).toEqual(["a"]);
+    system.tick(0);
+    expect(calls).toBe(2);
+    retry.resolve({ bytes: 200, value: "current" });
+    await system.settle();
+    expect(system.record("a")?.value).toBe("current");
+  });
+
+  test("clear releases resident resources but tracks cancelled work until settlement", async () => {
+    const pending = deferredLoad();
+    const unloaded: string[] = [];
+    let calls = 0;
+    const system = createAssetStreamingSystem({
+      settings: { maxConcurrentLoads: 1 },
+      unload: (id) => unloaded.push(id),
+      load: () => (++calls === 1 ? Promise.resolve({ bytes: 1 }) : pending.promise),
+    });
+    system.request("loaded");
+    system.tick(0);
+    await system.settle();
+    system.pin("loaded");
+    system.retain("loaded");
+    system.request("pending");
+    system.tick(0);
+    system.clear();
+    system.clear();
+    expect(unloaded).toEqual(["loaded"]);
+    expect(system.stats().inFlight).toBe(1);
+    system.request("pending");
+    system.tick(0);
+    expect(calls).toBe(2);
+    let settled = false;
+    const settling = system.settle().then(() => { settled = true; });
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    pending.resolve({ bytes: 10 });
+    await settling;
+    expect(system.stateOf("pending")).toBe("queued");
+    expect(unloaded).toEqual(["loaded", "pending"]);
+    expect(system.stats().inFlight).toBe(0);
+  });
+
+  test("synchronous loader failures release their slot and become errors", async () => {
+    const system = createAssetStreamingSystem({
+      settings: { maxConcurrentLoads: 1 },
+      load: (id) => { if (id === "bad") throw new Error("failed"); return Promise.resolve({ bytes: 1 }); },
+    });
+    system.request("bad", 10);
+    system.request("good");
+    expect(() => system.tick(0)).not.toThrow();
+    await system.settle();
+    expect(system.stateOf("bad")).toBe("error");
+    expect(system.stats().inFlight).toBe(0);
+    system.tick(0);
+    await system.settle();
+    expect(system.isLoaded("good")).toBe(true);
+  });
+
   test("request, tick, settle resolves to loaded", async () => {
     let t = 0;
     const system = createAssetStreamingSystem({

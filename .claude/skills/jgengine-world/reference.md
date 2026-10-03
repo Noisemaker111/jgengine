@@ -297,6 +297,10 @@ Compose, don't replace: scale `MobBrainConfig.aggroRadius` by `perceptionScale`,
 
 `movement/glideModel` `createGlideModel`, `world/lod` `createLodScheduler`, `visibility/simulationCulling` `createSimulationCuller` and `visibility/spatialIndex` `createSpatialIndex` hand back a plain JSON `snapshot()` and take it back with `restore(next)`; `movement/grappleSwing` `createGrappleSwing` pairs its existing `state()` with `restore(state)`. A restored spatial index keeps cell and id order, so queries return ids in the same order.
 
+### Asset loading lifecycle
+
+Asset loading uses `visibility/assetStreaming`'s `createAssetStreamingSystem`: `maxLoadsPerFrame` limits starts per tick; `maxConcurrentLoads` caps unresolved requests (default 4), including cancelled requests until their loader settles. `retune` changes these policies live; zero concurrency pauses new loads. Same-id retries wait for cancelled work to settle. `clear` releases loaded resources and cancels demand while `settle` still waits for outstanding work; successful cancelled loads are released through `unload`. Supply an `unload` callback for resources that need disposal, and make loaders settle after cancellation.
+
 ### Snapshot and restore on AI, faction and sensor handles
 
 These handles hand back a plain JSON `snapshot()` that later ticks do not mutate, and take it back with `restore(next)`, so a host, save file or replay can rewind them bit-exactly: `ai/threat` `createThreatTable`, `ai/groupAssist` `createAssistNetwork` (membership only; `restore(next, tableOf)` rebinds each member's separately restored threat table), `faction/reputation` `createReputationLedger`, `sensor/concealment` `createConcealmentSensor`, `sensor/freezeMonitor` `createFreezeMonitor` and `sensor/recordingBuffer` `createRecordingBuffer` (frame `data` is shared, not cloned).

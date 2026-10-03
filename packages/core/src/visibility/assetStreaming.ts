@@ -17,7 +17,7 @@ export interface CancelSignal {
 }
 
 export interface AssetStreamingOptions {
-  /** Async loader. Must honor `signal.cancelled` and avoid committing work when it flips true. */
+  /** Async loader. Honor `signal.cancelled` and always settle; cancelled successful loads are released through `unload`. */
   readonly load: (assetId: string, signal: CancelSignal) => Promise<AssetLoadResult>;
   /** Release GPU/CPU resources for an asset. */
   readonly unload?: (assetId: string) => void;
@@ -58,10 +58,12 @@ export interface AssetStreamingSystem {
   unpin(assetId: string): void;
   /** Refresh the "last needed" timestamp used by the grace-period unload. */
   markActive(assetId: string): void;
-  /** Advance one frame: start up to the load budget, evict past-grace assets up to the unload budget. */
+  /** Advance one frame: start up to the frame and concurrency budgets, evict past-grace assets up to the unload budget. */
   tick(dt: number): void;
-  /** Cancel an in-flight or queued request that is no longer needed. */
+  /** Cancel demand. Unresolved loads still occupy concurrency slots and block same-id retries until settlement. */
   cancel(assetId: string): void;
+  /** Merge streaming policy. Lowering concurrency waits for existing loads to settle; zero pauses new loads. */
+  retune(settings: Partial<StreamingSettings>): void;
   stateOf(assetId: string): AssetLoadState | undefined;
   isLoaded(assetId: string): boolean;
   record(assetId: string): AssetRecord | undefined;
@@ -70,11 +72,20 @@ export interface AssetStreamingSystem {
   applyTo(stats: VisibilityStats): void;
   /** Resolve once every in-flight load settles — for deterministic tests. */
   settle(): Promise<void>;
+  /** Release loaded resources and cancel demand; outstanding loads remain tracked until settlement. */
   clear(): void;
 }
 
 export function createAssetStreamingSystem(options: AssetStreamingOptions): AssetStreamingSystem {
-  const settings: StreamingSettings = mergeStreamingSettings(DEFAULT_STREAMING_SETTINGS, options.settings ?? {});
+  function mergeSettings(base: StreamingSettings, patch: Partial<StreamingSettings>): StreamingSettings {
+    const next = mergeStreamingSettings(base, patch);
+    if (!Number.isSafeInteger(next.maxConcurrentLoads) || next.maxConcurrentLoads < 0) {
+      throw new RangeError("AssetStreamingSystem: maxConcurrentLoads must be a nonnegative safe integer");
+    }
+    return next;
+  }
+
+  let settings = mergeSettings(DEFAULT_STREAMING_SETTINGS, options.settings ?? {});
   const clock = options.now ?? nowMs;
   const records = new Map<string, AssetRecord>();
   const queued = new Set<string>();
@@ -107,12 +118,16 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
     record.state = "loading";
     const signal = { cancelled: false };
     signals.set(record.id, signal);
-    const promise = options
-      .load(record.id, signal)
+    let loading: Promise<AssetLoadResult>;
+    try {
+      loading = options.load(record.id, signal);
+    } catch (error) {
+      loading = Promise.reject(error);
+    }
+    const promise = loading
       .then((result) => {
-        signals.delete(record.id);
-        if (signal.cancelled || !records.has(record.id)) {
-          record.state = "unloaded";
+        if (signal.cancelled || records.get(record.id) !== record) {
+          options.unload?.(record.id);
           return;
         }
         record.state = "loaded";
@@ -121,10 +136,10 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
         record.lastActiveMs = clock();
       })
       .catch(() => {
-        signals.delete(record.id);
-        if (!signal.cancelled) record.state = "error";
+        if (!signal.cancelled && records.get(record.id) === record) record.state = "error";
       })
       .finally(() => {
+        if (signals.get(record.id) === signal) signals.delete(record.id);
         inFlight.delete(promise);
       });
     inFlight.add(promise);
@@ -163,15 +178,18 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
     },
     tick() {
       const now = clock();
-      if (queued.size > 0) {
+      if (queued.size > 0 && signals.size < settings.maxConcurrentLoads) {
         const pending: AssetRecord[] = [];
         for (const id of queued) {
           const record = records.get(id);
-          if (record !== undefined) pending.push(record);
+          if (record !== undefined && !signals.has(id)) pending.push(record);
         }
         pending.sort((a, b) => b.priority - a.priority);
-        const budget = Math.min(settings.maxLoadsPerFrame, pending.length);
-        for (let i = 0; i < budget; i += 1) startLoad(pending[i]!);
+        const budget = Math.min(settings.maxLoadsPerFrame, settings.maxConcurrentLoads - signals.size, pending.length);
+        for (let i = 0; i < budget && signals.size < settings.maxConcurrentLoads; i += 1) {
+          const record = pending[i]!;
+          if (queued.has(record.id) && records.get(record.id) === record && !signals.has(record.id)) startLoad(record);
+        }
       }
       let unloads = 0;
       for (const record of records.values()) {
@@ -193,12 +211,15 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
         return;
       }
       const signal = signals.get(assetId);
-      if (signal !== undefined) {
+      if (signal !== undefined && !signal.cancelled) {
         signal.cancelled = true;
         const record = records.get(assetId);
         if (record !== undefined) record.state = "unloaded";
         cancelledTotal += 1;
       }
+    },
+    retune(patch) {
+      settings = mergeSettings(settings, patch);
     },
     stateOf(assetId) {
       return records.get(assetId)?.state;
@@ -245,12 +266,12 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
     },
     clear() {
       for (const signal of signals.values()) signal.cancelled = true;
+      const loaded = [...records.values()].filter((record) => record.state === "loaded").map((record) => record.id);
       records.clear();
       queued.clear();
-      signals.clear();
-      inFlight.clear();
       unloadedTotal = 0;
       cancelledTotal = 0;
+      for (const id of loaded) options.unload?.(id);
     },
   };
 }

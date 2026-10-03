@@ -38,6 +38,8 @@ export interface StreamingSettings {
   /** Seconds an asset must stay outside the active area before it is eligible for unload. */
   readonly unloadGraceSeconds: number;
   readonly maxLoadsPerFrame: number;
+  /** Maximum unresolved loads, including cancelled work until its loader settles. Zero pauses new loads. */
+  readonly maxConcurrentLoads: number;
   readonly maxUnloadsPerFrame: number;
   /** Assets at or below this byte size are kept resident once loaded (small shared assets). */
   readonly keepResidentBytes: number;
@@ -48,6 +50,7 @@ export const DEFAULT_STREAMING_SETTINGS: StreamingSettings = {
   preloadMargin: 32,
   unloadGraceSeconds: 10,
   maxLoadsPerFrame: 4,
+  maxConcurrentLoads: 4,
   maxUnloadsPerFrame: 2,
   keepResidentBytes: 64 * 1024,
 };
