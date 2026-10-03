@@ -70,6 +70,7 @@ Resolved **once** by the engine when the last stat in the receive order hits min
 - `onDeath.drops` tables are rolled and **granted to the killer** on player kills (emits `loot.granted`) when `onDeath.dropMode` is `"grant"` (default); `onDeath.command` runs through `ctx.game.commands.runAs` with the resolved killer. XP commands, quest kill events and loot therefore use the same actor identity on a remote host.
 - `onDeath.dropMode: "world"` routes item drops through a scatter impulse into ground `worldItem`s instead of straight to inventory (currency drops still grant directly) — tune the impulse with `onDeath.scatter: { radius, minRadius?, height? }` (defaults from `game/worldItem`'s `DEFAULT_SCATTER`).
 - Respawning under the same instance id revives it (it can die again). Same-id respawn must not happen synchronously inside the `entity.died` handler — defer a tick.
+- `ctx.hydrate` and `ctx.restore` also revive restored entities whose terminal receive pools are above their minima. Snapshots captured inside `entity.died` still contain the victim before despawn; their depleted terminal pools retain the duplicate-death guard.
 - `quest.bind("entity.died")` credits kill objectives from the same event; leaderboards and kill feeds hang off it too.
 
 ## Damage interception and threshold transitions

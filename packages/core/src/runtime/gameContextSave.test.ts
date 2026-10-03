@@ -29,6 +29,58 @@ const QUESTS = [
 ];
 
 describe("ctx.game.save", () => {
+  for (const mode of ["hydrate", "restore"] as const) {
+    test(`${mode} permits a restored living entity to die again without duplicate rewards`, () => {
+      const ctx = createGameContext({
+        definition: offlineGame(false),
+        content: { entityById: () => ({ stats: { hull: { min: 5, max: 25 } }, receive: { impact: { order: ["hull"] } }, onDeath: { command: "award" } }) },
+        player: { userId: "p1", isNew: true },
+      });
+      ctx.scene.entity.spawn("creep", { id: "creep-1", position: [1, 0, 2] });
+      const saved = mode === "hydrate" ? ctx.snapshot() : ctx.state();
+      let deaths = 0;
+      let rewards = 0;
+      ctx.game.commands.define("award", { apply() { rewards++; } });
+      ctx.game.events.on("entity.died", () => deaths++);
+      const hit = () => ctx.scene.entity.effect({ from: "p1", to: "creep-1", effect: "impact", via: { amount: 100 } });
+      hit();
+      expect(ctx.scene.entity.get("creep-1")).toBeNull();
+      ctx[mode](saved);
+      expect(ctx.scene.entity.stats.get("creep-1", "hull")?.current).toBe(25);
+      hit();
+      expect(ctx.scene.entity.get("creep-1")).toBeNull();
+      expect(deaths).toBe(2);
+      expect(rewards).toBe(2);
+      hit();
+      expect(deaths).toBe(2);
+      expect(rewards).toBe(2);
+    });
+
+    test(`${mode} preserves duplicate-death protection for a transient depleted victim`, () => {
+      const ctx = createGameContext({
+        definition: offlineGame(false),
+        content: { entityById: () => ({ stats: { hull: { min: 5, max: 25 } }, receive: { impact: { order: ["hull"] } } }) },
+        player: { userId: "p1", isNew: true },
+      });
+      ctx.scene.entity.spawn("creep", { id: "creep-1" });
+      let deaths = 0;
+      let transient = ctx.snapshot();
+      ctx.game.events.on("entity.died", () => {
+        deaths++;
+        transient = mode === "hydrate" ? ctx.snapshot() : ctx.state();
+      });
+      const hit = () => ctx.scene.entity.effect({ from: "p1", to: "creep-1", effect: "impact", via: { amount: 100 } });
+      hit();
+      ctx[mode](transient);
+      expect(ctx.scene.entity.stats.get("creep-1", "hull")?.current).toBe(5);
+      ctx.scene.entity.stats.set("creep-1", "hull", { current: 25 });
+      ctx[mode]({ entities: "invalid" });
+      ctx[mode]({ store: [] });
+      hit();
+      expect(deaths).toBe(1);
+    });
+  }
+
   test("state/restore and direct runtime saves retain private state without persist config", async () => {
     const create = () => createGameContext({ definition: offlineGame(false), content: {}, player: { userId: "p1", isNew: true } });
     const origin = create();
