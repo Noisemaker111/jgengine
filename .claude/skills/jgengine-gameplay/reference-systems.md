@@ -114,3 +114,61 @@ Default stages: fixed `input → movement → combat → ai → activities → c
 ## Snapshot and restore on stateful handles
 
 These handles hand back a plain JSON `snapshot()` that later ticks do not mutate, and take it back with `restore(next)`, so a host, save file or replay can rewind them bit-exactly: `game/lootTable` `createLootRegistry` (registered tables; not JSON when an entry uses `generate`), `game/toasts` `createToastQueue`, `game/vfxInstance` `createVfxInstanceStore` (restore emits `stop` then `upsert` so the renderer follows), `session/roundState` `createRoundState` (`RoundSnapshot` now carries `pendingWinner`), `input/lookChannel` `createLookChannel`, and `input/pointer` `createDragCapture` (`state()` out, `restore(state | null)` in).
+
+## Staffed production
+
+`stationOutputRate` (`@jgengine/core/work/staffedStation`) converts a plain staffing
+snapshot to cycles per game-second: `(base + perStat * sum(worker.stat)) * efficiency`.
+Only the first `floor(slots)` workers contribute, in caller order. Empty staffing
+keeps base output; set `base: 0` to require workers. Efficiency defaults to one and
+clamps to 0…1. Negative/nonfinite contributions are zero, nonfinite slots admit no
+workers, and nonfinite efficiency or an overflowing result returns zero.
+
+The caller owns unique worker ids, assignment/release policy, stat selection,
+modifiers, happiness, and tuning. Resolve numeric contributions from your stat
+store before writing staffing: one station might read `stats.get("strength")`,
+another `stats.get("agility")` with equipment modifiers. Invalid contributions
+still occupy their ordered slot; the function does not promote overflow workers,
+allocate collections, or mutate saved staffing.
+
+```ts
+import { stationOutputRate, type StaffedStation } from "@jgengine/core/work/staffedStation";
+import { createProductionState, productionBuilding, tickProduction, type ProductionState } from "@jgengine/core/crafting/production";
+import { defineStore } from "@jgengine/core/store/defineStore";
+import { defineSystem } from "@jgengine/core/game/defineSystem";
+
+const room = defineStore<{
+  staffing: StaffedStation;
+  efficiency: number;
+  production: ProductionState;
+}>("workshop", () => ({
+  staffing: { stationId: "workshop", slots: 2, workers: [] },
+  efficiency: 1,
+  production: createProductionState(),
+}));
+const recipe = productionBuilding({
+  id: "workshop", outputs: [{ itemId: "supplies", count: 1 }], rate: 0,
+});
+export const staffedProduction = defineSystem({
+  id: "staffed-production",
+  tick: { type: "fixed", rate: 4 },
+  update(ctx, dt) {
+    room.update(ctx, previous => ({ ...previous,
+      production: tickProduction({ ...recipe,
+        rate: stationOutputRate(previous.staffing, {
+          base: 0, perStat: 0.5, efficiency: previous.efficiency,
+        }),
+      }, previous.production, { dt }),
+    }));
+  },
+  reset(ctx) { room.clear(ctx); },
+});
+```
+
+Install the system via `defineGame({ systems: [staffedProduction] })`; write the
+caller-resolved worker snapshot with `room.update`. Production input buffers,
+output counts, partial-cycle seconds, staffing, and efficiency remain plain data
+in the same store. `ctx.state()`/`ctx.restore()` save and replace that data; reset
+restores the declared initial room. Persist progress, not just staffing, to avoid
+restarting an in-flight batch. Input reservation and power gating continue to use
+`feedProduction` and `tickProduction({ ...recipe, rate }, state, { dt, powered })`.

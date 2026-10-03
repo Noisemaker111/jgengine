@@ -63,6 +63,12 @@ bounded batches, repair located issues and require explicit semantic approval.
 
 Prefer `defineSystem` and `defineGame({ systems })` for scheduled capabilities. Keep boot/join in the game loop only when it is truly lifecycle glue. System ordering, frequency, and serialization are explicit; avoid a giant per-frame callback.
 
+For staffed production, use `stationOutputRate` (`work/staffedStation`) to resolve
+caller-owned worker stats and efficiency, then feed the rate to `tickProduction`.
+Keep staffing and production progress in the same serializable store; the
+[staffed production example](reference-systems.md#staffed-production) composes
+the existing scheduler and save/reset boundaries without a separate manager.
+
 For whole-world saves, follow [authoritative state](reference-systems.md#authoritative-state); persistence and client replication use separate context methods.
 Follow [truthful device saves](recipes/device-save-status.md) for denied storage,
 quota errors, checkpoint retry, and save status UI.
@@ -105,3 +111,10 @@ A character kit-bashed from primitives/`ModelPart`s (no skeleton, no clips) anim
 - Reset a profile with `initialPlayerState(runtime, userId)` from the same `onNewPlayer` hook used at join; insolvency never deletes a world.
 - `ctx.game.chat.send(userId, text)` targets global chat; `recent({ limit })` returns at most 100 messages. The default is 240 characters and one message per author per channel every two seconds. Rejected messages need visible UI feedback.
 - Hosts reuse `validateChatMessage` and `decideRateWindow`, storing the rate window transactionally with each accepted operation. Preserve chat rate windows when saving/restoring chat state.
+
+For timed away missions, compose the pure transitions in `work/expedition` with
+your existing `defineStore` and clock. The [expedition recipe](recipes/expeditions.md)
+keeps bounded offline catch-up, finite supplies, return/death, capacity and RNG
+continuity in one plain saveable state. Authored encounters, hazard/supply policy,
+loot tables, quality ramps and text remain caller-owned; use `timeScaledRarity`
+(`game/lootModifiers`) for elapsed-time odds with pipeline provenance.

@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { existsSync, readFileSync } from "node:fs";
 
 import { decodeGameLayers, loadGameLayers } from "./loadGameLayers";
 
@@ -60,9 +61,26 @@ describe("loadGameLayers", () => {
 
   test("a present editorLayers factory decodes a nonempty typed document", async () => {
     const loaded = await loadGameLayers("../packages/editor/testFixtures/module-valid-game");
-    expect(loaded.ok).toBe(true);
-    if (!loaded.ok) throw new Error("expected load success");
+    if (!loaded.ok) throw new Error(JSON.stringify(loaded.errors));
     expect(loaded.document.version).toBe(1);
     expect(loaded.document.markers.map((marker) => marker.id)).toEqual(["authored-prop"]);
+  });
+
+  test("an authored module imports its neighboring scene into a typed document", async () => {
+    const loaded = await loadGameLayers("../packages/editor/testFixtures/valid-layers-game");
+    if (!loaded.ok) throw new Error(JSON.stringify(loaded.errors));
+    expect(loaded.document.version).toBe(1);
+    expect(loaded.document.markers).toEqual([
+      { id: "spawn", kind: "player_spawn", position: { x: 6, y: 0, z: 6 } },
+    ]);
+  });
+
+  const studioScene = new URL("../../../../Games/studio-showcase/src/editor.scene.json", import.meta.url);
+  test.skipIf(!existsSync(studioScene) && !process.env.CI)("the pinned real game's authored scene decodes", () => {
+    const decoded = decodeGameLayers(JSON.parse(readFileSync(studioScene, "utf8")));
+    if (!decoded.ok) throw new Error(JSON.stringify(decoded.errors));
+    expect(decoded.document.version).toBe(1);
+    expect(decoded.document.markers.some((marker) => marker.id === "bookcase_1")).toBe(true);
+    expect(decoded.document.paths.some((path) => path.id === "powerline_1")).toBe(true);
   });
 });
