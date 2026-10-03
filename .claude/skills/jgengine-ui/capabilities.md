@@ -194,6 +194,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useDomEvent` (function) · `import { useDomEvent } from "@jgengine/react"`
 
+## drag-layer — composable pointer-owned drag, drop targets and cancellation for custom cards and inventory UI
+
+- `useDragLayer` (function) · `import { useDragLayer } from "@jgengine/react"`
+
 ## entity-frames — overlay that renders caller-composed frames over on-screen entities
 
 - `EntityFrames` (function) · `import { EntityFrames } from "@jgengine/react"`
