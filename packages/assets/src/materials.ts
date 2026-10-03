@@ -50,12 +50,12 @@ export function extractMaterialMaps(archive: Uint8Array): ExtractedMaterialMap[]
   return Array.from(byRole.values()).sort((a, b) => a.file.localeCompare(b.file));
 }
 
-/** URLs of one material's PBR maps; `ao`/`displacement` files may be absent from a rare pack. */
+/** URLs of one material's PBR maps; `ao`/`roughness`/`ktx2` appear only when declared by its source. */
 export interface MaterialMaps {
   color: string;
   normal: string;
-  roughness: string;
-  ao: string;
+  roughness?: string;
+  ao?: string;
   displacement: string;
   ktx2?: string;
 }
@@ -116,10 +116,10 @@ function refFor(source: AssetSource, basePath: string): MaterialRef {
     maps: {
       color: `${base}/${MATERIAL_MAP_FILES.color}`,
       normal: `${base}/${MATERIAL_MAP_FILES.normal}`,
-      roughness: `${base}/${MATERIAL_MAP_FILES.roughness}`,
-      ao: `${base}/${MATERIAL_MAP_FILES.ao}`,
+      ...(source.materialMaps?.includes("roughness") ? { roughness: `${base}/${MATERIAL_MAP_FILES.roughness}` } : {}),
+      ...(source.materialMaps?.includes("ao") ? { ao: `${base}/${MATERIAL_MAP_FILES.ao}` } : {}),
       displacement: `${base}/${MATERIAL_MAP_FILES.displacement}`,
-      ktx2: `${base}/${MATERIAL_MAP_FILES.ktx2}`,
+      ...(source.materialMaps?.includes("ktx2") ? { ktx2: `${base}/${MATERIAL_MAP_FILES.ktx2}` } : {}),
     },
   };
 }

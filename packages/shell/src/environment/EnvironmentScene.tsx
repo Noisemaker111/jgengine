@@ -67,8 +67,8 @@ function TexturedTerrainGround({
   const textures = useRecoverableTexture({
     color: maps.color,
     normal: maps.normal,
-    roughness: maps.roughness,
-    ao: maps.ao,
+    ...(maps.roughness !== undefined ? { roughness: maps.roughness } : {}),
+    ...(maps.ao !== undefined ? { ao: maps.ao } : {}),
   });
   useEffect(() => {
     textures.color.colorSpace = THREE.SRGBColorSpace;

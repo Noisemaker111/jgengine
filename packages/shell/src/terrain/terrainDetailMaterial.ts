@@ -10,13 +10,13 @@ export interface TerrainDetailMaterialHandle {
 /**
  * Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller
  * (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches
- * `THREE.Texture` and this shell function never fetches a URL itself.
+ * `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
  */
 export interface TerrainDetailMaterialTextures {
   color: THREE.Texture;
   normal: THREE.Texture;
-  roughness: THREE.Texture;
-  ao: THREE.Texture;
+  roughness?: THREE.Texture;
+  ao?: THREE.Texture;
 }
 
 const NOISE_GLSL = /* glsl */ `
@@ -85,8 +85,8 @@ export function createTerrainDetailMaterial(
       ? {
           uMatColor: { value: textures.color },
           uMatNormal: { value: textures.normal },
-          uMatRoughness: { value: textures.roughness },
-          uMatAo: { value: textures.ao },
+          ...(textures.roughness !== undefined ? { uMatRoughness: { value: textures.roughness } } : {}),
+          ...(textures.ao !== undefined ? { uMatAo: { value: textures.ao } } : {}),
           uMatRepeat: { value: Math.max(0.01, repeat) },
           uMatStrength: { value: strength },
           uMatTint: { value: tint },
@@ -125,8 +125,8 @@ vJgWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
       ? `
 uniform sampler2D uMatColor;
 uniform sampler2D uMatNormal;
-uniform sampler2D uMatRoughness;
-uniform sampler2D uMatAo;
+${textures.roughness !== undefined ? "uniform sampler2D uMatRoughness;" : ""}
+${textures.ao !== undefined ? "uniform sampler2D uMatAo;" : ""}
 uniform float uMatRepeat;
 uniform float uMatStrength;
 uniform float uMatTint;`
@@ -145,7 +145,7 @@ jgCol *= mix(1.0, clamp(jgMatLum / 0.35, 0.55, 1.7), uMatStrength * (1.0 - uMatT
 jgCol = mix(jgCol, jgMatColor, uMatStrength * uMatTint);`
       : "";
 
-    const materialRoughnessGlsl = hasTexture
+    const materialRoughnessGlsl = hasTexture && textures.roughness !== undefined
       ? `
 float jgMatRough = texture2D(uMatRoughness, jgMatUv).g;
 roughnessFactor = mix(roughnessFactor, jgMatRough, uMatStrength);`
@@ -157,7 +157,7 @@ vec2 jgMatNormalXy = texture2D(uMatNormal, jgMatUv).rg * 2.0 - 1.0;
 normal = normalize(normal + vec3(jgMatNormalXy.x, 0.0, jgMatNormalXy.y) * uMatStrength * 0.6);`
       : "";
 
-    const materialAoGlsl = hasTexture
+    const materialAoGlsl = hasTexture && textures.ao !== undefined
       ? `
 float jgMatAo = texture2D(uMatAo, jgMatUv).r;
 reflectedLight.indirectDiffuse *= mix(1.0, jgMatAo, uMatStrength);`
@@ -237,6 +237,6 @@ ${materialAoGlsl}`,
   };
 
   material.customProgramCacheKey = () =>
-    `jgengine-terrain-detail-${detail.rockSlopeStart}-${detail.snowHeight}-${hasTexture ? "tex" : "flat"}`;
+    `jgengine-terrain-detail-${detail.rockSlopeStart}-${detail.snowHeight}-${hasTexture ? "tex" : "flat"}-${hasTexture && textures.roughness !== undefined ? "rough" : "scalar"}-${hasTexture && textures.ao !== undefined ? "ao" : "unoccluded"}`;
   return { material };
 }

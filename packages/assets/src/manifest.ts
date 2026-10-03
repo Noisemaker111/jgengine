@@ -3,6 +3,7 @@ import type { AssetSpace } from "@jgengine/core/scene/assetSpace";
 import type { CollisionMeshData } from "@jgengine/core/scene/collisionMesh";
 
 import type { GlbMetrics } from "./glbMetrics";
+import type { MaterialMapRole } from "./materials";
 
 export type { ModelDims };
 export type { AssetSpace };
@@ -49,6 +50,8 @@ export interface AssetSource {
   categories: readonly string[];
   download: AssetDownload;
   homepage?: string;
+  /** Map roles present in the pinned material archive, used by the catalog and checked during pull. */
+  materialMaps?: readonly MaterialMapRole[];
   /** Direct archive URL tried as a last resort when the primary provider path fails; see `downloadPackArchive`. */
   mirror?: string;
   /**

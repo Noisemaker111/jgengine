@@ -131,3 +131,38 @@ test("a low tint keeps the authored colour and takes the map as grain", () => {
   material.onBeforeCompile?.(shader as never, undefined as never);
   expect(shader.uniforms.uMatTint?.value).toBe(0.2);
 });
+
+test("omitted AO and roughness skip sampling and preserve authored roughness", () => {
+  const maps: TerrainMaterialMaps = { color: FAKE_MAPS.color, normal: FAKE_MAPS.normal, displacement: FAKE_MAPS.displacement };
+  const detail = resolveTerrainDetail({ roughness: 0.73, material: { maps } });
+  const textures = { color: new THREE.Texture(), normal: new THREE.Texture() };
+  const { material } = createTerrainDetailMaterial(detail, textures);
+  const shader = fakeShader();
+  material.onBeforeCompile?.(shader as never, undefined as never);
+  expect(material.roughness).toBe(0.73);
+  expect(shader.uniforms.uMatRoughness).toBeUndefined();
+  expect(shader.uniforms.uMatAo).toBeUndefined();
+  expect(shader.fragmentShader).not.toContain("uMatRoughness");
+  expect(shader.fragmentShader).not.toContain("uMatAo");
+  expect(shader.fragmentShader).toContain("texture2D(uMatColor");
+  expect(shader.fragmentShader).toContain("texture2D(uMatNormal");
+});
+
+test("optional map presence selects distinct compiled shader programs", () => {
+  const detail = resolveTerrainDetail({ material: { maps: FAKE_MAPS } });
+  const keys = new Set<string>();
+  for (const ao of [false, true]) {
+    for (const roughness of [false, true]) {
+      const textures = fakeTextures();
+      if (!ao) delete textures.ao;
+      if (!roughness) delete textures.roughness;
+      const { material } = createTerrainDetailMaterial(detail, textures);
+      const shader = fakeShader();
+      material.onBeforeCompile?.(shader as never, undefined as never);
+      expect(shader.fragmentShader.includes("texture2D(uMatAo")).toBe(ao);
+      expect(shader.fragmentShader.includes("texture2D(uMatRoughness")).toBe(roughness);
+      keys.add(material.customProgramCacheKey());
+    }
+  }
+  expect(keys.size).toBe(4);
+});

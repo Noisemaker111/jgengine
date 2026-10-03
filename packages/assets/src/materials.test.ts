@@ -36,6 +36,23 @@ describe("buildMaterialCatalog", () => {
     expect(grass?.license).toBe("CC0-1.0");
   });
 
+  test("omits absent optional maps and preserves real AO maps", () => {
+    const catalog = buildMaterialCatalog();
+    expect(catalog.resolve("ambientcg-metalplates001")?.maps).toEqual({
+      color: "/materials/ambientcg-metalplates001/color.jpg",
+      normal: "/materials/ambientcg-metalplates001/normal.jpg",
+      roughness: "/materials/ambientcg-metalplates001/roughness.jpg",
+      displacement: "/materials/ambientcg-metalplates001/displacement.jpg",
+    });
+    expect(catalog.resolve("ambientcg-grass001")?.maps.ao).toBe("/materials/ambientcg-grass001/ao.jpg");
+    expect(catalog.resolve("ambientcg-metalplates010")?.maps.ao).toBe("/materials/ambientcg-metalplates010/ao.jpg");
+    for (const id of ["ambientcg-gravel001", "ambientcg-concrete001"]) {
+      expect(catalog.resolve(id)?.maps.roughness).toBeUndefined();
+      expect(catalog.resolve(id)?.maps.ao).toBeUndefined();
+    }
+    for (const id of catalog.ids()) expect(catalog.resolve(id)?.maps.ktx2).toBeUndefined();
+  });
+
   test("resolves aliases to their target material", () => {
     const catalog = buildMaterialCatalog();
     expect(catalog.resolve("material/grass")?.id).toBe("ambientcg-grass001");

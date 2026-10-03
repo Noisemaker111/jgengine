@@ -36,7 +36,7 @@ assets add sword                                    # icon G�� the game-icon
 ```
 
 - A **model / pack** match is fully automated: if the pack isn't already in `<dir>/models/`, it's pulled and extracted, then `reindex` runs so the id is addressable, then the `buildCatalog` + model-seam snippet is printed.
-- A **material** match pulls the maps into `<dir>/materials/<id>/` with normalized names (`color.jpg`, `normal.jpg`, `roughness.jpg`, `ao.jpg`, `displacement.jpg`) and prints the `buildMaterialCatalog` resolve snippet G�� no reindex needed, the material catalog is fully static.
+- A **material** match pulls the maps into `<dir>/materials/<id>/` with normalized names (`color.jpg`, `normal.jpg`, `displacement.jpg`, plus `roughness.jpg`/`ao.jpg` when present) and prints the `buildMaterialCatalog` resolve snippet G�� no reindex needed, the material catalog is fully static.
 - A **sprite / spritePack** match works like model/pack: if the pack isn't already in `<dir>/sprites/`, it's pulled and extracted, then `reindex-sprites` runs so individual SVG/PNG ids are addressable, then the `buildSpriteCatalog` snippet is printed.
 - A **component / icon** match prints the one-liner to run and the import + usage G�� no bytes to pull.
 - Ambiguous query? `add` lists the top matches across kinds; narrow with `--kind model|pack|material|component|icon|sprite|spritePack` or a more specific term. `--json` emits the ranked matches for scripting.
@@ -170,6 +170,8 @@ const materials = buildMaterialCatalog({ basePath: "/materials" });
 materials.resolve("ambientcg-grass001")!.maps.color; // "/materials/ambientcg-grass001/color.jpg"
 materials.resolve("material/grass")!.maps.normal;    // alias G�� "/materials/ambientcg-grass001/normal.jpg"
 ```
+
+`maps.ao` and `maps.roughness` are optional: the catalog advertises them only when the pinned source variant provides them. `ambientcg-metalplates001` has no AO; `ambientcg-gravel001` and `ambientcg-concrete001` have neither AO nor roughness. Pass `maps` directly to model, building, or terrain material seams; omitted maps skip loading, and terrain keeps its authored scalar roughness. Callers can still supply their own map URLs. Native ambientCG 1K-JPG pulls do not include KTX2, so the catalog omits `maps.ktx2` too. Pull fails if an archive omits a map its source declares.
 
 Sprite/icon packs resolve the same way once pulled + reindexed G�� individual files, not whole packs:
 

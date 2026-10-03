@@ -245,6 +245,8 @@ async function fetchPackInto(
     if (maps.every((map) => map.role !== "color")) {
       fail(`no color map found in ${source.id} archive`);
     }
+    const missing = source.materialMaps?.filter((role) => !maps.some((map) => map.role === role)) ?? [];
+    if (missing.length > 0) fail(`${source.id} archive is missing declared material map(s): ${missing.join(", ")}`);
     mkdirSync(outDir, { recursive: true });
     for (const map of maps) writeFileSync(join(outDir, map.file), map.bytes);
     return { outDir, models: 0, textures: maps.length, url };

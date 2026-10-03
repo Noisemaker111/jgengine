@@ -40,7 +40,7 @@ export function materialWiringSnippet(id: string, basePath = "/materials"): stri
     `export const materials = buildMaterialCatalog({ basePath: ${JSON.stringify(basePath)} });`,
     ``,
     `const material = materials.resolve(${JSON.stringify(id)})!;`,
-    `// material.maps => { color, normal, roughness, ao, displacement } URLs under ${basePath}/${id}/`,
+    `// material.maps => { color, normal, displacement, roughness?, ao?, ktx2? } URLs under ${basePath}/${id}/`,
     ``,
     `// onto the ground (terrain() in defineGame({ world: environment({ terrain: ... }) })):`,
     `terrain({ detail: { material: { maps: material.maps, repeat: 4 } } })`,

@@ -44,6 +44,8 @@ Run `assets budget <file|directory> --max-bytes <n> --max-triangles <n> --max-te
 
 A model resolved from a catalog string id is stamped `animation: "auto"`: the shell derives speed-driven `idle`/`walk`/`run` states plus `hit`/`death`/`attack` one-shots from the loaded GLB's own clip names via semantic clip roles (`@jgengine/core/game/clipRoles` — `classifyClip`, `defaultAnimationForClips`, exported `DEFAULT_CLIP_ROLE_TABLE` covering KayKit/Quaternius/Mixamo naming). No game-side clip strings needed; a clipless model is unaffected. An explicit `ModelConfig.animation`/`style.animation` always wins, and `animation: "none"` opts a placement back to the bind pose. Games rendering cloned scenes themselves get the same driver from `@jgengine/shell/render/useModelAnimation` instead of hand-rolling an `AnimationMixer`.
 
+Material sources declare the map roles in their pinned archive through `AssetSource.materialMaps`; `pull` checks those declarations before writing. `buildMaterialCatalog` omits absent `ao`, `roughness`, and `ktx2` URLs. Pass the returned maps directly to model, building, or terrain seams, or explicitly supply a game-owned map. Do not construct optional map filenames or fill every material with synthetic AO. Check the actual archive when changing availability; ambientCG API map metadata covers the catalog, while byte verification covers the downloaded variants.
+
 ## Source rules
 
 - Never use or reference Kenney.nl assets.

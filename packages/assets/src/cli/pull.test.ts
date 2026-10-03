@@ -1,11 +1,12 @@
 import { afterEach, describe, expect, spyOn, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { zipSync } from "fflate";
 
 import { mirrorOverrideUrl, type FetchLike } from "../download";
 import { sourceById } from "../sources";
+import { buildMaterialCatalog } from "../materials";
 import { cmdPull } from "./pull";
 
 const source = sourceById.get("quaternius-stylized-nature")!;
@@ -150,3 +151,63 @@ describe("cmdPull mirror resolution", () => {
   }, HEAVY_CASE_TIMEOUT_MS);
 });
 
+
+describe("material byte contract", () => {
+  const variants = [
+    { asset: "MetalPlates001", optional: ["Roughness"] },
+    { asset: "Grass001", optional: ["Roughness", "AmbientOcclusion"] },
+    { asset: "Gravel001", optional: [] },
+    { asset: "Concrete001", optional: [] },
+  ];
+
+  test.each(variants)("$asset catalog URLs load only the native pack's maps", async ({ asset, optional }) => {
+    const id = `ambientcg-${asset.toLowerCase()}`;
+    const materialSource = sourceById.get(id)!;
+    const dir = makeTmpDir();
+    const content = new Uint8Array([255, 216, 255, 217]);
+    const archive = zipSync(Object.fromEntries(
+      ["Color", "NormalGL", "NormalDX", "Displacement", ...optional].map((role) =>
+        [`${asset}_1K-JPG_${role}.jpg`, content]),
+    ));
+    const calls: string[] = [];
+    process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR = "1";
+    const url = "url" in materialSource.download ? materialSource.download.url : "";
+    globalThis.fetch = fetchFrom({ [url]: () => new Response(archive) }, calls);
+    try {
+      await cmdPull([id, "--dir", dir]);
+      expect(calls).toEqual([url]);
+      const maps = buildMaterialCatalog({ basePath: join(dir, "materials") }).resolve(id)!.maps;
+      for (const mapUrl of Object.values(maps)) expect(new Uint8Array(readFileSync(mapUrl))).toEqual(content);
+      expect(Object.keys(maps).length).toBe(3 + optional.length);
+      expect(maps.ao !== undefined).toBe(optional.includes("AmbientOcclusion"));
+      expect(maps.roughness !== undefined).toBe(optional.includes("Roughness"));
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, HEAVY_CASE_TIMEOUT_MS);
+
+  test("fails before writing when a downloaded pack omits a declared map", async () => {
+    const dir = makeTmpDir();
+    const materialSource = sourceById.get("ambientcg-grass001")!;
+    const url = "url" in materialSource.download ? materialSource.download.url : "";
+    process.env.JGENGINE_ASSETS_NO_DEFAULT_MIRROR = "1";
+    const archive = zipSync(Object.fromEntries(
+      ["Color", "NormalGL", "Roughness", "Displacement"].map((role) =>
+        [`Grass001_1K-JPG_${role}.jpg`, new Uint8Array([1])]),
+    ));
+    globalThis.fetch = fetchFrom({ [url]: () => new Response(archive) });
+    const exitSpy = spyOn(process, "exit").mockImplementation((code?: number): never => {
+      throw new Error(`process.exit:${code}`);
+    });
+    const errorSpy = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      await expect(cmdPull([materialSource.id, "--dir", dir])).rejects.toThrow("process.exit:1");
+      expect(errorSpy.mock.calls.flat().join(" ")).toContain("missing declared material map(s): ao");
+      expect(existsSync(join(dir, "materials", materialSource.id))).toBe(false);
+    } finally {
+      exitSpy.mockRestore();
+      errorSpy.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, HEAVY_CASE_TIMEOUT_MS);
+});

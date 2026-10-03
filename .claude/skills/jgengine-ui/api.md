@@ -2738,7 +2738,7 @@
 ## @jgengine/shell/terrain/terrainDetailMaterial
 
 - `TerrainDetailMaterialHandle` (interface): interface TerrainDetailMaterialHandle — The built procedural detail terrain material, ready to mount on the ground mesh.
-- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself.
+- `TerrainDetailMaterialTextures` (interface): interface TerrainDetailMaterialTextures — Loaded PBR textures matching a resolved `ResolvedTerrainDetailMaterial.maps`' roles. The caller (a React component, via `useTexture`/`useLoader`) owns loading and disposal; `core` never touches `THREE.Texture` and this shell function never fetches a URL itself. Omitted AO/roughness skip sampling.
 
 ## @jgengine/shell/terrain/terrainMath
 
