@@ -1,0 +1,70 @@
+{
+  "assetId": "lantern:market-cobbles",
+  "prefabId": "street:market-cobbles",
+  "sha256": "6487ad0774ffdefe57910cf497914bcb064561268c312450d233e2bb3af5d737",
+  "bytes": 16272,
+  "byteLength": 8074402,
+  "triangles": 208,
+  "submissions": 1,
+  "bounds": {
+    "min": [
+      -13,
+      0.0199996155872941,
+      -4
+    ],
+    "max": [
+      13,
+      0.039999990463256835,
+      4
+    ]
+  },
+  "sourcePrefabSha256": "144149fd4661fc0046a92a505e705548fddb09bf26030e3762de2cb3e5226628",
+  "staticBakeSha256": "c08badfed2c3124508e1adb03d3c3dc72676c02abb2f438ffca6e9cbdad14ec8",
+  "sources": [
+    {
+      "catalogId": "lantern:Floor_UnevenBrick",
+      "sha256": "2e5be86cc38ae44423c98f8a1cdb0d07c98ab33827bbf39c24e85b2fb09871d7",
+      "bytes": 1856,
+      "textures": [
+        {
+          "uri": "T_UnevenBrick_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_UnevenBrick_Normal.png",
+          "sha256": "bbf623cc35720d67a02079b20b9a6d9641c3686952b288cda97dec41e4b8acad",
+          "bytes": 3866626
+        },
+        {
+          "uri": "T_UnevenBrick_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_UnevenBrick_BaseColor.png",
+          "sha256": "ee0f096df6110e943cd9739680b61bc0ffd6fe00db752c5c3797941057a95ebc",
+          "bytes": 2945342
+        },
+        {
+          "uri": "T_UnevenBrick_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_UnevenBrick_Roughness.png",
+          "sha256": "da170cb92ac5479b93ca0c0002b783f1186a146e6e3124891ce7bfe6e1a8a942",
+          "bytes": 1246162
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "uri": "T_UnevenBrick_Normal.png",
+      "url": "/models/lantern-reach/scenery/T_UnevenBrick_Normal.png",
+      "sha256": "bbf623cc35720d67a02079b20b9a6d9641c3686952b288cda97dec41e4b8acad",
+      "bytes": 3866626
+    },
+    {
+      "uri": "T_UnevenBrick_BaseColor.png",
+      "url": "/models/lantern-reach/scenery/T_UnevenBrick_BaseColor.png",
+      "sha256": "ee0f096df6110e943cd9739680b61bc0ffd6fe00db752c5c3797941057a95ebc",
+      "bytes": 2945342
+    },
+    {
+      "uri": "T_UnevenBrick_Roughness.png",
+      "url": "/models/lantern-reach/scenery/T_UnevenBrick_Roughness.png",
+      "sha256": "da170cb92ac5479b93ca0c0002b783f1186a146e6e3124891ce7bfe6e1a8a942",
+      "bytes": 1246162
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "scope": "actual12prefabs and12visible prefab placements; original source fragments, marker transforms and metadata preserved",
+  "rpcSettings": 12,
+  "undos": 12,
+  "redos": 12,
+  "saveReopen": true,
+  "persistence": "packaged export_document RPC JSON -> disk -> strict importEditorDocumentJson -> packaged host reopen",
+  "fullDocumentError": "Error: invalid editor document: $.environment.preset expected \"day\" | \"dusk\" | \"night\"",
+  "fullDocumentBlocker": "https://github.com/Noisemaker111/JGengine-games/issues/46"
+}

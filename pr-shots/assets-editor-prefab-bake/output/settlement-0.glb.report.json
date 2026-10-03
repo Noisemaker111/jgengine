@@ -1,0 +1,485 @@
+{
+  "assetId": "lantern:settlement-0",
+  "prefabId": "building:Wilkes provision house",
+  "sha256": "ac8a6ee2781ec6fde1316fbde9b49f1a1b91aedd1139600c178db78a5b868fe4",
+  "bytes": 396064,
+  "byteLength": 43732527,
+  "triangles": 6957,
+  "submissions": 12,
+  "bounds": {
+    "min": [
+      -2.7065381526947014,
+      -0.0020958781242370605,
+      -3.8260345840453738
+    ],
+    "max": [
+      2.806538152694703,
+      6.977875280380249,
+      3.74624606132511
+    ]
+  },
+  "sourcePrefabSha256": "4564b5de2960613f0bf8c80218bae9f600ceedf794c23ff9655d9f48101ac455",
+  "staticBakeSha256": "c11233c993412ed850c19a06b06db87c1a7d2fcf093db33d54d7ece80efb0a5d",
+  "sources": [
+    {
+      "catalogId": "lantern:Wall_Plaster_Door_Round",
+      "sha256": "32e218aac75eb34994e4c1e2c88d2d5727afe7339ea4127d2f7db9b06cdce83c",
+      "bytes": 13188,
+      "textures": [
+        {
+          "uri": "T_WoodTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Normal.png",
+          "sha256": "5847623e4ed6c206e59f32d1718ee75dcb2b49a1d55ede7ef70a254739caf4a8",
+          "bytes": 3596501
+        },
+        {
+          "uri": "T_WoodTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_BaseColor.png",
+          "sha256": "a59f410b07a9bc5f0664df3ba7a2c1e37acffc7979795911f3fc8730ab60e33e",
+          "bytes": 2082310
+        },
+        {
+          "uri": "T_WoodTrim_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Roughness.png",
+          "sha256": "e888464fd4199d458d8cf39e00fa07d56f8a0bcb658aa03b4a7c95d466ceefa3",
+          "bytes": 1697111
+        },
+        {
+          "uri": "T_Plaster_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_Normal.png",
+          "sha256": "8b9617b561466cce00d5a0628eae7bef208dcf63445d72570e7f8e5057fed0d4",
+          "bytes": 4607606
+        },
+        {
+          "uri": "T_Plaster_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_BaseColor.png",
+          "sha256": "98547ca83888307e3ffa96384ce058b7622affe0a42add3b36d0b48618c5eda4",
+          "bytes": 3316410
+        },
+        {
+          "uri": "T_Plaster_ORM.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_ORM.png",
+          "sha256": "7be9d64a6154ba12bb7086e1d6774a7d5bbbc95775efb614f6ff40a4787fe0c7",
+          "bytes": 2381579
+        },
+        {
+          "uri": "T_RockTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_RockTrim_Normal.png",
+          "sha256": "f93f82f7e69aa0bf1900f8ab3f252390f091b771f0b84a345c5fefb0f0155cd3",
+          "bytes": 3925938
+        },
+        {
+          "uri": "T_RockTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_RockTrim_BaseColor.png",
+          "sha256": "aa571cd612091a8f4c95393f8f938bd6e5d47a8cdfd9c896b60a4b37903e2c7c",
+          "bytes": 1908835
+        },
+        {
+          "uri": "T_RockTrim_ORM.png",
+          "url": "/models/lantern-reach/scenery/T_RockTrim_ORM.png",
+          "sha256": "5287dd9a4e9fb7423af8d8440a8de8bdb8910f9f37ba148f619a6eddf58d5bc8",
+          "bytes": 1625807
+        }
+      ]
+    },
+    {
+      "catalogId": "lantern:Door_4_Round",
+      "sha256": "f34d478579fdd5d08805609f8ede82069905d55735e1c393fa477a2db2b83183",
+      "bytes": 79912,
+      "textures": [
+        {
+          "uri": "T_WoodTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Normal.png",
+          "sha256": "5847623e4ed6c206e59f32d1718ee75dcb2b49a1d55ede7ef70a254739caf4a8",
+          "bytes": 3596501
+        },
+        {
+          "uri": "T_WoodTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_BaseColor.png",
+          "sha256": "a59f410b07a9bc5f0664df3ba7a2c1e37acffc7979795911f3fc8730ab60e33e",
+          "bytes": 2082310
+        },
+        {
+          "uri": "T_WoodTrim_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Roughness.png",
+          "sha256": "e888464fd4199d458d8cf39e00fa07d56f8a0bcb658aa03b4a7c95d466ceefa3",
+          "bytes": 1697111
+        },
+        {
+          "uri": "T_MetalOrnaments_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_MetalOrnaments_BaseColor.png",
+          "sha256": "28603125908bb443ef7ac405d6bf2978dafdd348081c1dfd21630ac09862b668",
+          "bytes": 725116
+        },
+        {
+          "uri": "T_MetalOrnaments_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_MetalOrnaments_Roughness.png",
+          "sha256": "2de0135d6ffc3021e2550860107f531d0e64fdd0b46b3bf06f2f85e30b818874",
+          "bytes": 89547
+        }
+      ]
+    },
+    {
+      "catalogId": "lantern:Wall_Plaster_Straight",
+      "sha256": "5e4d5d3da9523dd96ddd19f683d51d6654281d575adf9e9c0c912b03337a2bcc",
+      "bytes": 8916,
+      "textures": [
+        {
+          "uri": "T_WoodTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Normal.png",
+          "sha256": "5847623e4ed6c206e59f32d1718ee75dcb2b49a1d55ede7ef70a254739caf4a8",
+          "bytes": 3596501
+        },
+        {
+          "uri": "T_WoodTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_BaseColor.png",
+          "sha256": "a59f410b07a9bc5f0664df3ba7a2c1e37acffc7979795911f3fc8730ab60e33e",
+          "bytes": 2082310
+        },
+        {
+          "uri": "T_WoodTrim_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Roughness.png",
+          "sha256": "e888464fd4199d458d8cf39e00fa07d56f8a0bcb658aa03b4a7c95d466ceefa3",
+          "bytes": 1697111
+        },
+        {
+          "uri": "T_Plaster_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_Normal.png",
+          "sha256": "8b9617b561466cce00d5a0628eae7bef208dcf63445d72570e7f8e5057fed0d4",
+          "bytes": 4607606
+        },
+        {
+          "uri": "T_Plaster_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_BaseColor.png",
+          "sha256": "98547ca83888307e3ffa96384ce058b7622affe0a42add3b36d0b48618c5eda4",
+          "bytes": 3316410
+        },
+        {
+          "uri": "T_Plaster_ORM.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_ORM.png",
+          "sha256": "7be9d64a6154ba12bb7086e1d6774a7d5bbbc95775efb614f6ff40a4787fe0c7",
+          "bytes": 2381579
+        }
+      ]
+    },
+    {
+      "catalogId": "lantern:Wall_Plaster_Window_Wide_Round",
+      "sha256": "c07d92a2b8e6b591d285a5069f7758687c730c68aefef7319aae5c3f3bb50909",
+      "bytes": 10996,
+      "textures": [
+        {
+          "uri": "T_WoodTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Normal.png",
+          "sha256": "5847623e4ed6c206e59f32d1718ee75dcb2b49a1d55ede7ef70a254739caf4a8",
+          "bytes": 3596501
+        },
+        {
+          "uri": "T_WoodTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_BaseColor.png",
+          "sha256": "a59f410b07a9bc5f0664df3ba7a2c1e37acffc7979795911f3fc8730ab60e33e",
+          "bytes": 2082310
+        },
+        {
+          "uri": "T_WoodTrim_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Roughness.png",
+          "sha256": "e888464fd4199d458d8cf39e00fa07d56f8a0bcb658aa03b4a7c95d466ceefa3",
+          "bytes": 1697111
+        },
+        {
+          "uri": "T_Plaster_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_Normal.png",
+          "sha256": "8b9617b561466cce00d5a0628eae7bef208dcf63445d72570e7f8e5057fed0d4",
+          "bytes": 4607606
+        },
+        {
+          "uri": "T_Plaster_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_BaseColor.png",
+          "sha256": "98547ca83888307e3ffa96384ce058b7622affe0a42add3b36d0b48618c5eda4",
+          "bytes": 3316410
+        },
+        {
+          "uri": "T_Plaster_ORM.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_ORM.png",
+          "sha256": "7be9d64a6154ba12bb7086e1d6774a7d5bbbc95775efb614f6ff40a4787fe0c7",
+          "bytes": 2381579
+        },
+        {
+          "uri": "T_Brick_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_Brick_Normal.png",
+          "sha256": "6349f1fb3eed9985e6f969c1de04b9e92490020a12ba19a44b96ea808fb27c1a",
+          "bytes": 4474267
+        },
+        {
+          "uri": "T_Brick_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_Brick_BaseColor.png",
+          "sha256": "5515f57e61767838f53f4b9e25aa83b1382ad345ff6b446482718b5140c33813",
+          "bytes": 2447169
+        },
+        {
+          "uri": "T_Brick_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_Brick_Roughness.png",
+          "sha256": "981e7a4f8e3119749b2fb3d557e3d0ba0551e75a39b467cff0a3a948a9392716",
+          "bytes": 689204
+        }
+      ]
+    },
+    {
+      "catalogId": "lantern:Window_Wide_Round1",
+      "sha256": "e76c7df5bac25fa481ffce2102ae442404740f1eb864c9f73332edd3506f0d20",
+      "bytes": 24692,
+      "textures": [
+        {
+          "uri": "T_WoodTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Normal.png",
+          "sha256": "5847623e4ed6c206e59f32d1718ee75dcb2b49a1d55ede7ef70a254739caf4a8",
+          "bytes": 3596501
+        },
+        {
+          "uri": "T_WoodTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_BaseColor.png",
+          "sha256": "a59f410b07a9bc5f0664df3ba7a2c1e37acffc7979795911f3fc8730ab60e33e",
+          "bytes": 2082310
+        },
+        {
+          "uri": "T_WoodTrim_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Roughness.png",
+          "sha256": "e888464fd4199d458d8cf39e00fa07d56f8a0bcb658aa03b4a7c95d466ceefa3",
+          "bytes": 1697111
+        }
+      ]
+    },
+    {
+      "catalogId": "lantern:Roof_RoundTiles_4x6",
+      "sha256": "7dbcc10a24ab97527fc94e10b083150a561d28b9d311465abd0100cceb1f2ef9",
+      "bytes": 133048,
+      "textures": [
+        {
+          "uri": "T_WoodTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Normal.png",
+          "sha256": "5847623e4ed6c206e59f32d1718ee75dcb2b49a1d55ede7ef70a254739caf4a8",
+          "bytes": 3596501
+        },
+        {
+          "uri": "T_WoodTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_BaseColor.png",
+          "sha256": "a59f410b07a9bc5f0664df3ba7a2c1e37acffc7979795911f3fc8730ab60e33e",
+          "bytes": 2082310
+        },
+        {
+          "uri": "T_WoodTrim_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Roughness.png",
+          "sha256": "e888464fd4199d458d8cf39e00fa07d56f8a0bcb658aa03b4a7c95d466ceefa3",
+          "bytes": 1697111
+        },
+        {
+          "uri": "T_RoundTiles_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_RoundTiles_Normal.png",
+          "sha256": "e8cf202fbc1ec36c3f5389a25ab9c99f015d49ae0ca963d0404614c3e1e8f687",
+          "bytes": 3792369
+        },
+        {
+          "uri": "T_RoundTiles_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_RoundTiles_BaseColor.png",
+          "sha256": "acf388ebd1a97346e1e5b59091cfc609ed15b4f70b83a626089f12a82a2d9997",
+          "bytes": 4352034
+        },
+        {
+          "uri": "T_RoundTiles_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_RoundTiles_Roughness.png",
+          "sha256": "02c5cdbb6768de6ac674a343265c020c5bd6ef70fd7ba555d9b9dc7445179366",
+          "bytes": 1624660
+        }
+      ]
+    },
+    {
+      "catalogId": "lantern:Roof_Front_Brick4",
+      "sha256": "20954dedae478f50fdc90de49fab3dfea51afe60212108e04c5ffb47cf650989",
+      "bytes": 16132,
+      "textures": [
+        {
+          "uri": "T_WoodTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Normal.png",
+          "sha256": "5847623e4ed6c206e59f32d1718ee75dcb2b49a1d55ede7ef70a254739caf4a8",
+          "bytes": 3596501
+        },
+        {
+          "uri": "T_WoodTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_BaseColor.png",
+          "sha256": "a59f410b07a9bc5f0664df3ba7a2c1e37acffc7979795911f3fc8730ab60e33e",
+          "bytes": 2082310
+        },
+        {
+          "uri": "T_WoodTrim_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_WoodTrim_Roughness.png",
+          "sha256": "e888464fd4199d458d8cf39e00fa07d56f8a0bcb658aa03b4a7c95d466ceefa3",
+          "bytes": 1697111
+        },
+        {
+          "uri": "T_Plaster_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_Normal.png",
+          "sha256": "8b9617b561466cce00d5a0628eae7bef208dcf63445d72570e7f8e5057fed0d4",
+          "bytes": 4607606
+        },
+        {
+          "uri": "T_Plaster_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_BaseColor.png",
+          "sha256": "98547ca83888307e3ffa96384ce058b7622affe0a42add3b36d0b48618c5eda4",
+          "bytes": 3316410
+        },
+        {
+          "uri": "T_Plaster_ORM.png",
+          "url": "/models/lantern-reach/scenery/T_Plaster_ORM.png",
+          "sha256": "7be9d64a6154ba12bb7086e1d6774a7d5bbbc95775efb614f6ff40a4787fe0c7",
+          "bytes": 2381579
+        }
+      ]
+    },
+    {
+      "catalogId": "lantern:Prop_Chimney",
+      "sha256": "3cb0f41147694bb8ea8c7e25146810aec49f2be2425972fa62f9b9cca1670171",
+      "bytes": 23300,
+      "textures": [
+        {
+          "uri": "T_RockTrim_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_RockTrim_Normal.png",
+          "sha256": "f93f82f7e69aa0bf1900f8ab3f252390f091b771f0b84a345c5fefb0f0155cd3",
+          "bytes": 3925938
+        },
+        {
+          "uri": "T_RockTrim_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_RockTrim_BaseColor.png",
+          "sha256": "aa571cd612091a8f4c95393f8f938bd6e5d47a8cdfd9c896b60a4b37903e2c7c",
+          "bytes": 1908835
+        },
+        {
+          "uri": "T_RockTrim_ORM.png",
+          "url": "/models/lantern-reach/scenery/T_RockTrim_ORM.png",
+          "sha256": "5287dd9a4e9fb7423af8d8440a8de8bdb8910f9f37ba148f619a6eddf58d5bc8",
+          "bytes": 1625807
+        },
+        {
+          "uri": "T_Brick_Normal.png",
+          "url": "/models/lantern-reach/scenery/T_Brick_Normal.png",
+          "sha256": "6349f1fb3eed9985e6f969c1de04b9e92490020a12ba19a44b96ea808fb27c1a",
+          "bytes": 4474267
+        },
+        {
+          "uri": "T_Brick_BaseColor.png",
+          "url": "/models/lantern-reach/scenery/T_Brick_BaseColor.png",
+          "sha256": "5515f57e61767838f53f4b9e25aa83b1382ad345ff6b446482718b5140c33813",
+          "bytes": 2447169
+        },
+        {
+          "uri": "T_Brick_Roughness.png",
+          "url": "/models/lantern-reach/scenery/T_Brick_Roughness.png",
+          "sha256": "981e7a4f8e3119749b2fb3d557e3d0ba0551e75a39b467cff0a3a948a9392716",
+          "bytes": 689204
+        }
+      ]
+    }
+  ],
+  "textures": [
+    {
+      "uri": "T_WoodTrim_Normal.png",
+      "url": "/models/lantern-reach/scenery/T_WoodTrim_Normal.png",
+      "sha256": "5847623e4ed6c206e59f32d1718ee75dcb2b49a1d55ede7ef70a254739caf4a8",
+      "bytes": 3596501
+    },
+    {
+      "uri": "T_WoodTrim_BaseColor.png",
+      "url": "/models/lantern-reach/scenery/T_WoodTrim_BaseColor.png",
+      "sha256": "a59f410b07a9bc5f0664df3ba7a2c1e37acffc7979795911f3fc8730ab60e33e",
+      "bytes": 2082310
+    },
+    {
+      "uri": "T_WoodTrim_Roughness.png",
+      "url": "/models/lantern-reach/scenery/T_WoodTrim_Roughness.png",
+      "sha256": "e888464fd4199d458d8cf39e00fa07d56f8a0bcb658aa03b4a7c95d466ceefa3",
+      "bytes": 1697111
+    },
+    {
+      "uri": "T_Plaster_Normal.png",
+      "url": "/models/lantern-reach/scenery/T_Plaster_Normal.png",
+      "sha256": "8b9617b561466cce00d5a0628eae7bef208dcf63445d72570e7f8e5057fed0d4",
+      "bytes": 4607606
+    },
+    {
+      "uri": "T_Plaster_BaseColor.png",
+      "url": "/models/lantern-reach/scenery/T_Plaster_BaseColor.png",
+      "sha256": "98547ca83888307e3ffa96384ce058b7622affe0a42add3b36d0b48618c5eda4",
+      "bytes": 3316410
+    },
+    {
+      "uri": "T_Plaster_ORM.png",
+      "url": "/models/lantern-reach/scenery/T_Plaster_ORM.png",
+      "sha256": "7be9d64a6154ba12bb7086e1d6774a7d5bbbc95775efb614f6ff40a4787fe0c7",
+      "bytes": 2381579
+    },
+    {
+      "uri": "T_RockTrim_Normal.png",
+      "url": "/models/lantern-reach/scenery/T_RockTrim_Normal.png",
+      "sha256": "f93f82f7e69aa0bf1900f8ab3f252390f091b771f0b84a345c5fefb0f0155cd3",
+      "bytes": 3925938
+    },
+    {
+      "uri": "T_RockTrim_BaseColor.png",
+      "url": "/models/lantern-reach/scenery/T_RockTrim_BaseColor.png",
+      "sha256": "aa571cd612091a8f4c95393f8f938bd6e5d47a8cdfd9c896b60a4b37903e2c7c",
+      "bytes": 1908835
+    },
+    {
+      "uri": "T_RockTrim_ORM.png",
+      "url": "/models/lantern-reach/scenery/T_RockTrim_ORM.png",
+      "sha256": "5287dd9a4e9fb7423af8d8440a8de8bdb8910f9f37ba148f619a6eddf58d5bc8",
+      "bytes": 1625807
+    },
+    {
+      "uri": "T_MetalOrnaments_BaseColor.png",
+      "url": "/models/lantern-reach/scenery/T_MetalOrnaments_BaseColor.png",
+      "sha256": "28603125908bb443ef7ac405d6bf2978dafdd348081c1dfd21630ac09862b668",
+      "bytes": 725116
+    },
+    {
+      "uri": "T_MetalOrnaments_Roughness.png",
+      "url": "/models/lantern-reach/scenery/T_MetalOrnaments_Roughness.png",
+      "sha256": "2de0135d6ffc3021e2550860107f531d0e64fdd0b46b3bf06f2f85e30b818874",
+      "bytes": 89547
+    },
+    {
+      "uri": "T_Brick_Normal.png",
+      "url": "/models/lantern-reach/scenery/T_Brick_Normal.png",
+      "sha256": "6349f1fb3eed9985e6f969c1de04b9e92490020a12ba19a44b96ea808fb27c1a",
+      "bytes": 4474267
+    },
+    {
+      "uri": "T_Brick_BaseColor.png",
+      "url": "/models/lantern-reach/scenery/T_Brick_BaseColor.png",
+      "sha256": "5515f57e61767838f53f4b9e25aa83b1382ad345ff6b446482718b5140c33813",
+      "bytes": 2447169
+    },
+    {
+      "uri": "T_Brick_Roughness.png",
+      "url": "/models/lantern-reach/scenery/T_Brick_Roughness.png",
+      "sha256": "981e7a4f8e3119749b2fb3d557e3d0ba0551e75a39b467cff0a3a948a9392716",
+      "bytes": 689204
+    },
+    {
+      "uri": "T_RoundTiles_Normal.png",
+      "url": "/models/lantern-reach/scenery/T_RoundTiles_Normal.png",
+      "sha256": "e8cf202fbc1ec36c3f5389a25ab9c99f015d49ae0ca963d0404614c3e1e8f687",
+      "bytes": 3792369
+    },
+    {
+      "uri": "T_RoundTiles_BaseColor.png",
+      "url": "/models/lantern-reach/scenery/T_RoundTiles_BaseColor.png",
+      "sha256": "acf388ebd1a97346e1e5b59091cfc609ed15b4f70b83a626089f12a82a2d9997",
+      "bytes": 4352034
+    },
+    {
+      "uri": "T_RoundTiles_Roughness.png",
+      "url": "/models/lantern-reach/scenery/T_RoundTiles_Roughness.png",
+      "sha256": "02c5cdbb6768de6ac674a343265c020c5bd6ef70fd7ba555d9b9dc7445179366",
+      "bytes": 1624660
+    }
+  ]
+}

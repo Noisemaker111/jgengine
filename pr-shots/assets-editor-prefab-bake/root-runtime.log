@@ -1,0 +1,271 @@
+prune: Removed types... Node (18)
+prune: Removed types... Mesh (11), Node (11), Primitive (57), Accessor (214)
+prune: Removed types... Node (18)
+prune: Removed types... Mesh (11), Node (11), Primitive (57), Accessor (214)
+COMPARE building:Wilkes provision house {
+  maxDelta: 4.005432288067823e-7,
+  triangles: 6957,
+  tolerance: 0.0001,
+} draws 11 -> 12
+prune: Removed types... Node (15)
+prune: Removed types... Mesh (8), Node (8), Primitive (43), Accessor (179)
+prune: Removed types... Node (15)
+prune: Removed types... Mesh (8), Node (8), Primitive (43), Accessor (179)
+COMPARE building:Lin apothecary {
+  maxDelta: 1.6212464970521978e-7,
+  triangles: 5869,
+  tolerance: 0.0001,
+} draws 11 -> 12
+prune: Removed types... Node (44)
+prune: Removed types... Mesh (39), Node (39), Primitive (210), Accessor (554)
+prune: Removed types... Node (44)
+prune: Removed types... Mesh (39), Node (39), Primitive (210), Accessor (554)
+COMPARE building:Eastbrook watch hall {
+  maxDelta: 4.768371573149466e-7,
+  triangles: 12100,
+  tolerance: 0.0001,
+} draws 9 -> 10
+prune: Removed types... Node (24)
+prune: Removed types... Mesh (19), Node (19), Primitive (113), Accessor (327)
+prune: Removed types... Node (24)
+prune: Removed types... Mesh (19), Node (19), Primitive (113), Accessor (327)
+COMPARE building:Aldric lantern chapel {
+  maxDelta: 4.768371573149466e-7,
+  triangles: 8760,
+  tolerance: 0.0001,
+} draws 10 -> 11
+prune: Removed types... Node (20)
+prune: Removed types... Mesh (15), Node (15), Primitive (82), Accessor (258)
+prune: Removed types... Node (20)
+prune: Removed types... Mesh (15), Node (15), Primitive (82), Accessor (258)
+COMPARE building:Odell workshop {
+  maxDelta: 4.768371573149466e-7,
+  triangles: 7276,
+  tolerance: 0.0001,
+} draws 9 -> 10
+prune: Removed types... Node (39)
+prune: Removed types... Mesh (32), Node (32), Primitive (155), Accessor (459)
+prune: Removed types... Node (39)
+prune: Removed types... Mesh (32), Node (32), Primitive (155), Accessor (459)
+COMPARE building:Reach wayside inn {
+  maxDelta: 4.005432288067823e-7,
+  triangles: 11501,
+  tolerance: 0.0001,
+} draws 11 -> 12
+prune: Removed types... Node (18)
+prune: Removed types... Mesh (11), Node (11), Primitive (57), Accessor (214)
+prune: Removed types... Node (18)
+prune: Removed types... Mesh (11), Node (11), Primitive (57), Accessor (214)
+COMPARE building:Fenbridge dock house {
+  maxDelta: 4.005432128195707e-7,
+  triangles: 6957,
+  tolerance: 0.0001,
+} draws 11 -> 12
+prune: Removed types... Node (24)
+prune: Removed types... Mesh (19), Node (19), Primitive (113), Accessor (327)
+prune: Removed types... Node (24)
+prune: Removed types... Mesh (19), Node (19), Primitive (113), Accessor (327)
+COMPARE building:Fenbridge ward tower {
+  maxDelta: 4.768371573149466e-7,
+  triangles: 8760,
+  tolerance: 0.0001,
+} draws 10 -> 11
+prune: Removed types... Node (44)
+prune: Removed types... Mesh (39), Node (39), Primitive (210), Accessor (554)
+prune: Removed types... Node (44)
+prune: Removed types... Mesh (39), Node (39), Primitive (210), Accessor (554)
+COMPARE building:Highwatch lodge {
+  maxDelta: 4.768371573149466e-7,
+  triangles: 12100,
+  tolerance: 0.0001,
+} draws 9 -> 10
+prune: Removed types... Node (24)
+prune: Removed types... Mesh (19), Node (19), Primitive (113), Accessor (327)
+prune: Removed types... Node (24)
+prune: Removed types... Mesh (19), Node (19), Primitive (113), Accessor (327)
+COMPARE building:Highwatch beacon tower {
+  maxDelta: 4.768371573149466e-7,
+  triangles: 8760,
+  tolerance: 0.0001,
+} draws 10 -> 11
+prune: Removed types... Node (20)
+prune: Removed types... Mesh (15), Node (15), Primitive (82), Accessor (258)
+prune: Removed types... Node (20)
+prune: Removed types... Mesh (15), Node (15), Primitive (82), Accessor (258)
+COMPARE building:Hollow Crypt gatehouse {
+  maxDelta: 4.768371573149466e-7,
+  triangles: 7276,
+  tolerance: 0.0001,
+} draws 9 -> 10
+prune: Removed types... Node (52)
+prune: Removed types... Mesh (51), Node (51), Primitive (103), Accessor (212)
+prune: Removed types... Node (52)
+prune: Removed types... Mesh (51), Node (51), Primitive (103), Accessor (212)
+COMPARE street:market-cobbles {
+  maxDelta: 0,
+  triangles: 208,
+  tolerance: 0.0001,
+} draws 1 -> 1
+{
+  "prefabs": [
+    {
+      "geometryComparison": {
+        "maxDelta": 4.005432288067823e-7,
+        "triangles": 6957,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 11,
+      "id": "building:Wilkes provision house",
+      "submissions": 12,
+      "triangles": 6957,
+      "bytes": 396064,
+      "sha256": "ac8a6ee2781ec6fde1316fbde9b49f1a1b91aedd1139600c178db78a5b868fe4"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 1.6212464970521978e-7,
+        "triangles": 5869,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 11,
+      "id": "building:Lin apothecary",
+      "submissions": 12,
+      "triangles": 5869,
+      "bytes": 339052,
+      "sha256": "970ad0b5d1576bcef63267c765a4b5cc877f71d42216bc6b0d3e2ae12b68a971"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.768371573149466e-7,
+        "triangles": 12100,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 9,
+      "id": "building:Eastbrook watch hall",
+      "submissions": 10,
+      "triangles": 12100,
+      "bytes": 680612,
+      "sha256": "71eb4a8e24766c411ddaa8d34295b14eea2ba13ff5ab1d4b0cc10ec6acb5a418"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.768371573149466e-7,
+        "triangles": 8760,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 10,
+      "id": "building:Aldric lantern chapel",
+      "submissions": 11,
+      "triangles": 8760,
+      "bytes": 493612,
+      "sha256": "269a71655298c6a424c61ec7e77ffd1747e1dadc8ec991f79544ba2b91c19b32"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.768371573149466e-7,
+        "triangles": 7276,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 9,
+      "id": "building:Odell workshop",
+      "submissions": 10,
+      "triangles": 7276,
+      "bytes": 410520,
+      "sha256": "42b9d7f2e0b63d6c8ea44ffbc9d62a7ddaf995c1c874675ae9052c9fa42c8115"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.005432288067823e-7,
+        "triangles": 11501,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 11,
+      "id": "building:Reach wayside inn",
+      "submissions": 12,
+      "triangles": 11501,
+      "bytes": 663944,
+      "sha256": "a60b338b916ce9481ea65d2b521ba7a713af71858552d63156398d23ddbc8a44"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.005432128195707e-7,
+        "triangles": 6957,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 11,
+      "id": "building:Fenbridge dock house",
+      "submissions": 12,
+      "triangles": 6957,
+      "bytes": 396056,
+      "sha256": "3b2e55b324805e6d90476867d6e118188dbdf97c828262a6a92324b9de882435"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.768371573149466e-7,
+        "triangles": 8760,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 10,
+      "id": "building:Fenbridge ward tower",
+      "submissions": 11,
+      "triangles": 8760,
+      "bytes": 493612,
+      "sha256": "380d064df84b534d609c6bb3fad0bd7c9dbe9dda7518ffa7a1388a5d45ca820f"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.768371573149466e-7,
+        "triangles": 12100,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 9,
+      "id": "building:Highwatch lodge",
+      "submissions": 10,
+      "triangles": 12100,
+      "bytes": 680660,
+      "sha256": "627d167849635e952f49f7f712b6f3ea687f98b4e44c68b625a979eef5b6c85f"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.768371573149466e-7,
+        "triangles": 8760,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 10,
+      "id": "building:Highwatch beacon tower",
+      "submissions": 11,
+      "triangles": 8760,
+      "bytes": 493612,
+      "sha256": "9c4e1060939e0016f419b89c7ccf5cba364bb45d969c97f2052d0d3c97b60d94"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 4.768371573149466e-7,
+        "triangles": 7276,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 9,
+      "id": "building:Hollow Crypt gatehouse",
+      "submissions": 10,
+      "triangles": 7276,
+      "bytes": 410524,
+      "sha256": "45d4ebd2f4def88d2f4f67e7f76dde5c7eb145f37018ed656705c77ba14a3009"
+    },
+    {
+      "geometryComparison": {
+        "maxDelta": 0,
+        "triangles": 208,
+        "tolerance": 0.0001
+      },
+      "oldSubmissions": 1,
+      "id": "street:market-cobbles",
+      "submissions": 1,
+      "triangles": 208,
+      "bytes": 16272,
+      "sha256": "6487ad0774ffdefe57910cf497914bcb064561268c312450d233e2bb3af5d737"
+    }
+  ],
+  "closedExteriors": 11,
+  "reachableResidents": 7,
+  "authoredProps": 40
+}
