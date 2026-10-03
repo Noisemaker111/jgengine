@@ -798,6 +798,7 @@
     "./devtools/latencyInstrumentation",
     "./devtools/panelAtoms",
     "./devtools/perfDiagnose",
+    "./devtools/playtestProbe",
     "./diagnostics/FpsCounter",
     "./diagnostics/RuntimeDiagnostics",
     "./drivers/FrameDriver",

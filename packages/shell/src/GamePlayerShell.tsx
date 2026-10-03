@@ -44,6 +44,7 @@ import { readUrlFlag, subscribeUrlChange, writeUrlParam } from "@jgengine/core/d
 import { createAudioEngine } from "./audio/audioEngine";
 import { attachAudioEventWire } from "./audio/audioWire";
 import { installAgentBridge } from "./devtools/agentBridge";
+import { attachPlaytestProbe } from "./devtools/playtestProbe";
 import { withDevtoolsLatency } from "./devtools/latencyInstrumentation";
 import { resolveRigKind } from "./camera/rigResolve";
 import { contextModels } from "./render/resolveModel";
@@ -343,6 +344,7 @@ export function GamePlayerShell({
 
   useEffect(() => {
     setDiagnostics([]);
+    let detachProbe = () => {};
     try {
       const models = contextModels(playable);
       const context = createGameContext({
@@ -355,12 +357,17 @@ export function GamePlayerShell({
       playable.loop.onInit(context);
       playable.loop.onNewPlayer(context);
       onContextReady?.(context);
+      const probe = playable.capture?.probe;
+      if (probe !== undefined && typeof window !== "undefined") {
+        detachProbe = attachPlaytestProbe(window, () => probe(context));
+      }
       setCtx(context);
     } catch (error) {
       reportRuntimeError(error, "init");
       setCtx(null);
     }
     return () => {
+      detachProbe();
       setCtx(null);
     };
   }, [playable, userId]);
