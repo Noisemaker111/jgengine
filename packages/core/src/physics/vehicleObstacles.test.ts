@@ -92,6 +92,54 @@ describe("createVehicleObstacleClamp — passthrough", () => {
 });
 
 describe("createVehicleObstacleClamp — impact bookkeeping", () => {
+  test("position recovery carries stable permitted motion without a stationary crash", () => {
+    let samples = 0;
+    const clamp = createVehicleObstacleClamp({
+      obstacles: () => { samples++; return [{ position: [0, 0, 0.3], halfExtents: [1.4, 1.2, 1.4] }]; },
+      radius: RADIUS, dt: () => DT,
+    });
+    const recovered = clamp.clampMove([0, 0], [0, 0]);
+    expect(samples).toBe(1);
+    expect(recovered[1]).toBeLessThan(-2.4);
+    expect(recovered.motion).toEqual([0, 0]);
+    expect(clamp.takeImpact()).toBeNull();
+    clamp.clampMove([0, 0], [0.02, -0.03]);
+    expect(recovered.motion).toEqual([0, 0]); // previous result never aliases live scratch
+    expect(clamp.takeImpact()).toBeNull();
+  });
+
+  test("recovery on one axis preserves genuine closing speed and slide on the other", () => {
+    const clamp = createVehicleObstacleClamp({
+      obstacles: () => [
+        { position: [0, 0, 0.3], halfExtents: [1.4, 1.2, 1.4] },
+        { position: [2, 0, 0], halfExtents: [0.5, 1, 10] },
+      ], radius: RADIUS, dt: () => DT,
+    });
+    const allowed = clamp.clampMove([0, 0], [1, -0.2]);
+    expect(allowed.motion?.[0]).toBeCloseTo(0.1, 9);
+    expect(allowed.motion?.[1]).toBeCloseTo(-0.2, 9);
+    const impact = clamp.takeImpact();
+    expect(impact?.closingSpeed).toBeCloseTo(0.9 / DT, 9);
+    expect(impact?.normal[0]).toBeCloseTo(-1, 9);
+    expect(impact?.normal[1]).toBeCloseTo(0, 9);
+  });
+
+  test("recovery into a second overlapping solid stays positional and bounded", () => {
+    let samples = 0;
+    const clamp = createVehicleObstacleClamp({
+      obstacles: () => { samples++; return [
+        { position: [0, 0, 0.3], halfExtents: [1.4, 1.2, 1.4] },
+        { position: [0, 0, -5], halfExtents: [1.4, 1.2, 1.4] },
+      ]; }, radius: RADIUS, dt: () => DT,
+    });
+    const result = clamp.clampMove([0, 0], [0, 0]);
+    expect(result.motion).toEqual([0, 0]);
+    expect(Number.isFinite(result[1])).toBe(true);
+    expect(Math.abs(result[1])).toBeLessThan(3);
+    expect(samples).toBe(1);
+    expect(clamp.takeImpact()).toBeNull();
+  });
+
   test("the largest block since the last take wins, and reads clear it", () => {
     const obstacle: CollisionObstacle = { position: [0, 0.5, 10] };
     const clamp = createVehicleObstacleClamp({ obstacles: () => [obstacle], radius: RADIUS, dt: () => DT });
