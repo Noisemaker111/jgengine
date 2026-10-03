@@ -260,8 +260,25 @@ export function EditorChrome({
     }
   }, [materialSourceUrl, materialMarker, state.document]);
   const materialSourceKey = JSON.stringify([materialMarker?.id, materialSourceUrl, materialPreviewConfig]);
-  const reportMaterialSlots = useCallback((slots: ModelMaterialSlotInfo[]) => setMaterialInventory({ source: materialSourceKey, slots }), [materialSourceKey]);
-  const reportMaterialError = useCallback((message: string | null) => setMaterialPreviewFailure({ source: materialSourceKey, message }), [materialSourceKey]);
+  const materialMarkerId = materialMarker?.id;
+  useEffect(() => {
+    if (layoutState.workspace !== "materials" || !materialMarkerId || !materialSourceUrl) return;
+    if (api.getMaterialSlots(materialMarkerId).status === "ready") return;
+    api.reportMaterialSlots(materialMarkerId, materialSourceUrl, materialPreviewConfig.error
+      ? { status: "unavailable", reason: materialPreviewConfig.error }
+      : { status: "loading" });
+    return () => {
+      const current = api.getMaterialSlots(materialMarkerId);
+      if (current.sourceUrl === materialSourceUrl && current.status === "loading") api.reportMaterialSlots(materialMarkerId, materialSourceUrl, { status: "unavailable", reason: "The model preview closed before slot inspection completed." });
+    };
+  }, [api, materialMarkerId, materialSourceUrl, layoutState.workspace, materialPreviewConfig.error]);
+  const reportMaterialSlots = useCallback((slots: ModelMaterialSlotInfo[]) => {
+    if (materialMarkerId && materialSourceUrl && api.reportMaterialSlots(materialMarkerId, materialSourceUrl, { status: "ready", slots })) setMaterialInventory({ source: materialSourceKey, slots });
+  }, [api, materialMarkerId, materialSourceUrl, materialSourceKey]);
+  const reportMaterialError = useCallback((message: string | null) => {
+    setMaterialPreviewFailure({ source: materialSourceKey, message });
+    if (message && materialMarkerId && materialSourceUrl && api.getMaterialSlots(materialMarkerId).status !== "ready") api.reportMaterialSlots(materialMarkerId, materialSourceUrl, { status: "unavailable", reason: message });
+  }, [api, materialMarkerId, materialSourceUrl, materialSourceKey]);
   const docSave = useDocumentSave(session, save, (ok, detail) =>
     consoleStore.log(ok ? "info" : "error", "save", detail),
   );
@@ -929,7 +946,7 @@ export function EditorChrome({
               {layoutState.workspace === "multiplayer" ? (
                 <NetworkWorkspacePanel snapshot={networkSnapshot} />
               ) : layoutState.workspace === "materials" ? (
-                <MaterialsWorkspacePanel session={session} api={api} materialSlots={materialInventory?.source === materialSourceKey ? materialInventory.slots : []} previewError={materialPreviewConfig.error ?? (materialPreviewFailure?.source === materialSourceKey ? materialPreviewFailure.message : null)} onSave={docSave.available ? docSave.doSave : undefined} preview={(asset, mode) => materialPreviewConfig.error ? null : <MaterialPreview asset={asset} mode={mode} model={materialPreviewConfig.model} onSlots={reportMaterialSlots} onError={reportMaterialError} environment={state.document.environment} />} />
+                <MaterialsWorkspacePanel session={session} api={api} materialSlots={materialInventory?.source === materialSourceKey ? materialInventory.slots : []} previewError={materialPreviewConfig.error ?? (materialPreviewFailure?.source === materialSourceKey ? materialPreviewFailure.message : null)} onSave={docSave.available ? docSave.doSave : undefined} preview={(asset, mode) => materialPreviewConfig.error || (!materialPreviewConfig.model && !asset) ? null : <MaterialPreview asset={asset} mode={mode} model={materialPreviewConfig.model} onSlots={reportMaterialSlots} onError={reportMaterialError} environment={state.document.environment} />} />
               ) : layoutState.workspace === "scripting" ? (
                 <ScriptingPanel session={session} api={api} />
               ) : layoutState.leftPage === "collections" ? (

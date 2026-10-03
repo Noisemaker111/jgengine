@@ -100,6 +100,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "set_object_flags", description: "Set per-object locked (blocks transform/delete) and/or hidden (viewport hide) flags on placeables by id. false clears the field." },
   { name: "batch_set_properties", description: "Patch color/label/meta across every listed id in one dispatch, regardless of kind." },
   { name: "list_material_assets", description: "List reusable authored material assets and per-marker named slot assignments." },
+  { name: "list_material_slots", description: "Read a marker's canonical loaded mesh/material slot names, indices, material type, UV sets and tangents. Select the marker and open Materials to load it; loading/unavailable states return explicit status rather than empty ready data." },
   { name: "upsert_material_asset", description: "Validate and save a reusable physical material asset as one undo step; omitted surface fields preserve imported appearance." },
   { name: "remove_material_asset", description: "Remove an unreferenced material asset; assigned materials fail with a diagnostic." },
   { name: "assign_material_asset", description: "Assign a material asset to exact mesh/material-slot names or slot index on selected markers. Untouched imported slots remain intact." },

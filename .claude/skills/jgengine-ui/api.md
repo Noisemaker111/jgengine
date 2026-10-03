@@ -2446,6 +2446,12 @@
 - `cloneModelScene` (function): function cloneModelScene(source: THREE.Object3D, options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode }): THREE.Object3D — Clone a model with independent pose and materials, retaining shared geometry and textures.
 - `disposeModelScene` (function): function disposeModelScene(root: THREE.Object3D): void — Release materials and bone textures owned by `cloneModelScene`; shared assets and attached models remain owned by their callers.
 
+## @jgengine/shell/render/projectedOverdraw
+
+- `ProjectedOverdrawOptions` (interface): interface ProjectedOverdrawOptions — Sampling resolution; lower resolutions change thin geometry and alpha-mask raster coverage.
+- `ProjectedOverdrawReport` (interface): interface ProjectedOverdrawReport — Projected mesh-fragment overlap, with depth rejection disabled; this is not production early-Z overdraw or GPU timing.
+- `measureProjectedOverdraw` (function): function measureProjectedOverdraw(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera, options: ProjectedOverdrawOptions = {}): ProjectedOverdrawReport — Opt in to a synchronous offscreen count of projected mesh fragments. Native PBR/unlit vertex transforms and alpha discard remain; depth rejection, shadow/refraction passes and postprocessing do not participate. Blended texels count equally, including zero opacity when native alphaTest/alphaHash does not discard them. Pure shader-modifying onBeforeCompile callbacks are retained; render callbacks, custom shader materials, stencil and alpha-to-coverage are rejected. The float readback stalls the GPU. Temporary materials/target are disposed and renderer draw counters/state restored; borrowed assets may become resident while measured.
+
 ## @jgengine/shell/render/resolveModel
 
 - `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.

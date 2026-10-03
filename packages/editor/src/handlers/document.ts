@@ -108,6 +108,7 @@ export const documentHandlers: Pick<
   | "place_asset"
   | "batch_set_properties"
   | "list_material_assets"
+  | "list_material_slots"
   | "upsert_material_asset"
   | "remove_material_asset"
   | "assign_material_asset"
@@ -455,6 +456,10 @@ export const documentHandlers: Pick<
     return { ok: true, result: summarizeEditorSession(ctx.session.getState()) };
   },
   list_material_assets: (ctx) => ({ ok: true, result: { assets: ctx.session.getState().document.materialAssets ?? [], assignments: ctx.session.getState().document.markers.filter((marker) => marker.meta?.materialAssignments !== undefined).map((marker) => ({ id: marker.id, assignments: marker.meta!.materialAssignments })) } }),
+  list_material_slots: (ctx, request) => {
+    const inventory = ctx.api.getMaterialSlots(request.id);
+    return inventory.status === "ready" ? { ok: true, result: inventory } : { ok: false, result: inventory, error: inventory.status === "loading" ? "Material slots are still loading." : inventory.reason };
+  },
   upsert_material_asset: (ctx, request) => {
     const asset = parseEditorMaterialAsset(request.asset);
     ctx.session.dispatch({ type: "upsertMaterialAsset", asset }, request.coalesce === undefined ? undefined : { coalesce: request.coalesce });

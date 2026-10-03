@@ -529,6 +529,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
 
+## projected-overdraw — sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits
+
+- `measureProjectedOverdraw` (function) · `import { measureProjectedOverdraw } from "@jgengine/shell/render/projectedOverdraw"`
+
 ## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
 
 - `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/react"`

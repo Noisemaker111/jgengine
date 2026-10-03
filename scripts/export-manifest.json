@@ -881,6 +881,7 @@
     "./render/modelBindPose",
     "./render/modelLoad",
     "./render/modelRender",
+    "./render/projectedOverdraw",
     "./render/resolveModel",
     "./render/sceneCapture",
     "./render/spriteRender",

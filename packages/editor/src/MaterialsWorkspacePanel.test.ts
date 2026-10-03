@@ -37,3 +37,22 @@ test("assignment initialization skips invalid references and preserves the prima
   expect(initialMaterialAssignment(document, ["unassigned"])).toBeNull();
   expect(initialMaterialAssignment({ ...document, markers: [...document.markers].reverse() }, ["chair", "unassigned"])).toBeNull();
 });
+
+test("a selected native model preview mounts before any material asset is created", () => {
+  const host = createEditorHost({ gameId: "material-slots-before-authoring", layers: {
+    markers: [{ id: "chair", kind: "prop", catalogId: "chair-model", position: { x: 0, y: 0, z: 0 } }],
+  }, assets: [{ id: "chair-model", label: "Chair", kind: "model", url: "/chair.glb" }] });
+  try {
+    host.api.handle({ method: "select", ids: ["chair"] });
+    let mounted = false;
+    const html = renderToStaticMarkup(createElement(MaterialsWorkspacePanel, { session: host.session, api: host.api, preview: (asset, mode) => {
+      mounted = true;
+      expect(asset).toBeUndefined();
+      expect(mode).toBe("neutral");
+      return createElement("div", null, "Selected imported model preview");
+    } }));
+    expect(mounted).toBe(true);
+    expect(html).toContain("Selected imported model preview");
+    expect(host.session.getState().document.materialAssets).toBeUndefined();
+  } finally { host.dispose(); }
+});

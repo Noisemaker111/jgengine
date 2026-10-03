@@ -117,6 +117,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   set_object_flags: [req(sa("ids")), b("locked"), b("hidden")],
   batch_set_properties: [req(sa("ids")), s("color"), s("label"), o("meta")],
   list_material_assets: [],
+  list_material_slots: [req(s("id"))],
   upsert_material_asset: [req(o("asset")), s("coalesce")],
   remove_material_asset: [req(s("id"))],
   assign_material_asset: [req(sa("ids")), req(s("materialId")), req(o("selector"))],

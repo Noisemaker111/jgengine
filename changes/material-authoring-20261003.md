@@ -4,6 +4,7 @@
 - Shared physical surface rendering, fuzzy sheen, directional woven appearance, hair-card ribbons and coverage/backscatter approximations; geometry and simulation remain separate.
 - Materials workspace edits six family-specific groups and advanced maps, previews neutral or document lighting, and shares editor undo, save and typed RPC with runtime.
 - Native glTF material inventory and export diagnostics preserve packed channels, extensions and attribution; resource accounting and appearance adapters consume wetness/exposure without changing global lighting.
+- Typed slot-inventory RPC reports actual loaded model prerequisites; opt-in projected-overdraw measurement preserves native coverage and restores rendering resources.
 
 ### Fixed
 

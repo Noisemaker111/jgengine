@@ -64,7 +64,7 @@ export function MaterialsWorkspacePanel({
 }: {
   session: EditorSession;
   api: EditorHostApi;
-  preview?: (asset: MaterialAsset, mode: "neutral" | "game") => ReactNode;
+  preview?: (asset: MaterialAsset | undefined, mode: "neutral" | "game") => ReactNode;
   onSave?: () => void;
   materialSlots?: readonly { mesh: string; slot: string; slotIndex: number }[];
   previewError?: string | null;
@@ -178,7 +178,7 @@ export function MaterialsWorkspacePanel({
         {previewError ? <p role="alert" className="text-[10px] text-rose-300">Preview: {previewError}</p> : null}
         {assignmentErrors.map((message) => <p key={message} role="alert" className="text-[10px] text-rose-300">{message}</p>)}
       </div>
-      {activeAsset ? <MaterialAssetEditor key={activeAsset.id} asset={activeAsset} preview={preview} onChange={(asset, coalesce) => { const result = api.handle({ method: "upsert_material_asset", asset, coalesce }); setError(result.ok ? null : result.error ?? "Material operation failed."); }} /> : <EmptyState icon="sphere" title="No material assets" description="Create an editable starting point, then assign it to a named mesh or material slot. Existing imported materials remain intact." />}
+      {activeAsset ? <MaterialAssetEditor key={activeAsset.id} asset={activeAsset} preview={preview} onChange={(asset, coalesce) => { const result = api.handle({ method: "upsert_material_asset", asset, coalesce }); setError(result.ok ? null : result.error ?? "Material operation failed."); }} /> : <><div className="p-2">{preview?.(undefined, "neutral")}</div><EmptyState icon="sphere" title="No material assets" description="Create an editable starting point, then assign it to a named mesh or material slot. Existing imported materials remain intact." /></>}
     </div>
   </div>;
 
