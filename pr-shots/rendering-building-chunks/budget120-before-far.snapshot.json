@@ -1,0 +1,870 @@
+{
+  "game": "gameplayer-demo",
+  "at": 1791014709236,
+  "why": "outside-sim (2/2 recent long frames): Cost is outside the sim driver \u2014 three.js render, React commit, GPU, GC, or tab throttle. Check the render sample: high draw calls/triangles mean scene cost (instancing, culling, terrain density); moderate counts with slow frames mean fill cost (dpr, AO/DOF passes, bloom) \u2014 try Quality low/medium.",
+  "frame": {
+    "fps": 0.2,
+    "avgFrameMs": 4897.7,
+    "p95FrameMs": 6828.7,
+    "maxFrameMs": 6828.7,
+    "avgSimMs": 1.8,
+    "maxSimMs": 2.6,
+    "avgOutsideMs": 4895.9,
+    "maxOutsideMs": 6826.1,
+    "longFrames": 2,
+    "samples": 2,
+    "phases": [
+      {
+        "name": "onTick",
+        "avgMs": 1.2,
+        "maxMs": 1.9,
+        "pctOfSim": 65
+      },
+      {
+        "name": "pose",
+        "avgMs": 0.4,
+        "maxMs": 0.6,
+        "pctOfSim": 24
+      },
+      {
+        "name": "actions",
+        "avgMs": 0.1,
+        "maxMs": 0.2,
+        "pctOfSim": 8
+      }
+    ]
+  },
+  "render": {
+    "drawCalls": 20,
+    "triangles": 647828,
+    "geometries": 25,
+    "textures": 9
+  },
+  "latency": null,
+  "longFrameSummary": {
+    "count": 2,
+    "culprits": [
+      {
+        "culprit": "outside-sim",
+        "count": 2
+      }
+    ],
+    "maxFrameMs": 6828.7,
+    "maxDrawCalls": 20,
+    "maxGeometries": 25
+  },
+  "longFrames": [
+    {
+      "at": 1791014705139,
+      "frameMs": 6828.7,
+      "simMs": 2.6,
+      "outsideMs": 6826.1,
+      "culprit": "outside-sim",
+      "reason": "display/render/browser hitch 6826.1ms outside sim \u00b7 sim 2.6ms",
+      "phases": [
+        {
+          "name": "onTick",
+          "ms": 1.9
+        },
+        {
+          "name": "pose",
+          "ms": 0.6
+        },
+        {
+          "name": "actions",
+          "ms": 0.1
+        }
+      ],
+      "probes": {
+        "presentationRecovery": [
+          {
+            "phase": "shell-reveal-layout",
+            "at": 1577.1000000005588,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 1577.300000000745,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 1585.5,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 1585.5,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "draw-observed",
+            "attempt": 0,
+            "scope": 1,
+            "sameOwner": true,
+            "pending": false,
+            "failed": false,
+            "at": 2708.600000000559,
+            "connected": false,
+            "rects": 0,
+            "width": null,
+            "height": null,
+            "display": null,
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2718.100000000559,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2718.2000000001863,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2724.800000000745,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2724.9000000003725,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2743.7000000001863,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2743.800000000745,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2755.100000000559,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2755.100000000559,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2768.100000000559,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2768.2000000001863,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 12544.400000000373,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 12544.400000000373,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 13678.200000000186,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 13678.200000000186,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          }
+        ],
+        "entities": 4,
+        "objects": 0,
+        "fallbacks": {
+          "entity": {
+            "omittedMapping": 4
+          }
+        },
+        "textureErrors": [],
+        "heavyModels": []
+      },
+      "render": {
+        "drawCalls": 20,
+        "triangles": 647828,
+        "geometries": 25,
+        "textures": 9
+      }
+    },
+    {
+      "at": 1791014708105,
+      "frameMs": 2966.7,
+      "simMs": 1.1,
+      "outsideMs": 2965.6,
+      "culprit": "outside-sim",
+      "reason": "display/render/browser hitch 2965.6ms outside sim \u00b7 sim 1.1ms",
+      "phases": [
+        {
+          "name": "onTick",
+          "ms": 0.5
+        },
+        {
+          "name": "pose",
+          "ms": 0.3
+        },
+        {
+          "name": "actions",
+          "ms": 0.2
+        }
+      ],
+      "probes": {
+        "presentationRecovery": [
+          {
+            "phase": "shell-reveal-layout",
+            "at": 1577.1000000005588,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 1577.300000000745,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 1585.5,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 1585.5,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "draw-observed",
+            "attempt": 0,
+            "scope": 1,
+            "sameOwner": true,
+            "pending": false,
+            "failed": false,
+            "at": 2708.600000000559,
+            "connected": false,
+            "rects": 0,
+            "width": null,
+            "height": null,
+            "display": null,
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2718.100000000559,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2718.2000000001863,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2724.800000000745,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2724.9000000003725,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2743.7000000001863,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2743.800000000745,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2755.100000000559,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2755.100000000559,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 2768.100000000559,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 2768.2000000001863,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 12544.400000000373,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 12544.400000000373,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-reveal-layout",
+            "at": 13678.200000000186,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          },
+          {
+            "phase": "shell-focus-result",
+            "at": 13678.200000000186,
+            "connected": true,
+            "rects": 1,
+            "width": 800,
+            "height": 450,
+            "display": "block",
+            "active": "BODY",
+            "ownsFocus": false,
+            "focusInside": false
+          }
+        ],
+        "entities": 4,
+        "objects": 0,
+        "fallbacks": {
+          "entity": {
+            "omittedMapping": 4
+          }
+        },
+        "textureErrors": [],
+        "heavyModels": []
+      },
+      "render": {
+        "drawCalls": 20,
+        "triangles": 647828,
+        "geometries": 25,
+        "textures": 9
+      }
+    }
+  ],
+  "probes": {
+    "presentationRecovery": [
+      {
+        "phase": "shell-reveal-layout",
+        "at": 1577.1000000005588,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 1577.300000000745,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-reveal-layout",
+        "at": 1585.5,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 1585.5,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "draw-observed",
+        "attempt": 0,
+        "scope": 1,
+        "sameOwner": true,
+        "pending": false,
+        "failed": false,
+        "at": 2708.600000000559,
+        "connected": false,
+        "rects": 0,
+        "width": null,
+        "height": null,
+        "display": null,
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-reveal-layout",
+        "at": 2718.100000000559,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 2718.2000000001863,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-reveal-layout",
+        "at": 2724.800000000745,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 2724.9000000003725,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-reveal-layout",
+        "at": 2743.7000000001863,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 2743.800000000745,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-reveal-layout",
+        "at": 2755.100000000559,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 2755.100000000559,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-reveal-layout",
+        "at": 2768.100000000559,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 2768.2000000001863,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-reveal-layout",
+        "at": 12544.400000000373,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 12544.400000000373,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-reveal-layout",
+        "at": 13678.200000000186,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      },
+      {
+        "phase": "shell-focus-result",
+        "at": 13678.200000000186,
+        "connected": true,
+        "rects": 1,
+        "width": 800,
+        "height": 450,
+        "display": "block",
+        "active": "BODY",
+        "ownsFocus": false,
+        "focusInside": false
+      }
+    ],
+    "entities": 4,
+    "objects": 0,
+    "fallbacks": {
+      "entity": {
+        "omittedMapping": 4
+      }
+    },
+    "textureErrors": [],
+    "heavyModels": []
+  },
+  "logs": [
+    {
+      "at": 1791014698355,
+      "level": "warn",
+      "message": "[jgengine] render seams resolved to placeholder fallbacks \u2014 entity:omittedMapping=4. Author the missing mapping/pack/scene, or ignore if the placeholder is intended."
+    },
+    {
+      "at": 1791014708102,
+      "level": "warn",
+      "message": "[jgengine] render seams resolved to placeholder fallbacks \u2014 entity:omittedMapping=4. Author the missing mapping/pack/scene, or ignore if the placeholder is intended."
+    },
+    {
+      "at": 1791014709234,
+      "level": "warn",
+      "message": "[jgengine] render seams resolved to placeholder fallbacks \u2014 entity:omittedMapping=4. Author the missing mapping/pack/scene, or ignore if the placeholder is intended."
+    }
+  ],
+  "discoveredCount": 39
+}

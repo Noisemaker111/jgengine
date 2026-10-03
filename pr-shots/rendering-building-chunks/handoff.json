@@ -1,0 +1,41 @@
+{
+  "afterHead": "a4615f8dd4624a9b44a26a08d2930159516b543a",
+  "afterTree": "e85ff9470a3c822dca56ff7a2d0442c0ce269289",
+  "baselineHead": "1729221c7aa63c9b7b3f6935e491708a16516088",
+  "baselineTree": "3326c2c20661a349291161ddbc25f370d97f1102",
+  "betaBase": "6d71cd76929f3581953059dba447888a6cfa0346",
+  "images": [
+    "/workspace/jgengine/.claude/worktrees/rendering-building-chunks/.scratch/building-chunks/budget120-before-near.png",
+    "/workspace/jgengine/.claude/worktrees/rendering-building-chunks/.scratch/building-chunks/budget120-before-far.png",
+    "/workspace/jgengine/.claude/worktrees/rendering-building-chunks/.scratch/building-chunks/budget120-after-near.png",
+    "/workspace/jgengine/.claude/worktrees/rendering-building-chunks/.scratch/building-chunks/budget120-after-far.png"
+  ],
+  "snapshots": [
+    "/workspace/jgengine/.claude/worktrees/rendering-building-chunks/.scratch/building-chunks/budget120-before-near.snapshot.json",
+    "/workspace/jgengine/.claude/worktrees/rendering-building-chunks/.scratch/building-chunks/budget120-before-far.snapshot.json",
+    "/workspace/jgengine/.claude/worktrees/rendering-building-chunks/.scratch/building-chunks/budget120-after-near.snapshot.json",
+    "/workspace/jgengine/.claude/worktrees/rendering-building-chunks/.scratch/building-chunks/budget120-after-far.snapshot.json"
+  ],
+  "verificationCommands": [
+    "bun test packages/shell/src/structures/buildingSpatialBatch.test.ts packages/shell/src/structures/BuildingRenderBudget.test.ts packages/shell/src/structures/buildingKit.test.ts packages/shell/src/structures/buildingKitRegistry.test.ts apps/dev/src/demo/environmentShowcase.world.test.ts",
+    "bun --cwd=packages/shell run check-types",
+    "bun --cwd=apps/dev run check-types",
+    "bun run gen",
+    "bun run ship:preflight"
+  ],
+  "changedFiles": [
+    ".claude/skills/jgengine-world/reference.md",
+    "apps/dev/src/demo/environmentShowcase.tsx",
+    "changes/rendering-building-chunks.md",
+    "packages/shell/src/Shell3dPresentation.tsx",
+    "packages/shell/src/structures/BuildingKitBatch.tsx",
+    "packages/shell/src/structures/BuildingRenderBudget.test.ts",
+    "packages/shell/src/structures/BuildingRenderBudget.tsx",
+    "packages/shell/src/structures/GeneratedBuilding.tsx",
+    "packages/shell/src/structures/buildingSpatialBatch.test.ts",
+    "packages/shell/src/structures/buildingSpatialBatch.ts",
+    "scripts/api-orphan-baseline.json",
+    "scripts/export-manifest.json"
+  ],
+  "sourceApproval": "Parent review pending; no push/PR/merge/publish by rendering agent"
+}

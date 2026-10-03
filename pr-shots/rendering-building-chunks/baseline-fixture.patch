@@ -1,0 +1,12 @@
+diff --git a/apps/dev/src/demo/environmentShowcase.tsx b/apps/dev/src/demo/environmentShowcase.tsx
+index 2d0c2bb3..30839abc 100644
+--- a/apps/dev/src/demo/environmentShowcase.tsx
++++ b/apps/dev/src/demo/environmentShowcase.tsx
+@@ -36,5 +36,7 @@ export const showcaseEnvironment = environment({
+ 
+ export const environmentShowcaseGame: PlayableGame = {
+   ...demoGame,
++  // Keep the distance cutoff inside the fixture camera's 300-unit far plane.
++  graphics: { high: { drawDistance: 120 } },
+   environment: () => <EnvironmentScene feature={showcaseEnvironment} />,
+ };
