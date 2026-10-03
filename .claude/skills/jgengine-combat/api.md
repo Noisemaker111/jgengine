@@ -442,6 +442,7 @@
 - `MagazineConfig` (interface): interface MagazineConfig — Tuning for `createMagazine`: mag capacity, reload delay, and where reserve ammo is drawn from.
 - `MagazineReserve` (interface): interface MagazineReserve — Draws ammo for a `Magazine`'s reload from wherever the reserve pool actually lives.
 - `MagazineSnapshot` (interface): interface MagazineSnapshot — Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve.
+- `MagazineTuning` (interface): interface MagazineTuning — Live magazine tuning; shrinking below loaded rounds rejects unless overflow is explicit.
 - `createMagazine` (function): function createMagazine(config: MagazineConfig): Magazine — Builds a {@link Magazine}: discrete loaded ammo, a timed reload, and reserve-pool interaction.
 
 ## @jgengine/core/combat/projectiles

@@ -11,6 +11,12 @@ This skill owns non-combat rules and state: systems, catalogs, inventory/items, 
 
 Use [capabilities.md](capabilities.md) for intent discovery, [api.md](api.md) for signatures, and [reference-systems.md](reference-systems.md) for scheduling details before hand-rolling a subsystem.
 
+For multi-cell inventory items, use `createShapedGrid`, `canPlace`, and
+`findShapedPlacement` (`inventory/shapedGrid`). The caller owns item footprints,
+rotation policy, saves, and UI; [shaped inventory placement](recipes/shaped-inventory.md)
+shows bounded first-fit search. A stack-slot `InventoryGrid` does not replace
+footprint rotation or spatial packing.
+
 Existing projects can keep player state and saves behind `LevelingStatAccess`.
 Follow the [portable XP/leveling recipe](recipes/portable-xp-leveling.md) for
 custom stat ids, immutable store writes, multiple level events, and JSON resume.

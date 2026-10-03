@@ -22,7 +22,7 @@ export interface ShapedGrid<T> {
   readonly placements: readonly Placement<T>[];
 }
 
-export type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id";
+export type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id" | "invalid-footprint" | "invalid-origin";
 
 export interface ShapedPlaceResult<T> {
   status: "ok";
@@ -83,14 +83,31 @@ export function occupiedCells(
 }
 
 /**
- * A spatial grid inventory that holds shaped multi-cell items, Resident-Evil/Tarkov style.
+ * An immutable spatial inventory board holding caller-defined multi-cell items.
  *
- * @capability tetris-inventory a spatial grid inventory holding shaped multi-cell items
-  * @internal
-  */
+ * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
+ */
 export function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> {
-  if (width <= 0 || height <= 0) throw new Error("shaped grid needs positive dimensions");
+  requireDimensions(width, height);
   return { width, height, placements: [] };
+}
+
+function requireDimensions(width: number, height: number): void {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0) {
+    throw new RangeError("shaped grid needs positive integer dimensions");
+  }
+}
+
+function validCell(cell: Cell): boolean {
+  return Number.isSafeInteger(cell[0]) && Number.isSafeInteger(cell[1]);
+}
+
+function validFootprint(footprint: Footprint): boolean {
+  return footprint.length > 0 && footprint.every(validCell);
+}
+
+function validRotation(rotation: Rotation): boolean {
+  return Number.isInteger(rotation) && rotation >= 0 && rotation <= 3;
 }
 
 function inBounds<T>(grid: ShapedGrid<T>, cells: readonly Cell[]): boolean {
@@ -108,7 +125,10 @@ function occupancyMap<T>(grid: ShapedGrid<T>, ignoreId?: string): Map<string, st
   return map;
 }
 
-/** @internal */
+/**
+ * Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+ * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
+ */
 export function canPlace<T>(
   grid: ShapedGrid<T>,
   footprint: Footprint,
@@ -116,6 +136,9 @@ export function canPlace<T>(
   rotation: Rotation,
   ignoreId?: string,
 ): ShapedRejection | null {
+  requireDimensions(grid.width, grid.height);
+  if (!validFootprint(footprint) || !validRotation(rotation)) return "invalid-footprint";
+  if (!validCell(origin)) return "invalid-origin";
   const cells = occupiedCells(footprint, origin, rotation);
   if (!inBounds(grid, cells)) return "out-of-bounds";
   const occupied = occupancyMap(grid, ignoreId);
@@ -125,7 +148,58 @@ export function canPlace<T>(
   return null;
 }
 
-/** @internal */
+/** Search policy: rotation order first, then rows and columns; the work budget counts candidate origins. */
+export interface ShapedPlacementSearchOptions {
+  /** Defaults to `[0, 1, 2, 3]`; a game can prefer or forbid rotations. */
+  rotations?: readonly Rotation[];
+  /** Ignore an existing placement while searching for its next position. */
+  ignoreId?: string;
+  /** Nonnegative integer candidate limit; defaults to 4096. */
+  maxChecks?: number;
+}
+
+/** A detached placement, a completed no-fit search, or an incomplete search that reached its budget. */
+export type ShapedPlacementSearchResult =
+  | { status: "found"; origin: Cell; rotation: Rotation; checks: number }
+  | { status: "no-space"; checks: number }
+  | { status: "budget-exceeded"; checks: number };
+
+/**
+ * Find the first legal placement without mutating the board; occupancy is indexed once per search.
+ *
+ * @capability shaped-placement find a shaped inventory item's first fit with ordered rotations, row-major placement, and an explicit search budget
+ */
+export function findShapedPlacement<T>(
+  grid: ShapedGrid<T>,
+  footprint: Footprint,
+  options: ShapedPlacementSearchOptions = {},
+): ShapedPlacementSearchResult {
+  requireDimensions(grid.width, grid.height);
+  const rotations = options.rotations ?? [0, 1, 2, 3];
+  const maxChecks = options.maxChecks ?? 4096;
+  if (!validFootprint(footprint) || !rotations.every(validRotation)) throw new RangeError("invalid footprint or rotation");
+  if (!Number.isSafeInteger(maxChecks) || maxChecks < 0) throw new RangeError("invalid placement search budget");
+  const occupied = occupancyMap(grid, options.ignoreId);
+  let checks = 0;
+  for (const rotation of rotations) {
+    const cells = rotateFootprint(footprint, rotation);
+    for (let row = 0; row < grid.height; row += 1) {
+      for (let column = 0; column < grid.width; column += 1) {
+        if (checks >= maxChecks) return { status: "budget-exceeded", checks };
+        checks += 1;
+        if (cells.every(([c, r]) => column + c < grid.width && row + r < grid.height && !occupied.has(cellKey([column + c, row + r])))) {
+          return { status: "found", origin: [column, row], rotation, checks };
+        }
+      }
+    }
+  }
+  return { status: "no-space", checks };
+}
+
+/**
+ * Place a caller-defined item without mutating the source board; duplicate ids reject.
+ * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
+ */
 export function placeShaped<T>(
   grid: ShapedGrid<T>,
   item: ShapedItem<T>,
@@ -147,7 +221,10 @@ export function placeShaped<T>(
   return { status: "ok", grid: { ...grid, placements: [...grid.placements, placement] } };
 }
 
-/** @internal */
+/**
+ * Remove one placement without mutating the source board.
+ * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
+ */
 export function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> {
   if (!grid.placements.some((p) => p.id === id)) {
     return { status: "rejected", reason: "unknown-id", detail: id };
@@ -155,7 +232,10 @@ export function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T
   return { status: "ok", grid: { ...grid, placements: grid.placements.filter((p) => p.id !== id) } };
 }
 
-/** @internal */
+/**
+ * Move or rotate one placement, ignoring its current cells during overlap checks.
+ * @capability shaped-grid a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
+ */
 export function moveShaped<T>(
   grid: ShapedGrid<T>,
   id: string,

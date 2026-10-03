@@ -146,6 +146,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useTarget` (function) · `import { useTarget } from "@jgengine/react"`
 
+## custom-viewmodel-muzzle — align tracer origins with a custom viewmodel's live muzzle without changing authoritative shots
+
+- `registerFirstPersonMuzzle` (function) · `import { registerFirstPersonMuzzle } from "@jgengine/shell/camera"`
+
 ## cutscene-letterbox — reskinnable cinematic letterbox + skip overlay for a cutscene — animated bars, caption/dialogue slot, progress line, Skip button
 
 - `CutsceneLetterbox` (function) · `import { CutsceneLetterbox } from "@jgengine/react"`

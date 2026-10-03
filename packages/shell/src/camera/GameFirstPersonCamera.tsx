@@ -16,6 +16,7 @@ import { useEntityRenderCues } from "../render/useEntityRenderCues";
 import { usePlayerFov } from "./PlayerFov";
 import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
 import { requestRawPointerLock } from "../input/pointerLock";
+import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle";
 
 const DEFAULT_SENSITIVITY = 0.0025;
 const DEFAULT_MAX_PITCH = 1.45;
@@ -23,14 +24,9 @@ const DEFAULT_MAX_PITCH = 1.45;
 const VIEWMODEL_ORIGIN = new THREE.Vector3(0.34, -0.26, -0.72);
 const MUZZLE_TIP_LOCAL = new THREE.Vector3(0, 0.03, -0.61);
 
-const muzzleWorld = new THREE.Vector3();
-let muzzleTracked = false;
-
-/** World position of the first-person weapon muzzle, or false when no viewmodel is mounted. */
-export function readFirstPersonMuzzle(target: THREE.Vector3): boolean {
-  if (!muzzleTracked) return false;
-  target.copy(muzzleWorld);
-  return true;
+/** Presentation muzzle in world space; camera-scoped when supplied, false leaves target unchanged. */
+export function readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera): boolean {
+  return readRegisteredFirstPersonMuzzle(target, camera);
 }
 
 /** Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state. */
@@ -156,9 +152,16 @@ function FirstPersonViewmodel({
   poseRef: MutableRefObject<WeaponPose | null>;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  useEffect(() => () => {
-    muzzleTracked = false;
-  }, []);
+  const muzzleWorld = useRef(new THREE.Vector3());
+  const muzzleTracked = useRef(false);
+  useEffect(() => {
+    muzzleTracked.current = false;
+    return registerTrackedFirstPersonMuzzle(camera, (target) => {
+      if (!muzzleTracked.current) return false;
+      target.copy(muzzleWorld.current);
+      return true;
+    });
+  }, [camera]);
   useFrame(() => {
     const group = groupRef.current;
     if (group === null) return;
@@ -177,8 +180,8 @@ function FirstPersonViewmodel({
     group.rotateZ(pose?.roll ?? 0);
     group.scale.set(squash, squash, 1);
     group.updateMatrixWorld();
-    group.localToWorld(muzzleWorld.copy(MUZZLE_TIP_LOCAL));
-    muzzleTracked = true;
+    group.localToWorld(muzzleWorld.current.copy(MUZZLE_TIP_LOCAL));
+    muzzleTracked.current = true;
   }, GAME_SIM_FRAME_PRIORITY);
   if (Viewmodel !== undefined) {
     return (

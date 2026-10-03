@@ -86,10 +86,50 @@ Lighting is `defineGame({ lighting })` (`LightingConfig`): ambient / hemisphere 
 
 Three composable-chrome seams for FPS/TPS polish — a placement hook plus a good default, never a forced look:
 
-- **Custom viewmodel.** `defineGame({ viewmodel })` supplies a component rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun — read when the active rig is first-person. It receives `ViewmodelProps` (`@jgengine/shell/camera`): `{ cuesRef }`, a live `MutableRefObject<EntityRenderCues>` for the followed entity — read `cuesRef.current` inside your own `useFrame` to drive bob/recoil/reload poses; never store it as render state (it updates every frame). `camera.firstPerson.viewmodel: false` renders no viewmodel at all regardless of `defineGame`'s `viewmodel` field — the explicit opt-out always wins. `readFirstPersonMuzzle(target: THREE.Vector3)` (also `@jgengine/shell/camera`) writes the live muzzle world position into `target` and returns `false` when no viewmodel is mounted — the seam for muzzle-flash lights, tracer origins, or shell casings.
+- **Custom viewmodel.** `defineGame({ viewmodel })` supplies a component rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun — read when the active rig is first-person. It receives `ViewmodelProps` (`@jgengine/shell/camera`): `{ cuesRef }`, a live `MutableRefObject<EntityRenderCues>` for the followed entity — read `cuesRef.current` inside your own `useFrame` to drive bob/recoil/reload poses; never store it as render state (it updates every frame). `camera.firstPerson.viewmodel: false` renders no viewmodel at all regardless of `defineGame`'s `viewmodel` field — the explicit opt-out always wins. `readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera)` (also `@jgengine/shell/camera`) writes the live presentation muzzle world position into `target`; pass the active Three.js camera to isolate canvases. It returns `false` without changing `target` when no muzzle is available — the seam for muzzle-flash lights, tracer origins, or shell casings.
 - **Weapon pose.** `camera.weapon: (entityId) => { handling, presentation } | null` hands the rigs the held weapon's `createWeaponHandling` frame and a `WeaponPresentationTuning` (`@jgengine/core/combat/weaponPresentation`). First person poses the viewmodel anchor from it (hip and ADS offsets, viewmodel FOV, `adsZoom`, sway from look speed, bob from `cuesRef`, recoil kick) and adds the recoil to the look; `shoulder` takes its ADS blend from `adsProgress` and adds the same recoil. A custom `viewmodel` rides the posed anchor. `bun run drive weapon-handling` (and `weapon-handling-shoulder`) is the dev demo.
 - **`WorldOverlay` receives `{ ctx }`.** `defineGame({ WorldOverlay })` components take `WorldOverlayProps` (`@jgengine/core/game/playableGame`) — `ctx: GameContext` handed directly, no extra hook or module-global workaround needed to reach engine state from canvas-layer VFX.
 - **Render cues for any custom rig.** `useEntityRenderCues(instanceId, tuning?)` (`@jgengine/shell/render/useEntityRenderCues`) returns the same `cuesRef` the viewmodel gets, for a custom `renderEntity` component: velocity-driven `bobPhase`, `firing`/`recoil` from `ctx.game.playEntityAnimation(instanceId, "fire")`, `reloading` from `"reload"`/`"reloadEnd"`, `hit` from `combat.hitReaction`, `dead` from `entity.died` — no diffing the parent group's position, no game-side module map for attack timing. `RenderCueTuning` (`@jgengine/core/combat/renderCues`) overrides the bob rate / recoil decay / pulse durations; see `jgengine-combat`'s `combat/renderCues` for the underlying pure math.
+A custom `WorldOverlay` rig can keep `camera.firstPerson.viewmodel: false` and
+register its own live muzzle for the shell's tracer presentation:
+
+```tsx
+import { useEffect, useRef } from "react";
+import { useThree } from "@react-three/fiber";
+import type { Object3D } from "three";
+import { registerFirstPersonMuzzle } from "@jgengine/shell/camera";
+
+function CustomRig() {
+  const camera = useThree((state) => state.camera);
+  const muzzle = useRef<Object3D>(null);
+  useEffect(() => registerFirstPersonMuzzle(camera, (target) => {
+    const tip = muzzle.current;
+    if (tip === null) return false;
+    tip.getWorldPosition(target);
+    return true;
+  }), [camera]);
+  return <group>{/* game-owned animated weapon geometry */}<object3D ref={muzzle} /></group>;
+}
+```
+
+Place the marker at the game's actual barrel tip and move it with the custom
+rig's recoil, aim, bob, reload, and equipment poses. Returning the registration's
+cleanup from the effect releases only that owner, including StrictMode remounts.
+The newest available custom reader wins over that camera's tracked stock muzzle;
+return `false` when unequipped or unavailable. A failed/invalid read preserves
+the caller's fallback origin. Registrations are limited to 64 per camera per
+priority; legacy one-argument reads consider the newest 64 globally per priority.
+Callbacks run on demand over a snapshot of at most 64 readers per priority.
+Disposed readers are skipped before their callback starts; newly registered
+readers join the next read. Callbacks must write finite world coordinates and should not throw.
+
+This is presentation only: projectile prediction, collision, authority, and
+`projectile.settled.origin` remain simulation-owned. Scrap Signal's
+`FerralonViewmodel` is the concrete adopter: its `flash` marker already shares
+`muzzleOffsetZ(gun.family)` with the actual barrel geometry. Its game-side
+registration waits for the coordinator's verified published SDK release; no
+source aliases or native verification of unpublished APIs are implied.
+
 `@jgengine/shell/terrain`'s `ProceduralGround`/`CarvedTerrain`/`GrassField` are the game-facing terrain surface; the height-field math underneath (`arenaField`, `flatField`, `fractalNoise`, `resolveGroundStep`, `valueNoise`, `withNormal`, re-exported from `@jgengine/core/world/terrain`) and `GamePlayerShell`'s physics helpers (`applyMotionImpulses`, `nearbyObstacles`, `resolvePhysicsTuning`, `hasEnvironmentTerrain`, sourced from `core/runtime/motionIntents` / `core/movement`) are internal building blocks the shell composes for you — reach for `defineGame({ movement, world })` and the ground primitives above instead of calling these directly.
 
 ## 15. Compact implementation API appendix

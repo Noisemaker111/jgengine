@@ -463,6 +463,18 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `setValue` (function) · `import { setValue } from "@jgengine/core/gameplay"`
 
+## shaped-grid — a serializable inventory board with arbitrary cell footprints, rotation, overlap checks, and immutable placement
+
+- `canPlace` (function) · `import { canPlace } from "@jgengine/core/inventory/shapedGrid"`
+- `createShapedGrid` (function) · `import { createShapedGrid } from "@jgengine/core/inventory/shapedGrid"`
+- `moveShaped` (function) · `import { moveShaped } from "@jgengine/core/inventory/shapedGrid"`
+- `placeShaped` (function) · `import { placeShaped } from "@jgengine/core/inventory/shapedGrid"`
+- `removeShaped` (function) · `import { removeShaped } from "@jgengine/core/inventory/shapedGrid"`
+
+## shaped-placement — find a shaped inventory item's first fit with ordered rotations, row-major placement, and an explicit search budget
+
+- `findShapedPlacement` (function) · `import { findShapedPlacement } from "@jgengine/core/inventory/shapedGrid"`
+
 ## shop-grid — serializable vendor/shop stock with buy/sell over a caller-owned wallet — finite/unlimited qty, sell-back, restock/setPrice, snapshot/restore
 
 - `createShopStock` (function) · `import { createShopStock } from "@jgengine/core/gameplay"`

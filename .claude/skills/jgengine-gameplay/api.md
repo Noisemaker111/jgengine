@@ -1103,7 +1103,7 @@
 - `CardPile` (interface): interface CardPile { state(): CardPileState; zones(): readonly ZoneName[]; count(zone: ZoneName): number; peek(zone: ZoneName, n?: number): readonly string[]; zoneOf(cardId: string): ZoneName | null; shuffle(zone: ZoneName | undefined, seed: string | number):… — ⚠ undocumented
 - `CardPileState` (interface): interface CardPileState { readonly zones: Readonly<Record<ZoneName, readonly string[]>> } — ⚠ undocumented · used by `CardStack` (@jgengine/react): `StackedPile` bound to a headless `CardPileState` zone: reads the ordered card ids from `pile.zones[zone]` and resolves each to a `PlayingCa…
 - `CatchUpPolicy` (type): type CatchUpPolicy = "each" | "sum" | "skip" — How cycles that came due between two {@link advanceLedger} calls are settled: - `"each"` — replay every missed cycle as its own transaction (bounded by the limits below); - `"sum"` — collapse the missed cycles into one transaction of the combined amount; - `"skip"` — apply only the most recent cycle and discard the rest (idle income that does not bank).
-- `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
+- `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented · used by `canPlace` (@jgengine/core/inventory/shapedGrid): Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `CellGrid` (interface): interface CellGrid<T> — A fixed-size 2D board of cells, row-major from the top-left; `null` is an empty cell. Plain data, so it serializes and restores as-is.
 - `ChargeOptions` (interface): interface ChargeOptions — Options for {@link charge}/{@link chargeAll}: opt one call into overdraft debt via `overdraft`.
 - `ChargeResult` (type): type ChargeResult = { status: "ok"; state: WalletState } | { status: "rejected"; reason: "insufficient-funds" } — Outcome of a {@link charge}/{@link chargeAll} attempt: `status: "ok"` carries the debited {@link WalletState}, while `status: "rejected"` leaves the wallet untouched and reports why (currently only `"insufficient-funds"`). Discriminate on `status` before reading `state`.
@@ -1322,7 +1322,7 @@
 - `RingConfig` (interface): interface RingConfig { center: RingPoint; phases: readonly RingPhase[] } — ⚠ undocumented
 - `RingPhase` (interface): interface RingPhase { startTime: number; shrinkDuration: number; fromRadius: number; toRadius: number; damagePerSecond: number; center?: RingPoint } — ⚠ undocumented
 - `RoleSpec` (interface): interface RoleSpec { id: string; count?: number; ratio?: number } — ⚠ undocumented
-- `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented
+- `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented · used by `canPlace` (@jgengine/core/inventory/shapedGrid): Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `RoundConfig` (interface): interface RoundConfig<TPhase extends string = RoundPhase> { phases: Record<TPhase, number>; teams: readonly string[] | readonly RoundTeam[]; phaseOrder?: readonly TPhase[]; winCondition?: (state: RoundSnapshot<TPhase>) => string | null; maxRounds?: number; winReward?: number; lossBonus?: LossBonus… — ⚠ undocumented
 - `RoundSnapshot` (interface): interface RoundSnapshot<TPhase extends string = RoundPhase> { round: number; phase: TPhase; timeLeft: number; scores: Record<string, number>; lossStreaks: Record<string, number>; roles: Record<string, string | undefined>; matchOver: boolean; pendingWinner: string | null } — ⚠ undocumented
 - `RtsCameraConfig` (interface): interface RtsCameraConfig extends TopDownCameraConfig — Free-pan / edge-scroll RTS rig (#24) — pan/rotate/zoom independent of any avatar.
@@ -1711,17 +1711,25 @@
 
 ## @jgengine/core/inventory/shapedGrid
 
-- `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented
-- `Footprint` (type): type Footprint = readonly Cell[] — ⚠ undocumented · used by `rotatedFootprint` (@jgengine/core/scene/assetSpace): The axis-aligned footprint extent after rotating a rectangular {@link Footprint} by `headingDegrees` — footprint-aware placement: a 90-degre…
+- `Cell` (type): type Cell = readonly [number, number] — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+- `Footprint` (type): type Footprint = readonly Cell[] — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
 - `GridAdjacencyQuery` (interface): interface GridAdjacencyQuery { cellsOf(id: string): readonly Cell[]; neighborsOf(id: string): readonly string[]; touching(idA: string, idB: string): boolean; adjacentCells(cells: readonly Cell[]): readonly Cell[] } — ⚠ undocumented
 - `Placement` (interface): interface Placement<T> { id: string; value: T; footprint: Footprint; origin: Cell; rotation: Rotation } — ⚠ undocumented
-- `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented
-- `ShapedGrid` (interface): interface ShapedGrid<T> { readonly width: number; readonly height: number; readonly placements: readonly Placement<T>[] } — ⚠ undocumented
-- `ShapedItem` (interface): interface ShapedItem<T> { id: string; value: T; footprint: Footprint } — ⚠ undocumented
+- `Rotation` (type): type Rotation = 0 | 1 | 2 | 3 — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+- `ShapedGrid` (interface): interface ShapedGrid<T> { readonly width: number; readonly height: number; readonly placements: readonly Placement<T>[] } — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+- `ShapedItem` (interface): interface ShapedItem<T> { id: string; value: T; footprint: Footprint } — ⚠ undocumented · used by `placeShaped`: Place a caller-defined item without mutating the source board; duplicate ids reject.
 - `ShapedPlaceResult` (interface): interface ShapedPlaceResult<T> { status: "ok"; grid: ShapedGrid<T> } — ⚠ undocumented
+- `ShapedPlacementSearchOptions` (interface): interface ShapedPlacementSearchOptions — Search policy: rotation order first, then rows and columns; the work budget counts candidate origins.
+- `ShapedPlacementSearchResult` (type): type ShapedPlacementSearchResult = | { status: "found"; origin: Cell; rotation: Rotation; checks: number } | { status: "no-space"; checks: number } | { status: "budget-exceeded"; checks: number } — A detached placement, a completed no-fit search, or an incomplete search that reached its budget.
 - `ShapedRejected` (interface): interface ShapedRejected { status: "rejected"; reason: ShapedRejection; detail?: string } — ⚠ undocumented
-- `ShapedRejection` (type): type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id" — ⚠ undocumented
-- `ShapedResult` (type): type ShapedResult<T> = ShapedPlaceResult<T> | ShapedRejected — ⚠ undocumented
+- `ShapedRejection` (type): type ShapedRejection = "out-of-bounds" | "overlap" | "duplicate-id" | "unknown-id" | "invalid-footprint" | "invalid-origin" — ⚠ undocumented · used by `canPlace`: Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+- `ShapedResult` (type): type ShapedResult<T> = ShapedPlaceResult<T> | ShapedRejected — ⚠ undocumented · used by `moveShaped`: Move or rotate one placement, ignoring its current cells during overlap checks.
+- `canPlace` (function): function canPlace<T>(grid: ShapedGrid<T>, footprint: Footprint, origin: Cell, rotation: Rotation, ignoreId?: string): ShapedRejection | null — Check bounds and overlap for a discrete footprint, optionally ignoring the item being moved.
+- `createShapedGrid` (function): function createShapedGrid<T>(width: number, height: number): ShapedGrid<T> — An immutable spatial inventory board holding caller-defined multi-cell items.
+- `findShapedPlacement` (function): function findShapedPlacement<T>(grid: ShapedGrid<T>, footprint: Footprint, options: ShapedPlacementSearchOptions = {}): ShapedPlacementSearchResult — Find the first legal placement without mutating the board; occupancy is indexed once per search.
+- `moveShaped` (function): function moveShaped<T>(grid: ShapedGrid<T>, id: string, origin: Cell, rotation?: Rotation): ShapedResult<T> — Move or rotate one placement, ignoring its current cells during overlap checks.
+- `placeShaped` (function): function placeShaped<T>(grid: ShapedGrid<T>, item: ShapedItem<T>, origin: Cell, rotation: Rotation = 0): ShapedResult<T> — Place a caller-defined item without mutating the source board; duplicate ids reject.
+- `removeShaped` (function): function removeShaped<T>(grid: ShapedGrid<T>, id: string): ShapedResult<T> — Remove one placement without mutating the source board.
 
 ## @jgengine/core/inventory/slotModel
 

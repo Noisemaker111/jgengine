@@ -19,6 +19,9 @@ a parallel entity store. To bolt firing onto an existing game, compose
 `resolveDamageHit`) per the
 [portable weapon-plumbing recipe](recipes/portable-weapon-plumbing.md); never add
 a default gun or FPS kit.
+For scene-backed `createProjectileSystem`, inject authoritative `rng`; spread
+samples independent pellet rays and prediction stays on the center ray. The
+weapon-plumbing recipe covers the bounded cone and cover contracts.
 Tune how a weapon feels (recoil, bloom, ADS, shake and rumble) with the
 [weapon-feel recipe](recipes/weapon-feel.md): feel target → `measureWeapon`
 numbers → handling knobs, and `createWeaponFeedbackSignals` into the feedback mixer.
@@ -28,7 +31,9 @@ receiver, interceptor, and status stages remain pure. Follow the
 [portable damage/effects recipe](recipes/portable-damage-effects.md) to compose
 them over an existing store, clock, RNG, spatial index, and death flow.
 
-Closure-backed magazines and stat modifiers expose snapshot/restore; ability
+Closure-backed magazines expose snapshot/restore and `retune` for capacity/reload
+changes without reconstructing ammo state; capacity overflow is explicit.
+Stat modifiers expose snapshot/restore; ability
 kits, shields, and meters expose state/restore for caller-owned saves,
 rollback, replay, and workers. Follow the
 [portable runtime-state recipe](recipes/portable-runtime-state.md); the caller

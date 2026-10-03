@@ -497,6 +497,7 @@ interface Tracer {
 
 export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
   const ctx = useGameContext();
+  const camera = useThree((state) => state.camera);
   const [tracers, setTracers] = useState<Tracer[]>([]);
   const nextId = useRef(0);
   const timers = useRef(new Set<ReturnType<typeof setTimeout>>());
@@ -508,7 +509,7 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
       if (event.ballistic) return;
       const id = nextId.current++;
       const start = new THREE.Vector3(event.origin[0], event.origin[1], event.origin[2]);
-      if (event.from === ctx.player.userId) readFirstPersonMuzzle(start);
+      if (event.from === ctx.player.userId) readFirstPersonMuzzle(start, camera);
       setTracers((current) => [
         ...current,
         {
@@ -527,7 +528,7 @@ export function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }) {
       for (const handle of timers.current) clearTimeout(handle);
       timers.current.clear();
     };
-  }, [ctx, lifeMs]);
+  }, [ctx, camera, lifeMs]);
   return (
     <>
       {tracers.map((tracer) => (

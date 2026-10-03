@@ -168,3 +168,100 @@ describe("createMagazine", () => {
     expect(infinite.loaded()).toBe(4);
   });
 });
+
+describe("magazine live tuning", () => {
+  test("capacity growth preserves rounds, reserve, and elapsed reload time", () => {
+    const mag = createMagazine({ capacity: 6, reloadMs: 1000, reserve: 20 });
+    mag.fire(4);
+    mag.startReload();
+    mag.tick(0.4);
+    expect(mag.retune({ capacity: 10, reloadMs: 800 })).toBe(true);
+    expect(mag.snapshot()).toEqual({ loaded: 2, reserve: 20, reloadElapsedMs: 400 });
+    expect(mag.reloadFraction()).toBe(0.5);
+    mag.tick(0.4);
+    expect(mag.snapshot()).toEqual({ loaded: 10, reserve: 12, reloadElapsedMs: null });
+  });
+
+  test("unsafe shrinking rejects capacity and reload tuning atomically", () => {
+    const mag = createMagazine({ capacity: 8, reloadMs: 1000, reserve: 20 });
+    mag.fire(2);
+    mag.startReload();
+    mag.tick(0.4);
+    const before = mag.snapshot();
+    expect(mag.retune({ capacity: 4, reloadMs: 200 })).toBe(false);
+    expect(mag.capacity()).toBe(8);
+    expect(mag.snapshot()).toEqual(before);
+    expect(mag.reloadFraction()).toBe(0.4);
+  });
+
+  test("shrinking returns only overflow to the same shared reserve when requested", () => {
+    let shared = 20;
+    const reserve = {
+      current: () => shared,
+      spend: (amount: number) => amount <= shared ? ((shared -= amount), true) : false,
+      gain: (amount: number) => { shared += amount; },
+    };
+    const mag = createMagazine({ capacity: 8, reloadMs: 1000, reserve });
+    const other = createMagazine({ capacity: 4, reloadMs: 1000, loaded: 0, reserve });
+    expect(mag.retune({ capacity: 5, overflow: "return-to-reserve" })).toBe(true);
+    expect(mag.loaded()).toBe(5);
+    expect(shared).toBe(23);
+    expect(other.reserve()).toBe(23);
+    expect(mag.retune({ capacity: 8 })).toBe(true);
+    expect(mag.loaded()).toBe(5);
+    expect(shared).toBe(23);
+  });
+
+  test("return-to-reserve rejects unsupported storage; discard is explicit", () => {
+    for (const reserve of [undefined, { current: () => 10, spend: () => true }]) {
+      const mag = createMagazine({ capacity: 8, reloadMs: 1000, reserve });
+      expect(mag.retune({ capacity: 3, reloadMs: 0, overflow: "return-to-reserve" })).toBe(false);
+      expect(mag.loaded()).toBe(8);
+      expect(mag.capacity()).toBe(8);
+      expect(mag.retune({ capacity: 3, overflow: "discard" })).toBe(true);
+      expect(mag.loaded()).toBe(3);
+      expect(mag.capacity()).toBe(3);
+    }
+    const numeric = createMagazine({ capacity: 8, reloadMs: 1000, reserve: 20 });
+    expect(numeric.retune({ capacity: 3, overflow: "return-to-reserve" })).toBe(true);
+    expect(numeric.reserve()).toBe(25);
+  });
+
+  test("shortening a reload completes only on the next positive tick", () => {
+    const mag = createMagazine({ capacity: 6, reloadMs: 1000, reserve: 20 });
+    mag.fire(6);
+    mag.startReload();
+    mag.tick(0.4);
+    expect(mag.retune({ reloadMs: 200 })).toBe(true);
+    expect(mag.snapshot()).toEqual({ loaded: 0, reserve: 20, reloadElapsedMs: 400 });
+    expect(mag.reloadFraction()).toBe(1);
+    mag.tick(0);
+    expect(mag.loaded()).toBe(0);
+    mag.tick(0.001);
+    expect(mag.loaded()).toBe(6);
+    expect(mag.reserve()).toBe(14);
+  });
+
+  test("a retuned in-progress reload saves and resumes with caller-saved tuning", () => {
+    const mag = createMagazine({ capacity: 6, reloadMs: 1000, reserve: 20 });
+    mag.fire(4);
+    mag.startReload();
+    mag.tick(0.4);
+    mag.retune({ capacity: 10, reloadMs: 800 });
+    const saved = JSON.parse(JSON.stringify(mag.snapshot()));
+    const restored = createMagazine({ capacity: 10, reloadMs: 800, reserve: 0 });
+    expect(restored.restore(saved)).toBe(true);
+    restored.tick(0.4);
+    mag.tick(0.4);
+    expect(restored.snapshot()).toEqual(mag.snapshot());
+  });
+
+  test("invalid tuning rejects without poisoning runtime state", () => {
+    const mag = createMagazine({ capacity: 6, reloadMs: 1000, reserve: 20 });
+    for (const tuning of [{ capacity: NaN }, { reloadMs: Infinity }, { capacity: -Infinity }]) {
+      expect(mag.retune(tuning)).toBe(false);
+      expect(mag.capacity()).toBe(6);
+      expect(mag.loaded()).toBe(6);
+    }
+  });
+});
