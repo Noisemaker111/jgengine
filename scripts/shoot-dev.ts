@@ -427,7 +427,7 @@ async function shootOne(
     await applyDevice(session, device, args.size);
     mark("device");
     const url = targetUrl(args, device, devBase);
-    await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS);
+    await navigateCapturePageWithRetry(session, url, devBase, args.timeoutMs, CAPTURE_MAX_ATTEMPTS, { legacyCanvas: args.url !== undefined });
     mark("ready");
     await reportAppliedAim(session, args);
     await new Promise((r) => setTimeout(r, 600));

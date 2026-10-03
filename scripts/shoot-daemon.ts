@@ -10,6 +10,7 @@
  *   bun run shoot <game> --mode play   # auto-attaches when daemon is live
  */
 import type { ChildProcess } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   closeSync,
   existsSync,
@@ -57,17 +58,30 @@ type DaemonStartWaitOptions = {
 
 export function daemonStatePath(cwd = process.cwd()): string {
   const port = resolveWarmChromePort(cwd);
-  return join(tmpdir(), `jgengine-shoot-daemon-${port}.json`);
+  const identity = createHash("sha256").update(checkoutIdentity(cwd)).digest("hex");
+  return join(tmpdir(), `jgengine-shoot-daemon-${port}-${identity}.json`);
 }
 
-export function readDaemonState(cwd = process.cwd()): ShootDaemonState | null {
-  const path = daemonStatePath(cwd);
+function readStatePath(path: string): ShootDaemonState | null {
   if (!existsSync(path)) return null;
   try {
     return JSON.parse(readFileSync(path, "utf8")) as ShootDaemonState;
   } catch {
     return null;
   }
+}
+
+function legacyStatePath(cwd: string): string {
+  return join(tmpdir(), `jgengine-shoot-daemon-${resolveWarmChromePort(cwd)}.json`);
+}
+
+export function readDaemonState(cwd = process.cwd(), legacyPath = legacyStatePath(cwd)): ShootDaemonState | null {
+  const path = daemonStatePath(cwd);
+  if (existsSync(path)) return readStatePath(path);
+  // Reuse old port-only records only for their exact owning checkout.
+  // Reading does not migrate, replace, or delete another checkout's record.
+  const legacy = readStatePath(legacyPath);
+  return legacy?.identity === checkoutIdentity(cwd) ? legacy : null;
 }
 
 export function writeDaemonState(state: ShootDaemonState, cwd = process.cwd()): void {
@@ -77,14 +91,18 @@ export function writeDaemonState(state: ShootDaemonState, cwd = process.cwd()): 
   renameSync(temporary, path);
 }
 
-export function clearDaemonState(cwd = process.cwd()): void {
+export function clearDaemonState(cwd = process.cwd(), legacyPath = legacyStatePath(cwd)): void {
   const path = daemonStatePath(cwd);
   if (existsSync(path)) unlinkSync(path);
+  if (readStatePath(legacyPath)?.identity === checkoutIdentity(cwd)) unlinkSync(legacyPath);
 }
 
 async function withDaemonStateLock<T>(cwd: string, fn: () => T | Promise<T>): Promise<T> {
-  const lockPath = `${daemonStatePath(cwd)}.lock`;
-  const deadline = Date.now() + 5_000;
+  return withDaemonFileLock(`${daemonStatePath(cwd)}.lock`, fn);
+}
+
+async function withDaemonFileLock<T>(lockPath: string, fn: () => T | Promise<T>, timeoutMs = 5_000): Promise<T> {
+  const deadline = Date.now() + timeoutMs;
   let fd: number | undefined;
   while (fd === undefined) {
     try {
@@ -93,11 +111,11 @@ async function withDaemonStateLock<T>(cwd: string, fn: () => T | Promise<T>): Pr
       const code = error instanceof Error && "code" in error ? (error as NodeJS.ErrnoException).code : undefined;
       if (code !== "EEXIST") throw error;
       try {
-        if (Date.now() - statSync(lockPath).mtimeMs > 30_000) unlinkSync(lockPath);
+        if (Date.now() - statSync(lockPath).mtimeMs > 120_000) unlinkSync(lockPath);
       } catch {
         /* lock owner released it */
       }
-      if (Date.now() >= deadline) throw new Error("shoot daemon: timed out waiting for state lock");
+      if (Date.now() >= deadline) throw new Error("shoot daemon: timed out waiting for daemon lock");
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
   }
@@ -229,30 +247,43 @@ export async function startDaemon(options: {
       return existing;
     }
   }
-  await reapStaleDaemonState(cwd);
-
   const identity = checkoutIdentity(cwd);
   const chromePort = resolveWarmChromePort(cwd);
-  let chrome: ChildProcess | null = null;
-  let chromePid: number | undefined;
-  try {
-    const launched = launchPersistentChrome(chromePort, "jg-shoot-daemon-");
-    chrome = launched.child;
-    chromePid = launched.pid;
-    await waitForDebugger(chromePort, 30_000);
-  } catch (error) {
-    if (chrome !== null) killProcessTree(chrome);
-    else killPid(chromePid, true);
-    throw error;
+  // Chrome ports are shared machine resources even though metadata is per checkout.
+  // Serialize occupancy checking and launch so two checkouts cannot race onto one port.
+  const owned = await withDaemonFileLock(join(tmpdir(), `jgengine-shoot-chrome-${chromePort}.lock`), async () => {
+    if (await isDaemonLive(cwd)) return { state: readDaemonState(cwd)!, chrome: null, started: false };
+    let occupied = false;
+    try {
+      const endpoint = await fetch(`http://127.0.0.1:${chromePort}/json/version`, { signal: AbortSignal.timeout(800) });
+      occupied = endpoint.ok;
+    } catch { /* no reachable debugger */ }
+    if (occupied) {
+      throw new Error(`shoot daemon: Chrome debug port ${chromePort} is already reachable without a live record for this checkout. Use a unique JG_CHROME_PORT to start a separate daemon, or explicitly --connect ${chromePort} to use the existing browser; its ownership and storage were not changed.`);
+    }
+    await reapStaleDaemonState(cwd);
+    let chrome: ChildProcess | null = null;
+    let chromePid: number | undefined;
+    try {
+      const launched = launchPersistentChrome(chromePort, "jg-shoot-daemon-");
+      chrome = launched.child;
+      chromePid = launched.pid;
+      await waitForDebugger(chromePort, 30_000);
+    } catch (error) {
+      if (chrome !== null) killProcessTree(chrome);
+      else killPid(chromePid, true);
+      throw error;
+    }
+    const started: ShootDaemonState = { identity, chromePort, chromePid, startedAt: new Date().toISOString() };
+    writeDaemonState(started, cwd);
+    return { state: started, chrome, started: true };
+  }, 35_000);
+  const { state, chrome } = owned;
+  const chromePid = state.chromePid;
+  if (!owned.started) {
+    console.error(`shoot daemon: already running — chrome :${state.chromePort}`);
+    return state;
   }
-
-  const state: ShootDaemonState = {
-    identity,
-    chromePort,
-    chromePid,
-    startedAt: new Date().toISOString(),
-  };
-  writeDaemonState(state, cwd);
   console.error(`shoot daemon: ready — chrome :${chromePort}; Vite starts lazily on first capture`);
   console.error(`shoot daemon: next shot → bun run shoot <game> --mode play`);
   console.error(`shoot daemon: stop → bun run shoot daemon stop`);

@@ -262,6 +262,96 @@ export const DEVICES = {
   "mobile-landscape": { width: 844, height: 390, dsf: 2, mobile: true },
 };
 
+export async function emulateDevice(session, profile, width = profile.width, height = profile.height) {
+  await session.send("Emulation.setDeviceMetricsOverride", {
+    width,
+    height,
+    deviceScaleFactor: profile.dsf,
+    mobile: profile.mobile,
+  });
+  await session.send("Emulation.setTouchEmulationEnabled", {
+    enabled: profile.mobile,
+    maxTouchPoints: profile.mobile ? 5 : 1,
+  });
+}
+
+export function clickPointExpr(text) {
+  return "(" + function (needle) {
+    if (!needle) return null;
+    var selector = 'button, [role=button], a';
+    var nodes = Array.from(document.querySelectorAll(selector + ', span, div, h1, h2, h3'));
+    var candidates = nodes.flatMap(function (node) {
+      return [(node.textContent || '').trim(), node.getAttribute('aria-label') || '']
+        .map(function (name) { return name.toLowerCase(); })
+        .filter(function (name) { return name.includes(needle); })
+        .map(function (name) { return { node: node.closest(selector) || node, own: name }; });
+    });
+    candidates.sort(function (a, b) {
+      return a.own.length - b.own.length || Number(b.node.matches(selector)) - Number(a.node.matches(selector));
+    });
+    if (!candidates.length) return null;
+    var shortest = candidates[0].own.length;
+    var interactive = candidates[0].node.matches(selector);
+    for (var item of candidates) {
+      if (item.own.length !== shortest || item.node.matches(selector) !== interactive) break;
+      var node = item.node;
+      if (node.matches(':disabled') || node.closest('[aria-disabled="true"], [inert]')) continue;
+      if (!node.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
+      node.scrollIntoView({ block: 'center', inline: 'center', behavior: 'instant' });
+      var rect = node.getBoundingClientRect();
+      var left = Math.max(0, rect.left), top = Math.max(0, rect.top);
+      var right = Math.min(innerWidth, rect.right), bottom = Math.min(innerHeight, rect.bottom);
+      for (var parent = node.parentElement; parent; parent = parent.parentElement) {
+        var style = getComputedStyle(parent), clip = parent.getBoundingClientRect();
+        if (/(auto|scroll|hidden|clip)/.test(style.overflowX)) {
+          left = Math.max(left, clip.left + parent.clientLeft);
+          right = Math.min(right, clip.left + parent.clientLeft + parent.clientWidth);
+        }
+        if (/(auto|scroll|hidden|clip)/.test(style.overflowY)) {
+          top = Math.max(top, clip.top + parent.clientTop);
+          bottom = Math.min(bottom, clip.top + parent.clientTop + parent.clientHeight);
+        }
+      }
+      if (right <= left || bottom <= top) continue;
+      for (var fy of [0.5, 0.1, 0.9]) for (var fx of [0.5, 0.1, 0.9]) {
+        var x = left + (right - left) * fx, y = top + (bottom - top) * fy;
+        var hit = document.elementFromPoint(x, y);
+        if (hit && (hit === node || node.contains(hit))) return { x: x, y: y };
+      }
+    }
+    return null;
+  }.toString() + ")(" + JSON.stringify(text.toLowerCase()) + ")";
+}
+
+const SETTLE_EPSILON_PX = 0.5;
+const SETTLE_SAMPLES = 3;
+const SETTLE_INTERVAL_MS = 100;
+const SETTLE_TIMEOUT_MS = 15_000;
+
+export async function findClickPoint(session, text, options = {}) {
+  const deadline = (options.now || Date.now)() + (options.timeoutMs || SETTLE_TIMEOUT_MS);
+  let last = null;
+  let stableRuns = 0;
+  while ((options.now || Date.now)() < deadline) {
+    const point = (await session.evaluate(clickPointExpr(text), { timeoutMs: Math.max(1, deadline - (options.now || Date.now)()) })) ?? null;
+    if (
+      point !== null &&
+      last !== null &&
+      Math.abs(point.x - last.x) <= SETTLE_EPSILON_PX &&
+      Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
+    ) {
+      stableRuns += 1;
+      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
+    } else {
+      stableRuns = 0;
+    }
+    last = point;
+    await (options.sleep || sleep)(SETTLE_INTERVAL_MS);
+  }
+  if (last === null) throw new Error('no actionable element matching "' + text + '"');
+  throw new Error('element matching "' + text + '" did not settle');
+}
+
 export function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -390,9 +480,12 @@ export class Cdp {
       const waiter = this.pending.get(msg.id);
       if (waiter === undefined) return;
       this.pending.delete(msg.id);
+      clearTimeout(waiter.timer);
       if (msg.error !== undefined) waiter.reject(new Error(msg.error.message));
       else waiter.resolve(msg.result ?? {});
     });
+    ws.addEventListener("close", () => this.rejectPending("CDP connection closed"));
+    ws.addEventListener("error", () => this.rejectPending("CDP connection error"));
   }
 
   static connect(url, timeoutMs) {
@@ -413,12 +506,30 @@ export class Cdp {
     });
   }
 
-  send(method, params) {
+  send(method, params, timeoutMs = 30_000) {
     const id = ++this.nextId;
     return new Promise((res, rej) => {
-      this.pending.set(id, { resolve: res, reject: rej });
-      this.ws.send(JSON.stringify({ id, method, params }));
+      const timer = setTimeout(() => {
+        this.pending.delete(id);
+        rej(new Error("CDP " + method + " timed out after " + timeoutMs + "ms"));
+      }, timeoutMs);
+      this.pending.set(id, { resolve: res, reject: rej, timer });
+      try {
+        this.ws.send(JSON.stringify({ id, method, params }));
+      } catch (error) {
+        clearTimeout(timer);
+        this.pending.delete(id);
+        rej(error);
+      }
     });
+  }
+
+  rejectPending(message) {
+    for (const waiter of this.pending.values()) {
+      clearTimeout(waiter.timer);
+      waiter.reject(new Error(message));
+    }
+    this.pending.clear();
   }
 
   async evaluate(expression, opts) {
@@ -426,11 +537,12 @@ export class Cdp {
       expression,
       returnByValue: true,
       ...(opts && opts.awaitPromise ? { awaitPromise: true } : {}),
-    });
+    }, opts && opts.timeoutMs !== undefined ? opts.timeoutMs : 30_000);
     return result.result ? result.result.value : undefined;
   }
 
   close() {
+    this.rejectPending("CDP session closed");
     this.ws.close();
   }
 }
@@ -479,7 +591,7 @@ export async function waitForHonestFrame(session, url, timeoutMs) {
   let last;
   let handshakeSeen = false;
   while (Date.now() < deadline) {
-    const s = await session.evaluate(HONESTY_EXPR);
+    const s = await session.evaluate(HONESTY_EXPR, { timeoutMs: Math.max(1, deadline - Date.now()) });
     last = s;
     if (s && s.cap !== null && s.cap !== undefined) handshakeSeen = true;
     if (s && s.cap === "error") throw new Error("page reported a capture error: " + (s.err || "unknown"));
@@ -574,14 +686,16 @@ export function isBlankFrame(pngBytes) {
  * Capture the current frame to a PNG (atomic write). A blank viewport is retried for
  * up to blankWaitMs, then refused: nothing is written and the capture fails.
  */
-export async function screenshotTo(session, outPath, blankWaitMs = 10_000) {
+export async function screenshotTo(session, outPath, blankWaitMs = 10_000, timeoutMs = 30_000) {
   const deadline = Date.now() + blankWaitMs;
+  const captureDeadline = Date.now() + timeoutMs;
   for (;;) {
+    if (Date.now() >= captureDeadline) throw new Error("Page.captureScreenshot timed out after " + timeoutMs + "ms");
     const shot = await session.send("Page.captureScreenshot", {
       format: "png",
       fromSurface: true,
       captureBeyondViewport: false,
-    });
+    }, Math.max(1, captureDeadline - Date.now()));
     if (typeof shot.data !== "string" || shot.data.length === 0) {
       throw new Error("Page.captureScreenshot returned no data");
     }
@@ -644,6 +758,7 @@ const shootMjs = `#!/usr/bin/env node
 import { join, resolve } from "node:path";
 import {
   DEVICES,
+  emulateDevice,
   ensureDevServer,
   launchChrome,
   openPage,
@@ -665,7 +780,7 @@ const HELP = [
   "  --height <n>      viewport height override",
   "  --out <path>      output PNG (default shots/shot.png)",
   "  --settle <ms>     extra wait after first honest frame (default 2000)",
-  "  --timeout <s>     max seconds to wait for a sized canvas (default 60)",
+  "  --timeout <s>     readiness/capture timeout in seconds (default 60)",
   "  --help            show this text",
   "",
   "Needs Chrome/Chromium (set CHROME_PATH if not auto-detected).",
@@ -731,12 +846,7 @@ async function main() {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
       // The fix for R3F's 300x150 default: give the page a real viewport BEFORE it lays out.
-      await session.send("Emulation.setDeviceMetricsOverride", {
-        width,
-        height,
-        deviceScaleFactor: profile.dsf,
-        mobile: profile.mobile,
-      });
+      await emulateDevice(session, profile, width, height);
       await session.send("Page.navigate", { url });
       const frame = await waitForHonestFrame(session, url, args.timeoutMs);
       if (frame && frame.bw === 300 && frame.bh === 150) {
@@ -748,7 +858,7 @@ async function main() {
       // Let the scene paint a couple of frames, then settle for late assets.
       await session.evaluate(RAF_EXPR, { awaitPromise: true });
       await sleep(Number.isFinite(args.settle) ? args.settle : 2000);
-      await screenshotTo(session, outPath);
+      await screenshotTo(session, outPath, 10_000, args.timeoutMs);
       console.log(outPath + " (" + width + "x" + height + " " + args.device + ")");
     } finally {
       session.close();
@@ -793,6 +903,8 @@ const driveMjs = `#!/usr/bin/env node
 import { join, resolve } from "node:path";
 import {
   DEVICES,
+  findClickPoint,
+  emulateDevice,
   ensureDevServer,
   launchChrome,
   openPage,
@@ -808,7 +920,7 @@ const HELP = [
   "drive.mjs — play/test this JGengine game from the CLI (WebGL-safe, dependency-free)",
   "",
   "Steps run in the order given:",
-  '  --click "<text>"    click the first visible element containing this text',
+  '  --click "<text>"    scroll to and click actionable text (case-insensitive)',
   "  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds",
   "  --wait <ms>         pause before the next step",
   "  --shot <name>       screenshot to shots/<name>.png (default step if none given)",
@@ -819,7 +931,7 @@ const HELP = [
   "  --port <n>          dev-server port to use/start (default 5173)",
   "  --device <name>     desktop | mobile | mobile-landscape (default desktop)",
   "  --width/--height    viewport overrides",
-  "  --timeout <s>       page-ready timeout in seconds (default 60)",
+  "  --timeout <s>       readiness/capture timeout in seconds (default 60)",
   "",
   "Playtest (softlock/progress rung — game must expose capture.probe):",
   "  --playtest          sample probe metrics while steps run; print JSON verdict",
@@ -884,53 +996,6 @@ function parseArgs(argv) {
     args.steps.push({ kind: "shot", name: "drive" });
   }
   return args;
-}
-
-// Clicks wait for the element's center to hold still across consecutive samples
-// (entrance animations and hydration shift positions for ~2s), then dispatch a
-// raw CDP mouse press at that center — no actionability checks to time out on
-// hover overlays.
-const SETTLE_EPSILON_PX = 0.5;
-const SETTLE_SAMPLES = 3;
-const SETTLE_INTERVAL_MS = 100;
-const SETTLE_TIMEOUT_MS = 5_000;
-
-function clickPointExpr(text) {
-  return (
-    "(function(){var needle=" + JSON.stringify(text) + ".toLowerCase();" +
-    "var nodes=Array.prototype.slice.call(document.querySelectorAll('button, [role=button], a, span, div, h1, h2, h3'));" +
-    "var best=null;" +
-    "for (var i=0;i<nodes.length;i+=1){var node=nodes[i];" +
-    "var own=(node.textContent||'').trim().toLowerCase();" +
-    "if(own===''||own.indexOf(needle)===-1)continue;" +
-    "if(best===null||own.length<best.len){var rect=node.getBoundingClientRect();" +
-    "if(rect.width>0&&rect.height>0){best={len:own.length,x:rect.left+rect.width/2,y:rect.top+rect.height/2};}}}" +
-    "return best===null?null:{x:best.x,y:best.y};})()"
-  );
-}
-
-async function findClickPoint(session, text) {
-  const deadline = Date.now() + SETTLE_TIMEOUT_MS;
-  let last = null;
-  let stableRuns = 0;
-  while (Date.now() < deadline) {
-    const point = (await session.evaluate(clickPointExpr(text))) ?? null;
-    if (
-      point !== null &&
-      last !== null &&
-      Math.abs(point.x - last.x) <= SETTLE_EPSILON_PX &&
-      Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
-    ) {
-      stableRuns += 1;
-      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
-    } else {
-      stableRuns = 0;
-    }
-    last = point;
-    await sleep(SETTLE_INTERVAL_MS);
-  }
-  if (last === null) throw new Error('no visible element matching "' + text + '"');
-  return last;
 }
 
 async function click(session, text) {
@@ -1082,12 +1147,7 @@ async function main() {
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
-      await session.send("Emulation.setDeviceMetricsOverride", {
-        width,
-        height,
-        deviceScaleFactor: profile.dsf,
-        mobile: profile.mobile,
-      });
+      await emulateDevice(session, profile, width, height);
       await session.send("Page.navigate", { url });
       await waitForHonestFrame(session, url, args.timeoutMs);
       await session.evaluate(RAF_EXPR, { awaitPromise: true });
@@ -1113,7 +1173,7 @@ async function main() {
         else if (step.kind === "rpc") await rpc(session, step.json);
         else {
           const outPath = resolve(join("shots", step.name + ".png"));
-          await screenshotTo(session, outPath);
+          await screenshotTo(session, outPath, 10_000, args.timeoutMs);
           console.log(outPath);
         }
       }

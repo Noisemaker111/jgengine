@@ -145,7 +145,9 @@ describe("gameTemplate canonical shape (mirrors check-game-shape)", () => {
       expect(lib).not.toContain("playwright");
       expect(lib).not.toContain("puppeteer");
       // The two things that make WebGL capture reliable: a forced viewport and an honest-frame wait.
-      expect(fileOf(files, "scripts/shoot.mjs")).toContain("Emulation.setDeviceMetricsOverride");
+      expect(fileOf(files, "scripts/shoot.mjs")).toContain("await emulateDevice(session, profile, width, height)");
+      expect(lib).toContain("Emulation.setDeviceMetricsOverride");
+      expect(lib).toContain("Emulation.setTouchEmulationEnabled");
       expect(lib).toContain("Page.captureScreenshot");
       // shots/ output is ignored so generated screenshots are never committed.
       expect(fileOf(files, ".gitignore")).toContain("shots/");

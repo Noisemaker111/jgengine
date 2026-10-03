@@ -67,6 +67,8 @@ A PR that touches a rendered surface embeds the inspected shots. The ten-categor
 
 **Created standalone game:** `bun run shoot` (or `npx jgengine shoot`, which also works in an older scaffold without `scripts/`) starts the dev server if needed, forces a real viewport, waits for an honest frame, and writes `shots/shot.png` headless. Flags: `--device desktop|mobile|mobile-landscape`, `--url`, `--out`, `--settle`, `--timeout`; `--help` for all. Set `CHROME_PATH` if Chrome is not auto-detected. For shots that need play first (menus clicked through, keys held, RPC state set up), use `bun run drive` (or `npx jgengine drive`) with `--shot` steps instead of scripting a browser by hand.
 
+Portable mobile profiles enable native touch emulation and coarse-pointer media queries before navigation; desktop disables touch. `drive --click` matches DOM text case-insensitively (CSS uppercase does not change the text), scrolls the shortest match into view, and requires a stable, enabled, unobstructed point within the viewport and clipping ancestors. Occluded or disabled targets fail rather than silently clicking elsewhere. `--timeout` bounds frame readiness and each screenshot stage; other CDP requests have a 30-second deadline. An existing project's `scripts/` harness takes precedence over the CLI bundle, so update those scripts to adopt harness fixes.
+
 **Inside the engine monorepo:** use one managed capture session (`bun run shoot daemon start`, then `bun run shoot <game> --mode play --size half --inspect`, then `bun run shoot daemon stop`). Aiming (`--look`, `--spawn`, `--view`), preview fixtures (`--fixture`), recording, `pr-shots`/`pr-video`, regression bisect (`bun run probe`), and capture-stack behavior are in [references/monorepo-capture.md](references/monorepo-capture.md). If managed capture fails twice, stop retrying and report lower-rung deterministic evidence.
 
 **Arbitrary URLs (`shoot --url`):** the page must set `document.documentElement.dataset.jgCapture = "ready"` (HTML `data-jg-capture="ready"`) when the frame is honest; set `data-jg-capture="error"` with `data-jg-capture-error` on failure. Prefer managed game or `--site` targets over a hand-rolled Vite consumer.
@@ -103,3 +105,5 @@ These guarded repository scripts exist only in the jgengine monorepo — never e
 - Use guarded scripts (`bun run test`, `bun run test:all`, `bun run gate`), not an unbounded bare `bun test` across the repository.
 - Any change to a map, world, or scene document counts as visual: attach captures of the changed content to the PR, not just test assertions.
 - Everything else (`drive --playtest` on software GL, fixtures, aiming, recording, PR media) is in [references/monorepo-capture.md](references/monorepo-capture.md).
+
+Portable `drive --click` also matches accessible labels on icon-only controls. Settling permits three stable samples within 15 seconds; individual CDP polls share the remaining budget.

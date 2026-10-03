@@ -15,6 +15,7 @@ import { join, resolve } from "node:path";
 
 import { retrySettleMs, shouldRetryCapture } from "./capture-retry";
 import { clearViteCaches, headRevision, revisionDrifted, shortRevision } from "./captureRevision";
+import { computeShotMetrics, deadViewport } from "./shot-metrics";
 import { decodePng } from "./png-reader";
 
 /**
@@ -1103,7 +1104,7 @@ async function installReadinessSignal(session: CdpSession): Promise<void> {
       const root = document.documentElement;
       if (root === null) return false;
       const status = root.dataset.jgCapture ?? null;
-      if (status !== "ready" && status !== "error") return false;
+      if (status === null) return false;
       const state = { status, error: root.dataset.jgCaptureError ?? null };
       try { window.${CAPTURE_SIGNAL_BINDING}(JSON.stringify(state)); } catch { /* binding gone */ }
       return true;
@@ -1111,12 +1112,11 @@ async function installReadinessSignal(session: CdpSession): Promise<void> {
     const attach = () => {
       const root = document.documentElement;
       if (root === null) return false;
-      if (!check()) {
-        new MutationObserver(check).observe(root, {
-          attributes: true,
-          attributeFilter: ["data-jg-capture"]
-        });
-      }
+      check();
+      new MutationObserver(check).observe(root, {
+        attributes: true,
+        attributeFilter: ["data-jg-capture", "data-jg-capture-error"]
+      });
       return true;
     };
     if (attach()) return;
@@ -1127,21 +1127,38 @@ async function installReadinessSignal(session: CdpSession): Promise<void> {
   await session.send("Page.addScriptToEvaluateOnNewDocument", { source });
 }
 
+export interface CaptureReadinessOptions {
+  /** Older native SDK pages without a handshake may prove readiness with settled canvas pixels. */
+  legacyCanvas?: boolean;
+}
+
+const CAPTURE_READINESS_EXPR = `(() => {
+  const canvas = document.querySelector("canvas");
+  return {
+    status: document.documentElement.dataset.jgCapture ?? null,
+    error: document.documentElement.dataset.jgCaptureError ?? null,
+    sizedCanvas: canvas !== null && canvas.clientWidth > 10 && canvas.clientHeight > 10 && canvas.width > 10 && canvas.height > 10
+  };
+})()`;
+
 /** Navigate and surface browser/page failures instead of waiting for the capture timeout. */
 export async function navigateCapturePage(
   session: CdpSession,
   url: string,
   timeoutMs: number,
+  options: CaptureReadinessOptions = {},
 ): Promise<void> {
+  let handshakeSeen = false;
   let pageFailure: string | undefined;
   let frameId: string | undefined;
-  let signalled: { status: string | null; error: string | null } | undefined;
+  let signalled: { status: string | null; error: string | null; sizedCanvas?: boolean } | undefined;
   const requestFrames = new Map<string, string>();
   const pendingDocumentFailures: Array<{ frameId?: string; message: string }> = [];
   const offSignal = session.on("Runtime.bindingCalled", (params) => {
     if (params.name !== CAPTURE_SIGNAL_BINDING || typeof params.payload !== "string") return;
     try {
       signalled = JSON.parse(params.payload) as { status: string | null; error: string | null };
+      if (signalled.status !== null) handshakeSeen = true;
     } catch {
       /* malformed payload — the poll below still reads the real flag */
     }
@@ -1183,16 +1200,38 @@ export async function navigateCapturePage(
     while (Date.now() < deadline) {
       if (pageFailure !== undefined) throw new Error(pageFailure);
       const remote =
-        signalled ??
+        (signalled?.status === "ready" || signalled?.status === "error" ? signalled : undefined) ??
         (Date.now() >= nextPollAt
           ? ((nextPollAt = Date.now() + 500),
-            await session.evaluate<{ status: string | null; error: string | null }>(`({
-              status: document.documentElement.dataset.jgCapture ?? null,
-              error: document.documentElement.dataset.jgCaptureError ?? null
-            })`))
+            await session.evaluate<{ status: string | null; error: string | null; sizedCanvas?: boolean }>(CAPTURE_READINESS_EXPR))
           : undefined);
       if (remote?.status === "ready") return;
       if (remote?.status === "error") throw new Error(`capture error: ${remote.error ?? "unknown"}`);
+      if (remote?.status != null) handshakeSeen = true;
+      if (options.legacyCanvas && !handshakeSeen && remote?.sizedCanvas) {
+        const settled = await session.evaluate<{ status: string | null; error: string | null; sizedCanvas?: boolean }>(
+          `new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve(${CAPTURE_READINESS_EXPR}))))`,
+          { awaitPromise: true },
+        );
+        if (settled?.status != null) handshakeSeen = true;
+        if (settled?.status === "error") throw new Error(`capture error: ${settled.error ?? "unknown"}`);
+        if (!handshakeSeen && settled?.sizedCanvas) {
+          const regions = await readCapturePageState(session);
+          const { bytes } = await captureViewportPng(session, { screencast: false });
+          const decoded = decodePng(bytes);
+          const frame = computeShotMetrics(decoded.width, decoded.height, decoded.data);
+          const viewport = computeShotMetrics(decoded.width, decoded.height, decoded.data, regions);
+          const fresh = await session.evaluate<{ status: string | null; error: string | null }>(CAPTURE_READINESS_EXPR);
+          if (fresh?.status != null) handshakeSeen = true;
+          if (fresh?.status === "error") throw new Error(`capture error: ${fresh.error ?? "unknown"}`);
+          if (pageFailure !== undefined) throw new Error(pageFailure);
+          if (signalled?.status === "error") throw new Error(`capture error: ${signalled.error ?? "unknown"}`);
+          if (!handshakeSeen && regions.region !== undefined && frame.nonblank && deadViewport(viewport) === null) {
+            console.error("capture: legacy native canvas settled with nonblank pixels; SDK exposes no asset-ready handshake");
+            return;
+          }
+        }
+      }
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     if (pageFailure !== undefined) throw new Error(pageFailure);
@@ -1212,10 +1251,11 @@ export async function navigateCapturePageWithRetry(
   serverBase: string,
   timeoutMs: number,
   maxAttempts = 2,
+  options: CaptureReadinessOptions = {},
 ): Promise<void> {
   for (let attempt = 1; ; attempt += 1) {
     try {
-      await navigateCapturePage(session, url, timeoutMs);
+      await navigateCapturePage(session, url, timeoutMs, options);
       return;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

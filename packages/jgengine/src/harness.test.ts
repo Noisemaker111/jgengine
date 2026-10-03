@@ -240,3 +240,59 @@ describe("scaffold blank-frame guard", () => {
     }
   });
 });
+
+describe("portable CDP deadlines", () => {
+  test("a screenshot with no transport response rejects on time and releases its waiter", async () => {
+    const dir = materializeHarness("shoot");
+    let messages = 0;
+    const server = Bun.serve({
+      port: 0,
+      hostname: "127.0.0.1",
+      fetch(request, server) {
+        return server.upgrade(request) ? undefined : new Response("websocket required", { status: 400 });
+      },
+      websocket: { message() { messages += 1; } },
+    });
+    const lib = await import(join(dir, "browser.mjs"));
+    const session = await lib.Cdp.connect(server.url.toString().replace("http:", "ws:"), 1000);
+    const out = join(dir, "stuck.png");
+    let kills = 0;
+    try {
+      const start = Date.now();
+      await expect(lib.screenshotTo(session, out, 10000, 50)).rejects.toThrow("CDP Page.captureScreenshot timed out");
+      expect(Date.now() - start).toBeLessThan(1000);
+      expect(messages).toBe(1);
+      expect(session.pending.size).toBe(0);
+      expect(existsSync(out)).toBe(false);
+      const pending = session.send("Runtime.evaluate", { expression: "1" }, 5000);
+      session.close();
+      await expect(pending).rejects.toThrow("CDP session closed");
+      expect(session.pending.size).toBe(0);
+    } finally {
+      session.close();
+      lib.shutdown({ kill() { kills += 1; } }, null);
+      server.stop(true);
+      rmSync(dir, { recursive: true, force: true });
+    }
+    expect(kills).toBe(1);
+  });
+});
+
+
+describe("portable click settling on slow rendered pages", () => {
+  test("three slow stable samples succeed within a bounded settling budget", async () => {
+    const dir = materializeHarness("drive");
+    const lib = await import(join(dir, "browser.mjs"));
+    let now = 0;
+    const budgets: number[] = [];
+    try {
+      const point = await lib.findClickPoint({ async evaluate(_: string, opts: { timeoutMs: number }) { budgets.push(opts.timeoutMs); now += 2500; return { x: 12, y: 34 }; } }, "Begin", { now: () => now, sleep: async (ms: number) => { now += ms; } });
+      expect(point).toEqual({ x: 12, y: 34 });
+      expect(budgets).toEqual([15000, 12400, 9800]);
+      expect(now).toBeLessThan(15000);
+      now = 0;
+      await expect(lib.findClickPoint({ async evaluate() { now += 1000; return { x: now, y: 34 }; } }, "Moving", { timeoutMs: 3000, now: () => now, sleep: async (ms: number) => { now += ms; } })).rejects.toThrow("did not settle");
+      expect(now).toBeLessThan(4500);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+});

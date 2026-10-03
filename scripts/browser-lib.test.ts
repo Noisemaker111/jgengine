@@ -219,6 +219,59 @@ describe("capture navigation failures", () => {
   });
 });
 
+describe("native legacy capture readiness", () => {
+  function legacy(options: { statuses?: (string | null)[]; pixels?: "right" | "none"; lateSignal?: string; sized?: boolean } = {}) {
+    let reads = 0;
+    let captures = 0;
+    const handlers = new Map<string, (params: Record<string, unknown>) => void>();
+    const session = {
+      on(method: string, handler: (params: Record<string, unknown>) => void) { handlers.set(method, handler); return () => handlers.delete(method); },
+      async send(method: string) {
+        if (method === "Page.captureScreenshot") {
+          captures++;
+          if (options.lateSignal) handlers.get("Runtime.bindingCalled")?.({ name: "__jgCaptureSignal", payload: JSON.stringify({ status: options.lateSignal, error: "late asset failure" }) });
+          return { data: splitPng(64, 64, options.pixels ?? "right").toString("base64") };
+        }
+        return {};
+      },
+      async evaluate(expression: string) {
+        if (expression.includes("const dpr")) return { region: { x: 32, y: 0, width: 32, height: 64 }, masks: [], overflow: null, collision: null };
+        const status = options.statuses?.[reads++] ?? null;
+        return { status, error: status === "error" ? "late asset failure" : null, sizedCanvas: options.sized !== false };
+      },
+    } as unknown as CdpSession;
+    return { session, captured: () => captures, subscriptions: () => handlers.size };
+  }
+
+  test("native opt-in requires settled nonblank canvas pixels, without writing readiness flags", async () => {
+    const fixture = legacy();
+    await expect(navigateCapturePage(fixture.session, "http://native", 100, { legacyCanvas: true })).resolves.toBeUndefined();
+    expect(fixture.captured()).toBe(1);
+    expect(fixture.subscriptions()).toBe(0);
+  });
+  test("managed targets stay handshake-only; blank and undersized native canvases do not pass", async () => {
+    for (const [fixture, options] of [[legacy(), {}], [legacy({ pixels: "none" }), { legacyCanvas: true }], [legacy({ sized: false }), { legacyCanvas: true }]] as const) {
+      await expect(navigateCapturePage(fixture.session, "http://native", 30, options)).rejects.toThrow("timed out waiting");
+      expect(fixture.subscriptions()).toBe(0);
+    }
+  });
+  test("loading or error appearing during rendered frames wins over a sized canvas", async () => {
+    const loading = legacy({ statuses: [null, "loading", null] });
+    await expect(navigateCapturePage(loading.session, "http://native", 30, { legacyCanvas: true })).rejects.toThrow("timed out waiting");
+    expect(loading.captured()).toBe(0);
+    const error = legacy({ statuses: [null, "error"] });
+    await expect(navigateCapturePage(error.session, "http://native", 100, { legacyCanvas: true })).rejects.toThrow("late asset failure");
+    expect(error.captured()).toBe(0);
+  });
+  test("transient loading and error during screenshot still win even after the flag disappears", async () => {
+    for (const status of ["loading", "error"]) {
+      const fixture = legacy({ lateSignal: status });
+      await expect(navigateCapturePage(fixture.session, "http://native", 30, { legacyCanvas: true })).rejects.toThrow(status === "error" ? "late asset failure" : "timed out waiting");
+      expect(fixture.captured()).toBe(1);
+    }
+  });
+});
+
 function pngChunk(type: string, data: Buffer): Buffer {
   const out = Buffer.alloc(12 + data.length);
   out.writeUInt32BE(data.length, 0);
