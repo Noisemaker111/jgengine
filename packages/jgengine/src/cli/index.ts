@@ -63,7 +63,8 @@ usage: jgengine <command> [...args]
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
   editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
   upgrade [dir]         diff installed @jgengine/* against the latest release and print every
-                        Migrate step and Adopt-worthy addition in between [--json]
+                        Migrate step and Adopt-worthy addition in between [--json] [--to x.y.z]
+                        --plan previews a root catalog update; --apply writes it without installing
   versions              CLI + installed @jgengine/* versions
   help                  this map
 `;

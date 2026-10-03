@@ -1181,6 +1181,7 @@
     "./templates/sharedBuilder",
     "./templates/starterTerrain",
     "./templates/types",
-    "./upgrade"
+    "./upgrade",
+    "./upgradeCatalog"
   ]
 }

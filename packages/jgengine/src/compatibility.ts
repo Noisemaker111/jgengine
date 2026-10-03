@@ -1,11 +1,32 @@
-import { join } from "node:path";
-import { findUp, readPackageJson } from "./pkg";
+import { dirname, join, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { readPackageJson } from "./pkg";
+
+/** @internal */
+export const LOCKSTEP_SDK_PACKAGES: readonly string[] = [
+  "@jgengine/core", "@jgengine/rapier", "@jgengine/react", "@jgengine/ws", "@jgengine/node",
+  "@jgengine/sql", "@jgengine/convex", "@jgengine/shell", "@jgengine/editor", "@jgengine/assets", "@jgengine/navbake",
+];
+
+/** @internal */
+export function inspectInstalledPackageVersion(dir: string, name: string): { version: string | null; error?: string } {
+  let current = resolve(dir);
+  for (;;) {
+    const file = join(current, "node_modules", name, "package.json");
+    if (existsSync(file)) {
+      const pkg = readPackageJson(file);
+      if (pkg === null || typeof pkg.version !== "string" || pkg.version === "") return { version: null, error: `${file}: invalid installed package metadata` };
+      return { version: pkg.version };
+    }
+    const parent = dirname(current);
+    if (parent === current) return { version: null };
+    current = parent;
+  }
+}
 
 /** @internal */
 export function installedPackageVersion(dir: string, name: string): string | null {
-  const root = findUp(dir, candidate => readPackageJson(join(candidate, "node_modules", name, "package.json")) !== null);
-  const version = root === null ? undefined : readPackageJson(join(root, "node_modules", name, "package.json"))?.version;
-  return typeof version === "string" ? version : null;
+  return inspectInstalledPackageVersion(dir, name).version;
 }
 
 /** @internal */

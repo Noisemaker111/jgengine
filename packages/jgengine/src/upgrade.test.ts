@@ -152,7 +152,7 @@ describe("renderUpgradeReport", () => {
   const packages = [{ name: "@jgengine/core", declared: "^0.12.0", installed: "0.12.0" }];
 
   test("up to date has no migrate/adopt sections", () => {
-    const report = renderUpgradeReport(packages, "0.13.0", "0.13.0", [], "test");
+    const report = renderUpgradeReport([{ name: "@jgengine/core", declared: "^0.13.0", installed: "0.13.0" }], "0.13.0", "0.13.0", [], "test");
     expect(report).toContain("Up to date");
     expect(report).not.toContain("Adopt");
   });

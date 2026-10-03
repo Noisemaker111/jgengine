@@ -33,13 +33,17 @@ Skills ship inside this package under `skills/` and are installed into the proje
 | `desktop [dir]` | Ship a Windows NSIS installer for a project or `--url` |
 | `skills -p \| -g` | Re-install agent skills (project / global) |
 | `doctor [dir]` | Diagnose version skew, missing peers, unstyled HUD, shape drift |
-| `upgrade [dir] [--json]` | Read-only migration report from installed SDK versions or resolved declarations to the latest release |
+| `upgrade [dir] [--json] [--to x.y.z] [--plan \| --apply]` | Read-only migration report by default; opt-in root workspace catalog authoring |
 | `assets …` | List, search, and pull CC0 asset packs (`@jgengine/assets`) |
 | `editor-mcp …` | Scene-editor agent bridge (document RPC / localhost server) |
 | `versions` | CLI + installed `@jgengine/*` versions |
 
-`doctor` and `upgrade` resolve default and named Bun workspace catalogs and recognize hoisted SDK installs. Catalog errors are reported at the owning workspace `package.json`. An upgrade of catalog-owned SDK pins is made once in that root catalog; the report does not edit files or install packages.
+`doctor` and `upgrade` resolve default and named Bun workspace catalogs and recognize hoisted SDK installs. Missing catalog entries and corrupt installed metadata fail diagnostics. Reports distinguish installed versions from declared baselines; unavailable migration notes never establish that a project is up to date.
+
+For a workspace catalog upgrade, run `jgengine upgrade --plan --to <published-version>` at the root or in a game. The plan covers existing SDK entries across all root catalogs, prints migrations oldest-first, and lists the owning file, catalog paths, and exact range changes. `--json` also includes the full before/after `package.json` text. Then run `jgengine upgrade --apply --to <published-version>` to print and apply a fresh plan. Omitting `--to` selects the registry's latest core version. Every affected SDK version and its SDK dependencies must be published; a candidate manifest or changelog cannot authorize an apply.
+
+Apply preserves range styles, unrelated text, per-game declarations, CLI/github versions, and an existing root editor override. Held editor entries and direct SDK pins appear explicitly in the report. Changed files are rejected rather than overwritten. Apply updates declarations only: installed packages and lockfiles remain unchanged. Run `bun install` at a Bun catalog workspace root, rebuild each game, migrate, and verify its behavior. With `--apply --json`, stdout contains the review plan before the write; stderr and the exit code report write success or failure.
 
 ## Packages
 
-The lockstep SDK set is `@jgengine/{core,react,ws,node,sql,convex,shell,editor,assets}` — versions move together; see `CHANGELOG.md` (also importable as typed data from `@jgengine/core/meta/changelog`).
+The lockstep SDK set is `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}` — versions move together; see `CHANGELOG.md` (also importable as typed data from `@jgengine/core/meta/changelog`).
