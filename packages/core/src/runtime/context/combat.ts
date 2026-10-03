@@ -24,7 +24,7 @@ import type {
   GameContextLoot,
 } from "../gameContext";
 import { createCombatFx, type CombatFx } from "./combatFx";
-import { applyLethalLoot } from "./deathLoot";
+import { allowsUnownedWorldDrops, applyLethalLoot } from "./deathLoot";
 
 /** @internal Wiring combat needs from the live scene, loot, and command seams. */
 export interface CombatSubsystemDeps {
@@ -89,7 +89,18 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
   } = d;
 
   const death = createDeathSystem({
-    resolveOnDeath: (instanceId) => catalogEntry(instanceId)?.onDeath,
+    resolveOnDeath(instanceId, reason) {
+      const spec = catalogEntry(instanceId)?.onDeath;
+      if (reason !== undefined && reason.kind !== "player_kill" && allowsUnownedWorldDrops(spec)) {
+        // Explicit opt-in must not enable neighboring legacy/unfiltered tables.
+        return {
+          ...spec,
+          drops: Array.isArray(spec?.drops)
+            ? spec.drops.filter((rule) => rule.when?.reason === "any") : [],
+        };
+      }
+      return spec;
+    },
     resolveIdentity(instanceId) {
       const entity = entities.get(instanceId);
       if (entity === null) return null;
@@ -138,6 +149,7 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
         applyLethalLoot({
           drops: resolution.drops,
           recipientUserId: reason.kind === "player_kill" ? reason.killerUserId : undefined,
+          allowUnownedWorldDrops: reason.kind !== "player_kill" && allowsUnownedWorldDrops(onDeath),
           onDeath,
           position,
           catalogId,

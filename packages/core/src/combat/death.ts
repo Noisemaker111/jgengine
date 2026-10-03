@@ -8,7 +8,8 @@ export type DeathReasonKind = DeathReason["kind"];
 
 export interface OnDeathDropRule {
   table: string;
-  when?: { reason: DeathReasonKind };
+  /** `"any"` explicitly permits world item drops without a player killer. */
+  when?: { reason: DeathReasonKind | "any" };
 }
 
 export interface OnDeathCommandRule {
@@ -61,7 +62,7 @@ export interface DeathIdentity {
 }
 
 export interface DeathSystemDeps {
-  resolveOnDeath(instanceId: string): OnDeathSpec | null | undefined;
+  resolveOnDeath(instanceId: string, reason?: DeathReason): OnDeathSpec | null | undefined;
   resolveIdentity(instanceId: string): DeathIdentity | null;
   loot: { roll(tableId: string): Drop[] };
   events: GameEvents;
@@ -78,8 +79,8 @@ export interface DeathSystem {
   revive(instanceId: string): boolean;
 }
 
-function matchesReason(when: { reason: DeathReasonKind } | undefined, reason: DeathReason): boolean {
-  return when === undefined || when.reason === reason.kind;
+function matchesReason(when: { reason: DeathReasonKind | "any" } | undefined, reason: DeathReason): boolean {
+  return when === undefined || when.reason === "any" || when.reason === reason.kind;
 }
 
 /**
@@ -105,7 +106,7 @@ export function createDeathSystem(deps: DeathSystemDeps): DeathSystem {
       if (identity.userId !== undefined) event.userId = identity.userId;
       if (identity.displayName !== undefined) event.displayName = identity.displayName;
       deps.events.emit("entity.died", event);
-      const onDeath = normalizeOnDeath(deps.resolveOnDeath(instanceId));
+      const onDeath = normalizeOnDeath(deps.resolveOnDeath(instanceId, reason));
       const drops: Drop[] = [];
       for (const rule of onDeath.drops) {
         if (matchesReason(rule.when, reason)) drops.push(...deps.loot.roll(rule.table));
