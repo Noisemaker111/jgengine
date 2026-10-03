@@ -366,6 +366,7 @@ async function findClickPoint(session: CdpSession, text: string): Promise<{ x: n
 }
 
 async function click(session: CdpSession, text: string): Promise<void> {
+  await session.send("Page.bringToFront");
   const point = await findClickPoint(session, text);
   for (const type of ["mousePressed", "mouseReleased"] as const) {
     await session.send("Input.dispatchMouseEvent", {
@@ -385,6 +386,7 @@ async function click(session: CdpSession, text: string): Promise<void> {
  * became the active element.
  */
 async function focusSurface(session: CdpSession): Promise<boolean> {
+  await session.send("Page.bringToFront");
   const expression = `(${focusGameSurface.toString()})(document)`;
   return (await session.evaluate<boolean>(expression)) ?? false;
 }
