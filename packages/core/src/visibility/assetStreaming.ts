@@ -36,6 +36,7 @@ export interface AssetRecord {
   value: unknown;
 }
 
+/** Current demand/residency gauges and cumulative unload/cancellation counters; clear resets totals. */
 export interface StreamingStats {
   queued: number;
   loading: number;
@@ -44,7 +45,18 @@ export interface StreamingStats {
   errored: number;
   inFlight: number;
   cancelled: number;
+  /** Known resident bytes; missing or invalid loader sizes count as zero. */
   bytes: number;
+  /** Current tracked records, including inactive history until forget or clear. */
+  records: number;
+  /** Known bytes protected by pins or active references. */
+  protectedBytes: number;
+  /** Loaded assets whose resident size is unknown. */
+  unknownSizeLoaded: number;
+  /** Known resident bytes above the configured target, including protected bytes. */
+  overBudgetBytes: number;
+  /** Cumulative resources evicted by resident-byte pressure since clear. */
+  budgetEvicted: number;
 }
 
 export interface AssetStreamingSystem {
@@ -58,15 +70,17 @@ export interface AssetStreamingSystem {
   unpin(assetId: string): void;
   /** Refresh the "last needed" timestamp used by the grace-period unload. */
   markActive(assetId: string): void;
-  /** Advance one frame: start up to the frame and concurrency budgets, evict past-grace assets up to the unload budget. */
+  /** Advance one frame: bounded load starts and unloads; resident-byte pressure precedes idle unloading. */
   tick(dt: number): void;
   /** Cancel demand. Unresolved loads still occupy concurrency slots and block same-id retries until settlement. */
   cancel(assetId: string): void;
-  /** Merge streaming policy. Lowering concurrency waits for existing loads to settle; zero pauses new loads. */
+  /** Merge policy. Zero concurrency pauses starts; resident-byte target/order changes apply on the next tick. */
   retune(settings: Partial<StreamingSettings>): void;
   stateOf(assetId: string): AssetLoadState | undefined;
   isLoaded(assetId: string): boolean;
   record(assetId: string): AssetRecord | undefined;
+  /** Drop inactive unloaded/error history. Returns false for missing, pinned, retained, queued, loaded or unresolved assets. Old record handles remain detached; future demand creates a new record. */
+  forget(assetId: string): boolean;
   stats(): StreamingStats;
   /** Merge asset counters into a per-frame VisibilityStats. */
   applyTo(stats: VisibilityStats): void;
@@ -76,11 +90,18 @@ export interface AssetStreamingSystem {
   clear(): void;
 }
 
+/** Stream shared resources with bounded load concurrency, per-tick resident-byte eviction, and explicit inactive-history cleanup. */
 export function createAssetStreamingSystem(options: AssetStreamingOptions): AssetStreamingSystem {
   function mergeSettings(base: StreamingSettings, patch: Partial<StreamingSettings>): StreamingSettings {
     const next = mergeStreamingSettings(base, patch);
     if (!Number.isSafeInteger(next.maxConcurrentLoads) || next.maxConcurrentLoads < 0) {
       throw new RangeError("AssetStreamingSystem: maxConcurrentLoads must be a nonnegative safe integer");
+    }
+    if (next.maxResidentBytes !== Infinity && (!Number.isFinite(next.maxResidentBytes) || next.maxResidentBytes < 0)) {
+      throw new RangeError("AssetStreamingSystem: maxResidentBytes must be nonnegative and finite, or Infinity");
+    }
+    if (next.residentEvictionOrder !== "oldest" && next.residentEvictionOrder !== "largest") {
+      throw new RangeError("AssetStreamingSystem: residentEvictionOrder must be oldest or largest");
     }
     return next;
   }
@@ -89,10 +110,13 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
   const clock = options.now ?? nowMs;
   const records = new Map<string, AssetRecord>();
   const queued = new Set<string>();
+  const residents = new Set<AssetRecord>();
+  const unknownSizes = new Set<AssetRecord>();
   const signals = new Map<string, { cancelled: boolean }>();
   const inFlight = new Set<Promise<void>>();
   let unloadedTotal = 0;
   let cancelledTotal = 0;
+  let budgetEvictedTotal = 0;
 
   function ensure(id: string): AssetRecord {
     let record = records.get(id);
@@ -131,9 +155,12 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
           return;
         }
         record.state = "loaded";
-        record.bytes = result.bytes ?? 0;
+        const knownSize = typeof result.bytes === "number" && Number.isFinite(result.bytes) && result.bytes >= 0;
+        record.bytes = knownSize ? result.bytes! : 0;
+        if (!knownSize) unknownSizes.add(record);
         record.value = result.value;
         record.lastActiveMs = clock();
+        residents.add(record);
       })
       .catch(() => {
         if (!signal.cancelled && records.get(record.id) === record) record.state = "error";
@@ -143,6 +170,25 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
         inFlight.delete(promise);
       });
     inFlight.add(promise);
+  }
+
+  function unprotected(record: AssetRecord): boolean {
+    return record.state === "loaded" && !record.pinned && record.refCount === 0;
+  }
+
+  function compareEviction(a: AssetRecord, b: AssetRecord): number {
+    if (settings.residentEvictionOrder === "largest" && a.bytes !== b.bytes) return b.bytes - a.bytes;
+    return a.lastActiveMs - b.lastActiveMs || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  }
+
+  function unload(record: AssetRecord): void {
+    options.unload?.(record.id);
+    residents.delete(record);
+    unknownSizes.delete(record);
+    record.state = "unloaded";
+    record.bytes = 0;
+    record.value = undefined;
+    unloadedTotal += 1;
   }
 
   function evictable(record: AssetRecord, now: number): boolean {
@@ -191,15 +237,25 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
           if (queued.has(record.id) && records.get(record.id) === record && !signals.has(record.id)) startLoad(record);
         }
       }
+      let bytes = 0;
+      for (const record of residents) bytes += record.bytes;
       let unloads = 0;
-      for (const record of records.values()) {
+      while (bytes > settings.maxResidentBytes && unloads < settings.maxUnloadsPerFrame) {
+        let candidate: AssetRecord | undefined;
+        for (const record of residents) {
+          if (record.bytes > 0 && unprotected(record) && (candidate === undefined || compareEviction(record, candidate) < 0)) candidate = record;
+        }
+        if (candidate === undefined) break;
+        const releasedBytes = candidate.bytes;
+        unload(candidate);
+        bytes -= releasedBytes;
+        budgetEvictedTotal += 1;
+        unloads += 1;
+      }
+      for (const record of residents) {
         if (unloads >= settings.maxUnloadsPerFrame) break;
         if (!evictable(record, now)) continue;
-        options.unload?.(record.id);
-        record.state = "unloaded";
-        record.bytes = 0;
-        record.value = undefined;
-        unloadedTotal += 1;
+        unload(record);
         unloads += 1;
       }
     },
@@ -230,13 +286,24 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
     record(assetId) {
       return records.get(assetId);
     },
+    forget(assetId) {
+      const record = records.get(assetId);
+      if (record === undefined || record.pinned || record.refCount > 0 || signals.has(assetId) || queued.has(assetId)) return false;
+      if (record.state !== "unloaded" && record.state !== "error") return false;
+      return records.delete(assetId);
+    },
     stats() {
-      let queuedCount = 0, loading = 0, loaded = 0, errored = 0, bytes = 0;
+      let queuedCount = 0, loading = 0, loaded = 0, errored = 0, bytes = 0, protectedBytes = 0, unknownSizeLoaded = 0;
       for (const record of records.values()) {
         switch (record.state) {
           case "queued": queuedCount += 1; break;
           case "loading": loading += 1; break;
-          case "loaded": loaded += 1; bytes += record.bytes; break;
+          case "loaded":
+            loaded += 1;
+            bytes += record.bytes;
+            if (record.pinned || record.refCount > 0) protectedBytes += record.bytes;
+            if (unknownSizes.has(record)) unknownSizeLoaded += 1;
+            break;
           case "error": errored += 1; break;
         }
       }
@@ -249,6 +316,11 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
         inFlight: inFlight.size,
         cancelled: cancelledTotal,
         bytes,
+        records: records.size,
+        protectedBytes,
+        unknownSizeLoaded,
+        overBudgetBytes: Math.max(0, bytes - settings.maxResidentBytes),
+        budgetEvicted: budgetEvictedTotal,
       };
     },
     applyTo(stats) {
@@ -269,6 +341,9 @@ export function createAssetStreamingSystem(options: AssetStreamingOptions): Asse
       const loaded = [...records.values()].filter((record) => record.state === "loaded").map((record) => record.id);
       records.clear();
       queued.clear();
+      residents.clear();
+      unknownSizes.clear();
+      budgetEvictedTotal = 0;
       unloadedTotal = 0;
       cancelledTotal = 0;
       for (const id of loaded) options.unload?.(id);

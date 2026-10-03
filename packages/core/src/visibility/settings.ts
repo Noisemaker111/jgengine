@@ -35,13 +35,17 @@ export interface StreamingSettings {
   readonly enabled: boolean;
   /** Extra world units around the camera whose assets are preloaded ahead of visibility. */
   readonly preloadMargin: number;
-  /** Seconds an asset must stay outside the active area before it is eligible for unload. */
+  /** Idle unload delay; resident-byte pressure can evict unprotected assets sooner. */
   readonly unloadGraceSeconds: number;
   readonly maxLoadsPerFrame: number;
   /** Maximum unresolved loads, including cancelled work until its loader settles. Zero pauses new loads. */
   readonly maxConcurrentLoads: number;
   readonly maxUnloadsPerFrame: number;
-  /** Assets at or below this byte size are kept resident once loaded (small shared assets). */
+  /** Resident-byte target, enforced on ticks within maxUnloadsPerFrame; protected assets may exceed it. */
+  readonly maxResidentBytes: number;
+  /** Budget eviction order. Ties use oldest activity then asset id for deterministic selection. */
+  readonly residentEvictionOrder: "oldest" | "largest";
+  /** Small shared assets survive idle unloading, but remain eligible under resident-byte pressure. */
   readonly keepResidentBytes: number;
 }
 
@@ -53,6 +57,8 @@ export const DEFAULT_STREAMING_SETTINGS: StreamingSettings = {
   maxConcurrentLoads: 4,
   maxUnloadsPerFrame: 2,
   keepResidentBytes: 64 * 1024,
+  maxResidentBytes: Infinity,
+  residentEvictionOrder: "oldest",
 };
 
 /**

@@ -39,7 +39,10 @@ default render distance.
 | streaming `preloadMargin` | 32 | Assets load ahead of visibility |
 | `unloadGraceSeconds` | 10 | Grace period before an idle asset is unloaded |
 | `maxLoadsPerFrame` / `maxUnloadsPerFrame` | 4 / 2 | Per-frame budgets to avoid spikes |
-| `keepResidentBytes` | 64 KiB | Small shared assets stay resident |
+| `maxConcurrentLoads` | 4 | Unresolved loads, including cancelled work |
+| `maxResidentBytes` | `Infinity` | Optional known resident-byte target |
+| `residentEvictionOrder` | `oldest` | Budget-pressure eviction; `largest` releases largest assets first |
+| `keepResidentBytes` | 64 KiB | Small shared assets survive idle eviction; byte pressure overrides this |
 
 ## How to opt out / override
 
@@ -73,6 +76,27 @@ entities: { tower: { bounds: { kind: "aabb", half: [2, 8, 2], offset: [0, 8, 0] 
 An asset is never auto-unloaded when it is `pinned`, retained (shared by an active object), or
 required by the current scene. `AssetStreamingSystem.pin(id)` / `retain(id)` from game code; or set
 `neverUnload` / `pinned` on the object override so its assets stay resident.
+
+## Resident memory and history
+
+`createAssetStreamingSystem({ settings: { maxResidentBytes: 256 * 1024 * 1024 }, load, unload })`
+opts into byte-pressure eviction. Supply approximate CPU/GPU resident bytes from `load`, not file
+sizes. `retune` changes the byte target and `residentEvictionOrder` during play. `oldest` evicts
+least recently active assets; `largest` evicts by size, then activity; both break ties by asset id.
+
+Each tick spends `maxUnloadsPerFrame` on pressure eviction before idle eviction. Pressure bypasses
+`unloadGraceSeconds` and `keepResidentBytes`, but never pins or references. This is a convergence
+target, not a hard allocation ceiling: loads complete between ticks, protected assets may exceed
+the target, and missing/invalid sizes count as zero. `stats()` exposes `overBudgetBytes`,
+`protectedBytes`, `unknownSizeLoaded`, and cumulative `budgetEvicted`. Retain currently used
+resources; refreshing activity only affects eviction order under pressure.
+
+Unloaded and failed records remain queryable by default. After releasing ownership and cancelling
+demand, call `forget(id)` to discard inactive history. It refuses loaded, queued, unresolved,
+pinned, or retained assets, including cancelled loads until settlement. Successful forgetting
+makes `stateOf`/`record` return `undefined`; previously held records become detached, and future
+requests create fresh records. Call it after eviction/cancellation settlement in a caller-owned
+cleanup pass to bound history; `stats().records` measures it. Eviction scans resident records only.
 
 ## Multiple cameras
 

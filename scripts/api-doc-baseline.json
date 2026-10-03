@@ -1740,8 +1740,6 @@
   "@jgengine/core/visibility/assetStreaming#AssetStreamingOptions",
   "@jgengine/core/visibility/assetStreaming#AssetStreamingSystem",
   "@jgengine/core/visibility/assetStreaming#CancelSignal",
-  "@jgengine/core/visibility/assetStreaming#StreamingStats",
-  "@jgengine/core/visibility/assetStreaming#createAssetStreamingSystem",
   "@jgengine/core/visibility/bounds#Vec3",
   "@jgengine/core/visibility/camera#CameraKind",
   "@jgengine/core/visibility/camera#cameraInfluencesStreaming",
