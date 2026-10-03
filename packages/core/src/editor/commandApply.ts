@@ -2,6 +2,7 @@ import {
   applyDeltaToSnapshot,
   applySurfaceDeltaToSnapshot,
   applyWeightDeltaToSnapshot,
+  editableTerrainFromSnapshot,
 } from "../world/terraform";
 import { patchUiPanel, removeUiPanel } from "../ui/hudDocument";
 import {
@@ -36,7 +37,6 @@ import type {
   EditorFragmentContent,
   EditorNote,
   EditorPrefab,
-  EditorTerrain,
   EditorVec3,
 } from "./types";
 import type { EditorCommand, EditorSessionState } from "./commands";
@@ -601,21 +601,9 @@ const mutationHandlers: MutationHandlers = {
   },
   setTerrainLayers: (state, command) => {
     if (state.document.terrain === undefined) return state;
-    const terrain = state.document.terrain;
-    const layers = command.layers.map((layer) => ({ ...layer }));
-    const before = terrain.layers ?? [];
-    // Keep hand-painted weights only when the layer id sequence is unchanged (a params-only edit).
-    const sameSequence =
-      before.length === layers.length && before.every((layer, i) => layer.id === layers[i]!.id);
-    const next: EditorTerrain =
-      sameSequence
-        ? { ...terrain, layers }
-        : (() => {
-            const copy = { ...terrain, layers };
-            delete copy.weights;
-            return copy;
-          })();
-    return { ...state, document: { ...state.document, terrain: next } };
+    const terrain = editableTerrainFromSnapshot(state.document.terrain);
+    terrain.setLayers(command.layers);
+    return { ...state, document: { ...state.document, terrain: terrain.snapshot() } };
   },
   convertScatterToObjects: (state, command) => {
     const path = state.document.paths.find((entry) => entry.id === command.pathId);

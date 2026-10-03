@@ -18,6 +18,13 @@ import {
 import { TERRAIN_MATERIALS } from "../uiStore";
 import type { HandlerTable } from "./context";
 
+function brushError(request: { x: number; z: number; radius?: number; strength?: number }): string | null {
+  if (![request.x, request.z, request.radius ?? 8, request.strength ?? 1].every(Number.isFinite)) return "brush coordinates, radius and strength must be finite";
+  if ((request.radius ?? 8) <= 0) return "brush radius must be positive";
+  if ((request.strength ?? 1) < 0) return "brush strength must be nonnegative";
+  return null;
+}
+
 /** Sculpt heightfield, material painting, terrain layers, and foliage/scatter verbs. */
 export const terrainHandlers: Pick<
   HandlerTable,
@@ -40,16 +47,31 @@ export const terrainHandlers: Pick<
     const depth = request.depth ?? 200;
     const cx = request.centerX ?? 0;
     const cz = request.centerZ ?? 0;
+    const cellSize = request.cellSize ?? 2;
+    if (![width, depth, cx, cz, cellSize].every(Number.isFinite) || width <= 0 || depth <= 0 || cellSize <= 0) {
+      return { ok: false, error: "terrain dimensions and cellSize must be finite and positive; center must be finite" };
+    }
+    if ((Math.max(1, Math.round(width / cellSize)) + 1) * (Math.max(1, Math.round(depth / cellSize)) + 1) > 1_000_000) {
+      return { ok: false, error: "terrain exceeds 1,000,000 vertices — increase cellSize or reduce width/depth" };
+    }
+    const bounds = { minX: cx - width / 2, minZ: cz - depth / 2, maxX: cx + width / 2, maxZ: cz + depth / 2 };
+    if (!Object.values(bounds).every(Number.isFinite) || bounds.maxX <= bounds.minX || bounds.maxZ <= bounds.minZ) {
+      return { ok: false, error: "terrain bounds must have a finite, nonzero extent" };
+    }
     const terrain = createTerrainSnapshot({
-      bounds: { minX: cx - width / 2, minZ: cz - depth / 2, maxX: cx + width / 2, maxZ: cz + depth / 2 },
-      cellSize: request.cellSize ?? 2,
+      bounds,
+      cellSize,
     });
     ctx.session.dispatch({ type: "setTerrain", terrain });
     return { ok: true, result: { cols: terrain.cols, rows: terrain.rows, cellSize: terrain.cellSize } };
   },
   sculpt_terrain: (ctx, request) => {
+    const invalid = brushError(request);
+    if (invalid !== null) return { ok: false, error: invalid };
     const terrain = ctx.session.getState().document.terrain;
     if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
+    if (request.mode === "ramp" && (request.toX === undefined || request.toZ === undefined)) return { ok: false, error: "ramp requires toX and toZ" };
+    if ([request.target, request.toX, request.toZ, request.seed].some((value) => value !== undefined && !Number.isFinite(value))) return { ok: false, error: "sculpt target, ramp endpoint and seed must be finite" };
     const live = editableTerrainFromSnapshot(terrain);
     const edit: TerraformEdit = {
       mode: request.mode,
@@ -92,6 +114,8 @@ export const terrainHandlers: Pick<
     };
   },
   paint_terrain: (ctx, request) => {
+    const invalid = brushError(request);
+    if (invalid !== null) return { ok: false, error: invalid };
     const terrain = ctx.session.getState().document.terrain;
     if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
     const live = editableTerrainFromSnapshot(terrain);
@@ -140,21 +164,27 @@ export const terrainHandlers: Pick<
     if (ctx.session.getState().document.terrain === undefined) {
       return { ok: false, error: "no terrain — call create_terrain first" };
     }
+    if (new Set(request.layers.map((layer) => layer.id)).size !== request.layers.length || request.layers.some((layer) => layer.id.length === 0 || layer.surface.length === 0)) {
+      return { ok: false, error: "terrain layers require unique nonempty ids and nonempty surfaces" };
+    }
     ctx.session.dispatch({ type: "setTerrainLayers", layers: request.layers });
     return { ok: true, result: { layers: ctx.session.getState().document.terrain?.layers ?? [] } };
   },
   blend_terrain: (ctx, request) => {
+    const invalid = brushError(request);
+    if (invalid !== null) return { ok: false, error: invalid };
     const terrain = ctx.session.getState().document.terrain;
     if (terrain === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
-    // Auto-add the surface as a layer if the stack does not carry it yet.
-    const layers = terrain.layers ?? [];
-    if (!layers.some((layer) => layer.surface === request.surface)) {
-      const next: TerrainMaterialLayer[] = [...layers, { id: request.surface, surface: request.surface }];
-      ctx.session.dispatch({ type: "setTerrainLayers", layers: next });
+    const live = editableTerrainFromSnapshot(terrain);
+    if ((request.strength ?? 1) > 1) return { ok: false, error: "blend strength must be between 0 and 1" };
+    const addLayer = !live.layers.some((layer) => layer.surface === request.surface);
+    if (addLayer) {
+      let id = request.surface;
+      let suffix = 1;
+      while (live.layers.some((layer) => layer.id === id)) id = `${request.surface}_${suffix++}`;
+      const layers: TerrainMaterialLayer[] = [...live.layers, { id, surface: request.surface }];
+      live.setLayers(layers);
     }
-    const snapshot = ctx.session.getState().document.terrain;
-    if (snapshot === undefined) return { ok: false, error: "no terrain — call create_terrain first" };
-    const live = editableTerrainFromSnapshot(snapshot);
     const delta = live.blendPaintDelta({
       mode: "paint",
       center: [request.x, request.z],
@@ -164,7 +194,9 @@ export const terrainHandlers: Pick<
       ...(request.shape === undefined ? {} : { shape: request.shape }),
     });
     if (delta.indices.length === 0) return { ok: false, error: "blend touched no cells (check radius/position)" };
-    ctx.session.dispatch({ type: "blendTerrain", delta });
+    ctx.session.dispatch(addLayer
+      ? { type: "setTerrain", terrain: live.snapshot() }
+      : { type: "blendTerrain", delta });
     return { ok: true, result: { changed: delta.indices.length, layers: ctx.session.getState().document.terrain?.layers ?? [] } };
   },
   convert_scatter: (ctx, request) => {
