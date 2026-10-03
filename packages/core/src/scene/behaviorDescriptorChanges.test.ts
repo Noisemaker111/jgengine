@@ -37,6 +37,18 @@ test("warm same-id hydration removes behavior ownership and its attack", () => {
   expect(ctx.scene.entity.stats.get("hero", "health")!.current).toBe(98);
 });
 
+test("warm module-only pursuit hydration reuses the keyed cache without listing entities", () => {
+  const ctx = context(); spawn(ctx); advanceBehaviors(ctx, .1);
+  const control = behaviorControl(ctx); control.pause("mob", "saved");
+  control.threat("mob")!.add("hero", 4);
+  const before = control.serialize("mob");
+  const module = structuredClone(ctx.snapshot().pursuitBehaviors);
+  ctx.scene.entity.list = () => { throw new Error("redundant full-world hydrate scan"); };
+  expect(() => ctx.hydrate({ pursuitBehaviors: module })).not.toThrow();
+  expect(control.serialize("mob")).toEqual(before);
+  expect(control.status("mob")).toBe("paused"); expect(control.reason("mob")).toBe("saved");
+});
+
 test("equal-data hydration and unrelated prompts retain original pursuit home and lifecycle", () => {
   const ctx = context(); spawn(ctx);
   ctx.scene.entity.setPose("mob", { position: [3, 0, 0] });

@@ -297,7 +297,7 @@ const runtimeOf = perContext((ctx) => {
 
   ctx.scene.entity.subscribeBehaviors(refreshId);
   refresh();
-  return { nav, refresh };
+  return { nav };
 });
 
 function resetPursue(ctx: GameContext, id: string, entry: PursueNav): void {
@@ -659,7 +659,6 @@ export function installPursuitPersistence(ctx: GameContext, aoiRadius?: number):
     },
     hydrate(data: { version: number; instances: PursueSaveRecord[] }) {
       const runtime = runtimeOf(ctx);
-      runtime.refresh();
       for (const record of data.instances) {
         const entry = runtime.nav.get(record.id);
         if (entry?.kind !== "pursue") continue;
