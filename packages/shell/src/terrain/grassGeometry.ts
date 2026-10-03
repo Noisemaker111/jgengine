@@ -200,3 +200,67 @@ export function createGrassBladeGeometry(options: GrassBladeGeometryOptions = {}
   geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0, 0), Math.max(size.width, size.depth) * 0.75 + resolved.height[1]);
   return geometry;
 }
+
+/** One bounded draw, retaining the original tuft indices for density/budget prefix selection. @internal */
+export interface GrassGeometryChunk {
+  geometry: THREE.InstancedBufferGeometry;
+  indices: Uint32Array;
+  roots: THREE.Box3;
+  bounds: THREE.Box3;
+  bladeExtent: number;
+}
+
+/** Partition one existing seeded bake into at most 64 draws without resampling any tuft. @internal */
+export function createGrassGeometryChunks(options: GrassBladeGeometryOptions = {}): GrassGeometryChunk[] {
+  const source = createGrassBladeGeometry(options);
+  const size = resolveTerrainSize(options.area ?? 40);
+  const columns = Math.max(1, Math.min(8, Math.ceil(size.width / 16)));
+  const rows = Math.max(1, Math.min(8, Math.ceil(size.depth / 16)));
+  const buckets: number[][] = Array.from({ length: columns * rows }, () => []);
+  const offsets = source.getAttribute("instanceOffset");
+  if (source.instanceCount === 0) return [{ geometry: source, indices: new Uint32Array(), roots: new THREE.Box3(), bounds: new THREE.Box3(), bladeExtent: 0 }];
+  for (let i = 0; i < source.instanceCount; i++) {
+    const x = Math.max(0, Math.min(columns - 1, Math.floor(size.width > 0 ? (offsets.getX(i) / size.width + 0.5) * columns : 0)));
+    const z = Math.max(0, Math.min(rows - 1, Math.floor(size.depth > 0 ? (offsets.getZ(i) / size.depth + 0.5) * rows : 0)));
+    buckets[z * columns + x]!.push(i);
+  }
+  const vary = source.getAttribute("bladeVary");
+  const bendScale = source.getAttribute("bladeBendScale");
+  const bladeOffset = source.getAttribute("bladeOffset");
+  let heightScale = 0, widthScale = 0, bendFactor = 0, radius = 0;
+  for (let i = 0; i < vary.count; i++) {
+    heightScale = Math.max(heightScale, Math.abs(vary.getY(i)));
+    widthScale = Math.max(widthScale, Math.abs(vary.getZ(i)));
+    bendFactor = Math.max(bendFactor, Math.abs(bendScale.getX(i)));
+    radius = Math.max(radius, Math.hypot(bladeOffset.getX(i), bladeOffset.getY(i)));
+  }
+  const point = new THREE.Vector3();
+  const chunks = buckets.filter((indices) => indices.length > 0).map((indices): GrassGeometryChunk => {
+    const geometry = new THREE.InstancedBufferGeometry();
+    geometry.setIndex(source.index);
+    for (const [name, attribute] of Object.entries(source.attributes)) {
+      if (!(attribute instanceof THREE.InstancedBufferAttribute)) {
+        geometry.setAttribute(name, attribute);
+        continue;
+      }
+      const values = new Float32Array(indices.length * attribute.itemSize);
+      for (let i = 0; i < indices.length; i++) {
+        values.set(attribute.array.subarray(indices[i]! * attribute.itemSize, (indices[i]! + 1) * attribute.itemSize), i * attribute.itemSize);
+      }
+      geometry.setAttribute(name, new THREE.InstancedBufferAttribute(values, attribute.itemSize));
+    }
+    const roots = new THREE.Box3();
+    let extent = radius;
+    for (const i of indices) {
+      roots.expandByPoint(point.set(offsets.getX(i), offsets.getY(i), offsets.getZ(i)));
+      const height = Math.abs(source.getAttribute("instanceHeight").getX(i)) * heightScale;
+      const bend = Math.abs(source.getAttribute("instanceBend").getX(i)) * bendFactor;
+      const width = Math.abs(source.getAttribute("instanceWidth").getX(i)) * widthScale * 1.2;
+      extent = Math.max(extent, radius + width + height * (1 + bend * 1.18));
+    }
+    geometry.instanceCount = indices.length;
+    return { geometry, indices: Uint32Array.from(indices), roots, bounds: roots.clone(), bladeExtent: extent };
+  });
+  source.dispose();
+  return chunks;
+}

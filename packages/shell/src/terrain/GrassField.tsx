@@ -1,9 +1,10 @@
 import { useFrame, type ThreeElements } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
+import * as THREE from "three";
 
 import { useDisposable } from "../render/useDisposable";
 import {
-  createGrassBladeGeometry,
+  createGrassGeometryChunks,
   grassTuftCount,
   GRASS_TUFT_BLADES,
   type GrassBladeGeometryOptions,
@@ -51,6 +52,7 @@ export interface GrassFieldProps extends Omit<ThreeElements["mesh"], "args" | "c
   roughness?: number;
 }
 
+/** Seeded grass tufts with bounded per-camera chunk submission; density and budgets stay in blades. */
 export function GrassField({
   count = DEFAULT_GRASS_COUNT,
   density = DEFAULT_GRASS_DENSITY,
@@ -77,11 +79,15 @@ export function GrassField({
   castShadow = false,
   receiveShadow = true,
   frustumCulled = true,
+  onBeforeRender,
+  onBeforeShadow,
+  onAfterRender,
+  onAfterShadow,
   ...meshProps
 }: GrassFieldProps) {
-  const geometry = useDisposable(
+  const chunks = useMemo(
     () =>
-      createGrassBladeGeometry({
+      createGrassGeometryChunks({
         count,
         area,
         seed,
@@ -97,6 +103,7 @@ export function GrassField({
       }),
     [area, bladeBend, bladeHeight, bladeWidth, count, edgeFeather, exclude, heightAt, seed, segments, tuftBlades, tuftRadius],
   );
+  useDisposable(() => chunks.map((chunk) => chunk.geometry), [chunks]);
   const handle = useMemo(
     () =>
       createGrassMaterial({
@@ -117,7 +124,55 @@ export function GrassField({
     () => grassTuftCount(resolveGrassInstanceBudget(count, density, area, budget), tuftBlades),
     [count, density, area, budget, tuftBlades],
   );
-  geometry.instanceCount = Math.min(instanceCount, grassTuftCount(count, tuftBlades));
+  const draws = useMemo(() => {
+    const counts = chunks.map((chunk) => {
+      let low = 0, high = chunk.indices.length;
+      while (low < high) {
+        const mid = (low + high) >>> 1;
+        if (chunk.indices[mid]! < instanceCount) low = mid + 1;
+        else high = mid;
+      }
+      return low;
+    });
+    const patchBounds = new THREE.Box3(new THREE.Vector3(-0.5, 0, 0), new THREE.Vector3(0.5, 1, 0));
+    const windExtent = (Math.abs(handle.uniforms.uWindStrength.value) + Math.abs(handle.uniforms.uWindFlutter.value)) * 1.2;
+    for (const chunk of chunks) {
+      chunk.bounds.copy(chunk.roots).expandByScalar(chunk.bladeExtent + windExtent);
+      chunk.geometry.boundingBox = chunk.bounds;
+      patchBounds.union(chunk.bounds);
+    }
+    const sphere = patchBounds.getBoundingSphere(new THREE.Sphere());
+    // All chunks retain the patch's shadow bounds; the factor also covers affine parent shear.
+    sphere.radius *= Math.sqrt(3);
+    const worldBounds = new THREE.Box3();
+    const cameraPosition = new THREE.Vector3();
+    const projection = new THREE.Matrix4();
+    const frustum = new THREE.Frustum();
+    return chunks.map((chunk, index) => {
+      chunk.geometry.boundingSphere = sphere;
+      chunk.geometry.instanceCount = counts[index]!;
+      const beforeRender: THREE.Mesh["onBeforeRender"] = function (this: THREE.Mesh, renderer, scene, camera, geometry, material, group) {
+        let visible = true;
+        if (frustumCulled) {
+          projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+          frustum.setFromProjectionMatrix(projection, camera.coordinateSystem, camera.reversedDepth);
+          visible = frustum.intersectsBox(worldBounds.copy(chunk.bounds).applyMatrix4(this.matrixWorld));
+        }
+        const fade = handle.uniforms.uDistanceFade.value;
+        if (visible && fade.y > fade.x) {
+          camera.getWorldPosition(cameraPosition);
+          visible = worldBounds.copy(chunk.roots).applyMatrix4(this.matrixWorld).distanceToPoint(cameraPosition) <= fade.y;
+        }
+        chunk.geometry.instanceCount = visible ? counts[index]! : 0;
+        (onBeforeRender as THREE.Mesh["onBeforeRender"] | undefined)?.call(this, renderer, scene, camera, geometry, material, group);
+      };
+      const beforeShadow: THREE.Mesh["onBeforeShadow"] = function (this: THREE.Mesh, ...args) {
+        chunk.geometry.instanceCount = counts[index]!;
+        (onBeforeShadow as THREE.Mesh["onBeforeShadow"] | undefined)?.apply(this, args);
+      };
+      return { geometry: chunk.geometry, beforeRender, beforeShadow };
+    });
+  }, [chunks, frustumCulled, handle, instanceCount, onBeforeRender, onBeforeShadow]);
 
   useFrame((state) => {
     handle.uniforms.uTime.value = state.clock.elapsedTime;
@@ -125,14 +180,27 @@ export function GrassField({
 
   useEffect(() => () => handle.material.dispose(), [handle]);
 
+  const root = draws[0]!;
   return (
     <mesh
       {...meshProps}
-      geometry={geometry}
+      geometry={root.geometry}
       material={handle.material}
       castShadow={castShadow}
       receiveShadow={receiveShadow}
       frustumCulled={frustumCulled}
-    />
+      onBeforeRender={root.beforeRender}
+      onBeforeShadow={root.beforeShadow}
+      onAfterRender={onAfterRender}
+      onAfterShadow={onAfterShadow}
+      dispose={null}
+    >
+      {draws.slice(1).map((draw, index) => (
+        <mesh key={index} geometry={draw.geometry} material={handle.material}
+          castShadow={castShadow} receiveShadow={receiveShadow} frustumCulled={frustumCulled}
+          onBeforeRender={draw.beforeRender} onBeforeShadow={draw.beforeShadow}
+          onAfterRender={onAfterRender} onAfterShadow={onAfterShadow} dispose={null} />
+      ))}
+    </mesh>
   );
 }

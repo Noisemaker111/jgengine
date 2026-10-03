@@ -173,7 +173,7 @@ void jgComputeGrassBlade() {
   // triangle blades leave the ground visible between tufts and read as stubble.
   float taper = (1.0 - 0.3 * t) * (1.0 - smoothstep(0.5, 1.0, t) * 0.95);
   // Surviving distant tufts widen to hold silhouette coverage as neighbors thin out.
-  float width = instanceWidth * bladeVary.z * taper * (1.0 + fadeT * 1.4);
+  float width = instanceWidth * bladeVary.z * taper * (1.0 + fadeT * 1.4) * keep;
   float arc = instanceBend * bladeBendScale * t * t;
   vec3 localPosition = vec3(side * width, heightScale * t - arc * heightScale * 0.18, arc * heightScale);
   vec3 localNormal = normalize(vec3(0.0, -instanceBend * bladeBendScale * t, 1.0));
@@ -198,7 +198,7 @@ ${
     : `  float gust = sin(gustPhase) * 0.7 + sin(gustPhase * 0.43 + 2.4) * 0.3;`
 }
   float flutter = sin(uTime * 7.5 + instancePhase * 2.7 + bladeVary.w * 6.2832) * uWindFlutter;
-  vec2 windOffset = uWindDirection * (gust * uWindStrength + flutter) * t * t * (0.4 + 0.6 * bladeVary.y);
+  vec2 windOffset = uWindDirection * (gust * uWindStrength + flutter) * t * t * (0.4 + 0.6 * bladeVary.y) * keep;
   jgGrassPosition = instanceOffset + tuftOffset + yawedPosition + vec3(windOffset.x, 0.0, windOffset.y);
   // Lifting normals toward straight-up lights the field like a continuous meadow surface —
   // side-lit individual blade planes read as dark stubble, not turf.
