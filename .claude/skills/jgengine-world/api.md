@@ -1471,6 +1471,7 @@
 - `EntityPosition` (type): type EntityPosition = readonly [number, number, number] — ⚠ undocumented · used by `resolveSourceWalkerStep` (@jgengine/core/movement/solidObstacles): {@link resolveWalkerStep} with no `GameContext`: gather plus slide against a bare {@link SolidObstacleSource} and a caller-owned {@link Obst…
 - `EntityRole` (type): type EntityRole = "player" | "npc" | "prop" — ⚠ undocumented
 - `EntityStore` (interface): interface EntityStore<TMeta = unknown> { spawn(name: string, options?: SpawnOptions<TMeta>): string; despawn(id: string): boolean; update(id: string, patch: EntityUpdatePatch<TMeta>): boolean; setPose(id: string, pose: EntityPose): boolean; setPoseConstraint(id: string, constrai… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
+- `EntityStoreOptions` (interface): interface EntityStoreOptions — Commit hook for a derived index; runs after the write and before existing subscribers. `undefined` denotes a whole-store replacement. Value overwrites keep membership false.
 - `EntityUpdatePatch` (type): type EntityUpdatePatch<TMeta = unknown> = Partial< Pick<SceneEntity<TMeta>, "name" | "rotationY" | "rotationX" | "rotationZ" | "role" | "movement" | "behaviors" | "hidden" | "meta"> > & { /** Accepts the same friendly shapes as `spawn`/`setPose` (#286.13). Raw patch semantics — velocity is not deriv… — ⚠ undocumented
 - `PoseConstraint` (type): type PoseConstraint = (frame: PoseConstraintFrame) => readonly [number, number, number] | undefined | void — Return a replacement position to constrain the step, or nothing to accept it.
 - `PoseConstraintFrame` (interface): interface PoseConstraintFrame { entityId: string; current: EntityPosition; next: EntityPosition; dt?: number } — ⚠ undocumented
@@ -1478,7 +1479,7 @@
 - `SpawnOptions` (interface): interface SpawnOptions<TMeta = unknown> { id?: string; position?: SpawnPositionInput; rotationY?: number; rotationX?: number; rotationZ?: number; role?: EntityRole; movement?: EntityMovement; behaviors?: readonly BehaviorDescriptor[]; hidden?: boolean; meta?: TMeta; onExisting?: … — ⚠ undocumented
 - `SpawnPose` (interface): interface SpawnPose { position: EntityPosition; rotationY: number } — ⚠ undocumented
 - `SpawnPositionInput` (type): type SpawnPositionInput = EntityPosition | { x: number; y: number; z: number } — ⚠ undocumented
-- `createEntityStore` (function): function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> — ⚠ undocumented
+- `createEntityStore` (function): function createEntityStore<TMeta = unknown>(options: EntityStoreOptions = {}): EntityStore<TMeta> — ⚠ undocumented
 - `entityMetaOf` (function): function entityMetaOf<T>(entity: SceneEntity<unknown>, isMeta: (value: unknown) => value is T): T | null — Narrow `entity.meta` with a type guard — prefer this over `entity.meta as T` so failed shapes return `null` instead of lying to the type checker.
 - `groundSpeed` (function): function groundSpeed(entity: SceneEntity<unknown>): number — Ground speed (horizontal magnitude of velocity) in world units per second. Scale to km/h or mph in game code.
 - `movedWhileFrozen` (function): function movedWhileFrozen(entity: SceneEntity<unknown>, threshold = DEFAULT_FROZEN_MOVE_THRESHOLD): boolean — ⚠ undocumented
@@ -1650,10 +1651,10 @@
 - `Aim` (type): type Aim = | { origin: EntityPosition; direction: EntityPosition } | { yaw: number; pitch: number; spread?: number } — ⚠ undocumented · used by `aimToPoint` (@jgengine/core/input/pointer): Build an `origin → point` aim for `item.use` / projectiles, firing toward the cursor.
 - `MoveTowardOptions` (interface): interface MoveTowardOptions { speed: number; stopDistance?: number; dt: number; avoidSolids?: boolean } — ⚠ undocumented
 - `QueryArcOptions` (interface): interface QueryArcOptions { from: string; aim: Aim; radius: number; halfAngleDeg?: number } — ⚠ undocumented
-- `SpatialApi` (interface): interface SpatialApi { distance(aInstanceId: string, bInstanceId: string): number | null; inRadius(center: EntityPosition | string, radius: number, filter?: (instanceId: string) => boolean): string[]; hasLineOfSight(fromInstanceId: string, toInstanceId: string)… — ⚠ undocumented
-- `SpatialApiOptions` (interface): interface SpatialApiOptions { resolvePosition: (instanceId: string) => EntityPosition | undefined; candidates: () => readonly string[]; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; grid?: SpatialGridOptions | false; getVersion?: () => number; reso… — ⚠ undocumented
+- `SpatialApi` (interface): interface SpatialApi { distance(aInstanceId: string, bInstanceId: string): number | null; inRadius(center: EntityPosition | string, radius: number, filter?: (instanceId: string) => boolean): string[]; hasLineOfSight(fromInstanceId: string, toInstanceId: string)… — ⚠ undocumented · used by `createSpatialApi`: Spatial queries with an optional notified incremental broadphase.
+- `SpatialApiOptions` (interface): interface SpatialApiOptions { resolvePosition: (instanceId: string) => EntityPosition | undefined; candidates: () => readonly string[]; occluder?: (from: EntityPosition, to: EntityPosition) => boolean; grid?: SpatialGridOptions | false; getVersion?: () => number; incr… — ⚠ undocumented · used by `createSpatialApi`: Spatial queries with an optional notified incremental broadphase.
 - `SpatialGridOptions` (interface): interface SpatialGridOptions { cellSize: number } — ⚠ undocumented
-- `createSpatialApi` (function): function createSpatialApi(options: SpatialApiOptions): SpatialApi — ⚠ undocumented
+- `createSpatialApi` (function): function createSpatialApi(options: SpatialApiOptions): SpatialApi — Spatial queries with an optional notified incremental broadphase.
 - `distanceBetween` (function): function distanceBetween(a: EntityPosition, b: EntityPosition): number — ⚠ undocumented
 
 ## @jgengine/core/scene/stationClaim

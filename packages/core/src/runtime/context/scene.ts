@@ -126,7 +126,12 @@ export interface ObjectSlotInventoryAccess {
 export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
   const { content, signalNotify, ground, events, time, occluder } = d;
 
-  const entities = createEntityStore();
+  const entities = createEntityStore({
+    onChange: (instanceId) => {
+      if (instanceId === undefined) spatial.invalidate();
+      else spatial.updateEntity(instanceId);
+    },
+  });
   const objects = createObjectStore();
   entities.subscribe(signalNotify);
   objects.subscribe(signalNotify);
@@ -157,18 +162,6 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
     return object === null ? undefined : content.objectById?.(object.catalogId);
   }
 
-  let spatialGeneration = 0;
-  const candidateIds: string[] = [];
-  let candidateIdsDirty = true;
-
-  function refreshCandidateIds(): readonly string[] {
-    if (!candidateIdsDirty) return candidateIds;
-    candidateIds.length = 0;
-    for (const entity of entities.list()) candidateIds.push(entity.id);
-    candidateIdsDirty = false;
-    return candidateIds;
-  }
-
   // `moveToward` reads the same blocking colliders the player resolver does, so a chaser stops at the
   // wall that stops the player rather than lerping through it.
   const walkerReach = createObstacleReachCache();
@@ -181,9 +174,9 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
 
   const spatial = createSpatialApi({
     resolvePosition: (instanceId) => entities.get(instanceId)?.position,
-    candidates: refreshCandidateIds,
+    candidates: entities.ids,
     grid: { cellSize: 8 },
-    getVersion: () => spatialGeneration,
+    incremental: true,
     resolveStep: (position, stepX, stepZ) =>
       slideStep(
         position,
@@ -198,12 +191,6 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
         ),
       ),
     ...(occluder !== undefined ? { occluder } : {}),
-  });
-
-  entities.subscribe(() => {
-    candidateIdsDirty = true;
-    spatialGeneration += 1;
-    spatial.invalidate();
   });
 
   const entityColliders = new Map<string, EntityColliderSet>();
@@ -336,7 +323,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
 
   const targeting = notifyAfter(
     createTargeting({
-      candidates: () => [...refreshCandidateIds()],
+      candidates: () => [...entities.ids()],
       classify(_fromId, toId) {
         const role = catalogEntry(toId)?.role;
         return role === "enemy" || role === "hostile" ? "hostile" : "friendly";

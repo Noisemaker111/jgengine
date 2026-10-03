@@ -1486,7 +1486,6 @@
   "@jgengine/core/scene/spatial#SpatialApi",
   "@jgengine/core/scene/spatial#SpatialApiOptions",
   "@jgengine/core/scene/spatial#SpatialGridOptions",
-  "@jgengine/core/scene/spatial#createSpatialApi",
   "@jgengine/core/scene/spatial#distanceBetween",
   "@jgengine/core/scene/stationClaim#ClaimResult",
   "@jgengine/core/scene/stationClaim#SharedVehicleConfig",

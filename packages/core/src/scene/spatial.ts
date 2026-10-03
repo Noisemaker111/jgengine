@@ -38,11 +38,20 @@ export interface SpatialApiOptions {
   /**
    * Broadphase for `inRadius`/`queryArc`. Defaults to `{ cellSize: 8 }`. Pass `false` to force a
    * linear scan. When enabled, the index rebuilds lazily on first use after `invalidate()` or when
-   * `getVersion()` advances — call `invalidate()` after moves unless a version source is wired.
+   * `getVersion()` advances — call `updateEntity(id)` after each committed move, or `invalidate()`
+   * after an unreported batch, unless a version source is wired.
    */
   grid?: SpatialGridOptions | false;
   /** When this number changes between queries, the grid rebuilds without an explicit `invalidate()`. */
   getVersion?: () => number;
+  /** Opt in only when every candidate add/remove/position change calls `updateEntity(id)` or
+   * `invalidate()`. Avoids scanning all candidate IDs on warm queries. Initially unresolved IDs
+   * still cost one position lookup per query until updated or invalidated. Default false retains
+   * discovery of new candidates without notification. If positions also resolve outside the
+   * candidate set, pass its explicit presence flag to `updateEntity`. Rebuilds are deferred to
+   * the first query.
+   */
+  incremental?: boolean;
   /**
    * Slide a horizontal step against the scene's solid geometry, returning the step actually allowed.
    * Wired by the runtime to the same blocking-collider query the player resolver reads, so a chaser
@@ -63,6 +72,13 @@ export interface SpatialApi {
   queryArc(options: QueryArcOptions): string[];
   moveToward(instanceId: string, target: EntityPosition | string, options: MoveTowardOptions): EntityPosition | null;
   invalidate(): void;
+  /** Notify after committing a candidate's position or membership. Pass `false` to remove an ID
+   * even if its position still resolves, or `true` for a present candidate with a late position.
+   * Omitted presence asserts membership when the position resolves, otherwise removes the entry;
+   * subset candidate sets with a broader position resolver must pass explicit presence.
+   * Preserves candidate order; does not build an invalidated/cold index or enumerate candidates.
+   */
+  updateEntity(instanceId: string, candidatePresent?: boolean): void;
 }
 
 export function distanceBetween(a: EntityPosition, b: EntityPosition): number {
@@ -97,10 +113,19 @@ interface GridIndex {
   indexed: Set<string>;
   bucketPool: string[][];
   poolCursor: number;
+  locations: Map<string, number>;
+  order: Map<string, number>;
+  nextOrder: number;
+  unresolved: Set<string>;
+  freeBuckets: string[][];
 }
 
 const DEFAULT_CELL_SIZE = 8;
+const MEMBERSHIP_REBUILD_THRESHOLD = 256;
 
+/** Spatial queries with an optional notified incremental broadphase.
+ * @capability spatial-incremental Update one entity's spatial cell after a committed write without scanning the population
+ */
 export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
   const { resolvePosition, candidates, occluder, getVersion, resolveStep } = options;
   const gridConfig = options.grid === false ? undefined : (options.grid ?? { cellSize: DEFAULT_CELL_SIZE });
@@ -108,12 +133,15 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
   let gridIndex: GridIndex | null = null;
   let gridDirty = true;
   let lastVersion: number | undefined;
+  let membershipChanges = 0;
 
   function resolveTarget(target: EntityPosition | string): EntityPosition | undefined {
     return typeof target === "string" ? resolvePosition(target) : target;
   }
 
   function takeBucket(index: GridIndex): string[] {
+    const recycled = index.freeBuckets.pop();
+    if (recycled !== undefined) return recycled;
     if (index.poolCursor < index.bucketPool.length) {
       const bucket = index.bucketPool[index.poolCursor]!;
       index.poolCursor += 1;
@@ -133,7 +161,10 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
       gridDirty = true;
       lastVersion = version;
     }
-    if (!gridDirty && gridIndex !== null) return gridIndex;
+    if (!gridDirty && gridIndex !== null) {
+      membershipChanges = 0;
+      return gridIndex;
+    }
 
     const previous = gridIndex;
     const cells = previous?.cells ?? new Map<number, string[]>();
@@ -145,13 +176,27 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
       indexed,
       bucketPool: previous?.bucketPool ?? [],
       poolCursor: 0,
+      locations: previous?.locations ?? new Map(),
+      order: previous?.order ?? new Map(),
+      nextOrder: 0,
+      unresolved: previous?.unresolved ?? new Set(),
+      freeBuckets: [],
     };
+    index.locations.clear();
+    index.order.clear();
+    index.unresolved.clear();
 
     for (const instanceId of candidates()) {
+      if (index.order.has(instanceId)) continue;
+      index.order.set(instanceId, index.nextOrder++);
       const position = resolvePosition(instanceId);
-      if (position === undefined) continue;
+      if (position === undefined) {
+        index.unresolved.add(instanceId);
+        continue;
+      }
       indexed.add(instanceId);
       const key = packCell(cellCoord(position[0], cellSize), cellCoord(position[2], cellSize));
+      index.locations.set(instanceId, key);
       let bucket = cells.get(key);
       if (bucket === undefined) {
         bucket = takeBucket(index);
@@ -161,7 +206,62 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
     }
     gridIndex = index;
     gridDirty = false;
+    membershipChanges = 0;
     return index;
+  }
+
+  function updateEntity(instanceId: string, candidatePresent?: boolean): void {
+    const index = gridIndex;
+    if (index === null || gridDirty || cellSize === undefined) return;
+    const position = candidatePresent === false ? undefined : resolvePosition(instanceId);
+    const present = candidatePresent ?? (position !== undefined);
+    const oldKey = index.locations.get(instanceId);
+    const newKey = position === undefined ? undefined
+      : packCell(cellCoord(position[0], cellSize), cellCoord(position[2], cellSize));
+    const had = index.order.has(instanceId);
+    if (had !== present) {
+      membershipChanges += 1;
+      if (membershipChanges > MEMBERSHIP_REBUILD_THRESHOLD) {
+        gridDirty = true;
+        return;
+      }
+    }
+    if (oldKey !== undefined && oldKey !== newKey) {
+      const bucket = index.cells.get(oldKey)!;
+      bucket.splice(bucket.indexOf(instanceId), 1);
+      if (bucket.length === 0) {
+        index.cells.delete(oldKey);
+        index.freeBuckets.push(bucket);
+      }
+    }
+    index.unresolved.delete(instanceId);
+    if (newKey === undefined) {
+      index.indexed.delete(instanceId);
+      index.locations.delete(instanceId);
+      if (present) {
+        if (!had) index.order.set(instanceId, index.nextOrder++);
+        index.unresolved.add(instanceId);
+      } else index.order.delete(instanceId);
+      return;
+    }
+    if (!had) index.order.set(instanceId, index.nextOrder++);
+    index.indexed.add(instanceId);
+    index.locations.set(instanceId, newKey);
+    if (oldKey === newKey) return;
+    let bucket = index.cells.get(newKey);
+    if (bucket === undefined) {
+      bucket = takeBucket(index);
+      index.cells.set(newKey, bucket);
+    }
+    const ordinal = index.order.get(instanceId)!;
+    let low = 0;
+    let high = bucket.length;
+    while (low < high) {
+      const mid = (low + high) >>> 1;
+      if (index.order.get(bucket[mid]!)! < ordinal) low = mid + 1;
+      else high = mid;
+    }
+    bucket.splice(low, 0, instanceId);
   }
 
   function collectNear(
@@ -197,6 +297,10 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
   const resultScratch: string[] = [];
 
   function appendUnindexed(index: GridIndex, out: string[]): void {
+    if (options.incremental === true) {
+      for (const instanceId of index.unresolved) out.push(instanceId);
+      return;
+    }
     for (const instanceId of candidates()) {
       if (index.indexed.has(instanceId)) continue;
       out.push(instanceId);
@@ -223,6 +327,7 @@ export function createSpatialApi(options: SpatialApiOptions): SpatialApi {
   }
 
   return {
+    updateEntity,
     distance(aInstanceId, bInstanceId) {
       const a = resolvePosition(aInstanceId);
       const b = resolvePosition(bInstanceId);

@@ -158,8 +158,15 @@ export interface EntityStore<TMeta = unknown> {
   blackboard: EntityBlackboard;
 }
 
-export function createEntityStore<TMeta = unknown>(): EntityStore<TMeta> {
-  const store = createObservableKeyedStore<SceneEntity<TMeta>>();
+/** Commit hook for a derived index; runs after the write and before existing subscribers.
+ * `undefined` denotes a whole-store replacement. Value overwrites keep membership false.
+ */
+export interface EntityStoreOptions {
+  onChange?: (instanceId: string | undefined, membershipChanged: boolean) => void;
+}
+
+export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions = {}): EntityStore<TMeta> {
+  const store = createObservableKeyedStore<SceneEntity<TMeta>>(undefined, options.onChange);
   const spawnPoses = new Map<string, SpawnPose>();
   const constraints = new Map<string, PoseConstraint>();
   const blackboards = new Map<string, Map<string, unknown>>();
