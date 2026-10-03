@@ -1,0 +1,151 @@
+{
+  "scope": "imported rig slots and supported leg-name resolution; exact unreleased public package proof, no registry publication/adoption",
+  "gamesSource": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "gameSourceChanges": 0,
+  "cohort": {
+    "commit": "4955a4444167b22650e929f807a7d4572375d261",
+    "tree": "399e4d76a29c416f41fc454c220afdf206736b84",
+    "base": "05b424d81174a9424705aaf271f15929a739629d",
+    "manifest": "candidate-package-manifest.json",
+    "manifestSha256": "02def7dc9aa4ef1641c4ed8fdbffdc5ea92733fd6821f330f470900f829eb14c",
+    "tarballsHashVerified": 13,
+    "packagesInstalled": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "10580d6cb90e196c5d5eb796f459ab210e6cec81a12adec89ec192679a3ed7d1"
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995"
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48"
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0"
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9"
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "c5e84f6835ed8f743ef892caae3f42199c2aa64dea30c62e162a0f6f1db0627a"
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "2b2b0399a2ffa582c2e4340c7c84f3138dd428d16812c112d7db987beb69632b"
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675"
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876"
+      }
+    ],
+    "cohortPackagesNotInstalled": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ]
+  },
+  "before": {
+    "cohort": "c2aa2e4b322e2061b0b7f1e3783e4c1e7f28a9a5",
+    "missingAttachmentInstances": 3,
+    "rawSlotFailures": [
+      {
+        "model": "gauge",
+        "slot": "handslot.r",
+        "runtimeName": "handslotr",
+        "directLookupMissing": true,
+        "importedOriginalNameUnique": true
+      },
+      {
+        "model": "reactor_hunter",
+        "slot": "handslot.r",
+        "runtimeName": "handslotr",
+        "directLookupMissing": true,
+        "importedOriginalNameUnique": true
+      }
+    ],
+    "proof": "renderer-before.json"
+  },
+  "after": {
+    "attachedInstances": 3,
+    "animatedWorldTransformFollowsBone": true,
+    "slotChangeDetachAndIsolation": true,
+    "missingSlotDiagnosedWithoutErasingBase": true,
+    "importedBindingNamesPreserved": true,
+    "sourceModelConfigHashes": {
+      "gauge": "36543492011c4ac99319cd29f2e0666896222710fbd972dded38c461805de78d",
+      "reactor_hunter": "8b8807b0371531e3ed44526f1f741de4a916784b0ef796511de1736d368dabf6",
+      "lantern": "525f950d44c28c76d48abea559ab9d22bd5e3344173cf2045671e7352f00ef98"
+    },
+    "sourceFiles": [
+      {
+        "file": "scrap-signal/src/game/world/models.ts",
+        "sha256": "a2faf347f83bf2d78ef8b901cc9f3828707da999917558c09935cae21fa0d43f"
+      },
+      {
+        "file": "lantern-reach/src/game/models.ts",
+        "sha256": "11590e674ed0ec2a793fe07bc5e2ca3ac2bd3e3320e0a65ab8c1339a24802a1a"
+      }
+    ],
+    "cachedTransformsHierarchyUnchanged": true,
+    "cachedMaterialDisposals": 0,
+    "cachedGeometryDisposals": 0,
+    "ownedMaterialDisposals": 3,
+    "proof": "renderer-after.json",
+    "rendererScript": "renderer-proof.tsx"
+  },
+  "consumers": {
+    "Scrap": "actual NPC Gauge Knight+sword and player reactor_hunter Rogue_Hooded+crossbow configurations unchanged",
+    "Lantern": "unchanged original converted22-clip Knight control; no attachments configured anywhere in actual game, no attachment-adoption claim"
+  },
+  "checks": {
+    "ScrapPublicTypes": "PASS",
+    "ScrapProductionBuild": "PASS",
+    "LanternProductionBuild": "PASS",
+    "LanternPublicTypes": "BLOCKED: same four preexisting ActionBar57/Dialogue68 async command-dispatch type errors"
+  },
+  "nativeFixture": {
+    "sameEarlierSourceFiles": 81,
+    "hashes": "native-source-hashes.json",
+    "status": "AFTER watchdog exit124 at210s, recovered missing workspace-import HMR and read original Gauge metadata/camera; no screenshot or completed visibility actions. Verify one-hang stop rule enforced; no rerun.",
+    "installFreezeReleased": true,
+    "proof": "../../native/rig-slots/"
+  },
+  "installedFootIKProof": {
+    "owner": "animation worker",
+    "proof": "../../ik/authored-leg-installed-4955a444.json",
+    "rigs": [
+      "Knight",
+      "Rogue",
+      "actual Scrap Rogue_Hooded"
+    ],
+    "walkingSlopeFrames": 60,
+    "reportedMaximumOriginalVsRuntimeNamePoseError": 0,
+    "configuredInActualGames": false
+  },
+  "limits": [
+    "Headless R3F reconciliation proves runtime attachment ownership/transforms; no pixel/appearance/performance claim.",
+    "Numerical parser skips material image decoding; geometry, hierarchy, bind poses and clip data come from actual SHA-identified GLBs.",
+    "Original Lantern Dawn document remains invalid; no new full normal Lantern edit/save proof.",
+    "No game dependency catalog or lock adoption.",
+    "Native baseline was capped; do not infer an unoccluded native BEFORE frame from numerical failure."
+  ]
+}

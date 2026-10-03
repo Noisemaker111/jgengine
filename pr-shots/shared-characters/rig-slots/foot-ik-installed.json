@@ -1,0 +1,233 @@
+{
+  "label": "unreleased installed public package numerical foot-IK proof; no native foot appearance or retargeting claim",
+  "cohort": "4955a4444167b22650e929f807a7d4572375d261",
+  "tree": "399e4d76a29c416f41fc454c220afdf206736b84",
+  "shellTarball": {
+    "name": "@jgengine/shell",
+    "version": "0.19.0",
+    "path": "/workspace/JGengine/.scratch/characters/packages/final-4955a444/jgengine-shell-0.19.0.tgz",
+    "sha256": "c5e84f6835ed8f743ef892caae3f42199c2aa64dea30c62e162a0f6f1db0627a",
+    "files": 511
+  },
+  "exports": [
+    {
+      "name": "@jgengine/shell/render/useFootIk",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/rig-slots/node_modules/@jgengine/shell/dist/render/useFootIk.js",
+      "sha256": "834c0563ec0b13d9d6f69425c1830823ffe9a12e259233fd18656c4ad47a6972"
+    },
+    {
+      "name": "@jgengine/shell/render/rigNode",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/rig-slots/node_modules/@jgengine/shell/dist/render/rigNode.js",
+      "sha256": "aeeb9f74f4543e88121f6e24343e84f0ecaed07462fe85f9e91c6590f2e3b32c"
+    }
+  ],
+  "threeModule": "/workspace/JGengine/.scratch/characters/consumer/rig-slots/node_modules/three/build/three.module.js",
+  "importedImageDecodeSkipped": true,
+  "sourceBytesUnmodified": true,
+  "framesPerCase": 60,
+  "warnings": [],
+  "errors": [],
+  "cases": [
+    {
+      "name": "Knight",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/rig-slots/games/scrap-signal/public/models/kaykit-adventurers/Knight.glb",
+      "consumer": "Scrap Signal gauge NPC",
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "clips": 76,
+      "referenceMappings": [
+        {
+          "root": {
+            "authored": "upperleg.l",
+            "runtime": "upperlegl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "mid": {
+            "authored": "lowerleg.l",
+            "runtime": "lowerlegl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "tip": {
+            "authored": "foot.l",
+            "runtime": "footl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          }
+        },
+        {
+          "root": {
+            "authored": "upperleg.r",
+            "runtime": "upperlegr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "mid": {
+            "authored": "lowerleg.r",
+            "runtime": "lowerlegr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "tip": {
+            "authored": "foot.r",
+            "runtime": "footr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          }
+        }
+      ],
+      "resolved": [
+        [
+          "upperlegl",
+          "lowerlegl",
+          "footl"
+        ],
+        [
+          "upperlegr",
+          "lowerlegr",
+          "footr"
+        ]
+      ],
+      "frames": 60,
+      "slopeHeight": "y=z*0.2",
+      "maxPositionError": 0,
+      "maxQuaternionError": 0,
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "name": "Rogue",
+      "path": "/workspace/JGengine/apps/dev/public/models/kaykit-adventurers/Rogue.glb",
+      "consumer": "existing SDK imported-rig fixture",
+      "sha256": "e825437cd4d2ee9c1960b517a74a69101e33eb409ae7fa8cedc7134a998fbb7d",
+      "clips": 76,
+      "referenceMappings": [
+        {
+          "root": {
+            "authored": "upperleg.l",
+            "runtime": "upperlegl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "mid": {
+            "authored": "lowerleg.l",
+            "runtime": "lowerlegl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "tip": {
+            "authored": "foot.l",
+            "runtime": "footl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          }
+        },
+        {
+          "root": {
+            "authored": "upperleg.r",
+            "runtime": "upperlegr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "mid": {
+            "authored": "lowerleg.r",
+            "runtime": "lowerlegr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "tip": {
+            "authored": "foot.r",
+            "runtime": "footr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          }
+        }
+      ],
+      "resolved": [
+        [
+          "upperlegl",
+          "lowerlegl",
+          "footl"
+        ],
+        [
+          "upperlegr",
+          "lowerlegr",
+          "footr"
+        ]
+      ],
+      "frames": 60,
+      "slopeHeight": "y=z*0.2",
+      "maxPositionError": 0,
+      "maxQuaternionError": 0,
+      "warnings": [],
+      "errors": []
+    },
+    {
+      "name": "Rogue_Hooded",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/rig-slots/games/scrap-signal/public/models/kaykit-adventurers/Rogue_Hooded.glb",
+      "consumer": "Scrap Signal reactor_hunter player",
+      "sha256": "93e6e25213009952276d9cf34f5d96a243767334c66f280db0433ddfabb91545",
+      "clips": 76,
+      "referenceMappings": [
+        {
+          "root": {
+            "authored": "upperleg.l",
+            "runtime": "upperlegl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "mid": {
+            "authored": "lowerleg.l",
+            "runtime": "lowerlegl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "tip": {
+            "authored": "foot.l",
+            "runtime": "footl",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          }
+        },
+        {
+          "root": {
+            "authored": "upperleg.r",
+            "runtime": "upperlegr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "mid": {
+            "authored": "lowerleg.r",
+            "runtime": "lowerlegr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          },
+          "tip": {
+            "authored": "foot.r",
+            "runtime": "footr",
+            "authoredMatch": "authored",
+            "runtimeMatch": "runtime"
+          }
+        }
+      ],
+      "resolved": [
+        [
+          "upperlegl",
+          "lowerlegl",
+          "footl"
+        ],
+        [
+          "upperlegr",
+          "lowerlegr",
+          "footr"
+        ]
+      ],
+      "frames": 60,
+      "slopeHeight": "y=z*0.2",
+      "maxPositionError": 0,
+      "maxQuaternionError": 0,
+      "warnings": [],
+      "errors": []
+    }
+  ]
+}
