@@ -24,6 +24,7 @@ import {
 } from "@jgengine/core/ui/panelModel";
 
 import { HudFrame, type HudFrameShape, type HudFrameVariation } from "./hudFrame";
+import { observeBrowserSuspension } from "./browserLifecycle";
 
 /**
  * React chrome over the headless panel/window model (`@jgengine/core/ui/panelModel`) — the toggleable,
@@ -187,27 +188,48 @@ function topClosableOpen(state: PanelState): string | null {
 
 // ---- Window chrome ---------------------------------------------------------
 
-/** @internal Begin a pointer drag from the title bar, streaming new positions to `onMove` until release. */
+/** @internal Own a title-bar pointer until release or interruption, streaming positions to `onMove`. */
 function beginWindowDrag(
-  event: ReactPointerEvent,
+  event: ReactPointerEvent<HTMLElement>,
   origin: PanelPosition,
   onMove: (pos: PanelPosition) => void,
-): void {
-  if (typeof window === "undefined") return;
+  onRetire: () => void,
+): (() => void) | null {
+  const source = event.currentTarget;
+  const view = source.ownerDocument.defaultView;
+  if (view === null) return null;
+  const pointerId = event.pointerId;
   const startX = event.clientX;
   const startY = event.clientY;
   const base = { x: origin.x, y: origin.y };
+  let active = true;
+  const retire = () => {
+    if (!active) return;
+    active = false;
+    view.removeEventListener("pointermove", onPointerMove);
+    view.removeEventListener("pointerup", onEnd);
+    view.removeEventListener("pointercancel", onEnd);
+    detachSuspension();
+    source.removeEventListener("lostpointercapture", onEnd);
+    onRetire();
+    if (source.hasPointerCapture(pointerId)) source.releasePointerCapture(pointerId);
+  };
   const onPointerMove = (moveEvent: PointerEvent) => {
+    if (moveEvent.pointerId !== pointerId) return;
+    if (!source.isConnected) { retire(); return; }
     onMove({ x: base.x + (moveEvent.clientX - startX), y: base.y + (moveEvent.clientY - startY) });
   };
-  const onPointerUp = () => {
-    window.removeEventListener("pointermove", onPointerMove);
-    window.removeEventListener("pointerup", onPointerUp);
-    window.removeEventListener("pointercancel", onPointerUp);
+  const onEnd = (endEvent: PointerEvent) => {
+    if (endEvent.pointerId !== pointerId || (endEvent.type === "pointerup" && endEvent.button !== 0)) return;
+    retire();
   };
-  window.addEventListener("pointermove", onPointerMove);
-  window.addEventListener("pointerup", onPointerUp);
-  window.addEventListener("pointercancel", onPointerUp);
+  view.addEventListener("pointermove", onPointerMove);
+  view.addEventListener("pointerup", onEnd);
+  view.addEventListener("pointercancel", onEnd);
+  const detachSuspension = observeBrowserSuspension(retire, { hidden: false, pointerLockLost: false }, { window: view, document: source.ownerDocument });
+  source.addEventListener("lostpointercapture", onEnd);
+  source.setPointerCapture(pointerId);
+  return retire;
 }
 
 const TITLEBAR_STYLE: CSSProperties = {
@@ -276,6 +298,9 @@ function WindowView({
   bodyStyle?: CSSProperties;
   children?: ReactNode;
 }) {
+  const retireDrag = useRef<(() => void) | null>(null);
+  useEffect(() => () => retireDrag.current?.(), []);
+
   return (
     <div
       role="dialog"
@@ -289,9 +314,11 @@ function WindowView({
         <div
           data-jg-window-titlebar=""
           onPointerDown={(event) => {
-            if (event.button !== 0) return;
+            if (event.button !== 0 || !event.isPrimary || retireDrag.current !== null) return;
             onFocus?.();
-            if (onMove !== undefined) beginWindowDrag(event, pos, onMove);
+            if (onMove !== undefined) {
+              retireDrag.current = beginWindowDrag(event, pos, onMove, () => { retireDrag.current = null; });
+            }
           }}
           style={TITLEBAR_STYLE}
         >
