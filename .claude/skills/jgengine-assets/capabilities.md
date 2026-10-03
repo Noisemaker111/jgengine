@@ -11,6 +11,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `readGlbFileMetrics` (function) · `import { readGlbFileMetrics } from "@jgengine/assets/assetBudget"`
 - `readGlbMetrics` (function) · `import { readGlbMetrics } from "@jgengine/assets"`
 
+## asset-byte-classification — identify custom asset formats from bytes instead of filename extensions
+
+- `classifyAssetFile` (function) · `import { classifyAssetFile } from "@jgengine/assets"`
+
+## asset-import-validation — validate game-owned multi-file asset descriptions before ingest
+
+- `validateImportSpec` (function) · `import { validateImportSpec } from "@jgengine/assets"`
+
 ## asset-reference-integrity — validate asset references against the provisioning contract (dangling / committed / provisioned)
 
 - `validateAssetReferences` (function) · `import { validateAssetReferences } from "@jgengine/assets"`
