@@ -1,0 +1,93 @@
+{
+  "scenario": "Existing Scrap Signal NPC Gauge attachment to the imported Knight hand slot",
+  "campaignPublishedAdoption": false,
+  "baseline": {
+    "cohort": "c2aa2e4b322e2061b0b7f1e3783e4c1e7f28a9a5",
+    "attempts": 2,
+    "cap": 2,
+    "furtherRetries": false,
+    "first": {
+      "exit": 0,
+      "image": "url-scrap-gauge-rig-before.png",
+      "inspection": "Gauge feet and lower hands are visible; the opaque logical NPC glyph obscures torso and head. Missing sword appearance is not proven.",
+      "attachmentConsoleWarningLines": 28
+    },
+    "second": {
+      "exit": 1,
+      "command": "before-visible-command.json",
+      "log": "before-visible-native.log",
+      "failure": "The normal Hide npc layer control remained transparent until row hover and was correctly rejected as non-actionable."
+    },
+    "attribution": "before-attribution.json",
+    "review": "before-review.json"
+  },
+  "candidate": {
+    "cohort": "4955a4444167b22650e929f807a7d4572375d261",
+    "tree": "399e4d76a29c416f41fc454c220afdf206736b84",
+    "attribution": "after-attribution.json",
+    "command": "after-command.json",
+    "log": "after-native.log",
+    "exit": 124,
+    "foregroundAttempts": 1,
+    "hardDeadlineSeconds": 210,
+    "internalRecovery": {
+      "reloads": 1,
+      "initialReadinessTimeoutSeconds": 90,
+      "reason": "The copied fixture initially lacked the existing games/shared/legacySave workspace import. Its unchanged file was copied; official drive classified the first page as stale after HMR and reloaded once."
+    },
+    "partialResults": {
+      "originalMarkerConfirmed": true,
+      "identicalCameraConfirmed": true,
+      "selectionCleared": true,
+      "nonblankLegacyCanvasReported": true,
+      "visibilityActionsCompleted": false,
+      "finalDebugSnapshotCompleted": false
+    },
+    "afterImage": null,
+    "nativeAttachmentAppearanceAccepted": false,
+    "warningConclusion": "The partial log cannot establish that attachment warnings are all clear.",
+    "furtherRetries": false,
+    "stopRule": ".claude/skills/jgengine-verify/SKILL.md: If a WebGL capture hangs once, do not repeat the same foreground command; fall back to deterministic scene evidence and report the capture failure."
+  },
+  "identity": {
+    "unchangedSceneSha256": "7a0d5dece0cd461f62bd7c68870d09163fc225476f84950554dc46e1f026055f",
+    "unchangedAssets": {
+      "Knight.glb": {
+        "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+        "bytes": 3659532
+      },
+      "sword_1handed.glb": {
+        "sha256": "2682f6e932b84c2513b4c26b82a627497e113322f4ae947797c285121f2e8a98",
+        "bytes": 14624
+      }
+    },
+    "unchangedGameSourceFiles": 81,
+    "sourceHashes": "../../consumer/rig-slots/native-source-hashes.json",
+    "unchangedModelConfigSha256SortedJSON": "a150dfd2fd5d2dd68a7df27a4ce9ddd2f300915dad6740f4d0bd1e13f5efe91f",
+    "camera": {
+      "method": "camera_goto",
+      "x": 2,
+      "y": 18.261346873407685,
+      "z": 20,
+      "distance": 4,
+      "pitch": 15,
+      "yaw": 0.5,
+      "height": 1.2
+    },
+    "targetSource": "The unchanged game.loop.onInit through its public game context created the existing npc_gauge. No authored world mutation or manual actor spawn was used."
+  },
+  "cleanup": {
+    "ownedViteStopped": true,
+    "officialCaptureDaemonStopped": true,
+    "originalC2aaInstallUntouched": true,
+    "newCandidateInstallFreezeReleased": true
+  },
+  "acceptedRung": "Separate exact-package actual EntityModel renderer proof; native attachment appearance remains unresolved.",
+  "limits": [
+    "Baseline screenshot does not show enough body to prove missing sword appearance.",
+    "There is no candidate after screenshot.",
+    "Static frozen editor view would prove attachment presence only, not locomotion, controls feel, or convincing animation.",
+    "Software rendering provides no hardware performance evidence.",
+    "No registry release or newly published game adoption occurred."
+  ]
+}
