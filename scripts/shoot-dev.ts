@@ -24,7 +24,6 @@ import {
   scaleProfile,
   screencastCapturesFully,
   isUp,
-  normalizeLoopbackUrl,
   navigateCapturePageWithRetry,
   openPageSession,
   parseSizeArg,
@@ -35,6 +34,7 @@ import {
   type SizeMode,
 } from "./browser-lib";
 import { decodePng } from "./png-reader";
+import { externalCaptureUrl } from "./captureTarget";
 import { lookSearchParams, parseLookAim } from "./lookArg";
 import {
   MIN_SAMPLED_SHARE,
@@ -247,7 +247,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--out") args.out = argv[++index];
     else if (value === "--url") {
       const raw = argv[++index];
-      args.url = raw === undefined ? undefined : normalizeLoopbackUrl(raw);
+      args.url = externalCaptureUrl(raw);
     }
     else if (value === "--site") args.site = argv[++index];
     else if (value === "--connect") args.connect = Number(argv[++index]);
@@ -547,13 +547,20 @@ try {
 const targets = devicesFor(args.device);
 
 const daemon: ShootDaemonState | null =
-  args.connect === undefined && args.url === undefined ? await attachDaemon() : null;
+  args.connect === undefined ? await attachDaemon() : null;
 
 let server: ChildProcess | null = null;
 let serverPid: number | undefined;
 let devBase = "";
 let attachedDaemon = false;
-if (daemon !== null) {
+if (args.url !== undefined) {
+  if (args.site !== undefined) throw new Error("shoot: --url and --site select different targets; pass one");
+  if (!(await isUp(args.url))) {
+    throw new Error(`shoot: nothing is listening at ${args.url} — start that external server first`);
+  }
+  devBase = args.url;
+  attachedDaemon = daemon !== null;
+} else if (daemon !== null) {
   const target = await ensureDaemonTarget(daemon, args.site !== undefined ? "web" : "dev");
   devBase = target.base;
   attachedDaemon = true;
@@ -568,19 +575,6 @@ if (daemon !== null) {
   server = dev.child;
   serverPid = dev.pid;
   devBase = dev.base;
-} else if (!(await isUp(args.url))) {
-  const dev = await ensureDevServer();
-  if (args.url.startsWith(dev.base) || args.url.startsWith("http://127.0.0.1:")) {
-    server = dev.child;
-    serverPid = dev.pid;
-    devBase = dev.base;
-  } else {
-    throw new Error(
-      `shoot: nothing is listening at ${args.url} — start that server first (auto-start only covers this worktree's dev port)`,
-    );
-  }
-} else {
-  devBase = args.url;
 }
 /**
  * Print the game's declared `capture.views`. The runner publishes them on `data-jg-shots` as soon
@@ -651,19 +645,19 @@ const exitCode = await withBrowserSession(
         startedAt: new Date().toISOString(),
       };
       const target = { port: Number(new URL(devBase).port), base: devBase, pid: serverPid ?? server?.pid };
-      if (args.site === undefined) {
+      if (args.url === undefined && args.site === undefined) {
         state.devPort = target.port;
         state.devBase = target.base;
         state.devPid = target.pid;
-      } else {
+      } else if (args.url === undefined) {
         state.webPort = target.port;
         state.webBase = target.base;
         state.webPid = target.pid;
       }
       writeDaemonState(state);
       console.error(`shoot: kept warm — chrome debug port ${debugPort}, dev server on ${devBase}`);
-      console.error(`shoot: next shot → bun run shoot ${args.game} --mode ${args.mode} (daemon auto-attach)`);
-      console.error(`shoot: or explicit → bun run shoot ${args.game} --mode ${args.mode} --connect ${debugPort} --size half`);
+      console.error(`shoot: next shot → bun run shoot ${args.url === undefined ? `${args.game} --mode ${args.mode}` : `--url ${args.url}`} (daemon auto-attach)`);
+      console.error(`shoot: or explicit → bun run shoot ${args.url === undefined ? `${args.game} --mode ${args.mode}` : `--url ${args.url}`} --connect ${debugPort} --size half`);
     }
     return code;
   },

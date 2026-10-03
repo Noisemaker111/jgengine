@@ -27,6 +27,8 @@ import {
   captureViewportPng,
   ensureDevServer,
   ensureWebServer,
+  forwardPageConsole,
+  isUp,
   navigateCapturePageWithRetry,
   openPageSession,
   parseSizeArg,
@@ -40,6 +42,7 @@ import {
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
+import { captureClickPoint, driveTargetUrl, externalCaptureUrl } from "./captureTarget";
 import { decodePng } from "./png-reader";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord } from "./shotProvenance";
@@ -53,6 +56,7 @@ type Step =
   | { kind: "click"; text: string }
   | { kind: "key"; code: string; holdMs: number }
   | { kind: "wait"; ms: number }
+  | { kind: "reload" }
   | { kind: "shot"; name: string; out?: string }
   | { kind: "rpc"; json: string }
   | { kind: "probe"; name: string };
@@ -73,6 +77,7 @@ const LOW_FPS_THRESHOLD = 5;
 type Args = {
   game: string;
   mode: string;
+  modeExplicit: boolean;
   size: SizeMode;
   connect?: number;
   keep: boolean;
@@ -93,6 +98,7 @@ type Args = {
   view?: string;
   state?: string;
   site?: string;
+  url?: string;
   record?: string;
   recordWidth: number;
   recordFps: number;
@@ -112,6 +118,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --click "<text>"    click the first visible element containing this text (or, for
                       icon-only buttons, this aria-label — e.g. "Settings")
   --wait <ms>         pause before the next step
+  --reload            reload this page and await readiness, keeping this run's storage
+                      (not available with lockstep recording or --playtest)
   --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds; join codes with
                       + to hold a chord (KeyW+KeyD:2000 = throttle and steer together)
   --shot <name|path>  screenshot to shots/<game>-<name>.png for a bare name, or to
@@ -140,6 +148,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       run the steps — pair with --rpc debug_snapshot to measure a
                       staged scene instead of clicking it together by hand
   --site <path>       drive a route from the managed apps/web server instead of a game
+  --url <url>         drive an existing native game server without booting a runner;
+                      uses the same readiness, recording, RPC, and storage rules
   --rpc <json>        call the page's agent/editor bridge with this JSON payload.
                       Compose an editor aerial in one call, e.g.
                       --rpc '{"method":"camera_frame","pitch":60}' (auto-fits the
@@ -199,6 +209,7 @@ function parseArgs(argv: string[]): Args {
   const args: Args = {
     game: "",
     mode: "play",
+    modeExplicit: false,
     size: "full",
     connect: undefined,
     keep: false,
@@ -220,7 +231,10 @@ function parseArgs(argv: string[]): Args {
   };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
-    if (value === "--mode") args.mode = argv[++index] ?? args.mode;
+    if (value === "--mode") {
+      args.mode = argv[++index] ?? args.mode;
+      args.modeExplicit = true;
+    }
     else if (value === "--state") args.state = argv[++index];
     else if (value === "--size") {
       args.size = parseSizeArg(argv[++index]);
@@ -229,6 +243,7 @@ function parseArgs(argv: string[]): Args {
       args.timeoutExplicit = true;
     }
     else if (value === "--click") args.steps.push({ kind: "click", text: argv[++index] ?? "" });
+    else if (value === "--reload") args.steps.push({ kind: "reload" });
     else if (value === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++index] ?? 500) });
     else if (value === "--key") {
       const spec = argv[++index] ?? "KeyW:1000";
@@ -271,6 +286,7 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--look-from") args.lookFrom = argv[++index];
     else if (value === "--view") args.view = argv[++index];
     else if (value === "--site") args.site = argv[++index];
+    else if (value === "--url") args.url = externalCaptureUrl(argv[++index]);
     else if (value === "--record") {
       const name = argv[++index] ?? "clip";
       if (name.includes("/") || name.includes("\\")) {
@@ -283,12 +299,20 @@ function parseArgs(argv: string[]): Args {
     else if (value === "--reuse-storage") args.reuseStorage = true;
     else if (value === "--help" || value === "-h") args.help = true;
     else if (value !== undefined && !value.startsWith("--")) args.game = value;
+    else throw new Error(`drive: unknown option ${value}; see --help`);
   }
   if (args.help) return args;
-  if (args.game === "" && args.site === undefined) {
-    throw new Error("drive: pass a game id or --site <path>, e.g. bun run drive the-robots --click START");
+  if (args.url !== undefined && (args.site !== undefined || args.game !== "")) {
+    throw new Error("drive: --url selects an external target; omit the game id and --site");
   }
-  if (args.game === "") args.game = "site";
+  if (args.steps.some((step) => step.kind === "reload") &&
+    (args.playtest || (args.record !== undefined && !args.recordRealtime))) {
+    throw new Error("drive: --reload cannot reset the clock during lockstep recording or --playtest; use a separate recovery drive");
+  }
+  if (args.game === "" && args.site === undefined && args.url === undefined) {
+    throw new Error("drive: pass a game id, --site <path>, or --url <url>, e.g. bun run drive the-robots --click START");
+  }
+  if (args.game === "") args.game = args.url === undefined ? "site" : "url";
   if (args.site !== undefined && !args.timeoutExplicit) {
     args.timeoutMs = process.platform === "linux" || process.env.CI !== undefined ? 30_000 : 10_000;
   }
@@ -307,30 +331,16 @@ const SETTLE_SAMPLES = 3;
 const SETTLE_INTERVAL_MS = 100;
 const SETTLE_TIMEOUT_MS = 5_000;
 
-async function measureClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number } | null> {
-  const expression = `(() => {
-      const needle = ${JSON.stringify(text)}.toLowerCase();
-      const nodes = Array.from(document.querySelectorAll("button, [role=button], a, span, div, h1, h2, h3"));
-      let best = null;
-      for (const node of nodes) {
-        const own = ((node.textContent ?? "").trim() || node.getAttribute("aria-label") || "").toLowerCase();
-        if (own === "" || !own.includes(needle)) continue;
-        const interactive = node.matches("button, [role=button], [role=switch], a");
-        if (best === null || own.length < best.len || (own.length === best.len && interactive && !best.interactive)) {
-          const rect = node.getBoundingClientRect();
-          if (rect.width > 0 && rect.height > 0) {
-            best = { len: own.length, interactive, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-          }
-        }
-      }
-      return best === null ? null : { x: best.x, y: best.y };
-    })()`;
-  return (await session.evaluate<{ x: number; y: number } | null>(expression)) ?? null;
+async function measureClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number; offscreen: boolean } | null> {
+  const point = await session.evaluate<{ x: number; y: number; offscreen: boolean } | null>(
+    `(${captureClickPoint.toString()})(document, ${JSON.stringify(text)})`,
+  );
+  return point ?? null;
 }
 
 async function findClickPoint(session: CdpSession, text: string): Promise<{ x: number; y: number }> {
   const deadline = Date.now() + SETTLE_TIMEOUT_MS;
-  let last: { x: number; y: number } | null = null;
+  let last: { x: number; y: number; offscreen: boolean } | null = null;
   let stableRuns = 0;
   while (Date.now() < deadline) {
     const point = await measureClickPoint(session, text);
@@ -341,7 +351,7 @@ async function findClickPoint(session: CdpSession, text: string): Promise<{ x: n
       Math.abs(point.y - last.y) <= SETTLE_EPSILON_PX
     ) {
       stableRuns += 1;
-      if (stableRuns >= SETTLE_SAMPLES - 1) return point;
+      if (stableRuns >= SETTLE_SAMPLES - 1 && !point.offscreen) return point;
     } else {
       stableRuns = 0;
     }
@@ -349,6 +359,9 @@ async function findClickPoint(session: CdpSession, text: string): Promise<{ x: n
     await new Promise((r) => setTimeout(r, SETTLE_INTERVAL_MS));
   }
   if (last === null) throw new Error(`drive: no visible element matching "${text}"`);
+  if (last.offscreen) {
+    throw new Error(`drive: matching element "${text}" is outside the viewport at (${last.x}, ${last.y}); fix the layout or scroll it into view before clicking`);
+  }
   return last;
 }
 
@@ -655,9 +668,14 @@ const outDir = resolve(import.meta.dir, "../shots");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
 
 const daemon = args.connect === undefined ? await attachDaemon() : null;
-const dev = daemon === null
-  ? args.site === undefined ? await ensureDevServer() : await ensureWebServer()
-  : await ensureDaemonTarget(daemon, args.site === undefined ? "dev" : "web");
+if (args.url !== undefined && !(await isUp(args.url))) {
+  throw new Error(`drive: nothing is listening at ${args.url} — start that external server first`);
+}
+const dev = args.url !== undefined
+  ? { base: args.url, child: null, pid: undefined }
+  : daemon === null
+    ? args.site === undefined ? await ensureDevServer() : await ensureWebServer()
+    : await ensureDaemonTarget(daemon, args.site === undefined ? "dev" : "web");
 
 const lockstep = args.record !== undefined && !args.recordRealtime && !args.playtest;
 const lockstepVirtualMs = args.steps.reduce(
@@ -683,16 +701,12 @@ const exitCode = await withBrowserSession(
   async ({ debugPort }) => {
     let code = 0;
     const session = await openPageSession(debugPort);
+    const stopConsoleForward = forwardPageConsole(session, "drive:");
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
       await applyDevice(session, "desktop", args.size);
-      const path = args.site === undefined ? "/" : args.site.startsWith("/") ? args.site : `/${args.site}`;
-      const url = new URL(path, dev.base);
-      if (args.site === undefined) {
-        url.searchParams.set("game", args.game);
-        url.searchParams.set("mode", args.mode);
-      }
+      const url = driveTargetUrl(args, dev.base);
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
       for (const [key, value] of args.params) url.searchParams.set(key, value);
@@ -792,6 +806,9 @@ const exitCode = await withBrowserSession(
         } else if (step.kind === "wait") {
           if (recorder !== null) await recorder.advance(step.ms);
           else await new Promise((r) => setTimeout(r, step.ms));
+        } else if (step.kind === "reload") {
+          await navigateCapturePageWithRetry(session, url.toString(), dev.base, args.timeoutMs);
+          await installFrameCounter(session);
         } else if (step.kind === "rpc") await rpc(session, step.json);
         else if (step.kind === "probe") {
           const metrics = await readProbe(session);
@@ -907,9 +924,10 @@ const exitCode = await withBrowserSession(
       }
       if (args.keep) {
         console.error(`drive: kept warm — chrome debug port ${debugPort}, dev server on ${dev.base}`);
-        console.error(`drive: next drive → bun run drive ${args.game} --mode ${args.mode} --connect ${debugPort} --size half ...`);
+        console.error(`drive: next drive → bun run drive ${args.url === undefined ? `${args.game} --mode ${args.mode}` : `--url ${args.url}`} --connect ${debugPort} --size half ...`);
       }
     } finally {
+      stopConsoleForward();
       await session.close();
     }
     return code;

@@ -1,0 +1,66 @@
+export function externalCaptureUrl(raw: string | undefined): string {
+  if (raw === undefined || raw.startsWith("--")) throw new Error("--url requires an http:// or https:// URL");
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error(`--url requires an http:// or https:// URL (got "${raw}")`);
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new Error(`--url requires http:// or https:// (got ${url.protocol})`);
+  }
+  if (url.hostname === "localhost") url.hostname = "127.0.0.1";
+  return url.toString();
+}
+
+export function driveTargetUrl(args: { game: string; mode: string; modeExplicit?: boolean; site?: string; url?: string }, base: string): URL {
+  if (args.url !== undefined && args.site !== undefined) throw new Error("--url and --site select different targets; pass one");
+  if (args.url !== undefined) {
+    const url = new URL(args.url);
+    if (args.modeExplicit) url.searchParams.set("mode", args.mode);
+    return url;
+  }
+  const path = args.site === undefined ? "/" : args.site.startsWith("/") ? args.site : `/${args.site}`;
+  const url = new URL(path, base);
+  if (args.site === undefined) {
+    url.searchParams.set("game", args.game);
+    url.searchParams.set("mode", args.mode);
+  }
+  return url;
+}
+
+type ClickNode = {
+  textContent: string | null;
+  getAttribute(name: string): string | null;
+  matches(selector: string): boolean;
+  getBoundingClientRect(): { width: number; height: number; left: number; top: number };
+};
+
+type ClickDocument = {
+  querySelectorAll(selector: string): ArrayLike<ClickNode>;
+  defaultView: { innerWidth: number; innerHeight: number } | null;
+};
+
+export function captureClickPoint(doc: ClickDocument, text: string): { x: number; y: number; offscreen: boolean } | null {
+  const needle = text.toLowerCase();
+  const nodes = Array.from(doc.querySelectorAll("button, [role=button], [role=switch], a, span, div, h1, h2, h3"));
+  let best: { len: number; exact: boolean; interactive: boolean; x: number; y: number } | null = null;
+  for (const node of nodes) {
+    const names = [(node.textContent ?? "").trim(), node.getAttribute("aria-label") ?? ""]
+      .map((name) => name.toLowerCase()).filter((name) => name !== "" && name.includes(needle));
+    if (names.length === 0) continue;
+    const exact = names.includes(needle);
+    const len = Math.min(...names.map((name) => name.length));
+    const interactive = node.matches("button, [role=button], [role=switch], a");
+    const rect = node.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) continue;
+    if (best === null || (exact && !best.exact) || (exact === best.exact &&
+      (len < best.len || (len === best.len && interactive && !best.interactive)))) {
+      best = { len, exact, interactive, x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    }
+  }
+  if (best === null) return null;
+  const view = doc.defaultView;
+  const offscreen = view !== null && (best.x < 0 || best.y < 0 || best.x >= view.innerWidth || best.y >= view.innerHeight);
+  return { x: best.x, y: best.y, offscreen };
+}
