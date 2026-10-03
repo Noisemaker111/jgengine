@@ -1,0 +1,66 @@
+{
+  "bind": [
+    0,
+    0,
+    0
+  ],
+  "rows": [
+    {
+      "state": "dodge",
+      "rootMotion": true,
+      "root": [
+        0,
+        -5.684339429686201e-15,
+        0
+      ],
+      "clips": [
+        {
+          "clip": "Dodge_Left",
+          "weight": 1,
+          "time": 0.25,
+          "layer": "base"
+        }
+      ]
+    },
+    {
+      "state": "idle",
+      "rootMotion": true,
+      "root": [
+        0,
+        -5.684339429686201e-15,
+        0
+      ],
+      "clips": [
+        {
+          "clip": "Dodge_Left",
+          "weight": 1,
+          "time": 0.25,
+          "layer": "base"
+        }
+      ]
+    },
+    {
+      "state": "idle",
+      "rootMotion": true,
+      "root": [
+        0,
+        -8.526512956176144e-15,
+        0
+      ],
+      "clips": [
+        {
+          "clip": "Dodge_Left",
+          "weight": 0.75,
+          "time": 0.3,
+          "layer": "base"
+        },
+        {
+          "clip": "Idle",
+          "weight": 0.25,
+          "time": 0.05,
+          "layer": "base"
+        }
+      ]
+    }
+  ]
+}

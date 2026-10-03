@@ -1,0 +1,67 @@
+{
+  "scenario": "fresh native coordinate input using public packaged CLI",
+  "underlyingNewCapability": "standard CLI supports native --click-at CSS viewport coordinates; old text-selector INPUT gap is not retried",
+  "manifest": "glyph-after-package-attribution.json",
+  "packageStatus": "unreleased validated0507cohort; not final shipping tree/publication",
+  "command": "hold-coordinate-command.json",
+  "attempts": 1,
+  "exit": 0,
+  "screenshot": "scrap-hold-native-coordinate.png",
+  "clickedCSSCoordinates": [
+    1389,
+    790
+  ],
+  "coordinatesInspectedFrom": "url-scrap-character-glyph-after.png",
+  "recordedAnimationMetadata": [
+    {
+      "clip": "Idle",
+      "paused": true,
+      "time": 0.75,
+      "timeScale": 0.5,
+      "loop": false,
+      "oneShots": {
+        "attack": [
+          "1H_Melee_Attack_Slice_Diagonal",
+          "1H_Melee_Attack_Chop"
+        ]
+      }
+    },
+    {
+      "clip": "Idle",
+      "loop": false,
+      "timeScale": 0.5,
+      "paused": false,
+      "time": 0.75,
+      "oneShots": {
+        "attack": [
+          "1H_Melee_Attack_Slice_Diagonal",
+          "1H_Melee_Attack_Chop"
+        ]
+      }
+    },
+    {
+      "clip": "Idle",
+      "loop": false,
+      "timeScale": 0.5,
+      "paused": true,
+      "time": 0.75,
+      "oneShots": {
+        "attack": [
+          "1H_Melee_Attack_Slice_Diagonal",
+          "1H_Melee_Attack_Chop"
+        ]
+      }
+    }
+  ],
+  "assertions": {
+    "heldTransitions": [
+      true,
+      false,
+      true
+    ],
+    "preservedScalars": true,
+    "preservedAttackVariants": true
+  },
+  "acceptedClaim": "Native GUI Hold edits update actual authored marker configuration while retaining scalar values and both mapped attack variants.",
+  "limits": "Static final held pose inspected. No capture of moving Idle/pause dynamics, gameplay controls feel, native Save, or complete GUI edit/play/save/reload loop claimed."
+}

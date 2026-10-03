@@ -1,0 +1,18 @@
+{
+  "boundary": "/workspace/JGengine/packages/editor/dist/ClipPreviewLayer.js",
+  "model": "KayKit Knight",
+  "sampledVertices": 123,
+  "maxVertexError": 0,
+  "importedPosition": [
+    4,
+    6,
+    -3
+  ],
+  "importedScale": [
+    2,
+    3,
+    4
+  ],
+  "loads": 1,
+  "boneTextureDisposed": 1
+}

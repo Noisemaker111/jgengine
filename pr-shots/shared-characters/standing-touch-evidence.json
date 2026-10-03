@@ -1,0 +1,111 @@
+{
+  "baseline": "dca8a794",
+  "before": [
+    {
+      "radius": 0.3,
+      "headroomBodies": [
+        1
+      ],
+      "standingAccepted": false,
+      "state": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "verticalVelocity": 0,
+        "grounded": true,
+        "groundNormal": [
+          0,
+          1,
+          0
+        ],
+        "groundBody": null,
+        "crouching": true
+      }
+    },
+    {
+      "radius": 0.35,
+      "headroomBodies": [],
+      "standingAccepted": true,
+      "state": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "verticalVelocity": 0,
+        "grounded": true,
+        "groundNormal": [
+          0,
+          1,
+          0
+        ],
+        "groundBody": null,
+        "crouching": false
+      }
+    }
+  ],
+  "afterPublicBuilt": [
+    {
+      "radius": 0.3,
+      "headroomBodies": [],
+      "standingAccepted": true,
+      "state": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "verticalVelocity": 0,
+        "grounded": true,
+        "groundNormal": [
+          0,
+          1,
+          0
+        ],
+        "groundBody": null,
+        "crouching": false
+      }
+    },
+    {
+      "radius": 0.35,
+      "headroomBodies": [],
+      "standingAccepted": true,
+      "state": {
+        "position": [
+          0,
+          0,
+          0
+        ],
+        "verticalVelocity": 0,
+        "grounded": true,
+        "groundNormal": [
+          0,
+          1,
+          0
+        ],
+        "groundBody": null,
+        "crouching": false
+      }
+    }
+  ],
+  "fix": "Overlap excludes machine-scale touching withsame8*EPSILON*struckaxisfacescale asshapecast; actualpenetration retained",
+  "verification": {
+    "focusedTests": 160,
+    "assertions": 422,
+    "failures": 0,
+    "coreTypes": "pass",
+    "coreBuild": "pass",
+    "beforeNewRegressionFailures": 2,
+    "translatedMeters": [
+      0,
+      100,
+      -100
+    ],
+    "retainedRealPenetrationMeters": 1e-08,
+    "lowCeilingBlocked": true,
+    "restoredCrouchFirstStandJump": "pass"
+  },
+  "scope": "PhysicsWorldBackend overlap condition andprivatehelper; backend/controllerregressions; releasefragmentonly; norender/store/navchanges"
+}

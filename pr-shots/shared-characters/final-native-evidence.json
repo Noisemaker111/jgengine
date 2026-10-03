@@ -1,0 +1,186 @@
+{
+  "scope": "native character movement/animation/authoring evidence only",
+  "captureMethod": "repository official monorepo drive/shoot and exact installed jgengine bundled portable drive; no custom CDP/Playwright",
+  "packageBoundaries": [
+    {
+      "label": "published baseline",
+      "sdk": "0.18.1",
+      "editor": "0.18.0",
+      "gameSource": "45a5052",
+      "campaignPublishedAdoption": false,
+      "existingPublishedInstall": true,
+      "adoptionMeaning": "Published SDK0.18.1/editor0.18.0 were already installed; no new released adoption by this campaign."
+    },
+    {
+      "label": "unreleased dirty phase1 built tarballs",
+      "manifest": "crouch-camera-before-package-attribution.json",
+      "claims": [
+        "real Scrap walk vs held-C displacement",
+        "stationary crouch camera before limitation"
+      ],
+      "campaignPublishedAdoption": false
+    },
+    {
+      "label": "unreleased validated0507cohort",
+      "manifest": "glyph-after-package-attribution.json",
+      "commit": "0507ce47bd4bff919b3ff656ba6f2b020784e929",
+      "claims": [
+        "selected Knight rig visibility",
+        "native Hold checkbox edits preserve authored scalar/mapping values"
+      ],
+      "shippingTree": false,
+      "campaignPublishedAdoption": false
+    },
+    {
+      "label": "unreleased validated7eb6cohort",
+      "manifest": "standalone-save-package-attribution.json",
+      "commit": "7eb6eec2f959cd43fcfddc4536b16779612aada4",
+      "claims": [
+        "standard standalone GUI Save and fresh browser document reload"
+      ],
+      "shippingTree": false,
+      "campaignPublishedAdoption": false
+    }
+  ],
+  "proved": [
+    {
+      "claim": "Real Scrap held-C reduces native travel",
+      "review": "candidate-native-review.json",
+      "limit": "Sequential1.84396m walk/1.01390m crouch differs in terrain/acceleration history; observed0.54985ratio is not configured steady-speed ratio. Shared default0.45 is proved separately by consumer worker."
+    },
+    {
+      "claim": "Selected imported Knight remains visible through editor marker",
+      "review": "glyph-after-review.json",
+      "before": "url-scrap-character-inspector-candidate.png",
+      "after": "url-scrap-character-glyph-after.png",
+      "inspectedRegions": [
+        {
+          "region": "helmet and torso",
+          "boundsCSSPixels": [
+            630,
+            115,
+            820,
+            440
+          ]
+        },
+        {
+          "region": "hand/arms and legs",
+          "boundsCSSPixels": [
+            755,
+            320,
+            870,
+            465
+          ]
+        },
+        {
+          "region": "right inspector playback scalars",
+          "boundsCSSPixels": [
+            1285,
+            540,
+            1590,
+            860
+          ]
+        }
+      ],
+      "limit": "Static held Idle, rear view; no convincing-animation, foot IK, feel or material-quality claim."
+    },
+    {
+      "claim": "Native Hold edits change actual authored marker paused true\u2192false\u2192true while preserving Idle,time.75,timeScale.5,loopfalse,andbothattackvariants",
+      "review": "hold-coordinate-review.json",
+      "artifact": "scrap-hold-native-coordinate.png",
+      "limit": "New public CLI coordinate input capability; old unsupported checkbox text selector was not retried. No native moving/pause dynamics capture."
+    },
+    {
+      "claim": "Actual GUI Save wrote authored character document to disk through the standard editor API; fresh browser loaded it without import_document and preserved placement, catalog id, held Idle scalars and both attack variants.",
+      "review": "standalone-save-review.json",
+      "limit": "Data persistence only; standalone Knight viewport mesh absent and clip inspector unavailable."
+    }
+  ],
+  "failedOrLimitedScenarios": [
+    {
+      "scenario": "Lantern native hero/appearance",
+      "failedAttempts": 2,
+      "cap": 2,
+      "artifacts": [
+        "lantern-baseline.log",
+        "lantern-walk-baseline.log"
+      ],
+      "fallback": "provisioned real assets hashverified + HTTP200; lower-rung actual imported-rig/package proof owned animation worker",
+      "limitation": "Texture decode failures/pale buildings/local hero absent. Second motion sequence unreliable due overlapping daemon target, explicitly excluded."
+    },
+    {
+      "scenario": "Deepward candidate readiness",
+      "failedAttempts": 2,
+      "cap": 2,
+      "artifact": "deepward-candidate.log",
+      "fallback": "published baseline native station rendered; candidate actual built consumer proof owned consumer worker",
+      "limitation": "No candidate native after movement/appearance acceptance."
+    },
+    {
+      "scenario": "Published Scrap original editor visibility/styles",
+      "failedAttempts": 2,
+      "cap": 2,
+      "fallback": "actual terrain query + normal imported authored document; prepared existing scaffold CSS source line adopted in isolated candidate",
+      "limitation": "Published ambientcg metalplates001 AO missing, editor stylesheet incomplete, marker occlusion; owned appearance paths not modified."
+    },
+    {
+      "scenario": "Old checkbox text selector",
+      "failedAttempts": 2,
+      "cap": 2,
+      "artifacts": [
+        "scrap-character-authoring-candidate.log",
+        "scrap-character-hold-reload-candidate.log"
+      ],
+      "fallback": "inspected real visible checkbox; official capture selector excluded INPUT; separately successful new public coordinate capability",
+      "limitation": "No old text-selector rerun."
+    }
+  ],
+  "textureAndFallbackLimits": {
+    "publishedDeepward": "inspected zero fallback/texture errors",
+    "phase1ScrapGameplay": "debug snapshot fallbacks{} textureErrors[]; existing attachment warnings remain",
+    "Lantern": "texture errors despite real asset files; no appearance acceptance",
+    "ScrapEditor": "missing ambientcg metalplates001 AO belongs appearance owner; no materials fix claimed",
+    "KnightHierarchyParse": "attachment-baseline.json records headless blob texture warning; only bone/original-name lookup failure proved"
+  },
+  "remaining": {
+    "crouchCamera": "BEFORE native framing and actual-hook1.62m limitation captured; shared camera patch withheld because authoritative shot origin stayed1.62m vs proposed.972m and combatownerPR1921 overlap. Patch ../crouch-camera-blocked.patch; no AFTER camera claim.",
+    "importedAttachments": "Runtime handslot.r alias failure reproduced on actualKnight; coordinator-owned SceneModels seam; no native enemy weapon acceptance.",
+    "standaloneSaveReopen": "PASS: standard CLI GUI Save wrote real file; fresh browser reopened metadata without import. See standalone-save-review.json.",
+    "fullGUIEditPlayAdjustSaveReload": "unproved; current standalone manifest lacks clip metadata, actual plain Vite games lack save backend",
+    "animationQualityAndFeel": "unproved in native recordings; software capture and passing tests cannot establish convincing animation/control feel",
+    "standaloneRuntimePlacement": {
+      "observations": 2,
+      "retryCap": 2,
+      "state": "no further native before retries",
+      "owningCode": [
+        "packages/editor/src/StandaloneEditor.tsx:123",
+        "packages/shell/src/defineGame.tsx:213"
+      ],
+      "sourceCondition": "loadedScene is passed as EditorApp layers but omitted from createBlankPlayable and defineGame editorLayers; defineGame only mounts authored scene when editorLayers is defined",
+      "owner": "broader creator host workflow; root narrow handoff, no edits by native worker"
+    },
+    "standaloneClipDiscovery": {
+      "owningCode": [
+        "packages/node/src/editorHostPlugin.ts:20",
+        "packages/editor/src/assetImport.ts:9",
+        "packages/editor/src/StandaloneEditor.tsx:52"
+      ],
+      "condition": "standalone manifest/StandaloneAsset contain id/url/label only; catalog registration passes URL only, so no imported clip metadata reaches Animation inspector"
+    }
+  },
+  "softwareLimits": {
+    "renderer": "Chromium SwiftShader software GL",
+    "hardwareFPSClaim": false,
+    "captureFrameRates": [
+      2
+    ],
+    "statement": "2fps is a recording setting, not measured hardware game performance."
+  },
+  "repoMutations": {
+    "originalGameSource": false,
+    "rootDependencyCatalogOrLockfile": false,
+    "publishedPackages": false,
+    "isolatedPreparedCSSPatch": "scrap-editor-style.patch",
+    "nativeOwnedFiles": "scratch scripts/artifacts only"
+  }
+}

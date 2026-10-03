@@ -1,0 +1,115 @@
+{
+  "baseline": "6f6ff5da rebased onto beta771523/PR1954",
+  "beforeSource": [
+    {
+      "authoritativeStep": false,
+      "capsule": false,
+      "position": [
+        0,
+        0.35000000000000003,
+        0
+      ],
+      "clock": 50,
+      "vy": 7
+    },
+    {
+      "authoritativeStep": false,
+      "capsule": true,
+      "position": [
+        0,
+        1.4000000000000001,
+        0
+      ],
+      "clock": 50,
+      "vy": 7
+    },
+    {
+      "authoritativeStep": true,
+      "capsule": false,
+      "position": [
+        0,
+        0.8,
+        0
+      ],
+      "clock": 200,
+      "vy": 4
+    },
+    {
+      "authoritativeStep": true,
+      "capsule": true,
+      "position": [
+        0,
+        0.8,
+        0
+      ],
+      "clock": 200,
+      "vy": 4
+    }
+  ],
+  "afterPublicBuilt": [
+    {
+      "authoritativeStep": false,
+      "capsule": false,
+      "position": [
+        0,
+        0.35000000000000003,
+        0
+      ],
+      "clock": 50,
+      "vy": 7
+    },
+    {
+      "authoritativeStep": false,
+      "capsule": true,
+      "position": [
+        0,
+        0.35000000000000003,
+        0
+      ],
+      "clock": 50,
+      "vy": 7
+    },
+    {
+      "authoritativeStep": true,
+      "capsule": false,
+      "position": [
+        0,
+        0.8,
+        0
+      ],
+      "clock": 200,
+      "vy": 4
+    },
+    {
+      "authoritativeStep": true,
+      "capsule": true,
+      "position": [
+        0,
+        0.8,
+        0
+      ],
+      "clock": 200,
+      "vy": 4
+    }
+  ],
+  "fix": "Capsule physicalmove gets motionStepSeconds(dt, authoritativeStep), matchingcommonvelocity/clock integration; beforeCommit frame.dt untouched",
+  "verification": {
+    "tests": 127,
+    "assertions": 290,
+    "failures": 0,
+    "coreTypes": "pass",
+    "coreBuild": "pass",
+    "standaloneDtSeconds": 0.2,
+    "standaloneClockMs": 50,
+    "standaloneFeetY": 0.35,
+    "authoritativeDtSeconds": 0.2,
+    "authoritativeClockMs": 200,
+    "authoritativeFeetY": 0.8,
+    "newRegressionBeforeFailure": true
+  },
+  "limits": [
+    "Doesnotchangegameclockauthority",
+    "Doesnotchangegamecallback dt policy",
+    "Builtcoreboundarytested; finaltarballrepeat rootowned"
+  ]
+}

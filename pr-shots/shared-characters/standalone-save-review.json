@@ -1,0 +1,74 @@
+{
+  "scenario": "standard CLI standalone GUI Save then fresh native browser reopen",
+  "packageStatus": "unreleased validated7eb6cohort; not later shipping tree or published adoption",
+  "commit": "7eb6eec2f959cd43fcfddc4536b16779612aada4",
+  "manifest": "standalone-save-package-attribution.json",
+  "host": "standard jgengine editor generated scaffold + existing @jgengine/node editorHostPlugin, real unchanged KayKit folder, finalcohort node_modules symlink; no custom host code",
+  "commands": [
+    "standalone-save-command.json",
+    "standalone-reopen-command.json"
+  ],
+  "saveButtonAttempt": 1,
+  "saveExit": 0,
+  "reopenExit": 0,
+  "savedFile": "/workspace/JGengine/.scratch/characters/native/standalone-save/scene/editor.scene.json",
+  "savedSha256": "c28dc2957ca8df413c0691684ff64a089c2a996ac89f71fa84082a76669baf35",
+  "savedEqualsAuthoredRequest": true,
+  "reopenedMarker": [
+    {
+      "id": "standalone-character-proof",
+      "kind": "prop",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "catalogId": "knight",
+      "meta": {
+        "animation": {
+          "clip": "Idle",
+          "paused": true,
+          "time": 0.75,
+          "timeScale": 0.5,
+          "loop": false,
+          "oneShots": {
+            "attack": [
+              "1H_Melee_Attack_Slice_Diagonal",
+              "1H_Melee_Attack_Chop"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "reopenedMetadataEqualsSaved": true,
+  "acceptedClaim": "Actual GUI Save wrote authored character document to disk through the standard editor API; fresh browser loaded it without import_document and preserved placement, catalog id, held Idle scalars and both attack variants.",
+  "screenshots": [
+    "standalone-character-saved.png",
+    "standalone-character-reopened.png"
+  ],
+  "inspection": "Saved just now / Saved status and canonical marker metadata visible. Real Knight thumbnail exists, selected glyph visible, viewport character mesh absent in both captures; Animation inspector absent because scanned assets omit clip metadata.",
+  "remainingFailures": {
+    "renderedCharacterPlacement": {
+      "observations": 2,
+      "retryCap": 2,
+      "state": "no further native before retries",
+      "owningCode": [
+        "packages/editor/src/StandaloneEditor.tsx:123",
+        "packages/shell/src/defineGame.tsx:213"
+      ],
+      "sourceCondition": "loadedScene is passed as EditorApp layers but omitted from createBlankPlayable and defineGame editorLayers; defineGame only mounts authored scene when editorLayers is defined",
+      "owner": "broader creator host workflow; root narrow handoff, no edits by native worker"
+    },
+    "animationClipDiscovery": {
+      "owningCode": [
+        "packages/node/src/editorHostPlugin.ts:20",
+        "packages/editor/src/assetImport.ts:9",
+        "packages/editor/src/StandaloneEditor.tsx:52"
+      ],
+      "condition": "standalone manifest/StandaloneAsset contain id/url/label only; catalog registration passes URL only, so no imported clip metadata reaches Animation inspector"
+    },
+    "fullGUICharacterLoop": "not claimed; Save/reopen data succeeds but model placement and animation GUI fail in standalone host"
+  },
+  "hardwarePerformanceClaim": false
+}
