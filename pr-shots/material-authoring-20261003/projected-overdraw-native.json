@@ -1,0 +1,41 @@
+[
+  {
+    "status": "measured",
+    "threeRevision": "WebGL2",
+    "report": {
+      "width": 256,
+      "height": 144,
+      "sampledPixels": 36864,
+      "coveredPixels": 9597,
+      "fragmentSamples": 10170,
+      "mean": 0.27587890625,
+      "meanCovered": 1.0597061581744296,
+      "max": 5,
+      "meshes": 16,
+      "materialSlots": 16,
+      "opaqueSlots": 16,
+      "maskedSlots": 1,
+      "blendedSlots": 0,
+      "transmissionSlots": 1,
+      "caveats": [
+        "Depth rejection is disabled: projected overlap is an upper bound on production opaque shading, not early-Z overdraw.",
+        "Native alphaTest/alphaHash discard is retained at this sampled resolution; blended texels count equally, including zero opacity.",
+        "Transmission refraction/background, shadow, postprocessing, sky and MSAA passes are excluded. No GPU timing is measured.",
+        "Native vertex transforms and pure shader-modifying material callbacks remain; borrowed assets may be uploaded during this diagnostic."
+      ]
+    },
+    "cleanup": {
+      "materialIdentitiesPreserved": true,
+      "renderCountersPreserved": true,
+      "beforeMemory": {
+        "geometries": 24,
+        "textures": 16
+      },
+      "afterMemory": {
+        "geometries": 24,
+        "textures": 16
+      }
+    },
+    "url": "http://127.0.0.1:4688/?game=material-showcase&mode=play&device=desktop&capture=1&view=overview"
+  }
+]

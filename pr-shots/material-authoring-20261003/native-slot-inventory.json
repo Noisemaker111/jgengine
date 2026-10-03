@@ -1,0 +1,58 @@
+{
+  "ok": true,
+  "result": {
+    "status": "ready",
+    "slots": [
+      {
+        "mesh": "SheenChair_fabric",
+        "slot": "fabric Mystere Mango Velvet",
+        "slotIndex": 0,
+        "materialType": "MeshPhysicalMaterial",
+        "uvSets": [
+          0,
+          1
+        ],
+        "tangents": false,
+        "physical": true
+      },
+      {
+        "mesh": "SheenChair_wood",
+        "slot": "wood Brown",
+        "slotIndex": 0,
+        "materialType": "MeshStandardMaterial",
+        "uvSets": [
+          0,
+          1
+        ],
+        "tangents": false,
+        "physical": false
+      },
+      {
+        "mesh": "SheenChair_metal",
+        "slot": "metal",
+        "slotIndex": 0,
+        "materialType": "MeshStandardMaterial",
+        "uvSets": [
+          0,
+          1
+        ],
+        "tangents": false,
+        "physical": false
+      },
+      {
+        "mesh": "SheenChair_label",
+        "slot": "label",
+        "slotIndex": 0,
+        "materialType": "MeshStandardMaterial",
+        "uvSets": [
+          0,
+          1
+        ],
+        "tangents": false,
+        "physical": false
+      }
+    ],
+    "id": "chair-authored",
+    "sourceUrl": "/models/material-showcase/SheenChair.glb"
+  }
+}
