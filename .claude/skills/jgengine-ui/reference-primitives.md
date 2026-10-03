@@ -16,6 +16,8 @@ and isolated tests.
 
 **Keyboard ownership.** The shell leaves prevented key events and focused text, dialog, grid, gridcell, and toolbar controls to the HUD, clearing held gameplay input at that boundary. Custom keyboard widgets call `preventDefault()` for the keys they handle. Opening a window does not pause simulation or change pointer lock; keep those policies in the game and use `suspendPlayControls(ctx)` when the window should suspend player controls.
 
+**Push-to-talk ownership.** `PushToTalkButton` (`@jgengine/react/voice`) owns one primary pointer or focused Enter/Space activation. Matching release, cancellation, capture loss, browser suspension and button unmount release its hold; mouse departure and keyboard focus loss also retire their activation. Secondary pointers, auxiliary buttons and key repeats cannot change it. Compose a caller-owned `VoiceState`; toggle/open-mic policy and holds started elsewhere remain caller-owned.
+
 ## 6. Game UI primitives
 
 Prefer small headless or lightly styled primitives over a giant universal design system. Useful concepts include:

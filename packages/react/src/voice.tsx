@@ -7,6 +7,7 @@ import {
   type VoiceRoute,
   type VoiceTransport,
 } from "@jgengine/core/multiplayer/voiceContract";
+import { observeBrowserSuspension } from "./browserLifecycle";
 
 export interface UseVoiceOptions {
   transport?: VoiceTransport;
@@ -162,6 +163,41 @@ export function PushToTalkButton({
   className?: string;
   children?: ReactNode;
 }) {
+  type Activation = { kind: "pointer"; pointerId: number; pointerType: string } | { kind: "key"; code: string };
+  const owner = useRef<{ activation: Activation; source: HTMLButtonElement; detach: () => void; keyUp: () => void } | null>(null);
+  const release = (): void => {
+    const current = owner.current;
+    if (current === null) return;
+    owner.current = null;
+    current.detach();
+    current.keyUp();
+    if (current.activation.kind === "pointer" && current.source.hasPointerCapture(current.activation.pointerId)) {
+      current.source.releasePointerCapture(current.activation.pointerId);
+    }
+  };
+  useEffect(() => () => release(), []);
+  const begin = (source: HTMLButtonElement, activation: Activation): void => {
+    if (owner.current !== null || (voice.mode === "hold" && voice.transmitting)) return;
+    const view = source.ownerDocument.defaultView;
+    if (view === null) return;
+    const mouse = activation.kind === "pointer" && activation.pointerType === "mouse";
+    const onUp = (event: MouseEvent): void => { if (event.button === 0) release(); };
+    const onCancel = (event: PointerEvent): void => {
+      if (activation.kind === "pointer" && event.pointerId === activation.pointerId) release();
+    };
+    const stopObserving = observeBrowserSuspension(release, {}, { window: view, document: source.ownerDocument });
+    owner.current = { activation, source, keyUp: voice.keyUp, detach: () => {
+      stopObserving();
+      view.removeEventListener("mouseup", onUp);
+      view.removeEventListener("pointercancel", onCancel);
+    } };
+    if (mouse) view.addEventListener("mouseup", onUp);
+    if (activation.kind === "pointer") {
+      view.addEventListener("pointercancel", onCancel);
+      if (!mouse) source.setPointerCapture(activation.pointerId);
+    }
+    voice.keyDown();
+  };
   return (
     <button
       type="button"
@@ -169,9 +205,31 @@ export function PushToTalkButton({
       data-push-to-talk
       data-transmitting={voice.transmitting}
       data-status={voice.status}
-      onPointerDown={() => voice.keyDown()}
-      onPointerUp={() => voice.keyUp()}
-      onPointerLeave={() => voice.keyUp()}
+      onPointerDown={(event) => {
+        if (event.button === 0 && event.isPrimary) begin(event.currentTarget, { kind: "pointer", pointerId: event.pointerId, pointerType: event.pointerType });
+      }}
+      onPointerUp={(event) => {
+        const activation = owner.current?.activation;
+        if (activation?.kind === "pointer" && activation.pointerId === event.pointerId && activation.pointerType !== "mouse") release();
+      }}
+      onPointerLeave={(event) => {
+        const activation = owner.current?.activation;
+        if (activation?.kind === "pointer" && activation.pointerId === event.pointerId) release();
+      }}
+      onLostPointerCapture={(event) => {
+        const activation = owner.current?.activation;
+        if (activation?.kind === "pointer" && activation.pointerId === event.pointerId) release();
+      }}
+      onKeyDown={(event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        if (!event.repeat) begin(event.currentTarget, { kind: "key", code: event.code });
+      }}
+      onKeyUp={(event) => {
+        const activation = owner.current?.activation;
+        if (activation?.kind === "key" && activation.code === event.code) { event.preventDefault(); release(); }
+      }}
+      onBlur={() => { if (owner.current?.activation.kind === "key") release(); }}
     >
       {children ?? (voice.transmitting ? "Transmitting" : "Push to talk")}
     </button>
