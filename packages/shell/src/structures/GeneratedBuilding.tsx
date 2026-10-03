@@ -13,6 +13,8 @@ import type { BuildingKit } from "@jgengine/core/world/buildingKit";
 import type { MaterialOverrideTextures } from "../materialOverride";
 import { useDisposable } from "../render/useDisposable";
 import { BuildingKitBatch } from "./BuildingKitBatch";
+import { useBuildingChunkBudget } from "./BuildingRenderBudget";
+import { applyBuildingChunk, partitionBuildingMatrices, type BuildingSpatialChunk } from "./buildingSpatialBatch";
 import { bucketBuildingParts, normalFor, outwardOffset } from "./buildingKitFit";
 import { applyBuildingSurface, useBuildingSurfaceTextures } from "./buildingSurface";
 
@@ -158,22 +160,31 @@ interface BuildingKindBatchProps {
 function BuildingKindBatch({ kind, matrices, palette, geometry }: BuildingKindBatchProps) {
   const surface = useMemo(() => surfaceFor(kind, palette), [kind, palette]);
   const textures = useBuildingSurfaceTextures(surface);
-  const meshRef = useRef<THREE.InstancedMesh>(null);
   const material = useDisposable(() => batchMaterialFor(kind, surface, textures), [kind, surface, textures]);
+  const chunks = useMemo(() => partitionBuildingMatrices(geometry, matrices), [geometry, matrices]);
+  return <>{chunks.map((chunk) => <BuildingChunk key={chunk.key} chunk={chunk} material={material} geometry={geometry} />)}</>;
+}
+
+function BuildingChunk({ chunk, material, geometry }: {
+  chunk: BuildingSpatialChunk;
+  material: THREE.Material;
+  geometry: THREE.BoxGeometry;
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  useBuildingChunkBudget(meshRef, chunk.bounds);
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    matrices.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [matrices, material]);
+    return applyBuildingChunk(mesh, chunk);
+  }, [chunk, geometry, material]);
   return (
     <instancedMesh
-      key={matrices.length}
+      key={chunk.matrices.length}
       ref={meshRef}
-      args={[geometry, material, matrices.length]}
+      args={[geometry, material, chunk.matrices.length]}
       castShadow
       receiveShadow
+      dispose={null}
     />
   );
 }

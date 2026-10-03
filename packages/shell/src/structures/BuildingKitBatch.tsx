@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 
@@ -17,6 +17,8 @@ import {
   type BuildingKitInstance,
 } from "./buildingKitFit";
 import { applyBuildingSurface, surfaceKey, useBuildingSurfaceTextures } from "./buildingSurface";
+import { useBuildingChunkBudget } from "./BuildingRenderBudget";
+import { applyBuildingChunk, partitionBuildingMatrices, type BuildingSpatialChunk } from "./buildingSpatialBatch";
 
 function KitSourceInstances({
   source,
@@ -27,26 +29,33 @@ function KitSourceInstances({
   material: THREE.Material | THREE.Material[];
   matrices: readonly THREE.Matrix4[];
 }) {
+  const chunks = useMemo(
+    () => partitionBuildingMatrices(source.geometry, matrices, source.localMatrix),
+    [source, matrices],
+  );
+  return <>{chunks.map((chunk) => <KitSourceChunk key={chunk.key} source={source} material={material} chunk={chunk} />)}</>;
+}
+
+function KitSourceChunk({ source, material, chunk }: {
+  source: ScatterModelSource;
+  material: THREE.Material | THREE.Material[];
+  chunk: BuildingSpatialChunk;
+}) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
+  useBuildingChunkBudget(meshRef, chunk.bounds);
+  useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (mesh === null) return;
-    const composed = new THREE.Matrix4();
-    for (let i = 0; i < matrices.length; i += 1) {
-      composed.multiplyMatrices(matrices[i]!, source.localMatrix);
-      mesh.setMatrixAt(i, composed);
-    }
-    mesh.count = matrices.length;
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [matrices, source]);
+    return applyBuildingChunk(mesh, chunk);
+  }, [chunk, source, material]);
   return (
     <instancedMesh
-      key={matrices.length}
+      key={chunk.matrices.length}
       ref={meshRef}
-      args={[source.geometry, material, matrices.length]}
+      args={[source.geometry, material, chunk.matrices.length]}
       castShadow
       receiveShadow
+      dispose={null}
     />
   );
 }
