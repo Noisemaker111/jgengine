@@ -140,8 +140,9 @@ export function filePersistence(dir: string, now: () => number = Date.now): Host
       let files: string[];
       try {
         files = await readdir(serverDir);
-      } catch {
-        return [];
+      } catch (error) {
+        if (isMissing(error)) return [];
+        throw error;
       }
       const records: WorldChunkRecord[] = [];
       for (const file of files) {
