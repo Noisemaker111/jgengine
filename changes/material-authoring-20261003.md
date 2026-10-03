@@ -9,3 +9,4 @@
 ### Fixed
 
 - Model material promotions and shared texture views have explicit ownership and cleanup; unused material-library maps are not loaded.
+- Editor module-load coverage uses a present, nonempty authoring fixture instead of relying on SDK/example imports from an isolated Games checkout.

@@ -58,10 +58,11 @@ describe("loadGameLayers", () => {
     expect(loaded.document.markers).toEqual([]);
   });
 
-  test("a real game's editorLayers export decodes to a typed document", async () => {
-    const loaded = await loadGameLayers("studio-showcase");
+  test("a present editorLayers factory decodes a nonempty typed document", async () => {
+    const loaded = await loadGameLayers("../packages/editor/testFixtures/module-valid-game");
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) throw new Error("expected load success");
     expect(loaded.document.version).toBe(1);
+    expect(loaded.document.markers.map((marker) => marker.id)).toEqual(["authored-prop"]);
   });
 });
