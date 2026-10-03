@@ -80,6 +80,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `StatList` (function) · `import { StatList } from "@jgengine/react"`
 
+## chase-heading — keep camera-relative input heading independent of body facing while retaining vehicle and seat camera follow
+
+- `resolveChaseHeading` (function) · `import { resolveChaseHeading } from "@jgengine/shell/camera/chaseHeading"`
+
 ## clock-format — format a signed time gap like a race split (+/- m:ss.ff)
 
 - `formatDelta` (function) · `import { formatDelta } from "@jgengine/core/ui"`

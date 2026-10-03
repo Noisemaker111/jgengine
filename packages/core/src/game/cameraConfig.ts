@@ -159,6 +159,8 @@ export type ChaseView = "chase" | "cockpit" | "hood" | "rear";
 
 /** Speed-reactive vehicle chase rig (#27) — speed→FOV, spring arm, procedural shake, interior views. */
 export interface ChaseCameraConfig {
+  /** Heading the chase boom follows: target body (default), or independent input/aim yaw for camera-relative walking. Seat views always follow the body. */
+  headingSource?: "body" | "input";
   /** Boom distance behind the vehicle. Default 6. */
   distance?: number;
   /** Camera height above the follow point. Default 2.6. */

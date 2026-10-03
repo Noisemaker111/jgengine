@@ -49,6 +49,7 @@ import {
   createCameraBlendScratch,
 } from "./cameraBlendMath";
 import { requestRawPointerLock } from "../input/pointerLock";
+import { resolveChaseHeading } from "./chaseHeading";
 
 export {
   applyCameraBlendStep,
@@ -559,7 +560,7 @@ export function ChaseRig(props: RigProps) {
 
     const entity = followId === null ? null : ctx.scene.entity.get(followId);
     const follow: Vec3 = entity === null ? { x: 0, y: 0, z: 0 } : { x: entity.position[0], y: entity.position[1], z: entity.position[2] };
-    const yaw = entity?.rotationY ?? 0;
+    const yaw = resolveChaseHeading(merged, entity?.rotationY ?? 0, props.yawRef.current);
     const v = entity?.velocity;
     const published = v !== undefined && (v[0] !== 0 || v[1] !== 0 || v[2] !== 0);
     const lookBack = resolved.lookBackAction !== null && ctx.input.isDown(resolved.lookBackAction);
@@ -595,7 +596,7 @@ export function ChaseRig(props: RigProps) {
       dt,
       view === "chase" ? clampBoom : undefined,
     );
-    props.yawRef.current = step.anchorYaw;
+    props.yawRef.current = resolveChaseHeading(merged, step.anchorYaw, props.yawRef.current);
 
     if (view !== "chase") {
       const seat =
