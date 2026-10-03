@@ -1,0 +1,26 @@
+{
+  "command": [
+    "scripts/drive-dev.ts",
+    "--url",
+    "http://127.0.0.1:5519",
+    "--connect",
+    "9230",
+    "--reuse-storage",
+    "--device",
+    "mobile",
+    "--size",
+    "full",
+    "--timeout",
+    "90",
+    "--click",
+    "Continue",
+    "--probe",
+    "checkpoint-restored",
+    "--wait",
+    "2000",
+    "--shot",
+    "/workspace/engine/.claude/worktrees/coop-iteration/shots/native-warm-storage-mobile.png"
+  ],
+  "exit": 0,
+  "elapsedSeconds": 15.453
+}

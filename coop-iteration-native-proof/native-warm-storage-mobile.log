@@ -1,0 +1,6 @@
+{"probe":"checkpoint-restored","metrics":{"room":3,"status":1,"controlledHero":1,"ownedHeroes":2,"lumenX":-9,"lumenZ":-3,"anchorX":-9,"anchorZ":3,"gates":0,"relays":0,"recoveries":0,"exits":0,"weight":0,"weightX":0,"weightZ":0,"prism":0,"prismX":0,"prismZ":0,"prismDirection":-1,"callouts":0}}
+/workspace/engine/.claude/worktrees/coop-iteration/shots/native-warm-storage-mobile.png
+
+drive: page warning: [jgengine:multiplayer] resonant-crossing: multiplayer adapter "p2p" needs its own session bootstrap (e.g. resolvePeerShellMultiplayer for p2p()); resolveShellMultiplayer cannot build a ws backend for it, so the game shipped single-player. Wire up the p2p transport or switch to ws()/lan().
+drive: page warning: GameHost: game declares multiplayer adapter "p2p", which the built-in shell resolver cannot drive. Running offline. Pass a prebuilt session via the multiplayer prop, or a resolveMultiplayer prop, to GameHost.
+drive: frame(screenshot)

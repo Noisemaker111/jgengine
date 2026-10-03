@@ -1,0 +1,13 @@
+{
+  "command": [
+    "scripts/drive-dev.ts",
+    "--url",
+    "http://127.0.0.1:5519",
+    "--reuse-storage",
+    "--probe",
+    "warm-storage"
+  ],
+  "exit": 1,
+  "elapsedSeconds": 0.102,
+  "stderr": "42 |   return raw as Device;\n43 | }\n44 | \n45 | export function requireReusableCaptureStorage(reuseStorage: boolean, connected: boolean, daemonAttached: boolean): void {\n46 |   if (reuseStorage && !connected && !daemonAttached) {\n47 |     throw new Error(\"drive: --reuse-storage requires a live warm browser; no daemon is attached. Use --connect <port> for the existing Chrome, or start bun run shoot daemon start before the setup and reuse drives. A new Chrome profile cannot retain a prior checkpoint; --keep alone only preserves the new profile after this run.\");\n                   ^\nerror: drive: --reuse-storage requires a live warm browser; no daemon is attached. Use --connect <port> for the existing Chrome, or start bun run shoot daemon start before the setup and reuse drives. A new Chrome profile cannot retain a prior checkpoint; --keep alone only preserves the new profile after this run.\n      at requireReusableCaptureStorage (/workspace/engine/.claude/worktrees/coop-iteration/scripts/captureTarget.ts:47:15)\n      at /workspace/engine/.claude/worktrees/coop-iteration/scripts/drive-dev.ts:691:1\n\nBun v1.3.8 (Linux x64)"
+}
