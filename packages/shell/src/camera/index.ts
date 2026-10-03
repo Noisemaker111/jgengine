@@ -30,3 +30,4 @@ export {
   isCameraOccluderTransparent,
   type CameraOccluder,
 } from "./cameraCollision";
+export { registerFirstPersonMuzzle, type FirstPersonMuzzleReader } from "./customMuzzle";
