@@ -12,7 +12,7 @@ import type { GraphicsQuality } from "@jgengine/core/settings/settingsModel";
 
 import { createGradePass } from "./gradeShader";
 import { StylizePass } from "./stylizePass";
-import { hidePostfxOverlays, restorePostfxOverlays } from "./postfxOverlay";
+import { renderShadowlessPrepass } from "./shadowPrepass";
 
 /**
  * GTAO renders the scene with an `overrideMaterial` normal/depth prepass, which stamps
@@ -31,9 +31,8 @@ class OverlayAwareGTAOPass extends GTAOPass {
     deltaTime: number,
     maskActive: boolean,
   ): void {
-    hidePostfxOverlays(this.scene, this.hiddenOverlays);
-    super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
-    restorePostfxOverlays(this.hiddenOverlays);
+    renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () =>
+      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
   }
 }
 
@@ -48,9 +47,8 @@ class OverlayAwareBokehPass extends BokehPass {
     deltaTime: number,
     maskActive: boolean,
   ): void {
-    hidePostfxOverlays(this.scene, this.hiddenOverlays);
-    super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive);
-    restorePostfxOverlays(this.hiddenOverlays);
+    renderShadowlessPrepass(renderer, this.scene, this.hiddenOverlays, () =>
+      super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive));
   }
 }
 
@@ -66,24 +64,18 @@ const TONE_MAPPING: Record<ToneMappingMode, THREE.ToneMapping> = {
 interface BuiltGraph {
   composer: EffectComposer;
   grade: ShaderPass | null;
-  dof: BokehPass | null;
 }
 
-function disposeGraph(built: BuiltGraph): void {
+/** Release each pass and the composer's owned targets. @internal */
+export function disposeGraph(built: BuiltGraph): void {
   for (const pass of built.composer.passes) pass.dispose();
-  if (built.dof !== null) {
-    built.dof.renderTargetDepth.dispose();
-    built.dof.materialDepth.dispose();
-    built.dof.materialBokeh.dispose();
-    built.dof.fsQuad.dispose();
-  }
   built.composer.dispose();
 }
 
-function syncSize(built: BuiltGraph, width: number, height: number, pixelRatio: number): void {
+/** Resize the composer and its passes at the renderer's pixel ratio. @internal */
+export function syncSize(built: BuiltGraph, width: number, height: number, pixelRatio: number): void {
   built.composer.setPixelRatio(pixelRatio);
   built.composer.setSize(width, height);
-  if (built.dof !== null) built.dof.renderTargetDepth.setSize(width * pixelRatio, height * pixelRatio);
 }
 
 /**
@@ -142,10 +134,9 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
       );
     }
 
-    let dof: BokehPass | null = null;
     if (resolvedStages.dof && config.dof !== undefined && config.dof !== false) {
       const d = config.dof;
-      dof = new OverlayAwareBokehPass(scene, camera, {
+      const dof = new OverlayAwareBokehPass(scene, camera, {
         focus: d.focus ?? 18,
         aperture: d.aperture ?? (quality === "high" ? 0.00025 : 0.00012),
         maxblur: d.maxBlur ?? 0.01,
@@ -170,7 +161,7 @@ export function PostProcessing({ config, quality = "high", stages }: { config: P
       composer.addPass(grade);
     }
 
-    const graph: BuiltGraph = { composer, grade, dof };
+    const graph: BuiltGraph = { composer, grade };
     syncSize(graph, width, height, gl.getPixelRatio());
     builtRef.current = graph;
     return () => {
