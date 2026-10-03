@@ -163,12 +163,18 @@ export function createPeerHost(options: PeerHostOptions): PeerHost {
       channel.onclose = () => connection.close();
     };
 
-    await pc.setRemoteDescription({ type: payload.type, sdp: payload.sdp });
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    await waitForIceGathering(pc, iceGatherTimeoutMs);
-    const description = localDescriptionOrThrow(pc);
-    return encodePeerSignal({ type: "answer", sdp: description.sdp });
+    try {
+      await pc.setRemoteDescription({ type: payload.type, sdp: payload.sdp });
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      await waitForIceGathering(pc, iceGatherTimeoutMs);
+      const description = localDescriptionOrThrow(pc);
+      return encodePeerSignal({ type: "answer", sdp: description.sdp });
+    } catch (error) {
+      peerConnections.delete(pc);
+      pc.close();
+      throw error;
+    }
   };
 
   return {
