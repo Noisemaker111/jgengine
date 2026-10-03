@@ -47,8 +47,13 @@ describe("writeGame", () => {
     expect(existsSync(join(dir, "src", "game", "ui", "GameUI.tsx"))).toBe(true);
     expect(readFileSync(join(dir, "src", "game.config.ts"), "utf8")).toContain('name: "Probe Game"');
 
-    mkdirSync(join(dir, "node_modules", "@jgengine", "core"), { recursive: true });
-    writeFileSync(join(dir, "node_modules", "@jgengine", "core", "package.json"), '{"version":"0.8.0"}');
+    const manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+    const dependencies = { ...manifest.dependencies, ...manifest.devDependencies };
+    for (const name of Object.keys(dependencies).filter(name => name.startsWith("@jgengine/"))) {
+      const installed = join(dir, "node_modules", name);
+      mkdirSync(installed, { recursive: true });
+      writeFileSync(join(installed, "package.json"), JSON.stringify({ name, version: sdkVersion() }));
+    }
 
     const failures = diagnose(dir).filter(
       (finding) => !finding.ok && !finding.label.includes("art-direction") && !finding.label.includes("skeleton"),
