@@ -120,6 +120,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     content,
     signalNotify: signal.notify,
     ground,
+    solids,
     events,
     time,
     ...(occluder !== undefined ? { occluder } : {}),

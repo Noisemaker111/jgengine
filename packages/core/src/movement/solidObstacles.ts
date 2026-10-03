@@ -2,7 +2,7 @@ import type { GameContext } from "../runtime/gameContext";
 import { perContext } from "../runtime/perContext";
 import { resolveColliders, type ResolvedCollider } from "../scene/colliders";
 import type { EntityPosition } from "../scene/entityStore";
-import type { WorldSolid } from "../world/worldSolids";
+import type { WorldSolid, WorldSolids } from "../world/worldSolids";
 import {
   DEFAULT_OBSTACLE_PLAYER_RADIUS,
   resolveObstacleStep,
@@ -55,6 +55,8 @@ export interface ObstacleReach {
  * pure rules package with no `GameContext` to import can satisfy it from its own object list.
  */
 export interface SolidObstacleSource {
+  /** Optional indexed world geometry that is not represented by scene objects. */
+  solids?: Pick<WorldSolids, "count" | "inBox">;
   list(): readonly { instanceId: string; position: EntityPosition; rotationY: number }[];
   inBox(
     min: EntityPosition,
@@ -245,15 +247,25 @@ export function solidObstaclesNear(
   height = WALKER_HEIGHT,
 ): CollisionObstacle[] {
   const obstacles = sourceObstaclesNear(ctx.scene.object, solidObstacleReach(ctx), position, reachX, reachZ, height);
-  const solids = ctx.world.solids;
-  if (solids.count() === 0) return obstacles;
+  appendWorldSolidObstacles(obstacles, ctx.world.solids, position, reachX, reachZ, height);
+  return obstacles;
+}
+
+function appendWorldSolidObstacles(
+  obstacles: CollisionObstacle[],
+  solids: Pick<WorldSolids, "count" | "inBox"> | undefined,
+  position: EntityPosition,
+  reachX: number,
+  reachZ: number,
+  height: number,
+): void {
+  if (solids === undefined || solids.count() === 0) return;
   for (const solid of solids.inBox(
     [position[0] - reachX, position[1] - height, position[2] - reachZ],
     [position[0] + reachX, position[1] + 2 * height, position[2] + reachZ],
   )) {
     obstacles.push(obstacleFromSolid(solid));
   }
-  return obstacles;
 }
 
 /** {@link solidObstaclesNear} against a bare source and an already-resolved reach. */
@@ -288,6 +300,7 @@ export function sourceObstaclesNear(
       obstacles.push(obstacleFromCollider(collider, object.position, object.rotationY));
     }
   }
+  appendWorldSolidObstacles(obstacles, source.solids, position, reachX, reachZ, height);
   return obstacles;
 }
 

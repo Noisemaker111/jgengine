@@ -50,6 +50,7 @@ import {
 } from "../../movement/solidObstacles";
 import { createTargeting, type Targeting } from "../../scene/targeting";
 import type { TerrainField } from "../../world/terrain";
+import type { WorldSolids } from "../../world/worldSolids";
 import type { SimClock } from "../../time/simClock";
 import { notifyAfter } from "../../store/changeSignal";
 import type {
@@ -66,6 +67,7 @@ export interface SceneSubsystemDeps {
   content: GameContextContent;
   signalNotify: () => void;
   ground: TerrainField;
+  solids?: Pick<WorldSolids, "count" | "inBox">;
   events: GameEvents;
   /** Full sim clock — forms need `after` for timed shapeshift reversion. */
   time: SimClock;
@@ -171,6 +173,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
   // wall that stops the player rather than lerping through it.
   const walkerReach = createObstacleReachCache();
   const solidSource: SolidObstacleSource = {
+    solids: d.solids,
     list: () => objects.list(),
     inBox: (min, max) => objects.inBox(min, max),
     collidersOf: (instanceId) => objectCollidersOf(instanceId),

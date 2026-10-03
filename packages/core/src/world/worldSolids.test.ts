@@ -171,6 +171,22 @@ describe("environment structures are solid to every system that reads ctx.world.
     expect(resolveWalkerStep(ctx, [20, 0, from], 0, 2).stepZ).toBe(2);
   });
 
+  test("scene movement prediction and commit stop at the player's world-solid face", () => {
+    const ctx = worldContext(TOWER);
+    const from: [number, number, number] = [0, 0, nearFace(ctx) - 1];
+    ctx.scene.entity.setPose("p", { position: from });
+    const expected = resolveWalkerStep(ctx, from, 0, 2);
+    const target: [number, number, number] = [0, 0, from[2] + 2];
+    const predicted = ctx.scene.entity.moveToward("p", target, { speed: 2, dt: 1 });
+    expect(predicted).toEqual([from[0] + expected.stepX, 0, from[2] + expected.stepZ]);
+    expect(ctx.scene.entity.get("p")!.position).toEqual(from);
+    expect(ctx.scene.entity.moveToward("p", target, { speed: 2, dt: 1, avoidSolids: false })).toEqual(target);
+    expect(ctx.scene.entity.moveTowardCommit("p", target, { speed: 2, dt: 1, face: true })).toEqual(predicted);
+    expect(ctx.scene.entity.get("p")!.position[2]).toBeLessThan(nearFace(ctx));
+    ctx.world.solids.remove("environment:structures");
+    expect(ctx.scene.entity.moveTowardCommit("p", target, { speed: 2, dt: 1 })).toEqual(target);
+  });
+
   test("a physics backend gets it as a static body", () => {
     const ctx = worldContext(TOWER);
     const backend = createPhysicsWorldBackend({ capacity: 8, bounds: { min: [-40, -40, -40], max: [40, 40, 40] }, warn: false });
