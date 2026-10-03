@@ -359,6 +359,33 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `MapLegend` (function) · `import { MapLegend } from "@jgengine/react"`
 
+## material-appearance-signals — update one owned material from wetness and local card exposure without global lighting edits
+
+- `applyMaterialAppearanceSignals` (function) · `import { applyMaterialAppearanceSignals } from "@jgengine/shell/render/materialAppearanceSignals"`
+- `captureMaterialAppearanceBaseline` (function) · `import { captureMaterialAppearanceBaseline } from "@jgengine/shell/render/materialAppearanceSignals"`
+- `restoreMaterialAppearanceBaseline` (function) · `import { restoreMaterialAppearanceBaseline } from "@jgengine/shell/render/materialAppearanceSignals"`
+- `setHairCardLightExposure` (function) · `import { setHairCardLightExposure } from "@jgengine/shell/render/materialAsset"`
+
+## material-assets — render authored physical surfaces, woven detail and approximate hair-card appearance
+
+- `MaterialAssetSurface` (function) · `import { MaterialAssetSurface } from "@jgengine/shell/render/materialAsset"`
+- `applyMaterialAsset` (function) · `import { applyMaterialAsset } from "@jgengine/shell/render/materialAsset"`
+- `applyMaterialAssignments` (function) · `import { applyMaterialAssignments } from "@jgengine/shell/render/materialAsset"`
+- `materialAssetSurface` (function) · `import { materialAssetSurface } from "@jgengine/shell/render/materialAsset"`
+- `useMaterialAssetMaterial` (function) · `import { useMaterialAssetMaterial } from "@jgengine/shell/render/materialAsset"`
+
+## material-resource-metrics — inspect loaded texture byte bounds and physical, coverage and transmission participation
+
+- `materialResourceMetrics` (function) · `import { materialResourceMetrics } from "@jgengine/shell/render/materialAsset"`
+
+## material-slots — discover exact imported mesh and material selectors with UV and tangent prerequisites
+
+- `inspectModelMaterialSlots` (function) · `import { inspectModelMaterialSlots } from "@jgengine/shell/render/materialAsset"`
+
+## material-texture-metadata — configure owned map views with semantic color space, packed channels, UV transforms and sampling
+
+- `configureMaterialTexture` (function) · `import { configureMaterialTexture } from "@jgengine/shell/render/materialAsset"`
+
 ## menu-router — screen stack for a game front-end — push/back/replace/reset with optional Escape-to-back
 
 - `useMenuRouter` (function) · `import { useMenuRouter } from "@jgengine/react/menuRouter"`
@@ -501,6 +528,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## popover — viewport-flipping, viewport-clamped anchored popover/tooltip shell
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
+
+## projected-overdraw — sample actual mesh/camera fragment overlap with native coverage and explicit depth/blending/transmission limits
+
+- `measureProjectedOverdraw` (function) · `import { measureProjectedOverdraw } from "@jgengine/shell/render/projectedOverdraw"`
 
 ## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
 

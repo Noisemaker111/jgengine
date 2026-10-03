@@ -4,6 +4,10 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## authored-material-slots — read validated material assignments from editor marker metadata
+
+- `authoredMaterialAssignments` (function) · `import { authoredMaterialAssignments } from "@jgengine/core/editor/materialAuthoring"`
+
 ## editor-catalogs — Persist gameplay tuning rows on the scene document.
 
 - `EditorCatalogData` (interface) · `import { EditorCatalogData } from "@jgengine/core/editor"`
@@ -67,6 +71,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `applyRuntimeStateDelta` (function) · `import { applyRuntimeStateDelta } from "@jgengine/core/editor"`
 - `createDocumentLiveSync` (function) · `import { createDocumentLiveSync } from "@jgengine/core/editor"`
 - `runtimeEntityWriteBackCommand` (function) · `import { runtimeEntityWriteBackCommand } from "@jgengine/core/editor"`
+
+## editor-material-controls — Explain geometry prerequisites and approximations for a material asset.
+
+- `materialAuthoringNotes` (function) · `import { materialAuthoringNotes } from "@jgengine/editor/materialControls"`
+- `materialControlGroups` (function) · `import { materialControlGroups } from "@jgengine/editor/materialControls"`
 
 ## editor-runtime-inspector — gate a play-mode frame against pause/step control
 

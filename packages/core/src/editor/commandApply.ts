@@ -1,3 +1,5 @@
+import { parseEditorMaterialAsset, authoredMaterialAssignments, sameMaterialSelector } from "./materialAuthoring";
+import { parseMaterialAssignments, validateMaterialAssignments } from "../material/materialAsset";
 import { parseStaticPrefabBake } from "./staticPrefab";
 import {
   applyDeltaToSnapshot,
@@ -151,6 +153,10 @@ function insertFragment(
   const annotations = clones.annotations.map((note) =>
     withId({ ...note, position: shifted(note.position, offset) }),
   );
+  for (const asset of clones.materialAssets ?? []) {
+    const existing = doc.materialAssets?.find((item) => item.id === asset.id);
+    if (existing !== undefined && JSON.stringify(existing) !== JSON.stringify(asset)) throw new TypeError(`Material ID conflict: ${asset.id}; rename the imported material before insertion.`);
+  }
   if (newIds.length === 0) return state;
   return {
     document: {
@@ -160,6 +166,7 @@ function insertFragment(
       paths: [...doc.paths, ...paths],
       annotations: [...doc.annotations, ...annotations],
       ...editorDocumentExtras(doc),
+      ...(doc.materialAssets === undefined && clones.materialAssets === undefined ? {} : { materialAssets: [...(doc.materialAssets ?? []), ...(clones.materialAssets ?? []).filter((asset) => !doc.materialAssets?.some((item) => item.id === asset.id))] }),
     },
     selection: newIds,
   };
@@ -168,6 +175,7 @@ function insertFragment(
 function fragmentAsDocument(fragment: EditorFragmentContent): EditorDocument {
   return {
     version: 1,
+    ...(fragment.materialAssets === undefined ? {} : { materialAssets: structuredClone(fragment.materialAssets) }),
     markers: [...fragment.markers],
     volumes: [...fragment.volumes],
     paths: [...fragment.paths],
@@ -666,6 +674,7 @@ const mutationHandlers: MutationHandlers = {
       command.instanceId ??
       `${prefab.id}_inst_${Date.now().toString(36)}_${Math.floor(Math.random() * 1_296_000).toString(36)}`;
     const tagged = fragmentAsDocument({
+      ...(prefab.fragment.materialAssets === undefined ? {} : { materialAssets: prefab.fragment.materialAssets }),
       markers: prefab.fragment.markers.map((marker) => tagWithInstance(marker, prefab.id, instanceId)),
       volumes: prefab.fragment.volumes.map((volume) => tagWithInstance(volume, prefab.id, instanceId)),
       paths: prefab.fragment.paths.map((path) => tagWithInstance(path, prefab.id, instanceId)),
@@ -826,6 +835,43 @@ const mutationHandlers: MutationHandlers = {
     const stamp = <T extends { id: string; meta?: Record<string, unknown> }>(item: T): T =>
       ids.has(item.id) ? { ...item, meta: { ...item.meta, materialId: command.materialId } } : item;
     return { ...state, document: { ...state.document, ...mapPlaceables(state.document, stamp) } };
+  },
+  upsertMaterialAsset: (state, command) => {
+    const asset = parseEditorMaterialAsset(command.asset);
+    return { ...state, document: { ...state.document, materialAssets: [...(state.document.materialAssets ?? []).filter((item) => item.id !== asset.id), asset] } };
+  },
+  removeMaterialAsset: (state, command) => {
+    const used = state.document.markers.some((marker) => authoredMaterialAssignments(marker.meta).some((assignment) => assignment.materialId === command.id))
+      || state.document.prefabs.some((prefab) => prefab.fragment.markers.some((marker) => authoredMaterialAssignments(marker.meta).some((assignment) => assignment.materialId === command.id)));
+    if (used) throw new TypeError(`Material ${command.id} is assigned; clear its references before removal.`);
+    if (!state.document.materialAssets?.some((asset) => asset.id === command.id)) throw new TypeError(`Material not found: ${command.id}`);
+    return { ...state, document: { ...state.document, materialAssets: state.document.materialAssets.filter((asset) => asset.id !== command.id) } };
+  },
+  assignMaterialAsset: (state, command) => {
+    const assignment = parseMaterialAssignments([{ materialId: command.materialId, selector: command.selector }])[0]!;
+    const errors = validateMaterialAssignments([assignment], state.document.materialAssets ?? []).filter((item) => item.severity === "error");
+    if (errors.length > 0) throw new TypeError(errors.map((item) => item.message).join("; "));
+    const ids = new Set(command.ids);
+    for (const id of ids) {
+      if (!state.document.markers.some((marker) => marker.id === id)) throw new TypeError(`material target is not a marker: ${id}`);
+      if (isEditorObjectLocked(state.document, id)) throw new TypeError(`object is locked: ${id}`);
+    }
+    const markers = state.document.markers.map((marker) => {
+      if (!ids.has(marker.id)) return marker;
+      const assignments = authoredMaterialAssignments(marker.meta).filter((item) => !sameMaterialSelector(item.selector, assignment.selector));
+      return { ...marker, meta: { ...marker.meta, materialAssignments: [...assignments, structuredClone(assignment)] } };
+    });
+    return { ...state, document: { ...state.document, markers } };
+  },
+  clearMaterialAssets: (state, command) => {
+    const ids = new Set(command.ids);
+    for (const id of ids) if (isEditorObjectLocked(state.document, id)) throw new TypeError(`object is locked: ${id}`);
+    const markers = state.document.markers.map((marker) => {
+      if (!ids.has(marker.id) || marker.meta?.materialAssignments === undefined) return marker;
+      const meta = { ...marker.meta }; delete meta.materialAssignments;
+      return { ...marker, meta };
+    });
+    return { ...state, document: { ...state.document, markers } };
   },
   undo: () => null,
   redo: () => null,

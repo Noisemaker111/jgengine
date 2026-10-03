@@ -1,3 +1,4 @@
+import { reportTextureLoadError } from "@jgengine/core/devtools/textureErrors";
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 import * as THREE from "three";
@@ -49,44 +50,70 @@ export function EnvironmentLighting({
     let target: THREE.WebGLRenderTarget | undefined;
     let loadedTexture: THREE.Texture | THREE.CubeTexture | undefined;
     let cancelled = false;
+    let appliedRotation: THREE.Euler | undefined;
+    let appliedRotationValue: THREE.Euler | undefined;
+    const previous = scene.environment;
+    const previousRotation = scene.environmentRotation;
+    const previousIntensity = scene.environmentIntensity;
+    const appliedIntensity = source?.intensity ?? intensity;
+    scene.environmentIntensity = appliedIntensity;
+    const release = () => {
+      if (cancelled) return;
+      cancelled = true;
+      if (target !== undefined && scene.environment === target.texture) scene.environment = previous;
+      if (appliedRotation !== undefined && scene.environmentRotation === appliedRotation && appliedRotation.equals(appliedRotationValue!)) scene.environmentRotation = previousRotation;
+      if (scene.environmentIntensity === appliedIntensity) scene.environmentIntensity = previousIntensity;
+      pmrem.dispose();
+      target?.dispose();
+      loadedTexture?.dispose();
+    };
     const effective = source?.kind === "gradient" ? source : undefined;
     const apply = (next: THREE.WebGLRenderTarget, rotation?: number) => {
       if (cancelled) { next.dispose(); return; }
       target = next;
       scene.environment = next.texture;
-      if (rotation !== undefined) (scene as THREE.Scene & { environmentRotation?: THREE.Euler }).environmentRotation = new THREE.Euler(0, rotation, 0);
+      if (rotation !== undefined) {
+        appliedRotation = new THREE.Euler(0, rotation, 0);
+        appliedRotationValue = appliedRotation.clone();
+        scene.environmentRotation = appliedRotation;
+      }
     };
-    const previous = scene.environment;
-    const previousRotation = (scene as THREE.Scene & { environmentRotation?: THREE.Euler }).environmentRotation;
-    if (source?.kind === "hdri") {
-      const Loader = /\.exr(?:$|\?)/i.test(source.url) ? EXRLoader : RGBELoader;
-      new Loader().loadAsync(source.url).then((texture) => {
-        loadedTexture = texture;
-        texture.mapping = THREE.EquirectangularReflectionMapping;
-        apply(pmrem.fromEquirectangular(texture), source.rotation);
-      }).catch(() => undefined);
-    } else if (source?.kind === "cube") {
-      new THREE.CubeTextureLoader().loadAsync(source.urls).then((texture) => {
-        loadedTexture = texture;
-        apply(pmrem.fromCubemap(texture));
-      }).catch(() => undefined);
-    } else {
-      const probe = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, sunDirection, sunColor: effective?.sun ?? sunColor });
-      apply(pmrem.fromScene(probe, 0.04));
-      disposeScene(probe);
+    try {
+      if (source?.kind === "hdri") {
+        const Loader = /\.exr(?:$|\?)/i.test(source.url) ? EXRLoader : RGBELoader;
+        new Loader().loadAsync(source.url).then((texture) => {
+          if (cancelled) { texture.dispose(); return; }
+          loadedTexture = texture;
+          texture.mapping = THREE.EquirectangularReflectionMapping;
+          apply(pmrem.fromEquirectangular(texture), source.rotation);
+        }).catch((error) => {
+          if (cancelled) return;
+          reportTextureLoadError(source.url);
+          console.warn(`[jgengine] environment illumination failed: ${source.url}`, error);
+        });
+      } else if (source?.kind === "cube") {
+        new THREE.CubeTextureLoader().loadAsync(source.urls).then((texture) => {
+          if (cancelled) { texture.dispose(); return; }
+          loadedTexture = texture;
+          apply(pmrem.fromCubemap(texture));
+        }).catch((error) => {
+          if (cancelled) return;
+          for (const url of source.urls) reportTextureLoadError(url);
+          console.warn(`[jgengine] cube environment illumination failed: ${source.urls.join(", ")}`, error);
+        });
+      } else {
+        const probe = buildSkyProbeScene({ skyColor: effective?.sky ?? skyColor, groundColor: effective?.ground ?? groundColor, sunDirection, sunColor: effective?.sun ?? sunColor });
+        try {
+          apply(pmrem.fromScene(probe, 0.04));
+        } finally {
+          disposeScene(probe);
+        }
+      }
+    } catch (error) {
+      release();
+      throw error;
     }
-    const sceneWithIntensity = scene as THREE.Scene & { environmentIntensity?: number };
-    const previousIntensity = sceneWithIntensity.environmentIntensity;
-    sceneWithIntensity.environmentIntensity = source?.intensity ?? intensity;
-    return () => {
-      cancelled = true;
-      pmrem.dispose();
-      target?.dispose();
-      loadedTexture?.dispose();
-      scene.environment = previous;
-      if (previousRotation !== undefined) (scene as THREE.Scene & { environmentRotation?: THREE.Euler }).environmentRotation = previousRotation;
-      if (previousIntensity !== undefined) sceneWithIntensity.environmentIntensity = previousIntensity;
-    };
+    return release;
   }, [gl, scene, source, intensity, skyColor, groundColor, sunColor, sunDirection?.[0], sunDirection?.[1], sunDirection?.[2]]);
 
   return null;

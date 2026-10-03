@@ -1,11 +1,11 @@
-import { useLoader } from "@react-three/fiber";
+import { useLoader, useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { Group, type Object3D } from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { measureLocalBounds } from "./measureBounds";
-import { sharedGltfLoader } from "./modelLoad";
+import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
 import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender";
 import { useModelAnimation } from "./useModelAnimation";
 
@@ -36,6 +36,8 @@ export interface ModelInstance {
  * @capability model-instance own loading, clone cleanup, placement and animation for a custom model renderer
  */
 export function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance {
+  const renderer = useThree(state => state.gl);
+  if ((renderer as typeof renderer & { isWebGLRenderer?: boolean }).isWebGLRenderer) detectKtx2Support(renderer);
   const gltf = useLoader(sharedGltfLoader, model.url);
   const { configure, instanceId } = options;
   const { content, scene, bindBounds } = useMemo(() => {

@@ -1,3 +1,4 @@
+import type { MaterialAsset, MaterialSelector } from "../material/materialAsset";
 import { parseStaticPrefabBake, type StaticPrefabBake } from "./staticPrefab";
 import {
   applyDeltaToSnapshot,
@@ -116,6 +117,10 @@ export type EditorCommand =
       ids: readonly string[];
       patch: { color?: string; label?: string; meta?: Record<string, unknown> };
     }
+  | { type: "upsertMaterialAsset"; asset: MaterialAsset }
+  | { type: "removeMaterialAsset"; id: string }
+  | { type: "assignMaterialAsset"; ids: readonly string[]; materialId: string; selector: MaterialSelector }
+  | { type: "clearMaterialAssets"; ids: readonly string[] }
   | { type: "assignMaterial"; ids: readonly string[]; materialId: string }
   | { type: "addGridLayer"; layer: EditorGridLayer }
   | { type: "removeGridLayer"; id: string }
@@ -179,6 +184,9 @@ function transactionCommandError(document: EditorDocument, command: EditorComman
       return [...document.markers, ...document.volumes, ...document.annotations].some((item) => item.id === command.id) ? requireObjects([command.id]) : `transform target not found: ${command.id}`;
     case "remove": return requireObjects([command.id]);
     case "translate": case "removeMany": case "batchSetProperties": case "assignMaterial":
+      return requireObjects(command.ids);
+    case "assignMaterialAsset": case "clearMaterialAssets":
+      for (const id of command.ids) if (!document.markers.some((marker) => marker.id === id)) return `material target is not a marker: ${id}`;
       return requireObjects(command.ids);
     case "duplicate": return requireObjects(command.ids, true);
     case "select": return command.ids.length === 0 ? null : requireObjects(command.ids, true);
@@ -281,6 +289,7 @@ const transactionFields: Record<EditorCommand["type"], string> = {
   createCollection: "id name ?memberIds", renameCollection: "id name", deleteCollection: "id",
   setCollectionMembers: "id memberIds", addToCollection: "id ids", removeFromCollection: "id ids", setCollectionFlags: "id patch",
   setObjectFlags: "ids patch", selectCollection: "id", batchSetProperties: "ids patch", assignMaterial: "ids materialId",
+  upsertMaterialAsset: "asset", removeMaterialAsset: "id", assignMaterialAsset: "ids materialId selector", clearMaterialAssets: "ids",
   addGridLayer: "layer", removeGridLayer: "id", setGridLayer: "id patch", paintGridCells: "id cells",
   fillGridRect: "id col0 row0 col1 row1 value", floodFillGrid: "id col row value", resizeGridLayer: "id cols rows",
   setUiPanel: "id patch", removeUiPanel: "id", setUi: "?ui", undo: "", redo: "",

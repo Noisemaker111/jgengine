@@ -1,6 +1,7 @@
 import type { AnimGraph } from "../anim/animGraph";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
+import type { MaterialAsset, MaterialAssignment, MaterialSurfaceParameters } from "../material/materialAsset";
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
 import type { PostProcessingConfig } from "../render/postProcessing";
 import type { EnvironmentSource } from "../render/environment";
@@ -192,12 +193,7 @@ export interface ModelMaterialMaps {
 }
 
 /** Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph. */
-export interface ModelMaterialOverride {
-  color?: string;
-  metalness?: number;
-  roughness?: number;
-  emissive?: string;
-  emissiveIntensity?: number;
+export interface ModelMaterialOverride extends MaterialSurfaceParameters {
   /** Real PBR texture maps applied over the model's material — see {@link ModelMaterialMaps}. */
   maps?: ModelMaterialMaps;
   /**
@@ -267,6 +263,10 @@ export interface ModelConfig {
   collisionMesh?: CollisionMeshData;
   /** Per-entity PBR tint/finish override (#151.3); cloned onto each `MeshStandardMaterial` in the model so shared GLTF caches stay untouched. */
   material?: ModelMaterialOverride;
+  /** Reusable authored surfaces available to this model's named slot assignments. */
+  materialAssets?: readonly MaterialAsset[];
+  /** Sparse per-slot assignments; unselected imported materials keep their original appearance. */
+  materialAssignments?: readonly MaterialAssignment[];
   /** Shadow participation of every mesh in the model. Default `"both"` (casts and receives); `"none"` for foliage cards, decals, or viewmodels that must never shadow the world. */
   shadows?: "cast" | "receive" | "both" | "none";
   /**

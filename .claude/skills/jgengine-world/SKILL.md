@@ -37,6 +37,8 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 
 For existing `environment()` consumers, `defineGame` overlays only defined editor sky fields on the legacy sky, retaining settings the editor cannot represent; an explicit `backdrop.sky` remains authoritative.
 
+For environment-driven surface appearance, sample only selected targets through `material/appearanceSignals`; wetness already includes shelter. Capture the assigned material's dry baseline, apply explicit wet endpoints, and restore it on unbinding. Keep wind in geometry/simulation consumers and local card backlighting separate from scene exposure. See [reference.md](reference.md#environment-fields-weather-hooks--realm-composition).
+
 ### Movement and interaction
 
 Choose input intent, controller/motor, collision/navigation, and camera as separate seams. Commands express game intent; world systems resolve motion. Interaction targets come from bounded spatial/sensor queries, not full-world scans.

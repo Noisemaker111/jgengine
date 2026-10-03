@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import type { EditorSession } from "@jgengine/core/editor/index";
+import type { EditorDocument, EditorSession } from "@jgengine/core/editor/index";
+import { createMaterialTemplate, parseMaterialAssignments, type MaterialAsset, type MaterialAssignment, type MaterialSelector, type MaterialTemplate } from "@jgengine/core/material/materialAsset";
 
 import { clearMaterialAssignmentPatch } from "./authoredComponentMeta";
+import { MaterialAssetEditor } from "./MaterialAssetEditor";
 import {
   filterMaterialAssignments,
   listMaterialAssignments,
@@ -30,6 +32,22 @@ function materialLabel(materialId: string): string {
   return TERRAIN_MATERIALS.find((material) => material.id === materialId)?.label ?? materialId;
 }
 
+/** Read the selected model's first usable assignment for workspace initialization. @internal */
+export function initialMaterialAssignment(document: Pick<EditorDocument, "markers" | "materialAssets">, selection: readonly string[]): MaterialAssignment | null {
+  const marker = document.markers.find((item) => selection.includes(item.id));
+  const value = marker?.meta?.materialAssignments;
+  if (!Array.isArray(value)) return null;
+  for (const item of value) {
+    try {
+      const assignment = parseMaterialAssignments([item])[0]!;
+      if (document.materialAssets?.some((asset) => asset.id === assignment.materialId)) return assignment;
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
 /**
  * Materials workspace home panel: browse every placeable's real `meta.materialId` from the live
  * document, filter by assignment/palette id/text, select into the hierarchy, and assign/clear via
@@ -39,14 +57,53 @@ function materialLabel(materialId: string): string {
 export function MaterialsWorkspacePanel({
   session,
   api,
+  preview,
+  onSave,
+  materialSlots,
+  previewError,
 }: {
   session: EditorSession;
   api: EditorHostApi;
+  preview?: (asset: MaterialAsset | undefined, mode: "neutral" | "game") => ReactNode;
+  onSave?: () => void;
+  materialSlots?: readonly { mesh: string; slot: string; slotIndex: number }[];
+  previewError?: string | null;
 }) {
   const document = useStoreSelector(session, (state) => state.document);
   const selection = useStoreSelector(session, (state) => state.selection, shallowArrayEqual);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<MaterialAssignmentFilter>("all");
+  const [tab, setTab] = useState<"assets" | "assignments">("assets");
+  const [initialAssignment] = useState(() => { const state = session.getState(); return initialMaterialAssignment(state.document, state.selection); });
+  const [activeAssetId, setActiveAssetId] = useState<string | null>(initialAssignment?.materialId ?? null);
+  const [template, setTemplate] = useState<MaterialTemplate>("wool");
+  const [newId, setNewId] = useState("");
+  const [mesh, setMesh] = useState(initialAssignment?.selector.mesh ?? "");
+  const [slot, setSlot] = useState(initialAssignment?.selector.slot ?? "");
+  const [slotIndex, setSlotIndex] = useState(initialAssignment?.selector.slotIndex === undefined ? "" : String(initialAssignment.selector.slotIndex));
+  const [error, setError] = useState<string | null>(null);
+  const selectionKey = selection.join("\0");
+  useEffect(() => {
+    const state = session.getState();
+    const assignment = initialMaterialAssignment(state.document, state.selection);
+    if (assignment) setActiveAssetId(assignment.materialId);
+    setMesh(assignment?.selector.mesh ?? "");
+    setSlot(assignment?.selector.slot ?? "");
+    setSlotIndex(assignment?.selector.slotIndex === undefined ? "" : String(assignment.selector.slotIndex));
+  }, [selectionKey, session]);
+  const assets = document.materialAssets ?? [];
+  const activeAsset = assets.find((asset) => asset.id === activeAssetId) ?? assets[0];
+  const assignmentErrors: string[] = [];
+  const selectedAssignments = document.markers.filter((marker) => selection.includes(marker.id)).flatMap((marker) => {
+    const value = marker.meta?.materialAssignments;
+    if (!Array.isArray(value)) return [];
+    try {
+      return parseMaterialAssignments(value).map((assignment) => ({ ...assignment, objectId: marker.id, objectName: marker.label ?? marker.id }));
+    } catch (failure) {
+      assignmentErrors.push(`${marker.id}: ${failure instanceof Error ? failure.message : String(failure)}`);
+      return [];
+    }
+  });
 
   const rows = useMemo(() => listMaterialAssignments(document), [document]);
   const filtered = useMemo(() => filterMaterialAssignments(rows, query, filter), [rows, query, filter]);
@@ -81,8 +138,53 @@ export function MaterialsWorkspacePanel({
     return filter === candidate;
   };
 
+  const tabs = <div className="flex shrink-0 gap-1 border-b border-white/[0.06] p-2" role="tablist" aria-label="Material workspace views">
+    {(["assets", "assignments"] as const).map((view) => <button key={view} type="button" role="tab" aria-selected={tab === view} className={`${CHIP} flex-1 ${tab === view ? CHIP_ACTIVE : CHIP_IDLE}`} onClick={() => setTab(view)}>{view === "assets" ? "Surface assets" : "Legacy assignments"}</button>)}
+  </div>;
+
+  if (tab === "assets") return <div className="flex min-h-0 flex-1 flex-col">
+    {tabs}
+    <div className="min-h-0 flex-1 overflow-auto">
+      <div className="space-y-2 border-b border-white/[0.06] p-2">
+        <label className="block space-y-1"><span className={MICRO_LABEL}>Reusable material asset</span><select aria-label="Choose material asset" value={activeAsset?.id ?? ""} className={`w-full px-2 py-1 ${INPUT_CLS}`} onChange={(event) => setActiveAssetId(event.target.value)}>{assets.length ? assets.map((asset) => <option key={asset.id} value={asset.id}>{asset.name}</option>) : <option value="">No authored materials</option>}</select></label>
+        {activeAsset ? <button type="button" className={`${CHIP} border-rose-400/25 text-rose-200`} onClick={() => { const result = api.handle({ method: "remove_material_asset", id: activeAsset.id }); setError(result.ok ? null : result.error ?? "Material operation failed."); }}>Remove unused asset</button> : null}
+        <details><summary className={`cursor-pointer text-[11px] text-neutral-400 ${FOCUS_RING}`}>Create from an editable starting point</summary><div className="mt-2 space-y-2">
+          <select aria-label="Material starting point" className={`w-full px-2 py-1 ${INPUT_CLS}`} value={template} onChange={(event) => setTemplate(event.target.value as MaterialTemplate)}>{["wool", "cotton", "silk", "brushed-metal", "glass", "coated-plastic", "stone", "hair-cards"].map((entry) => <option key={entry} value={entry}>{entry}</option>)}</select>
+          <input aria-label="New material stable ID" value={newId} onChange={(event) => setNewId(event.target.value)} placeholder="game/my-original-surface" className={`w-full px-2 py-1 ${INPUT_CLS}`} />
+          <button type="button" disabled={!newId.trim() || assets.some((asset) => asset.id === newId.trim())} className={`${CHIP} ${CHIP_IDLE}`} onClick={() => { const asset = createMaterialTemplate(template, newId.trim()); const result = api.handle({ method: "upsert_material_asset", asset }); if (!result.ok) setError(result.error ?? "Material operation failed."); else { setActiveAssetId(asset.id); setNewId(""); setError(null); } }}>Create asset</button>
+          <p className="text-[10px] text-neutral-500">Starting points contain authored response parameters; your game supplies original textures, geometry and art direction.</p>
+        </div></details>
+        {activeAsset ? <details><summary className={`cursor-pointer text-[11px] text-neutral-400 ${FOCUS_RING}`}>Assign to selected material slot</summary><div className="mt-2 space-y-2">
+          <p className="text-[10px] text-neutral-500">Choose a loaded material slot. Assignments preserve other slots on the model.</p>
+          {materialSlots?.length ? <select aria-label="Choose imported material slot" className={`w-full px-2 py-1 ${INPUT_CLS}`} value={String(materialSlots.findIndex((entry) => entry.mesh === mesh && entry.slot === slot && String(entry.slotIndex) === slotIndex))} onChange={(event) => { const entry = materialSlots[Number(event.target.value)]; if (!entry) return; setMesh(entry.mesh); setSlot(entry.slot); setSlotIndex(String(entry.slotIndex)); }}><option value="-1">Choose a slot…</option>{materialSlots.map((entry, index) => <option key={`${entry.mesh}:${entry.slotIndex}:${index}`} value={String(index)}>{entry.mesh || "Unnamed mesh"} / {entry.slot || `slot ${entry.slotIndex}`}</option>)}</select> : <p className="text-[10px] text-neutral-500">Select a model to inspect its imported slots, or enter an exact selector below.</p>}
+          <details><summary className={`cursor-pointer text-[10px] text-neutral-400 ${FOCUS_RING}`}>Advanced exact selector</summary><div className="mt-2 space-y-2">
+          <input aria-label="Assignment mesh name" placeholder="Mesh name (optional)" value={mesh} onChange={(event) => setMesh(event.target.value)} className={`w-full px-2 py-1 ${INPUT_CLS}`} />
+          <input aria-label="Assignment material slot name" placeholder="Material slot name (optional)" value={slot} onChange={(event) => setSlot(event.target.value)} className={`w-full px-2 py-1 ${INPUT_CLS}`} />
+          <input aria-label="Assignment material slot index" type="number" min="0" step="1" placeholder="Slot index (optional)" value={slotIndex} onChange={(event) => setSlotIndex(event.target.value)} className={`w-full px-2 py-1 ${INPUT_CLS}`} />
+          </div></details>
+          <button type="button" className={`${CHIP} ${CHIP_IDLE}`} disabled={selection.length === 0 || (!mesh.trim() && !slot.trim() && !slotIndex)} onClick={() => {
+            const selector: MaterialSelector = {};
+            if (mesh.trim()) selector.mesh = mesh.trim();
+            if (slot.trim()) selector.slot = slot.trim();
+            if (slotIndex) selector.slotIndex = Number(slotIndex);
+            const result = api.handle({ method: "assign_material_asset", ids: [...selection], materialId: activeAsset.id, selector });
+            setError(result.ok ? null : result.error ?? "Material operation failed.");
+          }}>Assign to selection ({selection.length})</button>
+          {selectedAssignments.map((assignment, index) => <button key={`${assignment.objectId}:${index}`} type="button" className={`${CHIP} ${CHIP_IDLE} block w-full text-left`} onClick={() => { setActiveAssetId(assignment.materialId); setMesh(assignment.selector.mesh ?? ""); setSlot(assignment.selector.slot ?? ""); setSlotIndex(assignment.selector.slotIndex === undefined ? "" : String(assignment.selector.slotIndex)); }}>{assignment.objectName}: {assignment.selector.mesh ?? "any mesh"} / {assignment.selector.slot ?? `slot ${assignment.selector.slotIndex ?? "any"}`} → {assignment.materialId}</button>)}
+          {selectedAssignments.length ? <button type="button" className={`${CHIP} border-rose-400/25 text-rose-200`} onClick={() => { const result = api.handle({ method: "clear_material_assets", ids: [...selection] }); setError(result.ok ? null : result.error ?? "Material operation failed."); }}>Restore selected objects' imported materials</button> : null}
+        </div></details> : null}
+        <div className="flex gap-1"><button type="button" className={`${CHIP} ${CHIP_IDLE}`} onClick={() => api.handle({ method: "undo" })}>Undo</button><button type="button" className={`${CHIP} ${CHIP_IDLE}`} onClick={() => api.handle({ method: "redo" })}>Redo</button>{onSave ? <button type="button" className={`${CHIP} ${CHIP_IDLE}`} onClick={onSave}>Save scene</button> : null}</div>
+        {error ? <p role="alert" className="text-[10px] text-rose-300">{error}</p> : null}
+        {previewError ? <p role="alert" className="text-[10px] text-rose-300">Preview: {previewError}</p> : null}
+        {assignmentErrors.map((message) => <p key={message} role="alert" className="text-[10px] text-rose-300">{message}</p>)}
+      </div>
+      {activeAsset ? <MaterialAssetEditor key={activeAsset.id} asset={activeAsset} preview={preview} onChange={(asset, coalesce) => { const result = api.handle({ method: "upsert_material_asset", asset, coalesce }); setError(result.ok ? null : result.error ?? "Material operation failed."); }} /> : <><div className="p-2">{preview?.(undefined, "neutral")}</div><EmptyState icon="sphere" title="No material assets" description="Create an editable starting point, then assign it to a named mesh or material slot. Existing imported materials remain intact." /></>}
+    </div>
+  </div>;
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {tabs}
       <div className="space-y-2 border-b border-white/[0.06] p-2">
         <div className={MICRO_LABEL}>Materials</div>
         <p className="text-[10px] leading-snug text-neutral-500">

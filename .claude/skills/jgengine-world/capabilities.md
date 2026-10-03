@@ -455,6 +455,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
 
+## material-appearance-signals — adapt selected surface response to sampled wetness and local card exposure
+
+- `resolveMaterialAppearance` (function) · `import { resolveMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
+- `sampleMaterialAppearance` (function) · `import { sampleMaterialAppearance } from "@jgengine/core/material/appearanceSignals"`
+
 ## merge-footprint-regions — pool adjacent compatible footprints with serializable capacity provenance
 
 - `mergeFootprints` (function) · `import { mergeFootprints } from "@jgengine/core/world"`

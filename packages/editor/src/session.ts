@@ -1,3 +1,4 @@
+import type { MaterialAsset, MaterialSelector } from "@jgengine/core/material/materialAsset";
 import type { StaticPrefabBake } from "@jgengine/core/editor/staticPrefab";
 import {
   createDocumentLiveSync,
@@ -24,6 +25,7 @@ import {
 import type { TerraformMode, TerrainMaterialLayer } from "@jgengine/core/world/terraform";
 import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
 import type { TerrainField } from "@jgengine/core/world/terrain";
+import type { ModelMaterialSlotInfo } from "@jgengine/shell/render/materialAsset";
 
 import { registerBuiltinSceneKinds } from "@jgengine/core/scene/builtinSceneKinds";
 
@@ -196,6 +198,12 @@ export type EditorBridgeRequest =
   | { method: "select_collection"; id: string }
   | { method: "set_object_flags"; ids: string[]; locked?: boolean; hidden?: boolean }
   | { method: "batch_set_properties"; ids: string[]; color?: string; label?: string; meta?: Record<string, unknown> }
+  | { method: "list_material_assets" }
+  | { method: "list_material_slots"; id: string }
+  | { method: "upsert_material_asset"; asset: MaterialAsset; coalesce?: string }
+  | { method: "remove_material_asset"; id: string }
+  | { method: "assign_material_asset"; ids: string[]; materialId: string; selector: MaterialSelector }
+  | { method: "clear_material_assets"; ids: string[] }
   | { method: "assign_material"; ids: string[]; materialId: string }
   | { method: "list_grids" }
   | { method: "get_grid_cell"; id: string; col: number; row: number }
@@ -287,6 +295,18 @@ export interface EditorAssetInfo {
   url?: string;
 }
 
+/** Canonical imported slot names and mesh prerequisites reported by the loaded model. */
+export type EditorMaterialSlotInfo = Readonly<Omit<ModelMaterialSlotInfo, "uvSets">> & { readonly uvSets: readonly number[] };
+
+/** A live model-source observation; loading and unavailable reports never contain fabricated slots. */
+export type EditorMaterialSlotReport =
+  | { status: "ready"; slots: readonly EditorMaterialSlotInfo[] }
+  | { status: "loading" }
+  | { status: "unavailable"; reason: string };
+
+/** A marker's current imported-model inventory, including an explicit availability state. */
+export type EditorMaterialSlotInventory = EditorMaterialSlotReport & { id: string; sourceUrl?: string };
+
 /** Rolling frame-rate sample published by the in-canvas PerfProbe. */
 export interface EditorPerfSample {
   /**
@@ -363,6 +383,10 @@ export interface EditorHostApi {
   subscribeFocus(listener: (target: EditorFocusTarget | null) => void): () => void;
   getAssets(): readonly EditorAssetInfo[];
   setAssets(assets: readonly EditorAssetInfo[]): void;
+  /** Read observed slot data for the marker's current model URL; headless or unloaded sources are unavailable. */
+  getMaterialSlots(id: string): EditorMaterialSlotInventory;
+  /** Publish a loaded-model observation only while its marker still resolves to this source URL. */
+  reportMaterialSlots(id: string, sourceUrl: string, report: EditorMaterialSlotReport): boolean;
   getCatalogDefinitions(): readonly EditorCatalogDefinition[];
   getPerf(): EditorPerfSample | null;
   setPerf(sample: EditorPerfSample): void;
@@ -429,6 +453,14 @@ export function createEditorHost(options: {
   let visibility: EditorKindVisibility = {};
   let focusTarget: EditorFocusTarget | null = null;
   let assets: EditorAssetInfo[] = [...(options.assets ?? [])];
+  const materialSlotReports = new Map<string, EditorMaterialSlotInventory>();
+  const materialSource = (id: string): { sourceUrl?: string; reason?: string } => {
+    const marker = session.getState().document.markers.find((item) => item.id === id);
+    if (!marker) return { reason: `No authored model marker ${id}.` };
+    const catalogId = marker.catalogId ?? marker.meta?.catalogId;
+    const sourceUrl = assets.find((asset) => asset.id === catalogId)?.url;
+    return sourceUrl ? { sourceUrl } : { reason: `Marker ${id} has no URL-backed catalog model.` };
+  };
   let perf: EditorPerfSample | null = null;
   let terrainSampler: TerrainField | null = null;
   let mode: EditorRunMode = "edit";
@@ -492,6 +524,27 @@ export function createEditorHost(options: {
     getAssets: () => assets,
     setAssets(next) {
       assets = [...next];
+      for (const [id, inventory] of materialSlotReports) {
+        if (materialSource(id).sourceUrl !== inventory.sourceUrl) materialSlotReports.delete(id);
+      }
+    },
+    getMaterialSlots(id) {
+      const source = materialSource(id);
+      const inventory = materialSlotReports.get(id);
+      if (source.sourceUrl === undefined || inventory?.sourceUrl !== source.sourceUrl) {
+        materialSlotReports.delete(id);
+        return { id, ...source, status: "unavailable", reason: source.reason ?? "This model has no loaded slot inventory. Select it and open the Materials workspace." };
+      }
+      return structuredClone(inventory);
+    },
+    reportMaterialSlots(id, sourceUrl, report) {
+      if (materialSource(id).sourceUrl !== sourceUrl) return false;
+      const previous = materialSlotReports.get(id);
+      if (previous?.sourceUrl === sourceUrl && previous.status !== "loading" && report.status === "loading") return true;
+      materialSlotReports.delete(id);
+      materialSlotReports.set(id, structuredClone({ ...report, id, sourceUrl }));
+      if (materialSlotReports.size > 64) materialSlotReports.delete(materialSlotReports.keys().next().value!);
+      return true;
     },
     getCatalogDefinitions: () => resolveCatalogDefinitions(session.getState().document, catalogDefinitions),
     getPerf: () => perf,
@@ -570,6 +623,7 @@ export function createEditorHost(options: {
 
   const uninstallHost = installEditorHost(api);
   const dispose = () => {
+    materialSlotReports.clear();
     unsubscribeSessionMirror();
     uninstallLiveSync();
     uninstallHost();

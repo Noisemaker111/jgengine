@@ -22,6 +22,12 @@ export function modelAssetRequests(model: ModelConfig): { models: string[]; text
       const urls = Object.values(modelMapEntries(next.material.maps));
       if (urls.length > 0) textureGroups.set(JSON.stringify(urls), urls);
     }
+    const referencedIds = new Set(next.materialAssignments?.map(assignment => assignment.materialId));
+    for (const asset of next.materialAssets ?? []) {
+      if (!referencedIds.has(asset.id)) continue;
+      const urls = Object.values(asset.textures ?? {}).map(metadata => metadata!.url);
+      if (urls.length > 0) textureGroups.set(JSON.stringify(urls), urls);
+    }
     for (const child of [...(next.parts ?? []), ...(next.attachments ?? [])]) {
       if (typeof child.model !== "string") visit(child.model);
     }

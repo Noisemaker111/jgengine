@@ -26,3 +26,13 @@ test("reused or cyclic compositions terminate and share requests without caching
   model.material = { maps: { color: "/new.png" } };
   expect(modelAssetRequests(model).textureGroups).toEqual([["/new.png"]]);
 });
+
+test("only assigned material assets request maps from a shared material library", () => {
+  const model: ModelConfig = { url: "/model.glb", materialAssets: [
+    { schemaVersion: 1, id: "used", name: "used", family: "stone", capabilities: ["pbr"], surface: {}, textures: { color: { url: "/used.png", colorSpace: "srgb" } } },
+    { schemaVersion: 1, id: "unused", name: "unused", family: "stone", capabilities: ["pbr"], surface: {}, textures: { color: { url: "/unused.png", colorSpace: "srgb" } } },
+  ], materialAssignments: [{ materialId: "used", selector: { mesh: "stone" } }] };
+  expect(modelAssetRequests(model).textureGroups).toEqual([["/used.png"]]);
+  model.materialAssignments = [];
+  expect(modelAssetRequests(model).textureGroups).toEqual([]);
+});
