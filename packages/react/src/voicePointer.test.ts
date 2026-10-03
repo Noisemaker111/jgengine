@@ -44,7 +44,7 @@ afterAll(async () => {
 async function open(mode = "hold") {
   await page.goto(`http://127.0.0.1:${server.port}/?mode=${mode}`);
   await page.getByRole("button", { name: "Crew radio", exact: true }).waitFor({ timeout: 2000 });
-  await page.waitForFunction(() => (window as any).fixture.snapshot().enabled === false, undefined, { timeout: 1000 });
+  await page.waitForFunction(() => { const state = (window as any).fixture.snapshot(); return state.enabled === state.transmitting; }, undefined, { timeout: 1000 });
 }
 async function snapshot() { return page.evaluate(() => (window as any).fixture.snapshot()); }
 async function center(id = 1) {
@@ -173,8 +173,7 @@ test("leaving an owned mouse radio hold retires it before outside release", asyn
   expect(await snapshot()).toMatchObject({ down: 1, up: 1 });
 });
 test("open mic remains caller-owned through button release and suspension", async () => {
-  await open("openMic"); await page.evaluate(() => (window as any).fixture.externalDown());
-  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => resolve())));
+  await open("openMic"); await talking(true);
   const point = await center(); await page.mouse.move(point.x, point.y); await page.mouse.down();
   await page.evaluate(() => window.dispatchEvent(new Event("blur"))); await talking(true);
   await page.mouse.up(); await page.evaluate(() => (window as any).fixture.hide()); await talking(true);

@@ -46,18 +46,17 @@ export function useVoice(options?: UseVoiceOptions): VoiceState {
   const transport = options?.transport;
   const channelId = options?.channelId ?? "voice";
   const resolveRoutes = options?.resolveRoutes;
-  const requestedMode = options?.mode ?? "hold";
+  const requestedMode = options?.mode;
 
-  const [transmitting, setTransmitting] = useState(false);
   const [version, setVersion] = useState(0);
   const bump = useCallback(() => setVersion((current) => current + 1), []);
-  void version;
 
   const pttRef = useRef<ReturnType<typeof createPushToTalk> | null>(null);
   if (pttRef.current === null) {
-    pttRef.current = createPushToTalk({ mode: requestedMode, onChange: setTransmitting });
+    pttRef.current = createPushToTalk({ mode: requestedMode, onChange: bump });
   }
   const ptt = pttRef.current;
+  const transmitting = ptt.transmitting();
 
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
@@ -77,6 +76,8 @@ export function useVoice(options?: UseVoiceOptions): VoiceState {
     }
     try {
       const stream = await getUserMedia({ audio: true });
+      const transmitting = ptt.transmitting();
+      for (const track of stream.getAudioTracks()) track.enabled = transmitting;
       micRef.current = stream;
       setMicStream(stream);
       setMicError(null);
@@ -86,7 +87,7 @@ export function useVoice(options?: UseVoiceOptions): VoiceState {
       setMicError(error instanceof Error ? error.message : "microphone permission denied");
       return false;
     }
-  }, [getUserMedia, transport, channelId]);
+  }, [getUserMedia, transport, channelId, ptt]);
 
   useEffect(() => {
     const stream = micRef.current;
@@ -150,7 +151,7 @@ export function useVoice(options?: UseVoiceOptions): VoiceState {
         return gain;
       },
     }),
-    [supported, micStream, micError, requestMic, transmitting, participants, routes, ptt, bump],
+    [supported, micStream, micError, requestMic, transmitting, participants, routes, ptt, bump, version],
   );
 }
 

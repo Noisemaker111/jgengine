@@ -14,6 +14,8 @@ simulation state. `observeBrowserSuspension` offers the same behavior outside
 React and returns listener cleanup; its optional sources support iframe windows
 and isolated tests.
 
+**Voice transmission state.** `useVoice` (`@jgengine/react/voice`) reads its mode, mute, status and transmission from the push-to-talk controller. Initial `mode: "openMic"` enables transmission on the first render; granted audio tracks adopt the current mode and mute state before publication, including changes made while capture is pending. Transport readiness preserves explicitly enabled hold/toggle sessions. Use `setMode` and `setMuted` for policy changes; microphone permission and transport stay caller-owned.
+
 **Keyboard ownership.** The shell leaves prevented key events and focused text, dialog, grid, gridcell, and toolbar controls to the HUD, clearing held gameplay input at that boundary. Custom keyboard widgets call `preventDefault()` for the keys they handle. Opening a window does not pause simulation or change pointer lock; keep those policies in the game and use `suspendPlayControls(ctx)` when the window should suspend player controls.
 
 **Push-to-talk ownership.** `PushToTalkButton` (`@jgengine/react/voice`) owns one primary pointer or focused Enter/Space activation. Matching release, cancellation, capture loss, browser suspension and button unmount release its hold; mouse departure and keyboard focus loss also retire their activation. Secondary pointers, auxiliary buttons and key repeats cannot change it. Compose a caller-owned `VoiceState`; toggle/open-mic policy and holds started elsewhere remain caller-owned.
