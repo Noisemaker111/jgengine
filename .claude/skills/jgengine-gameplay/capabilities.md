@@ -65,6 +65,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createItemUse` (function) · `import { createItemUse } from "@jgengine/core/gameplay"`
 
+## content-progression-validation — diagnose unavailable sources and blocked cross-content progression under explicit game-owned rules without rejecting intentional seeded cycles
+
+- `validateContentProgression` (function) · `import { validateContentProgression } from "@jgengine/core/game/contentValidation"`
+
+## content-reference-validation — locate duplicate content ids and broken references across game-owned catalog namespaces with repair guidance
+
+- `validateContentReferences` (function) · `import { validateContentReferences } from "@jgengine/core/game/contentValidation"`
+
 ## control-suspension — Suspend player input across overlapping menus without stopping shared simulation.
 
 - `suspendPlayControls` (function) · `import { suspendPlayControls } from "@jgengine/core/game/controlGate"`
@@ -412,6 +420,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## race-track — a checkpoint race with laps, standings, splits, and win conditions
 
 - `createRaceState` (function) · `import { createRaceState } from "@jgengine/core/gameplay"`
+
+## recipe-catalog-validation — locate broken crafting item/station/unlock references, duplicate inputs and invalid authored quantities with repair guidance
+
+- `validateRecipeCatalog` (function) · `import { validateRecipeCatalog } from "@jgengine/core/crafting/recipeCatalog"`
 
 ## resolve — the current tier/band label for a keyed or scalar value
 

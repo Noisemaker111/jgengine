@@ -42,6 +42,12 @@ Validate generated quest catalogs with `validateQuestCatalog` (`game/questCatalo
 Follow the [quest authoring recipe](recipes/quest-authoring.md) for bounded batches,
 canonical facts, external unlock declarations, and precise repair diagnostics.
 
+For cross-catalog sources and skill gates, compose `validateContentReferences` and
+`validateContentProgression` (`game/contentValidation`) with `validateRecipeCatalog`
+(`crafting/recipeCatalog`). Follow [content validation](reference-content-validation.md).
+Games declare complete sources before treating blocked routes as errors; costs,
+consumption, exclusive choices, story and balance still need game-owned playtests.
+
 For generated chapter dialogue, use the [narrative authoring recipe](recipes/narrative-authoring.md)
 and `npx jgengine recipe narrative-authoring`: freeze reviewed canon, validate
 bounded batches, repair located issues and require explicit semantic approval.

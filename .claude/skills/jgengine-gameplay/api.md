@@ -108,7 +108,7 @@
 - `CraftContext` (interface): interface CraftContext { origin?: Vec2; stations?: readonly StationInstance[]; unlocked?: (id: string) => boolean } — ⚠ undocumented
 - `CraftRejection` (type): type CraftRejection = | { reason: "missing-inputs"; missing: readonly RecipeItem[] } | { reason: "no-station"; station: string } | { reason: "locked"; requires: readonly string[] } | { reason: "no-output-space" } — ⚠ undocumented
 - `CraftResult` (type): type CraftResult = { status: "ok"; state: InventoryState } | ({ status: "rejected" } & CraftRejection) — ⚠ undocumented
-- `RecipeDef` (interface): interface RecipeDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; seconds?: number; station?: string; stationRange?: number; requires?: readonly string[]; category?: string } — ⚠ undocumented
+- `RecipeDef` (interface): interface RecipeDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; seconds?: number; station?: string; stationRange?: number; requires?: readonly string[]; category?: string } — ⚠ undocumented · used by `validateRecipeCatalog` (@jgengine/core/crafting/recipeCatalog): Validate native recipes before registration: ids, counts, timing and caller-catalog references.
 - `RecipeGraph` (interface): interface RecipeGraph { all(): readonly RecipeDef[]; get(id: string): RecipeDef | null; producing(itemId: string): RecipeDef[]; using(itemId: string): RecipeDef[]; category(categoryId: string): RecipeDef[] } — ⚠ undocumented
 - `RecipeItem` (interface): interface RecipeItem { itemId: string; count: number } — ⚠ undocumented
 - `StationInstance` (interface): interface StationInstance { catalogId: string; position: Vec2 } — ⚠ undocumented
@@ -119,6 +119,11 @@
 - `hasRecipeInputs` (function): function hasRecipeInputs(state: InventoryState, recipe: RecipeDef): boolean — ⚠ undocumented
 - `missingInputs` (function): function missingInputs(state: InventoryState, recipe: RecipeDef): RecipeItem[] — ⚠ undocumented
 - `stationSatisfied` (function): function stationSatisfied(recipe: RecipeDef, context: CraftContext): boolean — ⚠ undocumented
+
+## @jgengine/core/crafting/recipeCatalog
+
+- `RecipeCatalogValidationOptions` (interface): interface RecipeCatalogValidationOptions — Caller catalogs for native crafting references; omission leaves that namespace unchecked.
+- `validateRecipeCatalog` (function): function validateRecipeCatalog(recipes: readonly RecipeDef[], options: RecipeCatalogValidationOptions = {}): ContentIssue[] — Validate native recipes before registration: ids, counts, timing and caller-catalog references. Empty outputs are valid for game-owned benefits; fractional and zero counts are allowed. Negative/nonfinite counts, durations and ranges reject. Duplicate input rows reject because the crafting input check does not aggregate them; consolidate their counts into one row. No price, scarcity, story or cycle policy is imposed. O(recipes + item rows + requirements).
 
 ## @jgengine/core/data/dataSource
 
@@ -390,6 +395,18 @@
 - `ConnectedPlayer` (interface): interface ConnectedPlayer — A player currently joined to a hosted world — the unit a shared-world loop iterates instead of `ctx.player`. Frozen by the registry (see {@link ConnectedPlayers.get}); fields are `readonly` so a caller can't edit its own copy and assume the change stuck.
 - `ConnectedPlayers` (interface): interface ConnectedPlayers — The set of players connected to one hosted world. A single-player game uses `ctx.player`; a shared-world loop reads `ctx.game.players` so `onTick` can advance every connected hero, not just the one local player. The host (`HostedGameRunner`) drives `join`/`leave`/`setInput`; game code reads `list`/`ids`/`has`/`count`/`input`.
 - `createConnectedPlayers` (function): function createConnectedPlayers(): ConnectedPlayers — Build an empty {@link ConnectedPlayers} registry — the host joins/leaves players; the game loop reads them.
+
+## @jgengine/core/game/contentValidation
+
+- `ContentEntry` (interface): interface ContentEntry — A definition in a game-owned namespace, located in its authored document.
+- `ContentIssue` (interface): interface ContentIssue — A repairable authoring issue. Paths are caller document locations, usually JSON Pointers.
+- `ContentProgressionInput` (interface): interface ContentProgressionInput — Explicit possible sources; opaque fact strings may represent items, unlocks or skill milestones.
+- `ContentProgressionRequirement` (interface): interface ContentProgressionRequirement — A game-declared availability requirement, located at the content that needs it.
+- `ContentProgressionResult` (interface): interface ContentProgressionResult — Potential availability and diagnostics in deterministic input/traversal order.
+- `ContentProgressionRule` (interface): interface ContentProgressionRule — A possible source or action; all required facts must be reachable to provide its facts.
+- `ContentReference` (interface): interface ContentReference extends ContentEntry — A located reference; namespaces can express game-owned roles such as questgiver.
+- `validateContentProgression` (function): function validateContentProgression(input: ContentProgressionInput): ContentProgressionResult — Check declared potential progression using a dependency queue in O(facts + rules + edges). Alternatives are separate rules; every requirement within one rule is necessary. Seeded cycles are valid. An unseeded cycle is blocked only under the declared sources. Facts describe possible availability, not quantities, consumption, mutually exclusive choices, chronology, station proximity or economic balance. Encode those constraints in game-owned rules or playtests. Skill training caps must be explicitly translated into attainable milestones. This is offline authoring analysis, not a quest engine or a per-frame catalog scan.
+- `validateContentReferences` (function): function validateContentReferences(entries: readonly ContentEntry[], references: readonly ContentReference[]): ContentIssue[] — Index definitions once and check references in input order, without mutating the catalog. Namespace strings and roles are game-owned; identical ids in different namespaces are valid. Typed input must be decoded before calling. Work is O(definitions + references + allowed ids).
 
 ## @jgengine/core/game/controlGate
 
@@ -1310,7 +1327,7 @@
 - `RebindSessionConfig` (type): type RebindSessionConfig = RebindSessionActionsConfig | RebindSessionMapConfig — Config for {@link createRebindSession}: an explicit action list, or an {@link ActionCodesMap} + labels.
 - `RebindSessionMapConfig` (interface): interface RebindSessionMapConfig extends RebindSessionCommon — Declare actions from an authored {@link ActionCodesMap}, labelled by `labels` (falling back to the id).
 - `RebindSessionSnapshot` (interface): interface RebindSessionSnapshot — Serializable session state for save/restore.
-- `RecipeDef` (interface): interface RecipeDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; seconds?: number; station?: string; stationRange?: number; requires?: readonly string[]; category?: string } — ⚠ undocumented
+- `RecipeDef` (interface): interface RecipeDef { id: string; inputs: readonly RecipeItem[]; outputs: readonly RecipeItem[]; seconds?: number; station?: string; stationRange?: number; requires?: readonly string[]; category?: string } — ⚠ undocumented · used by `validateRecipeCatalog` (@jgengine/core/crafting/recipeCatalog): Validate native recipes before registration: ids, counts, timing and caller-catalog references.
 - `RecipeItem` (interface): interface RecipeItem { itemId: string; count: number } — ⚠ undocumented
 - `RequireRule` (interface): interface RequireRule — A rule that requires a second condition to hold whenever the first matches — e.g. "a scoped rifle requires a stock". Checked at completeness time, not during incremental placement, because the `then` side may be satisfied by a part chosen later in a generation pass.
 - `ResourceCost` (type): type ResourceCost = Readonly<Record<string, number>> — Resource costs keyed by currency/resource id.
