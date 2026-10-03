@@ -66,6 +66,7 @@ export interface QuestJournalDeps {
 }
 
 export interface QuestJournal {
+  /** Add or replace definitions and refresh active credit indexes; re-register after editing objectives. */
   register(catalog: readonly QuestDef[] | Record<string, QuestDef>): void;
   has(questId: string): boolean;
   canAccept(userId: string, questId: string): { reason: string } | null;
@@ -77,6 +78,7 @@ export interface QuestJournal {
   grant(userId: string, questId: string, options?: { completed?: boolean }): void;
   revoke(userId: string, questId: string): void;
   list(userId: string): QuestInstance[];
+  /** Credit objectives active at event start in catalog order; quests activated during credit join the next event. */
   bind(action: "entity.died" | "inventory.added"): () => void;
   snapshot(userId: string): QuestSnapshotEntry[];
   hydrate(userId: string, data: QuestSnapshotEntry[]): void;
@@ -99,6 +101,107 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   const catalog = new Map<string, QuestDef>();
   const users = new Map<string, Map<string, QuestState>>();
   const turningIn = new Set<QuestState>();
+  type Credit = {
+    questId: string;
+    objective: QuestObjective;
+    order: number;
+    index: number;
+    kind: "kill" | "collect";
+    key: string;
+    shared: boolean;
+  };
+  type CreditIndex = Map<string, Credit[]>;
+  const credits = new Map<string, Credit[]>();
+  const activeUsers = new Map<string, Set<string>>();
+  const userKills = new Map<string, CreditIndex>();
+  const userCollects = new Map<string, CreditIndex>();
+  const sharedKills: CreditIndex = new Map();
+  const catalogOrder = new Map<string, number>();
+
+  function compareCredit(a: Credit, b: Credit): number {
+    return a.order - b.order || a.index - b.index;
+  }
+
+  function updateIndex(index: CreditIndex, key: string, credit: Credit, add: boolean): void {
+    const bucket = index.get(key);
+    if (!add) {
+      if (!bucket) return;
+      const position = bucket.indexOf(credit);
+      if (position !== -1) bucket.splice(position, 1);
+      if (bucket.length === 0) index.delete(key);
+      return;
+    }
+    if (!bucket) {
+      index.set(key, [credit]);
+      return;
+    }
+    let low = 0;
+    let high = bucket.length;
+    while (low < high) {
+      const middle = (low + high) >>> 1;
+      if (compareCredit(bucket[middle]!, credit) < 0) low = middle + 1;
+      else high = middle;
+    }
+    bucket.splice(low, 0, credit);
+  }
+
+  function updateUserIndex(userId: string, questId: string, add: boolean): void {
+    for (const credit of credits.get(questId) ?? []) {
+      const indexes = credit.kind === "kill" ? userKills : userCollects;
+      let index = indexes.get(userId);
+      if (!index) {
+        if (!add) continue;
+        index = new Map();
+        indexes.set(userId, index);
+      }
+      updateIndex(index, credit.key, credit, add);
+      if (index.size === 0) indexes.delete(userId);
+    }
+  }
+
+  function updateSharedIndex(questId: string, add: boolean): void {
+    for (const credit of credits.get(questId) ?? []) {
+      if (credit.kind === "kill" && credit.shared) {
+        updateIndex(sharedKills, credit.key, credit, add);
+      }
+    }
+  }
+
+  function setActive(userId: string, questId: string, active: boolean): void {
+    const members = activeUsers.get(questId);
+    if (active) {
+      if (members?.has(userId)) return;
+      if (members) members.add(userId);
+      else {
+        activeUsers.set(questId, new Set([userId]));
+        updateSharedIndex(questId, true);
+      }
+      updateUserIndex(userId, questId, true);
+    } else if (members?.delete(userId)) {
+      updateUserIndex(userId, questId, false);
+      if (members.size === 0) {
+        activeUsers.delete(questId);
+        updateSharedIndex(questId, false);
+      }
+    }
+  }
+
+  function hydrate(userId: string, data: QuestSnapshotEntry[]): void {
+    for (const [questId, state] of users.get(userId) ?? []) {
+      if (state.status === "active") setActive(userId, questId, false);
+    }
+    const quests = new Map<string, QuestState>();
+    for (const entry of data) {
+      quests.set(entry.questId, {
+        status: entry.status,
+        progress: new Map(Object.entries(entry.progress)),
+      });
+    }
+    users.set(userId, quests);
+    for (const [questId, state] of quests) {
+      if (state.status === "active") setActive(userId, questId, true);
+    }
+  }
 
   function requireUserQuests(userId: string): Map<string, QuestState> {
     let quests = users.get(userId);
@@ -132,6 +235,7 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
     const denied = canAccept(userId, questId);
     if (denied !== null) return denied;
     requireUserQuests(userId).set(questId, { status: "active", progress: new Map() });
+    setActive(userId, questId, true);
     deps.events.emit("quest.accepted", { userId, questId });
     return null;
   }
@@ -189,6 +293,7 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
         if (fail !== null) return fail;
       }
       state.status = "completed";
+      setActive(userId, questId, false);
       deps.events.emit("quest.completed", { userId, questId });
       for (const nextQuestId of def.rewards?.quests ?? []) {
         if (canAccept(userId, nextQuestId) === null) accept(userId, nextQuestId);
@@ -200,33 +305,68 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   }
 
   function creditKill(killerUserId: string, catalogId: string): void {
-    for (const def of catalog.values()) {
-      for (const objective of def.objectives) {
-        if (objective.kind !== "kill" || objective.target !== catalogId) continue;
-        const recipients = new Set([killerUserId]);
-        if (objective.partyShare?.credit === "all" && deps.partyMembersNear) {
-          for (const member of deps.partyMembersNear(killerUserId, objective.partyShare.radius)) {
-            recipients.add(member);
-          }
-        }
-        for (const userId of recipients) progress(userId, def.id, objective.id, 1);
+    const direct = userKills.get(killerUserId)?.get(catalogId) ?? [];
+    const shared = deps.partyMembersNear ? sharedKills.get(catalogId) ?? [] : [];
+    const candidates: Credit[] = [];
+    let a = 0;
+    let b = 0;
+    while (a < direct.length || b < shared.length) {
+      const left = direct[a];
+      const right = shared[b];
+      if (left && right && left === right) {
+        candidates.push(left);
+        a++;
+        b++;
+      } else if (left && (!right || compareCredit(left, right) < 0)) {
+        candidates.push(left);
+        a++;
+      } else {
+        candidates.push(right!);
+        b++;
       }
+    }
+    for (const { questId, objective } of candidates) {
+      const recipients = new Set([killerUserId]);
+      if (objective.partyShare?.credit === "all" && deps.partyMembersNear) {
+        for (const member of deps.partyMembersNear(killerUserId, objective.partyShare.radius)) {
+          recipients.add(member);
+        }
+      }
+      for (const userId of recipients) progress(userId, questId, objective.id, 1);
     }
   }
 
   function creditCollect(userId: string, itemId: string, count: number): void {
-    for (const def of catalog.values()) {
-      for (const objective of def.objectives) {
-        if (objective.kind !== "collect" || objective.item !== itemId) continue;
-        progress(userId, def.id, objective.id, count);
-      }
+    const candidates = userCollects.get(userId)?.get(itemId)?.slice() ?? [];
+    for (const { questId, objective } of candidates) {
+      progress(userId, questId, objective.id, count);
     }
   }
 
   return {
     register(defs) {
-      const entries = Array.isArray(defs) ? defs : Object.values(defs);
-      for (const def of entries) catalog.set(def.id, def);
+      const entries: readonly QuestDef[] = Array.isArray(defs) ? defs : Object.values(defs);
+      for (const def of entries) {
+        const members = activeUsers.get(def.id);
+        if (members) {
+          for (const userId of members) updateUserIndex(userId, def.id, false);
+          updateSharedIndex(def.id, false);
+        }
+        if (!catalogOrder.has(def.id)) catalogOrder.set(def.id, catalogOrder.size);
+        catalog.set(def.id, def);
+        credits.set(def.id, def.objectives.flatMap((objective, index) => {
+          const kind = objective.kind;
+          if (kind !== "kill" && kind !== "collect") return [];
+          const key = kind === "kill" ? objective.target : objective.item;
+          if (key === undefined) return [];
+          return [{ questId: def.id, objective, order: catalogOrder.get(def.id)!, index,
+            kind, key, shared: objective.partyShare?.credit === "all" }];
+        }));
+        if (members) {
+          for (const userId of members) updateUserIndex(userId, def.id, true);
+          updateSharedIndex(def.id, true);
+        }
+      }
     },
     has(questId) {
       return catalog.has(questId);
@@ -235,7 +375,10 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
     accept,
     abandon(userId, questId) {
       const quests = users.get(userId);
-      if (quests?.get(questId)?.status === "active") quests.delete(questId);
+      if (quests?.get(questId)?.status === "active") {
+        quests.delete(questId);
+        setActive(userId, questId, false);
+      }
     },
     progress,
     canTurnIn,
@@ -252,11 +395,13 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
         status: completed ? "completed" : "active",
         progress: progressMap,
       });
+      setActive(userId, questId, !completed);
       if (completed) deps.events.emit("quest.completed", { userId, questId });
       else deps.events.emit("quest.accepted", { userId, questId });
     },
     revoke(userId, questId) {
       users.get(userId)?.delete(questId);
+      setActive(userId, questId, false);
     },
     list(userId) {
       const quests = users.get(userId);
@@ -302,16 +447,7 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
         progress: Object.fromEntries(state.progress),
       }));
     },
-    hydrate(userId, data) {
-      const quests = new Map<string, QuestState>();
-      for (const entry of data) {
-        quests.set(entry.questId, {
-          status: entry.status,
-          progress: new Map(Object.entries(entry.progress)),
-        });
-      }
-      users.set(userId, quests);
-    },
+    hydrate,
     snapshotAll() {
       const out: Record<string, QuestSnapshotEntry[]> = {};
       for (const [userId, quests] of users) {
@@ -325,15 +461,12 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
     },
     hydrateAll(data) {
       users.clear();
+      activeUsers.clear();
+      userKills.clear();
+      userCollects.clear();
+      sharedKills.clear();
       for (const [userId, entries] of Object.entries(data)) {
-        const quests = new Map<string, QuestState>();
-        for (const entry of entries) {
-          quests.set(entry.questId, {
-            status: entry.status,
-            progress: new Map(Object.entries(entry.progress)),
-          });
-        }
-        users.set(userId, quests);
+        hydrate(userId, entries);
       }
     },
   };

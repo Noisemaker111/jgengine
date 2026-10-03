@@ -49,6 +49,15 @@ For whole-world saves, follow [authoritative state](reference-systems.md#authori
 - Random selection accepts injected RNG and stable ordering.
 - Large collections use indexes, queues, or bounded reconciliation rather than repeated scans.
 
+Quest journals index active objectives by kill target and collected item. Bind
+`entity.died` and `inventory.added` once and keep the returned unsubscribe handles;
+credit follows catalog order, and quests activated by a credit callback join the
+next event. Register replacement definitions after editing objective targets,
+items, or party-sharing policy. Save hydration rebuilds the active indexes.
+Shared kills query nearby party members for matching objectives active on any
+user, so the killer need not have that quest; direct kills and collection only
+visit the actor's matching active objectives.
+
 ## Part-composed character motion
 
 A character kit-bashed from primitives/`ModelPart`s (no skeleton, no clips) animates procedurally: tag parts with `role` (`leg.l`, `arm.r`, `head`, `tail`, `wing.l`…) and the shell's part-motion rig drives counter-phase limb swing from the entity's live movement speed, idle breathe/sway, hit flinch on `combat.hitReaction`, and a death topple on `entity.died` — no game-side frame loops. Tune with `ModelConfig.partMotion`; curves are pure and deterministic (`@jgengine/core/game/partAnimation`), so crowds de-sync by instance-id phase and replays stay stable. Soft characters (blobs, slimes) opt into volume-conserving squash-and-stretch with `partMotion: { squashAmp }` — footfall squash, jelly idle breathe, flinch pulse — and `deathStyle: "splat"` flattens out on death instead of the default sideways topple. Rigged GLBs keep using `ModelConfig.animation` — roles are only for rig-less compositions.
