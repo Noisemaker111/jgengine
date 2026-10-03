@@ -469,6 +469,19 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     saveModules.push(module);
   }
 
+  function reviveRestoredEntities(snapshot: WorldSnapshot): void {
+    if (!Object.hasOwn(snapshot, "entities") || !Array.isArray(snapshot["entities"])) return;
+    for (const entity of entities.list()) {
+      const receive = content.entityById?.(entity.name)?.receive;
+      const alive = Object.values(receive ?? {}).every((rule) => {
+        const terminal = rule.order[rule.order.length - 1];
+        const pool = terminal === undefined ? undefined : statsByInstance.get(entity.id)?.[terminal];
+        return pool === undefined || pool.current > pool.min;
+      });
+      if (alive) combat.death.revive(entity.id);
+    }
+  }
+
   // --- Assemble public GameContext ---
   const ctx: GameContext = {
     rng,
@@ -643,11 +656,13 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     snapshot: (viewer) => composeWorldSnapshot(replicationModules, viewer),
     hydrate(snapshot) {
       applyWorldSnapshot(replicationModules, snapshot);
+      reviveRestoredEntities(snapshot);
       signal.notify();
     },
     state: () => structuredClone(composeWorldSnapshot(saveModules)),
     restore(state) {
       applyWorldSnapshot(saveModules, structuredClone(state));
+      reviveRestoredEntities(state);
       signal.notify();
     },
     replicationVersion,
