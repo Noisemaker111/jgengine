@@ -301,11 +301,11 @@ export function findPathResult(
   while (heap.length > 0) {
     const current = heapPop(heap)!;
     if (closed.has(current.key)) continue;
-    if (closed.size >= maxNodes) return { status: "budget", visited: closed.size };
     if (current.key === goalKey) {
       found = true;
       break;
     }
+    if (closed.size >= maxNodes) return { status: "budget", visited: closed.size };
     closed.add(current.key);
     const col = current.key % cols;
     const row = (current.key - col) / cols;
