@@ -838,6 +838,7 @@
     "./postfx/ScreenEffectsOverlay",
     "./postfx/gradeShader",
     "./postfx/postfxOverlay",
+    "./postfx/shadowPrepass",
     "./postfx/stylizePass",
     "./presentationRecovery",
     "./presentationRecovery3d",
