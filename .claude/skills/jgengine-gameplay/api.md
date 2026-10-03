@@ -627,6 +627,17 @@
 - `AUTO_ONE_SHOT_EVENTS` (const): const AUTO_ONE_SHOT_EVENTS: readonly ["hit", "death"] — The two one-shot events the shell fires automatically for an entity, from `combat.hitReaction` and `entity.died`.
 - `resolveOneShotClip` (function): function resolveOneShotClip(oneShots: Record<string, string | readonly string[]> | undefined, event: string, roll: number): string | null — Resolves the clip name a one-shot `event` should play from a model's `animation.oneShots` map, or `null` if the event isn't bound. A `string[]` binding picks a variant by `roll` (a value in `[0, 1)`), so combat can vary attack swings. Pure and deterministic given `roll` — the shell supplies the randomness.
 
+## @jgengine/core/game/narrativeAuthoring
+
+- `NarrativeBatch` (interface): interface NarrativeBatch — A candidate batch never changes canon; accepted new facts need a separately reviewed revision.
+- `NarrativeBatchLimits` (interface): interface NarrativeBatchLimits — Caller budgets across the entire batch, including graph branches and explicit assertions.
+- `NarrativeCanon` (interface): interface NarrativeCanon — Caller-reviewed facts for one authoring revision; event ids are in strict chronological order.
+- `NarrativeClaim` (type): type NarrativeClaim = { readonly nodeId: string } & ( | { readonly kind: "character"; readonly characterId: string } | { readonly kind: "fact"; readonly factId: string; readonly value: string } | { readonly kind: "before"; readonly earlier: string; readonly later: string } ) — An explicit assertion attached to a dialogue node; dialogue prose is never parsed.
+- `NarrativeDialogue` (interface): interface NarrativeDialogue — Authored dialogue with optional structured assertions against canon.
+- `NarrativeIssue` (interface): interface NarrativeIssue — A repair diagnostic with a JSON-pointer location in the candidate batch.
+- `freezeNarrativeCanon` (function): function freezeNarrativeCanon(canon: NarrativeCanon): NarrativeCanon — Detach and freeze reviewed canon before passing it to an asynchronous authoring callback. Duplicate character/event ids and an empty revision throw; facts retain exact caller values.
+- `validateNarrativeBatch` (function): function validateNarrativeBatch(canon: NarrativeCanon, batch: NarrativeBatch, limits: NarrativeBatchLimits): NarrativeIssue[] — Check a typed candidate against caller budgets, canon revision, explicit claims and graph topology. Stops at the first exceeded budget before topology work; stale revisions also stop immediately. Claims check exact fact values and the declared strict event order, never prose, speaker labels, motivations, branch consequences or story quality. O(canon + bounded nodes + choices + claims). Validate/parse external JSON before calling; this is not an untrusted JSON decoder.
+
 ## @jgengine/core/game/notifications
 
 - `NotificationCenterOptions` (interface): interface NotificationCenterOptions — Options for {@link createNotificationCenter}.

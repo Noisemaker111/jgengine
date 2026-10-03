@@ -19,6 +19,7 @@ const SEED = [
   "hitscan-weapon",
   "rolled-gear",
   "enter-vehicle",
+  "narrative-authoring",
 ];
 
 const here = dirname(fileURLToPath(import.meta.url));

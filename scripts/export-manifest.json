@@ -165,6 +165,7 @@
     "./game/lootPipeline",
     "./game/lootTable",
     "./game/modelAnimation",
+    "./game/narrativeAuthoring",
     "./game/notifications",
     "./game/objectives",
     "./game/paramLayers",

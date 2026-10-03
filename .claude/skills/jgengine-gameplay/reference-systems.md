@@ -27,6 +27,8 @@ Generate bounded chapter or catalog batches against those facts and existing def
 
 Use `validateQuestCatalog` (`@jgengine/core/game/questCatalog`) before registering quest batches. Declare unlocks supplied by other systems with `externalUnlocks`, and quest grants that bypass acceptance with `externallyStartedQuests`. Catalog reward unlocks are recognized automatically. `hasReference` optionally checks item, target, inventory, and currency ids against caller catalogs. Duplicate ids, missing references, and invalid quantities are errors; blocked prerequisites and dependency cycles are warnings under a model where any eligible quest may be accepted and its objectives completed. External grants can change actual reachability. Follow the [quest authoring recipe](recipes/quest-authoring.md) and `npx jgengine recipe quest-authoring` for SDK-typechecked bounded generation and repair locations.
 
+For repeated authoring and repair, follow the [narrative authoring recipe](recipes/narrative-authoring.md). It freezes a reviewed canon revision, bounds dialogue batches and checks explicit character/fact/event-order claims before an injected semantic reviewer approves. New canon is a separate author decision.
+
 Validate dialogue structure before opening a conversation:
 
 ```ts

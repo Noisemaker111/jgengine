@@ -297,6 +297,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createNameGenerator` (function) · `import { createNameGenerator } from "@jgengine/core/gameplay"`
 
+## narrative-batch-validation — locate stale canon, oversized batches, explicit character/fact/chronology contradictions and dialogue graph issues for bounded repair
+
+- `validateNarrativeBatch` (function) · `import { validateNarrativeBatch } from "@jgengine/core/game/narrativeAuthoring"`
+
+## narrative-canon — freeze caller-reviewed character ids, facts and chronology for a narrative authoring revision
+
+- `freezeNarrativeCanon` (function) · `import { freezeNarrativeCanon } from "@jgengine/core/game/narrativeAuthoring"`
+
 ## notice-feed — serializable tone-tagged notice/event feed bounded by count and age (toasts, life events, killfeed)
 
 - `appendFeed` (function) · `import { appendFeed } from "@jgengine/core/gameplay"`
