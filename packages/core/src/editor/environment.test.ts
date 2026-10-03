@@ -8,6 +8,7 @@ import {
   terrainBoundsFromDocument,
 } from "./environment";
 import type { EditorDocument, EditorMarker } from "./types";
+import { createTerrainSnapshot } from "../world/terraform";
 
 function marker(id: string, kind: string, x: number, z: number): EditorMarker {
   return { id, kind, position: { x, y: 0, z } };
@@ -65,7 +66,7 @@ describe("environmentContentFromDocument", () => {
 
     const sculpted: EditorDocument = {
       ...doc,
-      terrain: { version: 1, resolution: 2, size: 10, offsets: [] } as unknown as EditorDocument["terrain"],
+      terrain: createTerrainSnapshot({ bounds: { minX: -5, minZ: -5, maxX: 5, maxZ: 5 }, cellSize: 2 }),
     };
     expect(environmentContentFromDocument(sculpted).sculpt).toBe(sculpted.terrain);
   });

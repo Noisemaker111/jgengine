@@ -256,3 +256,15 @@ undoable `setMinimapBake` command. Runtime feeds the stored `background`/`bounds
   error inline.
 - RPC/CLI verb: `bake_minimap` (optional `padding`, `resolution`, `waterLevel`). The bake path uses
   no `Date`/`Math.random`, so the same scene + sampler always bakes byte-identical output.
+
+## Terrain and viewport iteration
+
+`create_terrain` rejects invalid dimensions and more than 1,000,000 vertices before allocation; increase `cellSize` for larger maps. Brush coordinates, radius and strength must be finite, radius positive, strength nonnegative. A ramp requires both `toX` and `toZ`; blend strength is 0–1.
+
+`blend_terrain` adds a missing material layer and paints it as one authored action: one notification and one undo. A missed or invalid brush changes neither the layer stack nor undo/redo. `set_terrain_layers` and `EditableTerrain.setLayers` preserve blends by stable layer id across additions, reorder and material parameter edits. Removing a painted layer normalizes surviving weights; replacing every painted layer clears the obsolete buffer.
+
+Viewport placement honors grid snap for marker, zone, note and path points on X/Z, then resamples the authored sculpt composed over the shared base ground field. Paths select along visible segments as well as vertices. Multi-selection gizmos translate the whole group; rotate/scale remain available for individual supported objects.
+
+Terrain-only scenes work with `camera_frame` / Frame all: the authored footprint and sculpt relief contribute to document bounds without a temporary marker. Native runner captures use `drive editor --param editor=standalone` and the same editor RPCs.
+
+Grid placement resamples the authored sculpt composed over the live base ground field at snapped XZ for markers, volumes, notes and draft path points. It uses the same terrain/path policy as the ground overlays (including the ground field’s off-map behavior), and flat Y=0 when no ground sampler is mounted. Nonfinite surface heights reject placement without changing the document or clearing the tool.

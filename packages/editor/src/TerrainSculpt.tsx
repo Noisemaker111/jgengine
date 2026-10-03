@@ -258,6 +258,7 @@ const SculptMesh = memo(function SculptMesh({
   heightRange: readonly [number, number];
   contourStrength: number;
 }) {
+  const invalidate = useThree((state) => state.invalidate);
   const geometry = useMemo(() => {
     const width = Math.max(1, bounds.maxX - bounds.minX);
     const depth = Math.max(1, bounds.maxZ - bounds.minZ);
@@ -275,8 +276,9 @@ const SculptMesh = memo(function SculptMesh({
     pendingRef.current = null;
     const region = pending !== null && pending.kind === "region" ? pending.region : null;
     displace(geometry, terrain, bounds, region, paletteAt, heightRange, contourStrength);
+    invalidate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [geometry, terrain, revision, paletteAt, heightRange, contourStrength]);
+  }, [geometry, terrain, revision, paletteAt, heightRange, contourStrength, invalidate]);
 
   return (
     <mesh geometry={geometry} receiveShadow>

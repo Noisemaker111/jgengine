@@ -86,6 +86,37 @@ describe("weighted blend", () => {
     expect(reader.surfaceAt(0, 0)).toBe("grass");
   });
 
+  test("layer additions, reorder and parameter edits retain weights by identity", () => {
+    const terrain = createEditableTerrain({ bounds, cellSize: 2 });
+    terrain.fillSurfaceDelta("grass");
+    terrain.setLayers(layers);
+    terrain.blendPaintDelta({ mode: "paint", center: [0, 0], radius: 6, surface: "dirt", strength: 0.5 });
+    const before = terrain.weightsAt(0, 0);
+    terrain.setLayers([{ id: "dirt", surface: "dirt", opacity: 0.7 }, { id: "grass", surface: "grass" }, { id: "rock", surface: "rock" }]);
+    expect(terrain.weightsAt(0, 0)).toEqual([before[1]!, before[0]!, 0]);
+    terrain.setLayers([{ id: "dirt", surface: "dirt" }]);
+    expect(terrain.weightsAt(0, 0)).toEqual([1]);
+    terrain.setLayers([]);
+    expect(terrain.snapshot().weights).toBeUndefined();
+  });
+
+  test("adding layers to partially painted bare ground preserves its blend strength", () => {
+    const terrain = createEditableTerrain({ bounds, cellSize: 2 });
+    terrain.setLayers(layers);
+    terrain.blendPaintDelta({ mode: "paint", center: [0, 0], radius: 6, surface: "dirt", strength: 0.5 });
+    const before = terrain.weightsAt(0, 0);
+    terrain.setLayers([...layers, { id: "rock", surface: "rock" }]);
+    expect(terrain.weightsAt(0, 0)).toEqual([...before, 0]);
+  });
+
+  test("oversized brushes traverse only the terrain grid", () => {
+    const terrain = createEditableTerrain({ bounds, cellSize: 2 });
+    expect(terrain.editDelta({ mode: "raise", center: [0, 0], radius: 1e9, strength: 1 }).indices).toHaveLength(17 * 17);
+    expect(terrain.paintDelta({ mode: "paint", center: [0, 0], radius: 1e9, surface: "grass" }).indices).toHaveLength(16 * 16);
+    terrain.setLayers(layers);
+    expect(terrain.blendPaintDelta({ mode: "paint", center: [0, 0], radius: 1e9, surface: "dirt" }).indices.length).toBeGreaterThan(0);
+  });
+
   test("setLayers with a changed id sequence drops stale weights", () => {
     const terrain = createEditableTerrain({ bounds, cellSize: 2 });
     terrain.setLayers(layers);

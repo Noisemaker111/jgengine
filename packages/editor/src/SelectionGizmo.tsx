@@ -14,6 +14,7 @@ import {
   type TransformGizmoPose,
 } from "@jgengine/shell/structures/TransformGizmo";
 
+import { placementGround, pathSegmentDistance, selectionGizmoMode, snapPlacement } from "./authoringPlacement";
 import { isPointerClick } from "./viewportContextMenu";
 import type { EditorHostApi } from "./session";
 import { resolvePivotPosition } from "./gizmoPivot";
@@ -154,18 +155,16 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
     let down: { x: number; y: number; button: number } | null = null;
 
     const session = () => api.getSession();
-    const screenDistance = (
-      point: EditorVec3,
-      lift: number,
-      clickX: number,
-      clickY: number,
-      rect: DOMRect,
-    ): number | null => {
+    const screenPoint = (point: EditorVec3, lift: number, rect: DOMRect): { x: number; y: number } | null => {
       projected.set(point.x, point.y + lift, point.z).project(camera);
       if (projected.z < -1 || projected.z > 1) return null;
       const px = (projected.x * 0.5 + 0.5) * rect.width;
       const py = (-projected.y * 0.5 + 0.5) * rect.height;
-      return Math.hypot(px - clickX, py - clickY);
+      return { x: px, y: py };
+    };
+    const screenDistance = (point: EditorVec3, lift: number, clickX: number, clickY: number, rect: DOMRect): number | null => {
+      const projectedPoint = screenPoint(point, lift, rect);
+      return projectedPoint === null ? null : Math.hypot(projectedPoint.x - clickX, projectedPoint.y - clickY);
     };
 
     const groundPoint = (clickX: number, clickY: number, rect: DOMRect): EditorVec3 | null => {
@@ -185,6 +184,11 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
     const place = (point: EditorVec3, keepTool: boolean) => {
       const placement = ui.getState().placement;
       if (placement === null) return;
+      const ground = placementGround(session().getState().document.terrain, api.getTerrainSampler());
+      const snapped = snapPlacement(point, ui.getState().snapMode, ui.getState().gridSize,
+        (x, z) => ground?.sampleHeight(x, z) ?? 0);
+      if (snapped === null) return;
+      point = snapped;
       if (placement.tool === "path") {
         ui.pushDraftPoint(point);
         return;
@@ -246,11 +250,16 @@ export const ViewportSelect = memo(function ViewportSelect({ api, ui }: { api: E
       for (const path of state.document.paths) {
         if (visibility[path.kind] === false || path.hidden === true) continue;
         let best: number | null = null;
+        let previous: { x: number; y: number } | null = null;
         for (const point of path.points) {
-          const distance = screenDistance(point, 0.8, clickX, clickY, rect);
-          if (distance !== null && distance < SCREEN_PICK_RADIUS_PX && (best === null || distance < best)) {
-            best = distance;
+          const projectedPoint = screenPoint(point, 0.8, rect);
+          if (projectedPoint !== null) {
+            const distance = previous === null
+              ? Math.hypot(projectedPoint.x - clickX, projectedPoint.y - clickY)
+              : pathSegmentDistance({ x: clickX, y: clickY }, previous, projectedPoint);
+            if (distance < SCREEN_PICK_RADIUS_PX && (best === null || distance < best)) best = distance;
           }
+          previous = projectedPoint;
         }
         if (best !== null) candidates.push({ id: path.id, distance: best });
       }
@@ -459,7 +468,7 @@ function resolveTarget(
   pivot: GizmoPivot,
 ): GizmoTarget | null {
   const { document } = session.getState();
-  if (pathPoint !== null) {
+  if (pathPoint !== null && selection.length === 1 && selection[0] === pathPoint.pathId) {
     const path = findEditorPath(document, pathPoint.pathId);
     const point = path?.points[pathPoint.index];
     if (point !== undefined) return { position: point, lift: 0.8, rotationY: 0, kind: "pathPoint" };
@@ -479,12 +488,6 @@ function resolveTarget(
   if (pivotPos === null) return primary;
   // Multi-select always translates as a group from the pivot; rotation/scale stay primary-kind limited.
   return { position: pivotPos, lift: primary.lift, rotationY: primary.rotationY, kind: primary.kind };
-}
-
-function effectiveMode(mode: GizmoMode, kind: GizmoTarget["kind"]): GizmoMode {
-  if (kind === "marker") return mode === "scale" ? "translate" : mode;
-  if (kind === "volume") return mode === "rotate" ? "translate" : mode;
-  return "translate";
 }
 
 /**
@@ -508,7 +511,7 @@ export const SelectionGizmo = memo(function SelectionGizmo({
     () => resolveTarget(session, state.selection, uiState.pathPoint, uiState.gizmoPivot),
     [state, uiState.pathPoint, uiState.gizmoPivot, session],
   );
-  const mode = target === null ? "translate" : effectiveMode(uiState.gizmoMode, target.kind);
+  const mode = target === null ? "translate" : selectionGizmoMode(uiState.gizmoMode, target.kind, target.kind === "pathPoint" ? 1 : state.selection.length);
 
   if (target === null) return null;
 

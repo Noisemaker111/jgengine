@@ -1435,6 +1435,18 @@ export function editorDocumentBounds(doc: EditorDocument): {
     include(note.position.x, note.position.y, note.position.z);
   }
 
+  if (doc.terrain !== undefined) {
+    const terrain = doc.terrain;
+    let low = 0;
+    let high = 0;
+    for (const offset of terrain.offsets) {
+      low = Math.min(low, offset);
+      high = Math.max(high, offset);
+    }
+    include(terrain.bounds.minX, low, terrain.bounds.minZ);
+    include(terrain.bounds.maxX, high, terrain.bounds.maxZ);
+  }
+
   if (!any) return null;
   return {
     min: { x: minX, y: minY, z: minZ },
