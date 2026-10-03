@@ -119,10 +119,10 @@ function applyHair(material: THREE.MeshStandardMaterial, asset: MaterialAsset): 
   material.userData.jgHairBacklightStrength = strength;
   const previousCompile = material.onBeforeCompile;
   const previousKey = material.customProgramCacheKey();
-  material.onBeforeCompile = (shader, renderer) => {
-    previousCompile.call(material, shader, renderer);
-    const uniform = { value: strength * ((material.userData.jgHairLightExposure as number | undefined) ?? 1) };
-    material.userData.jgHairBacklightUniform = uniform;
+  material.onBeforeCompile = function (this: THREE.MeshStandardMaterial, shader, renderer) {
+    previousCompile.call(this, shader, renderer);
+    const uniform = { value: strength * ((this.userData.jgHairLightExposure as number | undefined) ?? 1) };
+    this.userData.jgHairBacklightUniform = uniform;
     shader.uniforms.uJgHairBacklight = uniform;
     shader.uniforms.uJgHairTint = { value: tint };
     const directDiffuse = "reflectedLight.directDiffuse += irradiance * BRDF_Lambert( material.diffuseContribution );";
