@@ -133,7 +133,6 @@
   "@jgengine/core/visibility/diagnostics#createVisibilityStats",
   "@jgengine/core/visibility/diagnostics#nowMs",
   "@jgengine/core/visibility/diagnostics#resetCullingStats",
-  "@jgengine/core/visibility/distance#culledByDistance",
   "@jgengine/core/visibility/distance#distanceSquared",
   "@jgengine/core/visibility/occlusion#createAxisAlignedOcclusionTester",
   "@jgengine/core/visibility/settings#mergeCullingSettings",

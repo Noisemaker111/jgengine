@@ -69,6 +69,7 @@ import {
   rtsPanKeysConflict,
 } from "./camera";
 import { CullingProvider } from "./visibility/CullingProvider";
+import { BuildingRenderBudget } from "./structures/BuildingRenderBudget";
 import { SkyDaylight, TimeOfDayDaylight } from "./environment";
 import { bearingFromDirection } from "./environment/daylightCycle";
 import { resolveSkyLightOwnership, skyEmitsLights } from "./environment/skyLightingPolicy";
@@ -610,6 +611,7 @@ export function Shell3dPresentation({
                 ) : null}
                 <BackdropFog fog={backdrop?.fog} />
                 <GameProvider context={ctx}>
+                  <BuildingRenderBudget drawDistance={graphics.profile.drawDistance} visibility={playable.visibility} cullingDisabled={splitScreen}>
                   <CullingProvider config={playable.visibility} drawDistance={graphics.profile.drawDistance}>
                     <WorldView
                       entitySprites={playable.entitySprites}
@@ -677,6 +679,7 @@ export function Shell3dPresentation({
                     }}
                   />
                   <PointerProbe service={pointerService} />
+                  </BuildingRenderBudget>
                 </GameProvider>
                 <RemotePlayers rows={remotePlayers} />
                 <FrameDriver
