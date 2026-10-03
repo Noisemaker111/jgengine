@@ -8,6 +8,32 @@ in-memory session and, when every RPC succeeds, writes the session document to
 the GUI's Ctrl+S through `devSavePlugin`). Without `--save`, `--rpc` mutations are discarded on
 exit — use it for read-only inspection only, or capture `export_document` yourself.
 
+## Atomic authoring batches
+
+Use `document_revision` to inspect the current revision, then send one `push_document_patch` for a complete placement operation. Commands use the `EditorCommand` shapes from `@jgengine/core/editor/commands`, rather than RPC verb shapes. Earlier commands' ids are available to later commands in the same batch:
+
+```json
+{
+  "method": "push_document_patch",
+  "patch": {
+    "type": "commands",
+    "baseRevision": 0,
+    "commands": [
+      { "type": "addMarker", "marker": { "id": "placed_a", "kind": "prop", "catalogId": "my-model", "position": { "x": 1, "y": 0, "z": 2 } } },
+      { "type": "addPath", "path": { "id": "route_a", "kind": "route", "points": [{ "x": 0, "y": 0, "z": 0 }, { "x": 1, "y": 0, "z": 2 }] } },
+      { "type": "createCollection", "id": "region_a", "name": "Region A", "memberIds": ["placed_a", "route_a"] }
+    ]
+  }
+}
+```
+
+`my-model` is a model in the game's own catalog. Send this JSON through `--rpc-file <file> --save`, the live bridge, or the embedded agent's existing tool. Human code can use `session.transaction(commands)` with the same commands and undo contract.
+
+- All commands stage before commit. A malformed command, missing/locked target, parent cycle, or cross-kind object-id collision rejects the whole batch, preserving the document, selection, undo/redo history, revision, and live subscribers. Errors include `commands[N]`; the RPC also returns `result.commandIndex` and the unchanged `result.revision`.
+- A successful edit emits one session notification, publishes one document revision, and forms one undo/redo step. Selection-only changes do not publish or consume document history. `undo`/`redo` commands cannot run inside a transaction.
+- Existing same-kind object ids upsert without automatic renaming. Repeating an already-current transform or stable-id placement succeeds without publishing another revision or consuming history. After a revision conflict, inspect the latest document before retrying against its revision. `force` skips only the revision check; validation and rollback still apply.
+- Explicit copy operations such as `duplicate`, `addFragment`, and `insertPrefab` retain their existing generated-id behavior. Use direct `addMarker`/`addVolume`/`addPath`/`addNote` commands when gameplay needs caller-owned stable ids.
+
 # Editor agent panel (embedded)
 
 Toolbar **Agent** opens a dockable chat panel in `EditorChrome`. Tool calls use the same editor RPC verbs as the MCP/CLI bridge and the GUI — one session undo stack, interleaved with human edits.
@@ -45,6 +71,7 @@ Each `toolCalls[].name` is an editor RPC method (`set_transform`, `select`, …)
 The bridge is trustworthy so agents author instead of hardcoding — every path is honest about failure:
 
 - **Rejected mutations return `ok:false` with a reason.** A locked/cyclic `set_transform`, a `set_parent` that would form a cycle, a collection/prefab verb targeting a missing id, and a batch verb that matches nothing all fail loudly — never a phantom `{ok:true}`.
+- **Command patches are atomic.** `push_document_patch` commands share `EditorSession.transaction` with core live sync: a bad command rolls back the entire batch, and an accepted batch has one undo step and document publication. See [atomic authoring batches](#atomic-authoring-batches).
 - **One decode/migrate boundary.** `decodeEditorDocument` (`@jgengine/core/editor`) validates every field with a path-specific diagnostic (`$.markers[2].position`) and migrates forward; `import_document` and a `push_document_patch` **snapshot** both clear it, so a malformed or old document fails or migrates loudly rather than corrupting a live session.
 - **Document-global id uniqueness.** Placeable ids (markers/volumes/paths/notes) are one namespace: adds re-id on collision, and a single imported document that reuses an id is rejected with its path — a duplicate-id import is impossible. Combine paths (`mergeEditorDocuments`, duplicate, overlay) re-id instead.
 - **Schema-validated input.** `decodeEditorBridgeRequest` type-checks each field a method understands against the per-method schema before it reaches `handle` — a fuzzed value (string where a number belongs, scalar where an object belongs) is rejected at the `--rpc`/HTTP/stdio/agent-tool boundary, never cast in blind. Missing/unknown fields are left to `handle`'s guards so the boundary stays forward-compatible.

@@ -43,7 +43,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "scene_summary", description: "Compact summary of the editor document and bounds." },
   { name: "export_document", description: "Export the editor document as JSON text." },
   { name: "import_document", description: "Replace the session document from JSON text." },
-  { name: "push_document_patch", description: "Apply a versioned document patch (snapshot or commands) over the live-sync bus. Document is authoritative; force skips baseRevision checks." },
+  { name: "push_document_patch", description: "Apply a versioned document patch (snapshot or commands). Command batches validate atomically, publish once, and form one undo step; failure reports commands[index] without applying any edits. Same-kind add commands upsert stable ids. History commands are rejected. Force skips baseRevision checks." },
   { name: "pull_document_patches", description: "Pull document patches after a known revision (live-sync stream for a running game)." },
   { name: "document_revision", description: "Current live-sync document revision; optionally include the full document." },
   { name: "push_runtime_delta", description: "Publish ephemeral runtime state (entities/tunables) on the reverse channel — does not mutate the document." },

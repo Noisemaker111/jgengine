@@ -4,7 +4,7 @@
 
 ## @jgengine/core/editor
 
-- `ApplyDocumentPatchResult` (type): type ApplyDocumentPatchResult = | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch } | { ok: false; error: string } — Result of applying a {@link DocumentPatch} to a document + revision pair.
+- `ApplyDocumentPatchResult` (type): type ApplyDocumentPatchResult = | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch } | { ok: false; error: string; commandIndex?: number } — Result of applying a {@link DocumentPatch} to a document + revision pair.
 - `AsciiGridExportOptions` (interface): interface AsciiGridExportOptions — Options for rendering a grid layer back out as an ASCII/glyph map.
 - `AsciiGridImportOptions` (interface): interface AsciiGridImportOptions — Options for importing an ASCII/glyph map into a grid layer. Provide `glyphMap` (char → value id) or a `palette` whose entries carry `glyph`s (or both — `glyphMap` wins on conflict). Any glyph not mapped, and any short-row padding, resolves to `empty`.
 - `CURRENT_GRID_SCHEMA_VERSION` (const): const CURRENT_GRID_SCHEMA_VERSION: 1 — The grid-layer cell-schema version this build writes and migrates toward.
@@ -53,6 +53,7 @@
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
 - `EditorSkyPreset` (type): type EditorSkyPreset = "day" | "dusk" | "night" — Named sky look stored on the scene document; matches runtime `SkyEnvironmentConfig.preset`.
 - `EditorTerrain` (type): type EditorTerrain = TerraformSnapshot — A sculpted heightfield authored in the editor: the {@link TerraformSnapshot} of offset deltas over the game's base ground. Serializes with the scene; a game rebuilds the field with `editableTerrainFromSnapshot`.
+- `EditorTransactionResult` (type): type EditorTransactionResult = | { ok: true; state: EditorSessionState; changed: boolean } | { ok: false; error: string; commandIndex?: number } — Atomic command-batch outcome; a failure identifies the zero-based command index.
 - `EditorUiDocument` (interface): interface EditorUiDocument — Scene-document HUD section: panel id → layout. Single source of truth for placement.
 - `EditorUiPanelLayout` (interface): interface EditorUiPanelLayout — Authored layout for one HUD panel inside `editor.scene.json` → `ui.panels`.
 - `EditorVec3` (type): type EditorVec3 = { x: number; y: number; z: number } — A world-space point used across editor markers, volumes, and paths.
@@ -166,6 +167,7 @@
 - `EditorDispatchOptions` (interface): interface EditorDispatchOptions — Per-dispatch options; `coalesce` merges consecutive same-key edits into one undo step.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
 - `EditorSessionState` (interface): interface EditorSessionState — The document plus current selection at a point in editor history.
+- `EditorTransactionResult` (type): type EditorTransactionResult = | { ok: true; state: EditorSessionState; changed: boolean } | { ok: false; error: string; commandIndex?: number } — Atomic command-batch outcome; a failure identifies the zero-based command index.
 
 ## @jgengine/core/editor/directives
 
@@ -250,7 +252,7 @@
 
 ## @jgengine/core/editor/liveSync
 
-- `ApplyDocumentPatchResult` (type): type ApplyDocumentPatchResult = | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch } | { ok: false; error: string } — Result of applying a {@link DocumentPatch} to a document + revision pair.
+- `ApplyDocumentPatchResult` (type): type ApplyDocumentPatchResult = | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch } | { ok: false; error: string; commandIndex?: number } — Result of applying a {@link DocumentPatch} to a document + revision pair.
 - `DocumentLiveEvent` (interface): interface DocumentLiveEvent — Event emitted when the authoritative document changes on a {@link DocumentLiveSync}.
 - `DocumentLiveSync` (interface): interface DocumentLiveSync — Two-way live-sync bus: document patches out, runtime state deltas back.
 - `DocumentPatch` (type): type DocumentPatch = | { type: "snapshot"; revision?: number; baseRevision: number; document: EditorDocument; } | { type: "commands"; revision?: number; baseRevision: number; commands: readonly EditorCommand[]; } — One versioned document mutation on the live-sync stream. `snapshot` replaces the whole document; `commands` replays structural editor commands onto the current document. `baseRevision` must match the receiver's current revision unless `force` is set (document authority from the editor).

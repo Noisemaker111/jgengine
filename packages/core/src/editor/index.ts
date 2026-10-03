@@ -177,6 +177,8 @@ export type { EditorDispatchOptions } from "./commands";
 export type { EditorSession } from "./commands";
 /** The document plus current selection at a point in editor history. */
 export type { EditorSessionState } from "./commands";
+/** Atomic command-batch outcome; a failure identifies the zero-based command index. */
+export type { EditorTransactionResult } from "./commands";
 export {
   applyDocumentPatch,
   applyRuntimeStateDelta,

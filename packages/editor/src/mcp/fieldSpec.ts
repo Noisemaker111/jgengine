@@ -126,7 +126,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   flood_fill_grid: [req(s("id")), req(n("col")), req(n("row")), req(s("value"))],
   resize_grid_layer: [req(s("id")), req(n("cols")), req(n("rows"))],
   import_grid: [req(s("id")), req(s("kind")), req(s("format", ["ascii", "csv"])), req(s("text")), s("empty"), n("cellSize"), v3("origin"), o("glyphMap"), oa("palette")],
-  push_document_patch: [req(o("patch")), b("force")],
+  push_document_patch: [{ ...req(o("patch")), of: [req(s("type", ["snapshot", "commands"])), req(n("baseRevision")), oa("commands"), o("document"), n("revision")] }, b("force")],
   pull_document_patches: [n("sinceRevision")],
   document_revision: [b("includeDocument")],
   push_runtime_delta: [n("at"), oa("entities"), sa("removeIds"), o("tunables")],

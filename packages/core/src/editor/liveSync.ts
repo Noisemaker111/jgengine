@@ -25,7 +25,7 @@ export type DocumentPatch =
 /** Result of applying a {@link DocumentPatch} to a document + revision pair. */
 export type ApplyDocumentPatchResult =
   | { ok: true; document: EditorDocument; revision: number; patch: DocumentPatch }
-  | { ok: false; error: string };
+  | { ok: false; error: string; commandIndex?: number };
 
 /** One live entity row the runtime may stream to the editor (play-mode inspector feed). */
 export interface RuntimeEntityState {
@@ -91,15 +91,16 @@ export function applyDocumentPatch(
       patch: { ...patch, revision: nextRevision, document: nextDoc },
     };
   }
-  if (patch.commands.length === 0) {
+  if (!Array.isArray(patch.commands) || patch.commands.length === 0) {
     return { ok: false, error: "commands patch is empty" };
   }
-  const session = createEditorSession(cloneEditorDocument(document));
-  for (const command of patch.commands) {
-    session.dispatch(command);
-  }
-  const nextDoc = session.getState().document;
-  const nextRevision = revision + 1;
+  const session = createEditorSession(document);
+  const before = session.getState().document;
+  const result = session.transaction(patch.commands);
+  if (!result.ok) return result;
+  const changed = result.state.document !== before;
+  const nextDoc = changed ? result.state.document : document;
+  const nextRevision = changed ? revision + 1 : revision;
   return {
     ok: true,
     document: nextDoc,
@@ -246,7 +247,7 @@ export function createDocumentLiveSync(initial: EditorDocument): DocumentLiveSyn
     applyPatch(patch, options) {
       const result = applyDocumentPatch(document, revision, patch, options);
       if (!result.ok) return result;
-      commit(result);
+      if (result.revision !== revision) commit(result);
       return result;
     },
     replaceDocument(next) {

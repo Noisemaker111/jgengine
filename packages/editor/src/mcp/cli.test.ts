@@ -112,6 +112,28 @@ describe("saveSceneDocument", () => {
 });
 
 describe("editor CLI entry", () => {
+  test("command patch authors a region in one RPC and rolls back a bad batch", async () => {
+    const patch = {
+      type: "commands", baseRevision: 0, commands: [
+        { type: "addMarker", marker: { id: "placed", kind: "prop", catalogId: "game-model", position: { x: 1, y: 0, z: 2 } } },
+        { type: "addPath", path: { id: "route", kind: "route", points: [{ x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 2 }] } },
+        { type: "createCollection", id: "region", name: "Region", memberIds: ["placed", "route"] },
+      ],
+    };
+    const authored = await runCli(["--game", "__no-such-game__", "--rpc", JSON.stringify({ method: "push_document_patch", patch }), "--rpc", '{"method":"export_document"}']);
+    expect(authored.code).toBe(0);
+    const responses = JSON.parse(`[${authored.stdout.trim().replace(/\}\n\{/g, "},{")}]`);
+    expect(responses[0]).toMatchObject({ ok: true, result: { revision: 1, markers: 1, paths: 1 } });
+    const document = JSON.parse(responses[1].result.json);
+    expect(document.markers[0].id).toBe("placed");
+    expect(document.collections[0].memberIds).toEqual(["placed", "route"]);
+    const rejected = await runCli(["--game", "__no-such-game__", "--rpc", JSON.stringify({ method: "push_document_patch", patch: {
+      ...patch, commands: [...patch.commands, { type: "remove", id: "missing" }],
+    } })]);
+    expect(rejected.code).toBe(1);
+    expect(JSON.parse(rejected.stdout)).toMatchObject({ ok: false, result: { commandIndex: 3, revision: 0 } });
+  }, 20_000);
+
   test("--save without an RPC batch is an error", async () => {
     const { code, stderr } = await runCli(["--game", "__no-such-game__", "--save"]);
     expect(code).toBe(1);

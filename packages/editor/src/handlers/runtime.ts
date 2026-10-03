@@ -40,8 +40,8 @@ export const runtimeHandlers: Pick<
     if (patch.type !== "snapshot" && patch.type !== "commands") {
       return { ok: false, error: `unknown document patch type: ${String((patch as { type?: unknown }).type)} (snapshot | commands)` };
     }
-    if (typeof patch.baseRevision !== "number") {
-      return { ok: false, error: "push_document_patch requires a numeric baseRevision" };
+    if (!Number.isSafeInteger(patch.baseRevision) || patch.baseRevision < 0) {
+      return { ok: false, error: "push_document_patch requires a nonnegative safe-integer baseRevision" };
     }
     if (!force && patch.baseRevision !== ctx.liveSync.getRevision()) {
       return { ok: false, error: `baseRevision mismatch: patch=${patch.baseRevision} current=${ctx.liveSync.getRevision()}` };
@@ -59,13 +59,9 @@ export const runtimeHandlers: Pick<
     }
     if (!Array.isArray(patch.commands)) return { ok: false, error: "commands patch requires a commands array" };
     if (patch.commands.length === 0) return { ok: false, error: "commands patch is empty" };
-    for (const command of patch.commands) {
-      const { applied } = ctx.dispatchGuarded(command);
-      if (!applied && command.type !== "select" && command.type !== "clearSelection") {
-        return { ok: false, error: `${command.type} rejected while applying patch` };
-      }
-    }
-    return { ok: true, result: { revision: ctx.liveSync.getRevision(), ...summarizeEditorSession(ctx.session.getState()) } };
+    const transaction = ctx.session.transaction(patch.commands);
+    if (!transaction.ok) return { ok: false, error: transaction.error, result: { commandIndex: transaction.commandIndex, revision: ctx.liveSync.getRevision() } };
+    return { ok: true, result: { revision: ctx.liveSync.getRevision(), changed: transaction.changed, ...summarizeEditorSession(transaction.state) } };
   },
   pull_document_patches: (ctx, request) => ({
     ok: true,
