@@ -3,7 +3,8 @@ import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { cliVersion, findUp, hasFlag, readPackageJson } from "./pkg";
+import { cliVersion, findUp, hasFlag, readPackageJson, resolveDependencyRange } from "./pkg";
+import { installedPackageVersion } from "./compatibility";
 
 /** Lockstep SDK packages (everything under @jgengine/* except the CLI and @jgengine/github). */
 const LOCKSTEP_PACKAGES = [
@@ -34,6 +35,9 @@ export interface InstalledPackage {
   name: string;
   declared: string;
   installed: string | null;
+  resolvedDeclared?: string | null;
+  catalogSource?: string;
+  resolutionError?: string;
 }
 
 /** Parse CHANGELOG.md (Keep a Changelog shape: `## x.y.z` + `### Migrate/Added/Changed/Removed`). */
@@ -91,17 +95,26 @@ export function collectInstalled(projectDir: string): InstalledPackage[] {
   const pkg = readPackageJson(join(projectDir, "package.json"));
   return Object.entries({ ...pkg?.dependencies, ...pkg?.devDependencies })
     .filter(([name]) => LOCKSTEP_PACKAGES.includes(name))
-    .map(([name, declared]) => ({
-      name,
-      declared,
-      installed: readPackageJson(join(projectDir, "node_modules", name, "package.json"))?.version ?? null,
-    }));
+    .map(([name, declared]) => {
+      const resolution = resolveDependencyRange(projectDir, name, declared);
+      return {
+        name,
+        declared,
+        installed: installedPackageVersion(projectDir, name),
+        ...(declared.startsWith("catalog:") ? {
+          resolvedDeclared: resolution.range,
+          catalogSource: resolution.catalogSource,
+          resolutionError: resolution.error,
+        } : {}),
+      };
+    });
 }
 
-/** Lowest installed lockstep version — the safe baseline for the migrate span. */
+/** Lowest installed or resolved declared SDK version, used as the migration baseline. */
 export function baselineVersion(packages: InstalledPackage[]): string | null {
+  if (packages.some(entry => entry.resolutionError !== undefined)) return null;
   const versions = packages
-    .map((entry) => entry.installed ?? entry.declared.replace(/^[\^~]/, ""))
+    .map((entry) => entry.installed ?? (entry.resolvedDeclared ?? entry.declared).replace(/^[\^~]/, ""))
     .filter((version) => /^\d+\.\d+\.\d+$/.test(version));
   if (versions.length === 0) return null;
   return versions.sort(compareSemver)[0];
@@ -150,9 +163,12 @@ export function renderUpgradeReport(
   source: string,
 ): string {
   const lines: string[] = [];
-  lines.push(`jgengine upgrade — installed ${installed}, latest ${latest} (notes: ${source})`);
+  const baseline = packages.every(entry => entry.installed === null) ? "declared baseline"
+    : packages.some(entry => entry.installed === null) ? "mixed baseline" : "installed";
+  lines.push(`jgengine upgrade — ${baseline} ${installed}, latest ${latest} (notes: ${source})`);
   for (const entry of packages) {
-    lines.push(`  ${entry.name}  declared ${entry.declared}  installed ${entry.installed ?? "(not installed)"}`);
+    const resolution = entry.catalogSource === undefined ? "" : ` → ${entry.resolvedDeclared ?? "(unresolved)"} (${entry.catalogSource})`;
+    lines.push(`  ${entry.name}  declared ${entry.declared}${resolution}  installed ${entry.installed ?? "(not installed)"}`);
   }
   if (releases.length === 0) {
     lines.push("");
@@ -180,7 +196,10 @@ export function renderUpgradeReport(
     }
   }
   lines.push("");
-  lines.push(`Next: bump every @jgengine/* pin to ^${latest}, reinstall, rebuild, and run the Migrate steps oldest-first.`);
+  const catalogs = [...new Set(packages.flatMap(entry => entry.catalogSource === undefined ? [] : [entry.catalogSource]))];
+  lines.push(catalogs.length === 0
+    ? `Next: bump every @jgengine/* pin to ^${latest}, reinstall, rebuild, and run the Migrate steps oldest-first.`
+    : `Next: review SDK pins for ${latest} in ${catalogs.join(", ")}${packages.some(entry => entry.catalogSource === undefined) ? " and the project's direct SDK declarations" : ""}, reinstall, rebuild, and run the Migrate steps oldest-first.`);
   lines.push(
     "Then work the Adopt lists: replace hand-rolled glue with the new primitives (`npx jgengine recipe` lists vetted compositions).",
   );
@@ -203,6 +222,11 @@ export async function runUpgrade(argv: string[]): Promise<number> {
   const packages = collectInstalled(projectDir);
   if (packages.length === 0) {
     console.error(`error: no @jgengine/* dependencies in ${join(projectDir, "package.json")}`);
+    return 1;
+  }
+  const catalogErrors = packages.flatMap(entry => entry.resolutionError === undefined ? [] : [entry.resolutionError]);
+  if (catalogErrors.length > 0) {
+    console.error(`error: ${catalogErrors.join("; ")}`);
     return 1;
   }
   const installed = baselineVersion(packages);
@@ -241,7 +265,12 @@ export async function runUpgrade(argv: string[]): Promise<number> {
   if (hasFlag(argv, "json")) {
     console.log(
       JSON.stringify(
-        { cli: cliVersion(), installed, latest, upToDate: span.length === 0, packages, releases: span, notesSource: source },
+        {
+          cli: cliVersion(), installed, latest,
+          baselineSource: packages.every(entry => entry.installed === null) ? "declared"
+            : packages.some(entry => entry.installed === null) ? "mixed" : "installed",
+          upToDate: span.length === 0, packages, releases: span, notesSource: source,
+        },
         null,
         2,
       ),

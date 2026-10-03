@@ -69,6 +69,32 @@ export function findWorkspaceRoot(startDir: string): string | null {
 }
 
 /** @internal */
+export function resolveDependencyRange(
+  projectDir: string,
+  name: string,
+  declared: string,
+): { range: string | null; catalogSource?: string; error?: string } {
+  if (!declared.startsWith("catalog:")) return { range: declared };
+  const root = findWorkspaceRoot(projectDir);
+  if (root === null) return { range: null, error: `${name}: ${declared} requires a workspace catalog` };
+  const catalogName = declared.slice("catalog:".length);
+  const catalogSource = `${join(root, "package.json")} workspaces.${catalogName === "" ? "catalog" : `catalogs.${catalogName}`}`;
+  const workspaces = readPackageJson(join(root, "package.json"))?.workspaces;
+  const record = (value: unknown): value is Record<string, unknown> =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+  const catalogs: unknown = !Array.isArray(workspaces) ? workspaces?.catalogs : undefined;
+  const catalog: unknown = catalogName === ""
+    ? (!Array.isArray(workspaces) ? workspaces?.catalog : undefined)
+    : (record(catalogs) ? catalogs[catalogName] : undefined);
+  if (!record(catalog)) return { range: null, catalogSource, error: `${name}: missing or malformed ${catalogSource}` };
+  const range = catalog[name];
+  if (typeof range !== "string" || range.trim() === "" || range.startsWith("catalog:")) {
+    return { range: null, catalogSource, error: `${name}: missing or malformed entry in ${catalogSource}` };
+  }
+  return { range, catalogSource };
+}
+
+/** @internal */
 export function isEngineMonorepo(rootDir: string): boolean {
   return existsSync(join(rootDir, "packages", "core", "src")) && existsSync(join(rootDir, "Games"));
 }

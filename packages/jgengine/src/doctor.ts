@@ -2,8 +2,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 import { gameSkeletonRequiredSummary, isAllowedGameSrcEntry } from "./gameShape";
-import { cliVersion, findWorkspaceRoot, readPackageJson, sdkVersion, type PackageJson } from "./pkg";
-import { installedSdkVersions, sdkMinorNewer } from "./compatibility";
+import { cliVersion, findWorkspaceRoot, readPackageJson, resolveDependencyRange, sdkVersion, type PackageJson } from "./pkg";
+import { installedPackageVersion, installedSdkVersions, sdkMinorNewer } from "./compatibility";
 import { assessPrototypeLook } from "./prototypeLook";
 import { IN_REPO_TSCONFIG_PATHS } from "./templates";
 
@@ -77,11 +77,18 @@ export function diagnose(dir: string): Finding[] {
     fix: 'add "dev": "vite" so the standalone harness can launch',
   });
 
-  const ranges = new Set(Object.values(engineDeps).filter((range) => range !== "workspace:*"));
+  const resolvedDeps = Object.entries(engineDeps).map(([name, declared]) => resolveDependencyRange(dir, name, declared));
+  const catalogErrors = resolvedDeps.flatMap(entry => entry.error === undefined ? [] : [entry.error]);
+  if (Object.values(engineDeps).some(range => range.startsWith("catalog:"))) {
+    findings.push({ ok: catalogErrors.length === 0, label: "@jgengine/* catalogs resolve", fix: catalogErrors.join("; ") });
+  }
+  const ranges = new Set(resolvedDeps.flatMap(entry => entry.range === null || entry.range === "workspace:*" ? [] : [entry.range]));
   findings.push({
-    ok: ranges.size <= 1,
+    ok: catalogErrors.length === 0 && ranges.size <= 1,
     label: "@jgengine/* versions aligned",
-    fix: `mixed ranges ${[...ranges].join(", ")} — pin every @jgengine/* package to one version, or run npx jgengine versions`,
+    fix: catalogErrors.length > 0
+      ? "resolve the workspace catalog errors before comparing SDK versions"
+      : `mixed ranges ${[...ranges].join(", ")} — align the @jgengine/* declarations${resolvedDeps.some(entry => entry.catalogSource !== undefined) ? " in the workspace catalog" : ""}, or run npx jgengine versions`,
   });
 
   const workspaceRoot = findWorkspaceRoot(dir);
@@ -214,7 +221,7 @@ export function diagnose(dir: string): Finding[] {
 
   if (!usesWorkspaceProtocol) {
     findings.push({
-      ok: existsSync(join(dir, "node_modules", "@jgengine", "core")),
+      ok: installedPackageVersion(dir, "@jgengine/core") !== null,
       label: "engine installed in node_modules",
       fix: "run bun install (or npm install)",
     });

@@ -2,14 +2,20 @@ import { join } from "node:path";
 import { findUp, readPackageJson } from "./pkg";
 
 /** @internal */
+export function installedPackageVersion(dir: string, name: string): string | null {
+  const root = findUp(dir, candidate => readPackageJson(join(candidate, "node_modules", name, "package.json")) !== null);
+  const version = root === null ? undefined : readPackageJson(join(root, "node_modules", name, "package.json"))?.version;
+  return typeof version === "string" ? version : null;
+}
+
+/** @internal */
 export function installedSdkVersions(dir: string): { name: string; version: string }[] {
   const pkg = readPackageJson(join(dir, "package.json"));
   return Object.keys({ ...pkg?.dependencies, ...pkg?.devDependencies })
     .filter(name => name.startsWith("@jgengine/") && name !== "@jgengine/github")
     .flatMap(name => {
-      const root = findUp(dir, candidate => readPackageJson(join(candidate, "node_modules", name, "package.json")) !== null);
-      const version = root === null ? undefined : readPackageJson(join(root, "node_modules", name, "package.json"))?.version;
-      return version === undefined ? [] : [{ name, version }];
+      const version = installedPackageVersion(dir, name);
+      return version === null ? [] : [{ name, version }];
     });
 }
 

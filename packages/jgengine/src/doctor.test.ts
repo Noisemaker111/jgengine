@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -22,6 +22,35 @@ function failingLabels(dir: string): string[] {
 }
 
 describe("diagnose", () => {
+  test("checks resolved catalog drift and recognizes a hoisted SDK install", () => {
+    const root = mkdtempSync(join(tmpdir(), "jgengine-doctor-catalog-"));
+    const project = join(root, "games", "probe");
+    mkdirSync(project, { recursive: true });
+    const manifest = join(root, "package.json");
+    const core = join(root, "node_modules", "@jgengine", "core");
+    mkdirSync(core, { recursive: true });
+    writeFileSync(join(core, "package.json"), '{"version":"0.18.1"}');
+    writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/core": "catalog:", "@jgengine/react": "catalog:" } }));
+    try {
+      const workspace = { packages: ["games/*"], catalog: { "@jgengine/core": "0.18.1", "@jgengine/react": "0.18.0" } };
+      writeFileSync(manifest, JSON.stringify({ workspaces: workspace }));
+      const findings = diagnose(project);
+      expect(findings.find(entry => entry.label === "@jgengine/* catalogs resolve")?.ok).toBe(true);
+      expect(findings.find(entry => entry.label === "engine installed in node_modules")?.ok).toBe(true);
+      const alignment = findings.find(entry => entry.label === "@jgengine/* versions aligned");
+      expect(alignment?.ok).toBe(false);
+      expect(alignment?.fix).toContain("0.18.1, 0.18.0");
+      expect(alignment?.fix).toContain("workspace catalog");
+      workspace.catalog["@jgengine/react"] = "0.18.1";
+      writeFileSync(manifest, JSON.stringify({ workspaces: workspace }));
+      expect(failingLabels(project)).not.toContain("@jgengine/* versions aligned");
+      writeFileSync(manifest, JSON.stringify({ workspaces: { packages: ["games/*"], catalog: null } }));
+      const missing = diagnose(project);
+      expect(missing.find(entry => entry.label === "@jgengine/* catalogs resolve")?.ok).toBe(false);
+      expect(missing.find(entry => entry.label === "@jgengine/* versions aligned")?.ok).toBe(false);
+      expect(missing.find(entry => entry.label === "@jgengine/* catalogs resolve")?.fix).toContain(manifest);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
   test("a generated 2D game has no unused editor dependency or editor styling error", () => {
     const dir = join(mkdtempSync(join(tmpdir(), "jgengine-doctor-board-")), "board");
     writeGame(dir, "board", "Board", "standalone", undefined, { dimension: "2d" });

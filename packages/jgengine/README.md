@@ -33,9 +33,12 @@ Skills ship inside this package under `skills/` and are installed into the proje
 | `desktop [dir]` | Ship a Windows NSIS installer for a project or `--url` |
 | `skills -p \| -g` | Re-install agent skills (project / global) |
 | `doctor [dir]` | Diagnose version skew, missing peers, unstyled HUD, shape drift |
+| `upgrade [dir] [--json]` | Read-only migration report from installed SDK versions or resolved declarations to the latest release |
 | `assets …` | List, search, and pull CC0 asset packs (`@jgengine/assets`) |
 | `editor-mcp …` | Scene-editor agent bridge (document RPC / localhost server) |
 | `versions` | CLI + installed `@jgengine/*` versions |
+
+`doctor` and `upgrade` resolve default and named Bun workspace catalogs and recognize hoisted SDK installs. Catalog errors are reported at the owning workspace `package.json`. An upgrade of catalog-owned SDK pins is made once in that root catalog; the report does not edit files or install packages.
 
 ## Packages
 
