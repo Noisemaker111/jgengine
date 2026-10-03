@@ -1064,6 +1064,7 @@
     "./materialControls",
     "./mcp/bridgeServer",
     "./mcp/fieldSpec",
+    "./mcp/importOptionalGameModule",
     "./mcp/loadGameCatalogs",
     "./mcp/rpcRequest",
     "./mcp/tools",

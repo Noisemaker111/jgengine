@@ -36,6 +36,13 @@ describe("decodeGameCatalogs", () => {
 });
 
 describe("loadGameCatalogs", () => {
+  test("a present module that fails initialization is a load diagnostic, not an empty catalog", async () => {
+    const loaded = await loadGameCatalogs("../packages/editor/testFixtures/module-fail-game");
+    expect(loaded.ok).toBe(false);
+    if (loaded.ok) throw new Error("a broken catalog module must not become an empty catalog");
+    expect(loaded.errors).toEqual([{ path: "$", message: "catalog dependency failed during initialization" }]);
+  });
+
   test("a game with no editorCatalogs.ts loads an empty list", async () => {
     const loaded = await loadGameCatalogs("__no-such-game__");
     expect(loaded.ok).toBe(true);

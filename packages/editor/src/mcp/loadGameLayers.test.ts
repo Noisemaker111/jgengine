@@ -43,6 +43,14 @@ describe("decodeGameLayers", () => {
 });
 
 describe("loadGameLayers", () => {
+  test("a present module with a missing dependency is a load diagnostic, not an empty scene", async () => {
+    const loaded = await loadGameLayers("../packages/editor/testFixtures/module-fail-game");
+    expect(loaded.ok).toBe(false);
+    if (loaded.ok) throw new Error("a broken authored module must not become an empty scene");
+    expect(loaded.errors[0]?.path).toBe("$");
+    expect(loaded.errors[0]?.message).toContain("requiredScene");
+  });
+
   test("a game with no editorLayers.ts loads an empty document, not an error", async () => {
     const loaded = await loadGameLayers("__no-such-game__");
     expect(loaded.ok).toBe(true);

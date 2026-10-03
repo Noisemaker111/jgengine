@@ -10,6 +10,8 @@ exit — use it for read-only inspection only, or capture `export_document` your
 
 The source-only CLI writer validates the full document before replacing any saved bytes, matching the dev save endpoint. Validation failures report document paths and leave the existing file intact.
 
+Scene and catalog modules are optional. A present module with a broken dependency, initialization error, or invalid export returns load diagnostics; the CLI and stdio host stop before opening a session or saving. Only absent optional files resolve to empty content.
+
 `dispatch` with `setEnvironment` validates only the candidate environment before changing the session, undo history, or live document revision. Supported presets are `day`, `dusk`, and `night`; custom palette, sun, intensity, and fog fields remain explicit authored values. Invalid inputs report `$.environment` paths. Validated nested fields are copied, so mutating the command afterward cannot change the document. Passing `environment: undefined` removes the bag and remains undoable. Repair unsupported authored values through an explicit editor command; preserve the author's palette and fog rather than substituting a default.
 
 ## Atomic authoring batches
