@@ -3,10 +3,76 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { captureClickPoint, driveTargetUrl, externalCaptureUrl } from "./captureTarget";
+import { captureClickPoint, driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
 import { shotSidecarPath } from "./shotProvenance";
+import { applyDevice, DEVICES, scaleProfile, screencastCapturesFully, type CdpSession } from "./browser-lib";
+
+describe("shared drive device profiles", () => {
+  test("validates shared device names before browser startup", () => {
+    for (const device of Object.keys(DEVICES)) expect(parseCaptureDevice(device)).toBe(device);
+    for (const invalid of [undefined, "phone", "both", "toString", "__proto__"]) {
+      expect(() => parseCaptureDevice(invalid)).toThrow("--device must be");
+    }
+    for (const flags of [["--device"], ["--device", "phone"]]) {
+      const result = spawnSync(process.execPath, ["scripts/drive-dev.ts", ...flags, "--help"], {
+        cwd: import.meta.dir + "/..", encoding: "utf8", timeout: 5_000,
+      });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("--device must be");
+    }
+  });
+
+  test("parsed phone profile drives the shared viewport, touch, and user agent protocol", async () => {
+    const sent: { method: string; params: Record<string, unknown> }[] = [];
+    const session = { async send(method: string, params: Record<string, unknown>) { sent.push({ method, params }); return {}; } } as unknown as CdpSession;
+    const device = parseCaptureDevice("mobile");
+    await applyDevice(session, device, "full");
+    expect(sent.find((call) => call.method === "Emulation.setDeviceMetricsOverride")?.params)
+      .toEqual({ width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+    expect(sent.find((call) => call.method === "Emulation.setTouchEmulationEnabled")?.params).toEqual({ enabled: true, maxTouchPoints: 5 });
+    expect(sent.find((call) => call.method === "Emulation.setUserAgentOverride")?.params.userAgent).toContain("iPhone");
+    const profile = scaleProfile(DEVICES[device], "full");
+    expect([profile.width * profile.deviceScaleFactor, profile.height * profile.deviceScaleFactor]).toEqual([780, 1688]);
+    expect(screencastCapturesFully(profile)).toBe(false);
+  });
+
+  test("landscape and half size retain shared device semantics and native URL content", () => {
+    const device = parseCaptureDevice("mobile-landscape");
+    expect(scaleProfile(DEVICES[device], "half")).toEqual({ width: 422, height: 195, deviceScaleFactor: 2, mobile: true });
+    for (const target of [{ url: "http://native/room?map=courtyard" }, { site: "/playground?map=courtyard" }, {}]) {
+      const url = driveTargetUrl({ game: "co-op", mode: "play", device, ...target }, "http://runner");
+      expect(url.searchParams.get("device")).toBe("mobile");
+      if ("url" in target || "site" in target) expect(url.searchParams.get("map")).toBe("courtyard");
+    }
+  });
+});
 
 describe("external capture targets", () => {
+  test("storage reuse requires an existing browser instead of a fresh disposable profile", () => {
+    expect(() => requireReusableCaptureStorage(true, false, false)).toThrow("--connect <port>");
+    expect(() => requireReusableCaptureStorage(true, true, false)).not.toThrow();
+    expect(() => requireReusableCaptureStorage(true, false, true)).not.toThrow();
+    expect(() => requireReusableCaptureStorage(false, false, false)).not.toThrow();
+  });
+
+  test("an unconnected storage reuse drive fails before server or browser startup, even with --keep", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-reuse-no-daemon-"));
+    try {
+      for (const keep of [[], ["--keep"]]) {
+        const result = spawnSync(process.execPath, [
+          import.meta.dir + "/drive-dev.ts", "--url", "http://127.0.0.1:1", "--reuse-storage", ...keep,
+        ], { cwd, env: { ...process.env, JG_CHROME_PORT: "1" }, encoding: "utf8", timeout: 5_000 });
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("--reuse-storage requires a live warm browser");
+        expect(result.stderr).toContain("--keep alone only preserves the new profile");
+        expect(result.stderr).not.toContain("nothing is listening");
+        expect(result.stderr).not.toContain("starting");
+      }
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
   test("normalizes loopback and preserves the native document and query", () => {
     const native = externalCaptureUrl("http://localhost:5518/play?map=courtyard#room-2");
     const url = driveTargetUrl({ url: native, game: "url", mode: "play" }, "http://runner:4517");

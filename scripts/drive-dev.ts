@@ -39,10 +39,11 @@ import {
   withBrowserSession,
   writePngAtomic,
   type SizeMode,
+  type Device,
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
-import { captureClickPoint, driveTargetUrl, externalCaptureUrl } from "./captureTarget";
+import { captureClickPoint, driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
 import { decodePng } from "./png-reader";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";
@@ -78,6 +79,7 @@ type Args = {
   game: string;
   mode: string;
   modeExplicit: boolean;
+  device: Device;
   size: SizeMode;
   connect?: number;
   keep: boolean;
@@ -113,6 +115,8 @@ const RECORD_BUDGET_BYTES = 4_500_000;
 const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
 
   --mode <ui|play>    capture mode (default play)
+  --device <desktop|mobile|mobile-landscape>
+                      shared shoot viewport/touch/UA profile (default desktop)
   --size <full|half>  half halves both dimensions (~1/4 the pixels) for cheap
                       mid-loop judge shots — use full (default) for final/PR shots
   --click "<text>"    click the first visible element containing this text (or, for
@@ -174,7 +178,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       the honest movement check on a low-fps headless GL page
                       where held-key motion is too small to read off screenshots
   --reuse-storage     keep the warm profile's existing localStorage/origin storage
-                      for the target instead of clearing it before the drive. By
+                      for the target instead of clearing it before the drive;
+                      requires a live daemon or explicit --connect <port>. By
                       default a drive clears the target origin's storage so the game
                       boots clean and capture.probe reflects THIS run — a game that
                       auto-restores a save would otherwise resume the prior run's
@@ -183,7 +188,10 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
   --keep              leave the dev server + Chrome (per-worktree warm debug port)
                       running after this drive — pair with --connect <port>
                       on every following drive in the loop (warm-loop pattern)
-  --timeout <s>       page-ready timeout (default 60; --site: 10 local, 30 Linux/CI)
+  --timeout <s>       page-ready timeout (default 60; --site: 10 local, 30 Linux/CI);
+                      ordinary sessions also stop after this + 120s (default 180s).
+                      Use --timeout 300 for a 420s long-play budget. Lockstep
+                      recordings additionally budget 3s per projected frame.
   --playtest          bot-playtest rung: drive input, sample the game's
                       capture.probe over time, print a progress/softlock verdict
                       as JSON (needs a --key hold to drive; game must expose
@@ -210,6 +218,7 @@ function parseArgs(argv: string[]): Args {
     game: "",
     mode: "play",
     modeExplicit: false,
+    device: "desktop",
     size: "full",
     connect: undefined,
     keep: false,
@@ -236,6 +245,7 @@ function parseArgs(argv: string[]): Args {
       args.modeExplicit = true;
     }
     else if (value === "--state") args.state = argv[++index];
+    else if (value === "--device") args.device = parseCaptureDevice(argv[++index]);
     else if (value === "--size") {
       args.size = parseSizeArg(argv[++index]);
     } else if (value === "--timeout") {
@@ -629,10 +639,11 @@ async function screenshot(
   session: CdpSession,
   outPath: string,
   size: SizeMode,
+  device: Device,
   screencast: boolean,
   previous: PreviousShot | undefined,
 ): Promise<void> {
-  const profile = scaleProfile(DEVICES.desktop, size);
+  const profile = scaleProfile(DEVICES[device], size);
   const { region } = await readCapturePageState(session);
   const editor = await session.evaluate<boolean>(`document.documentElement.dataset.jgEditor === "1"`);
   const { bytes, via } = await captureViewportPng(session, {
@@ -677,6 +688,7 @@ for (const step of args.steps) {
 }
 
 const daemon = args.connect === undefined ? await attachDaemon() : null;
+requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
 if (args.url !== undefined && !(await isUp(args.url))) {
   throw new Error(`drive: nothing is listening at ${args.url} — start that external server first`);
 }
@@ -714,7 +726,7 @@ const exitCode = await withBrowserSession(
     try {
       await session.send("Page.enable");
       await session.send("Runtime.enable");
-      await applyDevice(session, "desktop", args.size);
+      await applyDevice(session, args.device, args.size);
       const url = driveTargetUrl(args, dev.base);
       url.searchParams.set("capture", "1");
       if (args.spawn !== undefined && args.spawn.length > 0) url.searchParams.set("spawn", args.spawn);
@@ -831,6 +843,7 @@ const exitCode = await withBrowserSession(
             session,
             path,
             args.size,
+            args.device,
             args.record === undefined,
             previous,
           );
