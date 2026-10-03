@@ -38,8 +38,11 @@ export interface SceneRaycastFilter {
 }
 
 export interface SceneRaycastInput {
+  /** Finite world coordinates. */
   origin: EntityPosition;
+  /** Finite direction and magnitude, normalized by the query. Zero direction returns no hits. */
   direction: EntityPosition;
+  /** Finite, nonnegative segment length in world units. */
   maxDistance: number;
   excludeInstanceIds?: ReadonlySet<string> | readonly string[];
   filter?: SceneRaycastFilter;
@@ -81,7 +84,7 @@ export interface SceneRaycastDeps {
   terrain?: TerrainRaycastSource;
   walls?: readonly WallSegment[];
   /** Indexed geometry returns physical, non-damage wall hits with instance id `world-solid`. */
-  solids?: Pick<WorldSolids, "inBox">;
+  solids?: Pick<WorldSolids, "inBox" | "inRay">;
 }
 
 export interface SceneRaycastApi {
@@ -364,6 +367,10 @@ function candidateObjects(
 }
 
 function gatherHits(deps: SceneRaycastDeps, input: SceneRaycastInput): SceneRaycastHit[] {
+  if (!input.origin.every(Number.isFinite) || !input.direction.every(Number.isFinite) || !Number.isFinite(input.maxDistance) || input.maxDistance < 0) {
+    throw new RangeError("Scene rays require finite coordinates, direction and nonnegative distance");
+  }
+  if (!Number.isFinite(Math.hypot(...input.direction))) throw new RangeError("Scene ray direction length must be finite");
   const direction = normalizeDirection(input.direction);
   if (direction[0] === 0 && direction[1] === 0 && direction[2] === 0) return [];
   const hits: SceneRaycastHit[] = [];
@@ -437,14 +444,20 @@ function gatherHits(deps: SceneRaycastDeps, input: SceneRaycastInput): SceneRayc
   }
 
   if (enabled(input.filter, "walls") && deps.solids !== undefined && !excluded(input.excludeInstanceIds, "world-solid")) {
-    const end: EntityPosition = [
-      origin[0] + direction[0] * maxDistance,
-      origin[1] + direction[1] * maxDistance,
-      origin[2] + direction[2] * maxDistance,
-    ];
-    const min: EntityPosition = [Math.min(origin[0], end[0]), Math.min(origin[1], end[1]), Math.min(origin[2], end[2])];
-    const max: EntityPosition = [Math.max(origin[0], end[0]), Math.max(origin[1], end[1]), Math.max(origin[2], end[2])];
-    for (const solid of deps.solids.inBox(min, max)) {
+    let candidates: readonly WorldSolid[];
+    if (deps.solids.inRay !== undefined) {
+      candidates = deps.solids.inRay(origin, direction, maxDistance);
+    } else {
+      const end: EntityPosition = [
+        origin[0] + direction[0] * maxDistance,
+        origin[1] + direction[1] * maxDistance,
+        origin[2] + direction[2] * maxDistance,
+      ];
+      const min: EntityPosition = [Math.min(origin[0], end[0]), Math.min(origin[1], end[1]), Math.min(origin[2], end[2])];
+      const max: EntityPosition = [Math.max(origin[0], end[0]), Math.max(origin[1], end[1]), Math.max(origin[2], end[2])];
+      candidates = deps.solids.inBox(min, max);
+    }
+    for (const solid of candidates) {
       const hit = rayHitsWorldSolid(solid, origin, direction, maxDistance);
       if (hit === null) continue;
       hits.push({

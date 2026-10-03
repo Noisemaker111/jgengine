@@ -2,7 +2,10 @@ import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { createEntityStore } from "@jgengine/core/scene/entityStore";
 import { createSceneRaycast, type SceneRaycastDeps, type SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
+import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import { building, environment } from "@jgengine/core/world/features";
 import { collectNameplateSamples, collectWorldBarSamples, worldBarOccluded, refreshWorldBarSamples, type NameplateSample, type WorldBarSample, type WorldOverlaySampleOptions } from "./worldBarSamples";
 
 function setup(deps: SceneRaycastDeps = {}) {
@@ -56,6 +59,41 @@ function plates(ctx: GameContext, camera = cameraAt(), occlude = true, options: 
 
 const wall: SceneRaycastDeps = { walls: [{ id: "wall", a: [-3, 5], b: [3, 5], yCenter: 2, halfHeight: 3 }] };
 describe("world overlay visibility", () => {
+  test("live generated and rotated world layers occlude both overlay kinds through GameContext", () => {
+    const ctx = createGameContext({
+      definition: defineGameDefinition({ name: "World overlay cover", assets: createAssetCatalog(), multiplayer: "off", persist: false,
+        world: environment({ structures: building({ count: 1, position: [0, 5], footprint: { w: 4, d: 2 }, stories: [2, 2], seed: "overlay-cover" }) }),
+      }),
+      content: { entityById: () => ({ stats: { health: { max: 10 } } }) },
+      player: { userId: "player", isNew: true },
+    });
+    ctx.scene.entity.spawn("Guard", { id: "enemy", position: [0, 0, 0] });
+    ctx.scene.entity.stats.delta("enemy", "health", -5);
+    const rays: SceneRaycastInput[] = [];
+    const raycast = ctx.scene.raycast;
+    ctx.scene.raycast = (input) => { rays.push(input); return raycast(input); };
+    const camera = cameraAt();
+    const policy = { maxSamples: 1 };
+    expect(ctx.world.solids.count()).toBe(1);
+    expect(bars(ctx, camera, true, policy)).toEqual([]);
+    expect(plates(ctx, camera, true, policy)).toEqual([]);
+    expect(rays).toHaveLength(2);
+    expect(rays[0]?.origin).toEqual([0, 2, 10]);
+    expect(rays[0]?.maxDistance).toBeCloseTo(9.999);
+    ctx.world.solids.remove("environment:structures");
+    expect(bars(ctx, camera, true, policy)[0]?.percent).toBe(0.5);
+    expect(plates(ctx, camera, true, policy)[0]?.name).toBe("Guard");
+    expect(rays).toHaveLength(4);
+    ctx.world.solids.set("rotated-wall", [{ center: [0, 2, 5], halfExtents: [3, 2, 0.3], rotationY: Math.PI / 4 }]);
+    expect(bars(ctx, camera, true, policy)).toEqual([]);
+    expect(plates(ctx, camera, true, policy)).toEqual([]);
+    expect(rays).toHaveLength(6);
+    ctx.world.solids.remove("rotated-wall");
+    expect(bars(ctx, camera, true, policy)).toHaveLength(1);
+    expect(plates(ctx, camera, true, policy)).toHaveLength(1);
+    expect(rays).toHaveLength(8);
+  });
+
   test("a wall hides bars and names; explicit reveal skips rays", () => {
     const { ctx, spawn, rays } = setup(wall);
     spawn("enemy", [0, 0, 0]);

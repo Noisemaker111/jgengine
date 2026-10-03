@@ -17,6 +17,16 @@ export interface WorldSolidsState {
   layers: Record<string, readonly WorldSolid[]>;
 }
 
+/** Caller-owned work counters, reset by each world-solid ray candidate query. */
+export interface WorldSolidRayWork {
+  /** Hash-grid cell lookups, including empty cells. */
+  cells: number;
+  /** Indexed entry visits, including duplicates removed before bounds tests. */
+  entries: number;
+  /** Cached AABB ray tests after deduplication. */
+  bounds: number;
+}
+
 /**
  * Static collision for world geometry that is not a scene object: generated buildings, studio
  * volumes like `city`, wall runs. Solids live in named layers so a feature can replace or drop its
@@ -34,6 +44,8 @@ export interface WorldSolids {
   layers(): readonly string[];
   /** Every solid whose world AABB overlaps `min`..`max`. Bounded by a uniform XZ hash grid. */
   inBox(min: readonly [number, number, number], max: readonly [number, number, number]): WorldSolid[];
+  /** Optional accelerated ray candidates; finite coordinates/direction and nonnegative finite distance, normalized internally. */
+  inRay?(origin: readonly [number, number, number], direction: readonly [number, number, number], maxDistance: number, work?: WorldSolidRayWork): WorldSolid[];
   /** Every solid in every layer. */
   all(): WorldSolid[];
   count(): number;
@@ -93,6 +105,7 @@ export function worldSolidFootprint(solid: WorldSolid): Aabb {
  */
 export function createWorldSolids(options: { cellSize?: number } = {}): WorldSolids {
   const cellSize = options.cellSize ?? DEFAULT_CELL_SIZE;
+  if (!Number.isFinite(cellSize) || cellSize <= 0) throw new RangeError("World solid cellSize must be finite and positive");
   const layerMap = new Map<string, IndexedSolid[]>();
   const grid = new Map<number, IndexedSolid[]>();
   const oversize: IndexedSolid[] = [];
@@ -111,7 +124,7 @@ export function createWorldSolids(options: { cellSize?: number } = {}): WorldSol
     const x1 = cellOf(entry.maxX);
     const z0 = cellOf(entry.minZ);
     const z1 = cellOf(entry.maxZ);
-    if ((x1 - x0 + 1) * (z1 - z0 + 1) > MAX_CELLS_PER_SOLID) {
+    if (![x0, x1, z0, z1].every(Number.isSafeInteger) || (x1 - x0 + 1) * (z1 - z0 + 1) > MAX_CELLS_PER_SOLID) {
       oversize.push(entry);
       return;
     }
@@ -160,6 +173,27 @@ export function createWorldSolids(options: { cellSize?: number } = {}): WorldSol
       entry.maxZ >= min[2]! &&
       entry.minZ <= max[2]!
     );
+  }
+
+  function rayOverlaps(entry: IndexedSolid, origin: readonly number[], direction: readonly number[], maxDistance: number): boolean {
+    let near = 0;
+    let far = maxDistance;
+    for (let axis = 0; axis < 3; axis++) {
+      const min = axis === 0 ? entry.minX : axis === 1 ? entry.minY : entry.minZ;
+      const max = axis === 0 ? entry.maxX : axis === 1 ? entry.maxY : entry.maxZ;
+      const from = origin[axis]!;
+      const delta = direction[axis]!;
+      if (delta === 0) {
+        if (from < min || from > max) return false;
+        continue;
+      }
+      const a = (min - from) / delta;
+      const b = (max - from) / delta;
+      near = Math.max(near, Math.min(a, b));
+      far = Math.min(far, Math.max(a, b));
+      if (near > far) return false;
+    }
+    return true;
   }
 
   return {
@@ -211,6 +245,71 @@ export function createWorldSolids(options: { cellSize?: number } = {}): WorldSol
         }
       }
       for (const entry of oversize) if (overlaps(entry, min, max)) out.push(entry.solid);
+      return out;
+    },
+    inRay(origin, direction, maxDistance, work) {
+      if (work !== undefined) { work.cells = 0; work.entries = 0; work.bounds = 0; }
+      if (!origin.every(Number.isFinite) || !direction.every(Number.isFinite) || !Number.isFinite(maxDistance) || maxDistance < 0) {
+        throw new RangeError("World solid rays require finite coordinates, direction and nonnegative distance");
+      }
+      const length = Math.hypot(...direction);
+      if (!Number.isFinite(length)) throw new RangeError("World solid ray direction length must be finite");
+      const out: WorldSolid[] = [];
+      if (length === 0 || total === 0) return out;
+      const normalized = [direction[0] / length, direction[1] / length, direction[2] / length];
+      stamp++;
+      const consider = (entry: IndexedSolid): void => {
+        if (work !== undefined) work.entries++;
+        if (entry.stamp === stamp) return;
+        entry.stamp = stamp;
+        if (work !== undefined) work.bounds++;
+        if (rayOverlaps(entry, origin, normalized, maxDistance)) out.push(entry.solid);
+      };
+      const scan = (): void => {
+        for (const entries of layerMap.values()) for (const entry of entries) consider(entry);
+      };
+      const visit = (x: number, z: number): void => {
+        if (work !== undefined) work.cells++;
+        const bucket = grid.get(keyOf(x, z));
+        if (bucket !== undefined) for (const entry of bucket) consider(entry);
+      };
+      let x = cellOf(origin[0]);
+      let z = cellOf(origin[2]);
+      const stepX = Math.sign(normalized[0]!);
+      const stepZ = Math.sign(normalized[2]!);
+      const deltaX = stepX === 0 ? Infinity : cellSize / Math.abs(normalized[0]!);
+      const deltaZ = stepZ === 0 ? Infinity : cellSize / Math.abs(normalized[2]!);
+      let nextX = stepX === 0 ? Infinity : ((x + (stepX > 0 ? 1 : 0)) * cellSize - origin[0]) / normalized[0]!;
+      let nextZ = stepZ === 0 ? Infinity : ((z + (stepZ > 0 ? 1 : 0)) * cellSize - origin[2]) / normalized[2]!;
+      const estimatedCells = 3 * (Math.ceil(maxDistance * Math.abs(normalized[0]!) / cellSize) + Math.ceil(maxDistance * Math.abs(normalized[2]!) / cellSize) + 1);
+      if (!Number.isSafeInteger(x) || !Number.isSafeInteger(z) || estimatedCells > total) {
+        scan();
+        return out;
+      }
+      if (grid.size > 0) {
+        visit(x, z);
+        while (Math.min(nextX, nextZ) <= maxDistance) {
+          const crossX = nextX <= nextZ;
+          const crossZ = nextZ <= nextX;
+          if (crossX && crossZ) {
+            visit(x + stepX, z);
+            visit(x, z + stepZ);
+          }
+          const oldX = x;
+          const oldZ = z;
+          const oldNextX = nextX;
+          const oldNextZ = nextZ;
+          if (crossX) { x += stepX; nextX += deltaX; }
+          if (crossZ) { z += stepZ; nextZ += deltaZ; }
+          if (!Number.isSafeInteger(x) || !Number.isSafeInteger(z) ||
+            (crossX && (x === oldX || nextX <= oldNextX)) || (crossZ && (z === oldZ || nextZ <= oldNextZ))) {
+            scan();
+            return out;
+          }
+          visit(x, z);
+        }
+      }
+      for (const entry of oversize) consider(entry);
       return out;
     },
     all: () => [...layerMap.values()].flatMap((entries) => entries.map((entry) => entry.solid)),

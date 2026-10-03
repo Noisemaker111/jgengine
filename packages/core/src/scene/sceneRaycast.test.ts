@@ -7,7 +7,7 @@ import {
 } from "@jgengine/core/scene/collisionMesh";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createSceneRaycast, firstImpact, hitsUntilBlocked } from "@jgengine/core/scene/sceneRaycast";
-import { createWorldSolids } from "../world/worldSolids";
+import { createWorldSolids, type WorldSolidRayWork } from "../world/worldSolids";
 import type { EntityPosition } from "./entityStore";
 
 describe("sceneRaycast", () => {
@@ -162,6 +162,51 @@ describe("sceneRaycast", () => {
 });
 
 describe("sceneRaycast world solids", () => {
+  test("finite segment validation applies before either candidate-query path", () => {
+    let queries = 0;
+    const api = createSceneRaycast({ solids: { inBox: () => { queries++; return []; } } });
+    for (const maxDistance of [Infinity, NaN, -1]) {
+      expect(() => api.raycast({ origin: [0, 0, 0], direction: [1, 0, 0], maxDistance })).toThrow(RangeError);
+    }
+    expect(() => api.raycast({ origin: [0, NaN, 0], direction: [1, 0, 0], maxDistance: 10 })).toThrow(RangeError);
+    expect(() => api.raycast({ origin: [0, 0, 0], direction: [1, Infinity, 0], maxDistance: 10 })).toThrow(RangeError);
+    expect(() => api.raycast({ origin: [0, 0, 0], direction: [Number.MAX_VALUE, Number.MAX_VALUE, 0], maxDistance: 10 })).toThrow(RangeError);
+    expect(queries).toBe(0);
+  });
+
+  test("long diagonal misses and nearest hits avoid testing the city's off-ray solids", () => {
+    let orientationReads = 0;
+    const city = [];
+    for (let x = 0; x < 128; x++) {
+      for (let z = 0; z < 128; z++) {
+        if (Math.abs(x - z) < 2) continue;
+        city.push({ center: [x * 16 + 8, 1, z * 16 + 8] as const, halfExtents: [1, 1, 1] as const,
+          get rotationY() { orientationReads++; return 0; },
+        });
+      }
+    }
+    const solids = createWorldSolids();
+    solids.set("city", city);
+    const work: WorldSolidRayWork = { cells: 0, entries: 0, bounds: 0 };
+    const api = createSceneRaycast({ solids: { inBox: solids.inBox, inRay: (origin, direction, distance) => solids.inRay!(origin, direction, distance, work) } });
+    const ray = { origin: [0, 1, 0] as const, direction: [1, 0, 1] as const, maxDistance: 2048 * Math.SQRT2 };
+    orientationReads = 0;
+    expect(api.raycast(ray)).toBeNull();
+    expect(orientationReads).toBeLessThanOrEqual(256);
+    expect(work.cells).toBeLessThanOrEqual(800);
+    expect(work.bounds).toBe(0);
+    expect(work.entries).toBe(0);
+    solids.set("near-wall", [{ center: [12, 1, 12], halfExtents: [0.5, 1, 0.5],
+      get rotationY() { orientationReads++; return 0; },
+    }]);
+    orientationReads = 0;
+    expect(api.raycast(ray)?.distance).toBeCloseTo(11.5 * Math.SQRT2);
+    expect(orientationReads).toBeLessThanOrEqual(256);
+    expect(work.cells).toBeLessThanOrEqual(800);
+    expect(work.bounds).toBe(1);
+    expect(work.entries).toBe(1);
+  });
+
   test("indexed solids share ordering, filters and accept policy with existing hit kinds", () => {
     const solids = createWorldSolids();
     solids.set("walls", [

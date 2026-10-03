@@ -9,6 +9,7 @@ import { createPhysicsWorldBackend } from "../physics/physicsWorldBackend";
 import { syncWorldColliders } from "../physics/worldColliders";
 import { createGameContext, type GameContext } from "../runtime/gameContext";
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { createSceneRaycast } from "../scene/sceneRaycast";
 import { createPerception } from "../sensor/perception";
 import { resolveAuthoredSolids, syncAuthoredSolids } from "./authoredSolids";
 import { resolveStructureBuildings } from "./environmentSummary";
@@ -78,6 +79,87 @@ describe("createWorldSolids", () => {
     const { min, max } = worldSolidBounds({ ...BOX, rotationY: Math.PI / 2 });
     expect(max[0] - min[0]).toBeCloseTo(2);
     expect(max[2] - min[2]).toBeCloseTo(4);
+  });
+
+  test("ray traversal includes closed cell boundaries, deduplicates boxes and observes live layers", () => {
+    const solids = createWorldSolids({ cellSize: 1 });
+    const corners: WorldSolid[] = [-0.5, 0.5].flatMap((x) => [-0.5, 0.5].map((z) => ({ center: [x, 1, z], halfExtents: [0.5, 1, 0.5] })));
+    const wide: WorldSolid = { center: [8, 1, 8], halfExtents: [5, 1, 5] };
+    const oversized: WorldSolid = { center: [-20, 1, -20], halfExtents: [10, 1, 10] };
+    solids.set("boxes", [...corners, wide, oversized]);
+    expect(new Set(solids.inRay!([0, 1, 0], [1, 0, 1], 0))).toEqual(new Set(corners));
+    expect(solids.inRay!([0, 1, 0], [1, 0, 1], 20).filter((solid) => solid === wide)).toHaveLength(1);
+    expect(solids.inRay!([-5, 1, -5], [-1, 0, -1], 50)).toContain(oversized);
+    expect(solids.inRay!([0, 5, 0], [0, -4, 0], 5)).toHaveLength(4);
+    expect(solids.inRay!([0, 5, 0], [1, 0, 1], 100)).toEqual([]);
+    expect(solids.inRay!([0, 1, 0], [0, 0, 0], 100)).toEqual([]);
+    const saved = solids.snapshot();
+    solids.remove("boxes");
+    expect(solids.inRay!([0, 1, 0], [1, 0, 1], 100)).toEqual([]);
+    solids.restore(saved);
+    expect(solids.inRay!([0, 1, 0], [1, 0, 1], 20)).toContain(wide);
+  });
+
+  test("indexed ray hits match an all-solid oracle across orientations and ray directions", () => {
+    let state = 12345;
+    const random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
+    const solids = createWorldSolids({ cellSize: 4 });
+    solids.set("scatter", Array.from({ length: 250 }, (): WorldSolid => ({
+      center: [(random() - 0.5) * 80, random() * 8, (random() - 0.5) * 80],
+      halfExtents: [0.5 + random() * 8, 0.5 + random() * 4, 0.5 + random() * 8],
+      rotationY: random() * Math.PI * 2,
+    })));
+    const indexed = createSceneRaycast({ solids });
+    const oracle = createSceneRaycast({ solids: { inBox: () => solids.all() } });
+    for (let i = 0; i < 200; i++) {
+      const ray = {
+        origin: [(random() - 0.5) * 100, random() * 12, (random() - 0.5) * 100] as const,
+        direction: [random() - 0.5, (random() - 0.5) * 0.2, random() - 0.5] as const,
+        maxDistance: random() * 100,
+      };
+      expect(indexed.raycastAll(ray)).toEqual(oracle.raycastAll(ray));
+    }
+  });
+
+  test("crossed-cell work includes corner contacts and counts deduplicated entry visits", () => {
+    const solids = createWorldSolids({ cellSize: 1 });
+    const wide: WorldSolid = { center: [2, 1, 2], halfExtents: [2, 1, 2] };
+    const corner: WorldSolid = { center: [1.5, 1, 0.5], halfExtents: [0.5, 1, 0.5] };
+    solids.set("route", [wide, corner]);
+    solids.set("off-ray", Array.from({ length: 100 }, (_, i) => ({ center: [100 + i, 1, -100] as const, halfExtents: [0.1, 1, 0.1] as const })));
+    const work = { cells: 0, entries: 0, bounds: 0 };
+    expect(new Set(solids.inRay!([0.25, 1, 0.25], [1, 0, 1], 2, work))).toEqual(new Set([wide, corner]));
+    expect(work.cells).toBeGreaterThan(1);
+    expect(work.cells).toBeLessThanOrEqual(10);
+    expect(work.bounds).toBe(2);
+    expect(work.entries).toBeGreaterThan(work.bounds);
+  });
+
+  test("ray traversal rejects unbounded input instead of entering an unbounded cell walk", () => {
+    const solids = createWorldSolids();
+    for (const maxDistance of [Infinity, NaN, -1]) expect(() => solids.inRay!([0, 0, 0], [1, 0, 0], maxDistance)).toThrow(RangeError);
+    expect(() => solids.inRay!([Infinity, 0, 0], [1, 0, 0], 10)).toThrow(RangeError);
+    expect(() => solids.inRay!([0, 0, 0], [NaN, 0, 0], 10)).toThrow(RangeError);
+    expect(() => solids.inRay!([0, 0, 0], [Number.MAX_VALUE, Number.MAX_VALUE, 0], 10)).toThrow(RangeError);
+    for (const cellSize of [0, -1, NaN, Infinity]) expect(() => createWorldSolids({ cellSize })).toThrow(RangeError);
+  });
+
+  test("far, tiny-cell and huge-coordinate rays bound indexed work without dropping blockers", () => {
+    const cases = [
+      { cellSize: 1, center: [0, 1, 0] as const, origin: [-1e12, 1, 0] as const, distance: 2e12 },
+      { cellSize: Number.MIN_VALUE, center: [1, 1, 1] as const, origin: [0, 1, 1] as const, distance: 2 },
+      { cellSize: 1, center: [1e20, 1, 1e20] as const, origin: [1e20, 1, 1e20] as const, distance: 100 },
+    ];
+    for (const fixture of cases) {
+      const solids = createWorldSolids({ cellSize: fixture.cellSize });
+      const blocker: WorldSolid = { center: fixture.center, halfExtents: [0.25, 1, 0.25] };
+      solids.set("blocker", [blocker]);
+      const work = { cells: -1, entries: -1, bounds: -1 };
+      expect(solids.inRay!(fixture.origin, [1, 0, 0], fixture.distance, work)).toContain(blocker);
+      expect(work).toEqual({ cells: 0, entries: 1, bounds: 1 });
+      expect(solids.inRay!([fixture.origin[0], 10, fixture.origin[2]], [1, 0, 0], fixture.distance, work)).toEqual([]);
+      expect(work).toEqual({ cells: 0, entries: 1, bounds: 1 });
+    }
   });
 });
 
