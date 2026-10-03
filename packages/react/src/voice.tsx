@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   createPushToTalk,
   type PushToTalkMode,
@@ -35,6 +35,10 @@ export interface VoiceState {
   gainFor(userId: string): number;
 }
 
+function stopStream(stream: MediaStream): void {
+  for (const track of stream.getTracks()) if (track.readyState !== "ended") track.stop();
+}
+
 /**
  * Mic capture + push-to-talk + channel roster over the VoiceTransport
  * signaling seam. Transmission gates the captured tracks' `enabled` flag; the
@@ -61,6 +65,17 @@ export function useVoice(options?: UseVoiceOptions): VoiceState {
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
   const micRef = useRef<MediaStream | null>(null);
+  const captureOwner = useMemo(() => ({}), [transport, channelId]);
+  const captureOwnerRef = useRef<object | null>(null);
+  const micRequestRef = useRef<object | null>(null);
+
+  useLayoutEffect(() => {
+    captureOwnerRef.current = captureOwner;
+    return () => {
+      captureOwnerRef.current = null;
+      micRequestRef.current = null;
+    };
+  }, [captureOwner]);
 
   const getUserMedia =
     options?.getUserMedia ??
@@ -70,24 +85,40 @@ export function useVoice(options?: UseVoiceOptions): VoiceState {
   const supported = getUserMedia !== undefined;
 
   const requestMic = useCallback(async (): Promise<boolean> => {
+    if (captureOwnerRef.current !== captureOwner) return false;
+    const request = {};
+    micRequestRef.current = request;
     if (getUserMedia === undefined) {
       setMicError("microphone capture not supported");
       return false;
     }
     try {
       const stream = await getUserMedia({ audio: true });
+      if (captureOwnerRef.current !== captureOwner || micRequestRef.current !== request) {
+        // An injected capture provider may return the already accepted stream.
+        if (stream !== micRef.current) stopStream(stream);
+        return false;
+      }
+      if (!stream.getAudioTracks().some((track) => track.readyState === "live")) {
+        stopStream(stream);
+        throw new Error("microphone capture has no live audio tracks");
+      }
+      const previous = micRef.current;
+      if (previous !== null && previous !== stream) stopStream(previous);
       const transmitting = ptt.transmitting();
       for (const track of stream.getAudioTracks()) track.enabled = transmitting;
       micRef.current = stream;
       setMicStream(stream);
       setMicError(null);
-      void transport?.publish(channelId, stream.id);
-      return true;
+      await transport?.publish(channelId, stream.id);
+      return captureOwnerRef.current === captureOwner && micRequestRef.current === request;
     } catch (error) {
-      setMicError(error instanceof Error ? error.message : "microphone permission denied");
+      if (captureOwnerRef.current === captureOwner && micRequestRef.current === request) {
+        setMicError(error instanceof Error ? error.message : "microphone permission denied");
+      }
       return false;
     }
-  }, [getUserMedia, transport, channelId, ptt]);
+  }, [getUserMedia, transport, channelId, ptt, captureOwner]);
 
   useEffect(() => {
     const stream = micRef.current;
@@ -97,8 +128,10 @@ export function useVoice(options?: UseVoiceOptions): VoiceState {
 
   useEffect(() => {
     return () => {
+      micRequestRef.current = null;
       const stream = micRef.current;
-      if (stream !== null) for (const track of stream.getTracks()) track.stop();
+      micRef.current = null;
+      if (stream !== null) stopStream(stream);
     };
   }, []);
 
