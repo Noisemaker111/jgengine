@@ -160,6 +160,22 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createEventTicker` (function) · `import { createEventTicker } from "@jgengine/core/gameplay"`
 
+## expedition-dispatch — dispatch a saveable timed away mission with finite supplies and a seeded RNG cursor
+
+- `dispatchExpedition` (function) · `import { dispatchExpedition } from "@jgengine/core/gameplay"`
+
+## expedition-recall — begin a safe fractional-time return after settling the pending expedition frontier
+
+- `recallExpedition` (function) · `import { recallExpedition } from "@jgengine/core/gameplay"`
+
+## expedition-return — complete an authorized instant return without skipping unsettled ticks or reviving death
+
+- `returnExpeditionNow` (function) · `import { returnExpeditionNow } from "@jgengine/core/gameplay"`
+
+## expedition-settle — settle bounded offline expedition ticks without losing supplies rewards or RNG continuity
+
+- `settleExpedition` (function) · `import { settleExpedition } from "@jgengine/core/gameplay"`
+
 ## fire-input — bind a key or mouse button to a named action that runs the same-named command with the aim; repeatMs auto-fires while held
 
 - `ActionCodesMap` (type) · `import { ActionCodesMap } from "@jgengine/core/gameplay"`
@@ -530,6 +546,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## tick-work — advance jobs over time, completing work and emitting typed lifecycle events
 
 - `tick` (function) · `import { tick } from "@jgengine/core/gameplay"`
+
+## time-scaled-loot — shape loot odds by elapsed hours with caller-authored curves and pipeline provenance
+
+- `timeScaledRarity` (function) · `import { timeScaledRarity } from "@jgengine/core/gameplay"`
 
 ## toast-feed — queue of transient self-expiring on-screen messages (toasts, announcer, kill-feed)
 

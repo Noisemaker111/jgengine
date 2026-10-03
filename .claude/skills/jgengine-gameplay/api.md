@@ -612,6 +612,11 @@
 - `evaluateLootFilter` (function): function evaluateLootFilter(rules: readonly LootFilterRule[], item: LootFilterItem): LootFilterOverride — First matching rule wins (PoE/Last Epoch block semantics) — later rules never override an earlier match. Returns overrides only; fields the rule doesn't set are left for the caller's baseline (rarity style) to fill in.
 - `lootFilter` (function): function lootFilter(rules: readonly LootFilterRule[]): readonly LootFilterRule[] — Validating factory — rule ids must be unique so authoring mistakes fail loudly.
 
+## @jgengine/core/game/lootModifiers
+
+- `TimeScaledRarityOptions` (interface): interface TimeScaledRarityOptions — Caller-authored weighting curve; item ids, quality tiers and balance never live in the modifier.
+- `timeScaledRarity` (function): function timeScaledRarity<TCtx extends { elapsedMs: number }>(options: TimeScaledRarityOptions): LootModifier<TCtx> — Multiply weighted odds (or independent chances, clamped to one) by a caller-authored elapsed-time curve. Keeps source tables unchanged and uses the existing pipeline's modifier provenance. Elapsed time and multipliers must be finite and nonnegative; invalid curves reject the roll.
+
 ## @jgengine/core/game/lootPipeline
 
 - `LootDropProvenance` (interface): interface LootDropProvenance — Why one drop is in the result: the stage/table/entry that produced it, its weights, and the modifiers that shaped it.
@@ -1183,6 +1188,12 @@
 - `EventTickerOptions` (interface): interface EventTickerOptions — Options for {@link createEventTicker}.
 - `EventTickerSnapshot` (interface): interface EventTickerSnapshot — Serializable state of the ticker, for save/restore.
 - `EventTickerView` (interface): interface EventTickerView extends EventTickerEntry — A live ticker entry as handed to the renderer: the stored entry plus a `fade` value `0..1` (age / `ttlMs`) — `0` for a fresh entry, approaching `1` as it nears expiry — so the UI can drop opacity as an entry ages out. `fade` is always `0` when no `ttlMs` is configured.
+- `ExpeditionConfig` (interface): interface ExpeditionConfig<TCtx> — Runtime policy, supplied on each transition and never saved. Callbacks must be pure.
+- `ExpeditionDispatch` (interface): interface ExpeditionDispatch — Dispatch data, detached from the caller's supply record. All timestamps are epoch milliseconds.
+- `ExpeditionEvent` (interface): interface ExpeditionEvent — Timestamped serializable event. `at` is epoch milliseconds, compatible with `appendFeed`.
+- `ExpeditionHazard` (interface): interface ExpeditionHazard — One encounter's mechanical effects and optional caller-authored notices.
+- `ExpeditionState` (interface): interface ExpeditionState — Plain saveable expedition data. Persist this whole value, including the RNG cursor and tick frontier.
+- `ExpeditionSupplyRule` (interface): interface ExpeditionSupplyRule — Ordered auto-consumption rule: spends one finite supply only when its declared effect changes a vital.
 - `FeedEntry` (interface): interface FeedEntry<T = unknown> { at: number; data: T } — ⚠ undocumented · used by `ToastStack` (@jgengine/react): Render `ctx.game.feed`'s entries for `action` as a newest-first toast stack — the feed-backed sibling of `@jgengine/core/game/toasts`' `crea…
 - `FeedWindow` (interface): interface FeedWindow — Bounds for {@link appendFeed} / {@link pruneFeed}: newest-`limit` cap and/or `ttl` age window.
 - `FiringBlock` (type): type FiringBlock = "predicate" | "no-target" | "cooldown" | "rate-limit" | "no-charges" | "stack-ignored" — Reason a firing did not produce an effect — surfaced for debug inspection, never thrown.
@@ -1420,6 +1431,7 @@
 - `ThresholdDirection` (type): type ThresholdDirection = "up" | "down" — Generic threshold-crossing detection over ordered numeric boundaries.
 - `TickResult` (interface): interface TickResult<TSpec, TReserve = undefined, TOutput = undefined> — Outcome of {@link tick}: advanced state plus the events produced.
 - `TieMode` (type): type TieMode = "standard" | "dense" — How equal scores share ranks: - `"standard"` (competition ranking): ties share a rank and the next distinct score skips ahead — `1, 2, 2, 4`. - `"dense"`: ties share a rank and the next distinct score is the very next integer — `1, 2, 2, 3`.
+- `TimeScaledRarityOptions` (interface): interface TimeScaledRarityOptions — Caller-authored weighting curve; item ids, quality tiers and balance never live in the modifier.
 - `TimedFeedEntry` (interface): interface TimedFeedEntry — Any feed entry carrying a game-time (or wall-clock) `at` stamp for age-based pruning.
 - `Toast` (interface): interface Toast<T = string> — A transient HUD message that expires on its own — banner, pickup note, alert.
 - `TopDownCameraConfig` (interface): interface TopDownCameraConfig — Fixed top-down / isometric rig (#23) — height/pitch/yaw + decoupled follow.
@@ -1582,6 +1594,7 @@
 - `describeTrackedQuest` (function): function describeTrackedQuest(def: QuestDef, instance: QuestInstance, label: (objective: QuestObjective) => string = defaultObjectiveLabel): TrackedQuestView — Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title, status, labelled objective progress). Pass `label` to override the derived objective text.
 - `dialogueSlot` (const): const dialogueSlot: StoreHandle<string | undefined> — Typed handle onto the open-dialogue slot — React reads it via `useOpenDialogueId`; game code uses `ctx.game.dialogue`.
 - `diffParams` (function): function diffParams(before: Readonly<Record<string, number>>, after: Readonly<Record<string, number>>): readonly ParamDelta[] — Compute the per-parameter deltas between two value maps — the preview/diff of applying a change, for showing a player what a difficulty tier or mutator will do before they commit.
+- `dispatchExpedition` (function): function dispatchExpedition(input: ExpeditionDispatch): ExpeditionState — Dispatch plain expedition state with a persisted seeded cursor; no clock, scheduler or storage is owned.
 - `drainOutput` (function): function drainOutput(state: ProductionState, itemId: string, count?: number): { state: ProductionState; taken: number } — ⚠ undocumented
 - `draw` (function): function draw(state: CardPileState, n: number, options: { from: ZoneName; to: ZoneName; handLimit?: number; reshuffleFrom?: ZoneName; seed?: string | number; }): DrawResult — ⚠ undocumented
 - `driftValue` (function): function driftValue(record: Record<string, number>, key: string, rate: number, rest = 0, bounds?: NumericBounds): number — Decay `key` toward a `rest` value (default `0`) by `rate` per call — the common "relationships cool off" / "heat fades" drift. Thin wrapper over {@link towardValue}.
@@ -1648,6 +1661,7 @@
 - `raceTrack` (function): function raceTrack(config: RaceTrackConfig): RaceTrack — A race track is an ordered ring of checkpoint trigger volumes plus a lap count. The final checkpoint is the lap/finish line: a racer completes a lap by passing all checkpoints in order and hitting the last one. `forks` splice alternate route segments between mainline checkpoints.
 - `rankLeaderboard` (function): function rankLeaderboard(rows: readonly RankableRow[], options: RankLeaderboardOptions = {}): RankedEntry[] — Turn raw leaderboard rows into a render-ready ranked table. Pure and allocation-bounded: it sorts a copy by `value` (descending by default), assigns 1-based ranks with correct tie handling (`"standard"` → `1, 2, 2, 4`; `"dense"` → `1, 2, 2, 3`), flags rows that share a score (`isTie`), marks the local player (`isLocal`, via `highlightUserId`), and finally applies `limit`. Sorting is stable, so rows with equal scores keep their input order. Nothing here styles or branches on game meaning — pair it with {@link medalFor} and a game-owned theme to render a reskinnable scoreboard. Accepts a {@link LeaderboardRow}`[]` straight from `leaderboard.snapshot()`/`getTop()` since those satisfy {@link RankableRow}.
 - `readPath` (function): function readPath(facts: PredicateFacts, path: PredicatePath): unknown — Read a dot path out of a fact bag, descending only through plain objects. Returns `undefined` when any segment is missing or non-traversable. Bounded by the path's segment count.
+- `recallExpedition` (function): function recallExpedition<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Settle first, then recall safely. If the catch-up budget leaves due exploring ticks, return that state without recalling; repeat at the same target until the frontier catches up. Dead state never revives.
 - `redirect` (function): function redirect(endpoints: { source?: string; recipient?: string }): ResourcePolicy — Override the source and/or recipient accounts of a transaction.
 - `refillMeter` (function): function refillMeter(values: DecayMeterValues, defs: readonly DecayMeterConfig[], id: string, amount: number): DecayMeterValues — Refill (or drain, if negative) one meter by `amount`, clamped to its range. Returns a new record; throws on an unknown id. The pure counterpart to {@link DecayMeterSet.refill}.
 - `registerRuleEffect` (function): function registerRuleEffect(definition: RuleEffectDefinition): void — Declare a rule effect id. Idempotent per id (last registration wins); call at module load next to catalogs so authored content and inspectors share one vocabulary.
@@ -1662,6 +1676,7 @@
 - `resolveSelection` (function): function resolveSelection(base: Readonly<Record<string, number>>, registry: LayerRegistry, ids: LayerSelection): { readonly snapshot: ParamSnapshot; readonly unknown: readonly string[] } — Reproducible session setup in one call: resolve a saved {@link LayerSelection} through a registry, fold the found layers over `base`, and return the snapshot alongside any unknown ids. The same base + registry + selection always yields the same snapshot.
 - `resumeJob` (function): function resumeJob<TSpec, TReserve>(state: WorkQueueState<TSpec, TReserve>, id: JobId): WorkQueueState<TSpec, TReserve> — Resume a paused job; it re-enters the queue and competes for a slot by ordering.
 - `resumeRule` (function): function resumeRule(ledger: ResourceLedger, ruleId: string): ResourceLedger — Resume a paused rule. Its `nextDueSeconds` is unchanged, so the paused span counts as missed cycles that the rule's {@link CatchUpPolicy} decides how to settle on the next advance.
+- `returnExpeditionNow` (function): function returnExpeditionNow<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Settle first, then complete a live return instantly. Caller owns payment/authorization; pending ticks remain unsettled when the budget is exhausted, and dead/home state is never changed.
 - `ringSampleAt` (function): function ringSampleAt(config: RingConfig, time: number): RingSample — ⚠ undocumented
 - `runPipeline` (function): function runPipeline<V>(base: V, modifiers: readonly Modifier<V>[], equals: (a: V, b: V) => boolean = Object.is): PipelineResult<V> — ⚠ undocumented
 - `saveBindingOverride` (function): function saveBindingOverride(gameId: string, action: string, codes: ActionCodes, storage: Pick<WebStorageLike, "getItem" | "setItem" | "removeItem"> | null | undefined = defaultStorage()): BindingOverrides — ⚠ undocumented
@@ -1672,6 +1687,7 @@
 - `setGamePhase` (function): function setGamePhase(ctx: GameContext, phase: GamePhase): void — Set the current phase. Publishes it to `ctx.game.store` (React reads it via `useGamePhase`) and gates the shell's on-screen touch controls in one call — `playing` shows them, every other phase hides them. This is the whole "main menu shouldn't show touch controls" wiring: call it once per phase transition and the dock follows.
 - `setTouchControlsMode` (function): function setTouchControlsMode(ctx: GameContext, mode: string | null): void — Activate a named touch control mode, or `null` to return to the base config.
 - `setValue` (function): function setValue(record: Record<string, number>, key: string, value: number, bounds?: NumericBounds): number — Set `key` to `value` (clamped to `bounds`), writing the record in place. Returns the stored value.
+- `settleExpedition` (function): function settleExpedition<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Replay due event ticks using the existing stepped catch-up primitive. Order is loot → hazard → ordered supplies → death → capacity recall. Unprocessed ticks retain their frontier; returning never rolls or takes damage. Auto-recall uses the triggering tick's time, including offline arrival in the same call.
 - `shuffleWithRng` (function): function shuffleWithRng<T>(values: readonly T[], rng: () => number): T[] — ⚠ undocumented
 - `slotAccepts` (function): function slotAccepts(slot: MountSlotDef, category: string): boolean — Attach parts into an item's mount slots and resolve the combined stats.
 - `splitSegments` (function): function splitSegments(splits: readonly number[], start = 0): number[] — Per-segment durations from a cumulative split book (`splits[i]` = elapsed time at checkpoint `i`): `segments[i] = splits[i] − splits[i−1]`, the first measured from `start` (default 0). Turns the cumulative splits {@link RacerProgress} records into the individual leg times a results screen shows.
@@ -1688,6 +1704,7 @@
 - `tickProduction` (function): function tickProduction(def: ProductionBuildingDef, state: ProductionState, input: ProductionTickInput): ProductionState — ⚠ undocumented
 - `tickRaceSession` (function): function tickRaceSession(session: RaceSessionState, dt: number): RaceSessionState — Advance the session by `dt` seconds: bleed the countdown down and flip to `racing` when it reaches zero, or accumulate `elapsed` while `racing`. `idle` and `finished` are inert. Overshoot past the countdown is dropped rather than banked into `elapsed`, so the race clock always starts from zero.
 - `tierAt` (function): function tierAt<Id>(boundaries: readonly ThresholdBoundary<Id>[], value: number, options: { readonly inclusive?: boolean } = {}): ThresholdBoundary<Id> | null — The highest boundary at-or-below `value` — the band the value currently sits in. Returns `null` when `value` is below every boundary. Boundaries need not be sorted.
+- `timeScaledRarity` (function): function timeScaledRarity<TCtx extends { elapsedMs: number }>(options: TimeScaledRarityOptions): LootModifier<TCtx> — Multiply weighted odds (or independent chances, clamped to one) by a caller-authored elapsed-time curve. Keeps source tables unchanged and uses the existing pipeline's modifier provenance. Elapsed time and multipliers must be finite and nonnegative; invalid curves reject the roll.
 - `touchButtonShape` (function): function touchButtonShape(action: string): TouchButtonShape — Default silhouette for an action; `circle` when nothing more specific fits.
 - `touchCode` (function): function touchCode(action: string): string — ⚠ undocumented
 - `towardValue` (function): function towardValue(record: Record<string, number>, key: string, target: number, maxDelta: number, bounds?: NumericBounds): number — Step `key` toward `target` by at most `maxDelta` without overshooting, then clamp to `bounds`. Writes in place and returns the stored value.
@@ -2216,6 +2233,19 @@
 - `TurnLoopSnapshot` (interface): interface TurnLoopSnapshot { round: number; order: string[]; activeIndex: number; phaseIndex: number; pools: Record<string, Record<string, number>> } — ⚠ undocumented
 - `TurnState` (interface): interface TurnState { round: number; order: readonly string[]; activeIndex: number; active: string | null; phaseIndex: number; phase: string | null } — ⚠ undocumented
 - `createTurnLoop` (function): function createTurnLoop<TAction = unknown>(config: TurnLoopConfig): TurnLoop<TAction> — ⚠ undocumented
+
+## @jgengine/core/work/expedition
+
+- `ExpeditionConfig` (interface): interface ExpeditionConfig<TCtx> — Runtime policy, supplied on each transition and never saved. Callbacks must be pure.
+- `ExpeditionDispatch` (interface): interface ExpeditionDispatch — Dispatch data, detached from the caller's supply record. All timestamps are epoch milliseconds.
+- `ExpeditionEvent` (interface): interface ExpeditionEvent — Timestamped serializable event. `at` is epoch milliseconds, compatible with `appendFeed`.
+- `ExpeditionHazard` (interface): interface ExpeditionHazard — One encounter's mechanical effects and optional caller-authored notices.
+- `ExpeditionState` (interface): interface ExpeditionState — Plain saveable expedition data. Persist this whole value, including the RNG cursor and tick frontier.
+- `ExpeditionSupplyRule` (interface): interface ExpeditionSupplyRule — Ordered auto-consumption rule: spends one finite supply only when its declared effect changes a vital.
+- `dispatchExpedition` (function): function dispatchExpedition(input: ExpeditionDispatch): ExpeditionState — Dispatch plain expedition state with a persisted seeded cursor; no clock, scheduler or storage is owned.
+- `recallExpedition` (function): function recallExpedition<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Settle first, then recall safely. If the catch-up budget leaves due exploring ticks, return that state without recalling; repeat at the same target until the frontier catches up. Dead state never revives.
+- `returnExpeditionNow` (function): function returnExpeditionNow<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Settle first, then complete a live return instantly. Caller owns payment/authorization; pending ticks remain unsettled when the budget is exhausted, and dead/home state is never changed.
+- `settleExpedition` (function): function settleExpedition<TCtx>(config: ExpeditionConfig<TCtx>, state: ExpeditionState, nowMs: number): ExpeditionState — Replay due event ticks using the existing stepped catch-up primitive. Order is loot → hazard → ordered supplies → death → capacity recall. Unprocessed ticks retain their frontier; returning never rolls or takes damage. Auto-recall uses the triggering tick's time, including offline arrival in the same call.
 
 ## @jgengine/core/work/jobQueue
 

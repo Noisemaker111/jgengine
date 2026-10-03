@@ -185,6 +185,7 @@ export {
 export { createLevelSequence, type LevelSequence } from "./game/levelSequence";
 export { createLoadouts, type LoadoutDef } from "./game/loadout";
 export { evaluateLootFilter, lootFilter, type LootFilterRule } from "./game/lootFilter";
+export { timeScaledRarity, type TimeScaledRarityOptions } from "./game/lootModifiers";
 export {
   createLootPipeline,
   defineLootPipeline,
@@ -602,6 +603,18 @@ export { createMultiRegionHealth, type MultiRegionHealth } from "./survival/regi
 export { createCommitController } from "./turn/commit";
 export { createIntentBoard } from "./turn/intent";
 export { createTurnLoop, type TurnLoop } from "./turn/turnLoop";
+export {
+  dispatchExpedition,
+  recallExpedition,
+  returnExpeditionNow,
+  settleExpedition,
+  type ExpeditionConfig,
+  type ExpeditionDispatch,
+  type ExpeditionEvent,
+  type ExpeditionHazard,
+  type ExpeditionState,
+  type ExpeditionSupplyRule,
+} from "./work/expedition";
 export {
   activeJobs,
   cancelJob,
