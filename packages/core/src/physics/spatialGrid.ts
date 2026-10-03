@@ -121,24 +121,23 @@ export class SpatialGrid {
     return n;
   }
 
-  /** Invoke `cb(a, b)` once for each unordered pair within `maxDistance` (mutual separation/overlap). */
+  /** Invoke `cb(a, b)` once for each unordered pair within finite, nonnegative `maxDistance`, including distances larger than `cellSize`. */
   forEachPair(maxDistance: number, cb: (a: number, b: number) => void): void {
+    if (!Number.isFinite(maxDistance) || maxDistance < 0) {
+      throw new RangeError("SpatialGrid: maxDistance must be finite and nonnegative");
+    }
     const xs = this.xs;
     const zs = this.zs;
     if (xs === null || zs === null) return;
     const d2 = maxDistance * maxDistance;
     const nx = this.nx;
-    const nz = this.nz;
     for (let i = 0; i < this.entityCount; i += 1) {
-      const c = this.cellOfBody[i]!;
-      const cz = (c / nx) | 0;
-      const cx = c - cz * nx;
       const x = xs[i]!;
       const z = zs[i]!;
-      const z0 = cz > 0 ? cz - 1 : cz;
-      const z1 = cz < nz - 1 ? cz + 1 : cz;
-      const x0 = cx > 0 ? cx - 1 : cx;
-      const x1 = cx < nx - 1 ? cx + 1 : cx;
+      const z0 = this.cellZ(z - maxDistance);
+      const z1 = this.cellZ(z + maxDistance);
+      const x0 = this.cellX(x - maxDistance);
+      const x1 = this.cellX(x + maxDistance);
       for (let gz = z0; gz <= z1; gz += 1) {
         const rowBase = gz * nx;
         for (let gx = x0; gx <= x1; gx += 1) {
