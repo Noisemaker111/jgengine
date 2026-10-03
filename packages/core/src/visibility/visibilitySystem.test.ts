@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import type { CameraVisibilityContext } from "@jgengine/core/visibility/camera";
 import type { Renderable } from "@jgengine/core/visibility/visibilitySystem";
-import { createVisibilitySystem } from "@jgengine/core/visibility/visibilitySystem";
+import { createVisibilitySystem } from "./visibilitySystem";
 
 function mainCamera(): CameraVisibilityContext {
   return {
@@ -109,6 +109,29 @@ describe("visibilitySystem", () => {
     sys.update();
     expect(sys.index().size()).toBe(1);
     expect(sys.boundsOf("b")).toBeUndefined();
+  });
+
+  test("repeated removal clears live state and reused ids receive fresh policy", () => {
+    let objects: Renderable[] = [];
+    const sys = createVisibilitySystem({ renderables: () => objects, cameras: () => [mainCamera()] });
+    for (let wave = 0; wave < 100; wave += 1) {
+      const id = `wave-${wave}`;
+      objects = [ahead(id, 20, { assets: [`${id}.glb`] })];
+      expect(sys.update().visible.has(id)).toBe(true);
+      expect(sys.stats().consideredForRender).toBe(1);
+      objects = [];
+      sys.update();
+      expect(sys.index().size()).toBe(0);
+      expect(sys.boundsOf(id)).toBeUndefined();
+      expect(sys.isVisible(id)).toBe(false);
+      expect(sys.isPreloaded(id)).toBe(false);
+      expect(sys.requiredAssets().size).toBe(0);
+      objects = [ahead(id, 20, { overrides: { customVisibility: () => false } })];
+      expect(sys.update().visible.has(id)).toBe(false);
+      expect(sys.stats().consideredForRender).toBe(1);
+      objects = [];
+      sys.update();
+    }
   });
 
   test("debug snapshot reports frustum corners, partitions, and culled ids", () => {

@@ -922,6 +922,7 @@
     "./vfx/ParticleField",
     "./vfx/WorldFloatingText",
     "./visibility/CullingProvider",
+    "./visibility/cullingDriver",
     "./vision/FrustumSensorHud",
     "./vision/HiddenStateProbeHud",
     "./vision/RevealVision",

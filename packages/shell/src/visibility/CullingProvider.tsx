@@ -2,12 +2,10 @@ import { createContext, useContext, useMemo, useRef, type ReactNode, type Mutabl
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGameContext } from "@jgengine/react/provider";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
-import { createVisibilitySystem, type Renderable, type VisibilitySystem } from "@jgengine/core/visibility/visibilitySystem";
 import type { CameraView } from "@jgengine/core/visibility/frustum";
-import type { CameraVisibilityContext } from "@jgengine/core/visibility/camera";
 import type { VisibilityConfig } from "@jgengine/core/visibility/config";
-import type { BoundsSpec, Vec3 } from "@jgengine/core/visibility/bounds";
+import type { Vec3 } from "@jgengine/core/visibility/bounds";
+import { buildCullingDriver } from "./cullingDriver";
 import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 
 type VisiblePredicate = (id: string) => boolean;
@@ -26,88 +24,6 @@ export function useRenderVisibility(): MutableRefObject<VisiblePredicate> {
   return useContext(CullingContext) ?? alwaysVisibleRef;
 }
 
-interface MutableRenderable {
-  id: string;
-  position: Vec3;
-  version: number;
-  bounds?: BoundsSpec;
-  overrides?: Renderable["overrides"];
-  layer?: string;
-}
-
-interface VersionEntry {
-  x: number;
-  y: number;
-  z: number;
-  rot: number;
-  version: number;
-}
-
-const ENTITY_BOUNDS: BoundsSpec = { kind: "sphere", radius: 2, offset: [0, 1, 0] };
-
-function objectRadius(scale: number | readonly [number, number, number] | undefined): number {
-  if (scale === undefined) return 1;
-  const s = typeof scale === "number" ? scale : Math.max(scale[0], scale[1], scale[2]);
-  return Math.max(0.75, s);
-}
-
-function buildSystem(ctx: GameContext, config: VisibilityConfig | undefined): { system: VisibilitySystem; setView: (view: CameraView | null) => void } {
-  const versions = new Map<string, VersionEntry>();
-  let currentView: CameraView | null = null;
-  const scratch: MutableRenderable = { id: "", position: [0, 0, 0], version: 0 };
-  const objectSpec: { kind: "sphere"; radius: number; offset?: Vec3 } = { kind: "sphere", radius: 1, offset: [0, 0.5, 0] };
-
-  function bump(id: string, position: Vec3, rot: number): number {
-    const prev = versions.get(id);
-    if (prev !== undefined && prev.x === position[0] && prev.y === position[1] && prev.z === position[2] && prev.rot === rot) {
-      return prev.version;
-    }
-    const version = (prev?.version ?? 0) + 1;
-    versions.set(id, { x: position[0], y: position[1], z: position[2], rot, version });
-    return version;
-  }
-
-  function* renderables(): Iterable<Renderable> {
-    const entityOverrides = config?.entities;
-    for (const entity of ctx.scene.entity.list()) {
-      scratch.id = entity.id;
-      scratch.position = entity.position;
-      scratch.version = bump(entity.id, entity.position, entity.rotationY);
-      scratch.bounds = ENTITY_BOUNDS;
-      scratch.overrides = entityOverrides?.[entity.name];
-      scratch.layer = "entity";
-      yield scratch as Renderable;
-    }
-    const objectOverrides = config?.objects;
-    for (const object of ctx.scene.object.list()) {
-      scratch.id = object.instanceId;
-      scratch.position = object.position;
-      scratch.version = bump(object.instanceId, object.position, object.rotationY);
-      objectSpec.radius = objectRadius(object.visual?.scale);
-      scratch.bounds = objectSpec;
-      scratch.overrides = objectOverrides?.[object.catalogId];
-      scratch.layer = "object";
-      yield scratch as Renderable;
-    }
-  }
-
-  const cameras = (): readonly CameraVisibilityContext[] => (currentView === null ? EMPTY_CAMERAS : [{ id: "main", view: currentView }]);
-  const options = {
-    renderables,
-    cameras,
-    ...(config?.culling !== undefined ? { settings: config.culling } : {}),
-    ...(config?.scene !== undefined ? { sceneOverrides: config.scene } : {}),
-  };
-  const system = createVisibilitySystem(options);
-  return {
-    system,
-    setView(view) {
-      currentView = view;
-    },
-  };
-}
-
-const EMPTY_CAMERAS: readonly CameraVisibilityContext[] = [];
 const tmpDir = new THREE.Vector3();
 
 function viewFromCamera(camera: THREE.Camera): CameraView | null {
@@ -153,7 +69,7 @@ export function CullingProvider({ config, drawDistance, children }: { config: Vi
     if (drawDistance === undefined) return config;
     return { ...config, culling: { ...config?.culling, defaultMaxRenderDistance: config?.culling?.defaultMaxRenderDistance ?? drawDistance } };
   }, [config, drawDistance]);
-  const driver = useMemo(() => (enabled ? buildSystem(ctx, resolvedConfig) : null), [ctx, resolvedConfig, enabled]);
+  const driver = useMemo(() => (enabled ? buildCullingDriver(ctx, resolvedConfig) : null), [ctx, resolvedConfig, enabled]);
 
   useFrame(() => {
     if (driver === null) {

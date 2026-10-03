@@ -20,6 +20,9 @@ the renderer.
   the cells that changed; static objects are inserted once.
 - **Bounds caching** — bounds recompute only when an object's `version` advances (transform,
   geometry, or override change), reusing the cached object so steady-state frames allocate nothing.
+  The shell tracks each live entity/object separately, invalidates placed-object bounds when visual
+  scale changes, and drops tracking entries after removal. `alwaysVisible` overrides stay attached
+  to their own rows even when several rows bypass culling in one frame.
 
 Every game improves immediately after upgrading, because defaults favor visual stability: a preload
 margin larger than the view, hysteresis so objects don't flicker at the boundary, and a large

@@ -154,6 +154,7 @@ export function createVisibilitySystem(options: VisibilitySystemOptions): Visibi
       index.remove(id);
       bounds.delete(id);
       records.delete(id);
+      consideredStamp.delete(id);
     }
     return alwaysVisibleList;
   }
