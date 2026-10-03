@@ -1,5 +1,8 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 
+import { ScrollRail } from "@jgengine/react/scrollRail";
+import { useDialogBehavior } from "@jgengine/react/dialogBehavior";
+
 import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
 
 import {
@@ -243,7 +246,7 @@ function TabButton({ tab, selected, orientation, onSelect }: { tab: Tab; selecte
     <button
       type="button"
       onClick={onSelect}
-      className={`min-h-[40px] whitespace-nowrap rounded-lg px-4 text-sm font-medium transition ${orientation === "col" ? "w-full text-left" : ""} ${selected ? "" : "hover:bg-white/5"}`}
+      className={`shrink-0 min-h-[44px] whitespace-nowrap rounded-lg px-4 text-sm font-medium transition ${orientation === "col" ? "w-full text-left" : ""} ${selected ? "" : "hover:bg-white/5"}`}
       style={selected ? { background: accent, color: onAccent } : { color: textDim }}
     >
       {tab.label}
@@ -253,7 +256,7 @@ function TabButton({ tab, selected, orientation, onSelect }: { tab: Tab; selecte
 
 function Body({ tab, actions, capturing, setCapturing, onClose }: BodyProps) {
   return (
-    <div className="jg-settings-scroll flex-1 space-y-2 overflow-y-auto p-4">
+    <div className="jg-settings-scroll min-h-0 flex-1 space-y-2 overflow-y-auto p-4">
       {tab.category === null
         ? actions.map((action) => <ActionRow key={action.id} action={action} onClose={onClose} />)
         : (
@@ -323,6 +326,7 @@ export function SettingsMenu({
   );
   const [capturing, setCapturing] = useState<SettingsKeybindRow | null>(null);
   const active = tabs.find((tab) => tab.id === activeId) ?? tabs[0] ?? null;
+  const dialogRef = useDialogBehavior({ open: active !== null, onClose: capturing === null ? onClose : undefined });
 
   useEffect(() => {
     if (capturing === null) return;
@@ -353,15 +357,6 @@ export function SettingsMenu({
     };
   }, [capturing]);
 
-  useEffect(() => {
-    if (capturing !== null) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.code === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [capturing, onClose]);
-
   if (active === null) return null;
 
   const bodyProps: BodyProps = { tab: active, actions: controller.actions, capturing, setCapturing, onClose };
@@ -373,7 +368,7 @@ export function SettingsMenu({
 
   if (controller.variant === "fullscreen") {
     return (
-      <div className="pointer-events-auto absolute inset-0 z-40 flex flex-col" style={{ background: surface, color: text, fontFamily: fontDisplay }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label="Settings" tabIndex={-1} className="pointer-events-auto absolute inset-0 z-40 flex flex-col" style={{ background: surface, color: text, fontFamily: fontDisplay }}>
         <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-4">
           <div className="flex items-center justify-between gap-3 pb-4 pt-6">
             <h2 className="text-2xl font-bold tracking-wide" style={{ color: text }}>
@@ -381,11 +376,11 @@ export function SettingsMenu({
             </h2>
             <CloseButton onClose={onClose} />
           </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-4">
+          <ScrollRail label="settings categories" style={{ paddingBottom: 16 }}>
             {tabs.map((tab) => (
               <TabButton key={tab.id} tab={tab} selected={tab.id === active.id} orientation="row" onSelect={() => setActiveId(tab.id)} />
             ))}
-          </div>
+          </ScrollRail>
           <Body {...bodyProps} />
         </div>
       </div>
@@ -396,11 +391,12 @@ export function SettingsMenu({
     return (
       <Backdrop onClose={onClose} align="items-center">
         <div
+          ref={dialogRef} role="dialog" aria-modal="true" aria-label="Settings" tabIndex={-1}
           onClick={stop}
           className="flex overflow-hidden rounded-2xl shadow-2xl"
           style={{ ...panelStyle, width: "min(94vw, 760px)", height: "min(84vh, 560px)" }}
         >
-          <nav className="flex w-44 shrink-0 flex-col gap-1 p-3" style={{ background: surfaceDeep, borderRight: `1px solid ${edge}` }}>
+          <nav className="flex w-44 shrink-0 flex-col gap-1 overflow-y-auto p-3" style={{ background: surfaceDeep, borderRight: `1px solid ${edge}` }}>
             <span className="px-3 pb-2 pt-1 text-xs font-semibold uppercase tracking-widest" style={{ color: textDim }}>
               Settings
             </span>
@@ -408,7 +404,7 @@ export function SettingsMenu({
               <TabButton key={tab.id} tab={tab} selected={tab.id === active.id} orientation="col" onSelect={() => setActiveId(tab.id)} />
             ))}
           </nav>
-          <div className="flex flex-1 flex-col">
+          <div className="flex min-w-0 flex-1 flex-col">
             <div className="flex items-center justify-between gap-3 px-4 py-3" style={{ borderBottom: `1px solid ${edge}` }}>
               <span className="text-sm font-semibold" style={{ color: text }}>
                 {active.label}
@@ -426,6 +422,7 @@ export function SettingsMenu({
     return (
       <Backdrop onClose={onClose} align="items-end">
         <div
+          ref={dialogRef} role="dialog" aria-modal="true" aria-label="Settings" tabIndex={-1}
           onClick={stop}
           className="flex flex-col overflow-hidden rounded-t-3xl shadow-2xl"
           style={{ ...panelStyle, width: "min(100%, 640px)", height: "min(84vh, 620px)" }}
@@ -437,11 +434,11 @@ export function SettingsMenu({
             {title}
             <CloseButton onClose={onClose} />
           </div>
-          <div className="flex gap-1.5 overflow-x-auto px-4 pb-3">
+          <ScrollRail label="settings categories" style={{ padding: "0 16px 12px" }}>
             {tabs.map((tab) => (
               <TabButton key={tab.id} tab={tab} selected={tab.id === active.id} orientation="row" onSelect={() => setActiveId(tab.id)} />
             ))}
-          </div>
+          </ScrollRail>
           <div style={{ borderTop: `1px solid ${edge}` }} className="flex flex-1 flex-col overflow-hidden">
             <Body {...bodyProps} />
           </div>
@@ -453,6 +450,7 @@ export function SettingsMenu({
   return (
     <Backdrop onClose={onClose} align="items-center">
       <div
+        ref={dialogRef} role="dialog" aria-modal="true" aria-label="Settings" tabIndex={-1}
         onClick={stop}
         className="flex flex-col overflow-hidden rounded-2xl shadow-2xl"
         style={{ ...panelStyle, width: "min(92vw, 460px)", height: "min(86vh, 580px)" }}
@@ -461,11 +459,11 @@ export function SettingsMenu({
           {title}
           <CloseButton onClose={onClose} />
         </div>
-        <div className="flex gap-1.5 overflow-x-auto px-4 py-3" style={{ borderBottom: `1px solid ${edge}` }}>
+        <ScrollRail label="settings categories" style={{ padding: "12px 16px", borderBottom: `1px solid ${edge}` }}>
           {tabs.map((tab) => (
             <TabButton key={tab.id} tab={tab} selected={tab.id === active.id} orientation="row" onSelect={() => setActiveId(tab.id)} />
           ))}
-        </div>
+        </ScrollRail>
         <Body {...bodyProps} />
       </div>
     </Backdrop>

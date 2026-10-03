@@ -17,7 +17,7 @@ Search [capabilities.md](capabilities.md) by intent and use [api.md](api.md) for
 2. Define the real UI states: attract, main menu, character create/select where relevant, live play, pause, settings, credits, results, empty/error, relevant overlays, and a death/downed screen when the player can die (see product rules).
 3. Read state through selectors/hooks; keep simulation mutation behind commands.
 4. Compose this game's UI from the shipped building blocks, then reskin: `InventoryGrid`, `usePanels`/`PanelHost`/`Window` (hotkeys, ESC, and z-stacking above the HUD are handled, so never hand-roll a `z-*` or keydown listener for a window), `CharacterSheet`/`Paperdoll`, stat/vitals bars, action/selection bars, and `EntityPreview` (`@jgengine/shell/render/EntityPreview`) for a live 3D character portrait. Hand-roll markup only where no block fits. When a second presentation is plausible, split data / renderer / chrome (see [reference-primitives.md](reference-primitives.md)).
-5. Make keyboard, pointer, touch, controller, focus, and screen-reader behavior explicit.
+5. Make keyboard, pointer, touch, controller, focus, and screen-reader behavior explicit. For dialogs whose open state already belongs to the game, use `useDialogBehavior({ open, onClose })` (`@jgengine/react/dialogBehavior`) and attach its ref to the caller-owned dialog root; keep the skin, accessible name, `role="dialog"`, `aria-modal`, and `tabIndex={-1}` in the game. `ModalHost` shares this behavior when a `ModalStack` owns the state.
 6. Add preview fixtures using the real components for fast deterministic capture. Shipped engine HUD primitives are registered in `@jgengine/react`'s `PREVIEW_FIXTURES`; in the monorepo capture one with `bun run shoot --fixture <name>` (`--list` shows the set).
 7. Verify desktop and mobile layouts through `jgengine-verify`, and check [reference.md](reference.md) §14 rejection criteria and the definition of done before claiming UI complete. A HUD that could pass for another game's default chrome fails visual review.
 
@@ -36,6 +36,7 @@ Existing React games keep their entity store and use the focused
 - **Player death gets a visible screen and respawn feedback — never a silent teleport.** Build the moment `game-design` requires: an authored death/downed overlay that reads the lethal event, communicates the consequence, and surfaces the way back (respawn/revive/restart). Drive it from `createDownedState` (`@jgengine/core/combat`) rather than a hand-rolled flag, and mount it inside `HudCanvas`.
 - **Browser interruption listeners are shared.** Use `useBrowserSuspension` from `@jgengine/react/browserLifecycle` for blur, hidden-page and pointer-lock loss. Keep the decision to pause, release controls or preserve multiplayer simulation in the callback; use options to disable unwanted triggers.
 - Layout and skin remain caller-controlled; shared primitives own reusable behavior, not product look.
+- Use `ScrollRail` for horizontal controls that can overflow: visible navigation and focus reveal keep every item reachable while the caller owns markup and selection. Keep item widths from shrinking when labels must stay readable.
 - SSR-visible output is hydration-stable; round computed SVG values at the boundary.
 
 ## Shared-world interaction rules

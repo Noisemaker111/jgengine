@@ -170,6 +170,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `DEFAULT_WALK_CODES` (const) · `import { DEFAULT_WALK_CODES } from "@jgengine/shell/shellMovement"`
 
+## dialog-behavior — controlled dialog focus and keyboard behavior without owning markup or screen state
+
+- `useDialogBehavior` (function) · `import { useDialogBehavior } from "@jgengine/react"`
+
 ## dialogue-view — drop-in branching conversation UI — speaker + portrait slot, current line, clickable response choices that advance a DialogueRun
 
 - `DialogueView` (function) · `import { DialogueView } from "@jgengine/react"`
@@ -525,6 +529,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## screen-effects-overlay — shell DOM overlay that renders a core screen-effects controller as full-screen flash / edge-vignette / low-health-pulse color-grade layers
 
 - `ScreenEffectsOverlay` (function) · `import { ScreenEffectsOverlay } from "@jgengine/shell/postfx/ScreenEffectsOverlay"`
+
+## scroll-rail — reachable horizontal controls with visible overflow navigation and keyboard focus reveal
+
+- `ScrollRail` (function) · `import { ScrollRail } from "@jgengine/react"`
 
 ## selection-collection — accessible portrait-strip / group-chip renderer over a selection model
 

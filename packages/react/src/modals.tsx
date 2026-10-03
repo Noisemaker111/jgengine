@@ -2,9 +2,7 @@ import {
   useCallback,
   useEffect,
   useReducer,
-  useRef,
   type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
 
@@ -16,6 +14,7 @@ import {
 } from "@jgengine/core/ui/modalStack";
 
 import { HudFrame } from "./hudFrame";
+import { useDialogBehavior } from "./dialogBehavior";
 
 /**
  * React chrome over the headless modal stack (`@jgengine/core/ui/modalStack`) — the blocking-overlay
@@ -44,15 +43,6 @@ export function useModalStack(stack: ModalStack): ModalStackView {
   const [, bump] = useReducer((n: number) => n + 1, 0);
   useEffect(() => stack.subscribe(bump), [stack]);
   return { top: stack.top(), depth: stack.depth() };
-}
-
-/** @internal Focusable descendants of `root`, in DOM order, skipping disabled/hidden ones. */
-function focusableWithin(root: HTMLElement): HTMLElement[] {
-  const selector =
-    'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])';
-  return Array.from(root.querySelectorAll<HTMLElement>(selector)).filter(
-    (el) => el.offsetParent !== null || el === document.activeElement,
-  );
 }
 
 /** Props for {@link ModalHost}. */
@@ -111,9 +101,6 @@ export function ModalHost({
   style,
 }: ModalHostProps): ReactNode {
   const { top } = useModalStack(stack);
-  const panelRef = useRef<HTMLDivElement | null>(null);
-  const restoreRef = useRef<HTMLElement | null>(null);
-  const stepId = top?.id ?? null;
 
   const controls: ModalControls = {
     resolve: useCallback((result: string, payload?: unknown) => stack.resolve(result, payload !== undefined ? { payload } : undefined), [stack]) as ModalControls["resolve"],
@@ -121,54 +108,19 @@ export function ModalHost({
     cancel: useCallback(() => stack.resolve(MODAL_CANCEL), [stack]),
   };
 
-  // Move focus into the dialog on open; restore it on close.
-  useEffect(() => {
-    if (stepId === null || typeof document === "undefined") return undefined;
-    restoreRef.current = document.activeElement as HTMLElement | null;
-    const panel = panelRef.current;
-    if (panel !== null) {
-      const first = focusableWithin(panel)[0] ?? panel;
-      first.focus();
-    }
-    return () => {
-      restoreRef.current?.focus?.();
-    };
-  }, [stepId]);
+  const panelRef = useDialogBehavior({
+    open: top !== null,
+    focusKey: top?.id,
+    onClose: closeOnEsc ? controls.cancel : undefined,
+  });
 
   if (top === null) return null;
   const dim = backdrop ?? "var(--jg-backdrop, rgba(4,7,12,0.62))";
-
-  const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>): void => {
-    if (closeOnEsc && event.key === "Escape") {
-      event.stopPropagation();
-      controls.cancel();
-      return;
-    }
-    if (event.key !== "Tab") return;
-    const panel = panelRef.current;
-    if (panel === null) return;
-    const focusable = focusableWithin(panel);
-    if (focusable.length === 0) {
-      event.preventDefault();
-      return;
-    }
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-    const active = document.activeElement;
-    if (event.shiftKey && active === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
 
   return (
     <div
       data-modal-host=""
       className={className}
-      onKeyDown={onKeyDown}
       style={{
         position: "fixed",
         inset: 0,

@@ -607,6 +607,7 @@
 - `DebounceTimer` (interface): interface DebounceTimer — Injectable timer seam so the controller is testable with a manual clock.
 - `DebouncedCommit` (interface): interface DebouncedCommit<T> — Live-mirrored, trailing-debounced commit binding for a single control value.
 - `DefaultEquipSlotId` (type): type DefaultEquipSlotId = | "head" | "chest" | "hands" | "legs" | "feet" | "mainHand" | "offHand" | "ring1" | "ring2" | "trinket" — Slot ids used by {@link defaultEquipLayout}'s convenience arrangement.
+- `DialogBehaviorOptions` (interface): interface DialogBehaviorOptions — Options for controlled dialog focus behavior; callers own markup, state, and close policy.
 - `DialogueBox` (function): function DialogueBox({ dialogue, onChoice, rng, className, lineClassName, speakerClassName, choicesClassName, choiceClassName, checkClassName, }: { dialogue: DialogueDef; onChoice?: (choice: DialogueChoice, result: CheckResult | null) => void; rng?: () => number; className?: string; lineClassName?: … — ⚠ undocumented
 - `DialogueCheck` (interface): interface DialogueCheck { label?: string; modifier: number; dc: number; advantage?: CheckAdvantage } — ⚠ undocumented
 - `DialogueChoice` (interface): interface DialogueChoice { label: string; invoke: {command: string; args?: unknown} | null; check?: DialogueCheck; onSuccess?: {command: string; args?: unknown} | null; onFailure?: {command: string; args?: unknown} | null } — ⚠ undocumented · used by `runDialogueChoice`: Route a {@link DialogueBox} choice through the `features.dialogue` bridge: resolve the choice's invoke (honoring a skill-check `result`), ru…
@@ -795,6 +796,8 @@
 - `ScoreboardProps` (interface): interface ScoreboardProps — Props for {@link Scoreboard}. Pass either `entries` (already ranked) or `rows` + `options`.
 - `ScoreboardTheme` (interface): interface ScoreboardTheme — Reskin tokens for {@link Scoreboard}. Every color/spacing value reads a `--jg-*` token first.
 - `Screen` (function): function Screen({ id, open = true, className, children, }: { id: string; open?: boolean; className?: string; children?: ReactNode; }): React.JSX.Element | null — ⚠ undocumented
+- `ScrollRail` (function): function ScrollRail({ children, label, className, style, gap = 6 }: ScrollRailProps): React.JSX.Element — Native horizontal scrolling with overflow-only navigation and automatic focus reveal. Callers own item markup, selection, keyboard semantics, and skin through HudTheme or style.
+- `ScrollRailProps` (interface): interface ScrollRailProps — Props for caller-composed horizontally scrolling controls.
 - `SelectionCollectionChrome` (function): function SelectionCollectionChrome({ model, itemSize = 44, gap = 4, windowSize, scroll = 0, ariaLabel = "Selection", renderMember, renderGroup, onGroupSelect, className, style, }: { model: SelectionModel; itemSize?: number; gap?: number; /** Cap the mounted portraits; the model virtualizes past this… — The composable RENDERER for the member collection: a portrait strip for a small selection, or the same-kind group chips once the model is `grouped`. Roving tabindex + arrow-key focus. Swap `renderMember`/`renderGroup` for custom chrome, or read the model and lay it out yourself. No panel skin — a behavior/accessibility layer only.
 - `SelectionGroupChip` (function): function SelectionGroupChip({ group, onSelect, renderIcon, className, style, }: { group: SelectionGroup; onSelect?: (group: SelectionGroup) => void; renderIcon?: (group: SelectionGroup) => ReactNode; className?: string; style?: CSSProperties; }): React.JSX.Element — A same-kind selection chip — icon plus count — for the grouped large-selection view. The default chrome {@link SelectionCollectionChrome} renders per group; swap it via `renderGroup`.
 - `SelectionKeyEvent` (interface): interface SelectionKeyEvent — A minimal keyboard-event shape — a real `KeyboardEvent`/React synthetic satisfies it.
@@ -928,6 +931,7 @@
 - `useCurrency` (function): function useCurrency(currencyId: string): number — ⚠ undocumented
 - `useDamageDirection` (function): function useDamageDirection(tracker: DamageDirectionTracker): readonly DamageIndicator[] — Subscribe to a damage-direction tracker and animate. Because indicators fade continuously on a clock (not just on discrete events), this drives a `requestAnimationFrame` loop while any indicator is live and stops when the screen is clear, then wakes again on the next hit. Returns the tracker's current `active()` array (reused between frames — copy if you retain it).
 - `useDebouncedCommit` (function): function useDebouncedCommit<T>(value: T, commit: (value: T) => void, delayMs = 180): DebouncedCommit<T> — See {@link DebouncedCommit}. `commit` and `delayMs` may change between renders (kept in refs); the binding identity stays stable except when `value` (the local mirror) changes.
+- `useDialogBehavior` (function): function useDialogBehavior<T extends HTMLElement = HTMLDivElement>(options: DialogBehaviorOptions): RefObject<T | null> — Focus entry, Tab trapping, Escape requests, and focus restoration for a caller-owned dialog. Attach the returned ref to the dialog root and supply `role="dialog"`, `aria-modal`, an accessible name, and `tabIndex={-1}`. The most recently opened dialog handles keys, including portal roots. Closing an inner dialog restores its opener; cleanup never steals focus from another active dialog. Replacing the root while open keeps its position and original return target.
 - `useDialogueRun` (function): function useDialogueRun(run: DialogueRun): DialogueGraphView | null — Subscribe to a {@link DialogueRun} and re-render on every advance / jump / reset, returning the current node view (or `null` if the run's node id is unknown).
 - `useDomEvent` (function): function useDomEvent<E>(resolveTarget: () => DomEventTarget | null, type: string, handler: (event: E) => void, options?: { capture?: boolean; passive?: boolean }): void — Attach a DOM event listener with automatic cleanup. `resolveTarget` runs inside the effect, so `() => window` and ref-reading resolvers are SSR-safe; return null to skip attaching. The handler is kept in a ref, so a fresh closure per render never re-binds the listener. Re-binds only when `type` or `options.capture`/`options.passive` change.
 - `useDragLayer` (function): function useDragLayer<T>(options?: { onDrop?: (info: DropInfo<T>) => void; }): DragLayer<T> — ⚠ undocumented
@@ -1184,6 +1188,11 @@
 - `DamageDirectionOverlayProps` (interface): interface DamageDirectionOverlayProps — Props for {@link DamageDirectionOverlay}.
 - `DamageDirectionTheme` (interface): interface DamageDirectionTheme — Reskin tokens for {@link DamageDirectionOverlay}.
 - `useDamageDirection` (function): function useDamageDirection(tracker: DamageDirectionTracker): readonly DamageIndicator[] — Subscribe to a damage-direction tracker and animate. Because indicators fade continuously on a clock (not just on discrete events), this drives a `requestAnimationFrame` loop while any indicator is live and stops when the screen is clear, then wakes again on the next hit. Returns the tracker's current `active()` array (reused between frames — copy if you retain it).
+
+## @jgengine/react/dialogBehavior
+
+- `DialogBehaviorOptions` (interface): interface DialogBehaviorOptions — Options for controlled dialog focus behavior; callers own markup, state, and close policy.
+- `useDialogBehavior` (function): function useDialogBehavior<T extends HTMLElement = HTMLDivElement>(options: DialogBehaviorOptions): RefObject<T | null> — Focus entry, Tab trapping, Escape requests, and focus restoration for a caller-owned dialog. Attach the returned ref to the dialog root and supply `role="dialog"`, `aria-modal`, an accessible name, and `tabIndex={-1}`. The most recently opened dialog handles keys, including portal roots. Closing an inner dialog restores its opener; cleanup never steals focus from another active dialog. Replacing the root while open keeps its position and original return target.
 
 ## @jgengine/react/dialogueView
 
@@ -1619,6 +1628,11 @@
 - `Scoreboard` (function): function Scoreboard({ entries, rows, options, title, scoreLabel = "Score", nameFor, formatScore, medalIcon, theme, className, style, }: ScoreboardProps): ReactNode — A reskinnable ranked-score table for the {@link rankLeaderboard} selector: a rank column (medal icon/color for the top three via {@link medalFor}, otherwise the number), a name column, and a score column. The local player's row (`isLocal`) is washed and accented so "you" stands out. Feed it already-ranked `entries`, or raw `rows` plus `options` and it ranks them for you. All colors and spacing come from {@link ScoreboardTheme} / HudTheme `--jg-*` tokens — the component reads the model and never styles by game meaning.
 - `ScoreboardProps` (interface): interface ScoreboardProps — Props for {@link Scoreboard}. Pass either `entries` (already ranked) or `rows` + `options`.
 - `ScoreboardTheme` (interface): interface ScoreboardTheme — Reskin tokens for {@link Scoreboard}. Every color/spacing value reads a `--jg-*` token first.
+
+## @jgengine/react/scrollRail
+
+- `ScrollRail` (function): function ScrollRail({ children, label, className, style, gap = 6 }: ScrollRailProps): React.JSX.Element — Native horizontal scrolling with overflow-only navigation and automatic focus reveal. Callers own item markup, selection, keyboard semantics, and skin through HudTheme or style.
+- `ScrollRailProps` (interface): interface ScrollRailProps — Props for caller-composed horizontally scrolling controls.
 
 ## @jgengine/react/selectSnapshot
 

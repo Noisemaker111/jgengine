@@ -812,13 +812,15 @@ function AnchoredSlot({
   anchor,
   children,
   slotRef,
+  movement = false,
 }: {
   anchor: TouchAnchor;
   children: ReactNode;
   slotRef?: MutableRefObject<HTMLDivElement | null>;
+  movement?: boolean;
 }) {
   return (
-    <div className="pointer-events-none absolute z-40" style={{ ...ANCHOR_POSITION[anchor], ...anchorInset(anchor) }}>
+    <div className="pointer-events-none absolute" style={{ zIndex: movement ? 10 : 40, ...ANCHOR_POSITION[anchor], ...anchorInset(anchor) }}>
       <div ref={slotRef}>{children}</div>
     </div>
   );
@@ -876,7 +878,7 @@ export function TouchControlsDock({
   return (
     <ResolvedLayout>
       {scheme.joystick !== null ? (
-        <AnchoredSlot anchor={layout.movement} slotRef={joystickRef}>
+        <AnchoredSlot anchor={layout.movement} slotRef={joystickRef} movement>
           {joystickVariant === "floating" ? (
             <FloatingJoystick joystick={scheme.joystick} sink={sink} tokens={tokens} scale={scale} />
           ) : (
@@ -918,5 +920,5 @@ export function TouchControlsDock({
 }
 
 function ResolvedLayout({ children }: { children: ReactNode }) {
-  return <div className="pointer-events-none absolute inset-0 z-40">{children}</div>;
+  return <div className="pointer-events-none absolute inset-0">{children}</div>;
 }

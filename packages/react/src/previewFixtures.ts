@@ -6,6 +6,7 @@ import { StreetGeometryPreview } from "./streetGeometryPreview";
 import { SpriteClipPreview } from "./spriteClipPreview";
 import { TileLayerPreview } from "./tileLayerPreview";
 import { HudSkinPreview } from "./hudSkinPreview";
+import { ScrollRailPreview } from "./scrollRailPreview";
 
 /**
  * One entry in the engine preview-fixture registry: a deterministic, engine-level
@@ -33,6 +34,7 @@ export interface PreviewFixture {
  * declares.
  */
 export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
+  ScrollRailPreview: { name: "ScrollRailPreview", description: "Reachable caller-owned settings categories in shared scrolling chrome.", component: ScrollRailPreview },
   HudThemePreview: {
     name: "HudThemePreview",
     description: "Every HudTheme genre preset × atomic bars + a themed frame + a slot row.",

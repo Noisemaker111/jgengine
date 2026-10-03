@@ -362,7 +362,7 @@ export function ActionBarChrome({
 }) {
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const { actions, focusedId, hoveredId, columns } = model;
-  const rovingId = focusedId ?? actions[0]?.id ?? null;
+  const rovingId = actions.some(action => action.id === focusedId) ? focusedId : actions[0]?.id ?? null;
 
   useEffect(() => {
     if (focusedId === null) return;
