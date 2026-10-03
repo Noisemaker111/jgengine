@@ -1568,6 +1568,14 @@ You are in a **JGengine** game project. JGengine is a pure-TypeScript game engin
 
 **This project is the game.** Build here, on the \`@jgengine/*\` npm packages. Never clone the jgengine GitHub repo, and never copy code, assets, or content from its \`Games/*\` directory — those are private in-repo test games, not templates, and their content is not licensed for reuse.
 
+## Framework-first game development
+
+For every interaction, feature, fix or visual change, discover the installed SDK capability before implementing reusable behavior. The game owns unique rules, content, assets, authored scenes and presentation; JGengine owns common input, rendering lifecycle, storage, interaction and UI accessibility. Compose its APIs instead of copying those mechanisms into game helpers.
+
+Check installed versions before recreating a fix already delivered upstream. Adopt compatible published updates, apply required migrations and remove superseded local code. In a workspace using an SDK catalog, versions belong to that root catalog, not each game manifest. Shared behavior must preserve distinct game designs and artwork.
+
+When a reusable contract is missing, report the upstream gap below. Engine contributors fix its shared owner with a real game adopter; recipes illustrate SDK composition rather than another implementation. A necessary temporary fallback must have a tracked upstream issue and removal path, and does not complete the shared fix. Never use engine source aliases to bypass publication.
+
 ## Path to a playable game
 
 1. Start from \`.claude/skills/jgengine/recipes/minimal-game.md\` — the default end-to-end path, installed with the project skills. Skills missing (your problem, not the user's): \`npx jgengine skills -p\` restores the minimal set; add \`--all\` for the full domain skills when the game outgrows it.
@@ -1601,7 +1609,7 @@ If you catch yourself writing a \`z-index\` for a HUD window, a \`keydown\` list
 
 ## Hit an engine bug or gap? File it upstream, don't just work around it
 
-\`@jgengine/*\` is the shared engine, not your game. When a primitive misbehaves, clamps or ignores a value you passed, lacks a seam your game needs, or its API misled you into a false negative, that is an **engine** problem — every other game hits it too. Do not bury the finding in a local workaround comment, a hardcoded fallback, or your own notes. Keep your game moving with a minimal workaround if you must, then **file a short issue** at https://github.com/Noisemaker111/jgengine/issues (open it with your GitHub tooling, or hand the user the link) so it gets fixed once, for everyone. Include:
+When a shared primitive misbehaves or lacks a reusable contract, **file a short upstream issue** at https://github.com/Noisemaker111/jgengine/issues. Check the installed version and existing fixes first. Do not treat a game-local replacement as the finished solution. Engine contributors fix the package and verify its adopter; independent projects track the gap and the published version that can replace any temporary adapter. Include:
 
 - **What** you were doing and what you expected.
 - **Cause** — the underlying behavior you traced, precisely. e.g. *"\`HeadlessRunner.step(dt)\` clamps game-dt to \`maxStepSeconds\` (default 0.05s) regardless of the dt passed, so time-based tests need ~20 steps per second of game-time."*

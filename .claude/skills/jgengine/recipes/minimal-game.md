@@ -6,6 +6,11 @@ authored scene edited in the browser, one system, one store slot, an empty-canva
 and a win condition. Every new game starts here; add combat, multiplayer, or deeper
 world features only after this loop plays.
 
+Every extension follows the [framework-first decision](../SKILL.md#framework-first-decisions):
+compose an installed SDK capability, improve its upstream contract if needed, then
+remove superseded game glue after published adoption. The game owns its rules and art;
+it should not recreate input, model lifecycle, storage or UI accessibility machinery.
+
 ## 1. Scaffold
 
 `npx jgengine create <name>` (inside the engine monorepo: `bun run new:game "<id-or-title>"`).
@@ -80,8 +85,8 @@ direction. Compose the shipped building blocks the moment you need them (`StatBa
 `Coins`, `InventoryGrid`, `CharacterSheet`, window shells from `jgengine-ui`), then reskin via
 `HudTheme` tokens. Reaching for those is using the engine correctly, not incomplete work. What
 the engine does not ship is a whole finished game *face* or genre theme preset — do not leave an
-unarranged, unskinned generic dashboard as the product. Hand-roll markup only where no building
-block fits (see `jgengine-ui`).
+unarranged, unskinned generic dashboard as the product. Custom markup can use headless
+SDK behavior; a missing reusable behavior is an upstream gap (see `jgengine-ui`).
 
 ## 3. Author, play, win
 

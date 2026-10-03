@@ -26,7 +26,9 @@ A session given several issues ships them as separate PRs in dependency order, e
 
 ## Change
 
-Implement the underlying seam and update the owning skill/reference plus generated artifacts. Preserve unrelated work. Public API changes require JSDoc and regenerated artifacts (`bun run gen`). Awkward or handrolled glue a custom game needs is lifted into `packages/*` or a skill recipe, not built as a game-local mini-framework or copied from `Games/*`.
+Follow [the framework-first boundary](../../../AGENTS.md#game-changes-improve-the-framework): adopt an existing capability or implement its underlying shared seam, with a real game adopter and removal of superseded local behavior. Update the owning skill/reference plus generated artifacts. Preserve unrelated work. Public API changes require JSDoc and regenerated artifacts (`bun run gen`). Reusable behavior lives in `packages/*`; recipes demonstrate composition, not another implementation. Games keep their unique rules and presentation.
+
+For a shared capability, include the consumer migration and required published version in the delivery evidence. Coordinate other consumer owners rather than patching their files independently. Beta delivery and published game adoption are separate evidence claims; SDK versions in the games workspace belong to its root catalog and lockfile.
 
 A change to published-SDK source (`packages/<pkg>/src`) adds `changes/<branch-name>.md` with its release note ([changes/README.md](../../../changes/README.md)); never edit `CHANGELOG.md` directly, since parallel PRs conflict there.
 

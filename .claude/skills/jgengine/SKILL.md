@@ -11,6 +11,20 @@ A created project installs only `jgengine`, `jgengine-editor`, `jgengine-verify`
 
 Created projects pin their scaffolding CLI as a local devDependency, separately from SDK versions. Run `npx jgengine doctor` after SDK upgrades to check CLI compatibility. Skill installation preserves newer or differing unversioned copies; update the project CLI first, and use `skills -p --force` only when replacement is intended. Each packaged skill install records its CLI and SDK versions in `.jgengine-version.json`.
 
+## Framework-first decisions
+
+For every requested interaction, feature, fix or visual change, follow the boundary in
+[AGENTS.md](../../../AGENTS.md): discover the installed
+capability, adopt it, or improve its shared owner before adding reusable game-local code.
+Games keep unique rules, content, assets and presentation. Custom markup is not a reason
+to copy focus handling, input tracking, storage or model lifecycle.
+
+Check installed versions before recreating an upstream fix. A published upgrade may
+replace a workaround; a beta merge does not update consumers. In the games workspace,
+the root catalog owns SDK versions. After adoption, remove superseded local machinery
+and verify the actual game. Outside these repositories, report missing SDK contracts
+upstream rather than treating a local engine implementation as the finished solution.
+
 ## 1. Establish the target
 
 For greenfield builds, write `src/art-direction.md` before any code.
@@ -56,7 +70,7 @@ Within each selected domain:
 3. Open the linked reference only for a deeper recipe or trap.
 4. For how several primitives wire into a running loop, read the domain's `recipes/` — connected, genre-free walkthroughs organized by composition seam; this skill's own [recipes/minimal-game.md](recipes/minimal-game.md) is the default whole-game walkthrough. Prefer a recipe over reading a game's source; the games under `Games/*` are not templates or references, and a hybrid game is just a different composition of the same primitives.
 
-If no capability fits, identify the upstream package seam before writing game-local code. In this repository, implement a reusable primitive with its first adopter; if editor-owned content cannot be expressed, file the editor gap first.
+If no capability fits, identify the upstream package seam before writing game-local code. In this repository, implement a reusable primitive with its first adopter and a reviewed consumer cleanup; coordinate a differently composed second consumer when applicable. Recipes wire SDK APIs, not copied implementations. If editor-owned content cannot be expressed, file the editor gap first; track any fallback and its removal path.
 
 ## 4. Build and finish
 

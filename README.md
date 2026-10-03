@@ -10,9 +10,24 @@
 
 `@jgengine/core` has no React, no renderer, and no backend dependency — adapters connect it to React, Convex, WebSockets, Node hosting, and Postgres (socket.io, WebRTC P2P, and LAN share the same protocol). Domains are opt-in at runtime via `defineGame({ features })`; the monorepo ships a wide primitive set. Coding agents build whole games on it from that one sentence: skills provide design playbooks, intake, focused API guidance, and verification, and route selectively so agents do not load every domain by default.
 
+## Build the framework through games
+
+Every game interaction should compose shared JGengine capabilities. Adopt an existing
+API first; when reusable behavior is missing or broken, improve its upstream package
+with a real game adopter and remove the superseded local implementation. Games own
+their rules, stories, items, assets, authored worlds and presentation. The engine owns
+the common machinery that makes those choices work. Shared behavior must preserve
+different art directions and gameplay, not impose a common game or asset kit.
+
+A compatible framework fix should reach consumers through a package upgrade, rather
+than another implementation in every game. Breaking API changes still need explicit
+migrations. The games repository centralizes SDK versions in one root workspace
+catalog; a beta merge alone does not change installed packages. The development and
+adoption rules live in [AGENTS.md](AGENTS.md#game-changes-improve-the-framework).
+
 ## Packages
 
-**Versions:** the lockstep game SDK set is `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}` (currently **0.18.x** — bump together). Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
+**Versions:** the lockstep game SDK set is `@jgengine/{core,rapier,react,ws,node,sql,convex,shell,editor,assets,navbake}` — bump together. Package manifests own the current versions. Separate cadences: CLI package `jgengine` and `@jgengine/github` (may lag; not part of that lockstep set).
 
 | Package | What it is |
 | --- | --- |

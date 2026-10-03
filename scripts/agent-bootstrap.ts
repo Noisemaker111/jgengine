@@ -131,19 +131,24 @@ function printContract(): void {
 agent-bootstrap: ready
 
 Package scripts (preferred):
-  bun --cwd packages/<pkg> run <script>
+  bun --cwd=packages/<pkg> run <script>
 Avoid:
   bun run --cwd packages/<pkg> <script>   # can resolve the wrong root script
 
-Worktrees (local machines only):
+Parallel work:
   bun run agent:worktree -- <name>  →  .claude/worktrees/<name>/ (bootstraps itself)
-  Cloud/container sessions are already isolated — never create a worktree there; just branch.
+  Shared-filesystem agents use separate worktrees; independent cloud sessions branch directly.
+
+Game changes:
+  Follow AGENTS.md#game-changes-improve-the-framework.
+  Discover the installed SDK capability; improve its shared owner; adopt and delete duplicate glue.
+  Keep unique game rules, content and presentation in the game.
 
 Verify:
-  focused package tests while iterating
-  bun run gate before ship; bun run ship:preflight before commit/push
+  focused package tests and types; bun run gen when required
+  bun run ship:preflight after commit; CI runs the full gate
   visual: bun run shoot daemon + shoot <game> only for pixel claims
-  arbitrary --url pages must set document.documentElement.dataset.jgCapture = "ready"
+  arbitrary --url pages declare readiness after an honest frame, never by forcing a ready flag
 `);
 }
 
