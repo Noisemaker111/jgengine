@@ -212,3 +212,65 @@ describe("createDocumentLiveSync", () => {
     unsub();
   });
 });
+
+
+describe("document reconnect recovery", () => {
+  test("an evicted cursor catches up once and then accepts incremental commands", () => {
+    const doc = normalizeEditorLayers({ markers: [{ id: "m", kind: "poi", position: { x: 0, y: 0, z: 0 } }] });
+    const authority = createDocumentLiveSync(doc);
+    const replica = createDocumentLiveSync(doc);
+    for (let i = 1; i <= 70; i++) {
+      expect(authority.applyPatch({ type: "commands", baseRevision: authority.getRevision(),
+        commands: [{ type: "setTransform", id: "m", position: { x: i, y: 0, z: 0 } }] }).ok).toBe(true);
+    }
+    const catchup = authority.pullPatches(replica.getRevision());
+    expect(catchup).toHaveLength(1);
+    expect(catchup[0]?.type).toBe("snapshot");
+    for (const patch of catchup) expect(replica.applyPatch(patch).ok).toBe(true);
+    expect(replica.getRevision()).toBe(70);
+    expect(replica.getDocument()).toEqual(authority.getDocument());
+    const forwarded = replica.pullPatches(69)[0]!;
+    expect(forwarded.type).toBe("snapshot");
+    expect(forwarded.baseRevision).toBe(69);
+    const downstream = applyDocumentPatch(doc, 69, forwarded);
+    expect(downstream.ok).toBe(true);
+    if (downstream.ok) expect(downstream.revision).toBe(70);
+    authority.applyPatch({ type: "commands", baseRevision: 70,
+      commands: [{ type: "setTransform", id: "m", position: { x: 71, y: 0, z: 0 } }] });
+    for (const patch of authority.pullPatches(replica.getRevision())) expect(replica.applyPatch(patch).ok).toBe(true);
+    expect(replica.getRevision()).toBe(71);
+    expect(replica.getDocument()).toEqual(authority.getDocument());
+  });
+
+  test("the oldest retained base keeps bounded incremental replay", () => {
+    const sync = createDocumentLiveSync(createEmptyEditorDocument());
+    for (let i = 0; i < 70; i++) sync.replaceDocument(createEmptyEditorDocument());
+    expect(sync.pullPatches(6)).toHaveLength(64);
+    expect(sync.pullPatches(6)[0]?.revision).toBe(7);
+    expect(sync.pullPatches(69)).toHaveLength(1);
+    expect(sync.pullPatches(70)).toHaveLength(0);
+  });
+
+  test("catch-up snapshots do not alias the authority document", () => {
+    const sync = createDocumentLiveSync(normalizeEditorLayers({ markers: [{ id: "m", kind: "poi", position: { x: 0, y: 0, z: 0 } }] }));
+    for (let i = 0; i < 70; i++) sync.replaceDocument(sync.getDocument());
+    const patch = sync.pullPatches(0)[0]!;
+    if (patch.type !== "snapshot") throw new Error("expected snapshot");
+    patch.document.markers[0]!.position.x = 999;
+    expect(sync.getDocument().markers[0]!.position.x).toBe(0);
+  });
+
+  test("rejects corrupt, duplicate and skipped command revisions without committing", () => {
+    const sync = createDocumentLiveSync(createEmptyEditorDocument());
+    for (const baseRevision of [-1, NaN, Infinity, 0.5]) {
+      expect(sync.applyPatch({ type: "snapshot", baseRevision, document: sync.getDocument() }, { force: true }).ok).toBe(false);
+    }
+    for (const revision of [0, -1, NaN, Infinity, 0.5]) {
+      expect(sync.applyPatch({ type: "snapshot", baseRevision: 0, revision, document: sync.getDocument() }).ok).toBe(false);
+    }
+    expect(sync.applyPatch({ type: "commands", baseRevision: 0, revision: 4,
+      commands: [{ type: "clearSelection" }] }).ok).toBe(false);
+    expect(sync.getRevision()).toBe(0);
+    expect(sync.pullPatches(0)).toEqual([]);
+  });
+});

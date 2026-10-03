@@ -6,7 +6,8 @@ import type { EditorDocument, EditorVec3 } from "./types";
  * One versioned document mutation on the live-sync stream. `snapshot` replaces the whole
  * document; `commands` replays structural editor commands onto the current document.
  * `baseRevision` must match the receiver's current revision unless `force` is set (document
- * authority from the editor).
+ * authority from the editor). `revision` preserves the authority cursor when replaying: snapshots
+ * may jump forward for reconnect recovery; commands must be the next revision.
  */
 export type DocumentPatch =
   | {
@@ -75,6 +76,15 @@ export function applyDocumentPatch(
   patch: DocumentPatch,
   options?: { force?: boolean },
 ): ApplyDocumentPatchResult {
+  if (!Number.isSafeInteger(patch.baseRevision) || patch.baseRevision < 0) {
+    return { ok: false, error: "baseRevision must be a nonnegative safe integer" };
+  }
+  if (patch.revision !== undefined && (!Number.isSafeInteger(patch.revision) || patch.revision <= revision)) {
+    return { ok: false, error: "revision must be a safe integer newer than the current revision" };
+  }
+  if (patch.type === "commands" && patch.revision !== undefined && patch.revision !== revision + 1) {
+    return { ok: false, error: "commands revision must immediately follow the current revision" };
+  }
   if (!options?.force && patch.baseRevision !== revision) {
     return {
       ok: false,
@@ -83,7 +93,7 @@ export function applyDocumentPatch(
   }
   if (patch.type === "snapshot") {
     const nextDoc = cloneEditorDocument(patch.document);
-    const nextRevision = revision + 1;
+    const nextRevision = patch.revision ?? revision + 1;
     return {
       ok: true,
       document: nextDoc,
@@ -192,6 +202,7 @@ export interface DocumentLiveSync {
   ): ApplyDocumentPatchResult;
   /** Document-authoritative full replace (editor session mirror). */
   replaceDocument(document: EditorDocument): DocumentLiveEvent;
+  /** Returns a current snapshot when the requested revision predates retained history. */
   pullPatches(sinceRevision: number): DocumentPatch[];
   subscribeDocument(listener: (event: DocumentLiveEvent) => void): () => void;
   getRuntimeState(): RuntimeStateSnapshot;
@@ -263,7 +274,11 @@ export function createDocumentLiveSync(initial: EditorDocument): DocumentLiveSyn
       return commit(result);
     },
     pullPatches(sinceRevision) {
-      return patchLog.filter((patch) => (patch.revision ?? 0) > sinceRevision);
+      const patches = patchLog.filter((patch) => (patch.revision ?? 0) > sinceRevision);
+      if (patches.length > 0 && patches[0]!.baseRevision !== sinceRevision) {
+        return [{ type: "snapshot", baseRevision: sinceRevision, revision, document: cloneEditorDocument(document) }];
+      }
+      return patches;
     },
     subscribeDocument(listener) {
       documentListeners.add(listener);
