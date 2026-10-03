@@ -589,6 +589,7 @@ export function Shell3dPresentation({
                       renderObject={playable.renderObject}
                       selectedIds={selectedIds}
                       hideLocalActor={firstPerson}
+                      editorLayers={playable.editorLayers}
                     />
                   </CullingProvider>
                   {WorldOverlay !== undefined ? (

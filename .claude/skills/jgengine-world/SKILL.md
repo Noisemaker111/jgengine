@@ -31,7 +31,7 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 
 1. Load the scene document through the shared authored-scene feature.
 2. Render objects, paths, terrain, foliage, and markers generically.
-3. Query the same ids/layers for spawns, routes, plots, and interaction.
+3. Query the same ids/layers for spawns, routes, plots, and interaction. The shell batches compatible static catalog props above eight placements per 24 m cell, preserving chosen models, material groups, shadows, measured colliders and object ids for picking. Interactive/custom props, per-object visual/style overrides, and animated, rigged, composed, transparent or mirrored models keep individual renderers. Runtime compatibility changes return a placement to its individual renderer. Visibility compacts each batch to the current visible placements.
 4. Collision for generated and studio content comes from its data through `ctx.world.solids`; never hand-place invisible blockers for it (see reference.md, World solids).
 5. Keep derived caches rebuildable; the document remains authoritative.
 

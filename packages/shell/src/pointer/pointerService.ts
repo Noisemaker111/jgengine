@@ -3,6 +3,8 @@ import type { PointerHit, PointerVec3 } from "@jgengine/core/input/pointer";
 
 export const POINTER_ENTITY_KEY = "jgEntityId";
 export const POINTER_OBJECT_KEY = "jgObjectId";
+/** Object-store identities indexed by the current compacted GPU instance slot. @internal */
+export const POINTER_OBJECT_INSTANCES_KEY = "jgObjectInstances";
 
 export type PointerHitFilter = (object: THREE.Object3D) => boolean;
 
@@ -52,6 +54,8 @@ export function createPointerService(): PointerService {
   const centerNdc = new THREE.Vector2(0, 0);
   const scratch = new THREE.Vector3();
   const normalMatrix = new THREE.Matrix3();
+  const instanceMatrix = new THREE.Matrix4();
+  const hitMatrix = new THREE.Matrix4();
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   let deps: PointerDeps | null = null;
   let cursorPresent = false;
@@ -69,7 +73,12 @@ export function createPointerService(): PointerService {
       const point: PointerVec3 = [hit.point.x, hit.point.y, hit.point.z];
       let normal: PointerVec3 = [0, 1, 0];
       if (hit.face !== null && hit.face !== undefined) {
-        normalMatrix.getNormalMatrix(hit.object.matrixWorld);
+        hitMatrix.copy(hit.object.matrixWorld);
+        if ((mesh as THREE.InstancedMesh).isInstancedMesh && hit.instanceId !== undefined) {
+          (mesh as THREE.InstancedMesh).getMatrixAt(hit.instanceId, instanceMatrix);
+          hitMatrix.multiply(instanceMatrix);
+        }
+        normalMatrix.getNormalMatrix(hitMatrix);
         scratch.copy(hit.face.normal).applyMatrix3(normalMatrix).normalize();
         normal = [scratch.x, scratch.y, scratch.z];
       }
@@ -78,7 +87,8 @@ export function createPointerService(): PointerService {
         point,
         normal,
         entity: tagOf(hit.object, POINTER_ENTITY_KEY),
-        object: tagOf(hit.object, POINTER_OBJECT_KEY),
+        object: hit.instanceId === undefined ? tagOf(hit.object, POINTER_OBJECT_KEY) :
+          (hit.object.userData[POINTER_OBJECT_INSTANCES_KEY] as readonly string[] | undefined)?.[hit.instanceId] ?? tagOf(hit.object, POINTER_OBJECT_KEY),
         ...(uv !== undefined ? { uv } : {}),
         material: standardMaterialSample(mesh.material),
         ...(hit.instanceId !== undefined ? { instanceId: hit.instanceId } : {}),

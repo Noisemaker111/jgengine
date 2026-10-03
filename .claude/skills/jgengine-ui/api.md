@@ -3028,7 +3028,7 @@
 ## @jgengine/shell/world/WorldScene
 
 - `RemotePlayers` (function): function RemotePlayers({ rows, presenceInterpolationMs = 100 }: { rows: PresencePoseRow[]; presenceInterpolationMs?: number }): React.JSX.Element — ⚠ undocumented
-- `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined; objectModels… — ⚠ undocumented
+- `WorldView` (function): function WorldView({ entitySprites, entityModels, objectModels, objectStyles, environment, assets, renderEntity, renderObject, selectedIds, hideLocalActor, editorLayers, }: { entitySprites: Record<string, EntitySpriteConfig> | undefined; entityModels: Record<string, string | ModelConfig> | undefined… — ⚠ undocumented
 
 ## @jgengine/shell/world/entityPose
 

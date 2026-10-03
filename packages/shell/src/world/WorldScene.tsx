@@ -2,6 +2,11 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ComponentType, type ReactNode } from "react";
 import * as THREE from "three";
 
+import { createEmptyEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
+import { resolveAuthoredObjects } from "@jgengine/core/world/authoredObjects";
+import { useLiveEditorDocument } from "../scene/AuthoredScene";
+import { StaticObjectModels } from "./StaticObjectModels";
+import { groupStaticObjects, type StaticObjectBatch } from "./staticObjectBatches";
 import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import { objectVisualScale, type SceneObject } from "@jgengine/core/scene/objectStore";
@@ -21,13 +26,14 @@ import { DefaultSurface, detailMaps } from "../render/defaultSurface";
 import { useDisposable } from "../render/useDisposable";
 import { MeasuredBoundsGroup } from "../render/measureBounds";
 import { EntitySprite, IsolatedEntityModel } from "../render/SceneModels";
-import { resolveModel, resolveEntityModel, tryResolveCatalogModel } from "../render/resolveModel";
+import { resolveEntityModel, resolveObjectModel, type ObjectModelCacheEntry } from "../render/resolveModel";
 import { useRenderVisibility } from "../visibility/CullingProvider";
 import { writeEntityPose, writeRenderPose } from "./entityPose";
 import type { RenderPose } from "@jgengine/core/runtime/poseInterpolation";
 import { createSnapshotBuffer, type SnapshotBuffer } from "@jgengine/core/runtime/snapshotBuffer";
 import { POINTER_ENTITY_KEY, POINTER_OBJECT_KEY } from "../pointer/pointerService";
 
+const EMPTY_DOCUMENT = createEmptyEditorDocument();
 const GROUND_SIZE = 160;
 const GROUND_SEGMENTS = 80;
 
@@ -274,6 +280,7 @@ function WorldActors({
   renderObject,
   selectedIds,
   hideLocalActor,
+  editorLayers,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
@@ -284,10 +291,15 @@ function WorldActors({
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
   selectedIds: ReadonlySet<string>;
   hideLocalActor: boolean;
+  editorLayers?: EditorDocument | undefined;
 }) {
   const ctx = useGameContext();
   const entityIds = useSceneEntityIds();
   const objectIds = useSceneObjectIds();
+  const document = useLiveEditorDocument(editorLayers ?? EMPTY_DOCUMENT, editorLayers !== undefined);
+  const authoredIds = useMemo(() => new Set(resolveAuthoredObjects(document).map((object) => object.instanceId)), [document]);
+  const batchCache = useRef(new Map<string, StaticObjectBatch>());
+  const modelCache = useMemo(() => new Map<string, ObjectModelCacheEntry>(), [objectModels, assets]);
   const player = usePlayer();
   const targetId = useTarget(player.userId);
   const controlledId = useGameStore((c) => c.player.possession.active(player.userId));
@@ -302,6 +314,28 @@ function WorldActors({
   useEffect(() => {
     endFallbackPass();
   });
+  const candidates = objectIds.flatMap((instanceId) => {
+    const object = ctx.scene.object.get(instanceId);
+    if (object === null) return [];
+    const custom = renderObject?.(object);
+    const model = resolveObjectModel(object, objectModels, assets, modelCache);
+    const style = objectStyles?.[object.catalogId];
+    // Reaching the primitive box means no model resolved. A present-but-unresolved objectModels
+    // key implies its asset pack is not pulled; an absent key is an omitted (often intended) mapping.
+    if ((custom === undefined || custom === null) && model === undefined && style?.hidden !== true) {
+      reportFallbackSeam("object", objectModels?.[object.catalogId] === undefined ? "omittedMapping" : "unpulledPack");
+    }
+    return [{ object, model, custom, style, authored: authoredIds.has(instanceId), catalog: ctx.scene.object.catalog(instanceId) }];
+  });
+  const grouped = groupStaticObjects(candidates.map((candidate) => ({ ...candidate, custom: candidate.custom !== undefined && candidate.custom !== null })), 24, batchCache.current);
+  batchCache.current = new Map(grouped.batches.map((batch) => [batch.key, batch]));
+  const candidatesById = new Map(candidates.map((candidate) => [candidate.object.instanceId, candidate]));
+  const renderSingle = (object: SceneObject) => {
+    object = ctx.scene.object.get(object.instanceId) ?? object;
+    const candidate = candidatesById.get(object.instanceId)!;
+    const model = resolveObjectModel(object, objectModels, assets, modelCache);
+    return <ObjectMarker key={object.instanceId} object={object} custom={object === candidate.object ? candidate.custom : renderObject?.(object)} model={model} style={objectStyles?.[object.catalogId]} />;
+  };
   return (
     <>
       {entityIds.map((entityId) => {
@@ -330,37 +364,8 @@ function WorldActors({
           />
         );
       })}
-      {objectIds.map((instanceId) => {
-        const object = ctx.scene.object.get(instanceId);
-        if (object === null) return null;
-        const custom = renderObject?.(object);
-        const resolved =
-          resolveModel(objectModels?.[object.catalogId], assets, {
-            seam: "objectModels",
-            key: object.catalogId,
-          }) ?? tryResolveCatalogModel(object.catalogId, assets);
-        // An authored per-placement animation override (marker.meta.animation → SceneObject.animation,
-        // #1276) wins over catalog resolution's default "auto"; absent, the resolved config is untouched.
-        const model =
-          resolved !== undefined && object.animation !== undefined
-            ? { ...resolved, animation: object.animation }
-            : resolved;
-        const style = objectStyles?.[object.catalogId];
-        // Reaching the primitive box means no model resolved. A present-but-unresolved objectModels
-        // key implies its asset pack is not pulled; an absent key is an omitted (often intended) mapping.
-        if ((custom === undefined || custom === null) && model === undefined && style?.hidden !== true) {
-          reportFallbackSeam("object", objectModels?.[object.catalogId] === undefined ? "omittedMapping" : "unpulledPack");
-        }
-        return (
-          <ObjectMarker
-            key={instanceId}
-            object={object}
-            custom={custom}
-            model={model}
-            style={style}
-          />
-        );
-      })}
+      {grouped.singles.map((candidate) => renderSingle(candidate.object))}
+      {grouped.batches.map((batch) => <StaticObjectModels key={batch.key} batch={batch} single={renderSingle} />)}
     </>
   );
 }
@@ -376,6 +381,7 @@ export function WorldView({
   renderObject,
   selectedIds,
   hideLocalActor,
+  editorLayers,
 }: {
   entitySprites: Record<string, EntitySpriteConfig> | undefined;
   entityModels: Record<string, string | ModelConfig> | undefined;
@@ -387,6 +393,7 @@ export function WorldView({
   renderObject: ((object: SceneObject) => ReactNode) | undefined;
   selectedIds: ReadonlySet<string>;
   hideLocalActor: boolean;
+  editorLayers?: EditorDocument | undefined;
 }) {
   return (
     <>
@@ -401,6 +408,7 @@ export function WorldView({
         renderObject={renderObject}
         selectedIds={selectedIds}
         hideLocalActor={hideLocalActor}
+        editorLayers={editorLayers}
       />
     </>
   );

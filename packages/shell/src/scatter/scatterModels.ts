@@ -10,6 +10,8 @@ export interface ScatterModelSource {
   geometry: THREE.BufferGeometry;
   material: THREE.Material | THREE.Material[];
   localMatrix: THREE.Matrix4;
+  castShadow?: boolean;
+  receiveShadow?: boolean;
 }
 
 /** The scale + position offset a `ModelConfig` applies before any per-instance transform — same anchor/targetHeight rules as the single-instance entity renderer. */
@@ -51,18 +53,20 @@ export function buildScatterModelSources(
   gltfScene: THREE.Object3D,
   model: ModelConfig,
 ): { sources: ScatterModelSource[]; root: THREE.Object3D } {
-  const root = cloneModelScene(gltfScene);
+  const root = cloneModelScene(gltfScene, { shadows: model.shadows });
   if (model.material !== undefined) applyMaterialOverride(root, model.material, { clone: false });
   root.updateMatrixWorld(true);
   const base = scatterModelBaseTransform(root, model);
   const sources: ScatterModelSource[] = [];
-  root.traverse((node) => {
+  root.traverseVisible((node) => {
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
     sources.push({
       geometry: mesh.geometry,
       material: mesh.material,
       localMatrix: base.clone().multiply(mesh.matrixWorld),
+      castShadow: mesh.castShadow,
+      receiveShadow: mesh.receiveShadow,
     });
   });
   return { sources, root };

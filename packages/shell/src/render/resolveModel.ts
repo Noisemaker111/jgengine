@@ -1,5 +1,6 @@
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import type { SceneObject } from "@jgengine/core/scene/objectStore";
 import type { GameContextModels } from "@jgengine/core/runtime/gameContext";
 import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 
@@ -54,6 +55,31 @@ export function tryResolveCatalogModel(id: string, assets: AssetCatalog): ModelC
   const ref = assets.resolve(id);
   if (ref === null) return undefined;
   return catalogModelConfig(ref);
+}
+
+/** @internal */
+export interface ObjectModelCacheEntry {
+  input: string | ModelConfig | undefined;
+  ref: ModelAssetRef | null;
+  model: ModelConfig | undefined;
+}
+
+/** Resolve a live object's catalog and animation, retaining unchanged base model identities. @internal */
+export function resolveObjectModel(
+  object: SceneObject,
+  models: Record<string, string | ModelConfig> | undefined,
+  assets: AssetCatalog,
+  cache: Map<string, ObjectModelCacheEntry>,
+): ModelConfig | undefined {
+  const input = models?.[object.catalogId];
+  const ref = assets.resolve(typeof input === "string" ? input : object.catalogId);
+  const cached = cache.get(object.catalogId);
+  const resolved = cached !== undefined && cached.input === input && cached.ref === ref ? cached.model :
+    resolveModel(input, assets, { seam: "objectModels", key: object.catalogId }) ?? tryResolveCatalogModel(object.catalogId, assets);
+  if (cached === undefined || cached.model !== resolved || cached.input !== input || cached.ref !== ref) {
+    cache.set(object.catalogId, { input, ref, model: resolved });
+  }
+  return resolved !== undefined && object.animation !== undefined ? { ...resolved, animation: object.animation } : resolved;
 }
 
 /**
