@@ -1,3 +1,4 @@
+import type { StaticPrefabBake } from "@jgengine/core/editor/staticPrefab";
 import {
   createDocumentLiveSync,
   createEditorSession,
@@ -183,6 +184,7 @@ export type EditorBridgeRequest =
   | { method: "insert_prefab"; prefabId: string; x?: number; y?: number; z?: number }
   | { method: "detach_prefab_instance"; instanceId: string }
   | { method: "delete_prefab"; prefabId: string }
+  | { method: "set_prefab_static_bake"; prefabId: string; bake: StaticPrefabBake | null }
   | { method: "list_collections" }
   | { method: "create_collection"; id: string; name: string; memberIds?: string[] }
   | { method: "rename_collection"; id: string; name: string }

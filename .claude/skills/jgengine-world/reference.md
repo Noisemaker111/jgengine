@@ -328,3 +328,13 @@ Cancelled or stolen pending cues never create a late source. Natural sample/synt
 Custom authored primitive renderers use `StaticShapeInstances` (`@jgengine/shell/render/staticShapeInstances`) with document-derived box/cylinder transforms and caller-owned `AuthoredSurfaceConfig`. Boxes span one unit; cylinders use unit radius/height. Grouping includes maps, sampler settings, PBR/rim values, tessellation and shadow policy. Updates upload matrices and recompute conservative bounds; positive finite scale is required. Bounds include an affine-parent safety factor, so culling may retain extra geometry. Generator markers (including Field Station's authored bookcase) consume this seam automatically without changing generator data or material defaults.
 
 `AuthoredSurfaceMaterial` / `useAuthoredSurfaceMaterial` (`@jgengine/shell/render/authoredSurfaceMaterial`) share model-material map roles and material application. They own material/texture clones; cached loader textures remain shared and untouched. Colour/emissive maps are sRGB, other roles linear. `wrapping` selects repeat (default), clamp or mirror; `anisotropy` defaults to 1. `normalScale` is explicit, `repeatMetres` optionally tiles unit shapes in physical metres including instance/parent scale (cylinder sides approximate an elliptical circumference). Omitting it retains authored UVs. Height maps must be normalized to [0,1]; `displacementScale`/`displacementBias` use local shape units and expand batch bounds. Compose local palette, asset URLs, opacity/depthWrite and emission in the game. No scene coordinates or surface families belong in these primitives; editor placement stays authoritative. Deepward's prefab-authoring fallback is tracked by #1937 and should be removed when editor composition can express it.
+
+### Baked authored prefab assets
+
+A static prefab bake supplies measured `dims`, triangle `collisionMesh` with authored movement
+`boxes`, and `anchor: "origin"`. Register these with its URL as a `ModelAssetRef` (or a
+`buildCatalog` extra). The shared catalog model resolver forwards the origin and collision mesh
+to both model rendering and runtime collider fitting, including unmapped objects resolved by their
+own catalog id. Explicit object model mappings still win. This retains the prefab's local placement
+frame. Place its catalog id through the existing authored-object document path. Baking is offline;
+see `jgengine-editor` for persisted settings and `jgengine-assets` for verified source export.

@@ -316,6 +316,14 @@
 - `keyFromSpriteFile` (function): function keyFromSpriteFile(file: string): string — Strips the `.svg`/`.png` extension off a pulled sprite/icon filename to get its id suffix.
 - `reindexSprites` (function): function reindexSprites(spritesDir: string, outDir: string): ReindexSpritesResult — Same shape as `reindex` (models) but walks SVG/PNG files and skips dims measurement — sprites have no footprint.
 
+## @jgengine/assets/staticPrefabBake
+
+- `StaticPrefabBakeReport` (interface): interface StaticPrefabBakeReport — Deterministic inventory and provenance for an editor-authored static artifact.
+- `StaticPrefabBakeResult` (interface): interface StaticPrefabBakeResult — GLB bytes and catalog-ready metadata; origin anchoring preserves the editable fragment's local frame.
+- `StaticPrefabSource` (interface): interface StaticPrefabSource — Original static model bytes; paths are absolute and every external image must have a pin.
+- `StaticPrefabTextureSource` (interface): interface StaticPrefabTextureSource — A verified external source image and its complete runtime URL. URI matches the source GLB exactly.
+- `bakeStaticPrefab` (function): function bakeStaticPrefab(prefab: EditorPrefab, sources: readonly StaticPrefabSource[]): Promise<StaticPrefabBakeResult> — Bake pinned static source art in an editor prefab's local frame. Node-only; never mutates authored data.
+
 ## @jgengine/assets/verify
 
 - `VerifyInput` (interface): interface VerifyInput { sources: readonly AssetSource[]; singles: readonly SingleAsset[]; aliases: readonly AssetAlias[]; index: readonly IndexEntry[]; materialAliases?: readonly AssetAlias[] } — ⚠ undocumented

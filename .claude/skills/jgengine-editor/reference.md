@@ -268,3 +268,24 @@ Viewport placement honors grid snap for marker, zone, note and path points on X/
 Terrain-only scenes work with `camera_frame` / Frame all: the authored footprint and sculpt relief contribute to document bounds without a temporary marker. Native runner captures use `drive editor --param editor=standalone` and the same editor RPCs.
 
 Grid placement resamples the authored sculpt composed over the live base ground field at snapped XZ for markers, volumes, notes and draft path points. It uses the same terrain/path policy as the ground overlays (including the ground field’s off-map behavior), and flat Y=0 when no ground sampler is mounted. Nonfinite surface heights reject placement without changing the document or clearing the tool.
+
+## Static prefab export
+
+Keep source parts in `EditorPrefab.fragment` and author export settings with `set_prefab_static_bake`
+(or the `setPrefabStaticBake` command): `prefabId` and `bake: { assetId, collisionBoxes?, clearances? }`.
+`bake: null` clears settings. Save/reopen and undo/redo retain settings alongside the editable parts;
+an invalid setting rejects the whole command without changing history. Each box uses local
+`min`/`max` XYZ triples; clearances add a unique `id`. Clearances require explicit solid boxes and
+may touch their edges but must not overlap them. These are authored constraints, not automatic
+proof that an entrance is navigable for a particular character.
+
+```json
+{"method":"set_prefab_static_bake","prefabId":"courtyard-arch","bake":{"assetId":"own:arch","collisionBoxes":[{"min":[-2,0,-1],"max":[-1,3,1]},{"min":[1,0,-1],"max":[2,3,1]}],"clearances":[{"id":"entry","min":[-1,0,-1],"max":[1,2,1]}]}}
+```
+
+Export pinned source bytes offline with `bakeStaticPrefab` from
+`@jgengine/assets/staticPrefabBake` (Node/Bun only; see `jgengine-assets`). Register the returned
+`dims`, `collisionMesh` and `anchor: "origin"` with the output URL in the game's asset catalog.
+The shared model resolver preserves that authored origin for rendering and collider consumption.
+World placements remain catalog markers in `editor.scene.json`; baking never replaces or moves
+them. Validate the game's real walker/route clearance before advertising walkable interiors.

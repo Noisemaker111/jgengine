@@ -83,6 +83,7 @@ const TOOL_DESCRIPTIONS: { name: EditorBridgeRequest["method"]; description: str
   { name: "set_parent", description: "Parent objects under another (or null to unparent); cycles are refused. Moving a parent moves its subtree." },
   { name: "hierarchy", description: "The scene's parent/child tree: root ids and each root's direct children." },
   { name: "list_prefabs", description: "List the document's reusable prefab stamps (id, name, fragment content)." },
+  { name: "set_prefab_static_bake", description: "Author static prefab export settings (assetId, local collisionBoxes, named clearance boxes); null clears settings. One undo step. Export verified source bytes offline through assets/staticPrefabBake." },
   { name: "create_prefab", description: "Make a reusable prefab from selected ids, centered on their own bounds." },
   { name: "insert_prefab", description: "Insert a fresh, tagged instance of a prefab at the camera focus or given x/y/z." },
   { name: "detach_prefab_instance", description: "Strip the prefab link from every object in an instance, keeping its content." },

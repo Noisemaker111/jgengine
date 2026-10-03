@@ -100,6 +100,7 @@ export const RPC_FIELD_SCHEMAS: Record<EditorBridgeRequest["method"], readonly R
   set_parent: [req(sa("ids")), req(sn("parentId"))],
   hierarchy: [],
   list_prefabs: [],
+  set_prefab_static_bake: [req(s("prefabId")), req({ name: "bake", kind: "object", nullable: true, of: [req(s("assetId")), oa("collisionBoxes", [req(val("min")), req(val("max"))]), oa("clearances", [req(s("id")), req(val("min")), req(val("max"))])] })],
   create_prefab: [req(s("id")), req(s("name")), req(sa("ids"))],
   insert_prefab: [req(s("prefabId")), n("x"), n("y"), n("z")],
   detach_prefab_instance: [req(s("instanceId"))],

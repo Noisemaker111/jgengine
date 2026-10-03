@@ -1,3 +1,4 @@
+import type { StaticPrefabBake } from "./staticPrefab";
 import type { ParamSchema } from "../scene/sceneKinds";
 import type { EditorUiDocument } from "../ui/hudDocument";
 import type { MinimapBakeBounds } from "../world/minimapBake";
@@ -121,6 +122,8 @@ export interface EditorPrefab {
   id: string;
   name: string;
   fragment: EditorFragmentContent;
+  /** Offline export settings; world instances remain authored markers. */
+  staticBake?: StaticPrefabBake;
 }
 
 /**

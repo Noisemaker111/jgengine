@@ -1,3 +1,4 @@
+import { parseStaticPrefabBake } from "./staticPrefab";
 import {
   applyDeltaToSnapshot,
   applySurfaceDeltaToSnapshot,
@@ -635,6 +636,15 @@ const mutationHandlers: MutationHandlers = {
         prefabs: [...state.document.prefabs.filter((entry) => entry.id !== command.id), prefab],
       },
     };
+  },
+  setPrefabStaticBake: (state, command) => {
+    if (findEditorPrefab(state.document, command.prefabId) === undefined) return null;
+    const bake = command.bake === null ? undefined : parseStaticPrefabBake(command.bake);
+    return { ...state, document: { ...state.document, prefabs: state.document.prefabs.map((prefab) => {
+      if (prefab.id !== command.prefabId) return prefab;
+      const { staticBake: previous, ...source } = prefab;
+      return { ...source, ...(bake === undefined ? {} : { staticBake: bake }) };
+    }) } };
   },
   deletePrefab: (state, command) => ({
     ...state,

@@ -13,6 +13,7 @@ import { warnOnce } from "@jgengine/core/devtools/warnOnce";
 function catalogModelConfig(ref: ModelAssetRef): ModelConfig {
   return {
     url: ref.url,
+    ...(ref.anchor === undefined ? {} : { anchor: ref.anchor }),
     ...(ref.dims === undefined ? {} : { dims: ref.dims }),
     ...(ref.collisionMesh === undefined ? {} : { collisionMesh: ref.collisionMesh }),
     animation: "auto",
@@ -178,7 +179,8 @@ function softModelLookup(
  * The `createGameContext` `models` lookup derived from a playable's render maps: what each entity kind /
  * object catalog id actually renders as, so colliders auto-fit the rendered mesh. Soft-resolves string
  * ids (a missing catalog id keeps the default collider instead of throwing — the render path already
- * reports it), passes inline configs through. `undefined` when the playable maps no models at all.
+ * reports it), passes inline configs through. Unmapped objects resolve their own catalog id,
+ * matching WorldScene; `undefined` when both the catalog and model maps are empty.
  * @internal
  */
 export function contextModels(playable: {
@@ -187,11 +189,14 @@ export function contextModels(playable: {
   objectModels?: Record<string, string | ModelConfig>;
 }): GameContextModels | undefined {
   const entity = softModelLookup(playable.entityModels, playable.game.assets);
-  const object = softModelLookup(playable.objectModels, playable.game.assets);
-  if (entity === undefined && object === undefined) return undefined;
+  const explicitObject = softModelLookup(playable.objectModels, playable.game.assets);
+  if (entity === undefined && explicitObject === undefined && playable.game.assets.ids().length === 0) return undefined;
+  const object = (key: string) => playable.objectModels?.[key] === undefined
+    ? tryResolveCatalogModel(key, playable.game.assets)
+    : explicitObject?.(key);
   return {
     ...(entity === undefined ? {} : { entity }),
-    ...(object === undefined ? {} : { object }),
+    object,
   };
 }
 

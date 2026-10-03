@@ -20,6 +20,7 @@ export interface CatalogExtra {
   url: string;
   /** Human-facing label kept only in the source literal; never registered into the catalog. */
   label?: string;
+  anchor?: "center" | "origin";
   dims?: import("@jgengine/core/scene/assetCatalog").ModelDims;
   space?: import("@jgengine/core/scene/assetSpace").AssetSpace;
   clips?: readonly string[];
@@ -88,6 +89,7 @@ export function buildCatalog(options: BuildCatalogOptions = {}): AssetCatalog {
   for (const extra of options.extras ?? []) {
     catalog.register(extra.id, {
       url: extra.url,
+      ...(extra.anchor === undefined ? {} : { anchor: extra.anchor }),
       ...(extra.dims === undefined ? {} : { dims: extra.dims }),
       ...(extra.space === undefined ? {} : { space: extra.space }),
       ...(extra.clips === undefined ? {} : { clips: extra.clips }),

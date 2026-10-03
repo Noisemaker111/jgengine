@@ -18,6 +18,7 @@ export const hierarchyHandlers: Pick<
   | "insert_prefab"
   | "detach_prefab_instance"
   | "delete_prefab"
+  | "set_prefab_static_bake"
 > = {
   set_parent: (ctx, request) => {
     const { applied, state } = ctx.dispatchGuarded({ type: "setParent", ids: request.ids, parentId: request.parentId });
@@ -59,6 +60,10 @@ export const hierarchyHandlers: Pick<
     if (!hasInstance) return { ok: false, error: `prefab instance not found: ${request.instanceId}` };
     ctx.session.dispatch({ type: "detachPrefabInstance", instanceId: request.instanceId });
     return { ok: true, result: summarizeEditorSession(ctx.session.getState()) };
+  },
+  set_prefab_static_bake: (ctx, request) => {
+    const result = ctx.session.transaction([{ type: "setPrefabStaticBake", prefabId: request.prefabId, bake: request.bake }]);
+    return result.ok ? { ok: true, result: findEditorPrefab(ctx.session.getState().document, request.prefabId) } : { ok: false, error: result.error };
   },
   delete_prefab: (ctx, request) => {
     if (findEditorPrefab(ctx.session.getState().document, request.prefabId) === undefined) {

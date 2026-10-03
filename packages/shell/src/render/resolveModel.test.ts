@@ -5,6 +5,7 @@ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 
 import {
   createModelMapResolver,
+  contextModels,
   pickModel,
   resolveEntityModel,
   resolveModel,
@@ -25,6 +26,21 @@ describe("resolveModel", () => {
       url: "/models/quaternius-modular-scifi/astronautA.glb",
       animation: "auto",
     });
+  });
+
+  test("authored prefab origins and collision solids reach both rendering and context model resolution", () => {
+    const catalog = createAssetCatalog();
+    const collisionMesh = { min: [-4, 2, -2] as const, max: [8, 7, 3] as const, vertexCount: 3, triangleCount: 1, positions: "AAAA", indices: "AAAA", boxes: [{ min: [-4, 2, -2] as const, max: [-2, 7, 3] as const }] };
+    const dims = { footprint: { w: 12, d: 5 }, center: { x: 2, z: 0.5 }, minY: 2, maxY: 7 };
+    catalog.register("own:prefab", { url: "/own-prefab.glb", anchor: "origin", dims, collisionMesh });
+    const rendered = resolveModel("own:prefab", catalog)!;
+    const modelLookup = contextModels({ game: { assets: catalog } });
+    expect(rendered.anchor).toBe("origin");
+    expect(rendered.dims).toBe(dims);
+    expect(rendered.collisionMesh).toBe(collisionMesh);
+    expect(modelLookup?.object?.("own:prefab")).toEqual(rendered);
+    expect(rendered.targetHeight).toBeUndefined();
+    expect(rendered.material).toBeUndefined();
   });
 
   test("forwards an explicit ModelConfig unchanged", () => {

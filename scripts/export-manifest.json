@@ -130,6 +130,7 @@
     "./editor/liveSync",
     "./editor/minimap",
     "./editor/runtimeInspector",
+    "./editor/staticPrefab",
     "./editor/streamer",
     "./editor/types",
     "./editor/world",
@@ -1135,6 +1136,7 @@
     "./sources/kaykit",
     "./sources/quaternius",
     "./spriteIndexGen",
+    "./staticPrefabBake",
     "./verify"
   ],
   "@jgengine/github": [

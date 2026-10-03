@@ -51,6 +51,13 @@ describe("buildCatalog", () => {
     expect(catalog.resolve("imported-ship")?.url).toBe("/models/imported/Ship.glb");
   });
 
+  test("static prefab extras retain authored origin and solid metadata", () => {
+    const dims = { footprint: { w: 10, d: 6 }, center: { x: 3, z: -1 }, minY: 2, maxY: 8 };
+    const collisionMesh = { min: [-2, 2, -4] as const, max: [8, 8, 2] as const, vertexCount: 3, triangleCount: 1, positions: "AAAA", indices: "AAAA", boxes: [{ min: [-2, 2, -4] as const, max: [0, 8, 2] as const }] };
+    const catalog = buildCatalog({ includeSingles: false, includeAliases: false, sources: [], extras: [{ id: "own:prefab", url: "/own.glb", anchor: "origin", dims, collisionMesh }] });
+    expect(catalog.resolve("own:prefab")).toEqual({ url: "/own.glb", anchor: "origin", dims, collisionMesh });
+  });
+
   test("an extra id overrides a pack id (last-writer-wins after packs)", () => {
     const catalog = buildCatalog({
       basePath: "/models",

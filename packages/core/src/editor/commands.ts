@@ -1,3 +1,4 @@
+import { parseStaticPrefabBake, type StaticPrefabBake } from "./staticPrefab";
 import {
   applyDeltaToSnapshot,
   applySurfaceDeltaToSnapshot,
@@ -88,6 +89,7 @@ export type EditorCommand =
   | { type: "insertPrefab"; prefabId: string; at: EditorVec3; instanceId?: string }
   | { type: "detachPrefabInstance"; instanceId: string }
   | { type: "deletePrefab"; prefabId: string }
+  | { type: "setPrefabStaticBake"; prefabId: string; bake: StaticPrefabBake | null }
   | { type: "createCollection"; id: string; name: string; memberIds?: readonly string[] }
   | { type: "renameCollection"; id: string; name: string }
   | { type: "deleteCollection"; id: string }
@@ -198,6 +200,9 @@ function transactionCommandError(document: EditorDocument, command: EditorComman
       return own.some((entry) => entry.id === item.id) ? requireObjects([item.id]) : null;
     }
     case "createPrefab": return requireObjects(command.ids, true);
+    case "setPrefabStaticBake":
+      if (command.bake !== null) parseStaticPrefabBake(command.bake);
+      return document.prefabs.some((item) => item.id === command.prefabId) ? null : `prefab not found: ${command.prefabId}`;
     case "insertPrefab": case "deletePrefab":
       return document.prefabs.some((item) => item.id === command.prefabId) ? null : `prefab not found: ${command.prefabId}`;
     case "detachPrefabInstance":
@@ -272,7 +277,7 @@ const transactionFields: Record<EditorCommand["type"], string> = {
   importDocument: "document", importJson: "json", replaceDocument: "document", setTerrain: "terrain",
   sculptTerrain: "delta", paintTerrain: "delta", blendTerrain: "delta", setTerrainLayers: "layers", clearTerrain: "",
   setMinimapBake: "minimap", setBake: "bake", setEnvironment: "?environment", convertScatterToObjects: "pathId markers",
-  createPrefab: "id name ids", insertPrefab: "prefabId at ?instanceId", detachPrefabInstance: "instanceId", deletePrefab: "prefabId",
+  setPrefabStaticBake: "prefabId bake", createPrefab: "id name ids", insertPrefab: "prefabId at ?instanceId", detachPrefabInstance: "instanceId", deletePrefab: "prefabId",
   createCollection: "id name ?memberIds", renameCollection: "id name", deleteCollection: "id",
   setCollectionMembers: "id memberIds", addToCollection: "id ids", removeFromCollection: "id ids", setCollectionFlags: "id patch",
   setObjectFlags: "ids patch", selectCollection: "id", batchSetProperties: "ids patch", assignMaterial: "ids materialId",
