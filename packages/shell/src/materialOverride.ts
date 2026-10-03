@@ -31,12 +31,13 @@ export function applyMaterialOverride(
     const mesh = node as THREE.Mesh;
     if (!mesh.isMesh) return;
     mesh.material = Array.isArray(mesh.material)
-      ? mesh.material.map((material) => overrideOne(material, override, clone, textures))
-      : overrideOne(mesh.material, override, clone, textures);
+      ? mesh.material.map((material) => applyMaterialOverrideToMaterial(material, override, clone, textures))
+      : applyMaterialOverrideToMaterial(mesh.material, override, clone, textures);
   });
 }
 
-function overrideOne(
+/** Apply the shared override contract to one material. @internal */
+export function applyMaterialOverrideToMaterial(
   material: THREE.Material,
   override: ModelMaterialOverride,
   clone: boolean,

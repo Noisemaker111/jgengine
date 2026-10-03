@@ -2339,6 +2339,13 @@
 - `installAssetBase` (function): function installAssetBase(base: string): void — Installs the app base URL (pass `import.meta.env.BASE_URL`) so root-absolute asset paths load from under it. Call once at app startup, before any game loads. Bases that are not root-absolute (`/`, `./`) reset to the pass-through default. Also registers {@link resolveAssetBaseUrl} on `THREE.DefaultLoadingManager`, covering `TextureLoader`, drei's `useTexture` / `useGLTF`, and every other loader on the default manager.
 - `resolveAssetBaseUrl` (function): function resolveAssetBaseUrl(url: string): string — Resolves a root-absolute asset URL (`/models/…`, `/materials/…`) against the installed app base. Relative, protocol-relative, absolute-scheme (`https:`, `blob:`, `data:`), and already-based URLs pass through unchanged. Installed as the URL modifier on THREE loading managers so every model and texture load resolves correctly wherever the app is mounted.
 
+## @jgengine/shell/render/authoredSurfaceMaterial
+
+- `AuthoredSurfaceConfig` (interface): interface AuthoredSurfaceConfig extends ModelMaterialOverride — Serializable PBR settings for an authored primitive surface. Map roles use the model-material contract.
+- `AuthoredSurfaceMaterial` (function): function AuthoredSurfaceMaterial({ surface, shape = "box" }: { surface: AuthoredSurfaceConfig; shape?: SurfaceShape }): React.JSX.Element — Mount an owned PBR surface material on a mesh.
+- `SurfaceShape` (type): type SurfaceShape = "box" | "cylinder" — Primitive UV layout whose physical dimensions drive `repeatMetres`.
+- `useAuthoredSurfaceMaterial` (function): function useAuthoredSurfaceMaterial(config: AuthoredSurfaceConfig, shape: SurfaceShape = "box"): THREE.MeshStandardMaterial — Load declared surface-map roles and own the material/map clones (cached textures remain untouched). Colour/emissive maps are sRGB; normal, AO, roughness, metalness and height are linear. Cylinder side metres use the RMS ellipse circumference approximation. Static batches and custom meshes share this lifecycle.
+
 ## @jgengine/shell/render/measureBounds
 
 - `MEASURE_EXCLUDE_KEY` (const): const MEASURE_EXCLUDE_KEY: "jgMeasureExclude" — Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos, selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible subtrees are always excluded.
@@ -2386,6 +2393,11 @@
 - `captureCanvas` (function): function captureCanvas(gl: CaptureRenderer): string | null — Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game canvas already is); returns null if the backing canvas can't be read.
 - `downloadImage` (function): function downloadImage(dataUrl: string, filename = "screenshot.png"): void — Trigger a browser download of an image data URL (the photo-mode "save" action).
 
+## @jgengine/shell/render/staticShapeInstances
+
+- `StaticShapeInstance` (interface): interface StaticShapeInstance — One editor-derived static primitive. A box spans one unit; a cylinder has unit radius and height before scale.
+- `StaticShapeInstances` (function): function StaticShapeInstances({ instances }: { instances: readonly StaticShapeInstance[] }): React.JSX.Element — Batch editor-derived boxes/cylinders by shape, PBR metadata and shadows. Uploads and bounds run only when instances change; map loading stays isolated per draw group.
+
 ## @jgengine/shell/render/testFixtures/proceduralTileLayer
 
 - `drawProceduralTileLayer` (function): function drawProceduralTileLayer(canvas: CanvasFixture): TilemapWorldConfig — Draw the deterministic tile atlas used by textured tile-layer captures and tests.
@@ -2414,6 +2426,13 @@
 - `createGraphPose` (function): function createGraphPose(scene: THREE.Object3D, graph: AnimGraph, clips: THREE.AnimationClip[]): GraphPose — Binds a graph's clips to a rig exactly as `useModelAnimation` does (masked layers get filtered clips, additive layers additive ones) so a host that runs its own `createAnimGraphRuntime`, such as the editor's graph preview, poses the rig from the runtime's output.
 - `takeRootMotion` (function): function takeRootMotion(rootBone: THREE.Object3D, bind: THREE.Vector3, localDelta: readonly [number, number, number] | undefined, out: THREE.Vector3): THREE.Vector3 — For a frame where a `rootMotion` state is current: pins the root bone's horizontal translation to its bind pose, so the clip plays in place, and returns that step's root travel as a world-space horizontal delta (through the rig's parent transform, so the entity's facing and the model's scale apply). The root bone's vertical motion stays in the clip.
 - `useModelAnimation` (function): function useModelAnimation(scene: THREE.Object3D, clips: THREE.AnimationClip[], animationInput: ModelAnimationConfig | "auto" | "none" | undefined, instanceId?: string): void — The engine's model animation driver as a standalone hook — the same mixer `EntityModel` runs, for games that render a cloned scene themselves (custom materials, procedural composition). Handles `"auto"` derivation from the GLB's clip names, speed-driven idle/walk/run crossfades read from the entity's live position when `instanceId` is set, one-shots fired from `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp. With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight and the mixer only applies them; clip events surface as `animation.event`.
+
+## @jgengine/shell/render/useModelInstance
+
+- `ModelInstance` (interface): interface ModelInstance — Render `scene` with `position` and uniform `scale`; animate or deform `content` inside that placement frame.
+- `ModelInstanceConfig` (type): type ModelInstanceConfig = Pick<ModelConfig, "url" | "scale" | "targetHeight" | "y" | "anchor" | "dims" | "shadows" | "animation" > — Model loading, placement, shadows and animation for a custom renderer.
+- `ModelInstanceOptions` (interface): interface ModelInstanceOptions — Caller-owned styling runs on the isolated clone, never the loader cache.
+- `useModelInstance` (function): function useModelInstance(model: ModelInstanceConfig, options: ModelInstanceOptions = {}): ModelInstance — Load and own an isolated model instance, preserving imported transforms and measuring placement at bind pose. Mount `scene` with the returned position/scale. Custom materials, deformation and surrounding geometry stay caller-owned. Must run inside an R3F canvas and Suspense boundary; a game provider is optional.
 
 ## @jgengine/shell/replay/useSessionRecorder
 

@@ -48,6 +48,11 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `AuthoredSolids` (function) · `import { AuthoredSolids } from "@jgengine/shell/scene"`
 
+## authored-surface-material — mount an owned PBR surface material on a mesh
+
+- `AuthoredSurfaceMaterial` (function) · `import { AuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
+- `useAuthoredSurfaceMaterial` (function) · `import { useAuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
+
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
@@ -370,6 +375,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `cloneModelScene` (function) · `import { cloneModelScene } from "@jgengine/shell/render/modelRender"`
 - `disposeModelScene` (function) · `import { disposeModelScene } from "@jgengine/shell/render/modelRender"`
+- `useModelInstance` (function) · `import { useModelInstance } from "@jgengine/shell/render/useModelInstance"`
 
 ## model-load-idle — how long the shared GLB loader has been idle, for capture settle waits
 
@@ -552,6 +558,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## start-screen — headless title/attract overlay the game fills and skins
 
 - `StartScreen` (function) · `import { StartScreen } from "@jgengine/react"`
+
+## static-shape-instances — render authored primitive transforms as static material-compatible instance batches
+
+- `StaticShapeInstances` (function) · `import { StaticShapeInstances } from "@jgengine/shell/render/staticShapeInstances"`
 
 ## status-effect-bar — timeline HUD row of active statuses — icon + radial countdown ring + stack badge, driven off the status model, HudTheme-skinned
 

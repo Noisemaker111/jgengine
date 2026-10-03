@@ -1,5 +1,5 @@
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { Component, Suspense, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
+import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig, ModelMaterialMaps } from "@jgengine/core/game/playableGame";
@@ -11,7 +11,7 @@ import { sharedGltfLoader } from "./modelLoad";
 import { modelAssetRequests, modelMapEntries } from "./modelAssets";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
-import { useModelAnimation } from "./useModelAnimation";
+import { useModelInstance } from "./useModelInstance";
 import { useFootIk } from "./useFootIk";
 import { PartMotionRig } from "./PartMotion";
 import { syncSpriteFrame } from "./spriteRender";
@@ -23,7 +23,6 @@ import {
   createPaintCanvas,
   disposeModelScene,
   disposePaintCanvas,
-  modelPlacementTransform,
   syncPaintCanvas,
   type MaterialCache,
   type PaintCanvas,
@@ -244,7 +243,6 @@ export function EntityModel({
   const assets = modelAssetRequests(model);
   for (const url of assets.models) useLoader.preload(sharedGltfLoader, url);
   for (const urls of assets.textureGroups) useLoader.preload(THREE.TextureLoader, urls);
-  const gltf = useLoader(sharedGltfLoader, model.url);
   // Optional, not required: measured bounds and paint strokes are live-world extras, and a model
   // that threw without a running game could not be inspected outside one — which is how a broken
   // composition stayed undiagnosable in `EntityPreview` (#1588).
@@ -253,24 +251,10 @@ export function EntityModel({
   const baseY = model.y ?? 0;
   const dims = model.dims;
 
-  const shadows = model.shadows;
-  const { content, scene } = useMemo(() => {
-    const cloned = cloneModelScene(gltf.scene, { shadows });
-    if (material !== undefined) applyMaterialOverride(cloned, material, { clone: false });
-    return { content: cloned, scene: new THREE.Group().add(cloned) };
-  }, [gltf, material, shadows]);
-
-  const { scale, position } = useMemo(
-    () => modelPlacementTransform(scene, model),
-    [scene, model.scale, model.targetHeight, model.y, model.anchor, dims],
-  );
-
-  useEffect(
-    () => () => {
-      disposeModelScene(content);
-    },
-    [content],
-  );
+  const configure = useCallback((content: THREE.Object3D) => {
+    if (material !== undefined) applyMaterialOverride(content, material, { clone: false });
+  }, [material]);
+  const { scene, scale, position } = useModelInstance(model, { instanceId, configure });
 
   // A model without index-measured dims can't drive the fitted-collider path, so report the live
   // measurement (the primitive mounts with only this uniform scale + position) instead of letting
@@ -279,7 +263,8 @@ export function EntityModel({
   const measureKey = measure?.key;
   const dimsMaxY = dims?.maxY;
   const [positionX, positionY, positionZ] = position;
-  useEffect(() => {
+  // Measure before the instance hook's passive animation effects can move imported root nodes.
+  useLayoutEffect(() => {
     if (ctx === null || measureTarget === undefined || measureKey === undefined || dimsMaxY !== undefined) return;
     const raw = measureLocalBounds(scene);
     if (raw === null) return;
@@ -292,7 +277,7 @@ export function EntityModel({
 
   // Runs with or without index dims: the loaded geometry upgrades whatever box the kind resolved
   // (fitted or measured) to a hitbox that raycasts the model's own triangles.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (ctx === null || measureTarget === undefined || measureKey === undefined) return;
     const triangles = measureLocalCollisionTriangles(scene, {
       scale,
@@ -301,7 +286,6 @@ export function EntityModel({
     if (triangles !== null) reportMeasuredCollisionMesh(ctx, measureTarget, measureKey, triangles);
   }, [ctx, scene, scale, positionX, positionY, positionZ, measureTarget, measureKey]);
 
-  useModelAnimation(content, gltf.animations, model.animation, instanceId);
   useFootIk(scene, model.ik, ctx, instanceId, baseY);
 
   const paintCanvasRef = useRef<PaintCanvas | null>(null);

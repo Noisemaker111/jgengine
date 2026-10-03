@@ -1,59 +1,20 @@
-import { useEffect, useMemo, useRef } from "react";
-import * as THREE from "three";
+import { useMemo } from "react";
 
-import { resolveGeneratorAsset, type GeneratedAsset, type GeneratedPart } from "@jgengine/core/scene/assetGenerator";
+import { resolveGeneratorAsset, type GeneratedAsset } from "@jgengine/core/scene/assetGenerator";
+import { StaticShapeInstances, type StaticShapeInstance } from "../render/staticShapeInstances";
 
-const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
 const NEUTRAL = "#b8b0a4";
 
 /** All parts of one generated asset, batched into one instanced box draw per color. */
 function GeneratedParts({ asset }: { asset: GeneratedAsset }) {
-  const byColor = useMemo(() => {
-    const groups = new Map<string, GeneratedPart[]>();
-    for (const part of asset.parts) {
-      const color = part.color ?? NEUTRAL;
-      const bucket = groups.get(color);
-      if (bucket === undefined) groups.set(color, [part]);
-      else bucket.push(part);
-    }
-    return [...groups.entries()];
-  }, [asset]);
-  return (
-    <>
-      {byColor.map(([color, parts]) => (
-        <ColorBatch key={color} color={color} parts={parts} />
-      ))}
-    </>
-  );
-}
-
-function ColorBatch({ color, parts }: { color: string; parts: readonly GeneratedPart[] }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  useEffect(() => {
-    const mesh = meshRef.current;
-    if (mesh === null) return;
-    const matrix = new THREE.Matrix4();
-    const position = new THREE.Vector3();
-    const quaternion = new THREE.Quaternion();
-    const euler = new THREE.Euler();
-    const scale = new THREE.Vector3();
-    parts.forEach((part, index) => {
-      position.set(part.position[0], part.position[1], part.position[2]);
-      euler.set(0, part.rotationY ?? 0, 0);
-      quaternion.setFromEuler(euler);
-      scale.set(Math.max(1e-3, part.size[0]), Math.max(1e-3, part.size[1]), Math.max(1e-3, part.size[2]));
-      matrix.compose(position, quaternion, scale);
-      mesh.setMatrixAt(index, matrix);
-    });
-    mesh.count = parts.length;
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingSphere();
-  }, [parts]);
-  return (
-    <instancedMesh ref={meshRef} args={[UNIT_BOX, undefined, Math.max(1, parts.length)]} castShadow receiveShadow>
-      <meshStandardMaterial color={color} roughness={0.62} metalness={0.04} />
-    </instancedMesh>
-  );
+  const instances = useMemo<StaticShapeInstance[]>(() => asset.parts.map(part => ({
+    shape: "box",
+    position: part.position,
+    rotation: [0, part.rotationY ?? 0, 0],
+    scale: [Math.max(1e-3, part.size[0]), Math.max(1e-3, part.size[1]), Math.max(1e-3, part.size[2])],
+    surface: { color: part.color ?? NEUTRAL, roughness: 0.62, metalness: 0.04 },
+  })), [asset]);
+  return <StaticShapeInstances instances={instances} />;
 }
 
 /** Props for {@link GeneratedAsset}: the placed instance's `meta` (assetId + params + seed) and transform. */
