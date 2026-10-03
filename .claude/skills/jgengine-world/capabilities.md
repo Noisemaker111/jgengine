@@ -162,6 +162,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createBodyBind` (function) · `import { createBodyBind } from "@jgengine/core/world"`
 
+## bounded-grid-route — distinguish no path from exhausted grid search work
+
+- `findPathResult` (function) · `import { findPathResult } from "@jgengine/core/nav/navGrid"`
+
 ## build-footprint-cells — grid cells a snapped build piece footprint covers (footprintGrid occupancy bridge)
 
 - `footprintCells` (function) · `import { footprintCells } from "@jgengine/core/world/buildSockets"`
@@ -662,6 +666,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `obstacleFromSolid` (function) · `import { obstacleFromSolid } from "@jgengine/core/movement/solidObstacles"`
 - `solidObstaclesNear` (function) · `import { solidObstaclesNear } from "@jgengine/core/movement/solidObstacles"`
+
+## solid-route — bounded local planning over indexed collision geometry
+
+- `planSolidRoute` (function) · `import { planSolidRoute } from "@jgengine/core/nav/solidRoute"`
 
 ## spatial-region-box — sample uniformly within an axis-aligned 3D box
 

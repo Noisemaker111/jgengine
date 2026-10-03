@@ -21,6 +21,10 @@ export interface FindPathOptions {
   clearance?: number;
   /** Multiplier (>=1) applied to the base cost of stepping from one cell center to a neighbour's. Use to penalize slopes, terrain, etc. */
   stepCost?: (from: NavPoint, to: NavPoint) => number;
+  /** Additional edge/shortcut policy. Called after grid occupancy checks. */
+  canTraverse?: (from: NavPoint, to: NavPoint) => boolean;
+  /** Maximum expanded cells. Omit for the legacy whole-grid search. */
+  maxNodes?: number;
 }
 
 export interface NavGrid {
@@ -226,13 +230,37 @@ export function findPath(
   to: NavPoint,
   options: FindPathOptions = {},
 ): NavPoint[] | null {
+  const result = findPathResult(grid, from, to, options);
+  return result.status === "path" ? result.points : null;
+}
+
+/** Bounded grid search distinguishes exhausted work from a proven unreachable goal. */
+export type FindPathResult =
+  | { status: "path"; points: NavPoint[]; visited: number }
+  | { status: "no-path" | "budget"; visited: number };
+
+/**
+ * Same endpoint snapping as {@link findPath}, with explicit search-budget exhaustion.
+ * @capability bounded-grid-route distinguish no path from exhausted grid search work
+ */
+export function findPathResult(
+  grid: NavGrid,
+  from: NavPoint,
+  to: NavPoint,
+  options: FindPathOptions = {},
+): FindPathResult {
+  const maxNodes = options.maxNodes ?? Number.POSITIVE_INFINITY;
+  if (!(maxNodes >= 0)) throw new Error("navGrid maxNodes must be nonnegative.");
   const passable = withClearance(grid, options.clearance ?? 0);
   const stepCost = options.stepCost;
   const startCell = grid.cellAt(from);
   const goalCell = grid.cellAt(to);
   const start = passable(startCell.col, startCell.row) ? startCell : nearestPassable(grid, from, passable);
-  const goal = passable(goalCell.col, goalCell.row) ? goalCell : nearestPassable(grid, to, passable);
-  if (start === null || goal === null) return null;
+  const exactGoal = passable(goalCell.col, goalCell.row);
+  const goal = exactGoal ? goalCell : nearestPassable(grid, to, passable);
+  if (start === null || goal === null) return { status: "no-path", visited: 0 };
+  const pointAt = (col: number, row: number): NavPoint =>
+    exactGoal && col === goal.col && row === goal.row ? to : grid.center(col, row);
 
   const cols = grid.cols;
   const keyOf = (col: number, row: number) => row * cols + col;
@@ -273,6 +301,7 @@ export function findPath(
   while (heap.length > 0) {
     const current = heapPop(heap)!;
     if (closed.has(current.key)) continue;
+    if (closed.size >= maxNodes) return { status: "budget", visited: closed.size };
     if (current.key === goalKey) {
       found = true;
       break;
@@ -288,7 +317,8 @@ export function findPath(
       if (dx !== 0 && dy !== 0 && (!passable(col + dx, row) || !passable(col, row + dy))) continue;
       const nKey = keyOf(nc, nr);
       if (closed.has(nKey)) continue;
-      const multiplier = stepCost === undefined ? 1 : Math.max(1, stepCost(grid.center(col, row), grid.center(nc, nr)));
+      if (options.canTraverse !== undefined && !options.canTraverse(pointAt(col, row), pointAt(nc, nr))) continue;
+      const multiplier = stepCost === undefined ? 1 : Math.max(1, stepCost(pointAt(col, row), pointAt(nc, nr)));
       const tentative = g + step * multiplier;
       if (tentative < (gScore.get(nKey) ?? Number.POSITIVE_INFINITY)) {
         gScore.set(nKey, tentative);
@@ -298,7 +328,7 @@ export function findPath(
     }
   }
 
-  if (!found) return null;
+  if (!found) return { status: "no-path", visited: closed.size };
 
   const cells: NavCell[] = [];
   let cursor: number | undefined = goalKey;
@@ -308,9 +338,9 @@ export function findPath(
     cursor = cameFrom.get(cursor);
   }
 
-  const raw: NavPoint[] = cells.map((cell) => grid.center(cell.col, cell.row));
-  if (passable(goalCell.col, goalCell.row)) raw[raw.length - 1] = [to[0], to[1]];
-  return options.smooth === false ? raw : smoothPath(grid, raw);
+  const raw: NavPoint[] = cells.map((cell) => [...pointAt(cell.col, cell.row)] as NavPoint);
+  const points = options.smooth === false ? raw : smoothPath(grid, raw, options.canTraverse);
+  return { status: "path", points, visited: closed.size };
 }
 
 const DEFAULT_SLOPE_STEP_WEIGHT = 1;
@@ -333,12 +363,12 @@ export function slopeStepCost(
 }
 
 /** Remove waypoints the mover can skip because it has clear line-of-sight past them. */
-export function smoothPath(grid: NavGrid, points: readonly NavPoint[]): NavPoint[] {
+export function smoothPath(grid: NavGrid, points: readonly NavPoint[], canTraverse?: (from: NavPoint, to: NavPoint) => boolean): NavPoint[] {
   if (points.length <= 2) return points.slice();
   const result: NavPoint[] = [points[0]!];
   let anchor = 0;
   for (let i = 2; i < points.length; i += 1) {
-    if (!grid.lineOfSight(points[anchor]!, points[i]!)) {
+    if (!grid.lineOfSight(points[anchor]!, points[i]!) || (canTraverse !== undefined && !canTraverse(points[anchor]!, points[i]!))) {
       result.push(points[i - 1]!);
       anchor = i - 1;
     }
