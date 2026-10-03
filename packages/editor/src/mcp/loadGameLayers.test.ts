@@ -58,10 +58,11 @@ describe("loadGameLayers", () => {
     expect(loaded.document.markers).toEqual([]);
   });
 
-  test("a real game's editorLayers export decodes to a typed document", async () => {
-    const loaded = await loadGameLayers("studio-showcase");
-    expect(loaded.ok).toBe(true);
-    if (!loaded.ok) throw new Error("expected load success");
+  test("loads an authored layer factory through declared package dependencies", async () => {
+    const loaded = await loadGameLayers("../packages/editor/testFixtures/layers-game");
+    if (!loaded.ok) throw new Error(`expected load success: ${loaded.errors.map((e) => e.message).join("; ")}`);
     expect(loaded.document.version).toBe(1);
+    expect(loaded.document.markers[0]?.position).toEqual({ x: 2, y: 0, z: -3 });
+    expect(loaded.document.simulation?.weather?.wind?.speed).toBe(3);
   });
 });
