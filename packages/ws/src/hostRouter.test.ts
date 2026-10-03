@@ -136,6 +136,34 @@ function worldBaseline(revision: number): WorldSyncFrame {
   return { kind: "baseline", revision, snapshot: { entities: [] } };
 }
 
+test("router close fences deferred authentication, queued joins, and new connections", async () => {
+  const host = createGameHost({ persistence: memoryPersistence() });
+  let began!: () => void;
+  let release!: () => void;
+  const started = new Promise<void>(resolve => { began = resolve; });
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  let joins = 0;
+  const join = host.joinServer;
+  host.joinServer = args => { joins += 1; return join(args); };
+  const router = createHostRouter({ host, authenticate: async () => { began(); await gate; return "alice"; } });
+  const replies: unknown[] = [];
+  const connection = router.connect({ send: raw => replies.push(JSON.parse(raw)), close: () => {} });
+  connection.handleRaw(JSON.stringify({ v: 1, t: "hello", id: 1, userId: "alice" }));
+  await started;
+  connection.handleRaw(JSON.stringify({ v: 1, t: "join", id: 2, gameId: "test" }));
+  router.close();
+  let settled = false;
+  const draining = router.drain().then(() => { settled = true; });
+  await Promise.resolve();
+  expect(settled).toBe(false);
+  expect(() => router.connect({ send: () => {}, close: () => {} })).toThrow("closed");
+  release(); await draining;
+  expect(joins).toBe(0);
+  expect(replies).toEqual([]);
+  connection.close(); router.close();
+  await host.stop();
+});
+
 test("server replication coalesces a slow subscriber's event burst and advances its cursor in order", async () => {
   const stack = await delayedWorldStack();
   try {

@@ -722,6 +722,7 @@ function resolveSaveOptions<TAssetRef extends ModelAssetRef, TMultiplayer>(
     mode: config.mode,
     key: saveKey(definition.name),
     version: config.version,
+    migrate: config.migrate,
     autosaveMs: config.autosaveMs,
     now: options.now,
   };

@@ -88,6 +88,8 @@ export type HostRouter = {
   connect: (transport: HostRouterTransport) => HostRouterConnection;
   rewind: (args: { serverId: string; atMs: number }) => RewoundPosition[];
   close: () => void;
+  /** Wait for accepted message handlers and subscription reads to settle. Close first to prevent new work. */
+  drain: () => Promise<void>;
 };
 
 export const DEFAULT_POSE_RULES: PoseSyncRules = DEFAULT_POSE_SYNC_RULES;
@@ -98,6 +100,7 @@ export const MAX_QUEUED_MESSAGES = 64;
 export const DEFAULT_GRACE_MS = 15_000;
 
 type Connection = {
+  closed: boolean;
   transport: HostRouterTransport;
   userId: string | null;
   subscriptions: Set<string>;
@@ -167,6 +170,13 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     (allowAnonymous ? ({ userId }: { userId: string }) => userId : null);
 
   const connections = new Set<Connection>();
+  let closed = false;
+  const work = new Set<Promise<unknown>>();
+  const track = <T>(promise: Promise<T>): Promise<T> => {
+    work.add(promise);
+    void promise.finally(() => work.delete(promise)).catch(() => {});
+    return promise;
+  };
   const sessionsByUserId = new Map<string, Connection>();
   const resumeTokens = new Map<string, string>();
   const pendingLeaves = new Map<string, ReturnType<typeof setTimeout>>();
@@ -231,6 +241,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     getOrCreate(histories, serverId, () => createPositionHistory({ historyMs: positionHistoryMs }));
 
   const send = (connection: Connection, message: WsServerMessage) => {
+    if (closed || connection.closed) return;
     connection.transport.send(encodeWsMessage(message));
   };
 
@@ -291,6 +302,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       atMs: now(),
       ...args,
     });
+    if (closed || connection.closed) return false;
     if (!decision.allow) {
       replyError(connection, id, decision.reason);
       return false;
@@ -413,6 +425,9 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     isCurrent: () => boolean,
   ) => {
     if (connection.userId === null || !isCurrent()) return;
+    if (host.pullWorld !== undefined) {
+      if (!(await host.isMember({ userId: connection.userId, serverId })) || !isCurrent()) return;
+    }
     if (channel === "server") {
       if (host.pullWorld !== undefined) {
         const sinceRevision = connection.worldRevisions.get(serverId) ?? null;
@@ -426,6 +441,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           }
           return;
         }
+        return;
       }
       const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId) });
       if (isCurrent()) send(connection, { v: 1, t: "update", channel, serverId, data });
@@ -472,7 +488,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     push.pending = true;
     if (push.run !== undefined) return push.run;
     const isActive = () => connections.has(connection) && connection.userId !== null && connection.subscriptions.has(key) && connection.subscriptionPushes.get(key) === push;
-    push.run = Promise.resolve().then(async () => {
+    push.run = track(Promise.resolve().then(async () => {
       while (push.pending && isActive()) {
         push.pending = false;
         const generation = push.generation;
@@ -489,7 +505,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       } else if (push.pending) {
         void requestSubscriptionPush(connection, channel, serverId, action);
       }
-    });
+    }));
     return push.run;
   };
 
@@ -563,6 +579,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
 
   const handleMessage = async (connection: Connection, message: WsClientMessage) => {
+    if (closed || connection.closed) return;
     if (message.t === "hello") {
       if (connection.userId !== null) {
         replyError(connection, message.id, "Already authenticated");
@@ -578,6 +595,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         resumeToken !== undefined && message.token === resumeToken
           ? message.userId
           : await authenticate({ userId: message.userId, token: message.token });
+      if (closed || connection.closed) return;
       if (userId === null) {
         replyError(connection, message.id, "Not authenticated");
         connection.transport.close();
@@ -632,6 +650,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             code: message.code,
             role: message.role,
           });
+          if (closed || connection.closed) return;
           connection.joinedServers.add(result.serverId);
           connection.roles.set(result.serverId, message.role ?? "player");
           if (message.sessionId !== undefined) getOrCreate(connection.sessions, result.serverId, () => new Set<string>()).add(message.sessionId);
@@ -649,6 +668,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             code: message.code,
           });
           if (result !== null) {
+            if (closed || connection.closed) return;
             connection.joinedServers.add(result.serverId);
             connection.roles.set(result.serverId, message.role ?? "player");
           }
@@ -762,7 +782,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         }
         case "subscribe": {
           if (
-            (message.channel === "chat" ||
+            (host.pullWorld !== undefined || message.channel === "chat" ||
               message.channel === "voice" ||
               message.channel === "presence") &&
             !(await host.isMember({ userId, serverId: message.serverId }))
@@ -770,6 +790,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             replyError(connection, message.id, "Not a member of this server");
             return;
           }
+          if (closed || connection.closed) return;
           if (message.channel === "server") connection.worldRevisions.set(message.serverId, null);
           addSubscription(connection, subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
@@ -791,7 +812,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
 
   const leaveJoinedServers = (connection: Connection) => {
-    if (connection.userId === null) return;
+    if (closed || connection.userId === null) return;
     const userId = connection.userId;
     const servers = [...connection.joinedServers];
     connection.joinedServers.clear();
@@ -812,7 +833,9 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
 
   return {
     connect: (transport) => {
+      if (closed) throw new Error("Host router is closed");
       const connection: Connection = {
+        closed: false,
         transport,
         userId: null,
         subscriptions: new Set(),
@@ -827,6 +850,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       connections.add(connection);
       return {
         handleRaw: (raw) => {
+          if (closed || connection.closed) return;
           const text = typeof raw === "string" ? raw : String(raw);
           const message = decodeWsClientMessage(text);
           if (message === null) {
@@ -841,14 +865,16 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
             return;
           }
           connection.queuedMessages += 1;
-          connection.queue = connection.queue
+          connection.queue = track(connection.queue
             .then(() => handleMessage(connection, message))
             .catch(() => undefined)
             .finally(() => {
               connection.queuedMessages -= 1;
-            });
+            }));
         },
         close: () => {
+          if (connection.closed) return;
+          connection.closed = true;
           if (connection.userId !== null && sessionsByUserId.get(connection.userId) === connection) {
             sessionsByUserId.delete(connection.userId);
           }
@@ -873,11 +899,16 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       return positions;
     },
     close: () => {
+      if (closed) return;
+      closed = true;
       unsubscribeHost();
       for (const timer of pendingLeaves.values()) clearTimeout(timer);
       pendingLeaves.clear();
       connections.clear();
       subscribers.clear();
+    },
+    async drain() {
+      while (work.size > 0) await Promise.allSettled([...work]);
     },
   };
 }

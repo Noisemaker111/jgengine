@@ -8,7 +8,7 @@ import type { ItemTraits } from "../inventory/inventoryModel";
 import type { StorageTier } from "../inventory/storageTier";
 import type { GameContext } from "../runtime/gameContext";
 import type { ReplicationPolicy } from "../runtime/worldProjection";
-import type { RuntimeSaveMode } from "../runtime/runtimeSave";
+import type { RuntimeSaveMode, RuntimeSaveOptions } from "../runtime/runtimeSave";
 import type { SaveConfig } from "../runtime/save";
 import { createAssetCatalog, type AssetCatalog, type ModelAssetRef } from "../scene/assetCatalog";
 import { createEntityStore, type EntityStore } from "../scene/entityStore";
@@ -26,8 +26,10 @@ export interface PersistConfig {
   mode?: RuntimeSaveMode;
   /** `"local"` (default) persists to `localStorage`; `"memory"` keeps saves in-session only (tests, "no persistence" mode). */
   storage?: "local" | "memory";
-  /** Save-format version; bump when the world shape changes in a save-breaking way. */
+  /** Save-format version. Supply `migrate` for incompatible older shapes; without it, mismatched versions retain compatible load behavior. */
   version?: number;
+  /** Convert a mismatched version (or raw payload, version 0) before world restoration. Throw to reject without hydrating or changing the stored save. Current-version payloads bypass this hook. */
+  migrate?: RuntimeSaveOptions["migrate"];
   /** Autosave debounce in ms (autosave mode). Default 3000. */
   autosaveMs?: number;
 }

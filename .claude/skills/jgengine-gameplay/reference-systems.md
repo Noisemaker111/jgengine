@@ -8,6 +8,15 @@ Use `ctx.state()` / `ctx.restore(state)` for detached whole-world persistence, i
 
 Restore after initialization has registered every system. Missing keys in older saves retain initialized values; unavailable historical economy/progression cannot be recovered by the engine. Keep a game's legacy migration until its older saves have been converted. Simulation tick and pose-buffer state persist, but callbacks, timers and game-owned closures must be registered/reconstructed at boot or exposed through a system save module.
 
+Declare `persist: { version, migrate(data, fromVersion) }` to convert incompatible
+older whole-world saves before restoration. Raw payloads use version 0; matching
+versions bypass the hook. Throw to reject a missing historical runtime module:
+load returns false, leaving the initialized world and stored
+save untouched. A version number alone preserves compatible mismatch loading;
+it is not a rejection gate. Migration exceptions retain the save store's existing
+decode fallback to initial data with idle status; they are not backend errors.
+Explicit context `save` options override `persist`.
+
 `ctx.sim.advance(realDt, (stepDt, tick, gameDt) => ...)` owns advancement of `ctx.time` once per simulation step. Use the third argument for scaled gameplay time and `stepDt` for movement; remove manual `ctx.time.advance` calls inside simulation callbacks. Movement prediction opts out with `{ advanceTime: false }` and must not run authoritative gameplay stages. Standalone clocks retain their explicit `advance` API.
 
 ## Portable XP and leveling

@@ -397,6 +397,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `modelLoadIdleMs` (function) · `import { modelLoadIdleMs } from "@jgengine/shell/render/modelLoad"`
 
+## multiplayer-p2p — bootstrap a playable authoritative world for browser peer co-op
+
+- `resolvePeerShellMultiplayer` (function) · `import { resolvePeerShellMultiplayer } from "@jgengine/shell/multiplayer"`
+
 ## nameplates — billboarded name + HP bar over nearby entities
 
 - `WorldNameplates` (function) · `import { WorldNameplates } from "@jgengine/shell/world/WorldHud"`

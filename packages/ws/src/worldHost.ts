@@ -17,12 +17,16 @@ export interface WorldGameHostOptions {
    */
   session(args: { gameId: string; serverId: string }): HostedWorldSession | Promise<HostedWorldSession | null> | null;
   now?: () => number;
+  /** Maximum active players per world; reconnecting members and spectators do not consume a new slot. */
+  slotsPerServer?: number;
 }
 
 /** A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change. */
 export interface WorldGameHost extends GameHost {
   /** Advance every live world by `dtSeconds` and emit a `server` change for each whose revision moved. */
   tick(dtSeconds: number): void;
+  /** Permanently close admission/ticks, drain accepted world operations, and save. Repeated calls share completion. */
+  stop(): Promise<void>;
 }
 
 /**
@@ -32,13 +36,19 @@ export interface WorldGameHost extends GameHost {
  * the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.
  */
 export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost {
-  const live = new Map<string, { gameId: string; session: HostedWorldSession }>();
-  const loading = new Map<string, Promise<{ gameId: string; session: HostedWorldSession } | null>>();
+  if (options.slotsPerServer !== undefined && (!Number.isSafeInteger(options.slotsPerServer) || options.slotsPerServer < 1)) {
+    throw new Error("slotsPerServer must be a positive safe integer");
+  }
+  type Entry = { gameId: string; session: HostedWorldSession; residentMembers: ReadonlySet<string> };
+  const live = new Map<string, Entry>();
+  const loading = new Map<string, Promise<Entry | null>>();
   const queues = new Map<string, Promise<unknown>>();
   const roles = new Map<string, Map<string, SnapshotViewer["role"]>>();
   const announcedRevisions = new Map<string, number>();
   const listeners = new Set<(event: HostChangeEvent) => void>();
   const now = options.now ?? (() => Date.now());
+  let stopped = false;
+  let stopping: Promise<void> | null = null;
 
   function emit(event: HostChangeEvent): void {
     if (event.type === "server") {
@@ -49,6 +59,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
   }
 
   function enqueue<T>(serverId: string, operation: () => Promise<T>): Promise<T> {
+    if (stopped) return Promise.reject(new Error("World host is closed"));
     const previous = queues.get(serverId) ?? Promise.resolve();
     const run = previous.catch(() => {}).then(operation);
     queues.set(serverId, run);
@@ -58,7 +69,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
     return run;
   }
 
-  function ensure(gameId: string, serverId: string): { gameId: string; session: HostedWorldSession } | Promise<{ gameId: string; session: HostedWorldSession } | null> | null {
+  function ensure(gameId: string, serverId: string): Entry | Promise<Entry | null> | null {
     const existing = live.get(serverId);
     if (existing !== undefined) return existing.gameId === gameId ? existing : null;
     const pending = loading.get(serverId);
@@ -67,7 +78,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
     if (resolved instanceof Promise) {
       const pending = resolved.then((session) => {
         if (session === null) return null;
-        const entry = { gameId, session };
+        const entry = { gameId, session, residentMembers: new Set(session.members()) };
         live.set(serverId, entry);
         return entry;
       });
@@ -76,12 +87,13 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
       return pending;
     }
     if (resolved === null) return null;
-    const entry = { gameId, session: resolved };
+    const entry = { gameId, session: resolved, residentMembers: new Set(resolved.members()) };
     live.set(serverId, entry);
     return entry;
   }
 
   function tickAll(dtSeconds: number): void {
+    if (stopped) return;
     for (const [serverId, entry] of live) {
       if (queues.has(serverId)) continue;
       const before = entry.session.revision();
@@ -97,15 +109,23 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
         const pending = ensure(gameId, id);
         const entry = pending instanceof Promise ? await pending : pending;
         if (entry === null) throw new Error(`no hosted world for game "${gameId}"`);
+        const members = entry.session.members();
+        const admittedRoles = roles.get(id);
+        const occupiesSlot = (memberId: string) => admittedRoles?.get(memberId) === "player"
+          || (admittedRoles?.get(memberId) === undefined && entry.residentMembers.has(memberId));
+        const usedSlots = members.filter(occupiesSlot).length;
+        if (role !== "spectator" && !(members.includes(userId) && occupiesSlot(userId)) && options.slotsPerServer !== undefined && usedSlots >= options.slotsPerServer) {
+          throw new Error("Server is full");
+        }
         const isNew = !entry.session.hasPlayer(userId);
         let serverRoles = roles.get(id);
         if (serverRoles === undefined) {
           serverRoles = new Map();
           roles.set(id, serverRoles);
         }
-        serverRoles.set(userId, role ?? "player");
         if (role !== "spectator") entry.session.join(userId, isNew);
         await entry.session.save();
+        serverRoles.set(userId, role ?? "player");
         emit({ type: "server", serverId: id });
         emit({ type: "player", serverId: id, userId });
         return { serverId: id, isNew };
@@ -125,7 +145,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
       return enqueue(serverId, async () => {
         const entry = live.get(serverId);
         if (entry === undefined) return { ok: false, reason: "no-server" };
-        if (!entry.session.members().includes(userId) || roles.get(serverId)?.get(userId) === "spectator") return { ok: false, reason: "not-a-player" };
+        if (!entry.session.members().includes(userId) || roles.get(serverId)?.get(userId) !== "player") return { ok: false, reason: "not-a-player" };
         if (command === INPUT_COMMAND) {
           entry.session.input(userId, input as InputFrame);
           return { ok: true };
@@ -139,11 +159,11 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
       });
     },
     async isMember({ userId, serverId }): Promise<boolean> {
-      return live.get(serverId)?.session.members().includes(userId) || roles.get(serverId)?.has(userId) === true;
+      return !stopped && roles.get(serverId)?.has(userId) === true;
     },
     async getServerView({ userId, serverId, role }): Promise<GameRuntimeServerView | null> {
       const entry = live.get(serverId);
-      if (entry === undefined) return null;
+      if (stopped || entry === undefined || !roles.get(serverId)?.has(userId)) return null;
       return {
         serverId,
         gameId: entry.gameId,
@@ -155,7 +175,7 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
     },
     async pullWorld({ userId, serverId, sinceRevision, role }): Promise<WorldSyncFrame | null> {
       const entry = live.get(serverId);
-      if (entry === undefined || (!entry.session.members().includes(userId) && roles.get(serverId)?.get(userId) !== "spectator")) return null;
+      if (stopped || entry === undefined || !roles.get(serverId)?.has(userId)) return null;
       if (entry.session.projectsViewers()) {
         return {
           kind: "baseline",
@@ -195,8 +215,18 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
       return live.size;
     },
     start() {},
-    async stop() {},
+    stop() {
+      if (stopping !== null) return stopping;
+      stopped = true;
+      stopping = (async () => {
+        await Promise.allSettled([...queues.values()]);
+        try { await Promise.all([...live.values()].map(entry => entry.session.save())); }
+        finally { listeners.clear(); }
+      })();
+      return stopping;
+    },
     subscribe(listener) {
+      if (stopped) return () => {};
       listeners.add(listener);
       return () => listeners.delete(listener);
     },

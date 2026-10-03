@@ -73,6 +73,126 @@ function channel<T>() {
 }
 
 describe("createWorldGameHost", () => {
+  test("failed new admission retains dirty player state without consuming capacity", async () => {
+    let failing = false;
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT,
+      host: { userId: "host", isNew: true },
+      store: { load: () => null, save: () => { if (failing) throw new Error("save denied"); } } });
+    session.join("host", true);
+    const host = createWorldGameHost({ session: () => session, slotsPerServer: 2 });
+    failing = true;
+    await expect(host.joinServer({ userId: "failed", gameId: "shared" })).rejects.toThrow("save denied");
+    expect(session.hasPlayer("failed")).toBe(true);
+    expect(session.runner().context().scene.entity.get("failed")).not.toBeNull();
+    expect(await host.isMember({ userId: "failed", serverId: "shared" })).toBe(false);
+    failing = false;
+    await host.joinServer({ userId: "guest", gameId: "shared" });
+    await expect(host.joinServer({ userId: "failed", gameId: "shared" })).rejects.toThrow("full");
+    await host.joinServer({ userId: "host", gameId: "shared" });
+    await host.joinServer({ userId: "guest", gameId: "shared" });
+    await host.leaveServer({ userId: "guest", serverId: "shared" });
+    expect((await host.joinServer({ userId: "failed", gameId: "shared" })).isNew).toBe(false);
+    expect(await host.isMember({ userId: "failed", serverId: "shared" })).toBe(true);
+    await host.stop();
+  });
+
+  test("failed spectator promotion cannot reserve a player seat, and its retry obeys capacity", async () => {
+    let failing = false;
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT,
+      store: { load: () => null, save: () => { if (failing) throw new Error("save denied"); } } });
+    const host = createWorldGameHost({ session: () => session, slotsPerServer: 2 });
+    await host.joinServer({ userId: "host", gameId: "shared" });
+    await host.joinServer({ userId: "watcher", gameId: "shared", role: "spectator" });
+    failing = true;
+    await expect(host.joinServer({ userId: "watcher", gameId: "shared" })).rejects.toThrow("save denied");
+    expect(await host.runCommand({ userId: "watcher", serverId: "shared", command: "engine.ping", input: {} })).toEqual({ ok: false, reason: "not-a-player" });
+    failing = false;
+    await host.joinServer({ userId: "guest", gameId: "shared" });
+    await expect(host.joinServer({ userId: "watcher", gameId: "shared" })).rejects.toThrow("full");
+    await host.leaveServer({ userId: "guest", serverId: "shared" });
+    expect((await host.joinServer({ userId: "watcher", gameId: "shared" })).isNew).toBe(false);
+    await host.stop();
+  });
+
+  test("stop awaits accepted saves, fences later work, and shares its completion", async () => {
+    let began!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>(resolve => { began = resolve; });
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    let writes = 0;
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT,
+      store: { load: () => null, save: async () => { began(); await gate; writes += 1; } } });
+    const host = createWorldGameHost({ session: () => session });
+    const joining = host.joinServer({ userId: "alice", gameId: "shared" });
+    await started;
+    let settled = false;
+    const stopping = host.stop();
+    expect(host.stop()).toBe(stopping);
+    void stopping.then(() => { settled = true; });
+    await expect(host.joinServer({ userId: "bob", gameId: "shared" })).rejects.toThrow("closed");
+    await expect(host.runCommand({ userId: "alice", serverId: "shared", command: "engine.ping", input: {} })).rejects.toThrow("closed");
+    const revision = session.revision();
+    host.tick(1);
+    expect(session.revision()).toBe(revision);
+    expect(settled).toBe(false);
+    release(); await joining; await stopping;
+    expect(writes).toBeGreaterThan(0);
+    expect(await host.getServerView({ userId: "alice", serverId: "shared" })).toBeNull();
+  });
+
+  test("failed admission persistence grants no view or command access until a successful retry", async () => {
+    let failing = true;
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT,
+      store: { load: () => null, save: () => { if (failing) throw new Error("save denied"); } } });
+    const host = createWorldGameHost({ session: () => session });
+    await expect(host.joinServer({ userId: "alice", gameId: "shared" })).rejects.toThrow("save denied");
+    expect(await host.isMember({ userId: "alice", serverId: "shared" })).toBe(false);
+    expect(await host.getServerView({ userId: "alice", serverId: "shared" })).toBeNull();
+    expect(await host.pullWorld!({ userId: "alice", serverId: "shared", sinceRevision: null })).toBeNull();
+    expect(await host.runCommand({ userId: "alice", serverId: "shared", command: "engine.ping", input: {} })).toEqual({ ok: false, reason: "not-a-player" });
+    failing = false;
+    await host.joinServer({ userId: "alice", gameId: "shared" });
+    expect(await host.isMember({ userId: "alice", serverId: "shared" })).toBe(true);
+  });
+
+  test("a departed subscriber receives no later world snapshots", async () => {
+    const { host } = sharedHost();
+    const router = createHostRouter({ host, allowAnonymous: true });
+    const backend = createWsBackend({ userId: "alice", pipe: loopbackPipe(router) });
+    const received: unknown[] = [];
+    const joined = await backend.transport.joinServer({ gameId: "shared" });
+    if (!joined.ok) throw new Error("join failed");
+    const unsub = backend.feeds!.subscribeServer("shared", value => received.push(value));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 20));
+      expect(received.length).toBeGreaterThan(0);
+      await backend.transport.leaveServer({ serverId: "shared" });
+      const count = received.length;
+      await host.joinServer({ userId: "bob", gameId: "shared" });
+      host.tick(1);
+      await new Promise(resolve => setTimeout(resolve, 20));
+      expect(received.length).toBe(count);
+    } finally { unsub(); backend.close(); router.close(); await router.drain(); await host.stop(); }
+  });
+
+  test("capacity-rejected callers cannot read the snapshot fallback or receive subscriptions", async () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldGameHost({ session: () => session, slotsPerServer: 1 });
+    await host.joinServer({ userId: "alice", gameId: "shared" });
+    await expect(host.joinServer({ userId: "denied", gameId: "shared" })).rejects.toThrow("full");
+    const router = createHostRouter({ host, allowAnonymous: true });
+    const backend = createWsBackend({ userId: "denied", pipe: loopbackPipe(router) });
+    const received: unknown[] = [];
+    const unsub = backend.feeds!.subscribeServer("shared", value => received.push(value));
+    try {
+      await new Promise(resolve => setTimeout(resolve, 20));
+      host.tick(1);
+      await new Promise(resolve => setTimeout(resolve, 20));
+      expect(received.filter(value => value != null)).toEqual([]);
+      expect(await host.getServerView({ userId: "denied", serverId: "shared", role: "spectator" })).toBeNull();
+    } finally { unsub(); backend.close(); router.close(); await host.stop(); }
+  });
+
   test("failed persistence withholds a purchase event, then its retry saves and broadcasts once", async () => {
     let failing = false;
     const session = createHostedWorldSession({ definition: definition(), content: CONTENT, store: {
@@ -220,6 +340,34 @@ describe("createWorldGameHost", () => {
     } finally {
       alice.close();
       router.close();
+    }
+  });
+});
+
+
+describe("world capacity", () => {
+  test("serialized concurrent admission caps players while permitting reconnect and spectators", async () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldGameHost({ session: () => session, slotsPerServer: 2 });
+    await host.joinServer({ userId: "host", gameId: "shared" });
+    const attempts = await Promise.allSettled([
+      host.joinServer({ userId: "guest", gameId: "shared" }),
+      host.joinServer({ userId: "third", gameId: "shared" }),
+    ]);
+    expect(attempts[0]?.status).toBe("fulfilled");
+    expect(attempts[1]?.status).toBe("rejected");
+    expect(session.members()).toEqual(["host", "guest"]);
+    await host.joinServer({ userId: "guest", gameId: "shared" });
+    await host.joinServer({ userId: "viewer", gameId: "shared", role: "spectator" });
+    expect(session.members()).toEqual(["host", "guest"]);
+    await host.leaveServer({ userId: "guest", serverId: "shared" });
+    await host.joinServer({ userId: "third", gameId: "shared" });
+    expect(session.members()).toEqual(["host", "third"]);
+  });
+
+  test("rejects invalid caps before opening a world", () => {
+    for (const slotsPerServer of [0, -1, 1.5, NaN, Infinity]) {
+      expect(() => createWorldGameHost({ session: () => null, slotsPerServer })).toThrow("slotsPerServer");
     }
   });
 });

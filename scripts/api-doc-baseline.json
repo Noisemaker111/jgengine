@@ -2686,7 +2686,6 @@
   "@jgengine/shell/multiplayer#ResolveShellMultiplayerArgs",
   "@jgengine/shell/multiplayer#ShellMultiplayer",
   "@jgengine/shell/multiplayer#randomPlayerId",
-  "@jgengine/shell/multiplayer#resolvePeerShellMultiplayer",
   "@jgengine/shell/multiplayer#resolveShellMultiplayer",
   "@jgengine/shell/pointer/PointerOverlays#ContextMenuView",
   "@jgengine/shell/pointer/PointerOverlays#MarqueeBox",
