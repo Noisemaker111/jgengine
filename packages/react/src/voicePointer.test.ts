@@ -21,7 +21,7 @@ beforeAll(async () => {
     import React,{useEffect,useState} from 'react';import {createRoot} from 'react-dom/client';import {flushSync} from 'react-dom';
     import {useVoice,PushToTalkButton} from '@jgengine/react/voice';
     const listeners=new Map();for(const [source,types]of [[window,['mouseup','pointercancel','blur']],[document,['visibilitychange','pointerlockchange']]]){const add=source.addEventListener.bind(source),remove=source.removeEventListener.bind(source);source.addEventListener=(type,listener,options)=>{if(types.includes(type)&&new Error().stack.split('\\n')[2]?.includes('/fixture.js')){const set=listeners.get(type)??new Set();set.add(listener);listeners.set(type,set)}add(type,listener,options)};source.removeEventListener=(type,listener,options)=>{listeners.get(type)?.delete(listener);remove(type,listener,options)}}
-    const track={enabled:true,stop(){}},stream={id:'fixture-mic',getAudioTracks:()=>[track],getTracks:()=>[track]},capture=async()=>stream,counts={down:0,up:0};
+    const audio=new AudioContext(),stream=audio.createMediaStreamDestination().stream,track=stream.getAudioTracks()[0],capture=async()=>stream,counts={down:0,up:0};
     function Fixture(){const[visible,setVisible]=useState(true),voice=useVoice({getUserMedia:capture,mode:new URLSearchParams(location.search).get('mode')??'hold'});
       useEffect(()=>{void voice.requestMic()},[]);
       window.fixture={snapshot:()=>({transmitting:voice.transmitting,mode:voice.mode,status:voice.status,enabled:track.enabled,listeners:[...listeners.values()].reduce((sum,set)=>sum+set.size,0),...counts}),hide:()=>flushSync(()=>setVisible(false)),show:()=>flushSync(()=>setVisible(true)),externalDown:()=>flushSync(()=>voice.keyDown()),externalUp:()=>flushSync(()=>voice.keyUp())};

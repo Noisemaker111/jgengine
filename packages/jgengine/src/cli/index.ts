@@ -50,7 +50,7 @@ usage: jgengine <command> [...args]
                         boots this project's dev server, waits for an honest frame, captures.
                         [--device desktop|mobile|mobile-landscape] [--out <path>] [--url <page>]
                         [--settle <ms>] [--timeout <s>] · needs Chrome/Chromium (CHROME_PATH) · --help
-  drive [...]           play/test the current game headlessly — ordered --click/--key/--wait/--shot
+  drive [...]           play/test the current game headlessly — ordered --click/--click-at/--key/--wait/--shot
                         steps, --rpc '{"method":"agent_status"}', and --playtest --strict for a
                         softlock verdict. Same boot + capture engine as shoot. --help for all flags
   find <intent>         search what the engine already ships by intent (e.g. "toggleable window",

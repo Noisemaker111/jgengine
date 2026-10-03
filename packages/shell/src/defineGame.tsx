@@ -37,6 +37,8 @@ type PresentationFields = Omit<PlayableGame, "game" | "content" | "loop" | "Game
   sceneScatterModels?: Record<string, string | ModelConfig>;
   /** Animated species models for cosmetic authored habitats; gameplay actors remain game-owned. */
   sceneFlockModels?: Record<string, string | ModelConfig>;
+  /** Visible ground path kinds; omit to draw every non-scatter path, or restrict to keep flight/patrol guides out of world roads. */
+  scenePathKinds?: readonly string[];
 };
 
 export type GameConfig<TAssetRef extends ModelAssetRef = ModelAssetRef> = EngineFields<TAssetRef> &
@@ -81,6 +83,7 @@ function authoredSceneOverlay(
   placement: boolean | { verticalOffset?: number },
   scatterModels: Record<string, string | ModelConfig> | undefined,
   flockModels: Record<string, string | ModelConfig> | undefined,
+  pathKinds: readonly string[] | undefined,
   assets: AssetCatalog,
   world: GameDefinitionConfig<ModelAssetRef>["world"],
   Vfx: ComponentType<WorldOverlayProps> | undefined,
@@ -101,6 +104,7 @@ function authoredSceneOverlay(
           assets={assets}
           {...(scatterModels === undefined ? {} : { scatterModels })}
           {...(flockModels === undefined ? {} : { flockModels })}
+          {...(pathKinds === undefined ? {} : { pathKinds })}
           {...(groundColorAt === undefined ? {} : { groundColorAt })}
         />
         {Vfx === undefined ? null : <Vfx {...props} />}
@@ -133,6 +137,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
     scenePlacement,
     sceneScatterModels,
     sceneFlockModels,
+    scenePathKinds,
     WorldOverlay,
     viewmodel,
     renderEntity,
@@ -225,6 +230,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
             scenePlacement ?? true,
             sceneScatterModels,
             sceneFlockModels,
+            scenePathKinds,
             game.assets,
             game.world,
             WorldOverlay,

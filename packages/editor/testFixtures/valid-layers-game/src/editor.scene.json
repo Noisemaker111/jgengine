@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "markers": [{ "id": "spawn", "kind": "player_spawn", "position": { "x": 6, "y": 0, "z": 6 } }],
+  "volumes": [],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": []
+}

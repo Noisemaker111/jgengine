@@ -15,3 +15,4 @@
 - Fire tools and opted-in rain cooling extinguish burning cells while preserving fuel; authored fire bindings stop spawning when the area stops burning.
 - Typed `get_simulation` / `set_simulation` authoring persists weather, schedules, wind zones, emitters, fields, fire areas and habitats through ordinary undo, save and import/export.
 - Reject numerically unsafe force magnitudes and wind coupling before authority or caller buffers mutate.
+- Forward game-selected visible path kinds so flock/patrol guide routes need not draw as ground roads.

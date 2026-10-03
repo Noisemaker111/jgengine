@@ -1,3 +1,4 @@
+import { dispatchClickAt, parseClickAt } from "../clickInput";
 import { escapeHtml } from "../escapeHtml";
 import { driveInputPointExpr, parseDriveFill } from "./driveInput";
 import type { EditorSceneDoc, TemplateVariant } from "./types";
@@ -256,6 +257,10 @@ import { existsSync, mkdirSync, readdirSync, renameSync, statSync, unlinkSync, w
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { inflateSync } from "node:zlib";
+
+export ${parseClickAt.toString()}
+
+export ${dispatchClickAt.toString()}
 
 export const DEVICES = {
   desktop: { width: 1600, height: 900, dsf: 1, mobile: false },
@@ -856,11 +861,13 @@ const driveMjs = `#!/usr/bin/env node
  * The dev server is started for you when it is not already up. RPC talks to
  * window.__jgengineAgent — agent_status, debug_snapshot, editor verbs — on the
  * running page. --playtest samples the game's capture.probe metrics while your
- * --key steps drive input and prints a JSON progress/softlock verdict.
+ * --key/--click-at steps drive input and prints a JSON progress/softlock verdict.
  */
 import { join, resolve } from "node:path";
 import {
   DEVICES,
+  dispatchClickAt,
+  parseClickAt,
   findClickPoint,
   driveInputPointExpr,
   emulateDevice,
@@ -880,6 +887,7 @@ const HELP = [
   "",
   "Steps run in the order given:",
   '  --click "<text>"    scroll to and click actionable text (case-insensitive)',
+  "  --click-at <x,y>    native left click in CSS viewport pixels (within width/height)",
   '  --double-click "<text>"  double-click actionable text',
   '  --fill "<label>=<value>" replace a text field by its accessible label',
   "  --key <CODE:ms>     hold a key (e.g. KeyW:2500) for the given milliseconds",
@@ -939,6 +947,7 @@ function parseArgs(argv) {
       args.steps.push({ kind: v === "--click" ? "click" : "double-click", text });
     }
     else if (v === "--fill") args.steps.push({ kind: "fill", ...parseDriveFill(argv[++i]) });
+    else if (v === "--click-at") args.steps.push({ kind: "clickAt", spec: argv[++i] ?? "" });
     else if (v === "--wait") args.steps.push({ kind: "wait", ms: Number(argv[++i] ?? 500) });
     else if (v === "--key") {
       const spec = argv[++i] ?? "KeyW:1000";
@@ -1111,6 +1120,9 @@ async function main() {
   const profile = DEVICES[args.device];
   const width = Number.isFinite(args.width) ? args.width : profile.width;
   const height = Number.isFinite(args.height) ? args.height : profile.height;
+  for (const step of args.steps) {
+    if (step.kind === "clickAt") step.point = parseClickAt(step.spec, width, height);
+  }
   const base = "http://127.0.0.1:" + args.port;
   const target = new URL(args.url ?? base);
   target.searchParams.set("capture", "1");
@@ -1150,6 +1162,7 @@ async function main() {
       for (const step of args.steps) {
         if (step.kind === "click" || step.kind === "double-click") await click(session, step.text, step.kind === "double-click" ? 2 : 1);
         else if (step.kind === "fill") await fill(session, step.label, step.value);
+        else if (step.kind === "clickAt") await dispatchClickAt(session, step.point);
         else if (step.kind === "key") await holdKey(session, step.code, step.holdMs);
         else if (step.kind === "wait") await sleep(step.ms);
         else if (step.kind === "rpc") await rpc(session, step.json);
@@ -1181,8 +1194,8 @@ async function main() {
               "(threshold " + args.softlockMs + "ms, seed " + args.seed + "). The loop did not advance.",
           );
           if (args.strict) exitCode = 1;
-        } else if (args.steps.every((step) => step.kind !== "key")) {
-          console.error("drive: --playtest ran with no --key hold — nothing drove input, so progress is unproven.");
+        } else if (args.steps.every((step) => step.kind !== "key" && step.kind !== "clickAt")) {
+          console.error("drive: --playtest ran with no --key or --click-at step — gameplay input is unproven.");
         }
       }
     } finally {
@@ -1672,7 +1685,7 @@ Title it \`[BUG] …\` for wrong behavior or \`[FEATURE] …\` for a missing cap
 - Visual claims are screenshot-judged, by you, harshly — flat untextured ground and an empty horizon fail. Prove content with \`bun test\`, prove looks with your eyes (\`jgengine-verify\` skill).
 - Models live in \`public/models\`, pulled — not shipped inside the package. \`jgengine create\` pulls them for you; if that was skipped (offline, \`--no-assets\`, \`--no-install\`) run \`npx assets pull starter\` in this folder, or every \`asset:\` id falls back to an untextured placeholder primitive and fails the bar above.
 - Screenshots: \`bun run shoot\` (or \`node scripts/shoot.mjs\`) captures the running game to \`shots/shot.png\` — it starts the dev server if needed, forces a real viewport so the WebGL canvas is not stuck at 300x150, waits for an honest frame, and works headless. Add \`--device mobile\`, \`--out shots/hud.png\`, \`--settle <ms>\`, or \`--url <page>\`; \`--help\` for all flags. Do **not** rely on a browser tool's "screenshot" button for the 3D canvas — it captures before the GPU draws.
-- Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\`, \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
+- Play & test from the CLI: \`bun run drive\` (or \`node scripts/drive.mjs\`) drives the running game headlessly — ordered \`--click "TEXT"\`, \`--click-at 240,180\` (CSS viewport pixels), \`--double-click "TEXT"\`, \`--fill "Label=value"\`, \`--key KeyW:2500\`, \`--wait <ms>\`, \`--shot <name>\`, and \`--rpc '{"method":"agent_status"}'\` steps, plus \`--playtest --strict\` for a progress/softlock verdict off the game's \`capture.probe\`; \`--help\` for all flags. **Never hand-roll a Playwright/Puppeteer/CDP script to play or test this game** — if drive cannot express what you need, that is an engine gap: file it upstream (see below).
 `;
 
 const artDirectionMd = `# Art direction
