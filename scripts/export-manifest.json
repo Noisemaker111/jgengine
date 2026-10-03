@@ -1176,6 +1176,7 @@
   "jgengine": [
     ".",
     "./cli/index",
+    "./clickInput",
     "./compatibility",
     "./create",
     "./desktop",
