@@ -162,7 +162,7 @@ export interface EditableTerrain extends TerrainField {
   revertSurfaceDelta(delta: SurfaceDelta): void;
   /** The current material layer stack (lower index paints under higher). */
   readonly layers: readonly TerrainMaterialLayer[];
-  /** Replace the material layer stack; drops blend weights whose layer index no longer exists. */
+  /** Replace the material stack, retaining weights by layer id and normalizing when painted layers are removed. */
   setLayers(layers: readonly TerrainMaterialLayer[]): void;
   /**
    * Paint the active `edit.surface` layer's blend weight into the brush footprint, pushing the
@@ -319,12 +319,12 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     const cx = gridX(edit.center[0]);
     const cz = gridZ(edit.center[1]);
     let changed = 0;
-    for (let iz = -rCells; iz <= rCells; iz += 1) {
-      const gz = Math.round(cz) + iz;
-      if (gz < 0 || gz >= vertsZ) continue;
-      for (let ix = -rCells; ix <= rCells; ix += 1) {
-        const gx = Math.round(cx) + ix;
-        if (gx < 0 || gx >= vertsX) continue;
+    const minZ = Math.max(0, Math.round(cz) - rCells);
+    const maxZ = Math.min(vertsZ - 1, Math.round(cz) + rCells);
+    const minX = Math.max(0, Math.round(cx) - rCells);
+    const maxX = Math.min(vertsX - 1, Math.round(cx) + rCells);
+    for (let gz = minZ; gz <= maxZ; gz += 1) {
+      for (let gx = minX; gx <= maxX; gx += 1) {
         const wx = vertexWorldX(gx);
         const wz = vertexWorldZ(gz);
         const dx = wx - edit.center[0];
@@ -421,12 +421,12 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
     const rCells = Math.ceil(edit.radius / cellSize) + 1;
     const cx = gridX(edit.center[0]);
     const cz = gridZ(edit.center[1]);
-    for (let iz = -rCells; iz <= rCells; iz += 1) {
-      const gz = Math.floor(cz) + iz;
-      if (gz < 0 || gz >= rows) continue;
-      for (let ix = -rCells; ix <= rCells; ix += 1) {
-        const gx = Math.floor(cx) + ix;
-        if (gx < 0 || gx >= cols) continue;
+    const minZ = Math.max(0, Math.floor(cz) - rCells);
+    const maxZ = Math.min(rows - 1, Math.floor(cz) + rCells);
+    const minX = Math.max(0, Math.floor(cx) - rCells);
+    const maxX = Math.min(cols - 1, Math.floor(cx) + rCells);
+    for (let gz = minZ; gz <= maxZ; gz += 1) {
+      for (let gx = minX; gx <= maxX; gx += 1) {
         const wx = cellWorldX(gx);
         const wz = cellWorldZ(gz);
         const dx = wx - edit.center[0];
@@ -645,9 +645,37 @@ export function createEditableTerrain(config: EditableTerrainConfig): EditableTe
       return layers;
     },
     setLayers(next) {
+      const previous = layers;
+      const previousWeights = weights;
       layers = next.map((layer) => ({ ...layer }));
-      // Layer count changed shape: drop the weight buffer, blends re-seed from surfaces on demand.
-      weights = null;
+      if (previousWeights === null || layers.length === 0) {
+        weights = null;
+        return;
+      }
+      const previousIndices = layers.map((layer) => previous.findIndex((entry) => entry.id === layer.id));
+      const buffer = new Float32Array(cellCount * layers.length);
+      let retained = false;
+      for (let cell = 0; cell < cellCount; cell += 1) {
+        let total = 0;
+        for (let layer = 0; layer < layers.length; layer += 1) {
+          const before = previousIndices[layer]!;
+          const weight = before < 0 ? 0 : previousWeights[cell * previous.length + before]!;
+          buffer[cell * layers.length + layer] = weight;
+          total += weight;
+        }
+        if (total > 0) {
+          retained = true;
+          let previousTotal = 0;
+          for (let layer = 0; layer < previous.length; layer += 1) previousTotal += previousWeights[cell * previous.length + layer]!;
+          if (total < previousTotal) {
+            for (let layer = 0; layer < layers.length; layer += 1) buffer[cell * layers.length + layer] /= total;
+          }
+        } else {
+          const fallback = layers.findIndex((layer) => layer.surface === surfaces[cell]);
+          if (fallback >= 0) buffer[cell * layers.length + fallback] = 1;
+        }
+      }
+      weights = retained ? buffer : null;
     },
     blendRecording(edit, record) {
       return blendPaint(edit, record);
