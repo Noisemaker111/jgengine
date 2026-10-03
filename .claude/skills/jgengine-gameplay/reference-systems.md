@@ -21,9 +21,9 @@ in the caller's save format and round-trips as ordinary JSON. See the
 
 ## Coherent authored content
 
-Keep stable ids and canonical facts for characters, factions, places, and world rules in the game's authored data. Record each chapter's prerequisites, consequences, and which facts it may introduce or change. The game's creative pillars and desired player experience come from its author; generated prose and items must serve those constraints.
+Keep stable ids and canonical facts for characters, factions, places, and world rules in the game's authored data. Record each chapter's prerequisites, consequences, and which facts it may introduce or change. The game's creative pillars, story voice, content palette, and desired player experience come from its author; generated prose, items, art, and assets must serve those constraints. Reuse constrained generation and validation code across games while each game owns its content and visual identity; do not fill catalogs from default genre kits or mass generic content.
 
-Generate bounded chapter or catalog batches against those facts and existing definitions. Validate references and dependencies before merging each batch; preserve reviewed facts across batches instead of asking a model to recreate the world from memory. `QuestDef.requires` accepts completed quest ids or unlock ids, so dependency checks must include the game's declared unlocks rather than treating every requirement as a quest. Check reward quest ids and objective/item references against their owning catalogs too.
+Generate bounded chapter or catalog batches against those facts and existing definitions. Validate references and dependencies before merging each batch, giving humans and agents precise repair locations early to reduce failed retries and speed up game creation. Preserve reviewed facts across batches instead of asking a model to recreate the world from memory. `QuestDef.requires` accepts completed quest ids or unlock ids, so dependency checks must include the game's declared unlocks rather than treating every requirement as a quest. Check reward quest ids and objective/item references against their owning catalogs too.
 
 Validate dialogue structure before opening a conversation:
 
@@ -40,6 +40,10 @@ function reviewDialogue(graph: DialogueGraph) {
 The validator locates duplicate ids, missing start/choice targets, unreachable nodes, and nodes without a route to an ending in linear time without recursive traversal. Loops with an exit are valid. Review warnings against intended entry points and conversation behavior; unreachable nodes may be entered with `goTo`, and closed loops may be deliberate. Run validation on authored batches, outside the frame loop.
 
 Structural validity cannot establish story coherence. Review generated content for contradictions with canonical facts, character motivations, chronology, and meaningful consequences; play representative paths and check that choices support the intended experience. Large item counts need useful distinctions, economy balance, discoverability, and bounded runtime lookup. Counting generated items or passing reference checks alone does not establish those qualities.
+
+Quest item rewards use a whole-batch grant before XP, currency, and unlocks. `ctx.game.quest` stages every item against the declared inventories and commits only when all fit, including cumulative capacity in one bag. Capacity/kind/unknown-inventory rejections leave inventories and quest status unchanged, so the player can make room and retry. Inventory commits still notify subscribers synchronously; this does not roll back thrown observer exceptions or arbitrary callback side effects.
+
+Custom `createQuestJournal` dependencies and `applyQuestRewards` appliers must supply `grantItems` for multiple item rewards. The callback grants the entire batch or returns a rejection without writes; implement staging or a transaction in the owning store. Legacy `grantItem` remains supported for a single reward. Multiple rewards without `grantItems` reject before any grant. Keep callbacks nonthrowing; external stores own exception handling and durable transaction boundaries.
 
 ## API
 

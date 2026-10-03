@@ -125,4 +125,39 @@ describe("pure quest evaluator", () => {
       ),
     ).toEqual({ reason: "inventory full" });
   });
+
+  test("multiple items fail closed before legacy item or non-item callbacks", () => {
+    const calls: string[] = [];
+    expect(applyQuestRewards({
+      items: [{ item: "sword", inventory: "bag", count: 1 }, { item: "shield", inventory: "bag", count: 1 }],
+      xp: { amount: 5 }, economy: { coins: 10 }, unlocks: ["next"],
+    }, {
+      grantItem: () => { calls.push("item"); },
+      grantXp: () => { calls.push("xp"); },
+      grantEconomy: () => { calls.push("economy"); },
+      grantUnlock: () => { calls.push("unlock"); },
+    })).toEqual({ reason: "multiple quest item rewards require grantItems" });
+    expect(calls).toEqual([]);
+  });
+
+  test("batch rejection prevents all remaining rewards and batch takes precedence", () => {
+    const calls: string[] = [];
+    const rewards = { items: [{ item: "sword", inventory: "bag", count: 1 }], xp: { amount: 5 } };
+    expect(applyQuestRewards(rewards, {
+      grantItems: (items) => {
+        expect(items).toEqual(rewards.items);
+        calls.push("batch");
+        return { reason: "inventory full" };
+      },
+      grantItem: () => { calls.push("legacy"); },
+      grantXp: () => { calls.push("xp"); },
+    })).toEqual({ reason: "inventory full" });
+    expect(calls).toEqual(["batch"]);
+    calls.length = 0;
+    expect(applyQuestRewards(rewards, {
+      grantItems: () => { calls.push("batch"); return null; },
+      grantXp: () => { calls.push("xp"); },
+    })).toBeNull();
+    expect(calls).toEqual(["batch", "xp"]);
+  });
 });

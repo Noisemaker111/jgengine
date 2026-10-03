@@ -629,7 +629,6 @@
   "@jgengine/core/game/quest#QuestSnapshotEntry",
   "@jgengine/core/game/quest#QuestStatus",
   "@jgengine/core/game/quest#QuestTurnIn",
-  "@jgengine/core/game/quest#applyQuestRewards",
   "@jgengine/core/game/quest#createQuestEvaluator",
   "@jgengine/core/game/race#Checkpoint",
   "@jgengine/core/game/race#RaceEvent",

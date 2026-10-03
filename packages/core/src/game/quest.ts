@@ -57,6 +57,8 @@ export interface QuestJournalDeps {
     grantXp(userId: string, amount: number): void;
     grantEconomy(userId: string, currencyId: string, amount: number): void;
     grantItem(userId: string, inventoryId: string, itemId: string, count: number): { reason: string } | null;
+    /** Grant the whole item batch, or reject without granting any items. Required for multiple item rewards. */
+    grantItems?(userId: string, items: Readonly<NonNullable<QuestRewards["items"]>>): { reason: string } | null;
     grantUnlock(userId: string, unlockId: string): void;
   };
   hasUnlock?(userId: string, id: string): boolean;
@@ -96,6 +98,7 @@ interface QuestState {
 export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   const catalog = new Map<string, QuestDef>();
   const users = new Map<string, Map<string, QuestState>>();
+  const turningIn = new Set<QuestState>();
 
   function requireUserQuests(userId: string): Map<string, QuestState> {
     let quests = users.get(userId);
@@ -153,6 +156,7 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
     if (state === undefined || state.status !== "active") {
       return { reason: `quest "${questId}" is not active` };
     }
+    if (turningIn.has(state)) return { reason: `quest "${questId}" is already turning in` };
     for (const objective of def.objectives) {
       if ((state.progress.get(objective.id) ?? 0) < objective.count) {
         return { reason: `objective "${objective.id}" incomplete` };
@@ -162,18 +166,15 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
   }
 
   function applyRewards(userId: string, rewards: QuestRewards): { reason: string } | null {
-    for (const entry of rewards.items ?? []) {
-      const fail = deps.rewards.grantItem(userId, entry.inventory, entry.item, entry.count);
-      if (fail !== null) return fail;
-    }
-    if (rewards.xp) deps.rewards.grantXp(userId, rewards.xp.amount);
-    for (const [currencyId, amount] of Object.entries(rewards.economy ?? {})) {
-      deps.rewards.grantEconomy(userId, currencyId, amount);
-    }
-    for (const unlockId of rewards.unlocks ?? []) {
-      deps.rewards.grantUnlock(userId, unlockId);
-    }
-    return null;
+    return applyQuestRewards(rewards, {
+      grantItem: (inventoryId, itemId, count) => deps.rewards.grantItem(userId, inventoryId, itemId, count),
+      grantItems: deps.rewards.grantItems === undefined
+        ? undefined
+        : (items) => deps.rewards.grantItems!(userId, items),
+      grantXp: (amount) => deps.rewards.grantXp(userId, amount),
+      grantEconomy: (currencyId, amount) => deps.rewards.grantEconomy(userId, currencyId, amount),
+      grantUnlock: (unlockId) => deps.rewards.grantUnlock(userId, unlockId),
+    });
   }
 
   function turnIn(userId: string, questId: string): { reason: string } | null {
@@ -181,16 +182,21 @@ export function createQuestJournal(deps: QuestJournalDeps): QuestJournal {
     if (denied !== null) return denied;
     const def = catalog.get(questId)!;
     const state = users.get(userId)!.get(questId)!;
-    if (def.rewards) {
-      const fail = applyRewards(userId, def.rewards);
-      if (fail !== null) return fail;
+    turningIn.add(state);
+    try {
+      if (def.rewards) {
+        const fail = applyRewards(userId, def.rewards);
+        if (fail !== null) return fail;
+      }
+      state.status = "completed";
+      deps.events.emit("quest.completed", { userId, questId });
+      for (const nextQuestId of def.rewards?.quests ?? []) {
+        if (canAccept(userId, nextQuestId) === null) accept(userId, nextQuestId);
+      }
+      return null;
+    } finally {
+      turningIn.delete(state);
     }
-    state.status = "completed";
-    deps.events.emit("quest.completed", { userId, questId });
-    for (const nextQuestId of def.rewards?.quests ?? []) {
-      if (canAccept(userId, nextQuestId) === null) accept(userId, nextQuestId);
-    }
-    return null;
   }
 
   function creditKill(killerUserId: string, catalogId: string): void {
@@ -434,17 +440,31 @@ export interface QuestEvaluator {
   list(state: readonly QuestSnapshotEntry[]): QuestInstance[];
 }
 
+/**
+ * Apply items before XP, currency, and unlocks. Multiple items require an all-or-reject `grantItems`
+ * callback; legacy single-item appliers remain supported. Rejected callbacks must make no writes.
+ * Arbitrary callback side effects or thrown exceptions cannot be rolled back by this helper.
+ */
 export function applyQuestRewards(
   rewards: QuestRewards,
   appliers: {
     grantXp?(amount: number): void;
     grantEconomy?(currencyId: string, amount: number): void;
     grantItem?(inventoryId: string, itemId: string, count: number): { reason: string } | null | void;
+    /** Grant every item, or reject without writes. Takes precedence over `grantItem`. */
+    grantItems?(items: Readonly<NonNullable<QuestRewards["items"]>>): { reason: string } | null | void;
     grantUnlock?(unlockId: string): void;
   },
 ): { reason: string } | null {
-  for (const entry of rewards.items ?? []) {
-    const fail = appliers.grantItem?.(entry.inventory, entry.item, entry.count);
+  const items = rewards.items ?? [];
+  if (items.length > 1 && appliers.grantItems === undefined) {
+    return { reason: "multiple quest item rewards require grantItems" };
+  }
+  if (items.length > 0) {
+    const entry = items[0]!;
+    const fail = appliers.grantItems !== undefined
+      ? appliers.grantItems(items)
+      : appliers.grantItem?.(entry.inventory, entry.item, entry.count);
     if (fail != null && typeof fail === "object" && "reason" in fail) return fail;
   }
   if (rewards.xp) appliers.grantXp?.(rewards.xp.amount);

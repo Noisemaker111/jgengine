@@ -192,4 +192,49 @@ describe("quest journal", () => {
     expect(journal.list("alice")[0]!.status).toBe("active");
     expect(completedEvents).toEqual([]);
   });
+
+  test("multiple item rewards reject unsafe legacy callbacks without granting anything", () => {
+    const { journal, xp, economy, items, unlocks } = createHarness();
+    journal.register([{ ...clearCamp, objectives: [], rewards: {
+      ...clearCamp.rewards,
+      items: [{ item: "one", count: 1, inventory: "bag" }, { item: "two", count: 1, inventory: "bag" }],
+    } }]);
+    journal.accept("alice", clearCamp.id);
+    expect(journal.turnIn("alice", clearCamp.id)).toEqual({ reason: "multiple quest item rewards require grantItems" });
+    expect([xp, economy, items, unlocks]).toEqual([[], [], [], []]);
+    expect(journal.list("alice")[0]!.status).toBe("active");
+  });
+
+  test("turn-in rejects reentrant callbacks and releases its guard after rejection", () => {
+    const events = createGameEvents();
+    const reentrant: unknown[] = [];
+    let reject = true;
+    let xp = 0;
+    const journal = createQuestJournal({
+      events,
+      rewards: {
+        grantItem: () => null,
+        grantItems: () => {
+          reentrant.push(journal.turnIn("alice", "q"));
+          return reject ? { reason: "full" } : null;
+        },
+        grantXp: (_user, amount) => { xp += amount; },
+        grantEconomy: () => undefined,
+        grantUnlock: () => undefined,
+      },
+    });
+    journal.register([{ id: "q", title: "Q", objectives: [], rewards: {
+      items: [{ item: "one", count: 1, inventory: "bag" }], xp: { amount: 10 },
+    } }]);
+    journal.accept("alice", "q");
+    expect(journal.turnIn("alice", "q")).toEqual({ reason: "full" });
+    expect(xp).toBe(0);
+    reject = false;
+    expect(journal.turnIn("alice", "q")).toBeNull();
+    expect(xp).toBe(10);
+    expect(reentrant).toEqual([
+      { reason: 'quest "q" is already turning in' },
+      { reason: 'quest "q" is already turning in' },
+    ]);
+  });
 });

@@ -352,6 +352,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     walletOf,
     setWallet: (userId, state) => wallets.set(userId, state),
     layouts,
+    itemTraits: playerSys.itemTraits,
     inventoryFor,
     ensureInstanceStats,
     seedUserPool,

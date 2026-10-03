@@ -15,7 +15,13 @@ import { createChat, type ChatSnapshot } from "../../game/chat";
 import { type Social, type SocialSnapshot } from "../../game/social";
 import { createTradeSystem } from "../../game/trade";
 import { createUnlocks, type Unlocks } from "../../game/unlocks";
-import type { InventoryLayout, InventorySet } from "../../inventory/inventoryModel";
+import {
+  putItem,
+  type InventoryLayout,
+  type InventorySet,
+  type InventoryState,
+  type ItemTraits,
+} from "../../inventory/inventoryModel";
 import type { StatValueMap } from "../../scene/entityStats";
 import type { EntityStore } from "../../scene/entityStore";
 import { createRoster, type RosterEntry } from "../../scene/roster";
@@ -58,6 +64,7 @@ export interface FeatureDeps {
   walletOf: (userId: string) => WalletState;
   setWallet: (userId: string, state: WalletState) => void;
   layouts: Record<string, InventoryLayout>;
+  itemTraits: ItemTraits;
   inventoryFor: (userId: string) => InventorySet<string>;
   ensureInstanceStats: (instanceId: string) => StatValueMap;
   seedUserPool: (userId: string, statId: string, pool: { current: number; max?: number; min?: number }) => void;
@@ -297,6 +304,20 @@ export const featureDescriptors: readonly FeatureDescriptor[] = [
               if (d.layouts[inventoryId] === undefined) return { reason: `unknown inventory "${inventoryId}"` };
               const result = d.inventoryFor(userId).put(inventoryId, itemId, count);
               return result.status === "ok" ? null : { reason: result.reason };
+            },
+            grantItems(userId, items) {
+              const inventories = d.inventoryFor(userId);
+              const staged = new Map<string, InventoryState>();
+              for (const entry of items) {
+                const layout = d.layouts[entry.inventory];
+                if (layout === undefined) return { reason: `unknown inventory "${entry.inventory}"` };
+                const current = staged.get(entry.inventory) ?? inventories.state(entry.inventory);
+                const result = putItem(current, layout, d.itemTraits, entry.item, entry.count);
+                if (result.status !== "ok") return { reason: result.reason };
+                staged.set(entry.inventory, result.state);
+              }
+              for (const [inventoryId, state] of staged) inventories.replaceState(inventoryId, state);
+              return null;
             },
             grantUnlock: (userId, unlockId) => d.feature<Unlocks>("unlocks")?.grant(userId, unlockId),
           },
