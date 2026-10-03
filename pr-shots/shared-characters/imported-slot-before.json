@@ -1,0 +1,29 @@
+{
+  "claim": "Imported authored slot lookup only; no rendering or attachment pose claim",
+  "rows": [
+    {
+      "asset": "apps/dev/public/models/kaykit-adventurers/Knight.glb",
+      "slot": "handslot.r",
+      "exactLookupFound": false,
+      "aliases": [
+        {
+          "runtimeName": "handslotr",
+          "originalName": "handslot.r",
+          "type": "Bone"
+        }
+      ]
+    },
+    {
+      "asset": "apps/dev/public/models/kaykit-adventurers/Rogue_Hooded.glb",
+      "slot": "handslot.r",
+      "exactLookupFound": false,
+      "aliases": [
+        {
+          "runtimeName": "handslotr",
+          "originalName": "handslot.r",
+          "type": "Bone"
+        }
+      ]
+    }
+  ]
+}

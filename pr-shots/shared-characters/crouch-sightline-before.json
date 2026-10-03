@@ -1,0 +1,21 @@
+{
+  "label": "direct built engine+shell before shared shot stance fix, actual unchanged Scrap catalog+camera+movement",
+  "cameraHeight": 0.972,
+  "shotSightlineHeight": 1.620000000000001,
+  "verticalMismatch": 0.648000000000001,
+  "acceptedPose": "crouch",
+  "colliders": null,
+  "actualCamera": {
+    "eyeHeight": 1.62,
+    "sensitivity": 0.0023,
+    "reticle": true,
+    "viewmodel": false
+  },
+  "sourceContract": [
+    "game/commands.ts fire yaw/pitch",
+    "game/items/use-handlers.ts fireProjectile without originPolicy",
+    "core/projectiles default converge",
+    "core/shotOrigin eye derives collider, scene collider has no pose"
+  ],
+  "noNativeAppearanceClaim": true
+}

@@ -1,0 +1,209 @@
+diff --git a/.claude/skills/jgengine-ui/reference-primitives.md b/.claude/skills/jgengine-ui/reference-primitives.md
+index eec69900..a96cb993 100644
+--- a/.claude/skills/jgengine-ui/reference-primitives.md
++++ b/.claude/skills/jgengine-ui/reference-primitives.md
+@@ -94,6 +94,8 @@ Lighting is `defineGame({ lighting })` (`LightingConfig`): ambient / hemisphere
+ 
+ ## First-person viewmodel, WorldOverlay props, render cues (#542)
+ 
++`camera.firstPerson.eyeHeight` sets standing view height (default `1.62`); `crouchEyeHeight` sets accepted shared crouching height (default `eyeHeight * 0.6`). The view stays low when headroom prevents standing. Custom movers without shared movement telemetry retain standing height.
++
+ Three composable-chrome seams for FPS/TPS polish — a placement hook plus a good default, never a forced look:
+ 
+ - **Custom viewmodel.** `defineGame({ viewmodel })` supplies a component rendered inside the shell's camera-locked, muzzle-tracked anchor in place of the built-in three-mesh gun — read when the active rig is first-person. It receives `ViewmodelProps` (`@jgengine/shell/camera`): `{ cuesRef }`, a live `MutableRefObject<EntityRenderCues>` for the followed entity — read `cuesRef.current` inside your own `useFrame` to drive bob/recoil/reload poses; never store it as render state (it updates every frame). `camera.firstPerson.viewmodel: false` renders no viewmodel at all regardless of `defineGame`'s `viewmodel` field — the explicit opt-out always wins. `readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera)` (also `@jgengine/shell/camera`) writes the live presentation muzzle world position into `target`; pass the active Three.js camera to isolate canvases. It returns `false` without changing `target` when no muzzle is available — the seam for muzzle-flash lights, tracer origins, or shell casings.
+diff --git a/changes/first-person-crouch-height.md b/changes/first-person-crouch-height.md
+new file mode 100644
+index 00000000..6a8c8fc7
+--- /dev/null
++++ b/changes/first-person-crouch-height.md
+@@ -0,0 +1,3 @@
++### Added
++
++- `camera.firstPerson.crouchEyeHeight` sets the first-person view height during accepted shared crouching, defaulting to 60% of standing eye height. Blocked standing keeps the crouched view; custom movers without shared telemetry retain standing height.
+diff --git a/packages/core/src/game/cameraConfig.ts b/packages/core/src/game/cameraConfig.ts
+index f9b81014..1e285786 100644
+--- a/packages/core/src/game/cameraConfig.ts
++++ b/packages/core/src/game/cameraConfig.ts
+@@ -15,8 +15,10 @@ export interface CameraWeaponView {
+ }
+ 
+ export interface FirstPersonCameraConfig {
+-  /** Camera height above the followed entity's origin. Default 1.6. */
++  /** Standing camera height above the followed entity's origin. Default 1.62. */
+   eyeHeight?: number;
++  /** Camera height while shared movement has accepted crouching. Default `eyeHeight * 0.6`. */
++  crouchEyeHeight?: number;
+   /** Mouse-look radians per pixel of pointer movement. Default 0.0025. */
+   sensitivity?: number;
+   /** Clamp on look pitch in radians (± from horizon). Default 1.45. */
+diff --git a/packages/shell/src/camera/GameFirstPersonCamera.tsx b/packages/shell/src/camera/GameFirstPersonCamera.tsx
+index fc884f9d..b3e4229b 100644
+--- a/packages/shell/src/camera/GameFirstPersonCamera.tsx
++++ b/packages/shell/src/camera/GameFirstPersonCamera.tsx
+@@ -2,7 +2,7 @@ import { useFrame, useThree } from "@react-three/fiber";
+ import { useEffect, useMemo, useRef, type ComponentType, type MutableRefObject } from "react";
+ import * as THREE from "three";
+ import type { CameraWeaponView, FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
+-import { DEFAULT_EYE_HEIGHT } from "@jgengine/core/combat/shotOrigin";
++import { playerMovementTelemetry } from "@jgengine/core/movement/playerMovement";
+ import type { EntityRenderCues } from "@jgengine/core/combat/renderCues";
+ import {
+   createWeaponPresentation,
+@@ -17,6 +17,7 @@ import { usePlayerFov } from "./PlayerFov";
+ import { GAME_SIM_FRAME_PRIORITY, ORBIT_CAMERA_FRAME_PRIORITY } from "./orbitCameraMath";
+ import { requestRawPointerLock } from "../input/pointerLock";
+ import { readRegisteredFirstPersonMuzzle, registerTrackedFirstPersonMuzzle } from "./customMuzzle";
++import { firstPersonEyeHeight } from "./firstPersonStance";
+ 
+ const DEFAULT_SENSITIVITY = 0.0025;
+ const DEFAULT_MAX_PITCH = 1.45;
+@@ -53,7 +54,6 @@ export function GameFirstPersonCamera({
+   viewmodel,
+   weapon,
+ }: GameFirstPersonCameraProps) {
+-  const eyeHeight = config?.eyeHeight ?? DEFAULT_EYE_HEIGHT;
+   const sensitivity = config?.sensitivity ?? DEFAULT_SENSITIVITY;
+   const maxPitch = config?.maxPitch ?? DEFAULT_MAX_PITCH;
+   const { userId } = usePlayer();
+@@ -120,6 +120,7 @@ export function GameFirstPersonCamera({
+     const yaw = yawRef.current - (pose?.lookYaw ?? 0);
+     const pitch = Math.max(-maxPitch, Math.min(maxPitch, pitchRef.current + (pose?.lookPitch ?? 0)));
+     const cosPitch = Math.cos(pitch);
++    const eyeHeight = firstPersonEyeHeight(config, playerMovementTelemetry(ctx, followId));
+     camera.position.set(entity.position[0], entity.position[1] + eyeHeight, entity.position[2]);
+     camera.lookAt(
+       camera.position.x + Math.sin(yaw) * cosPitch,
+diff --git a/packages/shell/src/camera/firstPersonStance.test.ts b/packages/shell/src/camera/firstPersonStance.test.ts
+new file mode 100644
+index 00000000..d73f2a3d
+--- /dev/null
++++ b/packages/shell/src/camera/firstPersonStance.test.ts
+@@ -0,0 +1,110 @@
++import { afterEach, beforeEach, describe, expect, test } from "bun:test";
++import { act, createRoot, type ReconcilerRoot, type RootStore } from "@react-three/fiber";
++import { createElement } from "react";
++import * as THREE from "three";
++import { createGameContext } from "@jgengine/core/runtime/gameContext";
++import { defineGameDefinition } from "@jgengine/core/game/defineGame";
++import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
++import { createPhysicsWorldBackend } from "@jgengine/core/physics/physicsWorldBackend";
++import { playerMovementTelemetry, resolvePlayerMovementTuning, stepPlayerMovement, type PlayerMovementTuning } from "@jgengine/core/movement/playerMovement";
++import type { FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
++import { GameProvider } from "@jgengine/react/provider";
++import { GameFirstPersonCamera } from "./GameFirstPersonCamera";
++import { firstPersonEyeHeight } from "./firstPersonStance";
++
++const roots: ReconcilerRoot<HTMLCanvasElement>[] = [];
++const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
++const previousActEnvironment = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
++const previousWindow = Object.getOwnPropertyDescriptor(globalThis, "window");
++beforeEach(() => {
++  actEnvironment.IS_REACT_ACT_ENVIRONMENT = true;
++  Object.defineProperty(globalThis, "window", { configurable: true, value: { addEventListener() {}, removeEventListener() {} } });
++});
++afterEach(async () => {
++  for (const root of roots.splice(0)) await act(async () => root.unmount());
++  actEnvironment.IS_REACT_ACT_ENVIRONMENT = previousActEnvironment;
++  if (previousWindow === undefined) Reflect.deleteProperty(globalThis, "window");
++  else Object.defineProperty(globalThis, "window", previousWindow);
++});
++
++async function harness(config: FirstPersonCameraConfig = { eyeHeight: 1.62, viewmodel: false }, followEntityId = "survivor") {
++  const ctx = createGameContext({
++    definition: defineGameDefinition({ name: "crouch-camera", assets: createAssetCatalog(), multiplayer: "off", features: { players: true } }),
++    content: { entityById: () => ({ movement: { poses: ["standing", "running", "crouch"] } }) },
++    player: { userId: "survivor", isNew: true },
++  });
++  ctx.game.players?.join("survivor", true);
++  ctx.scene.entity.spawn("hero", { id: "survivor", position: [0, 0, 0] });
++  if (followEntityId !== "survivor") ctx.scene.entity.spawn("hero", { id: followEntityId, position: [0, 3, 0] });
++  const camera = new THREE.PerspectiveCamera();
++  const root = createRoot({} as HTMLCanvasElement);
++  roots.push(root);
++  await root.configure({
++    camera, frameloop: "never", size: { width: 100, height: 100, top: 0, left: 0 }, dpr: 1,
++    gl: () => ({ render() {}, setSize() {}, setPixelRatio() {}, domElement: { addEventListener() {}, removeEventListener() {} } }) as unknown as THREE.WebGLRenderer,
++  });
++  let store: RootStore;
++  await act(async () => {
++    store = root.render(createElement(GameProvider, { context: ctx }, createElement(GameFirstPersonCamera, {
++      yawRef: { current: 0 }, pitchRef: { current: 0 }, config, followEntityId,
++    })));
++  });
++  const frame = () => {
++    const state = store.getState();
++    state.advance(state.clock.elapsedTime + 1 / 60, false);
++    return camera.position.y - ctx.scene.entity.get(followEntityId)!.position[1];
++  };
++  const move = (held: string[], tuning: PlayerMovementTuning = resolvePlayerMovementTuning({})) => {
++    stepPlayerMovement(ctx, "survivor", { held, pointer: null }, 1 / 60, tuning);
++    return frame();
++  };
++  return { ctx, frame, move, camera };
++}
++
++describe("first-person accepted stance", () => {
++  test("standing defaults and authored crouch heights remain independently configurable", () => {
++    expect(firstPersonEyeHeight(undefined, null)).toBe(1.62);
++    expect(firstPersonEyeHeight(undefined, { crouching: true })).toBe(1.62 * 0.6);
++    expect(firstPersonEyeHeight({ eyeHeight: 1.8, crouchEyeHeight: 0.82 }, { crouching: false })).toBe(1.8);
++    expect(firstPersonEyeHeight({ eyeHeight: 1.8, crouchEyeHeight: 0.82 }, { crouching: true })).toBe(0.82);
++    expect(firstPersonEyeHeight({ eyeHeight: 1.8, crouchEyeHeight: 0.82 }, undefined)).toBe(1.8);
++  });
++
++  test("the real first-person camera lowers and restores its view with shared crouch", async () => {
++    const h = await harness();
++    expect(h.move([])).toBeCloseTo(1.62, 8);
++    const crouched = h.move(["crouch"]);
++    expect(playerMovementTelemetry(h.ctx, "survivor")!.crouching).toBe(true);
++    expect(crouched).toBeCloseTo(1.62 * 0.6, 8);
++    expect(h.move([])).toBeCloseTo(1.62, 8);
++  });
++
++  test("headroom refusal keeps the camera crouched after the input is released", async () => {
++    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-20, -5, -20], max: [20, 20, 20] }, warn: false });
++    backend.addBody({ shape: { kind: "box", halfExtents: [10, 0.5, 10] }, position: [0, -0.5, 0], kind: "static" });
++    const ceiling = backend.addBody({ shape: { kind: "box", halfExtents: [2, 0.1, 2] }, position: [0, 1.4, 0], kind: "static" });
++    const tuning = resolvePlayerMovementTuning({ physics: { backend } });
++    const h = await harness();
++    expect(h.move(["crouch"], tuning)).toBeCloseTo(1.62 * 0.6, 8);
++    expect(h.move([], tuning)).toBeCloseTo(1.62 * 0.6, 8);
++    expect(playerMovementTelemetry(h.ctx, "survivor")!.crouching).toBe(true);
++    backend.removeBody(ceiling);
++    expect(h.move([], tuning)).toBeCloseTo(1.62, 8);
++  });
++
++  test("a custom mover with a crouched pose but no shared telemetry keeps its authored standing view", async () => {
++    const h = await harness({ eyeHeight: 1.8, viewmodel: false }, "custom");
++    h.ctx.player.movement.setPose("custom", "crouch");
++    expect(playerMovementTelemetry(h.ctx, "custom")).toBeNull();
++    expect(h.frame()).toBeCloseTo(1.8, 8);
++  });
++
++  test("the real hook reads live authored crouch height independently of standing height", async () => {
++    const config = { eyeHeight: 1.8, crouchEyeHeight: 0.82, viewmodel: false };
++    const h = await harness(config);
++    expect(h.move(["crouch"])).toBeCloseTo(0.82, 8);
++    config.crouchEyeHeight = 0.9;
++    expect(h.frame()).toBeCloseTo(0.9, 8);
++    expect(h.move([])).toBeCloseTo(1.8, 8);
++  });
++});
+diff --git a/packages/shell/src/camera/firstPersonStance.ts b/packages/shell/src/camera/firstPersonStance.ts
+new file mode 100644
+index 00000000..1fbc6b24
+--- /dev/null
++++ b/packages/shell/src/camera/firstPersonStance.ts
+@@ -0,0 +1,12 @@
++import { DEFAULT_EYE_HEIGHT } from "@jgengine/core/combat/shotOrigin";
++import type { FirstPersonCameraConfig } from "@jgengine/core/game/playableGame";
++import type { PlayerMovementTelemetry } from "@jgengine/core/movement/playerMovement";
++
++/** Resolves first-person eye height from accepted shared movement; unknown custom movers retain standing height. */
++export function firstPersonEyeHeight(
++  config: FirstPersonCameraConfig | undefined,
++  movement: Pick<Readonly<PlayerMovementTelemetry>, "crouching"> | null | undefined,
++): number {
++  const standing = config?.eyeHeight ?? DEFAULT_EYE_HEIGHT;
++  return movement?.crouching === true ? config?.crouchEyeHeight ?? standing * 0.6 : standing;
++}

@@ -1,0 +1,24 @@
+--- a/packages/shell/src/render/SceneModels.tsx
++++ b/packages/shell/src/render/SceneModels.tsx
+@@ -13,6 +13,7 @@
+ import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
+ import { useModelInstance } from "./useModelInstance";
+ import { useFootIk } from "./useFootIk";
++import { resolveRigNode } from "./rigNode";
+ import { PartMotionRig } from "./PartMotion";
+ import { syncSpriteFrame } from "./spriteRender";
+ import { applyMaterialOverride } from "../materialOverride";
+@@ -172,10 +173,11 @@
+   const s = scale ?? 1;
+ 
+   useEffect(() => {
+-    const bone = rig.getObjectByName(slot);
++    const resolved = resolveRigNode(rig, slot);
++    const bone = resolved.node;
+     if (bone === undefined) {
+       if (typeof console !== "undefined") {
+-        console.warn(`[jgengine] entityModels attachment: bone/slot "${slot}" not found on the rig`);
++        console.warn(`[jgengine] entityModels attachment: ${resolved.diagnostic!.message}`);
+       }
+       return;
+     }
