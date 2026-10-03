@@ -101,6 +101,10 @@
             "avgUploadMsPerField": 0.027954545454122126
           }
         }
+      },
+      "aggregateParticles": {
+        "live": 961,
+        "capacity": 5796
       }
     },
     {
@@ -159,6 +163,10 @@
             "avgUploadMsPerField": 0.024621212119448253
           }
         }
+      },
+      "aggregateParticles": {
+        "live": 629,
+        "capacity": 5796
       }
     },
     {
@@ -217,6 +225,10 @@
             "avgUploadMsPerField": 0.02444029850676767
           }
         }
+      },
+      "aggregateParticles": {
+        "live": 370,
+        "capacity": 5364
       }
     }
   ],
@@ -227,5 +239,66 @@
     "namedEmitters": 0,
     "canvasCount": 0,
     "runtimeProbes": {}
-  }
+  },
+  "namedEffectRetirement": {
+    "render": {
+      "drawCalls": 199,
+      "triangles": 303531,
+      "geometries": 210,
+      "textures": 138
+    },
+    "particles": {
+      "scope": "WorldParticles",
+      "emitters": 0,
+      "bursts": 0,
+      "count": 0,
+      "capacity": 0,
+      "renderBufferBytes": 0,
+      "poolsCreated": 8,
+      "poolsRetired": 8,
+      "updateSamples": 46,
+      "lastUpdateMs": 0.10000000055879354,
+      "maxUpdateMs": 31.09999999962747,
+      "avgUpdateMs": 1.8934782608209744,
+      "droppedCatchupSeconds": 0,
+      "resources": {
+        "fieldsMounted": 8,
+        "fieldsUnmounted": 8,
+        "liveFields": 0,
+        "attributeBytes": 0,
+        "totalUploadMs": 4.199999997392297,
+        "maxUploadMs": 0.20000000018626451,
+        "uploadSamples": 360,
+        "avgUploadMsPerField": 0.011666666659423047
+      }
+    },
+    "weatherParticles": {
+      "scope": "procedural-weather",
+      "rain": {
+        "count": 306,
+        "capacity": 2000
+      },
+      "snow": {
+        "count": 0,
+        "capacity": 1500
+      },
+      "dust": {
+        "count": 0,
+        "capacity": 1800
+      },
+      "impacts": {
+        "count": 64,
+        "capacity": 64,
+        "heightQueries": 64,
+        "exposureQueries": 64,
+        "queryBudget": 128
+      }
+    }
+  },
+  "measurementLimits": [
+    "Retained heap deltas after GC do not measure total allocations or prove absence of transient allocations.",
+    "Native render timing uses software GL and does not predict hardware FPS.",
+    "Native procedural precipitation capacity is separate from named ParticleSystem pools.",
+    "Particle clear/disposal retires ownership; buffer backing memory remains collectable until external references are released."
+  ]
 }
