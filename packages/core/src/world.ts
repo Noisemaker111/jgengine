@@ -623,7 +623,21 @@ export {
   type WorldGridConfig,
 } from "./world/features";
 export { createFogField, type FogCells, type FogField } from "./world/fog";
-export { boundaryNeighbors, createFootprintGrid, footprintObstacles, hasValidAdjacency } from "./world/footprintGrid";
+export {
+  boundaryNeighbors,
+  canMerge,
+  createFootprintGrid,
+  footprintObstacles,
+  hasValidAdjacency,
+  mergeFootprints,
+  splitRegion,
+  type FootprintRegion,
+  type MergedRegion,
+  type RegionContribution,
+  type RegionFootprint,
+  type RegionSplitIds,
+  type RegionWorkBudget,
+} from "./world/footprintGrid";
 export { type Aabb, type AvoidZone } from "./world/geometry";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";
