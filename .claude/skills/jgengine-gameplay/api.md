@@ -450,6 +450,7 @@
 
 - `DialogueGraph` (interface): interface DialogueGraph — A serializable branching conversation: a start node id and the nodes it can reach.
 - `DialogueGraphChoice` (interface): interface DialogueGraphChoice — One selectable response on a conversation node — the text a player clicks and the node it advances to. `kind` is a free style tag the presenter interprets; the model never reads it (no genre baked in).
+- `DialogueGraphIssue` (interface): interface DialogueGraphIssue — A structural authoring issue, located in the original graph's node/choice arrays.
 - `DialogueGraphNode` (interface): interface DialogueGraphNode — One conversation node: who is speaking, the line they say, and the branches out of it. `speaker`/`speakerKind`/`portrait` are opaque display data — the model never interprets them.
 - `DialogueGraphSnapshot` (interface): interface DialogueGraphSnapshot — Serializable run state — the current node id and the ids already visited.
 - `DialogueGraphView` (interface): interface DialogueGraphView — The render-ready snapshot of a conversation at one node — everything a view needs to draw speaker, line, and choice buttons, with no traversal logic in the component.
@@ -457,6 +458,7 @@
 - `DialogueRunOptions` (interface): interface DialogueRunOptions — Options for {@link createDialogueRun}.
 - `createDialogueRun` (function): function createDialogueRun(graph: DialogueGraph, options: DialogueRunOptions = {}): DialogueRun — Walk a branching {@link DialogueGraph}: hold the current node, expose its render-ready view, and advance by choosing one of the current node's responses (each choice names the node it leads to; a choice with no `to` ends the conversation). Purely a serializable model — a React host renders `current()` and calls `choose(index)` — so no game re-implements node lookup, choice-to-node traversal, or "am I at the end" bookkeeping. `snapshot`/`restore` round-trip the run through a save.
 - `selectDialogueView` (function): function selectDialogueView(graph: DialogueGraph, nodeId: string): DialogueGraphView | null — Project a {@link DialogueGraph} node id to its render-ready {@link DialogueGraphView} — the pure "current view" selector a stateless renderer reads (speaker, line, choices, done). Returns `null` when the id is not in the graph. No traversal or mutation.
+- `validateDialogueGraph` (function): function validateDialogueGraph(graph: DialogueGraph): DialogueGraphIssue[] — Check authored dialogue references, reachability, and routes to an ending in O(nodes + choices). A node without choices, or a choice with no target, is an ending. Loops with an exit are valid. Duplicate ids and missing references are errors; unreachable nodes and closed loops are warnings because games may jump to nodes or intentionally keep conversations open. Topology uses the first node for each id, matching {@link selectDialogueView}. This does not evaluate story semantics.
 
 ## @jgengine/core/game/eventTicker
 

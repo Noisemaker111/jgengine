@@ -19,6 +19,28 @@ and level state, then emits every reached level in ascending order. State stays
 in the caller's save format and round-trips as ordinary JSON. See the
 [portable XP/leveling recipe](recipes/portable-xp-leveling.md).
 
+## Coherent authored content
+
+Keep stable ids and canonical facts for characters, factions, places, and world rules in the game's authored data. Record each chapter's prerequisites, consequences, and which facts it may introduce or change. The game's creative pillars and desired player experience come from its author; generated prose and items must serve those constraints.
+
+Generate bounded chapter or catalog batches against those facts and existing definitions. Validate references and dependencies before merging each batch; preserve reviewed facts across batches instead of asking a model to recreate the world from memory. `QuestDef.requires` accepts completed quest ids or unlock ids, so dependency checks must include the game's declared unlocks rather than treating every requirement as a quest. Check reward quest ids and objective/item references against their owning catalogs too.
+
+Validate dialogue structure before opening a conversation:
+
+```ts
+import { validateDialogueGraph, type DialogueGraph } from "@jgengine/core/game/dialogueGraph";
+
+function reviewDialogue(graph: DialogueGraph) {
+  const issues = validateDialogueGraph(graph);
+  const errors = issues.filter((issue) => issue.severity === "error");
+  return { publishable: errors.length === 0, issues };
+}
+```
+
+The validator locates duplicate ids, missing start/choice targets, unreachable nodes, and nodes without a route to an ending in linear time without recursive traversal. Loops with an exit are valid. Review warnings against intended entry points and conversation behavior; unreachable nodes may be entered with `goTo`, and closed loops may be deliberate. Run validation on authored batches, outside the frame loop.
+
+Structural validity cannot establish story coherence. Review generated content for contradictions with canonical facts, character motivations, chronology, and meaningful consequences; play representative paths and check that choices support the intended experience. Large item counts need useful distinctions, economy balance, discoverability, and bounded runtime lookup. Counting generated items or passing reference checks alone does not establish those qualities.
+
 ## API
 
 ```ts

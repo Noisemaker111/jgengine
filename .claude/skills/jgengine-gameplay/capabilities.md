@@ -116,6 +116,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createGameDialogue` (function) · `import { createGameDialogue } from "@jgengine/core/gameplay"`
 
+## dialogue-graph-validation — diagnose duplicate ids, broken branches, unreachable dialogue, and nodes without a route to an ending before play
+
+- `validateDialogueGraph` (function) · `import { validateDialogueGraph } from "@jgengine/core/game/dialogueGraph"`
+
 ## dialogue-graph-view — select a conversation node's render-ready view (speaker, line, branching choices) from a serializable dialogue graph
 
 - `selectDialogueView` (function) · `import { selectDialogueView } from "@jgengine/core/gameplay"`
