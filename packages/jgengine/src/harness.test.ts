@@ -296,3 +296,35 @@ describe("portable click settling on slow rendered pages", () => {
     } finally { rmSync(dir, { recursive: true, force: true }); }
   });
 });
+
+
+describe("portable coordinate input", () => {
+  test("the emitted parser checks decimal CSS coordinates against the complete viewport", async () => {
+    const dir = materializeHarness("drive");
+    try {
+      const lib = await import(join(dir, "browser.mjs"));
+      expect(lib.parseClickAt("12.5, 34", 390, 844)).toEqual({ x: 12.5, y: 34 });
+      expect(lib.parseClickAt("0,0", 390, 844)).toEqual({ x: 0, y: 0 });
+      expect(lib.parseClickAt("389.9,843.9", 390, 844)).toEqual({ x: 389.9, y: 843.9 });
+      for (const spec of ["", "1", ",2", "1,", "1,2,3", "-1,2", "1,-2", "NaN,2", "Infinity,2", "1e999,2", "0x10,2", "390,2", "2,844"]) {
+        expect(() => lib.parseClickAt(spec, 390, 844)).toThrow("--click-at");
+      }
+      expect(() => lib.parseClickAt("400,20", 390, 844)).toThrow("390x844");
+      expect(lib.parseClickAt("400,20", 844, 390)).toEqual({ x: 400, y: 20 });
+      expect(() => lib.parseClickAt("1,2", 0, 844)).toThrow("--click-at");
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+
+  test("the emitted dispatcher sends native movement, press and release without page evaluation", async () => {
+    const dir = materializeHarness("drive");
+    try {
+      const lib = await import(join(dir, "browser.mjs"));
+      const calls: { method: string; params: Record<string, unknown> }[] = [];
+      await lib.dispatchClickAt({ async send(method: string, params: Record<string, unknown>) { calls.push({ method, params }); } }, { x: 12.5, y: 34 });
+      expect(calls.map(call => call.method)).toEqual(["Input.dispatchMouseEvent", "Input.dispatchMouseEvent", "Input.dispatchMouseEvent"]);
+      expect(calls.map(call => call.params.type)).toEqual(["mouseMoved", "mousePressed", "mouseReleased"]);
+      expect(calls.map(call => call.params.buttons)).toEqual([0, 1, 0]);
+      expect(calls.every(call => call.params.x === 12.5 && call.params.y === 34)).toBe(true);
+    } finally { rmSync(dir, { recursive: true, force: true }); }
+  });
+});
