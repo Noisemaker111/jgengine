@@ -19,6 +19,14 @@ export interface MagazineConfig {
   reserve?: number | MagazineReserve;
 }
 
+/** Live magazine tuning; shrinking below loaded rounds rejects unless overflow is explicit. */
+export interface MagazineTuning {
+  capacity?: number;
+  reloadMs?: number;
+  /** Defaults to `reject`; returning rounds requires a finite reserve with `gain`. */
+  overflow?: "reject" | "discard" | "return-to-reserve";
+}
+
 /** Complete serializable state for a {@link Magazine}; `reserve: null` means infinite reserve. */
 export interface MagazineSnapshot {
   loaded: number;
@@ -34,6 +42,8 @@ export interface MagazineSnapshot {
 export interface Magazine {
   loaded(): number;
   capacity(): number;
+  /** Retune without granting ammo or resetting reload elapsed time; false leaves all state unchanged. */
+  retune(tuning: MagazineTuning): boolean;
   /** Reserve rounds available to reload from, or `null` when the reserve is infinite. */
   reserve(): number | null;
   isReloading(): boolean;
@@ -90,8 +100,8 @@ const INFINITE_RESERVE: MagazineReserve = {
  * @capability magazine a weapon magazine with capacity, timed reload, and reserve-pool interaction
  */
 export function createMagazine(config: MagazineConfig): Magazine {
-  const capacity = Math.max(0, config.capacity);
-  const reloadMs = Math.max(0, config.reloadMs);
+  let capacity = Math.max(0, config.capacity);
+  let reloadMs = Math.max(0, config.reloadMs);
   const isInfiniteReserve = config.reserve === undefined;
   const reserve: MagazineReserve = isInfiniteReserve
     ? INFINITE_RESERVE
@@ -109,6 +119,25 @@ export function createMagazine(config: MagazineConfig): Magazine {
   return {
     loaded: () => loaded,
     capacity: () => capacity,
+    retune(tuning) {
+      if ((tuning.capacity !== undefined && !Number.isFinite(tuning.capacity)) ||
+          (tuning.reloadMs !== undefined && !Number.isFinite(tuning.reloadMs))) return false;
+      const nextCapacity = Math.max(0, tuning.capacity ?? capacity);
+      const nextReloadMs = Math.max(0, tuning.reloadMs ?? reloadMs);
+      const overflow = Math.max(0, loaded - nextCapacity);
+      if (overflow > 0) {
+        const policy = tuning.overflow ?? "reject";
+        if (policy === "reject") return false;
+        if (policy === "return-to-reserve") {
+          if (isInfiniteReserve || reserve.gain === undefined) return false;
+          reserve.gain(overflow);
+        }
+      }
+      capacity = nextCapacity;
+      reloadMs = nextReloadMs;
+      loaded = clampLoaded(loaded);
+      return true;
+    },
     reserve: () => (isInfiniteReserve ? null : reserve.current()),
     isReloading: () => reloadElapsedMs !== null,
     reloadFraction: () => (reloadElapsedMs === null || reloadMs <= 0 ? 0 : Math.min(1, reloadElapsedMs / reloadMs)),
