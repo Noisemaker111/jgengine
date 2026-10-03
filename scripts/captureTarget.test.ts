@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { captureClickPoint, driveTargetUrl, externalCaptureUrl } from "./captureTarget";
+import { shotSidecarPath } from "./shotProvenance";
 
 describe("external capture targets", () => {
   test("normalizes loopback and preserves the native document and query", () => {
@@ -47,17 +51,31 @@ describe("external capture targets", () => {
     }
   });
 
-  test("an unavailable external server fails both commands without a runner launch", () => {
+  test("an unavailable external server fails both commands and removes planned stale evidence", () => {
     const listener = Bun.serve({ port: 0, fetch: () => new Response("ready") });
     const url = `http://127.0.0.1:${listener.port}`;
     listener.stop(true);
-    for (const script of ["drive-dev", "shoot-dev"]) {
-      const result = spawnSync(process.execPath, [`scripts/${script}.ts`, "--url", url, "--timeout", "1"], {
-        cwd: import.meta.dir + "/..", encoding: "utf8", timeout: 5_000,
-      });
-      expect(result.status).toBe(1);
-      expect(result.stderr).toContain("start that external server first");
-      expect(result.stderr).not.toContain("starting");
+    const dir = mkdtempSync(join(tmpdir(), "jg-native-stale-"));
+    try {
+      for (const script of ["drive-dev", "shoot-dev"]) {
+        const out = join(dir, `${script}.png`);
+        const sidecar = shotSidecarPath(out);
+        writeFileSync(out, "prior capture");
+        writeFileSync(sidecar, "{}");
+        const result = spawnSync(process.execPath, [
+          `scripts/${script}.ts`, "--url", url, "--timeout", "1",
+          script === "drive-dev" ? "--shot" : "--out", out,
+        ], {
+          cwd: import.meta.dir + "/..", encoding: "utf8", timeout: 5_000,
+        });
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("start that external server first");
+        expect(result.stderr).not.toContain("starting");
+        expect(existsSync(out)).toBe(false);
+        expect(existsSync(sidecar)).toBe(false);
+      }
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 });

@@ -45,7 +45,7 @@ import { lookSearchParams, parseLookAim } from "./lookArg";
 import { captureClickPoint, driveTargetUrl, externalCaptureUrl } from "./captureTarget";
 import { decodePng } from "./png-reader";
 import { shotSignature } from "./shot-metrics";
-import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord } from "./shotProvenance";
+import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";
 import { classifyRenderCadence, summarizePlaytest, type ProbeSample } from "./playtest";
 import { focusGameSurface, holdComplete } from "./gameSurfaceFocus";
 import { framesFromTimeline, thinFrames, type TimedPng } from "./apng";
@@ -628,19 +628,20 @@ async function screenshot(
   outPath: string,
   size: SizeMode,
   screencast: boolean,
+  previous: PreviousShot | undefined,
 ): Promise<void> {
-  // Cleared first, so a failed step leaves no earlier shot at this path to be read as its result.
-  const previous = clearShotTarget(outPath);
   const profile = scaleProfile(DEVICES.desktop, size);
   const { region } = await readCapturePageState(session);
-  const { bytes } = await captureViewportPng(session, {
-    screencast: screencast && screencastCapturesFully(profile),
+  const editor = await session.evaluate<boolean>(`document.documentElement.dataset.jgEditor === "1"`);
+  const { bytes, via } = await captureViewportPng(session, {
+    screencast: screencast && editor !== true && screencastCapturesFully(profile),
     expect: {
       width: Math.round(profile.width * profile.deviceScaleFactor),
       height: Math.round(profile.height * profile.deviceScaleFactor),
     },
     ...(region === undefined ? {} : { liveRegion: region }),
   });
+  console.error(`drive: frame(${via})${editor === true ? " — synchronous editor snapshot" : ""}`);
   writePngAtomic(outPath, bytes);
   const decoded = decodePng(bytes);
   const record = buildShotRecord({
@@ -666,6 +667,12 @@ if (args.help) {
 
 const outDir = resolve(import.meta.dir, "../shots");
 if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true });
+const preparedShots = new Map<string, PreviousShot | undefined>();
+for (const step of args.steps) {
+  if (step.kind !== "shot") continue;
+  const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`);
+  if (!preparedShots.has(path)) preparedShots.set(path, clearShotTarget(path));
+}
 
 const daemon = args.connect === undefined ? await attachDaemon() : null;
 if (args.url !== undefined && !(await isUp(args.url))) {
@@ -815,11 +822,15 @@ const exitCode = await withBrowserSession(
           console.log(JSON.stringify({ probe: step.name, metrics }));
         } else {
           // A recording owns the screencast pump; a shot must not start/stop it underneath.
+          const path = step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`);
+          const previous = preparedShots.has(path) ? preparedShots.get(path) : clearShotTarget(path);
+          preparedShots.delete(path);
           await screenshot(
             session,
-            step.out ?? join(outDir, `${args.game}-${step.name}${sizeSuffix(args.size)}.png`),
+            path,
             args.size,
             args.record === undefined,
+            previous,
           );
         }
       }

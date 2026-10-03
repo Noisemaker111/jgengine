@@ -17,11 +17,13 @@ Do not run bare cold `shoot` or `drive` repeatedly in a multi-shot loop. For a s
 
 Keep the game on its published packages and its own dev server. `bun run drive --url http://127.0.0.1:5518 --click "Begin expedition" --key KeyW:500 --rpc '{"method":"debug_snapshot"}' --record expedition --record-fps 2 --size half` uses the existing input focus, recording, diagnostics, and storage isolation on that page. `shoot --url` and `drive --url` reuse daemon Chrome without starting or claiming ownership of a managed game/website server; an unavailable URL fails immediately. `--url` requires HTTP(S), preserves the page's path/query, and cannot be combined with a game id or `--site` in drive. Explicit `--mode editor` also selects the native host's editor; an existing mode query is otherwise preserved.
 
-Drive forwards page warnings and errors, including the native renderer and asset diagnostics, throughout navigation and interaction.
+Drive forwards page warnings and errors, including the native renderer and asset diagnostics, throughout navigation and interaction. Both commands clear every planned screenshot and sidecar before connecting, so an unavailable server or an earlier failed interaction leaves no stale image at a requested output path.
 
 The external page must declare `data-jg-capture="ready"` after an honest frame, as required by [SKILL.md](../SKILL.md). Neither a sized canvas nor an agent bridge substitutes for readiness. Published native hosts that do not expose `__jgProbe` return null from `--probe`; use their `debug_snapshot` RPC for diagnostics and deterministic gameplay assertions for progress rather than treating render metrics as player movement.
 
 Use ordered `--reload` to prove recovery within a drive: `--click "Begin expedition" --rpc '{"method":"debug_snapshot"}' --reload --rpc '{"method":"debug_snapshot"}'`. Reload waits for readiness again and preserves storage created in that run; `--reuse-storage` also retains a previous run's storage at initial navigation. Reload is rejected during lockstep recording and `--playtest`, whose clock and sample windows cannot survive navigation; record the recovery in a separate realtime drive if needed.
+
+Editor snapshots (`data-jg-editor="1"`) use synchronous capture: the demand renderer can publish a new screencast timestamp for the previous composed frame after an authoring mutation. This keeps terrain, camera, and undo evidence on the current frame.
 
 Clicks match visible text or an exact aria-label even when a button has icon text. An off-viewport matching control fails with its coordinates instead of dispatching input outside the page; correct the layout or scroll it into view before capturing its interaction.
 

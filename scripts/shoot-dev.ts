@@ -437,8 +437,9 @@ async function shootOne(
     // frame whose 3D viewport the canvas never committed into, and a shot that is a black hole
     // where the world should be is worth more than the frame time the overlap saved.
     const { overflow, collision, ...regions } = await readCapturePageState(session);
+    const editor = await session.evaluate<boolean>(`document.documentElement.dataset.jgEditor === "1"`);
     const { bytes, via } = await captureViewportPng(session, {
-      screencast: screencastCapturesFully(expected),
+      screencast: editor !== true && screencastCapturesFully(expected),
       expect: {
         width: Math.round(expected.width * expected.deviceScaleFactor),
         height: Math.round(expected.height * expected.deviceScaleFactor),
@@ -545,6 +546,13 @@ try {
   if (code !== "EEXIST" || !existsSync(outDir)) throw error;
 }
 const targets = devicesFor(args.device);
+const preparedShots = new Map<string, PreviousShot | undefined>();
+if (!args.listViews) {
+  for (const device of targets) {
+    const path = outPathFor(args, device, outDir);
+    preparedShots.set(path, clearShotTarget(path));
+  }
+}
 
 const daemon: ShootDaemonState | null =
   args.connect === undefined ? await attachDaemon() : null;
@@ -631,9 +639,7 @@ const exitCode = await withBrowserSession(
     let code = 0;
     for (const device of targets) {
       const outPath = outPathFor(args, device, outDir);
-      // Cleared before the attempt, so a failed or hung capture leaves no file behind to be
-      // read as this run's result — the shape of every stale-screenshot mixup.
-      const previous = clearShotTarget(outPath);
+      const previous = preparedShots.get(outPath);
       const fits = await shootOne(debugPort, args, device, outPath, devBase, previous);
       if (!fits) code = 1;
     }
