@@ -1,21 +1,11 @@
 import type { EditorCatalogDefinition, EditorCatalogEntry, EditorCatalogsInput } from "@jgengine/core/editor/index";
 import type { ParamSchema } from "@jgengine/core/scene/sceneKinds";
+import { importOptionalGameModule } from "./importOptionalGameModule";
 
 /** Result of {@link loadGameCatalogs}: validated definitions, or diagnostics when the export is malformed. */
 export type LoadGameCatalogsResult =
   | { ok: true; catalogs: readonly EditorCatalogDefinition[] }
   | { ok: false; errors: { path: string; message: string }[] };
-
-async function importOptionalEditorCatalogsModule(
-  gameId: string,
-): Promise<{ editorCatalogs?: unknown } | undefined> {
-  try {
-    const path = new URL(`../../../../Games/${gameId}/src/editorCatalogs.ts`, import.meta.url);
-    return (await import(path.href)) as { editorCatalogs?: unknown };
-  } catch {
-    return undefined;
-  }
-}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -80,11 +70,11 @@ export function decodeGameCatalogs(resolved: unknown): LoadGameCatalogsResult {
  * @internal
  */
 export async function loadGameCatalogs(gameId: string): Promise<LoadGameCatalogsResult> {
-  const mod = await importOptionalEditorCatalogsModule(gameId);
-  if (mod?.editorCatalogs === undefined) return { ok: true, catalogs: [] };
-
   let resolved: unknown;
   try {
+    const path = new URL(`../../../../Games/${gameId}/src/editorCatalogs.ts`, import.meta.url);
+    const mod = await importOptionalGameModule(path);
+    if (mod?.editorCatalogs === undefined) return { ok: true, catalogs: [] };
     const value = mod.editorCatalogs as EditorCatalogsInput;
     resolved = typeof value === "function" ? value() : value;
   } catch (error) {
