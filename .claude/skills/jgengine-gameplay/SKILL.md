@@ -21,6 +21,10 @@ Persist rolled items with `createItemInstanceRegistry` (`item/itemInstanceRegist
 definitions structured-cloneable and JSON-compatible for JSON saves. Save the
 inventory's returned runtime ids alongside this state; do not regenerate rolls
 or infer the next id from the surviving items.
+For large collections, inject caller-owned `ItemInstanceStorage` and use
+`statePages(pageSize)` / `restorePages(pages)` to clone one batch at a time.
+Follow the [paged item storage recipe](recipes/paged-item-storage.md) for
+atomic replacement, allocator reattachment, and export consistency.
 
 Generate coherent combinations with `generate` (`item/itemgen`): dependent
 pools and `GenStep.accept` constrain later choices using earlier picks.

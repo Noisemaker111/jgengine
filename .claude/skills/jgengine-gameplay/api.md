@@ -1481,7 +1481,7 @@
 - `createGameFeed` (function): function createGameFeed(options?: GameFeedOptions): GameFeed — A rolling per-action feed of recent gameplay events, bindable to the event bus — the HUD ticker and killfeed history.
 - `createGestureSurfaceTracker` (function): function createGestureSurfaceTracker(bindings: TouchGestureBindings, tuning: GestureSurfaceTuning = DEFAULT_GESTURE_TUNING): GestureSurfaceTracker — ⚠ undocumented
 - `createIntentBoard` (function): function createIntentBoard<TKind extends string = string>(): IntentBoard<TKind> — ⚠ undocumented
-- `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
+- `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item", options: ItemInstanceRegistryOptions<TDef> = {}): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
 - `createItemUse` (function): function createItemUse<TState>(resolveUse: (itemId: string) => string | null | undefined): ItemUse<TState> — Use or consume items, applying their effects and per-item cooldowns.
 - `createKeyValueStore` (function): function createKeyValueStore<T>(config: KeyValueStoreConfig<T>): KeyValueStore<T> — A lightweight mutable local save cell for single-player state (a credit bank, a settings blob, level progress) — the read-modify-write counterpart to the monotonic `recordBook`. Persists through a {@link KeyValueStorage} (browser `localStorage` by default); corrupt or unavailable storage degrades to in-memory and never throws into a game tick.
 - `createLapTimer` (function): function createLapTimer(): LapTimer — Create a {@link LapTimer} starting at lap 0 with no splits, best, or last time recorded.
@@ -1784,8 +1784,10 @@
 ## @jgengine/core/item/itemInstanceRegistry
 
 - `ItemInstanceRegistry` (interface): interface ItemInstanceRegistry<TDef> — A runtime store for procedurally generated item instances — a rolled unique gun, a rolled affixed relic — keyed by a generated id distinct from any static catalog id. The counterpart a game's `content.itemById` consults for ids `lootTable`'s `generate` entries hand back, so runtime rolls never need a hand-rolled parallel registry (#536.1).
+- `ItemInstanceRegistryOptions` (interface): interface ItemInstanceRegistryOptions<TDef> — Inject storage and its saved allocator sequence when attaching an existing collection.
 - `ItemInstanceRegistryState` (interface): interface ItemInstanceRegistryState<TDef> — Save data for a registry; definitions must be structured-cloneable and use the caller's serialization format.
-- `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item"): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
+- `ItemInstanceStorage` (interface): interface ItemInstanceStorage<TDef> — Caller-owned synchronous storage; `entries()` must stream without materializing the collection.
+- `createItemInstanceRegistry` (function): function createItemInstanceRegistry<TDef>(prefix = "item", options: ItemInstanceRegistryOptions<TDef> = {}): ItemInstanceRegistry<TDef> — Builds an {@link ItemInstanceRegistry}; generated ids are `"<prefix>:<baseId>:<n>"`, unique per registry instance.
 - `proceduralLootEntry` (function): function proceduralLootEntry<TDef>(registry: ItemInstanceRegistry<TDef>, roll: (rng: () => number) => { baseId: string; def: TDef }): (rng: () => number) => string — Bridges any procedural roller into a `LootEntry.generate` callback: rolls a `{ baseId, def }` pair and registers it, returning the runtime id the loot roll hands back as the drop's `item`.
 
 ## @jgengine/core/item/itemgen
