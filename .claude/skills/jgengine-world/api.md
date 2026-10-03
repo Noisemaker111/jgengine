@@ -861,15 +861,17 @@
 
 ## @jgengine/core/nav/navGrid
 
-- `FindPathOptions` (interface): interface FindPathOptions { smooth?: boolean; clearance?: number; stepCost?: (from: NavPoint, to: NavPoint) => number } — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
+- `FindPathOptions` (interface): interface FindPathOptions { smooth?: boolean; clearance?: number; stepCost?: (from: NavPoint, to: NavPoint) => number; canTraverse?: (from: NavPoint, to: NavPoint) => boolean; maxNodes?: number } — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
+- `FindPathResult` (type): type FindPathResult = | { status: "path"; points: NavPoint[]; visited: number } | { status: "no-path" | "budget"; visited: number } — Bounded grid search distinguishes exhausted work from a proven unreachable goal.
 - `NavCell` (interface): interface NavCell { col: number; row: number } — ⚠ undocumented
 - `NavGrid` (interface): interface NavGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly bounds: Aabb; readonly diagonal: boolean; isWalkable(col: number, row: number): boolean; setWalkable(col: number, row: number, walkable: boolean): void; blo… — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `NavGridConfig` (interface): interface NavGridConfig { bounds: Aabb; cellSize: number; diagonal?: boolean } — ⚠ undocumented
 - `NavPoint` (type): type NavPoint = readonly [number, number] — ⚠ undocumented · used by `findPath`: A* over the walkable grid.
 - `createNavGrid` (function): function createNavGrid(config: NavGridConfig): NavGrid — ⚠ undocumented
 - `findPath` (function): function findPath(grid: NavGrid, from: NavPoint, to: NavPoint, options: FindPathOptions = {}): NavPoint[] | null — A* over the walkable grid. Returns a polyline of world-space `[x, z]` waypoints from `from` to `to`, or `null` when no route exists. Blocked start/goal snap to the nearest walkable cell so a click on an obstacle still routes to its edge.
+- `findPathResult` (function): function findPathResult(grid: NavGrid, from: NavPoint, to: NavPoint, options: FindPathOptions = {}): FindPathResult — Same endpoint snapping as {@link findPath}, with explicit search-budget exhaustion.
 - `slopeStepCost` (function): function slopeStepCost(field: { sampleHeight(x: number, z: number): number }, weight = DEFAULT_SLOPE_STEP_WEIGHT): (from: NavPoint, to: NavPoint) => number — `FindPathOptions.stepCost` factory that penalizes steep terrain: cost is `1 + weight * |Δheight| / horizontalDistance`, so with the default weight a 45° slope roughly doubles the step cost.
-- `smoothPath` (function): function smoothPath(grid: NavGrid, points: readonly NavPoint[]): NavPoint[] — Remove waypoints the mover can skip because it has clear line-of-sight past them.
+- `smoothPath` (function): function smoothPath(grid: NavGrid, points: readonly NavPoint[], canTraverse?: (from: NavPoint, to: NavPoint) => boolean): NavPoint[] — Remove waypoints the mover can skip because it has clear line-of-sight past them.
 
 ## @jgengine/core/nav/navMesh
 
@@ -893,7 +895,7 @@
 - `PathFollowProgress` (interface): interface PathFollowProgress — Read-only progress readout for inspection/debug tooling, produced by {@link pathFollowProgress}.
 - `PathFollowState` (interface): interface PathFollowState { position: Waypoint; target: number; heading: number; done: boolean; distanceTravelled: number } — ⚠ undocumented · used by `advancePathFollow`: Advance a path-follower by `speed * dt` along its authored polyline.
 - `PathProgress` (type): type PathProgress = | { readonly kind: "normalized"; readonly value: number } /** World-distance travelled from the first waypoint (looping paths wrap; clamped otherwise). */ | { readonly kind: "distance"; readonly value: number } /** Segment `index` (0-based) plus `fraction` `0..1` along that segme… — Semantic seek target for {@link pathFollowSeek} — the caller-facing progress vocabulary a stateful path behavior restores from, so a follower can start at a distributed phase or resume a serialized route without knowing waypoint internals. `direction` (forward heading) falls out of the resulting {@link PathFollowState.heading}, so it is an output rather than a seek input.
-- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented · used by `useWaypoints` (@jgengine/react): Subscribe to a {@link WaypointTracker} and re-render on every change, returning its current waypoints.
+- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented · used by `planSolidRoute` (@jgengine/core/nav/solidRoute): Plan an exact-endpoint local route over indexed movement boxes using the shared nav grid.
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `pathFollowProgress` (function): function pathFollowProgress(config: PathFollowConfig, state: PathFollowState): PathFollowProgress — Read a follower's current progress in every semantic form — the inverse of {@link pathFollowSeek}, for editor/debug inspection and progress HUDs. Pure and allocation-light.
@@ -913,6 +915,13 @@
 - `ResolvedRailEdge` (interface): interface ResolvedRailEdge { id: string; from: string; to: string; points: readonly Waypoint[]; length: number } — ⚠ undocumented
 - `createRailGraph` (function): function createRailGraph(config: RailGraphConfig): RailGraph — ⚠ undocumented
 - `createRailRider` (function): function createRailRider(graph: RailGraph, config: RailRiderConfig): RailRider — ⚠ undocumented
+
+## @jgengine/core/nav/solidRoute
+
+- `SolidRouteOptions` (interface): interface SolidRouteOptions — Caller-owned local collision query and terrain policy; no movement or perception state.
+- `SolidRouteResult` (type): type SolidRouteResult = | { status: "path"; waypoints: Waypoint[]; work: SolidRouteWork } | { status: "no-path" | "budget"; work: SolidRouteWork } — Failures never carry a partial or snapped route.
+- `SolidRouteWork` (interface): interface SolidRouteWork — Work counters exclude the caller's spatial-query implementation.
+- `planSolidRoute` (function): function planSolidRoute(from: Waypoint, to: Waypoint, options: SolidRouteOptions): SolidRouteResult — Plan an exact-endpoint local route over indexed movement boxes using the shared nav grid. Every edge is swept at body width; bounded failure leaves retry/stop policy with the caller.
 
 ## @jgengine/core/nav/timetable
 
@@ -2545,7 +2554,7 @@
 - `WaveRunnerConfig` (interface): interface WaveRunnerConfig extends SpawnDirectorConfig — Configuration for {@link createWaveRunner}: the full {@link SpawnDirectorConfig} (escalating waves, budgets, seed, spawn points) plus an optional {@link WaveSpawnSink}. The runner owns the director state — you never pass a `SpawnDirectorState` here.
 - `WaveSpawnSink` (type): type WaveSpawnSink = (request: SpawnRequest) => void — A callback the wave runner hands each {@link SpawnRequest} the underlying spawn director emits. The runner never instantiates entities itself — it forwards the request (a free-string `entryId` "kind", cost, wave, optional point/lane) to the game, which decides what to build. Keeps the runner genre-agnostic.
 - `WaveView` (interface): interface WaveView — A pooled, per-frame readout of the current wave — the "brain behind WAVE 3". Reused across {@link WaveRunner.view} calls (never per-frame allocated), so read it and render it, don't retain it.
-- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented · used by `useWaypoints` (@jgengine/react): Subscribe to a {@link WaypointTracker} and re-render on every change, returning its current waypoints.
+- `Waypoint` (type): type Waypoint = readonly [number, number, number] — ⚠ undocumented · used by `planSolidRoute` (@jgengine/core/nav/solidRoute): Plan an exact-endpoint local route over indexed movement boxes using the shared nav grid.
 - `WaypointEntry` (interface): interface WaypointEntry — A single player-placed waypoint. World-XZ only — serializable and renderer-free.
 - `WaypointGuidance` (interface): interface WaypointGuidance — Direction/range to the tracked waypoint, for an on-screen guide arrow.
 - `WaypointSnapshot` (interface): interface WaypointSnapshot — Whole serializable state of a {@link WaypointStore} — drop into a save blob.

@@ -51,6 +51,8 @@ Compose perception, selection, planning/behavior, movement, and lifecycle indepe
 
 NPC decisions are a `decisionGraph` behavior: the graph and its blackboard are data, actions are registered by name, and perception or game systems write facts into `behaviorControl(ctx).blackboard(id)` rather than actions querying the world. Set `thinkInterval` so crowds think a few times a second, not every frame, and release movement or claims in `onAbort`.
 
+For a bounded local detour over movement collision geometry, use `planSolidRoute` (`nav/solidRoute`) with an indexed `solidObstaclesNear` or `sourceObstaclesNear` query. Handle `no-path` and `budget` separately; retain caller movement, goals, terrain and retry policy. See [reference.md](reference.md#local-collision-routes) for limits.
+
 Route on a polygon nav mesh through one `createNavMeshQuery(mesh)` per mesh; price terrain and gate doors with `areaCosts` via `retune`, and keep `maxNodes` bounded so a long request returns a `partial` route instead of stalling a frame.
 
 ### Fallback-seam diagnostics
