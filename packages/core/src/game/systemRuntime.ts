@@ -23,7 +23,7 @@ export interface InstalledSystems {
   tick(ctx: GameContext, dt: number): void;
   /** Invoke every system's `reset` (scenario/run wipe). */
   reset(ctx: GameContext): void;
-  /** Invoke every system's `dispose` in reverse install order. */
+  /** Retire once in reverse order; finish cleanup before rethrowing the first error. */
   dispose(ctx: GameContext): void;
   /** Run one manual system by id (no-op if missing or not manual). */
   runManual(ctx: GameContext, id: string, dt?: number): void;
@@ -39,7 +39,7 @@ function resolveModule(
 
 /**
  * Install systems on a live context: `create` → bind events → register save/replicate → `start`.
- * Call once per world boot (from the composed loop's `onInit`).
+ * Call once per world boot. Failed installation retires entered systems and listeners, then rethrows the startup error.
  * @internal
  */
 export function installSystems(
@@ -54,29 +54,37 @@ export function installSystems(
   const unsubs: Array<() => void> = [];
   const intervalAcc = new Map<string, number>();
   const fixedAcc = new Map<number, number>();
+  const acquired: SystemDefinition[] = [];
+  let disposed = false;
 
-  for (const system of list) {
-    system.create?.(ctx);
-  }
-
-  for (const system of list) {
-    if (system.events !== undefined) {
-      for (const [name, handler] of Object.entries(system.events)) {
-        if (handler === undefined) continue;
-        const off = ctx.game.events.on(name as never, ((event: unknown) => {
-          handler(ctx, event);
-        }) as never);
-        unsubs.push(off);
-      }
+  try {
+    for (const system of list) {
+      acquired.push(system);
+      system.create?.(ctx);
     }
-    const save = resolveModule(system.save, ctx);
-    if (save !== undefined) options?.modules?.registerSave(save);
-    const replicate = resolveModule(system.replicate, ctx);
-    if (replicate !== undefined) options?.modules?.registerReplicate(replicate);
-  }
 
-  for (const system of list) {
-    system.start?.(ctx);
+    for (const system of list) {
+      if (system.events !== undefined) {
+        for (const [name, handler] of Object.entries(system.events)) {
+          if (handler === undefined) continue;
+          const off = ctx.game.events.on(name as never, ((event: unknown) => {
+            handler(ctx, event);
+          }) as never);
+          unsubs.push(off);
+        }
+      }
+      const save = resolveModule(system.save, ctx);
+      if (save !== undefined) options?.modules?.registerSave(save);
+      const replicate = resolveModule(system.replicate, ctx);
+      if (replicate !== undefined) options?.modules?.registerReplicate(replicate);
+    }
+
+    for (const system of list) {
+      system.start?.(ctx);
+    }
+  } catch (error) {
+    try { dispose(ctx); } catch { /* The startup error remains the first failure. */ }
+    throw error;
   }
 
   for (const group of schedule.fixed) {
@@ -93,7 +101,7 @@ export function installSystems(
   }
 
   function tick(ctx: GameContext, dt: number): void {
-    if (!(dt > 0)) return;
+    if (disposed || !(dt > 0)) return;
 
     for (const group of schedule.fixed) {
       const step = 1 / group.rate;
@@ -122,20 +130,28 @@ export function installSystems(
   }
 
   function reset(ctx: GameContext): void {
+    if (disposed) return;
     for (const system of list) system.reset?.(ctx);
     for (const group of schedule.fixed) fixedAcc.set(group.rate, 0);
     for (const interval of schedule.intervals) intervalAcc.set(interval.id, 0);
   }
 
   function dispose(ctx: GameContext): void {
-    for (const off of unsubs) off();
-    unsubs.length = 0;
-    for (let i = list.length - 1; i >= 0; i -= 1) {
-      list[i]?.dispose?.(ctx);
+    if (disposed) return;
+    disposed = true;
+    let failure: { error: unknown } | undefined;
+    for (const off of unsubs) {
+      try { off(); } catch (error) { failure ??= { error }; }
     }
+    unsubs.length = 0;
+    for (let i = acquired.length - 1; i >= 0; i -= 1) {
+      try { acquired[i]?.dispose?.(ctx); } catch (error) { failure ??= { error }; }
+    }
+    if (failure !== undefined) throw failure.error;
   }
 
   function runManual(ctx: GameContext, id: string, dt = 0): void {
+    if (disposed) return;
     if (!schedule.manual.includes(id)) return;
     schedule.systemsById.get(id)?.update?.(ctx, dt);
   }
@@ -177,11 +193,12 @@ export function composeGameLoop(
     return loop ?? {};
   }
 
-  let installed: InstalledSystems | undefined;
+  const retired = new WeakSet<GameContext>();
   const loopBefore = options?.loopBeforeSystems === true;
 
   return {
     onInit(ctx) {
+      retired.delete(ctx);
       const modules: SystemModuleRegistration | undefined =
         ctx.game.registerSave !== undefined && ctx.game.registerReplicate !== undefined
           ? {
@@ -189,7 +206,7 @@ export function composeGameLoop(
               registerReplicate: (m) => ctx.game.registerReplicate!(m),
             }
           : undefined;
-      installed = installSystems(ctx, systems, { ...options, modules });
+      const installed = installSystems(ctx, systems, { ...options, modules });
       installedByCtx.set(ctx, installed);
       loop?.onInit?.(ctx);
     },
@@ -199,9 +216,9 @@ export function composeGameLoop(
     onTick(ctx, dt) {
       if (loopBefore) {
         loop?.onTick?.(ctx, dt);
-        installed?.tick(ctx, dt);
+        installedByCtx.get(ctx)?.tick(ctx, dt);
       } else {
-        installed?.tick(ctx, dt);
+        installedByCtx.get(ctx)?.tick(ctx, dt);
         loop?.onTick?.(ctx, dt);
       }
     },
@@ -209,13 +226,18 @@ export function composeGameLoop(
       loop?.onPlayerLeave?.(ctx, player);
     },
     onReset(ctx) {
-      installed?.reset(ctx);
+      installedByCtx.get(ctx)?.reset(ctx);
       loop?.onReset?.(ctx);
     },
     onDispose(ctx) {
-      installed?.dispose(ctx);
+      if (retired.has(ctx)) return;
+      retired.add(ctx);
+      const installed = installedByCtx.get(ctx);
       installedByCtx.delete(ctx);
-      loop?.onDispose?.(ctx);
+      let failure: { error: unknown } | undefined;
+      try { installed?.dispose(ctx); } catch (error) { failure = { error }; }
+      try { loop?.onDispose?.(ctx); } catch (error) { failure ??= { error }; }
+      if (failure !== undefined) throw failure.error;
     },
   };
 }

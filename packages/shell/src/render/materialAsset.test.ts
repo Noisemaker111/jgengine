@@ -105,6 +105,11 @@ describe("material assets render fidelity", () => {
     material.onBeforeCompile(shader as never, {} as THREE.WebGLRenderer);
     expect(shader.fragmentShader).toContain("jgHairBack");
     expect(shader.fragmentShader).toContain("directLight.color * uJgHairTint");
+    const nativeLighting = THREE.ShaderChunk.lights_physical_pars_fragment;
+    const nativeBody = nativeLighting.slice(nativeLighting.indexOf("float dotNL =", nativeLighting.indexOf("void RE_Direct_Physical")));
+    expect(shader.fragmentShader).toContain(nativeBody);
+    expect(shader.fragmentShader.split("float jgHairBack =")).toHaveLength(2);
+    expect(material.customProgramCacheKey()).toContain("jg-hair-cards:v2");
     setHairCardLightExposure(material, 0.4);
     expect((material.userData.jgHairBacklightUniform as { value: number }).value).toBeCloseTo(0.14);
     expect(material.alphaTest).toBe(0.5);

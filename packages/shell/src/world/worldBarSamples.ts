@@ -77,7 +77,7 @@ function healthFraction(stat: { min: number; max: number; current: number }): nu
 }
 
 function eligibleEntity(ctx: GameContext, id: string, options: WorldOverlaySampleOptions): SceneEntity | null {
-  if (id === ctx.player.userId || options.isVisible?.(id) === false) return null;
+  if (id === ctx.player.userId || id === ctx.player.possession.active(ctx.player.userId) || options.isVisible?.(id) === false) return null;
   const entity = ctx.scene.entity.get(id);
   if (entity === null || entity.hidden === true) return null;
   const health = ctx.scene.entity.stats.get(id, "health");

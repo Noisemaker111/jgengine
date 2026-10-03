@@ -5,6 +5,7 @@ import { createSceneRaycast, type SceneRaycastDeps, type SceneRaycastInput } fro
 import { createGameContext, type GameContext } from "@jgengine/core/runtime/gameContext";
 import { defineGameDefinition } from "@jgengine/core/game/defineGame";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+import { createPossession } from "@jgengine/core/scene/possession";
 import { building, environment } from "@jgengine/core/world/features";
 import { collectNameplateSamples, collectWorldBarSamples, worldBarOccluded, refreshWorldBarSamples, type NameplateSample, type WorldBarSample, type WorldOverlaySampleOptions } from "./worldBarSamples";
 
@@ -15,7 +16,7 @@ function setup(deps: SceneRaycastDeps = {}) {
   const rays: SceneRaycastInput[] = [];
   let queries = 0;
   const ctx = {
-    player: { userId: "player" },
+    player: { userId: "player", possession: createPossession({ entities: store }) },
     scene: {
       entity: {
         get: store.get,

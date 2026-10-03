@@ -125,16 +125,16 @@ function applyHair(material: THREE.MeshStandardMaterial, asset: MaterialAsset): 
     this.userData.jgHairBacklightUniform = uniform;
     shader.uniforms.uJgHairBacklight = uniform;
     shader.uniforms.uJgHairTint = { value: tint };
-    const directDiffuse = "reflectedLight.directDiffuse += irradiance * BRDF_Lambert( material.diffuseContribution );";
+    const directLighting = /void\s+RE_Direct_Physical\s*\([^)]*\)\s*\{/;
     const chunk = THREE.ShaderChunk.lights_physical_pars_fragment;
-    if (!chunk.includes(directDiffuse)) throw new Error("Pinned physical shader no longer supports the hair-card backlight adapter");
+    if (!directLighting.test(chunk)) throw new Error(`Three.js r${THREE.REVISION} physical shader lacks RE_Direct_Physical for the hair-card backlight adapter`);
     shader.fragmentShader = shader.fragmentShader.replace("#include <common>", "#include <common>\nuniform float uJgHairBacklight;\nuniform vec3 uJgHairTint;")
-      .replace("#include <lights_physical_pars_fragment>", chunk.replace(directDiffuse, `${directDiffuse}
+      .replace("#include <lights_physical_pars_fragment>", chunk.replace(directLighting, declaration => `${declaration}
 float jgHairBack = saturate(-dot(geometryNormal, directLight.direction));
 float jgHairForward = pow(saturate(dot(-directLight.direction, geometryViewDir)), 4.0);
 reflectedLight.directDiffuse += directLight.color * uJgHairTint * (jgHairBack * mix(0.25, 1.0, jgHairForward) * uJgHairBacklight * RECIPROCAL_PI);`));
   };
-  material.customProgramCacheKey = () => `${previousKey}|jg-hair-cards:v1`;
+  material.customProgramCacheKey = () => `${previousKey}|jg-hair-cards:v2`;
   material.needsUpdate = true;
 }
 

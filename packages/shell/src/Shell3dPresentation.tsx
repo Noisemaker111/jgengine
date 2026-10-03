@@ -654,7 +654,6 @@ export function Shell3dPresentation({
                         {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
                       />
                     ) : null}
-                  </CullingProvider>
                   {WorldOverlay !== undefined ? (
                     // Author decor is presentation dressing, not collision geometry — mark it
                     // camera-transparent so the orbit spring-arm never yanks toward it. A child
@@ -663,6 +662,7 @@ export function Shell3dPresentation({
                       <WorldOverlay ctx={ctx} />
                     </group>
                   ) : null}
+                  </CullingProvider>
                   <WorldItems config={playable.worldItem} />
                   <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} diagnostics={devtoolsEnabled} />
                   <CombatPresentation effects={effects} />
