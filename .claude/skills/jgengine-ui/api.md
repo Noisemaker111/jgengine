@@ -2463,6 +2463,12 @@
 - `ModelPick` (type): type ModelPick = { model?: string; fallbackModel?: string; style?: Omit<ModelConfig, "url" | "dims">; } — Preferred + optional fallback catalog ids for a single entity/object slot. Soft-resolves through the catalog: when neither id is live (pack not pulled/ reindexed yet), the mapping is omitted and the shell keeps its primitive. Re-home later by fixing ids / pulling packs — no Kenney, no hard throws.
 - `ModelResolveContext` (interface): interface ModelResolveContext { seam: "entityModels" | "objectModels" | "scatterModels"; key: string } — ⚠ undocumented
 
+## @jgengine/shell/render/rigNode
+
+- `RigNodeDiagnostic` (interface): interface RigNodeDiagnostic — A missing or nonunique node reference that a rig author can repair.
+- `RigNodeResolution` (type): type RigNodeResolution = | { node: Object3D; matchedBy: "runtime" | "authored"; diagnostic?: undefined } | { node: undefined; matchedBy?: undefined; diagnostic: RigNodeDiagnostic } — A node on this model instance, or a diagnostic instead of an arbitrary attachment target.
+- `resolveRigNode` (function): function resolveRigNode(rig: Object3D, name: string): RigNodeResolution — Resolves a bone or attachment slot by its exact runtime name first, then by the original imported name preserved as `userData.name`. GLTFLoader sanitizes names such as `handslot.r` to `handslotr`; authored references remain usable without renaming the animated hierarchy. Both lookups require a unique target. Call on model load or slot changes, not each frame, and keep the result with that model instance rather than reusing a cached asset's node.
+
 ## @jgengine/shell/render/sceneCapture
 
 - `CaptureRenderer` (interface): interface CaptureRenderer — The bit of a WebGL renderer scene capture needs — its backing `<canvas>`.

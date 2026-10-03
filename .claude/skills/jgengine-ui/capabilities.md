@@ -339,6 +339,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createI18n` (function) · `import { createI18n } from "@jgengine/core/ui"`
 
+## imported-rig-node — resolve original imported bone and slot names with ambiguity diagnostics
+
+- `resolveRigNode` (function) · `import { resolveRigNode } from "@jgengine/shell/render/rigNode"`
+
 ## interaction-prompt-host — screen-anchored "press E to…" callout rendering a prompt registry's active interactable — keybind cap+label, gauge hold bar, or plain label, theme- and per-prompt-accent skinnable
 
 - `InteractionPrompt` (function) · `import { InteractionPrompt } from "@jgengine/react"`

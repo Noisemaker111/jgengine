@@ -7,6 +7,7 @@ import { lookAt, solveTwoBone, type MutableVec3 } from "@jgengine/core/anim/ikSo
 import type { GameContext } from "@jgengine/core/runtime/gameContextTypes";
 import type { ModelConfig, ModelIkConfig } from "@jgengine/core/game/playableGame";
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
+import { resolveRigNode } from "./rigNode";
 
 type FootIkConfig = NonNullable<ModelConfig["ik"]>;
 type GroundProbe = (input: SceneRaycastInput) => SceneRaycastHit | null;
@@ -107,7 +108,13 @@ export function resolveFootIkRig(scene: THREE.Object3D, config: FootIkConfig): F
   const resolve = (name: string, role: string): THREE.Object3D | null => {
     const matches = named.get(name);
     if (matches?.length === 1) return matches[0]!;
-    warn(`${role} "${name}" ${matches === undefined ? "was not found" : "matches multiple objects"}; use a unique rig name.`);
+    if (matches === undefined) {
+      const imported = resolveRigNode(scene, name);
+      if (imported.node !== undefined) return imported.node;
+      warn(`${role} "${name}" ${imported.diagnostic.code === "ambiguous-node" ? "matches multiple original imported names; use a unique runtime name or repair duplicate imported names" : "was not found by runtime or original imported name; check the loaded rig names"}.`);
+      return null;
+    }
+    warn(`${role} "${name}" matches multiple objects; use a unique rig name.`);
     return null;
   };
   let chains = options.feet;
