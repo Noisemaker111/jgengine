@@ -12,6 +12,8 @@ Reference module for the [`jgengine-multiplayer` API](SKILL.md) skill. Load this
 
 The world WS host serializes joins/commands per world and awaits durable storage before replying or broadcasting. Ticks defer while a command is saving. `session.save()` returns `void | Promise<void>`; always await it at a shutdown or acknowledgement boundary. Automatic saves defer while a write is pending, and `persistenceError()` exposes failure until a successful retry. Node `flush()`/`close()` await persistence. Convex stores complete state atomically but queries return only viewer-projected replication. See [gameplay save semantics](../jgengine-gameplay/reference-systems.md#authoritative-state).
 
+`WorldGameHost.unload(serverId)` explicitly retires an idle world's host cache, tick and save references after its final save. It returns `unloaded`, `missing` or `occupied`; admitted players, spectators and still-present factory-resident members refuse unloading. A failed admission profile alone is not occupancy. Save failure rejects and keeps the live world for retry. Existing per-world queues serialize accepted work, unload and subsequent reload; `stop()` drains work accepted before closing. Choose idle timing in the caller: no automatic eviction policy runs. The session factory must create a fresh session on reload and bind it to the same authoritative game/server storage. Unload releases host references only; factory-owned subscriptions, timers and externally retained sessions remain caller-owned.
+
 Node `WorldGameServer.close()` permanently fences ticks and socket intake, drains
 accepted router work, then stops and saves the world host. Repeated calls share
 the same completion, including a final persistence failure. `stop()` only pauses

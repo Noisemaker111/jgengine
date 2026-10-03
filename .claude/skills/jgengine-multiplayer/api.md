@@ -524,7 +524,7 @@
 - `VoicePosition` (interface): interface VoicePosition { x: number; y: number; z: number } — ⚠ undocumented
 - `VoiceRoute` (interface): interface VoiceRoute { fromUserId: VoiceMemberId; channelId: VoiceChannelId; gain: number } — ⚠ undocumented
 - `WS_PROTOCOL_VERSION` (const): const WS_PROTOCOL_VERSION: 1 — ⚠ undocumented
-- `WorldGameHost` (interface): interface WorldGameHost extends GameHost — A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change.
+- `WorldGameHost` (interface): interface WorldGameHost extends GameHost — A {@link GameHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references.
 - `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.
 - `WsAppearance` (type): type WsAppearance = Record<string, string | number | boolean> — Client-set cosmetic/state tags carried alongside a pose (skin, mount, emote, ...). Primitive values only.
 - `WsBackend` (type): type WsBackend = GameBackend & { rtt: { sampleMs: number; smoothedMs: number }; pushFeedEntry: (args: { serverId: string; action: string; entry: unknown }) => Promise<void>; browse: (args: { gameId: string; filter?: MatchFilter; limit?: number }) => Promise<SessionListing[]>; joinByCode: (args: { ga… — ⚠ undocumented
@@ -701,6 +701,6 @@
 
 ## @jgengine/ws/worldHost
 
-- `WorldGameHost` (interface): interface WorldGameHost extends GameHost — A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change.
+- `WorldGameHost` (interface): interface WorldGameHost extends GameHost — A {@link GameHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references.
 - `WorldGameHostOptions` (interface): interface WorldGameHostOptions — Config for {@link createWorldGameHost}: how to resolve a hosted world's authoritative session per server.
 - `createWorldGameHost` (function): function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost — The GameContext-loop counterpart of the reducer `createGameHost`: a structural {@link GameHost} that serves each world's full `WorldSnapshot` as `serverState`, so the existing ws router, `createWsBackend`, and the shell's `attachWorldSync` carry host-authoritative GameContext worlds with zero changes to any of them. The harness owns the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.

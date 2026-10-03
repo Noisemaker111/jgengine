@@ -13,7 +13,8 @@ import type { GameHost, HostChangeEvent } from "./host";
 export interface WorldGameHostOptions {
   /**
    * Resolve (or lazily build) the authoritative {@link HostedWorldSession} for a server — called once per new
-   * `serverId`. Return `null` for an unknown game. Bind the game's definition + content here.
+   * loaded `serverId`, and again after successful unload. Create a fresh session on reload. Return `null` for an
+   * unknown game. Bind the game's definition + content here.
    */
   session(args: { gameId: string; serverId: string }): HostedWorldSession | Promise<HostedWorldSession | null> | null;
   now?: () => number;
@@ -21,10 +22,16 @@ export interface WorldGameHostOptions {
   slotsPerServer?: number;
 }
 
-/** A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change. */
+/** A {@link GameHost} backed by `HostedWorldSession`s; `tick` advances worlds and `unload` explicitly saves and releases idle world references. */
 export interface WorldGameHost extends GameHost {
   /** Advance every live world by `dtSeconds` and emit a `server` change for each whose revision moved. */
   tick(dtSeconds: number): void;
+  /**
+   * Save and release an unoccupied world's host references. Returns `occupied` for admitted players/spectators or
+   * resident members, and `missing` for an unloaded world. Save failure rejects and retains the world for retry.
+   * Later joins resolve a fresh session; external resources remain caller-owned. Closed hosts reject new unloads.
+   */
+  unload(serverId: string): Promise<"unloaded" | "missing" | "occupied">;
   /** Permanently close admission/ticks, drain accepted world operations, and save. Repeated calls share completion. */
   stop(): Promise<void>;
 }
@@ -205,6 +212,18 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
       return [];
     },
     tick: tickAll,
+    unload(serverId) {
+      return enqueue(serverId, async () => {
+        const entry = live.get(serverId);
+        if (entry === undefined) return "missing";
+        if ((roles.get(serverId)?.size ?? 0) > 0 || entry.session.members().some(userId => entry.residentMembers.has(userId))) return "occupied";
+        await entry.session.save();
+        live.delete(serverId);
+        roles.delete(serverId);
+        announcedRevisions.delete(serverId);
+        return "unloaded";
+      });
+    },
     async tickOnce() {
       tickAll(0);
       return { ticked: live.size, saved: 0 };
