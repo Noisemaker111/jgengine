@@ -1,3 +1,5 @@
+import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
+import { SimulationInspector } from "./SimulationInspector";
 import { useState } from "react";
 
 import {
@@ -647,9 +649,11 @@ export function InspectorPanel({
   onSelectTab,
   collapsed,
   onToggleSection,
+  creatorPolicy,
 }: {
   session: EditorSession;
   ui: EditorUiStore;
+  creatorPolicy?: CreatorPolicy;
   onClose?: () => void;
   /** Host API for RPC-backed actions (material assignment, camera). */
   api?: EditorHostApi;
@@ -1277,11 +1281,7 @@ export function InspectorPanel({
     );
   } else {
     body = (
-      <EmptyState
-        icon="cursor"
-        title="Nothing selected"
-        description="Click an object in the viewport or hierarchy to inspect it, or use Add to place new content."
-      />
+      creatorPolicy !== undefined && !(creatorPolicy.maxSimulationParticles || creatorPolicy.maxFireCells || creatorPolicy.maxPopulation || creatorPolicy.maxForceFields) ? <EmptyState icon="cursor" title="Nothing selected" description="Select an object to edit it, or use Add to place approved content." /> : <SimulationInspector session={session} creatorPolicy={creatorPolicy} />
     );
   }
 

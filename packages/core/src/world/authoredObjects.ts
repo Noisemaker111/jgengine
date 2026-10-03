@@ -187,3 +187,28 @@ export function placeAuthoredObjectsFromDocument(
 ): string[] {
   return placeAuthoredObjects(store, resolveAuthoredObjects(document), sampleHeight, options);
 }
+
+/**
+ * Update changed authored placements and remove previous authored ids absent from the next document.
+ * Initial placement keeps game onInit state; unrelated document edits preserve runtime prop state.
+ * Call on document changes, never on simulation ticks; runtime-created objects remain untouched.
+ * @capability sync-authored-objects synchronize edited catalog prop poses, elevation and removal through the existing object store
+ */
+export function syncAuthoredObjects(
+  store: AuthoredObjectPlaceTarget & { remove(instanceId: string): boolean },
+  objects: readonly AuthoredObject[],
+  previousObjects: readonly AuthoredObject[],
+  sampleHeight: (x: number, z: number) => number,
+  options: Pick<PlaceAuthoredObjectsOptions, "verticalOffset"> = {},
+): AuthoredObject[] {
+  const nextIds = new Set(objects.map((object) => object.instanceId));
+  if (nextIds.size !== objects.length) throw new Error("Authored object ids must be unique");
+  const previous = new Map(previousObjects.map((object) => [object.instanceId, object]));
+  for (const object of objects) {
+    const before = previous.get(object.instanceId);
+    if (before !== undefined && JSON.stringify(before) === JSON.stringify(object)) continue;
+    placeAuthoredObjects(store, [object], sampleHeight, { ...options, onExisting: before === undefined ? "keep" : "replace" });
+  }
+  for (const object of previousObjects) if (!nextIds.has(object.instanceId)) store.remove(object.instanceId);
+  return objects.map((object) => ({ ...object, ...(typeof object.animation === "object" ? { animation: structuredClone(object.animation) } : {}) }));
+}

@@ -114,11 +114,11 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
 
   const tuning: PlayerMovementTuning | null =
     options.playerMovement === true
-      ? resolvePlayerMovementTuning({
+      ? { ...resolvePlayerMovementTuning({
           physics: definition.physics,
           world: definition.world,
           movement: options.movement,
-        })
+        }), authoritativeStep: true }
       : null;
 
   function publishInput(input: HeadlessInput): void {
@@ -153,12 +153,12 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
         ctx.input.beginStep();
         total += gameDt;
         ctx.sim.runStages("beforeMovement", stepDt);
-        if (tuning !== null) {
+        if (tuning !== null && gameDt > 0) {
           stepPlayerMovement(
             ctx,
             player.userId,
             { held: ctx.input.held(), pointer: ctx.input.pointer() },
-            stepDt,
+            gameDt,
             tuning,
             options.heading,
             options.pitch,

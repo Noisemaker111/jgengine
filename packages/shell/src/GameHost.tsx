@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ComponentType } from "react";
 
 import type { EditorCatalogDefinition } from "@jgengine/core/editor/types";
+import type { CreatorConfig } from "@jgengine/core/editor/creatorStorage";
 import { installSaveEndpoint } from "@jgengine/core/devtools/saveEndpoint";
 import { readUrlParam, subscribeUrlChange, writeUrlParam } from "@jgengine/core/devtools/urlFlags";
 import { multiplayerAdapterKind } from "@jgengine/core/runtime/adapter";
@@ -22,6 +23,7 @@ function warnUndrivenAdapter(kind: string): void {
 
 /** Structural shape of the module `GameHost`'s `editor` loader resolves — `import("@jgengine/editor")` satisfies it. */
 export interface EditorSummonModule {
+  CreatorApp?: ComponentType<{ gameId: string; config: CreatorConfig<PlayableGame>; onExit: () => void }>;
   EditorApp: ComponentType<{
     gameId: string;
     playable: PlayableGame;
@@ -51,6 +53,11 @@ export interface GameHostProps {
    * stays a lazy chunk the game bundles only when this prop is set.
    */
   editor?: () => Promise<EditorSummonModule>;
+  /** Player creator: injected durable storage, bounded catalog and a fresh runtime factory. */
+  creator?: CreatorConfig<PlayableGame>;
+  /** Controlled by the game's production menu. */
+  creatorOpen?: boolean;
+  onCreatorOpenChange?: (open: boolean) => void;
 }
 
 function initialEditorMode(enabled: boolean): boolean {
@@ -64,7 +71,7 @@ function initialEditorMode(enabled: boolean): boolean {
  *
  * @capability mount-game mount a defined game in the browser — `<GameHost playable={game} editor={() => import("@jgengine/editor")} />`
  */
-export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor }: GameHostProps) {
+export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultiplayer, editor, creator, creatorOpen = false, onCreatorOpenChange }: GameHostProps) {
   const resolvedGameId = gameId ?? playable.game.name;
   const [editorOpen, setEditorOpen] = useState(() => initialEditorMode(editor !== undefined));
 
@@ -120,6 +127,14 @@ export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultipla
     if (editor === undefined) return null;
     return lazy(async () => ({ default: (await editor()).EditorApp }));
   }, [editor]);
+  const CreatorLazy = useMemo(() => {
+    if (editor === undefined) return null;
+    return lazy(async () => {
+      const module = await editor();
+      if (module.CreatorApp === undefined) throw new Error("Editor module does not expose CreatorApp");
+      return { default: module.CreatorApp };
+    });
+  }, [editor]);
 
   const resolved = useMemo(() => {
     if (multiplayer !== undefined) return multiplayer;
@@ -138,6 +153,9 @@ export function GameHost({ playable, gameId, wsUrl, multiplayer, resolveMultipla
     return session;
   }, [playable, resolvedGameId, wsUrl, multiplayer, resolveMultiplayer]);
 
+  if (creatorOpen && creator !== undefined && CreatorLazy !== null) {
+    return <Suspense fallback={null}><CreatorLazy gameId={resolvedGameId} config={creator} onExit={() => onCreatorOpenChange?.(false)} /></Suspense>;
+  }
   if (editorOpen && EditorLazy !== null) {
     return (
       <Suspense fallback={null}>

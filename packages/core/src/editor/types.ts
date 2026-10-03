@@ -1,3 +1,4 @@
+import type { EditorSimulation } from "./simulation";
 import type { StaticPrefabBake } from "./staticPrefab";
 import type { ParamSchema } from "../scene/sceneKinds";
 import type { EditorUiDocument } from "../ui/hudDocument";
@@ -250,6 +251,8 @@ export interface EditorEnvironment {
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
   version: 1;
+  /** Authored weather, emitter, fire and habitat inputs; runtime state saves separately. */
+  simulation?: EditorSimulation;
   markers: EditorMarker[];
   volumes: EditorVolume[];
   paths: EditorPath[];

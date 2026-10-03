@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   editorDocumentSize,
@@ -62,6 +62,8 @@ import { BORDER, FOCUS_RING } from "./shell/theme";
 import { IconButton, Kbd, PanelResizer } from "./shell/ui";
 import type { EditorNetworkSnapshot } from "./networkSnapshot";
 import { ScriptingPanel } from "./ScriptingPanel";
+import { EditorDocumentSaveContext, useDocumentSave, type EditorDocumentSave } from "./useDocumentSave";
+import type { CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
 
 let clipboardFragment: EditorDocument | null = null;
 
@@ -101,39 +103,6 @@ function downloadText(filename: string, text: string): void {
   URL.revokeObjectURL(url);
 }
 
-type SaveState = "idle" | "saving" | "saved" | "error";
-
-function useDocumentSave(
-  session: EditorSession,
-  save: ((json: string) => Promise<{ ok: boolean; path?: string; error?: string }>) | undefined,
-  onResult?: (ok: boolean, detail: string) => void,
-) {
-  const [saveState, setSaveState] = useState<SaveState>("idle");
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
-  const savedDocRef = useRef(session.getState().document);
-  const dirty = session.getState().document !== savedDocRef.current;
-  const doSave = () => {
-    if (save === undefined || saveState === "saving") return;
-    const document = session.getState().document;
-    setSaveState("saving");
-    void save(session.exportJson(true)).then((result) => {
-      if (result.ok) {
-        savedDocRef.current = document;
-        setSaveError(null);
-        setSaveState("saved");
-        setLastSavedAt(Date.now());
-        onResult?.(true, result.path === undefined ? "Scene saved" : `Scene saved to ${result.path}`);
-      } else {
-        setSaveError(result.error ?? "save failed");
-        setSaveState("error");
-        onResult?.(false, `Save failed: ${result.error ?? "unknown error"}`);
-      }
-    });
-  };
-  return { available: save !== undefined, dirty, saveState, saveError, lastSavedAt, doSave };
-}
-
 const LEFT_PAGES: readonly { id: LeftDockPage; label: string }[] = [
   { id: "hierarchy", label: "Hierarchy" },
   { id: "collections", label: "Sets" },
@@ -162,6 +131,12 @@ export function EditorChrome({
   importAsset = importAssetToHost,
   onRegisterAsset,
   onExitEditor,
+  allowedKinds,
+  exitLabel,
+  maxImportBytes,
+  documentSave,
+  draftAutosave = true,
+  creatorPolicy,
 }: {
   gameId: string;
   session: EditorSession;
@@ -173,6 +148,12 @@ export function EditorChrome({
   save?: (json: string) => Promise<{ ok: boolean; path?: string; error?: string }>;
   /** Closes the editor and returns to the game; set only when summoned over a game. Shows "Exit to game". */
   onExitEditor?: () => void;
+  allowedKinds?: readonly string[];
+  exitLabel?: string;
+  maxImportBytes?: number;
+  documentSave?: EditorDocumentSave;
+  draftAutosave?: boolean;
+  creatorPolicy?: CreatorPolicy;
   /**
    * Network workspace inspection payload (adapter config + optional host presence).
    * Built by `EditorApp` from the game definition; live presence rows only when the host injects them.
@@ -245,9 +226,11 @@ export function EditorChrome({
   const state = session.getState();
   const uiState = ui.getState();
   const layoutState = layout.getState();
-  const docSave = useDocumentSave(session, save, (ok, detail) =>
+  const sharedSave = useContext(EditorDocumentSaveContext) ?? documentSave;
+  const localSave = useDocumentSave(session, sharedSave === undefined ? save : undefined, (ok, detail) =>
     consoleStore.log(ok ? "info" : "error", "save", detail),
   );
+  const docSave = sharedSave ?? localSave;
   const docSaveRef = useRef(docSave);
   docSaveRef.current = docSave;
 
@@ -658,6 +641,10 @@ export function EditorChrome({
   );
 
   const importFile = (file: File) => {
+    if (maxImportBytes !== undefined && file.size > maxImportBytes) {
+      notify("Import failed: scene exceeds byte budget", "error");
+      return;
+    }
     void file.text().then((text) => {
       try {
         session.dispatch({ type: "importJson", json: text });
@@ -773,6 +760,7 @@ export function EditorChrome({
   return (
     <div className="pointer-events-none absolute inset-0 z-50 flex flex-col text-xs text-neutral-100">
       <TopAppBar
+        exitLabel={exitLabel}
         gameId={gameId}
         onExitToGame={onExitEditor}
         dirty={dirty}
@@ -807,6 +795,7 @@ export function EditorChrome({
         }}
       />
       <SceneToolbar
+        allowedKinds={allowedKinds}
         tool={uiState.tool}
         gizmoMode={uiState.gizmoMode}
         gizmoSpace={uiState.gizmoSpace}
@@ -1088,6 +1077,7 @@ export function EditorChrome({
               aria-label="Inspector dock"
             >
               <InspectorPanel
+                creatorPolicy={creatorPolicy}
                 session={session}
                 ui={ui}
                 api={api}
@@ -1109,7 +1099,7 @@ export function EditorChrome({
         objects={sceneStats.objects}
         foliage={sceneStats.foliage}
         selectionCount={state.selection.length}
-        autosave
+        autosave={draftAutosave}
       />
 
       {paletteQuery !== null ? (

@@ -7,7 +7,7 @@ import { setBillboardQuaternion } from "./fireSpreadPose";
 
 export interface FireSpreadLayerProps {
   grid: FireGrid;
-  cellSize: number;
+  cellSize?: number;
   origin?: readonly [number, number];
   /** Sample ground height so flames sit on terrain; defaults to y=0. */
   heightAt?: (x: number, z: number) => number;
@@ -15,18 +15,19 @@ export interface FireSpreadLayerProps {
   flameHeight?: number;
   burningColor?: THREE.ColorRepresentation;
   emberColor?: THREE.ColorRepresentation;
+  /** Absolute authoritative simulation clock; use for pause and snapshot restore. */
+  timeSeconds?: () => number;
 }
-
-const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
 
 export function FireSpreadLayer({
   grid,
-  cellSize,
-  origin = [0, 0],
+  cellSize = grid.cellSize,
+  origin = grid.origin,
   heightAt,
   flameHeight = 1.6,
   burningColor = "#ff6a1a",
   emberColor = "#4a1206",
+  timeSeconds,
 }: FireSpreadLayerProps) {
   const flames = useRef<THREE.InstancedMesh>(null);
   const scorch = useRef<THREE.InstancedMesh>(null);
@@ -68,13 +69,12 @@ export function FireSpreadLayer({
     const flameMesh = flames.current;
     const scorchMesh = scorch.current;
     if (flameMesh === null || scorchMesh === null) return;
-    const cells = grid.snapshot();
-    const flicker = 0.85 + 0.15 * Math.sin(state.clock.elapsedTime * 12);
+    const flicker = 0.85 + 0.15 * Math.sin((timeSeconds?.() ?? state.clock.elapsedTime) * 12);
     let flameIndex = 0;
     let scorchIndex = 0;
     for (let row = 0; row < grid.rows; row += 1) {
       for (let col = 0; col < grid.cols; col += 1) {
-        const cell = cells[row * grid.cols + col]!;
+        const cell = grid.cell(col, row);
         const x = origin[0] + col * cellSize;
         const z = origin[1] + row * cellSize;
         const groundY = heightAt?.(x, z) ?? 0;
@@ -94,10 +94,8 @@ export function FireSpreadLayer({
         }
       }
     }
-    for (let i = flameIndex; i < capacity; i += 1) flameMesh.setMatrixAt(i, HIDDEN);
-    for (let i = scorchIndex; i < capacity; i += 1) scorchMesh.setMatrixAt(i, HIDDEN);
-    flameMesh.count = capacity;
-    scorchMesh.count = capacity;
+    flameMesh.count = flameIndex;
+    scorchMesh.count = scorchIndex;
     flameMesh.instanceMatrix.needsUpdate = true;
     scorchMesh.instanceMatrix.needsUpdate = true;
   });

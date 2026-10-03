@@ -4,6 +4,14 @@
 
 Reach for these before hand-rolling. Each row is *the thing you need* → *the primitive that already does it*.
 
+## creator-export — export validated player scenes with approved catalogs and finite budgets
+
+- `exportCreatorDocument` (function) · `import { exportCreatorDocument } from "@jgengine/core/editor/creatorStorage"`
+
+## creator-storage — save and reopen named versioned player creations through injected durable storage
+
+- `createCreatorDocumentStorage` (function) · `import { createCreatorDocumentStorage } from "@jgengine/core/editor/creatorStorage"`
+
 ## editor-catalogs — Persist gameplay tuning rows on the scene document.
 
 - `EditorCatalogData` (interface) · `import { EditorCatalogData } from "@jgengine/core/editor"`
@@ -82,6 +90,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `bakeMinimapFromDocument` (function) · `import { bakeMinimapFromDocument } from "@jgengine/core/editor"`
 - `documentBakeZones` (function) · `import { documentBakeZones } from "@jgengine/core/editor"`
 
+## player-creator — create, edit, save, playtest and reopen bounded player scenes through the production editor
+
+- `CreatorApp` (function) · `import { CreatorApp } from "@jgengine/editor"`
+
 ## scene-ownership — audit a whole ownership manifest for boundary violations
 
 - `auditManifest` (function) · `import { auditManifest } from "@jgengine/core/scene/sceneOwnership"`
@@ -89,6 +101,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `collectOwnershipDiagnostics` (function) · `import { collectOwnershipDiagnostics } from "@jgengine/core/scene/sceneOwnership"`
 - `isSceneOwnershipManifest` (function) · `import { isSceneOwnershipManifest } from "@jgengine/core/scene/sceneOwnership"`
 - `ownershipKey` (function) · `import { ownershipKey } from "@jgengine/core/scene/sceneOwnership"`
+
+## simulation-inspector — author weather schedules, effects, fire, wind zones, forces and habitats with validated undoable controls
+
+- `SimulationInspector` (function) · `import { SimulationInspector } from "@jgengine/editor/SimulationInspector"`
+
+## validate-simulation — diagnose authored weather, effect, fire, force and habitat documents before publication
+
+- `decodeEditorSimulation` (function) · `import { decodeEditorSimulation } from "@jgengine/core/editor/simulation"`
 
 ## world-convergence — derive environment coordinate content from the scene document
 

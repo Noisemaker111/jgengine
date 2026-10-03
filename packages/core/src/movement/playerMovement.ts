@@ -59,6 +59,8 @@ const DEFAULT_PLAYER_STEP_HEIGHT = 0.4;
 
 /** The resolved, per-world movement configuration {@link stepPlayerMovement} integrates against — the same inputs the shell FrameDriver used to read piecemeal, gathered into one struct so single-player and host movement run identical math. */
 export interface PlayerMovementTuning {
+  /** The simulation driver already clamps frame stalls; integrate its scaled step in full. */
+  authoritativeStep?: boolean;
   collision?: VoxelCollisionConfig;
   movement?: PlayerMovementConfig;
   physics?: MovementTuningOverrides;
@@ -409,7 +411,7 @@ export function stepPlayerMovement(
       const cam = (ctx as unknown as { camera?: { setChaseTuning: (t: unknown) => void } }).camera;
       cam?.setChaseTuning(normalizedFlightTuning.camera ?? null);
     }
-    const step = advanceFreeFlight(flightState, flightIntent, state.heading, pitch, dt, normalizedFlightTuning);
+    const step = advanceFreeFlight(flightState, flightIntent, state.heading, pitch, dt, normalizedFlightTuning, { authoritativeStep: tuning.authoritativeStep });
     let stepX = step.stepX;
     let stepY = step.stepY;
     let stepZ = step.stepZ;
@@ -526,6 +528,7 @@ export function stepPlayerMovement(
       walkSpeed,
       dt,
       tuning.physics,
+      { authoritativeStep: tuning.authoritativeStep },
     );
     horizontal.grounded = grounded;
     horizontal.verticalVelocity = 0;
@@ -617,6 +620,7 @@ export function stepPlayerMovement(
       dims,
       tuning.physics,
       tuning.hasTerrain ? (x, z) => tuning.ground.sampleHeight(x, z) : undefined,
+      { authoritativeStep: tuning.authoritativeStep },
     );
     if (motionBatch !== null && motionBatch.y !== null) body.y = motionBatch.y;
     ctx.scene.entity.setPose(playerId, {
@@ -664,8 +668,8 @@ export function stepPlayerMovement(
     state.jumpBuffer = jumpBuffer;
   }
   const motionOptions: MotionFrameOptions = submerged
-    ? { speedScale: swimSpeedMultiplier, floating: true, buffer: jumpBuffer }
-    : { buffer: jumpBuffer };
+    ? { speedScale: swimSpeedMultiplier, floating: true, buffer: jumpBuffer, authoritativeStep: tuning.authoritativeStep }
+    : { buffer: jumpBuffer, authoritativeStep: tuning.authoritativeStep };
   const prevJumpOffset = motion.jumpOffset;
   const step = advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning.physics, motionOptions);
   // Airborne means "not resting on the surface below": any jump/impulse height before or after this

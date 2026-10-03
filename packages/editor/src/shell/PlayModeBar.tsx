@@ -31,10 +31,12 @@ export function PlayModeBar({
   gameId,
   api,
   onExit,
+  exitLabel = "Editor",
 }: {
   gameId: string;
   api: EditorHostApi;
   onExit: () => void;
+  exitLabel?: string;
 }) {
   const play = usePlayControl(api);
 
@@ -98,7 +100,7 @@ export function PlayModeBar({
           className={`flex h-8 items-center gap-1.5 rounded-[6px] border border-white/[0.07] bg-[#191d24] px-3 text-[12px] font-medium text-neutral-200 transition-colors hover:bg-[#1f242d] ${FOCUS_RING}`}
         >
           <Icon name="panel" size={12} />
-          Editor
+          {exitLabel}
         </button>
       </div>
     </header>

@@ -20,16 +20,116 @@ type Click = { trusted: boolean; x: number; y: number; scroll: number };
 const cli = resolve(import.meta.dir, "cli/index.ts");
 
 describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
-  test("mobile profiles expose touch and coarse pointer; desktop clears both on the same page", async () => {
+  for (const driver of ["portable", "monorepo"] as const) {
+    test(`${driver} drive fills labelled fields and double-clicks with trusted events`, async () => {
+      const events: { type: string; value?: string; trusted: boolean; name?: string; description?: string; note?: string; detail?: number }[] = [];
+      const server = Bun.serve({ port: 0, hostname: "127.0.0.1", async fetch(request) {
+        if (new URL(request.url).pathname === "/event") {
+          events.push(await request.json());
+          return new Response("ok");
+        }
+        return new Response(`<!doctype html><html><style>body{background:#234;color:white;padding:20px}input,textarea,button{display:block;margin:10px;padding:10px}</style>
+          <button id="create">Create</button><form hidden><label>Scene name<input name="scene" value="Old scene"></label>
+          <span id="desc">Description</span><textarea aria-labelledby="desc">Old description</textarea>
+          <input aria-label="Note" value="Old note"><button type="submit">Create scene</button></form><div role="button" tabindex="0" id="asset">Approved rock</div><script>
+          const send = data => fetch('/event',{method:'POST',body:JSON.stringify(data)});
+          document.querySelector('#create').onclick = () => { document.querySelector('form').hidden = false; };
+          document.querySelectorAll('input,textarea').forEach(input => ['input','change','focus','blur'].forEach(type => input.addEventListener(type,event=>send({type,value:input.value,trusted:event.isTrusted}))));
+          document.querySelector('#asset').addEventListener('dblclick',event=>send({type:'dblclick',detail:event.detail,trusted:event.isTrusted}));
+          document.querySelector('form').onsubmit = event => { event.preventDefault(); send({type:'submit',trusted:event.isTrusted,name:document.querySelector('[name=scene]').value,description:document.querySelector('textarea').value,note:document.querySelector('[aria-label=Note]').value}); };
+          requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.dataset.jgCapture='ready'));
+          </script></html>`, { headers: { "content-type": "text/html" } });
+      } });
+      const project = mkdtempSync(join(tmpdir(), "jg-form-project-"));
+      writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
+      try {
+        const command = driver === "portable" ? [cli, "drive"] : [resolve(import.meta.dir, "../../../scripts/drive-dev.ts")];
+        const child = Bun.spawn([process.execPath, ...command, "--url", server.url.toString(), "--click", "Create", "--fill", "scene NAME=Course = dusk", "--fill", "Description=Terrain notes", "--fill", "Note=", "--double-click", "Approved rock", "--click", "Create scene", "--wait", "100", "--rpc", "{}"], { cwd: project, stdout: "pipe", stderr: "pipe", env: { ...process.env, JG_CHROME_PORT: "1" } });
+        const [exit, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
+        expect(stderr).not.toContain("did not receive focus");
+        expect(exit).toBe(0);
+        expect(events.find(event => event.type === "submit")).toEqual({ type: "submit", trusted: true, name: "Course = dusk", description: "Terrain notes", note: "" });
+        expect(events.find(event => event.type === "dblclick")).toEqual({ type: "dblclick", detail: 2, trusted: true });
+        expect(events.some(event => event.type === "input" && event.value === "Course = dusk")).toBe(true);
+        expect(events.filter(event => event.type === "change").map(event => event.value)).toEqual(["Course = dusk", "Terrain notes", ""]);
+        expect(events.every(event => event.trusted)).toBe(true);
+      } finally {
+        server.stop(true);
+        rmSync(project, { recursive: true, force: true });
+      }
+    }, 45000);
+  }
+
+  test("monorepo drive waits for asynchronous controls beyond five seconds", async () => {
+    const events: { trusted: boolean; elapsed: number }[] = [];
+    const server = Bun.serve({ port: 0, hostname: "127.0.0.1", async fetch(request) {
+      if (new URL(request.url).pathname === "/event") {
+        events.push(await request.json());
+        return new Response("ok");
+      }
+      return new Response(`<!doctype html><html><style>body{background:#234;color:white}button{margin:30px;padding:20px}</style>
+        <button id="load">Load controls</button><button id="save" hidden>Late save</button><script>
+        let started = 0;
+        document.querySelector('#load').onclick = () => { started = performance.now(); setTimeout(() => { document.querySelector('#save').hidden = false; }, 5800); };
+        document.querySelector('#save').onclick = event => fetch('/event',{method:'POST',body:JSON.stringify({trusted:event.isTrusted,elapsed:performance.now()-started})});
+        requestAnimationFrame(() => requestAnimationFrame(() => document.documentElement.dataset.jgCapture='ready'));
+        </script></html>`, { headers: { "content-type": "text/html" } });
+    } });
+    const project = mkdtempSync(join(tmpdir(), "jg-delayed-controls-"));
+    writeFileSync(join(project, "package.json"), JSON.stringify({ dependencies: { "@jgengine/shell": "*" } }));
+    try {
+      const child = Bun.spawn([process.execPath, resolve(import.meta.dir, "../../../scripts/drive-dev.ts"), "--url", server.url.toString(), "--click", "Load controls", "--click", "Late save", "--wait", "100", "--rpc", "{}"], { cwd: project, stdout: "pipe", stderr: "pipe", env: { ...process.env, JG_CHROME_PORT: "1" } });
+      const [exit, stderr] = await Promise.all([child.exited, new Response(child.stderr).text()]);
+      expect(stderr).not.toContain("no settled actionable element");
+      expect(exit).toBe(0);
+      expect(events).toHaveLength(1);
+      expect(events[0]?.trusted).toBe(true);
+      expect(events[0]?.elapsed).toBeGreaterThanOrEqual(5800);
+    } finally {
+      server.stop(true);
+      rmSync(project, { recursive: true, force: true });
+    }
+  }, 30000);
+
+  test("fill target checks reject occluded, disabled, readonly, inert and hidden fields", async () => {
     const port = 10000 + Math.floor(Math.random() * 10000);
-    const chrome = browser.launchChrome(port, "jg-harness-test-");
+    const chrome = browser.launchChrome(port, "jg-fill-guard-test-");
+    const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("<label>Name<input value='Old'></label>", { headers: { "content-type": "text/html" } }) });
     let session;
     try {
       await browser.waitForDebugger(port, 30000);
       session = await browser.openPage(port);
       await session.send("Page.enable");
       await session.send("Runtime.enable");
-      await session.send("Page.navigate", { url: "data:text/html,<meta name='viewport' content='width=device-width,initial-scale=1'><button style='width:100px;height:100px'>Tap</button>" });
+      await session.send("Page.navigate", { url: server.url.toString() });
+      await session.evaluate(browser.RAF_EXPR, { awaitPromise: true });
+      expect(await session.evaluate(browser.driveInputPointExpr("Name", true))).not.toBeNull();
+      for (const attribute of ["disabled", "readonly", "aria-disabled", "inert", "hidden"]) {
+        await session.evaluate(`document.querySelector('input').setAttribute('${attribute}', '${attribute === "aria-disabled" ? 'true' : ''}')`);
+        expect(await session.evaluate(browser.driveInputPointExpr("Name", true))).toBeNull();
+        await session.evaluate(`document.querySelector('input').removeAttribute('${attribute}')`);
+      }
+      await session.evaluate("document.body.insertAdjacentHTML('beforeend','<div style=\"position:fixed;inset:0;background:white;z-index:10\"></div>')");
+      expect(await session.evaluate(browser.driveInputPointExpr("Name", true))).toBeNull();
+      expect(await session.evaluate("document.querySelector('input').value")).toBe("Old");
+    } finally {
+      session?.close();
+      browser.shutdown(chrome, null);
+      server.stop(true);
+    }
+  }, 40000);
+
+  test("mobile profiles expose touch and coarse pointer; desktop clears both on the same page", async () => {
+    const port = 10000 + Math.floor(Math.random() * 10000);
+    const chrome = browser.launchChrome(port, "jg-harness-test-");
+    const server = Bun.serve({ port: 0, hostname: "127.0.0.1", fetch: () => new Response("<meta name='viewport' content='width=device-width,initial-scale=1'><button style='width:100px;height:100px'>Tap</button>", { headers: { "content-type": "text/html" } }) });
+    let session;
+    try {
+      await browser.waitForDebugger(port, 30000);
+      session = await browser.openPage(port);
+      await session.send("Page.enable");
+      await session.send("Runtime.enable");
+      await session.send("Page.navigate", { url: server.url.toString() });
       await browser.sleep(100);
       const desktopFine = await session.evaluate("matchMedia('(pointer: fine)').matches");
       for (const name of ["mobile", "mobile-landscape", "desktop"]) {
@@ -48,6 +148,7 @@ describe.skipIf(!hasChrome)("portable harness in Chromium", () => {
     } finally {
       session?.close();
       browser.shutdown(chrome, null);
+      server.stop(true);
     }
   }, 40000);
 

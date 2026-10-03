@@ -1,3 +1,4 @@
+import type { AuthoredSimulationRuntime } from "../world/authoredSimulation";
 import type { Territory } from "../world/territory";
 import type { CurrencyDefinition } from "../economy/currency";
 import type { CardPile, CardPileConfig } from "../cards/cardPile";
@@ -311,6 +312,10 @@ export interface SceneEntityContext {
   willHitProjectile: ProjectileSystem["willHitProjectile"];
   fireProjectile: ProjectileSystem["fireProjectile"];
   settleProjectile: ProjectileSystem["settleProjectile"];
+  /** Live travel poses for game-owned arrow/projectile appearance. */
+  activeProjectiles: ProjectileSystem["activeProjectiles"];
+  projectileState: ProjectileSystem["snapshot"];
+  restoreProjectiles: ProjectileSystem["restore"];
   distance: SpatialApi["distance"];
   inRadius: SpatialApi["inRadius"];
   hasLineOfSight: SpatialApi["hasLineOfSight"];
@@ -498,6 +503,8 @@ export interface GameContext {
     raycastAll(input: SceneRaycastInput): readonly SceneRaycastHit[];
   };
   world: GameContextWorld;
+  /** Authored weather, shelter, accumulation and fire sampled from ctx.time. */
+  environment: AuthoredSimulationRuntime;
   /**
    * Deterministic `[0,1)` stream for this world — loot, AI, combat rolls, and any sim path that
    * needs randomness. Same seed → same sequence. Never fall back to `Math.random` in systems;

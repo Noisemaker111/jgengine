@@ -724,7 +724,7 @@
 - `HOVER_FLIGHT_TUNING` (const): const HOVER_FLIGHT_TUNING: FreeFlightTuning — Preset for hover/jetpack — gravity + thrust, useful for short bursts.
 - `NOCLIP_FLIGHT_TUNING` (const): const NOCLIP_FLIGHT_TUNING: FreeFlightTuning — Preset for noclip — weightless, noclips, yaw-relative with independent vertical.
 - `SPECTATOR_FLIGHT_TUNING` (const): const SPECTATOR_FLIGHT_TUNING: FreeFlightTuning — Preset for spectator — weightless, noclips, flies where the camera looks.
-- `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
+- `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning, options?: Pick<MotionFrameOptions, "authoritativeStep">): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
 - `createFreeFlightController` (function): function createFreeFlightController(initialTuning: FreeFlightTuning, options: { yaw?: number; pitch?: number; state?: FreeFlightState } = {}): FreeFlightController — Totally free flight for any actor — character, camera, drone, or debug rig. Horizontal is always yaw-relative strafe; vertical is jump/crouch. Use `alignWithLook` for a 6DOF spectator that flies where the camera looks.
 - `createFreeFlightState` (function): function createFreeFlightState(): FreeFlightState — Create an empty flight velocity state.
 - `resolveFlightStep` (function): function resolveFlightStep(position: readonly [number, number, number], stepX: number, stepY: number, stepZ: number, obstacles: readonly CollisionObstacle[], radius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS): { stepX: number; stepY: number; stepZ: number } — Resolve a flight step against world solids (XZ slide + Y clamp).
@@ -835,7 +835,7 @@
 - `SolidQuery` (type): type SolidQuery = (x: number, y: number, z: number) => boolean — ⚠ undocumented · used by `advanceVoxelPlayer`: Advance one frame of voxel-collided player kinematics.
 - `VoxelPlayerBody` (interface): interface VoxelPlayerBody — Mutable kinematic state carried between frames by the voxel controller.
 - `VoxelPlayerDims` (interface): interface VoxelPlayerDims — Footprint + height of the player box, in world units.
-- `advanceVoxelPlayer` (function): function advanceVoxelPlayer(body: VoxelPlayerBody, intent: MovementIntent, forwardX: number, forwardZ: number, baseSpeed: number, rawDeltaSeconds: number, isSolid: SolidQuery, dims: VoxelPlayerDims = DEFAULT_VOXEL_DIMS, tuning?: MovementTuningOverrides, groundHeight?: GroundHeightQuery): void — Advance one frame of voxel-collided player kinematics. Mutates `body` (position, velocity, grounded) in place.
+- `advanceVoxelPlayer` (function): function advanceVoxelPlayer(body: VoxelPlayerBody, intent: MovementIntent, forwardX: number, forwardZ: number, baseSpeed: number, rawDeltaSeconds: number, isSolid: SolidQuery, dims: VoxelPlayerDims = DEFAULT_VOXEL_DIMS, tuning?: MovementTuningOverrides, groundHeight?: GroundHeightQuery, options?: Pi… — Advance one frame of voxel-collided player kinematics. Mutates `body` (position, velocity, grounded) in place.
 - `createVoxelPlayerBody` (function): function createVoxelPlayerBody(x: number, y: number, z: number): VoxelPlayerBody — ⚠ undocumented
 
 ## @jgengine/core/nav/corridors
@@ -1001,10 +1001,12 @@
 
 ## @jgengine/core/physics/ballisticSweep
 
-- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
+- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies.
 - `BallisticSweepHit` (interface): interface BallisticSweepHit { point: [number, number, number]; time: number } — ⚠ undocumented
-- `BallisticSweepOptions` (interface): interface BallisticSweepOptions { step?: number; radius?: number } — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
-- `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
+- `BallisticSweepOptions` (interface): interface BallisticSweepOptions { step?: number; radius?: number } — ⚠ undocumented · used by `createBallisticSweep`: Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies.
+- `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies. Thin cover between samples blocks; `step` controls the approximation of the curved path.
+- `sweepMovingBounds` (function): function sweepMovingBounds(from: readonly [number, number, number], to: readonly [number, number, number], targetFrom: readonly [number, number, number], targetTo: readonly [number, number, number], halfExtents: readonly [number, number, number]): number | null — Contact fraction for a point segment against a translating axis-aligned box; inflate extents for a projectile radius.
+- `sweepMovingSphere` (function): function sweepMovingSphere(from: readonly [number, number, number], to: readonly [number, number, number], targetFrom: readonly [number, number, number], targetTo: readonly [number, number, number], radius: number): number | null — Contact fraction for a point segment against a translating sphere; add the projectile radius to `radius`.
 
 ## @jgengine/core/physics/boatDynamics
 
@@ -1071,7 +1073,9 @@
 
 ## @jgengine/core/physics/forceVolume
 
+- `ForceFieldConfig` (interface): interface ForceFieldConfig — Renderer-free localized acceleration shared by physical actors and cosmetic particles.
 - `ForceMode` (type): type ForceMode = "impulse" | "velocity" | "accelerate" — ⚠ undocumented · used by `applyVolumeForce`: One tick's force math for a body outside `PhysicsWorld` — apply the returned velocity in any custom integrator.
+- `ForceVector` (type): type ForceVector = readonly [number, number, number] — World-space force position, axis or acceleration vector.
 - `ForceVolume` (class): class ForceVolume — A trigger region that pushes bodies passing through it — boost pads (`impulse` + `once`), conveyors (`velocity`), fans/wind (`accelerate`). Call `apply` each tick; `once` mode fires only on entry by tracking membership between ticks.
 - `ForceVolumeConfig` (interface): interface ForceVolumeConfig { bounds: PhysicsBounds; force: readonly [number, number, number]; mode?: ForceMode; once?: boolean } — ⚠ undocumented
 - `PlatformCarry` (class): class PlatformCarry — Carries bodies standing on a moving platform by composing their transform with the platform's per-`step` delta — moving/rotating lifts and conveyor floors (Fall Guys, Gang Beasts). The platform is a body the game repositions each frame; riders are detected by overlap on its top face.
@@ -1081,6 +1085,8 @@
 - `VolumeTriggerStep` (interface): interface VolumeTriggerStep<TId> { entered: readonly TId[]; inside: readonly TId[]; exited: readonly TId[] } — ⚠ undocumented
 - `applyVolumeForce` (function): function applyVolumeForce(velocity: readonly [number, number, number], force: readonly [number, number, number], mode: ForceMode, dt: number): readonly [number, number, number] — One tick's force math for a body outside `PhysicsWorld` — apply the returned velocity in any custom integrator.
 - `createVolumeTrigger` (function): function createVolumeTrigger<TId = string>(config: VolumeTriggerConfig): VolumeTrigger<TId> — ⚠ undocumented
+- `sampleForceField` (function): function sampleForceField(config: ForceFieldConfig, position: ForceVector, targetMask = 0xffffffff, out: [number, number, number] = [0, 0, 0]): [number, number, number] — Sample localized acceleration; `out` permits allocation-free integration.
+- `validateForceField` (function): function validateForceField(config: ForceFieldConfig): void — Validate force authoring once before sampling in a hot loop. Coordinates stay within the safe integer range; acceleration magnitudes stay within 1e12 units/s².
 
 ## @jgengine/core/physics/gravityField
 
@@ -1885,21 +1891,32 @@
 - `ParticleAttachOptions` (interface): interface ParticleAttachOptions — Options for {@link ParticleDirector.attach}.
 - `ParticleBlendHint` (type): type ParticleBlendHint = "additive" | "normal" — How a particle effect composites on screen: `additive` for sparks/fire/glow, `normal` for smoke/dust.
 - `ParticleBurst` (interface): interface ParticleBurst — A one-shot burst request — consumed once by the renderer, never serialized.
+- `ParticleCollisionEffect` (interface): interface ParticleCollisionEffect — A bounded collision child effect; children cannot spawn further collision children.
 - `ParticleDirector` (interface): interface ParticleDirector — The game-side seam for particle effects. Game logic requests one-shot bursts and standing emitters as plain data; the shell renders them through `createParticleSystem`/`ParticleField`, applies the graphics-quality particle cap, and tracks `follow` entities. Nothing here touches a renderer, so commands and `onTick` systems can drive VFX headlessly and tests can assert the requested effects.
+- `ParticleDirectorEvent` (interface): interface ParticleDirectorEvent extends ParticleEvent — A cosmetic simulation event, labelled with its emitting effect.
+- `ParticleDirectorOptions` (interface): interface ParticleDirectorOptions — Bounded storage policy for transient effects and event exchange.
 - `ParticleDirectorState` (interface): interface ParticleDirectorState — Serializable director state: the standing emitters (bursts are transient by nature).
-- `ParticleEmitterSpec` (interface): interface ParticleEmitterSpec — A keyed continuous emitter owned by the director until detached.
-- `createParticleDirector` (function): function createParticleDirector(): ParticleDirector — Create the particle intent registry a `GameContext` exposes as `ctx.particles`. State is data-only and serializable: standing emitters survive `snapshot`/`restore`, queued bursts are transient. The renderer subscribes, drains bursts, and mirrors the emitter list — the director never allocates particle pools itself.
+- `ParticleEmitterSpec` (interface): interface ParticleEmitterSpec extends ParticleAttachOptions — A keyed continuous emitter owned by the director until detached.
+- `ParticleRenderHint` (interface): interface ParticleRenderHint — Render output selected independently of particle spawn and simulation.
+- `createParticleDirector` (function): function createParticleDirector(options: ParticleDirectorOptions = {}): ParticleDirector — Create the particle intent registry a `GameContext` exposes as `ctx.particles`. State is data-only and serializable: standing emitters survive `snapshot`/`restore`, queued bursts are transient. The renderer subscribes, drains bursts, and mirrors the emitter list — the director never allocates particle pools itself.
+- `validateParticleAttachOptions` (function): function validateParticleAttachOptions(value: unknown): string[] — Validate serializable binding, output, and bounded collision-child descriptors.
 
 ## @jgengine/core/vfx/particles
 
 - `Curve` (interface): interface Curve — A per-life start→end curve (linear interpolation from birth to death).
 - `EmitterConfig` (interface): interface EmitterConfig — A particle emitter: how particles spawn and how each one evolves over its life. Every field is data — no functions — so an emitter is fully serializable and an editor/tunable can drive it. Genre-agnostic: smoke, sparks, rain, magic, dust.
 - `ParticleBuffers` (interface): interface ParticleBuffers — Read-only packed buffers of the live particles, laid out for a renderer to upload directly (Structure-of-Arrays, no per-particle objects). Only the first `count` entries are live; the arrays themselves are reused every frame.
+- `ParticleCollisionConfig` (interface): interface ParticleCollisionConfig — Bounded particle contact policy; a query adapter can replace the fallback horizontal plane.
+- `ParticleCollisionHit` (interface): interface ParticleCollisionHit — One contact from an injected scene query, in simulation coordinates.
+- `ParticleEvent` (interface): interface ParticleEvent — Presentation events never authorize gameplay damage or physical impulses.
 - `ParticleSnapshot` (interface): interface ParticleSnapshot — Serializable simulation state for save/restore and deterministic replay.
+- `ParticleSpawnShape` (interface): interface ParticleSpawnShape — Serializable spawn volume in emitter coordinates; cone widens from its base along +Y.
 - `ParticleSystem` (interface): interface ParticleSystem — A live, dt-driven particle simulation.
+- `ParticleSystemOptions` (interface): interface ParticleSystemOptions — Optional geometry adapter; queries are capped independently of rendering.
 - `Range` (interface): interface Range — A `[min, max]` range a spawned particle draws uniformly from.
 - `Vec3` (type): type Vec3 = readonly [number, number, number] — A 3D vector `[x, y, z]`.
-- `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
+- `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}, options: ParticleSystemOptions = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
+- `validateEmitterConfig` (function): function validateEmitterConfig(value: unknown): string[] — Validate the serializable spawn/update descriptor before authoring or loading it.
 
 ## @jgengine/core/vfx/screenEffects
 
@@ -2051,7 +2068,7 @@
 - `AutoTargetPolicy` (type): type AutoTargetPolicy = | "nearest" | "farthest" | "random" | "strongest" | "weakest" | "first" | "last" — ⚠ undocumented
 - `AvoidZone` (interface): interface AvoidZone — A circular clearance around a gameplay spot (spawn, plot, path point, POI): scatter is repelled from it and terrain is flattened toward its center. `feather` (meters) is the soft outer band — full effect within `radius - feather`, ramping to zero at `radius`.
 - `AvoidanceAgent` (interface): interface AvoidanceAgent — A circular agent that avoidance may push on the XZ plane.
-- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — …
+- `BallisticSweep` (type): type BallisticSweep = ( origin: readonly [number, number, number], velocity: readonly [number, number, number], gravity: number, maxTime: number, ) => BallisticSweepHit | null — ⚠ undocumented · used by `createBallisticSweep`: Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies.
 - `BallisticSweepHit` (interface): interface BallisticSweepHit { point: [number, number, number]; time: number } — ⚠ undocumented
 - `BandTrimOptions` (interface): interface BandTrimOptions extends JunctionGeometryOptions — Options for {@link trimBandAtJunctions} — junction geometry tunables plus a band-specific clearance.
 - `BehaviorAction` (type): type BehaviorAction = DecisionAction<BehaviorActionContext> — Callback used by a registered decision graph behavior action.
@@ -2184,7 +2201,7 @@
 - `FastTravelNetwork` (interface): interface FastTravelNetwork<TMeta = unknown> — A network of fast-travel points with per-player discovery + distance queries.
 - `FastTravelOptions` (interface): interface FastTravelOptions<TMeta = unknown> — Options for {@link createFastTravelNetwork}.
 - `FastTravelSnapshot` (interface): interface FastTravelSnapshot — Serializable discovery state.
-- `FireGrid` (interface): interface FireGrid { readonly cols: number; readonly rows: number; step(dt: number, options?: FireStepOptions): void; igniteCell(col: number, row: number): void; ignite(x: number, z: number): boolean; cell(col: number, row: number): FireCell; cellAt(x: number… — ⚠ undocumented
+- `FireGrid` (interface): interface FireGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly origin: readonly [number, number]; step(dt: number, options?: FireStepOptions): void; igniteCell(col: number, row: number): void; extinguishCell(col: number… — ⚠ undocumented
 - `FlatGround` (interface): interface FlatGround — A 3D walkable plane/slab. `Infinity` axes are unbounded; no separate "infinite" mode exists.
 - `FlatGroundSize` (interface): interface FlatGroundSize — Size of a `flat` ground: extents in world units. `Infinity` on an axis means unbounded — an endless plain needs no bounds number invented for it. `y` optionally bounds vertical play space.
 - `FlightControlInput` (interface): interface FlightControlInput — Normalized pilot inputs for one flight-simulation tick.
@@ -2574,7 +2591,7 @@
 - `WorldXZ` (type): type WorldXZ = readonly [number, number] — ⚠ undocumented · used by `compassBearing`: Compass bearing (radians, 0 = map north = −Z, increasing clockwise toward +X = east) from one world XZ point to another.
 - `acquireTarget` (function): function acquireTarget(policy: AcquisitionPolicy, selfId: string, held: string | null = null): AcquisitionResult — Run one acquisition pass and pick the best target under `policy`. Pass the currently `held` target so retention hysteresis (`switchMargin`, `dropRangeScale`) can keep the lock stable; pass `null` for a cold acquire. Pure and allocation-light — the caller owns the held-target state.
 - `advanceBehaviors` (function): function advanceBehaviors(ctx: GameContext, dt: number): void — Advance every spawned entity carrying a `patrol` or `wander` {@link BehaviorDescriptor} one tick — the engine reads the descriptor, keeps the per-entity nav state itself, and poses the entity, so ambient traffic and idle NPC routes are register-once (attach the behavior at spawn) instead of a per-game per-frame `advancePathFollow` + `setPose` loop. Instances that are paused or disabled through {@link behaviorControl} retain their state and are skipped. The shell/host call this each frame; a game never does.
-- `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
+- `advanceFreeFlight` (function): function advanceFreeFlight(state: FreeFlightState, intent: FreeFlightIntent, yaw: number, pitch: number | undefined, dt: number, tuning: FreeFlightTuning, options?: Pick<MotionFrameOptions, "authoritativeStep">): FreeFlightStep — Advance one frame of free-flight kinematics. Horizontal uses yaw-relative strafe (A = left, D = right) — never roll/bank. Vertical is independent of pitch unless `alignWithLook` is true (spectator).
 - `advanceInterestGate` (function): function advanceInterestGate(state: InterestGateState, config: InterestSchedulerConfig, dt: number, input: InterestGateInput = {}): InterestGateStep — Advance one gate by `dt` seconds against this tick's `input`, mutating `state` in place and returning what the caller should do. Sleeping skips the expensive work (`active: false`) while the gate's timers keep advancing, so state is preserved; a `wake` signal or crossing `wakeRadius` flips it back to active and fires an immediate tick.
 - `advancePathFollow` (function): function advancePathFollow(config: PathFollowConfig, state: PathFollowState, dt: number): PathFollowState — Advance a path-follower by `speed * dt` along its authored polyline. Pure — returns the next state. Crosses multiple waypoints in one step, loops when configured, and reports `done` at the end of a non-looping path. No navmesh required (#52); feed it a navmesh route via `pathFromNav` for click-to-move (#51).
 - `advanceSpawnDirector` (function): function advanceSpawnDirector(config: SpawnDirectorConfig, state: SpawnDirectorState, dt: number, ctx: DirectorContext): DirectorStep — ⚠ undocumented
@@ -2627,7 +2644,7 @@
 - `createAreaEffectField` (function): function createAreaEffectField<P = unknown>(state?: AreaFieldState<P>): AreaEffectField<P> — Build a continuous area-effect field. Drive it with `setSource` (once per live source per tick, so shapes follow their emitters) and `step` (to reconcile membership and drain enter/refresh/leave edges). Optionally restore prior membership by passing a `serialize()` snapshot; re-`setSource` live shapes before the first `step` after restore, since shapes are transient.
 - `createAssetCatalog` (function): function createAssetCatalog<TMeta extends ModelAssetRef = ModelAssetRef>(): AssetCatalog<TMeta> — ⚠ undocumented
 - `createAuthoredTriggerRuntime` (function): function createAuthoredTriggerRuntime(options: { document: SceneDocumentLike; handlers?: TriggerHandlers; /** Invoked for every dispatch after the matching handler (if any). */ onDispatch?: (event: TriggerDispatchEvent) => void; /** Override the collected trigger list (tests / hot-reload). Default: … — Build a runtime that watches a document's authored triggers against moving actors and dispatches to per-action handlers (and optional catch-all). Pure membership math; the game supplies actors each tick from its own player/entity poses.
-- `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Marches the closed-form arc (constant gravity, straight lateral) through `world` and reports the first sample inside any live body's AABB — sleeping bodies included — refined by one bisection between the last clear sample and the hit sample. Returns `null` when the whole arc is clear.
+- `createBallisticSweep` (function): function createBallisticSweep(world: PhysicsWorld, options: BallisticSweepOptions = {}): BallisticSweep — Sweeps each short chord of the closed-form arc through live body AABBs, including sleeping bodies. Thin cover between samples blocks; `step` controls the approximation of the curved path.
 - `createBodyBind` (function): function createBodyBind(deps: BodyBindDeps): BodyBind — Mirror a sim's body snapshots onto scene entities each tick — spawn on first sight, pose while bound, despawn on drop — replacing a per-body `setPose` loop plus its `despawn`/`spawn` respawn dance.
 - `createBuoyantBody` (function): function createBuoyantBody(world: PhysicsWorld, config: BuoyantBodyConfig): BuoyantBody — ⚠ undocumented
 - `createCameraShake` (function): function createCameraShake(config: CameraShakeConfig = {}): CameraShakeController — A seeded, serializable, trauma-based camera shake / impulse controller. A game calls `add(amount, kind?)` on impacts (a hit, an explosion, a landing) to raise trauma in `[0, 1]`; `update(dt)` bleeds it off over time; and `offset()` returns a pooled `{ x, y, z, pitch, yaw, roll }` kick equal to `trauma^exponent` times per-axis maxima times deterministic seeded value-noise sampled along an internal time cursor. A shell consumer applies that offset to the active camera each frame so the view visibly shakes. Nothing here is genre-specific: `kind` is a free label the game styles, all amplitudes/decay are parameters, and `snapshot`/ `restore` round-trips the shake through a save. Deterministic from `seed`: the same seed and dt sequence reproduce the same offsets.
@@ -2659,7 +2676,7 @@
 - `createNavMeshQuery` (function): function createNavMeshQuery(mesh: NavMeshData, options: NavMeshQueryOptions = {}): NavMeshQuery — Create a cached query over a nav mesh: height-aware polygon lookup through a uniform grid, binary-heap A* priced by area costs and bounded by `maxNodes`, portal-funnel path straightening, and edge-walking raycasts.
 - `createOrderQueue` (function): function createOrderQueue<TCtx, TPayload = unknown>(registry: OrderRegistry<TCtx>, options: OrderQueueOptions<TPayload> = {}): OrderQueue<TCtx, TPayload> — Create a per-entity order queue over a shared kind registry. The queue owns the deterministic lifecycle and preemption policy; the kinds own behavior. Nothing here is random or unbounded: id generation is injected, activation is bounded by the pending count, and a single `tick` advances at most the active order plus one activation.
 - `createOrderRegistry` (function): function createOrderRegistry<TCtx>(): OrderRegistry<TCtx> — Build an empty order-kind registry. Register the built-in compositions from `orders/orderKinds` or your own verbs, then hand it to `createOrderQueue`. One registry is shared by many per-entity queues.
-- `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
+- `createParticleSystem` (function): function createParticleSystem(config: EmitterConfig = {}, options: ParticleSystemOptions = {}): ParticleSystem — A generic, allocation-aware particle system: one emitter, a fixed pool, and Structure-of-Arrays buffers a renderer uploads straight to the GPU. It is dt-driven (call `update(dt)` each frame) and deterministic — all randomness flows from an injected `seed`, so the same seed and dt sequence reproduce the same frames, and `snapshot`/`restore` round-trips the live pool. Nothing here is combat- or genre-specific: configure it for smoke, sparks, rain, dust, embers, magic, or confetti. Travel/gameplay stays elsewhere; this owns only the spawn-integrate-fade lifecycle.
 - `createPathFollow` (function): function createPathFollow(config: PathFollowConfig): PathFollowState — ⚠ undocumented
 - `createPlacedStructureStore` (function): function createPlacedStructureStore(): PlacedStructureStore — ⚠ undocumented
 - `createPlacementController` (function): function createPlacementController(config: PlacementControllerConfig): PlacementController — Headless placement ghost: hover → valid/invalid preview, rotate, grid/free/surface snap, commit. Pair with `@jgengine/shell/structures` `PlacementGhost` and {@link placeAssetFromCommit}.
@@ -2922,6 +2939,16 @@
 - `placeAuthoredObjects` (function): function placeAuthoredObjects(store: AuthoredObjectPlaceTarget, objects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Places resolved authored objects into an object store, grounding each on `sampleHeight(x,z)` plus per-object and options vertical offsets. Returns the instance ids that were placed (or kept).
 - `placeAuthoredObjectsFromDocument` (function): function placeAuthoredObjectsFromDocument(store: AuthoredObjectPlaceTarget, document: AuthoredObjectsDocumentLike, sampleHeight: (x: number, z: number) => number, options: PlaceAuthoredObjectsOptions = {}): string[] — Convenience: resolve a document then place every authored catalog prop.
 - `resolveAuthoredObjects` (function): function resolveAuthoredObjects(document: AuthoredObjectsDocumentLike, options: ResolveAuthoredObjectsOptions = {}): AuthoredObject[] — Every marker carrying a catalog id, as placeable props — pure, no terrain sample. Parallel to {@link resolveScatter}: games and headless tests read the same list `<AuthoredObjects>` places. Entity-spawn kinds (`mob`/`boss`) are skipped by default — they carry a `catalogId` for their entity definition, but are spawned via `authoredEntitySpawns`, not placed as static meshes.
+- `syncAuthoredObjects` (function): function syncAuthoredObjects(store: AuthoredObjectPlaceTarget & { remove(instanceId: string): boolean }, objects: readonly AuthoredObject[], previousObjects: readonly AuthoredObject[], sampleHeight: (x: number, z: number) => number, options: Pick<PlaceAuthoredObjectsOptions, "verticalOffset"> = {}):… — Update changed authored placements and remove previous authored ids absent from the next document. Initial placement keeps game onInit state; unrelated document edits preserve runtime prop state. Call on document changes, never on simulation ticks; runtime-created objects remain untouched.
+
+## @jgengine/core/world/authoredSimulation
+
+- `AuthoredFlockState` (interface): interface AuthoredFlockState — A habitat's live poses; game species determine appearance and gameplay actor policy.
+- `AuthoredSimulationRuntime` (interface): interface AuthoredSimulationRuntime — Engine-owned authority uses the caller's simulation clock; render quality cannot change it.
+- `AuthoredSimulationSnapshot` (interface): interface AuthoredSimulationSnapshot — Runtime state excludes authored configuration and cosmetic particle pools.
+- `AuthoredSurface` (interface): interface AuthoredSurface extends WeatherExposureSurface — A watched surface is sampled in metres. Its accumulation survives runtime save/restore.
+- `EnvironmentAppearanceSignals` (interface): interface EnvironmentAppearanceSignals — Appearance adapters consume these units without owning weather state or its clock.
+- `createAuthoredSimulation` (function): function createAuthoredSimulation(options: { document?: EditorDocument; timeSeconds: () => number; particles?: ParticleDirector; maxSurfaces?: number }): AuthoredSimulationRuntime — Compose authored weather, shelter, accumulation, named effect intents and fire with one clock.
 
 ## @jgengine/core/world/authoredSolids
 
@@ -2939,6 +2966,27 @@
 - `authoredSpawnPosition` (function): function authoredSpawnPosition(document: AuthoredSpawnDocumentLike, options: AuthoredSpawnOptions = {}): [number, number, number] | null — Position of the authored spawn marker as a spawn-ready `[x, y, z]` tuple, or null when the document has none. Reads the first `player_spawn` marker by default, so dragging the marker in the editor moves where players spawn — no coordinates copied into game code.
 - `authoredSpawnRotation` (function): function authoredSpawnRotation(document: AuthoredSpawnDocumentLike, options: AuthoredSpawnOptions = {}): number — Facing (yaw radians) of the authored spawn marker, or 0 when the document has none — pair with {@link authoredSpawnPosition} to spawn players where and how the editor placed them.
 - `markersOfKind` (function): function markersOfKind<TMarker extends AuthoredSpawnMarkerLike>(document: { markers: readonly TMarker[] }, kind: string): TMarker[] — Every marker of `kind`, in document order — the generic query behind gameplay that references authored markers by kind instead of copying coordinates into code.
+
+## @jgengine/core/world/authoredWeather
+
+- `AuthoredWeather` (interface): interface AuthoredWeather — Pure spatial weather queries using the caller’s authoritative simulation clock.
+- `AuthoredWeatherConfig` (interface): interface AuthoredWeatherConfig — Serializable weather lists capped at 256 entries. Wind amplitudes and direction components are bounded to 1e6, gust frequency to 1000 Hz; coordinates and times to 1e12 metres/seconds.
+- `AuthoredWeatherMode` (type): type AuthoredWeatherMode = "clear" | "rain" | "snow" | "mixed" | "dust" — Wind is metres/second along world X,Z; world Y points up. Times are simulation seconds.
+- `AuthoredWeatherProfile` (interface): interface AuthoredWeatherProfile extends WeatherConditions — A named set of conditions referenced by the authored schedule.
+- `AuthoredWeatherSample` (interface): interface AuthoredWeatherSample extends WeatherConditions — Resolved conditions and wind at a world point and absolute simulation time.
+- `AuthoredWeatherTransition` (interface): interface AuthoredWeatherTransition — An absolute simulation-time profile change with an optional continuous blend.
+- `AuthoredWeatherZone` (interface): interface AuthoredWeatherZone — A local weather override and additive wind source centered in world X,Z metres.
+- `WeatherConditions` (interface): interface WeatherConditions — Precipitation intensity, temperature offset in degrees, and normalized lightning brightness.
+- `WeatherExposure` (interface): interface WeatherExposure — Bounded surface accumulation with restoration, live rate tuning and explicit release.
+- `WeatherExposureConfig` (interface): interface WeatherExposureConfig — Surface capacity and normalized wetting, drying, snowfall and melting rates per second.
+- `WeatherExposureSample` (interface): interface WeatherExposureSample — Retained normalized wetness and snow coverage, temperature, and sky exposure.
+- `WeatherExposureSnapshot` (interface): interface WeatherExposureSnapshot — Detached accumulation values keyed by retained surface id.
+- `WeatherExposureStorage` (interface): interface WeatherExposureStorage — Injected persistence for detached surface accumulation snapshots.
+- `WeatherExposureSurface` (interface): interface WeatherExposureSurface — A stable surface id and world X,Z position with explicit sky exposure and temperature.
+- `createAuthoredWeather` (function): function createAuthoredWeather(source: AuthoredWeatherConfig = {}): AuthoredWeather — Pure authored weather sampling; the caller's simulation clock owns pause, replay and restore.
+- `createWeatherEnvironmentField` (function): function createWeatherEnvironmentField(weather: AuthoredWeather, config: Omit<EnvironmentFieldConfig, "rain"> = {}): EnvironmentField — Environment temperature, sunlight and shelter read the same authored precipitation as rendering.
+- `createWeatherExposure` (function): function createWeatherExposure(config: WeatherExposureConfig = {}, storage?: WeatherExposureStorage): WeatherExposure — Bounded surface accumulation shared by gameplay and material adapters, with injected persistence.
+- `validateAuthoredWeather` (function): function validateAuthoredWeather(config: AuthoredWeatherConfig): void — Validate authoring references and work bounds before persisting a weather document.
 
 ## @jgengine/core/world/buildPermissions
 
@@ -3224,6 +3272,11 @@
 - `ScalarField` (type): type ScalarField = number | ((x: number, z: number, time: number) => number) — ⚠ undocumented
 - `ShadeProvider` (type): type ShadeProvider = readonly OccluderRect[] | ((x: number, z: number) => number) — ⚠ undocumented
 - `createEnvironmentField` (function): function createEnvironmentField(config: EnvironmentFieldConfig = {}): EnvironmentField — A sampleable environment field: read temperature, wetness, sun/sky exposure, and ambient light at any world position and time. Built on the same renderer-free footing as terrain/wind/water so meters, spawn gating, and damage-in-sunlight read the world the shell renders — no three.js. Instantaneous and pure (no accumulation); stateful build-up belongs to a decay meter reading this field.
+
+## @jgengine/core/world/environmentForces
+
+- `EnvironmentMotionTarget` (interface): interface EnvironmentMotionTarget — The game selects affected players, coupling, target bits and its acceleration limit.
+- `installEnvironmentMotion` (function): function installEnvironmentMotion(ctx: GameContext, options: { targets: () => readonly EnvironmentMotionTarget[]; maxTargets?: number }): () => void — Inject authoritative spatial forces before existing movement consumes its motion intents.
 
 ## @jgengine/core/world/environmentSummary
 
@@ -4032,9 +4085,10 @@
 
 - `FireCell` (interface): interface FireCell { fuel: number; heat: number; state: FireCellState } — ⚠ undocumented
 - `FireCellState` (type): type FireCellState = "unburnt" | "burning" | "burnt" — ⚠ undocumented
-- `FireGrid` (interface): interface FireGrid { readonly cols: number; readonly rows: number; step(dt: number, options?: FireStepOptions): void; igniteCell(col: number, row: number): void; ignite(x: number, z: number): boolean; cell(col: number, row: number): FireCell; cellAt(x: number… — ⚠ undocumented
-- `FireGridConfig` (interface): interface FireGridConfig { cols: number; rows: number; cellSize: number; origin?: readonly [number, number]; fuelAt?: (col: number, row: number) => number; ignitionThreshold?: number; spreadRate?: number; burnRate?: number; wind?: WindVector; windBias?: number } — ⚠ undocumented
-- `FireStepOptions` (interface): interface FireStepOptions { spread?: number; wetnessAt?: (col: number, row: number) => number } — ⚠ undocumented
+- `FireGrid` (interface): interface FireGrid { readonly cols: number; readonly rows: number; readonly cellSize: number; readonly origin: readonly [number, number]; step(dt: number, options?: FireStepOptions): void; igniteCell(col: number, row: number): void; extinguishCell(col: number… — ⚠ undocumented
+- `FireGridConfig` (interface): interface FireGridConfig { cols: number; rows: number; cellSize: number; origin?: readonly [number, number]; fuelAt?: (col: number, row: number) => number; ignitionThreshold?: number; spreadRate?: number; burnRate?: number; wind?: WindVector; windBias?: number; max… — ⚠ undocumented
+- `FireGridTuning` (type): type FireGridTuning = Pick<FireGridConfig, "ignitionThreshold" | "spreadRate" | "burnRate" | "wind" | "windBias"> — Live fire ignition, spread, consumption and wind policies; grid geometry stays fixed.
+- `FireStepOptions` (interface): interface FireStepOptions { spread?: number; wind?: WindVector; windAt?: (x: number, z: number) => WindVector; wetnessAt?: (col: number, row: number) => number; extinguishRate?: number } — ⚠ undocumented
 - `ResolvedWeather` (interface): interface ResolvedWeather { grip: number; visibility: number; structureDamage: number; chill: number; ignition: number; spread: number } — ⚠ undocumented
 - `WeatherKind` (type): type WeatherKind = string — ⚠ undocumented
 - `WeatherKindOf` (type): type WeatherKindOf<TTable extends WeatherModifierTable> = Extract<keyof TTable, string> — ⚠ undocumented

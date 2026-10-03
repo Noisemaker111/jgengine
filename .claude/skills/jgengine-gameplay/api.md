@@ -515,7 +515,7 @@
 - `LootDrop` (interface): interface LootDrop — One granted reward: an inventory `item` id or a `currency` id, plus how many. Named because every consumer of `loot.granted` needs it — a toast renderer, a loot log, a session summary — and each one that re-declares the shape inline is a cast the compiler cannot check.
 - `LootGrantedEvent` (interface): interface LootGrantedEvent { userId: string; drops: LootDrop[]; source?: string } — ⚠ undocumented
 - `PossessionSwappedEvent` (interface): interface PossessionSwappedEvent { userId: string; entityId: string; previousEntityId: string } — ⚠ undocumented
-- `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent { from: string; origin: [number, number, number]; at: [number, number, number]; effect: string; hit: boolean; ballistic: boolean } — ⚠ undocumented
+- `ProjectileSettledEvent` (interface): interface ProjectileSettledEvent — Exactly-once projectile result for shot-specific game policy and presentation.
 - `QuestAcceptedEvent` (interface): interface QuestAcceptedEvent { userId: string; questId: string } — ⚠ undocumented
 - `QuestCompletedEvent` (interface): interface QuestCompletedEvent { userId: string; questId: string } — ⚠ undocumented
 - `QuestUpdatedEvent` (interface): interface QuestUpdatedEvent { userId: string; questId: string; objectiveId?: string; progress?: number } — ⚠ undocumented

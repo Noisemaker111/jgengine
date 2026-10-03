@@ -1,3 +1,4 @@
+import type { EditorSimulation } from "./simulation";
 import { parseStaticPrefabBake, type StaticPrefabBake } from "./staticPrefab";
 import {
   applyDeltaToSnapshot,
@@ -84,6 +85,7 @@ export type EditorCommand =
    * undo restores the previous snapshot as one step (use `coalesce` while scrubbing sliders).
    */
   | { type: "setEnvironment"; environment: EditorEnvironment | undefined }
+  | { type: "setSimulation"; simulation: EditorSimulation | undefined }
   | { type: "convertScatterToObjects"; pathId: string; markers: readonly EditorMarker[] }
   | { type: "createPrefab"; id: string; name: string; ids: readonly string[] }
   | { type: "insertPrefab"; prefabId: string; at: EditorVec3; instanceId?: string }
@@ -276,7 +278,7 @@ const transactionFields: Record<EditorCommand["type"], string> = {
   remove: "id", removeMany: "ids", duplicate: "ids ?offset", addFragment: "fragment ?offset",
   importDocument: "document", importJson: "json", replaceDocument: "document", setTerrain: "terrain",
   sculptTerrain: "delta", paintTerrain: "delta", blendTerrain: "delta", setTerrainLayers: "layers", clearTerrain: "",
-  setMinimapBake: "minimap", setBake: "bake", setEnvironment: "?environment", convertScatterToObjects: "pathId markers",
+  setMinimapBake: "minimap", setBake: "bake", setEnvironment: "?environment", setSimulation: "?simulation", convertScatterToObjects: "pathId markers",
   setPrefabStaticBake: "prefabId bake", createPrefab: "id name ids", insertPrefab: "prefabId at ?instanceId", detachPrefabInstance: "instanceId", deletePrefab: "prefabId",
   createCollection: "id name ?memberIds", renameCollection: "id name", deleteCollection: "id",
   setCollectionMembers: "id memberIds", addToCollection: "id ids", removeFromCollection: "id ids", setCollectionFlags: "id patch",
@@ -393,7 +395,8 @@ type HistoryEntry = { kind: "snapshot"; state: EditorSessionState } | TerrainStr
  * Environment commands validate and copy their candidate bag before publishing state or history.
  * @internal
  */
-export function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession {
+export function createEditorSession(initial: EditorDocument, historyLimit = 100, validateDocument?: (document: EditorDocument) => void): EditorSession {
+  validateDocument?.(initial);
   let state: EditorSessionState = {
     document: cloneEditorDocument(initial),
     selection: [],
@@ -419,11 +422,13 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
   };
 
   const pushTerrainStroke = (entry: TerrainStroke): void => {
+    const next = applyStroke(entry, "apply", entry.selection);
+    validateDocument?.(next.document);
     past.push(entry);
     if (past.length > historyLimit) past.shift();
     future.length = 0;
     lastCoalesce = null;
-    state = applyStroke(entry, "apply", entry.selection);
+    state = next;
   };
 
   return {
@@ -462,6 +467,7 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
           if (next === null) throw new Error(`${command.type} rejected`);
           const decoded = decodeEditorDocument(next.document);
           if (!decoded.ok) throw new Error(decoded.errors.map((diagnostic) => `${diagnostic.path} ${diagnostic.message}`).join("; "));
+          validateDocument?.(next.document);
           for (const item of [...next.document.markers, ...next.document.volumes, ...next.document.paths, ...next.document.annotations]) {
             if (item.parentId !== undefined && wouldCreateCycle(next.document, item.id, item.parentId)) throw new Error(`parent cycle: ${item.id}`);
           }
@@ -488,6 +494,8 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
     },
     dispatch(command, options) {
       if (command.type === "undo") {
+        const candidate = past[past.length - 1];
+        if (candidate !== undefined) validateDocument?.(candidate.kind === "snapshot" ? candidate.state.document : applyStroke(candidate, "revert", candidate.selection).document);
         const entry = past.pop();
         if (entry === undefined) return state;
         if (entry.kind === "snapshot") {
@@ -502,6 +510,8 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
         return state;
       }
       if (command.type === "redo") {
+        const candidate = future[future.length - 1];
+        if (candidate !== undefined) validateDocument?.(candidate.kind === "snapshot" ? candidate.state.document : applyStroke(candidate, "apply", candidate.selection).document);
         const entry = future.pop();
         if (entry === undefined) return state;
         if (entry.kind === "snapshot") {
@@ -529,6 +539,7 @@ export function createEditorSession(initial: EditorDocument, historyLimit = 100)
 
       const next = applyMutating(state, command);
       if (next === null) return state;
+      if (next.document !== state.document) validateDocument?.(next.document);
       if (isStructural(command)) {
         const coalesce = options?.coalesce;
         const merge = coalesce !== undefined && coalesce === lastCoalesce && past.length > 0;

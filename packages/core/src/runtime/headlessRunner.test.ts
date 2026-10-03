@@ -69,6 +69,44 @@ test("a released press buffered before a fixed step fires once, including determ
 });
 
 describe("createHeadlessRunner", () => {
+  test("paused and zero-timescale authority preserves poses and queued motion until play resumes", () => {
+    const game = defineGameDefinition({ name: "Paused movement", simulation: { hz: 20 }, physics: { gravity: 0, jumpVelocity: 8 } });
+    const runner = createHeadlessRunner({ definition: game, content, playerMovement: true, maxStepSeconds: 1, loop: { onNewPlayer(ctx) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); } } });
+    const ctx = runner.ctx;
+    const before = structuredClone(ctx.scene.entity.get("player"));
+    ctx.player.motion.impulse(8);
+    ctx.time.pause();
+    runner.step(0.2, { held: ["moveForward", "jump"] });
+    expect(ctx.scene.entity.get("player")).toEqual(before);
+    expect(ctx.player.motion.snapshot().impulses).toEqual([8]);
+    ctx.time.play();
+    ctx.time.setTimescale(0);
+    runner.step(0.2, { held: ["moveForward"] });
+    expect(ctx.scene.entity.get("player")).toEqual(before);
+    expect(ctx.time.now()).toBe(0);
+    ctx.time.setTimescale(1);
+    runner.step(0.05, { held: ["moveForward"] });
+    expect(ctx.scene.entity.get("player")!.position[1]).toBeGreaterThan(0);
+    expect(ctx.scene.entity.get("player")!.position[2]).toBeGreaterThan(0);
+    expect(ctx.player.motion.snapshot().impulses).toEqual([]);
+  });
+
+  test("fixed movement integrates scaled game seconds identically to the equivalent unscaled step", () => {
+    const run = (hz: number, speed: number, dt: number) => {
+      const game = defineGameDefinition({ name: "Scaled movement", simulation: { hz }, physics: { gravity: 0, jumpVelocity: 0 } });
+      const runner = createHeadlessRunner({ definition: game, content, playerMovement: true, maxStepSeconds: 1, loop: { onNewPlayer(ctx) { ctx.scene.entity.spawn("hero", { id: ctx.player.userId, position: [0, 0, 0] }); } } });
+      runner.ctx.time.setSpeed(speed);
+      runner.step(dt, { held: ["moveForward"] });
+      return { time: runner.ctx.time.now(), pose: runner.ctx.scene.entity.get("player")!.position, speed: runner.ctx.scene.entity.get("player")!.movement?.walkSpeed ?? 2 };
+    };
+    const half = run(40, 2, 0.025);
+    expect(half).toEqual(run(20, 1, 0.05));
+    expect(half.pose[2]).toBeCloseTo(half.speed * 1.75 * (1 - Math.exp(-26 * 0.05)) * 0.05);
+    const full = run(20, 2, 0.05);
+    expect(full).toEqual(run(10, 1, 0.1));
+    expect(full.pose[2]).toBeCloseTo(full.speed * 1.75 * (1 - Math.exp(-26 * 0.1)) * 0.1);
+  });
+
   test("physics-backed movement walks across a floor and steps onto a low box", () => {
     const backend = createPhysicsWorldBackend({
       capacity: 16,

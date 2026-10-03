@@ -59,6 +59,39 @@ function runner(restore?: WorldSnapshot): HostedGameRunner {
 }
 
 describe("hosted game runner", () => {
+  test("authority freezes player motion at pause and zero timescale and retains pending impulses", () => {
+    const host = runner();
+    host.join("alice", true);
+    host.input("alice", { held: ["moveForward"], pointer: null });
+    const ctx = host.context();
+    const pose = structuredClone(ctx.scene.entity.get("alice")!.position);
+    ctx.player.motionFor("alice").impulse(8);
+    ctx.time.pause();
+    host.tick(0.1);
+    expect(ctx.scene.entity.get("alice")!.position).toEqual(pose);
+    expect(ctx.player.motionFor("alice").snapshot().impulses).toEqual([8]);
+    ctx.time.play();
+    ctx.time.setTimescale(0);
+    host.tick(0.1);
+    expect(ctx.scene.entity.get("alice")!.position).toEqual(pose);
+    ctx.time.setTimescale(1);
+    host.tick(0.05);
+    expect(ctx.scene.entity.get("alice")!.position[2]).toBeGreaterThan(pose[2]);
+    expect(ctx.player.motionFor("alice").snapshot().impulses).toEqual([]);
+  });
+
+  test("host player movement uses scaled seconds matching its game clock", () => {
+    const move = (speed: number, dt: number) => {
+      const host = runner();
+      host.join("alice", true);
+      host.input("alice", { held: ["moveForward"], pointer: null });
+      host.context().time.setSpeed(speed);
+      host.tick(dt);
+      return { pose: host.context().scene.entity.get("alice")!.position, time: host.context().time.now() };
+    };
+    expect(move(2, 0.05)).toEqual(move(1, 0.1));
+  });
+
   test("10k departed identities retain only the configured recent admission window in memory", () => {
     const game = defineGameDefinition({ name: "input churn" });
     const host = createHostedGameRunner({ definition: game, content: {}, inputRetention: { nowMs: () => 0 } });

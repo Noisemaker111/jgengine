@@ -32,6 +32,8 @@ const READ_ONLY_METHODS = new Set<string>([
   "camera_goto",
   "camera_frame",
   "scene_summary",
+  "get_simulation",
+  "set_simulation",
   "export_document",
   "list_assets",
   "perf_report",

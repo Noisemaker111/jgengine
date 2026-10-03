@@ -1,3 +1,4 @@
+import type { EditorDocument } from "../editor/types";
 import type { ActionCodesMap } from "../input/actionBindings";
 import type { GameFeedOptions } from "./feed";
 import type { GamePhase } from "./gamePhase";
@@ -220,6 +221,10 @@ export interface GameDefinition<
    * pure UI/rules games that are not a spatial place.
    */
   world?: WorldFeature;
+  /** Validated authored scene inputs consumed by the environmental authority. */
+  authoredDocument?: EditorDocument;
+  /** Bounded opt-in projectile travel; game shots choose wind response, target masks and force caps. */
+  projectileTravel?: { maxActive?: number; maxRetained?: number; maxTargets?: number };
   /** Game-level default physics laws; a place world's own `physics` resolves over this. */
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */

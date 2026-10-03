@@ -20,7 +20,7 @@
  * on the surface layer (cell y=-1) rests with their feet at y=0.
  */
 
-import { MOVEMENT_TUNING, type MovementIntent, type MovementTuningOverrides } from "./movementModel";
+import { MOVEMENT_TUNING, motionStepSeconds, type MovementIntent, type MovementTuningOverrides, type MotionFrameOptions } from "./movementModel";
 
 export type SolidQuery = (x: number, y: number, z: number) => boolean;
 
@@ -247,8 +247,9 @@ export function advanceVoxelPlayer(
   dims: VoxelPlayerDims = DEFAULT_VOXEL_DIMS,
   tuning?: MovementTuningOverrides,
   groundHeight?: GroundHeightQuery,
+  options?: Pick<MotionFrameOptions, "authoritativeStep">,
 ): void {
-  const dt = Math.min(rawDeltaSeconds, MOVEMENT_TUNING.maxFrameSeconds);
+  const dt = motionStepSeconds(rawDeltaSeconds, options?.authoritativeStep);
   const gravityAcceleration = tuning?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration;
   const jumpVelocity = tuning?.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity;
 

@@ -83,12 +83,12 @@ export function FrameDriver({
   const slotActions = useMemo(() => findHotbarSlotActions(playable.game.input), [playable]);
   const hotbarId = useMemo(() => hotbarIdFor(playable), [playable]);
   const movementTuning = useMemo(
-    () => resolvePlayerMovementTuning({
+    () => ({ ...resolvePlayerMovementTuning({
       collision: playable.collision,
       movement: playable.movement,
       physics: playable.game.physics,
       world: playable.game.world,
-    }),
+    }), authoritativeStep: true }),
     [playable],
   );
   const autoPickupRadius = useMemo(() => {
@@ -188,17 +188,18 @@ export function FrameDriver({
     const playerId = ctx.player.possession.active(ctx.player.userId);
     ctx.sim.advance(dt, (stepDt, _tick, gameDt) => {
       ctx.input.beginStep();
+      const movementDt = serverAuthoritative ? stepDt : gameDt;
       if (!serverAuthoritative) ctx.sim.runStages("beforeMovement", stepDt);
       const player = ctx.scene.entity.get(playerId);
       // Server-authoritative sessions still run the deterministic local step as a prediction; the
       // replicated pose is the confirmation that the transport reconciles on the next world diff.
-      if (player !== null && drivesPose) {
+      if (player !== null && drivesPose && movementDt > 0) {
         const endPose = devtools.profile.begin("pose");
         stepPlayerMovement(
           ctx,
           ctx.player.userId,
           { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog() },
-          stepDt,
+          movementDt,
           movementTuning,
           yawRef.current,
           pitchRef.current,
@@ -207,13 +208,13 @@ export function FrameDriver({
         if (predicted !== null) {
           predictionRef.current.record(
             { held: ctx.input.held(), pointer: ctx.input.pointer(), analog: ctx.input.analog(), tick: ctx.sim.tick() },
-            stepDt,
+            movementDt,
             predicted.position,
           );
         }
         endPose();
       }
-      if (drivesPose && !serverAuthoritative) {
+      if (drivesPose && !serverAuthoritative && movementDt > 0) {
         const table = localPlayers(ctx);
         const seats = table.slots();
         for (let index = 1; index < seats.length; index += 1) {
@@ -223,7 +224,7 @@ export function FrameDriver({
             ctx,
             seat.userId,
             { held: seat.input.held(), pointer: null, analog: seat.input.analog() },
-            stepDt,
+            movementDt,
             movementTuning,
             seatCameraYaw(ctx, seat.userId),
           );

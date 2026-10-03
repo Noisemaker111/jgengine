@@ -145,6 +145,7 @@ export function SceneToolbar({
   onStartPlacement,
   onOpenAssistant,
   assistantOpen,
+  allowedKinds,
 }: {
   tool: EditorTool;
   gizmoMode: GizmoMode;
@@ -177,6 +178,7 @@ export function SceneToolbar({
   onStartPlacement: (tool: PlacementTool) => void;
   onOpenAssistant: () => void;
   assistantOpen: boolean;
+  allowedKinds?: readonly string[];
 }) {
   const [addOpen, setAddOpen] = useState(false);
   const [snapOpen, setSnapOpen] = useState(false);
@@ -186,7 +188,8 @@ export function SceneToolbar({
 
   // Recomputed every render (opening the menu rerenders): studios may register after the chrome
   // mounts (game modules load lazily), and a once-on-mount snapshot would silently hide them.
-  const studioKinds = listSceneKinds().filter((definition) => definition.addCategory !== undefined);
+  const allowed = (kind: string) => allowedKinds === undefined || allowedKinds.includes(kind);
+  const studioKinds = listSceneKinds().filter((definition) => definition.addCategory !== undefined && allowed(definition.kind));
 
   const pick = (placement: PlacementTool) => {
     setAddOpen(false);
@@ -387,13 +390,13 @@ export function SceneToolbar({
         </button>
         <MenuShell open={addOpen} onClose={() => setAddOpen(false)}>
           <div className={`px-2 pb-1 pt-1.5 ${MICRO_LABEL}`}>Markers</div>
-          {WELL_KNOWN_MARKER_KINDS.map((kind) => (
+          {WELL_KNOWN_MARKER_KINDS.filter(allowed).map((kind) => (
             <button key={kind} type="button" className={MENU_ITEM} onClick={() => pick({ tool: "marker", kind })}>
               {kind}
             </button>
           ))}
           <div className={`px-2 pb-1 pt-2 ${MICRO_LABEL}`}>Volumes</div>
-          {ADD_VOLUME_ENTRIES.map((entry) => (
+          {ADD_VOLUME_ENTRIES.filter((entry) => ("kind" in entry.tool && allowed(entry.tool.kind))).map((entry) => (
             <button key={entry.label} type="button" className={MENU_ITEM} onClick={() => pick(entry.tool)}>
               {entry.label}
             </button>
@@ -431,10 +434,10 @@ export function SceneToolbar({
             </div>
           ))}
           <div className={`px-2 pb-1 pt-2 ${MICRO_LABEL}`}>Paths & notes</div>
-          <button type="button" className={MENU_ITEM} onClick={() => pick({ tool: "path", kind: "route" })}>
+          <button type="button" disabled={!allowed("route")} className={MENU_ITEM} onClick={() => pick({ tool: "path", kind: "route" })}>
             Draw path (route)
           </button>
-          <button type="button" className={MENU_ITEM} onClick={() => pick({ tool: "path", kind: "road" })}>
+          <button type="button" disabled={!allowed("road")} className={MENU_ITEM} onClick={() => pick({ tool: "path", kind: "road" })}>
             Draw road
           </button>
           <button type="button" className={MENU_ITEM} onClick={() => pick({ tool: "note" })}>

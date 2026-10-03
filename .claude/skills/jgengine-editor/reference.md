@@ -295,3 +295,36 @@ Export pinned source bytes offline with `bakeStaticPrefab` from
 The shared model resolver preserves that authored origin for rendering and collider consumption.
 World placements remain catalog markers in `editor.scene.json`; baking never replaces or moves
 them. Validate the game's real walker/route clearance before advertising walkable interiors.
+
+## Production creator
+
+The game owns its menu and scene rules. The shared creator owns named durable documents, editor mounting, Save and isolated playtests:
+
+```tsx
+import { createCreatorDocumentStorage, type CreatorConfig, type CreatorPolicy } from "@jgengine/core/editor/creatorStorage";
+import { GameHost } from "@jgengine/shell/GameHost";
+import type { PlayableGame } from "@jgengine/shell/registry";
+
+const policy: CreatorPolicy = {
+  maxDocuments: 8, maxBytes: 128_000, maxObjects: 48,
+  maxPathPoints: 128, maxGridCells: 0, maxTerrainVertices: 0,
+  allowedKinds: ["player_spawn", "prop", "checkpoint", "finish"],
+  allowedAssets: ["own:platform"], allowedCatalogIds: ["platform"],
+  validate(document) { validateGameRules(document); },
+};
+const creator: CreatorConfig<PlayableGame> = {
+  policy,
+  storage: createCreatorDocumentStorage({ storage: localStorage, key: "my-game:creator:v1", policy }),
+  initialDocument: () => authoredStartingDocument,
+  createPlayable: document => buildGameFromDocument(document),
+};
+
+<GameHost playable={game} editor={() => import("@jgengine/editor")}
+  creator={creator} creatorOpen={creatorOpen} onCreatorOpenChange={setCreatorOpen} />;
+```
+
+Keep `creator` and its callbacks stable across renders. `createPlayable` recomposes rendering, world and gameplay from the supplied document; do not close over the bundled starting scene. `initialDocument` supplies game-authored content, not an SDK genre preset. Creator saves are version 1 named records and reject optimistic revision conflicts. The injected storage promise must resolve only after durable success. The browser adapter writes one bounded catalog value and surfaces access/quota failures; hosted storage can implement the same list/load/save interface with transactional revisions.
+
+The approved Add kinds and asset palette are filtered in the editor. The same validator applies before commands and transactions commit, on import, and on save. External asset URLs, prefab/directive expansion and undeclared simulation budgets are rejected. `maxSimulationParticles`, `maxFireCells`, `maxForceFields` and `maxPopulation` opt into bounded authored simulation (weather reserves 5,300 precipitation particles plus 256 rain-impact slots; collision effects reserve capacity for 32 concurrent child bursts alongside standing emitters); `validate` can restrict species, triggers or required markers. Save/export contain the authored scene; gameplay mutations stay in the captured playtest runtime and are discarded on Return to editor. Returning to saved scenes reopens the last durable save. Unsaved edits stay through Play/Return, and are discarded when leaving the editor catalog entry.
+
+The repeatable snapshot → Play → Return workflow follows the iteration principle in [UEFN playtesting](https://dev.epicgames.com/documentation/en-us/fortnite/playtesting-your-island-in-unreal-editor-for-fortnite). Each Play captures a new validated snapshot; authoring stays locked during isolated play, and Save always writes the editable document.

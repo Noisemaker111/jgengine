@@ -45,3 +45,11 @@ export function createWeatherSeedAttributes(maxCount: number, seed: number): Wea
   }
   return { spawn, drift };
 }
+
+/** @internal */
+export function lightningStrikeEnvelope(timeSeconds: number, startedAt: number, duration: number, seed: number): number {
+  const elapsed = timeSeconds - startedAt;
+  if (elapsed < 0 || duration <= 0 || elapsed >= duration) return 0;
+  const flicker = 0.62 + (Math.sin(elapsed * 97 + seed) * 0.5 + 0.5) * 0.38;
+  return (1 - elapsed / duration) * flicker;
+}

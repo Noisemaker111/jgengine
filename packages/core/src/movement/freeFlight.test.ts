@@ -11,6 +11,14 @@ import { createEmptyMovementKeys } from "./movementModel";
 
 const DT = 1 / 60;
 
+test("free-flight authority uses the full trusted tick and preserves standalone clamping", () => {
+  const intent = { forward: 0, right: 0, vertical: 0, sprint: false, moving: false };
+  const state = createFreeFlightState();
+  state.vx = 4;
+  expect(advanceFreeFlight({ ...state }, intent, 0, 0, 0.2, { mode: "creative", acceleration: 0 }, { authoritativeStep: true }).stepX).toBeCloseTo(0.8);
+  expect(advanceFreeFlight({ ...state }, intent, 0, 0, 0.2, { mode: "creative", acceleration: 0 }).stepX).toBeCloseTo(0.2);
+});
+
 function keysFrom(held: string[]): ReturnType<typeof createEmptyMovementKeys> {
   const k = createEmptyMovementKeys();
   for (const h of held) {

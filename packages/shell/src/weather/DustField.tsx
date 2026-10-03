@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useDisposable } from "../render/useDisposable";
 import { createWeatherQuadGeometry } from "./weatherGeometry";
 import { DEFAULT_DUST_COUNT, DEFAULT_DUST_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
+import { WEATHER_SHELTER_SHADER } from "./weatherShelter";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms";
 
 /**
@@ -32,6 +33,7 @@ export interface DustFieldProps {
    */
   groundBias?: number;
   timeScale?: number;
+  timeSeconds?: number | (() => number);
   seed?: number;
   renderOrder?: number;
   frustumCulled?: boolean;
@@ -64,16 +66,20 @@ export function DustField({
   color = DEFAULT_DUST_COLOR,
   groundBias = 0.65,
   timeScale,
+  timeSeconds,
   seed = 51407,
   renderOrder = 10,
   frustumCulled,
 }: DustFieldProps) {
   const { camera } = useThree();
-  const shared = useWeatherUniformSet({ wind, timeScale });
+  const shared = useWeatherUniformSet({ wind, timeScale, timeSeconds });
   const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
   const material = useDisposable(() => {
     const uniforms = {
       uTime: shared.time,
+      uShelterCenters: shared.shelterCenters,
+      uShelterShapes: shared.shelterShapes,
+      uShelterCount: shared.shelterCount,
       uWind: shared.wind,
       uAnchor: { value: new THREE.Vector3() },
       uVolume: { value: new THREE.Vector3() },
@@ -91,6 +97,7 @@ export function DustField({
       depthWrite: false,
       blending: THREE.NormalBlending,
       vertexShader: `
+        ${WEATHER_SHELTER_SHADER}
         uniform float uTime;
         uniform vec3 uWind;
         uniform vec3 uAnchor;
@@ -103,6 +110,7 @@ export function DustField({
         attribute vec3 aSpawn;
         attribute float aDrift;
 
+        varying float vExposure;
         varying vec2 vUv;
         varying float vDrift;
         varying float vFade;
@@ -128,6 +136,7 @@ export function DustField({
           vec3 travel = normalize(vec3(uWind.x, 0.0, uWind.z) + vec3(0.0001, 0.0, 0.0)) * carry;
           vec3 local = spawn * uVolume + (uWind + travel) * uTime + bob;
           vec3 worldCenter = mod(local - origin, uVolume) + origin;
+          vExposure = weatherExposure(worldCenter);
 
           // Fade at the top of the volume so recycled motes do not pop into view against the sky.
           float height = (worldCenter.y - origin.y) / max(uVolume.y, 0.001);
@@ -145,6 +154,7 @@ export function DustField({
         uniform float uOpacity;
         uniform vec3 uColor;
 
+        varying float vExposure;
         varying vec2 vUv;
         varying float vDrift;
         varying float vFade;
@@ -154,6 +164,7 @@ export function DustField({
           // No hard core: dust is diffuse, and a bright centre reads as snow.
           float puff = smoothstep(1.0, 0.05, distanceFromCenter);
           float alpha = puff * puff * uOpacity * (0.35 + 0.65 * vDrift) * vFade;
+          alpha *= vExposure;
           if (alpha < 0.001) discard;
           gl_FragColor = vec4(uColor, alpha);
         }
@@ -174,7 +185,9 @@ export function DustField({
     uniforms.uOpacity.value = opacity;
     uniforms.uGroundBias.value = groundBias;
     (uniforms.uColor.value as THREE.Color).set(color);
-    geometry.instanceCount = resolveWeatherInstanceCount(count, density, budget);
+    geometry.instanceCount = resolveWeatherInstanceCount(count, density * shared.dust.value, budget);
+    const metrics = shared.metrics?.dust;
+    if (metrics !== undefined) { metrics.count = geometry.instanceCount; metrics.capacity = geometry.getAttribute("aSpawn").count; }
   });
 
   return (

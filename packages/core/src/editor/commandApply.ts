@@ -1,3 +1,4 @@
+import { decodeEditorSimulation } from "./simulation";
 import { parseStaticPrefabBake } from "./staticPrefab";
 import {
   applyDeltaToSnapshot,
@@ -534,6 +535,14 @@ const mutationHandlers: MutationHandlers = {
   setTerrain: (state, command) => ({ ...state, document: { ...state.document, terrain: command.terrain } }),
   setMinimapBake: (state, command) => ({ ...state, document: { ...state.document, minimap: command.minimap } }),
   setBake: (state, command) => ({ ...state, document: { ...state.document, bakes: [...(state.document.bakes ?? []).filter((bake) => bake.id !== command.bake.id), command.bake] } }),
+  setSimulation: (state, command) => {
+    if (command.simulation === undefined) {
+      const { simulation: _removed, ...document } = state.document;
+      void _removed;
+      return { ...state, document };
+    }
+    return { ...state, document: { ...state.document, simulation: decodeEditorSimulation(command.simulation, state.document) } };
+  },
   setEnvironment: (state, command) => {
     if (command.environment === undefined) {
       const { environment: _removed, ...rest } = state.document;
@@ -560,6 +569,7 @@ const mutationHandlers: MutationHandlers = {
       ...(state.document.ui === undefined ? {} : { ui: state.document.ui }),
       ...(state.document.directives === undefined ? {} : { directives: state.document.directives }),
       ...(state.document.minimap === undefined ? {} : { minimap: state.document.minimap }),
+      ...(state.document.simulation === undefined ? {} : { simulation: structuredClone(state.document.simulation) }),
       ...(state.document.environment === undefined ? {} : { environment: state.document.environment }),
     };
     return { ...state, document: nextDoc };

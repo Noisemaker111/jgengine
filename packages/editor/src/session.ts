@@ -1,6 +1,8 @@
+import type { EditorSimulation } from "@jgengine/core/editor/simulation";
 import type { StaticPrefabBake } from "@jgengine/core/editor/staticPrefab";
 import {
   createDocumentLiveSync,
+  cloneEditorDocument,
   createEditorSession,
   createRuntimePlayControl,
   installDocumentLiveSync,
@@ -110,6 +112,8 @@ export type EditorBridgeRequest =
     }
   | { method: "camera_frame"; distance?: number; pitch?: number; yaw?: number; height?: number }
   | { method: "scene_summary" }
+  | { method: "get_simulation" }
+  | { method: "set_simulation"; simulation: EditorSimulation | null }
   | { method: "export_document" }
   | { method: "import_document"; json: string }
   | { method: "dispatch"; command: EditorCommand }
@@ -374,6 +378,8 @@ export interface EditorHostApi {
   getTerrainSampler(): TerrainField | null;
   setTerrainSampler(field: TerrainField | null): void;
   getMode(): EditorRunMode;
+  /** Immutable authored snapshot captured on entering an isolated playtest. */
+  getPlayDocument(): EditorDocument | null;
   setMode(mode: EditorRunMode): void;
   subscribeMode(listener: (mode: EditorRunMode) => void): () => void;
   /** Play-mode pause/step gate consumed by the runtime publisher. */
@@ -409,6 +415,10 @@ export function createEditorHost(options: {
   catalogs?: readonly EditorCatalogDefinition[];
   assets?: readonly EditorAssetInfo[];
   onFocus?: (target: { x: number; y: number; z: number } | null) => void;
+  validateDocument?: (document: EditorDocument) => void;
+  isolatedPlaytest?: boolean;
+  publishGlobal?: boolean;
+  persistAssetUrls?: boolean;
 }): {
   session: EditorSession;
   api: EditorHostApi;
@@ -417,9 +427,15 @@ export function createEditorHost(options: {
   warmNavBake();
   const catalogDefinitions = options.catalogs ?? [];
   const document = seedEditorCatalogs(normalizeEditorLayers(options.layers), catalogDefinitions);
-  const session = createEditorSession(document);
+  let mode: EditorRunMode = "edit";
+  const session = createEditorSession(document, 100, (candidate) => {
+    if (options.isolatedPlaytest && mode === "play") throw new Error("Return to editor before changing the authored scene");
+    options.validateDocument?.(candidate);
+  });
   const liveSync = createDocumentLiveSync(document);
-  const uninstallLiveSync = installDocumentLiveSync(liveSync);
+  let uninstallLiveSync = installDocumentLiveSync(liveSync);
+  let playDocument: EditorDocument | null = null;
+  let playSync: DocumentLiveSync | null = null;
   let lastMirroredDocument = session.getState().document;
   const unsubscribeSessionMirror = session.subscribe((state) => {
     if (state.document === lastMirroredDocument) return;
@@ -431,7 +447,6 @@ export function createEditorHost(options: {
   let assets: EditorAssetInfo[] = [...(options.assets ?? [])];
   let perf: EditorPerfSample | null = null;
   let terrainSampler: TerrainField | null = null;
-  let mode: EditorRunMode = "edit";
   let playControl: RuntimePlayControl = createRuntimePlayControl(false);
   const visibilityListeners = new Set<() => void>();
   const focusListeners = new Set<(target: EditorFocusTarget | null) => void>();
@@ -465,7 +480,7 @@ export function createEditorHost(options: {
   const api: EditorHostApi = {
     gameId: options.gameId,
     getSession: () => session,
-    getLiveSync: () => liveSync,
+    getLiveSync: () => playSync ?? liveSync,
     getVisibility: () => visibility,
     setVisibility(next) {
       visibility = { ...next };
@@ -503,8 +518,15 @@ export function createEditorHost(options: {
       terrainSampler = field;
     },
     getMode: () => mode,
+    getPlayDocument: () => playDocument === null ? null : cloneEditorDocument(playDocument),
     setMode(next) {
       if (next === mode) return;
+      if (options.isolatedPlaytest) {
+        uninstallLiveSync();
+        playDocument = next === "play" ? cloneEditorDocument(session.getState().document) : null;
+        playSync = playDocument === null ? null : createDocumentLiveSync(playDocument);
+        uninstallLiveSync = installDocumentLiveSync(playSync ?? liveSync);
+      }
       mode = next;
       if (next === "play") {
         playControl = createRuntimePlayControl(false);
@@ -544,7 +566,8 @@ export function createEditorHost(options: {
       const ctx: HandlerContext = {
         api,
         session,
-        liveSync,
+        liveSync: playSync ?? liveSync,
+        persistAssetUrls: options.persistAssetUrls,
         gameId: options.gameId,
         catalogDefinitions: defs,
         catalogById: new Map(defs.map((definition) => [definition.id, definition])),
@@ -568,7 +591,7 @@ export function createEditorHost(options: {
     },
   };
 
-  const uninstallHost = installEditorHost(api);
+  const uninstallHost = options.publishGlobal === false ? () => {} : installEditorHost(api);
   const dispose = () => {
     unsubscribeSessionMirror();
     uninstallLiveSync();

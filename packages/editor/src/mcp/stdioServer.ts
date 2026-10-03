@@ -1,3 +1,4 @@
+import type { EditorSimulation } from "@jgengine/core/editor/simulation";
 /**
  * Minimal MCP-compatible stdio server for the editor control plane.
  * Speaks JSON-RPC 2.0 over newline-delimited stdin/stdout (MCP transport).
@@ -114,6 +115,10 @@ function toolToBridge(name: string, args: Record<string, unknown>): EditorBridge
         ...(typeof args.yaw === "number" ? { yaw: args.yaw } : {}),
         ...(typeof args.height === "number" ? { height: args.height } : {}),
       };
+    case "get_simulation":
+      return { method: "get_simulation" };
+    case "set_simulation":
+      return { method: "set_simulation", simulation: args.simulation as EditorSimulation | null };
     case "scene_summary":
       return { method: "scene_summary" };
     case "export_document":

@@ -1,3 +1,4 @@
+import type { EffectResult } from "../combat/effects";
 import type { DeathReason } from "../combat/deathReason";
 import type { TelegraphShape } from "../combat/telegraph";
 import type { CameraShake } from "../combat/hitReaction";
@@ -197,7 +198,11 @@ export interface CombatHitReactionEvent {
   trauma?: number;
 }
 
+/** Exactly-once projectile result for shot-specific game policy and presentation. */
 export interface ProjectileSettledEvent {
+  shotId: string;
+  /** Actual applied effects; empty for misses and cover impacts. */
+  hits: readonly EffectResult[];
   from: string;
   origin: [number, number, number];
   at: [number, number, number];

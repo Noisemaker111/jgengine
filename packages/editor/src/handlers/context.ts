@@ -24,6 +24,7 @@ export interface HandlerContext {
   api: EditorHostApi;
   session: EditorSession;
   liveSync: DocumentLiveSync;
+  persistAssetUrls?: boolean;
   gameId: string;
   catalogDefinitions: readonly EditorCatalogDefinition[];
   catalogById: ReadonlyMap<string, EditorCatalogDefinition>;

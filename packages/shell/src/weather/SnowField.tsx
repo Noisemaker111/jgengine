@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useDisposable } from "../render/useDisposable";
 import { createWeatherQuadGeometry } from "./weatherGeometry";
 import { DEFAULT_SNOW_COUNT, DEFAULT_SNOW_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
+import { WEATHER_SHELTER_SHADER } from "./weatherShelter";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms";
 
 export interface SnowFieldProps {
@@ -20,6 +21,7 @@ export interface SnowFieldProps {
   opacity?: number;
   color?: THREE.ColorRepresentation;
   timeScale?: number;
+  timeSeconds?: number | (() => number);
   seed?: number;
   renderOrder?: number;
   frustumCulled?: boolean;
@@ -43,16 +45,20 @@ export function SnowField({
   opacity = 0.86,
   color = DEFAULT_SNOW_COLOR,
   timeScale,
+  timeSeconds,
   seed = 72931,
   renderOrder = 11,
   frustumCulled,
 }: SnowFieldProps) {
   const { camera } = useThree();
-  const shared = useWeatherUniformSet({ wind, timeScale });
+  const shared = useWeatherUniformSet({ wind, timeScale, timeSeconds });
   const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
   const material = useDisposable(() => {
     const uniforms = {
       uTime: shared.time,
+      uShelterCenters: shared.shelterCenters,
+      uShelterShapes: shared.shelterShapes,
+      uShelterCount: shared.shelterCount,
       uWind: shared.wind,
       uAnchor: { value: new THREE.Vector3() },
       uVolume: { value: new THREE.Vector3() },
@@ -69,6 +75,7 @@ export function SnowField({
       depthWrite: false,
       blending: THREE.NormalBlending,
       vertexShader: `
+        ${WEATHER_SHELTER_SHADER}
         uniform float uTime;
         uniform vec3 uWind;
         uniform vec3 uAnchor;
@@ -80,6 +87,7 @@ export function SnowField({
         attribute vec3 aSpawn;
         attribute float aDrift;
 
+        varying float vExposure;
         varying vec2 vUv;
         varying float vDrift;
 
@@ -97,6 +105,7 @@ export function SnowField({
           ) * uSway * (0.45 + 0.55 * aDrift);
           vec3 local = aSpawn * uVolume + vec3(uWind.x, -fallSpeed, uWind.z) * uTime + wander;
           vec3 worldCenter = mod(local - origin, uVolume) + origin;
+          vExposure = weatherExposure(worldCenter);
           float flakeSize = uSize * (0.48 + 1.08 * aDrift);
           vec3 right = vec3(viewMatrix[0][0], viewMatrix[1][0], viewMatrix[2][0]);
           vec3 up = vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]);
@@ -109,6 +118,7 @@ export function SnowField({
         uniform float uOpacity;
         uniform vec3 uColor;
 
+        varying float vExposure;
         varying vec2 vUv;
         varying float vDrift;
 
@@ -117,6 +127,7 @@ export function SnowField({
           float disc = smoothstep(1.0, 0.12, distanceFromCenter);
           float core = smoothstep(0.54, 0.0, distanceFromCenter) * 0.42;
           float alpha = (disc + core) * uOpacity * (0.56 + 0.44 * vDrift);
+          alpha *= vExposure;
           if (alpha < 0.001) discard;
           gl_FragColor = vec4(uColor, alpha);
         }
@@ -136,7 +147,9 @@ export function SnowField({
     uniforms.uSway.value = sway;
     uniforms.uOpacity.value = opacity;
     (uniforms.uColor.value as THREE.Color).set(color);
-    geometry.instanceCount = resolveWeatherInstanceCount(count, density, budget);
+    geometry.instanceCount = resolveWeatherInstanceCount(count, density * shared.snow.value, budget);
+    const metrics = shared.metrics?.snow;
+    if (metrics !== undefined) { metrics.count = geometry.instanceCount; metrics.capacity = geometry.getAttribute("aSpawn").count; }
   });
 
   return (

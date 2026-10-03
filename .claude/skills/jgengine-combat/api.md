@@ -448,14 +448,21 @@
 ## @jgengine/core/combat/projectiles
 
 - `EntityRaycastHit` (interface): interface EntityRaycastHit { kind: "entity"; instanceId: string; distance: number; at: EntityPosition; colliderName?: string; damageEligible?: boolean; blocks?: boolean } — ⚠ undocumented
+- `LiveProjectile` (interface): interface LiveProjectile — Detached pose of one active projectile pellet for presentation.
 - `ObjectRaycastHit` (interface): interface ObjectRaycastHit { kind: "object"; instanceId: string; catalogId: string; distance: number; at: EntityPosition; colliderName?: string; damageEligible?: boolean; blocks?: boolean } — ⚠ undocumented
+- `ProjectileFlightState` (interface): interface ProjectileFlightState — Serializable motion state of one projectile pellet.
 - `ProjectileHit` (type): type ProjectileHit = | { kind: "entity"; instanceId: string; distance: number; colliderName?: string; damageEligible?: boolean; } | { kind: "object"; instanceId: string; catalogId: string; distance: number; colliderName?: string; damageEligible?: boolean; } — ⚠ undocumented
 - `ProjectileObjectsDeps` (interface): interface ProjectileObjectsDeps { list(): readonly {instanceId: string; catalogId: string; position: readonly [number, number, number]; rotationY?: number;}[]; inBox?(min: EntityPosition, max: EntityPosition): readonly {instanceId: string; catalogId: string; position: rea… — ⚠ undocumented
 - `ProjectilePrediction` (interface): interface ProjectilePrediction { hits: ProjectileHit[]; blocked?: boolean; origin?: EntityPosition; direction?: EntityPosition; firstImpact?: ProjectileHit | null } — ⚠ undocumented
-- `ProjectileSettleReport` (interface): interface ProjectileSettleReport { from: string; origin: EntityPosition; at: EntityPosition; effect: string; hit: boolean; ballistic: boolean } — ⚠ undocumented
-- `ProjectileShotInput` (interface): interface ProjectileShotInput { from: string; via: EffectVia; aim: Aim; effect: string; originPolicy?: ShotOriginPolicy } — ⚠ undocumented
-- `ProjectileSystem` (interface): interface ProjectileSystem { willHitProjectile(input: ProjectileShotInput): ProjectilePrediction; fireProjectile(input: ProjectileShotInput): string; settleProjectile(shotId: string): SettleResult } — ⚠ undocumented · used by `createProjectileSystem`: Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
+- `ProjectileSettleReport` (interface): interface ProjectileSettleReport — Exactly-once settlement with launch identity and actual applied effects.
+- `ProjectileShotInput` (interface): interface ProjectileShotInput { from: string; via: EffectVia; aim: Aim; effect: string; originPolicy?: ShotOriginPolicy; travel?: ProjectileTravelConfig } — ⚠ undocumented
+- `ProjectileShotState` (interface): interface ProjectileShotState — Serializable captured launch and settlement state.
+- `ProjectileSystem` (interface): interface ProjectileSystem { willHitProjectile(input: ProjectileShotInput): ProjectilePrediction; fireProjectile(input: ProjectileShotInput): string; settleProjectile(shotId: string): SettleResult; advanceProjectiles(dt: number, time: number): SettleResult[]; activeP… — ⚠ undocumented · used by `createProjectileSystem`: Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
 - `ProjectileSystemDeps` (interface): interface ProjectileSystemDeps { effects: EffectSystem; spatial: CombatSpatialDeps; getStat(itemId: string, stat: string): number | null; raycast?: Raycast; sceneRaycast?: SceneRaycastApi; objects?: ProjectileObjectsDeps; entityCollidersOf?(instanceId: string): EntityCol… — ⚠ undocumented · used by `createProjectileSystem`: Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
+- `ProjectileSystemState` (interface): interface ProjectileSystemState — Detached projectile owner state for replay and restore.
+- `ProjectileTravelConfig` (interface): interface ProjectileTravelConfig — Captured launch settings for authoritative live travel.
+- `ProjectileTravelDeps` (interface): interface ProjectileTravelDeps — Authoritative clock, collision and environmental acceleration providers.
+- `ProjectileTravelImpact` (interface): interface ProjectileTravelImpact — Nearest contact returned by a live segment sweep.
 - `Raycast` (type): type Raycast = (from: string, aim: Aim, range: number, originPolicy?: ShotOriginPolicy) => RaycastHit[] — ⚠ undocumented
 - `RaycastHit` (type): type RaycastHit = EntityRaycastHit | ObjectRaycastHit — ⚠ undocumented
 - `SettleResult` (type): type SettleResult = | { status: "settled"; shotId: string; at: [number, number, number]; hits: EffectResult[]; origin?: [number, number, number]; } | { status: "rejected"; shotId: string; reason: string } — ⚠ undocumented

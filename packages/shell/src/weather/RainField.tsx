@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useDisposable } from "../render/useDisposable";
 import { createWeatherQuadGeometry } from "./weatherGeometry";
 import { DEFAULT_RAIN_COUNT, DEFAULT_RAIN_DENSITY, resolveWeatherInstanceCount } from "./weatherMath";
+import { WEATHER_SHELTER_SHADER } from "./weatherShelter";
 import { useWeatherUniformSet, type WeatherVector } from "./weatherUniforms";
 
 export interface RainFieldProps {
@@ -21,6 +22,7 @@ export interface RainFieldProps {
   color?: THREE.ColorRepresentation;
   lightning?: number;
   timeScale?: number;
+  timeSeconds?: number | (() => number);
   seed?: number;
   renderOrder?: number;
   frustumCulled?: boolean;
@@ -45,16 +47,20 @@ export function RainField({
   color = DEFAULT_RAIN_COLOR,
   lightning,
   timeScale,
+  timeSeconds,
   seed = 11939,
   renderOrder = 10,
   frustumCulled,
 }: RainFieldProps) {
   const { camera } = useThree();
-  const shared = useWeatherUniformSet({ wind, lightning, timeScale });
+  const shared = useWeatherUniformSet({ wind, lightning, timeScale, timeSeconds });
   const geometry = useDisposable(() => createWeatherQuadGeometry(count, seed), [count, seed]);
   const material = useDisposable(() => {
     const uniforms = {
       uTime: shared.time,
+      uShelterCenters: shared.shelterCenters,
+      uShelterShapes: shared.shelterShapes,
+      uShelterCount: shared.shelterCount,
       uWind: shared.wind,
       uLightning: shared.lightning,
       uAnchor: { value: new THREE.Vector3() },
@@ -72,6 +78,7 @@ export function RainField({
       depthWrite: false,
       blending: THREE.NormalBlending,
       vertexShader: `
+        ${WEATHER_SHELTER_SHADER}
         uniform float uTime;
         uniform vec3 uWind;
         uniform vec3 uAnchor;
@@ -83,6 +90,7 @@ export function RainField({
         attribute vec3 aSpawn;
         attribute float aDrift;
 
+        varying float vExposure;
         varying vec2 vUv;
         varying float vDrift;
 
@@ -95,6 +103,7 @@ export function RainField({
           vec3 velocity = vec3(uWind.x, -speed, uWind.z);
           vec3 local = aSpawn * uVolume + velocity * uTime;
           vec3 worldCenter = mod(local - origin, uVolume) + origin;
+          vExposure = weatherExposure(worldCenter);
           vec3 direction = normalize(velocity);
           vec3 cameraRay = normalize(cameraPosition - worldCenter);
           vec3 sideRaw = cross(direction, cameraRay);
@@ -110,6 +119,7 @@ export function RainField({
         uniform vec3 uColor;
         uniform float uLightning;
 
+        varying float vExposure;
         varying vec2 vUv;
         varying float vDrift;
 
@@ -117,6 +127,7 @@ export function RainField({
           float across = smoothstep(0.0, 0.45, vUv.x) * smoothstep(1.0, 0.55, vUv.x);
           float along = smoothstep(0.0, 0.28, vUv.y) * smoothstep(1.0, 0.58, vUv.y);
           float alpha = across * along * uOpacity * (0.55 + 0.45 * vDrift);
+          alpha *= vExposure;
           if (alpha < 0.001) discard;
           vec3 litColor = uColor * (1.0 + uLightning * 2.25);
           gl_FragColor = vec4(litColor, alpha);
@@ -137,7 +148,9 @@ export function RainField({
     uniforms.uWidth.value = width;
     uniforms.uOpacity.value = opacity;
     (uniforms.uColor.value as THREE.Color).set(color);
-    geometry.instanceCount = resolveWeatherInstanceCount(count, density, budget);
+    geometry.instanceCount = resolveWeatherInstanceCount(count, density * shared.rain.value, budget);
+    const metrics = shared.metrics?.rain;
+    if (metrics !== undefined) { metrics.count = geometry.instanceCount; metrics.capacity = geometry.getAttribute("aSpawn").count; }
   });
 
   return (

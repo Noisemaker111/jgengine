@@ -1,3 +1,4 @@
+import { createAuthoredSimulation, type AuthoredSimulationSnapshot } from "../world/authoredSimulation";
 import { createCommandRegistry } from "../commands/commandRegistry";
 import { type Cosmetics } from "../game/cosmetics";
 import type { GameDefinition, GameFeatures, PersistConfig } from "../game/defineGame";
@@ -305,6 +306,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     now,
     events,
     time,
+    projectileTravel: { ...definition.projectileTravel, acceleration: (position, _velocity, at, input) => authoredEnvironment.accelerationAt(position, at, input.travel?.windResponse ?? 0, input.travel?.maxAcceleration ?? 0, input.travel?.forceMask ?? 0) },
     entities,
     objects,
     combatSpatial,
@@ -335,6 +337,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   const { pile, loop, raceState, cardPiles, turnLoops } = createContextRegistries(signal.notify);
   const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
   const particles = createParticleDirector();
+  const authoredEnvironment = createAuthoredSimulation({ document: definition.authoredDocument, timeSeconds: time.now, particles });
   const input = createInputSnapshot();
 
   // --- Descriptor install (single feature enable path) ---
@@ -517,6 +520,9 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         willHitProjectile: projectiles.willHitProjectile,
         fireProjectile: projectiles.fireProjectile,
         settleProjectile: projectiles.settleProjectile,
+        activeProjectiles: projectiles.activeProjectiles,
+        projectileState: projectiles.snapshot,
+        restoreProjectiles: projectiles.restore,
         distance: spatial.distance,
         inRadius: spatial.inRadius,
         hasLineOfSight: spatial.hasLineOfSight,
@@ -548,6 +554,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
       raycast: (input) => sceneRaycast.raycast(input),
       raycastAll: (input) => sceneRaycast.raycastAll(input),
     },
+    environment: authoredEnvironment,
     world: {
       ground,
       groundHeightAt: ground.sampleHeight,
@@ -670,6 +677,11 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     replicatesPerViewer: () => projectsViewers,
   };
   ctxRef = ctx;
+  ctx.sim.addStage({ id: "authored-environment", phase: "afterTick", run: (_dt, _tick, gameDt) => authoredEnvironment.step(gameDt) });
+  ctx.sim.addStage({ id: "projectile-targets", phase: "beforeMovement", run: (_dt, _tick, gameDt) => combat.captureProjectileTargets(gameDt) });
+  ctx.sim.addStage({ id: "projectile-travel", phase: "afterTick", run: (_dt, _tick, gameDt) => projectiles.advanceProjectiles(gameDt, time.now()) });
+  registerSave({ key: "environment", snapshot: authoredEnvironment.snapshot, hydrate: (state) => authoredEnvironment.restore(state as AuthoredSimulationSnapshot) });
+  registerSave({ key: "projectiles", snapshot: projectiles.snapshot, hydrate: (state) => projectiles.restore(state as ReturnType<typeof projectiles.snapshot>) });
   registerSave({
     key: "sim",
     snapshot: () => ctx.sim.snapshot(),
@@ -682,7 +694,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const physicsBackend = definition.physics?.backend;
   if (physicsBackend !== undefined) {
-    ctx.sim.addStage({ id: "physics", phase: "afterMovement", run: (dt) => physicsBackend.step(dt) });
+    ctx.sim.addStage({ id: "physics", phase: "afterMovement", run: (_dt, _tick, gameDt) => { if (gameDt > 0) physicsBackend.step(gameDt); } });
   }
 
   const saveOptions = resolveSaveOptions(definition, options);

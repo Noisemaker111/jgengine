@@ -98,6 +98,8 @@ export const documentHandlers: Pick<
   | "camera_goto"
   | "camera_frame"
   | "scene_summary"
+  | "get_simulation"
+  | "set_simulation"
   | "export_document"
   | "import_document"
   | "dispatch"
@@ -353,6 +355,11 @@ export const documentHandlers: Pick<
     ctx.api.setFocusTarget(target);
     return { ok: true, result: { target, bounds } };
   },
+  get_simulation: (ctx) => ({ ok: true, result: { simulation: structuredClone(ctx.session.getState().document.simulation ?? {}) } }),
+  set_simulation: (ctx, request) => {
+    ctx.session.dispatch({ type: "setSimulation", simulation: request.simulation === null ? undefined : request.simulation });
+    return { ok: true, result: { simulation: structuredClone(ctx.session.getState().document.simulation ?? {}) } };
+  },
   scene_summary: (ctx) => ({
     ok: true,
     result: {
@@ -397,7 +404,7 @@ export const documentHandlers: Pick<
       kind: request.kind,
       knownKind: asset?.kind,
       knownLabel: asset?.label,
-      knownUrl: asset?.url,
+      knownUrl: ctx.persistAssetUrls === false ? undefined : asset?.url,
     });
     const placedMarker = toEditorMarker(placed);
     // URL-backed catalog models need a first-class catalogId so AuthoredObjects places the mesh;

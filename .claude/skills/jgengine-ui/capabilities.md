@@ -44,6 +44,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `ActionTooltip` (function) · `import { ActionTooltip } from "@jgengine/react"`
 
+## authored-flocks — render authored habitat agents through caller-selected animated species models with velocity orientation and bounded model lifetime
+
+- `AuthoredFlocks` (function) · `import { AuthoredFlocks } from "@jgengine/shell/world/AuthoredFlocks"`
+
 ## authored-solids — collision for studio-authored world content such as city volumes
 
 - `AuthoredSolids` (function) · `import { AuthoredSolids } from "@jgengine/shell/scene"`
@@ -52,6 +56,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `AuthoredSurfaceMaterial` (function) · `import { AuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
 - `useAuthoredSurfaceMaterial` (function) · `import { useAuthoredSurfaceMaterial } from "@jgengine/shell/render/authoredSurfaceMaterial"`
+
+## authored-weather-rendering — Render authored weather from shared gameplay samples, simulation time and shelter volumes.
+
+- `AuthoredWeatherLayer` (function) · `import { AuthoredWeatherLayer } from "@jgengine/shell/weather"`
 
 ## auto-scroll — pin a log/chat/console panel to its newest line as entries arrive — no hand-rolled scrollTop effects
 
@@ -478,7 +486,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `togglePanel` (function) · `import { togglePanel } from "@jgengine/core/ui"`
 
-## particle-field — render a core particle system as a soft-point GPU cloud with per-particle size, color, and alpha
+## particle-field — render a core particle pool as soft points, velocity streaks, connected ribbons, flakes, flames, smoke sprites, or ground ripples
 
 - `ParticleField` (function) · `import { ParticleField } from "@jgengine/shell/vfx/ParticleField"`
 
@@ -502,6 +510,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `Popover` (function) · `import { Popover } from "@jgengine/react"`
 
+## projectile-models — render authoritative projectile flights with caller models or opt-in shaft/head geometry, velocity orientation, bounded instances, and settlement cleanup
+
+- `ProjectileModels` (function) · `import { ProjectileModels } from "@jgengine/shell/combat/ProjectileModels"`
+
 ## quest-tracker — compact quest/objective HUD tracker — titles + labelled objective progress from describeTrackedQuest views
 
 - `QuestTracker` (function) · `import { QuestTracker } from "@jgengine/react"`
@@ -521,6 +533,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## raf-loop — run a cancellable requestAnimationFrame loop for DOM-side animation with delta seconds — no hand-rolled RAF effects
 
 - `useRafLoop` (function) · `import { useRafLoop } from "@jgengine/react"`
+
+## rain-ground-ripples — Render bounded rain impacts on exposed terrain using the shared precipitation clock.
+
+- `RainImpactField` (function) · `import { RainImpactField } from "@jgengine/shell/weather"`
 
 ## resolve-game-look — expand a look preset into concrete lighting/backdrop/post knobs
 

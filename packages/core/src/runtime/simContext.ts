@@ -10,7 +10,8 @@ export type SimStagePhase = "beforeMovement" | "afterMovement" | "afterTick";
 export interface SimStage {
   id: string;
   phase: SimStagePhase;
-  run(dt: number, tick: number): void;
+  /** dt is real seconds; gameDt is the scaled authoritative game-seconds for this step. */
+  run(dt: number, tick: number, gameDt: number): void;
 }
 
 /** Serializable `ctx.sim` state: loop position plus the interpolation pose history. */
@@ -51,6 +52,7 @@ export function createSimContext(options: { config?: SimulationConfig; entities:
   const poses = createPoseHistory({ snapDistance: loop.config().snapDistance });
   const stages = new Map<SimStagePhase, SimStage[]>();
   let advancing = false;
+  let currentGameDt = 0;
 
   return {
     loop,
@@ -61,10 +63,12 @@ export function createSimContext(options: { config?: SimulationConfig; entities:
         return loop.advance(realDt, (dt, tick) => {
           if (loop.isFixed()) poses.beginStep(entities);
           const gameDt = stepOptions?.advanceTime === false ? 0 : options.time?.advance(dt) ?? dt;
+          currentGameDt = gameDt;
           body(dt, tick, gameDt);
         });
       } finally {
         advancing = false;
+        currentGameDt = 0;
       }
     },
     tick: () => loop.tick(),
@@ -88,7 +92,7 @@ export function createSimContext(options: { config?: SimulationConfig; entities:
       const list = stages.get(phase);
       if (list === undefined) return;
       const tick = loop.tick();
-      for (const stage of list) stage.run(dt, tick);
+      for (const stage of list) stage.run(dt, tick, advancing ? currentGameDt : dt);
     },
     retune(config) {
       loop.retune(config);
