@@ -477,21 +477,24 @@ export function writePngAtomic(outPath, bytes) {
 export async function waitForHonestFrame(session, url, timeoutMs) {
   const deadline = Date.now() + timeoutMs;
   let last;
+  let handshakeSeen = false;
   while (Date.now() < deadline) {
     const s = await session.evaluate(HONESTY_EXPR);
     last = s;
+    if (s && s.cap !== null && s.cap !== undefined) handshakeSeen = true;
     if (s && s.cap === "error") throw new Error("page reported a capture error: " + (s.err || "unknown"));
     if (s && s.cap === "ready") return s;
-    if (s && s.hasCanvas && s.cw > 10 && s.ch > 10) return s;
+    if (!handshakeSeen && s && s.hasCanvas && s.cw > 10 && s.ch > 10 && s.bw > 10 && s.bh > 10) return s;
     await sleep(100);
   }
-  if (last && last.hasCanvas) return last; // canvas exists but small — capture it anyway, caller may warn
   throw new Error(
     "timed out after " +
       Math.round(timeoutMs / 1000) +
-      "s waiting for a sized <canvas> at " +
+      "s waiting for an honest frame at " +
       url +
-      " — is the game being served there?",
+      (handshakeSeen
+        ? " — data-jg-capture stayed " + JSON.stringify(last && last.cap) + "; the page must report ready or error."
+        : " — no sized <canvas> with a nonempty backing store (last: " + JSON.stringify(last) + "). Is the game being served there?"),
   );
 }
 

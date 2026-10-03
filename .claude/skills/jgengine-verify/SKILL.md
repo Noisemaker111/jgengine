@@ -70,6 +70,8 @@ A PR that touches a rendered surface embeds the inspected shots. The ten-categor
 
 **Arbitrary URLs (`shoot --url`):** the page must set `document.documentElement.dataset.jgCapture = "ready"` (HTML `data-jg-capture="ready"`) when the frame is honest; set `data-jg-capture="error"` with `data-jg-capture-error` on failure. Prefer managed game or `--site` targets over a hand-rolled Vite consumer.
 
+Standalone `shoot` and `drive` honor an observed `data-jg-capture` handshake: set it to `loading` before async scene setup, then `ready` after the frame is honest. A sized canvas cannot bypass a pending handshake, and a timeout reports its last state. Legacy pages without a handshake must provide a sized canvas with a nonempty backing store.
+
 A shot on disk is self-describing: a failed run leaves no file at its path, a re-capture that matches the shot it replaced prints `SAME PICTURE as the shot it replaced` (a no-op change or the wrong view, not a pass), and a blank viewport fails the command. None of that replaces looking.
 
 Screenshots come from the game's own dev server. Read every screenshot adversarially: assume it is broken and hunt for the flaw. A shot is evidence to be prosecuted, not a formality to wave through. Comb the frame region by region at full size — corners, edges, and background included — never sign off on a glance. Optimism here is a defect: "looks good" on a broken frame is worse than no capture, because it launders a bug into a completion claim.

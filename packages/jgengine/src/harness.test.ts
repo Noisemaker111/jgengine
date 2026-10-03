@@ -148,6 +148,78 @@ function encodePng(width: number, height: number, pixel: (x: number, y: number) 
   ]);
 }
 
+describe("standalone capture readiness", () => {
+  const sized = { cap: null as string | null, hasCanvas: true, cw: 1600, ch: 900, bw: 1600, bh: 900 };
+
+  async function withHarness(run: (wait: (session: { evaluate(expression: string): Promise<unknown> }, url: string, timeoutMs: number) => Promise<unknown>) => Promise<void>) {
+    const dir = materializeHarness("shoot");
+    try {
+      const lib = await import(join(dir, "browser.mjs"));
+      await run(lib.waitForHonestFrame);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  test("waits for declared readiness even when the canvas is already sized", async () => {
+    await withHarness(async (wait) => {
+      let calls = 0;
+      const ready = { ...sized, cap: "ready" };
+      const session = { evaluate: async () => (++calls === 1 ? { ...sized, cap: "loading" } : ready) };
+      expect(await wait(session, "http://game.test", 1000)).toEqual(ready);
+      expect(calls).toBe(2);
+    });
+  });
+
+  test("does not fall back to canvas sizing after an observed handshake disappears", async () => {
+    await withHarness(async (wait) => {
+      let calls = 0;
+      const states = [{ ...sized, cap: "loading" }, sized, { ...sized, cap: "ready" }];
+      expect(await wait({ evaluate: async () => states[calls++] }, "http://game.test", 1000)).toEqual(states[2]);
+      expect(calls).toBe(3);
+    });
+  });
+
+  test("fails a pending handshake with its state and URL instead of capturing", async () => {
+    await withHarness(async (wait) => {
+      await expect(wait({ evaluate: async () => ({ ...sized, cap: "loading" }) }, "http://game.test", 1))
+        .rejects.toThrow('http://game.test — data-jg-capture stayed "loading"');
+    });
+  });
+
+  test("reports host errors before accepting a sized canvas", async () => {
+    await withHarness(async (wait) => {
+      await expect(wait({ evaluate: async () => ({ ...sized, cap: "error", err: "player model failed" }) }, "http://game.test", 1000))
+        .rejects.toThrow("page reported a capture error: player model failed");
+    });
+  });
+
+  test("legacy games without a handshake accept a sized canvas", async () => {
+    await withHarness(async (wait) => {
+      expect(await wait({ evaluate: async () => sized }, "http://game.test", 1000)).toEqual(sized);
+    });
+  });
+
+  test("ready DOM-only previews do not require a canvas", async () => {
+    await withHarness(async (wait) => {
+      const ready = { cap: "ready", hasCanvas: false, cw: 0, ch: 0, bw: 0, bh: 0 };
+      expect(await wait({ evaluate: async () => ready }, "http://game.test", 1000)).toEqual(ready);
+    });
+  });
+
+  for (const [name, dimensions] of [
+    ["undersized canvas", { cw: 1, ch: 1 }],
+    ["empty backing store", { bw: 0, bh: 0 }],
+  ] as const) {
+    test(`rejects a legacy ${name} after timeout`, async () => {
+      await withHarness(async (wait) => {
+        await expect(wait({ evaluate: async () => ({ ...sized, ...dimensions }) }, "http://game.test", 1))
+          .rejects.toThrow("no sized <canvas> with a nonempty backing store");
+      });
+    });
+  }
+});
+
 describe("scaffold blank-frame guard", () => {
   test("decodes captured PNGs and refuses a one-color viewport but not a rendered one", async () => {
     const dir = materializeHarness("shoot");
