@@ -2238,10 +2238,12 @@
 ## @jgengine/shell/multiplayer
 
 - `DEFAULT_FEED_ACTIONS` (const): const DEFAULT_FEED_ACTIONS: string[] — ⚠ undocumented
+- `PeerShellFactories` (interface): interface PeerShellFactories — Alternate peer factories for hosts that provide their own WebRTC implementation or transport pipe.
+- `ResolvePeerShellMultiplayerArgs` (interface): interface ResolvePeerShellMultiplayerArgs — Peer bootstrap options; passing a playable hosts its authoritative GameContext world.
 - `ResolveShellMultiplayerArgs` (type): type ResolveShellMultiplayerArgs = { game: GameDefinition; gameId: string; url?: string; userId?: string; force?: boolean; feedActions?: string[]; } — ⚠ undocumented
-- `ShellMultiplayer` (type): type ShellMultiplayer = MultiplayerSession — ⚠ undocumented · used by `useShellMultiplayerSync` (@jgengine/shell/useShellMultiplayerSync): Joins the multiplayer server for the live context and wires presence, feed relay, and chat sync until teardown.
+- `ShellMultiplayer` (type): type ShellMultiplayer = MultiplayerSession — ⚠ undocumented · used by `resolvePeerShellMultiplayer`: Opens a peer session.
 - `randomPlayerId` (function): function randomPlayerId(): string — ⚠ undocumented
-- `resolvePeerShellMultiplayer` (function): function resolvePeerShellMultiplayer(args: { gameId: string; role: "host" | "join"; room?: string; userId?: string; feedActions?: string[]; }): Promise<ShellMultiplayer & { close: () => void }> — ⚠ undocumented
+- `resolvePeerShellMultiplayer` (function): function resolvePeerShellMultiplayer(args: ResolvePeerShellMultiplayerArgs): Promise<ShellMultiplayer & { close: () => Promise<void> }> — Opens a peer session. With `playable`, one host runs the game loop and guests mirror its shared world. Await `close()` to finish authoritative persistence. Same-origin rooms use BroadcastChannel signaling.
 - `resolveShellMultiplayer` (function): function resolveShellMultiplayer(args: ResolveShellMultiplayerArgs): ShellMultiplayer | null — ⚠ undocumented
 
 ## @jgengine/shell/pointer/PointerOverlays

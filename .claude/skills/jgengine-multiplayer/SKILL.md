@@ -20,7 +20,7 @@ description: Design authority, transport, replication, sessions, and host persis
 
 This skill owns network topology, authority, transports, sessions/presence, replication/projection, reconnect, hosted runners, and persistence adapters. Serializable game state and save semantics stay in `jgengine-gameplay`.
 
-Use [capabilities.md](capabilities.md) for intent-to-import discovery, [api.md](api.md) for signatures, and [reference.md](reference.md) for transport, host, projection, persistence, and deployment recipes.
+Use [capabilities.md](capabilities.md) for intent-to-import discovery, [api.md](api.md) for signatures, and [reference.md](reference.md) for transport, host, projection, persistence, and deployment recipes. See [playable peer worlds](references/peer-worlds.md) for authoritative browser co-op bootstrap and its release barrier.
 
 ## Canonical workflow
 
