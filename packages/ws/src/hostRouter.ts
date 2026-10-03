@@ -108,6 +108,13 @@ type Connection = {
   queuedMessages: number;
   worldRevisions: Map<string, number | null>;
   roles: Map<string, SnapshotViewer["role"]>;
+  subscriptionPushes: Map<string, SubscriptionPush>;
+};
+
+type SubscriptionPush = {
+  generation: number;
+  pending: boolean;
+  run?: Promise<void>;
 };
 
 type PresenceEntry = PresencePoseState & { appearance?: WsAppearance };
@@ -190,6 +197,12 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
   const addSubscription = (connection: Connection, key: string): void => {
     connection.subscriptions.add(key);
+    const push = connection.subscriptionPushes.get(key);
+    if (push === undefined) {
+      connection.subscriptionPushes.set(key, { generation: 0, pending: false });
+    } else {
+      push.generation += 1;
+    }
     let set = subscribers.get(key);
     if (set === undefined) {
       set = new Set();
@@ -199,6 +212,12 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
   };
   const removeSubscription = (connection: Connection, key: string): void => {
     connection.subscriptions.delete(key);
+    const push = connection.subscriptionPushes.get(key);
+    if (push !== undefined) {
+      push.generation += 1;
+      push.pending = false;
+      if (push.run === undefined) connection.subscriptionPushes.delete(key);
+    }
     const set = subscribers.get(key);
     if (set === undefined) return;
     set.delete(connection);
@@ -390,30 +409,32 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     connection: Connection,
     channel: WsChannel,
     serverId: string,
-    action?: string,
+    action: string | undefined,
+    isCurrent: () => boolean,
   ) => {
-    if (connection.userId === null) return;
+    if (connection.userId === null || !isCurrent()) return;
     if (channel === "server") {
       if (host.pullWorld !== undefined) {
         const sinceRevision = connection.worldRevisions.get(serverId) ?? null;
         const world = await host.pullWorld({ userId: connection.userId, serverId, sinceRevision, role: connection.roles.get(serverId) });
+        if (!isCurrent()) return;
         if (world !== null) {
-          connection.worldRevisions.set(serverId, world.revision);
           const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId) });
-          if (data !== null) {
+          if (data !== null && isCurrent()) {
             send(connection, { v: 1, t: "update", channel, serverId, data: { ...data, serverState: world } });
+            connection.worldRevisions.set(serverId, world.revision);
           }
           return;
         }
       }
       const data = await host.getServerView({ userId: connection.userId, serverId, role: connection.roles.get(serverId) });
-      send(connection, { v: 1, t: "update", channel, serverId, data });
+      if (isCurrent()) send(connection, { v: 1, t: "update", channel, serverId, data });
     } else if (channel === "player") {
       const data = await host.getPlayerView({ userId: connection.userId, serverId });
-      send(connection, { v: 1, t: "update", channel, serverId, data });
+      if (isCurrent()) send(connection, { v: 1, t: "update", channel, serverId, data });
     } else if (channel === "feed") {
       const data = await host.getFeed({ userId: connection.userId, serverId, action: action ?? "" });
-      send(connection, { v: 1, t: "update", channel, serverId, action: action ?? "", data });
+      if (isCurrent()) send(connection, { v: 1, t: "update", channel, serverId, action: action ?? "", data });
     } else if (channel === "chat") {
       const channelId = action ?? "";
       send(connection, {
@@ -439,22 +460,55 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     }
   };
 
+  const requestSubscriptionPush = (
+    connection: Connection,
+    channel: WsChannel,
+    serverId: string,
+    action?: string,
+  ): Promise<void> => {
+    const key = subscriptionKey(channel, serverId, action);
+    const push = connection.subscriptionPushes.get(key);
+    if (push === undefined) return Promise.resolve();
+    push.pending = true;
+    if (push.run !== undefined) return push.run;
+    const isActive = () => connections.has(connection) && connection.userId !== null && connection.subscriptions.has(key) && connection.subscriptionPushes.get(key) === push;
+    push.run = Promise.resolve().then(async () => {
+      while (push.pending && isActive()) {
+        push.pending = false;
+        const generation = push.generation;
+        try {
+          await pushSubscription(connection, channel, serverId, action, () => isActive() && push.generation === generation);
+        } catch {
+          // A failed read leaves the sent revision intact; a later notification retries it.
+        }
+      }
+    }).finally(() => {
+      push.run = undefined;
+      if (!isActive()) {
+        if (connection.subscriptionPushes.get(key) === push) connection.subscriptionPushes.delete(key);
+      } else if (push.pending) {
+        void requestSubscriptionPush(connection, channel, serverId, action);
+      }
+    });
+    return push.run;
+  };
+
   const onHostEvent = (event: HostChangeEvent) => {
     if (event.type === "server") {
       for (const connection of subscribersOf(subscriptionKey("server", event.serverId))) {
         if (connection.userId === null) continue;
-        void pushSubscription(connection, "server", event.serverId);
+        void requestSubscriptionPush(connection, "server", event.serverId);
       }
     } else if (event.type === "player") {
       for (const connection of subscribersOf(subscriptionKey("player", event.serverId))) {
         if (connection.userId === event.userId) {
-          void pushSubscription(connection, "player", event.serverId);
+          void requestSubscriptionPush(connection, "player", event.serverId);
         }
       }
     } else {
       for (const connection of subscribersOf(subscriptionKey("feed", event.serverId, event.action))) {
         if (connection.userId === null) continue;
-        void pushSubscription(connection, "feed", event.serverId, event.action);
+        void requestSubscriptionPush(connection, "feed", event.serverId, event.action);
       }
     }
   };
@@ -719,7 +773,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           if (message.channel === "server") connection.worldRevisions.set(message.serverId, null);
           addSubscription(connection, subscriptionKey(message.channel, message.serverId, message.action));
           reply(connection, message.id, null);
-          await pushSubscription(connection, message.channel, message.serverId, message.action);
+          void requestSubscriptionPush(connection, message.channel, message.serverId, message.action);
           return;
         }
         case "unsubscribe": {
@@ -768,6 +822,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         queuedMessages: 0,
         worldRevisions: new Map(),
         roles: new Map(),
+        subscriptionPushes: new Map(),
       };
       connections.add(connection);
       return {

@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 
 import type { CommandAuthorize, CommandCatalog, CommandLimits } from "./commandMiddleware";
-import { createGameHost, memoryPersistence, type GameHost } from "./host";
+import { createGameHost, memoryPersistence, type GameHost, type HostChangeEvent } from "./host";
 import { createHostRouter, loopbackPipe, MAX_QUEUED_MESSAGES, type HostRouter } from "./hostRouter";
 import { createWsBackend, type WsBackend } from "./createWsBackend";
-import type { WsChatMessage, WsPresenceRow } from "./protocol";
+import type { WsChatMessage, WsPresenceRow, WsServerMessage } from "./protocol";
 import type { WorldSyncFrame } from "@jgengine/core/runtime/transport";
 
 function channel<T>() {
@@ -76,6 +76,221 @@ function startStack(options: {
     },
   };
 }
+
+async function delayedWorldStack() {
+  const host = createGameHost({ persistence: memoryPersistence() });
+  let notify: (event: HostChangeEvent) => void = () => {};
+  host.subscribe = (listener) => { notify = listener; return () => {}; };
+  const pulls = channel<{
+    sinceRevision: number | null;
+    resolve: (frame: WorldSyncFrame) => void;
+    reject: (error: Error) => void;
+  }>();
+  const cursors: (number | null)[] = [];
+  let onPull: () => void = () => {};
+  host.pullWorld = ({ sinceRevision }) => new Promise((resolve, reject) => {
+    cursors.push(sinceRevision);
+    pulls.push({ sinceRevision, resolve, reject });
+    onPull();
+  });
+  const router = createHostRouter({ host, allowAnonymous: true, graceMs: 0 });
+  const replies = channel<WsServerMessage>();
+  const updates = channel<WorldSyncFrame>();
+  const sent: WorldSyncFrame[] = [];
+  let onFrame: () => void = () => {};
+  const connection = router.connect({
+    send: (raw) => {
+      const message = JSON.parse(raw) as WsServerMessage;
+      if (message.t === "reply" || message.t === "pong") replies.push(message);
+      if (message.t === "update" && message.channel === "server") {
+        const frame = (message.data as { serverState: WorldSyncFrame }).serverState;
+        sent.push(frame);
+        updates.push(frame);
+        onFrame();
+      }
+    },
+    close: () => {},
+  });
+  let id = 0;
+  const request = async (message: Record<string, unknown>) => {
+    connection.handleRaw(JSON.stringify({ v: 1, id: ++id, ...message }));
+    return replies.next();
+  };
+  await request({ t: "hello", userId: "alice" });
+  const joined = await request({ t: "join", gameId: "test-game" });
+  if (joined.t !== "reply" || !joined.ok) throw new Error("join failed");
+  const serverId = (joined.result as { serverId: string }).serverId;
+  return {
+    host, router, connection, pulls, cursors, updates, sent, serverId,
+    subscribe: () => request({ t: "subscribe", channel: "server", serverId }),
+    unsubscribe: () => request({ t: "unsubscribe", channel: "server", serverId }),
+    flush: () => request({ t: "ping", at: 0 }),
+    notify: () => notify({ type: "server", serverId }),
+    onFrame: (callback: () => void) => { onFrame = callback; },
+    onPull: (callback: () => void) => { onPull = callback; },
+    shutdown: async () => { connection.close(); router.close(); await host.stop(); },
+  };
+}
+
+function worldBaseline(revision: number): WorldSyncFrame {
+  return { kind: "baseline", revision, snapshot: { entities: [] } };
+}
+
+test("server replication coalesces a slow subscriber's event burst and advances its cursor in order", async () => {
+  const stack = await delayedWorldStack();
+  try {
+    expect(await stack.subscribe()).toMatchObject({ t: "reply", ok: true });
+    const first = await stack.pulls.next();
+    for (let index = 0; index < 10_000; index += 1) stack.notify();
+    await stack.flush();
+    expect(stack.cursors).toEqual([null]);
+    first.resolve(worldBaseline(1));
+    expect((await stack.updates.next()).revision).toBe(1);
+    const second = await stack.pulls.next();
+    expect(second.sinceRevision).toBe(1);
+    second.resolve(worldBaseline(10_001));
+    expect((await stack.updates.next()).revision).toBe(10_001);
+    await stack.flush();
+    expect(stack.cursors).toEqual([null, 1]);
+    expect(stack.sent.map((frame) => frame.revision)).toEqual([1, 10_001]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("server replication keeps one slow read across unsubscribe and resubscribe bursts", async () => {
+  const stack = await delayedWorldStack();
+  try {
+    await stack.subscribe();
+    const obsolete = await stack.pulls.next();
+    for (let index = 0; index < 20; index += 1) {
+      await stack.unsubscribe();
+      await stack.subscribe();
+      stack.notify();
+    }
+    expect(stack.cursors).toEqual([null]);
+    obsolete.resolve(worldBaseline(1));
+    const current = await stack.pulls.next();
+    expect(current.sinceRevision).toBeNull();
+    expect(stack.sent).toEqual([]);
+    current.resolve(worldBaseline(2));
+    expect((await stack.updates.next()).revision).toBe(2);
+    await stack.flush();
+    expect(stack.cursors).toEqual([null, null]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("server replication does not lose a notification queued while its drain settles", async () => {
+  const stack = await delayedWorldStack();
+  try {
+    stack.onFrame(() => {
+      stack.onFrame(() => {});
+      queueMicrotask(() => queueMicrotask(stack.notify));
+    });
+    await stack.subscribe();
+    (await stack.pulls.next()).resolve(worldBaseline(1));
+    expect((await stack.updates.next()).revision).toBe(1);
+    const next = await stack.pulls.next();
+    expect(next.sinceRevision).toBe(1);
+    next.resolve(worldBaseline(2));
+    expect((await stack.updates.next()).revision).toBe(2);
+    await stack.flush();
+    expect(stack.cursors).toEqual([null, 1]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("server replication stays single-flight when a world read emits a notification synchronously", async () => {
+  const stack = await delayedWorldStack();
+  try {
+    stack.onPull(() => {
+      stack.onPull(() => {});
+      stack.notify();
+    });
+    await stack.subscribe();
+    const first = await stack.pulls.next();
+    await stack.flush();
+    expect(stack.cursors).toEqual([null]);
+    first.resolve(worldBaseline(1));
+    await stack.updates.next();
+    const second = await stack.pulls.next();
+    expect(second.sinceRevision).toBe(1);
+    second.resolve(worldBaseline(2));
+    await stack.updates.next();
+    expect(stack.cursors).toEqual([null, 1]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("server replication discards in-flight results after unsubscribe or connection close", async () => {
+  for (const close of [false, true]) {
+    const stack = await delayedWorldStack();
+    try {
+      await stack.subscribe();
+      const pending = await stack.pulls.next();
+      stack.notify();
+      if (close) stack.connection.close();
+      else await stack.unsubscribe();
+      pending.resolve(worldBaseline(1));
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(stack.sent).toEqual([]);
+      expect(stack.cursors).toEqual([null]);
+    } finally {
+      await stack.shutdown();
+    }
+  }
+});
+
+test("server replication honors a baseline request while an older diff is in flight", async () => {
+  const stack = await delayedWorldStack();
+  try {
+    await stack.subscribe();
+    (await stack.pulls.next()).resolve(worldBaseline(1));
+    await stack.updates.next();
+    stack.notify();
+    const obsolete = await stack.pulls.next();
+    expect(obsolete.sinceRevision).toBe(1);
+    await stack.subscribe();
+    obsolete.resolve(worldBaseline(2));
+    const baseline = await stack.pulls.next();
+    expect(baseline.sinceRevision).toBeNull();
+    baseline.resolve(worldBaseline(3));
+    expect((await stack.updates.next()).revision).toBe(3);
+    expect(stack.sent.map((frame) => frame.revision)).toEqual([1, 3]);
+  } finally {
+    await stack.shutdown();
+  }
+});
+
+test("server replication retries rejected reads without advancing past unsent frames", async () => {
+  const stack = await delayedWorldStack();
+  try {
+    await stack.subscribe();
+    (await stack.pulls.next()).reject(new Error("temporary world read failure"));
+    await stack.flush();
+    stack.notify();
+    const retry = await stack.pulls.next();
+    expect(retry.sinceRevision).toBeNull();
+    const getServerView = stack.host.getServerView;
+    stack.host.getServerView = async () => { throw new Error("temporary metadata failure"); };
+    retry.resolve(worldBaseline(1));
+    await stack.flush();
+    stack.host.getServerView = getServerView;
+    stack.notify();
+    const retryMetadata = await stack.pulls.next();
+    expect(retryMetadata.sinceRevision).toBeNull();
+    retryMetadata.resolve(worldBaseline(2));
+    expect((await stack.updates.next()).revision).toBe(2);
+    expect(stack.sent.map((frame) => frame.revision)).toEqual([2]);
+  } finally {
+    await stack.shutdown();
+  }
+});
 
 test("loopback: second client joins the first client's server", async () => {
   const stack = startStack();
