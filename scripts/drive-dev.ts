@@ -43,7 +43,7 @@ import {
 } from "./browser-lib";
 import { attachDaemon, ensureDaemonTarget } from "./shoot-daemon";
 import { lookSearchParams, parseLookAim } from "./lookArg";
-import { captureClickPoint, driveTargetUrl, externalCaptureUrl, parseCaptureDevice } from "./captureTarget";
+import { captureClickPoint, driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
 import { decodePng } from "./png-reader";
 import { shotSignature } from "./shot-metrics";
 import { buildShotRecord, clearShotTarget, describeReplacement, writeShotRecord, type PreviousShot } from "./shotProvenance";
@@ -178,7 +178,8 @@ const HELP = `bun run drive <gameId> [options] --click "TEXT" --shot name ...
                       the honest movement check on a low-fps headless GL page
                       where held-key motion is too small to read off screenshots
   --reuse-storage     keep the warm profile's existing localStorage/origin storage
-                      for the target instead of clearing it before the drive. By
+                      for the target instead of clearing it before the drive;
+                      requires a live daemon or explicit --connect <port>. By
                       default a drive clears the target origin's storage so the game
                       boots clean and capture.probe reflects THIS run — a game that
                       auto-restores a save would otherwise resume the prior run's
@@ -687,6 +688,7 @@ for (const step of args.steps) {
 }
 
 const daemon = args.connect === undefined ? await attachDaemon() : null;
+requireReusableCaptureStorage(args.reuseStorage, args.connect !== undefined, daemon !== null);
 if (args.url !== undefined && !(await isUp(args.url))) {
   throw new Error(`drive: nothing is listening at ${args.url} — start that external server first`);
 }

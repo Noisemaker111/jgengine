@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { captureClickPoint, driveTargetUrl, externalCaptureUrl, parseCaptureDevice } from "./captureTarget";
+import { captureClickPoint, driveTargetUrl, externalCaptureUrl, parseCaptureDevice, requireReusableCaptureStorage } from "./captureTarget";
 import { shotSidecarPath } from "./shotProvenance";
 import { applyDevice, DEVICES, scaleProfile, screencastCapturesFully, type CdpSession } from "./browser-lib";
 
@@ -48,6 +48,31 @@ describe("shared drive device profiles", () => {
 });
 
 describe("external capture targets", () => {
+  test("storage reuse requires an existing browser instead of a fresh disposable profile", () => {
+    expect(() => requireReusableCaptureStorage(true, false, false)).toThrow("--connect <port>");
+    expect(() => requireReusableCaptureStorage(true, true, false)).not.toThrow();
+    expect(() => requireReusableCaptureStorage(true, false, true)).not.toThrow();
+    expect(() => requireReusableCaptureStorage(false, false, false)).not.toThrow();
+  });
+
+  test("an unconnected storage reuse drive fails before server or browser startup, even with --keep", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-reuse-no-daemon-"));
+    try {
+      for (const keep of [[], ["--keep"]]) {
+        const result = spawnSync(process.execPath, [
+          import.meta.dir + "/drive-dev.ts", "--url", "http://127.0.0.1:1", "--reuse-storage", ...keep,
+        ], { cwd, env: { ...process.env, JG_CHROME_PORT: "1" }, encoding: "utf8", timeout: 5_000 });
+        expect(result.status).toBe(1);
+        expect(result.stderr).toContain("--reuse-storage requires a live warm browser");
+        expect(result.stderr).toContain("--keep alone only preserves the new profile");
+        expect(result.stderr).not.toContain("nothing is listening");
+        expect(result.stderr).not.toContain("starting");
+      }
+    } finally {
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
   test("normalizes loopback and preserves the native document and query", () => {
     const native = externalCaptureUrl("http://localhost:5518/play?map=courtyard#room-2");
     const url = driveTargetUrl({ url: native, game: "url", mode: "play" }, "http://runner:4517");

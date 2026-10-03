@@ -42,6 +42,12 @@ export function parseCaptureDevice(raw: string | undefined): Device {
   return raw as Device;
 }
 
+export function requireReusableCaptureStorage(reuseStorage: boolean, connected: boolean, daemonAttached: boolean): void {
+  if (reuseStorage && !connected && !daemonAttached) {
+    throw new Error("drive: --reuse-storage requires a live warm browser; no daemon is attached. Use --connect <port> for the existing Chrome, or start bun run shoot daemon start before the setup and reuse drives. A new Chrome profile cannot retain a prior checkpoint; --keep alone only preserves the new profile after this run.");
+  }
+}
+
 type ClickNode = {
   textContent: string | null;
   getAttribute(name: string): string | null;

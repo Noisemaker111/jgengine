@@ -13,6 +13,7 @@ import {
   readDaemonState,
   reapStaleDaemonState,
   stopDaemon,
+  startDaemon,
   waitForDaemonLive,
   writeDaemonState,
   type ShootDaemonState,
@@ -30,6 +31,56 @@ describe("shoot daemon CLI routing", () => {
 });
 
 describe("shoot daemon state file", () => {
+  test("legacy compatibility reads and clears only the exact checkout's record", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-legacy-fixture-"));
+    const legacy = join(cwd, "legacy-state.json");
+    try {
+      const foreign = { identity: "/foreign-checkout", chromePort: 1, startedAt: "fixture" };
+      writeFileSync(legacy, JSON.stringify(foreign));
+      expect(readDaemonState(cwd, legacy)).toBeNull();
+      clearDaemonState(cwd, legacy);
+      expect(existsSync(legacy)).toBe(true);
+      const own = { ...foreign, identity: checkoutIdentity(cwd) };
+      writeFileSync(legacy, JSON.stringify(own));
+      expect(readDaemonState(cwd, legacy)).toEqual(own);
+      clearDaemonState(cwd, legacy);
+      expect(existsSync(legacy)).toBe(false);
+    } finally {
+      clearDaemonState(cwd, legacy);
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
+  test("same-port checkouts have isolated metadata and locks even under a port override", () => {
+    const first = mkdtempSync(join(tmpdir(), "jg-shoot-isolated-a-"));
+    const second = mkdtempSync(join(tmpdir(), "jg-shoot-isolated-b-"));
+    const prior = process.env.JG_CHROME_PORT;
+    process.env.JG_CHROME_PORT = "9230";
+    try {
+      const firstPath = daemonStatePath(first);
+      const secondPath = daemonStatePath(second);
+      expect(firstPath).not.toBe(secondPath);
+      expect(`${firstPath}.lock`).not.toBe(`${secondPath}.lock`);
+      expect(firstPath).not.toBe(join(tmpdir(), "jgengine-shoot-daemon-9230.json"));
+      for (const cwd of [first, second]) {
+        writeDaemonState({ identity: checkoutIdentity(cwd), chromePort: 9230, startedAt: "isolated" }, cwd);
+      }
+      expect(readDaemonState(first)?.identity).toBe(checkoutIdentity(first));
+      expect(readDaemonState(second)?.identity).toBe(checkoutIdentity(second));
+      clearDaemonState(first);
+      expect(readDaemonState(first)).toBeNull();
+      expect(readDaemonState(second)?.identity).toBe(checkoutIdentity(second));
+      expect(existsSync(secondPath)).toBe(true);
+    } finally {
+      clearDaemonState(first);
+      clearDaemonState(second);
+      if (prior === undefined) delete process.env.JG_CHROME_PORT;
+      else process.env.JG_CHROME_PORT = prior;
+      rmSync(first, { recursive: true, force: true });
+      rmSync(second, { recursive: true, force: true });
+    }
+  });
+
   test("write/read/clear round-trip on the per-checkout path", () => {
     const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-state-"));
     try {
@@ -131,6 +182,27 @@ describe("shoot daemon state file", () => {
 });
 
 describe("shoot daemon readiness", () => {
+  test("rejects an occupied unowned debugger port without launching or claiming Chrome", async () => {
+    const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-occupied-"));
+    const server = createServer((_request, response) => { response.writeHead(200); response.end("{}"); });
+    await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
+    const port = (server.address() as AddressInfo).port;
+    const prior = process.env.JG_CHROME_PORT;
+    process.env.JG_CHROME_PORT = String(port);
+    try {
+      await expect(startDaemon({ cwd })).rejects.toThrow(`explicitly --connect ${port}`);
+      expect(readDaemonState(cwd)).toBeNull();
+      expect(existsSync(daemonStatePath(cwd))).toBe(false);
+      expect((await fetch(`http://127.0.0.1:${port}/json/version`)).ok).toBe(true);
+    } finally {
+      clearDaemonState(cwd);
+      if (prior === undefined) delete process.env.JG_CHROME_PORT;
+      else process.env.JG_CHROME_PORT = prior;
+      await new Promise<void>(resolve => server.close(() => resolve()));
+      rmSync(cwd, { recursive: true, force: true });
+    }
+  });
+
   test("reaps an unreachable recorded daemon before the next start", async () => {
     const cwd = mkdtempSync(join(tmpdir(), "jg-shoot-stale-"));
     try {
