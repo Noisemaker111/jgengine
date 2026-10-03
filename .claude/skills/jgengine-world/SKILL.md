@@ -51,6 +51,8 @@ Per-instance state belongs on the placement, not in a game-owned map keyed by `i
 
 Compose perception, selection, planning/behavior, movement, and lifecycle independently. Inject randomness and scheduling. Use spatial indexes, interest tiers, or bounded candidate sets for scale.
 
+For chase-to-reach and cooldown effects, attach `pursue({ aggroRadius, reach, leashRange, speed, attack })` as behavior data. The host schedules acquisition and solid-aware movement; `behaviorControl` exposes pause/reset and optional threat. Pursuit progress survives GameContext save/replication without a game-local home/cooldown map. Use a decision graph and navigation actions when a route or richer perception policy is required.
+
 NPC decisions are a `decisionGraph` behavior: the graph and its blackboard are data, actions are registered by name, and perception or game systems write facts into `behaviorControl(ctx).blackboard(id)` rather than actions querying the world. Set `thinkInterval` so crowds think a few times a second, not every frame, and release movement or claims in `onAbort`.
 
 For a bounded local detour over movement collision geometry, use `planSolidRoute` (`nav/solidRoute`) with an indexed `solidObstaclesNear` or `sourceObstaclesNear` query. Handle `no-path` and `budget` separately; retain caller movement, goals, terrain and retry policy. See [reference.md](reference.md#local-collision-routes) for limits.

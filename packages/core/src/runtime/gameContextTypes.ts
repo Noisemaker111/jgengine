@@ -286,6 +286,7 @@ export interface SceneEntityContext {
   list(): readonly SceneEntity[];
   ids: EntityStore["ids"];
   subscribeMembership: EntityStore["subscribeMembership"];
+  subscribeBehaviors: EntityStore["subscribeBehaviors"];
   spawnPoseOf(instanceId: string): SpawnPose | null;
   resetToSpawn(instanceId: string): boolean;
   resetAllToSpawn(filter?: (entity: SceneEntity) => boolean): number;

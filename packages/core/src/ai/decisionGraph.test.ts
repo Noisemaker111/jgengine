@@ -4,6 +4,20 @@ import { createDecisionGraphRuntime, type DecisionNode } from "./decisionGraph";
 const action = (name: string): DecisionNode => ({ kind: "action", action: name });
 
 describe("decisionGraph", () => {
+  test("explicit abort clears running ownership before a throwing callback and preserves memory", () => {
+    let aborted = 0;
+    const runtime = createDecisionGraphRuntime({ kind: "sequence", memory: true, children: [
+      { kind: "action", action: "claim", params: { target: "one" } },
+    ] }, { claim: () => "running" }, { onAbort: (name, _ctx, params) => {
+      expect(name).toBe("claim"); expect(params).toEqual({ target: "one" });
+      expect(runtime.running()).toBeNull(); aborted++; throw new Error("caller cleanup failed");
+    } });
+    runtime.tick({}, {}, .1); const before = runtime.snapshot();
+    expect(() => runtime.abort({}, {})).toThrow("caller cleanup failed");
+    expect(runtime.snapshot()).toEqual({ ...before, runningPath: null });
+    runtime.abort({}, {}); expect(aborted).toBe(1);
+  });
+
   test("selector falls through failed branches", () => {
     const calls: string[] = [];
     const runtime = createDecisionGraphRuntime(

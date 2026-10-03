@@ -1,5 +1,5 @@
 import { createObservableKeyedStore } from "../store/observableKeyedStore";
-import type { BehaviorDescriptor } from "./behaviors";
+import { behaviorDataEqual, type BehaviorDescriptor } from "./behaviors";
 
 export type EntityRole = "player" | "npc" | "prop";
 
@@ -131,6 +131,7 @@ export interface EntityBlackboard {
   remaining(id: string, key: string, nowMs: number): number;
 }
 
+/** Entity state, pose writes, keyed behavior notifications and snapshot/hydration under stable instance IDs. */
 export interface EntityStore<TMeta = unknown> {
   spawn(name: string, options?: SpawnOptions<TMeta>): string;
   despawn(id: string): boolean;
@@ -146,6 +147,8 @@ export interface EntityStore<TMeta = unknown> {
   subscribe(listener: () => void): () => void;
   /** Notified only when the entity set changes (spawn/despawn/hydrate), never on a pose or field update — the render tree re-reconciles on membership, individual markers read live poses imperatively. */
   subscribeMembership(listener: () => void): () => void;
+  /** Changed behavior data or removal, keyed by id and notified before ordinary subscribers. Equal-data hydration and pose writes do not fire. */
+  subscribeBehaviors(listener: (id: string) => void): () => void;
   snapshot(): readonly SceneEntity<TMeta>[];
   /**
    * Apply a `snapshot()` (e.g. from an authoritative host) to this store — the counterpart of `snapshot()`
@@ -166,11 +169,26 @@ export interface EntityStoreOptions {
 }
 
 export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions = {}): EntityStore<TMeta> {
-  const store = createObservableKeyedStore<SceneEntity<TMeta>>(undefined, options.onChange);
+  const behaviorListeners = new Set<(id: string) => void>();
+  const behaviorChanges = new Set<string>();
+  const store = createObservableKeyedStore<SceneEntity<TMeta>>(undefined, (id, membershipChanged) => {
+    options.onChange?.(id, membershipChanged);
+    if (id !== undefined && behaviorChanges.delete(id)) for (const listener of behaviorListeners) listener(id);
+  });
   const spawnPoses = new Map<string, SpawnPose>();
   const constraints = new Map<string, PoseConstraint>();
   const blackboards = new Map<string, Map<string, unknown>>();
   let nextCounter = 1;
+
+  function writeEntity(entity: SceneEntity<TMeta>, previous = store.get(entity.id)?.behaviors): void {
+    if (!behaviorDataEqual(previous ?? [], entity.behaviors)) behaviorChanges.add(entity.id);
+    store.set(entity.id, entity);
+  }
+
+  function deleteEntity(id: string): void {
+    if ((store.get(id)?.behaviors.length ?? 0) > 0) behaviorChanges.add(id);
+    store.delete(id);
+  }
 
   const blackboard: EntityBlackboard = {
     get: <T>(id: string, key: string): T | undefined => blackboards.get(id)?.get(key) as T | undefined,
@@ -220,7 +238,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       const id = options.id ?? generateId();
       const position = toEntityPosition(options.position);
       const rotationY = options.rotationY ?? 0;
-      store.set(id, {
+      spawnPoses.set(id, { position, rotationY });
+      writeEntity({
         id,
         name,
         position,
@@ -234,12 +253,11 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
         ...(options.hidden === undefined ? {} : { hidden: options.hidden }),
         meta: options.meta as TMeta,
       });
-      spawnPoses.set(id, { position, rotationY });
       return id;
     },
     despawn(id) {
       const existed = store.has(id);
-      store.delete(id);
+      deleteEntity(id);
       spawnPoses.delete(id);
       constraints.delete(id);
       blackboards.delete(id);
@@ -248,6 +266,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     update(id, patch) {
       const current = store.get(id);
       if (!current) return false;
+      const previousBehaviors = current.behaviors;
       if (patch.position !== undefined) current.position = toEntityPosition(patch.position);
       if (patch.name !== undefined) current.name = patch.name;
       if (patch.rotationY !== undefined) current.rotationY = patch.rotationY;
@@ -258,7 +277,8 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       if (patch.behaviors !== undefined) current.behaviors = patch.behaviors;
       if (patch.hidden !== undefined) current.hidden = patch.hidden;
       if (patch.meta !== undefined) current.meta = patch.meta;
-      store.set(id, current);
+      if (patch.behaviors === undefined) store.set(id, current);
+      else writeEntity(current, previousBehaviors);
       return true;
     },
     setPoseConstraint(id, constraint) {
@@ -307,7 +327,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     },
     clear() {
       for (const entity of store.arraySnapshot()) {
-        store.delete(entity.id);
+        deleteEntity(entity.id);
       }
       constraints.clear();
       blackboards.clear();
@@ -318,6 +338,10 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
     subscribeMembership(listener) {
       return store.subscribeMembership(listener);
     },
+    subscribeBehaviors(listener) {
+      behaviorListeners.add(listener);
+      return () => { behaviorListeners.delete(listener); };
+    },
     snapshot() {
       return store.arraySnapshot();
     },
@@ -325,14 +349,14 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       const incoming = new Set(entities.map((entity) => entity.id));
       for (const current of store.arraySnapshot()) {
         if (!incoming.has(current.id)) {
-          store.delete(current.id);
+          deleteEntity(current.id);
           spawnPoses.delete(current.id);
           constraints.delete(current.id);
           blackboards.delete(current.id);
         }
       }
       for (const entity of entities) {
-        store.set(entity.id, {
+        writeEntity({
           id: entity.id,
           name: entity.name,
           position: entity.position,

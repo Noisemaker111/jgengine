@@ -150,7 +150,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `behaviorControl` (function) · `import { behaviorControl } from "@jgengine/core/world"`
 
-## behavior-tick — auto-advance patrol/wander behaviors on spawned entities, no per-game route loop
+## behavior-tick — auto-advance spawned patrol, wander, pursuit and decision graph behaviors with lifecycle control
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
 
@@ -600,6 +600,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## proximity-prompt — a "press E" contextual prompt shown near an interactable
 
 - `resolveActivePrompt` (function) · `import { resolveActivePrompt } from "@jgengine/core/world"`
+
+## pursue-behavior — scheduled pursuit with bounded target acquisition and saved cooldown/leash state
+
+- `pursue` (function) · `import { pursue } from "@jgengine/core/world"`
 
 ## pursuit — enemy/mob aggro chase-to-reach with a cooldown-gated attack and optional leash-to-home; owns the attack cooldown
 

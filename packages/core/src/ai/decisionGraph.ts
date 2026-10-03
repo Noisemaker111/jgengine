@@ -74,6 +74,8 @@ export interface DecisionGraphRuntime<Context = unknown> {
   tick(ctx: Context, blackboard: Blackboard, dt: number): DecisionStatus;
   /** Name of the action left running by the last tick, or null. */
   running(): string | null;
+  /** Abort the compiled running action once, retaining graph memory/timers. Clears ownership before invoking user onAbort, even if it throws. */
+  abort(ctx: Context, blackboard: Blackboard): void;
   snapshot(): DecisionGraphSnapshot;
   restore(next: DecisionGraphSnapshot): void;
 }
@@ -267,6 +269,11 @@ export function createDecisionGraphRuntime<Context = unknown>(
     running() {
       const node = runningId >= 0 ? nodes[runningId]!.node : null;
       return node?.kind === "action" ? node.action : null;
+    },
+    abort(ctx, blackboard) {
+      const node = runningId >= 0 ? nodes[runningId]!.node : null;
+      runningId = -1;
+      if (node?.kind === "action") options.onAbort?.(node.action, ctx, node.params, blackboard);
     },
     snapshot() {
       const nodeState: Record<string, DecisionNodeMemory> = {};
