@@ -3,7 +3,7 @@ import { join, resolve } from "node:path";
 
 import { gameSkeletonRequiredSummary, isAllowedGameSrcEntry } from "./gameShape";
 import { cliVersion, findWorkspaceRoot, readPackageJson, resolveDependencyRange, sdkVersion, type PackageJson } from "./pkg";
-import { installedPackageVersion, installedSdkVersions, sdkMinorNewer } from "./compatibility";
+import { inspectInstalledSdkGraph, installedPackageVersion, installedSdkVersions, sdkMinorNewer } from "./compatibility";
 import { assessPrototypeLook } from "./prototypeLook";
 import { IN_REPO_TSCONFIG_PATHS } from "./templates";
 
@@ -53,6 +53,17 @@ export function diagnose(dir: string): Finding[] {
   }
 
   const engineDeps = allEngineDeps(pkg);
+  const graph = inspectInstalledSdkGraph(dir);
+  const catalogRoot = findWorkspaceRoot(dir);
+  findings.push({
+    ok: true,
+    label: `SDK inspection scope: ${graph.scope.project} direct consumers and installed SDK graph; workspace leaves not inspected${graph.scope.uninstalledCatalogPackages.length === 0 ? "" : `; catalog packages without a project install: ${graph.scope.uninstalledCatalogPackages.join(", ")}`}`,
+  });
+  findings.push({
+    ok: graph.issues.length === 0,
+    label: graph.nodes.some(node => node.name.startsWith("@jgengine/")) ? "installed SDK dependency identities are coherent" : "installed SDK dependency identities not inspected (no installed SDK packages)",
+    fix: graph.issues.length === 0 ? undefined : `${graph.issues.map(issue => issue.message).join("; ")}. Review SDK declarations${catalogRoot === null ? "" : " in the shared catalog"} at ${catalogRoot ?? dir}/package.json and in linked consumers, then reinstall from that root. Ensure linked consumers use the same SDK package roots; a root install can leave private linked-package installs intact. Doctor has not changed declarations, installations, or lockfiles.`,
+  });
   const newerSdk = installedSdkVersions(dir).filter(entry => sdkMinorNewer(entry.version, sdkVersion()));
   findings.push({
     ok: newerSdk.length === 0,

@@ -32,13 +32,17 @@ Skills ship inside this package under `skills/` and are installed into the proje
 | `drive [...]` | Play/test the current game headless — `--click`/`--key`/`--wait`/`--shot` steps, `--rpc`, `--playtest --strict`; `--help` for all flags |
 | `desktop [dir]` | Ship a Windows NSIS installer for a project or `--url` |
 | `skills -p \| -g` | Re-install agent skills (project / global) |
-| `doctor [dir]` | Diagnose version skew, missing peers, unstyled HUD, shape drift |
+| `doctor [dir]` | Diagnose installed SDK identity splits, version skew, missing peers, unstyled HUD, shape drift |
 | `upgrade [dir] [--json] [--to x.y.z] [--plan \| --apply]` | Read-only migration report by default; opt-in root workspace catalog authoring |
 | `assets …` | List, search, and pull CC0 asset packs (`@jgengine/assets`) |
 | `editor-mcp …` | Scene-editor agent bridge (document RPC / localhost server) |
 | `versions` | CLI + installed `@jgengine/*` versions |
 
 `doctor` and `upgrade` resolve default and named Bun workspace catalogs and recognize hoisted SDK installs. Missing catalog entries and corrupt installed metadata fail diagnostics. Reports distinguish installed versions from declared baselines; unavailable migration notes never establish that a project is up to date.
+
+`doctor` also follows direct installed consumers (including `file:` links) and SDK dependency/peer edges by real package paths, up to 256 packages. A private SDK copy fails even when its version matches the root copy: identical versions can still own separate module state. The diagnostic names the importer, range, resolved path/version, and canonical project path/version; review the root SDK catalog and linked-consumer declarations, then reinstall from the root and check again. A root install may leave private linked-package installs intact. Doctor reads manifests without requiring a package root export and never changes files. It covers the declared package graph, not custom bundler aliases or indirect non-SDK dependency chains.
+
+At a workspace root, `doctor` checks that root's direct consumers and installed SDK graph; it does not open workspace games or certify a completed workspace upgrade. Passing a game directory inspects that particular game's graph. Restart running games after installation so cached modules use the updated paths. Unused catalog packages without a project install are listed as uninspected; required dependencies or peers without an install fail.
 
 For a workspace catalog upgrade, run `jgengine upgrade --plan --to <published-version>` at the root or in a game. The plan covers existing SDK entries across all root catalogs, prints migrations oldest-first, and lists the owning file, catalog paths, and exact range changes. `--json` also includes the full before/after `package.json` text. Then run `jgengine upgrade --apply --to <published-version>` to print and apply a fresh plan. Omitting `--to` selects the registry's latest core version. Every affected SDK version and its SDK dependencies must be published; a candidate manifest or changelog cannot authorize an apply.
 
