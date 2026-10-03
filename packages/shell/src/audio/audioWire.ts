@@ -51,8 +51,8 @@ export function attachAudioEventWire(
   const offLoopStart = events.on("audio.loopStart", ({ id, sound, at }) => {
     const existing = loops.get(id);
     if (existing !== undefined) {
-      // Same sound: idempotent — keep the running source so a per-tick re-issue never clicks.
-      if (existing.sound === sound) return;
+      // Keep active/pending loops; a stolen voice can retry on the next explicit start.
+      if (existing.sound === sound && existing.handle.isPlaying?.() !== false) return;
       existing.handle.stop();
       loops.delete(id);
     }

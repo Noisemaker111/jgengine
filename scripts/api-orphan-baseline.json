@@ -182,7 +182,6 @@
   "@jgengine/node/testFixtures#createTestRuntime",
   "@jgengine/node/webHandler#toWebRequest",
   "@jgengine/shell/GamePhaseStamp#GamePhaseStamp",
-  "@jgengine/shell/audio/audioEngine#createAudioEngine",
   "@jgengine/shell/audio/musicVoices#playMusicNote",
   "@jgengine/shell/audio/synthEngine#createNoiseBuffer",
   "@jgengine/shell/audio/synthEngine#realizeSynthPatch",

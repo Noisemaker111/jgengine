@@ -308,3 +308,13 @@ These handles hand back a plain JSON `snapshot()` that later ticks do not mutate
 ### Snapshot and restore on building handles
 
 `world/footprintGrid` `createFootprintGrid` (reservations in claim order; restore rebuilds occupancy), `world/walls` `createWallDrawTool` (points and closed flag) and `world/terraform` `createTerraformBrush` (radius and strength; the terrain keeps its own `snapshot()`) hand back a plain JSON `snapshot()` and take it back with `restore(next)`. `world/interiors` `createInteriors` holds config only, so it has nothing to save.
+
+## Spatial audio and playback budgets
+
+Games own the sound catalog and music composition. `PlayableGame.audio.maxVoices` bounds simultaneous SFX playbacks/patch reservations, including pending sample loads; each caller-defined synth patch shares one slot across its oscillators (default 64); `voiceOverflow` chooses `"steal-lowest"` or `"reject"`. `SoundDef.maxVoices` caps one sound and `priority` protects higher-priority cues. Equal priorities steal the oldest reservation. Music runs through its own director outside this SFX budget.
+
+The shell feeds camera position, forward, up, and velocity into `setListenerPose`; a legacy bare position still uses forward -Z and up +Y. `SoundDef.spatial` enables a panner whose distance attenuation replaces scalar falloff while preserving authored gain. `positional: false` keeps UI cues flat, even when spatial settings are present. Loop handles copy positions and velocities and accept updates before samples finish loading. `isPlaying()` includes pending loads; an explicit `audio.loopStart` retries a stolen/stopped loop while active starts stay idempotent. Legacy handles without the optional probe keep their previous behavior.
+
+For custom audio hosts, `createVoiceAllocator` (`@jgengine/core/audio/voiceAllocator`) exposes detached reservation `snapshot`/`restore`, injected `VoiceAllocatorStorage`, and `retune`. Pass a dedicated allocator to `createAudioEngine` (`@jgengine/shell/audio/audioEngine`) to inspect reservations; use `engine.setVoiceLimit(total, overflow?)` to retune an active engine so removed reservations also stop their graphs. Reservation snapshots describe admission state, not browser nodes or resumable audio playback. Stop every id returned by allocator stealing or retuning when using it outside the shell.
+
+Cancelled or stolen pending cues never create a late source. Natural sample/synth completion, failed loads, explicit stops, and engine teardown release reservations and disconnect source, filters, per-cue gains, and panners. Mocked graph tests establish routing and lifecycle; they do not establish audible quality.

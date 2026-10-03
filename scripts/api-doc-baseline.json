@@ -2538,7 +2538,6 @@
   "@jgengine/shell/audio/audioEngine#AudioEngine",
   "@jgengine/shell/audio/audioEngine#AudioSceneConfig",
   "@jgengine/shell/audio/audioEngine#Vec3",
-  "@jgengine/shell/audio/audioEngine#createAudioEngine",
   "@jgengine/shell/behaviour#attachObject3D",
   "@jgengine/shell/behaviourAttach#attachObject3D",
   "@jgengine/shell/camera#CameraFollowListener",

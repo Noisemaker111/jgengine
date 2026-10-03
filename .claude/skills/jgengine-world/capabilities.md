@@ -102,6 +102,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `defineAttackMoveOrder` (function) · `import { defineAttackMoveOrder } from "@jgengine/core/world"`
 
+## audio-voice-budget — bound simultaneous sound playback with per-sound caps, priorities, and deterministic stealing
+
+- `createVoiceAllocator` (function) · `import { createVoiceAllocator } from "@jgengine/core/audio/voiceAllocator"`
+
 ## authored-entities — spawn authored mob/boss markers from the editor document at runtime
 
 - `authoredEntitySpawns` (function) · `import { authoredEntitySpawns } from "@jgengine/core/world/authoredEntities"`

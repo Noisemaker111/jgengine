@@ -300,7 +300,7 @@
 - `AudioBusId` (type): type AudioBusId = string — ⚠ undocumented
 - `AudioFalloffConfig` (interface): interface AudioFalloffConfig { minDistance?: number; maxDistance?: number; curve?: FalloffCurve } — ⚠ undocumented
 - `FalloffCurve` (type): type FalloffCurve = "linear" | "inverse" | "none" — ⚠ undocumented
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistan… — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equal… — ⚠ undocumented
 - `computeFalloffGain` (function): function computeFalloffGain(distance: number, config: AudioFalloffConfig = {}): number — ⚠ undocumented
 - `distance3` (function): function distance3(a: { x: number; y: number; z: number }, b: { x: number; y: number; z: number }): number — ⚠ undocumented
 - `resolveEmitterGain` (function): function resolveEmitterGain(distance: number, sound: Pick<SoundDef, "gain" | "positional" | "falloff">, busGain: number): number — ⚠ undocumented
@@ -360,6 +360,16 @@
 - `SynthWave` (type): type SynthWave = "sine" | "square" | "sawtooth" | "triangle" — Oscillator waveform available to a pitched synth voice.
 - `ToneVoice` (interface): interface ToneVoice — A pitched oscillator voice: a 12ms linear attack to `gain`, then an exponential decay to silence across `duration`, with an optional exponential pitch slide from `freq` to `slideTo`.
 - `patchDuration` (function): function patchDuration(patch: SynthPatch): number — Total wall-clock length of a patch in seconds — the latest voice end across all voices.
+
+## @jgengine/core/audio/voiceAllocator
+
+- `AudioVoice` (interface): interface AudioVoice — One reserved playback slot, including sources still loading.
+- `VoiceAllocation` (type): type VoiceAllocation = { ok: false } | { ok: true; voiceId: number; stolen: number[] } — Admission result; stop every stolen source before starting the admitted voice.
+- `VoiceAllocator` (interface): interface VoiceAllocator — Bounded reservations with higher-priority protection and oldest-first ties.
+- `VoiceAllocatorConfig` (interface): interface VoiceAllocatorConfig — Playback budget. Zero disables playback; default 64.
+- `VoiceAllocatorSnapshot` (interface): interface VoiceAllocatorSnapshot — Detached allocator state; ids increase monotonically for deterministic oldest-first ties.
+- `VoiceAllocatorStorage` (interface): interface VoiceAllocatorStorage — Caller-owned reservation storage. Reads and writes use detached state.
+- `createVoiceAllocator` (function): function createVoiceAllocator(config: VoiceAllocatorConfig = {}): VoiceAllocator — Reserve bounded sound playback before fetching or constructing a graph. Equal priorities steal the oldest reservation; lower priorities cannot interrupt higher priorities. Policy is retunable.
 
 ## @jgengine/core/faction/factions
 
@@ -2438,7 +2448,7 @@
 - `SnapMode` (type): type SnapMode = "grid" | "free" | "surface" — ⚠ undocumented
 - `SnowEnvironmentDescriptor` (type): type SnowEnvironmentDescriptor = { kind: "snow" } & Required< Pick<SnowEnvironmentConfig, "area" | "density" | "speed" | "flakeSize" | "drift" | "wind" | "color" | "opacity"> > — ⚠ undocumented · used by `snow`: Declares a snowfall weather effect for `environment()` — area, density, drift, wind, and flake opacity.
 - `SoilRules` (interface): interface SoilRules — Fully-defaulted soil params parsed from a volume's `meta`.
-- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equalpower"; refDistance?: number; maxDistan… — ⚠ undocumented
+- `SoundDef` (interface): interface SoundDef { id: string; url?: string; synth?: SynthPatch; bus: AudioBusId; gain?: number; loop?: boolean; maxVoices?: number; priority?: number; positional?: boolean; falloff?: AudioFalloffConfig; doppler?: number; spatial?: {panning: "hrtf" | "equal… — ⚠ undocumented
 - `SpatialGrid` (class): class SpatialGrid — A uniform-grid broad-phase over the x/z plane, separate from the rigid-body sim, for cheap same-tick proximity across hundreds–thousands of simple movers (swarm enemies). Rebuild each tick from the caller's own position arrays, then `queryCircle` (enemies hitting the player / an AoE) or `forEachPair` (mutual separation). Both are precise: no false negatives, no false positives beyond the exact distance test.
 - `SpawnDirectorConfig` (interface): interface SpawnDirectorConfig { waves: readonly WaveManifest[]; maxAlive?: number; escalationPerSecond?: number; alertBudgetPerSecond?: number; alertDecayPerSecond?: number; playerBudgetPerSecond?: number; maxSpawnsPerTick?: number; loop?: boolean; seed?: number; spawnP… — ⚠ undocumented
 - `SpawnDirectorState` (interface): interface SpawnDirectorState { wave: number; elapsed: number; waveElapsed: number; budget: number; alert: number; spawnedThisWave: number; spawnedTotal: number; rng: RandomSeed; done: boolean } — ⚠ undocumented

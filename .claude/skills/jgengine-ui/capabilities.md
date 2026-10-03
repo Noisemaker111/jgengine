@@ -52,6 +52,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useAutoScroll` (function) · `import { useAutoScroll } from "@jgengine/react"`
 
+## bounded-spatial-audio — play positional or flat cues with listener orientation, voice budgets, and per-source cleanup
+
+- `createAudioEngine` (function) · `import { createAudioEngine } from "@jgengine/shell/audio/audioEngine"`
+
 ## camera-shake-meter — HUD readout for a core camera-shake controller — a trauma meter plus current impact-kind label, reskinnable and kind-labelled
 
 - `CameraShakeMeter` (function) · `import { CameraShakeMeter } from "@jgengine/react"`

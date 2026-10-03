@@ -39,6 +39,7 @@
     "./audio/musicState",
     "./audio/stepCadence",
     "./audio/synth",
+    "./audio/voiceAllocator",
     "./authoring",
     "./behaviour/behaviour",
     "./board/laneBoard",

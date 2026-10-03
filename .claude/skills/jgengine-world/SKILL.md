@@ -64,6 +64,7 @@ Render seams fall back to placeholders when content is unauthored: default green
 - Do not duplicate editor coordinates in runtime state.
 - Public APIs accept semantic policies and caller data, not renderer mechanics or internal tuning rolls.
 - Generated environments still need deterministic data assertions; authored environments need scene-document assertions.
+- Bound SFX through `PlayableGame.audio.maxVoices` and game-owned `SoundDef.priority`/`maxVoices`; choose reject or deterministic stealing with `voiceOverflow`. See the spatial audio reference for custom hosts and cleanup.
 - Audio files and licensing belong to `jgengine-assets`; spatial playback policy belongs here.
 
 

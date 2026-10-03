@@ -269,6 +269,8 @@ export function GamePlayerShell({
     () =>
       createAudioEngine({
         sounds: playable.audio?.sounds,
+        maxVoices: playable.audio?.maxVoices,
+        voiceOverflow: playable.audio?.voiceOverflow,
         buses: playable.audio?.buses,
         music: playable.audio?.music,
         musicBus: playable.audio?.musicBus,

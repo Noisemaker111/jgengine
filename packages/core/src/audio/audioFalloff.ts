@@ -29,6 +29,10 @@ export interface SoundDef {
   /** Base gain before bus/falloff multipliers. Default 1. */
   gain?: number;
   loop?: boolean;
+  /** Maximum simultaneous reservations for this sound, including pending loads. Default the engine's total voice limit. */
+  maxVoices?: number;
+  /** Playback priority; higher priorities survive voice-budget pressure. Default 0. */
+  priority?: number;
   /** Positional emitters attenuate by distance from the listener; non-positional sounds (UI, music) play at flat gain. Default true. */
   positional?: boolean;
   falloff?: AudioFalloffConfig;

@@ -1791,12 +1791,12 @@
 
 ## @jgengine/shell/audio/audioEngine
 
-- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Vec3): void; stop(): void } — ⚠ undocumented
-- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; playOneShot(soundId: string, position?: Vec3): void; playLoop(soundId: string, position?: Vec3): AudioEmitterHandle | null; playMusic(themeId: string | null, options?: CrossfadeOptions): v… — ⚠ undocumented
-- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string } — ⚠ undocumented
+- `AudioEmitterHandle` (interface): interface AudioEmitterHandle { isPlaying?(): boolean; setPosition(position: Vec3): void; setRate(rate: number): void; setGain(gain: number): void; setLowpass(hz: number): void; setHighpass(hz: number): void; setVelocity(velocity: Vec3): void; stop(): void } — ⚠ undocumented
+- `AudioEngine` (interface): interface AudioEngine { setListenerPose(pose: ListenerPose | Vec3): void; setVoiceLimit(maxTotal: number, overflow?: VoiceAllocatorConfig["overflow"]): void; playOneShot(soundId: string, position?: Vec3): void; playLoop(soundId: string, position?: Vec3): AudioEm… — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
+- `AudioSceneConfig` (interface): interface AudioSceneConfig { sounds?: Record<string, SoundDef>; maxVoices?: number; voiceOverflow?: VoiceAllocatorConfig["overflow"]; voiceAllocator?: VoiceAllocator; buses?: Record<string, AudioBusDef>; music?: Record<string, MusicTheme>; musicBus?: string } — ⚠ undocumented · used by `createAudioEngine`: Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 - `ListenerPose` (interface): interface ListenerPose — Position and orientation for a spatial-audio listener.
 - `Vec3` (interface): interface Vec3 { x: number; y: number; z: number } — ⚠ undocumented · used by `coverPoints` (@jgengine/core/ai/tacticalQueries): Returns boundary locations that are hidden from a threat.
-- `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — ⚠ undocumented
+- `createAudioEngine` (function): function createAudioEngine(config: AudioSceneConfig = {}): AudioEngine — Game-owned sound catalog playback with bounded SFX reservations, spatial panning, and shared buses.
 
 ## @jgengine/shell/audio/loopParams
 
@@ -1816,8 +1816,9 @@
 
 ## @jgengine/shell/audio/synthEngine
 
+- `SynthPlayback` (interface): interface SynthPlayback — Scheduled procedural sources; stopping releases their source/filter/envelope graph.
 - `createNoiseBuffer` (function): function createNoiseBuffer(ctx: BaseAudioContext): AudioBuffer — Build the shared 1-second mono white-noise buffer every noise voice samples from.
-- `realizeSynthPatch` (function): function realizeSynthPatch(ctx: BaseAudioContext, out: AudioNode, noiseBuf: AudioBuffer, patch: SynthPatch): void — Realise a procedural cue on Web Audio: every voice is scheduled at `ctx.currentTime + delay` into `out`, summed into one one-shot. `noiseBuf` is the shared buffer from {@link createNoiseBuffer}.
+- `realizeSynthPatch` (function): function realizeSynthPatch(ctx: BaseAudioContext, out: AudioNode, noiseBuf: AudioBuffer, patch: SynthPatch): SynthPlayback — Realise a procedural cue on Web Audio: every voice is scheduled at `ctx.currentTime + delay` into `out`, summed into one one-shot. `noiseBuf` is the shared buffer from {@link createNoiseBuffer}.
 
 ## @jgengine/shell/behaviour
 

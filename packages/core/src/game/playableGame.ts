@@ -683,6 +683,10 @@ export interface PlayableGame<
   /** Sound catalog + mix buses (music/sfx/ambient/…) the shell's Web Audio glue plays from. Catalog-first — no per-game audio wiring. `sounds` may be sample (`url`) or procedural (`synth`); `music` holds procedural themes crossfaded via `ctx.game.audio.music(id)`. */
   audio?: {
     sounds: Record<string, SoundDef>;
+    /** SFX playback/patch budget, including pending samples; individual synth oscillators share one slot. Default 64; zero disables SFX. */
+    maxVoices?: number;
+    /** Overflow rejects new cues or steals the lowest-priority oldest cue. Default "steal-lowest". */
+    voiceOverflow?: "steal-lowest" | "reject";
     buses?: Record<string, AudioBusDef>;
     music?: Record<string, MusicTheme>;
     musicBus?: string;
