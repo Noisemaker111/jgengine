@@ -123,14 +123,48 @@ exposes `elapsedMs()`/`restore()` for HUD and snapshots:
 ```ts
 const snapshot = {
   cadenceMs: rifle.cadence.elapsedMs(),
-  loaded: rifle.magazine?.loaded() ?? null,
+  magazine: rifle.magazine?.snapshot() ?? null,
 };
 // After load: recreate the runtime from the same config, then:
 rifle.cadence.restore(snapshot.cadenceMs);
+if (snapshot.magazine !== null && !rifle.magazine?.restore(snapshot.magazine)) {
+  throw new Error("magazine reserve configuration differs");
+}
 ```
 
-Recreate the magazine at its saved `loaded` via `MagazineConfig.loaded`. (Full
-magazine snapshot/restore lands with the serializable-runtime-state slice.)
+Restore caller-owned reserve storage first. Recreate with the current equipment
+capacity/reload duration, then restore the full magazine snapshot; see the
+[portable runtime-state recipe](portable-runtime-state.md) for live retuning.
+
+## Scene-backed projectiles and spread
+
+When a project already uses `createProjectileSystem`, keep its
+`fireProjectile(input)` → `settleProjectile(shotId)` call path. Pass authoritative
+seeded randomness as `ProjectileSystemDeps.rng`. A nonzero `Aim.spread` (degrees)
+or item `spread` samples an independent uniform solid-angle cone for each pellet
+(the half angle is clamped to 90 degrees);
+`pellets` chooses the count. Each sampled ray resolves its own nearest eligible
+receiver and cover. An explicit `{ origin, direction }` aim remains an exact ray.
+`willHitProjectile` stays a center-ray preview and consumes no randomness.
+
+GameContext forwards its authoritative RNG to the projectile system. Standalone
+callers must inject one for reproducible shots; the fallback is `Math.random`.
+Aim fields, explicit ray vectors, and the chosen origin-policy vectors are copied
+at fire time before RNG callbacks, so reusing caller input cannot redirect an
+in-flight shot. The default policy is copied for each shot too. World entities
+and colliders remain queried at settlement time.
+Two RNG draws are captured at fire time per nonzero-spread pellet. Settlement
+preserves the selected eye/muzzle/converge origin, named hitboxes, LOS, and
+blocking colliders. Ballistic paths are unchanged. `maxPellets` defaults to 64
+and clamps to [1, 256] to bound per-shot ray work. Zero-spread pellets each hit
+the nearest receiver; they no longer cycle through receivers down one ray.
+
+Scrap Signal is the first adopter: `items/use-handlers.ts` already calls these
+projectile APIs, and its Breacher adds pellet/range/ammo tradeoffs. Its combat
+adapter also needs `Magazine.retune` for live equipment/talent changes without
+reconstructing ammo state. Games remain on published packages until the
+coordinator verifies and unlocks the SDK release; these adoption points do not
+claim native play against unpublished code.
 
 ## Ownership
 

@@ -132,6 +132,28 @@ and restores that reserve directly. For a caller-owned `MagazineReserve`, save
 and restore the caller's reserve first; `restore` returns `false` rather than
 partially changing loaded/reload state when it cannot reconcile the reserve.
 
+## Retune without reconstructing the magazine
+
+Equipment or upgrades can change capacity and reload duration in place:
+
+```ts
+if (!magazine.retune({ capacity: 8, reloadMs: 750 })) {
+  throw new Error("capacity would strand loaded rounds");
+}
+```
+
+Growing capacity never grants ammo. Retuning preserves loaded rounds, shared
+reserve identity/value, and elapsed reload milliseconds. A shorter duration
+can put `reloadFraction()` at 1; only the next positive `tick` completes the
+reload and draws reserve. Save the current tuning in the caller's equipment
+schema and supply it when recreating the runtime before restoring its snapshot.
+
+Shrinking below the loaded count rejects the entire tuning by default. Choose
+`overflow: "return-to-reserve"` to return exactly the excess to a finite reserve
+with `gain`, or `overflow: "discard"` to explicitly destroy those rounds. Returning
+to an infinite reserve or a read/spend-only adapter rejects without changing
+capacity, duration, or ammo.
+
 ## Abilities, shields, and meters
 
 Ability kits, shields, and meters use the same save boundary:
@@ -174,8 +196,8 @@ same config and clock.
 
 ## Common traps
 
-- Re-supply immutable configuration such as magazine capacity/reload duration
-  and the stat id set when rebuilding a runtime; snapshots contain mutable
+- Re-supply current tuning such as magazine capacity/reload duration
+  and immutable configuration such as the stat id set when rebuilding a runtime; snapshots contain mutable
   state, not content catalogs.
 - Restore externally-owned reserve data before calling `Magazine.restore`.
 - Persist the injected clock alongside expiring modifier snapshots or convert

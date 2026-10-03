@@ -1,6 +1,6 @@
 import type { BallisticSweep } from "../physics/ballisticSweep";
 import type { EntityPosition } from "../scene/entityStore";
-import { defaultEntityColliders, resolveColliders, type EntityColliderSet } from "../scene/colliders";
+import type { EntityColliderSet } from "../scene/colliders";
 import {
   createSceneRaycast,
   firstImpact,
@@ -98,6 +98,10 @@ export interface ProjectileSystemDeps {
   sweepBallistic?: BallisticSweep;
   defaultOriginPolicy?: ShotOriginPolicy;
   now?: () => number;
+  /** Cone samples use two draws per nonzero-spread pellet at fire time; defaults to Math.random. */
+  rng?: () => number;
+  /** Per-shot ray limit, clamped to [1, 256]; defaults to 64. */
+  maxPellets?: number;
   onSettle?(report: ProjectileSettleReport): void;
 }
 
@@ -137,7 +141,9 @@ export type SettleResult =
   | { status: "rejected"; shotId: string; reason: string };
 
 export interface ProjectileSystem {
+  /** Predict the center ray without consuming random samples or applying effects. */
   willHitProjectile(input: ProjectileShotInput): ProjectilePrediction;
+  /** Capture aim, origin-policy vectors and cone samples independently of subsequent caller mutation. */
   fireProjectile(input: ProjectileShotInput): string;
   settleProjectile(shotId: string): SettleResult;
 }
@@ -147,8 +153,32 @@ const DEFAULT_PROJECTILE_SPEED = 15;
 const GRAVITY = 9.8;
 const BASE_HIT_RADIUS = 0.5;
 
-function isEntityHit(hit: RaycastHit): hit is EntityRaycastHit {
-  return hit.kind === "entity";
+function copyPosition(position: EntityPosition): EntityPosition {
+  return [position[0], position[1], position[2]];
+}
+
+function copyAim(aim: Aim): Aim {
+  return "origin" in aim
+    ? { ...aim, origin: copyPosition(aim.origin), direction: copyPosition(aim.direction) }
+    : { ...aim };
+}
+
+function copyOriginPolicy(policy: ShotOriginPolicy): ShotOriginPolicy {
+  switch (policy.kind) {
+    case "camera":
+    case "world":
+      return { ...policy, origin: copyPosition(policy.origin), ...(policy.direction !== undefined ? { direction: copyPosition(policy.direction) } : {}) };
+    case "entityOffset":
+      return { ...policy, offset: copyPosition(policy.offset) };
+    case "muzzle":
+      return { ...policy, ...(policy.offset !== undefined ? { offset: copyPosition(policy.offset) } : {}) };
+    case "converge":
+      return { ...policy, ...(policy.muzzle !== undefined ? { muzzle: copyPosition(policy.muzzle) } : {}) };
+    case "eye":
+    case "legacy":
+    case "entity":
+      return { ...policy };
+  }
 }
 
 function isObjectHit(hit: RaycastHit): hit is ObjectRaycastHit {
@@ -214,15 +244,53 @@ function asSceneHits(hits: readonly RaycastHit[]): SceneRaycastHit[] {
   }));
 }
 
+function sampleCone(
+  forward: EntityPosition,
+  spreadDeg: number,
+  sample: readonly [number, number],
+): EntityPosition {
+  const cone = Math.min(Math.PI / 2, spreadDeg * Math.PI / 180);
+  const unit = (value: number) => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
+  const cosTheta = 1 - unit(sample[0]) * (1 - Math.cos(cone));
+  const sinTheta = Math.sqrt(Math.max(0, 1 - cosTheta * cosTheta));
+  const phi = unit(sample[1]) * Math.PI * 2;
+  const horizontal = Math.hypot(forward[0], forward[2]);
+  const right: EntityPosition = horizontal > 1e-9
+    ? [forward[2] / horizontal, 0, -forward[0] / horizontal]
+    : [1, 0, 0];
+  const up: EntityPosition = [
+    forward[1] * right[2] - forward[2] * right[1],
+    forward[2] * right[0] - forward[0] * right[2],
+    forward[0] * right[1] - forward[1] * right[0],
+  ];
+  const x = sinTheta * Math.cos(phi);
+  const y = sinTheta * Math.sin(phi);
+  return [
+    forward[0] * cosTheta + right[0] * x + up[0] * y,
+    forward[1] * cosTheta + right[1] * x + up[1] * y,
+    forward[2] * cosTheta + right[2] * x + up[2] * y,
+  ];
+}
+
 /**
  * Spawn and advance projectiles each frame, resolving travel, lifetime, and hits.
  *
  * @capability projectiles spawn and advance projectiles with travel and hit resolution
  */
 export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSystem {
-  const shots = new Map<string, { input: ProjectileShotInput; firedAt: number; settled: boolean }>();
+  const shots = new Map<string, {
+    input: ProjectileShotInput;
+    coneSamples: readonly (readonly [number, number])[];
+    pellets: number;
+    firedAt: number;
+    settled: boolean;
+  }>();
   let shotCounter = 0;
   const now = deps.now ?? (() => Date.now());
+  const rng = deps.rng ?? Math.random;
+  const maxPellets = Number.isFinite(deps.maxPellets)
+    ? Math.max(1, Math.min(256, Math.floor(deps.maxPellets!)))
+    : 64;
   const defaultPolicy: ShotOriginPolicy = deps.defaultOriginPolicy ?? { kind: "converge" };
 
   function itemStat(via: EffectVia, stat: string): number | null {
@@ -317,41 +385,7 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         excludeInstanceIds: [from],
       });
       const until = hitsUntilBlocked(all);
-      const spreadRad = (aimSpreadDeg(aim) * Math.PI) / 180;
-      const mapped: RaycastHit[] = [];
-      for (const hit of until) {
-        if (hit.targetKind === "entity" && spreadRad > 0) {
-          const position = deps.spatial.positionOf(hit.instanceId);
-          if (position !== undefined) {
-            const colliders = resolveColliders(
-              deps.entityCollidersOf?.(hit.instanceId) ?? defaultEntityColliders(),
-            );
-            const collider =
-              colliders.find((candidate) => candidate.name === hit.colliderName) ?? colliders[0];
-            const localOffset = collider?.shape.offset ?? [0, 0, 0];
-            const slack =
-              collider === undefined
-                ? BASE_HIT_RADIUS
-                : collider.shape.kind === "sphere"
-                  ? collider.shape.radius
-                  : Math.hypot(...collider.shape.halfExtents);
-            const rotationY = deps.rotationYOf?.(hit.instanceId) ?? 0;
-            const cos = Math.cos(rotationY);
-            const sin = Math.sin(rotationY);
-            const dx = position[0] + localOffset[0] * cos + localOffset[2] * sin - origin[0];
-            const dy = position[1] + localOffset[1] - origin[1];
-            const dz = position[2] - localOffset[0] * sin + localOffset[2] * cos - origin[2];
-            const along = dx * direction[0] + dy * direction[1] + dz * direction[2];
-            const px = dx - direction[0] * along;
-            const py = dy - direction[1] * along;
-            const pz = dz - direction[2] * along;
-            const perpendicular = Math.sqrt(px * px + py * py + pz * pz);
-            if (perpendicular > slack + Math.tan(spreadRad) * along) continue;
-          }
-        }
-        mapped.push(sceneHitToRaycast(hit));
-      }
-      return mapped;
+      return until.map(sceneHitToRaycast);
     });
 
   function resolveRange(via: EffectVia): number {
@@ -458,7 +492,22 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
     fireProjectile(input) {
       shotCounter += 1;
       const shotId = `shot_${shotCounter}`;
-      shots.set(shotId, { input, firedAt: now(), settled: false });
+      const captured: ProjectileShotInput = {
+        ...input,
+        aim: copyAim(input.aim),
+        via: { ...input.via },
+        originPolicy: copyOriginPolicy(input.originPolicy ?? defaultPolicy),
+      };
+      captured.aim = withWeaponSpread(captured.via, captured.aim);
+      const count = itemStat(captured.via, "pellets") ?? 1;
+      const pellets = Number.isFinite(count) ? Math.max(1, Math.min(maxPellets, Math.round(count))) : 1;
+      const coneSamples: [number, number][] = [];
+      if (!isBallistic(captured.via) && aimSpreadDeg(captured.aim) > 0) {
+        for (let pellet = 0; pellet < pellets; pellet += 1) {
+          coneSamples.push([rng(), rng()]);
+        }
+      }
+      shots.set(shotId, { input: captured, coneSamples, pellets, firedAt: now(), settled: false });
       return shotId;
     },
     settleProjectile(shotId) {
@@ -487,44 +536,40 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
         return { status: "settled", shotId, at, hits, origin: originTuple };
       }
 
-      const { visible, rawHits } = predictHits(input);
-      const ordered = asSceneHits(rawHits);
-      const untilBlock = hitsUntilBlocked(ordered);
-      const impact = firstImpact(untilBlock);
-
-      const solidBlock = impact !== null && impact.blocks && !impact.damageEligible;
-      const damageEntityHits = visible.filter(
-        (hit): hit is EntityRaycastHit =>
-          isEntityHit(hit) &&
-          hit.damageEligible !== false &&
-          (!solidBlock || hit.distance <= (impact?.distance ?? Infinity) + 1e-9) &&
-          deps.effects.canReceive(hit.instanceId, input.effect) === null,
-      );
-
-      const pellets = Math.max(1, Math.round(itemStat(input.via, "pellets") ?? 1));
+      const pellets = shot.pellets;
       const hits: EffectResult[] = [];
-      if (!solidBlock && damageEntityHits.length > 0) {
-        for (let pellet = 0; pellet < pellets; pellet += 1) {
-          const target = damageEntityHits[pellet % damageEntityHits.length]!;
-          hits.push(
-            ...deps.effects.applyEffect({
-              from: input.from,
-              to: target.instanceId,
-              effect: input.effect,
-              via: input.via,
-            }),
-          );
+      let at: [number, number, number] | undefined;
+      for (let pellet = 0; pellet < pellets; pellet += 1) {
+        const sample = shot.coneSamples[pellet];
+        const pelletInput = sample === undefined || resolved === null
+          ? input
+          : {
+              ...input,
+              aim: { origin, direction: sampleCone(resolved.direction, aimSpreadDeg(input.aim), sample) },
+              originPolicy: { kind: "eye" as const },
+            };
+        const { rawHits } = predictHits(pelletInput);
+        const untilBlock = hitsUntilBlocked(asSceneHits(rawHits));
+        const impact = firstImpact(untilBlock);
+        const target = untilBlock.find((hit) =>
+          hit.targetKind === "entity" && hit.damageEligible &&
+          deps.spatial.hasLineOfSight(input.from, hit.instanceId) &&
+          deps.effects.canReceive(hit.instanceId, input.effect) === null,
+        );
+        if (target !== undefined) {
+          hits.push(...deps.effects.applyEffect({
+            from: input.from,
+            to: target.instanceId,
+            effect: input.effect,
+            via: input.via,
+          }));
+        }
+        if (at === undefined) {
+          const point = impact?.point ?? target?.point ?? missPoint(pelletInput);
+          at = [point[0], point[1], point[2]];
         }
       }
-
-      let at: [number, number, number];
-      if (impact !== null) {
-        at = [impact.point[0], impact.point[1], impact.point[2]];
-      } else if (damageEntityHits[0] !== undefined) {
-        at = [damageEntityHits[0].at[0], damageEntityHits[0].at[1], damageEntityHits[0].at[2]];
-      } else {
-        at = missPoint(input);
-      }
+      at ??= missPoint(input);
 
       deps.onSettle?.({ from: input.from, origin, at, effect: input.effect, hit: hits.length > 0, ballistic: false });
       return { status: "settled", shotId, at, hits, origin: originTuple };

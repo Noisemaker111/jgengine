@@ -207,6 +207,7 @@ export function createCombatSubsystem(d: CombatSubsystemDeps): CombatSubsystem {
       entityCollidersOf,
       rotationYOf: (instanceId) => entities.get(instanceId)?.rotationY,
       now,
+      rng,
       onSettle(report) {
         events.emit("projectile.settled", {
           from: report.from,
