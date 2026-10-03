@@ -727,7 +727,18 @@ export function createProjectileSystem(deps: ProjectileSystemDeps): ProjectileSy
       const next = new Map<string, ProjectileShotState>();
       let active = 0;
       for (const shot of state.shots) {
-        if (shot.input.travel !== undefined) validateProjectileTravel(shot.input.travel);
+        if (!Number.isInteger(shot.pellets) || shot.pellets < 1 || shot.pellets > maxPellets ||
+          !Array.isArray(shot.coneSamples) || (shot.coneSamples.length !== 0 && shot.coneSamples.length !== shot.pellets)) {
+          throw new RangeError("Restored projectile pellet budget or sample count is invalid");
+        }
+        if (shot.input.travel !== undefined) {
+          validateProjectileTravel(shot.input.travel);
+          if ((shot.input.travel.radius ?? 0) > 0 && deps.travel?.sweep === undefined) throw new RangeError("Projectile radius requires an injected radius-aware sweep");
+        }
+        if ((shot.flights !== undefined) !== (shot.input.travel !== undefined) ||
+          (shot.flights !== undefined && (!Array.isArray(shot.flights) || shot.flights.length !== shot.pellets))) {
+          throw new RangeError("Restored projectile flight count must match captured travel pellets");
+        }
         if (shot.flights !== undefined && deps.travel === undefined) throw new Error("Restoring live projectiles requires an authoritative travel clock");
         if (shot.flights !== undefined && !shot.settled) active += 1;
         if (next.has(shot.shotId)) throw new Error("Restoring duplicate projectile ids");

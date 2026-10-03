@@ -19,7 +19,7 @@ export interface SceneEntity<TMeta = unknown> {
   rotationY: number;
   rotationX: number;
   rotationZ: number;
-  /** World units per second, derived from consecutive setPose calls that carry `dt`. Zero until the entity moves under a dt. */
+  /** World units per second, derived by `setPose` with `dt` or explicitly replaced by `setVelocity`. Zero until set. */
   velocity: EntityPosition;
   role: EntityRole;
   movement: EntityMovement;
@@ -137,6 +137,8 @@ export interface EntityStore<TMeta = unknown> {
   despawn(id: string): boolean;
   update(id: string, patch: EntityUpdatePatch<TMeta>): boolean;
   setPose(id: string, pose: EntityPose): boolean;
+  /** Replace velocity without moving the entity. Copies a finite three-number tuple; invalid input or a missing id returns false unchanged. */
+  setVelocity(id: string, velocity: EntityPosition): boolean;
   /** Register a constraint applied inside every `setPose` for this entity — the self-driven sibling of the shell's `beforeCommit` (#282.9): nav clamps, corridor walls, arena bounds without wrapping every call site. `null` clears; despawn clears automatically. */
   setPoseConstraint(id: string, constraint: PoseConstraint | null): void;
   get(id: string): SceneEntity<TMeta> | null;
@@ -316,6 +318,14 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
       store.set(id, current);
       return true;
     },
+    setVelocity(id, velocity) {
+      const current = store.get(id);
+      if (current === undefined || !Array.isArray(velocity) || velocity.length !== 3 ||
+          !velocity.every((component) => typeof component === "number" && Number.isFinite(component))) return false;
+      current.velocity = [velocity[0], velocity[1], velocity[2]];
+      store.set(id, current);
+      return true;
+    },
     get(id) {
       return store.get(id) ?? null;
     },
@@ -367,6 +377,7 @@ export function createEntityStore<TMeta = unknown>(options: EntityStoreOptions =
           role: entity.role,
           movement: entity.movement,
           behaviors: entity.behaviors,
+          ...(entity.hidden === undefined ? {} : { hidden: entity.hidden }),
           meta: entity.meta,
         });
         if (!spawnPoses.has(entity.id)) {

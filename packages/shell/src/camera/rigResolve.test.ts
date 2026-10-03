@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { resolveRigKind, turntableAsObserver } from "./rigResolve";
+import { resolveRigKind, resolveRuntimeCameraConfig, turntableAsObserver } from "./rigResolve";
+import { createCameraDirector } from "@jgengine/core/runtime/cameraDirector";
+import type { GameCameraConfig } from "@jgengine/core/game/cameraConfig";
 
 describe("resolveRigKind", () => {
   test("infers the turntable rig from its block alone, no explicit rig", () => {
@@ -35,4 +37,19 @@ describe("turntableAsObserver", () => {
     expect("height" in (mapped.observer ?? {})).toBe(false);
     expect(mapped.observer?.distance).toBe(9);
   });
+});
+
+test("runtime rig resolution preserves authored camera data/callbacks and null restores the exact configured rig", () => {
+  const onCameraFollow = () => undefined, weapon = () => null;
+  for (const base of [{ rig: "orbit", initialDistance: 4 }, { rig: "inspection", inspection: { pan: false } }] as const) {
+    const configured: GameCameraConfig = { ...base, projection: "orthographic", frustum: { zoom: 80 },
+      chase: { height: 3, springDamping: 8 }, onCameraFollow, weapon };
+    const director = createCameraDirector(); director.setRig("chase", { chase: { distance: 9 } });
+    const resolved = resolveRuntimeCameraConfig(configured, director.rig());
+    expect(resolveRigKind(resolved)).toBe("chase"); expect(resolved?.chase).toEqual({ height: 3, springDamping: 8, distance: 9 });
+    expect(resolved?.projection).toBe("orthographic"); expect(resolved?.frustum).toBe(configured.frustum);
+    expect(resolved?.onCameraFollow).toBe(onCameraFollow); expect(resolved?.weapon).toBe(weapon);
+    director.setRig(null); expect(resolveRuntimeCameraConfig(configured, director.rig())).toBe(configured);
+    expect(resolveRigKind(configured)).toBe(base.rig); expect(configured.chase).toEqual({ height: 3, springDamping: 8 });
+  }
 });

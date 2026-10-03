@@ -28,6 +28,11 @@ export interface Occupant {
   seatId: string;
 }
 
+/** Occupancy only; register the world's rideables before restoring. */
+export interface MountedRider extends SeatRef {
+  riderId: string;
+}
+
 export type MountResult = { ok: true; seat: MountSeat } | { ok: false; reason: string };
 
 const DEFAULT_SEAT: MountSeat = { id: "driver", offset: [0, 0, 0], control: true };
@@ -142,6 +147,42 @@ export class MountController {
     if (ref === undefined) return riderId;
     const seat = this.mounts.get(ref.mountId)?.seats.find((s) => s.id === ref.seatId);
     return seat?.control === true ? ref.mountId : null;
+  }
+
+  snapshot(): MountedRider[] {
+    return [...this.seatOfRider].map(([riderId, ref]) => ({ riderId, ...ref }));
+  }
+
+  /** Replace occupancy atomically. Invalid, unknown, or duplicate claims leave it unchanged. */
+  restore(next: readonly MountedRider[]): void {
+    const riders = new Set<string>();
+    const claims = new Map<string, Set<string>>();
+    if (!Array.isArray(next)) throw new Error("mount occupancy must be an array");
+    for (const row of next) {
+      if (row === null || typeof row !== "object" || typeof row.riderId !== "string" || row.riderId.length === 0 ||
+          typeof row.mountId !== "string" || typeof row.seatId !== "string" || riders.has(row.riderId)) {
+        throw new Error("invalid mount occupant");
+      }
+      const reg = this.mounts.get(row.mountId);
+      const occupied = claims.get(row.mountId) ?? new Set<string>();
+      if (reg === undefined || !reg.seats.some((seat) => seat.id === row.seatId) || occupied.has(row.seatId)) {
+        throw new Error("invalid mount seat claim");
+      }
+      riders.add(row.riderId);
+      occupied.add(row.seatId);
+      claims.set(row.mountId, occupied);
+    }
+    this.reset();
+    for (const { riderId, mountId, seatId } of next) {
+      this.mounts.get(mountId)!.bySeat.set(seatId, riderId);
+      this.seatOfRider.set(riderId, { mountId, seatId });
+    }
+  }
+
+  /** Release every rider, preserving authored registrations. */
+  reset(): void {
+    this.seatOfRider.clear();
+    for (const reg of this.mounts.values()) reg.bySeat.clear();
   }
 }
 

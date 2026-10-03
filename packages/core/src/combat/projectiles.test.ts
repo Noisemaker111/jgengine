@@ -271,6 +271,163 @@ describe("authoritative live projectile travel", () => {
   });
 });
 
+describe("projectile restore policy", () => {
+  const input = (radius = 0) => ({ from: "shooter", via: { item: "pistol" }, effect: "damage",
+    aim: { origin: [0, 0.9, 0] as [number, number, number], direction: [0, 0, 1] as [number, number, number] },
+    travel: { speed: 10, lifetime: 2, radius } });
+  const wide = () => createRange({ enemy: target([0.75, 0, 3]) }, [], undefined, undefined, undefined, {
+    travel: { now: () => 0, sweep(from, to, step) {
+      const fraction = sweepMovingSphere(from, to, [0.75, 0.9, 3], [0.75, 0.9, 3], 0.5 + step.radius);
+      return fraction === null ? null : { fraction,
+        at: [from[0] + (to[0] - from[0]) * fraction, 0.9, from[2] + (to[2] - from[2]) * fraction],
+        target: { kind: "entity", instanceId: "enemy", distance: 0 } };
+    } },
+  });
+  function populated(maxPellets = 64) {
+    const owner = createRange({}, [], undefined, undefined, undefined, { maxPellets, travel: { now: () => 0 } });
+    owner.projectiles.settleProjectile(owner.projectiles.fireProjectile({ ...input(), travel: undefined }));
+    owner.projectiles.fireProjectile(input());
+    return owner;
+  }
+
+  test("cold radius restore rejects a missing sweep before changing active or retained shots", () => {
+    const original = wide(); original.projectiles.fireProjectile(input(1));
+    const saved = JSON.parse(JSON.stringify(original.projectiles.snapshot()));
+    const cold = populated(); const before = cold.projectiles.snapshot();
+    expect(() => cold.projectiles.fireProjectile(input(1))).toThrow("radius-aware sweep");
+    expect(() => cold.projectiles.restore(saved)).toThrow("radius-aware sweep");
+    expect(cold.projectiles.snapshot()).toEqual(before);
+    expect(cold.projectiles.fireProjectile(input())).toBe("shot_3");
+  });
+
+  test("a valid wider pellet snapshot cannot bypass the receiving owner's per-shot limit", () => {
+    const original = createRange({}, [], undefined, undefined, undefined, {
+      maxPellets: 8, getStat: (_item, stat) => stat === "pellets" ? 8 : stat === "range" ? 50 : null,
+      travel: { now: () => 0 },
+    });
+    original.projectiles.fireProjectile(input());
+    const saved = JSON.parse(JSON.stringify(original.projectiles.snapshot()));
+    expect(saved.shots[0].flights).toHaveLength(8);
+    const cold = populated(1); const before = cold.projectiles.snapshot();
+    expect(() => cold.projectiles.restore(saved)).toThrow("pellet");
+    expect(cold.projectiles.snapshot()).toEqual(before);
+  });
+
+  test("inconsistent captured pellet counts reject atomically", () => {
+    const original = populated(); const saved = original.projectiles.snapshot();
+    for (const count of [0, -1, 1.5, NaN, Infinity, 257]) {
+      const invalid = structuredClone(saved); invalid.shots[1]!.pellets = count;
+      invalid.shots[0]!.input.aim = { yaw: 1, pitch: 1 };
+      expect(() => original.projectiles.restore(invalid)).toThrow("pellet");
+      expect(original.projectiles.snapshot()).toEqual(saved);
+    }
+  });
+
+  test("missing, extra and non-travel flights reject without dropping valid pending work", () => {
+    const original = populated(); const saved = original.projectiles.snapshot();
+    for (const change of [
+      (shot: typeof saved.shots[number]) => { shot.flights = []; },
+      (shot: typeof saved.shots[number]) => { shot.flights!.push(structuredClone(shot.flights![0]!)); },
+      (shot: typeof saved.shots[number]) => { delete shot.flights; },
+      (shot: typeof saved.shots[number]) => { delete shot.input.travel; },
+    ]) {
+      const invalid = structuredClone(saved); change(invalid.shots[1]!);
+      expect(() => original.projectiles.restore(invalid)).toThrow("flight");
+      expect(original.projectiles.snapshot()).toEqual(saved);
+    }
+  });
+
+  test("extra saved cone samples cannot bypass the per-shot work bound", () => {
+    const original = populated(); const saved = original.projectiles.snapshot();
+    const invalid = structuredClone(saved); invalid.shots[1]!.coneSamples = [[0, 0], [0, 0]];
+    expect(() => original.projectiles.restore(invalid)).toThrow("sample count");
+    expect(original.projectiles.snapshot()).toEqual(saved);
+  });
+
+  test("compatible cold radius restore preserves real off-center impact and exactly one settlement", () => {
+    const original = wide(); original.projectiles.fireProjectile(input(1));
+    const cold = wide(); cold.projectiles.restore(JSON.parse(JSON.stringify(original.projectiles.snapshot())));
+    const saved = cold.projectiles.snapshot(); saved.shots[0]!.flights![0]!.position[0] = 999;
+    for (const owner of [original, cold]) {
+      owner.projectiles.advanceProjectiles(0.4, 0.4);
+      owner.projectiles.advanceProjectiles(1, 1.4);
+      expect(owner.stats.enemy!.health!.current).toBe(90);
+      expect(owner.reports).toHaveLength(1);
+      expect(owner.reports[0]!.shotId).toBe("shot_1");
+    }
+    expect(cold.projectiles.snapshot()).toEqual(original.projectiles.snapshot());
+    expect(cold.reports).toEqual(original.reports);
+  });
+
+  test("compatible cold centerline restore keeps cover ahead of a receiver", () => {
+    const create = () => createRange({ enemy: target([0, 0, 5]) }, [],
+      [{ instanceId: "cover", catalogId: "wall", position: [0, 0.9, 2] }],
+      undefined, undefined, { travel: { now: () => 0 } });
+    const original = create(); original.projectiles.fireProjectile(input());
+    const cold = create(); cold.projectiles.restore(JSON.parse(JSON.stringify(original.projectiles.snapshot())));
+    for (const owner of [original, cold]) {
+      owner.projectiles.advanceProjectiles(1, 1);
+      expect(owner.stats.enemy!.health!.current).toBe(100);
+      expect(owner.reports).toHaveLength(1);
+      expect(owner.reports[0]!.hits).toEqual([]);
+      expect(owner.reports[0]!.at[2]).toBeCloseTo(1.5);
+    }
+    expect(cold.projectiles.snapshot()).toEqual(original.projectiles.snapshot());
+  });
+
+  test("compatible cold moving-target impacts settle death and loot once through the game API", () => {
+    const create = () => createHeadlessRunner({
+      definition: defineGameDefinition({ name: "Cold live loot", assets: createAssetCatalog(), multiplayer: "off",
+        simulation: { hz: 10 }, inventories: { backpack: { slots: 9 } },
+        physics: { gravity: 0, jumpVelocity: 0, projectileObstacles: true } }),
+      player: { userId: "shooter", isNew: true }, maxStepSeconds: 1,
+      content: {
+        itemById: () => ({ weapon: { damage: 10, range: 50 } }),
+        entityById: id => ({ stats: { health: { max: id === "enemy" ? 10 : 100 } }, receive: { damage: { order: ["health"] } },
+          ...(id === "enemy" ? { onDeath: { drops: [{ table: "reward", when: { reason: "player_kill" } }] } } : {}),
+          colliders: { hitboxes: [{ name: "body", purpose: "damage", shape: { kind: "sphere", radius: 0.1, offset: [0, 0.9, 0] } }] } }),
+      },
+      loop: { onTick(ctx, dt) {
+        const enemy = ctx.scene.entity.get("enemy");
+        if (enemy !== null) ctx.scene.entity.setPose("enemy", { position: [enemy.position[0] + 10 * dt, 0, 0.5] });
+      } },
+    });
+    const live = create();
+    live.ctx.scene.entity.spawn("hero", { id: "shooter", position: [0, 0, 0] });
+    live.ctx.scene.entity.spawn("enemy", { id: "enemy", position: [-0.5, 0, 0.5] });
+    live.ctx.scene.entity.fireProjectile(input());
+    const saved = JSON.parse(JSON.stringify(live.ctx.state()));
+    const cold = create(); cold.ctx.restore(saved);
+    for (const runner of [live, cold]) {
+      const settled: ProjectileSettledEvent[] = [], deaths: unknown[] = [], grants: unknown[] = [];
+      runner.ctx.game.loot.register({ id: "reward", entries: [{ item: "proof-token", count: 2, weight: 1 }] });
+      runner.ctx.game.events.on("projectile.settled", event => settled.push(event));
+      runner.ctx.game.events.on("entity.died", event => deaths.push(event));
+      runner.ctx.game.events.on("loot.granted", event => grants.push(event));
+      runner.step(0.1); runner.step(1);
+      expect(runner.ctx.scene.entity.get("enemy")).toBeNull();
+      expect(runner.ctx.player.inventory.count("backpack", "proof-token")).toBe(2);
+      expect(deaths).toHaveLength(1); expect(grants).toHaveLength(1); expect(settled).toHaveLength(1);
+      expect(settled[0]!.hits[0]!.lethal).toBe(true);
+      expect(settled[0]!.shotId).toBe("shot_1");
+      expect(runner.ctx.scene.entity.activeProjectiles()).toEqual([]);
+    }
+    expect(cold.ctx.scene.entity.projectileState()).toEqual(live.ctx.scene.entity.projectileState());
+  });
+
+  test("zero retained budget preserves every compatible restored completion", () => {
+    const original = createRange({}, [], undefined, undefined, undefined, { travel: { now: () => 0, maxActive: 3, maxRetained: 0 } });
+    for (let i = 0; i < 3; i++) original.projectiles.fireProjectile(input());
+    const cold = createRange({}, [], undefined, undefined, undefined, { travel: { now: () => 0, maxActive: 3, maxRetained: 0 } });
+    cold.projectiles.restore(JSON.parse(JSON.stringify(original.projectiles.snapshot())));
+    const results = cold.projectiles.advanceProjectiles(2, 2);
+    expect(results.map(result => result.shotId)).toEqual(["shot_1", "shot_2", "shot_3"]);
+    expect(cold.reports.map(report => report.shotId)).toEqual(["shot_1", "shot_2", "shot_3"]);
+    expect(cold.projectiles.snapshot().shots).toEqual([]);
+    expect(cold.projectiles.advanceProjectiles(2, 4)).toEqual([]);
+  });
+});
+
 describe("projectile system", () => {
   test("zero-magnitude live contacts defer game damage policy until the actual impact target", () => {
     const { projectiles, stats, reports } = createRange({ interceptor: target([0, 0, 3]), intended: target([0, 0, 8]) }, [], undefined, undefined, undefined, { travel: { now: () => 0 } });

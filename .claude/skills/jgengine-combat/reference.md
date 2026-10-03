@@ -34,6 +34,8 @@ interceptors). See the [portable damage/effects recipe](recipes/portable-damage-
 
 ## Effects and projectiles
 
+Cold projectile restore requires the receiving owner's pellet limit and radius-aware sweep to support the captured launch. Incompatible or inconsistent pellet, cone-sample and flight counts reject atomically; never truncate saved flights or discard pending settlements.
+
 Effect ids are **game-defined strings**. Magnitudes **drain** stats: positive subtracts down `receive.<effect>.order` (spilling to the next stat in the order), negative restores. Heals pass a negative amount (`via: { amount: -flashHeal }`, typically read from a `weapon.heal` stat).
 
 ```ts
@@ -60,6 +62,24 @@ settleProjectile(shotId)                        // authoritative → { at, hits 
 `Aim = { origin, direction } | { yaw, pitch, spread? }`. A free `{ yaw, pitch }` aim defaults to `converge`: the bullet leaves the gun `muzzle` (so a tracer visibly comes from the barrel, not the camera) yet bends toward whatever the eye ray's crosshair covers, so the reticle stays truth. An explicit `{ origin, direction }` aim (enemy AI, turrets) passes through unchanged. Shot origin otherwise resolves via `ShotOriginPolicy` (`eye`: shooter position raised to eye height — 90% of the shooter's own hitbox top when colliders are known, ~1.6m otherwise — so shots trace the sightline and the crosshair is truth; `muzzle`/`camera`/`world` for custom rigs, `legacy` = raw entity position). Hitboxes auto-fit the rendered model: an entity kind mapped in `entityModels` (or an object catalog id in `objectModels`) gets a grounded AABB matching its model's measured bounds — footprint x height composed with `scale`/`targetHeight` exactly like the renderer — so the damage box equals the visual without hand-tuning. Custom-rendered content auto-fits too: the shell measures what `renderEntity`/`renderObject` actually mount (and any model with no index `dims`) and reports the entity-local bounds through `ctx.scene.entity.reportBounds` / `ctx.scene.object.reportBounds`, so a procedural mesh's hitbox wraps the render instead of the humanoid default — flag debug gizmos with `userData.jgMeasureExclude` to keep them out of the measurement, and note the measurement happens on the rendering client, so a never-rendering authoritative host should author `colliders` or model `dims` instead. Entities with nothing measurable at all keep the body-covering humanoid AABB default (feet to ~1.8m); unmodeled objects with a `visual.scale` get a matching grounded physical body. Catalog assets opted into `COLLISION_MESH_ASSET_IDS` (`@jgengine/assets`) go one step further: the fit raycasts the asset's actual triangles (BVH over a quantized mesh shipped in the index), so a shot through a torus hole or archway passes clean instead of hitting the fitted box — same shape on client and headless host. Explicit catalog `colliders`/`halfExtents` and per-instance `setColliders` always override the fit. Hitscan settles into per-hit effects; ballistic shots (`weapon.projectile` with `fuseTime`/`settleOn`) settle to a landing point — the handler then calls `effect({ at: settle.at, radius })`. Settling twice rejects. Prediction is never authority.
 
 Raycasts are **object-aware**: the default raycast checks placed scene objects as well as entities, discriminated by `RaycastHit.kind` (`"entity" | "object"` — an `ObjectRaycastHit` also carries `catalogId`). A crate or wall between shooter and target blocks or absorbs the shot instead of every projectile passing through scenery; supply `ProjectileSystemDeps.objects` (`{ list(), halfExtents?(catalogId) }`, matching `ObjectStore.list()` structurally) to opt in, with a `[0.5, 0.5, 0.5]` half-extent default per object.
+
+`defineGame({ projectileTravel })` accepts `GameProjectileTravelOptions` from
+`@jgengine/core/game/defineGame`: the existing `maxActive`, `maxRetained` and
+`maxTargets` budgets plus `sweep(ctx, from, to, step)`,
+`acceleration(ctx, position, velocity, time, input)` and `targets(ctx)`.
+Each callback receives the live context of that world, including when one
+definition hosts multiple worlds; the authoritative clock remains engine-owned.
+Supply a radius-aware `sweep` for finite-radius travel through authored cover.
+The default cover query supports radius zero and rejects larger radii.
+`targets` selects bounded entity IDs for the default moving-target query;
+omission selects that world's entities, and exceeding `maxTargets` (default
+2048) throws instead of dropping blockers. A custom sweep owns its complete
+collision policy, including cover and receivers.
+Supplied `acceleration` fully replaces the authored sampler; call
+`ctx.environment.accelerationAt(position, time, windResponse, maxAcceleration,
+forceMask)` explicitly when composing authored forces. Omitting it keeps the
+authored sampler. Providers are unsaved world policy; projectile snapshot and
+restore retain launch and motion state and use the receiving world's providers.
 
 ## Death
 

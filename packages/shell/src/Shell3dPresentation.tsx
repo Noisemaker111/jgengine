@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type Dispatch,
   type MutableRefObject,
@@ -52,6 +53,7 @@ import { GameProvider } from "@jgengine/react/provider";
 import { SettingsProvider, type SettingsActionView } from "@jgengine/react/settings";
 
 import { resolveWorldSky } from "./worldSky";
+import { resolveRuntimeCameraConfig } from "./camera/rigResolve";
 import { pointerAimFor, pointerContextMenu } from "./shellPointer";
 import { shellPointerInput } from "./shellPointerInput";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
@@ -221,14 +223,16 @@ export function Shell3dPresentation({
   const pointerService = useMemo(() => createPointerService(), []);
   const selection = useMemo(() => createSelectionSet(), [playable]);
   const controlledEntityId = ctx.player.possession.active(ctx.player.userId);
-  const cameraConfig =
+  const cameraOverride = useSyncExternalStore(ctx.camera.subscribe, ctx.camera.rig, ctx.camera.rig);
+  const configuredCamera =
     playable.camera?.followEntityId !== undefined
       ? playable.camera
       : { ...playable.camera, followEntityId: controlledEntityId };
+  const cameraConfig = resolveRuntimeCameraConfig(configuredCamera, cameraOverride);
   const rigKind = resolveRigKind(cameraConfig);
   const firstPerson = rigKind === "first";
   const showReticle =
-    (firstPerson && playable.camera?.firstPerson?.reticle !== false) || rigKind === "shoulder";
+    (firstPerson && cameraConfig?.firstPerson?.reticle !== false) || rigKind === "shoulder";
   const rtsPanKeysEnabled = !rtsPanKeysConflict(playable.game.input);
   const bars = resolveWorldOverlayBars(playable.worldHealthBars);
   const nameplates = resolveWorldOverlayBars(playable.nameplates);

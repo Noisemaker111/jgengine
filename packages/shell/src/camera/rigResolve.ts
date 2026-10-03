@@ -3,6 +3,17 @@ import type {
   GameCameraConfig,
   ObserverCameraConfig,
 } from "@jgengine/core/game/playableGame";
+import type { CameraRigOverride } from "@jgengine/core/runtime/cameraDirector";
+
+/** @internal */
+export function resolveRuntimeCameraConfig(config: GameCameraConfig | undefined, override: CameraRigOverride | null | undefined): GameCameraConfig | undefined {
+  if (override === null || override === undefined) return config;
+  const merged = { ...config, ...override.config, rig: override.kind };
+  for (const key of ["firstPerson", "topDown", "rts", "shoulder", "lockOn", "chase", "observer", "turntable", "sideScroll", "inspection", "shake"] as const) {
+    if (override.config[key] !== undefined) Object.assign(merged, { [key]: { ...config?.[key], ...override.config[key] } });
+  }
+  return merged;
+}
 
 /**
  * Resolves which rig mounts from a `GameCameraConfig`. Precedence, most to least

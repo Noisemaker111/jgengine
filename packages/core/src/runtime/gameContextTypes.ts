@@ -282,6 +282,8 @@ export interface SceneEntityContext {
   despawn(instanceId: string): boolean;
   update: EntityStore["update"];
   setPose(instanceId: string, pose: EntityPose): boolean;
+  /** Set finite world velocity without changing pose; invalid tuples and missing entities return false unchanged. */
+  setVelocity: EntityStore["setVelocity"];
   setPoseConstraint: EntityStore["setPoseConstraint"];
   get(instanceId: string): SceneEntity | null;
   list(): readonly SceneEntity[];

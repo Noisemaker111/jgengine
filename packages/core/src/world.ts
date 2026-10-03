@@ -429,7 +429,14 @@ export {
 } from "./scene/sequenceDirector";
 export { type Aim } from "./scene/spatial";
 export { createStationClaim, type Station } from "./scene/stationClaim";
-export { VehicleSeats, createVehicleSeats } from "./scene/vehicleSeat";
+export {
+  VehicleSeats,
+  boardVehicle,
+  createVehicleSeats,
+  leaveVehicle,
+  type BoardVehicleOptions,
+  type LeaveVehicleOptions,
+} from "./scene/vehicleSeat";
 export { type ConcealmentSensor } from "./sensor/concealment";
 export { type FreezeMonitor, type FreezeViolation } from "./sensor/freezeMonitor";
 export {

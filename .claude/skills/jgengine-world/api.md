@@ -1532,6 +1532,7 @@
 - `MountKit` (interface): interface MountKit { kind: MountKind; moveSpeed?: number; turnSpeed?: number } — ⚠ undocumented
 - `MountResult` (type): type MountResult = { ok: true; seat: MountSeat } | { ok: false; reason: string } — ⚠ undocumented
 - `MountSeat` (interface): interface MountSeat { id: string; offset: readonly [number, number, number]; control?: boolean } — ⚠ undocumented
+- `MountedRider` (interface): interface MountedRider extends SeatRef — Occupancy only; register the world's rideables before restoring.
 - `Occupant` (interface): interface Occupant { riderId: string; seatId: string } — ⚠ undocumented
 - `RideableConfig` (interface): interface RideableConfig { id: string; kit: MountKit; seats?: readonly MountSeat[] } — ⚠ undocumented
 - `SeatRef` (interface): interface SeatRef { mountId: string; seatId: string } — ⚠ undocumented
@@ -1695,15 +1696,19 @@
 
 ## @jgengine/core/scene/vehicleSeat
 
+- `BoardVehicleOptions` (interface): interface BoardVehicleOptions extends EnterVehicleOptions — Seat selection and optional local camera policy for an explicit rider transition.
 - `DismountOffset` (interface): interface DismountOffset — Where {@link VehicleSeats.exit} steps the rider out, relative to the vehicle's heading.
 - `EnterVehicleOptions` (interface): interface EnterVehicleOptions — Options for {@link VehicleSeats.enter}.
 - `EnterVehicleResult` (type): type EnterVehicleResult = | { ok: true; seat: MountSeat; /** Feed straight into `ctx.camera.follow(...)` — the vehicle while a control seat is taken, else the rider's own id. */ cameraTarget: string; /** Entity this rider's axis input should now drive (`scene/mount`'s `driveTarget`); `null` for a pa… — Result of {@link VehicleSeats.enter} — the resolved seat plus the camera/drive/movement patches to apply.
-- `ExitVehicleResult` (type): type ExitVehicleResult = | { ok: true; vehicleId: string; /** Where to `setPose` the rider — alongside the vehicle's side door, facing its heading. */ placement: VehiclePose; cameraTarget: string; riderMovementPatch: RiderMovementPatch; } | { ok: false; reason: "not_seated" } — Result of {@link VehicleSeats.exit} — the side-door placement plus the camera/movement patches to apply.
+- `ExitVehicleResult` (type): type ExitVehicleResult = | { ok: true; vehicleId: string; /** Where to `setPose` the rider — alongside the vehicle's side door, facing its heading. */ placement: VehiclePose; cameraTarget: string; riderMovementPatch: RiderMovementPatch; } | { ok: false; reason: "not_seated" | "invalid_pose" } — Result of {@link VehicleSeats.exit} — the side-door placement plus the camera/movement patches to apply.
+- `LeaveVehicleOptions` (interface): interface LeaveVehicleOptions extends DismountOffset — Exit placement and optional local camera restoration for an explicit rider.
 - `RiderMovementPatch` (interface): interface RiderMovementPatch — Movement-lock patch for `entities.update(riderId, { movement: { ...current, ...patch } })` (#286.gameplay `movement.frozen`).
 - `VehiclePose` (interface): interface VehiclePose — A vehicle's world-space position and heading, used for {@link VehicleSeats.exit}'s dismount placement math.
 - `VehiclePosition` (type): type VehiclePosition = readonly [number, number, number] — World-space `[x, y, z]` for a vehicle's current position.
 - `VehicleSeats` (class): class VehicleSeats — Composes `scene/mount`'s control-transfer bookkeeping with the seat/camera/movement-mode transition every enter/exit-vehicle flow needs (#533.2): boarding resolves a free seat and reports the camera target, drive target, and rider movement-lock patch in one call; leaving computes a side-door placement next to the vehicle and reports the same triad in reverse. Pure — no entity/camera side effects — the caller applies `riderMovementPatch`/`placement`/`cameraTarget` via its own `ctx`.
+- `boardVehicle` (function): function boardVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, vehicleId: string, options: BoardVehicleOptions = {}): EnterVehicleResult — Apply an existing seat transition to the explicitly named rider. Motor/input policy stays caller-owned.
 - `createVehicleSeats` (function): function createVehicleSeats(controller?: MountController): VehicleSeats — Builds a {@link VehicleSeats}, optionally over an existing `MountController` to share its occupancy.
+- `leaveVehicle` (function): function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, options: LeaveVehicleOptions = {}): ExitVehicleResult | { ok: false; reason: "unknown_rider" | "unknown_vehicle" } — Apply dismount placement, restore rider movement/visibility and the configured camera rig.
 
 ## @jgengine/core/sensor/concealment
 
@@ -2096,6 +2101,7 @@
 - `BiomeBand` (interface): interface BiomeBand — A z-ordered ground palette zone — the linear-boundary counterpart to the radial `materialRegions`. Adjacent bands cross-fade into each other across a `fade`-wide window centered on the midpoint z between their centers, so a multi-biome world (vale → marsh → peaks along z) blends its ground color instead of hard-switching. Bands may also carry per-zone `fog`, `sky`, and `weather`. Order the list by ascending `z`.
 - `BoardGround` (interface): interface BoardGround — A 2D surface you look at — grid games, solitaire, tabletop. Physics is often zero-gravity or omitted; the game owns the face it draws on the board.
 - `BoardGroundSize` (interface): interface BoardGroundSize — Size of a `board` ground: a 2D surface you look at, in cells or layout units.
+- `BoardVehicleOptions` (interface): interface BoardVehicleOptions extends EnterVehicleOptions — Seat selection and optional local camera policy for an explicit rider transition.
 - `BookmarkRecallMode` (type): type BookmarkRecallMode = "replace" | "merge" — How a recalled bookmark folds into the active selection.
 - `BoundsSpec` (type): type BoundsSpec = | { readonly kind: "sphere"; readonly radius: number; readonly offset?: Vec3 } | { readonly kind: "aabb"; readonly half: Vec3; readonly offset?: Vec3 } | { readonly kind: "rect"; readonly halfWidth: number; readonly halfDepth: number; readonly halfHeight?: number; readonly offset?:… — How a renderable declares its extent. AABB, bounding sphere, and 2D rectangle cover the common cases; `point` is the degenerate zero-size default for objects that never override. `offset` shifts the volume from the object origin (e.g. a tall model whose pivot is at its feet).
 - `BoxFormationOptions` (interface): interface BoxFormationOptions — Options for {@link boxFormation}.
@@ -2289,6 +2295,7 @@
 - `KinematicVehicleTuning` (interface): interface KinematicVehicleTuning { engineAccel: number; brakeAccel: number; topSpeed: number; reverseSpeed: number; turnRate: number; turnSpeedRef: number; grip?: GripCurve; gripStrength: number; handbrakeGrip: number; rollingResistance?: number; coastDeceleration?: number… — ⚠ undocumented · used by `createKinematicVehicle`: Arcade ground-vehicle sim (car, kart, bike) with throttle, brake, steer, drift and retunable handling.
 - `LANDMARK_HARD_CAP` (const): const LANDMARK_HARD_CAP: 12 — Hard cap on grand plots emitted regardless of dial/city size.
 - `LOCK_ACTIONS` (const): const LOCK_ACTIONS: readonly LockAction[] — The five pick actions, in display order (shallow → deep).
+- `LeaveVehicleOptions` (interface): interface LeaveVehicleOptions extends DismountOffset — Exit placement and optional local camera restoration for an explicit rider.
 - `LineFormationOptions` (interface): interface LineFormationOptions — Options for {@link lineFormation}.
 - `LocalAvoidanceOptions` (interface): interface LocalAvoidanceOptions — Tuning for {@link resolveLocalAvoidance}.
 - `LockAction` (type): type LockAction = "hardSet" | "set" | "steady" | "ease" | "drop" — One discrete pick move: how far the pick drives into the lock this step.
@@ -2631,6 +2638,7 @@
 - `beginTerraformStroke` (function): function beginTerraformStroke(terrain: Pick<EditableTerrain, "applyRecording">): TerraformStroke — Opens a stroke recorder over `terrain`; stamp edits into it, then read one net delta.
 - `behaviorControl` (function): function behaviorControl(ctx: GameContext): BehaviorControl — Obtain the per-context {@link BehaviorControl} surface for suspending, resuming, seeking, serializing, and inspecting behavior instances by entity id — the lifecycle contract games use to hand pose ownership to possession/streaming/staggering code instead of bypassing the behavior runtime.
 - `biomes` (function): function biomes(config: BiomesWorldConfig): WorldFeature — Declares a biome-painted world — the whole-world alternative to a single `environment()` terrain.
+- `boardVehicle` (function): function boardVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, vehicleId: string, options: BoardVehicleOptions = {}): EnterVehicleResult — Apply an existing seat transition to the explicitly named rider. Motor/input policy stays caller-owned.
 - `boundaryNeighbors` (function): function boundaryNeighbors(grid: FootprintGrid, cells: readonly GridCell[]): AdjacentCell[] — Every occupied cell orthogonally touching `cells` but outside them — the connective-piece neighbor set.
 - `boxFormation` (function): function boxFormation(options: BoxFormationOptions): FormationSlotGenerator — A rectangular grid centered on the destination, front row toward `+forward` — a marching block or a phalanx. Rows fill front-to-back, left-to-right.
 - `boxRegion` (function): function boxRegion(min: Point3, max: Point3): SampleRegion<Point3> — An axis-aligned box `[min..max]` in 3D. Uniform density; draws x, y, z in order.
@@ -2783,6 +2791,7 @@
 - `keybind` (function): function keybind(actionId: string, label?: string): KeybindPromptDisplay — ⚠ undocumented
 - `label` (function): function label(text: string): LabelPromptDisplay — ⚠ undocumented
 - `laneCenters` (function): function laneCenters(road: RoadEnvironmentDescriptor): readonly [StreetLane, StreetLane] — Two right-hand-traffic lane centerlines for a road — each offset a quarter of the drivable width from the center and ordered in its direction of travel. Feed a lane's `path` straight into `nav/pathFollow` for traffic AI, or use its endpoints as directed car spawn points.
+- `leaveVehicle` (function): function leaveVehicle(ctx: GameContext, seats: VehicleSeats, riderId: string, options: LeaveVehicleOptions = {}): ExitVehicleResult | { ok: false; reason: "unknown_rider" | "unknown_vehicle" } — Apply dismount placement, restore rider movement/visibility and the configured camera rig.
 - `lineFormation` (function): function lineFormation(options: LineFormationOptions): FormationSlotGenerator — A single rank abreast, centered on the destination and facing forward — a skirmish line or a chorus row. Slots run left→right along the group's right axis.
 - `listTriggerActions` (function): function listTriggerActions(target?: TriggerSourceKind): TriggerActionDefinition[] — Every registered action, optionally filtered by target collection.
 - `mapLayerColor` (function): function mapLayerColor(tone: MapLayerTone | undefined): string — ⚠ undocumented

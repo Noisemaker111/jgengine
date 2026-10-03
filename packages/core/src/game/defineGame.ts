@@ -1,4 +1,5 @@
 import type { EditorDocument } from "../editor/types";
+import type { ProjectileTravelDeps } from "../combat/projectiles";
 import type { ActionCodesMap } from "../input/actionBindings";
 import type { GameFeedOptions } from "./feed";
 import type { GamePhase } from "./gamePhase";
@@ -196,6 +197,18 @@ export interface LifecycleConfig<TState = unknown> {
  */
 export type GameLifecycle<TState = unknown> = LifecycleConfig<TState> | "always-live";
 
+/** Context-aware projectile policy; callbacks are not included in saved shot state. */
+export interface GameProjectileTravelOptions extends Pick<ProjectileTravelDeps, "maxActive" | "maxRetained"> {
+  /** Collision-source limit, default 2048; an oversized source throws rather than dropping targets. */
+  maxTargets?: number;
+  /** Override the default centerline cover query with a radius-aware collision provider. */
+  sweep?: (ctx: GameContext, ...args: Parameters<NonNullable<ProjectileTravelDeps["sweep"]>>) => ReturnType<NonNullable<ProjectileTravelDeps["sweep"]>>;
+  /** Full acceleration override; call ctx.environment.accelerationAt explicitly to compose authored forces. */
+  acceleration?: (ctx: GameContext, ...args: Parameters<NonNullable<ProjectileTravelDeps["acceleration"]>>) => ReturnType<NonNullable<ProjectileTravelDeps["acceleration"]>>;
+  /** Bounded entity IDs for the default moving-target query; omission uses this world's entities. */
+  targets?(ctx: GameContext): readonly string[];
+}
+
 /** Fully-resolved game description produced by {@link defineGameDefinition} — assets, scene, and opted-in subsystems. */
 export interface GameDefinition<
   TAssetRef extends ModelAssetRef = ModelAssetRef,
@@ -223,8 +236,8 @@ export interface GameDefinition<
   world?: WorldFeature;
   /** Validated authored scene inputs consumed by the environmental authority. */
   authoredDocument?: EditorDocument;
-  /** Bounded opt-in projectile travel; game shots choose wind response, target masks and force caps. */
-  projectileTravel?: { maxActive?: number; maxRetained?: number; maxTargets?: number };
+  /** Bounded projectile travel providers receive their live world; the authoritative clock stays engine-owned. */
+  projectileTravel?: GameProjectileTravelOptions;
   /** Game-level default physics laws; a place world's own `physics` resolves over this. */
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */

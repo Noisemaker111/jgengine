@@ -41,7 +41,7 @@ import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createSimClock } from "../time/simClock";
 import { createSimContext } from "./simContext";
 import { seededRng } from "../random/rng";
-import { createCameraDirector } from "./cameraDirector";
+import { createCameraDirector, installCameraPersistence } from "./cameraDirector";
 import { createParticleDirector } from "../vfx/particleDirector";
 import { createInputSnapshot } from "./inputSnapshot";
 import { baselineDescriptors, type BaselineDeps } from "./descriptors/baseline";
@@ -301,13 +301,25 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   // --- Combat installer (effects, projectiles, death, combat FX) ---
   // Command runner closes over `ctx` once assembled (same late-bind pattern as before).
   let ctxRef: GameContext | null = null;
+  const { sweep, acceleration, targets, ...projectileBudgets } = definition.projectileTravel ?? {};
+  function projectileContext(): GameContext {
+    if (ctxRef === null) throw new Error("Projectile providers require an assembled GameContext");
+    return ctxRef;
+  }
   const combat = createCombatSubsystem({
     content,
     signalNotify: signal.notify,
     now,
     events,
     time,
-    projectileTravel: { ...definition.projectileTravel, acceleration: (position, _velocity, at, input) => authoredEnvironment.accelerationAt(position, at, input.travel?.windResponse ?? 0, input.travel?.maxAcceleration ?? 0, input.travel?.forceMask ?? 0) },
+    projectileTravel: {
+      ...projectileBudgets,
+      ...(sweep === undefined ? {} : { sweep: (from, to, step) => sweep(projectileContext(), from, to, step) }),
+      ...(targets === undefined ? {} : { targets: () => targets(projectileContext()) }),
+      acceleration: acceleration === undefined
+        ? (position, _velocity, at, input) => authoredEnvironment.accelerationAt(position, at, input.travel?.windResponse ?? 0, input.travel?.maxAcceleration ?? 0, input.travel?.forceMask ?? 0)
+        : (position, velocity, at, input) => acceleration(projectileContext(), position, velocity, at, input),
+    },
     entities,
     objects,
     combatSpatial,
@@ -336,7 +348,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
 
   const store = notifyAfter(createObservableKeyedStore<unknown>(), ["set", "delete", "hydrate"], signal.notify);
   const { pile, loop, raceState, cardPiles, turnLoops } = createContextRegistries(signal.notify);
-  const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning"], signal.notify);
+  const camera = notifyAfter(createCameraDirector(), ["follow", "setCinematic", "setChaseTuning", "setRig", "restore", "reset"], signal.notify);
   const particles = createParticleDirector();
   const authoredEnvironment = createAuthoredSimulation({ document: definition.authoredDocument, timeSeconds: time.now, particles });
   const input = createInputSnapshot();
@@ -497,6 +509,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         despawn: despawnEntity,
         update: entities.update,
         setPose: entities.setPose,
+        setVelocity: entities.setVelocity,
         setPoseConstraint: entities.setPoseConstraint,
         get: entities.get,
         list: entities.list,
@@ -700,6 +713,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
   }
 
   installPursuitPersistence(ctx, aoiRadius);
+  installCameraPersistence(ctx);
   const saveOptions = resolveSaveOptions(definition, options);
   if (saveOptions !== undefined) {
     const saveTarget: RuntimeSaveTarget = {

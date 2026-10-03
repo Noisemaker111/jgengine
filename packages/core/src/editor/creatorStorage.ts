@@ -166,6 +166,7 @@ export function createCreatorDocumentStorage(config: { storage: KeyValueStorage;
       if ((previous?.revision ?? null) !== expectedRevision) throw new Error("Scene changed in storage; reopen it before saving");
       if (previous === undefined && documents.length >= config.policy.maxDocuments) throw new Error("Creator catalog is full");
       const next: CreatorDocument = { version: 1, id: value.id, name: value.name.trim(), revision: (previous?.revision ?? 0) + 1, document };
+      identity(next);
       if (index < 0) documents.push(next); else documents[index] = next;
       config.storage.setItem(config.key, JSON.stringify({ version: 1, documents }));
       return { ...next, document: cloneEditorDocument(document) };

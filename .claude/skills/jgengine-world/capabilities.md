@@ -166,6 +166,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `advanceBehaviors` (function) · `import { advanceBehaviors } from "@jgengine/core/world"`
 
+## board-vehicle — board a rideable, freeze/hide its rider and apply caller camera policy
+
+- `boardVehicle` (function) · `import { boardVehicle } from "@jgengine/core/world"`
+
 ## boat-dynamics — force-based powered hull — hull-speed drag hump, planing, keel, rudder that needs flow or outboard thrust
 
 - `createBoatDynamics` (function) · `import { createBoatDynamics } from "@jgengine/core/physics/boatDynamics"`
@@ -453,6 +457,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## lean-metrics — measure a motorcycle's lean — steady lean, time to lean, countersteer tip-in
 
 - `measureLean` (function) · `import { measureLean } from "@jgengine/core/physics/handlingProbe"`
+
+## leave-vehicle — leave a rideable beside its current pose and restore on-foot camera/movement
+
+- `leaveVehicle` (function) · `import { leaveVehicle } from "@jgengine/core/world"`
 
 ## limb-health — per-body-part/region health tracked separately
 

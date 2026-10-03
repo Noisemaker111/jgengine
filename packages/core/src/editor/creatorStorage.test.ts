@@ -32,6 +32,26 @@ test("creator surfaces durable failure without acknowledging a save", async () =
   expect(await adapter.load("course")).toBeNull();
 });
 
+test("creator revision exhaustion rejects before writing and keeps the last valid scene readable", async () => {
+  const values = new Map<string, string>();
+  let writes = 0;
+  const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, json: string) => { writes += 1; values.set(key, json); }, removeItem: (key: string) => { values.delete(key); } };
+  const previous = { ...value(), revision: Number.MAX_SAFE_INTEGER - 1 };
+  values.set("courses", JSON.stringify({ version: 1, documents: [previous] }));
+  const first = createCreatorDocumentStorage({ storage, key: "courses", policy });
+  const last = await first.save({ ...previous, name: "Last valid scene" }, previous.revision);
+  expect(last.revision).toBe(Number.MAX_SAFE_INTEGER);
+  expect(writes).toBe(1);
+  const before = values.get("courses");
+  const reopened = createCreatorDocumentStorage({ storage, key: "courses", policy });
+  expect(await reopened.load("course")).toEqual(last);
+  await expect(reopened.save({ ...last, name: "Unreadable successor" }, last.revision)).rejects.toThrow("Invalid scene revision");
+  expect(writes).toBe(1);
+  expect(values.get("courses")).toBe(before);
+  expect(await first.load("course")).toEqual(last);
+  expect(await reopened.list()).toEqual([{ version: 1, id: "course", name: "Last valid scene", revision: Number.MAX_SAFE_INTEGER }]);
+});
+
 test("creator imports reject catalog, schema, amplification and budget bypasses", () => {
   expect(() => importCreatorDocument('{"version":77}', policy)).toThrow();
   expect(() => validateCreatorDocument({ ...initial(), markers: [{ id: "x", kind: "unapproved", position: { x: 0, y: 0, z: 0 } }] }, policy)).toThrow("kind");
