@@ -58,7 +58,6 @@
   "packages/core/src/orders/orderQueue.ts#createOrderRegistry",
   "packages/core/src/physics/forceVolume.ts#createVolumeTrigger",
   "packages/core/src/progression/statGraph.ts#createStatGraph",
-  "packages/core/src/runtime/cameraDirector.ts#createCameraDirector",
   "packages/core/src/runtime/context/combatFx.ts#createCombatFx",
   "packages/core/src/runtime/hostedGameRunner.ts#createHostedGameRunner",
   "packages/core/src/runtime/hostedWorldSession.ts#createHostedWorldSession",
