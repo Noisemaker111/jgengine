@@ -13,6 +13,8 @@ export interface LethalLootInput {
   drops: readonly Drop[];
   /** Resolved killer identity; environmental kills have no player recipient. */
   recipientUserId: string | undefined;
+  /** Explicit any-death world rules may spawn items without a player recipient. */
+  allowUnownedWorldDrops?: boolean;
   /** Catalog `onDeath` for the dying entity (drop mode + scatter). */
   onDeath: OnDeathSpec | undefined;
   /** World position of the dying entity — required for `dropMode: "world"`. */
@@ -26,16 +28,26 @@ export interface LethalLootInput {
   rng: () => number;
 }
 
+/** @internal Only an explicit rule opts a catalog into unowned world drops. */
+export function allowsUnownedWorldDrops(onDeath: OnDeathSpec | undefined): boolean {
+  const normalized = normalizeOnDeath(onDeath);
+  return normalized.dropMode === "world" && normalized.drops.some((rule) => rule.when?.reason === "any");
+}
+
 /**
- * Pure death→loot policy: when a kill yields drops for a player, either scatter them as
- * world items (`dropMode: "world"`) or grant straight into bags. Extracted from `createGameContext`
+ * Pure death→loot policy: scatter world items or grant straight into player bags.
+ * Unowned deaths require explicit opt-in and never grant currency. Extracted from `createGameContext`
  * so combat install stays free of nested loot branching.
  * @internal
  */
 export function applyLethalLoot(input: LethalLootInput): void {
-  if (input.drops.length === 0 || input.recipientUserId === undefined) return;
+  if (input.drops.length === 0) return;
 
   const normalizedOnDeath = normalizeOnDeath(input.onDeath);
+  if (
+    input.recipientUserId === undefined &&
+    !(input.allowUnownedWorldDrops && normalizedOnDeath.dropMode === "world" && input.position !== undefined)
+  ) return;
   if (normalizedOnDeath.dropMode === "world" && input.position !== undefined) {
     const resolved = resolveDeathDrops([...input.drops], {
       mode: "world",
@@ -47,10 +59,10 @@ export function applyLethalLoot(input: LethalLootInput): void {
       ...(input.catalogId !== undefined ? { source: input.catalogId } : {}),
     });
     for (const spawn of resolved.worldSpawns) input.spawnWorldItem(spawn);
-    if (resolved.grants.length > 0) {
+    if (resolved.grants.length > 0 && input.recipientUserId !== undefined) {
       input.grantToPlayer(input.recipientUserId, resolved.grants, input.catalogId);
     }
-  } else {
+  } else if (input.recipientUserId !== undefined) {
     input.grantToPlayer(input.recipientUserId, [...input.drops], input.catalogId);
   }
 }

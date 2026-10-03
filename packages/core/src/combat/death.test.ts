@@ -140,3 +140,28 @@ describe("death system", () => {
     });
   });
 });
+
+test("explicit any-death table matches every reason and forwards the actual reason to policy", () => {
+  const reasons = [
+    { kind: "player_kill", killerUserId: "bob" },
+    { kind: "environment", source: "trap" },
+    { kind: "self", source: "retire" },
+  ] as const;
+  const received: unknown[] = [];
+  const system = createDeathSystem({
+    resolveOnDeath(_instanceId, reason) {
+      received.push(reason);
+      return { drops: [{ table: "explicit", when: { reason: "any" } }] };
+    },
+    resolveIdentity: () => ({ catalogId: "victim", position: [0, 0, 0] }),
+    loot: { roll: () => [{ item: "goo", count: 2 }] },
+    events: createGameEvents(),
+    despawn: () => {},
+  });
+  reasons.forEach((reason, index) => {
+    expect(system.resolveDeath(`victim:${index}`, reason)).toEqual({
+      status: "resolved", drops: [{ item: "goo", count: 2 }], ranCommand: null,
+    });
+  });
+  expect(received).toEqual([...reasons]);
+});

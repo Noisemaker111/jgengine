@@ -676,6 +676,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `planSolidRoute` (function) · `import { planSolidRoute } from "@jgengine/core/nav/solidRoute"`
 
+## spatial-incremental — Update one entity's spatial cell after a committed write without scanning the population
+
+- `createSpatialApi` (function) · `import { createSpatialApi } from "@jgengine/core/scene/spatial"`
+
 ## spatial-region-box — sample uniformly within an axis-aligned 3D box
 
 - `boxRegion` (function) · `import { boxRegion } from "@jgengine/core/world"`

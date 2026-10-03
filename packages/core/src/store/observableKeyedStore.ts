@@ -21,6 +21,7 @@ export interface ObservableKeyedStore<T> {
 /** @internal */
 export function createObservableKeyedStore<T>(
   areEqual?: (previous: T, next: T) => boolean,
+  beforeNotify?: (key: string | undefined, membershipChanged: boolean) => void,
 ): ObservableKeyedStore<T> {
   const store = new Map<string, T>();
   const listeners = new Set<() => void>();
@@ -34,14 +35,15 @@ export function createObservableKeyedStore<T>(
   let mapCache: ReadonlyMap<string, T> = new Map();
   let mapDirty = false;
 
-  function emit(): void {
+  function emit(key: string | undefined, membershipChanged: boolean): void {
     arrayDirty = true;
     mapDirty = true;
+    if (membershipChanged) keysDirty = true;
+    beforeNotify?.(key, membershipChanged);
     for (const listener of listeners) listener();
   }
 
   function emitMembership(): void {
-    keysDirty = true;
     for (const listener of membershipListeners) listener();
   }
 
@@ -51,13 +53,13 @@ export function createObservableKeyedStore<T>(
       const previous = store.get(key);
       if (had && areEqual?.(previous as T, value)) return;
       if (previous !== value) store.set(key, value);
-      emit();
+      emit(key, !had);
       if (!had) emitMembership();
     },
     delete(key) {
       if (!store.has(key)) return;
       store.delete(key);
-      emit();
+      emit(key, true);
       emitMembership();
     },
     get(key) {
@@ -101,7 +103,7 @@ export function createObservableKeyedStore<T>(
     hydrate(data) {
       store.clear();
       for (const [key, value] of data) store.set(key, value);
-      emit();
+      emit(undefined, true);
       emitMembership();
     },
   };

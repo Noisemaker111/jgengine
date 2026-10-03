@@ -138,6 +138,8 @@ Inject `sampleHeight`, body `radius`/`height`, edge `canTraverse` and terrain `s
 
 Keep perception and behavior separate. Save waypoints and follower progress in caller storage; compose `pathFollow` for kinematic progress or feed targets to collision-aware `moveTowardCommit`. Keep the actual movement result authoritative: an axis-separated resolver can shorten a step beside a corner even when the continuous route is clear. Revalidate moving obstacles during movement, and invalidate/replan routes on goal or geometry changes. `findPathResult` (`nav/navGrid`) exposes bounded grid search separately; legacy `findPath` retains snapped endpoints and `null` for failure.
 
+`maxNodes` counts expanded cells, excluding the reached goal. A route that reaches its goal after exactly that many expansions succeeds; a same-cell grid request needs no expansion.
+
 ### Physics world (optional, headless)
 
 `physics/physicsWorld` `PhysicsWorld` is a standalone fixed-capacity rigid-body sim (SoA buffers, spatial-hash broadphase, sleeping) — **not** the `defineGame` `physics: { gravity, jumpVelocity }` field, which the built-in walk controller reads directly every frame (see "Controller kinematics" above; both values are real and honored, not dead config). Reach for `PhysicsWorld` when a game needs many colliding dynamic bodies (piles, debris, stress scenes): `new PhysicsWorld({ capacity, bounds, … })`, `addBody({ position, mass?, ...shape })`, then `step(dt)` per tick → `PhysicsStats`. Core owns the sim; `@jgengine/shell/world/InstancedBodies` renders its bodies. Most games never need it — the character controller covers ordinary movement. The broadphase grid (`nx*ny*nz` cells from `bounds`/`cellSize`) throws at construction if it would exceed a sane cell cap — shrink `bounds` or raise `cellSize` (same guard on `physics/spatialGrid`'s `SpatialGrid`).
@@ -328,6 +330,14 @@ These handles hand back a plain JSON `snapshot()` that later ticks do not mutate
 ### Snapshot and restore on building handles
 
 `world/footprintGrid` `createFootprintGrid` (reservations in claim order; restore rebuilds occupancy), `world/walls` `createWallDrawTool` (points and closed flag) and `world/terraform` `createTerraformBrush` (radius and strength; the terrain keeps its own `snapshot()`) hand back a plain JSON `snapshot()` and take it back with `restore(next)`. `world/interiors` `createInteriors` holds config only, so it has nothing to save.
+
+## Entity proximity queries
+
+`ctx.scene.entity.inRadius` and `queryArc` use an incremental grid. All entity store writes, including pose/update, spawn/despawn, reset and replication/save hydration, update the derived index before change subscribers run. The live entity ID list keeps its identity across value writes. Mutating a live entity directly bypasses notification: prefer the store verbs, or call `ctx.scene.entity.invalidateSpatial()` after such a batch. Spatial caches are derived from entities and never enter saved or replicated state.
+
+For a bare `createSpatialApi` (`@jgengine/core/scene/spatial`), opt into `incremental: true` only when every candidate membership/position change calls `updateEntity` after the authoritative write, or invalidates the index. Subset consumers whose positions resolve outside their candidate set must pass `updateEntity(id, candidateSet.has(id))`: `false` removes without looking up the position, and `true` retains a candidate whose position is not known yet. Omitted presence asserts membership when the position resolves, otherwise removes; it suits the runtime's all-entity store. Cold/invalidated indexes and large membership bursts rebuild on the next query. Warm queries visit nearby cells plus unresolved IDs; each unresolved ID costs one lookup per query until updated or invalidated. Dense nearby cells still cost their local population. Cell crossings preserve the same candidate ordering as a full rebuild and reuse emptied cell buckets.
+
+The default bare API retains discovery of newly added candidate IDs without notification, at the cost of enumerating all candidate IDs on each query. Existing `invalidate()`/`getVersion()` and `grid: false` behavior remains available. `createEntityStore({ onChange })` offers a committed-ID/membership hook before normal subscribers for an independently composed index; it does not replace existing general or membership subscriptions.
 
 ## Spatial audio and playback budgets
 

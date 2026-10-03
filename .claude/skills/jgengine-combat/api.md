@@ -328,12 +328,12 @@
 - `DeathReasonKind` (type): type DeathReasonKind = DeathReason["kind"] — ⚠ undocumented
 - `DeathResolution` (type): type DeathResolution = | { status: "resolved"; drops: Drop[]; ranCommand: string | null } | { status: "rejected"; reason: string } — ⚠ undocumented
 - `DeathSystem` (interface): interface DeathSystem { resolveDeath(instanceId: string, reason: DeathReason): DeathResolution; revive(instanceId: string): boolean } — ⚠ undocumented · used by `createDeathSystem`: Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
-- `DeathSystemDeps` (interface): interface DeathSystemDeps { resolveOnDeath(instanceId: string): OnDeathSpec | null | undefined; resolveIdentity(instanceId: string): DeathIdentity | null; loot: {roll(tableId: string): Drop[]}; events: GameEvents; runCommand?(name: string, args: unknown, reason?: De… — ⚠ undocumented · used by `createDeathSystem`: Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
+- `DeathSystemDeps` (interface): interface DeathSystemDeps { resolveOnDeath(instanceId: string, reason?: DeathReason): OnDeathSpec | null | undefined; resolveIdentity(instanceId: string): DeathIdentity | null; loot: {roll(tableId: string): Drop[]}; events: GameEvents; runCommand?(name: string, args… — ⚠ undocumented · used by `createDeathSystem`: Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `DropMode` (type): type DropMode = "grant" | "world" — ⚠ undocumented
 - `EffectDeathContext` (interface): interface EffectDeathContext { from: string; via?: EffectVia; userIdOf?(instanceId: string): string | undefined } — ⚠ undocumented
 - `NormalizedOnDeath` (interface): interface NormalizedOnDeath { drops: OnDeathDropRule[]; command: OnDeathCommandRule | null; dropMode: DropMode; scatter?: ScatterOptions } — ⚠ undocumented
 - `OnDeathCommandRule` (interface): interface OnDeathCommandRule { name: string; args?: unknown; when?: {reason: DeathReasonKind} } — ⚠ undocumented
-- `OnDeathDropRule` (interface): interface OnDeathDropRule { table: string; when?: {reason: DeathReasonKind} } — ⚠ undocumented
+- `OnDeathDropRule` (interface): interface OnDeathDropRule { table: string; when?: {reason: DeathReasonKind | "any"} } — ⚠ undocumented
 - `OnDeathSpec` (interface): interface OnDeathSpec — Catalog `onDeath` for an entity: loot tables to roll, `dropMode: "world"` to scatter drops on the ground (rendered with loot beams) instead of granting them into the killer's bag, and commands to run. Fires only when the entity dies through `ctx.scene.entity.effect`, not a raw `stats.delta`.
 - `createDeathSystem` (function): function createDeathSystem(deps: DeathSystemDeps): DeathSystem — Resolve entity death and the on-death consequences — drops, respawn eligibility, kill credit.
 - `deathReasonFromEffect` (function): function deathReasonFromEffect(ctx: EffectDeathContext): DeathReason — ⚠ undocumented

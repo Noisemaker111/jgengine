@@ -142,6 +142,8 @@ describe.if(built)("clean-consumer resolution of the real tarball (zero-dep pack
         "const route = planSolidRoute([0,0,0], [8,0,0], { bounds: navBounds, cellSize: 0.5, obstaclesInBounds: () => [{ position: [4,1,0], halfExtents: [0.1,1,2] }] });",
         "if (route.status !== 'path' || route.waypoints.length < 3 || route.waypoints.at(-1)[0] !== 8) throw new Error('packaged collision route failed');",
         "if (findPathResult(createNavGrid({ bounds: navBounds, cellSize: 1 }), [0,0], [8,0], { maxNodes: 0 }).status !== 'budget') throw new Error('packaged bounded grid failed');",
+        "const exactBudget = findPathResult(createNavGrid({ bounds: navBounds, cellSize: 1 }), [0.5,0.5], [1.5,0.5], { maxNodes: 1 });",
+        "if (exactBudget.status !== 'path' || exactBudget.visited !== 1) throw new Error('packaged exact expansion budget failed');",
         "import { validateContentReferences, validateContentProgression } from '@jgengine/core/game/contentValidation';",
         "import { validateRecipeCatalog } from '@jgengine/core/crafting/recipeCatalog';",
         "const references = validateContentReferences([{ kind: 'card', id: 'relay', path: '/cards/relay' }], [{ kind: 'card', id: 'typo', path: '/deck/0', contentId: 'starter' }]);",

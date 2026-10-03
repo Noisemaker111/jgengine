@@ -1193,6 +1193,7 @@
     "./templates/starterTerrain",
     "./templates/types",
     "./upgrade",
-    "./upgradeCatalog"
+    "./upgradeCatalog",
+    "./workspaceDoctor"
   ]
 }

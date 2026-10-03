@@ -6,6 +6,7 @@ import { cliVersion, findWorkspaceRoot, readPackageJson, resolveDependencyRange,
 import { inspectInstalledSdkGraph, installedPackageVersion, installedSdkVersions, sdkMinorNewer } from "./compatibility";
 import { assessPrototypeLook } from "./prototypeLook";
 import { IN_REPO_TSCONFIG_PATHS } from "./templates";
+import { runWorkspaceDoctor } from "./workspaceDoctor";
 
 export interface Finding {
   ok: boolean;
@@ -258,6 +259,7 @@ export function diagnose(dir: string): Finding[] {
 
 /** @internal */
 export function runDoctor(argv: string[]): number {
+  if (argv.includes("--workspace")) return runWorkspaceDoctor(argv);
   const dir = resolve(argv.find((arg) => !arg.startsWith("--")) ?? ".");
   const findings = diagnose(dir);
   for (const finding of findings) {

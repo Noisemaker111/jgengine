@@ -254,41 +254,66 @@ function isSignalEnvelope(value: unknown): value is SignalEnvelope {
 
 export function broadcastChannelSignaling(room: string): PeerSignaling {
   const channel = new BroadcastChannel(room);
-  const pendingAnswers = new Map<string, (code: string) => void>();
+  const pendingAnswers = new Map<string, {
+    resolve: (code: string) => void;
+    reject: (error: Error) => void;
+  }>();
   let currentAnswer: ((offerCode: string) => Promise<string>) | null = null;
+  let closed = false;
 
   channel.onmessage = (event) => {
+    if (closed) return;
     const envelope: unknown = event.data;
     if (!isSignalEnvelope(envelope)) return;
     if (envelope.t === "offer") {
       const answer = currentAnswer;
       if (answer === null) return;
-      void answer(envelope.code).then((answerCode) => {
-        channel.postMessage({ t: "answer", id: envelope.id, code: answerCode });
-      });
+      void answer(envelope.code).then(
+        (answerCode) => {
+          if (closed) return;
+          channel.postMessage({ t: "answer", id: envelope.id, code: answerCode });
+        },
+        (error: unknown) => {
+          if (!closed) throw error;
+        },
+      );
       return;
     }
-    const resolve = pendingAnswers.get(envelope.id);
-    if (resolve === undefined) return;
+    const pending = pendingAnswers.get(envelope.id);
+    if (pending === undefined) return;
     pendingAnswers.delete(envelope.id);
-    resolve(envelope.code);
+    pending.resolve(envelope.code);
   };
 
   return {
     publishOffer: (offerCode) => {
+      if (closed) return Promise.reject(new Error("Peer signaling is closed"));
       const id = crypto.randomUUID();
-      return new Promise<string>((resolve) => {
-        pendingAnswers.set(id, resolve);
-        channel.postMessage({ t: "offer", id, code: offerCode });
+      return new Promise<string>((resolve, reject) => {
+        pendingAnswers.set(id, { resolve, reject });
+        try {
+          channel.postMessage({ t: "offer", id, code: offerCode });
+        } catch (error) {
+          pendingAnswers.delete(id);
+          reject(error);
+        }
       });
     },
     onOffer: (answer) => {
+      if (closed) throw new Error("Peer signaling is closed");
       currentAnswer = answer;
       return () => {
         if (currentAnswer === answer) currentAnswer = null;
       };
     },
     close: () => {
+      if (closed) return;
+      closed = true;
+      currentAnswer = null;
+      channel.onmessage = null;
+      for (const pending of pendingAnswers.values()) {
+        pending.reject(new Error("Peer signaling is closed"));
+      }
       pendingAnswers.clear();
       channel.close();
     },

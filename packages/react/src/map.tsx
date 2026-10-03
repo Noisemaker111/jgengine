@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import type { FogCells, FogField } from "@jgengine/core/world/fog";
 import {
   DEFAULT_MARKER_KINDS,
@@ -1174,6 +1174,14 @@ function clampScale(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+function mapControlEvent(event: { currentTarget: Element; nativeEvent: Event }): boolean {
+  for (const target of event.nativeEvent.composedPath()) {
+    if (target === event.currentTarget) break;
+    if (target instanceof Element && target.matches('button, a[href], input, textarea, select, label, [role="button"], [role="link"], [role="slider"], [role="switch"], [role="checkbox"], [contenteditable]:not([contenteditable=false])')) return true;
+  }
+  return false;
+}
+
 /** Props for {@link FullscreenMap}. */
 export interface FullscreenMapProps extends Omit<WorldMapSurfaceProps, "canvasWidth" | "canvasHeight" | "viewport" | "width" | "height" | "style"> {
   /** Render nothing when false. Default true. */
@@ -1240,8 +1248,24 @@ export function FullscreenMap({
   const moved = useRef(false);
   const draftRef = useRef<WorldXZ[] | null>(null);
   const [draft, setDraft] = useState<readonly WorldXZ[] | null>(null);
+  const [panning, setPanning] = useState(false);
+  const ownerRef = useRef<{ pointerId: number; pointerType: string; source: HTMLDivElement; tool: "pan" | "draw"; detach: () => void } | null>(null);
+  const gestureRef = useRef<{ move: (event: Pick<PointerEvent, "pointerId" | "clientX" | "clientY">) => void; finish: (event: Pick<PointerEvent, "pointerId">) => void } | null>(null);
   const drawing = tool === "draw";
   const minSpacing = (worldW + worldD) / 400;
+
+  const retireGesture = (notify = true): void => {
+    const owner = ownerRef.current;
+    ownerRef.current = null;
+    owner?.detach();
+    drag.current = null;
+    draftRef.current = null;
+    if (notify) { setDraft(null); setPanning(false); }
+    if (owner?.source.hasPointerCapture(owner.pointerId)) owner.source.releasePointerCapture(owner.pointerId);
+  };
+  const cancelGesture = (): void => { if (ownerRef.current !== null) moved.current = true; retireGesture(); };
+  useEffect(() => { cancelGesture(); }, [open, tool]);
+  useEffect(() => () => retireGesture(false), []);
 
   if (!open) return null;
 
@@ -1279,11 +1303,31 @@ export function FullscreenMap({
     setDraft(draftRef.current);
   };
 
-  const commitDraft = (): void => {
-    const points = draftRef.current;
-    draftRef.current = null;
-    setDraft(null);
-    if (points !== null && points.length >= 2) onStrokeComplete?.(points);
+  gestureRef.current = {
+    move: (event) => {
+      const owner = ownerRef.current;
+      if (owner === null || event.pointerId !== owner.pointerId) return;
+      if (!owner.source.isConnected) { cancelGesture(); return; }
+      if (owner.tool === "draw") {
+        if (draftRef.current !== null) pushDraftPoint(screenToWorld({ currentTarget: owner.source, clientX: event.clientX, clientY: event.clientY }));
+        return;
+      }
+      const state = drag.current;
+      if (state === null) return;
+      const rect = owner.source.getBoundingClientRect();
+      const dx = (event.clientX - state.x) * contentWidth / rect.width;
+      const dy = (event.clientY - state.y) * contentHeight / rect.height;
+      if (Math.abs(dx) + Math.abs(dy) > 3) moved.current = true;
+      setViewport({ scale: state.vp.scale, tx: state.vp.tx + dx, ty: state.vp.ty + dy });
+    },
+    finish: (event) => {
+      const owner = ownerRef.current;
+      if (owner === null || event.pointerId !== owner.pointerId) return;
+      if (!owner.source.isConnected) { cancelGesture(); return; }
+      const points = owner.tool === "draw" ? draftRef.current : null;
+      retireGesture();
+      if (points !== null && points.length >= 2) onStrokeComplete?.(points);
+    },
   };
 
   const draftRoute: MapRoute | null =
@@ -1356,45 +1400,50 @@ export function FullscreenMap({
           minHeight: 0,
           overflow: "hidden",
           touchAction: "none",
-          cursor: drawing ? "crosshair" : drag.current !== null ? "grabbing" : "grab",
+          cursor: drawing ? "crosshair" : panning ? "grabbing" : "grab",
         }}
         onWheel={(event) => {
           const at = canvasPoint(event);
           zoomBy(event.deltaY < 0 ? 1.15 : 1 / 1.15, at.x, at.y);
         }}
         onPointerDown={(event) => {
-          if (event.button !== 0) return;
-          event.currentTarget.setPointerCapture(event.pointerId);
+          if (event.button !== 0 || !event.isPrimary || ownerRef.current !== null || mapControlEvent(event)) return;
+          const source = event.currentTarget;
+          const view = source.ownerDocument.defaultView;
+          if (view === null) return;
+          const onMove = (move: PointerEvent) => gestureRef.current?.move(move);
+          const onUp = (up: MouseEvent) => { if (up.button === 0) gestureRef.current?.finish({ pointerId: event.pointerId }); };
+          const onCancel = (cancel: PointerEvent) => { if (cancel.pointerId === ownerRef.current?.pointerId) cancelGesture(); };
+          const mouse = event.pointerType === "mouse";
+          ownerRef.current = { pointerId: event.pointerId, pointerType: event.pointerType, source, tool, detach: () => {
+            if (!mouse) return;
+            view.removeEventListener("pointermove", onMove);
+            view.removeEventListener("mouseup", onUp);
+            view.removeEventListener("pointercancel", onCancel);
+          } };
+          if (mouse) {
+            // Mouse capture can be dropped on an auxiliary release while the primary button is still held.
+            view.addEventListener("pointermove", onMove);
+            view.addEventListener("mouseup", onUp);
+            view.addEventListener("pointercancel", onCancel);
+          } else source.setPointerCapture(event.pointerId);
+          moved.current = false;
           if (drawing) {
             draftRef.current = [screenToWorld(event)];
             setDraft(draftRef.current);
             return;
           }
           drag.current = { x: event.clientX, y: event.clientY, vp: viewport };
-          moved.current = false;
+          setPanning(true);
         }}
-        onPointerMove={(event) => {
-          if (drawing) {
-            if (draftRef.current !== null) pushDraftPoint(screenToWorld(event));
-            return;
-          }
-          const state = drag.current;
-          if (state === null) return;
-          const rect = event.currentTarget.getBoundingClientRect();
-          const kx = contentWidth / rect.width;
-          const ky = contentHeight / rect.height;
-          const dx = (event.clientX - state.x) * kx;
-          const dy = (event.clientY - state.y) * ky;
-          if (Math.abs(dx) + Math.abs(dy) > 3) moved.current = true;
-          setViewport({ scale: state.vp.scale, tx: state.vp.tx + dx, ty: state.vp.ty + dy });
-        }}
-        onPointerUp={(event) => {
-          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-          if (drawing) {
-            commitDraft();
-            return;
-          }
-          drag.current = null;
+        onPointerMove={(event) => { if (ownerRef.current?.pointerType !== "mouse") gestureRef.current?.move(event); }}
+        onPointerUp={(event) => { if (ownerRef.current?.pointerType !== "mouse") gestureRef.current?.finish(event); }}
+        onPointerCancel={(event) => { if (event.pointerId === ownerRef.current?.pointerId) cancelGesture(); }}
+        onLostPointerCapture={(event) => { if (event.pointerId === ownerRef.current?.pointerId) cancelGesture(); }}
+        onClick={(event) => {
+          if (ownerRef.current !== null || onWorldClick === undefined || drawing || mapControlEvent(event)) return;
+          if (moved.current) { moved.current = false; return; }
+          onWorldClick(screenToWorld(event));
         }}
       >
         <WorldMapSurface
@@ -1406,18 +1455,7 @@ export function FullscreenMap({
           canvasWidth={contentWidth}
           canvasHeight={contentHeight}
           viewport={viewport}
-          style={{ width: "100%", height: "100%", borderRadius: 0, display: "block" }}
-          onWorldClick={
-            onWorldClick === undefined || drawing
-              ? undefined
-              : (world) => {
-                  if (moved.current) {
-                    moved.current = false;
-                    return;
-                  }
-                  onWorldClick(world);
-                }
-          }
+          style={{ width: "100%", height: "100%", borderRadius: 0, display: "block", ...(onWorldClick === undefined || drawing ? {} : { cursor: "crosshair" }) }}
         />
         {children}
       </div>

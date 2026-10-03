@@ -60,6 +60,7 @@ usage: jgengine <command> [...args]
   recipe [name]         print a vetted wired composition (imports + snippet); no name lists them
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift
+                       --workspace [--json]: root + declared owners' installed SDK identities only
   assets [...]          @jgengine/assets CLI: list, search, pull CC0 packs
   editor-mcp [...]      scene editor agent bridge (document RPC / localhost server)
   upgrade [dir]         diff installed @jgengine/* against the latest release and print every
@@ -198,7 +199,7 @@ switch (command) {
     runDesktop(rest);
     break;
   case "doctor":
-    process.exit(runDoctor(rest));
+    process.exitCode = runDoctor(rest);
     break;
   case "skills":
     process.exit(runSkills(rest));
