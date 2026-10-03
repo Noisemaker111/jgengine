@@ -19,6 +19,10 @@ Keep the game on its published packages and its own dev server. `bun run drive -
 
 Use separate per-worktree daemon ports for concurrent workers. Sharing an explicit `--connect` port lets another target blur the active game and trigger its pause policy. Drive brings its page to the front before each click/key and focuses the canvas for keys; resume a paused game explicitly rather than treating background input as gameplay proof.
 
+Use `drive --device mobile --size full` for ordered gameplay at shoot's shared phone profile (390×844 CSS pixels, dsf 2; PNG 780×1688). `--device mobile-landscape` uses its shared landscape profile; `--size half` scales the selected viewport rather than choosing a different device. Device selection also enables the same touch/user-agent emulation and device URL overlay as shoot. Use distinct shot names or absolute output paths for desktop/phone pairs.
+
+`--timeout` controls page readiness and the session watchdog: ordinary drives have `timeout + 120s` total wall time (180s by default; `--timeout 300` allows 420s). Lockstep recordings add 3s per projected frame. Set the budget for long authored gameplay scripts instead of interpreting a killed browser as a puzzle softlock.
+
 Drive forwards page warnings and errors, including the native renderer and asset diagnostics, throughout navigation and interaction. Both commands clear every planned screenshot and sidecar before connecting, so an unavailable server or an earlier failed interaction leaves no stale image at a requested output path.
 
 The external page must declare `data-jg-capture="ready"` after an honest frame, as required by [SKILL.md](../SKILL.md). Neither a sized canvas nor an agent bridge substitutes for readiness. Published native hosts that do not expose `__jgProbe` return null from `--probe`; use their `debug_snapshot` RPC for diagnostics and deterministic gameplay assertions for progress rather than treating render metrics as player movement.

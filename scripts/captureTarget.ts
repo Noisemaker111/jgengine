@@ -1,3 +1,5 @@
+import { DEVICES, type Device } from "./browser-lib";
+
 export function externalCaptureUrl(raw: string | undefined): string {
   if (raw === undefined || raw.startsWith("--")) throw new Error("--url requires an http:// or https:// URL");
   let url: URL;
@@ -13,20 +15,31 @@ export function externalCaptureUrl(raw: string | undefined): string {
   return url.toString();
 }
 
-export function driveTargetUrl(args: { game: string; mode: string; modeExplicit?: boolean; site?: string; url?: string }, base: string): URL {
+export function driveTargetUrl(args: { game: string; mode: string; modeExplicit?: boolean; device?: Device; site?: string; url?: string }, base: string): URL {
   if (args.url !== undefined && args.site !== undefined) throw new Error("--url and --site select different targets; pass one");
+  let url: URL;
   if (args.url !== undefined) {
-    const url = new URL(args.url);
+    url = new URL(args.url);
     if (args.modeExplicit) url.searchParams.set("mode", args.mode);
-    return url;
+  } else {
+    const path = args.site === undefined ? "/" : args.site.startsWith("/") ? args.site : `/${args.site}`;
+    url = new URL(path, base);
+    if (args.site === undefined) {
+      url.searchParams.set("game", args.game);
+      url.searchParams.set("mode", args.mode);
+    }
   }
-  const path = args.site === undefined ? "/" : args.site.startsWith("/") ? args.site : `/${args.site}`;
-  const url = new URL(path, base);
-  if (args.site === undefined) {
-    url.searchParams.set("game", args.game);
-    url.searchParams.set("mode", args.mode);
+  if (args.device !== undefined) {
+    url.searchParams.set("device", args.device === "mobile-landscape" ? "mobile" : args.device);
   }
   return url;
+}
+
+export function parseCaptureDevice(raw: string | undefined): Device {
+  if (raw === undefined || !Object.hasOwn(DEVICES, raw)) {
+    throw new Error(`--device must be ${Object.keys(DEVICES).join(", ")} (got ${raw ?? "nothing"})`);
+  }
+  return raw as Device;
 }
 
 type ClickNode = {
