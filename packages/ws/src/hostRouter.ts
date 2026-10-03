@@ -12,7 +12,7 @@ import {
   DEFAULT_CHAT_RATE_LIMIT,
   type ChatRateLimit,
 } from "@jgengine/core/game/chat";
-import type { ResumeTicket } from "@jgengine/core/runtime/transport";
+import type { JoinServerResult, ResumeTicket } from "@jgengine/core/runtime/transport";
 import type { SnapshotViewer } from "@jgengine/core/runtime/worldSnapshot";
 
 import {
@@ -112,6 +112,7 @@ type Connection = {
   worldRevisions: Map<string, number | null>;
   roles: Map<string, SnapshotViewer["role"]>;
   subscriptionPushes: Map<string, SubscriptionPush>;
+  admission: { serverId?: string; result: Promise<JoinServerResult | null> } | null;
 };
 
 type SubscriptionPush = {
@@ -198,6 +199,45 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
       if (other !== self && other.userId === userId && other.joinedServers.has(serverId)) return true;
     }
     return false;
+  };
+  const scheduleLeave = (connection: Connection, userId: string, serverId: string) => {
+    clearPendingLeave(userId, serverId);
+    const key = ticketKey(userId, serverId);
+    pendingLeaves.set(key, setTimeout(() => {
+      pendingLeaves.delete(key);
+      void track((async () => {
+        const admissions = [...connections]
+          .filter(other => other !== connection && other.userId === userId)
+          .flatMap(other => other.admission === null || (other.admission.serverId !== undefined && other.admission.serverId !== serverId)
+            ? [] : [other.admission.result]);
+        await Promise.allSettled(admissions);
+        if (closed || heldByOtherConnection(connection, userId, serverId)) return;
+        await host.leaveServer({ userId, serverId });
+      })()).catch(() => {});
+    }, graceMs));
+  };
+  const admit = async (
+    connection: Connection,
+    userId: string,
+    join: () => Promise<JoinServerResult | null>,
+    role: SnapshotViewer["role"] | undefined,
+    sessionId?: string,
+    serverId?: string,
+  ) => {
+    const admission = join().then(result => {
+      if (result === null || closed) return result;
+      if (connection.closed || connection.userId !== userId) {
+        scheduleLeave(connection, userId, result.serverId);
+        return result;
+      }
+      connection.joinedServers.add(result.serverId);
+      connection.roles.set(result.serverId, role ?? "player");
+      if (sessionId !== undefined) getOrCreate(connection.sessions, result.serverId, () => new Set<string>()).add(sessionId);
+      return result;
+    });
+    connection.admission = { serverId, result: admission };
+    try { return await admission; }
+    finally { connection.admission = null; }
   };
   const subscribers = new Map<string, Set<Connection>>();
 
@@ -642,18 +682,16 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
           break;
         case "join": {
           if (!(await gate(connection, message.id, "join", { serverId: message.serverId }))) return;
-          const result = await host.joinServer({
+          const result = await admit(connection, userId, () => host.joinServer({
             userId,
             gameId: message.gameId,
             serverId: message.serverId,
             attributes: message.attributes,
             code: message.code,
             role: message.role,
-          });
-          if (closed || connection.closed) return;
-          connection.joinedServers.add(result.serverId);
-          connection.roles.set(result.serverId, message.role ?? "player");
-          if (message.sessionId !== undefined) getOrCreate(connection.sessions, result.serverId, () => new Set<string>()).add(message.sessionId);
+          }), message.role, message.sessionId, message.serverId);
+          if (result === null) return;
+          if (closed || connection.closed || connection.userId !== userId) return;
           reply(connection, message.id, {
             ...result,
             resumeTicket: ticketFor(userId, result.serverId),
@@ -662,15 +700,13 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         }
         case "joinByCode": {
           if (!(await gate(connection, message.id, "join", {}))) return;
-          const result = await host.joinByCode({
+          const result = await admit(connection, userId, () => host.joinByCode({
             userId,
             gameId: message.gameId,
             code: message.code,
-          });
+          }), message.role);
           if (result !== null) {
-            if (closed || connection.closed) return;
-            connection.joinedServers.add(result.serverId);
-            connection.roles.set(result.serverId, message.role ?? "player");
+            if (closed || connection.closed || connection.userId !== userId) return;
           }
           reply(
             connection,
@@ -818,16 +854,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
     connection.joinedServers.clear();
     connection.sessions.clear();
     for (const serverId of servers) {
-      const key = ticketKey(userId, serverId);
-      clearPendingLeave(userId, serverId);
-      pendingLeaves.set(
-        key,
-        setTimeout(() => {
-          pendingLeaves.delete(key);
-          if (heldByOtherConnection(connection, userId, serverId)) return;
-          void host.leaveServer({ userId, serverId }).catch(() => undefined);
-        }, graceMs),
-      );
+      scheduleLeave(connection, userId, serverId);
     }
   };
 
@@ -846,6 +873,7 @@ export function createHostRouter(options: HostRouterOptions): HostRouter {
         worldRevisions: new Map(),
         roles: new Map(),
         subscriptionPushes: new Map(),
+        admission: null,
       };
       connections.add(connection);
       return {
