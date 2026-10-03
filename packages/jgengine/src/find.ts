@@ -164,9 +164,10 @@ export function searchCapabilities(entries: readonly CapabilityEntry[], query: s
 }
 
 const MAX_RESULTS = 40;
+const MAX_LIMIT = 100;
 
 /** Render matches as grouped `[skill] slug — description` blocks with the import line(s) beneath. */
-export function renderFindResults(matches: readonly CapabilityEntry[], query: string, partial = false): string {
+export function renderFindResults(matches: readonly CapabilityEntry[], query: string, partial = false, limit = MAX_RESULTS): string {
   if (matches.length === 0) {
     return [
       `jgengine find "${query}" — no shipped capability matched.`,
@@ -175,7 +176,7 @@ export function renderFindResults(matches: readonly CapabilityEntry[], query: st
       "Browse everything: npx jgengine skills --all  (installs the full domain capability indexes).",
     ].join("\n");
   }
-  const shown = matches.slice(0, MAX_RESULTS);
+  const shown = matches.slice(0, limit);
   const lines: string[] = [
     partial
       ? `jgengine find "${query}" — nothing matched every word; ${matches.length} closest ${matches.length === 1 ? "capability matches" : "capabilities match"} some of them:`
@@ -197,6 +198,11 @@ export function renderFindResults(matches: readonly CapabilityEntry[], query: st
   return lines.join("\n");
 }
 
+/** Render bounded machine-readable discovery while preserving total and partial-match metadata. */
+export function renderFindJsonResults(matches: readonly CapabilityEntry[], query: string, partial = false, limit = MAX_RESULTS): string {
+  return JSON.stringify({ query, total: matches.length, partial, truncated: matches.length > limit, matches: matches.slice(0, limit) });
+}
+
 /**
  * Locate the staged `skills/` directory that ships inside this CLI's tarball. In a published consumer
  * that is `node_modules/jgengine/skills`; in the monorepo it is `packages/jgengine/skills` (populated by
@@ -216,7 +222,7 @@ export function loadCapabilityIndex(skillsDir: string): CapabilityEntry[] {
   try {
     domains = readdirSync(skillsDir, { withFileTypes: true })
       .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => dirent.name);
+      .map((dirent) => dirent.name).sort();
   } catch {
     return entries;
   }
@@ -249,7 +255,7 @@ export function loadSkillRecipes(skillsDir: string): CapabilityEntry[] {
   try {
     domains = readdirSync(skillsDir, { withFileTypes: true })
       .filter((dirent) => dirent.isDirectory())
-      .map((dirent) => dirent.name);
+      .map((dirent) => dirent.name).sort();
   } catch {
     return entries;
   }
@@ -274,20 +280,54 @@ export function loadSkillRecipes(skillsDir: string): CapabilityEntry[] {
 
 /** `jgengine find <intent>` command entry. */
 export function runFind(argv: string[]): number {
-  const query = argv.filter((arg) => !arg.startsWith("-")).join(" ").trim();
-  if (query === "" || argv.includes("-h") || argv.includes("--help")) {
+  const words: string[] = [];
+  let json = false;
+  let help = false;
+  let limit = MAX_RESULTS;
+  let limitSeen = false;
+  let positional = false;
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i]!;
+    if (positional || !arg.startsWith("-")) {
+      words.push(arg);
+    } else if (arg === "--") {
+      positional = true;
+    } else if (arg === "--help" || arg === "-h") {
+      help = true;
+    } else if (arg === "--json" && !json) {
+      json = true;
+    } else if (arg === "--limit" || arg.startsWith("--limit=")) {
+      const value = arg === "--limit" ? argv[++i] : arg.slice("--limit=".length);
+      if (limitSeen || value === undefined || !/^[1-9]\d*$/.test(value) || Number(value) > MAX_LIMIT) {
+        console.error(`jgengine find: --limit must appear once with an integer from 1 to ${MAX_LIMIT}.`);
+        return 1;
+      }
+      limit = Number(value);
+      limitSeen = true;
+    } else {
+      console.error(`jgengine find: unknown or repeated option "${arg}".`);
+      return 1;
+    }
+  }
+  const query = words.join(" ").trim();
+  if (query === "" || help) {
     console.log(
       [
-        "jgengine find <intent> — search what the engine already ships, by intent.",
+        "jgengine find <intent> [--json] [--limit N] — search what the engine already ships, by intent.",
         "",
         'examples: npx jgengine find "toggleable window"',
         '          npx jgengine find inventory',
         '          npx jgengine find "character sheet paperdoll"',
+        '          npx jgengine find "inventory" --json --limit 5',
+        "",
+        `--limit N: show 1–${MAX_LIMIT} matches (default ${MAX_RESULTS}).`,
+        "--json: emit query, total, partial, truncated, and matches with imports or recipe paths.",
+        "--: treat remaining arguments as intent words.",
         "",
         "Prints the drop-in primitive and its import so you don't hand-roll one that exists.",
       ].join("\n"),
     );
-    return query === "" && !argv.includes("-h") && !argv.includes("--help") ? 1 : 0;
+    return query === "" && !help ? 1 : 0;
   }
   const skillsDir = resolveSkillsDir();
   if (skillsDir === null) {
@@ -299,6 +339,8 @@ export function runFind(argv: string[]): number {
   }
   const index = [...loadCapabilityIndex(skillsDir), ...loadSkillRecipes(skillsDir), ...recipeCapabilities()];
   const { matches, partial } = findCapabilities(index, query);
-  console.log(renderFindResults(matches, query, partial));
+  console.log(json
+    ? renderFindJsonResults(matches, query, partial, limit)
+    : renderFindResults(matches, query, partial, limit));
   return 0;
 }

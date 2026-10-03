@@ -56,6 +56,7 @@ usage: jgengine <command> [...args]
   find <intent>         search what the engine already ships by intent (e.g. "toggleable window",
                         "inventory", "minimap") → the drop-in primitive + its import. Reach for
                         this before hand-rolling a HUD/inventory/window/rig — most already exist.
+                        [--json] [--limit 1..100] for bounded machine-readable discovery
   recipe [name]         print a vetted wired composition (imports + snippet); no name lists them
   skills -p | -g        re-install skills (recovery only — create already installs them)
   doctor [dir]          diagnose version skew, missing peers, unstyled HUD, prototype look, shape drift

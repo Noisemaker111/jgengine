@@ -13,12 +13,14 @@ Search [capabilities.md](capabilities.md) before adding a resolver or catalog pa
 
 ## Canonical workflow
 
-1. Prefer existing catalog entries and typed asset refs.
+1. Choose a palette from the game's art direction: silhouette, materials, scale, era, and visual language. Search existing catalog entries and typed asset refs against that palette; catalog availability does not choose the game's look.
 2. Verify source license and attribution requirements before download.
 3. Record canonical facing, source units, pivot, footprint, bounds, and placement policy in metadata.
 4. Pull/index through shared tooling; do not commit remote-library bulk bytes when the catalog is designed to resolve them.
 5. Preview through the same resolver runtime will use.
 6. Add required credit in the same PR.
+
+Reuse import, validation, catalog, and rendering tools to save time. Each game owns its asset selection and visual identity. Source or import licensed assets when the catalog does not fit; do not substitute the same convenient pack into every game. Validate a representative set in the actual scene before filling the world with it. Keep that reviewed palette consistent within the game without treating it as an SDK preset.
 
 ## Reference integrity
 
@@ -46,4 +48,3 @@ A model resolved from a catalog string id is stamped `animation: "auto"`: the sh
 - Fix wrong scale/facing/pivot upstream in catalog metadata, never with per-game corrective transforms.
 - Asset ids and metadata are stable data contracts; filenames and URLs are implementation details.
 - Missing attribution is a release blocker even when the code works.
-

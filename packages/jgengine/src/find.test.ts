@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -10,8 +10,10 @@ import {
   recipeCapabilities,
   parseCapabilities,
   renderFindResults,
+  renderFindJsonResults,
   resolveSkillsDir,
   searchCapabilities,
+  runFind,
   type CapabilityEntry,
 } from "./find";
 
@@ -123,6 +125,64 @@ describe("renderFindResults", () => {
     const out = renderFindResults([], "flux capacitor");
     expect(out).toContain("no shipped capability matched");
     expect(out).toContain("npx jgengine skills --all");
+  });
+
+  test("text respects a caller's limit and preserves total counts", () => {
+    const out = renderFindResults(index, "ui", false, 1);
+    expect(out).toContain("3 shipped capabilities");
+    expect(out).toContain("[jgengine-ui] use-panels");
+    expect(out).not.toContain("[jgengine-ui] panel-host");
+    expect(out).toContain("2 more");
+  });
+
+  test("JSON preserves ranking, import and recipe rows, and truncation metadata", () => {
+    const rows = [...index, ...recipeCapabilities()];
+    const out = JSON.parse(renderFindJsonResults(rows, "ui camera", true, 4));
+    expect(out).toEqual({ query: "ui camera", total: rows.length, partial: true, truncated: true, matches: rows.slice(0, 4) });
+    expect(out.matches[0].imports).toEqual(index[0]!.imports);
+    expect(out.matches[3].skill).toBe("recipe");
+    expect(JSON.parse(renderFindJsonResults([], "unknown"))).toEqual({
+      query: "unknown", total: 0, partial: false, truncated: false, matches: [],
+    });
+    expect(JSON.parse(renderFindJsonResults(index, "ui", false, 3)).truncated).toBe(false);
+  });
+});
+
+describe("runFind flags", () => {
+  test.each([
+    ["inventory", "--unknown"],
+    ["inventory", "--json", "--json"],
+    ["inventory", "--limit"],
+    ["inventory", "--limit", "--json"],
+    ["inventory", "--limit", "0"],
+    ["inventory", "--limit", "-1"],
+    ["inventory", "--limit", "1.5"],
+    ["inventory", "--limit", "101"],
+    ["inventory", "--limit", "1e1"],
+    ["inventory", "--limit=2", "--limit", "3"],
+  ])("rejects invalid options %j", (...argv) => {
+    const log = spyOn(console, "log").mockImplementation(() => {});
+    const error = spyOn(console, "error").mockImplementation(() => {});
+    try {
+      expect(runFind(argv)).toBe(1);
+      expect(log).not.toHaveBeenCalled();
+      expect(error).toHaveBeenCalledTimes(1);
+    } finally {
+      log.mockRestore();
+      error.mockRestore();
+    }
+  });
+
+  test("help documents JSON and accepts limit values without treating them as intent", () => {
+    const log = spyOn(console, "log").mockImplementation(() => {});
+    try {
+      expect(runFind(["--json", "--limit", "1", "--help"])).toBe(0);
+      expect(String(log.mock.calls[0]?.[0])).toContain("--limit N");
+      expect(runFind(["--limit=100", "-h"])).toBe(0);
+      expect(runFind(["--json", "--limit", "2"])).toBe(1);
+    } finally {
+      log.mockRestore();
+    }
   });
 });
 
