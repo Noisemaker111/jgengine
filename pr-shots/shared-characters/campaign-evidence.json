@@ -7,7 +7,13 @@
     "baseTree": "8485f40f54749973acdfa3e62da132f3dcea6e13",
     "remoteCommit": "e194cfa4e7972ee951ba7d89477753ffd1e29831",
     "remoteTreeEqualsLocalTree": true,
-    "deliveryMethod": "normal standalone git pushes returned HTTP401; connected Git Data API blob hashes and tree identity verified"
+    "deliveryMethod": "normal standalone git pushes returned HTTP401; connected Git Data API blob hashes and tree identity verified",
+    "delivery": {
+      "pr": 1956,
+      "state": "MERGED",
+      "mergedAt": "2026-10-03T23:16:27Z",
+      "betaMerge": "05b424d81174a9424705aaf271f15929a739629d"
+    }
   },
   "publicPackages": {
     "manifest": "final-package-manifest.json",
@@ -45,7 +51,12 @@
         "log": "delivery-shell-editor-suite.log"
       }
     },
-    "finalCI": "pending PR"
+    "finalCI": {
+      "status": "all six jobs PASS",
+      "run": 37160855598,
+      "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37160855598",
+      "head": "e194cfa4e7972ee951ba7d89477753ffd1e29831"
+    }
   },
   "proofs": {
     "actualConsumers": "consumer-evidence.json",
@@ -61,7 +72,7 @@
   },
   "remaining": {
     "cameraAim": "camera patch withheld pending combat-owned eye/muzzle convergence; issue1896#5974073290, PR1921",
-    "rigAttachments": "authored handslot.r sanitized to handslotr; alias resolver prototype unwired pending SceneModels owner; issue1896#5973998802",
+    "rigAttachments": "Original-name resolution remained unwired in this first cohort; next independently reviewable pass characters/imported-rig-slots wires the shared resolver into attachments and explicitly configured IK chains.",
     "standaloneCharacterLoop": "Save/reopen proven but viewport character and imported clip metadata absent; existing creator host seams handed off issue1896#5974318691 and correction5974319609",
     "Lantern": "dawn schema blocks complete normal authoring; four existing dispatch-Promise type errors remain; two native capture failures reached retry cap",
     "DeepwardNative": "two candidate readiness failures reached retry cap; package tests/build pass",
