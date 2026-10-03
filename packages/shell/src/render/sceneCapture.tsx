@@ -1,50 +1,60 @@
-import { useThree } from "@react-three/fiber";
-import { useEffect } from "react";
-import type * as THREE from "three";
-
-/** The bit of a WebGL renderer scene capture needs — its backing `<canvas>`. */
-export interface CaptureRenderer {
-  domElement: { toDataURL(type?: string): string };
-}
-
+import { addAfterEffect, useThree } from "@react-three/fiber";
+import { useEffect, useSyncExternalStore } from "react";
+import { useGameContext, useOptionalGameContext } from "@jgengine/react/provider";
+import { captureCanvas, sceneCaptureFor, type SceneCapture, type SceneCaptureState } from "./sceneCaptureRuntime";
+export * from "./sceneCaptureRuntime";
 /**
- * Read the current frame to a PNG data URL. Requires the R3F `<Canvas>` to have
- * been created with `gl={{ preserveDrawingBuffer: true }}` (the shell's game
- * canvas already is); returns null if the backing canvas can't be read.
- *
- * @capability capture-canvas read the live R3F frame to a PNG data URL (needs preserveDrawingBuffer)
+ * Observe and capture the renderer attached to the current GameProvider.
+ * @capability use-scene-capture observe renderer readiness and take photographs from a game HUD
  */
-export function captureCanvas(gl: CaptureRenderer): string | null {
-  try {
-    const url = gl.domElement.toDataURL("image/png");
-    return url.startsWith("data:image/png") ? url : null;
-  } catch {
-    return null;
-  }
-}
-
-/** Trigger a browser download of an image data URL (the photo-mode "save" action). */
-export function downloadImage(dataUrl: string, filename = "screenshot.png"): void {
-  if (typeof document === "undefined") return;
-  const anchor = document.createElement("a");
-  anchor.href = dataUrl;
-  anchor.download = filename;
-  anchor.click();
+export function useSceneCapture(): SceneCaptureState & Pick<SceneCapture, "photoMode" | "capture"> {
+  const capture = sceneCaptureFor(useGameContext());
+  const state = useSyncExternalStore(capture.subscribe, capture.get, capture.get);
+  return { ...state, photoMode: capture.photoMode, capture: capture.capture };
 }
 
 /**
  * In-`<Canvas>` binder that hands the scene-capture function out to HUD code
  * living outside the reconciler (a photo-mode Capture button). Mount it inside
- * the game's `WorldOverlay`; call `bind` receives a `() => string | null` that
- * grabs the current frame. Renders nothing.
+ * the game's `WorldOverlay` and use `useSceneCapture` in its HUD. Optional `bind`
+ * preserves direct current-frame access for existing consumers. Renders nothing.
  *
  * @capability scene-capture-binding expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
  */
-export function SceneCaptureBinding({ bind }: { bind: (capture: () => string | null) => void }): null {
-  const gl = useThree((state) => state.gl as unknown as THREE.WebGLRenderer & CaptureRenderer);
+export function SceneCaptureBinding({ bind }: { bind?: (capture: () => string | null) => void } = {}): null {
+  const get = useThree((state) => state.get);
+  const ctx = useOptionalGameContext();
+  const capture = ctx === null ? null : sceneCaptureFor(ctx);
   useEffect(() => {
-    bind(() => captureCanvas(gl));
-    return () => bind(() => null);
-  }, [gl, bind]);
+    let mounted = true;
+    const read = (): string | null => {
+      if (!mounted) return null;
+      try {
+        const { gl } = get();
+        if (gl.getContext().isContextLost()) return null;
+        return captureCanvas(gl);
+      } catch {
+        return null;
+      }
+    };
+    const schedule = (take: () => void) => {
+      const { gl, invalidate } = get();
+      const frame = gl.info.render.frame;
+      const detach = addAfterEffect(() => {
+        if (!mounted || get().gl !== gl || gl.info.render.frame <= frame) return;
+        detach();
+        take();
+      });
+      invalidate();
+      return detach;
+    };
+    const unbind = capture?.bind(read, schedule);
+    bind?.(read);
+    return () => {
+      mounted = false;
+      unbind?.();
+      bind?.(() => null);
+    };
+  }, [get, capture, bind]);
   return null;
 }

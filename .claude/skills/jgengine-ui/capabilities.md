@@ -169,6 +169,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `useDomEvent` (function) · `import { useDomEvent } from "@jgengine/react"`
 
+## download-image — save a captured PNG through the browser download control
+
+- `downloadImage` (function) · `import { downloadImage } from "@jgengine/shell/render/sceneCapture"`
+
 ## entity-frames — overlay that renders caller-composed frames over on-screen entities
 
 - `EntityFrames` (function) · `import { EntityFrames } from "@jgengine/react"`
@@ -452,6 +456,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `PauseMenu` (function) · `import { PauseMenu } from "@jgengine/react"`
 
+## photo-controls — open photo mode, save a rendered PNG and return focus to gameplay
+
+- `PhotoControls` (function) · `import { PhotoControls } from "@jgengine/shell/PhotoControls"`
+
 ## photo-mode — observable photo-mode state (active + hide-HUD) a game binds its screenshot/camera flow to
 
 - `createPhotoModeStore` (function) · `import { createPhotoModeStore } from "@jgengine/core/ui"`
@@ -499,6 +507,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## scene-capture-binding — expose the in-Canvas scene-capture function to outside-Canvas HUD (photo mode)
 
 - `SceneCaptureBinding` (function) · `import { SceneCaptureBinding } from "@jgengine/shell/render/sceneCapture"`
+
+## scene-capture-for — retrieve photograph state scoped to a game instance
+
+- `sceneCaptureFor` (function) · `import { sceneCaptureFor } from "@jgengine/shell/render/sceneCapture"`
+
+## scene-photograph — per-instance rendered PNG capture and download with presentation restoration
+
+- `createSceneCapture` (function) · `import { createSceneCapture } from "@jgengine/shell/render/sceneCapture"`
 
 ## scoreboard-table — reskinnable ranked-score / leaderboard table over the rankLeaderboard selector — medal-colored podium, local-row highlight, HudTheme-token driven
 
@@ -640,6 +656,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## use-save-slots — React hook binding a save-slots metadata index — re-renders on change and returns the ordered slot list
 
 - `useSaveSlots` (function) · `import { useSaveSlots } from "@jgengine/react"`
+
+## use-scene-capture — observe renderer readiness and take photographs from a game HUD
+
+- `useSceneCapture` (function) · `import { useSceneCapture } from "@jgengine/shell/render/sceneCapture"`
 
 ## use-sequence-director — React hook that drives a cutscene director's per-frame tick loop and exposes playhead/progress + play/pause/skip controls
 
