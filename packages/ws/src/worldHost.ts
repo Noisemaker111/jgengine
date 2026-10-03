@@ -17,6 +17,8 @@ export interface WorldGameHostOptions {
    */
   session(args: { gameId: string; serverId: string }): HostedWorldSession | Promise<HostedWorldSession | null> | null;
   now?: () => number;
+  /** Maximum active players per world; reconnecting members and spectators do not consume a new slot. */
+  slotsPerServer?: number;
 }
 
 /** A {@link GameHost} whose worlds run on `HostedWorldSession`s; `tick` advances them and re-broadcasts on change. */
@@ -32,6 +34,9 @@ export interface WorldGameHost extends GameHost {
  * the tick cadence (call {@link WorldGameHost.tick} on an interval); commands and joins broadcast immediately.
  */
 export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHost {
+  if (options.slotsPerServer !== undefined && (!Number.isSafeInteger(options.slotsPerServer) || options.slotsPerServer < 1)) {
+    throw new Error("slotsPerServer must be a positive safe integer");
+  }
   const live = new Map<string, { gameId: string; session: HostedWorldSession }>();
   const loading = new Map<string, Promise<{ gameId: string; session: HostedWorldSession } | null>>();
   const queues = new Map<string, Promise<unknown>>();
@@ -97,6 +102,10 @@ export function createWorldGameHost(options: WorldGameHostOptions): WorldGameHos
         const pending = ensure(gameId, id);
         const entry = pending instanceof Promise ? await pending : pending;
         if (entry === null) throw new Error(`no hosted world for game "${gameId}"`);
+        const members = entry.session.members();
+        if (role !== "spectator" && !members.includes(userId) && options.slotsPerServer !== undefined && members.length >= options.slotsPerServer) {
+          throw new Error("Server is full");
+        }
         const isNew = !entry.session.hasPlayer(userId);
         let serverRoles = roles.get(id);
         if (serverRoles === undefined) {

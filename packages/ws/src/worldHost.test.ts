@@ -223,3 +223,31 @@ describe("createWorldGameHost", () => {
     }
   });
 });
+
+
+describe("world capacity", () => {
+  test("serialized concurrent admission caps players while permitting reconnect and spectators", async () => {
+    const session = createHostedWorldSession({ definition: definition(), content: CONTENT });
+    const host = createWorldGameHost({ session: () => session, slotsPerServer: 2 });
+    await host.joinServer({ userId: "host", gameId: "shared" });
+    const attempts = await Promise.allSettled([
+      host.joinServer({ userId: "guest", gameId: "shared" }),
+      host.joinServer({ userId: "third", gameId: "shared" }),
+    ]);
+    expect(attempts[0]?.status).toBe("fulfilled");
+    expect(attempts[1]?.status).toBe("rejected");
+    expect(session.members()).toEqual(["host", "guest"]);
+    await host.joinServer({ userId: "guest", gameId: "shared" });
+    await host.joinServer({ userId: "viewer", gameId: "shared", role: "spectator" });
+    expect(session.members()).toEqual(["host", "guest"]);
+    await host.leaveServer({ userId: "guest", serverId: "shared" });
+    await host.joinServer({ userId: "third", gameId: "shared" });
+    expect(session.members()).toEqual(["host", "third"]);
+  });
+
+  test("rejects invalid caps before opening a world", () => {
+    for (const slotsPerServer of [0, -1, 1.5, NaN, Infinity]) {
+      expect(() => createWorldGameHost({ session: () => null, slotsPerServer })).toThrow("slotsPerServer");
+    }
+  });
+});
