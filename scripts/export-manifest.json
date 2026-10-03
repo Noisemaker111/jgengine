@@ -771,6 +771,7 @@
     "./camera/cameraBlendMath",
     "./camera/cameraCollision",
     "./camera/cameraRigs",
+    "./camera/customMuzzle",
     "./camera/fovPreference",
     "./camera/index",
     "./camera/inspectionCameraMath",

@@ -1837,6 +1837,7 @@
 - `CameraShakeContext` (const): const CameraShakeContext: React.Context<CameraShakeChannel> — ⚠ undocumented
 - `ControllerCameraShake` (function): function ControllerCameraShake({ controller, priority = GAME_SIM_FRAME_PRIORITY, }: ControllerCameraShakeProps): ReactNode — The shell-side consumer of a core {@link CameraShakeController}: each frame it calls `controller.update(delta)` to bleed trauma, reads the pooled `controller.offset()`, and applies it additively to the active camera — a positional kick plus a pitch/yaw/roll rotation — so the view VISIBLY shakes on impacts. It runs after the camera rig (which re-poses the camera to its base every frame), so the shake composes with any rig without a manual save/restore and without fighting the built-in `shakeChannel`. Renders nothing.
 - `ControllerCameraShakeProps` (interface): interface ControllerCameraShakeProps — Props for {@link ControllerCameraShake}.
+- `FirstPersonMuzzleReader` (type): type FirstPersonMuzzleReader = (target: Vector3) => boolean — Writes a live presentation muzzle in world space; false means this rig has no muzzle available.
 - `GAME_SIM_FRAME_PRIORITY` (const): const GAME_SIM_FRAME_PRIORITY: 0 — Run simulation/movement before orbit follow so poses are current.
 - `GameCameraRig` (function): function GameCameraRig({ yawRef, pitchRef, config, onDragChange, pointerControls, panKeysEnabled, director, viewmodel, }: GameCameraRigProps): React.JSX.Element — ⚠ undocumented
 - `GameCameraRigProps` (interface): interface GameCameraRigProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: GameCameraConfig; onDragChange?: (dragging: boolean) => void; pointerControls?: boolean; panKeysEnabled?: boolean; director?: CameraDirector; viewmodel?: Compo… — ⚠ undocumented
@@ -1852,7 +1853,8 @@
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
 - `defaultCameraShakeChannel` (const): const defaultCameraShakeChannel: CameraShakeChannel — Process-wide default channel. A shell mounts its own channel via `CameraShakeContext`, but game systems that have no React context (e.g. a `loop.onTick` reacting to `entity.died`) can import `cameraShake` and feed the default channel directly.
 - `isCameraOccluderTransparent` (function): function isCameraOccluderTransparent(object: CameraOccluder | null | undefined): boolean — Should the camera spring-arm ignore this raycast hit? Walks the object up its `.parent` chain and honors the nearest camera tag: `jgCameraCollide === true` blocks (opt back in), `jgCameraTransparent === true` passes through. Untagged geometry blocks as before, so engine-owned ground/entities are unaffected.
-- `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
+- `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera): boolean — Presentation muzzle in world space; camera-scoped when supplied, false leaves target unchanged.
+- `registerFirstPersonMuzzle` (function): function registerFirstPersonMuzzle(camera: Camera, reader: FirstPersonMuzzleReader): () => void — Register a custom rig's presentation muzzle for its Three.js camera. Newest available custom reader wins over that camera's stock muzzle; call the returned cleanup on unmount.
 - `usePlayerFov` (function): function usePlayerFov(): PlayerFovState — ⚠ undocumented
 
 ## @jgengine/shell/camera/ControllerCameraShake
@@ -1870,7 +1872,7 @@
 - `GameFirstPersonCamera` (function): function GameFirstPersonCamera({ yawRef, pitchRef, config, followEntityId, viewmodel, weapon, }: GameFirstPersonCameraProps): React.JSX.Element | null — ⚠ undocumented
 - `GameFirstPersonCameraProps` (interface): interface GameFirstPersonCameraProps { yawRef: MutableRefObject<number>; pitchRef: MutableRefObject<number>; config?: FirstPersonCameraConfig; followEntityId?: string; viewmodel?: ComponentType<ViewmodelProps>; weapon?: (entityId: string) => CameraWeaponView | null } — ⚠ undocumented
 - `ViewmodelProps` (interface): interface ViewmodelProps — Props handed to a custom viewmodel component (#542): a live cue ref (velocity/bob/firing/reloading/recoil/hit) for the followed entity, driven from your own `useFrame` — read `cuesRef.current` there rather than storing it as render state.
-- `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3): boolean — World position of the first-person weapon muzzle, or false when no viewmodel is mounted.
+- `readFirstPersonMuzzle` (function): function readFirstPersonMuzzle(target: THREE.Vector3, camera?: THREE.Camera): boolean — Presentation muzzle in world space; camera-scoped when supplied, false leaves target unchanged.
 
 ## @jgengine/shell/camera/GameInspectionCamera
 
@@ -1919,6 +1921,11 @@
 - `ShoulderRig` (function): function ShoulderRig(props: RigProps): null — ⚠ undocumented
 - `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
 - `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented
+
+## @jgengine/shell/camera/customMuzzle
+
+- `FirstPersonMuzzleReader` (type): type FirstPersonMuzzleReader = (target: Vector3) => boolean — Writes a live presentation muzzle in world space; false means this rig has no muzzle available.
+- `registerFirstPersonMuzzle` (function): function registerFirstPersonMuzzle(camera: Camera, reader: FirstPersonMuzzleReader): () => void — Register a custom rig's presentation muzzle for its Three.js camera. Newest available custom reader wins over that camera's stock muzzle; call the returned cleanup on unmount.
 
 ## @jgengine/shell/camera/fovPreference
 
