@@ -1,3 +1,4 @@
+import { parseStaticPrefabBake } from "./staticPrefab";
 import type { ParamField, ParamSchema } from "../scene/sceneKinds";
 import { cloneEditorUiDocument, decodeEditorUiDocument } from "../ui/hudDocument";
 import { migrateTerrainSnapshot } from "../world/terraform";
@@ -202,12 +203,8 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     })),
     prefabs: doc.prefabs.map((prefab) => ({
       ...prefab,
-      fragment: {
-        markers: prefab.fragment.markers.map((marker) => ({ ...marker, position: { ...marker.position } })),
-        volumes: prefab.fragment.volumes.map((volume) => ({ ...volume, center: { ...volume.center } })),
-        paths: prefab.fragment.paths.map((path) => ({ ...path, points: path.points.map((point) => ({ ...point })) })),
-        annotations: prefab.fragment.annotations.map((note) => ({ ...note, position: { ...note.position } })),
-      },
+      ...(prefab.staticBake === undefined ? {} : { staticBake: parseStaticPrefabBake(prefab.staticBake) }),
+      fragment: structuredClone(prefab.fragment),
     })),
     collections: doc.collections.map((collection) => ({ ...collection, memberIds: [...collection.memberIds] })),
     catalogs: cloneCatalogs(doc.catalogs),
@@ -854,7 +851,12 @@ function decodePrefab(item: unknown, path: string, errors: EditorDocumentDiagnos
   if (typeof item.name !== "string") errors.push({ path: `${path}.name`, message: "expected a string" });
   const fragment = decodeFragmentContent(item.fragment, `${path}.fragment`, errors);
   if (typeof item.id !== "string" || typeof item.name !== "string" || fragment === null) return null;
-  return { id: item.id, name: item.name, fragment };
+  const prefab: EditorPrefab = { id: item.id, name: item.name, fragment };
+  if (item.staticBake !== undefined) {
+    try { prefab.staticBake = parseStaticPrefabBake(item.staticBake); }
+    catch (error) { errors.push({ path: `${path}.staticBake`, message: error instanceof Error ? error.message : String(error) }); }
+  }
+  return prefab;
 }
 
 function decodeCollection(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorCollection | null {

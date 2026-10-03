@@ -286,6 +286,12 @@
 - `runtimeEntityMetaWriteBackCommand` (function): function runtimeEntityMetaWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Promotes ephemeral runtime `values` into an undoable meta patch on a document-linked object. Returns null when the id is not in the document or there are no values.
 - `summarizeRuntimeInspector` (function): function summarizeRuntimeInspector(snapshot: RuntimeStateSnapshot, overrides: Readonly<Record<string, RuntimeEntityState>>, play: RuntimePlayControl): RuntimeInspectorSummary — Builds the compact reverse-channel summary used by the play-mode inspector panel and the `runtime_summary` bridge RPC.
 
+## @jgengine/core/editor/staticPrefab
+
+- `StaticPrefabBake` (interface): interface StaticPrefabBake — Persisted static export settings; source parts remain editable in the prefab fragment.
+- `StaticPrefabBox` (interface): interface StaticPrefabBox — A solid or clearance volume in the prefab's unnormalized local asset space.
+- `parseStaticPrefabBake` (function): function parseStaticPrefabBake(value: unknown): StaticPrefabBake — Validate and copy static prefab export settings from document or RPC input.
+
 ## @jgengine/core/editor/streamer
 
 - `StreamUpdate` (interface): interface StreamUpdate — The residency change produced by one {@link WorldStreamer.update}.
@@ -622,7 +628,7 @@
 
 ## @jgengine/editor/handlers/hierarchy
 
-- `hierarchyHandlers` (const): const hierarchyHandlers: Pick< HandlerTable, | "set_parent" | "hierarchy" | "list_prefabs" | "create_prefab" | "insert_prefab" | "detach_prefab_instance" | "delete_prefab" > — Parent/child hierarchy and prefab library verbs.
+- `hierarchyHandlers` (const): const hierarchyHandlers: Pick< HandlerTable, | "set_parent" | "hierarchy" | "list_prefabs" | "create_prefab" | "insert_prefab" | "detach_prefab_instance" | "delete_prefab" | "set_prefab_static_bake" > — Parent/child hierarchy and prefab library verbs.
 
 ## @jgengine/editor/handlers/minimap
 

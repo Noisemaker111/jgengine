@@ -12,6 +12,8 @@ export interface ModelDims {
 
 export interface ModelAssetRef {
   url: string;
+  /** Preserve a composed prefab's authored local origin instead of recentering its measured bounds. */
+  anchor?: "center" | "origin";
   /** Measured at asset reindex: horizontal footprint, footprint center, and lowest Y in model space (pre-scale). Lets the shell auto-center and ground-snap corner-pivot kit models. */
   dims?: ModelDims;
   /** Opt-in compact triangle mesh extracted at asset reindex (see {@link "scene/collisionMesh".CollisionMeshData}) — feeds mesh-accurate hitboxes for concave models. */

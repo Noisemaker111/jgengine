@@ -50,3 +50,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## starter-packs — themed CC0 model ids (people/props/nature/urban) ready for entityModels
 
 - `StarterTheme` (type) · `import { StarterTheme } from "@jgengine/assets"`
+
+## static-prefab-export — export editable prefab compositions with source materials and collision metadata
+
+- `bakeStaticPrefab` (function) · `import { bakeStaticPrefab } from "@jgengine/assets/staticPrefabBake"`
