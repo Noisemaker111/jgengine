@@ -173,6 +173,7 @@
     "./game/playableGame",
     "./game/progression",
     "./game/quest",
+    "./game/questCatalog",
     "./game/race",
     "./game/recordBook",
     "./game/ruleSelection",

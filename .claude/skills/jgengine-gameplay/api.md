@@ -789,6 +789,14 @@
 - `defaultObjectiveLabel` (function): function defaultObjectiveLabel(objective: QuestObjective): string — Default objective label: a readable "verb count noun" from a {@link QuestObjective}.
 - `describeTrackedQuest` (function): function describeTrackedQuest(def: QuestDef, instance: QuestInstance, label: (objective: QuestObjective) => string = defaultObjectiveLabel): TrackedQuestView — Join a quest's static {@link QuestDef} with a player's live {@link QuestInstance} into a flat, renderer-free view a HUD tracker draws (title, status, labelled objective progress). Pass `label` to override the derived objective text.
 
+## @jgengine/core/game/questCatalog
+
+- `QuestCatalogDefinition` (type): type QuestCatalogDefinition = Omit<Readonly<QuestDef>, "requires" | "objectives" | "rewards"> & { requires?: readonly string[]; objectives: readonly Readonly<QuestObjective>[]; rewards?: Omit<Readonly<QuestRewards>, "items" | "unlocks" | "quests"> & { items?: readonly Readonly<NonNullable<QuestRewar… — Readonly authoring input; mutable QuestDef catalogs also satisfy this shape.
+- `QuestCatalogIssue` (interface): interface QuestCatalogIssue — A located structural issue; path is a JSON Pointer into the supplied catalog.
+- `QuestCatalogReferenceKind` (type): type QuestCatalogReferenceKind = "item" | "target" | "inventory" | "currency" — Caller-owned reference namespaces; objective kinds remain unconstrained.
+- `QuestCatalogValidationOptions` (interface): interface QuestCatalogValidationOptions — Declarations and optional lookups for a game's own authoring rules.
+- `validateQuestCatalog` (function): function validateQuestCatalog(catalog: readonly QuestCatalogDefinition[] | Readonly<Record<string, QuestCatalogDefinition>>, options: QuestCatalogValidationOptions = {}): QuestCatalogIssue[] — Validate catalog ids, references, quantities, and potential prerequisite progression without mutation. Requirements are completed quest ids OR unlock ids; all requirements of a quest must be met. Any eligible quest may be accepted directly. External unlocks and granted quest starts are possible entry points, not claims about their timing. Blocked progression/cycles are warnings: game systems can bypass prerequisites. Topology uses the last duplicate, matching journal registration. Traversal is iterative and linear in definitions, requirements, and their producer edges. Objective and item counts may be fractional or zero; negative/nonfinite counts are invalid. This assumes objectives can be completed and does not evaluate narrative, chronology, or balance.
+
 ## @jgengine/core/game/race
 
 - `Checkpoint` (interface): interface Checkpoint { id: string; center: readonly [number, number, number]; half: readonly [number, number, number] } — ⚠ undocumented

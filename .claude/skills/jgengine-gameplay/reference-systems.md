@@ -25,6 +25,8 @@ Keep stable ids and canonical facts for characters, factions, places, and world 
 
 Generate bounded chapter or catalog batches against those facts and existing definitions. Validate references and dependencies before merging each batch, giving humans and agents precise repair locations early to reduce failed retries and speed up game creation. Preserve reviewed facts across batches instead of asking a model to recreate the world from memory. `QuestDef.requires` accepts completed quest ids or unlock ids, so dependency checks must include the game's declared unlocks rather than treating every requirement as a quest. Check reward quest ids and objective/item references against their owning catalogs too.
 
+Use `validateQuestCatalog` (`@jgengine/core/game/questCatalog`) before registering quest batches. Declare unlocks supplied by other systems with `externalUnlocks`, and quest grants that bypass acceptance with `externallyStartedQuests`. Catalog reward unlocks are recognized automatically. `hasReference` optionally checks item, target, inventory, and currency ids against caller catalogs. Duplicate ids, missing references, and invalid quantities are errors; blocked prerequisites and dependency cycles are warnings under a model where any eligible quest may be accepted and its objectives completed. External grants can change actual reachability. Follow the [quest authoring recipe](recipes/quest-authoring.md) and `npx jgengine recipe quest-authoring` for SDK-typechecked bounded generation and repair locations.
+
 Validate dialogue structure before opening a conversation:
 
 ```ts

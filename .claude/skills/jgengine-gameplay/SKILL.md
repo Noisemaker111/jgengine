@@ -32,6 +32,10 @@ Pins consume no choice RNG and must satisfy the same pool and constraints;
 incompatible pins backtrack earlier unpinned choices or return `unsatisfiable`
 within the configured attempt and pick budgets.
 
+Validate generated quest catalogs with `validateQuestCatalog` (`game/questCatalog`).
+Follow the [quest authoring recipe](recipes/quest-authoring.md) for bounded batches,
+canonical facts, external unlock declarations, and precise repair diagnostics.
+
 ## Canonical workflow
 
 1. Define plain serializable state and stable ids.

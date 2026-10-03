@@ -380,6 +380,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `evalCurve` (function) · `import { evalCurve } from "@jgengine/core/gameplay"`
 
+## quest-catalog-validation — diagnose authored quest ids, prerequisite and reward references, quantities, and blocked dependencies with caller-declared external unlocks
+
+- `validateQuestCatalog` (function) · `import { validateQuestCatalog } from "@jgengine/core/game/questCatalog"`
+
 ## quest-log — track accepted quests and their per-objective progress
 
 - `createQuestJournal` (function) · `import { createQuestJournal } from "@jgengine/core/gameplay"`

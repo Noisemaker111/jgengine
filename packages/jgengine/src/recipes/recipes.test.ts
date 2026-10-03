@@ -10,6 +10,7 @@ const SEED = [
   "boss-telegraph",
   "loot",
   "quest",
+  "quest-authoring",
   "coop-presence",
   "third-person-camera",
   "world-drops",
