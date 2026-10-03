@@ -85,6 +85,13 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `materialAuthoringNotes` (function) · `import { materialAuthoringNotes } from "@jgengine/editor/materialControls"`
 - `materialControlGroups` (function) · `import { materialControlGroups } from "@jgengine/editor/materialControls"`
 
+## editor-movement — bind live character tuning while preserving distinctive game policy
+
+- `bindAuthoredMovement` (function) · `import { bindAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`
+- `createAuthoredMovementReader` (function) · `import { createAuthoredMovementReader } from "@jgengine/core/editor/movementCatalog"`
+- `createMovementSchema` (function) · `import { createMovementSchema } from "@jgengine/core/editor/movementCatalog"`
+- `readAuthoredMovement` (function) · `import { readAuthoredMovement } from "@jgengine/core/editor/movementCatalog"`
+
 ## editor-runtime-inspector — gate a play-mode frame against pause/step control
 
 - `consumeRuntimePlayStep` (function) · `import { consumeRuntimePlayStep } from "@jgengine/core/editor"`

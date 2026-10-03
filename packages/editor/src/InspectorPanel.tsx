@@ -44,6 +44,9 @@ import {
   setLocomotionClip,
   setLocomotionNumber,
   setOneShotClip,
+  setPlaybackBoolean,
+  setPlaybackClip,
+  setPlaybackNumber,
   type AnimationMode,
   type AnimationSetting,
 } from "./modelAnimationAuthoring";
@@ -432,6 +435,7 @@ function ClipSelectRow({
         onChange={(event) => onChange(event.target.value === "" ? null : event.target.value)}
       >
         <option value="">— none —</option>
+        {value !== null && !clips.includes(value) ? <option value={value}>{value} (missing)</option> : null}
         {clips.map((clip) => (
           <option key={clip} value={clip}>
             {clip}
@@ -446,7 +450,7 @@ const ANIMATION_MODE_HINT: Record<AnimationMode, string> = {
   default: "Inherits the catalog default: a rigged asset auto-animates from its clip roles.",
   auto: "Forces derivation of idle/walk/run + hit/death/attack from this rig's clip names.",
   none: "Renders the bind pose — no clip playback.",
-  custom: "Author explicit role→clip bindings below; unset roles fall back to the rig's defaults.",
+  custom: "Author explicit playback or role bindings below; states and graphs take priority over a single clip.",
 };
 
 /**
@@ -488,14 +492,46 @@ function ModelAnimationSection({
       ) : (
         <>
           <div className="space-y-1.5 rounded-[6px] border border-white/[0.06] bg-white/[0.02] p-2">
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">Playback</div>
+            <ClipSelectRow
+              label="Single clip"
+              clips={clips}
+              value={config.clip ?? null}
+              onChange={(clip) => onChange(setPlaybackClip(setting, clip))}
+            />
+            <div className="text-[10px] text-neutral-600">Picking a single clip replaces locomotion states and a stored graph.</div>
+            <FieldRow label="Rate" title="Playback multiplier; zero holds playback.">
+              <AxisNumberField label="rate" step={0.1} value={config.timeScale ?? 1} onCommit={(value) => onChange(setPlaybackNumber(setting, "timeScale", value))} />
+            </FieldRow>
+            <FieldRow label="Hold pose" title="Stops playback at the current pose. Single clips also support an authored seek time.">
+              <input type="checkbox" aria-label="Hold animation pose" checked={config.paused === true} onChange={(event) => onChange(setPlaybackBoolean(setting, "paused", event.target.checked))} />
+            </FieldRow>
+            {config.states === undefined && config.graph === undefined ? (
+              <>
+                <FieldRow label="Time" title="Start or hold the selected clip at this time in seconds.">
+                  <AxisNumberField label="time" step={0.05} value={config.time ?? 0} onCommit={(value) => onChange(setPlaybackNumber(setting, "time", value))} />
+                </FieldRow>
+                <FieldRow label="Loop">
+                  <input type="checkbox" aria-label="Loop animation clip" checked={config.loop !== false} onChange={(event) => onChange(setPlaybackBoolean(setting, "loop", event.target.checked))} />
+                </FieldRow>
+              </>
+            ) : null}
+          </div>
+          <div className="space-y-1.5 rounded-[6px] border border-white/[0.06] bg-white/[0.02] p-2">
             <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">Locomotion states</div>
+            {config.graph === undefined && config.states !== undefined && (config.states.idle === undefined || config.states.idle.trim().length === 0) ? (
+              <div role="status" className="text-[10px] text-amber-300">Choose an idle clip to enable locomotion. An explicitly selected single clip remains active until then.</div>
+            ) : null}
+            {config.graph === undefined && config.states?.idle !== undefined && config.states.idle.trim().length > 0 && (config.states.walk === undefined || config.states.walk.trim().length === 0) ? (
+              <div role="status" className="text-[10px] text-amber-300">Walk is unset: idle continues while moving. Pick a walk clip to animate movement.</div>
+            ) : null}
             {LOCOMOTION_ROLES.map((role) => (
               <ClipSelectRow
                 key={role}
                 label={role}
                 clips={clips}
                 value={config.states?.[role] ?? null}
-                onChange={(clip) => onChange(setLocomotionClip(setting, role, clip))}
+                onChange={(clip) => onChange(setLocomotionClip(setting, role, clip, clips))}
               />
             ))}
             <FieldRow label="walkSpeed" title="Speed (u/s) above which the entity counts as moving (walk).">
@@ -503,7 +539,7 @@ function ModelAnimationSection({
                 label="u/s"
                 step={0.1}
                 value={config.states?.walkSpeed ?? 0.5}
-                onCommit={(value) => onChange(setLocomotionNumber(setting, "walkSpeed", Math.max(0, value)))}
+                onCommit={(value) => onChange(setLocomotionNumber(setting, "walkSpeed", Math.max(0, value), clips))}
               />
             </FieldRow>
             <FieldRow label="runSpeed" title="Speed above which the run clip plays (when a run clip is set).">
@@ -511,7 +547,7 @@ function ModelAnimationSection({
                 label="u/s"
                 step={0.5}
                 value={config.states?.runSpeed ?? 6}
-                onCommit={(value) => onChange(setLocomotionNumber(setting, "runSpeed", Math.max(0, value)))}
+                onCommit={(value) => onChange(setLocomotionNumber(setting, "runSpeed", Math.max(0, value), clips))}
               />
             </FieldRow>
             <FieldRow label="fadeSec" title="Crossfade duration (s) when the locomotion state changes.">
@@ -519,7 +555,7 @@ function ModelAnimationSection({
                 label="s"
                 step={0.05}
                 value={config.states?.fadeSec ?? 0.2}
-                onCommit={(value) => onChange(setLocomotionNumber(setting, "fadeSec", Math.max(0, value)))}
+                onCommit={(value) => onChange(setLocomotionNumber(setting, "fadeSec", Math.max(0, value), clips))}
               />
             </FieldRow>
           </div>
@@ -527,13 +563,19 @@ function ModelAnimationSection({
             <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">One-shot events</div>
             <div className="text-[10px] text-neutral-600">hit / death auto-fire on damage/death; others via playEntityAnimation.</div>
             {ONE_SHOT_EVENTS.map((event) => (
-              <ClipSelectRow
-                key={event}
-                label={event}
-                clips={clips}
-                value={config.oneShots?.[event] ?? null}
-                onChange={(clip) => onChange(setOneShotClip(setting, event, clip))}
-              />
+              <FieldRow key={event} label={event} title="Choose one clip or Ctrl/Cmd-click multiple variants. Clear selection to remove the binding.">
+                <select
+                  multiple
+                  size={3}
+                  className={`w-full min-w-0 px-1.5 ${INPUT_CLS}`}
+                  aria-label={`${event} clip variants`}
+                  value={typeof config.oneShots?.[event] === "string" ? [config.oneShots[event] as string] : [...(config.oneShots?.[event] ?? [])]}
+                  onChange={(change) => onChange(setOneShotClip(setting, event, Array.from(change.target.selectedOptions, (option) => option.value)))}
+                >
+                  {clips.map((clip) => <option key={clip} value={clip}>{clip}</option>)}
+                  {(typeof config.oneShots?.[event] === "string" ? [config.oneShots[event] as string] : [...(config.oneShots?.[event] ?? [])]).filter((clip) => !clips.includes(clip)).map((clip) => <option key={clip} value={clip}>{clip} (missing)</option>)}
+                </select>
+              </FieldRow>
             ))}
           </div>
         </>

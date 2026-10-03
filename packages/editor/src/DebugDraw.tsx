@@ -11,6 +11,7 @@ import type {
   EditorVec3,
   EditorVolume,
 } from "@jgengine/core/editor/index";
+import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
 
 const DEFAULT_COLORS: Record<string, string> = {
   player_spawn: "#22d3ee",
@@ -138,6 +139,7 @@ const MarkerMesh = memo(function MarkerMesh({
   const scale = selected ? 1.28 : hovered ? 1.12 : 1;
   const baseY = groundHeightAt !== undefined ? groundHeightAt(marker.position.x, marker.position.z) : marker.position.y;
   const fill = emphasisColor(selected, hovered, color);
+  const modelBacked = markerCatalogId(marker) !== null;
   return (
     <group
       position={[marker.position.x, baseY + 1.2, marker.position.z]}
@@ -150,11 +152,11 @@ const MarkerMesh = memo(function MarkerMesh({
       }}
     >
       <mesh geometry={sharedSphere}>
-        <meshBasicMaterial color={fill} transparent opacity={selected ? 1 : hovered ? 0.9 : 1} />
+        <meshBasicMaterial color={fill} transparent opacity={selected ? 1 : hovered ? 0.9 : 1} wireframe={modelBacked} depthWrite={!modelBacked} />
       </mesh>
       {selected || hovered ? (
         <mesh geometry={sharedSphere} scale={1.18}>
-          <meshBasicMaterial color={fill} transparent opacity={selected ? 0.28 : 0.18} depthWrite={false} />
+          <meshBasicMaterial color={fill} transparent opacity={selected ? 0.28 : 0.18} wireframe={modelBacked} depthWrite={false} />
         </mesh>
       ) : null}
       <mesh position={[0, 1.35, 0]} geometry={sharedCone}>

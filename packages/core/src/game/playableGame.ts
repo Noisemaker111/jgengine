@@ -475,8 +475,8 @@ export interface PlayerMovementConfig {
   /**
    * Walk-controller feel. Acceleration and friction are exponential response rates (1/s): higher reaches
    * the target velocity or stops sooner. Omitted fields keep the engine defaults, so nothing changes until a
-   * game sets one. The jump fields apply to the kinematic walk; a `physics.backend` capsule or `collision.voxel`
-   * body jumps on the press frame with plain gravity. Tune against `measureMovement` (`@jgengine/core/movement/movementProbe`).
+   * game sets one. The heightfield and physics-backed capsule paths share jump feel; a `collision.voxel`
+   * body retains press-frame jumping with plain gravity. Tune against `measureMovement` (`@jgengine/core/movement/movementProbe`).
    */
   feel?: MovementFeelConfig;
   /** Radians/second the rendered body rotates toward its movement heading (shortest arc), so strafing/backpedalling read as a turn rather than an instant flip; also the rate the internally-integrated `turnLeft`/`turnRight` heading turns when the shell doesn't own yaw. Unset = body facing snaps instantly (no change to existing feel). */
@@ -485,6 +485,19 @@ export interface PlayerMovementConfig {
   swim?: { speedMultiplier?: number } | boolean;
   /** Slide the player downhill on terrain steeper than they can stand on (heightfield worlds only). `true` uses defaults; default off. */
   slopeSlide?: { maxClimbSlope?: number } | boolean;
+  /**
+   * Maximum sampled uphill rise/run for heightfield walking, including jumps. A rejected step
+   * slides along a traversable X or Z axis and feet use the accepted ground. Finite, nonnegative;
+   * omitted means unrestricted. Capsule, voxel and flight paths retain their own collision rules.
+   */
+  maxClimbGrade?: number;
+  /**
+   * Optional terrain-policy sampler for `maxClimbGrade`; defaults to the resolved ground sampler.
+   * Use when grade rules follow a different terrain field (for example before road cuts). This
+   * does not change foot grounding. Called at most four times per constrained walking step;
+   * must return finite heights or the step throws with the invalid sampling coordinate.
+   */
+  climbGradeHeight?: (x: number, z: number) => number;
   /**
    * Free-flight — creative/spectator/noclip/hover — folded into the same walk controller so a game
    * doesn't hand-roll a second movement loop to get Minecraft-like flight. `true` uses creative defaults;

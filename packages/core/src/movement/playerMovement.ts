@@ -20,6 +20,7 @@ import {
   createEmptyMovementKeys,
   createPlayerMotionState,
   DEFAULT_OBSTACLE_PLAYER_RADIUS,
+  motionStepSeconds,
   obstacleSupportHeight,
   resolveMovementIntent,
   resolveObstacleStep,
@@ -28,7 +29,6 @@ import {
   type MotionFrameOptions,
   type MovementTuningOverrides,
   type PlayerMotionState,
-  MOVEMENT_TUNING,
 } from "./movementModel";
 import {
   advanceFreeFlight,
@@ -40,6 +40,7 @@ import {
 } from "./freeFlight";
 import { solidObstaclesNear } from "./solidObstacles";
 import { approachYaw, steerYaw } from "./steering";
+import { resolveTerrainGradeStep } from "./terrainGrade";
 import {
   advanceVoxelPlayer,
   createVoxelPlayerBody,
@@ -47,6 +48,7 @@ import {
   type VoxelPlayerDims,
 } from "./voxelController";
 
+const CONTROLLER_CONFIG_FIELDS = ["radius", "height", "stepHeight", "maxSlopeDeg", "skinWidth", "crouchHeight", "snapDistance", "maxSlides", "mask"] as const;
 const DEFAULT_TURN_SPEED = 2.4;
 const DEFAULT_WALK_SPEED = 2;
 const DEFAULT_SWIM_SPEED_MULTIPLIER = 0.65;
@@ -94,46 +96,51 @@ export function resolvePlayerMovementTuning(opts: {
   physics?: PhysicsConfig;
   world?: WorldFeature;
 }): PlayerMovementTuning {
-  const physics = resolvePhysicsTuning(opts.physics);
-  const backpedal = opts.movement?.backpedalMult;
-  const feel = opts.movement?.feel;
-  const feelOverrides: MovementTuningOverrides = {
-    ...(backpedal === undefined ? {} : { backpedalSpeedMultiplier: backpedal }),
-    ...(feel?.groundAcceleration === undefined ? {} : { groundAcceleration: feel.groundAcceleration }),
-    ...(feel?.airAcceleration === undefined ? {} : { airAcceleration: feel.airAcceleration }),
-    ...(feel?.groundFriction === undefined ? {} : { groundFriction: feel.groundFriction }),
-    ...(feel?.runMultiplier === undefined ? {} : { runSpeedMultiplier: feel.runMultiplier }),
-    ...(feel?.crouchMultiplier === undefined ? {} : { crouchSpeedMultiplier: feel.crouchMultiplier }),
-    ...(feel?.jumpBufferMs === undefined ? {} : { jumpBufferMs: feel.jumpBufferMs }),
-    ...(feel?.coyoteMs === undefined ? {} : { coyoteMs: feel.coyoteMs }),
-    ...(feel?.jumpCutFactor === undefined ? {} : { jumpCutFactor: feel.jumpCutFactor }),
-    ...(feel?.apexGravityScale === undefined ? {} : { apexGravityScale: feel.apexGravityScale }),
-    ...(feel?.apexSpeed === undefined ? {} : { apexSpeed: feel.apexSpeed }),
-    ...(feel?.fallGravityScale === undefined ? {} : { fallGravityScale: feel.fallGravityScale }),
-    ...(feel?.landingRecoveryMs === undefined ? {} : { landingRecoveryMs: feel.landingRecoveryMs }),
-    ...(feel?.landingSpeedScale === undefined ? {} : { landingSpeedScale: feel.landingSpeedScale }),
+  const overrides: MovementTuningOverrides = {
+    get gravityAcceleration() { return opts.physics?.gravity === undefined ? undefined : -opts.physics.gravity; },
+    get jumpVelocity() { return opts.physics?.jumpVelocity; },
+    get backpedalSpeedMultiplier() { return opts.movement?.backpedalMult; },
+    get groundAcceleration() { return opts.movement?.feel?.groundAcceleration; },
+    get airAcceleration() { return opts.movement?.feel?.airAcceleration; },
+    get groundFriction() { return opts.movement?.feel?.groundFriction; },
+    get runSpeedMultiplier() { return opts.movement?.feel?.runMultiplier; },
+    get crouchSpeedMultiplier() { return opts.movement?.feel?.crouchMultiplier; },
+    get jumpBufferMs() { return opts.movement?.feel?.jumpBufferMs; },
+    get coyoteMs() { return opts.movement?.feel?.coyoteMs; },
+    get jumpCutFactor() { return opts.movement?.feel?.jumpCutFactor; },
+    get apexGravityScale() { return opts.movement?.feel?.apexGravityScale; },
+    get apexSpeed() { return opts.movement?.feel?.apexSpeed; },
+    get fallGravityScale() { return opts.movement?.feel?.fallGravityScale; },
+    get landingRecoveryMs() { return opts.movement?.feel?.landingRecoveryMs; },
+    get landingSpeedScale() { return opts.movement?.feel?.landingSpeedScale; },
   };
-  const overrides =
-    Object.keys(feelOverrides).length === 0 ? physics : { ...(physics ?? {}), ...feelOverrides };
+  const defaultCapsule: CharacterControllerConfig = {
+    radius: DEFAULT_OBSTACLE_PLAYER_RADIUS,
+    height: 1.8,
+    stepHeight: DEFAULT_PLAYER_STEP_HEIGHT,
+  };
+  const controller = {
+    get backend() { return opts.physics!.backend!; },
+    get capsule() { return opts.physics?.controller ?? defaultCapsule; },
+  };
   return {
-    ...(opts.collision === undefined ? {} : { collision: opts.collision }),
-    ...(opts.movement === undefined ? {} : { movement: opts.movement }),
-    ...(overrides === undefined ? {} : { physics: overrides }),
-    ...(opts.physics?.backend === undefined
-      ? {}
-      : {
-          controller: {
-            backend: opts.physics.backend,
-            capsule: opts.physics.controller ?? {
-              radius: DEFAULT_OBSTACLE_PLAYER_RADIUS,
-              height: 1.8,
-              stepHeight: DEFAULT_PLAYER_STEP_HEIGHT,
-            },
-          },
-        }),
+    get collision() { return opts.collision; },
+    get movement() { return opts.movement; },
+    get physics() {
+      return opts.physics === undefined && opts.movement?.feel === undefined && opts.movement?.backpedalMult === undefined
+        ? undefined : overrides;
+    },
+    get controller() { return opts.physics?.backend === undefined ? undefined : controller; },
     ground: groundFieldFor(opts.world),
     hasTerrain: hasEnvironmentTerrain(opts.world),
   };
+}
+
+/** Last completed shared movement step for one entity; a live read-only view, not a save snapshot. */
+export interface PlayerMovementTelemetry {
+  grounded: boolean;
+  verticalVelocity: number;
+  crouching: boolean;
 }
 
 interface PlayerMovementState {
@@ -143,10 +150,13 @@ interface PlayerMovementState {
   motion: PlayerMotionState | null;
   flight: FreeFlightState | null;
   controller: CharacterController | null;
+  controllerConfig: CharacterControllerConfig | null;
   controllerJumpHeld: boolean;
   jumpBuffer: InputBuffer | null;
   /** Controller state restored before the capsule exists; applied when it is created. */
   pendingController: CharacterControllerState | null;
+  entityId: string | null;
+  telemetry: PlayerMovementTelemetry | null;
 }
 
 interface CtxMovementStore {
@@ -178,13 +188,79 @@ function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState 
       motion: null,
       flight: null,
       controller: null,
+      controllerConfig: null,
       controllerJumpHeld: false,
       jumpBuffer: null,
       pendingController: null,
+      entityId: null,
+      telemetry: null,
     };
     store.players.set(userId, state);
   }
   return state;
+}
+
+function invalidateTelemetry(state: PlayerMovementState): void {
+  state.entityId = null;
+  state.telemetry = null;
+}
+
+function retuneController(state: PlayerMovementState, config: CharacterControllerConfig): void {
+  const previous = state.controllerConfig;
+  if (previous !== null) {
+    let changed = false;
+    for (const field of CONTROLLER_CONFIG_FIELDS) {
+      if (previous[field] !== config[field]) { changed = true; break; }
+    }
+    if (!changed) return;
+  }
+  const next = {
+    radius: config.radius,
+    height: config.height,
+    stepHeight: config.stepHeight,
+    maxSlopeDeg: config.maxSlopeDeg,
+    skinWidth: config.skinWidth,
+    crouchHeight: config.crouchHeight,
+    snapDistance: config.snapDistance,
+    maxSlides: config.maxSlides,
+    mask: config.mask,
+  };
+  state.controller!.retune(next);
+  state.controllerConfig = next;
+}
+
+function positionAccepted(ctx: GameContext, entityId: string, x: number, y: number, z: number): boolean {
+  const actual = ctx.scene.entity.get(entityId)?.position;
+  return actual !== undefined && actual[0] === x && actual[1] === y && actual[2] === z;
+}
+
+function updateTelemetry(
+  state: PlayerMovementState,
+  entityId: string,
+  grounded: boolean,
+  verticalVelocity: number,
+  crouching: boolean,
+): void {
+  state.entityId = entityId;
+  const telemetry = state.telemetry ??= { grounded, verticalVelocity, crouching };
+  telemetry.grounded = grounded;
+  telemetry.verticalVelocity = verticalVelocity;
+  telemetry.crouching = crouching;
+}
+
+/**
+ * Read the entity's last shared movement result through indexed possession ownership. Returns `null` before a
+ * step, after movement restore/forget, when a commit policy replaces the motor proposal, or for an entity not
+ * currently driven by this motor. Reuses one live view;
+ * custom movers supply their own animation parameters. Flight never reports ground contact or a walking crouch.
+ *
+ * @capability movement-telemetry read physical grounded, vertical velocity and crouch state without animation-store writes
+ */
+export function playerMovementTelemetry(ctx: GameContext, entityId: string): Readonly<PlayerMovementTelemetry> | null {
+  const userId = ctx.player.possession.ownerOf(entityId) ?? entityId;
+  if (ctx.player.possession.active(userId) !== entityId || ctx.scene.entity.get(entityId) === null) return null;
+  const state = stores.get(ctx)?.players.get(userId);
+  return state?.entityId === entityId ? state.telemetry : null;
 }
 
 /** One player's current heading (radians), integrated by {@link stepPlayerMovement} — the shell reads it back into its camera/aim yaw. */
@@ -229,6 +305,7 @@ export function snapshotPlayerMovement(ctx: GameContext, userId: string): Player
 /** Put a player's movement state back to a {@link snapshotPlayerMovement} copy, so the next {@link stepPlayerMovement} replays from there. */
 export function restorePlayerMovement(ctx: GameContext, userId: string, snapshot: PlayerMovementSnapshot): void {
   const state = stateFor(storeFor(ctx), userId);
+  invalidateTelemetry(state);
   state.heading = snapshot.heading;
   state.facing = snapshot.facing;
   state.voxelBody = snapshot.voxelBody === null ? null : { ...snapshot.voxelBody };
@@ -359,6 +436,11 @@ export function stepPlayerMovement(
   keys.d = isDown("moveRight");
   keys.shift = isDown("sprint") && (tuning.movement?.canSprint?.(ctx) ?? true);
   keys.space = isDown("jump");
+  keys.c = isDown("crouch") && ctx.player.movement.setPose(playerId, "crouch") === null;
+  if (!keys.c && tuning.controller === undefined) {
+    const currentPose = ctx.player.movement.getPose(playerId);
+    if (currentPose !== "prone") ctx.player.movement.setPose(playerId, keys.shift ? "running" : "standing");
+  }
   // A frame carrying analog magnitudes (virtual joystick, gamepad stick) walks at its deflection
   // instead of slamming digital ±1 axes — the fix for "a slight stick tilt reads as a full strafe".
   const analog = input.analog ?? null;
@@ -429,10 +511,12 @@ export function stepPlayerMovement(
         if (flightState.vy < 0) flightState.vy = 0;
       }
     }
+    let motorProposalAccepted = true;
     let nextX = player.position[0] + stepX;
     let nextY = player.position[1] + stepY;
     let nextZ = player.position[2] + stepZ;
     if (motionBatch !== null && motionBatch.y !== null) {
+      motorProposalAccepted = motionBatch.y === nextY;
       nextY = motionBatch.y;
     }
     if (tuning.movement?.beforeCommit !== undefined) {
@@ -445,6 +529,7 @@ export function stepPlayerMovement(
       };
       const replacement = tuning.movement.beforeCommit(frame);
       if (replacement !== undefined) {
+        motorProposalAccepted = motorProposalAccepted && replacement[0] === nextX && replacement[1] === nextY && replacement[2] === nextZ;
         nextX = replacement[0];
         nextY = replacement[1];
         nextZ = replacement[2];
@@ -463,6 +548,8 @@ export function stepPlayerMovement(
       ),
       dt,
     });
+    if (motorProposalAccepted && positionAccepted(ctx, playerId, nextX, nextY, nextZ)) updateTelemetry(state, playerId, false, flightState.vy, false);
+    else invalidateTelemetry(state);
     return;
   }
   if (flightTuning === null && state.flight !== null) {
@@ -488,6 +575,7 @@ export function stepPlayerMovement(
       state.pendingController = null;
     }
 
+    retuneController(state, tuning.controller.capsule);
     const controllerState = controller.state();
     if (
       Math.hypot(
@@ -504,57 +592,67 @@ export function stepPlayerMovement(
       });
     }
 
-    // Keep the existing input feel and horizontal impulse seam; the capsule owns vertical motion and collision.
     let horizontal = state.motion;
     if (horizontal === null) {
       horizontal = createPlayerMotionState();
       state.motion = horizontal;
     }
+    controller.setCrouch(tuning.controller.backend, intent.crouching);
     const grounded = controller.state().grounded;
     horizontal.grounded = grounded;
-    horizontal.verticalVelocity = 0;
+    horizontal.verticalVelocity = applyMotionImpulses(controller.state().verticalVelocity, motionBatch);
     horizontal.jumpOffset = 0;
     [horizontal.horizontalVelocityX, horizontal.horizontalVelocityZ] = applyHorizontalImpulses(
       horizontal.horizontalVelocityX,
       horizontal.horizontalVelocityZ,
       motionBatch,
     );
-    const jumpPressed = intent.jumping && !state.controllerJumpHeld;
+    const controllerIntent = {
+      ...intent,
+      crouching: controller.state().crouching,
+      running: intent.running && !controller.state().crouching,
+    };
+    if (state.jumpBuffer === null) {
+      horizontal.jumpHeld = state.controllerJumpHeld;
+      state.jumpBuffer = createInputBuffer({ windowMs: tuning.physics?.jumpBufferMs ?? 0 });
+    }
     const horizontalStep = advancePlayerMotion(
       horizontal,
-      { ...intent, jumping: false },
+      controllerIntent,
       forwardX,
       forwardZ,
       walkSpeed,
       dt,
       tuning.physics,
-      { authoritativeStep: tuning.authoritativeStep },
+      { buffer: state.jumpBuffer, externalGrounding: true, authoritativeStep: tuning.authoritativeStep },
     );
-    horizontal.grounded = grounded;
-    horizontal.verticalVelocity = 0;
-    horizontal.jumpOffset = 0;
     state.controllerJumpHeld = intent.jumping;
-
-    const current = controller.state();
     controller.restore({
-      ...current,
-      verticalVelocity: applyMotionImpulses(current.verticalVelocity, motionBatch),
+      ...controller.state(),
+      verticalVelocity: horizontal.verticalVelocity,
+      grounded: horizontal.grounded,
     });
     const result = controller.move(tuning.controller.backend, {
       motion: [horizontalStep.stepX, 0, horizontalStep.stepZ],
-      dt,
-      gravity: tuning.physics?.gravityAcceleration ?? MOVEMENT_TUNING.gravityAcceleration,
-      ...(jumpPressed && !intent.crouching
-        ? { jumpVelocity: tuning.physics?.jumpVelocity ?? MOVEMENT_TUNING.jumpVelocity }
-        : {}),
-      crouch: intent.crouching,
+      dt: motionStepSeconds(dt, tuning.authoritativeStep),
     });
+    horizontal.verticalVelocity = controller.state().verticalVelocity;
+    horizontal.jumpOffset = 0;
+    if (!grounded && result.grounded) horizontal.landedAtMs = horizontal.clockMs;
+    horizontal.wasAirborne = !result.grounded;
+    if (result.grounded) horizontal.jumpRising = false;
+    ctx.player.movement.setPose(
+      playerId,
+      controller.state().crouching ? "crouch" : intent.running ? "running" : "standing",
+    );
+    let motorProposalAccepted = true;
     let nextPosition: [number, number, number] = [
       controller.state().position[0],
       controller.state().position[1],
       controller.state().position[2],
     ];
     if (motionBatch !== null && motionBatch.y !== null) {
+      motorProposalAccepted = motionBatch.y === nextPosition[1];
       nextPosition[1] = motionBatch.y;
       controller.restore({ ...controller.state(), position: nextPosition });
     }
@@ -568,6 +666,7 @@ export function stepPlayerMovement(
       };
       const replacement = tuning.movement.beforeCommit(frame);
       if (replacement !== undefined) {
+        motorProposalAccepted = motorProposalAccepted && replacement[0] === nextPosition[0] && replacement[1] === nextPosition[1] && replacement[2] === nextPosition[2];
         nextPosition = [replacement[0], replacement[1], replacement[2]];
         controller.restore({ ...controller.state(), position: nextPosition });
       }
@@ -586,6 +685,8 @@ export function stepPlayerMovement(
       ),
       dt,
     });
+    if (motorProposalAccepted && positionAccepted(ctx, playerId, nextPosition[0], nextPosition[1], nextPosition[2])) updateTelemetry(state, playerId, controller.state().grounded, controller.state().verticalVelocity, controller.state().crouching);
+    else invalidateTelemetry(state);
     return;
   }
 
@@ -622,6 +723,7 @@ export function stepPlayerMovement(
       tuning.hasTerrain ? (x, z) => tuning.ground.sampleHeight(x, z) : undefined,
       { authoritativeStep: tuning.authoritativeStep },
     );
+    const motorProposalAccepted = motionBatch === null || motionBatch.y === null || motionBatch.y === body.y;
     if (motionBatch !== null && motionBatch.y !== null) body.y = motionBatch.y;
     ctx.scene.entity.setPose(playerId, {
       position: [body.x, body.y, body.z],
@@ -636,6 +738,8 @@ export function stepPlayerMovement(
       ),
       dt,
     });
+    if (motorProposalAccepted && positionAccepted(ctx, playerId, body.x, body.y, body.z)) updateTelemetry(state, playerId, body.grounded, body.velocityY, intent.crouching);
+    else invalidateTelemetry(state);
     return;
   }
 
@@ -718,6 +822,18 @@ export function stepPlayerMovement(
       nextZ += slope.downhill[1] * slide;
     }
   }
+  const maxClimbGrade = tuning.movement?.maxClimbGrade;
+  if (maxClimbGrade !== undefined) {
+    const accepted = resolveTerrainGradeStep(
+      tuning.movement?.climbGradeHeight ?? tuning.ground,
+      player.position,
+      nextX - player.position[0],
+      nextZ - player.position[2],
+      maxClimbGrade,
+    );
+    nextX = player.position[0] + accepted.stepX;
+    nextZ = player.position[2] + accepted.stepZ;
+  }
   const groundAtNext = tuning.ground.sampleHeight(nextX, nextZ);
   // Blocking colliders are walkable surfaces: the effective ground under the player is the higher of
   // the terrain and the tallest object top the player can stand on here. While grounded a top within
@@ -729,6 +845,7 @@ export function stepPlayerMovement(
       ? obstacleSupportHeight(nextX, nextZ, player.position[1], airborne ? 0 : stepHeight, obstacles)
       : null;
   const effectiveGround = supportY !== null && supportY > groundAtNext ? supportY : groundAtNext;
+  let motorProposalAccepted = true;
   let nextY: number;
   if (airborne) {
     // Integrate the jump arc in absolute space (previous feet + this frame's offset delta) so the
@@ -756,6 +873,7 @@ export function stepPlayerMovement(
     nextY = effectiveGround;
   }
   if (motionBatch !== null && motionBatch.y !== null) {
+    motorProposalAccepted = motionBatch.y === nextY;
     nextY = motionBatch.y;
     motion.jumpOffset = motionBatch.y - effectiveGround;
   } else if (swimEnabled && waterLevel !== undefined && effectiveGround < waterLevel) {
@@ -771,6 +889,7 @@ export function stepPlayerMovement(
     };
     const replacement = tuning.movement.beforeCommit(frame);
     if (replacement !== undefined) {
+      motorProposalAccepted = motorProposalAccepted && replacement[0] === nextX && replacement[1] === nextY && replacement[2] === nextZ;
       nextX = replacement[0];
       nextY = replacement[1];
       nextZ = replacement[2];
@@ -789,6 +908,8 @@ export function stepPlayerMovement(
     ),
     dt,
   });
+  if (motorProposalAccepted && positionAccepted(ctx, playerId, nextX, nextY, nextZ)) updateTelemetry(state, playerId, motion.grounded, motion.verticalVelocity, intent.crouching);
+  else invalidateTelemetry(state);
 }
 
 /**

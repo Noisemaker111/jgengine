@@ -131,25 +131,26 @@ export async function createRapierBackend(options: RapierBackendOptions = {}): P
       const n = Math.hypot(...d.direction); if (!n) return null;
       updateQueryPipeline();
       const ray = new R.Ray({ x: d.origin[0], y: d.origin[1], z: d.origin[2] }, { x: d.direction[0] / n, y: d.direction[1] / n, z: d.direction[2] / n });
-      const h = world.castRay(ray, d.maxDistance, true, undefined, queryGroups(d.mask)); if (!h) return null;
+      const h = world.castRay(ray, d.maxDistance, true, undefined, queryGroups(d.mask), d.exclude === undefined ? undefined : colliders.get(d.exclude)); if (!h) return null;
       const intersection = h.collider.castRayAndGetNormal(ray, h.timeOfImpact, true);
       const b = find(colliders, h.collider ?? h.colliderHandle); return b === undefined || b === d.exclude ? null : { body: b, distance: h.timeOfImpact, point: vec(ray.pointAt(h.timeOfImpact)), normal: vec(intersection.normal) };
     },
     shapecast(d: ShapeCastDesc) {
       updateQueryPipeline();
-      const h = world.castShape({ x: d.position[0], y: d.position[1], z: d.position[2] }, q(d.rotation), { x: d.motion[0], y: d.motion[1], z: d.motion[2] }, shape(d.shape).shape, 0, 1, true, undefined, queryGroups(d.mask)); if (!h) return null;
+      const h = world.castShape({ x: d.position[0], y: d.position[1], z: d.position[2] }, q(d.rotation), { x: d.motion[0], y: d.motion[1], z: d.motion[2] }, shape(d.shape).shape, 0, 1, true, undefined, queryGroups(d.mask), d.exclude === undefined ? undefined : colliders.get(d.exclude)); if (!h) return null;
       if (h.time_of_impact <= 0 && h.normal1 && (h.normal1.x * d.motion[0] + h.normal1.y * d.motion[1] + h.normal1.z * d.motion[2]) > 0) return null;
-      const horizontal = Math.hypot(d.motion[0], d.motion[2]);
-      const castBottom = d.position[1] - (d.shape.kind === "capsule" ? d.shape.halfHeight + d.shape.radius : d.shape.kind === "sphere" ? d.shape.radius : d.shape.kind === "box" ? d.shape.halfExtents[1] : 0);
-      const raisedWitness = h.witness1 && h.witness2 && (h.witness1.y > castBottom + 0.01 || h.witness2.y > castBottom + 0.01);
-      const edgeNormal = h.normal1 && raisedWitness && horizontal > 0 && h.normal1.y > 0.1
-        ? (Math.hypot(h.normal1.x, h.normal1.z) > 1e-6
-          ? { x: h.normal1.x / Math.hypot(h.normal1.x, h.normal1.z), y: 0, z: h.normal1.z / Math.hypot(h.normal1.x, h.normal1.z) }
-          : { x: -d.motion[0] / horizontal, y: 0, z: -d.motion[2] / horizontal })
+      // Capsule edge contacts mix adjacent faces; query the collider surface instead.
+      const verticalDrop = d.motion[1] < 0 && d.motion[0] === 0 && d.motion[2] === 0;
+      const direction = verticalDrop ? { x: 0, y: -1, z: 0 } : { x: -h.normal1.x, y: -h.normal1.y, z: -h.normal1.z };
+      const normal = h.normal1 && h.witness1
+        ? h.collider.castRayAndGetNormal(
+          new R.Ray(
+            { x: h.witness1.x - direction.x * 0.01, y: h.witness1.y - direction.y * 0.01, z: h.witness1.z - direction.z * 0.01 },
+            direction,
+          ), 0.02, true,
+        )?.normal ?? h.normal1
         : h.normal1;
-      const cornerLanding = d.motion[1] < 0 && h.normal1 && h.normal1.y > 0 && h.witness1 && h.witness1.y < castBottom - 0.01;
-      const contactNormal = cornerLanding ? { x: 0, y: 1, z: 0 } : edgeNormal;
-      const b = find(colliders, h.collider ?? h.colliderHandle); return b === undefined || b === d.exclude ? null : { body: b, toi: h.time_of_impact, distance: h.time_of_impact * Math.hypot(...d.motion), point: vec(h.witness1), normal: vec(contactNormal) };
+      const b = find(colliders, h.collider ?? h.colliderHandle); return b === undefined || b === d.exclude ? null : { body: b, toi: h.time_of_impact, distance: h.time_of_impact * Math.hypot(...d.motion), point: vec(h.witness1), normal: vec(normal) };
     },
     overlap(d: OverlapDesc) { const out: number[] = [], s = shape(d.shape); updateQueryPipeline(); world.intersectionsWithShape({ x: d.position[0], y: d.position[1], z: d.position[2] }, q(d.rotation), s.shape, (c: any) => { const h = find(colliders, c.handle); if (h !== undefined && h !== d.exclude) out.push(h); return true; }, undefined, queryGroups(d.mask)); return out; },
     onContact(l) { listener = l; },

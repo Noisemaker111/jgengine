@@ -10,6 +10,8 @@ import type { InputFrame } from "../runtime/inputSnapshot";
 import type { TerrainField } from "../world/terrain";
 import {
   playerMovementHeading,
+  playerMovementTelemetry,
+  forgetPlayerMovement,
   resolvePlayerMovementTuning,
   restorePlayerMovement,
   snapshotPlayerMovement,
@@ -21,7 +23,7 @@ const CONTENT: GameContextContent = {
   entityById: (catalogId) => (catalogId === "hero" ? { stats: { health: { max: 10 } } } : null),
 };
 
-function context(userIds: string[]): GameContext {
+function context(userIds: string[], content: GameContextContent = CONTENT): GameContext {
   const ctx = createGameContext({
     definition: defineGameDefinition({
       name: "Move",
@@ -29,7 +31,7 @@ function context(userIds: string[]): GameContext {
       multiplayer: "off",
       features: { players: true },
     }),
-    content: CONTENT,
+    content,
     player: { userId: userIds[0]!, isNew: true },
   });
   for (const id of userIds) {
@@ -110,6 +112,53 @@ const STEEP_GROUND: TerrainField = {
   sampleHeight: (x) => -3 * x,
   sampleNormal: () => [3 / N, 1 / N, 0],
 };
+
+describe("heightfield climb-grade policy", () => {
+  test("a rejected ascent keeps feet on the accepted ground", () => {
+    const ctx = context(["a"]);
+    const ground: TerrainField = { sampleHeight: (_x, z) => 2 * z, sampleNormal: () => [0, 1, 0] };
+    const movement = { maxClimbGrade: 0.85 };
+    driveWith(ctx, "a", ["moveForward"], 10, tuning({ ground, movement }), 0);
+    const position = ctx.scene.entity.get("a")!.position;
+    expect(position[2]).toBe(0);
+    expect(position[1]).toBe(ground.sampleHeight(position[0], position[2]));
+  });
+
+  test("grade sampling can preserve raw terrain policy while feet follow effective ground", () => {
+    const ctx = context(["a"]);
+    const ground: TerrainField = { sampleHeight: () => 0.24, sampleNormal: () => [0, 1, 0] };
+    const movement = { maxClimbGrade: 0.85, climbGradeHeight: (_x: number, z: number) => 2 * z };
+    driveWith(ctx, "a", ["moveForward"], 10, tuning({ ground, movement }), 0);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0.24, 0]);
+  });
+
+  test("rejected airborne travel preserves the jump arc instead of raising feet to the rejected slope", () => {
+    const hill = context(["hill"]);
+    const flat = context(["flat"]);
+    const ground: TerrainField = { sampleHeight: (_x, z) => 2 * z, sampleNormal: () => [0, 1, 0] };
+    driveWith(hill, "hill", ["moveForward", "jump"], 10, tuning({ ground, movement: { maxClimbGrade: 0.85 } }), 0);
+    driveWith(flat, "flat", ["jump"], 10, tuning({ ground: FLAT_GROUND }), 0);
+    const position = hill.scene.entity.get("hill")!.position;
+    expect(position[2]).toBe(0);
+    expect(position[1]).toBeGreaterThan(0);
+    expect(position[1]).toBeCloseTo(flat.scene.entity.get("flat")!.position[1], 8);
+    expect(playerMovementTelemetry(hill, "hill")?.grounded).toBe(false);
+  });
+
+  test("omitted policy preserves existing ascent and live removal restores travel", () => {
+    const ctx = context(["a"]);
+    const ground: TerrainField = { sampleHeight: (_x, z) => 2 * z, sampleNormal: () => [0, 1, 0] };
+    const movement: NonNullable<PlayerMovementTuning["movement"]> = { maxClimbGrade: 0.85 };
+    const configured = tuning({ ground, movement });
+    driveWith(ctx, "a", ["moveForward"], 10, configured, 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBe(0);
+    delete movement.maxClimbGrade;
+    driveWith(ctx, "a", ["moveForward"], 10, configured, 0);
+    const position = ctx.scene.entity.get("a")!.position;
+    expect(position[2]).toBeGreaterThan(0);
+    expect(position[1]).toBe(ground.sampleHeight(position[0], position[2]));
+  });
+});
 
 function driveWith(ctx: GameContext, userId: string, held: string[], steps: number, t: PlayerMovementTuning, heading?: number): void {
   for (let i = 0; i < steps; i++) stepPlayerMovement(ctx, userId, frame(held), 1 / 60, t, heading);
@@ -401,6 +450,211 @@ describe("resolvePlayerMovementTuning — movement.feel", () => {
   });
 });
 
+describe("indexed movement telemetry", () => {
+  test("follows physical jump and landing while reusing a live view", () => {
+    const ctx = context(["a"]);
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+    drive(ctx, "a", [], 1);
+    const view = playerMovementTelemetry(ctx, "a")!;
+    expect(view.grounded).toBe(true);
+    drive(ctx, "a", ["jump"], 1);
+    expect(playerMovementTelemetry(ctx, "a")).toBe(view);
+    expect(view.grounded).toBe(false);
+    expect(view.verticalVelocity).toBeGreaterThan(5);
+    drive(ctx, "a", [], 100);
+    expect(view.grounded).toBe(true);
+    expect(view.verticalVelocity).toBe(0);
+    restorePlayerMovement(ctx, "a", snapshotPlayerMovement(ctx, "a")!);
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+    drive(ctx, "a", [], 1);
+    expect(playerMovementTelemetry(ctx, "a")!.grounded).toBe(true);
+    forgetPlayerMovement(ctx, "a");
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+  });
+
+  test("resolves only the currently driven owned pawn without scanning other players", () => {
+    const ctx = context(["a", "b"]);
+    ctx.scene.entity.spawn("hero", { id: "pawn", position: [0, 0, 0] });
+    ctx.player.possession.own("a", "pawn");
+    ctx.player.possession.possess("a", "pawn");
+    drive(ctx, "a", ["jump"], 1);
+    drive(ctx, "b", [], 1);
+    expect(playerMovementTelemetry(ctx, "pawn")!.grounded).toBe(false);
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+    expect(playerMovementTelemetry(ctx, "b")!.grounded).toBe(true);
+    expect(playerMovementTelemetry(ctx, "unmanaged")).toBeNull();
+    ctx.player.possession.own("a", "a");
+    ctx.player.possession.possess("a", "a");
+    expect(playerMovementTelemetry(ctx, "pawn")).toBeNull();
+  });
+
+  test("flight never invents ground contact and returning to walking reads its active motor", () => {
+    const ctx = context(["a"]);
+    const flight = resolvePlayerMovementTuning({ movement: { flight: { mode: "creative", collide: false } } });
+    driveWith(ctx, "a", ["jump"], 5, flight);
+    expect(playerMovementTelemetry(ctx, "a")!.grounded).toBe(false);
+    expect(playerMovementTelemetry(ctx, "a")!.crouching).toBe(false);
+    drive(ctx, "a", [], 1);
+    expect(playerMovementTelemetry(ctx, "a")!.verticalVelocity).toBe(snapshotPlayerMovement(ctx, "a")!.motion!.verticalVelocity);
+    drive(ctx, "a", [], 100);
+    expect(playerMovementTelemetry(ctx, "a")!.grounded).toBe(true);
+  });
+
+  test("a policy replacement with external collision authority makes telemetry unavailable", () => {
+    const reject = { beforeCommit: (frame: Parameters<NonNullable<NonNullable<Parameters<typeof resolvePlayerMovementTuning>[0]["movement"]>["beforeCommit"]>>[0]) => frame.current };
+    const walking = context(["a"]);
+    stepPlayerMovement(walking, "a", frame(["jump"]), 1 / 60, resolvePlayerMovementTuning({ movement: reject }));
+    expect(walking.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+    expect(playerMovementTelemetry(walking, "a")).toBeNull();
+    const flight = context(["a"]);
+    stepPlayerMovement(flight, "a", frame(["jump"]), 1 / 60, resolvePlayerMovementTuning({ movement: { ...reject, flight: { mode: "creative", collide: false } } }));
+    expect(playerMovementTelemetry(flight, "a")).toBeNull();
+    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -5, -60], max: [60, 60, 60] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+    const capsule = context(["a"]);
+    capsule.scene.entity.setPose("a", { position: [0, 0.02, 0] });
+    stepPlayerMovement(capsule, "a", frame(["jump"]), 1 / 60, resolvePlayerMovementTuning({ physics: { backend }, movement: reject }));
+    expect(playerMovementTelemetry(capsule, "a")).toBeNull();
+    const accepted = context(["a"]);
+    stepPlayerMovement(accepted, "a", frame(["jump"]), 1 / 60, resolvePlayerMovementTuning({ movement: { beforeCommit: frame => frame.next } }));
+    expect(playerMovementTelemetry(accepted, "a")!.grounded).toBe(false);
+  });
+
+  test("an absolute motion height override does not masquerade as motor ground contact", () => {
+    const ctx = context(["a"]);
+    ctx.player.motionFor("a").setY(10);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, resolvePlayerMovementTuning({ movement: { beforeCommit: frame => frame.next } }));
+    expect(ctx.scene.entity.get("a")!.position[1]).toBe(10);
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+  });
+
+  test("an entity pose constraint also keeps the constrained motor state unknown", () => {
+    const ctx = context(["a"]);
+    ctx.scene.entity.setPoseConstraint("a", () => [0, 0, 0]);
+    drive(ctx, "a", ["jump"], 1);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+  });
+
+  test("a despawned pawn has no movement telemetry", () => {
+    const ctx = context(["a"]);
+    drive(ctx, "a", [], 1);
+    ctx.scene.entity.despawn("a");
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+  });
+
+  test("live capsule declarations retune dimensions and recompute omitted defaults", () => {
+    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -5, -60], max: [60, 60, 60] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+    let capsule = { radius: 0.3, height: 1.8 };
+    let lastShape: unknown;
+    const shapecast = backend.shapecast.bind(backend);
+    backend.shapecast = desc => { lastShape = desc.shape; return shapecast(desc); };
+    const config = resolvePlayerMovementTuning({ physics: { backend, get controller() { return capsule; } } });
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", [], 1, config);
+    capsule = { radius: 0.2, height: 0.8 };
+    driveWith(ctx, "a", [], 1, config);
+    expect(lastShape).toEqual({ kind: "capsule", radius: 0.2, halfHeight: 0.2 });
+    capsule.height = 1;
+    driveWith(ctx, "a", [], 1, config);
+    expect(lastShape).toEqual({ kind: "capsule", radius: 0.2, halfHeight: 0.3 });
+  });
+
+  test("capsule and voxel telemetry reads the actual owning body's state", () => {
+    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -5, -60], max: [60, 60, 60] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+    const capsule = context(["a"], { entityById: () => ({ movement: { poses: ["standing", "crouch"] } }) });
+    driveWith(capsule, "a", ["crouch"], 1, resolvePlayerMovementTuning({ physics: { backend } }));
+    expect(playerMovementTelemetry(capsule, "a")).toEqual({ grounded: true, verticalVelocity: 0, crouching: true });
+    const voxel = context(["a"]);
+    driveWith(voxel, "a", [], 1, resolvePlayerMovementTuning({ collision: { voxel: true } }));
+    const body = snapshotPlayerMovement(voxel, "a")!.voxelBody!;
+    expect(playerMovementTelemetry(voxel, "a")).toEqual({ grounded: body.grounded, verticalVelocity: body.velocityY, crouching: false });
+  });
+});
+
+describe("live authored movement tuning", () => {
+  test("one resolved tuning follows replaced physics and feel through save/replay", () => {
+    let movement = { feel: { runMultiplier: 1.2, jumpCutFactor: 0.2 } };
+    let physics = { gravity: -20, jumpVelocity: 4 };
+    const resolved = resolvePlayerMovementTuning({ get movement() { return movement; }, get physics() { return physics; } });
+    expect(resolved.physics!.runSpeedMultiplier).toBe(1.2);
+    expect(resolved.physics!.gravityAcceleration).toBe(20);
+    movement = { feel: { runMultiplier: 3, jumpCutFactor: 0.8 } };
+    physics = { gravity: -30, jumpVelocity: 9 };
+    expect(resolved.physics!.runSpeedMultiplier).toBe(3);
+    expect(resolved.physics!.jumpCutFactor).toBe(0.8);
+    expect(resolved.physics!.gravityAcceleration).toBe(30);
+    expect(resolved.physics!.jumpVelocity).toBe(9);
+    const ctx = context(["a"]);
+    driveWith(ctx, "a", ["moveForward", "sprint"], 10, resolved);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    const position = ctx.scene.entity.get("a")!.position;
+    driveWith(ctx, "a", ["moveForward", "sprint"], 10, resolved);
+    const expected = ctx.scene.entity.get("a")!.position;
+    restorePlayerMovement(ctx, "a", saved);
+    ctx.scene.entity.setPose("a", { position });
+    driveWith(ctx, "a", ["moveForward", "sprint"], 10, resolved);
+    expect(ctx.scene.entity.get("a")!.position).toEqual(expected);
+  });
+});
+
+describe("semantic crouch input", () => {
+  const crouchContent: GameContextContent = {
+    entityById: () => ({ movement: { poses: ["standing", "running", "crouch"] } }),
+  };
+
+  test("crouch reduces authored walking speed, wins over sprint, and updates stance", () => {
+    const walking = context(["a"], crouchContent);
+    const crouched = context(["a"], crouchContent);
+    const config = resolvePlayerMovementTuning({ movement: { feel: { crouchMultiplier: 0.3 } } });
+    driveWith(walking, "a", ["moveForward"], 60, config);
+    driveWith(crouched, "a", ["moveForward", "crouch", "sprint"], 60, config);
+    expect(crouched.scene.entity.get("a")!.position[2] / walking.scene.entity.get("a")!.position[2]).toBeCloseTo(0.3, 5);
+    expect(crouched.player.movement.getPose("a")).toBe("crouch");
+    stepPlayerMovement(crouched, "a", frame([]), 1 / 60, config);
+    expect(crouched.player.movement.getPose("a")).toBe("standing");
+  });
+
+  test("crouch suppresses jumping only for an entity that allows crouch", () => {
+    const crouched = context(["a"], crouchContent);
+    stepPlayerMovement(crouched, "a", frame(["crouch", "jump"]), 1 / 60, FLAT);
+    expect(crouched.scene.entity.get("a")!.position[1]).toBe(0);
+    const standingOnly = context(["a"]);
+    stepPlayerMovement(standingOnly, "a", frame(["crouch", "jump"]), 1 / 60, FLAT);
+    expect(standingOnly.player.movement.getPose("a")).toBe("standing");
+    expect(standingOnly.scene.entity.get("a")!.position[1]).toBeGreaterThan(0);
+  });
+
+  test("standing and jumping on one frame preserves the fresh jump press", () => {
+    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -5, -60], max: [60, 60, 60] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+    const ctx = context(["a"], crouchContent);
+    const config = resolvePlayerMovementTuning({ physics: { backend } });
+    stepPlayerMovement(ctx, "a", frame(["crouch"]), 1 / 60, config);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, config);
+    expect(snapshotPlayerMovement(ctx, "a")!.controller!.verticalVelocity).toBeGreaterThan(5);
+    expect(ctx.player.movement.getPose("a")).toBe("standing");
+  });
+
+  test("capsule crouch persists until headroom allows standing", () => {
+    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -5, -60], max: [60, 60, 60] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+    const ceiling = backend.addBody({ shape: { kind: "box", halfExtents: [2, 0.1, 2] }, position: [0, 1.4, 0], kind: "static" });
+    const ctx = context(["a"], crouchContent);
+    const config = resolvePlayerMovementTuning({ physics: { backend } });
+    stepPlayerMovement(ctx, "a", frame(["crouch"]), 1 / 60, config);
+    expect(snapshotPlayerMovement(ctx, "a")!.controller!.crouching).toBe(true);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, config);
+    expect(ctx.player.movement.getPose("a")).toBe("crouch");
+    backend.removeBody(ceiling);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, config);
+    expect(snapshotPlayerMovement(ctx, "a")!.controller!.crouching).toBe(false);
+    expect(ctx.player.movement.getPose("a")).toBe("standing");
+  });
+});
+
 describe("stepPlayerMovement jump buffer", () => {
   function bounces(jumpBufferMs: number | undefined): boolean {
     const t = resolvePlayerMovementTuning(jumpBufferMs === undefined ? {} : { movement: { feel: { jumpBufferMs } } });
@@ -417,6 +671,105 @@ describe("stepPlayerMovement jump buffer", () => {
   test("movement.feel.jumpBufferMs turns a press just before landing into a jump", () => {
     expect(bounces(undefined)).toBe(false);
     expect(bounces(120)).toBe(true);
+  });
+});
+
+describe("capsule jump feel", () => {
+  function config(feel: NonNullable<NonNullable<Parameters<typeof resolvePlayerMovementTuning>[0]["movement"]>["feel"]> = {}, floorHalfWidth = 50): PlayerMovementTuning {
+    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -10, -60], max: [60, 40, 60] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [floorHalfWidth, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+    return resolvePlayerMovementTuning({ physics: { backend, gravity: -20, jumpVelocity: 8 }, movement: { feel } });
+  }
+
+  test("capsule and heightfield share authoritative game steps and standalone stall clamping", () => {
+    for (const authoritativeStep of [false, true]) {
+      const capsule = context(["capsule"]);
+      const heightfield = context(["heightfield"]);
+      const capsuleTuning = { ...config(), authoritativeStep };
+      const heightfieldTuning = { ...resolvePlayerMovementTuning({ physics: { gravity: -20, jumpVelocity: 8 } }), authoritativeStep };
+      stepPlayerMovement(capsule, "capsule", frame(["jump"]), 0.2, capsuleTuning);
+      stepPlayerMovement(heightfield, "heightfield", frame(["jump"]), 0.2, heightfieldTuning);
+      const capsuleState = snapshotPlayerMovement(capsule, "capsule")!;
+      const heightfieldState = snapshotPlayerMovement(heightfield, "heightfield")!;
+      expect(capsuleState.motion!.clockMs).toBe(authoritativeStep ? 200 : 50);
+      expect(capsuleState.motion!.clockMs).toBe(heightfieldState.motion!.clockMs);
+      expect(capsuleState.motion!.verticalVelocity).toBe(heightfieldState.motion!.verticalVelocity);
+      expect(capsule.scene.entity.get("capsule")!.position[1]).toBeCloseTo(authoritativeStep ? 0.8 : 0.35, 8);
+      expect(capsule.scene.entity.get("capsule")!.position[1]).toBeCloseTo(heightfield.scene.entity.get("heightfield")!.position[1], 8);
+    }
+  });
+
+  test("jump held on the first authored-floor frame starts ascent without an idle warm-up", () => {
+    const ctx = context(["a"]);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, config());
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeGreaterThan(0.1);
+    expect(playerMovementTelemetry(ctx, "a")?.verticalVelocity).toBeGreaterThan(0);
+    expect(playerMovementTelemetry(ctx, "a")?.grounded).toBe(false);
+  });
+
+  test("a released jump cuts the capsule ascent just like heightfield movement", () => {
+    const peak = (hold: boolean) => {
+      const ctx = context(["a"]);
+      const t = config({ jumpCutFactor: 0.2 });
+      stepPlayerMovement(ctx, "a", frame([]), 1 / 60, t);
+      let highest = 0;
+      for (let i = 0; i < 100; i++) {
+        stepPlayerMovement(ctx, "a", frame(i === 0 || hold ? ["jump"] : []), 1 / 60, t);
+        highest = Math.max(highest, ctx.scene.entity.get("a")!.position[1]);
+      }
+      return highest;
+    };
+    expect(peak(false)).toBeLessThan(peak(true) * 0.4);
+  });
+
+  test("a press shortly before physical landing is buffered once", () => {
+    const ctx = context(["a"]);
+    ctx.scene.entity.setPose("a", { position: [0, 2, 0] });
+    const t = config({ jumpBufferMs: 120 });
+    let pressed = false;
+    let rebounded = false;
+    let consumed = false;
+    for (let i = 0; i < 130; i++) {
+      const y = ctx.scene.entity.get("a")!.position[1];
+      const held = !pressed && y < 0.25 ? ["jump"] : [];
+      if (held.length > 0) pressed = true;
+      stepPlayerMovement(ctx, "a", frame(held), 1 / 60, t);
+      const snapshot = snapshotPlayerMovement(ctx, "a")!;
+      if (pressed && snapshot.controller!.verticalVelocity > 4) rebounded = true;
+      if (snapshot.jumpBuffer?.actions.jump?.consumed) consumed = true;
+    }
+    expect(pressed).toBe(true);
+    expect(rebounded).toBe(true);
+    expect(consumed).toBe(true);
+    expect(snapshotPlayerMovement(ctx, "a")!.controller!.grounded).toBe(true);
+  });
+
+  test("coyote grace allows one late jump after walking off a physical platform", () => {
+    const ctx = context(["a"]);
+    const t = config({ coyoteMs: 100 }, 1);
+    let leftGround = false;
+    for (let i = 0; i < 120; i++) {
+      stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, t, Math.PI / 2);
+      if (!snapshotPlayerMovement(ctx, "a")!.controller!.grounded) { leftGround = true; break; }
+    }
+    expect(leftGround).toBe(true);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, t);
+    expect(snapshotPlayerMovement(ctx, "a")!.controller!.verticalVelocity).toBeGreaterThan(6);
+  });
+
+  test("landing recovery gates a new jump against the actual collision landing", () => {
+    const ctx = context(["a"]);
+    const t = config({ landingRecoveryMs: 200 });
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, t);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, t);
+    let landed = false;
+    for (let i = 0; i < 100; i++) {
+      stepPlayerMovement(ctx, "a", frame([]), 1 / 60, t);
+      if (snapshotPlayerMovement(ctx, "a")!.controller!.grounded) { landed = true; break; }
+    }
+    expect(landed).toBe(true);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, t);
+    expect(snapshotPlayerMovement(ctx, "a")!.controller!.verticalVelocity).toBe(0);
   });
 });
 
@@ -458,6 +811,29 @@ describe("snapshotPlayerMovement", () => {
     for (let i = 0; i < 5; i++) stepPlayerMovement(ctx, "a", frame(["turnRight"]), 1 / 60, FLAT);
     restorePlayerMovement(ctx, "b", snapshotPlayerMovement(ctx, "a")!);
     expect(playerMovementHeading(ctx, "b")).toBe(playerMovementHeading(ctx, "a"));
+  });
+
+  test("legacy capsule saves preserve a held jump latch without inventing a new press", () => {
+    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -5, -60], max: [60, 60, 60] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+    const config = resolvePlayerMovementTuning({ physics: { backend } });
+    const live = context(["a"]);
+    driveWith(live, "a", [], 1, config);
+    driveWith(live, "a", ["jump"], 100, config);
+    const saved = snapshotPlayerMovement(live, "a")!;
+    expect(saved.controller!.grounded).toBe(true);
+    expect(saved.controllerJumpHeld).toBe(true);
+    saved.motion!.jumpHeld = false;
+    saved.jumpBuffer = null;
+    const replay = context(["a"]);
+    replay.scene.entity.setPose("a", { position: live.scene.entity.get("a")!.position });
+    restorePlayerMovement(replay, "a", saved);
+    stepPlayerMovement(replay, "a", frame(["jump"]), 1 / 60, config);
+    expect(snapshotPlayerMovement(replay, "a")!.controller!.grounded).toBe(true);
+    expect(snapshotPlayerMovement(replay, "a")!.controller!.verticalVelocity).toBe(0);
+    stepPlayerMovement(replay, "a", frame([]), 1 / 60, config);
+    stepPlayerMovement(replay, "a", frame(["jump"]), 1 / 60, config);
+    expect(snapshotPlayerMovement(replay, "a")!.controller!.verticalVelocity).toBeGreaterThan(5);
   });
 
   test("a capsule-controller player restored into a fresh context replays the same path", () => {

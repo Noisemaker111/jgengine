@@ -33,6 +33,28 @@ describe("stateClipWeights", () => {
 });
 
 describe("createAnimGraphRuntime", () => {
+  test("fading root policy is serialized, survives interruption and ignores a disabled layer", () => {
+    const graph: AnimGraph = { layers: [{ id: "base", entry: "move", states: {
+      move: { kind: "clip", clip: "move", rootMotion: true },
+      idle: { kind: "clip", clip: "idle" }, walk: { kind: "clip", clip: "walk" },
+    }, transitions: [
+      { from: "move", to: "idle", trigger: "stop", duration: 0.2 },
+      { from: "idle", to: "walk", trigger: "walk", duration: 0.2 },
+    ] }] };
+    const runtime = createAnimGraphRuntime(graph);
+    const clips = { move: 1, idle: 1, walk: 1 };
+    runtime.trigger("stop"); runtime.advance(0, {}, clips);
+    expect(runtime.advance(0.05, {}, clips).rootMotion).toBe(true);
+    runtime.trigger("walk"); runtime.advance(0, {}, clips);
+    const snapshot = JSON.parse(JSON.stringify(runtime.snapshot()));
+    const restored = createAnimGraphRuntime(graph);
+    restored.restore(snapshot);
+    expect(restored.advance(0.05, {}, clips).rootMotion).toBe(true);
+    expect(restored.advance(0.2, {}, clips).rootMotion).toBeUndefined();
+    const disabled = createAnimGraphRuntime({ layers: [{ ...graph.layers[0]!, weight: 0 }] });
+    disabled.restore(snapshot);
+    expect(disabled.advance(0.05, {}, clips).rootMotion).toBeUndefined();
+  });
   test("returns root motion sampled from a synthetic root track", () => {
     const rt = createAnimGraphRuntime({
       layers: [{ id: "base", entry: "walk", states: { walk: { kind: "clip", clip: "walk", rootMotion: true } }, transitions: [] }],
@@ -44,7 +66,7 @@ describe("createAnimGraphRuntime", () => {
     expect(out.rootMotion).toBe(true);
   });
 
-  test("flags root motion only while a root-motion state is current, even when it does not travel", () => {
+  test("flags an influencing root-motion state even when it does not travel", () => {
     const rt = createAnimGraphRuntime({
       layers: [
         {
@@ -81,6 +103,24 @@ describe("createAnimGraphRuntime", () => {
     expect(second.events).toEqual([{ name: "footstep", clip: "walk" }]);
   });
 
+  test("loop events survive a full-cycle frame and coalesce multiple cycles", () => {
+    const graph: AnimGraph = {
+      layers: [{ id: "base", entry: "walk", states: { walk: { kind: "clip", clip: "walk" } }, transitions: [] }],
+      events: [{ clip: "walk", atSec: 0.5, name: "footstep" }],
+    };
+    const runtime = createAnimGraphRuntime(graph);
+    expect(runtime.advance(1, {}, clips).events).toEqual([{ name: "footstep", clip: "walk" }]);
+    expect(runtime.advance(3, {}, clips).events).toEqual([{ name: "footstep", clip: "walk" }]);
+  });
+
+  test("zero-weight blend clips and layers do not emit events", () => {
+    const graph = locomotionGraph({ idle: "idle", walk: "walk", walkSpeed: 1 });
+    const runtime = createAnimGraphRuntime({ ...graph, events: [{ clip: "idle", atSec: 0.1, name: "idle-event" }] });
+    expect(runtime.advance(0.2, { speed: 1 }, clips).events).toEqual([]);
+    const muted = createAnimGraphRuntime({ layers: [{ ...graph.layers[0]!, weight: 0 }], events: [{ clip: "walk", atSec: 0.1, name: "footstep" }] });
+    expect(muted.advance(0.2, { speed: 1 }, clips).events).toEqual([]);
+  });
+
   test("transitions crossfade by weight and consume their trigger", () => {
     const rt = createAnimGraphRuntime(locomotionGraph({ idle: "idle", walk: "walk", oneShots: { attack: "attack" } }));
     rt.advance(0.1, { speed: 0 }, clips);
@@ -96,6 +136,35 @@ describe("createAnimGraphRuntime", () => {
     expect(weightOf(done, "attack")).toBeCloseTo(1, 6);
     expect(weightOf(done, "idle")).toBe(0);
     expect(rt.state().triggers).toEqual([]);
+  });
+
+  test("a crossfade keeps the outgoing clip advancing at its own speed and loop policy", () => {
+    const graph: AnimGraph = { layers: [{ id: "base", entry: "walk", states: {
+      walk: { kind: "clip", clip: "walk", speed: 2 },
+      attack: { kind: "clip", clip: "attack", loop: false },
+    }, transitions: [{ from: "walk", to: "attack", trigger: "attack", duration: 0.5 }] }] };
+    const runtime = createAnimGraphRuntime(graph);
+    runtime.advance(0.4, {}, clips);
+    runtime.trigger("attack");
+    runtime.advance(0, {}, clips);
+    const out = runtime.advance(0.15, {}, clips);
+    expect(out.clips.find((entry) => entry.clip === "walk")!.time).toBeCloseTo(0.1, 6);
+    expect(out.clips.find((entry) => entry.clip === "attack")!.time).toBeCloseTo(0.15, 6);
+    const restored = createAnimGraphRuntime(graph);
+    restored.restore(runtime.snapshot());
+    expect(restored.advance(0.1, {}, clips)).toEqual(runtime.advance(0.1, {}, clips));
+  });
+
+  test("an outgoing one-shot clamps during a long fade instead of wrapping", () => {
+    const runtime = createAnimGraphRuntime({ layers: [{ id: "base", entry: "attack", states: {
+      attack: { kind: "clip", clip: "attack", loop: false },
+      idle: { kind: "clip", clip: "idle" },
+    }, transitions: [{ from: "attack", to: "idle", trigger: "end", duration: 0.5 }] }] });
+    runtime.advance(0.4, {}, clips);
+    runtime.trigger("end");
+    runtime.advance(0, {}, clips);
+    const out = runtime.advance(0.2, {}, clips);
+    expect(out.clips.find((entry) => entry.clip === "attack")!.time).toBe(clips.attack);
   });
 
   test("a one-shot returns to locomotion at its exit time and death clamps", () => {

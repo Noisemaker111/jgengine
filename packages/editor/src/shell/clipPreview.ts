@@ -53,7 +53,7 @@ export interface ClipPreviewSession {
   /** Every clip's duration, published by the viewport layer once the GLB loads. */
   readonly clipDurations?: Readonly<Record<string, number>>;
   /** When set, the viewport poses the rig from this graph output instead of playing `driver`'s clip. */
-  readonly graphPose?: { readonly graph: AnimGraph; readonly clips: readonly AnimClipOutput[] };
+  readonly graphPose?: { readonly graph: AnimGraph; readonly clips: readonly AnimClipOutput[]; readonly rootMotion?: true };
 }
 
 /** Playback state of the clip preview driver. `time` is seconds into the clip. */

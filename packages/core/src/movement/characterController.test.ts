@@ -16,6 +16,37 @@ function controller() {
 }
 
 describe("createCharacterController", () => {
+  test("restored crouch at exact floor contact can stand and jump on its first frame", () => {
+    const backend = world();
+    const c = createCharacterController({ radius: 0.3, height: 1.8 });
+    c.restore({ ...c.snapshot(), position: [0, 0, 0], grounded: true, crouching: true });
+    const result = c.move(backend, { motion: [0, 0, 0], dt: 1 / 60, jumpVelocity: 8, crouch: false });
+    expect(result.crouchBlocked).toBe(false);
+    expect(c.state().crouching).toBe(false);
+    expect(result.moved[1]).toBeCloseTo(8 / 60, 8);
+  });
+
+  test("restored crouch still cannot stand into a low ceiling or real floor penetration", () => {
+    for (const feetY of [0, -1e-8]) {
+      const backend = world();
+      if (feetY === 0) backend.addBody({ shape: { kind: "box", halfExtents: [3, 0.1, 3] }, position: [0, 1.5, 0], kind: "static" });
+      const c = createCharacterController({ radius: 0.3, height: 1.8 });
+      c.restore({ ...c.snapshot(), position: [0, feetY, 0], grounded: true, crouching: true });
+      expect(c.setCrouch(backend, false)).toBe(false);
+      expect(c.state().crouching).toBe(true);
+    }
+  });
+
+  test("a first-frame jump from exact authored floor contact is not a ceiling", () => {
+    const backend = world();
+    const c = createCharacterController({ radius: 0.3, height: 1.8 });
+    c.restore({ ...c.snapshot(), position: [0, 0, 0], grounded: true });
+    const result = c.move(backend, { motion: [0, 0, 0], dt: 1 / 60, jumpVelocity: 8 });
+    expect(result.hitCeiling).toBe(false);
+    expect(result.moved[1]).toBeCloseTo(8 / 60, 8);
+    expect(c.state().verticalVelocity).toBe(8);
+  });
+
   test("lands on the floor and walks along it", () => {
     const backend = world();
     const c = controller();
@@ -57,6 +88,17 @@ describe("createCharacterController", () => {
     expect(s.position[1]).toBeCloseTo(0, 1);
     expect(s.position[0]).toBeLessThan(5 - 1 - 0.35 + 0.01);
     expect(s.position[0]).toBeGreaterThan(3.5);
+  });
+
+  test("airborne wall contact cannot use grounded step forgiveness", () => {
+    const backend = world();
+    backend.addBody({ shape: { kind: "box", halfExtents: [1, 0.25, 3] }, position: [2, 0.25, 0], kind: "static" });
+    const c = controller();
+    c.restore({ ...c.snapshot(), position: [0.5, 0.2, 0], verticalVelocity: -0.1 });
+    const result = c.move(backend, { motion: [0.3, 0, 0], dt: 1 / 60, gravity: 20 });
+    expect(result.steppedUp).toBe(false);
+    expect(result.hitWall).toBe(true);
+    expect(c.state().position[1]).toBeLessThan(0.2);
   });
 
   test("jumps, hits a ceiling, and falls back", () => {
@@ -112,6 +154,42 @@ describe("createCharacterController", () => {
       c.move(backend, { motion: [0, 0, 0], dt: 1 / 60, gravity: 20 });
     }
     expect(c.state().position[0]).toBeGreaterThan(0.4);
+  });
+
+  test("rejects dimensions whose capsule would extend below authored feet", () => {
+    expect(() => createCharacterController({ radius: 0.35, height: 0.5 })).toThrow(/height.*diameter/);
+    expect(() => createCharacterController({ radius: 0.35, height: 1.8, crouchHeight: 0.5 })).toThrow(/crouchHeight.*diameter/);
+    expect(() => createCharacterController({ radius: 0.35, height: 1.8, crouchHeight: 2 })).toThrow(/crouchHeight.*height/);
+  });
+
+  test("small valid characters keep their default crouched capsule above their feet", () => {
+    const c = createCharacterController({ radius: 0.35, height: 0.8 });
+    c.setCrouch(world(), true);
+    expect(c.config().crouchHeight).toBe(0.7);
+    const shape = c.shape();
+    expect(shape.kind).toBe("capsule");
+    if (shape.kind !== "capsule") throw new Error("expected capsule");
+    expect(c.center()[1] - shape.halfHeight - shape.radius).toBeCloseTo(0, 8);
+  });
+
+  test("retuning proportions recomputes only the unauthored crouch default", () => {
+    const c = controller();
+    c.retune({ height: 0.8 });
+    expect(c.config().crouchHeight).toBe(0.7);
+    c.retune({ height: 1.8, crouchHeight: 1 });
+    c.retune({ height: 2 });
+    expect(c.config().crouchHeight).toBe(1);
+  });
+
+  test("invalid retuning fails before replacing a valid configuration", () => {
+    const c = controller();
+    const original = { ...c.config() };
+    expect(() => c.retune({ height: 0.2 })).toThrow(/height.*diameter/);
+    expect(c.config()).toEqual(original);
+    for (const [field, value] of [["radius", NaN], ["skinWidth", -0.01], ["maxSlopeDeg", 90], ["maxSlides", 1.5]] as const) {
+      expect(() => c.retune({ [field]: value })).toThrow(field);
+      expect(c.config()).toEqual(original);
+    }
   });
 
   test("retune and snapshot round-trip", () => {

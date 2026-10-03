@@ -50,8 +50,10 @@ export interface AuthoredAnimationConfig {
   clip?: string;
   loop?: boolean;
   timeScale?: number;
+  paused?: boolean;
+  time?: number;
   states?: AuthoredAnimationStates;
-  oneShots?: Record<string, string>;
+  oneShots?: Record<string, string | readonly string[]>;
   /** A stored animation graph; takes over from `states`/`oneShots` at play time. */
   graph?: AnimGraph;
 }
@@ -74,20 +76,22 @@ export function readAnimationSetting(meta: Record<string, unknown> | undefined):
   const config: AuthoredAnimationConfig = {};
   if (typeof value["clip"] === "string") config.clip = value["clip"];
   if (typeof value["loop"] === "boolean") config.loop = value["loop"];
-  if (typeof value["timeScale"] === "number") config.timeScale = value["timeScale"];
+  if (typeof value["timeScale"] === "number" && Number.isFinite(value["timeScale"])) config.timeScale = value["timeScale"];
+  if (typeof value["paused"] === "boolean") config.paused = value["paused"];
+  if (typeof value["time"] === "number" && Number.isFinite(value["time"])) config.time = value["time"];
   if (isRecord(value["states"])) {
     const raw = value["states"];
     const states: AuthoredAnimationStates = {};
     for (const role of LOCOMOTION_ROLES) if (typeof raw[role] === "string") states[role] = raw[role] as string;
-    for (const key of LOCOMOTION_NUMBERS) if (typeof raw[key] === "number") states[key] = raw[key] as number;
-    if (Object.keys(states).length > 0) config.states = states;
+    for (const key of LOCOMOTION_NUMBERS) if (typeof raw[key] === "number" && Number.isFinite(raw[key])) states[key] = raw[key] as number;
+    config.states = states;
   }
   if (isRecord(value["oneShots"])) {
     const raw = value["oneShots"];
-    const oneShots: Record<string, string> = {};
+    const oneShots: Record<string, string | readonly string[]> = {};
     for (const [event, clip] of Object.entries(raw)) {
       if (typeof clip === "string") oneShots[event] = clip;
-      else if (Array.isArray(clip) && typeof clip[0] === "string") oneShots[event] = clip[0];
+      else if (Array.isArray(clip) && clip.length > 0 && clip.every((variant) => typeof variant === "string")) oneShots[event] = [...clip];
     }
     if (Object.keys(oneShots).length > 0) config.oneShots = oneShots;
   }
@@ -110,7 +114,6 @@ function asConfig(setting: AnimationSetting | undefined): AuthoredAnimationConfi
 
 function normalizeConfig(config: AuthoredAnimationConfig): AuthoredAnimationConfig {
   const next: AuthoredAnimationConfig = { ...config };
-  if (next.states !== undefined && Object.keys(next.states).length === 0) delete next.states;
   if (next.oneShots !== undefined && Object.keys(next.oneShots).length === 0) delete next.oneShots;
   return next;
 }
@@ -139,10 +142,10 @@ export function defaultCustomConfig(clips: readonly string[]): AuthoredAnimation
   if (roles.idle?.[0] !== undefined) states.idle = roles.idle[0];
   if (roles.walk?.[0] !== undefined) states.walk = roles.walk[0];
   if (roles.run?.[0] !== undefined) states.run = roles.run[0];
-  const oneShots: Record<string, string> = {};
+  const oneShots: Record<string, string | readonly string[]> = {};
   for (const event of ONE_SHOT_EVENTS) {
-    const variant = roles[event]?.[0];
-    if (variant !== undefined) oneShots[event] = variant;
+    const variants = roles[event];
+    if (variants !== undefined && variants.length > 0) oneShots[event] = variants.length === 1 ? variants[0]! : [...variants];
   }
   const config: AuthoredAnimationConfig = {};
   if (Object.keys(states).length > 0) config.states = states;
@@ -155,12 +158,13 @@ export function setLocomotionClip(
   setting: AnimationSetting | undefined,
   role: LocomotionRole,
   clipName: string | null,
+  clips: readonly string[] = [],
 ): AuthoredAnimationConfig {
   const config = asConfig(setting);
-  const states: AuthoredAnimationStates = { ...config.states };
+  const states: AuthoredAnimationStates = { ...(config.states ?? (clipName === null ? undefined : defaultCustomConfig(clips).states)) };
   if (clipName === null) delete states[role];
   else states[role] = clipName;
-  return normalizeConfig({ ...config, states });
+  return normalizeConfig({ ...config, ...(config.states !== undefined || Object.keys(states).length > 0 ? { states } : {}) });
 }
 
 /** Sets or clears (null) a numeric locomotion tuning. */
@@ -168,25 +172,57 @@ export function setLocomotionNumber(
   setting: AnimationSetting | undefined,
   key: LocomotionNumber,
   value: number | null,
+  clips: readonly string[] = [],
 ): AuthoredAnimationConfig {
   const config = asConfig(setting);
-  const states: AuthoredAnimationStates = { ...config.states };
+  const states: AuthoredAnimationStates = { ...(config.states ?? (value === null || !Number.isFinite(value) ? undefined : defaultCustomConfig(clips).states)) };
   if (value === null || !Number.isFinite(value)) delete states[key];
   else states[key] = value;
-  return normalizeConfig({ ...config, states });
+  return normalizeConfig({ ...config, ...(config.states !== undefined || Object.keys(states).length > 0 ? { states } : {}) });
 }
 
-/** Binds or clears (null) a one-shot event to a clip. */
+/** Binds or clears (null) a one-shot event's clip or variant list. */
 export function setOneShotClip(
   setting: AnimationSetting | undefined,
   event: string,
-  clipName: string | null,
+  clipName: string | readonly string[] | null,
 ): AuthoredAnimationConfig {
   const config = asConfig(setting);
-  const oneShots: Record<string, string> = { ...config.oneShots };
-  if (clipName === null) delete oneShots[event];
-  else oneShots[event] = clipName;
+  const oneShots: Record<string, string | readonly string[]> = { ...config.oneShots };
+  if (clipName === null || (Array.isArray(clipName) && clipName.length === 0)) delete oneShots[event];
+  else oneShots[event] = typeof clipName === "string" ? clipName : clipName.length === 1 ? clipName[0]! : [...clipName];
   return normalizeConfig({ ...config, oneShots });
+}
+
+/** Sets a single playback clip, explicitly replacing speed-driven states and a stored graph. @internal */
+export function setPlaybackClip(setting: AnimationSetting | undefined, clip: string | null): AuthoredAnimationConfig {
+  if (clip === null) {
+    const { clip: _clip, ...config } = asConfig(setting);
+    return config;
+  }
+  const { states: _states, graph: _graph, ...config } = asConfig(setting);
+  return { ...config, clip };
+}
+
+/** Changes a playback scalar while preserving role mappings, variants and the stored graph. @internal */
+export function setPlaybackNumber(
+  setting: AnimationSetting | undefined,
+  key: "time" | "timeScale",
+  value: number | null,
+): AuthoredAnimationConfig {
+  const config = { ...asConfig(setting) };
+  if (value === null || !Number.isFinite(value)) delete config[key];
+  else config[key] = key === "time" ? Math.max(0, value) : value;
+  return config;
+}
+
+/** Changes a playback toggle without replacing the remaining authored settings. @internal */
+export function setPlaybackBoolean(
+  setting: AnimationSetting | undefined,
+  key: "paused" | "loop",
+  value: boolean,
+): AuthoredAnimationConfig {
+  return { ...asConfig(setting), [key]: value };
 }
 
 /**
@@ -213,9 +249,9 @@ export function effectiveAnimGraph(
   if (setting !== undefined && setting !== "auto") {
     if (setting.graph !== undefined) return { graph: setting.graph, source: "authored" };
     const states = setting.states;
-    if (states?.idle === undefined) return null;
+    if (states?.idle === undefined || states.idle.trim().length === 0) return null;
     const graph = animGraphFromConfig({
-      states: { ...states, idle: states.idle, walk: states.walk ?? states.idle },
+      states: { ...states, idle: states.idle, walk: states.walk === undefined || states.walk.trim().length === 0 ? states.idle : states.walk },
       ...(setting.oneShots === undefined ? {} : { oneShots: setting.oneShots }),
     });
     return graph === undefined ? null : { graph, source: "locomotion" };

@@ -130,12 +130,39 @@ export const STASH_KIND = definePlaceableMarkerKind({
 
 A placed rigged asset's animation override lives at `marker.meta.animation` and reaches the game through `markerAnimation` → `ModelConfig.animation`. It is `"auto"`, `"none"` or a config with `states`, `oneShots` and an optional stored `graph` (an `AnimGraph`, validated with `parseAnimGraph` on read).
 
-- **Inspector → Animation** picks the mode and binds idle/walk/run and one-shot clips.
+- **Inspector → Animation** picks the mode and binds idle/walk/run and one-shot clips. Custom playback exposes rate and Hold pose; choosing Single clip explicitly replaces locomotion states and a stored graph, then exposes seek time and looping. Playback edits preserve the remaining configuration. One-shot lists retain all variants; Ctrl/Cmd-click selects several clips.
+  - The first locomotion edit after single-clip playback seeds the rig's detected role clips, preserving deeper playback settings. Missing idle keeps an explicitly chosen single clip active; without one, playback stays at bind pose and reports the incomplete mapping. Missing walk keeps the idle pose while moving and displays a repair hint. A stored graph remains authoritative.
 - **Animation workspace → Graph** (rail button, or the bottom dock's Animation tab) shows the graph the selected placement plays: layers, states and transitions, with the source (stored, built from states, or derived from clip roles).
   - The scrub slider replays the graph runtime from its entry states. Parameter sliders come from the graph's blend points and conditions.
   - Trigger buttons record a press at the playhead, so scrubbing back and forth replays it. The rig at the camera focus is posed from the runtime's output through the shell's `createGraphPose`.
   - Editing a crossfade, or **Store graph**, writes the graph to `meta.animation.graph` as one undoable edit. **Use derived graph** drops it.
 - Scripted: `set_meta` with `{ "animation": { "graph": { ... } } }` on the marker; see the `jgengine-world` recipe `character-animation.md` for the graph shape.
+
+For a held single-clip pose, use `set_meta` with `{ "animation": { "clip": "Idle", "paused": true, "time": 0.75, "timeScale": 1, "loop": true } }`. Read it with `get_marker`, inspect it in play, adjust through the inspector, and save through the host's normal Save action. Reopen the document and read the same marker id to verify the saved values. `time` seeks single clips; graph playback has its own timeline. A placement without a moving entity remains at speed zero unless the game supplies animation parameters.
+
+A game-owned player spawn can use the same marker's `catalogId` to associate the rig's catalog clips with the Animation inspector. In `defineGame`, set `scenePlacement: { excludeKinds: [...ENTITY_MARKER_KINDS, "player_spawn"] }` (`ENTITY_MARKER_KINDS` comes from `@jgengine/core/world/authoredObjects`). The canonical spawn marker remains available to the game's existing entity-spawn and `markerAnimation` composition, while automatic object placement skips that kind and keeps ordinary props. This exclusion list replaces the default mob/boss list. It controls placement eligibility. Live editor synchronization removes previously authored static objects that become excluded; outside synchronization, existing store objects remain. Game-owned entities are unaffected.
+
+## Character movement tuning
+
+`createMovementSchema` (`@jgengine/core/editor/movementCatalog`) creates ordinary Data-tab controls from game-supplied defaults. Export a named `EditorCatalogDefinition` with that schema and named rows, then use `set_catalog_entry` or the GUI to adjust them. Only supplied controls appear: walk speed, signed world gravity, jump velocity, step height, acceleration, braking, air control, sprint multiplier, crouch multiplier and optional maximum climb grade. No movement style or capsule/backend is selected for the game.
+
+```ts
+const readMovement = createAuthoredMovementReader(
+  () => getDocumentLiveSync()?.getDocument() ?? editorLayers,
+  "player_motion",
+  "player",
+);
+const authored = bindAuthoredMovement(readMovement, {
+  movement: existingMovement,
+  physics: existingPhysics,
+});
+```
+
+Pass `authored.movement` to the playable configuration and `authored.physics` to the game definition's physics. These stable objects expose live numeric getters; policy callbacks, collision settings and backend remain the game's choices. The reader scans only when the immutable document changes. `authored.diagnostics` reports invalid persisted values with document paths and repair guidance; invalid values retain the explicit game fallback. Supply `readMovement().config.walkSpeed` when resolving the game's selected player catalog entry, preserving its other stats and poses. Walk speed applies when that entity spawns or reseats; this API does not overwrite existing entities every frame.
+
+Use the normal edit → play → inspect → adjust → save → reload loop. `get_catalog_entry` inspects saved controls; a fresh `import_document` or reopened scene must produce the same reader result. Runtime tuning requires this explicit binding; merely adding a Data row does not change gameplay. Capsule dimensions and terrain/controller backend configuration remain outside this catalog contract.
+
+`maxClimbGrade` limits heightfield rise per horizontal distance, including airborne travel. Expose it only when the game requires that policy; the optional `climbGradeHeight` sampler remains a game-owned callback retained by the binding. This is independent of a capsule's slope angle and does not select collision geometry.
 
 ## Pure API (`@jgengine/editor`)
 
