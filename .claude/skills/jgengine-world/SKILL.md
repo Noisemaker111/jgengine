@@ -35,6 +35,8 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 4. Collision for generated and studio content comes from its data through `ctx.world.solids`; never hand-place invisible blockers for it (see reference.md, World solids).
 5. Keep derived caches rebuildable; the document remains authoritative.
 
+For existing `environment()` consumers, `defineGame` overlays only defined editor sky fields on the legacy sky, retaining settings the editor cannot represent; an explicit `backdrop.sky` remains authoritative.
+
 ### Movement and interaction
 
 Choose input intent, controller/motor, collision/navigation, and camera as separate seams. Commands express game intent; world systems resolve motion. Interaction targets come from bounded spatial/sensor queries, not full-world scans.

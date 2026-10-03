@@ -12,7 +12,7 @@ import { offline } from "@jgengine/core/runtime/adapter";
 import type { GameContext, GameContextContent } from "@jgengine/core/runtime/gameContext";
 import type { AssetCatalog, ModelAssetRef } from "@jgengine/core/scene/assetCatalog";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
-import type { EnvironmentWorldFeature } from "@jgengine/core/world/features";
+import type { EnvironmentWorldFeature, SkyEnvironmentConfig } from "@jgengine/core/world/features";
 import type { EnvironmentSource } from "@jgengine/core/render/environment";
 import { lightingFromDocument, skyFromDocument } from "@jgengine/core/editor/environment";
 import { resolveGameLook } from "@jgengine/core/render/lookPreset";
@@ -50,15 +50,23 @@ function worldBackdrop(feature: EnvironmentWorldFeature): ComponentType {
 
 /**
  * The scene document's authored sky fills `backdrop.sky` when the game did not set one, so editor
- * lighting-workspace edits render in `place()` worlds too. A document environment carrying only
+ * lighting-workspace edits render in `place()` worlds too. Defined document fields overlay the
+ * legacy world's sky, preserving settings the editor cannot represent. An environment carrying only
  * point lights yields no sky fields and leaves the world's sky alone.
  * @internal
  */
-export function withDocumentSky(backdrop: BackdropConfig | undefined, doc: EditorDocument | undefined): BackdropConfig | undefined {
+export function withDocumentSky(backdrop: BackdropConfig | undefined, doc: EditorDocument | undefined, worldSky?: SkyEnvironmentConfig): BackdropConfig | undefined {
   if (backdrop?.sky !== undefined || doc === undefined) return backdrop;
   const sky = skyFromDocument(doc);
   if (sky === undefined || Object.keys(sky).length === 0) return backdrop;
-  return { ...backdrop, sky };
+  return { ...backdrop, sky: {
+    ...worldSky,
+    ...sky,
+    ...(sky.sun === undefined ? {} : { sun: { ...worldSky?.sun,
+      ...Object.fromEntries(Object.entries(sky.sun).filter(([, value]) => value !== undefined)) } }),
+    ...(sky.fog === undefined ? {} : { fog: { ...worldSky?.fog,
+      ...Object.fromEntries(Object.entries(sky.fog).filter(([, value]) => value !== undefined)) } }),
+  } };
 }
 
 function isEnvironmentSource(value: unknown): value is EnvironmentSource {
@@ -165,7 +173,7 @@ export function defineGame<TAssetRef extends ModelAssetRef = ModelAssetRef>(
   const resolvedLook = resolveGameLook({
     look,
     lighting: authoredLighting,
-    backdrop: withDocumentSky(backdrop, editorLayers),
+    backdrop: withDocumentSky(backdrop, editorLayers, engineFields.world?.kind === "environment" ? engineFields.world.sky : undefined),
     postProcessing,
     hasWorldSky: editorLayers?.environment?.preset !== undefined,
   });
