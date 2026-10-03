@@ -97,10 +97,10 @@ describe("createWorldGameServer", () => {
       expect(s.port()).toBeGreaterThan(0);
       await s.host.joinServer({ userId: "alice", gameId: "shared" });
       s.tick(1);
-      const view = await s.host.getServerView({ serverId: "shared" });
+      const view = await s.host.getServerView({ userId: "alice", serverId: "shared" });
       expect(heroX(view)).toBeCloseTo(1);
       s.tick(0.5);
-      expect(heroX(await s.host.getServerView({ serverId: "shared" }))).toBeCloseTo(1.5);
+      expect(heroX(await s.host.getServerView({ userId: "alice", serverId: "shared" }))).toBeCloseTo(1.5);
     } finally {
       await s.close();
     }

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, expect, test } from "bun:test";
 import { cp, mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser, type Page } from "playwright-core";
-import { findChromeExecutable } from "../../../scripts/browser-lib";
+import { buildBrowserFixture, findChromeExecutable } from "../../../scripts/browser-lib";
 
 const scratch = resolve(import.meta.dir, "../../../.scratch/scroll-rail-test");
 let browser: Browser, page: Page, server: ReturnType<typeof Bun.serve>;
@@ -28,9 +28,7 @@ beforeAll(async () => {
     }
     createRoot(document.getElementById('root')).render(<Fixture/>);
   `);
-  const build = await Bun.build({ entrypoints: [entry], target: "browser" });
-  if (!build.success) throw new Error(build.logs.join("\n"));
-  const script = await build.outputs[0]!.text();
+  const script = buildBrowserFixture(entry);
   server = Bun.serve({hostname:"127.0.0.1",port:0,fetch:r=>new URL(r.url).pathname === '/fixture.js'
     ? new Response(script,{headers:{'Content-Type':'text/javascript'}})
     : new Response('<meta name="viewport" content="width=device-width, initial-scale=1"><div id="root"></div><script src="/fixture.js"></script>',{headers:{'Content-Type':'text/html'}})});

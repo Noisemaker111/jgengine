@@ -103,6 +103,7 @@ These guarded repository scripts exist only in the jgengine monorepo — never e
 
 - PR CI runs the full `bun run gate` set; run it locally only when changing the gate or reproducing a CI failure. `bun run ship:preflight` runs after commit, before push.
 - Use guarded scripts (`bun run test`, `bun run test:all`, `bun run gate`), not an unbounded bare `bun test` across the repository.
+- Browser unit fixtures use `buildBrowserFixture` from `scripts/browser-lib` to bundle in a fresh Bun process; runner mocks and resolver caches must not affect the browser's module graph.
 - Any change to a map, world, or scene document counts as visual: attach captures of the changed content to the PR, not just test assertions.
 - Everything else (`drive --playtest` on software GL, fixtures, aiming, recording, PR media) is in [references/monorepo-capture.md](references/monorepo-capture.md).
 

@@ -1,4 +1,7 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createServer } from "node:http";
 import type { AddressInfo } from "node:net";
 import { deflateSync } from "node:zlib";
@@ -6,6 +9,7 @@ import { deflateSync } from "node:zlib";
 import {
   type CdpSession,
   DEVICES,
+  buildBrowserFixture,
   MAX_FLAT_SCREENCAST_FRAMES,
   captureViewportPng,
   checkoutIdentity,
@@ -20,6 +24,35 @@ import {
   screencastCapturesFully,
   windowsPersistentChromeCommand,
 } from "./browser-lib";
+
+test("browser fixture bundling reads real modules despite runner mocks", async () => {
+  const scratch = mkdtempSync(join(tmpdir(), "jg-browser-bundle-"));
+  const dependency = join(scratch, "dependency.ts");
+  const entry = join(scratch, "fixture.ts");
+  try {
+    writeFileSync(dependency, 'export const value = "real fixture";');
+    writeFileSync(entry, 'import { value } from "./dependency"; globalThis.fixtureValue = value;');
+    mock.module(dependency, () => ({ value: "runner mock" }));
+    expect((await import(dependency)).value).toBe("runner mock");
+    const fixtureGlobal: { fixtureValue?: string } = {};
+    new Function("globalThis", buildBrowserFixture(entry))(fixtureGlobal);
+    expect(fixtureGlobal.fixtureValue).toBe("real fixture");
+  } finally {
+    mock.restore();
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+test("browser fixture bundling reports unresolved imports", () => {
+  const scratch = mkdtempSync(join(tmpdir(), "jg-browser-bundle-"));
+  const entry = join(scratch, "fixture.ts");
+  try {
+    writeFileSync(entry, 'import "./missing-fixture-module";');
+    expect(() => buildBrowserFixture(entry)).toThrow("missing-fixture-module");
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
 
 function fakeSession(options: {
   navigation?: Record<string, unknown>;

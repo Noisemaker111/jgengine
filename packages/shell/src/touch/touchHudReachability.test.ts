@@ -2,7 +2,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { cp, mkdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
 import { chromium, type Browser } from "playwright-core";
-import { findChromeExecutable } from "../../../../scripts/browser-lib";
+import { buildBrowserFixture, findChromeExecutable } from "../../../../scripts/browser-lib";
 
 const scratch=resolve(import.meta.dir,'../../../../.scratch/touch-hud-test');
 let browser:Browser, server:ReturnType<typeof Bun.serve>;
@@ -32,9 +32,7 @@ beforeAll(async()=>{
     }
     createRoot(document.getElementById('root')).render(<Fixture/>);
   `);
-  const build=await Bun.build({entrypoints:[`${scratch}/fixture.tsx`],target:'browser'});
-  if(!build.success)throw new Error(build.logs.join('\n'));
-  const script=await build.outputs[0]!.text();
+  const script=buildBrowserFixture(`${scratch}/fixture.tsx`);
   const html='<meta name="viewport" content="width=device-width, initial-scale=1"><style>.pointer-events-none{pointer-events:none}.pointer-events-auto{pointer-events:auto}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0}.touch-none{touch-action:none}.invisible{visibility:hidden}.flex{display:flex}.flex-col{flex-direction:column}.items-center{align-items:center}.justify-center{justify-content:center}.overflow-hidden{overflow:hidden}.z-40{z-index:40}.p-3{padding:12px}.flex-1{flex:1 1 0%}.min-h-0{min-height:0}.shrink-0{flex-shrink:0}</style><div id="root"></div><script src="/fixture.js"></script>';
   server=Bun.serve({hostname:'127.0.0.1',port:0,fetch:r=>new URL(r.url).pathname==='/fixture.js'?new Response(script,{headers:{'Content-Type':'text/javascript'}}):new Response(html,{headers:{'Content-Type':'text/html'}})});
   browser=await chromium.launch({executablePath:findChromeExecutable(),headless:true,args:['--no-sandbox']});

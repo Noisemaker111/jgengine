@@ -110,6 +110,16 @@ export function findChromeExecutable(): string {
   throw new Error("No Chrome/Chromium found. Set CHROME_PATH or install Chrome.");
 }
 
+/** Build browser fixtures outside the test runner's module mocks and resolver cache. */
+export function buildBrowserFixture(entry: string): string {
+  const build = spawnSync(process.execPath, ["build", entry, "--target=browser"], {
+    encoding: "utf8", timeout: 25_000, maxBuffer: 16 * 1024 * 1024,
+  });
+  if (build.error !== undefined) throw build.error;
+  if (build.status !== 0) throw new Error(build.stderr.trim() || "Browser fixture build failed");
+  return build.stdout;
+}
+
 /** Native GPU locally; deterministic software GL only when explicitly requested or in CI. */
 export function chromeGraphicsArgs(
   env: NodeJS.ProcessEnv = process.env,
