@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { createEmptyEditorDocument } from "@jgengine/core/editor/index";
+import { createEmptyEditorDocument, type EditorEnvironment } from "@jgengine/core/editor/index";
 
 import { parseEditorCliArgs, saveSceneDocument } from "./cli";
 
@@ -90,6 +90,24 @@ describe("parseEditorCliArgs", () => {
 });
 
 describe("saveSceneDocument", () => {
+  test("rejects an invalid whole document before replacing existing bytes", () => {
+    const root = mkdtempSync(join(tmpdir(), "editor-cli-save-"));
+    const src = join(root, "demo", "src");
+    mkdirSync(src, { recursive: true });
+    const path = join(src, "editor.scene.json");
+    writeFileSync(path, "existing authored bytes\n");
+    const document = createEmptyEditorDocument();
+    document.environment = { preset: "dawn" } as EditorEnvironment;
+    const result = saveSceneDocument("demo", document, root);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error).toContain("$.environment.preset");
+    expect(readFileSync(path, "utf8")).toBe("existing authored bytes\n");
+    document.environment = { preset: "day" };
+    document.markers.push({ id: "invalid", kind: "prop", position: { x: "invalid" as unknown as number, y: 0, z: 0 } });
+    expect(saveSceneDocument("demo", document, root).ok).toBe(false);
+    expect(readFileSync(path, "utf8")).toBe("existing authored bytes\n");
+  });
+
   test("writes dev-save-format JSON into the game's src directory", () => {
     const root = mkdtempSync(join(tmpdir(), "editor-cli-save-"));
     mkdirSync(join(root, "demo", "src"), { recursive: true });

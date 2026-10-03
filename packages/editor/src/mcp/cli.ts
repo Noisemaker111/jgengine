@@ -15,7 +15,7 @@ import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import type { EditorDocument } from "@jgengine/core/editor/index";
+import { decodeEditorDocument, type EditorDocument } from "@jgengine/core/editor/index";
 
 import { createEditorHost } from "../session";
 import { startEditorBridgeServerNode } from "./bridgeServer.node.ts";
@@ -98,15 +98,19 @@ export type SaveSceneResult = { ok: true; saved: string } | { ok: false; error: 
 /**
  * Writes a session document to `<gamesRoot>/<gameId>/src/editor.scene.json` in the exact format
  * the dev-server save endpoint uses (2-space JSON + trailing newline), so headless `--save` and
- * the GUI's Ctrl+S round-trip identically. Refuses to invent a game directory.
+ * the GUI's Ctrl+S round-trip identically. Refuses invalid documents before writing or inventing a game directory.
  * @internal
  */
 export function saveSceneDocument(gameId: string, document: EditorDocument, gamesRoot?: string): SaveSceneResult {
   const root = gamesRoot ?? fileURLToPath(new URL("../../../../Games/", import.meta.url));
   const srcDir = join(root, gameId, "src");
   if (!existsSync(srcDir)) return { ok: false, error: `--save: no src directory for game "${gameId}" at ${srcDir}` };
+  const decoded = decodeEditorDocument(document);
+  if (!decoded.ok) {
+    return { ok: false, error: `--save: invalid editor document: ${decoded.errors.map((error) => `${error.path} ${error.message}`).join("; ")}` };
+  }
   const path = join(srcDir, "editor.scene.json");
-  writeFileSync(path, `${JSON.stringify(document, null, 2)}\n`);
+  writeFileSync(path, `${JSON.stringify(decoded.document, null, 2)}\n`);
   return { ok: true, saved: path };
 }
 

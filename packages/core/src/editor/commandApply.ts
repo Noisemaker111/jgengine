@@ -9,7 +9,9 @@ import { patchUiPanel, removeUiPanel } from "../ui/hudDocument";
 import {
   cloneEditorDocument,
   collectDescendants,
+  createEmptyEditorDocument,
   createPrefabFragment,
+  decodeEditorDocument,
   editorDocumentExtras,
   ensureUniqueEditorId,
   extractEditorFragment,
@@ -538,7 +540,11 @@ const mutationHandlers: MutationHandlers = {
       void _removed;
       return { ...state, document: rest };
     }
-    return { ...state, document: { ...state.document, environment: command.environment } };
+    const decoded = decodeEditorDocument({ ...createEmptyEditorDocument(), environment: command.environment });
+    if (!decoded.ok) {
+      throw new Error(`invalid editor environment: ${decoded.errors.map((error) => `${error.path} ${error.message}`).join("; ")}`);
+    }
+    return { ...state, document: { ...state.document, environment: decoded.document.environment } };
   },
   clearTerrain: (state) => {
     const nextDoc: EditorDocument = {

@@ -390,6 +390,7 @@ const terrainStrokeKind: Record<"sculptTerrain" | "paintTerrain" | "blendTerrain
 type HistoryEntry = { kind: "snapshot"; state: EditorSessionState } | TerrainStroke;
 
 /** Creates an editor session with undo/redo history seeded from an initial document.
+ * Environment commands validate and copy their candidate bag before publishing state or history.
  * @internal
  */
 export function createEditorSession(initial: EditorDocument, historyLimit = 100): EditorSession {

@@ -8,6 +8,10 @@ in-memory session and, when every RPC succeeds, writes the session document to
 the GUI's Ctrl+S through `devSavePlugin`). Without `--save`, `--rpc` mutations are discarded on
 exit — use it for read-only inspection only, or capture `export_document` yourself.
 
+The source-only CLI writer validates the full document before replacing any saved bytes, matching the dev save endpoint. Validation failures report document paths and leave the existing file intact.
+
+`dispatch` with `setEnvironment` validates only the candidate environment before changing the session, undo history, or live document revision. Supported presets are `day`, `dusk`, and `night`; custom palette, sun, intensity, and fog fields remain explicit authored values. Invalid inputs report `$.environment` paths. Validated nested fields are copied, so mutating the command afterward cannot change the document. Passing `environment: undefined` removes the bag and remains undoable. Repair unsupported authored values through an explicit editor command; preserve the author's palette and fog rather than substituting a default.
+
 ## Atomic authoring batches
 
 Use `document_revision` to inspect the current revision, then send one `push_document_patch` for a complete placement operation. Commands use the `EditorCommand` shapes from `@jgengine/core/editor/commands`, rather than RPC verb shapes. Earlier commands' ids are available to later commands in the same batch:
