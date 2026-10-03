@@ -83,14 +83,20 @@ export const runtimeHandlers: Pick<
     });
     return { ok: true, result: delta };
   },
-  pull_runtime_deltas: (ctx, request) => ({
-    ok: true,
-    result: {
-      seq: ctx.liveSync.getRuntimeState().seq,
-      deltas: ctx.liveSync.pullRuntimeDeltas(request.sinceSeq ?? 0),
-      ...(request.includeSnapshot === true ? { snapshot: ctx.liveSync.getRuntimeState() } : {}),
-    },
-  }),
+  pull_runtime_deltas: (ctx, request) => {
+    const sinceSeq = request.sinceSeq ?? 0;
+    const snapshot = ctx.liveSync.getRuntimeState();
+    const deltas = ctx.liveSync.pullRuntimeDeltas(sinceSeq);
+    const historyGap = deltas.length > 0 && deltas[0]!.seq > sinceSeq + 1;
+    return {
+      ok: true,
+      result: {
+        seq: snapshot.seq,
+        deltas: historyGap ? [] : deltas,
+        ...(request.includeSnapshot === true || historyGap ? { snapshot } : {}),
+      },
+    };
+  },
   runtime_snapshot: (ctx) => ({ ok: true, result: ctx.liveSync.getRuntimeState() }),
   runtime_summary: (ctx) => ({
     ok: true,
