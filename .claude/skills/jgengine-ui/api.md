@@ -552,7 +552,7 @@
 - `AtomicBarProps` (interface): interface AtomicBarProps — Shared props for every atomic bar — bound to a stat (`statId`/`entityId`) or explicit (`value`).
 - `BarShape` (type): type BarShape = "rect" | "pill" | "skew" | "chamfer" — Trough shape language — `rect` (default), `pill` (fully round), `skew` (parallelogram, upright label), or `chamfer` (cut corners). Matches a game's skin without hand-rolling a local bar.
 - `BarTokens` (interface): interface BarTokens — Atomic, purpose-named vitals — one component per readout (`HealthBar`, `ShieldBar`, …), never a `tone`-switched umbrella and never a bundled combo. Every bar reads the same shared CSS custom properties (`--jg-health`, `--jg-shield`, `--jg-xp`, plus frame/shape tokens). Default token colors are scaffolding only: games own layout, framing, and art direction, and must set tokens (or replace the markup) so the HUD is unique to the pitch — the engine ships parts, not a face.
-- `BarsPreview` (function): function BarsPreview({ className }: { className?: string }): React.JSX.Element — Renders the atomic bar matrix twice under different token blocks to prove global re-theming.
+- `BarsPreview` (function): function BarsPreview({ className }: { className?: string }): React.JSX.Element — Renders atomic bars under token blocks and nested themes to prove fill and skin precedence.
 - `BetterAuthSessionState` (interface): interface BetterAuthSessionState { data: {user: BetterAuthUserShape} | null | undefined; isPending: boolean } — ⚠ undocumented
 - `BetterAuthUserShape` (interface): interface BetterAuthUserShape { id: string; name?: string | null; email?: string | null; image?: string | null } — ⚠ undocumented
 - `BossBar` (function): function BossBar(props: AtomicBarProps & { name?: string }): React.JSX.Element — A wide encounter/boss health bar with the boss name at the start.
@@ -888,7 +888,7 @@
 - `guestIdentity` (function): function guestIdentity(seed?: string): IdentitySource — ⚠ undocumented
 - `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
 - `hudTheme` (function): function hudTheme(overrides: HudThemeOverrides): HudTheme — Builds a full {@link HudTheme} from per-group partials, filling the rest from {@link defaultHudTheme}. Reach for this when a game wants to name exact values; use {@link deriveHudTheme} when a seed color pair is enough.
-- `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree.
+- `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits theme CSS properties, resetting inherited bar fills when absent. Spread onto a HUD ancestor.
 - `hudVisibleInPhase` (function): function hudVisibleInPhase(showDuring: readonly GamePhase[] | undefined, phase: GamePhase): boolean — Whether a HUD element opted into `showDuring` is visible in the current phase; `undefined` = always visible (default).
 - `isRedSuit` (function): function isRedSuit(suit: Suit): boolean — True for the red suits (hearts, diamonds).
 - `latestChatBubbles` (function): function latestChatBubbles(messages: readonly ChatMessage[], nowMs: number, ttlMs: number): ChatBubble[] — ⚠ undocumented
@@ -1057,7 +1057,7 @@
 
 ## @jgengine/react/barsPreview
 
-- `BarsPreview` (function): function BarsPreview({ className }: { className?: string }): React.JSX.Element — Renders the atomic bar matrix twice under different token blocks to prove global re-theming.
+- `BarsPreview` (function): function BarsPreview({ className }: { className?: string }): React.JSX.Element — Renders atomic bars under token blocks and nested themes to prove fill and skin precedence.
 
 ## @jgengine/react/cameraShake
 
@@ -1371,7 +1371,7 @@
 - `deriveHudTheme` (function): function deriveHudTheme(seed: HudThemeSeed): HudTheme — Derives a coherent full theme from an accent/surface pair — shades, edges, dim text, frames, bar troughs, and slots all fall out of the seed, so a game gets one consistent look across the `packages/react` primitives and the `registry/jgengine` blocks without naming 50 tokens. Hex seeds only (`#rgb` or `#rrggbb`).
 - `hudSkinVars` (function): function hudSkinVars(skin?: HudSkin): CSSProperties — Converts a skin into the CSS variables consumed by shared HUD components.
 - `hudTheme` (function): function hudTheme(overrides: HudThemeOverrides): HudTheme — Builds a full {@link HudTheme} from per-group partials, filling the rest from {@link defaultHudTheme}. Reach for this when a game wants to name exact values; use {@link deriveHudTheme} when a seed color pair is enough.
-- `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree.
+- `hudThemeVars` (function): function hudThemeVars(theme: HudTheme): CSSProperties — Emits theme CSS properties, resetting inherited bar fills when absent. Spread onto a HUD ancestor.
 - `resolveHudTheme` (function): function resolveHudTheme(theme?: HudThemePreset | HudTheme): HudTheme — Resolves a preset name (or a full theme) to a `HudTheme`; falls back to the default theme.
 
 ## @jgengine/react/hudThemePreview
@@ -3000,13 +3000,13 @@
 ## @jgengine/shell/world/WorldHud
 
 - `CombatCameraShake` (function): function CombatCameraShake(): null — ⚠ undocumented
-- `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
+- `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
 - `ProjectileTracers` (function): function ProjectileTracers({ lifeMs = 130 }: { lifeMs?: number }): React.JSX.Element — ⚠ undocumented
 - `Reticle` (function): function Reticle({ className }: { className?: string }): React.JSX.Element — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample { x: number; y: number; percent: number } — ⚠ undocumented
-- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, occlude = false, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars for entities farther than this from … — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number } — ⚠ undocumented
+- `WorldEntityBars` (function): function WorldEntityBars({ statId, height = 2.2, roles, resolveRole, maxDistance = 60, occlude = true, tickMs = 80, maxSamples = 64, }: { statId: string; height?: number; roles?: readonly CatalogEntityRole[]; resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined; /** Hide bars beyond … — ⚠ undocumented
 - `WorldFloatText` (function): function WorldFloatText({ height = 1.9, lifeMs = 950 }: { height?: number; lifeMs?: number }): React.JSX.Element — ⚠ undocumented
-- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, occlude = false, tickMs = 120, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React.JSX.Element — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
+- `WorldNameplates` (function): function WorldNameplates({ statId = "health", height = 2.3, roles, resolveRole, maxDistance = 40, occlude = true, tickMs = 120, maxSamples = 64, resolveName, showHealth = true, className, nameplateClassName, nameClassName, barClassName, fillClassName, renderNameplate, }: WorldNameplatesProps): React… — Billboarded name + 78×6px HP bar over every nearby non-local entity that passes `roles`/`maxDistance` — headless (className/data-* slots on every part, `renderNameplate` for a full swap), turned on declaratively via `defineGame({ nameplates })` rather than mounted by hand.
 - `WorldNameplatesProps` (interface): interface WorldNameplatesProps — Props for `WorldNameplates` — entity filter, refresh rate, and headless className/render hooks.
 - `WorldObjectHighlights` (function): function WorldObjectHighlights({ color = "#facc15", radius, y = 0.05 }: WorldObjectHighlightsProps): React.JSX.Element — Ground ring over every `ctx.scene.object.selection`-ed placed object — the object-layer counterpart to `WorldEntityBars`/`WorldNameplates`. Mount it once in the game's scene (headless: no defaults are imposed beyond a visible ring) instead of hand-rolling a selection highlight through `WorldOverlay` against external state.
 - `WorldObjectHighlightsProps` (interface): interface WorldObjectHighlightsProps — Props for {@link WorldObjectHighlights}.
@@ -3053,9 +3053,11 @@
 
 ## @jgengine/shell/world/worldBarSamples
 
-- `NameplateSample` (interface): interface NameplateSample — One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player.
+- `NameplateSample` (interface): interface NameplateSample — Projected nameplate with optional health and distance from the render camera.
 - `Projectable` (interface): interface Projectable { set(x: number, y: number, z: number): this; project(camera: {matrixWorldInverse: unknown; projectionMatrix: unknown}): this; x: number; y: number; z: number } — ⚠ undocumented
-- `WorldBarSample` (interface): interface WorldBarSample { x: number; y: number; percent: number } — ⚠ undocumented
+- `WorldBarSample` (interface): interface WorldBarSample { entityId?: string; x: number; y: number; percent: number } — ⚠ undocumented
+- `WorldOverlayCamera` (interface): interface WorldOverlayCamera — Render camera matrices; world translation supplies the overlay's viewpoint.
+- `WorldOverlaySampleOptions` (interface): interface WorldOverlaySampleOptions — Sampling policy shared by health bars and nameplates.
 
 ## @jgengine/shell/worldSync
 

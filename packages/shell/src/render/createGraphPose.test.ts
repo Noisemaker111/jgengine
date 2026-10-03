@@ -4,26 +4,77 @@ import { fileURLToPath } from "node:url";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
 
 import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph";
 import { locomotionGraph } from "@jgengine/core/anim/locomotionGraph";
 import { createGraphPose } from "./useModelAnimation";
-import { cloneModelScene, disposeModelScene } from "./modelRender";
+import { cloneModelScene, disposeModelScene, modelPlacementTransform } from "./modelRender";
+import { measureLocalBounds } from "./measureBounds";
+import { measureLocalCollisionTriangles } from "./measureCollisionMesh";
+import { modelBindPosePositions } from "./modelBindPose";
 
-async function loadKnight(): Promise<GLTF> {
-  const file = fileURLToPath(new URL("../../../../apps/dev/public/models/kaykit-adventurers/Knight.glb", import.meta.url));
+async function loadModel(path: string): Promise<GLTF> {
+  const file = fileURLToPath(new URL(`../../../../apps/dev/public/models/${path}`, import.meta.url));
   const bytes = readFileSync(file);
   const warn = console.warn;
   const error = console.error;
   console.warn = () => {};
   console.error = () => {};
   try {
-    return await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "");
+    return await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "");
   } finally {
     console.warn = warn;
     console.error = error;
   }
 }
+
+const loadKnight = () => loadModel("kaykit-adventurers/Knight.glb");
+
+describe("model normalization on an imported skinned creature", () => {
+  test("grounds actual skin-applied vertices and keeps collider geometry in that same bind pose", async () => {
+    const gltf = await loadModel("claudecraft/creatures/wild_boar.glb");
+    const instance = cloneModelScene(gltf.scene);
+    const second = cloneModelScene(gltf.scene);
+    const root = new THREE.Group().add(instance);
+    const transform = modelPlacementTransform(root, { url: "boar", targetHeight: 1.45, y: 0.2 });
+    root.position.fromArray(transform.position);
+    root.scale.setScalar(transform.scale);
+    root.updateMatrixWorld(true);
+    const rendered = new THREE.Box3().setFromObject(root, true);
+    expect(rendered.max.y - rendered.min.y).toBeCloseTo(1.45, 6);
+    expect(rendered.min.y).toBeCloseTo(0.2, 6);
+    expect((rendered.min.x + rendered.max.x) / 2).toBeCloseTo(0, 6);
+    expect((rendered.min.z + rendered.max.z) / 2).toBeCloseTo(0, 6);
+
+    const meshesOf = (scene: THREE.Object3D) => {
+      const meshes: THREE.SkinnedMesh[] = [];
+      scene.traverse((node) => { if ((node as THREE.SkinnedMesh).isSkinnedMesh === true) meshes.push(node as THREE.SkinnedMesh); });
+      return meshes;
+    };
+    const mesh = meshesOf(instance)[0]!;
+    expect(modelBindPosePositions(mesh)).toBe(modelBindPosePositions(meshesOf(second)[0]!));
+    const triangles = measureLocalCollisionTriangles(root, { scale: transform.scale, offset: transform.position })!;
+    const expected = new THREE.Vector3();
+    for (let index = 0; index < mesh.geometry.getAttribute("position").count; index++) {
+      mesh.getVertexPosition(index, expected).applyMatrix4(mesh.matrixWorld);
+      expect(expected.distanceTo(new THREE.Vector3().fromArray(triangles.positions, index * 3))).toBeLessThan(1e-6);
+    }
+    const before = measureLocalBounds(root);
+    const mixer = new THREE.AnimationMixer(instance);
+    const dying = THREE.AnimationClip.findByName(gltf.animations, "Dying")!;
+    mixer.clipAction(dying).play();
+    mixer.update(dying.duration * 0.9);
+    const animated = new THREE.Box3().setFromObject(root, true);
+    expect(animated.min.distanceTo(rendered.min)).toBeGreaterThan(0.1);
+    expect(measureLocalBounds(root)).toEqual(before);
+    expect(measureLocalCollisionTriangles(root, { scale: transform.scale, offset: transform.position })!.positions).toEqual(triangles.positions);
+    mixer.stopAllAction();
+    mixer.uncacheRoot(instance);
+    disposeModelScene(instance);
+    disposeModelScene(second);
+  });
+});
 
 function boneQuaternions(scene: THREE.Object3D): number[] {
   const values: number[] = [];

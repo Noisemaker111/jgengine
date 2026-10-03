@@ -4,6 +4,7 @@ import type { CollisionMeshSource } from "@jgengine/core/scene/collisionMesh";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 
 import { MEASURE_EXCLUDE_KEY } from "./measureBounds";
+import { modelBindPosePositions } from "./modelBindPose";
 
 /** Above this the model is too dense to double as its own hitbox — keep the fitted box instead of
  * paying BVH build + per-ray traversal on a hero-detail mesh. Game-ready low-poly assets sit far under it. */
@@ -48,8 +49,11 @@ function collectTriangles(object: THREE.Object3D, parentMatrix: THREE.Matrix4 | 
     if (positionAttribute !== undefined && positionAttribute.itemSize === 3 && positionAttribute.count >= 3) {
       const base = sink.positions.length / 3;
       const applied = matrix ?? IDENTITY;
+      const bindPositions = (mesh as THREE.SkinnedMesh).isSkinnedMesh === true ? modelBindPosePositions(mesh as THREE.SkinnedMesh) : null;
       for (let v = 0; v < positionAttribute.count; v += 1) {
-        tmpVec.fromBufferAttribute(positionAttribute, v).applyMatrix4(applied);
+        if (bindPositions === null) tmpVec.fromBufferAttribute(positionAttribute, v);
+        else tmpVec.fromArray(bindPositions, v * 3);
+        tmpVec.applyMatrix4(applied);
         sink.positions.push(tmpVec.x, tmpVec.y, tmpVec.z);
       }
       const index = geometry.getIndex();
@@ -87,6 +91,7 @@ export function measureLocalCollisionTriangles(
   root: THREE.Object3D,
   transform?: { scale: number; offset: readonly [number, number, number] },
 ): MeasuredCollisionTriangles | null {
+  root.updateMatrixWorld(true);
   const sink: TriangleSink = { positions: [], indices: [], meshCount: 0, triangleCount: 0, overflow: false };
   collectTriangles(root, null, sink);
   if (sink.overflow || sink.meshCount === 0 || sink.triangleCount === 0) return null;

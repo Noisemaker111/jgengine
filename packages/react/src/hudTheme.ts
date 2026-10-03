@@ -121,7 +121,7 @@ export interface HudTheme {
   skin?: HudSkin;
 }
 
-/** Emits the CSS custom properties for a theme — spread onto any HUD ancestor to re-skin the subtree. */
+/** Emits theme CSS properties, resetting inherited bar fills when absent. Spread onto a HUD ancestor. */
 export function hudThemeVars(theme: HudTheme): CSSProperties {
   const { palette, surface, status, font, rarity, frame, bar, slot } = theme;
   return {
@@ -133,7 +133,8 @@ export function hudThemeVars(theme: HudTheme): CSSProperties {
     "--jg-slot-slice": "0",
     "--jg-slot-scale": "1",
     "--jg-bar-skin-track": "none",
-    "--jg-bar-skin-fill": "none",
+    // `initial` clears inherited skins and lets var() fall back to the bar's palette color.
+    "--jg-bar-skin-fill": "initial",
     "--jg-skin-cursor": "auto",
     ...hudSkinVars(theme.skin),
     // atomic-bar tokens (same names the bars read — #1033)

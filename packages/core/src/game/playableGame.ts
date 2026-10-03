@@ -17,6 +17,7 @@ import type { PositionedPrompt } from "../interaction/proximityPrompt";
 import type { ChaseCameraTuning } from "../runtime/cameraDirector";
 import type { CatalogEntityRole, GameContext, GameContextContent } from "../runtime/gameContext";
 import type { FreeFlightBindings } from "../movement/freeFlight";
+import type { SceneEntity } from "../scene/entityStore";
 import type { ModelDims } from "../scene/assetCatalog";
 import type { PartMotionParams, PartRole } from "./partAnimation";
 import type { CollisionMeshData } from "../scene/collisionMesh";
@@ -650,21 +651,25 @@ export interface PlayableGame<
   platforms?: readonly HudPlatform[];
   /** HUD design resolution + scale clamps (default 1600×900, scale 0.4–1). `mobile` overrides tune the phone fit separately — the same resolution system drives desktop UI-scale and phone shrink. */
   hudFit?: HudViewportConfig;
-  /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the player (default 60). */
+  /** Opt in to world-space health bars floating over non-local entities that carry the stat. `roles` restricts bars to entities whose catalog entry declares one of the given roles; `maxDistance` hides bars beyond this many world units from the render camera (default 60). */
   worldHealthBars?:
     | boolean
     | {
         statId?: string;
         roles?: readonly CatalogEntityRole[];
         maxDistance?: number;
-        /** Hide a bar when world geometry stands between the player and the entity. These bars are a screen-space overlay outside the depth buffer, so by default they draw through walls. Default false. */
+        /** Maximum overlays and visibility rays per refresh. Default 64, capped at 256. */
+        maxSamples?: number;
+        /** Minimum refresh interval in ms. Default 80 for bars, 120 for plates. */
+        tickMs?: number;
+        /** Hide bars behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
         occlude?: boolean;
       };
   /**
    * Opt in to billboarded nameplates (name + optional HP bar) floating over non-local entities — the
    * MMO "who's this and how hurt are they" readout. `roles` restricts to entities whose catalog entry
    * declares one of the given roles (default: all); `maxDistance` hides nameplates beyond this many
-   * world units from the player (default 40). Headless: skin every part via `className`/`data-*` hooks
+   * world units from the render camera (default 40). Headless: skin every part via `className`/`data-*` hooks
    * on `WorldNameplates` (`@jgengine/shell/world/WorldHud`) — this flag only turns the readout on and
    * scopes which entities it covers. Set `showHealth: false` for a name-only plate when a game already
    * draws the HP bar itself (its own HUD, or `worldHealthBars`) — otherwise the nameplate's built-in bar
@@ -672,7 +677,20 @@ export interface PlayableGame<
    */
   nameplates?:
     | boolean
-    | { statId?: string; roles?: readonly CatalogEntityRole[]; maxDistance?: number; showHealth?: boolean };
+    | {
+        statId?: string;
+        roles?: readonly CatalogEntityRole[];
+        maxDistance?: number;
+        /** Maximum overlays and visibility rays per refresh. Default 64, capped at 256. */
+        maxSamples?: number;
+        /** Minimum refresh interval in ms. Default 80 for bars, 120 for plates. */
+        tickMs?: number;
+        showHealth?: boolean;
+        /** Hide plates behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
+        occlude?: boolean;
+        /** Authored display name. Return null to omit a plate; default suppresses machine identifiers. */
+        resolveName?: (entity: SceneEntity) => string | null;
+      };
   /**
    * Combat presentation stack mounted inside the 3D canvas (telegraphs, spell VFX, retained VFX,
    * float text, projectile tracers, camera shake). Default `true` preserves historical always-on

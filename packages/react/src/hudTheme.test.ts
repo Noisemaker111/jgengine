@@ -27,6 +27,19 @@ describe("hudThemeVars", () => {
     expect(vars["--jg-slot-border"]).toBe(defaultHudTheme.slot.border);
     expect(vars["--jg-ring"]).toBe(defaultHudTheme.ring);
   });
+
+  test("a theme without a bar skin clears inherited fill without suppressing the palette fallback", () => {
+    const vars = hudThemeVars(defaultHudTheme) as Record<string, string>;
+    expect(vars["--jg-bar-skin-fill"]).toBe("initial");
+    expect(vars["--jg-bar-skin-track"]).toBe("none");
+  });
+
+  test("each theme supplies its own bar skin instead of the default fill reset", () => {
+    const parent = hudTheme({ skin: { bar: { fill: "#112233", track: "none" } } });
+    const child = hudTheme({ skin: { bar: { fill: "#445566", track: "none" } } });
+    expect((hudThemeVars(parent) as Record<string, string>)["--jg-bar-skin-fill"]).toBe("#112233");
+    expect((hudThemeVars(child) as Record<string, string>)["--jg-bar-skin-fill"]).toBe("#445566");
+  });
 });
 
 describe("presets", () => {

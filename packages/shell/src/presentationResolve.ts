@@ -1,3 +1,4 @@
+import type { SceneEntity } from "@jgengine/core/scene/entityStore";
 import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
 import type { PresentationEffectsConfig } from "@jgengine/core/game/playableGame";
 
@@ -6,9 +7,12 @@ export interface ResolvedWorldOverlayBars {
   statId: string;
   roles?: readonly CatalogEntityRole[];
   maxDistance?: number;
+  maxSamples?: number;
+  tickMs?: number;
   /** Nameplates only: draw the built-in HP bar. `false` yields a name-only plate. Defaults to `true`. */
   showHealth?: boolean;
-  occlude?: boolean;
+  occlude: boolean;
+  resolveName?: (entity: SceneEntity) => string | null;
 }
 
 /**
@@ -25,19 +29,25 @@ export function resolveWorldOverlayBars(
         statId?: string;
         roles?: readonly CatalogEntityRole[];
         maxDistance?: number;
+        maxSamples?: number;
+        tickMs?: number;
         showHealth?: boolean;
         occlude?: boolean;
+        resolveName?: (entity: SceneEntity) => string | null;
       }
     | undefined,
 ): ResolvedWorldOverlayBars | null {
   if (config === undefined || config === false) return null;
-  if (config === true) return { statId: "health" };
+  if (config === true) return { statId: "health", occlude: true };
   return {
     statId: config.statId ?? "health",
     ...(config.roles === undefined ? {} : { roles: config.roles }),
+    ...(config.maxSamples === undefined ? {} : { maxSamples: config.maxSamples }),
+    ...(config.tickMs === undefined ? {} : { tickMs: config.tickMs }),
     ...(config.maxDistance === undefined ? {} : { maxDistance: config.maxDistance }),
     ...(config.showHealth === undefined ? {} : { showHealth: config.showHealth }),
-    ...(config.occlude === undefined ? {} : { occlude: config.occlude }),
+    occlude: config.occlude ?? true,
+    ...(config.resolveName === undefined ? {} : { resolveName: config.resolveName }),
   };
 }
 

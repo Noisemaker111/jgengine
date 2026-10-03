@@ -13,6 +13,7 @@ import {
   ShieldBar,
   SoulBar,
 } from "./bars";
+import { hudTheme, hudThemeVars } from "./hudTheme";
 
 describe("barTokens", () => {
   test("binds only the passed tokens to their CSS custom properties", () => {
@@ -106,6 +107,20 @@ describe("fill override", () => {
     expect(html).toContain("#00ffcc");
     expect(html).not.toContain("data-low"); // fill override suppresses the danger swap
     expect(html).not.toContain("var(--jg-health,"); // token not used for the fill
+  });
+
+  test("an explicit fill wins over an ancestor's bar skin", () => {
+    const html = renderToStaticMarkup(
+      createElement("div", { style: hudThemeVars(hudTheme({ skin: { bar: { fill: "#ff0000", track: "none" } } })) },
+        createElement(HealthBar, { value: 270, max: 270, fill: "#7fb06d" })),
+    );
+    expect(html).toContain("background:#7fb06d;");
+    expect(html).not.toContain("var(--jg-bar-skin-fill");
+  });
+
+  test("bars without an explicit fill use the skin with a semantic palette fallback", () => {
+    const html = renderToStaticMarkup(createElement(HealthBar, { value: 5, max: 100 }));
+    expect(html).toContain(`background:var(--jg-bar-skin-fill, var(--jg-health-low, ${DEFAULT_BAR_TOKENS.healthLow}));`);
   });
 });
 

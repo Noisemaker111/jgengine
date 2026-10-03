@@ -40,7 +40,7 @@ export const PREVIEW_FIXTURES: Record<string, PreviewFixture> = {
   },
   BarsPreview: {
     name: "BarsPreview",
-    description: "Every atomic vitals bar rendered twice under different BarTokens blocks.",
+    description: "Atomic vitals under BarTokens blocks, explicit fills, skins, and nested theme resets.",
     component: BarsPreview,
   },
   IconsPreview: {

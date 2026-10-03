@@ -6,6 +6,7 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import { useGameContext } from "@jgengine/react/provider";
 
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
+import { modelBindPosePositions } from "./modelBindPose";
 
 /** Subtrees flagged with this userData key are excluded from bounds measurement — debug gizmos,
  * selection quads, effect billboards that should not inflate the hitbox. Sprites and invisible
@@ -22,6 +23,7 @@ export interface MeasuredLocalBounds {
 
 const IDENTITY = new THREE.Matrix4();
 const tmpBox = new THREE.Box3();
+const tmpVertex = new THREE.Vector3();
 
 /**
  * Measure the meshes under `root` in `root`'s own frame (root's transform is the measuring frame,
@@ -29,6 +31,7 @@ const tmpBox = new THREE.Box3();
  * mounted. Skinned meshes measure at bind pose — the standard engine approximation.
  */
 export function measureLocalBounds(root: THREE.Object3D): MeasuredLocalBounds | null {
+  root.updateMatrixWorld(true);
   const box = new THREE.Box3();
   box.makeEmpty();
   const meshCount = collectBounds(root, null, box);
@@ -55,8 +58,16 @@ function collectBounds(object: THREE.Object3D, parentMatrix: THREE.Matrix4 | nul
   const mesh = object as THREE.Mesh;
   if (mesh.isMesh === true && mesh.geometry !== undefined) {
     const geometry = mesh.geometry;
-    if (geometry.boundingBox === null) geometry.computeBoundingBox();
-    const bounds = geometry.boundingBox;
+    let bounds: THREE.Box3 | null;
+    if ((mesh as THREE.SkinnedMesh).isSkinnedMesh === true) {
+      tmpBox.makeEmpty();
+      const positions = modelBindPosePositions(mesh as THREE.SkinnedMesh);
+      for (let index = 0; index < positions.length; index += 3) tmpBox.expandByPoint(tmpVertex.fromArray(positions, index));
+      bounds = tmpBox;
+    } else {
+      if (geometry.boundingBox === null) geometry.computeBoundingBox();
+      bounds = geometry.boundingBox;
+    }
     if (bounds !== null && !bounds.isEmpty()) {
       tmpBox.copy(bounds);
       if (matrix !== null) tmpBox.applyMatrix4(matrix);

@@ -16,10 +16,13 @@ import {
   collectNameplateSamples,
   collectWorldBarSamples,
   paintWorldBarSamples,
+  refreshWorldBarSamples,
   type NameplateSample,
   type WorldBarSample,
 } from "./worldBarSamples";
 import { telegraphPulseOpacity } from "./telegraphPulse";
+import { useRenderVisibility } from "../visibility/CullingProvider";
+import { CAMERA_POST_FRAME_PRIORITY } from "../camera/cameraRigs";
 
 export type { NameplateSample, WorldBarSample } from "./worldBarSamples";
 export { collectNameplateSamples, collectWorldBarSamples, paintWorldBarSamples } from "./worldBarSamples";
@@ -39,17 +42,22 @@ export function WorldEntityBars({
   roles,
   resolveRole,
   maxDistance = 60,
-  occlude = false,
+  occlude = true,
+  tickMs = 80,
+  maxSamples = 64,
 }: {
   statId: string;
   height?: number;
   roles?: readonly CatalogEntityRole[];
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
-  /** Hide bars for entities farther than this from the player (world units). Default 60. */
+  /** Hide bars beyond this camera distance in world units. Default 60. */
   maxDistance?: number;
-  /** Hide the bar when world geometry stands between the player and the entity. These bars are a screen-space overlay outside the depth buffer, so without this they read through walls. Default false, preserving the always-visible behaviour. */
+  /** Hide bars behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
   occlude?: boolean;
-
+  /** Minimum visibility/health refresh interval in ms; anchors reproject every frame. Default 80. */
+  tickMs?: number;
+  /** Maximum overlays and occlusion rays per refresh. Default 64, capped at 256. */
+  maxSamples?: number;
 }) {
   const ctx = useGameContext();
   const camera = useThree((state) => state.camera);
@@ -58,8 +66,11 @@ export function WorldEntityBars({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const samplesRef = useRef<WorldBarSample[]>([]);
   const projectRef = useRef(new THREE.Vector3());
+  const lastTickRef = useRef(-Infinity);
+  const visibility = useRenderVisibility();
 
-  useFrame(() => {
+  useFrame((state) => {
+    const nowMs = state.clock.elapsedTime * 1000;
     const canvas = canvasRef.current;
     if (canvas === null) return;
     const dpr = Math.min(2, gl.getPixelRatio());
@@ -72,21 +83,27 @@ export function WorldEntityBars({
       canvas.height = pixelH;
     }
     camera.updateMatrixWorld();
-    collectWorldBarSamples(
-      ctx,
-      statId,
-      height,
-      roles,
-      resolveRole,
-      camera,
-      { width: cssW, height: cssH },
-      samplesRef.current,
-      projectRef.current,
-      maxDistance,
-      occlude,
-    );
+    if (nowMs - lastTickRef.current >= Math.max(0, tickMs)) {
+      lastTickRef.current = nowMs;
+      collectWorldBarSamples(
+        ctx,
+        statId,
+        height,
+        roles,
+        resolveRole,
+        camera,
+        { width: cssW, height: cssH },
+        samplesRef.current,
+        projectRef.current,
+        maxDistance,
+        occlude,
+        { maxSamples, isVisible: visibility.current },
+      );
+    } else {
+      refreshWorldBarSamples(ctx, height, camera, { width: cssW, height: cssH }, samplesRef.current, projectRef.current, maxDistance, { isVisible: visibility.current });
+    }
     paintWorldBarSamples(canvas, samplesRef.current, dpr);
-  });
+  }, CAMERA_POST_FRAME_PRIORITY + 0.01);
 
   return (
     <Html fullscreen calculatePosition={pinOverlayToViewport} zIndexRange={[20, 0]} style={{ pointerEvents: "none" }}>
@@ -104,12 +121,16 @@ export interface WorldNameplatesProps {
   height?: number;
   roles?: readonly CatalogEntityRole[];
   resolveRole?: (entity: SceneEntity) => CatalogEntityRole | undefined;
-  /** Hide nameplates for entities farther than this from the player (world units). Default 40. */
+  /** Hide nameplates beyond this camera distance in world units. Default 40. */
   maxDistance?: number;
-  /** Hide the plate when world geometry stands between the player and the entity. Default false. */
+  /** Hide plates behind blocking geometry from the render camera. Default true; false explicitly reveals through walls. */
   occlude?: boolean;
   /** Minimum ms between position/health refreshes — trades smoothness for fewer re-renders at scale. Default 120. */
   tickMs?: number;
+  /** Maximum overlays and occlusion rays per refresh. Default 64, capped at 256. */
+  maxSamples?: number;
+  /** Authored display name. Return null to omit a plate; default suppresses machine identifiers. */
+  resolveName?: (entity: SceneEntity) => string | null;
   /** Draw the built-in HP bar under the name. Set `false` for a name-only plate when the game already draws its own health bar (its own HUD, or `worldHealthBars`). Default true. */
   showHealth?: boolean;
   className?: string;
@@ -135,8 +156,10 @@ export function WorldNameplates({
   roles,
   resolveRole,
   maxDistance = 40,
-  occlude = false,
+  occlude = true,
   tickMs = 120,
+  maxSamples = 64,
+  resolveName,
   showHealth = true,
   className,
   nameplateClassName,
@@ -151,11 +174,12 @@ export function WorldNameplates({
   const [samples, setSamples] = useState<readonly NameplateSample[]>([]);
   const samplesRef = useRef<NameplateSample[]>([]);
   const projectRef = useRef(new THREE.Vector3());
-  const lastTickRef = useRef(0);
+  const lastTickRef = useRef(-Infinity);
+  const visibility = useRenderVisibility();
 
   useFrame((state) => {
     const nowMs = state.clock.elapsedTime * 1000;
-    if (nowMs - lastTickRef.current < tickMs) return;
+    if (nowMs - lastTickRef.current < Math.max(0, tickMs)) return;
     lastTickRef.current = nowMs;
     camera.updateMatrixWorld();
     collectNameplateSamples(
@@ -170,9 +194,10 @@ export function WorldNameplates({
       projectRef.current,
       maxDistance,
       occlude,
+      { maxSamples, isVisible: visibility.current, ...(resolveName === undefined ? {} : { resolveName }) },
     );
     setSamples([...samplesRef.current]);
-  });
+  }, CAMERA_POST_FRAME_PRIORITY + 0.01);
 
   return (
     <Html fullscreen calculatePosition={pinOverlayToViewport} zIndexRange={[19, 0]} style={{ pointerEvents: "none" }}>

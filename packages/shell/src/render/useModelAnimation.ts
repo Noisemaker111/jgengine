@@ -28,8 +28,8 @@ function graphClipNames(graph: AnimGraph): Set<string> {
 
 /**
  * An explicit `animation` config always wins over `"auto"`, and both the state machine and the
- * one-shot table degrade quietly when a named clip is absent: states fall back to `clips[0]` (often
- * an attack clip, so an actor "idles" mid-swing) and one-shots are dropped, so deaths and attacks
+ * one-shot table degrade quietly when a named clip is absent: missing graph clips contribute no
+ * pose and one-shots are dropped, so deaths and attacks
  * never play. Neither leaves a trace, which makes a mistyped or wrong-pack clip name one of the
  * hardest render bugs to see — the model loads, animates, and is simply wrong forever.
  *
@@ -64,7 +64,7 @@ function warnMissingClips(
   console.warn(
     `[jgengine] model animation: clip(s) ${[...missing].map((name) => `"${name}"`).join(", ")} ` +
       `not found on this rig. Available: ${clips.map((clip) => clip.name).join(", ")}. ` +
-      `States fall back to the first clip and one-shots are skipped — set animation: "auto" to ` +
+      `Missing graph clips contribute no pose and one-shots are skipped; a single-clip config falls back to the first clip. Set animation: "auto" to ` +
       `derive states/one-shots from the rig's own clip names.`,
   );
 }

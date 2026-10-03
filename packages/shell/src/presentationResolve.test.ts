@@ -12,26 +12,30 @@ describe("resolveWorldOverlayBars", () => {
   });
 
   test("true uses the default health stat", () => {
-    expect(resolveWorldOverlayBars(true)).toEqual({ statId: "health" });
+    expect(resolveWorldOverlayBars(true)).toEqual({ statId: "health", occlude: true });
   });
 
   test("object form fills defaults and keeps explicit fields", () => {
     expect(resolveWorldOverlayBars({ roles: ["enemy"], maxDistance: 12 })).toEqual({
-      statId: "health",
+      statId: "health", occlude: true,
       roles: ["enemy"],
       maxDistance: 12,
     });
-    expect(resolveWorldOverlayBars({ statId: "armor" })).toEqual({ statId: "armor" });
+    expect(resolveWorldOverlayBars({ statId: "armor", occlude: true })).toEqual({ statId: "armor", occlude: true });
   });
 
   test("showHealth is carried through only when set (nameplate name-only opt-out)", () => {
-    expect(resolveWorldOverlayBars({ maxDistance: 40 })).toEqual({ statId: "health", maxDistance: 40 });
+    expect(resolveWorldOverlayBars({ maxDistance: 40 })).toEqual({ statId: "health", occlude: true, maxDistance: 40 });
     expect(resolveWorldOverlayBars({ maxDistance: 40, showHealth: false })).toEqual({
-      statId: "health",
+      statId: "health", occlude: true,
       maxDistance: 40,
       showHealth: false,
     });
-    expect(resolveWorldOverlayBars({ showHealth: true })).toEqual({ statId: "health", showHealth: true });
+    expect(resolveWorldOverlayBars({ showHealth: true })).toEqual({ statId: "health", occlude: true, showHealth: true });
+  });
+  test("through-wall reveal remains explicit and display names survive normalization", () => {
+    const resolveName = () => "Guard";
+    expect(resolveWorldOverlayBars({ occlude: false, resolveName, maxSamples: 12, tickMs: 100 })).toEqual({ statId: "health", occlude: false, resolveName, maxSamples: 12, tickMs: 100 });
   });
 });
 

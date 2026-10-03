@@ -624,6 +624,30 @@ export function Shell3dPresentation({
                       hideLocalActor={firstPerson}
                       editorLayers={playable.editorLayers}
                     />
+                    {bars !== null ? (
+                      <WorldEntityBars
+                        statId={bars.statId}
+                        roles={bars.roles}
+                        resolveRole={resolveEntityRole}
+                        {...(bars.maxSamples === undefined ? {} : { maxSamples: bars.maxSamples })}
+                        {...(bars.tickMs === undefined ? {} : { tickMs: bars.tickMs })}
+                        {...(bars.maxDistance === undefined ? {} : { maxDistance: bars.maxDistance })}
+                        {...(bars.occlude === undefined ? {} : { occlude: bars.occlude })}
+                      />
+                    ) : null}
+                    {nameplates !== null ? (
+                      <WorldNameplates
+                        statId={nameplates.statId}
+                        roles={nameplates.roles}
+                        resolveRole={resolveEntityRole}
+                        {...(nameplates.maxSamples === undefined ? {} : { maxSamples: nameplates.maxSamples })}
+                        {...(nameplates.tickMs === undefined ? {} : { tickMs: nameplates.tickMs })}
+                        {...(nameplates.maxDistance === undefined ? {} : { maxDistance: nameplates.maxDistance })}
+                        occlude={nameplates.occlude}
+                        {...(nameplates.resolveName === undefined ? {} : { resolveName: nameplates.resolveName })}
+                        {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
+                      />
+                    ) : null}
                   </CullingProvider>
                   {WorldOverlay !== undefined ? (
                     // Author decor is presentation dressing, not collision geometry — mark it
@@ -632,24 +656,6 @@ export function Shell3dPresentation({
                     <group userData={CAMERA_TRANSPARENT_USERDATA}>
                       <WorldOverlay ctx={ctx} />
                     </group>
-                  ) : null}
-                  {bars !== null ? (
-                    <WorldEntityBars
-                      statId={bars.statId}
-                      roles={bars.roles}
-                      resolveRole={resolveEntityRole}
-                      {...(bars.maxDistance === undefined ? {} : { maxDistance: bars.maxDistance })}
-                      {...(bars.occlude === undefined ? {} : { occlude: bars.occlude })}
-                    />
-                  ) : null}
-                  {nameplates !== null ? (
-                    <WorldNameplates
-                      statId={nameplates.statId}
-                      roles={nameplates.roles}
-                      resolveRole={resolveEntityRole}
-                      {...(nameplates.maxDistance === undefined ? {} : { maxDistance: nameplates.maxDistance })}
-                      {...(nameplates.showHealth === undefined ? {} : { showHealth: nameplates.showHealth })}
-                    />
                   ) : null}
                   <WorldItems config={playable.worldItem} />
                   <WorldParticles quality={graphics.quality} particleCap={graphics.profile.particleCap} />

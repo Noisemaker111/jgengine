@@ -1,9 +1,10 @@
-import type { SceneEntity } from "@jgengine/core/scene/entityStore";
+import type { SceneEntity, EntityPosition } from "@jgengine/core/scene/entityStore";
 import { worldHealthBarAllowsRole } from "@jgengine/core/game/playableGame";
-import type { CatalogEntityRole } from "@jgengine/core/runtime/gameContext";
-import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { CatalogEntityRole, GameContext } from "@jgengine/core/runtime/gameContext";
 
 export interface WorldBarSample {
+  /** Live anchor id used by retained samples; omitted for caller-painted screen samples. */
+  entityId?: string;
   x: number;
   y: number;
   percent: number;
@@ -17,134 +18,196 @@ export interface Projectable {
   z: number;
 }
 
-/**
- * True when world geometry stands between the player's eye and `target`. World bars and nameplates
- * are DOM/canvas overlays projected to screen space, so nothing in the depth buffer can hide them —
- * without this test an enemy's health bar reads straight through the building it is standing behind.
- * @internal
- */
-export function worldBarOccluded(
-  ctx: GameContext,
-  from: readonly [number, number, number],
-  target: readonly [number, number, number],
-  eyeHeight: number,
-): boolean {
-  const origin: [number, number, number] = [from[0], from[1] + eyeHeight, from[2]];
-  const dx = target[0] - origin[0];
-  const dy = target[1] + eyeHeight - origin[1];
-  const dz = target[2] - origin[2];
-  const length = Math.hypot(dx, dy, dz);
-  if (length < 0.001) return false;
-  const hit = ctx.scene.object.raycast({
-    origin,
-    direction: [dx / length, dy / length, dz / length],
-    // Stop short of the entity so its own collider never counts as its own occluder.
-    maxDistance: length - 0.5,
-  });
-  return hit !== null;
+/** Render camera matrices; world translation supplies the overlay's viewpoint. */
+export interface WorldOverlayCamera {
+  matrixWorld: { elements: ArrayLike<number> };
+  matrixWorldInverse: { elements: ArrayLike<number> };
+  projectionMatrix: unknown;
 }
 
-/**
- * Projects every non-local, role/distance-filtered entity carrying `statId` into `into` as a
- * `WorldBarSample`. Pure data step behind `WorldHealthBars` — call it directly to paint the bars
- * with your own renderer.
- * @internal
- */
+/** Sampling policy shared by health bars and nameplates. */
+export interface WorldOverlaySampleOptions {
+  /** Maximum sampled overlays and visibility rays per refresh. Default 64; unchecked entities stay hidden. */
+  maxSamples?: number;
+  /** Match a renderer's visibility or membership policy. */
+  isVisible?: (id: string) => boolean;
+  /** Authored display name; return null to omit the nameplate. */
+  resolveName?: (entity: SceneEntity) => string | null;
+}
+
+/** True when blocking scene geometry lies between the render camera and overlay anchor. @internal */
+export function worldBarOccluded(
+  ctx: GameContext,
+  from: EntityPosition,
+  target: EntityPosition,
+): boolean {
+  const dx = target[0] - from[0];
+  const dy = target[1] - from[1];
+  const dz = target[2] - from[2];
+  const length = Math.hypot(dx, dy, dz);
+  if (length < 0.001) return false;
+  return ctx.scene.raycast({
+    origin: from,
+    direction: [dx / length, dy / length, dz / length],
+    maxDistance: length - 0.001,
+    filter: { entities: false },
+    accept: (hit) => hit.blocks,
+  }) !== null;
+}
+
+function cameraOrigin(camera: WorldOverlayCamera): EntityPosition {
+  const matrix = camera.matrixWorld.elements;
+  return [matrix[12]!, matrix[13]!, matrix[14]!];
+}
+
+function projectAnchor(entity: SceneEntity, height: number, camera: WorldOverlayCamera, project: Projectable): EntityPosition | null {
+  const anchor: EntityPosition = [entity.position[0], entity.position[1] + height, entity.position[2]];
+  const inverse = camera.matrixWorldInverse.elements;
+  const cameraZ = inverse[2]! * anchor[0] + inverse[6]! * anchor[1] + inverse[10]! * anchor[2] + inverse[14]!;
+  if (!Number.isFinite(cameraZ) || cameraZ >= 0) return null;
+  project.set(...anchor).project(camera);
+  if (!Number.isFinite(project.x) || !Number.isFinite(project.y) || !Number.isFinite(project.z)) return null;
+  if (Math.abs(project.x) > 1 || Math.abs(project.y) > 1 || Math.abs(project.z) > 1) return null;
+  return anchor;
+}
+
+function healthFraction(stat: { min: number; max: number; current: number }): number {
+  const range = stat.max - stat.min;
+  return range <= 0 ? 0 : Math.max(0, Math.min(1, (stat.current - stat.min) / range));
+}
+
+function eligibleEntity(ctx: GameContext, id: string, options: WorldOverlaySampleOptions): SceneEntity | null {
+  if (id === ctx.player.userId || options.isVisible?.(id) === false) return null;
+  const entity = ctx.scene.entity.get(id);
+  if (entity === null || entity.hidden === true) return null;
+  const health = ctx.scene.entity.stats.get(id, "health");
+  if (health !== null && health.current <= health.min) return null;
+  return entity;
+}
+
+function sampleLimit(options: WorldOverlaySampleOptions): number {
+  return Math.max(0, Math.min(256, Math.floor(options.maxSamples ?? 64) || 0));
+}
+
+/** Project nearby live non-local entities carrying `statId`; occlusion defaults on. @internal */
 export function collectWorldBarSamples(
   ctx: GameContext,
   statId: string,
   height: number,
   roles: readonly CatalogEntityRole[] | undefined,
   resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined,
-  camera: { matrixWorldInverse: unknown; projectionMatrix: unknown },
+  camera: WorldOverlayCamera,
   viewport: { width: number; height: number },
   into: WorldBarSample[],
   project: Projectable,
   maxDistance = 60,
-  occlude = false,
+  occlude = true,
+  options: WorldOverlaySampleOptions = {},
 ): number {
   into.length = 0;
-  const playerId = ctx.player.userId;
-  const player = ctx.scene.entity.get(playerId);
-  for (const entity of ctx.scene.entity.list()) {
-    if (entity.id === playerId) continue;
-    if (!worldHealthBarAllowsRole(roles, resolveRole?.(entity))) continue;
-    if (
-      player !== null &&
-      Math.hypot(entity.position[0] - player.position[0], entity.position[2] - player.position[2]) >
-        maxDistance
-    ) {
-      continue;
-    }
-    if (occlude && player !== null && worldBarOccluded(ctx, player.position, entity.position, 1.5)) continue;
-    const stat = ctx.scene.entity.stats.get(entity.id, statId);
+  const origin = cameraOrigin(camera);
+  const limit = sampleLimit(options);
+  if (limit === 0 || !Number.isFinite(maxDistance) || maxDistance <= 0) return 0;
+  let checked = 0;
+  for (const id of ctx.scene.entity.inRadius(origin, maxDistance)) {
+    const entity = eligibleEntity(ctx, id, options);
+    if (entity === null || !worldHealthBarAllowsRole(roles, resolveRole?.(entity))) continue;
+    const stat = ctx.scene.entity.stats.get(id, statId);
     if (stat === null) continue;
-    const range = stat.max - stat.min;
-    const percent = range <= 0 ? 0 : Math.max(0, Math.min(1, (stat.current - stat.min) / range));
-    project.set(entity.position[0], entity.position[1] + height, entity.position[2]);
-    project.project(camera);
-    if (project.z < -1 || project.z > 1) continue;
-    const x = (project.x * 0.5 + 0.5) * viewport.width;
-    const y = (-project.y * 0.5 + 0.5) * viewport.height;
-    into.push({ x, y, percent });
+    const anchor = projectAnchor(entity, height, camera, project);
+    if (anchor === null) continue;
+    if (checked++ >= limit) break;
+    if (occlude && worldBarOccluded(ctx, origin, anchor)) continue;
+    into.push({
+      entityId: id,
+      x: (project.x * 0.5 + 0.5) * viewport.width,
+      y: (-project.y * 0.5 + 0.5) * viewport.height,
+      percent: healthFraction(stat),
+    });
   }
   return into.length;
 }
 
-/** One entity's projected nameplate: screen `x`/`y`, display `name`, health `percent` (or `null` when statless), and world `distance` from the player. */
+/** Reproject retained bar anchors without a nearby query or visibility ray. @internal */
+export function refreshWorldBarSamples(
+  ctx: GameContext,
+  height: number,
+  camera: WorldOverlayCamera,
+  viewport: { width: number; height: number },
+  samples: WorldBarSample[],
+  project: Projectable,
+  maxDistance = 60,
+  options: WorldOverlaySampleOptions = {},
+): void {
+  const origin = cameraOrigin(camera);
+  let kept = 0;
+  for (const sample of samples) {
+    if (sample.entityId === undefined) continue;
+    const entity = eligibleEntity(ctx, sample.entityId, options);
+    if (entity === null || Math.hypot(entity.position[0] - origin[0], entity.position[1] - origin[1], entity.position[2] - origin[2]) > maxDistance) continue;
+    if (projectAnchor(entity, height, camera, project) === null) continue;
+    sample.x = (project.x * 0.5 + 0.5) * viewport.width;
+    sample.y = (-project.y * 0.5 + 0.5) * viewport.height;
+    samples[kept++] = sample;
+  }
+  samples.length = kept;
+}
+
+/** Projected nameplate with optional health and distance from the render camera. */
 export interface NameplateSample {
   id: string;
   name: string;
   x: number;
   y: number;
-  /** Health-stat fraction 0..1, or `null` when the entity carries no `statId` stat (name-only nameplate). */
+  /** Health-stat fraction 0..1, or null for a statless entity. */
   percent: number | null;
   distance: number;
 }
 
-/**
- * Projects every non-local, role/distance-filtered entity into `into` as a
- * `NameplateSample`. Pure data step powering `WorldNameplates` — swap in your
- * own renderer by calling this directly instead of the component.
- * @internal
- */
+function defaultDisplayName(entity: SceneEntity): string | null {
+  const name = entity.name.trim();
+  // Entity names also key catalogs; machine identifiers need an explicit display-name resolver.
+  return name === entity.id || /^[a-z0-9_-]+$/.test(name) || /[_:/]/.test(name) ? null : name || null;
+}
+
+/** Project nearby live non-local nameplates; occlusion defaults on. @internal */
 export function collectNameplateSamples(
   ctx: GameContext,
   statId: string,
   height: number,
   roles: readonly CatalogEntityRole[] | undefined,
   resolveRole: ((entity: SceneEntity) => CatalogEntityRole | undefined) | undefined,
-  camera: { matrixWorldInverse: unknown; projectionMatrix: unknown },
+  camera: WorldOverlayCamera,
   viewport: { width: number; height: number },
   into: NameplateSample[],
   project: Projectable,
   maxDistance = 40,
-  occlude = false,
+  occlude = true,
+  options: WorldOverlaySampleOptions = {},
 ): number {
   into.length = 0;
-  const playerId = ctx.player.userId;
-  const player = ctx.scene.entity.get(playerId);
-  for (const entity of ctx.scene.entity.list()) {
-    if (entity.id === playerId) continue;
-    if (!worldHealthBarAllowsRole(roles, resolveRole?.(entity))) continue;
-    const distance =
-      player === null
-        ? 0
-        : Math.hypot(entity.position[0] - player.position[0], entity.position[2] - player.position[2]);
-    if (player !== null && distance > maxDistance) continue;
-    if (occlude && player !== null && worldBarOccluded(ctx, player.position, entity.position, 1.5)) continue;
-    const stat = ctx.scene.entity.stats.get(entity.id, statId);
-    let percent: number | null = null;
-    if (stat !== null) {
-      const range = stat.max - stat.min;
-      percent = range <= 0 ? 0 : Math.max(0, Math.min(1, (stat.current - stat.min) / range));
-    }
-    project.set(entity.position[0], entity.position[1] + height, entity.position[2]);
-    project.project(camera);
-    if (project.z < -1 || project.z > 1) continue;
-    const x = (project.x * 0.5 + 0.5) * viewport.width;
-    const y = (-project.y * 0.5 + 0.5) * viewport.height;
-    into.push({ id: entity.id, name: entity.name, x, y, percent, distance });
+  const origin = cameraOrigin(camera);
+  const limit = sampleLimit(options);
+  if (limit === 0 || !Number.isFinite(maxDistance) || maxDistance <= 0) return 0;
+  let checked = 0;
+  for (const id of ctx.scene.entity.inRadius(origin, maxDistance)) {
+    const entity = eligibleEntity(ctx, id, options);
+    if (entity === null || !worldHealthBarAllowsRole(roles, resolveRole?.(entity))) continue;
+    const name = (options.resolveName ?? defaultDisplayName)(entity)?.trim();
+    if (!name) continue;
+    const anchor = projectAnchor(entity, height, camera, project);
+    if (anchor === null) continue;
+    if (checked++ >= limit) break;
+    if (occlude && worldBarOccluded(ctx, origin, anchor)) continue;
+    const stat = ctx.scene.entity.stats.get(id, statId);
+    into.push({
+      id,
+      name,
+      x: (project.x * 0.5 + 0.5) * viewport.width,
+      y: (-project.y * 0.5 + 0.5) * viewport.height,
+      percent: stat === null ? null : healthFraction(stat),
+      distance: Math.hypot(entity.position[0] - origin[0], entity.position[1] - origin[1], entity.position[2] - origin[2]),
+    });
   }
   return into.length;
 }

@@ -12,6 +12,7 @@ import {
   StaminaBar,
   type BarTokens,
 } from "./bars";
+import { hudTheme, hudThemeVars } from "./hudTheme";
 
 /**
  * A deterministic preview of every atomic vitals bar plus a composed example — the fixture behind
@@ -72,7 +73,31 @@ function AtomicMatrix({ label, tokens }: { label: string; tokens?: BarTokens }) 
   );
 }
 
-/** Renders the atomic bar matrix twice under different token blocks to prove global re-theming. */
+function ThemeFills() {
+  const themed = hudTheme({ palette: { health: "#7fb06d", healthLow: "#d89b38" } });
+  const skinned = hudTheme({ skin: { bar: { fill: "linear-gradient(90deg, #136fbc, #68c9ee)", track: "none" } } });
+  const nestedSkin = hudTheme({ skin: { bar: { fill: "#a855f7", track: "none" } } });
+  return (
+    <div style={{ ...PANEL, ...hudThemeVars(themed) }}>
+      <span>Theme fill precedence</span>
+      <HealthBar value={270} max={270} fill="#7fb06d" label="Explicit" />
+      <HealthBar value={80} max={100} label="Palette" />
+      <HealthBar value={15} max={100} label="Low palette" />
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, ...hudThemeVars(skinned) }}>
+        <HealthBar value={80} max={100} label="Skin" />
+        <HealthBar value={80} max={100} fill="#7fb06d" label="Explicit over skin" />
+        <div style={hudThemeVars(themed)}>
+          <HealthBar value={80} max={100} label="Nested reset" />
+        </div>
+        <div style={hudThemeVars(nestedSkin)}>
+          <HealthBar value={80} max={100} label="Nested skin" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Renders atomic bars under token blocks and nested themes to prove fill and skin precedence. */
 export function BarsPreview({ className }: { className?: string }) {
   return (
     <div
@@ -97,6 +122,7 @@ export function BarsPreview({ className }: { className?: string }) {
           height: "20px",
         }}
       />
+      <ThemeFills />
     </div>
   );
 }

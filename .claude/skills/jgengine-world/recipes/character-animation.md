@@ -5,7 +5,7 @@
 ## The seams
 
 - **Clips on a model.** `ModelConfig.animation` on an entity kind. A catalog model with indexed `clips` animates automatically through semantic clip roles; `"none"` holds the bind pose. `{ clip, paused, time }` holds one pose.
-- **Placement.** `targetHeight` normalizes bind bounds and grounds them at `ModelConfig.y`, then `scale` multiplies that height. Imported root transforms stay inside a separate placement frame shared by render bounds and collision triangles; clips keep binding to the imported root.
+- **Placement.** `targetHeight` normalizes skin-applied imported bind bounds and grounds them at `ModelConfig.y`, then `scale` multiplies that height. The renderer caches skin-applied vertices before animation and shares them between clones, so skin deformation cannot change normalization or fitted collision triangles. Imported root transforms stay inside a separate placement frame shared by render bounds and collision triangles; clips keep binding to the imported root.
 - **Graph.** `animation.graph` is an `AnimGraph` (`@jgengine/core/anim/animGraph`): layers, each a state machine of `clip`, `blend1D` and `blend2D` states joined by transitions with `when` conditions, `trigger`s, crossfade `duration` and `exitTime`. It is plain data, so it saves, diffs and can be authored in the editor.
   - `locomotionGraph({ idle, walk, run, walkSpeed, runSpeed, fadeSec, oneShots })` builds the idle/walk/run blend plus one-shots; `states`/`oneShots` configs are converted through it.
   - Upper-body actions (aim, reload, wave) go on a second layer with `mask: ["spine", "arm", ...]` bone prefixes, `additive` for recoil or breathing on top of the base.

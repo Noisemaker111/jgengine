@@ -5,6 +5,7 @@ import type { PaintStroke } from "@jgengine/core/scene/paintLayer";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 
 import { measureLocalBounds } from "./measureBounds";
+import { copyModelBindPose } from "./modelBindPose";
 
 export const PAINT_TEXTURE_SIZE = 512;
 
@@ -43,6 +44,7 @@ export function cloneModelScene(
   options?: { cloneMaterials?: boolean; shadows?: ModelShadowMode },
 ): THREE.Object3D {
   const clone = cloneSkinned(source) as THREE.Object3D;
+  copyModelBindPose(source, clone);
   const shadows = options?.shadows ?? "both";
   const cloneMaterials = options?.cloneMaterials !== false;
   const materials = new Map<THREE.Material, THREE.Material>();

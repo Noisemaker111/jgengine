@@ -109,7 +109,7 @@ export type BarShape = "rect" | "pill" | "skew" | "chamfer";
 export interface AtomicBarProps {
   /** Trough shape language. Default `rect`. */
   shape?: BarShape;
-  /** Explicit fill color, overriding the token (and the low-threshold swap) — for per-instance
+  /** Explicit fill color, overriding the skin, token, and low-threshold swap — for per-instance
    * colors a token can't express (e.g. a class-colored resource bar). Caller overrides win. */
   fill?: string;
   /** Explicit current value; when set the bar is pure and needs no game provider. */
@@ -215,7 +215,7 @@ function BarView({
           position: "absolute",
           inset: 0,
           width: `${fraction * 100}%`,
-          background: "var(--jg-bar-skin-fill, " + fill + ")",
+          background: fillOverride ?? `var(--jg-bar-skin-fill, ${fill})`,
           transition: "width 160ms ease",
         }}
       />

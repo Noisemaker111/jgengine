@@ -860,6 +860,7 @@
     "./render/measureBounds",
     "./render/measureCollisionMesh",
     "./render/modelAssets",
+    "./render/modelBindPose",
     "./render/modelLoad",
     "./render/modelRender",
     "./render/resolveModel",
