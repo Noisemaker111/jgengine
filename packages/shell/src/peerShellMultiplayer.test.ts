@@ -4,7 +4,7 @@ import { createGameContext, type GameContext } from "@jgengine/core/runtime/game
 import type { HostedWorldRecord } from "@jgengine/core/runtime/hostedWorldStore";
 import { createWsBackend } from "@jgengine/ws/createWsBackend";
 import { loopbackPipe, type HostRouter } from "@jgengine/ws/hostRouter";
-import { createPeerHost, type PeerSignaling } from "@jgengine/ws/peer";
+import { broadcastChannelSignaling, createPeerHost, encodePeerSignal, type PeerSignaling } from "@jgengine/ws/peer";
 import { defineGame } from "./defineGame";
 import { resolvePeerShellMultiplayer, type PeerShellFactories } from "./multiplayer";
 import { attachWorldSync } from "./worldSync";
@@ -68,6 +68,52 @@ async function until(check: () => boolean): Promise<void> {
 }
 
 describe("playable peer worlds through injected pipes", () => {
+  test("closing native signaling during bootstrap rejects and disposes its guest transport", async () => {
+    const native = broadcastChannelSignaling(`peer-bootstrap-close-${crypto.randomUUID()}`);
+    let begin!: () => void;
+    const began = new Promise<void>(resolve => { begin = resolve; });
+    const signaling: PeerSignaling = {
+      ...native, publishOffer(offer) { const pending = native.publishOffer(offer); begin(); return pending; },
+    };
+    let guestClosed = 0;
+    let pipeClosed = 0;
+    let request: Promise<unknown> | undefined;
+    let dispose = () => {};
+    const peers: PeerShellFactories = {
+      host() { throw new Error("unused host factory"); },
+      guest({ userId }) {
+        const backend = createWsBackend({ userId, pipe: handlers => {
+          queueMicrotask(handlers.onOpen);
+          return { send() {}, close() { pipeClosed++; handlers.onClose(); } };
+        } });
+        request = backend.browse({ gameId: "paired" }).catch(error => error);
+        dispose = () => { guestClosed++; backend.close(); };
+        return { backend, offer: async () => encodePeerSignal({ type: "offer", sdp: "fixture-offer" }),
+          connect: async () => {}, close: () => dispose() };
+      },
+    };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const opening = resolvePeerShellMultiplayer({ gameId: "paired", role: "join", signaling, peers });
+      await began;
+      const completed = Promise.race([opening, new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Native channel response timed out")), 1000);
+      })]);
+      const rejected = completed.catch(error => error);
+      native.close();
+      const error = await rejected;
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toBe("Peer signaling is closed");
+      expect(guestClosed).toBe(1);
+      expect(pipeClosed).toBe(1);
+      expect(await request).toEqual(new Error("Backend closed"));
+    } finally {
+      clearTimeout(timer);
+      native.close();
+      if (guestClosed === 0) dispose();
+    }
+  });
+
   test("a final save failure rejects the shared close promise after canceling owned resources", async () => {
     const transport = transportFixture();
     let failing = false;
