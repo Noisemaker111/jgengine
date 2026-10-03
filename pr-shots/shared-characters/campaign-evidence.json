@@ -1,0 +1,76 @@
+{
+  "scope": "shared character movement, animation, rig safety and authoring; no release or shipped game adoption",
+  "source": {
+    "commit": "c2aa2e4b322e2061b0b7f1e3783e4c1e7f28a9a5",
+    "tree": "bbd290e4384184a1d3d45da4898c6c6c913ecef5",
+    "base": "640ec48bc796e092627bf4aae7dba6c31b9af980",
+    "baseTree": "8485f40f54749973acdfa3e62da132f3dcea6e13",
+    "remoteCommit": "e194cfa4e7972ee951ba7d89477753ffd1e29831",
+    "remoteTreeEqualsLocalTree": true,
+    "deliveryMethod": "normal standalone git pushes returned HTTP401; connected Git Data API blob hashes and tree identity verified"
+  },
+  "publicPackages": {
+    "manifest": "final-package-manifest.json",
+    "status": "all13 exact built tarballs installed into isolated real game fixtures; public exports only"
+  },
+  "checks": {
+    "finalSource": "c2aa2e4b",
+    "owningTypes": "core,shell,editor,rapier all exit0",
+    "generatedGates": "artifacts,exports,skills,capabilities,skill-api all exit0",
+    "generation": "5 stages PASS; review-gen.log",
+    "preflight": "PASS; review-preflight.log",
+    "tarballExports": {
+      "tests": 34,
+      "assertions": 99,
+      "failures": 0,
+      "log": "review-package-tests.log"
+    },
+    "focusedIntegrated": {
+      "tests": 52,
+      "assertions": 230,
+      "failures": 0,
+      "evidence": "authoring worker actual tool transcript, finalchunk0904d8; no filesystem logs claimed"
+    },
+    "wholeOwningSuitesBeforeFinalUpstreamRebases": {
+      "source": "d5943ce4",
+      "core": {
+        "tests": 6461,
+        "failures": 0,
+        "log": "delivery-core-suite.log"
+      },
+      "shellEditorRapier": {
+        "tests": 1126,
+        "skipped": 1,
+        "failures": 0,
+        "log": "delivery-shell-editor-suite.log"
+      }
+    },
+    "finalCI": "pending PR"
+  },
+  "proofs": {
+    "actualConsumers": "consumer-evidence.json",
+    "preparedConsumerMigration": "prepared-migrations.patch",
+    "preparedMigrationHashes": "prepared-migration-hashes.json",
+    "native": "final-native-evidence.json",
+    "importedRootFadeBefore": "root-fade-before.json",
+    "importedRootFadeAfter": "root-fade-after.json",
+    "importedPreviewTransform": "editor-preview-built-proof.json",
+    "numericalHeadroom": "standing-touch-evidence.json",
+    "scaledTimestep": "authoritative-capsule-evidence.json",
+    "rapierSlope": "rapier-surface-measurement.json"
+  },
+  "remaining": {
+    "cameraAim": "camera patch withheld pending combat-owned eye/muzzle convergence; issue1896#5974073290, PR1921",
+    "rigAttachments": "authored handslot.r sanitized to handslotr; alias resolver prototype unwired pending SceneModels owner; issue1896#5973998802",
+    "standaloneCharacterLoop": "Save/reopen proven but viewport character and imported clip metadata absent; existing creator host seams handed off issue1896#5974318691 and correction5974319609",
+    "Lantern": "dawn schema blocks complete normal authoring; four existing dispatch-Promise type errors remain; two native capture failures reached retry cap",
+    "DeepwardNative": "two candidate readiness failures reached retry cap; package tests/build pass",
+    "rootDelta": "outgoing/transition-weighted travel extraction unsupported; in-place rig guarantee is separate"
+  },
+  "limits": [
+    "No hardwareFPS or convincing animation/control-feel acceptance",
+    "No universal retargeting or IK support claimed",
+    "Old native cohorts retain exact original attribution",
+    "Root dependency catalogs and lockfiles unchanged"
+  ]
+}

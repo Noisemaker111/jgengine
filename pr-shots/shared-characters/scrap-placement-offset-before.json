@@ -1,0 +1,32 @@
+{
+  "label": "actual Scrap normal loops + public synchronized prop command/save/reload, numerical package proof",
+  "cohort": "c2aa2e4b322e2061b0b7f1e3783e4c1e7f28a9a5",
+  "marker": "crash_bus",
+  "before": {
+    "instanceId": "crash_bus",
+    "catalogId": "bus_wreck",
+    "position": [
+      -510,
+      34.77783504754558,
+      606
+    ],
+    "rotationY": 0
+  },
+  "edited": {
+    "instanceId": "crash_bus",
+    "catalogId": "bus_wreck",
+    "position": [
+      -509,
+      34.27783504754558,
+      608
+    ],
+    "rotationY": 0.2
+  },
+  "originalGameLift": 0.5,
+  "autoSceneLift": 0,
+  "offsetErrorMeters": -0.5,
+  "savedReloadExact": true,
+  "initialSyncPreservesOnInit": true,
+  "gameConfigSha256": "8b6f4a3cbf5a058b90c08a02f126ffd62822dfd018f3b8d338e1ee82f9bd249c",
+  "source": "prepared adapter before scenePlacement alignment; genuine earlier public sync run before fix"
+}

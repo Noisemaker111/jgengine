@@ -1,0 +1,81 @@
+{
+  "gamesSource": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "label": "prepared migration only, unreleased candidate package required; no catalogs or lock adoption",
+  "files": {
+    "lantern-reach/src/loop.ts": {
+      "sourceFixture": "candidate",
+      "before": "fdee5a592c54e76877ae2a6f3e15d76ddbdb94e562cf288ec66e15d067340172",
+      "after": "841f032265f85b9aa39922636bcf51be7bdc828e01dc54e07691686add8effea"
+    },
+    "scrap-signal/src/loop.ts": {
+      "sourceFixture": "candidate",
+      "before": "0f8f9c43a8023ddf1bd05c578491871467c4057cda2fc80ad3a46bb200dc44d8",
+      "after": "88bea9d7e67052cda98dd158634fea0971df12e548657c5bf1393a8533593faf"
+    },
+    "lantern-reach/src/game.config.ts": {
+      "sourceFixture": "candidate",
+      "before": "79621a34548109bff001dbdd255447c7921f3bcd2e83bd354eb8a902688e7854",
+      "after": "95030e2a914ef91da620b58dac858bedb551ce59bf76c5548999d5659e1a0eab"
+    },
+    "lantern-reach/src/editor.scene.json": {
+      "sourceFixture": "candidate",
+      "before": "6d0042c2b9da28da05cd209048fb5d513b7033a58465cc34f09e6746129f80c7",
+      "after": "c9ab5ff285014a8ba0efc5490cea762140b1ec3e8ff2e787ef5064e59e4bae85"
+    },
+    "lantern-reach/src/game/systems.ts": {
+      "sourceFixture": "candidate",
+      "before": "d87c3f55fb0628d2942b55ee3bc4fe5fa4fe689d638b26b80cd30beb0d397883",
+      "after": "4fbd4eaba109a58ff42ea54527d7efeedc66009b802519b22facde960ceaecd6"
+    },
+    "lantern-reach/src/game/characterMotion.ts": {
+      "sourceFixture": "candidate",
+      "before": null,
+      "after": "6bf496fa58911465015bf5782e62257441eaaf956011f1e110a418ea23c960fd"
+    },
+    "lantern-reach/src/game/models.ts": {
+      "sourceFixture": "candidate",
+      "before": "11590e674ed0ec2a793fe07bc5e2ca3ac2bd3e3320e0a65ab8c1339a24802a1a",
+      "after": "5d5e42c5367ecd639c0e77662257648df840d08ab44355317a17f60382565963"
+    },
+    "lantern-reach/src/game/assets.ts": {
+      "sourceFixture": "candidate",
+      "before": "612dae88e11d679d02142e1d0f8922148fb5d9c10275d59764d6ed74862d275f",
+      "after": "6ed9382de27c228e7051bf5a073dee0d3e7f5f877341da9ab35fc50cb06a0dc5"
+    },
+    "lantern-reach/src/game/knight-clips.json": {
+      "sourceFixture": "candidate",
+      "before": null,
+      "after": "13ef641acc8d9c9ca6644c97773fd128d26c2f995b37ef4c35ad622212196e6a"
+    },
+    "scrap-signal/src/game.config.ts": {
+      "sourceFixture": "candidate",
+      "before": "d28f5d2e28630c562b04513466c44775bddfe08763c6d046178d9501e3fec40e",
+      "after": "9c5b6ea35c3f2fdb97a8fbf8bcbc4633fa58beb8108fd875d9a57cf79a5909f3"
+    },
+    "scrap-signal/src/editor.scene.json": {
+      "sourceFixture": "candidate",
+      "before": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+      "after": "7a0d5dece0cd461f62bd7c68870d09163fc225476f84950554dc46e1f026055f"
+    },
+    "scrap-signal/src/game/characterMotion.ts": {
+      "sourceFixture": "candidate",
+      "before": null,
+      "after": "33d61b22aabc960d815cda3682e386ac2ef13ae6c23f0d4b2036381cf0099ce6"
+    },
+    "scrap-signal/src/index.css": {
+      "sourceFixture": "candidate",
+      "before": "9a745cb250c270b689b06e763ba2d74ba5e67f728cbd2267d982917531c1bb47",
+      "after": "df94b843e057d3554b65f59b309ac75463a4f4e5251e12448f3ef4b26f310d73"
+    },
+    "deepward/src/game.tsx": {
+      "sourceFixture": "deepward-authoring",
+      "before": "bc9ae98246979e43176bc680ef0706096953670d6b5aa5d7d898ca6bdeb3b5b1",
+      "after": "dd9a0e6b7bc40b20fc37d8ab5ce24d500e075d8bcfe0796d7089725bcba711f8"
+    },
+    "deepward/src/editor.scene.json": {
+      "sourceFixture": "deepward-authoring",
+      "before": "46c03af5f3ba84cbaf9484191ae6b42659fa2b6891571f4f88c796deb3ff921d",
+      "after": "4b94d8984ca64322cd7b2f81df1d75932facd3a92b5137ee6aedfc8c034a0b7f"
+    }
+  }
+}

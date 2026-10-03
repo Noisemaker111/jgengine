@@ -1,0 +1,213 @@
+{
+  "status": "validated exact unreleased package cohort; no publication or shipped adoption",
+  "gamesSource": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "gameRepositoryMutated": false,
+  "cohort": {
+    "commit": "c2aa2e4b322e2061b0b7f1e3783e4c1e7f28a9a5",
+    "tree": "bbd290e4384184a1d3d45da4898c6c6c913ecef5",
+    "manifest": "candidate/candidate-package-manifest.json",
+    "manifestSha256": "737e4e9e75620f6986676d9b813443acbeb5452f91c4dc5bff3967cdd451d0b1",
+    "tarballsVerified": 13,
+    "publishedAdoption": false,
+    "remoteSourceCommit": "e194cfa4",
+    "remoteTreeIdenticalToTestedTree": true
+  },
+  "movement": [
+    {
+      "game": "Lantern Reach",
+      "identityPreserved": true,
+      "crouchRatioBefore": 1,
+      "crouchRatioAfter": 1,
+      "sprintRatio": 2.2500000000001816,
+      "unsupportedCrouchPreservesJump": true,
+      "savedAirbornePoseExact": true
+    },
+    {
+      "game": "Scrap Signal",
+      "identityPreserved": true,
+      "crouchRatioBefore": 1,
+      "crouchRatioAfter": 0.45000000000004386,
+      "sprintRatio": 2.2499999999999267,
+      "unsupportedCrouchPreservesJump": null,
+      "savedAirbornePoseExact": true
+    },
+    {
+      "game": "Deepward",
+      "identityPreserved": true,
+      "crouchRatioBefore": 1,
+      "crouchRatioAfter": 1,
+      "sprintRatio": 2.2499999999999956,
+      "unsupportedCrouchPreservesJump": true,
+      "savedAirbornePoseExact": true
+    }
+  ],
+  "grade": {
+    "cases": 11532,
+    "blocked": 190,
+    "slides": 188,
+    "rawPolicySamplerRetained": true,
+    "originalFloatMeters": 0.08595235483110564,
+    "fixedFloatMeters": 0.0,
+    "XZPolicyExact": true,
+    "airbornePolicyPreserved": true,
+    "proof": "grade-public-proof.json"
+  },
+  "actualRig": {
+    "url": "/models/lantern-reach/players/knight.glb",
+    "sha256": "ce0d0a5ec1d67594629ecac20a7576fde22a44456e7628e8eb100891bc6dda97",
+    "clips": 22,
+    "physicalStates": [
+      "locomotion",
+      "airborne",
+      "locomotion"
+    ],
+    "missingStartLandDiagnosed": true,
+    "otherClassesAndNPCsPreserved": true,
+    "native76ClipKnightIsDistinctAsset": true,
+    "proof": "candidate/final-c2aa-knight-physical-public.json"
+  },
+  "authoring": {
+    "controlSaveReloadGames": [
+      "Scrap Signal",
+      "Deepward"
+    ],
+    "placement": [
+      {
+        "game": "Lantern Reach",
+        "before": [
+          0,
+          7.244763548770163,
+          -275
+        ],
+        "after": [
+          3,
+          7.244763548770163,
+          -273
+        ],
+        "afterYaw": 0.3,
+        "savedReloadExact": null,
+        "fullValidatedSave": false,
+        "headingSnapshotExact": true
+      },
+      {
+        "game": "Scrap Signal",
+        "before": [
+          -502,
+          34.27783504754558,
+          594
+        ],
+        "after": [
+          -499,
+          34.27783504754558,
+          596
+        ],
+        "afterYaw": 3.0589680735783435,
+        "savedReloadExact": true,
+        "fullValidatedSave": true,
+        "headingSnapshotExact": true
+      }
+    ],
+    "normalSpawnLoopsInvoked": true,
+    "existingGroundYPolicyRetained": true,
+    "LanternHostClientExact": true,
+    "proofs": [
+      "candidate/final-c2aa-authoring-scrap.json",
+      "deepward-authoring/final-c2aa-authoring-public.json",
+      "placement-public.json",
+      "candidate/final-c2aa-lantern-lower-rung.json"
+    ]
+  },
+  "latestAuthoringRegression": {
+    "explicitEmptyRolesBeforeDropped": true,
+    "latestSavedEmptyRolesRetained": true,
+    "actualNativeVariantPlaybackScalarsRetained": true,
+    "proof": "candidate/final-c2aa-native-config-rate-public.json"
+  },
+  "packageBoundary": {
+    "allCheckedExportsResolvePublicDist": true,
+    "withheldCameraHelperAbsent": true,
+    "proof": "candidate/final-c2aa-package-boundary.json"
+  },
+  "livePlacementOffset": {
+    "game": "Scrap Signal",
+    "originalGameLiftMeters": 0.5,
+    "beforeEditedOffsetErrorMeters": -0.5,
+    "afterEditedOffsetErrorMeters": 0,
+    "savedReloadExact": true,
+    "actualComposedPlacement": {
+      "verticalOffset": 0.5
+    },
+    "proofs": [
+      "candidate/final-c2aa-placement-offset-before.json",
+      "candidate/final-c2aa-placement-offset-after.json"
+    ],
+    "scope": "prepared existing scenePlacement option preserves actual onInit lift under new public live static-prop synchronization"
+  },
+  "native": {
+    "glyphPixelCohort": "0507ce47",
+    "saveFreshBrowserReopenCohort": "7eb6eec2",
+    "standaloneSavedBytes": 674,
+    "proof": "../native/final-native-evidence.json",
+    "limits": "Actual game plain Vite Save still unavailable; standard CLI host Save proved. Standalone viewport rig mesh/clipmetadata missing owned creator-host issue."
+  },
+  "checks": {
+    "preparedIntegrationTests": {
+      "pass": 7,
+      "fail": 0,
+      "log": "candidate/final-c2aa-prepared-migration-tests.log"
+    },
+    "actualFocusedGameTests": {
+      "pass": 14,
+      "fail": 0,
+      "log": "candidate/final-c2aa-consumer-tests.log"
+    },
+    "typechecks": {
+      "Scrap": "PASS",
+      "Deepward": "PASS",
+      "DeepwardPreparedAuthoring": "PASS",
+      "Lantern": "BLOCKED: 4 preexisting dispatch-Promise union errors, same unmodified consumer"
+    },
+    "productionBuilds": {
+      "Lantern": "PASS",
+      "Scrap": "PASS",
+      "Deepward": "PASS"
+    }
+  },
+  "preparedMigration": {
+    "patch": "prepared-migrations.patch",
+    "hashes": "prepared-migration-hashes.json",
+    "files": 15,
+    "cleanApplyCheck": true,
+    "originalDependencyCatalogAndLockUntouched": true,
+    "patchSha256": "7b1c7a1f5f76d56ec6e1ace2c7ddc43e875b056363b3c2915855f161b3f12105",
+    "hashesSha256": "0519f3aee4e9a37167425a4564ef4ac8d2151c9b15194f9e4337c8526ff59c7c"
+  },
+  "blockers": [
+    {
+      "owner": "Lantern environment/appearance author",
+      "failure": "Original environment.preset dawn invalid under supported day/dusk/night document schema; full normal command/save loop blocked.",
+      "next": "Author a supported environment preserving intended Dawn appearance; then rerun normal live setMarker/catalog commands + save/reload."
+    },
+    {
+      "owner": "Lantern command UI/creator workflow",
+      "failure": "ActionBar.tsx57 and Dialogue.tsx68 assume synchronous command results; new public dispatch type includes Promise. Four errors also present in unmodified consumer.",
+      "next": "Await/narrow DispatchedCommandResult in those two owned components, then rerun actual consumer typecheck."
+    },
+    {
+      "owner": "combat PR1921",
+      "failure": "Proposed crouch camera .972m disagreed with authoritative shot eye1.62m by .648m. Camera implementation withheld; final camera behavior unchanged.",
+      "next": "Align camera accepted stance and authoritative eye/muzzle origins through existing combat integration before enabling saved camera patch."
+    },
+    {
+      "owner": "native whole-game proof",
+      "failure": "Lantern full capture and Deepward readiness each reached existing two-attempt cap; no more retries authorized by capture instructions.",
+      "next": "Resolve exact native readiness/texture resource failures in the owning lane; keep lower-rung proofs labeled."
+    }
+  ],
+  "limits": [
+    "No hardware FPS measurement.",
+    "No universal retargeting or IK claim.",
+    "22-clip Lantern has no distinct start/land animation content.",
+    "0507 native glyph pixel evidence stays attributed to 0507 even when character compiled artifacts remain identical."
+  ]
+}

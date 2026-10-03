@@ -1,0 +1,142 @@
+{
+  "label": "validated unreleased tarball cohort public API, actual unchanged Scrap callback+raw grade sampler",
+  "cohort": "c2aa2e4b322e2061b0b7f1e3783e4c1e7f28a9a5",
+  "cases": 11532,
+  "blocked": 190,
+  "slides": 188,
+  "gradeLimit": 0.85,
+  "old": {
+    "position": [
+      -742,
+      11.965935674949709,
+      254
+    ],
+    "ground": 11.879983320118603,
+    "state": {
+      "heading": 0,
+      "facing": 0,
+      "voxelBody": null,
+      "motion": {
+        "horizontalVelocityX": 0,
+        "horizontalVelocityZ": 6,
+        "verticalVelocity": 0,
+        "jumpOffset": 0,
+        "grounded": true,
+        "jumpHeld": false,
+        "clockMs": 33.333333333333336,
+        "groundedAtMs": 33.333333333333336,
+        "landedAtMs": null,
+        "jumpRising": false,
+        "wasAirborne": false
+      },
+      "flight": null,
+      "controller": null,
+      "controllerJumpHeld": false,
+      "jumpBuffer": {
+        "windowMs": 0,
+        "actions": {}
+      }
+    }
+  },
+  "fixed": {
+    "position": [
+      -742,
+      11.879983320118603,
+      254
+    ],
+    "ground": 11.879983320118603,
+    "state": {
+      "heading": 0,
+      "facing": 0,
+      "voxelBody": null,
+      "motion": {
+        "horizontalVelocityX": 0,
+        "horizontalVelocityZ": 6,
+        "verticalVelocity": 0,
+        "jumpOffset": 0,
+        "grounded": true,
+        "jumpHeld": false,
+        "clockMs": 33.333333333333336,
+        "groundedAtMs": 33.333333333333336,
+        "landedAtMs": null,
+        "jumpRising": false,
+        "wasAirborne": false
+      },
+      "flight": null,
+      "controller": null,
+      "controllerJumpHeld": false,
+      "jumpBuffer": {
+        "windowMs": 0,
+        "actions": {}
+      }
+    }
+  },
+  "airborneOld": {
+    "position": [
+      -742,
+      13.888316653451936,
+      254
+    ],
+    "ground": 11.879983320118603,
+    "state": {
+      "heading": 0,
+      "facing": 0,
+      "voxelBody": null,
+      "motion": {
+        "horizontalVelocityX": 0,
+        "horizontalVelocityZ": 6,
+        "verticalVelocity": 0.5,
+        "jumpOffset": 1.9223809785022272,
+        "grounded": false,
+        "jumpHeld": false,
+        "clockMs": 33.333333333333336,
+        "groundedAtMs": 16.666666666666668,
+        "landedAtMs": null,
+        "jumpRising": false,
+        "wasAirborne": true
+      },
+      "flight": null,
+      "controller": null,
+      "controllerJumpHeld": false,
+      "jumpBuffer": {
+        "windowMs": 0,
+        "actions": {}
+      }
+    }
+  },
+  "airborneFixed": {
+    "position": [
+      -742,
+      13.888316653451936,
+      254
+    ],
+    "ground": 11.879983320118603,
+    "state": {
+      "heading": 0,
+      "facing": 0,
+      "voxelBody": null,
+      "motion": {
+        "horizontalVelocityX": 0,
+        "horizontalVelocityZ": 6,
+        "verticalVelocity": 0.5,
+        "jumpOffset": 2.008333333333333,
+        "grounded": false,
+        "jumpHeld": false,
+        "clockMs": 33.333333333333336,
+        "groundedAtMs": 16.666666666666668,
+        "landedAtMs": null,
+        "jumpRising": false,
+        "wasAirborne": true
+      },
+      "flight": null,
+      "controller": null,
+      "controllerJumpHeld": false,
+      "jumpBuffer": {
+        "windowMs": 0,
+        "actions": {}
+      }
+    }
+  },
+  "rawGradeSamplerPreserved": true,
+  "feetUseResolvedEngineGround": true
+}

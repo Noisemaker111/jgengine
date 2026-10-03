@@ -1,0 +1,635 @@
+--- a/lantern-reach/src/loop.ts
++++ b/lantern-reach/src/loop.ts
+@@ -1,3 +1,5 @@
++import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
++import { readCharacterDocument } from "./game/characterMotion";
+ import type { GameLoop } from "@jgengine/core/game/defineGame";
+ import { setGamePhase } from "@jgengine/core/game/gamePhase";
+ import type { GameContext } from "@jgengine/core/runtime/gameContext";
+@@ -101,10 +103,13 @@
+   },
+   onNewPlayer(ctx, player) {
+     const userId = player?.userId ?? ctx.player.userId;
+-    const [x, z] = PLAYER_SPAWN;
++    const document = readCharacterDocument();
++    const spawn = authoredSpawnPosition(document);
++    const [x, z] = spawn === null ? PLAYER_SPAWN : [spawn[0], spawn[2]];
+     ctx.scene.entity.spawn(CLASS_ENTITY_ID, {
+       id: userId,
+       position: [x, ctx.world.groundHeightAt(x, z), z],
++      rotationY: authoredSpawnRotation(document),
+     });
+   },
+ };
+--- a/scrap-signal/src/loop.ts
++++ b/scrap-signal/src/loop.ts
+@@ -1,3 +1,5 @@
++import { authoredSpawnPosition, authoredSpawnRotation } from "@jgengine/core/world/authoredSpawn";
++import { readCharacterDocument } from "./game/characterMotion";
+ import { loadSavedProgress } from "./game/saveCompatibility";
+ import type { EntityDiedEvent } from "@jgengine/core/game/events";
+ import { seededRng } from "@jgengine/core/random/rng";
+@@ -241,11 +243,14 @@
+ function onNewPlayer(ctx: GameContext): void {
+   setGamePhase(ctx, "menu");
+   ctx.time.pause();
+-  const y = ctx.world.groundHeightAt(PLAYER_SPAWN[0], PLAYER_SPAWN[2]);
++  const document = readCharacterDocument();
++  const authoredSpawn = authoredSpawnPosition(document);
++  const spawn = authoredSpawn ?? PLAYER_SPAWN;
++  const y = ctx.world.groundHeightAt(spawn[0], spawn[2]);
+   ctx.scene.entity.spawn(player.id, {
+     id: ctx.player.userId,
+-    position: [PLAYER_SPAWN[0], y, PLAYER_SPAWN[2]],
+-    rotationY: PLAYER_SPAWN_YAW,
++    position: [spawn[0], y, spawn[2]],
++    rotationY: authoredSpawn === null ? PLAYER_SPAWN_YAW : authoredSpawnRotation(document),
+     role: "player",
+   });
+   if (ctx.player.isNew) ctx.player.applyLoadout(ctx.player.userId, "starterKit");
+--- a/lantern-reach/src/game.config.ts
++++ b/lantern-reach/src/game.config.ts
+@@ -1,3 +1,4 @@
++import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects";
+ import { ws } from "@jgengine/core/runtime/adapter";
+ import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
+ import type { GameContext } from "@jgengine/core/runtime/gameContext";
+@@ -9,7 +10,7 @@
+ import { audio } from "./game/audio/catalog";
+ import { entityModels } from "./game/models";
+ import { objectModels } from "./game/scenery";
+-import { content } from "./game/content";
++import { characterContent as content, characterControls, characterMotionCatalog } from "./game/characterMotion";
+ import { inventories } from "./game/inventories";
+ import { keybinds } from "./game/keybinds";
+ import { craftingPrompts, FISHING_SPOT, FORGE } from "./game/crafting/systems";
+@@ -73,9 +74,11 @@
+   multiplayer: ws({ authority: "server" }),
+   assets,
+   editorLayers,
+-  scenePlacement: true,
++  editorCatalogs: [characterMotionCatalog],
++  scenePlacement: { excludeKinds: [...ENTITY_MARKER_KINDS, "player_spawn"] },
+   world,
+-  physics,
++  physics: characterControls.physics,
++  movement: characterControls.movement,
+   inventories,
+   input: keybinds,
+   hudFit: { designSize: { width: 1280, height: 720 }, minScale: 1, maxScale: 1, mobile: { designSize: { width: 390, height: 844 }, minScale: 1, maxScale: 1 } },
+--- a/lantern-reach/src/editor.scene.json
++++ b/lantern-reach/src/editor.scene.json
+@@ -11,8 +11,74 @@
+       },
+       "label": "Player spawn",
+       "meta": {
+-        "clearance": 0
+-      }
++        "clearance": 0,
++        "animation": {
++          "graph": {
++            "layers": [
++              {
++                "id": "base",
++                "entry": "locomotion",
++                "states": {
++                  "locomotion": {
++                    "kind": "blend1D",
++                    "param": "speed",
++                    "points": [
++                      {
++                        "at": 0,
++                        "clip": "Idle"
++                      },
++                      {
++                        "at": 0.5,
++                        "clip": "Walking_A"
++                      },
++                      {
++                        "at": 6,
++                        "clip": "Running_A"
++                      }
++                    ]
++                  },
++                  "airborne": {
++                    "kind": "clip",
++                    "clip": "Jump_Idle"
++                  }
++                },
++                "transitions": [
++                  {
++                    "from": "locomotion",
++                    "to": "airborne",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": "!=",
++                        "value": 0
++                      }
++                    ],
++                    "duration": 0.08
++                  },
++                  {
++                    "from": "airborne",
++                    "to": "locomotion",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": true
++                      }
++                    ],
++                    "duration": 0.08
++                  }
++                ]
++              }
++            ]
++          }
++        }
++      },
++      "catalogId": "lantern:knight"
+     },
+     {
+       "id": "hub:vale",
+@@ -7354,7 +7420,22 @@
+       ]
+     }
+   ],
+-  "catalogs": [],
++  "catalogs": [
++    {
++      "id": "player-motion",
++      "entries": [
++        {
++          "id": "player_hero",
++          "meta": {
++            "walkSpeed": 7,
++            "gravity": -16,
++            "jumpVelocity": 6,
++            "stepHeight": 0.4
++          }
++        }
++      ]
++    }
++  ],
+   "terrain": {
+     "bounds": {
+       "minX": -75,
+@@ -10108,7 +10189,7 @@
+       1.5017244401997298,
+       0.7612674121178776,
+       0.2155747933908371,
+-      0.0000287884002031733,
++      2.87884002031733e-05,
+       0,
+       0,
+       0,
+--- a/lantern-reach/src/game/systems.ts
++++ b/lantern-reach/src/game/systems.ts
+@@ -13,9 +13,10 @@
+ import { tickProtectYumi } from "./minigames/yumi";
+ import { tickPets } from "./pets/systems";
+ import { tickWorldBoss } from "./world/worldBoss";
+-import { physics, world } from "../world";
++import { world } from "../world";
++import { characterControls } from "./characterMotion";
+ 
+-const movementTuning = resolvePlayerMovementTuning({ physics, world });
++const movementTuning = resolvePlayerMovementTuning({ physics: characterControls.physics, movement: characterControls.movement, world });
+ const EMPTY_INPUT = { held: [] as readonly string[], pointer: null };
+ 
+ function forEachPlayer(ctx: GameContext, fn: (userId: string) => void): void {
+--- /dev/null
++++ b/lantern-reach/src/game/characterMotion.ts
+@@ -0,0 +1,33 @@
++import { bindAuthoredMovement, createAuthoredMovementReader, createMovementSchema } from "@jgengine/core/editor/movementCatalog";
++import { getDocumentLiveSync } from "@jgengine/core/editor/liveSync";
++import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
++import { editorLayers } from "../editorLayers";
++import { physics } from "../world";
++import { content as baseContent } from "./content";
++import { CLASS_ENTITY_ID, isPlayerEntityId } from "./model";
++export const characterDocument = editorLayers;
++const actor = CLASS_ENTITY_ID;
++const defaults = {
++  walkSpeed: baseContent.entityById!(actor)!.movement!.walkSpeed!,
++  gravity: physics.gravity!, jumpVelocity: physics.jumpVelocity!, stepHeight: 0.4,
++  groundAcceleration: MOVEMENT_TUNING.groundAcceleration,
++  airAcceleration: MOVEMENT_TUNING.airAcceleration,
++  groundFriction: MOVEMENT_TUNING.groundFriction,
++  runMultiplier: MOVEMENT_TUNING.runSpeedMultiplier,
++};
++export const characterMotionCatalog = {
++  id: "player-motion", label: "Player movement", schema: createMovementSchema(defaults),
++  entries: [{ id: actor, label: "Player", meta: defaults }],
++};
++export const readCharacterDocument = () => getDocumentLiveSync()?.getDocument() ?? characterDocument;
++const read = createAuthoredMovementReader(readCharacterDocument, characterMotionCatalog.id, actor);
++export const characterControls = bindAuthoredMovement(read, { physics });
++export const characterContent = {
++  ...baseContent,
++  entityById(catalogId: string) {
++    const entry = baseContent.entityById!(catalogId);
++    const walkSpeed = read().config.walkSpeed;
++    return entry == null || !(isPlayerEntityId(catalogId)) || walkSpeed === undefined
++      ? entry : { ...entry, movement: { ...entry.movement, walkSpeed } };
++  },
++};
+--- a/lantern-reach/src/game/models.ts
++++ b/lantern-reach/src/game/models.ts
+@@ -1,3 +1,8 @@
++import { parseAnimGraph } from "@jgengine/core/anim/animGraph";
++import { findEditorMarker } from "@jgengine/core/editor/document";
++import { editorLayers } from "../editorLayers";
++import { getDocumentLiveSync } from "@jgengine/core/editor/liveSync";
++import { markerAnimation } from "@jgengine/core/world/authoredObjects";
+ import type { ModelConfig } from "@jgengine/core/game/playableGame";
+ 
+ import { FIESTA_ALLY_CATALOG, FIESTA_ENEMY_MOBS } from "./arena/catalog";
+@@ -18,6 +23,28 @@
+ const KAYKIT_CLIPS = { idle: "Idle", walk: "Walking_A", run: "Running_A", runSpeed: 6 } as const;
+ const CREATURE_RUN = { idle: "Idle", walk: "Walk", run: "Run", runSpeed: 6 } as const;
+ const CREATURE_GALLOP = { idle: "Idle", walk: "Walk", run: "Gallop", runSpeed: 6 } as const;
++
++let animationDocument: typeof editorLayers | undefined;
++let animationConfig: ModelConfig["animation"];
++function knightAnimation(): ModelConfig["animation"] {
++  const document = getDocumentLiveSync()?.getDocument() ?? editorLayers;
++  if (document === animationDocument) return animationConfig;
++  const marker = findEditorMarker(document, "spawn:player");
++  const authored = marker === undefined ? undefined : markerAnimation(marker);
++  if (marker?.meta?.animation !== undefined && authored === undefined) {
++    throw new Error("spawn:player has an invalid animation override. Use an animation object, auto, or none.");
++  }
++  if (authored === undefined) animationConfig = { states: { ...KAYKIT_CLIPS } };
++  else if (authored === "auto" || authored === "none") animationConfig = authored;
++  else if (authored.graph === undefined) animationConfig = authored;
++  else {
++    const graph = parseAnimGraph(authored.graph);
++    if (graph === undefined) throw new Error("spawn:player animation needs a valid Knight graph.");
++    animationConfig = { states: { ...KAYKIT_CLIPS }, ...authored, graph };
++  }
++  animationDocument = document;
++  return animationConfig;
++}
+ 
+ function humanoid(file: string, tint?: string): ModelConfig {
+   return {
+@@ -53,7 +80,7 @@
+ }
+ 
+ const CLASS_MODEL: Record<string, ModelConfig> = {
+-  warrior: humanoid("knight"),
++  warrior: { ...humanoid("knight"), get animation() { return knightAnimation(); } },
+   paladin: humanoid("paladin"),
+   hunter: humanoid("ranger"),
+   rogue: humanoid("rogue"),
+--- a/lantern-reach/src/game/assets.ts
++++ b/lantern-reach/src/game/assets.ts
+@@ -2,6 +2,7 @@
+ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ 
+ import provenance from "../../scripts/model-provenance.json";
++import knightClips from "./knight-clips.json";
+ 
+ import { FIESTA_ALLY_CATALOG, FIESTA_ENEMY_MOBS } from "./arena/catalog";
+ import { DELVE_COMPANION_CATALOG } from "./delves/systems";
+@@ -20,6 +21,9 @@
+     dims: model.dims,
+   });
+ }
++
++// Clip metadata measured from this game's converted Knight asset, not a different KayKit rig.
++assets.register("lantern:knight", { url: knightClips.source, clips: knightClips.clips });
+ 
+ function billboard(body: string, accent: string, outline: string): string {
+   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${body
+--- /dev/null
++++ b/lantern-reach/src/game/knight-clips.json
+@@ -0,0 +1,28 @@
++{
++  "source": "/models/lantern-reach/players/knight.glb",
++  "sha256": "ce0d0a5ec1d67594629ecac20a7576fde22a44456e7628e8eb100891bc6dda97",
++  "clips": [
++    "Death_A",
++    "Hit_A",
++    "Idle",
++    "Jump_Idle",
++    "Running_A",
++    "Walking_A",
++    "Running_Strafe_Left",
++    "Running_Strafe_Right",
++    "Walking_Backwards",
++    "1H_Melee_Attack_Chop",
++    "1H_Melee_Attack_Slice_Diagonal",
++    "2H_Melee_Attack_Chop",
++    "Block",
++    "Dualwield_Melee_Attack_Chop",
++    "2H_Ranged_Shoot",
++    "Spellcast_Raise",
++    "Spellcast_Shoot",
++    "Spellcasting",
++    "Cheer",
++    "Lie_Idle",
++    "Sit_Floor_Down",
++    "Sit_Floor_Idle"
++  ]
++}
+--- a/scrap-signal/src/game.config.ts
++++ b/scrap-signal/src/game.config.ts
+@@ -6,7 +6,7 @@
+ import { assets } from "./game/assets";
+ import { audio, objectSounds } from "./game/audio/catalog";
+ import { audioProbe } from "./game/audio/drive";
+-import { content } from "./game/content";
++import { characterContent as content, bindCharacterMovement, characterMotionCatalog, characterDocument } from "./game/characterMotion";
+ import { inventories } from "./game/inventories";
+ import { keybinds } from "./game/keybinds";
+ import { RARITY_COLORS } from "./game/palette";
+@@ -137,6 +137,12 @@
+   ];
+ }
+ 
++const characterControls = bindCharacterMovement({
++  collideObjects: true,
++  maxClimbGrade: CLIMB_SLOPE_LIMIT,
++  climbGradeHeight: (x, z) => terrainField.sampleHeight(x, z),
++});
++
+ export const game = defineGame({
+   capture: {
+     play: [{ name: "character.pick", input: { characterId: "gunk" } }],
+@@ -161,7 +167,11 @@
+   audio,
+   objectSounds,
+   world,
+-  physics,
++  physics: characterControls.physics,
++  editorLayers: characterDocument,
++  // Match the existing placeLevel lift when live authored edits replace a prop.
++  scenePlacement: { verticalOffset: 0.5 },
++  editorCatalogs: [characterMotionCatalog],
+   inventories,
+   input: keybinds,
+   server: { mode: "campaign" },
+@@ -241,21 +251,7 @@
+       gain: [1.02, 1.0, 0.96],
+     },
+   },
+-  movement: {
+-    collideObjects: true,
+-    beforeCommit: (frame) => {
+-      const currentGround = terrainField.sampleHeight(frame.current[0], frame.current[2]);
+-      const tooSteep = (x: number, z: number) => {
+-        const distance = Math.hypot(x - frame.current[0], z - frame.current[2]);
+-        if (distance < 0.0001) return false;
+-        return (terrainField.sampleHeight(x, z) - currentGround) / distance > CLIMB_SLOPE_LIMIT;
+-      };
+-      if (!tooSteep(frame.next[0], frame.next[2])) return undefined;
+-      if (!tooSteep(frame.next[0], frame.current[2])) return [frame.next[0], frame.next[1], frame.current[2]];
+-      if (!tooSteep(frame.current[0], frame.next[2])) return [frame.current[0], frame.next[1], frame.next[2]];
+-      return [frame.current[0], frame.next[1], frame.current[2]];
+-    },
+-  },
++  movement: characterControls.movement,
+   camera: {
+     perspective: "first",
+     firstPerson: { eyeHeight: 1.62, sensitivity: 0.0023, reticle: true, viewmodel: false },
+--- a/scrap-signal/src/editor.scene.json
++++ b/scrap-signal/src/editor.scene.json
+@@ -5390,7 +5390,7 @@
+         "z": -20
+       },
+       "color": "#34d399",
+-      "label": "Arid Badlands — Coretown travel",
++      "label": "Arid Badlands \u2014 Coretown travel",
+       "meta": {
+         "zoneId": "arid_badlands"
+       }
+@@ -5567,7 +5567,7 @@
+         "z": -520
+       },
+       "color": "#34d399",
+-      "label": "Cores Blight — Ember Gate travel",
++      "label": "Cores Blight \u2014 Ember Gate travel",
+       "meta": {
+         "zoneId": "cores_blight"
+       }
+@@ -5978,7 +5978,7 @@
+       "radius": 240,
+       "height": 24,
+       "color": "#38bdf8",
+-      "label": "Arid Badlands — Coretown",
++      "label": "Arid Badlands \u2014 Coretown",
+       "meta": {
+         "zoneId": "arid_badlands",
+         "level": 8
+@@ -5996,7 +5996,7 @@
+       "radius": 90,
+       "height": 8,
+       "color": "#94a3b8",
+-      "label": "Arid Badlands — Coretown flatten",
++      "label": "Arid Badlands \u2014 Coretown flatten",
+       "meta": {
+         "zoneId": "arid_badlands"
+       }
+@@ -6383,7 +6383,7 @@
+       "radius": 220,
+       "height": 24,
+       "color": "#38bdf8",
+-      "label": "Cores Blight — Ember Gate",
++      "label": "Cores Blight \u2014 Ember Gate",
+       "meta": {
+         "zoneId": "cores_blight",
+         "level": 24
+@@ -6401,7 +6401,7 @@
+       "radius": 90,
+       "height": 8,
+       "color": "#94a3b8",
+-      "label": "Cores Blight — Ember Gate flatten",
++      "label": "Cores Blight \u2014 Ember Gate flatten",
+       "meta": {
+         "zoneId": "cores_blight"
+       }
+@@ -7993,7 +7993,7 @@
+       "radius": 8,
+       "height": 6,
+       "color": "#4ade80",
+-      "label": "Arid Badlands — Coretown discover",
++      "label": "Arid Badlands \u2014 Coretown discover",
+       "meta": {
+         "zoneId": "arid_badlands",
+         "radius": 8
+@@ -8047,7 +8047,7 @@
+       "radius": 8,
+       "height": 6,
+       "color": "#4ade80",
+-      "label": "Cores Blight — Ember Gate discover",
++      "label": "Cores Blight \u2014 Ember Gate discover",
+       "meta": {
+         "zoneId": "cores_blight",
+         "radius": 8
+@@ -9560,5 +9560,21 @@
+   "annotations": [],
+   "prefabs": [],
+   "collections": [],
+-  "catalogs": []
++  "catalogs": [
++    {
++      "id": "player-motion",
++      "entries": [
++        {
++          "id": "reactor_hunter",
++          "meta": {
++            "walkSpeed": 5.8,
++            "gravity": -30,
++            "jumpVelocity": 8.4,
++            "stepHeight": 0.4,
++            "maxClimbGrade": 0.85
++          }
++        }
++      ]
++    }
++  ]
+ }
+--- /dev/null
++++ b/scrap-signal/src/game/characterMotion.ts
+@@ -0,0 +1,37 @@
++import { bindAuthoredMovement, createAuthoredMovementReader, createMovementSchema } from "@jgengine/core/editor/movementCatalog";
++import { normalizeEditorLayers } from "@jgengine/core/editor/document";
++import { getDocumentLiveSync } from "@jgengine/core/editor/liveSync";
++import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
++import type { PlayerMovementConfig } from "@jgengine/core/game/playableGame";
++import { editorLayers } from "../editorLayers";
++import { CLIMB_SLOPE_LIMIT, physics } from "../world";
++import { content as baseContent } from "./content";
++import { player } from "./entities/players/catalog";
++export const characterDocument = normalizeEditorLayers(editorLayers);
++const actor = player.id;
++const defaults = {
++  walkSpeed: baseContent.entityById!(actor)!.movement!.walkSpeed!,
++  gravity: physics.gravity!, jumpVelocity: physics.jumpVelocity!, stepHeight: 0.4,
++  groundAcceleration: MOVEMENT_TUNING.groundAcceleration,
++  airAcceleration: MOVEMENT_TUNING.airAcceleration,
++  groundFriction: MOVEMENT_TUNING.groundFriction,
++  runMultiplier: MOVEMENT_TUNING.runSpeedMultiplier,
++  crouchMultiplier: MOVEMENT_TUNING.crouchSpeedMultiplier,
++  maxClimbGrade: CLIMB_SLOPE_LIMIT,
++};
++export const characterMotionCatalog = {
++  id: "player-motion", label: "Player movement", schema: createMovementSchema(defaults),
++  entries: [{ id: actor, label: "Player", meta: defaults }],
++};
++export const readCharacterDocument = () => getDocumentLiveSync()?.getDocument() ?? characterDocument;
++const read = createAuthoredMovementReader(readCharacterDocument, characterMotionCatalog.id, actor);
++export function bindCharacterMovement(movement: PlayerMovementConfig) { return bindAuthoredMovement(read, { physics, movement }); }
++export const characterContent = {
++  ...baseContent,
++  entityById(catalogId: string) {
++    const entry = baseContent.entityById!(catalogId);
++    const walkSpeed = read().config.walkSpeed;
++    return entry == null || !(catalogId === player.id) || walkSpeed === undefined
++      ? entry : { ...entry, movement: { ...entry.movement, walkSpeed } };
++  },
++};
+--- a/scrap-signal/src/index.css
++++ b/scrap-signal/src/index.css
+@@ -2,3 +2,4 @@
+ @import "./style.css";
+ @source "../node_modules/@jgengine/react/dist";
+ @source "../node_modules/@jgengine/shell/dist";
++@source "../node_modules/@jgengine/editor/dist";
+--- a/deepward/src/game.tsx
++++ b/deepward/src/game.tsx
+@@ -1,4 +1,7 @@
+ import "./style.css";
++import { bindAuthoredMovement, createAuthoredMovementReader, createMovementSchema } from "@jgengine/core/editor/movementCatalog";
++import { getDocumentLiveSync } from "@jgengine/core/editor/liveSync";
++import { MOVEMENT_TUNING } from "@jgengine/core/movement/movementModel";
+ import { useEffect, useMemo, useRef, type ReactNode } from "react";
+ import { useFrame } from "@react-three/fiber";
+ import { Group, PointLight, Vector3 } from "three";
+@@ -206,7 +209,7 @@
+     <Hand />
+   </>;
+ }
+-const content: GameContextContent = {
++const baseContent: GameContextContent = {
+   entityById(id): GameContextEntityEntry | null {
+     if (id === "diver") return { stats: { health: { max: 100, min: 0 }, oxygen: { max: 110 }, ammo: { max: 6 } }, movement: { poses: ["standing", "running"], walkSpeed: 4.4 } };
+     if (id === "fitter") return { stats: { health: { max: 80, min: 0 } }, movement: { poses: ["standing"], walkSpeed: 2.5 } };
+@@ -215,16 +218,10 @@
+   itemById(id) { return Object.hasOwn(ITEMS, id) ? { rarity: ITEMS[id as keyof typeof ITEMS].rarity.toLowerCase(), baseType: id } : null; },
+ };
+ export const credit = { text: "Original Deepward vault geometry, signage and item art", handle: "Deepward" };
+-export const game = defineGame({
+-  name: "Deepward", assets: stationAssets, world, physics, content, input: keybinds, editorLayers,
+-  server: { mode: "campaign" }, save: "none", persist: false,
+-  presentation: "3d", scenePlacement: false, touch: false,
+-  // Engine records own acquisition; the vault's authored meshes own presentation.
+-  worldItem: { filter: [{ id: "authored-salvage", when: {}, hide: true }] },
+-  loop: { onInit: initialize, onNewPlayer: seatPlayer, onTick: tick },
+-  GameUI, WorldOverlay, renderEntity,
+-  camera: { perspective: "first", firstPerson: { eyeHeight: 1.62, sensitivity: 0.0021, reticle: false, viewmodel: false }, frustum: { far: 95 } },
+-  movement: {
++const defaults = { walkSpeed: baseContent.entityById!("diver")!.movement!.walkSpeed!, gravity: physics.gravity, stepHeight: 0.4, groundAcceleration: MOVEMENT_TUNING.groundAcceleration, groundFriction: MOVEMENT_TUNING.groundFriction, runMultiplier: MOVEMENT_TUNING.runSpeedMultiplier };
++const characterMotionCatalog = { id: "player-motion", label: "Diver movement", schema: createMovementSchema(defaults), entries: [{ id: "diver", label: "Diver", meta: defaults }] };
++const readCharacter = createAuthoredMovementReader(() => getDocumentLiveSync()?.getDocument() ?? editorLayers, "player-motion", "diver");
++const characterControls = bindAuthoredMovement(readCharacter, { physics, movement: {
+     beforeCommit(frame) {
+       const view = viewStore.read(frame.ctx);
+       if (view.paused || view.panel !== null || (view.mode !== "home" && view.mode !== "dive")) return frame.current;
+@@ -240,7 +237,22 @@
+       }
+       return [x, frame.next[1], z];
+     },
+-  },
++  } });
++const content: GameContextContent = { ...baseContent, entityById(id) {
++  const entry = baseContent.entityById!(id), walkSpeed = readCharacter().config.walkSpeed;
++  return entry == null || id !== "diver" || walkSpeed === undefined ? entry : { ...entry, movement: { ...entry.movement, walkSpeed } };
++} };
++
++export const game = defineGame({
++  name: "Deepward", assets: stationAssets, world, physics: characterControls.physics, content, input: keybinds, editorLayers, editorCatalogs: [characterMotionCatalog],
++  server: { mode: "campaign" }, save: "none", persist: false,
++  presentation: "3d", scenePlacement: false, touch: false,
++  // Engine records own acquisition; the vault's authored meshes own presentation.
++  worldItem: { filter: [{ id: "authored-salvage", when: {}, hide: true }] },
++  loop: { onInit: initialize, onNewPlayer: seatPlayer, onTick: tick },
++  GameUI, WorldOverlay, renderEntity,
++  camera: { perspective: "first", firstPerson: { eyeHeight: 1.62, sensitivity: 0.0021, reticle: false, viewmodel: false }, frustum: { far: 95 } },
++  movement: characterControls.movement,
+   lighting: { ambient: { color: "#d4d5c8", intensity: 0.72 }, hemisphere: { skyColor: "#c7d9df", groundColor: "#514639", intensity: 0.5 } },
+   backdrop: { background: C.black, fog: { color: C.black, near: 24, far: 75 } },
+   postProcessing: { toneMapping: "aces", exposure: 1.05, bloom: { strength: 0.2, radius: 0.4, threshold: 1.1 } },
+--- a/deepward/src/editor.scene.json
++++ b/deepward/src/editor.scene.json
+@@ -3271,7 +3271,21 @@
+   "annotations": [],
+   "prefabs": [],
+   "collections": [],
+-  "catalogs": [],
++  "catalogs": [
++  {
++    "id": "player-motion",
++    "entries": [
++      {
++        "id": "diver",
++        "meta": {
++          "walkSpeed": 4.4,
++          "gravity": -30,
++          "stepHeight": 0.4
++        }
++      }
++    ]
++  }
++],
+   "terrain": {
+     "bounds": {
+       "minX": -10,
