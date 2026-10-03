@@ -455,6 +455,14 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAnnotationLayer` (function) · `import { createAnnotationLayer } from "@jgengine/core/world"`
 
+## merge-footprint-regions — pool adjacent compatible footprints with serializable capacity provenance
+
+- `mergeFootprints` (function) · `import { mergeFootprints } from "@jgengine/core/world"`
+
+## mergeable-footprint-regions — check compatible adjacent regions within caller work budgets
+
+- `canMerge` (function) · `import { canMerge } from "@jgengine/core/world"`
+
 ## mesh-hitboxes — shots pass through holes in concave models — opted-in catalog assets raycast their actual triangles instead of the fitted box.
 
 - `ColliderShape` (type) · `import { ColliderShape } from "@jgengine/core/scene/colliders"`
@@ -714,6 +722,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 ## spatial-sample-stratified — evenly cover an area with one jittered point per grid cell, deterministic
 
 - `sampleStratified` (function) · `import { sampleStratified } from "@jgengine/core/world"`
+
+## split-footprint-regions — split pooled regions along retained contributions without area-based capacity loss
+
+- `splitRegion` (function) · `import { splitRegion } from "@jgengine/core/world"`
 
 ## stop-order — halt-and-complete order that brings a unit to an immediate standstill
 

@@ -115,6 +115,27 @@ Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/F
 | `createPlotPermissions({ plotId, ownerId, guildId? })` + `createContributionPool(goal)` | Per-plot/guild edit authority (`canEdit`/`canView`, `grant`/`revoke` `BuildRole`, guild inheritance) for co-op building, plus a pooled-resource contribution model (`contribute` caps at the goal, reports overflow, `isComplete`, per-contributor totals). |
 | `createFootprintGrid({ cellSize? })` (`world/footprintGrid`) | Multi-cell footprint occupancy/reservation on a shared build grid — `cellsFor(origin, footprint, quarterTurns?)` derives the cells, `reserve(id, kind, cells)`/`release(id)`/`isFree`/`occupantAt`/`kindAt` hold the persistent claim `placementController`'s ghost preview doesn't. `footprintObstacles(grid)` bridges live reservations into `world/placement`'s `PlacementRules.obstacles` unchanged — no separate obstacle bookkeeping. `boundaryNeighbors(grid, cells)`/`hasValidAdjacency(grid, cells, accepts, requireConnection?)` validate connective-piece adjacency (roads/pipes/belts): every touching occupied neighbor must satisfy `accepts(kind)`, and `requireConnection` demands at least one (a road segment with nothing to connect to is invalid). |
 
+
+`world/footprintGrid` also provides pure region pooling: `canMerge(a, b, budget?)`
+and `mergeFootprints(a, b, id, budget?)` require matching caller-owned kind/tier,
+cardinal contact, unique disjoint safe-integer cells and distinct source identities.
+A `MergedRegion` retains detached `contributions` with each original id, cells and
+finite nonnegative capacity. Its capacity is the ordered JavaScript-number sum;
+occupied area does not determine allocation. Save the whole region as JSON.
+
+`splitRegion(region, leftContributionIds, { left?, right? }, budget?)` partitions
+whole source footprints. Each side must remain connected. A singleton restores
+its original identity/capacity; a side with multiple contributions requires an
+explicit output id. Output ids may reuse their own side's contribution identity,
+but cannot match a contribution from the opposite side. Invalid provenance, unknown/duplicate ids, empty or disconnected
+sides, conflicting ids, mismatched kind/tier, overlap and exhausted budgets return
+`null` (`canMerge` returns `false`). Optional `maxCells`/`maxContributions` budgets
+limit total source cells/contributions before traversal; omitted budgets follow the
+input size with linear work. These calls never mutate a grid: commit reservation
+replacement separately. Width limits, upgrade pricing and arbitrary cell cuts stay
+caller policy. Both split sides inherit the current kind/tier; when repricing capacity,
+update the retained contributions as well as their total.
+
 ### World solids: collision for generated and studio geometry
 
 `ctx.world.solids` (`world/worldSolids` `WorldSolids`) is the static collision for world geometry that is not a scene object. It holds oriented boxes (`WorldSolid { center, halfExtents, rotationY? }`) in named layers. The player walk resolver and walking NPCs read it through `solidObstaclesNear`/`resolveWalkerStep`. Scene `moveToward` and `moveTowardCommit` gather the same indexed solids unless `avoidSolids: false`; bare `SolidObstacleSource` adapters inject them through `solids`. `syncWorldColliders` mirrors the store into a physics backend as static bodies, and `populateNavGridFromSolids` blocks it on a nav grid. Scene objects stay in `ctx.scene.object`; do not re-author generated buildings as placed objects to make them solid.
