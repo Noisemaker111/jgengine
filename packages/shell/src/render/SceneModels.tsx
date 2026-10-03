@@ -2,16 +2,17 @@ import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 
-import type { EntitySpriteConfig, ModelConfig, ModelMaterialMaps } from "@jgengine/core/game/playableGame";
+import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
 import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 import { useOptionalGameContext } from "@jgengine/react/provider";
 
-import { sharedGltfLoader } from "./modelLoad";
-import { modelAssetRequests, modelMapEntries } from "./modelAssets";
+import { detectKtx2Support, sharedGltfLoader } from "./modelLoad";
+import { modelAssetRequests } from "./modelAssets";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
 import { useModelInstance } from "./useModelInstance";
+import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader } from "./materialAsset";
 import { useFootIk } from "./useFootIk";
 import { PartMotionRig } from "./PartMotion";
 import { syncSpriteFrame } from "./spriteRender";
@@ -22,6 +23,7 @@ import {
   cloneModelScene,
   createPaintCanvas,
   disposeModelScene,
+  ownModelMaterial,
   disposePaintCanvas,
   syncPaintCanvas,
   type MaterialCache,
@@ -214,17 +216,6 @@ function ModelPartGroup({
   );
 }
 
-function ModelMaterialMapsApplier({ scene, maps }: { scene: THREE.Object3D; maps: ModelMaterialMaps }) {
-  const entries = useMemo(() => modelMapEntries(maps), [maps.color, maps.normal, maps.roughness, maps.ao, maps.metalness, maps.emissive, maps.height]);
-  const loaded = useLoader(THREE.TextureLoader, Object.values(entries));
-  const textures = useMemo(() => Object.fromEntries(Object.keys(entries).map((key, index) => [key, loaded[index]!])), [entries, loaded]);
-  useLayoutEffect(() => {
-    if (textures.color !== undefined) textures.color.colorSpace = THREE.SRGBColorSpace;
-    applyMaterialOverride(scene, {}, { clone: false, textures });
-  }, [scene, textures]);
-  return null;
-}
-
 /** Where a measured model reports its rendered bounds: an entity kind or an object catalog id. */
 export interface MeasureTarget {
   target: "entity" | "object";
@@ -240,20 +231,27 @@ export function EntityModel({
   instanceId?: string;
   measure?: MeasureTarget;
 }) {
+  const renderer = useThree(state => state.gl);
+  if ((renderer as THREE.WebGLRenderer & { isWebGLRenderer?: boolean }).isWebGLRenderer) detectKtx2Support(renderer);
   const assets = modelAssetRequests(model);
   for (const url of assets.models) useLoader.preload(sharedGltfLoader, url);
-  for (const urls of assets.textureGroups) useLoader.preload(THREE.TextureLoader, urls);
+  for (const urls of assets.textureGroups) useLoader.preload(MaterialTextureLoader, urls);
   // Optional, not required: measured bounds and paint strokes are live-world extras, and a model
   // that threw without a running game could not be inspected outside one — which is how a broken
   // composition stayed undiagnosable in `EntityPreview` (#1588).
   const ctx = useOptionalGameContext();
   const material = model.material;
+  const materialTextures = useModelMaterialTextures(model);
+  const materialAssetKey = JSON.stringify((model.materialAssets ?? []).filter(asset => model.materialAssignments?.some(assignment => assignment.materialId === asset.id)));
+  const materialAssets = useMemo(() => (model.materialAssets ?? []).filter(asset => model.materialAssignments?.some(assignment => assignment.materialId === asset.id)), [materialAssetKey]);
+  const materialAssignments = model.materialAssignments;
   const baseY = model.y ?? 0;
   const dims = model.dims;
 
   const configure = useCallback((content: THREE.Object3D) => {
-    if (material !== undefined) applyMaterialOverride(content, material, { clone: false });
-  }, [material]);
+    if (material !== undefined) applyMaterialOverride(content, material, { clone: false, textures: materialTextures.global, ownMaterial: replacement => ownModelMaterial(content, replacement) });
+    if (materialAssignments !== undefined) applyMaterialAssignments(content, materialAssets ?? [], materialAssignments, materialTextures.assets);
+  }, [material, materialTextures, materialAssets, materialAssignments]);
   const { scene, scale, position } = useModelInstance(model, { instanceId, configure });
 
   // A model without index-measured dims can't drive the fitted-collider path, so report the live
@@ -334,11 +332,6 @@ export function EntityModel({
   const base = (
     <>
       <primitive object={scene} position={position} scale={[scale, scale, scale]} />
-      {material?.maps !== undefined ? (
-        <IsolatedModelPart model={model}>
-          <ModelMaterialMapsApplier scene={scene} maps={material.maps} />
-        </IsolatedModelPart>
-      ) : null}
       {(model.attachments ?? []).map((attachment, index) =>
         typeof attachment.model === "string" ? null : (
           <IsolatedModelPart key={`${attachment.slot}-${index}`} model={attachment.model}>

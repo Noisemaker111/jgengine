@@ -1,0 +1,558 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "wool",
+      "kind": "material_sample",
+      "position": {
+        "x": -4,
+        "y": 2.4,
+        "z": 0
+      },
+      "meta": {
+        "shape": "cloth",
+        "materialId": "wool"
+      }
+    },
+    {
+      "id": "silk",
+      "kind": "material_sample",
+      "position": {
+        "x": -2.4,
+        "y": 2.4,
+        "z": 0
+      },
+      "meta": {
+        "shape": "cloth",
+        "materialId": "silk"
+      }
+    },
+    {
+      "id": "metal",
+      "kind": "material_sample",
+      "position": {
+        "x": -0.8,
+        "y": 2.4,
+        "z": 0
+      },
+      "meta": {
+        "shape": "sphere",
+        "materialId": "metal"
+      }
+    },
+    {
+      "id": "glass",
+      "kind": "material_sample",
+      "position": {
+        "x": 0.8,
+        "y": 2.4,
+        "z": 0
+      },
+      "meta": {
+        "shape": "sphere",
+        "materialId": "glass"
+      }
+    },
+    {
+      "id": "stone",
+      "kind": "material_sample",
+      "position": {
+        "x": 2.4,
+        "y": 2.4,
+        "z": 0
+      },
+      "meta": {
+        "shape": "sphere",
+        "materialId": "stone"
+      }
+    },
+    {
+      "id": "hair",
+      "kind": "material_sample",
+      "position": {
+        "x": 4,
+        "y": 2.4,
+        "z": 0
+      },
+      "meta": {
+        "shape": "hair",
+        "materialId": "hair",
+        "cards": {
+          "guides": [
+            {
+              "id": "card-0",
+              "points": [
+                [
+                  -0.55,
+                  0.8,
+                  0
+                ],
+                [
+                  -0.58,
+                  0.1,
+                  0.1
+                ],
+                [
+                  -0.7,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "id": "card-1",
+              "points": [
+                [
+                  -0.41500000000000004,
+                  0.8,
+                  0
+                ],
+                [
+                  -0.43999999999999995,
+                  0.1,
+                  0.1
+                ],
+                [
+                  -0.5399999999999999,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "id": "card-2",
+              "points": [
+                [
+                  -0.28,
+                  0.8,
+                  0
+                ],
+                [
+                  -0.29999999999999993,
+                  0.1,
+                  0.1
+                ],
+                [
+                  -0.37999999999999995,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "id": "card-3",
+              "points": [
+                [
+                  -0.14500000000000002,
+                  0.8,
+                  0
+                ],
+                [
+                  -0.15999999999999992,
+                  0.1,
+                  0.1
+                ],
+                [
+                  -0.21999999999999997,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "id": "card-4",
+              "points": [
+                [
+                  -0.010000000000000009,
+                  0.8,
+                  0
+                ],
+                [
+                  -0.019999999999999907,
+                  0.1,
+                  0.1
+                ],
+                [
+                  -0.05999999999999994,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "id": "card-5",
+              "points": [
+                [
+                  0.125,
+                  0.8,
+                  0
+                ],
+                [
+                  0.1200000000000001,
+                  0.1,
+                  0.1
+                ],
+                [
+                  0.10000000000000009,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "id": "card-6",
+              "points": [
+                [
+                  0.26,
+                  0.8,
+                  0
+                ],
+                [
+                  0.2600000000000001,
+                  0.1,
+                  0.1
+                ],
+                [
+                  0.26,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "id": "card-7",
+              "points": [
+                [
+                  0.395,
+                  0.8,
+                  0
+                ],
+                [
+                  0.40000000000000013,
+                  0.1,
+                  0.1
+                ],
+                [
+                  0.42000000000000015,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            },
+            {
+              "id": "card-8",
+              "points": [
+                [
+                  0.53,
+                  0.8,
+                  0
+                ],
+                [
+                  0.5400000000000001,
+                  0.1,
+                  0.1
+                ],
+                [
+                  0.5800000000000001,
+                  -0.8,
+                  0.3
+                ]
+              ],
+              "width": 0.18,
+              "tipWidth": 0.05,
+              "facing": [
+                0,
+                0,
+                1
+              ]
+            }
+          ],
+          "subdivisionsPerSegment": 3
+        }
+      }
+    },
+    {
+      "id": "chair-imported",
+      "kind": "material_sample",
+      "position": {
+        "x": -2.1,
+        "y": 0,
+        "z": 0
+      },
+      "meta": {
+        "shape": "model",
+        "url": "/models/material-showcase/SheenChair.glb",
+        "catalogId": "material-chair"
+      }
+    },
+    {
+      "id": "chair-authored",
+      "kind": "material_sample",
+      "position": {
+        "x": 0.5,
+        "y": 0,
+        "z": 0
+      },
+      "meta": {
+        "shape": "model",
+        "url": "/models/material-showcase/SheenChair.glb",
+        "catalogId": "material-chair",
+        "materialAssignments": [
+          {
+            "materialId": "silk",
+            "selector": {
+              "slot": "fabric Mystere Mango Velvet"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "volumes": [],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": [],
+  "materialAssets": [
+    {
+      "schemaVersion": 1,
+      "id": "wool",
+      "name": "wool",
+      "family": "fabric",
+      "surface": {
+        "roughness": 0.9,
+        "sheen": 0.8,
+        "sheenColor": "#ffffff",
+        "sheenRoughness": 0.85,
+        "color": "#a65438"
+      },
+      "capabilities": [
+        "pbr",
+        "sheen"
+      ],
+      "provenance": {
+        "author": "JGengine contributors",
+        "license": "Apache-2.0",
+        "sourceUrl": "https://github.com/Noisemaker111/jgengine",
+        "description": "Original editable parameter starting point. Geometry, textures and simulation are authored separately."
+      },
+      "fabric": {
+        "construction": "fuzzy"
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "silk",
+      "name": "silk",
+      "family": "fabric",
+      "surface": {
+        "roughness": 0.28,
+        "sheen": 0.7,
+        "sheenColor": "#ffffff",
+        "sheenRoughness": 0.3,
+        "anisotropy": 0.7,
+        "color": "#a65438"
+      },
+      "capabilities": [
+        "pbr",
+        "sheen",
+        "anisotropy"
+      ],
+      "provenance": {
+        "author": "JGengine contributors",
+        "license": "Apache-2.0",
+        "sourceUrl": "https://github.com/Noisemaker111/jgengine",
+        "description": "Original editable parameter starting point. Geometry, textures and simulation are authored separately."
+      },
+      "fabric": {
+        "construction": "woven",
+        "weaveDirection": 0,
+        "threadScale": 150,
+        "normalStrength": 0.05,
+        "variation": 0.03
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "metal",
+      "name": "brushed-metal",
+      "family": "metal",
+      "surface": {
+        "metalness": 1,
+        "roughness": 0.3,
+        "anisotropy": 0.7,
+        "anisotropyRotation": 0,
+        "clearcoat": 0.5
+      },
+      "capabilities": [
+        "pbr",
+        "anisotropy",
+        "clearcoat"
+      ],
+      "provenance": {
+        "author": "JGengine contributors",
+        "license": "Apache-2.0",
+        "sourceUrl": "https://github.com/Noisemaker111/jgengine",
+        "description": "Original editable parameter starting point. Geometry, textures and simulation are authored separately."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "glass",
+      "name": "glass",
+      "family": "glass",
+      "surface": {
+        "roughness": 0.05,
+        "metalness": 0,
+        "transmission": 1,
+        "ior": 1.5,
+        "thickness": 0.05,
+        "attenuationColor": "#ffffff",
+        "attenuationDistance": 2
+      },
+      "capabilities": [
+        "pbr",
+        "transmission",
+        "specular",
+        "volume"
+      ],
+      "provenance": {
+        "author": "JGengine contributors",
+        "license": "Apache-2.0",
+        "sourceUrl": "https://github.com/Noisemaker111/jgengine",
+        "description": "Original editable parameter starting point. Geometry, textures and simulation are authored separately."
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "stone",
+      "name": "stone",
+      "family": "stone",
+      "surface": {
+        "metalness": 0,
+        "roughness": 0.95
+      },
+      "capabilities": [
+        "pbr"
+      ],
+      "provenance": {
+        "author": "JGengine contributors",
+        "license": "Apache-2.0",
+        "sourceUrl": "https://github.com/Noisemaker111/jgengine",
+        "description": "Original editable parameter starting point. Geometry, textures and simulation are authored separately."
+      },
+      "textures": {
+        "color": {
+          "url": "/materials/ambientcg-ground025/color.jpg",
+          "colorSpace": "srgb",
+          "sampler": {
+            "wrapS": "repeat",
+            "wrapT": "repeat"
+          }
+        },
+        "normal": {
+          "url": "/materials/ambientcg-ground025/normal.jpg",
+          "colorSpace": "linear"
+        },
+        "roughness": {
+          "url": "/materials/ambientcg-ground025/roughness.jpg",
+          "colorSpace": "linear"
+        }
+      }
+    },
+    {
+      "schemaVersion": 1,
+      "id": "hair",
+      "name": "hair-cards",
+      "family": "hair",
+      "surface": {
+        "roughness": 0.4,
+        "anisotropy": 0.8,
+        "alphaMode": "mask",
+        "alphaCutoff": 0.5,
+        "doubleSided": true,
+        "color": "#563124"
+      },
+      "capabilities": [
+        "pbr",
+        "anisotropy",
+        "alpha"
+      ],
+      "provenance": {
+        "author": "JGengine contributors",
+        "license": "Apache-2.0",
+        "sourceUrl": "https://github.com/Noisemaker111/jgengine",
+        "description": "Original editable parameter starting point. Geometry, textures and simulation are authored separately."
+      },
+      "hair": {
+        "geometry": "cards",
+        "strandDirection": 1.5707963267948966,
+        "backlightStrength": 0.65,
+        "backlightColor": "#cf8551"
+      },
+      "textures": {
+        "alpha": {
+          "url": "/materials/original-fibres/coverage.svg",
+          "colorSpace": "linear"
+        }
+      }
+    }
+  ]
+}

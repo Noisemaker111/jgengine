@@ -26,17 +26,24 @@ function pack(json: JSONDocument["json"], bin: Uint8Array): Uint8Array {
   return bytes;
 }
 
-function fixture(options: { embedded?: boolean; flat?: boolean; textureUrl?: string; mutate?: (json: JSONDocument["json"]) => void } = {}): { source: StaticPrefabSource; json: JSONDocument["json"] } {
+function fixture(options: { embedded?: boolean; flat?: boolean; tangents?: boolean; textureUrl?: string; mutate?: (json: JSONDocument["json"]) => void } = {}): { source: StaticPrefabSource; json: JSONDocument["json"] } {
   const directory = mkdtempSync(join(tmpdir(), "jg-static-prefab-"));
   scratch.push(directory);
   const position = new Float32Array([0, 0, 0, 2, 0, 0, 2, options.flat ? 0 : 1, 3, 0, options.flat ? 0 : 1, 3]);
   const uv = new Float32Array([0, 0, 1, 0, 1, 1, 0, 1]);
   const indices = new Uint16Array([0, 1, 2, 0, 2, 3]);
-  const geometryLength = position.byteLength + uv.byteLength + indices.byteLength;
+  const normals = new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]);
+  const tangents = new Float32Array([1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]);
+  const baseLength = position.byteLength + uv.byteLength + indices.byteLength;
+  const geometryLength = baseLength + (options.tangents ? normals.byteLength + tangents.byteLength : 0);
   const binary = new Uint8Array(geometryLength + (options.embedded ? png.length : 0));
   binary.set(new Uint8Array(position.buffer));
   binary.set(new Uint8Array(uv.buffer), position.byteLength);
   binary.set(new Uint8Array(indices.buffer), position.byteLength + uv.byteLength);
+  if (options.tangents) {
+    binary.set(new Uint8Array(normals.buffer), baseLength);
+    binary.set(new Uint8Array(tangents.buffer), baseLength + normals.byteLength);
+  }
   if (options.embedded) binary.set(png, geometryLength);
   const texturePath = join(directory, "palette.png");
   writeFileSync(texturePath, png);
@@ -44,25 +51,33 @@ function fixture(options: { embedded?: boolean; flat?: boolean; textureUrl?: str
   const json: JSONDocument["json"] = {
     asset: { version: "2.0" }, scene: 0, scenes: [{ nodes: [0] }],
     nodes: [{ mesh: 0, translation: [1, 2, 3] }],
-    meshes: [{ primitives: [0, 1].map((material) => ({ attributes: { POSITION: 0, TEXCOORD_0: 1 }, indices: 2, material })) }],
+    meshes: [{ primitives: [0, 1].map((material) => ({ attributes: { POSITION: 0, TEXCOORD_0: 1, ...(options.tangents ? { NORMAL: 3, TANGENT: 4 } : {}) }, indices: 2, material })) }],
     buffers: [{ byteLength: binary.length }],
     bufferViews: [
       { buffer: 0, byteOffset: 0, byteLength: position.byteLength },
       { buffer: 0, byteOffset: position.byteLength, byteLength: uv.byteLength },
       { buffer: 0, byteOffset: position.byteLength + uv.byteLength, byteLength: indices.byteLength },
+      ...(options.tangents ? [
+        { buffer: 0, byteOffset: baseLength, byteLength: normals.byteLength },
+        { buffer: 0, byteOffset: baseLength + normals.byteLength, byteLength: tangents.byteLength },
+      ] : []),
       ...(options.embedded ? [{ buffer: 0, byteOffset: geometryLength, byteLength: png.length }] : []),
     ],
     accessors: [
       { bufferView: 0, componentType: 5126, count: 4, type: "VEC3", min: [0, 0, 0], max: [2, options.flat ? 0 : 1, 3] },
       { bufferView: 1, componentType: 5126, count: 4, type: "VEC2" },
       { bufferView: 2, componentType: 5123, count: 6, type: "SCALAR" },
+      ...(options.tangents ? [
+        { bufferView: 3, componentType: 5126, count: 4, type: "VEC3" as const },
+        { bufferView: 4, componentType: 5126, count: 4, type: "VEC4" as const },
+      ] : []),
     ],
     materials: [
       { name: "custom brick", pbrMetallicRoughness: { baseColorFactor: [0.2, 0.4, 0.6, 1], metallicFactor: 0.25, roughnessFactor: 0.7, baseColorTexture: { index: 0 } }, doubleSided: true },
       { name: "custom copper", pbrMetallicRoughness: { baseColorFactor: [0.7, 0.3, 0.1, 1], metallicFactor: 0.9, roughnessFactor: 0.2, baseColorTexture: { index: 0 } } },
     ],
     textures: [{ source: 0, sampler: 0 }], samplers: [{ magFilter: 9728, minFilter: 9984, wrapS: 33071, wrapT: 33648 }],
-    images: [options.embedded ? { bufferView: 3, mimeType: "image/png" } : { uri: texture.uri }],
+    images: [options.embedded ? { bufferView: options.tangents ? 5 : 3, mimeType: "image/png" } : { uri: texture.uri }],
   };
   options.mutate?.(json);
   const bytes = pack(json, binary);
@@ -107,6 +122,7 @@ describe("static editor prefab export", () => {
     expect(result.report.bounds.max).toEqual([16, 7.5, 19]);
     expect(result.report.triangles).toBe(4);
     expect(result.report.submissions).toBe(2);
+    expect(result.report.materialLayout).toBe("merged-by-source-material");
     expect(result.report.sha256).toBe(hash(result.bytes));
     expect(result.report.byteLength).toBe(result.bytes.length + png.length);
     expect(result.report.sourcePrefabSha256).toBe(hash(new TextEncoder().encode(JSON.stringify(authored.fragment))));
@@ -169,6 +185,77 @@ describe("static editor prefab export", () => {
     expect(json.images![0]!.bufferView).toBeDefined();
     const document = await new NodeIO().readBinary(result.bytes);
     expect(document.getRoot().listTextures()[0]!.getImage()).toEqual(png);
+  });
+
+  test("retains physical extensions, UV transforms, alpha behavior and material authorship", async () => {
+    const { source } = fixture({ mutate: (json) => {
+      json.extensionsUsed = ["KHR_materials_sheen", "KHR_materials_clearcoat", "KHR_materials_specular", "KHR_materials_ior", "KHR_materials_transmission", "KHR_materials_volume", "KHR_texture_transform"];
+      for (const primitive of json.meshes![0]!.primitives) primitive.attributes.TEXCOORD_1 = 1;
+      const fabric = json.materials![0]!;
+      fabric.alphaMode = "MASK";
+      fabric.alphaCutoff = 0.35;
+      fabric.extras = { author: "Original fabric artist", license: "game-owned" };
+      fabric.extensions = { KHR_materials_sheen: { sheenColorFactor: [0.5, 0.4, 0.3], sheenRoughnessFactor: 0.8 } };
+      fabric.pbrMetallicRoughness!.baseColorTexture!.extensions = { KHR_texture_transform: { offset: [0.1, 0.2], scale: [3, 2], rotation: 0.7, texCoord: 1 } };
+      const glass = json.materials![1]!;
+      glass.alphaMode = "BLEND";
+      glass.extensions = {
+        KHR_materials_clearcoat: { clearcoatFactor: 0.9, clearcoatRoughnessFactor: 0.15 },
+        KHR_materials_specular: { specularFactor: 0.7, specularColorFactor: [0.9, 0.8, 0.7] },
+        KHR_materials_ior: { ior: 1.4 },
+        KHR_materials_transmission: { transmissionFactor: 0.8 },
+        KHR_materials_volume: { thicknessFactor: 0.4, attenuationDistance: 1.5, attenuationColor: [0.6, 0.8, 0.7] },
+      };
+    } });
+    const json = outputJson((await bakeStaticPrefab(prefab(), [source])).bytes);
+    const fabric = json.materials!.find((material) => material.name === "custom brick")!;
+    const glass = json.materials!.find((material) => material.name === "custom copper")!;
+    expect(fabric.alphaMode).toBe("MASK");
+    expect(fabric.alphaCutoff).toBe(0.35);
+    expect(fabric.extras).toEqual({ author: "Original fabric artist", license: "game-owned" });
+    expect(fabric.extensions?.KHR_materials_sheen).toEqual({ sheenColorFactor: [0.5, 0.4, 0.3], sheenRoughnessFactor: 0.8 });
+    expect(fabric.pbrMetallicRoughness!.baseColorTexture!.extensions?.KHR_texture_transform).toEqual({ offset: [0.1, 0.2], scale: [3, 2], rotation: 0.7, texCoord: 1 });
+    expect(glass.alphaMode).toBe("BLEND");
+    expect(glass.extensions?.KHR_materials_transmission).toEqual({ transmissionFactor: 0.8 });
+    expect(glass.extensions?.KHR_materials_volume).toEqual({ thicknessFactor: 0.4, attenuationDistance: 1.5, attenuationColor: [0.6, 0.8, 0.7] });
+    expect(glass.extensions?.KHR_materials_ior).toEqual({ ior: 1.4 });
+    expect(glass.extensions?.KHR_materials_clearcoat).toEqual({ clearcoatFactor: 0.9, clearcoatRoughnessFactor: 0.15 });
+    expect(glass.extensions?.KHR_materials_specular).toEqual({ specularFactor: 0.7, specularColorFactor: [0.9, 0.8, 0.7] });
+    expect(json.meshes!.flatMap((mesh) => mesh.primitives).every((primitive) => primitive.attributes.TEXCOORD_1 !== undefined)).toBe(true);
+  });
+
+  test("rotates and retains source tangent direction and handedness for anisotropic surfaces", async () => {
+    const { source } = fixture({ embedded: true, tangents: true, mutate: (json) => {
+      json.extensionsUsed = ["KHR_materials_anisotropy"];
+      json.materials![1]!.extensions = { KHR_materials_anisotropy: { anisotropyStrength: 0.7, anisotropyRotation: 0.4 } };
+    } });
+    const result = await bakeStaticPrefab(prefab(), [source]);
+    const document = await new NodeIO().registerExtensions(ALL_EXTENSIONS).readBinary(result.bytes);
+    const primitive = document.getRoot().listMeshes().flatMap((mesh) => mesh.listPrimitives()).find((item) => item.getMaterial()?.getName() === "custom copper")!;
+    const node = document.getRoot().listNodes().find((item) => item.getMesh()?.listPrimitives().includes(primitive))!;
+    const matrix = node.getWorldMatrix();
+    const tangent = primitive.getAttribute("TANGENT")!;
+    expect(tangent.getCount()).toBe(4);
+    for (let i = 0; i < tangent.getCount(); i += 1) {
+      const value = tangent.getElement(i, []);
+      expect(matrix[0]! * value[0]! + matrix[4]! * value[1]! + matrix[8]! * value[2]!).toBeCloseTo(0);
+      expect(matrix[1]! * value[0]! + matrix[5]! * value[1]! + matrix[9]! * value[2]!).toBeCloseTo(0);
+      expect(matrix[2]! * value[0]! + matrix[6]! * value[1]! + matrix[10]! * value[2]!).toBeCloseTo(-1);
+      expect(value[3]).toBe(1);
+    }
+    const json = outputJson(result.bytes);
+    expect(json.materials!.find((material) => material.name === "custom copper")!.extensions?.KHR_materials_anisotropy).toEqual({ anisotropyStrength: 0.7, anisotropyRotation: 0.4 });
+  });
+
+  test("retains exact source copyright in portable pins and merged GLB attribution", async () => {
+    const first = fixture({ mutate: (json) => { json.asset.copyright = "Artist A · CC-BY-4.0"; } }).source;
+    const second = { ...fixture({ mutate: (json) => { json.asset.copyright = "Artist B · Original game art"; } }).source, catalogId: "game:other-wall" };
+    const authored = prefab();
+    authored.fragment.markers = [...authored.fragment.markers, { ...authored.fragment.markers[0]!, id: "second", catalogId: second.catalogId }, { ...authored.fragment.markers[0]!, id: "repeat" }];
+    const result = await bakeStaticPrefab(authored, [first, second]);
+    expect(result.report.sources.map((source) => source.copyright)).toEqual(["Artist A · CC-BY-4.0", "Artist B · Original game art"]);
+    expect(outputJson(result.bytes).asset.copyright).toBe("Artist A · CC-BY-4.0\nArtist B · Original game art");
+    expect(JSON.stringify(result.report)).not.toContain(first.path);
   });
 
   test("authored movement solids and clearance openings round-trip without broad bounds obstruction", async () => {
@@ -269,12 +356,15 @@ describe("static editor prefab export", () => {
       authored.fragment.markers[0]!.kind = kind;
       await expect(bakeStaticPrefab(authored, [source])).rejects.toThrow("requires kind prop");
     }
-    for (const key of ["scale", "rotationX", "animation", "interactive", "on", "action", "triggers", "triggerRadius", "maps", "materialId", "offsetY"]) {
+    for (const key of ["scale", "rotationX", "animation", "interactive", "on", "action", "triggers", "triggerRadius", "maps", "materialId", "materialAssignments", "offsetY"]) {
       const authored = prefab();
       authored.fragment.markers[0]!.meta![key] = 1;
       await expect(bakeStaticPrefab(authored, [source])).rejects.toThrow(`unsupported ${key}`);
     }
     const authored = prefab();
+    (authored.fragment.markers[0] as unknown as Record<string, unknown>).materialAssignments = [{ materialId: "game/fabric", selector: { slot: "custom brick" } }];
+    await expect(bakeStaticPrefab(authored, [source])).rejects.toThrow("unsupported materialAssignments");
+    delete (authored.fragment.markers[0] as unknown as Record<string, unknown>).materialAssignments;
     authored.fragment.paths = [{ id: "walk", kind: "road", points: [] }];
     await expect(bakeStaticPrefab(authored, [source])).rejects.toThrow("model markers only");
   });

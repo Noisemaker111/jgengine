@@ -18,6 +18,9 @@ import { CatalogsPanel } from "./CatalogsPanel";
 import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
 import { ParentPickerMenu } from "./ParentPickerMenu";
+import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
+import type { ModelMaterialSlotInfo } from "@jgengine/shell/render/materialAsset";
+import { MaterialPreview } from "./MaterialPreview";
 import { MaterialsWorkspacePanel } from "./MaterialsWorkspacePanel";
 import { PrefabsPanel } from "./PrefabsPanel";
 import { listParentCandidates } from "./parentCandidates";
@@ -183,6 +186,8 @@ export function EditorChrome({
   /** Models added this session via Content Browser Import / drop — merged over the game catalog. */
   const [importedAssets, setImportedAssets] = useState<readonly EditorAssetEntry[]>([]);
   const [importBusy, setImportBusy] = useState(false);
+  const [materialInventory, setMaterialInventory] = useState<{ source: string; slots: ModelMaterialSlotInfo[] } | null>(null);
+  const [materialPreviewFailure, setMaterialPreviewFailure] = useState<{ source: string; message: string | null } | null>(null);
 
   // Bridge global RPC/agent console emits into the dock console for this chrome instance.
   useEffect(
@@ -226,6 +231,35 @@ export function EditorChrome({
   const state = session.getState();
   const uiState = ui.getState();
   const layoutState = layout.getState();
+  const materialMarker = state.document.markers.find((item) => state.selection.includes(item.id));
+  const materialSourceUrl = liveAssets.find((item) => item.id === (materialMarker?.catalogId ?? materialMarker?.meta?.catalogId))?.url;
+  const materialPreviewConfig = useMemo(() => {
+    try {
+      return { model: materialSourceUrl && materialMarker ? modelWithAuthoredMaterials({ url: materialSourceUrl, targetHeight: 1.8, animation: "none" }, state.document, materialMarker.id) : undefined, error: null };
+    } catch (failure) {
+      return { model: undefined, error: failure instanceof Error ? failure.message : String(failure) };
+    }
+  }, [materialSourceUrl, materialMarker, state.document]);
+  const materialSourceKey = JSON.stringify([materialMarker?.id, materialSourceUrl, materialPreviewConfig]);
+  const materialMarkerId = materialMarker?.id;
+  useEffect(() => {
+    if (layoutState.workspace !== "materials" || !materialMarkerId || !materialSourceUrl) return;
+    if (api.getMaterialSlots(materialMarkerId).status === "ready") return;
+    api.reportMaterialSlots(materialMarkerId, materialSourceUrl, materialPreviewConfig.error
+      ? { status: "unavailable", reason: materialPreviewConfig.error }
+      : { status: "loading" });
+    return () => {
+      const current = api.getMaterialSlots(materialMarkerId);
+      if (current.sourceUrl === materialSourceUrl && current.status === "loading") api.reportMaterialSlots(materialMarkerId, materialSourceUrl, { status: "unavailable", reason: "The model preview closed before slot inspection completed." });
+    };
+  }, [api, materialMarkerId, materialSourceUrl, layoutState.workspace, materialPreviewConfig.error]);
+  const reportMaterialSlots = useCallback((slots: ModelMaterialSlotInfo[]) => {
+    if (materialMarkerId && materialSourceUrl && api.reportMaterialSlots(materialMarkerId, materialSourceUrl, { status: "ready", slots })) setMaterialInventory({ source: materialSourceKey, slots });
+  }, [api, materialMarkerId, materialSourceUrl, materialSourceKey]);
+  const reportMaterialError = useCallback((message: string | null) => {
+    setMaterialPreviewFailure({ source: materialSourceKey, message });
+    if (message && materialMarkerId && materialSourceUrl && api.getMaterialSlots(materialMarkerId).status !== "ready") api.reportMaterialSlots(materialMarkerId, materialSourceUrl, { status: "unavailable", reason: message });
+  }, [api, materialMarkerId, materialSourceUrl, materialSourceKey]);
   const sharedSave = useContext(EditorDocumentSaveContext) ?? documentSave;
   const localSave = useDocumentSave(session, sharedSave === undefined ? save : undefined, (ok, detail) =>
     consoleStore.log(ok ? "info" : "error", "save", detail),
@@ -901,7 +935,7 @@ export function EditorChrome({
               {layoutState.workspace === "multiplayer" ? (
                 <NetworkWorkspacePanel snapshot={networkSnapshot} />
               ) : layoutState.workspace === "materials" ? (
-                <MaterialsWorkspacePanel session={session} api={api} />
+                <MaterialsWorkspacePanel session={session} api={api} materialSlots={materialInventory?.source === materialSourceKey ? materialInventory.slots : []} previewError={materialPreviewConfig.error ?? (materialPreviewFailure?.source === materialSourceKey ? materialPreviewFailure.message : null)} onSave={docSave.available ? docSave.doSave : undefined} preview={(asset, mode) => materialPreviewConfig.error || (!materialPreviewConfig.model && !asset) ? null : <MaterialPreview asset={asset} mode={mode} model={materialPreviewConfig.model} onSlots={reportMaterialSlots} onError={reportMaterialError} environment={state.document.environment} />} />
               ) : layoutState.workspace === "scripting" ? (
                 <ScriptingPanel session={session} api={api} />
               ) : layoutState.leftPage === "collections" ? (

@@ -1,4 +1,5 @@
 import type { EditorSimulation } from "./simulation";
+import type { MaterialAsset } from "../material/materialAsset";
 import type { StaticPrefabBake } from "./staticPrefab";
 import type { ParamSchema } from "../scene/sceneKinds";
 import type { EditorUiDocument } from "../ui/hudDocument";
@@ -107,6 +108,8 @@ export type EditorTerrain = TerraformSnapshot;
 
 /** The four placeable-object collections a prefab fragment or clipboard fragment carries. */
 export interface EditorFragmentContent {
+  /** Referenced reusable materials travel with prefab and clipboard content. */
+  materialAssets?: MaterialAsset[];
   markers: readonly EditorMarker[];
   volumes: readonly EditorVolume[];
   paths: readonly EditorPath[];
@@ -250,6 +253,8 @@ export interface EditorEnvironment {
 
 /** The full authored scene: every marker, volume, path, note, and sculpted terrain for a game. */
 export interface EditorDocument {
+  /** Reusable material library; per-marker named assignments live in meta.materialAssignments. */
+  materialAssets?: MaterialAsset[];
   version: 1;
   /** Authored weather, emitter, fire and habitat inputs; runtime state saves separately. */
   simulation?: EditorSimulation;

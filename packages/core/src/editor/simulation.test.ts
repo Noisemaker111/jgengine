@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createEditorSession } from "./commands";
 import { applyEditorDocumentOverlay, cloneEditorDocument, createEmptyEditorDocument, decodeEditorDocument, exportEditorDocumentJson, importEditorDocumentJson, mergeEditorDocuments, normalizeEditorLayers } from "./document";
 import type { EditorSimulation } from "./simulation";
+import { createMaterialTemplate } from "../material/materialAsset";
 
 const simulation: EditorSimulation = {
   weather: { profiles: [{ id: "storm", mode: "rain", intensity: 0.8 }], schedule: [{ atSeconds: 10, profileId: "storm", transitionSeconds: 4 }], wind: { direction: [1, 0], speed: 5 }, zones: [{ id: "valley", center: [2, 4], radius: 10, falloff: 2, wind: { speed: 2 } }] },
@@ -11,6 +12,27 @@ const simulation: EditorSimulation = {
 };
 
 describe("authored simulation document", () => {
+  test("weather and material authoring share history and durable document rebuilds", () => {
+    const material = createMaterialTemplate("silk", "coat", "Coat");
+    const source = { ...createEmptyEditorDocument(), simulation: structuredClone(simulation), materialAssets: [material] };
+    const session = createEditorSession(source);
+    expect(session.transaction([{ type: "addMarker", marker: { id: "prop", kind: "prop", position: { x: 0, y: 0, z: 0 } } }, { type: "assignMaterialAsset", ids: ["prop"], materialId: "coat", selector: { slotIndex: 0 } }]).ok).toBe(true);
+    const saved = session.exportJson();
+    session.dispatch({ type: "undo" });
+    expect(session.getState().document.simulation).toEqual(simulation);
+    expect(session.getState().document.materialAssets).toEqual([material]);
+    session.dispatch({ type: "redo" });
+    expect(session.exportJson()).toBe(saved);
+    for (const next of [importEditorDocumentJson(saved), normalizeEditorLayers(session.getState().document), mergeEditorDocuments(session.getState().document), applyEditorDocumentOverlay(createEmptyEditorDocument(), session.getState().document)]) {
+      expect(next.simulation).toEqual(simulation);
+      expect(next.materialAssets).toEqual([material]);
+      expect(next.markers[0]!.meta?.materialAssignments).toEqual([{ materialId: "coat", selector: { slotIndex: 0 } }]);
+    }
+    const play = cloneEditorDocument(session.getState().document);
+    play.materialAssets![0]!.surface.roughness = 0.99;
+    play.simulation!.weather!.zones![0]!.center = [999, 999];
+    expect(session.exportJson()).toBe(saved);
+  });
   test("nested authored metadata and schemas detach across play snapshot boundaries", () => {
     const document = createEmptyEditorDocument();
     document.markers.push({ id: "source", kind: "prop", position: { x: 0, y: 0, z: 0 }, meta: { nested: { speed: 5 } } });

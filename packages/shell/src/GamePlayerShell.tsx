@@ -345,6 +345,17 @@ export function GamePlayerShell({
   useEffect(() => {
     setDiagnostics([]);
     let detachProbe = () => {};
+    let ownedContext: GameContext | null = null;
+    const disposeOwnedContext = () => {
+      const context = ownedContext;
+      ownedContext = null;
+      if (context === null) return;
+      try {
+        playable.loop.onDispose(context);
+      } catch (error) {
+        reportRuntimeError(error, "dispose");
+      }
+    };
     try {
       const models = contextModels(playable);
       const context = createGameContext({
@@ -353,6 +364,7 @@ export function GamePlayerShell({
         player: { userId, isNew: true },
         ...(models === undefined ? {} : { models }),
       });
+      ownedContext = context;
       if (playable.localPlayers !== undefined) localPlayers(context).retune(playable.localPlayers);
       playable.loop.onInit(context);
       playable.loop.onNewPlayer(context);
@@ -363,12 +375,17 @@ export function GamePlayerShell({
       }
       setCtx(context);
     } catch (error) {
+      disposeOwnedContext();
       reportRuntimeError(error, "init");
       setCtx(null);
     }
     return () => {
-      detachProbe();
-      setCtx(null);
+      try {
+        detachProbe();
+      } finally {
+        disposeOwnedContext();
+        setCtx(null);
+      }
     };
   }, [playable, userId]);
 

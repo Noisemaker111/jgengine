@@ -193,6 +193,17 @@
 - `GlbTextureMetrics` (interface): interface GlbTextureMetrics — Dimensions and encoded bytes for one glTF image, including images referenced by texture extensions.
 - `readGlbMetrics` (function): function readGlbMetrics(bytes: Uint8Array, readResource?: (uri: string) => Uint8Array): GlbMetrics — Inspect GLB v2 geometry accessors and image headers offline. Throws on unreadable resources, malformed geometry, or required geometry compression; never silently reports missing data as zero. External resources are supplied by the caller; this function never fetches or decompresses bytes.
 
+## @jgengine/assets/gltfMaterials
+
+- `GLTF_MATERIAL_EXTENSIONS_R182` (const): const GLTF_MATERIAL_EXTENSIONS_R182: readonly string[] — Native material/texture extensions implemented by Three.js GLTFLoader r182. Decoders are still required.
+- `GltfImportedMaterial` (interface): interface GltfImportedMaterial — One imported material with the native definition retained as an independent JSON snapshot.
+- `GltfMaterialDiagnostic` (interface): interface GltfMaterialDiagnostic — Actionable fidelity warning or error; this inspector never changes imported surfaces.
+- `GltfMaterialInspection` (interface): interface GltfMaterialInspection — Native material inventory, primitive selectors, attribution, and renderer compatibility diagnostics.
+- `GltfMaterialSlot` (interface): interface GltfMaterialSlot — A primitive slot retains mesh and material indices even when display names collide.
+- `GltfMaterialTexture` (interface): interface GltfMaterialTexture — A native glTF texture use; embedded images retain their source index instead of an invented URL.
+- `inspectGlbMaterials` (function): function inspectGlbMaterials(bytes: Uint8Array, assetId: string): GltfMaterialInspection — Inspect the JSON chunk of complete GLB v2 bytes, including models with compressed geometry. This measures material metadata only; it never decodes geometry or resolves image URLs.
+- `inspectGltfMaterials` (function): function inspectGltfMaterials(json: GLTF.IGLTF, assetId: string): GltfMaterialInspection — Inventory validated glTF JSON without flattening slots, decoding compressed geometry, or changing materials. IDs use the supplied model namespace plus source indices, and remain stable while its pinned bytes remain stable.
+
 ## @jgengine/assets/importSpec
 
 - `AssetImportKind` (type): type AssetImportKind = "model" | "texture" | "material" | "sprite" | "spriteSheet" | "audio" | "font" | "hdri" — Supported logical kinds for user-supplied assets.
@@ -330,3 +341,40 @@
 - `VerifyResult` (interface): interface VerifyResult { ok: boolean; errors: string[] } — ⚠ undocumented
 - `verifyData` (function): function verifyData(input: VerifyInput): VerifyResult — ⚠ undocumented
 - `verifyManifest` (function): function verifyManifest(): VerifyResult — ⚠ undocumented
+
+## @jgengine/core/material/hairCards
+
+- `HAIR_CARD_STRAND_ROTATION` (const): const HAIR_CARD_STRAND_ROTATION: number — Tangents follow card width (UV U); strand length follows UV V. Angles are radians.
+- `HairCardAuthoring` (interface): interface HairCardAuthoring — Serializable geometry authoring, independent of materials, grooming physics and collisions.
+- `HairCardGuide` (interface): interface HairCardGuide — An authored centreline, in model-local metres, with root-to-tip points.
+- `HairCardMesh` (interface): interface HairCardMesh — Renderer-neutral indexed ribbons with an explicit tangent frame and guide ranges.
+- `buildHairCards` (function): function buildHairCards(input: HairCardAuthoring): HairCardMesh — Build deterministic model-local ribbon geometry; guides remain separately editable source data.
+- `validateHairCardAuthoring` (function): function validateHairCardAuthoring(value: unknown): MaterialDiagnostic[] — Validate finite guides, tangent frames and bounded generation; crossing/collision is not solved.
+
+## @jgengine/core/material/materialAsset
+
+- `FabricAppearance` (interface): interface FabricAppearance — Procedural cloth surface response; this does not create or bend cloth geometry.
+- `HairAppearance` (interface): interface HairAppearance — Anisotropic surface approximation for existing hair cards or strand meshes, without grooming.
+- `MATERIAL_SURFACE_CAPABILITIES` (const): const MATERIAL_SURFACE_CAPABILITIES: Partial<Record<keyof MaterialSurfaceParameters, MaterialCapability>> — Feature declarations required by each sparse physical parameter.
+- `MATERIAL_TEXTURE_CAPABILITIES` (const): const MATERIAL_TEXTURE_CAPABILITIES: Readonly<Partial<Record<MaterialTextureRole, MaterialCapability>>> — Feature declarations required by authored texture roles.
+- `MATERIAL_TEXTURE_SEMANTICS` (const): const MATERIAL_TEXTURE_SEMANTICS: Readonly<Record<MaterialTextureRole, { colorSpace: "srgb" | "linear"; channel: MaterialTextureChannel }>> — Shader channel defaults; standalone alpha maps use green, base-color alpha stays in its color map.
+- `MaterialAsset` (interface): interface MaterialAsset — Shared, versioned authoring data. IDs survive rename, save and export.
+- `MaterialAssignment` (interface): interface MaterialAssignment — A reusable asset reference with an optional instance-only sparse edit.
+- `MaterialCapability` (type): type MaterialCapability = "pbr" | "sheen" | "anisotropy" | "clearcoat" | "specular" | "transmission" | "volume" | "iridescence" | "alpha" — Renderer features an authored material explicitly requires.
+- `MaterialDiagnostic` (interface): interface MaterialDiagnostic — An actionable authoring/import diagnostic.
+- `MaterialFamily` (type): type MaterialFamily = "standard" | "fabric" | "hair" | "glass" | "metal" | "skin" | "stone" | "plastic" — Physical surface families; these describe appearance, never geometry or simulation.
+- `MaterialProvenance` (interface): interface MaterialProvenance — Portable material or image authorship.
+- `MaterialSelector` (interface): interface MaterialSelector — Names constrain mesh and imported material slot independently; all provided tests must match.
+- `MaterialSurfaceParameters` (interface): interface MaterialSurfaceParameters — Sparse surface edits. Omitted values preserve the imported material. Angles are radians.
+- `MaterialTemplate` (type): type MaterialTemplate = "wool" | "cotton" | "silk" | "brushed-metal" | "glass" | "coated-plastic" | "stone" | "hair-cards" — Editable engine-authored surface starting points, independent of any game's palette or assets.
+- `MaterialTextureChannel` (type): type MaterialTextureChannel = "r" | "g" | "b" | "a" | "rgb" | "rgba" — Texture channels used by the pinned standard/physical shader path.
+- `MaterialTextureMetadata` (interface): interface MaterialTextureMetadata — Serializable sampling and UV metadata; metres are descriptive, UV transforms drive rendering.
+- `MaterialTextureRole` (type): type MaterialTextureRole = "color" | "normal" | "roughness" | "metalness" | "ao" | "emissive" | "alpha" | "height" | "sheenColor" | "sheenRoughness" | "anisotropy" | "clearcoat" | "clearcoatRoughness" | "clearcoatNormal" | "specularIntensity" | "specularColor" | "transmission" | "thickness" | "iride… — Supported texture semantics; packed channels follow glTF and Three's PBR shaders.
+- `createMaterialTemplate` (function): function createMaterialTemplate(template: MaterialTemplate, id: string, name = template): MaterialAsset — Create fresh, serializable material data with provenance; templates create no textures or geometry.
+- `matchesMaterialSelector` (function): function matchesMaterialSelector(selector: MaterialSelector, mesh: string, slot: string, slotIndex: number): boolean — Exact name/index selector matching shared by authoring and rendering.
+- `materialCapabilitiesForAsset` (function): function materialCapabilitiesForAsset(asset: Pick<MaterialAsset, "surface" | "textures" | "fabric" | "hair">): MaterialCapability[] — Determine required shader features from surface fields, maps and appearance adapters without editing them.
+- `materialCapabilitiesForSurface` (function): function materialCapabilitiesForSurface(surface: MaterialSurfaceParameters): MaterialCapability[] — Determine feature requirements from authored fields, including intentional zero values.
+- `parseMaterialAssignments` (function): function parseMaterialAssignments(value: unknown): MaterialAssignment[] — Parse assignment JSON at editor/RPC boundaries. Invalid data fails with an actionable path.
+- `validateMaterialAsset` (function): function validateMaterialAsset(value: unknown): MaterialDiagnostic[] — Validate material JSON and renderer prerequisites before saving or assigning it.
+- `validateMaterialAssignments` (function): function validateMaterialAssignments(assignments: readonly MaterialAssignment[], assets: readonly MaterialAsset[]): MaterialDiagnostic[] — Validate references and selectors without accepting accidental whole-model assignment.
+- `validateMaterialSurface` (function): function validateMaterialSurface(value: unknown, path = "surface"): MaterialDiagnostic[] — Validate sparse surface edits without mutating them or guessing unsupported fields.

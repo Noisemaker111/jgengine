@@ -15,6 +15,7 @@ import { createWeaponStats } from "../item/weapon";
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { type StatValueMap } from "../scene/entityStats";
 import { type SceneEntity } from "../scene/entityStore";
+import { installPursuitPersistence } from "../scene/behaviorRuntime";
 import type { SceneObject } from "../scene/objectStore";
 import { createChangeSignal, notifyAfter } from "../store/changeSignal";
 import { createObservableKeyedStore } from "../store/observableKeyedStore";
@@ -501,6 +502,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
         list: entities.list,
         ids: entities.ids,
         subscribeMembership: entities.subscribeMembership,
+        subscribeBehaviors: entities.subscribeBehaviors,
         spawnPoseOf: entities.spawnPoseOf,
         resetToSpawn: entities.resetToSpawn,
         resetAllToSpawn,
@@ -697,6 +699,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     ctx.sim.addStage({ id: "physics", phase: "afterMovement", run: (_dt, _tick, gameDt) => { if (gameDt > 0) physicsBackend.step(gameDt); } });
   }
 
+  installPursuitPersistence(ctx, aoiRadius);
   const saveOptions = resolveSaveOptions(definition, options);
   if (saveOptions !== undefined) {
     const saveTarget: RuntimeSaveTarget = {

@@ -359,19 +359,28 @@ export {
   type BehaviorResumePolicy,
   type BehaviorSnapshot,
   type BehaviorStatus,
+  type PursueBehaviorSnapshot,
 } from "./scene/behaviorRuntime";
 export {
   patrol,
   player,
+  pursue,
   talkable,
   wander,
   type BehaviorDescriptor,
   type DecisionGraphBehavior,
+  type PursueBehavior,
 } from "./scene/behaviors";
 export { createBodyBind } from "./scene/bodyBind";
 export { type ColliderPurpose, type EntityColliderSet, type ResolvedCollider } from "./scene/colliders";
 export { type StatCatalog, type StatValue } from "./scene/entityStats";
-export { entityMetaOf, groundSpeed, type EntityPosition, type SceneEntity } from "./scene/entityStore";
+export {
+  entityMetaOf,
+  groundSpeed,
+  type EntityPosition,
+  type EntityStore,
+  type SceneEntity,
+} from "./scene/entityStore";
 export { DEFAULT_FORWARD } from "./scene/facing";
 export { readNamedSockets, type ModelNode } from "./scene/modelSockets";
 export { MountController, createMountController } from "./scene/mount";
@@ -623,7 +632,21 @@ export {
   type WorldGridConfig,
 } from "./world/features";
 export { createFogField, type FogCells, type FogField } from "./world/fog";
-export { boundaryNeighbors, createFootprintGrid, footprintObstacles, hasValidAdjacency } from "./world/footprintGrid";
+export {
+  boundaryNeighbors,
+  canMerge,
+  createFootprintGrid,
+  footprintObstacles,
+  hasValidAdjacency,
+  mergeFootprints,
+  splitRegion,
+  type FootprintRegion,
+  type MergedRegion,
+  type RegionContribution,
+  type RegionFootprint,
+  type RegionSplitIds,
+  type RegionWorkBudget,
+} from "./world/footprintGrid";
 export { type Aabb, type AvoidZone } from "./world/geometry";
 export { GRASS_SCHEMA } from "./world/grassKind";
 export { resolveGridInstances } from "./world/gridInstances";

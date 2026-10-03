@@ -1,4 +1,5 @@
 import { decodeEditorSimulation, type EditorSimulation } from "./simulation";
+import { parseMaterialAssignments, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset } from "../material/materialAsset";
 import { parseStaticPrefabBake } from "./staticPrefab";
 import type { ParamField, ParamSchema } from "../scene/sceneKinds";
 import { cloneEditorUiDocument, decodeEditorUiDocument } from "../ui/hudDocument";
@@ -112,6 +113,7 @@ function upsertGrids(
 
 /** Spread-ready non-placeable fields preserved across document rebuilds. @internal */
 export function editorDocumentExtras(doc: EditorDocument): {
+  materialAssets?: MaterialAsset[];
   prefabs: EditorPrefab[];
   collections: EditorCollection[];
   catalogs: EditorCatalogData[];
@@ -126,6 +128,7 @@ export function editorDocumentExtras(doc: EditorDocument): {
 } {
   return {
     ...(doc.simulation === undefined ? {} : { simulation: structuredClone(doc.simulation) }),
+    ...(doc.materialAssets === undefined ? {} : { materialAssets: doc.materialAssets }),
     prefabs: doc.prefabs,
     collections: doc.collections,
     catalogs: doc.catalogs,
@@ -212,6 +215,7 @@ export function cloneEditorDocument(doc: EditorDocument): EditorDocument {
     })),
     collections: doc.collections.map((collection) => ({ ...collection, memberIds: [...collection.memberIds] })),
     catalogs: cloneCatalogs(doc.catalogs),
+    ...(doc.materialAssets === undefined ? {} : { materialAssets: structuredClone(doc.materialAssets) }),
     ...(doc.grids === undefined ? {} : { grids: doc.grids.map(cloneGridLayer) }),
     ...(doc.terrain === undefined ? {} : { terrain: doc.terrain }),
     ...(ui === undefined ? {} : { ui }),
@@ -282,6 +286,7 @@ export function normalizeEditorLayers(input: EditorLayersInput | undefined | nul
     prefabs: asArray(resolved.prefabs),
     collections: asArray(resolved.collections),
     catalogs: cloneCatalogs(resolved.catalogs),
+    ...(resolved.materialAssets === undefined ? {} : { materialAssets: structuredClone(resolved.materialAssets) }),
     ...(grids === undefined ? {} : { grids }),
     ...(resolved.terrain === undefined ? {} : { terrain: migrateTerrainSnapshot(resolved.terrain) }),
     ...(ui === undefined ? {} : { ui }),
@@ -335,6 +340,7 @@ export function mergeEditorDocuments(...docs: readonly EditorDocument[]): Editor
     out.prefabs.push(...doc.prefabs);
     out.collections.push(...doc.collections);
     out.catalogs = upsertCatalogs(out.catalogs, doc.catalogs);
+    if (doc.materialAssets !== undefined) out.materialAssets = structuredClone(upsertById(out.materialAssets ?? [], doc.materialAssets));
     const mergedGrids = upsertGrids(out.grids, doc.grids);
     if (mergedGrids !== undefined) out.grids = mergedGrids;
     if (doc.terrain !== undefined) out.terrain = doc.terrain;
@@ -363,6 +369,7 @@ export function extractEditorFragment(doc: EditorDocument, ids: readonly string[
   const wanted = new Set(ids);
   return cloneEditorDocument({
     version: 1,
+    ...(doc.materialAssets === undefined ? {} : { materialAssets: doc.materialAssets.filter((asset) => doc.markers.some((marker) => wanted.has(marker.id) && parseMaterialAssignments(marker.meta?.materialAssignments ?? []).some((item) => item.materialId === asset.id))) }),
     markers: doc.markers.filter((marker) => wanted.has(marker.id)),
     volumes: doc.volumes.filter((volume) => wanted.has(volume.id)),
     paths: doc.paths.filter((path) => wanted.has(path.id)),
@@ -514,6 +521,7 @@ export function createPrefabFragment(doc: EditorDocument, ids: readonly string[]
     z: point.z - origin.z,
   });
   return {
+    ...(extracted.materialAssets === undefined ? {} : { materialAssets: extracted.materialAssets }),
     markers: extracted.markers.map((marker) => ({ ...marker, position: shift(marker.position) })),
     volumes: extracted.volumes.map((volume) => ({ ...volume, center: shift(volume.center) })),
     paths: extracted.paths.map((path) => ({ ...path, points: path.points.map(shift) })),
@@ -732,7 +740,11 @@ function decodeMeta(
     errors.push({ path, message: "expected an object" });
     return undefined;
   }
-  return value;
+  if (value.materialAssignments !== undefined) {
+    try { parseMaterialAssignments(value.materialAssignments); }
+    catch (error) { errors.push({ path: `${path}.materialAssignments`, message: String(error) }); }
+  }
+  return structuredClone(value);
 }
 
 function decodeMarker(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorMarker | null {
@@ -831,6 +843,22 @@ function decodeNote(item: unknown, path: string, errors: EditorDocumentDiagnosti
   return note;
 }
 
+function decodeMaterialAssets(value: unknown, path: string, errors: EditorDocumentDiagnostic[]): MaterialAsset[] {
+  if (!Array.isArray(value)) { errors.push({ path, message: "expected material assets" }); return []; }
+  const ids = new Set<string>();
+  const assets: MaterialAsset[] = [];
+  value.forEach((asset, index) => {
+    const diagnostics = validateMaterialAsset(asset).filter((diagnostic) => diagnostic.severity === "error");
+    for (const diagnostic of diagnostics) errors.push({ path: `${path}[${index}].${diagnostic.path}`, message: diagnostic.message });
+    if (diagnostics.length === 0) {
+      if (ids.has(asset.id)) errors.push({ path: `${path}[${index}].id`, message: "duplicate material ID" });
+      ids.add(asset.id);
+      assets.push(structuredClone(asset));
+    }
+  });
+  return assets;
+}
+
 function decodeFragmentContent(
   value: unknown,
   path: string,
@@ -840,12 +868,27 @@ function decodeFragmentContent(
     errors.push({ path, message: "expected an object" });
     return null;
   }
+  const materialAssets = value.materialAssets === undefined ? undefined : decodeMaterialAssets(value.materialAssets, `${path}.materialAssets`, errors);
+  const markers = decodeArray(value.markers, `${path}.markers`, decodeMarker, errors);
+  validateMarkerMaterialReferences(markers, materialAssets ?? [], path, errors);
   return {
-    markers: decodeArray(value.markers, `${path}.markers`, decodeMarker, errors),
+    ...(materialAssets === undefined ? {} : { materialAssets }),
+    markers,
     volumes: decodeArray(value.volumes, `${path}.volumes`, decodeVolume, errors),
     paths: decodeArray(value.paths, `${path}.paths`, decodePath, errors),
     annotations: decodeArray(value.annotations, `${path}.annotations`, decodeNote, errors),
   };
+}
+
+function validateMarkerMaterialReferences(markers: readonly EditorMarker[], assets: readonly MaterialAsset[], path: string, errors: EditorDocumentDiagnostic[]): void {
+  for (const [index, marker] of markers.entries()) {
+    if (marker.meta?.materialAssignments === undefined) continue;
+    try {
+      for (const diagnostic of validateMaterialAssignments(parseMaterialAssignments(marker.meta.materialAssignments), assets)) {
+        if (diagnostic.severity === "error") errors.push({ path: `${path}.markers[${index}].meta.${diagnostic.path}`, message: diagnostic.message });
+      }
+    } catch {}
+  }
 }
 
 function decodePrefab(item: unknown, path: string, errors: EditorDocumentDiagnostic[]): EditorPrefab | null {
@@ -1282,6 +1325,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
     return { ok: false, errors: [{ path: "$", message: "editor document must be an object" }] };
   }
   const errors: EditorDocumentDiagnostic[] = [];
+  const materialAssets = raw.materialAssets === undefined ? undefined : decodeMaterialAssets(raw.materialAssets, "$.materialAssets", errors);
   const markers = decodeArray(raw.markers, "$.markers", decodeMarker, errors);
   const volumes = decodeArray(raw.volumes, "$.volumes", decodeVolume, errors);
   const paths = decodeArray(raw.paths, "$.paths", decodePath, errors);
@@ -1324,6 +1368,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
       }
     });
   }
+  validateMarkerMaterialReferences(markers, materialAssets ?? [], "$", errors);
   if (errors.length > 0) return { ok: false, errors };
   const terrain = raw.terrain === undefined ? undefined : migrateTerrainSnapshot(raw.terrain as EditorTerrain);
   const ui = decodeEditorUiDocument(raw.ui);
@@ -1332,6 +1377,7 @@ export function decodeEditorDocument(raw: unknown): DecodeEditorDocumentResult {
     document: {
       version: 1,
       ...(simulation === undefined ? {} : { simulation }),
+      ...(materialAssets === undefined ? {} : { materialAssets }),
       markers,
       volumes,
       paths,
@@ -1402,6 +1448,7 @@ export function applyEditorDocumentOverlay(
     prefabs: upsertById(base.prefabs, overlay.prefabs),
     collections: upsertById(base.collections, overlay.collections),
     catalogs: upsertCatalogs(base.catalogs, overlay.catalogs),
+    ...(base.materialAssets === undefined && overlay.materialAssets === undefined ? {} : { materialAssets: structuredClone(upsertById(base.materialAssets ?? [], overlay.materialAssets ?? [])) }),
     ...(grids === undefined ? {} : { grids }),
     ...(terrain === undefined ? {} : { terrain }),
     ...(ui === undefined ? {} : { ui }),

@@ -282,6 +282,7 @@ const DEFAULT_KTX2_TRANSCODER_PATH = "https://cdn.jsdelivr.net/npm/three@0.182.0
 
 let configuredModelLoaders: Readonly<Required<ModelLoaderConfig>> | undefined;
 let ktx2Loader: KTX2Loader | undefined;
+const ktx2DetectedRenderers = new WeakMap<THREE.WebGLRenderer, KTX2Loader>();
 
 /** Configures shared Draco and KTX2 loaders. Repeated calls with the same paths are no-ops. */
 export function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly<Required<ModelLoaderConfig>> {
@@ -303,7 +304,15 @@ export function configureModelLoaders(options: ModelLoaderConfig = {}): Readonly
 /** Detects GPU support for the configured KTX2 transcoder after a renderer exists. */
 export function detectKtx2Support(renderer: THREE.WebGLRenderer): void {
   configureModelLoaders();
+  if (ktx2DetectedRenderers.get(renderer) === ktx2Loader) return;
   ktx2Loader?.detectSupport(renderer);
+  ktx2DetectedRenderers.set(renderer, ktx2Loader!);
+}
+
+/** Shared transcoder for authored material maps; GPU support is detected by the canvas. @internal */
+export function materialKtx2Loader(): KTX2Loader {
+  configureModelLoaders();
+  return ktx2Loader!;
 }
 
 // LoadingManager reports queue transitions, not per-item events: `onStart` fires when the

@@ -39,6 +39,28 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `creditsForSources` (function) · `import { creditsForSources } from "@jgengine/assets/credits"`
 
+## gltf-material-inspection — inspect material slots and texture metadata directly from complete GLB bytes
+
+- `inspectGlbMaterials` (function) · `import { inspectGlbMaterials } from "@jgengine/assets/gltfMaterials"`
+- `inspectGltfMaterials` (function) · `import { inspectGltfMaterials } from "@jgengine/assets/gltfMaterials"`
+
+## hair-card-geometry — validate authored ribbon guides and their vertex allocation ceiling
+
+- `validateHairCardAuthoring` (function) · `import { validateHairCardAuthoring } from "@jgengine/core/material/hairCards"`
+
+## material-feature-requirements — Declare material shader requirements when authors add maps or appearance adapters.
+
+- `materialCapabilitiesForAsset` (function) · `import { materialCapabilitiesForAsset } from "@jgengine/core/material/materialAsset"`
+
+## material-slot-selection — match named meshes and imported material slots independently
+
+- `matchesMaterialSelector` (function) · `import { matchesMaterialSelector } from "@jgengine/core/material/materialAsset"`
+- `validateMaterialAssignments` (function) · `import { validateMaterialAssignments } from "@jgengine/core/material/materialAsset"`
+
+## material-surface-validation — diagnose unsupported or physically invalid sparse surface edits
+
+- `validateMaterialSurface` (function) · `import { validateMaterialSurface } from "@jgengine/core/material/materialAsset"`
+
 ## sources-for-asset-ids — resolve the asset packs behind the ids a game actually ships
 
 - `sourcesForAssetIds` (function) · `import { sourcesForAssetIds } from "@jgengine/assets/credits"`

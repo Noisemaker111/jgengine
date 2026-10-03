@@ -9,3 +9,4 @@
 - Edit mode preserves the game's authored models and placement overlay alongside editor guides; save acknowledgements, dirty state and pending failures survive Play/Return.
 - Live authored prop moves/removals update previews while unrelated edits preserve game-initialized prop state.
 - Creator budgets include bounded collision child pools; play clock control preserves native canvas rendering without postprocessing.
+- Player shell replacement, exit and failed initialization dispose the owned runtime context exactly once, including environment resources when game disposal throws.

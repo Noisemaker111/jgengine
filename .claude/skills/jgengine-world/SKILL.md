@@ -37,6 +37,8 @@ A world is the place you play in: substrate + laws, via `world()` from `@jgengin
 
 For existing `environment()` consumers, `defineGame` overlays only defined editor sky fields on the legacy sky, retaining settings the editor cannot represent; an explicit `backdrop.sky` remains authoritative.
 
+For environment-driven surface appearance, sample only selected targets through `material/appearanceSignals`; wetness already includes shelter. Capture the assigned material's dry baseline, apply explicit wet endpoints, and restore it on unbinding. Keep wind in geometry/simulation consumers and local card backlighting separate from scene exposure. See [reference.md](reference.md#environment-fields-weather-hooks--realm-composition).
+
 ### Movement and interaction
 
 Choose input intent, controller/motor, collision/navigation, and camera as separate seams. Commands express game intent; world systems resolve motion. Interaction targets come from bounded spatial/sensor queries, not full-world scans.
@@ -50,6 +52,8 @@ Per-instance state belongs on the placement, not in a game-owned map keyed by `i
 ### AI and navigation
 
 Compose perception, selection, planning/behavior, movement, and lifecycle independently. Inject randomness and scheduling. Use spatial indexes, interest tiers, or bounded candidate sets for scale.
+
+For chase-to-reach and cooldown effects, attach `pursue({ aggroRadius, reach, leashRange, speed, attack })` as behavior data. The host schedules acquisition and solid-aware movement; `behaviorControl` exposes pause/reset and optional threat. Pursuit progress survives GameContext save/replication without a game-local home/cooldown map. Use a decision graph and navigation actions when a route or richer perception policy is required.
 
 NPC decisions are a `decisionGraph` behavior: the graph and its blackboard are data, actions are registered by name, and perception or game systems write facts into `behaviorControl(ctx).blackboard(id)` rather than actions querying the world. Set `thinkInterval` so crowds think a few times a second, not every frame, and release movement or claims in `onAbort`.
 

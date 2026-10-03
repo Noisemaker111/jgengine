@@ -1408,7 +1408,6 @@
   "@jgengine/core/scene/entityStore#EntityPose",
   "@jgengine/core/scene/entityStore#EntityPosition",
   "@jgengine/core/scene/entityStore#EntityRole",
-  "@jgengine/core/scene/entityStore#EntityStore",
   "@jgengine/core/scene/entityStore#EntityUpdatePatch",
   "@jgengine/core/scene/entityStore#PoseConstraintFrame",
   "@jgengine/core/scene/entityStore#SceneEntity",

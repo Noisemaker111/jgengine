@@ -1,3 +1,4 @@
+import { parseEditorMaterialAsset } from "@jgengine/core/editor/materialAuthoring";
 import {
   editorDocumentBounds,
   listEditorKinds,
@@ -108,6 +109,12 @@ export const documentHandlers: Pick<
   | "list_assets"
   | "place_asset"
   | "batch_set_properties"
+  | "list_material_assets"
+  | "list_material_slots"
+  | "upsert_material_asset"
+  | "remove_material_asset"
+  | "assign_material_asset"
+  | "clear_material_assets"
   | "assign_material"
   | "set_object_flags"
 > = {
@@ -454,6 +461,28 @@ export const documentHandlers: Pick<
       },
     });
     return { ok: true, result: summarizeEditorSession(ctx.session.getState()) };
+  },
+  list_material_assets: (ctx) => ({ ok: true, result: { assets: ctx.session.getState().document.materialAssets ?? [], assignments: ctx.session.getState().document.markers.filter((marker) => marker.meta?.materialAssignments !== undefined).map((marker) => ({ id: marker.id, assignments: marker.meta!.materialAssignments })) } }),
+  list_material_slots: (ctx, request) => {
+    const inventory = ctx.api.getMaterialSlots(request.id);
+    return inventory.status === "ready" ? { ok: true, result: inventory } : { ok: false, result: inventory, error: inventory.status === "loading" ? "Material slots are still loading." : inventory.reason };
+  },
+  upsert_material_asset: (ctx, request) => {
+    const asset = parseEditorMaterialAsset(request.asset);
+    ctx.session.dispatch({ type: "upsertMaterialAsset", asset }, request.coalesce === undefined ? undefined : { coalesce: request.coalesce });
+    return { ok: true, result: { asset } };
+  },
+  remove_material_asset: (ctx, request) => {
+    const result = ctx.session.transaction([{ type: "removeMaterialAsset", id: request.id }]);
+    return result.ok ? { ok: true, result: summarizeEditorSession(result.state) } : { ok: false, error: result.error };
+  },
+  assign_material_asset: (ctx, request) => {
+    const result = ctx.session.transaction([{ type: "assignMaterialAsset", ids: request.ids, materialId: request.materialId, selector: request.selector }]);
+    return result.ok ? { ok: true, result: summarizeEditorSession(result.state) } : { ok: false, error: result.error };
+  },
+  clear_material_assets: (ctx, request) => {
+    const result = ctx.session.transaction([{ type: "clearMaterialAssets", ids: request.ids }]);
+    return result.ok ? { ok: true, result: summarizeEditorSession(result.state) } : { ok: false, error: result.error };
   },
   assign_material: (ctx, request) => {
     if (!documentHasAnyId(ctx.session.getState().document, request.ids)) {

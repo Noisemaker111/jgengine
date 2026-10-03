@@ -35,6 +35,18 @@ Working example: the `guard-probe` dev demo (`apps/dev/src/demo/guardProbe.ts`),
 
 ## Gotchas
 
+For an NPC that only acquires a hostile player, chases to reach and applies an effect on cooldown, attach the shared behavior instead of a graph or a per-game pursuit map:
+
+```ts
+ctx.scene.entity.spawn("guard", {
+  behaviors: [pursue({ aggroRadius: 12, reach: 1.2, leashRange: 24, speed: 3,
+    attack: { effect: "damage", amount: 4, intervalSec: 1.5 }, thinkInterval: 0.1,
+    threat: { decayPerSecond: 0.5 } })],
+});
+```
+
+Import `pursue` from `@jgengine/core/world`; configure the target's `receive` policy in content. The host runs the behavior and GameContext saves its home/cooldown/scheduling state. Game effects can add threat through `behaviorControl(ctx).threat(id)?.add(sourceId, amount)`; explicit `setTarget` has priority. Its movement uses shared solids without route planning. Keep perception memory and navigation in the seams above when the NPC needs occlusion, investigation or a detour.
+
 - Hand the graph facts, not objects: the blackboard serializes with the behavior,
   so saves and replays keep an NPC mid-investigation.
 - Judge footstep noise on speed averaged over a window, not one frame; frame-time

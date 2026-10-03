@@ -166,3 +166,18 @@ describe("applyMaterialOverride", () => {
     expect(shader.fragmentShader).toBe(BASE_FRAGMENT);
   });
 });
+
+test("shared source promotion and rim hooks are applied once per material", () => {
+  const material = new THREE.MeshStandardMaterial();
+  const root = new THREE.Group();
+  root.add(new THREE.Mesh(new THREE.BoxGeometry(), material), new THREE.Mesh(new THREE.BoxGeometry(), material));
+  let owned = 0;
+  applyMaterialOverride(root, { clearcoat: 0.5, rim: { strength: 0.2 } }, { clone: false, ownMaterial: () => owned++ });
+  const a = root.children[0] as THREE.Mesh;
+  const b = root.children[1] as THREE.Mesh;
+  expect(a.material).toBe(b.material);
+  expect(owned).toBe(1);
+  const shader = { uniforms: {}, fragmentShader: BASE_FRAGMENT };
+  (a.material as THREE.MeshStandardMaterial).onBeforeCompile(shader as never, {} as THREE.WebGLRenderer);
+  expect(shader.fragmentShader.split("uniform vec3 uJgRimColor;").length - 1).toBe(1);
+});

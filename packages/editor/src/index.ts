@@ -62,6 +62,9 @@ export {
   type EditorBridgeRequest,
   type EditorBridgeResponse,
   type EditorHostApi,
+  type EditorMaterialSlotInfo,
+  type EditorMaterialSlotReport,
+  type EditorMaterialSlotInventory,
   type EditorPerfSample,
   type EditorRunMode,
 } from "./session";

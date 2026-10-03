@@ -278,6 +278,12 @@
 - `runtimeEntityWriteBackCommand` (function): function runtimeEntityWriteBackCommand(document: EditorDocument, entity: RuntimeEntityState): EditorCommand | null — Builds an undoable document command from an ephemeral runtime entity row (write-back). Returns null when there is nothing to promote. Does not mutate document or clear the override — the caller dispatches the command and then clears the override.
 - `subscribeDocumentLiveSyncInstall` (function): function subscribeDocumentLiveSyncInstall(listener: () => void): () => void — Subscribe to install/uninstall of the global live-sync bus (AuthoredScene re-attaches when the editor host mounts over a running game).
 
+## @jgengine/core/editor/materialAuthoring
+
+- `authoredMaterialAssignments` (function): function authoredMaterialAssignments(meta: Record<string, unknown> | undefined): MaterialAssignment[] — Read named assignments from authored marker metadata without inferring whole-model overrides.
+- `modelWithAuthoredMaterials` (function): function modelWithAuthoredMaterials(model: ModelConfig | undefined, document: Pick<EditorDocument, "markers" | "materialAssets">, instanceId: string): ModelConfig | undefined — Apply authored references; document assets and selectors override model defaults of the same identity.
+- `parseEditorMaterialAsset` (function): function parseEditorMaterialAsset(value: unknown): MaterialAsset — Validate and copy a material asset at the editor boundary.
+
 ## @jgengine/core/editor/minimap
 
 - `DocumentBakeOptions` (interface): interface DocumentBakeOptions extends MinimapBakeOptions — Options for {@link bakeMinimapFromDocument}.
@@ -440,6 +446,9 @@
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, }: { gameId: string; session: EditorSession; … — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorLayerOverlays` (function): function EditorLayerOverlays({ document, visibility, selection, hoverId = null, onSelect, activePathPoint, groundHeightAt, }: { document: EditorDocument; visibility: EditorKindVisibility; selection: readonly string[]; /** Pre-selection hover id from viewport pointer pick; ignored when already select… — Renders every visible marker, volume, path, and note from a document as in-scene 3D gizmos.
+- `EditorMaterialSlotInfo` (type): type EditorMaterialSlotInfo = Readonly<Omit<ModelMaterialSlotInfo, "uvSets">> & { readonly uvSets: readonly number[] } — Canonical imported slot names and mesh prerequisites reported by the loaded model.
+- `EditorMaterialSlotInventory` (type): type EditorMaterialSlotInventory = EditorMaterialSlotReport & { id: string; sourceUrl?: string } — A marker's current imported-model inventory, including an explicit availability state.
+- `EditorMaterialSlotReport` (type): type EditorMaterialSlotReport = | { status: "ready"; slots: readonly EditorMaterialSlotInfo[] } | { status: "loading" } | { status: "unavailable"; reason: string } — A live model-source observation; loading and unavailable reports never contain fabricated slots.
 - `EditorMcpTool` (interface): interface EditorMcpTool — One MCP tool descriptor — same verbs as the in-browser host RPC.
 - `EditorNetworkAdapterKind` (type): type EditorNetworkAdapterKind = MultiplayerAdapterConfig["kind"] | "unknown" — Transport kind declared by the game, or `"unknown"` when the config is unreadable.
 - `EditorNetworkPresenceActor` (interface): interface EditorNetworkPresenceActor — One online actor from a host-supplied presence feed. Fields mirror {@link PresencePoseRow} so hosts can forward backend rows without inventing shape.
@@ -521,6 +530,10 @@
 ## @jgengine/editor/EditorChrome
 
 - `EditorChrome` (function): function EditorChrome({ gameId, session, api, assets, ui, baselineDocument, save, networkSnapshot, importAsset = importAssetToHost, onRegisterAsset, onExitEditor, allowedKinds, exitLabel, maxImportBytes, documentSave, draftAutosave = true, creatorPolicy, }: { gameId: string; session: EditorSession; … — The full editor UI shell — global app bar, contextual scene toolbar, workspace rail, resizable hierarchy/inspector docks, tabbed bottom dock (content browser, console, profiler, AI assistant), viewport overlays, and status bar — wired to the session, UI store, layout store, and host RPC. Mounted by `EditorApp`; not a game-author entry point.
+
+## @jgengine/editor/MaterialAssetEditor
+
+- `MaterialAssetEditorProps` (interface): interface MaterialAssetEditorProps — A callback-driven physical material editor; the host owns persistence, undo and preview rendering.
 
 ## @jgengine/editor/PerfProbe
 
@@ -694,6 +707,14 @@
 - `MaterialDocumentSlice` (interface): interface MaterialDocumentSlice — Minimal document slice the materials inventory needs.
 - `MaterialObjectKind` (type): type MaterialObjectKind = "marker" | "volume" | "path" — Document-wide material assignment inventory for the Materials workspace. Reads real `meta.materialId` stamps from placeables — no thumbnails or faked previews.
 
+## @jgengine/editor/materialControls
+
+- `MaterialControl` (interface): interface MaterialControl — One physical surface field in the material workspace.
+- `MaterialControlGroup` (interface): interface MaterialControlGroup — A family-specific group of primary controls; maps and full physical fields remain available.
+- `advancedMaterialControls` (const): const advancedMaterialControls: readonly MaterialControl[] — Complete supported physical scalar/color fields, independent of the six primary groups.
+- `materialAuthoringNotes` (function): function materialAuthoringNotes(asset: MaterialAsset): readonly string[] — Reports geometry prerequisites and renderer approximations to authors.
+- `materialControlGroups` (function): function materialControlGroups(family: MaterialFamily): readonly MaterialControlGroup[] — Returns six primary groups suited to the material family without hiding the physical model.
+
 ## @jgengine/editor/mcp/bridgeServer
 
 - `EditorBridgeServer` (interface): interface EditorBridgeServer — A running editor bridge server: its bound port, URL, and a stop handle.
@@ -806,6 +827,9 @@
 - `EditorFocusTarget` (interface): interface EditorFocusTarget — Where the editor orbit camera looks, plus optional placement so a single `camera_goto`/ `camera_frame` can compose an aerial. `x/y/z` is the orbit target (pan-only when that is all that is set — the historical behavior); `distance`, `pitch` (degrees above the horizon), `yaw` (degrees), and `height` reposition the camera around that target when provided.
 - `EditorHostApi` (interface): interface EditorHostApi — The live editor's global control surface — session, visibility, camera focus, assets, mode, RPC.
 - `EditorKindVisibility` (interface): interface EditorKindVisibility — Per-kind show/hide flags for the editor's layer panel.
+- `EditorMaterialSlotInfo` (type): type EditorMaterialSlotInfo = Readonly<Omit<ModelMaterialSlotInfo, "uvSets">> & { readonly uvSets: readonly number[] } — Canonical imported slot names and mesh prerequisites reported by the loaded model.
+- `EditorMaterialSlotInventory` (type): type EditorMaterialSlotInventory = EditorMaterialSlotReport & { id: string; sourceUrl?: string } — A marker's current imported-model inventory, including an explicit availability state.
+- `EditorMaterialSlotReport` (type): type EditorMaterialSlotReport = | { status: "ready"; slots: readonly EditorMaterialSlotInfo[] } | { status: "loading" } | { status: "unavailable"; reason: string } — A live model-source observation; loading and unavailable reports never contain fabricated slots.
 - `EditorPerfSample` (interface): interface EditorPerfSample — Rolling frame-rate sample published by the in-canvas PerfProbe.
 - `EditorRunMode` (type): type EditorRunMode = "edit" | "walk" | "play" | "hud" — How the editor hosts the game: frozen placement view, roamable world, the real game, or HUD-layout authoring.
 - `EditorSession` (interface): interface EditorSession — Stateful, undoable handle for driving scene edits from UI or an MCP agent.
