@@ -3,11 +3,49 @@ import * as THREE from "three";
 import type { EnvironmentSample } from "@jgengine/core/world/envField";
 import { createMaterialTemplate } from "@jgengine/core/material/materialAsset";
 import { applyMaterialAsset } from "./materialAsset";
+import { cloneModelScene, disposeModelScene } from "./modelRender";
 import { applyMaterialAppearanceSignals, captureMaterialAppearanceBaseline, restoreMaterialAppearanceBaseline } from "./materialAppearanceSignals";
 
 const sample = (wetness: number, lightExposure = 1): EnvironmentSample => ({ temperature: 20, wetness, lightExposure, ambientLight: 0.5, sheltered: false });
 
 describe("owned material environment response", () => {
+  test("cloned authored cards bind exposure and reset to each instance's compiled uniform", () => {
+    const imported = new THREE.MeshPhysicalMaterial({ transmission: 0.2, clearcoat: 0.4, iridescence: 0.3 });
+    const receivers: THREE.Material[] = [];
+    imported.onBeforeCompile = function () { receivers.push(this); };
+    imported.customProgramCacheKey = () => "imported-cards:v1";
+    const authored = applyMaterialAsset(imported, createMaterialTemplate("hair-cards", "cards"));
+    const source = new THREE.Mesh(new THREE.PlaneGeometry(), authored);
+    const compile = (material: THREE.Material) => {
+      const shader = { uniforms: {} as Record<string, { value: number }>, vertexShader: THREE.ShaderLib.physical.vertexShader, fragmentShader: THREE.ShaderLib.physical.fragmentShader };
+      material.onBeforeCompile(shader as never, {} as THREE.WebGLRenderer);
+      return shader.uniforms.uJgHairBacklight!;
+    };
+    const originalUniform = compile(authored);
+    const first = cloneModelScene(source) as THREE.Mesh, second = cloneModelScene(source) as THREE.Mesh;
+    const a = first.material as THREE.MeshPhysicalMaterial, b = second.material as THREE.MeshPhysicalMaterial;
+    const baselineA = captureMaterialAppearanceBaseline(a), baselineB = captureMaterialAppearanceBaseline(b);
+    const uniformA = compile(a), uniformB = compile(b);
+    try {
+      expect(receivers).toEqual([authored, a, b]);
+      expect(a.customProgramCacheKey()).toBe(authored.customProgramCacheKey());
+      applyMaterialAppearanceSignals(a, baselineA, sample(0, 0.2), { cardBacklightExposure: true });
+      expect(uniformA.value).toBeCloseTo(0.05);
+      expect(uniformB.value).toBe(0.25);
+      applyMaterialAppearanceSignals(b, baselineB, sample(0, 0.6), { cardBacklightExposure: true });
+      expect(uniformB.value).toBeCloseTo(0.15);
+      expect(uniformA.value).toBeCloseTo(0.05);
+      restoreMaterialAppearanceBaseline(a, baselineA);
+      expect(uniformA.value).toBe(0.25);
+      expect(uniformB.value).toBeCloseTo(0.15);
+      restoreMaterialAppearanceBaseline(b, baselineB);
+      expect(uniformB.value).toBe(0.25);
+      expect(authored.userData.jgHairBacklightUniform).toBe(originalUniform);
+      expect(originalUniform.value).toBe(0.25);
+      expect([a.transmission, b.clearcoat, authored.iridescence]).toEqual([0.2, 0.4, 0.3]);
+    } finally { disposeModelScene(first); disposeModelScene(second); authored.dispose(); imported.dispose(); source.geometry.dispose(); }
+  });
+
   test("wet updates preserve imported features, texture sharing and source slots without drift", () => {
     const map = new THREE.Texture();
     const imported = new THREE.MeshPhysicalMaterial({ roughness: 0.8, color: "#937b65", sheen: 0.6, clearcoat: 0.3, transmission: 0.2, ior: 1.7, thickness: 0.2, alphaTest: 0.5, map });
