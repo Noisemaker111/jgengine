@@ -121,6 +121,7 @@ Turn data-only placement into the build tooling of Valheim/Enshrouded/The Sims/F
 - Studio kinds declare collision with a `solids(resolved, object, params, context)` hook on `registerSceneKind`. `city` implements it for wall and roof pieces, with a `solid buildings` toggle in the inspector (`meta.solid`). `AuthoredScene` calls `syncAuthoredSolids(ctx.world.solids, document, sampleHeight)`, one `authored:<objectId>` layer per object; a headless host calls it itself.
 - For code-built geometry, derive solids from data and `set` a layer: `buildingSolids(buildings, groundHeight)`, `wallSolids(wallSegments(points, closed), { height, thickness })`.
 - A yawed solid reaches walkers as AABB strips along its long axis (`obstacleFromSolid`); physics backends get the exact oriented box.
+- Scene `raycast`/`raycastAll` query the same store by segment bounds and intersect the oriented boxes. Hits use existing `targetKind: "wall"`, `instanceId: "world-solid"`, physical/blocking/non-damage policy; `walls: false` or excluding `world-solid` omits them. LOS consumers pass `accept: (hit) => hit.blocks`; bare spatial/perception occlusion remains an injected policy. Projectile cover still follows `physics.projectileObstacles`.
 
 ### Physics world (optional, headless)
 

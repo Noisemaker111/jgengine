@@ -7,6 +7,8 @@ import {
 } from "@jgengine/core/scene/collisionMesh";
 import { createObjectStore } from "@jgengine/core/scene/objectStore";
 import { createSceneRaycast, firstImpact, hitsUntilBlocked } from "@jgengine/core/scene/sceneRaycast";
+import { createWorldSolids } from "../world/worldSolids";
+import type { EntityPosition } from "./entityStore";
 
 describe("sceneRaycast", () => {
   test("nearest-hit and ordered-all over entities with default colliders", () => {
@@ -156,6 +158,71 @@ describe("sceneRaycast", () => {
     });
     const all = api.raycastAll({ origin: [0, 0, 0], direction: [0, 0, 1], maxDistance: 20 });
     expect(all[0]!.instanceId <= all[1]!.instanceId).toBe(true);
+  });
+});
+
+describe("sceneRaycast world solids", () => {
+  test("indexed solids share ordering, filters and accept policy with existing hit kinds", () => {
+    const solids = createWorldSolids();
+    solids.set("walls", [
+      { center: [20, 1, 4], halfExtents: [21, 1, 0.5] },
+      { center: [0, 1, 8], halfExtents: [1, 1, 0.5] },
+    ]);
+    const objects = createObjectStore();
+    objects.place("crate", 0, 1, 6, { instanceId: "crate" });
+    const queries: { min: EntityPosition; max: EntityPosition }[] = [];
+    const api = createSceneRaycast({
+      solids: { inBox(min, max) { queries.push({ min, max }); return solids.inBox(min, max); } },
+      objects: { list: () => objects.list(), inBox: (min, max) => objects.inBox(min, max) },
+      entities: {
+        list: () => [{ id: "target", position: [0, 1, 10], rotationY: 0 }],
+        collidersOf: () => ({ hitboxes: [{ name: "target", purpose: "damage", shape: { kind: "sphere", radius: 0.5 } }] }),
+      },
+      walls: [{ id: "manual-wall", a: [-1, 7], b: [1, 7], halfHeight: 2 }],
+      terrain: { sampleHeight: () => 0 },
+    });
+    const ray = { origin: [0, 1, 0] as const, direction: [0, 0, 17] as const, maxDistance: 12, filter: { terrain: false } };
+    const hits = api.raycastAll(ray);
+    expect(hits.map((hit) => hit.instanceId)).toEqual(["world-solid", "crate", "manual-wall", "world-solid", "target"]);
+    expect(hits.map((hit) => hit.distance)).toEqual([3.5, 5.5, 6.75, 7.5, 9.5]);
+    expect(hits[0]).toMatchObject({ targetKind: "wall", purpose: "physical", damageEligible: false, blocks: true, point: [0, 1, 3.5], normal: [0, 0, -1] });
+    expect(queries).toEqual([{ min: [0, 1, 0], max: [0, 1, 12] }]);
+    expect(api.raycast(ray)?.instanceId).toBe("world-solid");
+    const beforeFilter = queries.length;
+    expect(api.raycast({ ...ray, filter: { ...ray.filter, walls: false } })?.instanceId).toBe("crate");
+    expect(queries).toHaveLength(beforeFilter);
+    expect(api.raycast({ ...ray, excludeInstanceIds: new Set(["world-solid", "crate"]) })?.instanceId).toBe("manual-wall");
+    expect(queries).toHaveLength(beforeFilter);
+    expect(api.raycast({ ...ray, accept: (hit) => hit.damageEligible })?.instanceId).toBe("target");
+    expect(api.raycast({ ...ray, accept: (hit) => hit.instanceId === "world-solid" && hit.distance > 6 })?.distance).toBe(7.5);
+    expect(api.raycast({ ...ray, maxDistance: 3.49 })).toBeNull();
+    expect(api.raycast({ ...ray, maxDistance: 3.5 })?.distance).toBe(3.5);
+    expect(api.raycast({ ...ray, direction: [0, 0, -1] })).toBeNull();
+    const beforeZero = queries.length;
+    expect(api.raycast({ ...ray, direction: [0, 0, 0] })).toBeNull();
+    expect(queries).toHaveLength(beforeZero);
+    solids.remove("walls");
+    expect(api.raycast(ray)?.instanceId).toBe("crate");
+    solids.restore({ layers: { restored: [{ center: [0, 1, 2], halfExtents: [1, 1, 0.25] }] } });
+    expect(api.raycast(ray)?.distance).toBe(1.75);
+    expect(api.raycast({ origin: [0, 5, 0], direction: [0, -1, 0], maxDistance: 10 })?.targetKind).toBe("terrain");
+  });
+
+  test("yawed solid hits use its oriented box and return world normals without filling empty corners", () => {
+    const solids = createWorldSolids();
+    solids.set("angled-wall", [{ center: [5, 2, 5], halfExtents: [2, 1, 0.25], rotationY: Math.PI / 4 }]);
+    const api = createSceneRaycast({ solids });
+    const cos = Math.cos(Math.PI / 4);
+    const sin = Math.sin(Math.PI / 4);
+    const hit = api.raycast({ origin: [5 - 4 * cos, 2, 5 + 4 * sin], direction: [cos, 0, -sin], maxDistance: 8 });
+    expect(hit?.distance).toBeCloseTo(2);
+    expect(hit?.normal[0]).toBeCloseTo(-cos);
+    expect(hit?.normal[2]).toBeCloseTo(sin);
+    expect(hit?.point[0]).toBeCloseTo(5 - 2 * cos);
+    expect(hit?.point[2]).toBeCloseTo(5 + 2 * sin);
+    expect(api.raycast({ origin: [6.4, 5, 6.4], direction: [0, -1, 0], maxDistance: 5 })).toBeNull();
+    expect(api.raycast({ origin: [5, 5, 5], direction: [0, -1, 0], maxDistance: 5 })?.distance).toBeCloseTo(2);
+    expect(api.raycast({ origin: [5, 2, 5], direction: [0, 1, 0], maxDistance: 5 })?.distance).toBe(0);
   });
 });
 

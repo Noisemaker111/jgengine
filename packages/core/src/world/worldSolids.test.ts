@@ -9,6 +9,7 @@ import { createPhysicsWorldBackend } from "../physics/physicsWorldBackend";
 import { syncWorldColliders } from "../physics/worldColliders";
 import { createGameContext, type GameContext } from "../runtime/gameContext";
 import { createAssetCatalog } from "../scene/assetCatalog";
+import { createPerception } from "../sensor/perception";
 import { resolveAuthoredSolids, syncAuthoredSolids } from "./authoredSolids";
 import { resolveStructureBuildings } from "./environmentSummary";
 import { building, environment, type BuildingEnvironmentConfig } from "./features";
@@ -185,6 +186,75 @@ describe("environment structures are solid to every system that reads ctx.world.
     expect(ctx.scene.entity.get("p")!.position[2]).toBeLessThan(nearFace(ctx));
     ctx.world.solids.remove("environment:structures");
     expect(ctx.scene.entity.moveTowardCommit("p", target, { speed: 2, dt: 1 })).toEqual(target);
+  });
+
+  test("generated and placed walls block the same scene ray and perception sight line", () => {
+    const generated = worldContext(TOWER);
+    const placed = worldContext({ ...TOWER, solid: false });
+    const solid = generated.world.solids.layer("environment:structures")[0]!;
+    placed.scene.object.place("wall", ...solid.center, { instanceId: "placed-wall" });
+    placed.scene.object.setColliders("placed-wall", {
+      body: { purpose: "physical", shape: { kind: "aabb", halfExtents: solid.halfExtents } },
+    });
+    const ray = { origin: [0, 1, 0] as const, direction: [0, 0, 1] as const, maxDistance: 20, filter: { entities: false, terrain: false } };
+    const placedHit = placed.scene.raycast(ray)!;
+    expect(placedHit?.blocks).toBe(true);
+    const generatedHit = generated.scene.raycast(ray)!;
+    expect(generatedHit).not.toBeNull();
+    expect(generatedHit).toMatchObject({ targetKind: "wall", purpose: "physical", damageEligible: false, blocks: true });
+    expect(generatedHit.distance).toBeCloseTo(placedHit.distance);
+    expect(generatedHit.point).toEqual(placedHit.point);
+    expect(generatedHit.normal).toEqual(placedHit.normal);
+
+    for (const ctx of [generated, placed]) {
+      const senses = createPerception({ sightRange: 30, sightConeDeg: 360, hearingRange: 0, memorySeconds: 1,
+        occluded: (from, to) => ctx.scene.raycast({ ...ray, origin: from,
+          direction: [to[0] - from[0], to[1] - from[1], to[2] - from[2]], maxDistance: Math.hypot(...to.map((v, i) => v - from[i]!)),
+          accept: (hit) => hit.blocks,
+        }) !== null,
+      });
+      const observer = { id: "observer", position: ray.origin, yaw: 0 };
+      const targets = [{ id: "target", position: [0, 1, 20] as const }];
+      senses.observe(observer, targets, 0);
+      expect(senses.memory("observer")).toEqual([]);
+      ctx.world.solids.remove("environment:structures");
+      ctx.scene.object.remove("placed-wall");
+      senses.observe(observer, targets, 100);
+      expect(senses.memory("observer")[0]?.targetId).toBe("target");
+    }
+  });
+
+  test("projectiles use generated cover under the existing projectile obstacle policy", () => {
+    for (const projectileObstacles of [true, false]) {
+      const ctx = createGameContext({
+        definition: defineGameDefinition({ name: "Generated cover", assets: createAssetCatalog(), multiplayer: "off",
+          world: environment({ structures: building(TOWER) }), physics: { gravity: -30, jumpVelocity: 8, projectileObstacles },
+        }),
+        content: {
+          itemById: () => ({ weapon: { damage: 7, range: 30, pellets: 1, spread: 0 } }),
+          entityById: () => ({ stats: { health: { max: 100 } }, receive: { damage: { order: ["health"] } } }),
+        },
+        player: { userId: "shooter", isNew: true },
+      });
+      ctx.scene.entity.spawn("shooter", { id: "shooter", position: [0, 0, 0] });
+      ctx.scene.entity.spawn("target", { id: "target", position: [0, 0, 20] });
+      const shoot = () => ctx.scene.entity.settleProjectile(ctx.scene.entity.fireProjectile({
+        from: "shooter", via: { item: "weapon" }, aim: { yaw: 0, pitch: 0 }, effect: "damage",
+        originPolicy: { kind: "world", origin: [0, 1, 0] },
+      }));
+      const covered = shoot();
+      expect(covered.status).toBe("settled");
+      if (covered.status !== "settled") throw new Error(covered.reason);
+      expect(covered.hits.map((hit) => hit.instanceId)).toEqual(projectileObstacles ? [] : ["target"]);
+      expect(ctx.scene.entity.stats.get("target", "health")?.current).toBe(projectileObstacles ? 100 : 93);
+      if (projectileObstacles) expect(covered.at[2]).toBeCloseTo(nearFace(ctx));
+      ctx.world.solids.remove("environment:structures");
+      const open = shoot();
+      expect(open.status).toBe("settled");
+      if (open.status !== "settled") throw new Error(open.reason);
+      expect(open.hits.map((hit) => hit.instanceId)).toEqual(["target"]);
+      expect(ctx.scene.entity.stats.get("target", "health")?.current).toBe(projectileObstacles ? 93 : 86);
+    }
   });
 
   test("a physics backend gets it as a static body", () => {

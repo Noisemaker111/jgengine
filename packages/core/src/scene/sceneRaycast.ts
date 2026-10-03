@@ -12,6 +12,7 @@ import {
 import { raycastCollisionMesh } from "./collisionMesh";
 import { intersectAabb, normalizeDirection } from "./objectQuery";
 import type { SceneObject } from "./objectStore";
+import type { WorldSolid, WorldSolids } from "../world/worldSolids";
 
 export type SceneRaycastTargetKind = "entity" | "object" | "terrain" | "wall";
 
@@ -32,6 +33,7 @@ export interface SceneRaycastFilter {
   entities?: boolean;
   objects?: boolean;
   terrain?: boolean;
+  /** Wall segments and indexed world solids. */
   walls?: boolean;
 }
 
@@ -78,6 +80,8 @@ export interface SceneRaycastDeps {
   objects?: SceneObjectQuerySource;
   terrain?: TerrainRaycastSource;
   walls?: readonly WallSegment[];
+  /** Indexed geometry returns physical, non-damage wall hits with instance id `world-solid`. */
+  solids?: Pick<WorldSolids, "inBox">;
 }
 
 export interface SceneRaycastApi {
@@ -237,6 +241,31 @@ function wallAabb(wall: WallSegment): { min: EntityPosition; max: EntityPosition
     min: [minX, yCenter - halfHeight, minZ],
     max: [maxX, yCenter + halfHeight, maxZ],
     center: [(ax + bx) / 2, yCenter, (az + bz) / 2],
+  };
+}
+
+function rayHitsWorldSolid(
+  solid: WorldSolid,
+  origin: EntityPosition,
+  direction: EntityPosition,
+  maxDistance: number,
+): { distance: number; normal: EntityPosition } | null {
+  const cos = Math.cos(solid.rotationY ?? 0);
+  const sin = Math.sin(solid.rotationY ?? 0);
+  const x = origin[0] - solid.center[0];
+  const z = origin[2] - solid.center[2];
+  const [hx, hy, hz] = solid.halfExtents;
+  const hit = intersectAabb(
+    [x * cos - z * sin, origin[1] - solid.center[1], x * sin + z * cos],
+    [direction[0] * cos - direction[2] * sin, direction[1], direction[0] * sin + direction[2] * cos],
+    [-hx, -hy, -hz],
+    [hx, hy, hz],
+    maxDistance,
+  );
+  if (hit === null) return null;
+  return {
+    distance: hit.distance,
+    normal: [hit.normal[0] * cos + hit.normal[2] * sin, hit.normal[1], -hit.normal[0] * sin + hit.normal[2] * cos],
   };
 }
 
@@ -403,6 +432,35 @@ function gatherHits(deps: SceneRaycastDeps, input: SceneRaycastInput): SceneRayc
           origin[2] + direction[2] * hit.distance,
         ],
         normal: hit.normal,
+      });
+    }
+  }
+
+  if (enabled(input.filter, "walls") && deps.solids !== undefined && !excluded(input.excludeInstanceIds, "world-solid")) {
+    const end: EntityPosition = [
+      origin[0] + direction[0] * maxDistance,
+      origin[1] + direction[1] * maxDistance,
+      origin[2] + direction[2] * maxDistance,
+    ];
+    const min: EntityPosition = [Math.min(origin[0], end[0]), Math.min(origin[1], end[1]), Math.min(origin[2], end[2])];
+    const max: EntityPosition = [Math.max(origin[0], end[0]), Math.max(origin[1], end[1]), Math.max(origin[2], end[2])];
+    for (const solid of deps.solids.inBox(min, max)) {
+      const hit = rayHitsWorldSolid(solid, origin, direction, maxDistance);
+      if (hit === null) continue;
+      hits.push({
+        targetKind: "wall",
+        instanceId: "world-solid",
+        colliderName: "solid",
+        purpose: "physical",
+        damageEligible: false,
+        blocks: true,
+        distance: hit.distance,
+        normal: hit.normal,
+        point: [
+          origin[0] + direction[0] * hit.distance,
+          origin[1] + direction[1] * hit.distance,
+          origin[2] + direction[2] * hit.distance,
+        ],
       });
     }
   }

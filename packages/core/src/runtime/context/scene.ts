@@ -360,6 +360,7 @@ export function createSceneSubsystem(d: SceneSubsystemDeps): SceneSubsystem {
   };
 
   const sceneRaycast: SceneRaycastApi = createSceneRaycast({
+    solids: d.solids,
     entities: {
       list: () =>
         entities.list().map((entity) => ({
