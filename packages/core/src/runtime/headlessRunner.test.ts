@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "../game/defineGame";
+import { createAssetCatalog } from "../scene/assetCatalog";
 import { environment, grass, terrain } from "../world/features";
 import { summarizeEnvironment } from "../world/environmentSummary";
 import { offline } from "./adapter";
@@ -50,6 +51,22 @@ function boot() {
   });
   return { game, runner };
 }
+
+test("a released press buffered before a fixed step fires once, including deterministic recorded replay", () => {
+  const seen: Array<{ down: boolean; pressed: boolean }> = [];
+  const game = defineGameDefinition({ name: "tap", assets: createAssetCatalog(), simulation: { hz: 60 } });
+  const runner = createHeadlessRunner({ definition: game, loop: { onTick(ctx) { seen.push({ down: ctx.input.isDown("fire"), pressed: ctx.input.justPressed("fire") }); } } });
+  runner.publishInput({ held: ["fire"], presses: [{ action: "fire", seq: 1 }] });
+  runner.publishInput({ held: [] });
+  runner.step(0);
+  expect(seen).toEqual([]);
+  runner.step(2 / 60);
+  expect(seen).toEqual([{ down: false, pressed: true }, { down: false, pressed: false }]);
+  runner.publishInput({ held: [], presses: [{ action: "fire", seq: 2 }] });
+  runner.restore(runner.snapshot());
+  runner.step(1 / 60);
+  expect(seen.at(-1)?.pressed).toBe(false);
+});
 
 describe("createHeadlessRunner", () => {
   test("physics-backed movement walks across a floor and steps onto a low box", () => {

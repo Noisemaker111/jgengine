@@ -13,7 +13,7 @@ export interface InputRecorderState {
 
 /** Tick-indexed input log: record per tick, look up the frame in force at any tick. */
 export interface InputRecorder {
-  /** Store the frame in force from `tick` onward. Recording the same tick twice replaces the earlier frame. */
+  /** Store held state from `tick` onward and presses on that tick only. Same-tick recordings merge press identities while replacing continuous state. */
   record(tick: number, frame: InputFrame): void;
   /** The frame in force at `tick`: the latest recorded frame whose tick is at most `tick`, or `null` before the first. */
   frameAt(tick: number): InputFrame | null;
@@ -29,6 +29,7 @@ function cloneFrame(frame: InputFrame): InputFrame {
   return {
     held: [...frame.held],
     pointer: frame.pointer === null ? null : { ...frame.pointer },
+    ...(frame.presses === undefined ? {} : { presses: frame.presses.map(press => ({ ...press })) }),
     ...(frame.analog === undefined ? {} : { analog: frame.analog === null ? null : { ...frame.analog } }),
     ...(frame.tick === undefined ? {} : { tick: frame.tick }),
   };
@@ -42,6 +43,7 @@ function cloneFrame(frame: InputFrame): InputFrame {
  */
 export function createInputRecorder(): InputRecorder {
   let frames: RecordedInput[] = [];
+  const continuousFrames = new WeakMap<InputFrame, InputFrame>();
 
   function indexAtOrBefore(tick: number): number {
     let lo = 0;
@@ -64,6 +66,12 @@ export function createInputRecorder(): InputRecorder {
       const entry = { tick, frame: cloneFrame(frame) };
       const index = indexAtOrBefore(tick);
       if (index >= 0 && frames[index]!.tick === tick) {
+        const previous = frames[index]!.frame.presses;
+        if (previous !== undefined) {
+          const presses = new Map(previous.map(press => [press.seq, press]));
+          for (const press of entry.frame.presses ?? []) presses.set(press.seq, press);
+          entry.frame.presses = [...presses.values()].map(press => ({ ...press }));
+        }
         frames[index] = entry;
         return;
       }
@@ -71,7 +79,16 @@ export function createInputRecorder(): InputRecorder {
     },
     frameAt(tick) {
       const index = indexAtOrBefore(tick);
-      return index < 0 ? null : frames[index]!.frame;
+      if (index < 0) return null;
+      const entry = frames[index]!;
+      if (entry.tick === tick || entry.frame.presses === undefined) return entry.frame;
+      let heldFrame = continuousFrames.get(entry.frame);
+      if (heldFrame === undefined) {
+        const { presses: _presses, ...continuous } = entry.frame;
+        heldFrame = continuous;
+        continuousFrames.set(entry.frame, heldFrame);
+      }
+      return heldFrame;
     },
     frames: () => frames,
     lastTick: () => (frames.length === 0 ? -1 : frames[frames.length - 1]!.tick),

@@ -897,6 +897,7 @@
     "./shellInputPublication",
     "./shellMovement",
     "./shellPointer",
+    "./shellPointerInput",
     "./structures",
     "./structures/BuildingKitBatch",
     "./structures/GeneratedBuilding",

@@ -2,6 +2,20 @@ import { describe, expect, test } from "bun:test";
 
 import { createInputRecorder } from "./inputRecorder";
 
+test("same-tick neutral retains the accepted press and replay never repeats it on later ticks", () => {
+  const recorder = createInputRecorder();
+  const press = { action: "fire", seq: 42 };
+  recorder.record(7, { held: ["fire"], pointer: null, presses: [press] });
+  press.action = "mutated";
+  recorder.record(7, { held: [], pointer: null });
+  expect(recorder.frameAt(7)).toMatchObject({ held: [], presses: [{ action: "fire", seq: 42 }] });
+  expect(recorder.frameAt(8)?.presses).toBeUndefined();
+  const restored = createInputRecorder();
+  restored.restore(recorder.snapshot());
+  expect(restored.frameAt(7)).toEqual(recorder.frameAt(7));
+  expect(restored.frameAt(8)?.presses).toBeUndefined();
+});
+
 describe("createInputRecorder", () => {
   test("frameAt returns the frame in force at a tick", () => {
     const recorder = createInputRecorder();

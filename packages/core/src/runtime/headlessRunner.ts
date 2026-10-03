@@ -8,11 +8,13 @@ import {
 import type { ModelAssetRef } from "../scene/assetCatalog";
 import { advanceBehaviors } from "../scene/behaviorRuntime";
 import { createGameContext, type GameContext, type GameContextContent, type GameContextModels } from "./gameContext";
-import type { InputSnapshot } from "./inputSnapshot";
+import type { InputFrame, InputSnapshot } from "./inputSnapshot";
 import { createContextSimSnapshot, type SimSnapshot } from "./simSnapshot";
 
 /** One step's worth of player intent handed to {@link HeadlessRunner.step} — the held-action set and pointer state the shell would otherwise publish from the browser each frame. */
 export interface HeadlessInput {
+  /** Discrete presses on this recorded step, including taps released before its held-state sample. */
+  presses?: InputFrame["presses"];
   /** Replaces the held-action set for this step; edge detection (`justPressed`/`justReleased`) rolls the previous set forward. Omit to keep the last published set. */
   held?: readonly string[];
   /** Replaces the normalized pointer state; omit to leave the last pointer unchanged (pass `null` to clear it). */
@@ -120,7 +122,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
       : null;
 
   function publishInput(input: HeadlessInput): void {
-    if (input.held !== undefined) ctx.input.publish(input.held);
+    ctx.input.publish(input.held ?? ctx.input.held(), { pressed: input.presses?.map(press => press.action) ?? [] });
     if (input.pointer !== undefined) ctx.input.publishPointer(input.pointer);
   }
 
@@ -148,6 +150,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
       const dt = Math.min(dtSeconds, maxStep);
       let total = 0;
       ctx.sim.advance(dt, (stepDt, _tick, gameDt) => {
+        ctx.input.beginStep();
         total += gameDt;
         ctx.sim.runStages("beforeMovement", stepDt);
         if (tuning !== null) {
@@ -171,6 +174,7 @@ export function createHeadlessRunner<TAssetRef extends ModelAssetRef, TMultiplay
     snapshot: () => simSnapshot.capture(),
     restore(snapshot) {
       simSnapshot.restore(snapshot);
+      ctx.input.publish([], { reset: true });
     },
     tick: () => ctx.sim.tick(),
   };

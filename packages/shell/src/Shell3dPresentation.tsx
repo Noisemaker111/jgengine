@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import {
   useMemo,
+  useEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -20,7 +21,7 @@ import {
   type ContextVerb,
 } from "@jgengine/core/interaction/contextMenu";
 import type { PointerAxisState } from "@jgengine/core/input/pointerAxis";
-import type { ActionStateTracker } from "@jgengine/core/input/actionBindings";
+import type { observableShellTracker } from "./shellInputPublication";
 import type { BindingOverrides } from "@jgengine/core/input/bindingOverrides";
 import type { TouchJoystickVariant, TouchScheme, TouchStyle } from "@jgengine/core/input/touchScheme";
 import type { Aim } from "@jgengine/core/scene/spatial";
@@ -52,6 +53,7 @@ import { SettingsProvider, type SettingsActionView } from "@jgengine/react/setti
 
 import { resolveWorldSky } from "./worldSky";
 import { pointerAimFor, pointerContextMenu } from "./shellPointer";
+import { shellPointerInput } from "./shellPointerInput";
 import { AudioListener, EntityAudioEmitters, ObjectAudioEmitters } from "./audio/AudioComponents";
 import type { AudioEngine } from "./audio/audioEngine";
 import { PostProcessing } from "./postfx/PostProcessing";
@@ -172,7 +174,7 @@ export function Shell3dPresentation({
   playable: PlayableGame;
   ctx: GameContext;
   multiplayer: ShellMultiplayer | null;
-  tracker: ActionStateTracker<string>;
+  tracker: ReturnType<typeof observableShellTracker>;
   pointerAxisRef: MutableRefObject<PointerAxisState | null>;
   gateRef: MutableRefObject<boolean>;
   wrapperRef: RefObject<HTMLDivElement | null>;
@@ -302,7 +304,35 @@ export function Shell3dPresentation({
   const isWorldPointerTarget = (event: { target: EventTarget | null }) =>
     event.target instanceof HTMLCanvasElement;
 
+  const pointerInput = useMemo(() => shellPointerInput(tracker, () => playControlsActive(ctx)), [tracker, ctx]);
+  useEffect(() => {
+    const clearGesture = () => { pointerDownRef.current = null; marqueeStartRef.current = null; setMarquee(null); };
+    const up = (event: PointerEvent) => {
+      pointerInput.up(event);
+      if (!(event.target instanceof Node) || !wrapperRef.current?.contains(event.target)) clearGesture();
+    };
+    const cancel = (event: PointerEvent) => { pointerInput.cancel(event.pointerId); clearGesture(); };
+    const retire = () => { pointerInput.cancel(); clearGesture(); };
+    const blur = () => { tracker.reset(); retire(); };
+    const move = (event: PointerEvent) => { pointerInput.move(event, false); };
+    const detachReset = pointerInput.attachReset(tracker, clearGesture);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointercancel", cancel);
+    window.addEventListener("blur", blur);
+    return () => {
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointercancel", cancel);
+      window.removeEventListener("blur", blur);
+      detachReset();
+      pointerInput.cancel();
+    };
+  }, [pointerInput, tracker]);
+
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    pointerInput.down(event, isWorldPointerTarget(event));
+    if (!playControlsActive(ctx)) return;
     if (isWorldPointerTarget(event)) wrapperRef.current?.focus();
     trackPointerAxis(event);
     audioEngine.resume();
@@ -315,6 +345,7 @@ export function Shell3dPresentation({
   };
 
   const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    pointerInput.move(event, isWorldPointerTarget(event));
     trackPointerAxis(event);
     if (pointer?.select !== true) return;
     const start = marqueeStartRef.current;
@@ -324,6 +355,8 @@ export function Shell3dPresentation({
   };
 
   const handlePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const boundPointer = pointerInput.up(event);
+    if (!playControlsActive(ctx)) { pointerDownRef.current = null; marqueeStartRef.current = null; setMarquee(null); return; }
     if (event.button !== 0 || pointerDownRef.current === null) return;
     const start = pointerDownRef.current;
     pointerDownRef.current = null;
@@ -376,7 +409,7 @@ export function Shell3dPresentation({
       return;
     }
     const moved = (end.x - start.x) ** 2 + (end.y - start.y) ** 2;
-    if (moved <= PRIMARY_CLICK_MOVE_THRESHOLD_PX * PRIMARY_CLICK_MOVE_THRESHOLD_PX) primaryClickRef.current = true;
+    if (!boundPointer && moved <= PRIMARY_CLICK_MOVE_THRESHOLD_PX * PRIMARY_CLICK_MOVE_THRESHOLD_PX) primaryClickRef.current = true;
   };
 
   const handleContextMenu = (event: ReactMouseEvent<HTMLDivElement>) => {

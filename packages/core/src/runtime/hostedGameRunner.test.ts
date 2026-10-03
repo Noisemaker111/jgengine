@@ -5,7 +5,7 @@ import { gamePhase } from "../game/gamePhase";
 import { defineStore } from "../store/defineStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { applyWorldDiff } from "./worldReplication";
-import { createHostedGameRunner, type HostedGameRunner } from "./hostedGameRunner";
+import { createHostedGameRunner, type HostedGameRunner, type InputFrame } from "./hostedGameRunner";
 import type { GameContext, GameContextContent } from "./gameContext";
 import type { WorldSnapshot } from "./worldSnapshot";
 
@@ -59,6 +59,175 @@ function runner(restore?: WorldSnapshot): HostedGameRunner {
 }
 
 describe("hosted game runner", () => {
+  test("10k departed identities retain only the configured recent admission window in memory", () => {
+    const game = defineGameDefinition({ name: "input churn" });
+    const host = createHostedGameRunner({ definition: game, content: {}, inputRetention: { nowMs: () => 0 } });
+    for (let index = 0; index < 10_000; index += 1) {
+      const id = `player-${index}`;
+      host.join(id, true);
+      host.input(id, { held: [], pointer: null, seq: 1, presses: [{ action: "fire", seq: 1 }] } as InputFrame);
+      host.leave(id);
+      host.input(id, { held: ["fire"], pointer: null, seq: 999 } as InputFrame);
+    }
+    expect(host.inputStats()).toEqual({ members: 0, recorders: 0, recordedFrames: 0, latestInputs: 0, wireSequences: 256, pressSequences: 256, departedUsers: 256 });
+    host.join("player-9999", false);
+    host.input("player-9999", { held: ["fire"], pointer: null, seq: 1 } as InputFrame);
+    expect(host.heldInput("player-9999")).toBeNull();
+    host.join("player-0", false);
+    host.input("player-0", { held: ["fire"], pointer: null, seq: 1 } as InputFrame);
+    expect(host.heldInput("player-0")?.held).toEqual(["fire"]);
+  });
+
+  test("ordered reconnect TTL and count eviction survive a reversed clock, while live admission never expires", () => {
+    let nowMs = 1000;
+    const host = createHostedGameRunner({ definition: defineGameDefinition({ name: "retention clock" }), content: {}, inputRetention: { maxDepartedUsers: 2, departedTtlMs: 100, nowMs: () => nowMs } });
+    for (const id of ["oldest", "recent", "newest"]) {
+      host.join(id, true);
+      host.input(id, { held: [], pointer: null, seq: 10, presses: [{ action: "fire", seq: 10 }] } as InputFrame);
+      host.leave(id);
+      nowMs -= 10;
+    }
+    expect(host.inputStats().departedUsers).toBe(2);
+    expect(host.inputStats().wireSequences).toBe(2);
+    host.join("recent", false);
+    host.input("recent", { held: ["fire"], pointer: null, seq: 9 } as InputFrame);
+    expect(host.heldInput("recent")).toBeNull();
+    nowMs = 1101;
+    expect(host.inputStats()).toMatchObject({ departedUsers: 0, wireSequences: 1, pressSequences: 1 });
+    host.input("recent", { held: [], pointer: null, seq: 11, presses: [{ action: "fire", seq: 10 }] } as InputFrame);
+    expect(host.heldInput("recent")?.presses).toEqual([]);
+    host.leave("recent");
+    nowMs = 1202;
+    host.join("recent", false);
+    host.input("recent", { held: [], pointer: null, seq: 1, presses: [{ action: "fire", seq: 1 }] } as InputFrame);
+    expect(host.heldInput("recent")?.presses).toEqual([{ action: "fire", seq: 1 }]);
+  });
+
+  test("20k normal live ticks compact actual recorder memory and consume each released press once", () => {
+    let fires = 0;
+    const game = defineGameDefinition({ name: "long live input", features: { players: true }, simulation: { hz: 60 }, loop: { onTick(ctx) { fires += ctx.game.players?.input("alice")?.presses?.length ?? 0; } } });
+    const host = createHostedGameRunner({ definition: game, content: {} });
+    host.join("alice", true);
+    let peakFrames = 0;
+    for (let index = 1; index <= 20_000; index += 1) {
+      host.input("alice", { held: [], pointer: null, seq: index, ...(index % 100 === 0 ? { presses: [{ action: "fire", seq: index }] } : {}) } as InputFrame);
+      peakFrames = Math.max(peakFrames, host.inputStats().recordedFrames);
+      host.tick(1 / 60);
+    }
+    expect(fires).toBe(200);
+    expect(peakFrames).toBeLessThanOrEqual(2);
+    expect(host.inputStats()).toEqual({ members: 1, recorders: 1, recordedFrames: 1, latestInputs: 1, wireSequences: 1, pressSequences: 1, departedUsers: 0 });
+  });
+
+  test("host compaction retains every staged future replay edge across save and resume", () => {
+    const seen: string[] = [];
+    const game = defineGameDefinition({ name: "future replay", features: { players: true }, simulation: { hz: 60 }, loop: { onTick(ctx) { for (const press of ctx.game.players?.input("alice")?.presses ?? []) seen.push(press.action); } } });
+    let host = createHostedGameRunner({ definition: game, content: {} });
+    host.join("alice", true);
+    for (let tick = 1; tick <= 100; tick += 1) host.input("alice", { held: [], pointer: null, tick, presses: [{ action: `edge-${tick}`, seq: tick }] });
+    expect(host.inputStats().recordedFrames).toBe(100);
+    for (let tick = 1; tick <= 50; tick += 1) host.tick(1 / 60);
+    expect(host.inputStats().recordedFrames).toBe(51);
+    host = createHostedGameRunner({ definition: game, content: {}, restore: host.state() });
+    host.resume("alice");
+    for (let tick = 51; tick <= 100; tick += 1) host.tick(1 / 60);
+    expect(seen).toEqual(Array.from({ length: 100 }, (_, index) => `edge-${index + 1}`));
+    expect(host.inputStats().recordedFrames).toBe(1);
+  });
+
+  test("nonmember input never allocates host admission or replay storage", () => {
+    const host = createHostedGameRunner({ definition: defineGameDefinition({ name: "member ingress" }), content: {} });
+    for (let index = 0; index < 10_000; index += 1) host.input(`unknown-${index}`, { held: ["fire"], pointer: null, presses: [{ action: "fire", seq: index }], tick: 1000, seq: index } as InputFrame);
+    expect(host.inputStats()).toEqual({ members: 0, recorders: 0, recordedFrames: 0, latestInputs: 0, wireSequences: 0, pressSequences: 0, departedUsers: 0 });
+  });
+
+  test("host input save codec accepts absent optional edges and skips malformed pointer state", () => {
+    const game = defineGameDefinition({ name: "input save codec", features: { players: true } });
+    const host = createHostedGameRunner({ definition: game, content: {} });
+    host.join("alice", true);
+    host.input("alice", { held: ["moveForward"], pointer: { x: 0, y: 0, active: true }, presses: undefined, analog: { moveForward: 0.5 }, seq: 9 } as InputFrame);
+    const saved = host.state();
+    const restored = createHostedGameRunner({ definition: game, content: {}, restore: saved });
+    restored.resume("alice");
+    restored.input("alice", { held: [], pointer: null, seq: 8 } as InputFrame);
+    expect(restored.heldInput("alice")?.held).toEqual(["moveForward"]);
+    expect(restored.heldInput("alice")?.analog).toEqual({ moveForward: 0.5 });
+    const malformed = saved.hostInput as Array<{ latest: { pointer: { x: number } } }>;
+    malformed[0]!.latest.pointer.x = NaN;
+    const safe = createHostedGameRunner({ definition: game, content: {}, restore: saved });
+    safe.resume("alice");
+    expect(safe.heldInput("alice")).toBeNull();
+  });
+
+  test("host-only admission and pending edges survive stateless reconstruction without replaying consumed presses", () => {
+    const game = defineGameDefinition({ name: "stateless edges", features: { players: true }, simulation: { hz: 60 }, loop: {
+      onTick(ctx) {
+        const presses = ctx.game.players?.input("alice")?.presses?.length ?? 0;
+        ctx.game.store.set("fires", (ctx.game.store.get("fires") as number ?? 0) + presses);
+      },
+    } });
+    const boot = (restore?: WorldSnapshot) => {
+      const host = createHostedGameRunner({ definition: game, content: {}, ...(restore === undefined ? {} : { restore }) });
+      if (restore === undefined) host.join("alice", true); else host.resume("alice");
+      return host;
+    };
+    const tap = { held: [], pointer: null, presses: [{ action: "fire", seq: 100 }], seq: 2 };
+    let host = boot();
+    host.input("alice", tap);
+    expect(host.snapshot()).not.toHaveProperty("hostInput");
+    // A command-only invocation saves the admitted edge before any simulation tick.
+    host = boot(host.state());
+    host.input("alice", tap);
+    host.tick(1 / 60);
+    expect(host.context().game.store.get("fires")).toBe(1);
+    for (let index = 0; index < 20; index += 1) {
+      host = boot(host.state());
+      host.input("alice", tap);
+      host.tick(1 / 60);
+      expect(host.context().game.store.get("fires")).toBe(1);
+      expect(host.context().game.players?.input("alice")?.presses).toBeUndefined();
+    }
+    host.input("alice", { ...tap, presses: [{ action: "fire", seq: 101 }], seq: 3 });
+    host.tick(1 / 60);
+    expect(host.context().game.store.get("fires")).toBe(2);
+    // Newer neutral ownership reaches the host before a delayed retained press.
+    host.input("alice", { held: [], pointer: null, seq: 5 } as InputFrame);
+    host = boot(host.state());
+    host.input("alice", { ...tap, presses: [{ action: "fire", seq: 102 }], seq: 4 });
+    host.tick(1 / 60);
+    expect(host.context().game.store.get("fires")).toBe(2);
+    const saved = host.state().hostInput as Array<{ recorder: { frames: unknown[] } }>;
+    expect(saved).toHaveLength(1);
+    expect(saved[0]!.recorder.frames).toHaveLength(1);
+    host.leave("alice");
+    expect(host.state().hostInput).toEqual([]);
+  });
+
+  test("neutral-before-down admits one press, keeps movement neutral and rejects repeated or older press identities", () => {
+    const seen: InputFrame[] = [];
+    const game = defineGameDefinition({ name: "hosted-tap", assets: createAssetCatalog(), features: { players: true }, simulation: { hz: 60 }, loop: { onTick(ctx) { const input = ctx.game.players?.input("alice"); if (input) seen.push(input); } } });
+    const host = createHostedGameRunner({ definition: game, content: {} });
+    host.join("alice", true);
+    const press = { action: "fire", seq: 100 };
+    host.input("alice", { held: [], pointer: null, presses: [press], seq: 2 } as never);
+    host.input("alice", { held: ["fire"], pointer: null, presses: [press], seq: 1 } as never);
+    host.tick(1 / 60);
+    expect(seen.at(-1)).toMatchObject({ held: [], presses: [press] });
+    host.input("alice", { held: [], pointer: null, presses: [press], seq: 3 } as never);
+    host.tick(1 / 60);
+    expect(seen.at(-1)?.presses ?? []).toEqual([]);
+    host.leave("alice"); host.join("alice", false);
+    host.input("alice", { held: ["fire"], pointer: null, presses: [press], seq: 1 } as never);
+    expect(host.heldInput("alice")).toBeNull();
+    host.input("alice", { held: [], pointer: null, presses: [press], seq: 4 } as never);
+    host.tick(1 / 60);
+    expect(seen.at(-1)?.presses ?? []).toEqual([]);
+    host.input("alice", { held: [], pointer: null, presses: [{ action: "fire", seq: 101 }], seq: 5 } as never);
+    host.tick(1 / 60);
+    expect(seen.at(-1)?.presses).toEqual([{ action: "fire", seq: 101 }]);
+    host.tick(1 / 60);
+    expect(seen.at(-1)?.presses).toBeUndefined();
+  });
   test("scaled game time, pause and simulation cursor survive authoritative restore", () => {
     const host = runner();
     host.context().time.setSpeed(2);
@@ -143,6 +312,7 @@ describe("hosted game runner", () => {
 
   test("input frames are stored and retrievable per user", () => {
     const host = runner();
+    host.join("alice", true);
     host.input("alice", { held: ["moveForward"], pointer: null });
     expect(host.heldInput("alice")).toEqual({ held: ["moveForward"], pointer: null });
     expect(host.heldInput("bob")).toBeNull();
@@ -150,6 +320,7 @@ describe("hosted game runner", () => {
 
   test("a stale, out-of-order (lower-seq) input frame does not resurrect a released state", () => {
     const host = runner();
+    host.join("alice", true);
     host.input("alice", { held: ["moveForward"], pointer: null, seq: 1 } as never);
     host.input("alice", { held: [], pointer: null, seq: 2 } as never);
     expect(host.heldInput("alice")).toEqual({ held: [], pointer: null, seq: 2 } as never);
@@ -160,6 +331,7 @@ describe("hosted game runner", () => {
 
   test("input frames without a seq always apply, unaffected by seq ordering", () => {
     const host = runner();
+    host.join("alice", true);
     host.input("alice", { held: ["a"], pointer: null });
     host.input("alice", { held: ["b"], pointer: null });
     expect(host.heldInput("alice")).toEqual({ held: ["b"], pointer: null });

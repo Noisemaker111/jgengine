@@ -3,7 +3,7 @@ import type { LiveGameBackend, TransportRunCommandResult } from "@jgengine/core/
 
 /** Where the local player's per-frame input goes: discarded in single-player, sent to the authoritative host under `authority: "server"`. */
 export interface InputSink {
-  send(frame: InputFrame, options?: { urgent?: boolean }): void;
+  send(frame: InputFrame, options?: { urgent?: boolean; reset?: boolean }): void;
 }
 
 /** Discards input — the single-player / client-authoritative default, where the client integrates movement itself.
@@ -17,6 +17,7 @@ interface RemoteInputSource {
   pending: InputFrame | null;
   inFlight: object | null;
   latest: InputFrame | null;
+  presses: Map<number, NonNullable<InputFrame["presses"]>[number]>;
 }
 
 const remoteInputSources = new WeakMap<LiveGameBackend["transport"], Map<string, RemoteInputSource>>();
@@ -30,7 +31,7 @@ function remoteInputSourceFor(backend: Pick<LiveGameBackend, "transport">, serve
   }
   let source = sources.get(serverId);
   if (source === undefined) {
-    source = { pending: null, inFlight: null, latest: null };
+    source = { pending: null, inFlight: null, latest: null, presses: new Map() };
     sources.set(serverId, source);
   }
   return source;
@@ -51,19 +52,21 @@ function pumpRemoteInput(
   if (source.inFlight !== null) return;
   const frame = source.pending;
   if (frame === null) {
-    remoteInputSources.get(backend.transport)?.delete(serverId);
+    if (source.presses.size === 0) remoteInputSources.get(backend.transport)?.delete(serverId);
     return;
   }
   source.pending = null;
   const owner = {};
   source.inFlight = owner;
+  const presses = [...source.presses.values()].map(press => ({ ...press }));
   const seq = monotonicInputSeq();
   // Live clients and the joined host have independent simulation clocks. The host
   // stamps receipt on its next tick; explicit ticks remain supported by replay.
-  const { tick: _clientTick, ...intent } = frame;
+  const { tick: _clientTick, presses: _framePresses, ...intent } = frame;
   void backend.transport
-    .runCommand({ serverId, command: INPUT_COMMAND, input: { ...intent, seq } })
+    .runCommand({ serverId, command: INPUT_COMMAND, input: { ...intent, ...(presses.length > 0 ? { presses } : {}), seq } })
     .then((result: TransportRunCommandResult) => {
+      if (result.ok) for (const press of presses) source.presses.delete(press.seq);
       if (!result.ok) console.warn(`[jgengine:input] frame seq=${seq} to server "${serverId}" rejected: ${result.reason}`);
     })
     .catch((error: unknown) => {
@@ -86,9 +89,14 @@ export function remoteInputSink(backend: Pick<LiveGameBackend, "transport">, ser
   return {
     send(frame, options) {
       const source = remoteInputSourceFor(backend, serverId);
-      if (source.latest !== null && inputFramesEqual(source.latest, frame)) return;
+      if (options?.reset) source.presses.clear();
+      for (const press of frame.presses ?? []) source.presses.set(press.seq, { ...press });
+      // A reset must overtake an identical neutral release that still carries an
+      // unacknowledged press. Intent equality alone does not describe that flight.
+      if (!options?.reset && source.latest !== null && inputFramesEqual(source.latest, frame) && source.presses.size === 0) return;
       const snapshot: InputFrame = {
         ...frame, held: [...frame.held],
+        ...(frame.presses === undefined ? {} : { presses: frame.presses.map(press => ({ ...press })) }),
         pointer: frame.pointer === null ? null : { ...frame.pointer },
         ...(frame.analog === undefined ? {} : { analog: frame.analog === null ? null : { ...frame.analog } }),
       };
@@ -118,6 +126,8 @@ export function resolveInputSink(opts: {
  * @internal
  */
 export function inputFramesEqual(a: InputFrame, b: InputFrame): boolean {
+  const ap = a.presses ?? []; const bp = b.presses ?? [];
+  if (ap.length !== bp.length || ap.some((press, index) => press.seq !== bp[index]!.seq || press.action !== bp[index]!.action)) return false;
   if (a.held.length !== b.held.length) return false;
   for (let i = 0; i < a.held.length; i++) if (a.held[i] !== b.held[i]) return false;
   const aa = a.analog ?? null;

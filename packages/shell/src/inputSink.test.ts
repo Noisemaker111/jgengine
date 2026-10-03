@@ -35,6 +35,73 @@ const flush = () => Promise.resolve().then().then().then();
 const frame = (held: readonly string[]): InputFrame => ({ held, pointer: null });
 
 describe("input sink", () => {
+  test("owner reset overtakes an identical neutral release carrying an unacknowledged press", async () => {
+    const calls: Array<{ serverId: string; command: string; input: unknown }> = [];
+    const { backend, resolveNext } = controllableBackend(calls);
+    const sink = remoteInputSink(backend, "neutral-reset");
+    const host = createHostedGameRunner({ definition: defineGameDefinition({ name: "reset before receipt", features: { players: true } }), content: {} });
+    host.join("alice", true);
+    sink.send({ ...frame(["fire"]), presses: [{ action: "fire", seq: 1 }] }, { urgent: true });
+    sink.send(frame([]), { urgent: true });
+    sink.send(frame([]), { urgent: true, reset: true });
+    expect(calls).toHaveLength(3);
+    host.input("alice", calls[2]!.input as InputFrame);
+    host.input("alice", calls[1]!.input as InputFrame);
+    host.input("alice", calls[0]!.input as InputFrame);
+    host.tick(1 / 60);
+    expect(host.context().game.players?.input("alice")).toMatchObject({ held: [] });
+    expect(host.context().game.players?.input("alice")?.presses).toBeUndefined();
+    for (let index = 0; index < calls.length; index += 1) { resolveNext({ ok: true }); await flush(); }
+  });
+  test("owner reset discards its pending pulses while ordinary release preserves them", async () => {
+    const calls: Array<{ serverId: string; command: string; input: unknown }> = [];
+    const { backend, resolveNext } = controllableBackend(calls);
+    const sink = remoteInputSink(backend, "pulse-reset");
+    sink.send({ ...frame(["fire"]), presses: [{ action: "fire", seq: 1 }] }, { urgent: true });
+    sink.send(frame([]), { urgent: true, reset: true });
+    expect((calls.at(-1)!.input as InputFrame).presses).toBeUndefined();
+    resolveNext({ ok: true }); await flush();
+    resolveNext({ ok: true }); await flush();
+  });
+  test("urgent neutral carries an unacknowledged press, including neutral-before-down and repeated release", async () => {
+    const calls: Array<{ serverId: string; command: string; input: unknown }> = [];
+    const { backend, resolveNext } = controllableBackend(calls);
+    const host = createHostedGameRunner({ definition: defineGameDefinition({ name: "reordered tap", assets: createAssetCatalog(), features: { players: true } }), content: {} });
+    host.join("alice", true);
+    const sink = remoteInputSink(backend, "pulse-release");
+    const press = { action: "fire", seq: 100 };
+    sink.send({ ...frame(["fire"]), presses: [press] }, { urgent: true });
+    sink.send(frame([]), { urgent: true });
+    expect((calls[1]!.input as InputFrame).presses).toEqual([press]);
+    host.input("alice", calls[1]!.input as InputFrame);
+    host.input("alice", calls[0]!.input as InputFrame);
+    host.tick(1 / 60);
+    expect(host.context().game.players?.input("alice")).toMatchObject({ held: [], presses: [press] });
+    sink.send(frame([]), { urgent: true });
+    host.input("alice", calls[2]!.input as InputFrame);
+    host.tick(1 / 60);
+    expect(host.context().game.players?.input("alice")?.presses).toEqual([]);
+    resolveNext({ ok: true }); await flush();
+    resolveNext({ ok: true }); await flush();
+    resolveNext({ ok: true }); await flush();
+    const count = calls.length;
+    sink.send(frame([]), { urgent: true });
+    // Idle source cleanup may send a new neutral frame, but never an acknowledged press.
+    if (calls.length > count) { expect((calls.at(-1)!.input as InputFrame).presses).toBeUndefined(); resolveNext({ ok: true }); await flush(); }
+  });
+
+  test("old ACK retires only its press identities and cannot erase a replacement press", async () => {
+    const calls: Array<{ serverId: string; command: string; input: unknown }> = [];
+    const { backend, resolveNext } = controllableBackend(calls);
+    const sink = remoteInputSink(backend, "pulse-owner");
+    sink.send({ ...frame(["fire"]), presses: [{ action: "fire", seq: 1 }] }, { urgent: true });
+    sink.send({ ...frame(["alternate"]), presses: [{ action: "alternate", seq: 2 }] }, { urgent: true });
+    resolveNext({ ok: true }); await flush();
+    sink.send(frame([]), { urgent: true });
+    expect((calls.at(-1)!.input as InputFrame).presses).toEqual([{ action: "alternate", seq: 2 }]);
+    resolveNext({ ok: true }); await flush();
+    resolveNext({ ok: true }); await flush();
+  });
   test("two clients in one realm never coalesce or replay input under the other actor", async () => {
     const aliceCalls: Array<{ serverId: string; command: string; input: unknown }> = [];
     const bobCalls: typeof aliceCalls = [];
@@ -220,6 +287,7 @@ test("a fresh browser's input advances the same live actor beyond the previous c
     definition: defineGameDefinition({ name: "Reload input", assets: createAssetCatalog(), multiplayer: "off" }),
     content: { entityById: () => null },
   });
+  host.join("same-actor", false);
   const previousEpoch = performance.timeOrigin + performance.now();
   host.input("same-actor", { held: [], pointer: null, seq: previousEpoch });
   const backend: Pick<LiveGameBackend, "transport"> = {
