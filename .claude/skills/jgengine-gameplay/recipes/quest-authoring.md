@@ -56,3 +56,8 @@ reward amounts reject. Discrete quantity rules, XP loss, economy balance, story
 contradictions, character motivation, chronology, and consequences remain
 caller-owned review. Play representative paths before treating a valid catalog
 as a coherent world.
+
+For item supply and skill gates outside the quest journal, compose the
+[content validation](../reference-content-validation.md) checks. Declare source
+rules explicitly rather than assuming every defined item is obtainable or that
+catalog order proves an item reward can precede a collection objective.
