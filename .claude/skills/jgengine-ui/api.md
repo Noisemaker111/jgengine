@@ -1920,6 +1920,10 @@
 - `SideScrollRig` (function): function SideScrollRig(props: RigProps): null — Fixed side-on 2.5D follow rig: watches the followed entity from the perpendicular axis, never reading WASD/mouse-look.
 - `TopDownRig` (function): function TopDownRig(props: RigProps): null — ⚠ undocumented
 
+## @jgengine/shell/camera/chaseHeading
+
+- `resolveChaseHeading` (function): function resolveChaseHeading(config: Pick<ChaseCameraConfig, "headingSource" | "view"> | undefined, bodyYaw: number, inputYaw: number): number — Select a chase heading without feeding target facing or camera smoothing back into input-owned yaw. Seat views always use body heading; omitting `headingSource` preserves body follow.
+
 ## @jgengine/shell/camera/fovPreference
 
 - `PLAYER_FOV_DEFAULT` (const): const PLAYER_FOV_DEFAULT: 55 — ⚠ undocumented

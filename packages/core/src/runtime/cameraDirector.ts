@@ -14,6 +14,7 @@ export type ChaseCameraTuning = Partial<
     | "shakePerSpeed"
     | "velocityYaw"
     | "yawResponse"
+    | "headingSource"
     | "distanceBySpeed"
     | "pitchFollow"
     | "fovKick"
