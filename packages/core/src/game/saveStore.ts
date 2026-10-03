@@ -1,4 +1,4 @@
-import { defaultKeyValueStorage, type KeyValueStorage } from "./keyValueStore";
+import { defaultKeyValueStorage, reportStorageFailure, type KeyValueStorage, type KeyValueStorageErrorPolicy } from "./keyValueStore";
 
 /**
  * The one async storage seam a save store persists through. Every backend
@@ -15,46 +15,43 @@ export interface SaveBackend {
   remove(key: string): Promise<void>;
 }
 
-function readSafe(storage: KeyValueStorage | null, key: string): string | null {
-  if (storage === null) return null;
-  try {
-    return storage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
 /**
  * A {@link SaveBackend} over a synchronous {@link KeyValueStorage} — the
  * browser's `localStorage` by default (offline, on-device saves), a test stub,
- * or `null` for memory-only. Storage errors (quota exceeded, private mode, no
- * DOM) degrade to no-ops, so a save never throws into a game tick.
+ * or `null` for a no-op backend. Default fallback ignores failures; `errorMode: "throw"`
+ * rejects failed operations and unavailable storage, so SaveStore status/onError can report them.
+ * Use {@link memorySaveBackend} for deliberate ephemeral persistence.
  *
  * @capability local-save persist a game to on-device localStorage (offline)
  */
-export function localSaveBackend(storage?: KeyValueStorage | null): SaveBackend {
-  const store = storage === undefined ? defaultKeyValueStorage() : storage;
+export function localSaveBackend(storage?: KeyValueStorage | null, policy: KeyValueStorageErrorPolicy = {}): SaveBackend {
+  const resolve = (): KeyValueStorage => {
+    const store = storage === undefined ? defaultKeyValueStorage((error) => { throw error; }) : storage;
+    if (store === null) throw new Error("Local storage is unavailable");
+    return store;
+  };
   return {
-    read: (key) => Promise.resolve(readSafe(store, key)),
-    write: (key, value) => {
-      if (store !== null) {
-        try {
-          store.setItem(key, value);
-        } catch {
-          // storage rejected the write; the store keeps the value in memory
-        }
+    async read(key) {
+      try {
+        return resolve().getItem(key);
+      } catch (error) {
+        reportStorageFailure(policy, { operation: "read", key, error });
+        return null;
       }
-      return Promise.resolve();
     },
-    remove: (key) => {
-      if (store !== null) {
-        try {
-          store.removeItem(key);
-        } catch {
-          // ignore removal failure
-        }
+    async write(key, value) {
+      try {
+        resolve().setItem(key, value);
+      } catch (error) {
+        reportStorageFailure(policy, { operation: "write", key, error });
       }
-      return Promise.resolve();
+    },
+    async remove(key) {
+      try {
+        resolve().removeItem(key);
+      } catch (error) {
+        reportStorageFailure(policy, { operation: "remove", key, error });
+      }
     },
   };
 }
@@ -80,7 +77,7 @@ export function remoteSaveBackend(backend: SaveBackend): SaveBackend {
   return backend;
 }
 
-/** Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` means the backend rejected a read or write. */
+/** Lifecycle of the last save/load — drive a "Saving…"/"Saved" indicator or a loading gate off it. `"error"` includes rejected reads, writes, removals and slot metadata updates; metadata failure can follow a successful payload write. */
 export type SaveStatus = "idle" | "loading" | "saving" | "saved" | "error";
 
 /** Autosave cadence: debounce writes `debounceMs` after the last edit, but never wait longer than `maxWaitMs` while edits keep coming (`0` removes the ceiling). `autosave: true` uses `{ debounceMs: 1000, maxWaitMs: 15000 }`. */
@@ -241,9 +238,9 @@ export function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> {
   }
 
   async function readSlots(): Promise<string[]> {
+    const raw = await backend.read(indexKey());
+    if (raw === null) return [];
     try {
-      const raw = await backend.read(indexKey());
-      if (raw === null) return [];
       const parsed = JSON.parse(raw) as unknown;
       return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === "string") : [];
     } catch {
@@ -252,23 +249,15 @@ export function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> {
   }
 
   async function rememberSlot(slot: string): Promise<void> {
-    try {
-      const list = await readSlots();
-      if (list.includes(slot)) return;
-      await backend.write(indexKey(), JSON.stringify([...list, slot]));
-    } catch (error) {
-      reportError(error);
-    }
+    const list = await readSlots();
+    if (list.includes(slot)) return;
+    await backend.write(indexKey(), JSON.stringify([...list, slot]));
   }
 
   async function forgetSlot(slot: string): Promise<void> {
-    try {
-      const list = await readSlots();
-      if (!list.includes(slot)) return;
-      await backend.write(indexKey(), JSON.stringify(list.filter((entry) => entry !== slot)));
-    } catch (error) {
-      reportError(error);
-    }
+    const list = await readSlots();
+    if (!list.includes(slot)) return;
+    await backend.write(indexKey(), JSON.stringify(list.filter((entry) => entry !== slot)));
   }
 
   function clearTimer(): void {
@@ -337,7 +326,10 @@ export function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> {
       firstDirtyAt = null;
       setStatus("idle");
       emit();
-      void rememberSlot(currentSlot);
+      void rememberSlot(currentSlot).catch((error) => {
+        setStatus("error");
+        reportError(error);
+      });
       return current;
     } catch (error) {
       setStatus("error");
@@ -390,7 +382,15 @@ export function createSaveStore<T>(config: SaveStoreConfig<T>): SaveStore<T> {
       firstDirtyAt = null;
       return load();
     },
-    slots: readSlots,
+    async slots() {
+      try {
+        return await readSlots();
+      } catch (error) {
+        setStatus("error");
+        reportError(error);
+        return [];
+      }
+    },
     subscribe(listener) {
       listeners.add(listener);
       return () => listeners.delete(listener);

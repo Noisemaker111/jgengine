@@ -718,7 +718,7 @@ function resolveSaveOptions<TAssetRef extends ModelAssetRef, TMultiplayer>(
   if (!isOffline(definition.multiplayer)) return undefined;
   const config: PersistConfig = persist === undefined || persist === true ? {} : persist;
   return {
-    backend: config.storage === "memory" ? memorySaveBackend() : localSaveBackend(),
+    backend: config.storage === "memory" ? memorySaveBackend() : localSaveBackend(undefined, { errorMode: "throw" }),
     mode: config.mode,
     key: saveKey(definition.name),
     version: config.version,

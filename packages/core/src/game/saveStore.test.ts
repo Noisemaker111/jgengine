@@ -7,7 +7,7 @@ import {
   type SaveBackend,
   type SaveTimers,
 } from "./saveStore";
-import type { KeyValueStorage } from "./keyValueStore";
+import type { KeyValueStorage, KeyValueStorageFailure } from "./keyValueStore";
 
 function memoryStorage(initial: Record<string, string> = {}): KeyValueStorage & { data: Record<string, string> } {
   const data = { ...initial };
@@ -46,6 +46,109 @@ function manualTimers(): SaveTimers & { runAll: () => void; pending: () => numbe
 }
 
 describe("createSaveStore", () => {
+  test("local backend fallback observes each failed operation without rejecting", async () => {
+    const error = new Error("denied");
+    const failures: KeyValueStorageFailure[] = [];
+    const backend = localSaveBackend({ getItem() { throw error; }, setItem() { throw error; }, removeItem() { throw error; } }, { onError: (failure) => failures.push(failure) });
+    expect(await backend.read("slot")).toBeNull();
+    await backend.write("slot", "value");
+    await backend.remove("slot");
+    expect(failures).toEqual(["read", "write", "remove"].map((operation) => ({ operation, key: "slot", error })));
+  });
+
+  test("strict local backend rejects denied reads, writes and removals with the original error", async () => {
+    const error = new Error("denied");
+    const backend = localSaveBackend({ getItem() { throw error; }, setItem() { throw error; }, removeItem() { throw error; } }, { errorMode: "throw" });
+    await expect(backend.read("slot")).rejects.toBe(error);
+    await expect(backend.write("slot", "value")).rejects.toBe(error);
+    await expect(backend.remove("slot")).rejects.toBe(error);
+    await expect(localSaveBackend(null, { errorMode: "throw" }).write("slot", "value")).rejects.toThrow("Local storage is unavailable");
+  });
+
+  test("strict quota failure retains the last valid checkpoint and reports error instead of saved", async () => {
+    const storage = memoryStorage();
+    const errors: unknown[] = [];
+    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0, onError: (error) => errors.push(error) });
+    store.set(7);
+    await store.save();
+    const checkpoint = storage.data["save:default"];
+    const error = new Error("quota exceeded");
+    storage.setItem = () => { throw error; };
+    store.set(9);
+    await store.save();
+    expect(store.status()).toBe("error");
+    expect(errors).toEqual([error]);
+    expect(storage.data["save:default"]).toBe(checkpoint);
+    expect(store.value()).toBe(9); // Live edits remain available to retry.
+    expect(await createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0 }).load()).toBe(7);
+  });
+
+  test("strict denied load and removal preserve current state and checkpoint", async () => {
+    const storage = memoryStorage();
+    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0 });
+    store.set(7);
+    await store.save();
+    const checkpoint = storage.data["save:default"];
+    const error = new Error("denied");
+    storage.getItem = () => { throw error; };
+    expect(await store.load()).toBe(7);
+    expect(store.status()).toBe("error");
+    storage.removeItem = () => { throw error; };
+    await store.clear();
+    expect(store.status()).toBe("error");
+    expect(store.value()).toBe(7);
+    expect(storage.data["save:default"]).toBe(checkpoint);
+  });
+
+  test("failed slot index publication reports partial success without claiming saved", async () => {
+    const storage = memoryStorage();
+    const write = storage.setItem;
+    const error = new Error("index quota");
+    storage.setItem = (key, value) => { if (key.endsWith(":__slots__")) throw error; write(key, value); };
+    const errors: unknown[] = [];
+    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0, onError: (error) => errors.push(error) });
+    store.set(7);
+    await store.save();
+    expect(store.status()).toBe("error");
+    expect(errors).toEqual([error]);
+    expect(JSON.parse(storage.data["save:default"]!).value).toBe(7);
+    expect(storage.data["save:__slots__"]).toBeUndefined();
+    await store.load();
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    expect(store.status()).toBe("error");
+    expect(errors).toEqual([error, error]);
+  });
+
+  test("slot enumeration and save expose denied index reads", async () => {
+    const storage = memoryStorage();
+    const read = storage.getItem;
+    const error = new Error("index read denied");
+    storage.getItem = (key) => { if (key.endsWith(":__slots__")) throw error; return read(key); };
+    const errors: unknown[] = [];
+    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0, onError: (error) => errors.push(error) });
+    expect(await store.slots()).toEqual([]);
+    expect(store.status()).toBe("error");
+    await store.save();
+    expect(store.status()).toBe("error");
+    expect(errors).toEqual([error, error]);
+  });
+
+  test("failed index removal reports partial success and preserves the live cell", async () => {
+    const storage = memoryStorage();
+    const errors: unknown[] = [];
+    const store = createSaveStore({ backend: localSaveBackend(storage, { errorMode: "throw" }), initial: 0, onError: (error) => errors.push(error) });
+    store.set(7);
+    await store.save();
+    const error = new Error("index removal denied");
+    storage.setItem = () => { throw error; };
+    await store.clear();
+    expect(store.status()).toBe("error");
+    expect(store.value()).toBe(7);
+    expect(storage.data["save:default"]).toBeUndefined();
+    expect(storage.data["save:__slots__"]).toBe('["default"]');
+    expect(errors).toEqual([error]);
+  });
+
   test("starts from the initial value before loading", () => {
     const store = createSaveStore({ backend: memorySaveBackend(), initial: { level: 1 } });
     expect(store.value()).toEqual({ level: 1 });

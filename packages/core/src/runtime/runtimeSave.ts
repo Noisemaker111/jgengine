@@ -65,13 +65,13 @@ export interface RuntimeSave {
   save(): Promise<void>;
   /** Semantic alias for `save()` — call it from a save point, a quest-complete or area-enter handler. */
   checkpoint(): Promise<void>;
-  /** Load the active slot and hydrate the whole world; resolves `true` when a real save was applied, `false` for an empty slot. */
+  /** Load the active slot and hydrate the whole world; resolves `true` when a real save was applied, `false` for an empty slot or failed payload read. Failed reads never restore cached state. */
   load(): Promise<boolean>;
-  /** Whether the active slot holds a saved world — gate a title-screen "Continue" on it. */
+  /** Whether the active slot holds a saved world — gate a title-screen "Continue" on it. Failed payload reads resolve false and report error status. */
   hasSave(): Promise<boolean>;
   /** Delete the active slot's save. */
   clear(): Promise<void>;
-  /** Switch slot and load it, hydrating the world when that slot has a save. */
+  /** Switch slot and load it, hydrating the world when that slot has a save. Failed payload reads resolve false without restoring cached state. */
   switchSlot(slot: string): Promise<boolean>;
   /** The slots this game has written — back a load/save menu. */
   slots(): Promise<string[]>;
@@ -179,15 +179,18 @@ export function createRuntimeSave(config: RuntimeSaveConfig): RuntimeSave {
     save,
     checkpoint: save,
     async load() {
-      return applyLoaded(await store.load());
+      const snapshot = await store.load();
+      return store.status() !== "error" && applyLoaded(snapshot);
     },
     async hasSave() {
-      return hasContent(await store.load());
+      const snapshot = await store.load();
+      return store.status() !== "error" && hasContent(snapshot);
     },
     clear: () => store.clear(),
     async switchSlot(slot) {
       clearTimer();
-      return applyLoaded(await store.switchSlot(slot));
+      const snapshot = await store.switchSlot(slot);
+      return store.status() !== "error" && applyLoaded(snapshot);
     },
     slots: () => store.slots(),
     subscribe: (listener) => store.subscribe(listener),

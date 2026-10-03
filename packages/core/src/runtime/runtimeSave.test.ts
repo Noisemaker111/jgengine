@@ -52,6 +52,45 @@ function manualTimers(): SaveTimers & { runAll: () => void; pending: () => numbe
 }
 
 describe("createRuntimeSave", () => {
+  test("denied reads cannot restore a cached snapshot or report slot occupancy", async () => {
+    const memory = memorySaveBackend();
+    const error = new Error("read denied");
+    let denied = false;
+    const backend: SaveBackend = { ...memory, read: (key) => denied ? Promise.reject(error) : memory.read(key) };
+    const host = fakeWorld({ store: { level: 3 } });
+    const errors: unknown[] = [];
+    const save = createRuntimeSave({ target: host, backend, mode: "manual", onError: (error) => errors.push(error) });
+    await save.save();
+    expect(await save.load()).toBe(true);
+    host.hydrate({ store: { level: 9 } });
+    denied = true;
+    expect(await save.load()).toBe(false);
+    expect(host.world).toEqual({ store: { level: 9 } });
+    expect(await save.hasSave()).toBe(false);
+    expect(host.world).toEqual({ store: { level: 9 } });
+    expect(await save.switchSlot("other")).toBe(false);
+    expect(host.world).toEqual({ store: { level: 9 } });
+    expect(save.status()).toBe("error");
+    expect(errors).toEqual([error, error, error]);
+  });
+
+  test.each(["read", "write"])("successful payload load restores even when its later index %s fails", async (operation) => {
+    const memory = memorySaveBackend();
+    await memory.write("runtime:default", JSON.stringify({ version: 1, savedAt: 0, value: { store: { level: 7 } } }));
+    const error = new Error("index denied");
+    const backend: SaveBackend = { ...memory, read: (key) => operation === "read" && key.endsWith(":__slots__") ? Promise.reject(error) : memory.read(key), write: (key, value) => operation === "write" && key.endsWith(":__slots__") ? Promise.reject(error) : memory.write(key, value) };
+    for (const method of ["load", "hasSave", "switchSlot"] as const) {
+      const target = fakeWorld({ store: { level: 1 } });
+      const errors: unknown[] = [];
+      const save = createRuntimeSave({ target, backend, mode: "manual", onError: (error) => errors.push(error) });
+      expect(await (method === "switchSlot" ? save.switchSlot("default") : save[method]())).toBe(true);
+      expect(target.world).toEqual({ store: { level: method === "hasSave" ? 1 : 7 } });
+      await new Promise<void>((resolve) => setTimeout(resolve, 0));
+      expect(save.status()).toBe("error");
+      expect(errors).toEqual([error]);
+    }
+  });
+
   test("save captures the live world; load hydrates a fresh world", async () => {
     const backend = memorySaveBackend();
     const host = fakeWorld({ store: { level: 3 }, entities: [{ id: "p" }] });

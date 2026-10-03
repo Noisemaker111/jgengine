@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { createKeyValueStore, type KeyValueStorage } from "./keyValueStore";
+import { createKeyValueStore, type KeyValueStorage, type KeyValueStorageFailure } from "./keyValueStore";
 
 function memoryStorage(initial: Record<string, string> = {}): KeyValueStorage & { data: Record<string, string> } {
   const data = { ...initial };
@@ -92,5 +92,40 @@ describe("createKeyValueStore", () => {
     const bank = createKeyValueStore({ key: "credits", initial: 5, storage: null });
     bank.update((c) => c + 1);
     expect(bank.get()).toBe(6);
+  });
+
+  test("fallback observes denied reads, writes and removals while retaining session state", () => {
+    const failures: KeyValueStorageFailure[] = [];
+    const bank = createKeyValueStore({ key: "credits", initial: 0, storage: throwingStorage(), onError: (failure) => failures.push(failure) });
+    bank.set(7);
+    expect(bank.get()).toBe(7);
+    bank.clear();
+    expect(bank.get()).toBe(0);
+    expect(failures.map(({ operation, key }) => [operation, key])).toEqual([["read", "credits"], ["write", "credits"], ["remove", "credits"]]);
+    expect(failures.map(({ error }) => (error as Error).message)).toEqual(["read blocked", "write blocked", "remove blocked"]);
+  });
+
+  test("strict denied read exposes the original error", () => {
+    const error = new Error("read denied");
+    expect(() => createKeyValueStore({ key: "credits", initial: 0, storage: { ...memoryStorage(), getItem() { throw error; } }, errorMode: "throw" })).toThrow(error);
+  });
+
+  test("strict failed writes, updates and removals preserve the previous cell and checkpoint", () => {
+    const storage = memoryStorage({ credits: "10" });
+    const error = new Error("quota exceeded");
+    storage.setItem = () => { throw error; };
+    storage.removeItem = () => { throw error; };
+    const bank = createKeyValueStore({ key: "credits", initial: 0, storage, errorMode: "throw" });
+    expect(() => bank.set(20)).toThrow(error);
+    expect(() => bank.update((value) => value + 1)).toThrow(error);
+    expect(() => bank.clear()).toThrow(error);
+    expect(bank.get()).toBe(10);
+    expect(storage.data.credits).toBe("10");
+  });
+
+  test("strict explicit null storage deliberately keeps a memory cell", () => {
+    const bank = createKeyValueStore({ key: "credits", initial: 5, storage: null, errorMode: "throw" });
+    bank.set(9);
+    expect(bank.get()).toBe(9);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import { defineGameDefinition } from "../game/defineGame";
-import { memorySaveBackend } from "../game/saveStore";
+import { localSaveBackend, memorySaveBackend } from "../game/saveStore";
 import { createAssetCatalog } from "../scene/assetCatalog";
 import { defineStore } from "../store/defineStore";
 import { convex } from "./adapter";
@@ -80,6 +80,62 @@ describe("ctx.game.save", () => {
       expect(deaths).toBe(1);
     });
   }
+
+  test("default local save exposes denied reads, writes and removals through error status", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const error = new Error("device storage denied");
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: {
+      getItem() { throw error; }, setItem() { throw error; }, removeItem() { throw error; },
+    } });
+    try {
+      const ctx = createGameContext({ definition: offlineGame({ mode: "manual" }), content: {}, player: { userId: "p1", isNew: true } });
+      const save = ctx.game.save!;
+      await save.save();
+      expect(save.status()).toBe("error");
+      await save.load();
+      expect(save.status()).toBe("error");
+      await save.clear();
+      expect(save.status()).toBe("error");
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
+
+  test("unavailable local storage cannot report saved; explicit memory persistence can", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, value: undefined });
+    try {
+      const local = createGameContext({ definition: offlineGame(true), content: {}, player: { userId: "p1", isNew: true } });
+      await local.game.save!.save();
+      expect(local.game.save!.status()).toBe("error");
+      const memory = createGameContext({ definition: offlineGame({ storage: "memory", mode: "manual" }), content: {}, player: { userId: "p1", isNew: true } });
+      await memory.game.save!.save();
+      expect(memory.game.save!.status()).toBe("saved");
+      const injected = createGameContext({ definition: offlineGame(true), content: {}, player: { userId: "p1", isNew: true }, save: { backend: memorySaveBackend(), mode: "manual" } });
+      await injected.game.save!.save();
+      expect(injected.game.save!.status()).toBe("saved");
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
+
+  test("a denied ambient storage getter reaches the save error observer", async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+    const error = new Error("storage getter denied");
+    Object.defineProperty(globalThis, "localStorage", { configurable: true, get() { throw error; } });
+    try {
+      const errors: unknown[] = [];
+      const ctx = createGameContext({ definition: offlineGame(true), content: {}, player: { userId: "p1", isNew: true }, save: { backend: localSaveBackend(undefined, { errorMode: "throw" }), mode: "manual", onError: (error) => errors.push(error) } });
+      await ctx.game.save!.save();
+      expect(ctx.game.save!.status()).toBe("error");
+      expect(errors).toEqual([error]);
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, "localStorage", descriptor);
+      else Reflect.deleteProperty(globalThis, "localStorage");
+    }
+  });
 
   test("state/restore and direct runtime saves retain private state without persist config", async () => {
     const create = () => createGameContext({ definition: offlineGame(false), content: {}, player: { userId: "p1", isNew: true } });
