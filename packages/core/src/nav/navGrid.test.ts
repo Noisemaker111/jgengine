@@ -1,9 +1,25 @@
 import { describe, expect, test } from "bun:test";
-import { createNavGrid, findPath, slopeStepCost, smoothPath, type NavPoint } from "@jgengine/core/nav/navGrid";
+import { createNavGrid, findPath, findPathResult, slopeStepCost, smoothPath, type NavPoint } from "@jgengine/core/nav/navGrid";
 
 const BOUNDS = { minX: 0, minZ: 0, maxX: 10, maxZ: 10 };
 
 describe("navGrid", () => {
+  test("a same-cell goal requires no expansion", () => {
+    const grid = createNavGrid({ bounds: { minX: 0, maxX: 3, minZ: 0, maxZ: 1 }, cellSize: 1 });
+    expect(findPathResult(grid, [0.5, 0.5], [0.5, 0.5], { maxNodes: 0 })).toEqual({
+      status: "path", points: [[0.5, 0.5]], visited: 0,
+    });
+    expect(findPathResult(grid, [0.5, 0.5], [1.5, 0.5], { maxNodes: 0 })).toEqual({ status: "budget", visited: 0 });
+  });
+
+  test("a reached goal succeeds at the exact expansion budget", () => {
+    const grid = createNavGrid({ bounds: { minX: 0, maxX: 3, minZ: 0, maxZ: 1 }, cellSize: 1 });
+    expect(findPathResult(grid, [0.5, 0.5], [1.5, 0.5], { maxNodes: 1 })).toEqual({
+      status: "path", points: [[0.5, 0.5], [1.5, 0.5]], visited: 1,
+    });
+    expect(findPathResult(grid, [0.5, 0.5], [2.5, 0.5], { maxNodes: 1 })).toEqual({ status: "budget", visited: 1 });
+  });
+
   test("maps world points to cells and back to centers", () => {
     const grid = createNavGrid({ bounds: BOUNDS, cellSize: 1 });
     expect(grid.cols).toBe(10);
