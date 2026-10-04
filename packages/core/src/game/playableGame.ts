@@ -148,6 +148,10 @@ export interface ModelAnimationStates {
 
 /** Rig playback for a `ModelConfig`'s GLTF animation clips — looping idles, one-shots, and held poses. */
 export interface ModelAnimationConfig {
+  /** Infer defaults from the loaded rig's actual clip roles, then replace fields with explicit overrides. Requires an identifiable idle clip. */
+  auto?: true;
+  /** Playback clock: real seconds (default), or entity-bound game speed × time scale. Unbound previews use real seconds. Calendar scale is excluded. */
+  clock?: "real" | "game";
   /** Clip name to play; defaults to the GLB's first clip. */
   clip?: string;
   /** Loop the clip. Default true. */

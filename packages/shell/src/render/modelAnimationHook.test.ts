@@ -28,7 +28,7 @@ beforeAll(async () => {
     import {flushSync} from 'react-dom';
     import {context as FiberContext} from '@react-three/fiber';
     import {GameProvider} from '@jgengine/react/provider';
-    import {useModelAnimation} from '@jgengine/shell/render/useModelAnimation';
+    import {useModelAnimation,diagnoseModelAnimation} from '@jgengine/shell/render/useModelAnimation';
     import {locomotionGraph} from '@jgengine/core/anim/locomotionGraph';
     import {AnimationMixer} from 'three';
     import {createGameContext} from '@jgengine/core/runtime/gameContext';
@@ -186,6 +186,59 @@ beforeAll(async () => {
       AnimationMixer.prototype.clipAction=originalAction;AnimationMixer.prototype.uncacheRoot=originalUncache;
       return{before,frozen,resumed,clockBefore,clockAfter,cleanupWhileFrozen,cleanupAfterUnmount:cleanups,subscriptionsAfterUnmount:callbacks.size};
     };
+    window.selectedClock=async({rate=1,timescale=1,clock='game',single=false,binding='bound',authoredRate=1,explicitGraph=false,held=false})=>{
+      gltf=await gltfPromise;
+      const scene=clone(gltf.scene),peer=clone(gltf.scene),id='selected-clock-actor';
+      const ctx=createGameContext({definition:defineGameDefinition({name:'selected-clock-proof',assets:createAssetCatalog(),multiplayer:'off',time:{scale:75}}),content:{},player:{userId:'player',isNew:true}});
+      ctx.time.setSpeed(rate);ctx.time.setTimescale(timescale);
+      ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
+      const animation={...(single?{clip:'Idle'}:explicitGraph?{graph:locomotionGraph(config.states)}:{states:config.states}),...(clock===null?{}:{clock}),timeScale:authoredRate,...(held?{paused:true,time:.3}:{})};
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const store=selector=>selector(state);store.getState=()=>state;
+      const actions=[];let cleanups=0;
+      const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
+      AnimationMixer.prototype.clipAction=function(...args){const action=originalAction.apply(this,args);actions.push(action);return action};
+      AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
+      const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
+      const content=<FiberContext.Provider value={store}><Model scene={scene} id={binding==='unbound'?undefined:id} animation={animation}/><Model scene={peer} animation={{clip:'Idle'}}/></FiberContext.Provider>;
+      flushSync(()=>root.render(binding==='noctx'?content:<GameProvider context={ctx}>{content}</GameProvider>));
+      const sample=target=>({pose:values(target),actions:actions.filter(a=>a.getMixer().getRoot()===target&&a.getEffectiveWeight()>1e-6).map(a=>({clip:a.getClip().name,duration:a.getClip().duration,time:a.time,weight:a.getEffectiveWeight()}))});
+      const before=sample(scene);
+      for(const ref of callbacks)ref.current(state,0);
+      // Identical 3 seconds of speed-normalized travel; the calendar scale is deliberately separate.
+      for(let n=0;n<180/(rate*timescale);n++){
+        const effectiveDelta=rate*timescale/60;
+        ctx.sim.advance(1/60,()=>{});
+        ctx.scene.entity.setPose(id,{position:[0,0,(n+1)*effectiveDelta*1.1],dt:effectiveDelta});
+        for(const ref of callbacks)ref.current(state,1/60);
+      }
+      const after=sample(scene),peerAfter=sample(peer),snapshot=ctx.time.snapshot(),cleanupBeforeUnmount=cleanups;
+      flushSync(()=>root.unmount());element.remove();
+      AnimationMixer.prototype.clipAction=originalAction;AnimationMixer.prototype.uncacheRoot=originalUncache;
+      return{before,after,peerAfter,snapshot,cleanupBeforeUnmount,cleanupAfterUnmount:cleanups,subscriptionsAfterUnmount:callbacks.size};
+    };
+    window.autoDiagnostics=async(mode)=>{
+      gltf=await gltfPromise;
+      const scene=clone(gltf.scene),bind=values(scene);
+      const available=mode==='empty'?[]:mode==='noidle'?gltf.animations.filter(c=>!c.name.toLowerCase().includes('idle')):gltf.animations;
+      const diagnostics=diagnoseModelAnimation(scene,{auto:true,clock:'game'},available);
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const store=selector=>selector(state);store.getState=()=>state;
+      const warnings=[];let cleanups=0;
+      const originalWarn=console.warn,originalUncache=AnimationMixer.prototype.uncacheRoot;
+      console.warn=(...args)=>warnings.push(args.join(' '));
+      AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
+      const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
+      function AutoModel({animation}){useModelAnimation(scene,available,animation);return null}
+      const render=animation=>flushSync(()=>root.render(<FiberContext.Provider value={store}><AutoModel animation={animation}/></FiberContext.Provider>));
+      render('none');render({auto:true,clock:'game'});render({auto:true,clock:'game'});
+      for(const ref of callbacks)ref.current(state,.2);
+      const after=values(scene),explicitWarnings=[...warnings];
+      if(mode==='empty'){render('auto');for(const ref of callbacks)ref.current(state,.2)};
+      flushSync(()=>root.unmount());element.remove();
+      console.warn=originalWarn;AnimationMixer.prototype.uncacheRoot=originalUncache;
+      return{diagnostics,warnings,explicitWarnings,bind,after,cleanups,subscriptionsAfterUnmount:callbacks.size};
+    };
     window.ready=true;
   `);
   const script = buildBrowserFixture(`${scratch}/fixture.tsx`);
@@ -197,6 +250,29 @@ beforeAll(async () => {
     return new Response('<div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "Content-Type": "text/html" } });
   } });
   browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox"] });
+}, 30000);
+
+test("explicit automatic playback diagnoses unsupported imported clips once while legacy automatic playback remains quiet", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const mode of ['empty', 'noidle']) {
+    const result = await page.evaluate(mode => (window as any).autoDiagnostics(mode), mode);
+    expect(result.diagnostics.map((d: any) => d.code)).toEqual(['missing-auto-idle']);
+    expect(result.explicitWarnings).toHaveLength(1);
+    expect(result.explicitWarnings[0]).toContain('idle');
+    expect(result.warnings).toEqual(result.explicitWarnings);
+    expect(result.after).toEqual(result.bind);
+    expect(result.cleanups).toBe(0);
+    expect(result.subscriptionsAfterUnmount).toBe(0);
+  }
+  const valid = await page.evaluate(() => (window as any).autoDiagnostics('valid'));
+  expect(valid.diagnostics).toEqual([]);
+  expect(valid.warnings).toEqual([]);
+  expect(valid.after).not.toEqual(valid.bind);
+  expect(valid.cleanups).toBe(1);
+  expect(valid.subscriptionsAfterUnmount).toBe(0);
+  await page.close();
 }, 30000);
 afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scratch, { recursive: true, force: true }); });
 
@@ -384,5 +460,59 @@ test("context-unbound previews and positive game-clock rates keep their visual p
     expect(result.clockAfter).toBeGreaterThan(result.clockBefore);
     expect(result.frozen.actions[0].time).toBeCloseTo((result.before.actions[0].time + 1) % result.before.actions[0].duration, 10);
   }
+  await page.close();
+}, 30000);
+
+test("selected game clock keeps imported gait and clip phase coherent at 1x, 2x and 4x", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const explicitGraph of [false, true]) {
+    const control = await page.evaluate(explicitGraph => (window as any).selectedClock({explicitGraph}), explicitGraph);
+    for (const rate of [2, 4]) {
+      const result = await page.evaluate(options => (window as any).selectedClock(options), {rate, explicitGraph});
+      expect(result.snapshot.scale).toBe(75);
+      expect(result.snapshot.now).toBeCloseTo(control.snapshot.now, 8);
+      for (let n = 0; n < result.after.actions.length; n++) {
+        expect(result.after.actions[n].time).toBeCloseTo(control.after.actions[n].time, 8);
+        expect(result.after.actions[n].weight).toBeCloseTo(control.after.actions[n].weight, 6);
+      }
+      expect(result.after.pose.every(Number.isFinite)).toBe(true);
+      expect(result.cleanupBeforeUnmount).toBe(0);
+      expect(result.cleanupAfterUnmount).toBe(2);
+      expect(result.subscriptionsAfterUnmount).toBe(0);
+      // A second model keeps its own unbound real-time policy in the same context.
+      const peerTime = result.peerAfter.actions[0];
+      expect(peerTime.time).toBeCloseTo((3 / rate) % peerTime.duration, 8);
+    }
+  }
+  await page.close();
+}, 30000);
+
+test("selected clock composes global timescale and authored rates while previews and default playback remain real-time", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const single of [false, true]) {
+    const control = await page.evaluate(single => (window as any).selectedClock({single}), single);
+    const combined = await page.evaluate(single => (window as any).selectedClock({single,rate:4,timescale:.5}), single);
+    for (let n=0;n<control.after.actions.length;n++) expect(combined.after.actions[n].time).toBeCloseTo(control.after.actions[n].time, 8);
+  }
+  for (const authoredRate of [0, -.5, .5, 2]) {
+    const control = await page.evaluate(authoredRate => (window as any).selectedClock({single:true,authoredRate}), authoredRate);
+    const fast = await page.evaluate(authoredRate => (window as any).selectedClock({single:true,authoredRate,rate:4}), authoredRate);
+    expect(fast.after.actions[0].time).toBeCloseTo(control.after.actions[0].time, 8);
+    expect(fast.after.pose.every(Number.isFinite)).toBe(true);
+  }
+  for (const clock of [null, 'real']) {
+    const result = await page.evaluate(clock => (window as any).selectedClock({clock,rate:4,single:true}), clock);
+    expect(result.after.actions[0].time).toBeCloseTo(.75 % result.after.actions[0].duration, 8);
+  }
+  for (const binding of ['unbound', 'noctx']) {
+    const result = await page.evaluate(binding => (window as any).selectedClock({binding,rate:4,single:true}), binding);
+    expect(result.after.actions[0].time).toBeCloseTo(.75 % result.after.actions[0].duration, 8);
+  }
+  const held = await page.evaluate(() => (window as any).selectedClock({rate:4,single:true,held:true}));
+  expect(held.before).toEqual(held.after);
   await page.close();
 }, 30000);

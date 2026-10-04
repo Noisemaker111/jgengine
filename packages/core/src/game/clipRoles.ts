@@ -161,7 +161,8 @@ export function defaultAnimationForClips(
  * configs pass through, `"none"`/absent render the bind pose, and `"auto"` derives states and
  * one-shots from the model's clip names via {@link defaultAnimationForClips}. The shell calls
  * this with the loaded GLB's actual clip names, so `"auto"` works on any rigged model —
- * catalog-resolved ids are stamped `"auto"` automatically.
+ * catalog-resolved ids are stamped `"auto"` automatically. An object with `auto: true` derives
+ * the same defaults, then replaces each explicitly supplied field whole, including empty maps.
  */
 export function resolveAnimationConfig(
   animation: ModelAnimationConfig | "auto" | "none" | undefined,
@@ -169,7 +170,9 @@ export function resolveAnimationConfig(
   table: ClipRoleTable = DEFAULT_CLIP_ROLE_TABLE,
 ): ModelAnimationConfig | undefined {
   if (animation === undefined || animation === "none") return undefined;
-  if (animation !== "auto") return animation;
+  if (animation !== "auto" && animation.auto !== true) return animation;
   if (clips === undefined || clips.length === 0) return undefined;
-  return defaultAnimationForClips(clips, table);
+  const defaults = defaultAnimationForClips(clips, table);
+  if (defaults === undefined || animation === "auto") return defaults;
+  return { ...defaults, ...animation };
 }

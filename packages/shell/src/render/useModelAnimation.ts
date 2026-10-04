@@ -34,7 +34,7 @@ function graphClipNames(graph: AnimGraph): Set<string> {
 
 /** A repairable mismatch between a model animation config and its imported rig. */
 export interface ModelAnimationDiagnostic {
-  code: "missing-clip" | "missing-root-track" | "empty-layer-mask" | "incomplete-locomotion";
+  code: "missing-clip" | "missing-root-track" | "empty-layer-mask" | "incomplete-locomotion" | "missing-auto-idle";
   message: string;
 }
 
@@ -49,6 +49,14 @@ export function diagnoseModelAnimation(
   clips: readonly THREE.AnimationClip[],
 ): readonly ModelAnimationDiagnostic[] {
   const diagnostics: ModelAnimationDiagnostic[] = [];
+  if (animation.auto === true) {
+    const automatic = resolveAnimationConfig(animation, clips.map((clip) => clip.name));
+    if (automatic === undefined) return [{
+      code: "missing-auto-idle",
+      message: `explicit automatic playback needs an identifiable idle clip on this rig. Available: ${clips.length === 0 ? "none" : clips.map((clip) => clip.name).join(", ")}. The bind pose is retained; use a supported animated asset or disable automatic derivation and author this rig's clip mapping.`,
+    }];
+    animation = automatic;
+  }
   const available = new Set(clips.map((clip) => clip.name));
   const missing = new Set<string>();
   const resolved = animGraphFromConfig(animation);
@@ -324,6 +332,7 @@ export function useModelAnimation(
 
   useEffect(() => {
     if (animation !== undefined) warnAnimationDiagnostics(scene, animation, clips);
+    else if (typeof animationInput === "object" && animationInput.auto === true) warnAnimationDiagnostics(scene, animationInput, clips);
     if (animation === undefined || clips.length === 0) {
       mixerRef.current = null;
       actionRef.current = null;
@@ -371,6 +380,7 @@ export function useModelAnimation(
   }, [
     scene,
     clips,
+    animationKey,
     animation?.clip,
     animation?.loop,
     animation?.timeScale,
@@ -412,12 +422,15 @@ export function useModelAnimation(
   useFrame((_state, delta) => {
     if (animationPausedRef.current || animation?.timeScale === 0) return;
     if (ctx !== null && instanceId !== undefined && (ctx.time.speed() === 0 || ctx.time.timescale() === 0)) return;
+    const playbackDelta = animation?.clock === "game" && ctx !== null && instanceId !== undefined
+      ? delta * ctx.time.speed() * ctx.time.timescale()
+      : delta;
     const playback = graphRef.current;
     if (playback !== null && mixerRef.current !== null) {
       const params = playback.params;
       if (ctx !== null && instanceId !== undefined) {
         const entity = ctx.scene.entity.get(instanceId);
-        if (entity !== null && delta > 0) {
+        if (entity !== null && playbackDelta > 0) {
           const [x, , z] = entity.position;
           if (playback.lastPos !== null) {
             const dx = x - playback.lastPos[0];
@@ -427,8 +440,8 @@ export function useModelAnimation(
             if (dx * dx + dy * dy + dz * dz > snapDistance * snapDistance) {
               playback.smoothedSpeed = 0;
             } else {
-              const instantSpeed = Math.hypot(dx, dz) / delta;
-              playback.smoothedSpeed += (instantSpeed - playback.smoothedSpeed) * Math.min(1, delta * 12);
+              const instantSpeed = Math.hypot(dx, dz) / playbackDelta;
+              playback.smoothedSpeed += (instantSpeed - playback.smoothedSpeed) * Math.min(1, playbackDelta * 12);
             }
           }
           playback.lastPos = [x, entity.position[1], z];
@@ -438,7 +451,7 @@ export function useModelAnimation(
         for (const key in params) if (Object.hasOwn(params, key)) delete params[key];
         params[LOCOMOTION_SPEED_PARAM] = playback.smoothedSpeed;
       }
-      const out = playback.runtime.advance(delta * (animation?.timeScale ?? 1), params, playback.durations);
+      const out = playback.runtime.advance(playbackDelta * (animation?.timeScale ?? 1), params, playback.durations);
       applyGraphClips(playback.actions, out.clips);
       mixerRef.current.update(0);
       if (out.rootMotion === true && playback.rootBone !== null && playback.rootBindPosition !== null) {
@@ -451,7 +464,7 @@ export function useModelAnimation(
       return;
     }
     if (mixerRef.current !== null && actionRef.current?.isRunning()) {
-      mixerRef.current.update(delta);
+      mixerRef.current.update(playbackDelta);
     }
   });
 }

@@ -48,6 +48,8 @@ export interface AuthoredAnimationStates {
 
 /** Structurally compatible with `ModelAnimationConfig`, but every field optional for authoring. */
 export interface AuthoredAnimationConfig {
+  auto?: true;
+  clock?: "real" | "game";
   clip?: string;
   loop?: boolean;
   timeScale?: number;
@@ -175,7 +177,7 @@ export function setPlaybackClip(setting: AnimationSetting | undefined, clip: str
     const { clip: _clip, ...config } = asConfig(setting);
     return config;
   }
-  const { states: _states, graph: _graph, ...config } = asConfig(setting);
+  const { states: _states, graph: _graph, auto: _auto, ...config } = asConfig(setting);
   return { ...config, clip };
 }
 
@@ -188,6 +190,19 @@ export function setPlaybackNumber(
   const config = { ...asConfig(setting) };
   if (value === null || !Number.isFinite(value)) delete config[key];
   else config[key] = key === "time" ? Math.max(0, value) : value;
+  return config;
+}
+
+/** Chooses the playback clock without replacing mappings, graph, or other authored fields. @internal */
+export function setPlaybackClock(setting: AnimationSetting | undefined, clock: "real" | "game"): AuthoredAnimationConfig {
+  return { ...(setting === "auto" ? { auto: true as const } : asConfig(setting)), clock };
+}
+
+/** Requests loaded-rig role inference, or removes that request, retaining explicit overrides whole. @internal */
+export function setAutomaticRoles(setting: AnimationSetting | undefined, derive: boolean): AuthoredAnimationConfig {
+  const config = { ...asConfig(setting) };
+  if (derive) config.auto = true;
+  else delete config.auto;
   return config;
 }
 
@@ -221,6 +236,11 @@ export function effectiveAnimGraph(
   clips: readonly string[],
 ): { graph: AnimGraph; source: AnimGraphSource } | null {
   if (setting === "none") return null;
+  if (setting !== undefined && setting !== "auto" && setting.auto === true) {
+    const resolved = resolveAnimationConfig(setting as Parameters<typeof resolveAnimationConfig>[0], clips);
+    const graph = resolved === undefined ? undefined : animGraphFromConfig(resolved);
+    return graph === undefined ? null : { graph, source: setting.graph !== undefined ? "authored" : setting.states !== undefined ? "locomotion" : "auto" };
+  }
   if (setting !== undefined && setting !== "auto") {
     if (setting.graph !== undefined) return { graph: setting.graph, source: "authored" };
     const states = setting.states;
