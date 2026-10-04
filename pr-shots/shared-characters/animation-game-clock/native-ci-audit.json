@@ -1,0 +1,25 @@
+{
+  "state": "Frozen native/CI subset audit; final consumer report pending",
+  "nativeReportSHA256": "5c755e799a146fc4f246e2255b942f4e28438db690ad652f036b585c9a6f9194",
+  "nativeImagesHashVerifiedAndInspected": 5,
+  "generatedScaffoldFilesByteVerified": 5,
+  "initialDocumentSHA256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1",
+  "savedDocumentSHA256": "fb48a439f3222900f41e2f6cd5d49e1b31d929299cde0938b6cc3eac1f66c33a",
+  "markerCount": 438,
+  "exactOnlySavedChange": "markers[400].meta.animation.clock=game",
+  "CIReportSHA256": "2af7f8dc7412180836113849fbf944f5ce8b183c46ee25d42f68b428dca722e6",
+  "CIHead": "b562fc6c4e72a3da61ee487570a9bc780cf1a3f9",
+  "allSixChecksPass": true,
+  "firstAttempt": true,
+  "remainingLimitations": [
+    "Standalone asset metadata remains0clips; this scenario proves configuration editing/persistence only, no graph/rig playback or derivation.",
+    "Temporary auto:true checkbox state is removed beforeSave; actual loaded Idle compatibility and gameclock runtime behavior require separate imported-hook proof.",
+    "No convincing animation, movement feel, hardwareFPS or published package adoption claim.",
+    "Earlier Lantern/rig native caps and host blockers remain unresolved."
+  ],
+  "nativeCaptureFailures": 0,
+  "nativeCaptureRetries": 0,
+  "postCaptureAnalysisAssertionFailures": 1,
+  "postCaptureCorrection": "Initial postcapture expectation assumed undo preserves Clockgame; actual editor grouped marker edits and restored exactinitialmarker. Corrected assertion preserves rawRPC/captures; no native retry.",
+  "actions": "Read-only hashes/data and existing screenshot inspection; no capture/test/CI rerun."
+}

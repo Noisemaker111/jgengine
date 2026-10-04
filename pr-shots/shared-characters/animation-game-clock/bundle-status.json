@@ -1,0 +1,14 @@
+{
+  "bundle": "/workspace/JGengine/.scratch/characters/eleventh-archive/eleventh-proof.tar.gz",
+  "bytes": 23254304,
+  "sha256": "9cda08da6ea824fe94fa47032dcbdc8f985a3f7cac9a57a179e4e7400c66a818",
+  "gitBlobSha": "051122fd81c414b974d4eb75dfc827a1eaaf4875",
+  "regularFilesIncludingLedger": 1064,
+  "allTarMemberHashesVerified": true,
+  "consumerArtifactHashesVerifiedAndBundled": 54,
+  "consumerReportUnchanged": true,
+  "sourceTree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "separateNextPassLimitationIncluded": true,
+  "sourceCI": "Exactb562 firstattempt all six checksPASS; merge not yet assumed.",
+  "publication": "Unreleased built package and prepared adapter evidence; no released adoption/native animation appearance/feel/FPS claim."
+}

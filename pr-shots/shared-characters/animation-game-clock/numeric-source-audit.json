@@ -1,0 +1,28 @@
+{
+  "state": "Frozen numeric/source subset audit; final report pending",
+  "builtCommit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "numericCases": 6,
+  "baselineRealTimeRecordSetsBitExact": 3,
+  "selectedClockPhysicalPolicyRecordSetsBitExact": 3,
+  "selectedClockMeasuredDeltas": [
+    0.9999999999999432,
+    0.9999999999999432,
+    0.9999999999999432
+  ],
+  "selectedClockGaitTolerance": {
+    "clipTime": 1e-08,
+    "blendWeight": 0.02
+  },
+  "numericOriginalGameFilesVerified": 52,
+  "originalConsumerSourceFilesVerified": 127,
+  "onlyPreparedSourceChange": "odd-orbit/src/game/render/AlienMesh.tsx",
+  "allOtherPreparedSourceFilesByteUnchanged": 126,
+  "originalPrepatchBuildTypeLogsHashVerified": 4,
+  "KnightGLBSHA256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+  "limits": [
+    "Original OddOrbit normal new/speed commands and onTick through exact installed public packages plus manual React/Fiber hook. One speed-normalized second; measured clock snapshots retained. No native appearance or performance judgement.",
+    "Original OddOrbit public/models remains unprovisioned; same registered official KayKit Knight supplied read-only from provisioned SDK dev catalog.",
+    "This audit rechecks frozen numerical records and byte hashes, not runtime interaction or native appearance."
+  ]
+}

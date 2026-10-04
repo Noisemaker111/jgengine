@@ -1,0 +1,66 @@
+{
+  "label": "Unmodified originalOdd+Scrap publicpackage checks, frozen BEFORE preparedclockpolicy patch.",
+  "cohort": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "manifestSha256": "dcc1b150aea61bfed80dcec8af542e405f81f48dbf25879912fb1c9592441127",
+  "originalSourceFilesVerified": 127,
+  "checks": [
+    {
+      "game": "odd-orbit",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/odd-orbit",
+      "exitCode": 0,
+      "durationFromLog": "24.45s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-odd-orbit-build.log",
+      "logSha256": "303eb6084bf05143bb23c1e4d10177ea769ba6b3e2782fab1770bb23249824f6"
+    },
+    {
+      "game": "odd-orbit",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/odd-orbit",
+      "exitCode": 0,
+      "durationFromLog": null,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-odd-orbit-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "game": "scrap-signal",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/scrap-signal",
+      "exitCode": 0,
+      "durationFromLog": "26.38s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-scrap-signal-build.log",
+      "logSha256": "776b4cd73654ffb72cae9ec6fc6d52b573b733da9f2c1e40f5ef843f4fda5607"
+    },
+    {
+      "game": "scrap-signal",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/scrap-signal",
+      "exitCode": 0,
+      "durationFromLog": null,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-scrap-signal-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "originalSourceProvenanceSha256": "72391847c34a7904701a77149b83409a0380c246f6eab0dddae4834e0ab51f16"
+}

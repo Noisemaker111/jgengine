@@ -1,0 +1,35 @@
+{
+  "format": "Concatenate binary parts in listed order to reconstruct eleventh-proof.tar.gz; individual parts are not decompressible.",
+  "bundleBytes": 23254304,
+  "bundleSha256": "9cda08da6ea824fe94fa47032dcbdc8f985a3f7cac9a57a179e4e7400c66a818",
+  "bundleGitBlobSha": "051122fd81c414b974d4eb75dfc827a1eaaf4875",
+  "regularTarFilesIncludingLedger": 1064,
+  "parts": [
+    {
+      "path": "pr-shots/shared-characters/animation-game-clock/eleventh-proof.tar.gz.part-01",
+      "bytes": 5242880,
+      "sha256": "8fb785c278afc403736f6b52ea38e4a1c004d6806ba15bdd230ed41c2a55bdc2"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-game-clock/eleventh-proof.tar.gz.part-02",
+      "bytes": 5242880,
+      "sha256": "6b0c75794fe991555d55692aaac8cf82168a983903a7f4ec1a05adf4d7b1d801"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-game-clock/eleventh-proof.tar.gz.part-03",
+      "bytes": 5242880,
+      "sha256": "098e4e48258387c688fce959ad569835d9dd61f5dab88c3152232cc9d08d2c35"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-game-clock/eleventh-proof.tar.gz.part-04",
+      "bytes": 5242880,
+      "sha256": "7ffd9756b347a0a30bcb942a65f67cf8aab277cae9d0f3d3b2af592f498f4e27"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-game-clock/eleventh-proof.tar.gz.part-05",
+      "bytes": 2282784,
+      "sha256": "1026915a7ae8accfbc3f352479ceaa581af5cb73f872c7f223f65006d56c564c"
+    }
+  ],
+  "verification": "Whole bundle, all regular tar members and concatenated part bytes verified."
+}

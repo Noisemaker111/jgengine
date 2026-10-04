@@ -1,0 +1,1645 @@
+{
+  "state": "Partial package/source audit; final consumer/native report pending",
+  "builtCommit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "builtTree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "manifestSHA256": "dcc1b150aea61bfed80dcec8af542e405f81f48dbf25879912fb1c9592441127",
+  "trackedSourceFilesVerified": 4039,
+  "cleanBuildStagesVerified": 27,
+  "actualTarballsVerified": 13,
+  "tarEntriesByteVerified": 2644,
+  "compiledTarEntriesVerified": 2379,
+  "installedPackagesVerified": 9,
+  "installedFilesVerified": 2548,
+  "skillEntriesVerifiedAgainstCommittedGit": 231,
+  "skills": [
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/api.md",
+      "source": ".claude/skills/jgengine-combat/api.md",
+      "bytes": 156044,
+      "sha256": "4261e82ae702a98b8938b82d96e370b173f057cb462f57142d2df1822443e631"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/api.md",
+      "source": ".claude/skills/jgengine-gameplay/api.md",
+      "bytes": 463941,
+      "sha256": "9dca64f7ce8c5d6f29171743bf4e00b8b2da7ac27a1cf6a04fd4d4fb2862cffd"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/api.md",
+      "source": ".claude/skills/jgengine-world/api.md",
+      "bytes": 818120,
+      "sha256": "46978fec12225a974bc352b15b8136eedc61e842b65101d9a4e3a040507dc176"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/game-design/references/application-playbook.md",
+      "source": ".claude/skills/game-design/references/application-playbook.md",
+      "bytes": 7757,
+      "sha256": "a84c077ce70c834b3cd23f6de79a468f66794aae53c91adb3ebd7f2d54a7f84e"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/recipes/building-kit.md",
+      "source": ".claude/skills/jgengine-world/recipes/building-kit.md",
+      "bytes": 2908,
+      "sha256": "2f501a738cbab6d08ec3fd2b703748e73bdf9fda54b65347ba66625e834f50e1"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/capabilities.md",
+      "source": ".claude/skills/jgengine-combat/capabilities.md",
+      "bytes": 14160,
+      "sha256": "8c0d889a9df5d26e4739bbeb016a2babe317147beeeb586698aad848fc0c53e0"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/capabilities.md",
+      "source": ".claude/skills/jgengine-gameplay/capabilities.md",
+      "bytes": 33748,
+      "sha256": "652737b07a6b981ff6eef0940657193849019af92d50e66181ae58bfd13ad104"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/capabilities.md",
+      "source": ".claude/skills/jgengine-world/capabilities.md",
+      "bytes": 53038,
+      "sha256": "2498c3af83a43c688cc4957a0b3e881532b925749fce938a49d12f8709bd32c4"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/recipes/character-animation.md",
+      "source": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "bytes": 17792,
+      "sha256": "e3795ec21c17fc19ccb5388979dd1808b9bd40e0ff001a3d230ad1a4928f69b1"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/recipes/commanding-entities.md",
+      "source": ".claude/skills/jgengine-world/recipes/commanding-entities.md",
+      "bytes": 5884,
+      "sha256": "d0132fb245f0e3340180a3213608731b49f079b674479d245235cc2a569cfe06"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/recipes/controls.md",
+      "source": ".claude/skills/jgengine-world/recipes/controls.md",
+      "bytes": 7152,
+      "sha256": "3da8e2ce36fb2727262ed3e31c6c0c2ac6cea348af285e37e8752d43df61281e"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/recipes/device-save-status.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/device-save-status.md",
+      "bytes": 2393,
+      "sha256": "29562c5e90ba9007deec0cb5e6df1761736f5dbca9e08bb18da19c5e56e00d53"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/recipes/expeditions.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/expeditions.md",
+      "bytes": 5780,
+      "sha256": "fa519eecfea3e97701b6571a254fac592976c4b65dae80192f9445a27ce280c4"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/game-design/references/field-guide.md",
+      "source": ".claude/skills/game-design/references/field-guide.md",
+      "bytes": 17240,
+      "sha256": "498febd935848db3d24a3de9e8bf289d288d23a09212dd24aa91fd6cc53e9d7f"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/recipes/flight-feel.md",
+      "source": ".claude/skills/jgengine-world/recipes/flight-feel.md",
+      "bytes": 9520,
+      "sha256": "17a6e25f5f6286b13607e671f29b426f0ff5816a674ef6d519d9e9326b04a730"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/recipes/narrative-authoring.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/narrative-authoring.md",
+      "bytes": 3760,
+      "sha256": "aa1a56fee7c1a7edd0ad7f1eaaeff5370802f6914d419f8dbaa909e02ac8c460"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/recipes/npc-senses.md",
+      "source": ".claude/skills/jgengine-world/recipes/npc-senses.md",
+      "bytes": 3428,
+      "sha256": "c2778addc2c2f447da5fc454d44d3367891f214acccaaaf76d590618bcbc7619"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/recipes/paged-item-storage.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/paged-item-storage.md",
+      "bytes": 4298,
+      "sha256": "9b9c7d1b4913aad88f51f1db9dd35f357edf99957d8893a4799ee571b0928b5a"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/recipes/portable-damage-effects.md",
+      "source": ".claude/skills/jgengine-combat/recipes/portable-damage-effects.md",
+      "bytes": 5860,
+      "sha256": "176e0d848cb8de6473183e0404421ec7fef162e32a20c8108dd84e8e8cc9a5d9"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/recipes/portable-runtime-state.md",
+      "source": ".claude/skills/jgengine-combat/recipes/portable-runtime-state.md",
+      "bytes": 6599,
+      "sha256": "70d5f14c2a82f6e54b24570dd069ca3f2a2e3b6eb3c03a42c345d68e77c0dc7f"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/recipes/portable-stat-pools.md",
+      "source": ".claude/skills/jgengine-combat/recipes/portable-stat-pools.md",
+      "bytes": 3731,
+      "sha256": "9d92b1c75315c4e7ab8fc3fb4d2988ff355f9661767cb7aa9b99578fc5e75b8e"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/recipes/portable-weapon-plumbing.md",
+      "source": ".claude/skills/jgengine-combat/recipes/portable-weapon-plumbing.md",
+      "bytes": 7752,
+      "sha256": "dfe908df245b19f7aa4e5bda9b3bfc0d1c66f6a8a9687f866f797021471dffed"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/recipes/portable-xp-leveling.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/portable-xp-leveling.md",
+      "bytes": 4460,
+      "sha256": "f9576ac120552a4b7531fe2a257466a2baf8b577aa8869d24144ac771653cec0"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/recipes/quest-authoring.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/quest-authoring.md",
+      "bytes": 3811,
+      "sha256": "51ef27572c0caa06fdd7b7e47c1eaefe23f57dd98950b0e63810b6e6ec90a045"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/reference-content-validation.md",
+      "source": ".claude/skills/jgengine-gameplay/reference-content-validation.md",
+      "bytes": 4341,
+      "sha256": "e0786626689fc24e69f7ee41d6f5254090d5a08fe3f459556ba4af57420eecb9"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/reference-systems.md",
+      "source": ".claude/skills/jgengine-gameplay/reference-systems.md",
+      "bytes": 13953,
+      "sha256": "e519e0bff33f73746be5b180b3c934fd9404fb2d96e360f6241e04cabc92908a"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/reference.md",
+      "source": ".claude/skills/jgengine-combat/reference.md",
+      "bytes": 31778,
+      "sha256": "e17307bd863e5b4c5ef82f8772719efd7e759ddb91b273f0106dc4bc237f2570"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/reference.md",
+      "source": ".claude/skills/jgengine-world/reference.md",
+      "bytes": 112966,
+      "sha256": "dcd583d92f4ccb3a5058831e69997668ecde3cf7636816ba683edf09afcc9fa5"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/recipes/shaped-inventory.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/shaped-inventory.md",
+      "bytes": 2198,
+      "sha256": "28f5e56ff2d0ded3f42549ce1586fa0152ac958e509a89bce1b8b0647d9bfba7"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/game-design/SKILL.md",
+      "source": ".claude/skills/game-design/SKILL.md",
+      "bytes": 4449,
+      "sha256": "c9691ce1dbeda6dd6ac4a80d3bc9032f41fdef75b5f8196954f134f8f10fb57f"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/SKILL.md",
+      "source": ".claude/skills/jgengine-combat/SKILL.md",
+      "bytes": 4495,
+      "sha256": "bc08e8c2a05f427f63872b3e79eeb9fd61928a076c507718985241da2af0d5e5"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-gameplay/SKILL.md",
+      "source": ".claude/skills/jgengine-gameplay/SKILL.md",
+      "bytes": 9028,
+      "sha256": "9376e2b9fb7f4656ac6267bccf9d3d382b6301957ee20cf64b07cd69d65e5ccf"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/SKILL.md",
+      "source": ".claude/skills/jgengine-world/SKILL.md",
+      "bytes": 11385,
+      "sha256": "ea0ba6e5bd0d6e3ca90836899f991247ce3fab1f70b1c95dc21aac9224bf4137"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/recipes/vehicle-feel.md",
+      "source": ".claude/skills/jgengine-world/recipes/vehicle-feel.md",
+      "bytes": 12424,
+      "sha256": "5a0b53419222be94a9717057072706473e28ce67a9625dfa0f7a53178ed22931"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-world/visibility.md",
+      "source": ".claude/skills/jgengine-world/visibility.md",
+      "bytes": 8242,
+      "sha256": "651a190d5919672af1222a4163c9df917d64c2163b48f98776f3bfae888c972c"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/recipes/visible-attacks.md",
+      "source": ".claude/skills/jgengine-combat/recipes/visible-attacks.md",
+      "bytes": 3704,
+      "sha256": "a167cce0ef5c1c70c4274edcf2f9c792c319e548ccc9b76405e1418c8836c46d"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/jgengine-combat/recipes/weapon-feel.md",
+      "source": ".claude/skills/jgengine-combat/recipes/weapon-feel.md",
+      "bytes": 4833,
+      "sha256": "054e08d0148309a497af37e9dae2460b0a100baab7bd4ca628b9de469af1ce32"
+    },
+    {
+      "package": "@jgengine/core",
+      "path": "skills/game-design/agents/openai.yaml",
+      "source": ".claude/skills/game-design/agents/openai.yaml",
+      "bytes": 254,
+      "sha256": "00b7d8ac5e98f95b76c1cd1b7b0440d7072f9822252c400a06279d6bbe223226"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine-multiplayer/api.md",
+      "source": ".claude/skills/jgengine-multiplayer/api.md",
+      "bytes": 119486,
+      "sha256": "65badd84afd28b318c876ca134bb12fb66dfe8750bd00a4ae36be99aff1e59a5"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine-multiplayer/capabilities.md",
+      "source": ".claude/skills/jgengine-multiplayer/capabilities.md",
+      "bytes": 3672,
+      "sha256": "456612c2823f7bf4d845b530cc2b197ea38105beeb92eabf7fb3211777dfbca7"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine-multiplayer/references/peer-worlds.md",
+      "source": ".claude/skills/jgengine-multiplayer/references/peer-worlds.md",
+      "bytes": 3760,
+      "sha256": "b61fbf8d253dc6d047874d2425027c8ea36b3a1aa2e69c028330020e51fd5e41"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine-multiplayer/reference.md",
+      "source": ".claude/skills/jgengine-multiplayer/reference.md",
+      "bytes": 32507,
+      "sha256": "65cb7d0d330875c4a7a90fbe7caf46023ef4f999deabfdef97f6e70c2b3ec998"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine-multiplayer/SKILL.md",
+      "source": ".claude/skills/jgengine-multiplayer/SKILL.md",
+      "bytes": 7271,
+      "sha256": "1701a6be5084fcec3c80a618a2839c33649af9e7f11672e94c65da6d98efa4ab"
+    },
+    {
+      "package": "@jgengine/ws",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine-multiplayer/api.md",
+      "source": ".claude/skills/jgengine-multiplayer/api.md",
+      "bytes": 119486,
+      "sha256": "65badd84afd28b318c876ca134bb12fb66dfe8750bd00a4ae36be99aff1e59a5"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine-multiplayer/capabilities.md",
+      "source": ".claude/skills/jgengine-multiplayer/capabilities.md",
+      "bytes": 3672,
+      "sha256": "456612c2823f7bf4d845b530cc2b197ea38105beeb92eabf7fb3211777dfbca7"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine-multiplayer/references/peer-worlds.md",
+      "source": ".claude/skills/jgengine-multiplayer/references/peer-worlds.md",
+      "bytes": 3760,
+      "sha256": "b61fbf8d253dc6d047874d2425027c8ea36b3a1aa2e69c028330020e51fd5e41"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine-multiplayer/reference.md",
+      "source": ".claude/skills/jgengine-multiplayer/reference.md",
+      "bytes": 32507,
+      "sha256": "65cb7d0d330875c4a7a90fbe7caf46023ef4f999deabfdef97f6e70c2b3ec998"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine-multiplayer/SKILL.md",
+      "source": ".claude/skills/jgengine-multiplayer/SKILL.md",
+      "bytes": 7271,
+      "sha256": "1701a6be5084fcec3c80a618a2839c33649af9e7f11672e94c65da6d98efa4ab"
+    },
+    {
+      "package": "@jgengine/sql",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine-ui/api.md",
+      "source": ".claude/skills/jgengine-ui/api.md",
+      "bytes": 610102,
+      "sha256": "ac9959f7545eb6f77583431120daeed567bec90dbb28987bf7838338c4687ee2"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine-ui/capabilities.md",
+      "source": ".claude/skills/jgengine-ui/capabilities.md",
+      "bytes": 43709,
+      "sha256": "18b2d5b272a6bc76a323edce9d718536de224abb4627dff6e1db36ccecd3edea"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine-ui/recipes/overhead-entity-frames.md",
+      "source": ".claude/skills/jgengine-ui/recipes/overhead-entity-frames.md",
+      "bytes": 5213,
+      "sha256": "2a5ea2a4bd89b90755f57ad6e5b5fefc2680896341d8c495ffd8eab534a882f4"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine-ui/recipes/portable-minimap.md",
+      "source": ".claude/skills/jgengine-ui/recipes/portable-minimap.md",
+      "bytes": 4167,
+      "sha256": "f78865af89c15f8bb1d47e2c5dd76164f800a48b775066fe6072e3095f6fd865"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine-ui/reference-primitives.md",
+      "source": ".claude/skills/jgengine-ui/reference-primitives.md",
+      "bytes": 35629,
+      "sha256": "82d4807ab6d248d16e7c101305ec7d56afb9aac83238484a18d09c067d0be18f"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine-ui/reference.md",
+      "source": ".claude/skills/jgengine-ui/reference.md",
+      "bytes": 34728,
+      "sha256": "c2bb950fd6f95c222c16fd2ef8490835c2079837ba14a8e01e5fdac2f243821f"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine-ui/SKILL.md",
+      "source": ".claude/skills/jgengine-ui/SKILL.md",
+      "bytes": 9339,
+      "sha256": "2b8fbe8d5272a687621e39e44bd97855a547b4fe4a33335761a54ee8f77b56f9"
+    },
+    {
+      "package": "@jgengine/react",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine-multiplayer/api.md",
+      "source": ".claude/skills/jgengine-multiplayer/api.md",
+      "bytes": 119486,
+      "sha256": "65badd84afd28b318c876ca134bb12fb66dfe8750bd00a4ae36be99aff1e59a5"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine-multiplayer/capabilities.md",
+      "source": ".claude/skills/jgengine-multiplayer/capabilities.md",
+      "bytes": 3672,
+      "sha256": "456612c2823f7bf4d845b530cc2b197ea38105beeb92eabf7fb3211777dfbca7"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine-multiplayer/references/peer-worlds.md",
+      "source": ".claude/skills/jgengine-multiplayer/references/peer-worlds.md",
+      "bytes": 3760,
+      "sha256": "b61fbf8d253dc6d047874d2425027c8ea36b3a1aa2e69c028330020e51fd5e41"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine-multiplayer/reference.md",
+      "source": ".claude/skills/jgengine-multiplayer/reference.md",
+      "bytes": 32507,
+      "sha256": "65cb7d0d330875c4a7a90fbe7caf46023ef4f999deabfdef97f6e70c2b3ec998"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine-multiplayer/SKILL.md",
+      "source": ".claude/skills/jgengine-multiplayer/SKILL.md",
+      "bytes": 7271,
+      "sha256": "1701a6be5084fcec3c80a618a2839c33649af9e7f11672e94c65da6d98efa4ab"
+    },
+    {
+      "package": "@jgengine/convex",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine-multiplayer/api.md",
+      "source": ".claude/skills/jgengine-multiplayer/api.md",
+      "bytes": 119486,
+      "sha256": "65badd84afd28b318c876ca134bb12fb66dfe8750bd00a4ae36be99aff1e59a5"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine-multiplayer/capabilities.md",
+      "source": ".claude/skills/jgengine-multiplayer/capabilities.md",
+      "bytes": 3672,
+      "sha256": "456612c2823f7bf4d845b530cc2b197ea38105beeb92eabf7fb3211777dfbca7"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine-multiplayer/references/peer-worlds.md",
+      "source": ".claude/skills/jgengine-multiplayer/references/peer-worlds.md",
+      "bytes": 3760,
+      "sha256": "b61fbf8d253dc6d047874d2425027c8ea36b3a1aa2e69c028330020e51fd5e41"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine-multiplayer/reference.md",
+      "source": ".claude/skills/jgengine-multiplayer/reference.md",
+      "bytes": 32507,
+      "sha256": "65cb7d0d330875c4a7a90fbe7caf46023ef4f999deabfdef97f6e70c2b3ec998"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine-multiplayer/SKILL.md",
+      "source": ".claude/skills/jgengine-multiplayer/SKILL.md",
+      "bytes": 7271,
+      "sha256": "1701a6be5084fcec3c80a618a2839c33649af9e7f11672e94c65da6d98efa4ab"
+    },
+    {
+      "package": "@jgengine/node",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-ui/api.md",
+      "source": ".claude/skills/jgengine-ui/api.md",
+      "bytes": 610102,
+      "sha256": "ac9959f7545eb6f77583431120daeed567bec90dbb28987bf7838338c4687ee2"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/api.md",
+      "source": ".claude/skills/jgengine-world/api.md",
+      "bytes": 818120,
+      "sha256": "46978fec12225a974bc352b15b8136eedc61e842b65101d9a4e3a040507dc176"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/game-design/references/application-playbook.md",
+      "source": ".claude/skills/game-design/references/application-playbook.md",
+      "bytes": 7757,
+      "sha256": "a84c077ce70c834b3cd23f6de79a468f66794aae53c91adb3ebd7f2d54a7f84e"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/level-design/references/application-playbook.md",
+      "source": ".claude/skills/level-design/references/application-playbook.md",
+      "bytes": 9059,
+      "sha256": "7337d48d7c402c15fc81c3dfd3b961f2bb1c9fbad179f88a0f7c42ac21451c40"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/recipes/building-kit.md",
+      "source": ".claude/skills/jgengine-world/recipes/building-kit.md",
+      "bytes": 2908,
+      "sha256": "2f501a738cbab6d08ec3fd2b703748e73bdf9fda54b65347ba66625e834f50e1"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-ui/capabilities.md",
+      "source": ".claude/skills/jgengine-ui/capabilities.md",
+      "bytes": 43709,
+      "sha256": "18b2d5b272a6bc76a323edce9d718536de224abb4627dff6e1db36ccecd3edea"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/capabilities.md",
+      "source": ".claude/skills/jgengine-world/capabilities.md",
+      "bytes": 53038,
+      "sha256": "2498c3af83a43c688cc4957a0b3e881532b925749fce938a49d12f8709bd32c4"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/recipes/character-animation.md",
+      "source": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "bytes": 17792,
+      "sha256": "e3795ec21c17fc19ccb5388979dd1808b9bd40e0ff001a3d230ad1a4928f69b1"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/recipes/commanding-entities.md",
+      "source": ".claude/skills/jgengine-world/recipes/commanding-entities.md",
+      "bytes": 5884,
+      "sha256": "d0132fb245f0e3340180a3213608731b49f079b674479d245235cc2a569cfe06"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/recipes/controls.md",
+      "source": ".claude/skills/jgengine-world/recipes/controls.md",
+      "bytes": 7152,
+      "sha256": "3da8e2ce36fb2727262ed3e31c6c0c2ac6cea348af285e37e8752d43df61281e"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/game-design/references/field-guide.md",
+      "source": ".claude/skills/game-design/references/field-guide.md",
+      "bytes": 17240,
+      "sha256": "498febd935848db3d24a3de9e8bf289d288d23a09212dd24aa91fd6cc53e9d7f"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/level-design/references/field-guide.md",
+      "source": ".claude/skills/level-design/references/field-guide.md",
+      "bytes": 20527,
+      "sha256": "b270bd505ec608705b9b43b9dd9390693bfc3d748006d2b9fd46fc1996ec7951"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/recipes/flight-feel.md",
+      "source": ".claude/skills/jgengine-world/recipes/flight-feel.md",
+      "bytes": 9520,
+      "sha256": "17a6e25f5f6286b13607e671f29b426f0ff5816a674ef6d519d9e9326b04a730"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/level-design/references/live-editor-loop.md",
+      "source": ".claude/skills/level-design/references/live-editor-loop.md",
+      "bytes": 10385,
+      "sha256": "021ce23b5cf6d0cadbff9eb90ddf3ffd78009f5a3cf422ecbc87a059104e5cc3"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/recipes/npc-senses.md",
+      "source": ".claude/skills/jgengine-world/recipes/npc-senses.md",
+      "bytes": 3428,
+      "sha256": "c2778addc2c2f447da5fc454d44d3367891f214acccaaaf76d590618bcbc7619"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-ui/recipes/overhead-entity-frames.md",
+      "source": ".claude/skills/jgengine-ui/recipes/overhead-entity-frames.md",
+      "bytes": 5213,
+      "sha256": "2a5ea2a4bd89b90755f57ad6e5b5fefc2680896341d8c495ffd8eab534a882f4"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-ui/recipes/portable-minimap.md",
+      "source": ".claude/skills/jgengine-ui/recipes/portable-minimap.md",
+      "bytes": 4167,
+      "sha256": "f78865af89c15f8bb1d47e2c5dd76164f800a48b775066fe6072e3095f6fd865"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-ui/reference-primitives.md",
+      "source": ".claude/skills/jgengine-ui/reference-primitives.md",
+      "bytes": 35629,
+      "sha256": "82d4807ab6d248d16e7c101305ec7d56afb9aac83238484a18d09c067d0be18f"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-ui/reference.md",
+      "source": ".claude/skills/jgengine-ui/reference.md",
+      "bytes": 34728,
+      "sha256": "c2bb950fd6f95c222c16fd2ef8490835c2079837ba14a8e01e5fdac2f243821f"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/reference.md",
+      "source": ".claude/skills/jgengine-world/reference.md",
+      "bytes": 112966,
+      "sha256": "dcd583d92f4ccb3a5058831e69997668ecde3cf7636816ba683edf09afcc9fa5"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/game-design/SKILL.md",
+      "source": ".claude/skills/game-design/SKILL.md",
+      "bytes": 4449,
+      "sha256": "c9691ce1dbeda6dd6ac4a80d3bc9032f41fdef75b5f8196954f134f8f10fb57f"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-ui/SKILL.md",
+      "source": ".claude/skills/jgengine-ui/SKILL.md",
+      "bytes": 9339,
+      "sha256": "2b8fbe8d5272a687621e39e44bd97855a547b4fe4a33335761a54ee8f77b56f9"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/SKILL.md",
+      "source": ".claude/skills/jgengine-world/SKILL.md",
+      "bytes": 11385,
+      "sha256": "ea0ba6e5bd0d6e3ca90836899f991247ce3fab1f70b1c95dc21aac9224bf4137"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/level-design/SKILL.md",
+      "source": ".claude/skills/level-design/SKILL.md",
+      "bytes": 5643,
+      "sha256": "64393374615b59ceb080e4c657d2b053e2f11d2f46c2f1bff162571c910f5651"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/recipes/vehicle-feel.md",
+      "source": ".claude/skills/jgengine-world/recipes/vehicle-feel.md",
+      "bytes": 12424,
+      "sha256": "5a0b53419222be94a9717057072706473e28ce67a9625dfa0f7a53178ed22931"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/jgengine-world/visibility.md",
+      "source": ".claude/skills/jgengine-world/visibility.md",
+      "bytes": 8242,
+      "sha256": "651a190d5919672af1222a4163c9df917d64c2163b48f98776f3bfae888c972c"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/game-design/agents/openai.yaml",
+      "source": ".claude/skills/game-design/agents/openai.yaml",
+      "bytes": 254,
+      "sha256": "00b7d8ac5e98f95b76c1cd1b7b0440d7072f9822252c400a06279d6bbe223226"
+    },
+    {
+      "package": "@jgengine/shell",
+      "path": "skills/level-design/agents/openai.yaml",
+      "source": ".claude/skills/level-design/agents/openai.yaml",
+      "bytes": 294,
+      "sha256": "8a0a375f4e53ec36e86013a3d1796d0ff1b0ccbafd8f6c40b1bc07c565c0294c"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine-editor/api.md",
+      "source": ".claude/skills/jgengine-editor/api.md",
+      "bytes": 199033,
+      "sha256": "702a24af7b92ab37e62bf499358d6846befe2359a4f858be101e680ee97c6b97"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/level-design/references/application-playbook.md",
+      "source": ".claude/skills/level-design/references/application-playbook.md",
+      "bytes": 9059,
+      "sha256": "7337d48d7c402c15fc81c3dfd3b961f2bb1c9fbad179f88a0f7c42ac21451c40"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine-editor/capabilities.md",
+      "source": ".claude/skills/jgengine-editor/capabilities.md",
+      "bytes": 11457,
+      "sha256": "e4a1c93d835160f9fff475b7630cc0348335a8bd7c762bc9b78c29acbace625e"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/level-design/references/field-guide.md",
+      "source": ".claude/skills/level-design/references/field-guide.md",
+      "bytes": 20527,
+      "sha256": "b270bd505ec608705b9b43b9dd9390693bfc3d748006d2b9fd46fc1996ec7951"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/level-design/references/live-editor-loop.md",
+      "source": ".claude/skills/level-design/references/live-editor-loop.md",
+      "bytes": 10385,
+      "sha256": "021ce23b5cf6d0cadbff9eb90ddf3ffd78009f5a3cf422ecbc87a059104e5cc3"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine-editor/references/live-sync.md",
+      "source": ".claude/skills/jgengine-editor/references/live-sync.md",
+      "bytes": 954,
+      "sha256": "82760815f8403eec1019288d8336f56d133ba0384885bfb1fea0228847f943df"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine-editor/reference.md",
+      "source": ".claude/skills/jgengine-editor/reference.md",
+      "bytes": 39320,
+      "sha256": "345a5b484b9205b01ad20b1240e339c37ec737abc8a46ae1b9606dd3a8026fa1"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine-editor/SKILL.md",
+      "source": ".claude/skills/jgengine-editor/SKILL.md",
+      "bytes": 7494,
+      "sha256": "003e02916e689d821ccf7448e3b0974ce2b03e4d754537025e9f3a4921ce02c0"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/level-design/SKILL.md",
+      "source": ".claude/skills/level-design/SKILL.md",
+      "bytes": 5643,
+      "sha256": "64393374615b59ceb080e4c657d2b053e2f11d2f46c2f1bff162571c910f5651"
+    },
+    {
+      "package": "@jgengine/editor",
+      "path": "skills/level-design/agents/openai.yaml",
+      "source": ".claude/skills/level-design/agents/openai.yaml",
+      "bytes": 294,
+      "sha256": "8a0a375f4e53ec36e86013a3d1796d0ff1b0ccbafd8f6c40b1bc07c565c0294c"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine-assets/api.md",
+      "source": ".claude/skills/jgengine-assets/api.md",
+      "bytes": 59544,
+      "sha256": "7e141ead60331b00a17895c89e7a5f90affde86c1f1a9142095dcab498850756"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine-assets/capabilities.md",
+      "source": ".claude/skills/jgengine-assets/capabilities.md",
+      "bytes": 4331,
+      "sha256": "8f1aea3ae763928ac0d2055e9feee40d58b91c669bcc68fdd8fc4f6449973c3e"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine-assets/references/custom-imports.md",
+      "source": ".claude/skills/jgengine-assets/references/custom-imports.md",
+      "bytes": 7465,
+      "sha256": "a51f91d8179b5486a93c40a355bf61efbf9711b5662e475386ef59a8ed297d59"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine-assets/SKILL.md",
+      "source": ".claude/skills/jgengine-assets/SKILL.md",
+      "bytes": 9626,
+      "sha256": "4440341115492a6b68f7e2bb58a8788ddaf931898f2bcd84082dc35ec90c7164"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "@jgengine/assets",
+      "path": "skills/jgengine-assets/references/video-to-3d-capture.md",
+      "source": ".claude/skills/jgengine-assets/references/video-to-3d-capture.md",
+      "bytes": 3430,
+      "sha256": "34ac00b61c6aac57ff4dfef9e3fb469374949fef881e032a6e0f6abd52ac8a37"
+    },
+    {
+      "package": "@jgengine/github",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "@jgengine/github",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "@jgengine/github",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "@jgengine/github",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "@jgengine/github",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-assets/api.md",
+      "source": ".claude/skills/jgengine-assets/api.md",
+      "bytes": 59544,
+      "sha256": "7e141ead60331b00a17895c89e7a5f90affde86c1f1a9142095dcab498850756"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/api.md",
+      "source": ".claude/skills/jgengine-combat/api.md",
+      "bytes": 156044,
+      "sha256": "4261e82ae702a98b8938b82d96e370b173f057cb462f57142d2df1822443e631"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-editor/api.md",
+      "source": ".claude/skills/jgengine-editor/api.md",
+      "bytes": 199033,
+      "sha256": "702a24af7b92ab37e62bf499358d6846befe2359a4f858be101e680ee97c6b97"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/api.md",
+      "source": ".claude/skills/jgengine-gameplay/api.md",
+      "bytes": 463941,
+      "sha256": "9dca64f7ce8c5d6f29171743bf4e00b8b2da7ac27a1cf6a04fd4d4fb2862cffd"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-multiplayer/api.md",
+      "source": ".claude/skills/jgengine-multiplayer/api.md",
+      "bytes": 119486,
+      "sha256": "65badd84afd28b318c876ca134bb12fb66dfe8750bd00a4ae36be99aff1e59a5"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-ui/api.md",
+      "source": ".claude/skills/jgengine-ui/api.md",
+      "bytes": 610102,
+      "sha256": "ac9959f7545eb6f77583431120daeed567bec90dbb28987bf7838338c4687ee2"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/api.md",
+      "source": ".claude/skills/jgengine-world/api.md",
+      "bytes": 818120,
+      "sha256": "46978fec12225a974bc352b15b8136eedc61e842b65101d9a4e3a040507dc176"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine/api.md",
+      "source": ".claude/skills/jgengine/api.md",
+      "bytes": 126416,
+      "sha256": "10e1dfd81e4029a13e0ffe5d9ba21db5eef4e6658e29cfd99a925b4ca72190f2"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/game-design/references/application-playbook.md",
+      "source": ".claude/skills/game-design/references/application-playbook.md",
+      "bytes": 7757,
+      "sha256": "a84c077ce70c834b3cd23f6de79a468f66794aae53c91adb3ebd7f2d54a7f84e"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/level-design/references/application-playbook.md",
+      "source": ".claude/skills/level-design/references/application-playbook.md",
+      "bytes": 9059,
+      "sha256": "7337d48d7c402c15fc81c3dfd3b961f2bb1c9fbad179f88a0f7c42ac21451c40"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/recipes/building-kit.md",
+      "source": ".claude/skills/jgengine-world/recipes/building-kit.md",
+      "bytes": 2908,
+      "sha256": "2f501a738cbab6d08ec3fd2b703748e73bdf9fda54b65347ba66625e834f50e1"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-assets/capabilities.md",
+      "source": ".claude/skills/jgengine-assets/capabilities.md",
+      "bytes": 4331,
+      "sha256": "8f1aea3ae763928ac0d2055e9feee40d58b91c669bcc68fdd8fc4f6449973c3e"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/capabilities.md",
+      "source": ".claude/skills/jgengine-combat/capabilities.md",
+      "bytes": 14160,
+      "sha256": "8c0d889a9df5d26e4739bbeb016a2babe317147beeeb586698aad848fc0c53e0"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-editor/capabilities.md",
+      "source": ".claude/skills/jgengine-editor/capabilities.md",
+      "bytes": 11457,
+      "sha256": "e4a1c93d835160f9fff475b7630cc0348335a8bd7c762bc9b78c29acbace625e"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/capabilities.md",
+      "source": ".claude/skills/jgengine-gameplay/capabilities.md",
+      "bytes": 33748,
+      "sha256": "652737b07a6b981ff6eef0940657193849019af92d50e66181ae58bfd13ad104"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-multiplayer/capabilities.md",
+      "source": ".claude/skills/jgengine-multiplayer/capabilities.md",
+      "bytes": 3672,
+      "sha256": "456612c2823f7bf4d845b530cc2b197ea38105beeb92eabf7fb3211777dfbca7"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-ui/capabilities.md",
+      "source": ".claude/skills/jgengine-ui/capabilities.md",
+      "bytes": 43709,
+      "sha256": "18b2d5b272a6bc76a323edce9d718536de224abb4627dff6e1db36ccecd3edea"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/capabilities.md",
+      "source": ".claude/skills/jgengine-world/capabilities.md",
+      "bytes": 53038,
+      "sha256": "2498c3af83a43c688cc4957a0b3e881532b925749fce938a49d12f8709bd32c4"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine/capabilities.md",
+      "source": ".claude/skills/jgengine/capabilities.md",
+      "bytes": 11704,
+      "sha256": "c403bae531751f218da2adf3317b1b5c4ba596aa7aaad06ecd50f4347d5c2275"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/recipes/character-animation.md",
+      "source": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "bytes": 17792,
+      "sha256": "e3795ec21c17fc19ccb5388979dd1808b9bd40e0ff001a3d230ad1a4928f69b1"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/recipes/commanding-entities.md",
+      "source": ".claude/skills/jgengine-world/recipes/commanding-entities.md",
+      "bytes": 5884,
+      "sha256": "d0132fb245f0e3340180a3213608731b49f079b674479d245235cc2a569cfe06"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/recipes/controls.md",
+      "source": ".claude/skills/jgengine-world/recipes/controls.md",
+      "bytes": 7152,
+      "sha256": "3da8e2ce36fb2727262ed3e31c6c0c2ac6cea348af285e37e8752d43df61281e"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-assets/references/custom-imports.md",
+      "source": ".claude/skills/jgengine-assets/references/custom-imports.md",
+      "bytes": 7465,
+      "sha256": "a51f91d8179b5486a93c40a355bf61efbf9711b5662e475386ef59a8ed297d59"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/recipes/device-save-status.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/device-save-status.md",
+      "bytes": 2393,
+      "sha256": "29562c5e90ba9007deec0cb5e6df1761736f5dbca9e08bb18da19c5e56e00d53"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/recipes/expeditions.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/expeditions.md",
+      "bytes": 5780,
+      "sha256": "fa519eecfea3e97701b6571a254fac592976c4b65dae80192f9445a27ce280c4"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/game-design/references/field-guide.md",
+      "source": ".claude/skills/game-design/references/field-guide.md",
+      "bytes": 17240,
+      "sha256": "498febd935848db3d24a3de9e8bf289d288d23a09212dd24aa91fd6cc53e9d7f"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/level-design/references/field-guide.md",
+      "source": ".claude/skills/level-design/references/field-guide.md",
+      "bytes": 20527,
+      "sha256": "b270bd505ec608705b9b43b9dd9390693bfc3d748006d2b9fd46fc1996ec7951"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/recipes/flight-feel.md",
+      "source": ".claude/skills/jgengine-world/recipes/flight-feel.md",
+      "bytes": 9520,
+      "sha256": "17a6e25f5f6286b13607e671f29b426f0ff5816a674ef6d519d9e9326b04a730"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/level-design/references/live-editor-loop.md",
+      "source": ".claude/skills/level-design/references/live-editor-loop.md",
+      "bytes": 10385,
+      "sha256": "021ce23b5cf6d0cadbff9eb90ddf3ffd78009f5a3cf422ecbc87a059104e5cc3"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-editor/references/live-sync.md",
+      "source": ".claude/skills/jgengine-editor/references/live-sync.md",
+      "bytes": 954,
+      "sha256": "82760815f8403eec1019288d8336f56d133ba0384885bfb1fea0228847f943df"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine/recipes/minimal-game.md",
+      "source": ".claude/skills/jgengine/recipes/minimal-game.md",
+      "bytes": 5214,
+      "sha256": "bb7ee366a65641e438219ef42d3af4e6fd23e8e76e29fc98d594d4340edd9ddb"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-verify/references/monorepo-capture.md",
+      "source": ".claude/skills/jgengine-verify/references/monorepo-capture.md",
+      "bytes": 23674,
+      "sha256": "8805ee2f69de2ebbb1f137a06829bf1b442896da2c555c56ccc4a56ab103d642"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/recipes/narrative-authoring.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/narrative-authoring.md",
+      "bytes": 3760,
+      "sha256": "aa1a56fee7c1a7edd0ad7f1eaaeff5370802f6914d419f8dbaa909e02ac8c460"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/recipes/npc-senses.md",
+      "source": ".claude/skills/jgengine-world/recipes/npc-senses.md",
+      "bytes": 3428,
+      "sha256": "c2778addc2c2f447da5fc454d44d3367891f214acccaaaf76d590618bcbc7619"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-ui/recipes/overhead-entity-frames.md",
+      "source": ".claude/skills/jgengine-ui/recipes/overhead-entity-frames.md",
+      "bytes": 5213,
+      "sha256": "2a5ea2a4bd89b90755f57ad6e5b5fefc2680896341d8c495ffd8eab534a882f4"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/recipes/paged-item-storage.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/paged-item-storage.md",
+      "bytes": 4298,
+      "sha256": "9b9c7d1b4913aad88f51f1db9dd35f357edf99957d8893a4799ee571b0928b5a"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-multiplayer/references/peer-worlds.md",
+      "source": ".claude/skills/jgengine-multiplayer/references/peer-worlds.md",
+      "bytes": 3760,
+      "sha256": "b61fbf8d253dc6d047874d2425027c8ea36b3a1aa2e69c028330020e51fd5e41"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/recipes/portable-damage-effects.md",
+      "source": ".claude/skills/jgengine-combat/recipes/portable-damage-effects.md",
+      "bytes": 5860,
+      "sha256": "176e0d848cb8de6473183e0404421ec7fef162e32a20c8108dd84e8e8cc9a5d9"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-ui/recipes/portable-minimap.md",
+      "source": ".claude/skills/jgengine-ui/recipes/portable-minimap.md",
+      "bytes": 4167,
+      "sha256": "f78865af89c15f8bb1d47e2c5dd76164f800a48b775066fe6072e3095f6fd865"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/recipes/portable-runtime-state.md",
+      "source": ".claude/skills/jgengine-combat/recipes/portable-runtime-state.md",
+      "bytes": 6599,
+      "sha256": "70d5f14c2a82f6e54b24570dd069ca3f2a2e3b6eb3c03a42c345d68e77c0dc7f"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/recipes/portable-stat-pools.md",
+      "source": ".claude/skills/jgengine-combat/recipes/portable-stat-pools.md",
+      "bytes": 3731,
+      "sha256": "9d92b1c75315c4e7ab8fc3fb4d2988ff355f9661767cb7aa9b99578fc5e75b8e"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/recipes/portable-weapon-plumbing.md",
+      "source": ".claude/skills/jgengine-combat/recipes/portable-weapon-plumbing.md",
+      "bytes": 7752,
+      "sha256": "dfe908df245b19f7aa4e5bda9b3bfc0d1c66f6a8a9687f866f797021471dffed"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/recipes/portable-xp-leveling.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/portable-xp-leveling.md",
+      "bytes": 4460,
+      "sha256": "f9576ac120552a4b7531fe2a257466a2baf8b577aa8869d24144ac771653cec0"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/recipes/quest-authoring.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/quest-authoring.md",
+      "bytes": 3811,
+      "sha256": "51ef27572c0caa06fdd7b7e47c1eaefe23f57dd98950b0e63810b6e6ec90a045"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/reference-content-validation.md",
+      "source": ".claude/skills/jgengine-gameplay/reference-content-validation.md",
+      "bytes": 4341,
+      "sha256": "e0786626689fc24e69f7ee41d6f5254090d5a08fe3f459556ba4af57420eecb9"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-ui/reference-primitives.md",
+      "source": ".claude/skills/jgengine-ui/reference-primitives.md",
+      "bytes": 35629,
+      "sha256": "82d4807ab6d248d16e7c101305ec7d56afb9aac83238484a18d09c067d0be18f"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/reference-systems.md",
+      "source": ".claude/skills/jgengine-gameplay/reference-systems.md",
+      "bytes": 13953,
+      "sha256": "e519e0bff33f73746be5b180b3c934fd9404fb2d96e360f6241e04cabc92908a"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/reference.md",
+      "source": ".claude/skills/jgengine-combat/reference.md",
+      "bytes": 31778,
+      "sha256": "e17307bd863e5b4c5ef82f8772719efd7e759ddb91b273f0106dc4bc237f2570"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-editor/reference.md",
+      "source": ".claude/skills/jgengine-editor/reference.md",
+      "bytes": 39320,
+      "sha256": "345a5b484b9205b01ad20b1240e339c37ec737abc8a46ae1b9606dd3a8026fa1"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-multiplayer/reference.md",
+      "source": ".claude/skills/jgengine-multiplayer/reference.md",
+      "bytes": 32507,
+      "sha256": "65cb7d0d330875c4a7a90fbe7caf46023ef4f999deabfdef97f6e70c2b3ec998"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-ui/reference.md",
+      "source": ".claude/skills/jgengine-ui/reference.md",
+      "bytes": 34728,
+      "sha256": "c2bb950fd6f95c222c16fd2ef8490835c2079837ba14a8e01e5fdac2f243821f"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/reference.md",
+      "source": ".claude/skills/jgengine-world/reference.md",
+      "bytes": 112966,
+      "sha256": "dcd583d92f4ccb3a5058831e69997668ecde3cf7636816ba683edf09afcc9fa5"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/recipes/shaped-inventory.md",
+      "source": ".claude/skills/jgengine-gameplay/recipes/shaped-inventory.md",
+      "bytes": 2198,
+      "sha256": "28f5e56ff2d0ded3f42549ce1586fa0152ac958e509a89bce1b8b0647d9bfba7"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/ce-handoff/SKILL.md",
+      "source": ".claude/skills/ce-handoff/SKILL.md",
+      "bytes": 9345,
+      "sha256": "556ba2df951ebd756ebca05572a61f4b0baadb9ab1c1d44ad869fc4189077118"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/game-design/SKILL.md",
+      "source": ".claude/skills/game-design/SKILL.md",
+      "bytes": 4449,
+      "sha256": "c9691ce1dbeda6dd6ac4a80d3bc9032f41fdef75b5f8196954f134f8f10fb57f"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-assets/SKILL.md",
+      "source": ".claude/skills/jgengine-assets/SKILL.md",
+      "bytes": 9626,
+      "sha256": "4440341115492a6b68f7e2bb58a8788ddaf931898f2bcd84082dc35ec90c7164"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/SKILL.md",
+      "source": ".claude/skills/jgengine-combat/SKILL.md",
+      "bytes": 4495,
+      "sha256": "bc08e8c2a05f427f63872b3e79eeb9fd61928a076c507718985241da2af0d5e5"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-editor/SKILL.md",
+      "source": ".claude/skills/jgengine-editor/SKILL.md",
+      "bytes": 7494,
+      "sha256": "003e02916e689d821ccf7448e3b0974ce2b03e4d754537025e9f3a4921ce02c0"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-gameplay/SKILL.md",
+      "source": ".claude/skills/jgengine-gameplay/SKILL.md",
+      "bytes": 9028,
+      "sha256": "9376e2b9fb7f4656ac6267bccf9d3d382b6301957ee20cf64b07cd69d65e5ccf"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-multiplayer/SKILL.md",
+      "source": ".claude/skills/jgengine-multiplayer/SKILL.md",
+      "bytes": 7271,
+      "sha256": "1701a6be5084fcec3c80a618a2839c33649af9e7f11672e94c65da6d98efa4ab"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-ui/SKILL.md",
+      "source": ".claude/skills/jgengine-ui/SKILL.md",
+      "bytes": 9339,
+      "sha256": "2b8fbe8d5272a687621e39e44bd97855a547b4fe4a33335761a54ee8f77b56f9"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-verify/SKILL.md",
+      "source": ".claude/skills/jgengine-verify/SKILL.md",
+      "bytes": 16733,
+      "sha256": "5a3c7d8503111c0446569b44a6d0694673116b2ac35238cdf72a8350be282617"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/SKILL.md",
+      "source": ".claude/skills/jgengine-world/SKILL.md",
+      "bytes": 11385,
+      "sha256": "ea0ba6e5bd0d6e3ca90836899f991247ce3fab1f70b1c95dc21aac9224bf4137"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine/SKILL.md",
+      "source": ".claude/skills/jgengine/SKILL.md",
+      "bytes": 10850,
+      "sha256": "350e53f418aec0a05c8c1a8d0e55390d6d7dd2abc6ef1c98046a2ac59ec6fbb3"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/level-design/SKILL.md",
+      "source": ".claude/skills/level-design/SKILL.md",
+      "bytes": 5643,
+      "sha256": "64393374615b59ceb080e4c657d2b053e2f11d2f46c2f1bff162571c910f5651"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/recipes/vehicle-feel.md",
+      "source": ".claude/skills/jgengine-world/recipes/vehicle-feel.md",
+      "bytes": 12424,
+      "sha256": "5a0b53419222be94a9717057072706473e28ce67a9625dfa0f7a53178ed22931"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-assets/references/video-to-3d-capture.md",
+      "source": ".claude/skills/jgengine-assets/references/video-to-3d-capture.md",
+      "bytes": 3430,
+      "sha256": "34ac00b61c6aac57ff4dfef9e3fb469374949fef881e032a6e0f6abd52ac8a37"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-world/visibility.md",
+      "source": ".claude/skills/jgengine-world/visibility.md",
+      "bytes": 8242,
+      "sha256": "651a190d5919672af1222a4163c9df917d64c2163b48f98776f3bfae888c972c"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/recipes/visible-attacks.md",
+      "source": ".claude/skills/jgengine-combat/recipes/visible-attacks.md",
+      "bytes": 3704,
+      "sha256": "a167cce0ef5c1c70c4274edcf2f9c792c319e548ccc9b76405e1418c8836c46d"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-verify/references/visual-scorecard.md",
+      "source": ".claude/skills/jgengine-verify/references/visual-scorecard.md",
+      "bytes": 6459,
+      "sha256": "8a0ff320b48cfbe5f9550814ade83b8ea7c88a59f0406b8efd1f99a60113a0ee"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/jgengine-combat/recipes/weapon-feel.md",
+      "source": ".claude/skills/jgengine-combat/recipes/weapon-feel.md",
+      "bytes": 4833,
+      "sha256": "054e08d0148309a497af37e9dae2460b0a100baab7bd4ca628b9de469af1ce32"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/game-design/agents/openai.yaml",
+      "source": ".claude/skills/game-design/agents/openai.yaml",
+      "bytes": 254,
+      "sha256": "00b7d8ac5e98f95b76c1cd1b7b0440d7072f9822252c400a06279d6bbe223226"
+    },
+    {
+      "package": "jgengine",
+      "path": "skills/level-design/agents/openai.yaml",
+      "source": ".claude/skills/level-design/agents/openai.yaml",
+      "bytes": 294,
+      "sha256": "8a0a375f4e53ec36e86013a3d1796d0ff1b0ccbafd8f6c40b1bc07c565c0294c"
+    }
+  ],
+  "executedPackHelper": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/animation-game-clock-authoring/pack-current-executed-f9d7071b.py",
+  "executedPackHelperSHA256": "55d176f898ae035039cfc7fb260157b7cbf051e33d1a63fe6a9645f9e6f283ff",
+  "separateExplicitSkillStageLog": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/animation-game-clock-authoring/integration-stage-skills.log",
+  "rebasedLocal": "a5c5250ffa031f4e713a2a27c2ec1c0c1bc9372c",
+  "wholeTreeEqualityVerified": true,
+  "limitations": [
+    "Before pass11, helper check-stage-skills validated mapping-source availability, not actual package staging/freshness. Prior runtime proofs stay unchanged; prior bundled-skill freshness is not established.",
+    "Pass11 root explicitly staged skills before clean build; all231 additional skill entries checked against committed f9 source.",
+    "Future pack-current-staged.py adds staging; it did not produce this f9 cohort.",
+    "No consumer/native final readiness, release, published adoption or appearance claim."
+  ],
+  "actions": "Read-only file/Git/tar/installed hashes; no source edits, tests, builds, packs or capture."
+}

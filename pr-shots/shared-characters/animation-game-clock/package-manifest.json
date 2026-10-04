@@ -1,0 +1,105 @@
+{
+  "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption",
+  "commit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "base": "560ade4e0ce52833b8f134140613c4b6e3cb5fb8",
+  "dirty": false,
+  "packages": [
+    {
+      "name": "@jgengine/core",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-core-0.19.0.tgz",
+      "sha256": "681fcd2c273941675d87e2a2323ae5d616490ae901c5e39f13f05190a7f557f9",
+      "files": 1254
+    },
+    {
+      "name": "@jgengine/rapier",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-rapier-0.19.0.tgz",
+      "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/ws",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-ws-0.19.0.tgz",
+      "sha256": "95340f7f138d12502e4d56a6d09afb63112539be63fe70009614b79669f6409a",
+      "files": 39
+    },
+    {
+      "name": "@jgengine/sql",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-sql-0.19.0.tgz",
+      "sha256": "4f7aab213c8519fb19444a8f4be6145672c9de12e02bdd3b0854e898164aaaa6",
+      "files": 19
+    },
+    {
+      "name": "@jgengine/navbake",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-navbake-0.19.0.tgz",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/react",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-react-0.19.0.tgz",
+      "sha256": "8ac2dbddcf32f2b071b71e2f4ced03a284b420ead744b103522fed4fdc1d0e2d",
+      "files": 195
+    },
+    {
+      "name": "@jgengine/convex",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-convex-0.19.0.tgz",
+      "sha256": "6a7d03b12a86cbb7e8dbf3b532b35ecb65052b863cefdc87a1228acf1c1ec6a3",
+      "files": 37
+    },
+    {
+      "name": "@jgengine/node",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-node-0.19.0.tgz",
+      "sha256": "8521a5a9e175ce6cb25dacceb175b3c53c25dfb344ec027cdfa758f89305fd22",
+      "files": 39
+    },
+    {
+      "name": "@jgengine/shell",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-shell-0.19.0.tgz",
+      "sha256": "b43b41caceca29d87d9516e7bcde33b76a1bdef57c984559d997c4c8741282b8",
+      "files": 548
+    },
+    {
+      "name": "@jgengine/editor",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-editor-0.19.0.tgz",
+      "sha256": "30b16cea6cc2e2a71ac43305f7960b00cfc221b8b8de474d2ecf11abe9640c8e",
+      "files": 247
+    },
+    {
+      "name": "@jgengine/assets",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-assets-0.19.0.tgz",
+      "sha256": "ecff959ab738d1c0885e0bbd8c4a6f95c97eb70352edb58aa4d7e5d7bf305e94",
+      "files": 91
+    },
+    {
+      "name": "@jgengine/github",
+      "version": "0.6.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-github-0.6.0.tgz",
+      "sha256": "603e9286bc9cf9fb72e4d60d39d117376cf14693f33f7b92f94810c2ce30a56e",
+      "files": 34
+    },
+    {
+      "name": "jgengine",
+      "version": "0.16.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/jgengine-0.16.0.tgz",
+      "sha256": "d1ef67c0862459791fd29dcd12bd3eb50db7f2a62ce3a0e76d5c7bf55ba360ab",
+      "files": 129
+    }
+  ],
+  "buildProvenance": "build-provenance.json",
+  "compiledFileLedger": "compiled-files.json",
+  "packageFileLedger": "package-files.json",
+  "sourceFileLedger": "source-files.json",
+  "buildProvenanceSha256": "efb18047bf554d8711cd9a0b827271e37abd7154ee80927afa4083a319a014fd"
+}

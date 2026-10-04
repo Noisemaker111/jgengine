@@ -1,0 +1,914 @@
+{
+  "classification": "Pass 11 frozen public-package consumer evidence; unreleased candidate and prepared game policy, no published adoption",
+  "outcome": "Shared game-clock animation option keeps phase and gait blending coherent across actual Odd Orbit fast-forward rates; legacy real-clock records remain bit-exact. Ordinary editor configuration survives save/reopen and reaches the public reader and imported hook.",
+  "source": {
+    "commit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+    "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+    "base": "560ade4e0ce52833b8f134140613c4b6e3cb5fb8",
+    "clean": true,
+    "remotePRHeadReportedByNative": "b562fc6c4e72a3da61ee487570a9bc780cf1a3f9",
+    "manifest": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/candidate-package-manifest.json",
+      "sha256": "dcc1b150aea61bfed80dcec8af542e405f81f48dbf25879912fb1c9592441127",
+      "bytes": 5166
+    },
+    "cleanBuildAndPack": "13 ordered fresh dist builds and normal npm packs; 27 stages passed. Exact source/build/compiled/package ledgers retained."
+  },
+  "packageBoundary": {
+    "allTarballsHashed": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "681fcd2c273941675d87e2a2323ae5d616490ae901c5e39f13f05190a7f557f9",
+        "installedFilesByteVerified": 1254
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "95340f7f138d12502e4d56a6d09afb63112539be63fe70009614b79669f6409a",
+        "installedFilesByteVerified": 39
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "8ac2dbddcf32f2b071b71e2f4ced03a284b420ead744b103522fed4fdc1d0e2d",
+        "installedFilesByteVerified": 195
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "8521a5a9e175ce6cb25dacceb175b3c53c25dfb344ec027cdfa758f89305fd22",
+        "installedFilesByteVerified": 39
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "b43b41caceca29d87d9516e7bcde33b76a1bdef57c984559d997c4c8741282b8",
+        "installedFilesByteVerified": 548
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "30b16cea6cc2e2a71ac43305f7960b00cfc221b8b8de474d2ecf11abe9640c8e",
+        "installedFilesByteVerified": 247
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "ecff959ab738d1c0885e0bbd8c4a6f95c97eb70352edb58aa4d7e5d7bf305e94",
+        "installedFilesByteVerified": 91
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "d1ef67c0862459791fd29dcd12bd3eb50db7f2a62ce3a0e76d5c7bf55ba360ab",
+        "installedFilesByteVerified": 129
+      }
+    ],
+    "installedRegularFilesByteCompared": 2548,
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "isolatedInstall": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules",
+    "sourceAliases": false,
+    "publication": "No registry release or dependency adoption; tarballs contain candidate versions only."
+  },
+  "consumerSource": {
+    "originalCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "originalSourceFiles": 127,
+    "oddOrbitSourceFiles": 47,
+    "scrapSourceFiles": 80,
+    "originalOddInputsIncludingBuildFiles": 52,
+    "sourceLedger": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-source-provenance.json",
+      "sha256": "72391847c34a7904701a77149b83409a0380c246f6eab0dddae4834e0ab51f16",
+      "bytes": 35011
+    },
+    "originalBeforePatchArchive": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-games",
+    "originalChecksInputs": "127 source files matched original45a; current Odd source is the prepared one-line adapter. Separate original-games archive supplies exact original before-patch bytes.",
+    "actualOriginalWorktreeEdited": false
+  },
+  "before": {
+    "buildAndTypeBaseline": [
+      {
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/game",
+        "exitCode": 0,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/odd-orbit-baseline-build.log",
+        "logSha256": "f2041090f530dec637832160b260205dc8d171eec568b6da7d2000cda1c4fce3"
+      },
+      {
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/game",
+        "exitCode": 0,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/odd-orbit-baseline-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "olderCompileFailures": "None reproduced: unchanged Odd Orbit build and types both exit0 on ef19. Missing ignored model/material packs remain a runtime-content prerequisite, not a compile failure.",
+    "numericBaseline": {
+      "path": "/workspace/JGengine/.scratch/characters/positive-animation-triage/result.json",
+      "sha256": "a84c1e2aef9e6edcb21ac9ea3403fa954e3983d206ad3f44742c852edb0f7749"
+    },
+    "concreteLimitation": "For one measured game-clock second at normal/speed2/speed4, original real-clock walking phase is 1/.5/.25s and running blend weight rises .101558/.295039/.652826 despite unchanged physical trajectory."
+  },
+  "sharedAfter": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock/executed-f9d7071b/summary.json",
+      "sha256": "9b2caec5fe0bd6cd1cac8c85a423d6f74f62865df1921262279738ebd2dd3da0",
+      "bytes": 5281
+    },
+    "scope": "Original OddOrbit normal new/speed commands and onTick through exact installed public packages plus manual React/Fiber hook. One speed-normalized second; measured clock snapshots retained. No native appearance or performance judgement.",
+    "originalLegacyRealRecordsBitExact": true,
+    "physicalAndPolicyRecordsBitExact": true,
+    "cases": [
+      {
+        "rate": 1,
+        "selectedClock": false,
+        "scale": 1,
+        "measuredClockDelta": 0.9999999999999432,
+        "weights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984421488685458,
+            "time": 1.0000000000000013
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.1015578511314542,
+            "time": 0.19999998807907238
+          }
+        ],
+        "cleanups": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 2,
+        "selectedClock": false,
+        "scale": 1,
+        "measuredClockDelta": 0.9999999999999432,
+        "weights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.704960543203722,
+            "time": 0.49999999999999994
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.29503945679627797,
+            "time": 0.49999999999999994
+          }
+        ],
+        "cleanups": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 4,
+        "selectedClock": false,
+        "scale": 1,
+        "measuredClockDelta": 0.9999999999999432,
+        "weights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.3471744241395829,
+            "time": 0.24999999999999997
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.6528255758604171,
+            "time": 0.24999999999999997
+          }
+        ],
+        "cleanups": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 1,
+        "selectedClock": true,
+        "scale": 1,
+        "measuredClockDelta": 0.9999999999999432,
+        "weights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984421488685458,
+            "time": 1.0000000000000013
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.1015578511314542,
+            "time": 0.19999998807907238
+          }
+        ],
+        "cleanups": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 2,
+        "selectedClock": true,
+        "scale": 1,
+        "measuredClockDelta": 0.9999999999999432,
+        "weights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984445890121764,
+            "time": 0.9999999999999999
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10155541098782361,
+            "time": 0.19999998807907093
+          }
+        ],
+        "cleanups": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 4,
+        "selectedClock": true,
+        "scale": 1,
+        "measuredClockDelta": 0.9999999999999432,
+        "weights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984500118946448,
+            "time": 0.9999999999999999
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10154998810535525,
+            "time": 0.19999998807907093
+          }
+        ],
+        "cleanups": 1,
+        "subscriptionsAfterUnmount": 0
+      }
+    ],
+    "interpretation": "Selected game-clock walking phase is approximately1 second at rates1/2/4; running weights approximately .101558/.101555/.101550. Game elapsed is measured; snapshots report timeScale1, so this is not a blind rate multiplier. Approximate weights are not claimed bit-exact across rates.",
+    "cleanup": "Each case cleanup1 and subscriptionsAfterUnmount0.",
+    "registeredImportedRig": {
+      "path": "/workspace/JGengine/apps/dev/public/models/kaykit-adventurers/Knight.glb",
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "clips": 76,
+      "scope": "Existing registered KayKit Knight bytes read-only from provisioned SDK dev asset; original Odd ignored model packs are absent."
+    }
+  },
+  "preparedGamePolicy": {
+    "ledger": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-clock-policy-ledger.json",
+      "sha256": "13da407a33b7dbb6150b846e50d6c1814dd1f08bb29c28ecc474314ee56a7c99",
+      "bytes": 1451
+    },
+    "file": "odd-orbit/src/game/render/AlienMesh.tsx",
+    "before": "useModelAnimation(scene, gltf.animations, \"auto\", instanceId);",
+    "after": "useModelAnimation(scene, gltf.animations, { auto: true, clock: \"game\" }, instanceId);",
+    "patch": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-clock-policy.patch",
+      "sha256": "8991c50811ddb113c136221a68688cdd69bd3c48c8a9ce18b7209c74c47e2d40",
+      "bytes": 509
+    },
+    "originalFileSha256": "ced9d36cc90dedb536ba4a4be31bf17abdf9cb2d52261e4cb3b50468e97dab42",
+    "preparedFileSha256": "661c02b008b18a9f2b91e18a3d3590e8baee221fadae05f771bd5ecc710af97a",
+    "otherSourceFilesBytePreserved": 126,
+    "cleanApplyOriginal45a": "PASS",
+    "sequence": "Applied only after shared six-case numeric proof passed.",
+    "preservation": "Body bob, proportion/style, material/color, camera, routes, economy, catalog and clip-selection mechanisms unchanged; selectedpublic sharedclock policy only.",
+    "status": "Prepared isolated adapter; original game source, SDK versions, central catalog and lockfiles unchanged."
+  },
+  "consumerChecks": {
+    "originalBothGamesBeforePatch": [
+      {
+        "game": "odd-orbit",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/odd-orbit",
+        "exitCode": 0,
+        "durationFromLog": "24.45s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-odd-orbit-build.log",
+        "logSha256": "303eb6084bf05143bb23c1e4d10177ea769ba6b3e2782fab1770bb23249824f6"
+      },
+      {
+        "game": "odd-orbit",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/odd-orbit",
+        "exitCode": 0,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-odd-orbit-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "game": "scrap-signal",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/scrap-signal",
+        "exitCode": 0,
+        "durationFromLog": "26.38s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-scrap-signal-build.log",
+        "logSha256": "776b4cd73654ffb72cae9ec6fc6d52b573b733da9f2c1e40f5ef843f4fda5607"
+      },
+      {
+        "game": "scrap-signal",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/scrap-signal",
+        "exitCode": 0,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-scrap-signal-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "preparedOddAfterPatch": [
+      {
+        "game": "odd-orbit",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/odd-orbit",
+        "exitCode": 0,
+        "durationFromLog": "18.75s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-orbit-build.log",
+        "logSha256": "d8d8bc96ac4eda25a386f0f844709b6ff344a9c3560c85698013b6f4c1fa99c7"
+      },
+      {
+        "game": "odd-orbit",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/odd-orbit",
+        "exitCode": 0,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-orbit-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "scrapAfterPatch": "Original Scrap remains byte-equal and was already built/typechecked on this same candidate; Odd-only patch does not affect it."
+  },
+  "publicAuthoring": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/executed-f9d7071b/public-authoring-proof.json",
+      "sha256": "cfa7f926c1c2c80d4325871cf970c6777f60dab4439a23ebb85b93bcb974c09a",
+      "bytes": 25841
+    },
+    "document": {
+      "markers": 438,
+      "markerId": "player_spawn",
+      "markerIndex": 400,
+      "graphTransitions": 31,
+      "originalInputUnchanged": true,
+      "clockOnlyEdit": true,
+      "normalEditPlayUndoRedoExportImport": true,
+      "memoizedRuntimeReader": true,
+      "enumAndAutoPersisted": true,
+      "wholeMapsOrderSignedValuesExtensionsAndEmptyMapsPreserved": true,
+      "allOtherSceneDataUnchanged": true
+    },
+    "invalidValues": [
+      {
+        "field": "clock",
+        "authoredValue": "calendar",
+        "diagnostics": [
+          {
+            "path": "markers[400].meta.animation.clock",
+            "message": "clock must be real or game",
+            "repair": "Use real or game, or remove the animation override to inherit the game setting."
+          }
+        ],
+        "malformedRetainedOnSaveReload": true,
+        "explicitRepairUndoRedo": true,
+        "exactActualGameDefaultFallback": true
+      },
+      {
+        "field": "auto",
+        "authoredValue": false,
+        "diagnostics": [
+          {
+            "path": "markers[400].meta.animation.auto",
+            "message": "auto must be true when supplied",
+            "repair": "Use true, or omit auto to use explicit configuration, or remove the animation override to inherit the game setting."
+          }
+        ],
+        "malformedRetainedOnSaveReload": true,
+        "explicitRepairUndoRedo": true,
+        "exactActualGameDefaultFallback": true
+      }
+    ],
+    "publicModules": {
+      "@jgengine/core/world/authoredAnimation": {
+        "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/core/dist/world/authoredAnimation.js",
+        "sha256": "9cabe8277c0f8d9c4a9b8d4ac112ccb054ca64a40812346bb579644ad891d94f",
+        "bytes": 4983
+      },
+      "@jgengine/core/game/clipRoles": {
+        "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/core/dist/game/clipRoles.js",
+        "sha256": "16d922b18d9540491424ec7d497c12749cda976aa1caa2ff05ffa8c4b03c2755",
+        "bytes": 5934
+      },
+      "@jgengine/editor/modelAnimationAuthoring": {
+        "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/editor/dist/modelAnimationAuthoring.js",
+        "sha256": "75fa8b972332072b81e87592da78972bb7aaecbae112bda268bdc9b0fe59ed00",
+        "bytes": 10469
+      },
+      "@jgengine/editor/session": {
+        "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/editor/dist/session.js",
+        "sha256": "51dbe1d167989569ffb18f922c428aaf569479578eb0003b783f18b38df7cf03",
+        "bytes": 10804
+      },
+      "three/examples/jsm/loaders/GLTFLoader.js": {
+        "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/three/examples/jsm/loaders/GLTFLoader.js",
+        "sha256": "a2d45c28c56774cc789b99154e914c34db3197f9ea2b89fee27600cc2509b14f",
+        "bytes": 114883
+      },
+      "three/examples/jsm/libs/meshopt_decoder.module.js": {
+        "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/three/examples/jsm/libs/meshopt_decoder.module.js",
+        "sha256": "784315b6959c85459eab77f51776158cc381d7e7d77b919ff7c4935f088a7c5c",
+        "bytes": 24848
+      }
+    },
+    "preservation": "Clock and derive controls preserve graph31, signed values, partial/deeper maps, unknown fields, explicit empty maps, and order through normal edits/undo/redo/export/import. Malformed clock/auto persists until intentional repair; located diagnostic and exact caller-default whole fallback verified."
+  },
+  "nativeConfiguration": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/native-evidence-f9d7071b.json",
+      "sha256": "5c755e799a146fc4f246e2255b942f4e28438db690ad652f036b585c9a6f9194",
+      "bytes": 4825
+    },
+    "inputSha256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1",
+    "savedDocument": {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/saved-document.json",
+      "sha256": "fb48a439f3222900f41e2f6cd5d49e1b31d929299cde0938b6cc3eac1f66c33a",
+      "bytes": 206384
+    },
+    "markers": 438,
+    "graphTransitions": 31,
+    "verifiedUI": [
+      "Existing valid Custom mode visible with actual zero clip metadata",
+      "Native select via inspected screenshot coordinates and ArrowDown/Enter changes Real time to Game time",
+      "Native derive checkbox adds auto:true without graph/map edits",
+      "Normal undo restores entire exact original marker, grouping both same-marker edits; redo restores game+auto",
+      "Native uncheck removes transient auto; final config clock game only",
+      "Native GUI Save writes actualfile",
+      "Fresh official browser without import opens saved Game time and unchecked derive, empty undo/redo history"
+    ],
+    "finalDifference": "markers[400].meta.animation.clock = game",
+    "automaticRolesFinal": "auto omitted; derive was transient and unchecked before Save.",
+    "otherSceneDataExact": true,
+    "nativeFailures": 0,
+    "nativeHangs": 0,
+    "captureRetries": 0,
+    "analysisCorrection": "Initial postcapture expectation assumed undo preserves Clockgame; actual editor grouped marker edits and restored exactinitialmarker. Corrected assertion preserves rawRPC/captures; no native retry.",
+    "scope": "Untouched standard packaged jgengine editor configuration-only GUI proof with native selection/checkbox/Save and fresh actual-file reopen; no rig, game movement or appearance claim."
+  },
+  "savedDocumentJoins": {
+    "strictPublicReader": {
+      "proof": {
+        "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/executed-f9d7071b-native/public-authoring-proof.json",
+        "sha256": "e49a29c5fc463146a2bf56d9b6ceba2ed4de4591b9310e4ba662da9c39224a48",
+        "bytes": 26594
+      },
+      "record": {
+        "input": {
+          "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/saved-document.json",
+          "sha256": "fb48a439f3222900f41e2f6cd5d49e1b31d929299cde0938b6cc3eac1f66c33a",
+          "bytes": 206384
+        },
+        "publicReader": "exact original31-transition graph plus clock:game; no other scene data changed",
+        "diagnosticCount": 0,
+        "importedClipCount": 76,
+        "presentationHookProof": "owned by animation worker; this report proves authored data only"
+      },
+      "snapshotFreeze": {
+        "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/native-public-proof-freeze.json",
+        "sha256": "39558715d206f66d0b7f663943e88bee594a32c97e775bfb44e33e518e0bc1a4",
+        "bytes": 27781
+      }
+    },
+    "importedHook": {
+      "proof": {
+        "path": "/workspace/JGengine/.scratch/characters/animation-game-clock-saved-document/executed-f9d7071b-v2/summary.json",
+        "sha256": "8a7ff95bd01ac7186b90220b42ca19fd50db003a78dabab5ff93d7ed23d414fd",
+        "bytes": 4802
+      },
+      "savedDocumentSha256": "fb48a439f3222900f41e2f6cd5d49e1b31d929299cde0938b6cc3eac1f66c33a",
+      "cases": [
+        {
+          "rate": 1,
+          "selectedClock": false,
+          "scale": 1,
+          "measuredClockDelta": 0.9999999999999432,
+          "weights": [
+            {
+              "clip": "Walking_A",
+              "weight": 0.8984421488685458,
+              "time": 1.0000000000000013
+            },
+            {
+              "clip": "Running_A",
+              "weight": 0.1015578511314542,
+              "time": 0.19999998807907238
+            }
+          ],
+          "cleanups": 1,
+          "subscriptionsAfterUnmount": 0
+        },
+        {
+          "rate": 4,
+          "selectedClock": false,
+          "scale": 1,
+          "measuredClockDelta": 0.9999999999999432,
+          "weights": [
+            {
+              "clip": "Walking_A",
+              "weight": 0.3471744241395829,
+              "time": 0.24999999999999997
+            },
+            {
+              "clip": "Running_A",
+              "weight": 0.6528255758604171,
+              "time": 0.24999999999999997
+            }
+          ],
+          "cleanups": 1,
+          "subscriptionsAfterUnmount": 0
+        },
+        {
+          "rate": 1,
+          "selectedClock": true,
+          "scale": 1,
+          "measuredClockDelta": 0.9999999999999432,
+          "weights": [
+            {
+              "clip": "Walking_A",
+              "weight": 0.8984421488685458,
+              "time": 1.0000000000000013
+            },
+            {
+              "clip": "Running_A",
+              "weight": 0.1015578511314542,
+              "time": 0.19999998807907238
+            }
+          ],
+          "cleanups": 1,
+          "subscriptionsAfterUnmount": 0
+        },
+        {
+          "rate": 4,
+          "selectedClock": true,
+          "scale": 1,
+          "measuredClockDelta": 0.9999999999999432,
+          "weights": [
+            {
+              "clip": "Walking_A",
+              "weight": 0.8984500118946448,
+              "time": 0.9999999999999999
+            },
+            {
+              "clip": "Running_A",
+              "weight": 0.10154998810535525,
+              "time": 0.19999998807907093
+            }
+          ],
+          "cleanups": 1,
+          "subscriptionsAfterUnmount": 0
+        }
+      ],
+      "graphRetained": true,
+      "physicalPolicyRecordsBitExact": true,
+      "scope": "Native-saved canonical Scrap spawn animation data drives the same imported Knight hook on the original OddOrbit numeric composition. This is authored presentation data proof; it is not Scrap model-adapter adoption."
+    }
+  },
+  "remainingLimitations": [
+    "Original Odd Orbit public/models is unprovisioned. No assets were fetched or invented; successful Vite/type checks do not prove its original game renders.",
+    "Imported hook evidence uses manual React/Fiber frames with actual Odd new/speed commands/onTick and registered read-only SDK Knight. It is numerical installed-package evidence, not native game appearance, interaction feel or performance.",
+    "Native Save data is canonical full Scrap scene configuration, but its hook join uses the existing Odd Knight numeric fixture. It is not an adopted Scrap model adapter or an actual Scrap gameplay rendering claim.",
+    "No released package was adopted by any game. The one-line Odd policy remains a prepared migration until repository release rules permit adoption.",
+    "Real imported material image decoding is skipped in numeric rig proofs; public authoring headless texture-blob warning is preserved. No material appearance claim."
+  ],
+  "failuresAndCorrections": [
+    "Baseline input-count assertion initially assumed52src; actual52inputs=47src+5build files, corrected before checks without altering copied bytes.",
+    "Native grouped-undo expectation corrected after captured undo restored exact initial marker; raw captures retained, no native retry.",
+    "Native saved-document hook join initial v1 DOM document-shadowing harness failure retained; v2 renamed the argument and used a unique output archive, without SDK/game change."
+  ],
+  "ownership": {
+    "root": "SDK source integration/publication/CI and merge; consumer uses exact built tarballs.",
+    "consumerBoundary": "Installed hashes/files, immutable original sources, original two-game checks and one-line prepared Odd policy/patch checks.",
+    "animation": "Actual Odd six-case real-hook numeric proof and four-case saved-native-document hook join with before-execution snapshots.",
+    "authoring": "Public full438 document edits/validation/undo/redo/save/reload and strict saved-native-document reader join.",
+    "nativeProof": "Native standard CLI configuration capture, GUI Save and actual-file fresh reopen.",
+    "footGrounding": "Independent evidence archive audit/publication when root authorizes."
+  },
+  "artifactHashes": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/candidate-package-manifest.json",
+      "sha256": "dcc1b150aea61bfed80dcec8af542e405f81f48dbf25879912fb1c9592441127",
+      "bytes": 5166
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/installed-package-verification.json",
+      "sha256": "f1b09d5e7b5e8d9403f8964837a7d3e3be1b0b8dc37938045bd2d26155b68406",
+      "bytes": 2194
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-source-provenance.json",
+      "sha256": "72391847c34a7904701a77149b83409a0380c246f6eab0dddae4834e0ab51f16",
+      "bytes": 35011
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-prepatch-checks.json",
+      "sha256": "c28e5e40a3b5464a30e04825be7a5e81de8ff2c871f63bab1421ac9528a38905",
+      "bytes": 2985
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-clock-policy-ledger.json",
+      "sha256": "13da407a33b7dbb6150b846e50d6c1814dd1f08bb29c28ecc474314ee56a7c99",
+      "bytes": 1451
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-clock-policy-checks.json",
+      "sha256": "f2322749de37a5f45d178e4ab4ab09876f147aa5a4e3a85d63929e93a2be213a",
+      "bytes": 1851
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-clock-policy.patch",
+      "sha256": "8991c50811ddb113c136221a68688cdd69bd3c48c8a9ce18b7209c74c47e2d40",
+      "bytes": 509
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-odd-orbit-build.log",
+      "sha256": "303eb6084bf05143bb23c1e4d10177ea769ba6b3e2782fab1770bb23249824f6",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-odd-orbit-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-scrap-signal-build.log",
+      "sha256": "776b4cd73654ffb72cae9ec6fc6d52b573b733da9f2c1e40f5ef843f4fda5607",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-scrap-signal-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-orbit-build.log",
+      "sha256": "d8d8bc96ac4eda25a386f0f844709b6ff344a9c3560c85698013b6f4c1fa99c7",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-orbit-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/odd-orbit-baseline-checks.json",
+      "sha256": "dc1cc6f9f5bf4a6f5f1c55e92f9d6a63e350201f80621abba23f7dbb1760f81b",
+      "bytes": 3924
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/original-build-input-provenance.json",
+      "sha256": "db38a7f3441c2f48f86e817f918dff6a4a976229409b12a285a91052bf7c7cba",
+      "bytes": 17346
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/public-module-resolutions.json",
+      "sha256": "4f1796eb291a982e8d4416334732cbc5d3db136267cf6e8d41623e1f47eabac5",
+      "bytes": 1132
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/odd-orbit-baseline-build.log",
+      "sha256": "f2041090f530dec637832160b260205dc8d171eec568b6da7d2000cda1c4fce3",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/baseline-ef19/odd-orbit-baseline-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/manifest.json",
+      "sha256": "dcc1b150aea61bfed80dcec8af542e405f81f48dbf25879912fb1c9592441127",
+      "bytes": 5166
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/build-provenance.json",
+      "sha256": "efb18047bf554d8711cd9a0b827271e37abd7154ee80927afa4083a319a014fd",
+      "bytes": 20928
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/compiled-files.json",
+      "sha256": "f7cd8ab70b0a66ff4095aa5c00e7a04e924238ff712712b1afcae628a6300a47",
+      "bytes": 370579
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/package-files.json",
+      "sha256": "4d442616c3ef82096bca8dccab0c7a64aba91c81145ad8ffacb099288228dc64",
+      "bytes": 427598
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-game-clock-f9d7071b/source-files.json",
+      "sha256": "b0b5867d5c497af4872a771f0a6f110f0451258f09b1c85024384986ebfc50dc",
+      "bytes": 703009
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock/executed-f9d7071b/summary.json",
+      "sha256": "9b2caec5fe0bd6cd1cac8c85a423d6f74f62865df1921262279738ebd2dd3da0",
+      "bytes": 5281
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock/executed-f9d7071b/numeric-records.json",
+      "sha256": "c718252d38b492373fa7a2ddcb523672ee0a9f240a6998074658ba86bae20ac4",
+      "bytes": 4555031
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock/executed-f9d7071b/run.ts",
+      "sha256": "8924858fa93c10e76987944789021b836e672d4114245351e9b9c265ea087025",
+      "bytes": 6593
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock/executed-f9d7071b/fixture.tsx",
+      "sha256": "4163761d20d0c24ddf2d88676c8b6c560875073b3650bed1a165fada3bad0c75",
+      "bytes": 3888
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock/executed-f9d7071b/provenance.json",
+      "sha256": "cd6ccfeaa10f6f98751a3dfb630adefcc5ddcc3a8e82cb25d877b106961220d6",
+      "bytes": 2318
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock/executed-f9d7071b/archive-hashes.json",
+      "sha256": "8a60b70353566fcc578804e003fa1b52c05e52a638db37bd4f6e4aa214facbe0",
+      "bytes": 646
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock-saved-document/executed-f9d7071b-v2/summary.json",
+      "sha256": "8a7ff95bd01ac7186b90220b42ca19fd50db003a78dabab5ff93d7ed23d414fd",
+      "bytes": 4802
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock-saved-document/executed-f9d7071b-v2/numeric-records.json",
+      "sha256": "893711cc659063037608a68640a651765716fd1515e11b134ce7d9ba3003f4b6",
+      "bytes": 3337277
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock-saved-document/executed-f9d7071b-v2/run.ts",
+      "sha256": "fb43a0fdca67a4872802e265e3a190af75adae9457f893c1f0acbaa06b0bdc27",
+      "bytes": 7358
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock-saved-document/executed-f9d7071b-v2/fixture.tsx",
+      "sha256": "bb79e152187046bae986eb65f27c1636a3867021125586464a887a6c9e4b2972",
+      "bytes": 4520
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock-saved-document/executed-f9d7071b-v2/provenance.json",
+      "sha256": "f74bbeffb886e0df0fd9bec1ec6160649d128a4dc292c924209f45da2559fa6e",
+      "bytes": 2787
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock-saved-document/executed-f9d7071b-v2/archive-hashes.json",
+      "sha256": "b10a3c0038116280116802ae7fdfa822e79c943dccb50c23d13d8076bfc9ec3d",
+      "bytes": 746
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-game-clock-saved-document/executed-f9d7071b-v2/native-saved-document.json",
+      "sha256": "fb48a439f3222900f41e2f6cd5d49e1b31d929299cde0938b6cc3eac1f66c33a",
+      "bytes": 206384
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/executed-f9d7071b/public-authoring-proof.json",
+      "sha256": "cfa7f926c1c2c80d4325871cf970c6777f60dab4439a23ebb85b93bcb974c09a",
+      "bytes": 25841
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/executed-f9d7071b/before-execution-provenance.json",
+      "sha256": "3906202c02139a47ec733c239ff8a5c0c2f1ae1c95f178da1f8beb72d87b2b44",
+      "bytes": 24122
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/executed-f9d7071b/executed-public-authoring.ts",
+      "sha256": "fc79cf43bc5075be57e415e4221b8705a9a054294d728507493e87200759080c",
+      "bytes": 13769
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/executed-f9d7071b-native/public-authoring-proof.json",
+      "sha256": "e49a29c5fc463146a2bf56d9b6ceba2ed4de4591b9310e4ba662da9c39224a48",
+      "bytes": 26594
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/executed-f9d7071b-native/before-execution-provenance.json",
+      "sha256": "b0c3d21d2f4a5917f04724fb62bc29005aa580dcd2ce4b80f1227333519d1efa",
+      "bytes": 24359
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/executed-f9d7071b-native/executed-public-authoring.ts",
+      "sha256": "fc79cf43bc5075be57e415e4221b8705a9a054294d728507493e87200759080c",
+      "bytes": 13769
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/public-proof-freeze.json",
+      "sha256": "f442cd379162bca03dfe5e9876d9b6b53984d5778967c9f5584e1b578d82936a",
+      "bytes": 26074
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/native-public-proof-freeze.json",
+      "sha256": "39558715d206f66d0b7f663943e88bee594a32c97e775bfb44e33e518e0bc1a4",
+      "bytes": 27781
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/public-authoring-f9.log",
+      "sha256": "681352d22fdd15a31ea8b9faf36f6389dcfbb285656d838da592bf784b3d329d",
+      "bytes": 1355
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/clock-authoring-proof/public-authoring-f9-native.log",
+      "sha256": "a9382eeef5d992efe28b833184617ada01c8e0fa4c97b0bcc0f3d9d1af48e3e3",
+      "bytes": 1812
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/native-evidence-f9d7071b.json",
+      "sha256": "5c755e799a146fc4f246e2255b942f4e28438db690ad652f036b585c9a6f9194",
+      "bytes": 4825
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/saved-document.json",
+      "sha256": "fb48a439f3222900f41e2f6cd5d49e1b31d929299cde0938b6cc3eac1f66c33a",
+      "bytes": 206384
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/saved-public-reader.json",
+      "sha256": "907a0b5daf58919a5df8d3bafa553e9f7d967a13fef352ac55aab7f5aff32ff1",
+      "bytes": 301
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/clock-controls-before.png",
+      "sha256": "6226b69cf972d05bb889b744f921e409716c8443b0a2a7768057fa746c33d730",
+      "bytes": 209221
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/clock-game-derived.png",
+      "sha256": "5b9ed94afdc970b01b46085fe4b8998c9f8bcde474b58c37f78dbe820e6811a6",
+      "bytes": 207576
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/clock-game-undo.png",
+      "sha256": "8083e9c107ab843ac2ac08838b1fcc7f7b527f32143eae26a89186835fc2200d",
+      "bytes": 207285
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/clock-game-saved.png",
+      "sha256": "4a19c9397a6d90874bf396b34b18dd7149596b38e9d51196696ab3fa50664f1c",
+      "bytes": 207073
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/clock-game-fresh-reopened.png",
+      "sha256": "66121eae704a7ba086aca220211d399bcd42a1018cf5ea33229c281de75d0b6b",
+      "bytes": 206558
+    }
+  ],
+  "frozen": true
+}

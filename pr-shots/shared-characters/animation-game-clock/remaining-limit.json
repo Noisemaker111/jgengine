@@ -1,0 +1,151 @@
+{
+  "classification": "Separate next-pass limitation; not fixed by pass11 and not part of its original54-artifact consumer report",
+  "builtCommit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "proof": {
+    "path": "/workspace/JGengine/.scratch/characters/animation-driver-clock-triage/executed-f9d7071b/summary.json",
+    "sha256": "145c96fa5d0e83ea42da046ec2995364328c4cfed04b28b35d70fd1e2ee24306"
+  },
+  "scope": "Actual public FrameDriver mounted with original OddOrbit PlayableGame and normal commands; manually invoked Fiber subscriptions sorted by registered priority, React/hook/rig numeric proof only. No native rendering, FPS or appearance inference.",
+  "failure": "For raw0.2s frames, public FrameDriver advances accepted game time0.05s at1x or0.2s at4x, but game-clock animation advances0.2s or0.8s on the first frame. The hook follows raw frame delta instead of accepted/clamped simulation time.",
+  "cases": [
+    {
+      "rate": 1,
+      "rawDt": 0.016666666666666666,
+      "frames": 60,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 1,
+      "displacement": 1.08114964294704,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8984421488685458,
+          "time": 1.0000000000000013
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.1015578511314542,
+          "time": 0.19999998807907238
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.016666666666666666
+        }
+      ],
+      "firstClockDelta": 0.01666666666666572,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 4,
+      "rawDt": 0.016666666666666666,
+      "frames": 15,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 1,
+      "displacement": 1.0824252926411606,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8984500118946448,
+          "time": 0.9999999999999999
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.10154998810535525,
+          "time": 0.19999998807907093
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.06666666666666667
+        }
+      ],
+      "firstClockDelta": 0.06666666666666288,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 1,
+      "rawDt": 0.2,
+      "frames": 20,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 4,
+      "displacement": 1.0820000464103567,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Idle",
+          "weight": 0.47165099527757093,
+          "time": 0.7999998331069955
+        },
+        {
+          "clip": "Walking_A",
+          "weight": 0.5283490047224291,
+          "time": 0.7999998331069955
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.2
+        }
+      ],
+      "firstClockDelta": 0.04999999999999716,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 4,
+      "rawDt": 0.2,
+      "frames": 5,
+      "calendarScale": 1,
+      "acceptedClockDelta": 1.0000000000000142,
+      "rawSpeedNormalizedSeconds": 4,
+      "displacement": 1.0858281580466171,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Idle",
+          "weight": 0.467593463644124,
+          "time": 0.7999998331069946
+        },
+        {
+          "clip": "Walking_A",
+          "weight": 0.532406536355876,
+          "time": 0.7999998331069946
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.8
+        }
+      ],
+      "firstClockDelta": 0.20000000000000284,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    }
+  ],
+  "status": "Unresolved; parent selected accepted FrameDriver time for pass12",
+  "limits": [
+    "Existing11 manual-clock six-case proof remains valid in its stated scope.",
+    "This four-case public driver proof is numerical React/Fiber evidence, not native FPS, appearance or movement feel.",
+    "No pass12 fix or package is included or claimed here."
+  ]
+}

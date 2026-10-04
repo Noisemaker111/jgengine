@@ -1,0 +1,81 @@
+{
+  "head": "a5c5250ffa031f4e713a2a27c2ec1c0c1bc9372c",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "base": "0693d1386d24768a6df4c415b93629392bb6aeee",
+  "baseTree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+  "builtHead": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "wholeTreeIdentical": true,
+  "files": [
+    {
+      "path": ".claude/skills/jgengine-gameplay/api.md",
+      "sha": "76c95aa6cf79397315e0524933c965b87ec36fa1",
+      "size": 463941
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "sha": "fb12f8b7a3749d507457e3a51728e4fc89322a7e",
+      "size": 17792
+    },
+    {
+      "path": "changes/animation-game-clock.md",
+      "sha": "35b860de0ce26e472440f006fadbb5beb7c06504",
+      "size": 275
+    },
+    {
+      "path": "packages/core/src/game/clipRoles.test.ts",
+      "sha": "a2faacbb6a54a13a246d133851d6d5e7885538d5",
+      "size": 6718
+    },
+    {
+      "path": "packages/core/src/game/clipRoles.ts",
+      "sha": "aa7581f0969c08c540632384ca60b70cec76c9cc",
+      "size": 7027
+    },
+    {
+      "path": "packages/core/src/game/playableGame.ts",
+      "sha": "cf10bf6d9a5cd007e618deddea739f03016d39ee",
+      "size": 47440
+    },
+    {
+      "path": "packages/core/src/world/authoredAnimation.test.ts",
+      "sha": "5ad214097ff8632a3fd064de6bbce54ef9798180",
+      "size": 8514
+    },
+    {
+      "path": "packages/core/src/world/authoredAnimation.ts",
+      "sha": "385e342eb8d70ba6ec399dd6b2f5283bf23f23f0",
+      "size": 5790
+    },
+    {
+      "path": "packages/editor/src/InspectorPanel.tsx",
+      "sha": "89d9f0f82a512408dad5cd82a13b65dc85c7c922",
+      "size": 61054
+    },
+    {
+      "path": "packages/editor/src/modelAnimationAuthoring.test.ts",
+      "sha": "e91267d030754ba48e1833470a134af730ff9a37",
+      "size": 30091
+    },
+    {
+      "path": "packages/editor/src/modelAnimationAuthoring.ts",
+      "sha": "32e067147f25063a42c4aa151413fbdb268c6564",
+      "size": 13712
+    },
+    {
+      "path": "packages/shell/src/render/modelAnimationHook.test.ts",
+      "sha": "c46c1f073d1492a428693132373d2837eb0befc2",
+      "size": 34724
+    },
+    {
+      "path": "packages/shell/src/render/useModelAnimation.ts",
+      "sha": "d988d606b912d29e0b3c384754ba97d66cdb4851",
+      "size": 21976
+    }
+  ],
+  "remoteHead": "b562fc6c4e72a3da61ee487570a9bc780cf1a3f9",
+  "remoteTree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "delivery": "Normal standalone Git push failed HTTP401; GitData upload asserted exact committed blob SHA for all13 files and complete tree equality before branch creation",
+  "pr": 1970,
+  "manifestRelabeled": false,
+  "sourceChecks": "Owning source tests/types passed, independent movement and root reviews approved; five generation stages, export/skill checks, beta changelog and ship preflight pass"
+}

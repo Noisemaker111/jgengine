@@ -1,0 +1,14 @@
+{
+  "verifiedBy": "Read-only GitHub Git commit API",
+  "remoteHead": "b562fc6c4e72a3da61ee487570a9bc780cf1a3f9",
+  "remoteTree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "parents": [
+    "0693d1386d24768a6df4c415b93629392bb6aeee"
+  ],
+  "builtSource": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "rebasedLocal": "a5c5250ffa031f4e713a2a27c2ec1c0c1bc9372c",
+  "wholeTreeEquality": true,
+  "packageManifestRelabeled": false,
+  "localEqualityCheck": "git rev-parse a5c5250^{tree}; git diff --exit-code f9d7071b a5c5250",
+  "scope": "Source provenance only; no source ref mutations or publication."
+}

@@ -1,0 +1,85 @@
+{
+  "classification": "Native configuration-only unreleased public-package Clock/derive authoring proof; no game adoption, rig or appearance claim",
+  "sourceCommit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "sourceTree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "remotePRHead": "b562fc6c4e72a3da61ee487570a9bc780cf1a3f9",
+  "sourceManifest": "candidate-package-manifest.json",
+  "attribution": "attribution.json",
+  "installedVerification": "installed-package-verification.json",
+  "inputOrigin": "Frozen ninth VALID full438document, prior public authored-animation output, not malformed diagnostic fixture",
+  "inputSHA256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1",
+  "savedSHA256": "fb48a439f3222900f41e2f6cd5d49e1b31d929299cde0938b6cc3eac1f66c33a",
+  "savedFile": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/scene/editor.scene.json",
+  "savedSnapshot": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/saved-document.json",
+  "markerCount": 438,
+  "volumeCount": 127,
+  "pathCount": 8,
+  "targetMarker": "player_spawn",
+  "targetIndex": 400,
+  "singleFinalDifference": "markers[400].meta.animation.clock = game",
+  "original31TransitionGraphAndMappingsExact": true,
+  "allOtherSceneDataExact": true,
+  "stages": {
+    "inspect": {
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedWallSeconds": 20.586503555998206,
+      "startedAtUTC": "2026-10-04T05:19:50.522093+00:00"
+    },
+    "edit-save": {
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedWallSeconds": 45.32722352900237,
+      "startedAtUTC": "2026-10-04T05:20:57.094240+00:00"
+    },
+    "reopen": {
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedWallSeconds": 16.52670910300003,
+      "startedAtUTC": "2026-10-04T05:22:31.857745+00:00"
+    }
+  },
+  "verifiedUI": [
+    "Existing valid Custom mode visible with actual zero clip metadata",
+    "Native select via inspected screenshot coordinates and ArrowDown/Enter changes Real time to Game time",
+    "Native derive checkbox adds auto:true without graph/map edits",
+    "Normal undo restores entire exact original marker, grouping both same-marker edits; redo restores game+auto",
+    "Native uncheck removes transient auto; final config clock game only",
+    "Native GUI Save writes actualfile",
+    "Fresh official browser without import opens saved Game time and unchecked derive, empty undo/redo history"
+  ],
+  "inspectedImages": {
+    "clock-controls-before.png": "6226b69cf972d05bb889b744f921e409716c8443b0a2a7768057fa746c33d730",
+    "clock-game-derived.png": "5b9ed94afdc970b01b46085fe4b8998c9f8bcde474b58c37f78dbe820e6811a6",
+    "clock-game-undo.png": "8083e9c107ab843ac2ac08838b1fcc7f7b527f32143eae26a89186835fc2200d",
+    "clock-game-saved.png": "4a19c9397a6d90874bf396b34b18dd7149596b38e9d51196696ab3fa50664f1c",
+    "clock-game-fresh-reopened.png": "66121eae704a7ba086aca220211d399bcd42a1018cf5ea33229c281de75d0b6b"
+  },
+  "publicReaderReceipt": "saved-public-reader.json",
+  "strictSavedPublicReaderDiagnostics": [],
+  "nativeFailures": 0,
+  "nativeHangs": 0,
+  "captureRetries": 0,
+  "analysisAssertionFailures": 1,
+  "analysisCorrection": "Initial postcapture expectation assumed undo preserves Clockgame; actual editor grouped marker edits and restored exactinitialmarker. Corrected assertion preserves rawRPC/captures; no native retry.",
+  "normalToolsOnly": true,
+  "noMetadataOrAssetsInvented": true,
+  "noContentPlacementCameraReadinessChanges": true,
+  "host": "Untouched packaged jgengine editor generated scaffold; prelinked verified isolated install",
+  "generatedScaffoldSHA256": {
+    "workspace/vite.config.ts": "b7a9b9a64a4c42e1ef6aeacfabf3ae363b74e1732bd44345f4b56686fad97228",
+    "workspace/index.html": "1d42c359604f65457ebeb8f57ac94ecf363bad01050d94042941c28c01c8d0ee",
+    "workspace/package.json": "46ccb229e4348a2fe00dbe5b906821f9ebc77a32a7e6a3ab1474b625128f8599",
+    "workspace/src/main.tsx": "350afa9159ffc80e9b1d877545f384c54c9e3b7a98c3d51cdcad1b983e182479",
+    "workspace/src/index.css": "05f8911b388d1a8e6bb8fac9a963bdf670f65133cad4e7190380ddf6a0e0bff7"
+  },
+  "processCleanup": "Owned standard hostCtrlC exit1; all3drive subprocesses exit0; port5571no listener confirmed",
+  "oldCapsUnchanged": true,
+  "remainingLimitations": [
+    "Standalone asset metadata remains0clips; this scenario proves configuration editing/persistence only, no graph/rig playback or derivation.",
+    "Temporary auto:true checkbox state is removed beforeSave; actual loaded Idle compatibility and gameclock runtime behavior require separate imported-hook proof.",
+    "No convincing animation, movement feel, hardwareFPS or published package adoption claim.",
+    "Earlier Lantern/rig native caps and host blockers remain unresolved."
+  ],
+  "frozen": true
+}

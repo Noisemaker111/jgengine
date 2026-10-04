@@ -1,0 +1,30 @@
+{
+  "message": "Error: evaluate: TypeError: document2.createElement is not a function\n    at window.run (http://127.0.0.1:33365/fixture.js:113146:29)\n    at async <anonymous>:329:30",
+  "documentPath": "/workspace/JGengine/.scratch/characters/native/animation-clock-authoring/saved-document.json",
+  "documentSha256": "fb48a439f3222900f41e2f6cd5d49e1b31d929299cde0938b6cc3eac1f66c33a",
+  "documentMarkers": 438,
+  "presentationScope": "Native-saved canonical Scrap spawn animation data drives the same imported Knight hook on the original OddOrbit numeric composition. This is authored presentation data proof; it is not Scrap model-adapter adoption.",
+  "manifestPath": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/candidate-package-manifest.json",
+  "manifestSha256": "dcc1b150aea61bfed80dcec8af542e405f81f48dbf25879912fb1c9592441127",
+  "commit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "modules": {
+    "@jgengine/core/runtime/gameContext": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/core/dist/runtime/gameContext.js",
+    "@jgengine/shell/render/useModelAnimation": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+    "@jgengine/assets/catalogs/build": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/assets/dist/catalogs/build.js"
+  },
+  "moduleHashes": {
+    "@jgengine/core/runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+    "@jgengine/shell/render/useModelAnimation": "34868a00471ccfcd48544692ac24dcf9b4095982008d76e0a006af78c0807229",
+    "@jgengine/assets/catalogs/build": "62c4d4985e3383f0fbc81d4c53346906e827d58978cf9a5693de77975e6b4c27"
+  },
+  "runnerSha256": "e143cd614a084197d43c0c55c69e4a7b6de4e7ac276fa4752434408d4b26b77e",
+  "fixtureSha256": "2a89a9aae08cf5549379b8735e55e9f4af9180f5d28f60fa57de0034e9b5bf2b",
+  "originalGameLedgerSha256": "e522b7d61788d6e108c8289946d2326d2995052ccb6bf2588f08a81c79b95952",
+  "baselinePath": "/workspace/JGengine/.scratch/characters/positive-animation-triage/result.json",
+  "baselineSha256": "a84c1e2aef9e6edcb21ac9ea3403fa954e3983d206ad3f44742c852edb0f7749",
+  "asset": "/workspace/JGengine/apps/dev/public/models/kaykit-adventurers/Knight.glb",
+  "assetSha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+  "scope": "Original OddOrbit normal new/speed commands and onTick through exact installed public packages plus manual React/Fiber hook. One speed-normalized second; measured clock snapshots retained. No native appearance or performance judgement.",
+  "assetLimitation": "Original OddOrbit public/models remains unprovisioned; same registered official KayKit Knight supplied read-only from provisioned SDK dev catalog."
+}

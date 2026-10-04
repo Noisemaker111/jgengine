@@ -1,0 +1,97 @@
+{
+  "commit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "files": [
+    {
+      "path": ".claude/skills/jgengine-gameplay/api.md",
+      "archivePath": "engine-source-f9d7071b/.claude/skills/jgengine-gameplay/api.md",
+      "bytes": 463941,
+      "sha256": "9dca64f7ce8c5d6f29171743bf4e00b8b2da7ac27a1cf6a04fd4d4fb2862cffd",
+      "gitBlob": "76c95aa6cf79397315e0524933c965b87ec36fa1"
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "archivePath": "engine-source-f9d7071b/.claude/skills/jgengine-world/recipes/character-animation.md",
+      "bytes": 17792,
+      "sha256": "e3795ec21c17fc19ccb5388979dd1808b9bd40e0ff001a3d230ad1a4928f69b1",
+      "gitBlob": "fb12f8b7a3749d507457e3a51728e4fc89322a7e"
+    },
+    {
+      "path": "changes/animation-game-clock.md",
+      "archivePath": "engine-source-f9d7071b/changes/animation-game-clock.md",
+      "bytes": 275,
+      "sha256": "207cb76663c16840cc4a51e6f36981d8f60599e24be90fd53b9f4016cbb511d6",
+      "gitBlob": "35b860de0ce26e472440f006fadbb5beb7c06504"
+    },
+    {
+      "path": "packages/core/src/game/clipRoles.test.ts",
+      "archivePath": "engine-source-f9d7071b/packages/core/src/game/clipRoles.test.ts",
+      "bytes": 6718,
+      "sha256": "a2c6b91260730cd215643d87f03cb3da8a10cbaf2d1eef6eb70642ec6d0df696",
+      "gitBlob": "a2faacbb6a54a13a246d133851d6d5e7885538d5"
+    },
+    {
+      "path": "packages/core/src/game/clipRoles.ts",
+      "archivePath": "engine-source-f9d7071b/packages/core/src/game/clipRoles.ts",
+      "bytes": 7027,
+      "sha256": "4e93f028a4f301fbc747bc8a043af8f68f17cffe5cdbfe8c993920b078e688ce",
+      "gitBlob": "aa7581f0969c08c540632384ca60b70cec76c9cc"
+    },
+    {
+      "path": "packages/core/src/game/playableGame.ts",
+      "archivePath": "engine-source-f9d7071b/packages/core/src/game/playableGame.ts",
+      "bytes": 47440,
+      "sha256": "38c5ecf0d16add4aae6806e7ba053a941aa76147e8cda6718b4f68369568cb9a",
+      "gitBlob": "cf10bf6d9a5cd007e618deddea739f03016d39ee"
+    },
+    {
+      "path": "packages/core/src/world/authoredAnimation.test.ts",
+      "archivePath": "engine-source-f9d7071b/packages/core/src/world/authoredAnimation.test.ts",
+      "bytes": 8514,
+      "sha256": "957bd0a02e136f123aefcc2be62d6ab4ebd2eb45a54cceaeb6d19b314553ae28",
+      "gitBlob": "5ad214097ff8632a3fd064de6bbce54ef9798180"
+    },
+    {
+      "path": "packages/core/src/world/authoredAnimation.ts",
+      "archivePath": "engine-source-f9d7071b/packages/core/src/world/authoredAnimation.ts",
+      "bytes": 5790,
+      "sha256": "8aa0f053b035afb179d43a3aeba044c6eacd47e1ad0b92af43ccdce60541ca95",
+      "gitBlob": "385e342eb8d70ba6ec399dd6b2f5283bf23f23f0"
+    },
+    {
+      "path": "packages/editor/src/InspectorPanel.tsx",
+      "archivePath": "engine-source-f9d7071b/packages/editor/src/InspectorPanel.tsx",
+      "bytes": 61054,
+      "sha256": "c3d79e1953f66d22aa76c85aa7b4dcb6b0bea42f01dbc6208f2f27dd50c38e73",
+      "gitBlob": "89d9f0f82a512408dad5cd82a13b65dc85c7c922"
+    },
+    {
+      "path": "packages/editor/src/modelAnimationAuthoring.test.ts",
+      "archivePath": "engine-source-f9d7071b/packages/editor/src/modelAnimationAuthoring.test.ts",
+      "bytes": 30091,
+      "sha256": "113ed8c4ab23fde9511a60970498b7ca6059be312594194ccf81ca351dc18e89",
+      "gitBlob": "e91267d030754ba48e1833470a134af730ff9a37"
+    },
+    {
+      "path": "packages/editor/src/modelAnimationAuthoring.ts",
+      "archivePath": "engine-source-f9d7071b/packages/editor/src/modelAnimationAuthoring.ts",
+      "bytes": 13712,
+      "sha256": "86c3eb1121160b9558b4dc15ab040c6d1ca2dba295c7aba739be0e8498579e8d",
+      "gitBlob": "32e067147f25063a42c4aa151413fbdb268c6564"
+    },
+    {
+      "path": "packages/shell/src/render/modelAnimationHook.test.ts",
+      "archivePath": "engine-source-f9d7071b/packages/shell/src/render/modelAnimationHook.test.ts",
+      "bytes": 34724,
+      "sha256": "394983a2d5c12f1fefc50f221a226765b99b3b2b0363ba7b43f72b6fe08eb326",
+      "gitBlob": "c46c1f073d1492a428693132373d2837eb0befc2"
+    },
+    {
+      "path": "packages/shell/src/render/useModelAnimation.ts",
+      "archivePath": "engine-source-f9d7071b/packages/shell/src/render/useModelAnimation.ts",
+      "bytes": 21976,
+      "sha256": "65a7a81a544b660d59e9287a8ff06d85d4818a8b8ef8740c7bec3b6e0f150906",
+      "gitBlob": "d988d606b912d29e0b3c384754ba97d66cdb4851"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "builtHead": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "addedPackageFiles": 231,
+  "cause": "Explicit stage-skills performed before pass11 build; prior isolated helper only called check-stage-skills, which validates mapping sources in a temporary directory, not package staging. Prior runtime proofs are unchanged; package-owned bundled-skills freshness was not established by that check.",
+  "allSkillEntriesCheckedAgainstCommittedSource": 231,
+  "mismatches": [],
+  "tarFiles": 2644,
+  "installedFiles": 2548,
+  "priorCohortsRewritten": false
+}

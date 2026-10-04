@@ -1,0 +1,39 @@
+{
+  "label": "Prepared isolated one-line game policy source verified and compiled against actual unreleased public SDK; no source adoption/nativeclaim.",
+  "cohort": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "checks": [
+    {
+      "game": "odd-orbit",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/odd-orbit",
+      "exitCode": 0,
+      "durationFromLog": "18.75s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-orbit-build.log",
+      "logSha256": "d8d8bc96ac4eda25a386f0f844709b6ff344a9c3560c85698013b6f4c1fa99c7"
+    },
+    {
+      "game": "odd-orbit",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/games/odd-orbit",
+      "exitCode": 0,
+      "durationFromLog": null,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/prepared-odd-orbit-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "exactOnlyOneLineChanged": true,
+  "otherSourceFileCountPreserved": 126,
+  "originalPrepatchResults": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-prepatch-checks.json",
+  "preparedPatchLedgerSha256": "13da407a33b7dbb6150b846e50d6c1814dd1f08bb29c28ecc474314ee56a7c99"
+}

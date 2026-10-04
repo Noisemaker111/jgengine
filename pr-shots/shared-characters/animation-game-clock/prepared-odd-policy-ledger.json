@@ -1,0 +1,20 @@
+{
+  "label": "Prepared isolated one-line compositionpolicy only; no releasedpackage adoption/originalgameedit.",
+  "cohort": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "sharedNumericProofBeforePatch": "/workspace/JGengine/.scratch/characters/animation-game-clock/executed-f9d7071b/summary.json",
+  "sharedNumericProofSha256": "9b2caec5fe0bd6cd1cac8c85a423d6f74f62865df1921262279738ebd2dd3da0",
+  "sourceGameCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "file": "odd-orbit/src/game/render/AlienMesh.tsx",
+  "originalSha256": "ced9d36cc90dedb536ba4a4be31bf17abdf9cb2d52261e4cb3b50468e97dab42",
+  "preparedSha256": "661c02b008b18a9f2b91e18a3d3590e8baee221fadae05f771bd5ecc710af97a",
+  "patchSha256": "8991c50811ddb113c136221a68688cdd69bd3c48c8a9ce18b7209c74c47e2d40",
+  "onlySubstitution": {
+    "before": "useModelAnimation(scene, gltf.animations, \"auto\", instanceId);",
+    "after": "useModelAnimation(scene, gltf.animations, { auto: true, clock: \"game\" }, instanceId);"
+  },
+  "allOtherSourceFilesBytePreserved": 126,
+  "originalPrePatchGameSourceArchive": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/original-games",
+  "policyPreservation": "Body bob, proportion/style, material/color, camera, routes, economy, catalog and clip-selection mechanisms unchanged; selectedpublic sharedclock policy only.",
+  "gitApplyCheckOriginal45a": "PASS"
+}
