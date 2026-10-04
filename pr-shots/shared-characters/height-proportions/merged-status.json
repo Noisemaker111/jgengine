@@ -1,0 +1,75 @@
+{
+  "headRefOid": "64122739eb0866a26e24da6f5118569172c8e94a",
+  "mergeCommit": {
+    "oid": "c0041964c4f1b9628847974b46cbd1836cc8d614"
+  },
+  "mergedAt": "2026-10-04T01:32:30Z",
+  "state": "MERGED",
+  "statusCheckRollup": [
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-04T01:19:21Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37167586106/job/111333752550",
+      "name": "quick",
+      "startedAt": "2026-10-04T01:18:34Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-04T01:19:29Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37167586106/job/111333752532",
+      "name": "types",
+      "startedAt": "2026-10-04T01:18:34Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-04T01:25:38Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37167586106/job/111333752516",
+      "name": "test",
+      "startedAt": "2026-10-04T01:19:10Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-04T01:19:41Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37167586106/job/111333752371",
+      "name": "web-build",
+      "startedAt": "2026-10-04T01:18:34Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-04T01:22:26Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37167586106/job/111333752514",
+      "name": "smoke",
+      "startedAt": "2026-10-04T01:18:34Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    },
+    {
+      "__typename": "CheckRun",
+      "completedAt": "2026-10-04T01:25:44Z",
+      "conclusion": "SUCCESS",
+      "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37167586106/job/111334839105",
+      "name": "ci",
+      "startedAt": "2026-10-04T01:25:40Z",
+      "status": "COMPLETED",
+      "workflowName": "CI"
+    }
+  ],
+  "url": "https://github.com/Noisemaker111/jgengine/pull/1959",
+  "localPackageCommit": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "packageTree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "archiveCommit": "05e433e58770e73a81b5bd43ee1d8b9c51f5f457",
+  "publication": "unreleased; no shipped adoption"
+}
