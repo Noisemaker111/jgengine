@@ -1,0 +1,100 @@
+{
+  "label": "unreleased built character candidate; no registry publication or shipped game adoption",
+  "commit": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "base": "c970a2ef2e78689b8980f6a7777339a61a71b5ad",
+  "dirty": false,
+  "packages": [
+    {
+      "name": "@jgengine/core",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-core-0.19.0.tgz",
+      "sha256": "aee7dc5756c7015b02ec67c321e5776bb3acd55bf599e48d425c7076e3e05a07",
+      "files": 1209
+    },
+    {
+      "name": "@jgengine/rapier",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-rapier-0.19.0.tgz",
+      "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/ws",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-ws-0.19.0.tgz",
+      "sha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+      "files": 29
+    },
+    {
+      "name": "@jgengine/sql",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-sql-0.19.0.tgz",
+      "sha256": "afa66ad7fba962c837b8604a0b836189401badc3392f13d93666673b8bd16664",
+      "files": 9
+    },
+    {
+      "name": "@jgengine/navbake",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-navbake-0.19.0.tgz",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/react",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-react-0.19.0.tgz",
+      "sha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+      "files": 183
+    },
+    {
+      "name": "@jgengine/convex",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-convex-0.19.0.tgz",
+      "sha256": "c5b9df18576ea43ebb889e92eb854d61d405379e24665e16779a4035cdd455f6",
+      "files": 27
+    },
+    {
+      "name": "@jgengine/node",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-node-0.19.0.tgz",
+      "sha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+      "files": 29
+    },
+    {
+      "name": "@jgengine/shell",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-shell-0.19.0.tgz",
+      "sha256": "7fcc5c2d976041b2dd8af801f5f7b351498f5ea1620ee8cab5680feb2fdae142",
+      "files": 515
+    },
+    {
+      "name": "@jgengine/editor",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-editor-0.19.0.tgz",
+      "sha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+      "files": 232
+    },
+    {
+      "name": "@jgengine/assets",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-assets-0.19.0.tgz",
+      "sha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675",
+      "files": 81
+    },
+    {
+      "name": "@jgengine/github",
+      "version": "0.6.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-github-0.6.0.tgz",
+      "sha256": "7ef7a1329bdc14646235e6a55c6c7c3e35e2edc3502817510e8e0ee6e497ba5d",
+      "files": 29
+    },
+    {
+      "name": "jgengine",
+      "version": "0.16.0",
+      "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-0.16.0.tgz",
+      "sha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+      "files": 56
+    }
+  ]
+}

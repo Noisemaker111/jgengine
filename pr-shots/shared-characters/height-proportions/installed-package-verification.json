@@ -1,0 +1,68 @@
+{
+  "label": "unreleased public package fixture; no release adoption",
+  "commit": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "allManifestTarballsHashed": 13,
+  "installedPackages": [
+    {
+      "name": "@jgengine/core",
+      "version": "0.19.0",
+      "tarballSha256": "aee7dc5756c7015b02ec67c321e5776bb3acd55bf599e48d425c7076e3e05a07",
+      "installedFilesByteVerified": 1209
+    },
+    {
+      "name": "@jgengine/ws",
+      "version": "0.19.0",
+      "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+      "installedFilesByteVerified": 29
+    },
+    {
+      "name": "@jgengine/navbake",
+      "version": "0.19.0",
+      "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "installedFilesByteVerified": 6
+    },
+    {
+      "name": "@jgengine/react",
+      "version": "0.19.0",
+      "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+      "installedFilesByteVerified": 183
+    },
+    {
+      "name": "@jgengine/node",
+      "version": "0.19.0",
+      "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+      "installedFilesByteVerified": 29
+    },
+    {
+      "name": "@jgengine/shell",
+      "version": "0.19.0",
+      "tarballSha256": "7fcc5c2d976041b2dd8af801f5f7b351498f5ea1620ee8cab5680feb2fdae142",
+      "installedFilesByteVerified": 515
+    },
+    {
+      "name": "@jgengine/editor",
+      "version": "0.19.0",
+      "tarballSha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+      "installedFilesByteVerified": 232
+    },
+    {
+      "name": "@jgengine/assets",
+      "version": "0.19.0",
+      "tarballSha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675",
+      "installedFilesByteVerified": 81
+    },
+    {
+      "name": "jgengine",
+      "version": "0.16.0",
+      "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+      "installedFilesByteVerified": 56
+    }
+  ],
+  "uninstalledPackages": [
+    "@jgengine/rapier",
+    "@jgengine/sql",
+    "@jgengine/convex",
+    "@jgengine/github"
+  ]
+}

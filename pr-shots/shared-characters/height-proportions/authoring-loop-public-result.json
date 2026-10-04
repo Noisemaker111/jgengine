@@ -1,0 +1,34 @@
+{
+  "layer": "installed public package authoring; actual movement route proof is separate",
+  "publicModules": {
+    "commands": "/workspace/JGengine/.scratch/characters/consumer/height-proportions/node_modules/@jgengine/core/dist/editor/commands.js",
+    "document": "/workspace/JGengine/.scratch/characters/consumer/height-proportions/node_modules/@jgengine/core/dist/editor/document.js",
+    "movementCatalog": "/workspace/JGengine/.scratch/characters/consumer/height-proportions/node_modules/@jgengine/core/dist/editor/movementCatalog.js"
+  },
+  "publicModuleHashes": {
+    "commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+    "document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+    "movementCatalog": "0b6be0f44072e5b7a118e3413188b03d981433ba3e11296413113bb4e7c32a65"
+  },
+  "packageManifestPath": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/manifest.json",
+  "packageCohort": {
+    "commit": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+    "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+    "label": "unreleased built character candidate; no registry publication or shipped game adoption"
+  },
+  "originalPath": "/workspace/JGengine-games/lantern-reach/src/editor.scene.json",
+  "markerIds": [
+    "spawn:player",
+    "architecture:Odell workshop:160"
+  ],
+  "catalogId": "player-motion",
+  "entryId": "player_hero",
+  "collisionHeightSource": "unchanged actual Lantern entityModels[CLASS_ENTITY_ID].targetHeight; original HUMANOID_H independently inspected as 2.6",
+  "inspected": [
+    2.6,
+    2
+  ],
+  "reloadedCollisionHeight": 2.6,
+  "markersUnchanged": true,
+  "limitation": "Authored slice retains original markers; original full Lantern environment.preset=dawn still blocks validated full-document saves. No original scene override, full world reload or native appearance claim."
+}

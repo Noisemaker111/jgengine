@@ -1,0 +1,326 @@
+{
+  "label": "unreleased installed public-package numeric animation parameter integration; no native or crouch appearance claim",
+  "cohort": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "packageExports": [
+    {
+      "name": "@jgengine/core/movement/playerMovement",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/height-proportions/node_modules/@jgengine/core/dist/movement/playerMovement.js",
+      "sha256": "8a1503ccdc1f38bc9bd50ceb531996539208d5d78f0e3c29c096c1392bab5084"
+    },
+    {
+      "name": "@jgengine/shell/render/useModelAnimation",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/height-proportions/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+      "sha256": "3585acefa311b5da8f5e4e2df0b5962006950031a79ed0838f4994e597da0b23"
+    }
+  ],
+  "coreTarball": {
+    "name": "@jgengine/core",
+    "version": "0.19.0",
+    "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-core-0.19.0.tgz",
+    "sha256": "aee7dc5756c7015b02ec67c321e5776bb3acd55bf599e48d425c7076e3e05a07",
+    "files": 1209
+  },
+  "shellTarball": {
+    "name": "@jgengine/shell",
+    "version": "0.19.0",
+    "path": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/jgengine-shell-0.19.0.tgz",
+    "sha256": "7fcc5c2d976041b2dd8af801f5f7b351498f5ea1620ee8cab5680feb2fdae142",
+    "files": 515
+  },
+  "fixture": {
+    "publicWorldSolidRoofs": [
+      2.058,
+      1.05
+    ],
+    "requestedHeights": [
+      1.8,
+      2.6,
+      0.9
+    ],
+    "gravity": -16,
+    "jumpVelocity": 6,
+    "stepSeconds": 0.016666666666666666,
+    "semanticCrouchExplicit": true,
+    "collisionHeightDoesNotInferAnimationPose": true
+  },
+  "records": [
+    {
+      "label": "standing accepted1.8",
+      "position": [
+        0,
+        0,
+        2
+      ],
+      "physical": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": false,
+        "collisionHeight": 1.8,
+        "requestedCollisionHeight": 1.8,
+        "collisionHeightBlocked": false
+      },
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 0,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "growth blocked under roof",
+      "position": [
+        0,
+        0,
+        2
+      ],
+      "physical": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": false,
+        "collisionHeight": 1.8,
+        "requestedCollisionHeight": 2.6,
+        "collisionHeightBlocked": true
+      },
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 0,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "restored before physical step",
+      "position": [
+        0,
+        0,
+        2
+      ],
+      "physical": null,
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 77,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "restored blocked growth after step",
+      "position": [
+        0,
+        0,
+        2
+      ],
+      "physical": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": false,
+        "collisionHeight": 1.8,
+        "requestedCollisionHeight": 2.6,
+        "collisionHeightBlocked": true
+      },
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 0,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "clear headroom accepts growth",
+      "position": [
+        2.4636774102529237,
+        0,
+        2
+      ],
+      "physical": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": false,
+        "collisionHeight": 2.6,
+        "requestedCollisionHeight": 2.6,
+        "collisionHeightBlocked": false
+      },
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 0,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "shrink accepted without changing pose",
+      "position": [
+        2.505704029104064,
+        0,
+        2
+      ],
+      "physical": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": false,
+        "collisionHeight": 0.9,
+        "requestedCollisionHeight": 0.9,
+        "collisionHeightBlocked": false
+      },
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 0,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "supported crouch remains explicit intent",
+      "position": [
+        0.02018560782108316,
+        0,
+        2
+      ],
+      "physical": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": true,
+        "collisionHeight": 0.9,
+        "requestedCollisionHeight": 0.9,
+        "collisionHeightBlocked": false
+      },
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 0,
+        "crouched": true,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "small body standing before jump",
+      "position": [
+        0.02988086226326912,
+        0,
+        2
+      ],
+      "physical": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": false,
+        "collisionHeight": 0.9,
+        "requestedCollisionHeight": 0.9,
+        "collisionHeightBlocked": false
+      },
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 0,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "resolved airborne head bump",
+      "position": [
+        0.03835011321311514,
+        0.14999999999999797,
+        2
+      ],
+      "physical": {
+        "grounded": false,
+        "verticalVelocity": 0,
+        "crouching": false,
+        "collisionHeight": 0.9,
+        "requestedCollisionHeight": 0.9,
+        "collisionHeightBlocked": false
+      },
+      "params": {
+        "grounded": false,
+        "verticalSpeed": 0,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "head-bump restore awaiting physical step",
+      "position": [
+        0.03835011321311514,
+        0.14999999999999797,
+        2
+      ],
+      "physical": null,
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 77,
+        "crouched": false,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "restored head bump continues falling",
+      "position": [
+        0.04147158057543931,
+        0.14555555555555352,
+        2
+      ],
+      "physical": {
+        "grounded": false,
+        "verticalVelocity": -0.26666666666666666,
+        "crouching": true,
+        "collisionHeight": 0.9,
+        "requestedCollisionHeight": 0.9,
+        "collisionHeightBlocked": false
+      },
+      "params": {
+        "grounded": false,
+        "verticalSpeed": -0.26666666666666666,
+        "crouched": true,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    },
+    {
+      "label": "accepted floor landing",
+      "position": [
+        0.052093503297968795,
+        0,
+        2
+      ],
+      "physical": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": true,
+        "collisionHeight": 0.9,
+        "requestedCollisionHeight": 0.9,
+        "collisionHeightBlocked": false
+      },
+      "params": {
+        "grounded": true,
+        "verticalSpeed": 0,
+        "crouched": true,
+        "aiming": true,
+        "speed": 0
+      },
+      "blackboardUnchanged": true
+    }
+  ],
+  "blackboardUnchanged": true,
+  "onlyExistingPhysicalGraphParamsFed": true,
+  "currentTelemetryOutputAliasRejected": true
+}

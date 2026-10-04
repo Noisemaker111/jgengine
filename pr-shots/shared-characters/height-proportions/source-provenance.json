@@ -1,0 +1,12 @@
+{
+  "localCommit": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "remoteCommit": "64122739eb0866a26e24da6f5118569172c8e94a",
+  "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "base": "c970a2ef2e78689b8980f6a7777339a61a71b5ad",
+  "localParent": "56a9c6ed80197f084cdbc9e0a8e2fad0017f9ede",
+  "remoteParent": "6600d00c0425f317d9e40943265b337e27438409",
+  "delivery": "Git Data API after normal Git HTTP push401; exact tree identity checked",
+  "publication": "unreleased source; no registry publication or shipped adoption",
+  "remotePrevious": "4382a889eb92a6d11456ef1764677d0bed87da82",
+  "remoteTopology": "Fast-forward merge commit retaining previous PR head and current beta; exact local rebased tree checked"
+}

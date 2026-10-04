@@ -1,0 +1,268 @@
+{
+  "label": "unreleased public package candidate proven against two actual compositions; no published game adoption, native appearance or hardware performance claim",
+  "cohort": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "enginePr": 1959,
+  "remoteHeadReportedByParent": "64122739 (same tree)",
+  "sourceGamesCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "packageBoundary": {
+    "manifest": "candidate-package-manifest.json",
+    "manifestTarballsSha256Verified": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "aee7dc5756c7015b02ec67c321e5776bb3acd55bf599e48d425c7076e3e05a07",
+        "installedFilesByteVerified": 1209
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "7fcc5c2d976041b2dd8af801f5f7b351498f5ea1620ee8cab5680feb2fdae142",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "installedFilesByteVerified": 2340,
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "verification": "installed-package-verification.json",
+    "sdkSourceAliases": false
+  },
+  "originalSources": {
+    "filesByteVerified": 212,
+    "provenance": "original-source-provenance.json",
+    "gameSourceModelCameraSceneNoEdits": true,
+    "repositoryCatalogAndLocksNoEdits": true
+  },
+  "concretePreliminaryFailure": {
+    "cohort": "56a9c6ed80197f084cdbc9e0a8e2fad0017f9ede",
+    "archive": "cohorts/56a9c6ed",
+    "failure": "Explicit fresh height2.6 rejected original authored spawn because road top4cm above terrain overlapped feet; same support overlap exists default1.8 and is step-able at existing .4 step height",
+    "blocker": "street:market-cobbles",
+    "fix": "Owning engine preflight accepts valid existing support while retaining real oversized headroom rejection",
+    "noSpawnRepairOrRuntimePositionRewrite": true
+  },
+  "lantern": {
+    "modelHeight": 2.6,
+    "catalogId": "player-motion",
+    "entryId": "player_hero",
+    "normalSavedPublicDocument": "authoring-doc-public.json",
+    "sourceDocAndPublicSavedDocBytesEqual": true,
+    "authoringDocumentSha256": "6af65c42e764691df1af4c081891641b49336ea506cb2e639727235d8f384aa8",
+    "fullOriginalWorldRetained": true,
+    "sliceOnlyFeedsMovementReader": true,
+    "sameOriginalSpawn": [
+      0,
+      7.244763548770163,
+      -275
+    ],
+    "roofMarker": "architecture:Odell workshop:160",
+    "roofGlbSha256": "813dcef47e0d705da2203b0f3cfa3ef06fd88c5485c716165547cf0515f8d178",
+    "roofUndersideY": 9.303211291232321,
+    "roofToTerrainClearanceMeters": 2.0584477424621577,
+    "freshDeclared2_6": {
+      "steps": 1800,
+      "reachedLowRoofInterior": false,
+      "minimumDistanceToInteriorTarget": 1.9467092037201041,
+      "finalPosition": [
+        15.53536953618449,
+        7.244763548770163,
+        -306.0532906770706
+      ],
+      "everyStepAcceptedHeight2_6AndNoRoofOverlap": true
+    },
+    "declaredDefaultHeight": {
+      "normalRouteFrames": 361,
+      "same4004WalkedToAndBrakedAt": true,
+      "walkedTo": [
+        15.509807083079815,
+        7.244763548770163,
+        -307.94570049979154
+      ]
+    },
+    "ordinaryLiveCatalogGrowth": {
+      "command": "setCatalogEntry patch.meta.collisionHeight",
+      "blockedFrames": 12,
+      "requested": 2.6,
+      "acceptedWhileBlocked": 1.8,
+      "maxNoInputHorizontalShift": 0.0,
+      "normalWalkEgressAcceptsAtFrame": 27,
+      "egressAccepted": {
+        "grounded": true,
+        "verticalVelocity": 0,
+        "crouching": false,
+        "collisionHeight": 2.6,
+        "requestedCollisionHeight": 2.6,
+        "collisionHeightBlocked": false
+      }
+    },
+    "proof": "height-route.json",
+    "script": "height-route.ts",
+    "authoringPublicLoop": "authoring-loop-public-result.json",
+    "fullOriginalSave": "blocked by existing unsupported dawn; no environment override"
+  },
+  "scrap": {
+    "after": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+    "before": "4004ec17cac406fa33d157149c15b82c444f1144",
+    "defaultAndSavedFullDocumentCasesExactPhysicalIdentity": true,
+    "normalLifecycle": "onInit\u2192onNewPlayer\u2192character.pick(gunk)",
+    "cases": [
+      "walk",
+      "sprint",
+      "crouch",
+      "sprintCrouch",
+      "jump",
+      "crouchJump"
+    ],
+    "ratios": {
+      "sprint": 2.250000000000408,
+      "crouch": 0.44999999999942863,
+      "sprintCrouch": 0.44999999999942863
+    },
+    "savedDocument": "scrap-full-authoring-doc.json",
+    "readConfig": {
+      "walkSpeed": 5.8,
+      "physics": {
+        "gravity": -30,
+        "jumpVelocity": 8.4
+      },
+      "movement": {
+        "collisionHeight": 1.8
+      }
+    },
+    "originalBeforeCommitCallbackPreserved": true,
+    "noPositionRewrite": true
+  },
+  "scrapFullOriginalDocumentAuthoring": "scrap-full-authoring-result.json",
+  "publicConsumerChecks": {
+    "scrap-signal": {
+      "types": "PASS",
+      "build": "PASS",
+      "buildSeconds": 31.19,
+      "typesLog": "public-scrap-signal-types.log",
+      "buildLog": "public-scrap-signal-build.log"
+    },
+    "lantern-reach": {
+      "types": "same4pre-existingPromise-dispatcherrors ActionBar57/Dialogue68",
+      "build": "PASS",
+      "buildSeconds": 37.05,
+      "typesLog": "public-lantern-reach-types.log",
+      "buildLog": "public-lantern-reach-build.log"
+    }
+  },
+  "limitations": [
+    "Numerical public package simulation, not native controls feel or appearance. Previous Lantern native rendering caps remain unresolved.",
+    "Heightfield-only authored height, unchanged default1.8; camera, voxel/capsule policies and automatic crouch inference are separate.",
+    "Imported roof uses conservative outer collider bounds; exact pitched triangles/interior door openings are not claimed.",
+    "Original Lantern dawn blocks full scene save; normal valid character catalog slice and full valid Scrap document loops proven separately.",
+    "Game composition must opt supported height control into its existing catalog/binding; no shipping adapter or dependency adoption performed."
+  ],
+  "artifactHashes": [
+    {
+      "path": "candidate-package-manifest.json",
+      "sha256": "09cac5ada29d30e2d890934858b2de43f2982e57bde981ec8d519d5abc11ab54"
+    },
+    {
+      "path": "installed-package-verification.json",
+      "sha256": "d85007a07fbd537ace0380887c2b6383ff0160e20ac3f4d3a7d5ba7dc5f332ea"
+    },
+    {
+      "path": "height-route.ts",
+      "sha256": "bb63bc7407c6f839651b82fc6fe9dbbd16c7727fb7cbdfcbabd34b714daa9ef4"
+    },
+    {
+      "path": "height-route.json",
+      "sha256": "4a2856015ddf0f1bcad398d9efc34c0040367c8aabdf1e97f170fd6fdd3b8f8e"
+    },
+    {
+      "path": "height-route.log",
+      "sha256": "65a77ff3775a1a55bc66a3f94efe32990b12e3786e0b68de94a2bb8bd628d614"
+    },
+    {
+      "path": "initial-height-readiness.json",
+      "sha256": "960ee125a9114bcd77dab664aaf33d2afb5b3e01086fdd11679feb97bb242f5b"
+    },
+    {
+      "path": "authoring-doc-public.json",
+      "sha256": "6af65c42e764691df1af4c081891641b49336ea506cb2e639727235d8f384aa8"
+    },
+    {
+      "path": "authoring-loop-public-result.json",
+      "sha256": "09ddd4997ad2e90152cc688f70135d8a268c63fa839e249a155e5ecf9d519d17"
+    },
+    {
+      "path": "scrap-controls.ts",
+      "sha256": "9a51a37a7a600496408cf073819b4f47f95b104e8873c4eb9c8e00a66a9714e9"
+    },
+    {
+      "path": "scrap-controls.json",
+      "sha256": "e0ceb436c463934bcf11fff975c060f68dadd05d73d899b13e972b611bc9a46e"
+    },
+    {
+      "path": "scrap-saved-controls.ts",
+      "sha256": "2b4f30cb0680338780251356a573dc272b957f8de4f307793fcdf542b78ee294"
+    },
+    {
+      "path": "scrap-saved-controls.json",
+      "sha256": "a11abd17040508c22c3de1edf546af64faef7d391efccac9daee349ef8451b32"
+    },
+    {
+      "path": "scrap-controls-comparison.json",
+      "sha256": "c1990733e219e23d3add4e2706df19e5166fe887c360d97e0970106d4f5fee50"
+    },
+    {
+      "path": "scrap-full-authoring-doc.json",
+      "sha256": "d41e9c65ed6c3bdeff79a245f70caab788c322a2d6d6e17a87ca6fece30ce9e8"
+    },
+    {
+      "path": "scrap-full-authoring-result.json",
+      "sha256": "cbbe35d4e64dd9bf9c890b35aad0b2478721919dd578a883e2dc2e56b6ad2b0b"
+    }
+  ]
+}

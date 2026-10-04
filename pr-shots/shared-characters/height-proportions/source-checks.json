@@ -1,0 +1,68 @@
+{
+  "head": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "base": "c970a2ef2e78689b8980f6a7777339a61a71b5ad",
+  "status": "",
+  "sourceSHA256": {
+    "packages/core/src/movement/playerMovement.ts": "1f283ada10b9046d82e7afea6031c7b326b4da55bf10adfd4aaba97084b91666",
+    "packages/core/src/movement/playerMovement.test.ts": "898aa6d0432b178e04031cae2602dc7cf38cba85c4df24261b6230d5ad77b559",
+    "packages/core/src/movement/movementModel.ts": "1b9d8dcb166b4f1eadd28271a6b83e72a6db8eb45063d36982cd84448632a7b5",
+    "packages/core/src/editor/movementCatalog.ts": "810c66e4cf691afeb0805d67326715e31df1e0475bcbea81743e37aa9a19df55",
+    "packages/core/src/editor/movementCatalog.test.ts": "c4caf1fe0aeda5f177a1eb2a43287dae59fd6ce5520060305a8b1e91c3a7ab3e",
+    "packages/core/src/game/playableGame.ts": "c8fe1900807b4f643672f85ac139f3060b4925374efdd1d4bcbddd815f1dc2ea",
+    ".claude/skills/jgengine-world/reference.md": "cfd632f205c880ae0aab13a85739b65029197082bd09275b0660b0071b40064e"
+  },
+  "sourceUnchangedSinceGen": {
+    "packages/core/src/movement/playerMovement.ts": true,
+    "packages/core/src/movement/playerMovement.test.ts": true,
+    "packages/core/src/movement/movementModel.ts": true,
+    "packages/core/src/editor/movementCatalog.ts": true,
+    "packages/core/src/editor/movementCatalog.test.ts": true,
+    "packages/core/src/game/playableGame.ts": true,
+    ".claude/skills/jgengine-world/reference.md": true
+  },
+  "motorCatalogDiffAcrossRebase": "",
+  "checks": {
+    "gen": {
+      "exitCode": 0,
+      "log": ".scratch/characters/height-proportions-checks/gen.log"
+    },
+    "core-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/height-proportions-checks/core-types.log"
+    },
+    "shell-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/height-proportions-checks/shell-types.log"
+    },
+    "editor-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/height-proportions-checks/editor-types.log"
+    },
+    "rapier-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/height-proportions-checks/rapier-types.log"
+    },
+    "export-tarball": {
+      "exitCode": 0,
+      "log": ".scratch/characters/height-proportions-checks/export-tarball.log",
+      "tests": 34,
+      "assertions": 99,
+      "files": 2
+    },
+    "ship-preflight": {
+      "exitCode": 0,
+      "log": ".scratch/characters/height-proportions-checks/ship-preflight.log"
+    }
+  },
+  "owningMotorTests": {
+    "runBy": "movement owner on frozen corrected source",
+    "log": ".scratch/characters/heightfield-height-road-owning.log",
+    "tests": 324,
+    "assertions": 1525,
+    "files": 21,
+    "sourceUnchangedAcrossRebase": true
+  },
+  "previousSupersededChecks": ".scratch/characters/height-proportions-checks/superseded-a3a12",
+  "preliminary56a9": ".scratch/characters/height-proportions-checks/preliminary-56a9"
+}

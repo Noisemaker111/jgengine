@@ -1,0 +1,39 @@
+{
+  "label": "Fourth-pass actual unchanged Lantern configuration limitation before collisionHeight support",
+  "cohort": "4004ec17cac406fa33d157149c15b82c444f1144",
+  "gamesSource": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "marker": "architecture:Odell workshop:160",
+  "roofAssetSHA256": "813dcef47e0d705da2203b0f3cfa3ef06fd88c5485c716165547cf0515f8d178",
+  "configuredHumanoidTargetHeight": 2.6,
+  "heightSource": "/workspace/JGengine-games/lantern-reach/src/game/models.ts",
+  "heightSourceSHA256": "11590e674ed0ec2a793fe07bc5e2ca3ac2bd3e3320e0a65ab8c1339a24802a1a",
+  "ordinaryRoute": {
+    "authoredSpawn": [
+      0,
+      7.244763548770163,
+      -275
+    ],
+    "walkedTo": [
+      15.509807083079815,
+      7.244763548770163,
+      -307.94570049979154
+    ],
+    "brakedAt": [
+      15.575108242034911,
+      7.244763548770163,
+      -308.1281545952859
+    ],
+    "routeFrames": 361,
+    "playerKind": "player_hero"
+  },
+  "roofUnderside": 9.303211291232321,
+  "floor": 7.244763548770163,
+  "clearance": 2.0584477424621577,
+  "physicalHeightBefore": 1.8,
+  "physicalHeadBefore": 9.044763548770163,
+  "configuredVisualEnvelopeTop": 9.844763548770164,
+  "configuredEnvelopeExceedsRoofBy": 0.5415522575378429,
+  "limitation": "The built public heightfield mover admits the normal player route with its fixed1.8m span even though the actual humanoid configuration targets2.6m; no collisionHeight control exists. Visual envelope is derived from actual model configuration, not measured animated/native rendered head.",
+  "appearanceClaim": false,
+  "owningBeforeTests": ".scratch/characters/heightfield-height-before.log"
+}

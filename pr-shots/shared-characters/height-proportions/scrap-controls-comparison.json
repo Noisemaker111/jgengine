@@ -1,0 +1,32 @@
+{
+  "after": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "before": "4004ec17cac406fa33d157149c15b82c444f1144",
+  "defaultAndSavedFullDocumentCasesExactPhysicalIdentity": true,
+  "normalLifecycle": "onInit\u2192onNewPlayer\u2192character.pick(gunk)",
+  "cases": [
+    "walk",
+    "sprint",
+    "crouch",
+    "sprintCrouch",
+    "jump",
+    "crouchJump"
+  ],
+  "ratios": {
+    "sprint": 2.250000000000408,
+    "crouch": 0.44999999999942863,
+    "sprintCrouch": 0.44999999999942863
+  },
+  "savedDocument": "scrap-full-authoring-doc.json",
+  "readConfig": {
+    "walkSpeed": 5.8,
+    "physics": {
+      "gravity": -30,
+      "jumpVelocity": 8.4
+    },
+    "movement": {
+      "collisionHeight": 1.8
+    }
+  },
+  "originalBeforeCommitCallbackPreserved": true,
+  "noPositionRewrite": true
+}

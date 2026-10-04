@@ -1,0 +1,102 @@
+{
+  "branch": "characters/heightfield-proportions",
+  "base": "c970a2ef2e78689b8980f6a7777339a61a71b5ad",
+  "status": "Engine source and exact unreleased public packages verified against unchanged Lantern and Scrap; all six CI checks passed; native appearance unresolved; no published adoption",
+  "sourceSHA256": {
+    "packages/core/src/movement/playerMovement.ts": "1f283ada10b9046d82e7afea6031c7b326b4da55bf10adfd4aaba97084b91666",
+    "packages/core/src/movement/movementModel.ts": "1b9d8dcb166b4f1eadd28271a6b83e72a6db8eb45063d36982cd84448632a7b5"
+  },
+  "actualBefore": ".scratch/characters/heightfield-height-actual-lantern-before.json",
+  "owningFailureBefore": [
+    {
+      "log": ".scratch/characters/heightfield-height-before.log",
+      "limitation": "2.6m and0.9m authored heights ignored, unsafe fresh placement, no live-retune state/diagnostics, invalid dimensions accepted"
+    },
+    {
+      "log": ".scratch/characters/heightfield-height-possession-before.log",
+      "failure": "restoring accepted height erased pawn identity; a subsequent possession switch had different behavior"
+    },
+    {
+      "log": ".scratch/characters/heightfield-height-stance-before.log",
+      "failure": "rejected height edit changed semantic standing/crouch/running pose"
+    }
+  ],
+  "verification": {
+    "owningTests": 324,
+    "assertions": 1525,
+    "files": 21,
+    "log": ".scratch/characters/heightfield-height-road-owning.log",
+    "coreTypes": "passed",
+    "coreBuild": ".scratch/characters/heightfield-height-core-build.log",
+    "diffCheck": "passed",
+    "checks": ".scratch/characters/height-proportions-checks/final-check-summary.json",
+    "ci": ".scratch/characters/native/height-proportions/pr1959-ci.json"
+  },
+  "independentBuiltProof": ".scratch/characters/ik/proportions-terrain-package.json",
+  "contract": {
+    "configuration": "movement.collisionHeight: finite positive, default1.8m, onlyheightfield",
+    "liveGrowth": "retain accepted physical height while requested body overlaps blocking bounds; retry on subsequent step; no automatic visual resizing/crouch",
+    "liveShrink": "apply immediately",
+    "freshExplicitIllegalPlacement": "RangeError with entity and repair beforeheading/stance/impulse/motor changes",
+    "unauthoredDefaultInitialOverlap": "legacy horizontal depenetration unchanged",
+    "snapshot": [
+      "heightfieldHeight optional acceptedheight",
+      "heightfieldEntityId optional actoridentity",
+      "legacy omissions retain historical1.8m and bind to active pawn onrestore"
+    ],
+    "telemetry": [
+      "collisionHeight accepted",
+      "requestedCollisionHeight",
+      "collisionHeightBlocked"
+    ],
+    "telemetryAvailability": "heightfield completed acceptedmotion only; fields absent for capsule/voxel/flight and wholeviewnull forpolicyrejectedmovement"
+  },
+  "coverage": [
+    "configuredtallbodyblocks lowroof",
+    "configuredshortbody passes lowroof",
+    "queryabovehistoricalheadspan",
+    "fastauthoritativejump with .9m and2.6m bodies translated+/-100m",
+    "growthblocked noXZ ejection thenordinaryinputegress/grow",
+    "shrink andcollisionoptout",
+    "snapshotreplay acceptedheight andpawnidentity",
+    "invalid config/snapshot atomicity",
+    "capsule/voxel/flight retain dimensions"
+  ],
+  "limitations": [
+    "physical height remains independent from importedvisual targetHeight; game opts into a matching scalar",
+    "existing .3m heightfield radius and axis-separated conservative bounds remain",
+    "blocked growth does not resize or animatevisualmodel",
+    "explicitbeforeCommit/motion.setY policies retainauthority",
+    "no native appearance/interaction/FPS claim from numerical proof"
+  ],
+  "roadPlateFollowup": {
+    "actualBefore": ".scratch/characters/consumer/height-proportions/initial-height-readiness.json",
+    "owningBefore": ".scratch/characters/heightfield-height-road-before.log",
+    "fix": "Preflight uses canonical walkable support feet for currently grounded nonfloating actors and queries the requested span plus stepHeight; airborne and floating retain currentfeet",
+    "verification": {
+      "tests": 324,
+      "assertions": 1525,
+      "files": 21,
+      "log": ".scratch/characters/heightfield-height-road-owning.log",
+      "coreTypes": "passed",
+      "coreBuild": ".scratch/characters/heightfield-height-road-core-build.log",
+      "diffCheck": "passed"
+    },
+    "scope": [
+      "playerMovement.ts",
+      "playerMovement.test.ts"
+    ],
+    "status": "Exact final public packages passed original authored spawn and actual route; no game placement rewrite"
+  },
+  "localCommit": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "remoteCommit": "64122739eb0866a26e24da6f5118569172c8e94a",
+  "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "publicConsumerEvidence": ".scratch/characters/consumer/height-proportions/height-consumer-evidence.json",
+  "authoringLoops": {
+    "fullValidScrap": ".scratch/characters/consumer/height-proportions/scrap-full-authoring-result.json",
+    "LanternCatalogSlice": ".scratch/characters/consumer/height-proportions/authoring-loop-public-result.json",
+    "limitation": "Full Lantern save remains blocked by original dawn; data/runtime API loops do not prove complete native GUI loop"
+  },
+  "animationIntegration": ".scratch/characters/ik/height-animation-params-package-f4cbd717.json",
+  "nativeEligibility": ".scratch/characters/native/height-proportions/final4-native-eligibility.json"
+}

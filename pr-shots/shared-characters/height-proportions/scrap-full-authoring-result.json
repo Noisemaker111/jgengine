@@ -1,0 +1,44 @@
+{
+  "layer": "installed public package full original document configuration; motor and native appearance proof are separate",
+  "publicModules": {
+    "commands": "/workspace/JGengine/.scratch/characters/consumer/height-proportions/node_modules/@jgengine/core/dist/editor/commands.js",
+    "document": "/workspace/JGengine/.scratch/characters/consumer/height-proportions/node_modules/@jgengine/core/dist/editor/document.js",
+    "movementCatalog": "/workspace/JGengine/.scratch/characters/consumer/height-proportions/node_modules/@jgengine/core/dist/editor/movementCatalog.js"
+  },
+  "publicModuleHashes": {
+    "commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+    "document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+    "movementCatalog": "0b6be0f44072e5b7a118e3413188b03d981433ba3e11296413113bb4e7c32a65"
+  },
+  "packageManifestPath": "/workspace/JGengine/.scratch/characters/packages/final-f4cbd717/manifest.json",
+  "packageCohort": {
+    "commit": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+    "tree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+    "label": "unreleased built character candidate; no registry publication or shipped game adoption"
+  },
+  "originalPath": "/workspace/JGengine-games/scrap-signal/src/editor.scene.json",
+  "originalHash": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+  "catalogId": "player-motion",
+  "entryId": "reactor_hunter",
+  "inspected": [
+    1.8,
+    1.6
+  ],
+  "sourceValues": {
+    "walkSpeed": "scrap-signal/src/game/entities/players/catalog.ts:19",
+    "physics": "scrap-signal/src/world.ts:308",
+    "collisionHeight": "shared heightfield default1.8; temporary1.6 edits configuration only"
+  },
+  "markerCount": 438,
+  "fullSceneOutsideCatalogUnchanged": true,
+  "reloaded": {
+    "walkSpeed": 5.8,
+    "physics": {
+      "gravity": -30,
+      "jumpVelocity": 8.4
+    },
+    "movement": {
+      "collisionHeight": 1.8
+    }
+  }
+}

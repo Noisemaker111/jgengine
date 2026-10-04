@@ -1,0 +1,160 @@
+{
+  "version": 1,
+  "markers": [
+    {
+      "id": "spawn:player",
+      "kind": "player_spawn",
+      "position": {
+        "x": 0,
+        "y": 0,
+        "z": -275
+      },
+      "label": "Player spawn",
+      "meta": {
+        "clearance": 0
+      }
+    },
+    {
+      "id": "architecture:Odell workshop:160",
+      "kind": "prop",
+      "catalogId": "lantern:Roof_2x4_RoundTile",
+      "position": {
+        "x": 15.8,
+        "y": 0,
+        "z": -308
+      },
+      "rotationY": -1.5707963267948966,
+      "label": "Odell workshop",
+      "meta": {
+        "verticalOffset": 2.4,
+        "clearance": 0.2,
+        "building": "Odell workshop"
+      }
+    }
+  ],
+  "volumes": [],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": [
+    {
+      "id": "player-motion",
+      "schema": {
+        "fields": [
+          {
+            "key": "walkSpeed",
+            "label": "Walk speed",
+            "group": "movement",
+            "min": 0,
+            "step": 0.1,
+            "type": "number",
+            "default": 7
+          },
+          {
+            "key": "gravity",
+            "label": "Gravity",
+            "group": "jump",
+            "step": 0.5,
+            "type": "number",
+            "default": -16
+          },
+          {
+            "key": "jumpVelocity",
+            "label": "Jump velocity",
+            "group": "jump",
+            "min": 0,
+            "step": 0.1,
+            "type": "number",
+            "default": 6
+          },
+          {
+            "key": "stepHeight",
+            "label": "Step height",
+            "group": "movement",
+            "min": 0,
+            "step": 0.05,
+            "type": "number",
+            "default": 0.4
+          },
+          {
+            "key": "collisionHeight",
+            "label": "Collision height",
+            "group": "movement",
+            "min": 5e-324,
+            "step": 0.1,
+            "type": "number",
+            "default": 2.6
+          },
+          {
+            "key": "groundAcceleration",
+            "label": "Ground acceleration",
+            "group": "response",
+            "min": 0,
+            "step": 1,
+            "type": "number",
+            "default": 26
+          },
+          {
+            "key": "airAcceleration",
+            "label": "Air control",
+            "group": "response",
+            "min": 0,
+            "step": 1,
+            "type": "number",
+            "default": 12
+          },
+          {
+            "key": "groundFriction",
+            "label": "Braking",
+            "group": "response",
+            "min": 0,
+            "step": 1,
+            "type": "number",
+            "default": 18
+          },
+          {
+            "key": "runMultiplier",
+            "label": "Sprint multiplier",
+            "group": "movement",
+            "min": 0,
+            "step": 0.1,
+            "type": "number",
+            "default": 2.25
+          }
+        ],
+        "groups": [
+          {
+            "id": "movement",
+            "label": "Movement"
+          },
+          {
+            "id": "jump",
+            "label": "Jump"
+          },
+          {
+            "id": "response",
+            "label": "Response",
+            "collapsed": true
+          }
+        ]
+      },
+      "entries": [
+        {
+          "id": "player_hero",
+          "meta": {
+            "walkSpeed": 7,
+            "gravity": -16,
+            "jumpVelocity": 6,
+            "stepHeight": 0.4,
+            "groundAcceleration": 26,
+            "airAcceleration": 12,
+            "groundFriction": 18,
+            "runMultiplier": 2.25,
+            "collisionHeight": 2.6
+          }
+        }
+      ]
+    }
+  ]
+}

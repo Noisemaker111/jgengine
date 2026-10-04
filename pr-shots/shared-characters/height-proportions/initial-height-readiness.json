@@ -1,0 +1,59 @@
+{
+  "cohort": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "height": 2.6,
+  "authoredSpawn": [
+    0,
+    7.244763548770163,
+    -275
+  ],
+  "blocking": [
+    {
+      "object": {
+        "instanceId": "street:market-cobbles",
+        "catalogId": "lantern:market-cobbles",
+        "position": [
+          0,
+          7.244763548770163,
+          -279
+        ],
+        "rotationY": 0
+      },
+      "collider": {
+        "name": "body",
+        "purpose": "physical",
+        "shape": {
+          "kind": "aabb",
+          "halfExtents": [
+            13,
+            0.010000187437981367,
+            4
+          ],
+          "offset": [
+            0,
+            0.029999803025275468,
+            0
+          ]
+        },
+        "damageEligible": false,
+        "blocks": true
+      },
+      "obstacle": {
+        "position": [
+          0,
+          7.244763548770163,
+          -279
+        ],
+        "offset": [
+          0,
+          0.029999803025275468,
+          0
+        ],
+        "halfExtents": [
+          13,
+          0.010000187437981367,
+          4
+        ]
+      }
+    }
+  ]
+}
