@@ -12,7 +12,7 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
   await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
-  for (const pkg of ["react", "react-dom", "three", "@react-three/fiber"]) {
+  for (const pkg of ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"]) {
     const owner = pkg === "react-dom" ? "react" : "shell";
     await symlink(resolve(import.meta.dir, "../../../../packages", owner, "node_modules", pkg), `${scratch}/node_modules/${pkg}`, "dir");
   }
