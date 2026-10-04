@@ -1,0 +1,21 @@
+{
+  "before": "4955a4444167b22650e929f807a7d4572375d261",
+  "after": "4004ec17cac406fa33d157149c15b82c444f1144",
+  "normalLifecycle": "onInit\u2192onNewPlayer\u2192character.pick(gunk)",
+  "exactCasePhysicalIdentity": true,
+  "cases": [
+    "walk",
+    "sprint",
+    "crouch",
+    "sprintCrouch",
+    "jump",
+    "crouchJump"
+  ],
+  "ratios": {
+    "sprint": 2.250000000000408,
+    "crouch": 0.44999999999942863,
+    "sprintCrouch": 0.44999999999942863
+  },
+  "beforeCallbackPolicyPreserved": true,
+  "noDocumentPositionRewrite": true
+}

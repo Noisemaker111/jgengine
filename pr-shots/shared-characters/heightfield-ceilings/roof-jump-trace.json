@@ -1,0 +1,233 @@
+{
+  "label": "Numerical installed-package simulation; not native appearance or hardware performance evidence",
+  "inputs": [
+    {
+      "variant": "before",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/heightfield-ceilings/roof-before.json",
+      "sha256": "0caa91300760219fae0d9978a82f2bf525002a31041b2798c763041e75a7f337",
+      "cohort": "4955a4444167b22650e929f807a7d4572375d261",
+      "gameSource": "45a50523cae2021c412aa83ce50589d806dd96d9",
+      "packageManifest": {
+        "path": "/workspace/JGengine/.scratch/characters/consumer/heightfield-ceilings/baseline-package-manifest.json",
+        "sha256": "02def7dc9aa4ef1641c4ed8fdbffdc5ea92733fd6821f330f470900f829eb14c",
+        "tree": "399e4d76a29c416f41fc454c220afdf206736b84",
+        "packages": [
+          {
+            "name": "@jgengine/core",
+            "version": "0.19.0",
+            "sha256": "10580d6cb90e196c5d5eb796f459ab210e6cec81a12adec89ec192679a3ed7d1"
+          },
+          {
+            "name": "@jgengine/rapier",
+            "version": "0.19.0",
+            "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c"
+          },
+          {
+            "name": "@jgengine/ws",
+            "version": "0.19.0",
+            "sha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995"
+          },
+          {
+            "name": "@jgengine/sql",
+            "version": "0.19.0",
+            "sha256": "afa66ad7fba962c837b8604a0b836189401badc3392f13d93666673b8bd16664"
+          },
+          {
+            "name": "@jgengine/navbake",
+            "version": "0.19.0",
+            "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48"
+          },
+          {
+            "name": "@jgengine/react",
+            "version": "0.19.0",
+            "sha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0"
+          },
+          {
+            "name": "@jgengine/convex",
+            "version": "0.19.0",
+            "sha256": "c5b9df18576ea43ebb889e92eb854d61d405379e24665e16779a4035cdd455f6"
+          },
+          {
+            "name": "@jgengine/node",
+            "version": "0.19.0",
+            "sha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9"
+          },
+          {
+            "name": "@jgengine/shell",
+            "version": "0.19.0",
+            "sha256": "c5e84f6835ed8f743ef892caae3f42199c2aa64dea30c62e162a0f6f1db0627a"
+          },
+          {
+            "name": "@jgengine/editor",
+            "version": "0.19.0",
+            "sha256": "2b2b0399a2ffa582c2e4340c7c84f3138dd428d16812c112d7db987beb69632b"
+          },
+          {
+            "name": "@jgengine/assets",
+            "version": "0.19.0",
+            "sha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675"
+          },
+          {
+            "name": "@jgengine/github",
+            "version": "0.6.0",
+            "sha256": "7ef7a1329bdc14646235e6a55c6c7c3e35e2edc3502817510e8e0ee6e497ba5d"
+          },
+          {
+            "name": "jgengine",
+            "version": "0.16.0",
+            "sha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876"
+          }
+        ]
+      }
+    },
+    {
+      "variant": "after",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/heightfield-ceilings/roof-after.json",
+      "sha256": "0deac4cc88371ca9b97c43f8252852610679bcb8948c67b3d55885ffff58bf08",
+      "cohort": "4004ec17cac406fa33d157149c15b82c444f1144",
+      "gameSource": "45a50523cae2021c412aa83ce50589d806dd96d9",
+      "packageManifest": {
+        "path": "/workspace/JGengine/.scratch/characters/consumer/heightfield-ceilings/candidate-package-manifest.json",
+        "sha256": "8b3a4193a87c9ce6d1e2960a2653834c7f25d014b7c21f7941464161ff9018b2",
+        "tree": "513bc599d80db71b3337ca1905fd8659f58d1ef5",
+        "packages": [
+          {
+            "name": "@jgengine/core",
+            "version": "0.19.0",
+            "sha256": "1027ecd4325037a0b9b8a5424cfcb7cccf681fbafdc4c1a0cae773fa6ead2e2b"
+          },
+          {
+            "name": "@jgengine/rapier",
+            "version": "0.19.0",
+            "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c"
+          },
+          {
+            "name": "@jgengine/ws",
+            "version": "0.19.0",
+            "sha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995"
+          },
+          {
+            "name": "@jgengine/sql",
+            "version": "0.19.0",
+            "sha256": "afa66ad7fba962c837b8604a0b836189401badc3392f13d93666673b8bd16664"
+          },
+          {
+            "name": "@jgengine/navbake",
+            "version": "0.19.0",
+            "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48"
+          },
+          {
+            "name": "@jgengine/react",
+            "version": "0.19.0",
+            "sha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0"
+          },
+          {
+            "name": "@jgengine/convex",
+            "version": "0.19.0",
+            "sha256": "c5b9df18576ea43ebb889e92eb854d61d405379e24665e16779a4035cdd455f6"
+          },
+          {
+            "name": "@jgengine/node",
+            "version": "0.19.0",
+            "sha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9"
+          },
+          {
+            "name": "@jgengine/shell",
+            "version": "0.19.0",
+            "sha256": "fbb66104e38e82413237a4a2f882eb5e1d2c5799a5c5a1a5c58ac4d0d49e5bf4"
+          },
+          {
+            "name": "@jgengine/editor",
+            "version": "0.19.0",
+            "sha256": "2b2b0399a2ffa582c2e4340c7c84f3138dd428d16812c112d7db987beb69632b"
+          },
+          {
+            "name": "@jgengine/assets",
+            "version": "0.19.0",
+            "sha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675"
+          },
+          {
+            "name": "@jgengine/github",
+            "version": "0.6.0",
+            "sha256": "7ef7a1329bdc14646235e6a55c6c7c3e35e2edc3502817510e8e0ee6e497ba5d"
+          },
+          {
+            "name": "jgengine",
+            "version": "0.16.0",
+            "sha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876"
+          }
+        ]
+      }
+    }
+  ],
+  "marker": {
+    "id": "architecture:Odell workshop:160",
+    "kind": "prop",
+    "catalogId": "lantern:Roof_2x4_RoundTile",
+    "position": {
+      "x": 15.8,
+      "y": 0,
+      "z": -308
+    },
+    "rotationY": -1.5707963267948966,
+    "label": "Odell workshop",
+    "meta": {
+      "verticalOffset": 2.4,
+      "clearance": 0.2,
+      "building": "Odell workshop"
+    }
+  },
+  "modelSha256": "813dcef47e0d705da2203b0f3cfa3ef06fd88c5485c716165547cf0515f8d178",
+  "roofBoundsUndersideWorldY": 9.303211291232321,
+  "physicalHeight": 1.8,
+  "visualTargetHeight": 2.6,
+  "route": {
+    "walkingSteps": 361,
+    "walkingDt": 0.008333333333333333,
+    "brakingSteps": 120,
+    "brakingDt": 0.008333333333333333,
+    "jumpSteps": 24,
+    "jumpDt": 0.016666666666666666,
+    "authoredSpawn": [
+      0,
+      7.244763548770163,
+      -275
+    ],
+    "brakedAt": [
+      15.575108242034911,
+      7.244763548770163,
+      -308.1281545952859
+    ]
+  },
+  "derivations": {
+    "time_s": "(frame + 1) / 60; initial point from the recorded braked position at t=0",
+    "head_y_m": "recorded feet Y + recorded physical height",
+    "xz_displacement_m": "Euclidean XZ distance from recorded braked position",
+    "step_xz_shift_m": "recorded horizontalShift, independently checked against consecutive XZ coordinates"
+  },
+  "maximums": {
+    "before": {
+      "headPenetration_m": 0.8171078130933989,
+      "xzDisplacement_m": 1.8195544892249131,
+      "stepXzShift_m": 1.8195544892249131
+    },
+    "after": {
+      "headPenetration_m": -2.1316282072803006e-14,
+      "xzDisplacement_m": 0.0,
+      "stepXzShift_m": 0.0
+    }
+  },
+  "limitations": [
+    "Conservative roof outer bounds do not represent exact interior triangle clearance.",
+    "Physical 1.8 m clearance does not prove clearance of the 2.6 m visual model.",
+    "Image decoding was skipped by the numerical fixture.",
+    "No native host or daemon was launched for this figure.",
+    "No registry release or published game adoption occurred."
+  ],
+  "artifacts": {
+    "plot_roof_trace.py": "6717c7f9ddecef3e5e4eeeb3513723874f57cb6d457d11137f443a02afd32278",
+    "roof-jump-trace.csv": "7f5dbbbb530e47ad51dd28582c71d96e94c6635c53d121567c40fdba330e49d7",
+    "roof-jump-trace.png": "7e7e9d8f0cfc3af5c6bfad6df849af59d7ad705865f2f68b76edd004587880a8",
+    "roof-jump-trace.svg": "465ed2c13dd7e96c3d5bec12054a436c9416663edc5af86f94d6ca0a80e5e56f"
+  }
+}

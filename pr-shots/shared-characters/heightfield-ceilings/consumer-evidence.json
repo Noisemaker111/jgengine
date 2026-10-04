@@ -1,0 +1,249 @@
+{
+  "claim": "Actual unchanged Lantern authored roof reproduces missing heightfield ceiling collision through installed public packages; numerical simulation, no native appearance/interaction claim",
+  "before": {
+    "commit": "4955a4444167b22650e929f807a7d4572375d261",
+    "manifest": "baseline-package-manifest.json",
+    "sourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "sourceProvenance": "source-provenance.json",
+    "originalSourceFilesByteEqual": 212,
+    "modelUrl": "/models/lantern-reach/scenery/Roof_2x4_RoundTile.glb",
+    "glbSha256": "813dcef47e0d705da2203b0f3cfa3ef06fd88c5485c716165547cf0515f8d178",
+    "marker": "architecture:Odell workshop:160",
+    "catalogId": "lantern:Roof_2x4_RoundTile",
+    "roofCollider": "renderer-measured mesh collider; heightfield conservatively uses outer AABB, no compound openings",
+    "undersideY": 9.303211291232321,
+    "feetY": 7.244763548770163,
+    "physicalHeadSpan": 1.8,
+    "legalStandingCandidates": 434,
+    "normalAuthoredSpawnRoute": {
+      "spawn": [
+        0,
+        7.244763548770163,
+        -275
+      ],
+      "walkedTo": [
+        15.509807083079815,
+        7.244763548770163,
+        -307.94570049979154
+      ],
+      "brakedAt": [
+        15.575108242034911,
+        7.244763548770163,
+        -308.1281545952859
+      ],
+      "walkFrames": 361,
+      "brakeFrames": 120,
+      "walkDt": 0.008333333333333333,
+      "jumpDt": 0.016666666666666666,
+      "positionRewrite": false,
+      "headingPolicy": "perstep cameraYaw atan2(target-current), distance-based existing analog input; normal released inputs brake",
+      "beforeJumpGrounded": true,
+      "firstHeadPenetration": {
+        "frame": 2,
+        "meters": 0.01488559087117558
+      },
+      "firstNoInputHorizontalEjection": {
+        "frame": 3,
+        "meters": 1.8195544892249131
+      }
+    },
+    "fullProof": "roof-before.json",
+    "script": "roof-before.ts",
+    "packageBoundary": {
+      "kind": "actual installed tarballs; no SDK source aliases",
+      "manifestTarballsHashed": 13,
+      "installedPackages": [
+        "@jgengine/core",
+        "@jgengine/ws",
+        "@jgengine/navbake",
+        "@jgengine/react",
+        "@jgengine/node",
+        "@jgengine/shell",
+        "@jgengine/editor",
+        "@jgengine/assets",
+        "jgengine"
+      ],
+      "unusedCohortPackages": [
+        "@jgengine/rapier",
+        "@jgengine/sql",
+        "@jgengine/convex",
+        "@jgengine/github"
+      ],
+      "fixtureDependencyPath": "node_modules -> ../rig-slots/node_modules (preserved4955 install, before only)"
+    },
+    "installedExportHashes": [
+      {
+        "path": "@jgengine/core/dist/movement/playerMovement.js",
+        "sha256": "505c35afab12952c6640cb2aeca93b50478b9556aa59e3f5bbeef1575e1c9b03"
+      },
+      {
+        "path": "@jgengine/core/dist/movement/movementModel.js",
+        "sha256": "83461bf7e423e44733724193bc043187507f46dbb59809bcd91e3360ee8fe9cc"
+      },
+      {
+        "path": "@jgengine/core/dist/movement/solidObstacles.js",
+        "sha256": "f5337a2edc526c59e9cac67c656832f403242845310df257328ff0f249623bf5"
+      },
+      {
+        "path": "@jgengine/core/dist/scene/colliders.js",
+        "sha256": "f043069b4dbd39daaa3591f42595ba48649d0a53df3f4ffd4942253ddb129fed"
+      },
+      {
+        "path": "@jgengine/shell/dist/render/measureBounds.js",
+        "sha256": "e8d926d7107474e21cbc3ef4e073999640ae603da907b9b97b9ff50bf5c567c7"
+      },
+      {
+        "path": "@jgengine/shell/dist/render/measureCollisionMesh.js",
+        "sha256": "9f3c061e986fe7129cf4245c0a084a415507e778b941cdab4988584b50215ff8"
+      },
+      {
+        "path": "@jgengine/shell/dist/render/modelRender.js",
+        "sha256": "c22e61f6b201c99e5115ef448c8549dab0dd3488760a77519877d8d413c835b5"
+      }
+    ]
+  },
+  "scrapControl": {
+    "marker": "reactor_gate",
+    "modelUrl": "/models/quaternius-modular-scifi/Door_Frame_SquareTall.glb",
+    "glbSha256": "437f42a880e96310e12ba1552064ff1b28cc67cf8278ab6209b34a3f5b5c52db",
+    "result": "actual tall door frame has opaque whole outer AABB extending from ground; renderer supplies no compound boxes, so no usable doorway head-bump claim"
+  },
+  "after": {
+    "commit": "4004ec17cac406fa33d157149c15b82c444f1144",
+    "tree": "513bc599d80db71b3337ca1905fd8659f58d1ef5",
+    "manifest": "candidate-package-manifest.json",
+    "allManifestTarballsSha256Verified": 13,
+    "installedPackageCount": 9,
+    "installedFilesByteVerified": 2336,
+    "verification": "installed-package-verification.json",
+    "originalSourceFilesStillByteEqual": 212,
+    "originalBeforeArtifactsStillByteEqual": true,
+    "sameImportedColliderModelMarkerAndNormalRoute": true,
+    "normalRoute": {
+      "walkFrames": 361,
+      "authoredSpawn": [
+        0,
+        7.244763548770163,
+        -275
+      ],
+      "walkedTo": [
+        15.509807083079815,
+        7.244763548770163,
+        -307.94570049979154
+      ],
+      "brakedAt": [
+        15.575108242034911,
+        7.244763548770163,
+        -308.1281545952859
+      ],
+      "positionRewrite": false,
+      "maxHeadPenetrationMeters": -2.1316282072803006e-14,
+      "maxNoInputHorizontalShiftMeters": 0,
+      "firstCeilingStoppedFrame": 2,
+      "ceilingContactVerticalVelocity": 0,
+      "finalGrounded": true
+    },
+    "directColliderDerivedStandingFixture": {
+      "legalStandingCandidates": 434,
+      "maxNoInputHorizontalShiftMeters": 0,
+      "firstHeadPenetration": null,
+      "firstHorizontalEjection": null
+    },
+    "fullProof": "roof-after.json",
+    "script": "roof-after.ts",
+    "scrapOriginalNormalControls": {
+      "proof": "scrap-controls.json",
+      "beforeProof": "scrap-controls-before.json",
+      "comparison": "scrap-controls-comparison.json",
+      "before": "4955a4444167b22650e929f807a7d4572375d261",
+      "after": "4004ec17cac406fa33d157149c15b82c444f1144",
+      "normalLifecycle": "onInit\u2192onNewPlayer\u2192character.pick(gunk)",
+      "exactCasePhysicalIdentity": true,
+      "cases": [
+        "walk",
+        "sprint",
+        "crouch",
+        "sprintCrouch",
+        "jump",
+        "crouchJump"
+      ],
+      "ratios": {
+        "sprint": 2.250000000000408,
+        "crouch": 0.44999999999942863,
+        "sprintCrouch": 0.44999999999942863
+      },
+      "beforeCallbackPolicyPreserved": true,
+      "noDocumentPositionRewrite": true
+    },
+    "publicConsumerChecks": {
+      "scrap-signal": {
+        "types": "PASS",
+        "build": "PASS",
+        "buildSeconds": 25.54,
+        "typesLog": "public-scrap-signal-types.log",
+        "buildLog": "public-scrap-signal-build.log"
+      },
+      "lantern-reach": {
+        "types": "4 pre-existing Promise dispatch errors in ActionBar.tsx:57/Dialogue.tsx:68, same as earlier4955",
+        "build": "PASS",
+        "buildSeconds": 32.07,
+        "typesLog": "public-lantern-reach-types.log",
+        "buildLog": "public-lantern-reach-build.log"
+      }
+    },
+    "native": "No new capture; read-only eligibility review preserved. Numerical trace visualization native/heightfield-ceilings/roof-jump-trace.png, no appearance/performance claim."
+  },
+  "limitations": [
+    "No native Lantern roof capture: prior two rendering failures remain unresolved; native feedback-route macro unproven. See native/heightfield-ceilings/eligibility-review.json.",
+    "Lantern visual rig targetHeight2.6 differs existing heightfield physical span1.8; proportions remain separate.",
+    "Outer roof AABB conservatively stops at bounding underside, not exact pitched triangles.",
+    "GLTF material image decoding skipped for geometry-only numerical proof.",
+    "Unreleased built candidate; no published adoption or game source/dependency edits."
+  ],
+  "artifactHashes": [
+    {
+      "path": "roof-before.ts",
+      "sha256": "a99f0078c68dff26281e111edfb1864adc260e6c9099c1e746082e992b317136"
+    },
+    {
+      "path": "roof-before.json",
+      "sha256": "0caa91300760219fae0d9978a82f2bf525002a31041b2798c763041e75a7f337"
+    },
+    {
+      "path": "roof-after.ts",
+      "sha256": "8dc5985bbfd3bdc15b1c3b459b446eb0001cdae87304c43bd0ce90dcbd508014"
+    },
+    {
+      "path": "roof-after.json",
+      "sha256": "0deac4cc88371ca9b97c43f8252852610679bcb8948c67b3d55885ffff58bf08"
+    },
+    {
+      "path": "candidate-package-manifest.json",
+      "sha256": "8b3a4193a87c9ce6d1e2960a2653834c7f25d014b7c21f7941464161ff9018b2"
+    },
+    {
+      "path": "installed-package-verification.json",
+      "sha256": "9c18ddfa1c7b0cc060219f189b13b2c75a4be528e529e0e9b37bbabb98a26df9"
+    },
+    {
+      "path": "source-provenance.json",
+      "sha256": "2c762d4cac792298f66a0537659c4d77df67afa236a926496030b4048dd60bce"
+    },
+    {
+      "path": "scrap-controls.ts",
+      "sha256": "9a51a37a7a600496408cf073819b4f47f95b104e8873c4eb9c8e00a66a9714e9"
+    },
+    {
+      "path": "scrap-controls.json",
+      "sha256": "73f452685896ab972a95288d830fc98d4c47f8238cc0a9d3ef83fc566e590359"
+    },
+    {
+      "path": "scrap-controls-before.json",
+      "sha256": "ef82fca7c197628235c726ff002a7780ea198f514587e8cb833268a8b3447a59"
+    },
+    {
+      "path": "scrap-controls-comparison.json",
+      "sha256": "a7945737aac85010a5c17bd5e9008e518cc3ed565305b1b509671a593764965d"
+    }
+  ]
+}
