@@ -1,4 +1,5 @@
-import { parseAnimGraph, type AnimGraph } from "@jgengine/core/anim/animGraph";
+import type { AnimGraph } from "@jgengine/core/anim/animGraph";
+import { readAuthoredAnimation, type AuthoredAnimationDiagnostic, type AuthoredAnimationDocumentLike } from "@jgengine/core/world/authoredAnimation";
 import { animGraphFromConfig } from "@jgengine/core/anim/locomotionGraph";
 import { resolveAnimationConfig, rolesFromClips } from "@jgengine/core/game/clipRoles";
 
@@ -64,40 +65,18 @@ export type AnimationSetting = AuthoredAnimationConfig | "auto" | "none";
 /** Which authoring mode a stored setting represents. `default` = no override key. */
 export type AnimationMode = "default" | "auto" | "none" | "custom";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+/** Reads a whole valid override, retaining authored fields; malformed values return undefined. */
+export function readAnimationSetting(meta: Record<string, unknown> | undefined): AnimationSetting | undefined {
+  return readAnimationSettingResult({ markers: [{ id: "animation", meta }] }, "animation").setting;
 }
 
-/** Reads and shape-validates the animation override from a marker's meta; undefined when absent/invalid. */
-export function readAnimationSetting(meta: Record<string, unknown> | undefined): AnimationSetting | undefined {
-  const value = meta?.["animation"];
-  if (value === "auto" || value === "none") return value;
-  if (!isRecord(value)) return undefined;
-  const config: AuthoredAnimationConfig = {};
-  if (typeof value["clip"] === "string") config.clip = value["clip"];
-  if (typeof value["loop"] === "boolean") config.loop = value["loop"];
-  if (typeof value["timeScale"] === "number" && Number.isFinite(value["timeScale"])) config.timeScale = value["timeScale"];
-  if (typeof value["paused"] === "boolean") config.paused = value["paused"];
-  if (typeof value["time"] === "number" && Number.isFinite(value["time"])) config.time = value["time"];
-  if (isRecord(value["states"])) {
-    const raw = value["states"];
-    const states: AuthoredAnimationStates = {};
-    for (const role of LOCOMOTION_ROLES) if (typeof raw[role] === "string") states[role] = raw[role] as string;
-    for (const key of LOCOMOTION_NUMBERS) if (typeof raw[key] === "number" && Number.isFinite(raw[key])) states[key] = raw[key] as number;
-    config.states = states;
-  }
-  if (isRecord(value["oneShots"])) {
-    const raw = value["oneShots"];
-    const oneShots: Record<string, string | readonly string[]> = {};
-    for (const [event, clip] of Object.entries(raw)) {
-      if (typeof clip === "string") oneShots[event] = clip;
-      else if (Array.isArray(clip) && clip.length > 0 && clip.every((variant) => typeof variant === "string")) oneShots[event] = [...clip];
-    }
-    if (Object.keys(oneShots).length > 0) config.oneShots = oneShots;
-  }
-  const graph = parseAnimGraph(value["graph"]);
-  if (graph !== undefined) config.graph = graph;
-  return config;
+/** Validates a placement's animation with its saved-document repair locations. @internal */
+export function readAnimationSettingResult(
+  document: AuthoredAnimationDocumentLike,
+  markerId: string,
+): { setting: AnimationSetting | undefined; diagnostics: readonly AuthoredAnimationDiagnostic[] } {
+  const result = readAuthoredAnimation(document, markerId);
+  return { setting: result.animation as AnimationSetting | undefined, diagnostics: result.diagnostics };
 }
 
 /** The authoring mode a stored setting maps to. */
@@ -110,12 +89,6 @@ export function animationMode(setting: AnimationSetting | undefined): AnimationM
 
 function asConfig(setting: AnimationSetting | undefined): AuthoredAnimationConfig {
   return setting !== undefined && setting !== "auto" && setting !== "none" ? setting : {};
-}
-
-function normalizeConfig(config: AuthoredAnimationConfig): AuthoredAnimationConfig {
-  const next: AuthoredAnimationConfig = { ...config };
-  if (next.oneShots !== undefined && Object.keys(next.oneShots).length === 0) delete next.oneShots;
-  return next;
 }
 
 /**
@@ -132,7 +105,7 @@ export function setAnimationMode(
   if (mode === "auto") return "auto";
   if (mode === "none") return "none";
   if (setting !== undefined && setting !== "auto" && setting !== "none") return setting;
-  return normalizeConfig(defaultCustomConfig(clips));
+  return defaultCustomConfig(clips);
 }
 
 /** A concrete custom config derived from a rigged asset's clip roles — the `custom` mode seed. */
@@ -164,7 +137,7 @@ export function setLocomotionClip(
   const states: AuthoredAnimationStates = { ...(config.states ?? (clipName === null ? undefined : defaultCustomConfig(clips).states)) };
   if (clipName === null) delete states[role];
   else states[role] = clipName;
-  return normalizeConfig({ ...config, ...(config.states !== undefined || Object.keys(states).length > 0 ? { states } : {}) });
+  return { ...config, ...(config.states !== undefined || Object.keys(states).length > 0 ? { states } : {}) };
 }
 
 /** Sets or clears (null) a numeric locomotion tuning. */
@@ -178,7 +151,7 @@ export function setLocomotionNumber(
   const states: AuthoredAnimationStates = { ...(config.states ?? (value === null || !Number.isFinite(value) ? undefined : defaultCustomConfig(clips).states)) };
   if (value === null || !Number.isFinite(value)) delete states[key];
   else states[key] = value;
-  return normalizeConfig({ ...config, ...(config.states !== undefined || Object.keys(states).length > 0 ? { states } : {}) });
+  return { ...config, ...(config.states !== undefined || Object.keys(states).length > 0 ? { states } : {}) };
 }
 
 /** Binds or clears (null) a one-shot event's clip or variant list. */
@@ -191,7 +164,9 @@ export function setOneShotClip(
   const oneShots: Record<string, string | readonly string[]> = { ...config.oneShots };
   if (clipName === null || (Array.isArray(clipName) && clipName.length === 0)) delete oneShots[event];
   else oneShots[event] = typeof clipName === "string" ? clipName : clipName.length === 1 ? clipName[0]! : [...clipName];
-  return normalizeConfig({ ...config, oneShots });
+  const next: AuthoredAnimationConfig = { ...config, oneShots };
+  if (Object.keys(oneShots).length === 0) delete next.oneShots;
+  return next;
 }
 
 /** Sets a single playback clip, explicitly replacing speed-driven states and a stored graph. @internal */
@@ -263,15 +238,14 @@ export function effectiveAnimGraph(
 
 /** Stores `graph` on the placement, keeping its other fields; the stored graph wins at play time. */
 export function storeAnimGraph(setting: AnimationSetting | undefined, graph: AnimGraph): AuthoredAnimationConfig {
-  return normalizeConfig({ ...asConfig(setting), graph });
+  return { ...asConfig(setting), graph };
 }
 
 /** Removes a stored graph so `states`/`oneShots` (or clip roles) drive the placement again. */
 export function clearAnimGraph(setting: AnimationSetting | undefined): AnimationSetting | undefined {
   if (setting === undefined || setting === "auto" || setting === "none") return setting;
   const { graph: _graph, ...rest } = setting;
-  const next = normalizeConfig(rest);
-  return Object.keys(next).length === 0 ? undefined : next;
+  return Object.keys(rest).length === 0 ? undefined : rest;
 }
 
 /**
