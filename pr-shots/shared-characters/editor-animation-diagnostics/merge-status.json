@@ -1,0 +1,21 @@
+{
+  "pr": 1967,
+  "state": "MERGED",
+  "head": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+  "mergeCommit": "560ade4e0ce52833b8f134140613c4b6e3cb5fb8",
+  "mergedAtUTC": "2026-10-04T04:47:22Z",
+  "sourceCommit": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "sourceTree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+  "CI": {
+    "run": 37176683837,
+    "attempt": 2,
+    "allSixChecks": "PASS",
+    "failedJobsReruns": 1,
+    "firstHUDHookTimeoutsPreserved": true,
+    "cause": "Unestablished; bounded local five-test PASS and CI retry PASS are separate observations."
+  },
+  "completeProofArchive": "000bff4f3498be4e4c14bdaf859aa039e5396601",
+  "finalCIArchive": "0a28915104fbbd5aa5beb46db9765a8aed89d6f5",
+  "cohortLimits": "d355 BEFORE, eac intermediate native clipped path, and f704 final wrapped native path remain separately attributed. Native configuration only; no rig appearance, play/feel/FPS or published game adoption.",
+  "actions": "Archive-only merge receipt; no product/source/PR changes or old evidence rewritten."
+}
