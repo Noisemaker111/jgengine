@@ -283,6 +283,7 @@ function buildGraphPlayback(scene: THREE.Object3D, mixer: THREE.AnimationMixer, 
  * `entity.animation` / `combat.hitReaction` / `entity.died`, held poses, and the death clamp.
  * With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight
  * and the mixer only applies them; clip events surface as `animation.event`.
+ * Equivalent same-order config data retains playback across rerenders; actual data edits reset it.
  */
 export function useModelAnimation(
   scene: THREE.Object3D,
@@ -298,13 +299,17 @@ export function useModelAnimation(
 
   // "auto" (stamped by catalog resolution, or set inline) derives states/one-shots from the
   // loaded GLB's actual clip names; "none" and absent render the bind pose.
+  // Equivalent fresh JSON data retains playback, pending triggers and visual RNG.
+  // The private snapshot observes edits on render, including reused nested objects.
+  // Preserve one-shot insertion order: simultaneous non-death triggers depend on it.
+  const animationKey = JSON.stringify(animationInput);
   const animation = useMemo(
     () =>
       resolveAnimationConfig(
-        animationInput,
+        animationKey === undefined ? undefined : JSON.parse(animationKey) as ModelAnimationConfig | "auto" | "none",
         clips.map((clip) => clip.name),
       ),
-    [animationInput, clips],
+    [animationKey, clips],
   );
 
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
