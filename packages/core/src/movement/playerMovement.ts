@@ -143,6 +143,12 @@ export interface PlayerMovementTelemetry {
   grounded: boolean;
   verticalVelocity: number;
   crouching: boolean;
+  /** Accepted physical height for heightfield walking; absent for other collision paths. */
+  collisionHeight?: number;
+  /** Live authored height requested for this completed heightfield step. */
+  requestedCollisionHeight?: number;
+  /** Growth is waiting for headroom; the accepted physical height remains collisionHeight. */
+  collisionHeightBlocked?: boolean;
 }
 
 interface PlayerMovementState {
@@ -157,6 +163,8 @@ interface PlayerMovementState {
   jumpBuffer: InputBuffer | null;
   /** Controller state restored before the capsule exists; applied when it is created. */
   pendingController: CharacterControllerState | null;
+  heightfieldHeight: number | null;
+  heightfieldEntityId: string | null;
   entityId: string | null;
   telemetry: PlayerMovementTelemetry | null;
 }
@@ -194,6 +202,8 @@ function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState 
       controllerJumpHeld: false,
       jumpBuffer: null,
       pendingController: null,
+      heightfieldHeight: null,
+      heightfieldEntityId: null,
       entityId: null,
       telemetry: null,
     };
@@ -205,6 +215,12 @@ function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState 
 function invalidateTelemetry(state: PlayerMovementState): void {
   state.entityId = null;
   state.telemetry = null;
+}
+
+function validateCollisionHeight(height: number): void {
+  if (!Number.isFinite(height) || height <= 0) {
+    throw new RangeError("PlayerMovementConfig.collisionHeight must be finite and positive.");
+  }
 }
 
 function retuneController(state: PlayerMovementState, config: CharacterControllerConfig): void {
@@ -242,12 +258,24 @@ function updateTelemetry(
   grounded: boolean,
   verticalVelocity: number,
   crouching: boolean,
+  collisionHeight?: number,
+  requestedCollisionHeight?: number,
+  collisionHeightBlocked?: boolean,
 ): void {
   state.entityId = entityId;
   const telemetry = state.telemetry ??= { grounded, verticalVelocity, crouching };
   telemetry.grounded = grounded;
   telemetry.verticalVelocity = verticalVelocity;
   telemetry.crouching = crouching;
+  if (collisionHeight === undefined) {
+    delete telemetry.collisionHeight;
+    delete telemetry.requestedCollisionHeight;
+    delete telemetry.collisionHeightBlocked;
+  } else {
+    telemetry.collisionHeight = collisionHeight;
+    telemetry.requestedCollisionHeight = requestedCollisionHeight;
+    telemetry.collisionHeightBlocked = collisionHeightBlocked;
+  }
 }
 
 /**
@@ -281,6 +309,10 @@ export interface PlayerMovementSnapshot {
   controllerJumpHeld: boolean;
   /** Buffered jump presses; absent in snapshots taken before jump buffering existed. */
   jumpBuffer?: InputBufferSnapshot | null;
+  /** Accepted heightfield body height. Older walking snapshots retain their historical 1.8m span. */
+  heightfieldHeight?: number | null;
+  /** Pawn that accepted heightfieldHeight; omission binds legacy dimensions to the active pawn on restore. */
+  heightfieldEntityId?: string | null;
 }
 
 function copyController(state: CharacterControllerState): CharacterControllerState {
@@ -301,11 +333,21 @@ export function snapshotPlayerMovement(ctx: GameContext, userId: string): Player
     controller: controller === null ? null : copyController(controller),
     controllerJumpHeld: state.controllerJumpHeld,
     jumpBuffer: state.jumpBuffer?.snapshot() ?? null,
+    heightfieldHeight: state.heightfieldHeight,
+    heightfieldEntityId: state.heightfieldEntityId,
   };
 }
 
 /** Put a player's movement state back to a {@link snapshotPlayerMovement} copy, so the next {@link stepPlayerMovement} replays from there. */
 export function restorePlayerMovement(ctx: GameContext, userId: string, snapshot: PlayerMovementSnapshot): void {
+  const heightfieldHeight = snapshot.heightfieldHeight === undefined
+    ? (snapshot.motion === null ? null : DEFAULT_OBSTACLE_PLAYER_HEIGHT) : snapshot.heightfieldHeight;
+  if (heightfieldHeight !== null) validateCollisionHeight(heightfieldHeight);
+  const heightfieldEntityId = snapshot.heightfieldEntityId === undefined
+    ? (heightfieldHeight === null ? null : ctx.player.possession.active(userId)) : snapshot.heightfieldEntityId;
+  if (heightfieldEntityId !== null && typeof heightfieldEntityId !== "string") {
+    throw new RangeError("PlayerMovementSnapshot.heightfieldEntityId must be a string or null.");
+  }
   const state = stateFor(storeFor(ctx), userId);
   invalidateTelemetry(state);
   state.heading = snapshot.heading;
@@ -313,6 +355,8 @@ export function restorePlayerMovement(ctx: GameContext, userId: string, snapshot
   state.voxelBody = snapshot.voxelBody === null ? null : { ...snapshot.voxelBody };
   state.motion = snapshot.motion === null ? null : { ...snapshot.motion };
   state.flight = snapshot.flight === null ? null : { ...snapshot.flight };
+  state.heightfieldHeight = heightfieldHeight;
+  state.heightfieldEntityId = heightfieldEntityId;
   state.controllerJumpHeld = snapshot.controllerJumpHeld;
   const jumpBuffer = snapshot.jumpBuffer ?? null;
   if (jumpBuffer === null) {
@@ -418,18 +462,47 @@ export function stepPlayerMovement(
   const store = storeFor(ctx);
   const state = stateFor(store, userId);
 
+  // Validate authored dimensions before heading, stance or queued motion can change.
+  const flightTuning = flightTuningFor(tuning.movement, ctx);
+  let collisionHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+  let requestedCollisionHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+  let collisionHeightBlocked = false;
+  if (flightTuning === null && tuning.controller === undefined && tuning.collision?.voxel !== true) {
+    const authoredHeight = tuning.movement?.collisionHeight;
+    requestedCollisionHeight = authoredHeight === undefined ? DEFAULT_OBSTACLE_PLAYER_HEIGHT : authoredHeight;
+    validateCollisionHeight(requestedCollisionHeight);
+    const previousHeight = state.heightfieldEntityId !== null && state.heightfieldEntityId !== playerId
+      ? null : state.heightfieldHeight;
+    collisionHeight = previousHeight ?? requestedCollisionHeight;
+    if (tuning.movement?.collideObjects !== false &&
+      (previousHeight === null && authoredHeight !== undefined || requestedCollisionHeight > collisionHeight)) {
+      const bounds = gatherMovementObstacles(ctx, player.position, 0, 0, 0, 0,
+        Math.max(collisionHeight, requestedCollisionHeight));
+      const overlap = resolveObstacleVerticalStep(player.position, 0, bounds,
+        DEFAULT_OBSTACLE_PLAYER_RADIUS, requestedCollisionHeight).initialOverlap;
+      if (overlap && previousHeight === null) {
+        throw new RangeError(`PlayerMovementConfig.collisionHeight ${requestedCollisionHeight} intersects blocking geometry at entity ${playerId}. Move the authored placement or choose a height that fits.`);
+      }
+      collisionHeightBlocked = overlap;
+    }
+    if (!collisionHeightBlocked) collisionHeight = requestedCollisionHeight;
+    state.heightfieldHeight = collisionHeight;
+    state.heightfieldEntityId = playerId;
+  }
+
   const held = new Set(input.held);
   const isDown = (action: string): boolean => held.has(action);
 
+  let nextHeading = state.heading;
   if (heading !== undefined) {
-    state.heading = heading;
+    nextHeading = heading;
   } else {
     const turnInput = (isDown("turnRight") ? 1 : 0) - (isDown("turnLeft") ? 1 : 0);
     const turnSpeed = tuning.movement?.turnSpeed ?? DEFAULT_TURN_SPEED;
-    if (turnInput !== 0) state.heading = steerYaw(state.heading, turnInput, turnSpeed, dt);
+    if (turnInput !== 0) nextHeading = steerYaw(nextHeading, turnInput, turnSpeed, dt);
   }
-  const forwardX = Math.sin(state.heading);
-  const forwardZ = Math.cos(state.heading);
+  const forwardX = Math.sin(nextHeading);
+  const forwardZ = Math.cos(nextHeading);
 
   const keys = createEmptyMovementKeys();
   keys.w = isDown("moveForward");
@@ -454,10 +527,10 @@ export function stepPlayerMovement(
           right: (analog.moveRight ?? 0) - (analog.moveLeft ?? 0),
         };
   const intent = resolveMovementIntent(keys, true, analogMove);
-  const motionBatch = ctx.player.motionFor(userId).takePending();
   const walkSpeed = player.movement?.walkSpeed ?? DEFAULT_WALK_SPEED;
 
-  const flightTuning = flightTuningFor(tuning.movement, ctx);
+  state.heading = nextHeading;
+  const motionBatch = ctx.player.motionFor(userId).takePending();
   if (flightTuning !== null) {
     const value = (action: string): number => input.analog?.[action] ?? (isDown(action) ? 1 : 0);
     let flightIntent = resolveFreeFlightIntentFromInput(isDown, value, input.pointer, flightTuning.bindings);
@@ -795,7 +868,7 @@ export function stepPlayerMovement(
   const queryMaxStepY = Math.max(stepHeight, verticalStep);
   let obstacles: CollisionObstacle[] | null = null;
   if (tuning.movement?.collideObjects !== false) {
-    obstacles = gatherMovementObstacles(ctx, player.position, stepX, stepZ, queryMinStepY, queryMaxStepY);
+    obstacles = gatherMovementObstacles(ctx, player.position, stepX, stepZ, queryMinStepY, queryMaxStepY, collisionHeight);
     // While grounded, a box the player could simply step onto is a ledge, not a wall.
     const resolved = resolveObstacleStep(
       player.position,
@@ -804,6 +877,7 @@ export function stepPlayerMovement(
       obstacles,
       DEFAULT_OBSTACLE_PLAYER_RADIUS,
       airborne ? 0 : stepHeight,
+      collisionHeight,
     );
     stepX = resolved.stepX;
     stepZ = resolved.stepZ;
@@ -872,10 +946,10 @@ export function stepPlayerMovement(
       terrainHeightAt(player.position[0], nextZ),
     ) - player.position[1];
     if (rise > queryMaxStepY) {
-      obstacles = gatherMovementObstacles(ctx, player.position, nextX - player.position[0], nextZ - player.position[2], queryMinStepY, rise);
+      obstacles = gatherMovementObstacles(ctx, player.position, nextX - player.position[0], nextZ - player.position[2], queryMinStepY, rise, collisionHeight);
     }
   }
-  const validStartingBounds = obstacles === null || !resolveObstacleVerticalStep(player.position, 0, obstacles).initialOverlap;
+  const validStartingBounds = obstacles === null || !resolveObstacleVerticalStep(player.position, 0, obstacles, DEFAULT_OBSTACLE_PLAYER_RADIUS, collisionHeight).initialOverlap;
   const resolveCandidate = (x: number, z: number) => {
     const terrainHeight = terrainHeightAt(x, z);
     const supportY = obstacles === null ? null : obstacleSupportHeight(x, z, player.position[1], airborne ? 0 : stepHeight, obstacles);
@@ -895,7 +969,7 @@ export function stepPlayerMovement(
       y = player.position[1]; offset = y - ground; velocity = 0; grounded = false;
     }
     if (obstacles !== null && !absoluteHeightOverride) {
-      const vertical = resolveObstacleVerticalStep([x, player.position[1], z], y - player.position[1], obstacles);
+      const vertical = resolveObstacleVerticalStep([x, player.position[1], z], y - player.position[1], obstacles, DEFAULT_OBSTACLE_PLAYER_RADIUS, collisionHeight);
       if (vertical.hitCeiling) {
         const clippedY = player.position[1] + vertical.stepY;
         // A surface above the ceiling cannot be reached by snapping entirely through a thin roof.
@@ -907,7 +981,7 @@ export function stepPlayerMovement(
       }
     }
     const clear = obstacles === null || absoluteHeightOverride || !validStartingBounds ||
-      (!blockedRise && !resolveObstacleVerticalStep([x, y, z], 0, obstacles).initialOverlap);
+      (!blockedRise && !resolveObstacleVerticalStep([x, y, z], 0, obstacles, DEFAULT_OBSTACLE_PLAYER_RADIUS, collisionHeight).initialOverlap);
     return { x, z, y, ground, grounded, velocity, offset, rising, clear };
   };
   let candidate = resolveCandidate(nextX, nextZ);
@@ -922,7 +996,7 @@ export function stepPlayerMovement(
         // The original Z sweep used post-X coordinates. An alternate axis must be swept again from
         // the original pose; reject a changed endpoint rather than accepting an unsampled grade.
         const swept = resolveObstacleStep(player.position, x - player.position[0], z - player.position[2], obstacles,
-          DEFAULT_OBSTACLE_PLAYER_RADIUS, airborne ? 0 : stepHeight);
+          DEFAULT_OBSTACLE_PLAYER_RADIUS, airborne ? 0 : stepHeight, collisionHeight);
         if (swept.stepX !== x - player.position[0] || swept.stepZ !== z - player.position[2]) return false;
       }
       if (!gradeAllows(x, z)) return false;
@@ -991,7 +1065,7 @@ export function stepPlayerMovement(
     ),
     dt,
   });
-  if (motorProposalAccepted && positionAccepted(ctx, playerId, nextX, nextY, nextZ)) updateTelemetry(state, playerId, motion.grounded, motion.verticalVelocity, intent.crouching);
+  if (motorProposalAccepted && positionAccepted(ctx, playerId, nextX, nextY, nextZ)) updateTelemetry(state, playerId, motion.grounded, motion.verticalVelocity, intent.crouching, collisionHeight, requestedCollisionHeight, collisionHeightBlocked);
   else invalidateTelemetry(state);
 }
 
@@ -1006,6 +1080,7 @@ function gatherMovementObstacles(
   stepZ: number,
   minStepY = 0,
   maxStepY = 0,
+  playerHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT,
 ): CollisionObstacle[] {
   if (!Number.isFinite(minStepY) || !Number.isFinite(maxStepY)) throw new RangeError("Movement obstacle query requires a finite vertical step.");
   const minY = Math.min(0, minStepY);
@@ -1016,6 +1091,6 @@ function gatherMovementObstacles(
     queryPosition,
     Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
     Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
-    DEFAULT_OBSTACLE_PLAYER_HEIGHT + maxY - minY,
+    playerHeight + maxY - minY,
   );
 }
