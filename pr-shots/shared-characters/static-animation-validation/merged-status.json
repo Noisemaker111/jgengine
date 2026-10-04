@@ -1,0 +1,28 @@
+{
+  "classification": "Confirmed source PR merge; immutable prior proof/package attribution retained",
+  "pr": 1972,
+  "prUrl": "https://github.com/Noisemaker111/jgengine/pull/1972",
+  "state": "closed",
+  "merged": true,
+  "mergedAt": "2026-10-04T06:45:59Z",
+  "sourceRemoteHead": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+  "betaMergeCommit": "8066470a36a9ddc5f2e8f033375adccb7dc53c3c",
+  "builtSourceCommit": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+  "builtSourceTree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+  "proofArchiveCommit": "8a7eada7fbc117f37d50903017f5c9972184c7a2",
+  "consumerReportSHA256": "0541f22e5a4f0a73d400216a827015a032538114b955e06e7fbd0b9e19a051aa",
+  "CI": {
+    "exactHead": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+    "run": 37182657573,
+    "attempt": 1,
+    "allSixChecksPass": true,
+    "reportSHA256": "95ed25e6eadf4e493655649ee3bc51ae51071f555cf9f849106d1f14ea5037a8",
+    "newReruns": 0
+  },
+  "limits": [
+    "Merge establishes engine source delivery, not package publication or consumer released adoption.",
+    "Previous saved-document/numerical rig proof limits, textureblob warning, original Lantern Save/type blockers and fixture failures remain retained.",
+    "No source/test/build/capture actions performed for this receipt."
+  ],
+  "verification": "Independent GitHub pull1972 read confirms merged=true, exact head/merge/time; prior archive blobs preserved."
+}

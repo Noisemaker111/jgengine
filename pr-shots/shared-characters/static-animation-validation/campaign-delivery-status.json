@@ -1,0 +1,403 @@
+{
+  "observedAtUTC": "2026-10-04T06:52:40.350325+00:00",
+  "deliveries": [
+    {
+      "headRefOid": "e194cfa4e7972ee951ba7d89477753ffd1e29831",
+      "mergeCommit": {
+        "oid": "05b424d81174a9424705aaf271f15929a739629d"
+      },
+      "mergedAt": "2026-10-03T23:16:27Z",
+      "number": 1956,
+      "state": "MERGED",
+      "title": "Keep character movement, animation and editor configuration consistent",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1956",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1956"
+    },
+    {
+      "headRefOid": "fad3af64e4ffb632d33171f286e62c61b84f1666",
+      "mergeCommit": {
+        "oid": "946bfe6b0cdae329d1c40c5fb0c4e60ebdcd1f0b"
+      },
+      "mergedAt": "2026-10-04T00:00:55Z",
+      "number": 1957,
+      "state": "MERGED",
+      "title": "Resolve original imported rig names for attachments and foot IK",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1957",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1957"
+    },
+    {
+      "headRefOid": "7647e7dff9e93549e2c665ebbc9c7b5f6bf2918b",
+      "mergeCommit": {
+        "oid": "397025948bd447f2a9106368562b3a4ff4f43200"
+      },
+      "mergedAt": "2026-10-04T00:54:13Z",
+      "number": 1958,
+      "state": "MERGED",
+      "title": "Stop heightfield jumps and terrain rises at blocking ceilings",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1958",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1958"
+    },
+    {
+      "headRefOid": "64122739eb0866a26e24da6f5118569172c8e94a",
+      "mergeCommit": {
+        "oid": "c0041964c4f1b9628847974b46cbd1836cc8d614"
+      },
+      "mergedAt": "2026-10-04T01:32:30Z",
+      "number": 1959,
+      "state": "MERGED",
+      "title": "Author heightfield character proportions with safe live retuning",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1959",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1959"
+    },
+    {
+      "headRefOid": "60e41ff2bf014ecc7d2d435d839a16c44e8858f7",
+      "mergeCommit": {
+        "oid": "76f1da353570ca530595387ec455c458dbdc3371"
+      },
+      "mergedAt": "2026-10-04T02:57:02Z",
+      "number": 1961,
+      "state": "MERGED",
+      "title": "Author existing jump and landing response through movement catalogs",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1961",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1961"
+    },
+    {
+      "headRefOid": "9fbecff00b2667017ae04b4b24ecd867df06cab4",
+      "mergeCommit": {
+        "oid": "d508016d7a18abeef568c45282a5d28d13ac4ab8"
+      },
+      "mergedAt": "2026-10-04T02:55:58Z",
+      "number": 1963,
+      "state": "MERGED",
+      "title": "Preserve imported animation playback across equivalent configurations",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1963",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1963"
+    },
+    {
+      "headRefOid": "532ef9756007c602496df398f4a2bf8b55080baf",
+      "mergeCommit": {
+        "oid": "0318b0872edce92037d810f1a7fa5017869ee273"
+      },
+      "mergedAt": "2026-10-04T03:37:50Z",
+      "number": 1964,
+      "state": "MERGED",
+      "title": "Read saved character animation through shared strict graph validation",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1964",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1964"
+    },
+    {
+      "headRefOid": "8851ca4e3d0e2984a5da15e1472690d1eb5d242c",
+      "mergeCommit": {
+        "oid": "bea2af8913100404f3c5dd5cde3c38c8d203b7ae"
+      },
+      "mergedAt": "2026-10-04T04:00:48Z",
+      "number": 1965,
+      "state": "MERGED",
+      "title": "Clear character motion history across portals and respawns",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1965",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1965"
+    },
+    {
+      "number": 1967,
+      "title": "Preserve malformed character animation until explicit editor repair",
+      "state": "MERGED",
+      "headRefOid": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+      "mergeCommit": {
+        "oid": "560ade4e0ce52833b8f134140613c4b6e3cb5fb8"
+      },
+      "mergedAt": "2026-10-04T04:47:22Z",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1967",
+      "proofArchiveCommit": "8a8d145b9c716afe3fc34278a40da0364298b69d",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1967"
+    },
+    {
+      "number": 1969,
+      "state": "MERGED",
+      "title": "Hold bound character animation when game time is frozen",
+      "headRefOid": "185fd8180b59290d1779c46ca0c9f85d79dd1152",
+      "mergeCommit": {
+        "oid": "0693d1386d24768a6df4c415b93629392bb6aeee"
+      },
+      "mergedAt": "2026-10-04T05:10:16Z",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1969",
+      "proofArchiveCommit": "500ec4331b638e64e298b098926b96ae45c83482",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1969"
+    },
+    {
+      "number": 1970,
+      "title": "Author and consume explicit character animation clocks",
+      "state": "MERGED",
+      "headRefOid": "b562fc6c4e72a3da61ee487570a9bc780cf1a3f9",
+      "mergeCommit": {
+        "oid": "ef22f0c41b32949ba6ab162188f1d721851316f0"
+      },
+      "mergedAt": "2026-10-04T05:41:53Z",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1970",
+      "proofArchiveCommit": "de3c0a21b7712f684c38415dcc72e34912d88396",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1970"
+    },
+    {
+      "number": 1971,
+      "title": "Advance character animation only with accepted simulation time",
+      "state": "MERGED",
+      "headRefOid": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+      "mergeCommit": {
+        "oid": "8677b7285773742e73c66319cc4592b7026d303a"
+      },
+      "mergedAt": "2026-10-04T06:19:24Z",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1971",
+      "proofArchiveCommit": "7e0f1442d6a966427a79112ec9e88acdcb4e26b3",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1971"
+    },
+    {
+      "number": 1972,
+      "title": "Validate saved animation consistently for static character placements",
+      "state": "MERGED",
+      "headRefOid": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+      "mergeCommit": {
+        "oid": "8066470a36a9ddc5f2e8f033375adccb7dc53c3c"
+      },
+      "mergedAt": "2026-10-04T06:45:59Z",
+      "url": "https://github.com/Noisemaker111/jgengine/pull/1972",
+      "proofArchiveCommit": "8a7eada7fbc117f37d50903017f5c9972184c7a2",
+      "reviewAndEvidence": "https://github.com/Noisemaker111/jgengine/pull/1972"
+    }
+  ],
+  "publication": {
+    "authorized": false,
+    "registryAdoption": false,
+    "gamesCatalogAndLockfilesUnchanged": true,
+    "preparedMigrationsOnly": true
+  },
+  "ongoing": {
+    "eleventh": {
+      "pr": 1970,
+      "head": "b562fc6c4e72a3da61ee487570a9bc780cf1a3f9",
+      "local": "a5c5250ffa031f4e713a2a27c2ec1c0c1bc9372c",
+      "built": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+      "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+      "status": "MERGED; source, fresh packages, two consumers, native save/reopen and reader/rig joins, first-head CI verified",
+      "consumerReportSha256": "6e826e2aea8d7bd90fc1d219d29fd5cbffdd7e534b11009e4350874b79690b88",
+      "archiveCommit": "30831b0e4df13783e46a6397db0a14ac457c757c"
+    },
+    "twelfth": {
+      "branch": "characters/animation-accepted-clock",
+      "worktree": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "coreOwner": "movement",
+      "runtimeOwner": "animation",
+      "integrator": "root",
+      "status": "MERGED; accepted-clock source and corrected-head CI PASS; original99a packages and three-game proofs preserved with explicit test-only source equivalence",
+      "coreAPI": "SimClock optional advancedSeconds; concrete factory required; local accepted dt, nonserialized/nonhydrated",
+      "hostedLimitation": "advanceTime:false has no local accepted progress; no remote snapshot capability claimed",
+      "pr": 1971,
+      "head": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+      "built": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+      "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+      "manifestSha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+      "preparedConsumerRoot": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress",
+      "firstCI": {
+        "head": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+        "run": 37181085087,
+        "conclusion": "failure",
+        "cause": "Isolated hook fixture did not stage Drei required by newly imported actual FrameDriver camera closure",
+        "unchangedHeadRetry": false
+      },
+      "correctedHead": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+      "correctedLocal": "db82ce68b6e74cdad4b6d70526b64f449df2a6f6",
+      "correctedTree": "e6c176b01087e3a1518a6720396e6cc8a8e9d927",
+      "consumerReportSha256": "757f428866e5de10255bf44f8d7b84bce4606b3afd857a4bfcb8376091d0589d",
+      "correctedCI": {
+        "run": 37181753227,
+        "head": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+        "allSixChecksPass": true,
+        "passed": 9722,
+        "skipped": 2,
+        "failed": 0
+      },
+      "archiveCommit": "7e0f1442d6a966427a79112ec9e88acdcb4e26b3",
+      "sourceEquivalenceSha256": "2ef043e32586d1af367728090b2649e2d1f2d15a29e7cca1777cdc5427b66989"
+    },
+    "thirteenth": {
+      "branch": "characters/static-animation-validation",
+      "worktree": "/workspace/JGengine/.claude/worktrees/character-placement-animation",
+      "base": "8677b7285773742e73c66319cc4592b7026d303a",
+      "coreOwner": "authoring",
+      "shellOwner": "animation",
+      "integrator": "root",
+      "status": "MERGED; source/review/fresh public packages, original consumer/default controls, saved documents, paired real imported hook, exact-head CI and immutable archive PASS",
+      "beforeReportSha256": "686e1b72fb667738d4cd8ea651ca8933a17e36cd04f49567c484237de583e32d",
+      "scope": "Existing native-authored Knight proof placement in Scrap-based document, not shipping actor; validation/diagnostics, no appearance/feel/adoption claim",
+      "local": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+      "tree": "a52ba2db848cf40980abce7060658a39003bb0fd",
+      "pr": 1972,
+      "head": "16d497e504950e8c1bfcbc63661f36a0078310ff",
+      "built": "ecb938cd8e53c7baad3d076cbae9c26f7d2c0497",
+      "manifestSha256": "53597cc99d8775d3a499ff32af54bf408e405f4afbeb1dc47af310a66c98de3f",
+      "consumerRoot": "/workspace/JGengine/.scratch/characters/consumer/static-animation-validation",
+      "merge": "8066470a36a9ddc5f2e8f033375adccb7dc53c3c",
+      "mergedAt": "2026-10-04T06:45:59Z",
+      "consumerReportSha256": "0541f22e5a4f0a73d400216a827015a032538114b955e06e7fbd0b9e19a051aa",
+      "archiveCommit": "8a7eada7fbc117f37d50903017f5c9972184c7a2",
+      "consumerEvidence": "https://raw.githubusercontent.com/Noisemaker111/jgengine/8a7eada7fbc117f37d50903017f5c9972184c7a2/pr-shots/shared-characters/static-animation-validation/consumer-evidence.json",
+      "independentAudit": "https://raw.githubusercontent.com/Noisemaker111/jgengine/8a7eada7fbc117f37d50903017f5c9972184c7a2/pr-shots/shared-characters/static-animation-validation/summary.json",
+      "CI": {
+        "run": 37182657573,
+        "attempt": 1,
+        "allSixChecksPass": true,
+        "passed": 9729,
+        "skipped": 2,
+        "failed": 0,
+        "receipt": "https://raw.githubusercontent.com/Noisemaker111/jgengine/8a7eada7fbc117f37d50903017f5c9972184c7a2/pr-shots/shared-characters/static-animation-validation/ci-first-head.json",
+        "sha256": "95ed25e6eadf4e493655649ee3bc51ae51071f555cf9f849106d1f14ea5037a8"
+      },
+      "bundle": {
+        "manifest": "https://raw.githubusercontent.com/Noisemaker111/jgengine/8a7eada7fbc117f37d50903017f5c9972184c7a2/pr-shots/shared-characters/static-animation-validation/bundle-parts.json",
+        "regularFiles": 1428,
+        "bytes": 29203358,
+        "parts": 6,
+        "sha256": "083464578e198251174aa0380eca5e7c4c4982485f7ed17111eb90ecb41a741b"
+      },
+      "originalControls": {
+        "Scrap": 403,
+        "Lantern": 40,
+        "placementAndModelRecordsUnchanged": true
+      },
+      "rootAudit": "All59 consumer artifacts plus212 before/113 after ledgers verified; public report and exact-head CI anonymous bytes independently rechecked",
+      "attributionErratumSha256": "7eb9ded3e5dbce8f7a6c2515c1c85f860cb28b9193e27495adb004252ab77744"
+    }
+  },
+  "remainingBoundaries": [
+    "Native configuration edit/undo/Save/reopen proven; full animated placement/play/reload creator-host blocked and capture caps unchanged. No convincing feel/appearance/hardware FPS claim.",
+    "Released-package adoption requires authorized release and real published package.",
+    "Crouch camera/muzzle policy overlaps camera/combat owners, not this source lane.",
+    "Reentrant synchronous membership replacement needs authoritative lifecycle event/generation in coordinator store lane.",
+    "Original Lantern full-document dawn preset and four UI Promise-result type errors remain outside scoped character source.",
+    "Prior isolated helpers check-stage-skills validated mapping source availability, not bundled SDK staging; pass11 explicitly stages and verifies all231 skill files. Prior immutable runtime proofs unchanged."
+  ],
+  "coordination": "https://github.com/Noisemaker111/jgengine/issues/1896#issuecomment-5977312443",
+  "nextUnresolved": "Independent reproduced supported character queue exhausted after13; next work requires creator-host owner, not another validator or unused feature.",
+  "updatedUtc": "2026-10-04T06:52:40.350325+00:00",
+  "betaObserved": "8066470a36a9ddc5f2e8f033375adccb7dc53c3c",
+  "gamesObserved": {
+    "head": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "workingTreeClean": true,
+    "SDKCatalog": "0.18.1",
+    "editorCatalog": "0.18.0",
+    "locksAndShippingSourcesUnchanged": true
+  },
+  "ownership": {
+    "integrationReviewEvidence": "root; six user-requested Sol6.1 high workers; disjoint source cohorts",
+    "playerMovement": "core/src/movement/playerMovement.ts; movement worker",
+    "characterControllers": "core/src/movement/characterController.ts and voxelController.ts; movement worker",
+    "RapierCollision": "rapier/src/rapierBackend.ts; foot_grounding worker",
+    "animationPlayback": "shell/src/render/useModelAnimation.ts; animation worker",
+    "animationGraphs": "Existing core graph validation/playback and editor AnimationGraphPanel; animation/authoring workers",
+    "importedRigs": "Existing shell rigNode/useFootIk/model clone/root-transform paths; animation/foot_grounding workers",
+    "characterAuthoring": "Existing core editor/movementCatalog, world/authoredAnimation/authoredObjects and editor catalog/animation panels; authoring worker",
+    "realConsumerBoundary": "consumer_boundary worker; game policy preserved, prepared adapters only",
+    "nativeAndCI": "native_proof worker; capture caps preserved",
+    "externalOwners": "creator host, camera/combat, coordinator store lifecycle; no edits to held cohorts"
+  },
+  "substantiveResults": [
+    {
+      "passes": [
+        1,
+        3,
+        4,
+        5
+      ],
+      "result": "Grounded shared movement, capsule/headroom safety, heightfield ceilings and independent collision proportions; existing jump/landing controls authored and persisted",
+      "measurements": [
+        "Actual Scrap11532 ground cases worst gap0.08595m to0",
+        "Actual Lantern ceiling route removed0.0148856m penetration and1.81955m lateral ejection",
+        "2.6m body rejects2.058m roof; existing default proportions preserved",
+        "Authored short-jump Scrap1.14125m to0.1056667m; game rules retained"
+      ],
+      "limitations": "Convincing native feel and hardware FPS not established"
+    },
+    {
+      "passes": [
+        1,
+        2,
+        6,
+        8,
+        10,
+        11,
+        12
+      ],
+      "result": "Imported rig/root/bind isolation, original-name attachments and supported foot IK; graph continuity, portal/observed respawn history, pause and accepted clocks",
+      "measurements": [
+        "Imported root/bind error2.768 to0 in tested rigs",
+        "Equivalent fresh configs preserve30 Fitter/22 Knight frame poses instead of resetting",
+        "Lantern359.7867m portal no longer falsely holds Run",
+        "Raw0.2s frame animation accepts0.05s at1x and0.2s at4x with actual FrameDriver",
+        "All100 original physical/game records bit-exact in clock proof"
+      ],
+      "limitations": "No universal retargeting or native appearance claim; advanceTime:false prediction lacks local accepted timeline"
+    },
+    {
+      "passes": [
+        7,
+        9,
+        11,
+        13
+      ],
+      "result": "Strict saved animation shared by dynamic/static runtime and editor; explicit repair and persistent GUI clock/jump controls",
+      "measurements": [
+        "Original438-marker Scrap document retained",
+        "Malformed static clip7 recovers from bind pose to catalog Idle with finite changing bones and0.5s phase",
+        "403 Scrap/40 Lantern props/model defaults exact; valid partial/empty/signed/order/extensions exact"
+      ],
+      "limitations": "Native configuration Save/reopen proven; full imported animated play/reload blocked by creator-host document/clip seams"
+    }
+  ],
+  "consumerCoverage": {
+    "actualCompositions": [
+      "Scrap",
+      "Lantern",
+      "Odd",
+      "Deepward"
+    ],
+    "boundary": "Fresh actual public tarballs in isolated original-game fixtures; real commands and imported-rig numerical proofs are functional evidence",
+    "preparedMigration": "Thin prepared patches verified after shared behavior; no published adoption",
+    "checks": "Original builds pass in relevant cohorts; Scrap/Odd/Deepward types pass; Lantern retains four pre-existing UI Promise-result errors",
+    "releaseStatus": "Engine source merged beta; unreleased built packages verified; no release/adopted package"
+  },
+  "failurePreservation": {
+    "native": "Knight full-mesh WebGL hang stops that scenario; prior Lantern/Deepward/placement two-observation caps remain. No hidden readiness/CDP/manual screenshots used to bypass caps.",
+    "sourceDelivery": "Standalone pushes HTTP401; exact Git blob/tree-equivalent GitData fallback force:false. Test correction non-fast-forward ancestry mismatch separately attributed.",
+    "CI": "Earlier permitted retries/cancellations/first-head failures preserved. Pass12 missing-Drei isolated test peer fixed only in test, runtime/package equivalence verified; corrected head passes. Pass13 first attempt allsix pass.",
+    "harness": "Pass13 caller argument order and intermediate shell-store expectation failures preserved; fixtures corrected. Before clock/auto retains pausedIdle.75; only clip7 has bind failure.",
+    "skillPackaging": "Old check-stage-skills validates mapping sources, not SDK staging. Pass11 explicit231-file staging; passes12/13 frozen helper actual stage-skills28 stages. Earlier immutable runtime proofs unchanged.",
+    "otherSource": "Separate beta CreatorApp pause timing CI failure recorded without cause inference/retry. Lantern dawn full Save and4 UI errors remain outside lane."
+  },
+  "nextExecutableTask": {
+    "owner": "broader creator-host workflow owner",
+    "sourceAt": "merged beta8066470a36a9ddc5f2e8f033375adccb7dc53c3c",
+    "steps": [
+      "Thread loaded authored scene into StandaloneEditor createBlankPlayable/defineGame editorLayers via existing APIs. StandaloneEditor.tsx:123 omits loadedScene; EditorApp:150 receives it.",
+      "Carry measured imported GLB clip metadata through node/src/editorHostPlugin.ts manifest/import -> editor/src/assetImport.ts StandaloneAsset -> catalog registration. StandaloneEditor.tsx:52 registers only {url}.",
+      "Prove actual imported character edit/play/inspect/adjust/Save/reopen through supported host with an eligible native scenario and existing caps. Zero-clip configuration screenshots do not prove animated runtime."
+    ],
+    "nativeEvidence": "https://raw.githubusercontent.com/Noisemaker111/jgengine/de3c0a21b7712f684c38415dcc72e34912d88396/pr-shots/shared-characters/animation-game-clock/native-authoring-proof.json",
+    "coordination": "https://github.com/Noisemaker111/jgengine/issues/1896#issuecomment-5974319609"
+  },
+  "otherBlockedTasks": [
+    {
+      "owner": "camera/combat PR1926/1932/1921",
+      "task": "Align crouch accepted eye1.62 ->0.972m with muzzle/aim before withheld patch adoption",
+      "patch": ".scratch/characters/crouch-camera-blocked.patch",
+      "coordination": "https://github.com/Noisemaker111/jgengine/issues/1896#issuecomment-5974073290"
+    },
+    {
+      "owner": "coordinator store lifecycle",
+      "task": "Authoritative generation/event for reentrant earlier-listener same-ID despawn/spawn; observed absence works, actor/hydration heuristics insufficient",
+      "coordination": "https://github.com/Noisemaker111/jgengine/issues/1896#issuecomment-5976281104"
+    },
+    {
+      "owner": "release maintainer with required explicit release instruction",
+      "task": "Actual permitted release first, then Games central dependency catalog/lockfiles; prepared cohorts are unreleased proof"
+    }
+  ],
+  "finalHandoff": "Frozen before additive immutable merge-status/campaign-ledger commit. Proof archive8a7eada7 complete;13 actual source merges confirmed. No circular inference of archive commit."
+}
