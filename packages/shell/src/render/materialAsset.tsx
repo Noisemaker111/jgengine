@@ -368,7 +368,8 @@ export function useModelMaterialTextures(model: Pick<ModelConfig, "material" | "
   const key = JSON.stringify([model.material?.maps, referenced]);
   const entries = useMemo(() => {
     const result: { assetId?: string; role: MaterialTextureRole; metadata: MaterialTextureMetadata }[] = [];
-    for (const [role, url] of Object.entries(model.material?.maps ?? {})) if (url !== undefined) result.push({ role: role as MaterialTextureRole, metadata: { url, colorSpace: MATERIAL_TEXTURE_SEMANTICS[role as MaterialTextureRole].colorSpace } });
+    const maps: Partial<Record<MaterialTextureRole, string>> = model.material?.maps ?? {};
+    for (const [role, url] of Object.entries(maps)) if (url !== undefined) result.push({ role: role as MaterialTextureRole, metadata: { url, colorSpace: MATERIAL_TEXTURE_SEMANTICS[role as MaterialTextureRole].colorSpace } });
     for (const asset of referenced) for (const [role, metadata] of Object.entries(asset.textures ?? {})) result.push({ assetId: asset.id, role: role as MaterialTextureRole, metadata: metadata! });
     return result;
   }, [key]);

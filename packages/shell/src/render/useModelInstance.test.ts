@@ -6,6 +6,8 @@ import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
+import { MATERIAL_TEXTURE_SEMANTICS, type MaterialTextureRole } from "@jgengine/core/material/materialAsset";
+import { MATERIAL_TEXTURE_PROPERTIES } from "../materialOverride";
 import { GameProvider } from "@jgengine/react/provider";
 import { readFileSync } from "node:fs";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -69,6 +71,77 @@ function sourceModel() {
 }
 
 describe("useModelInstance", () => {
+  test("EntityModel loads all simple physical map roles into owned views without changing imported maps", async () => {
+    const source = new THREE.Group();
+    const imported = new THREE.Texture();
+    const original = new THREE.MeshStandardMaterial({ normalMap: imported });
+    const geometry = new THREE.BoxGeometry();
+    source.add(new THREE.Mesh(geometry, original));
+    const h = await harness(source);
+    const roles = Object.keys(MATERIAL_TEXTURE_SEMANTICS) as MaterialTextureRole[];
+    const maps = Object.fromEntries(roles.map(role => [role, `/ordinary-${h.url}-${role}.png`]));
+    const cached = new Map<string, THREE.Texture>();
+    const views: { texture: THREE.Texture; disposals: number }[] = [];
+    let borrowedDisposals = 0;
+    const load = THREE.TextureLoader.prototype.load;
+    THREE.TextureLoader.prototype.load = (url, onLoad) => {
+      let texture = cached.get(url);
+      if (texture === undefined) {
+        texture = new THREE.Texture(); texture.name = url;
+        texture.addEventListener("dispose", () => borrowedDisposals++);
+        const clone = texture.clone;
+        texture.clone = function () {
+          const view = { texture: clone.call(this), disposals: 0 };
+          view.texture.addEventListener("dispose", () => view.disposals++);
+          views.push(view);
+          return view.texture;
+        };
+        cached.set(url, texture);
+      }
+      onLoad?.(texture);
+      return texture as THREE.Texture<HTMLImageElement>;
+    };
+    imported.addEventListener("dispose", () => borrowedDisposals++);
+    geometry.addEventListener("dispose", () => borrowedDisposals++);
+    original.addEventListener("dispose", () => borrowedDisposals++);
+    try {
+      let scene!: THREE.Scene;
+      function Inspect() { scene = useThree(state => state.scene); return null; }
+      const first: ModelConfig = { url: h.url, material: { maps, sheen: 0.4, clearcoat: 0.6, transmission: 0.5 } };
+      const second: ModelConfig = { url: h.url, material: { maps: { sheenColor: maps.sheenColor, specularColor: maps.specularColor, clearcoat: maps.clearcoat } } };
+      await act(async () => h.root.render(createElement(Suspense, { fallback: null }, createElement(EntityModel, { model: first }), createElement(EntityModel, { model: second }), createElement(Inspect))));
+      const meshes: THREE.Mesh[] = [];
+      scene.traverse(node => { if ((node as THREE.Mesh).isMesh) meshes.push(node as THREE.Mesh); });
+      const firstMaterial = meshes[0]!.material as THREE.MeshPhysicalMaterial;
+      const secondMaterial = meshes[1]!.material as THREE.MeshPhysicalMaterial;
+      expect(firstMaterial.isMeshPhysicalMaterial).toBe(true);
+      expect(secondMaterial.isMeshPhysicalMaterial).toBe(true);
+      for (const role of roles) {
+        const texture = (firstMaterial as unknown as Record<string, THREE.Texture>)[MATERIAL_TEXTURE_PROPERTIES[role]]!;
+        expect(texture.name).toBe(maps[role]);
+        expect(texture).not.toBe(cached.get(maps[role]!));
+        expect(texture.colorSpace).toBe(MATERIAL_TEXTURE_SEMANTICS[role].colorSpace === "srgb" ? THREE.SRGBColorSpace : THREE.NoColorSpace);
+        expect(texture.flipY).toBe(false);
+      }
+      expect(secondMaterial.normalMap).toBe(imported);
+      expect(secondMaterial.sheenColorMap).not.toBe(firstMaterial.sheenColorMap);
+      expect(meshes.every(mesh => mesh.geometry === geometry)).toBe(true);
+      expect(original.normalMap).toBe(imported);
+      expect(cached.size).toBe(20);
+      expect([...cached.values()].every(texture => texture.colorSpace === THREE.NoColorSpace && texture.flipY)).toBe(true);
+      expect(views).toHaveLength(23);
+      const materialDisposals = [0, 0];
+      firstMaterial.addEventListener("dispose", () => materialDisposals[0]++);
+      secondMaterial.addEventListener("dispose", () => materialDisposals[1]++);
+      await act(async () => h.root.render(null));
+      expect(views.every(view => view.disposals === 1)).toBe(true);
+      expect(materialDisposals).toEqual([1, 1]);
+      expect(borrowedDisposals).toBe(0);
+    } finally {
+      THREE.TextureLoader.prototype.load = load;
+    }
+  });
+
   test("EntityModel rejects malformed JSON visibility before texture or clone allocation", async () => {
     const report = globalThis.reportError; globalThis.reportError = () => {};
     const texture = new THREE.Texture();

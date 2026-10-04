@@ -1,9 +1,13 @@
 import type { ModelConfig, ModelMaterialMaps } from "@jgengine/core/game/playableGame";
+import { MATERIAL_TEXTURE_SEMANTICS, type MaterialTextureRole } from "@jgengine/core/material/materialAsset";
+
+const legacyMapRoles: readonly MaterialTextureRole[] = ["color", "normal", "roughness", "ao", "metalness", "emissive", "height"];
+const modelMapRoles = [...legacyMapRoles, ...(Object.keys(MATERIAL_TEXTURE_SEMANTICS) as MaterialTextureRole[]).filter(role => !legacyMapRoles.includes(role))];
 
 /** Stable loader keys shared by preloading and material application. @internal */
 export function modelMapEntries(maps: ModelMaterialMaps): Record<string, string> {
   const entries: Record<string, string> = {};
-  for (const key of ["color", "normal", "roughness", "ao", "metalness", "emissive", "height"] as const) {
+  for (const key of modelMapRoles) {
     if (maps[key] !== undefined) entries[key] = maps[key];
   }
   return entries;
