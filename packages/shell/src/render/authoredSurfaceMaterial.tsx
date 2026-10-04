@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import * as THREE from "three";
 
 import type { ModelMaterialOverride } from "@jgengine/core/game/playableGame";
+import { MATERIAL_TEXTURE_SEMANTICS } from "@jgengine/core/material/materialAsset";
 
 import { applyMaterialOverrideToMaterial, requiresPhysicalMaterial, type MaterialOverrideTextures } from "../materialOverride";
 import { modelMapEntries } from "./modelAssets";
@@ -39,7 +40,7 @@ export function authoredSurfaceTextures(entries: Record<string, string>, sources
   const wrapping = config.wrapping === "clamp" ? THREE.ClampToEdgeWrapping : config.wrapping === "mirror" ? THREE.MirroredRepeatWrapping : THREE.RepeatWrapping;
   return Object.fromEntries(Object.keys(entries).map((role, index) => {
     const texture = sources[index]!.clone();
-    texture.colorSpace = role === "color" || role === "emissive" ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    texture.colorSpace = MATERIAL_TEXTURE_SEMANTICS[role as keyof typeof MATERIAL_TEXTURE_SEMANTICS]?.colorSpace === "srgb" ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     texture.wrapS = wrapping;
     texture.wrapT = wrapping;
     texture.anisotropy = config.anisotropy ?? 1;
@@ -88,7 +89,7 @@ ${Object.entries({ MAP: "vMapUv", NORMALMAP: "vNormalMapUv", ROUGHNESSMAP: "vRou
 
 /**
  * Load declared surface-map roles and own the material/map clones (cached textures remain untouched).
- * Colour/emissive maps are sRGB; normal, AO, roughness, metalness and height are linear. Cylinder side metres use the RMS ellipse circumference approximation.
+ * Colour, emissive, sheen-colour and specular-colour maps are sRGB; numeric maps are linear. Cylinder side metres use the RMS ellipse circumference approximation.
  * Static batches and custom meshes share this lifecycle.
  * @capability authored-surface-material render declared PBR maps with colour-space handling and metre-scale box/cylinder UVs
  */

@@ -3,6 +3,32 @@ import * as THREE from "three";
 import { authoredSurfaceTextures, configureAuthoredSurface } from "./authoredSurfaceMaterial";
 
 describe("authored PBR surface", () => {
+  test("physical color maps use sRGB while numeric maps stay linear on independently owned views", () => {
+    const source = new THREE.Texture();
+    const roles = ["color", "emissive", "sheenColor", "specularColor", "normal", "roughness", "metalness", "ao", "alpha", "height", "sheenRoughness", "anisotropy", "clearcoat", "clearcoatRoughness", "clearcoatNormal", "specularIntensity", "transmission", "thickness", "iridescence", "iridescenceThickness"];
+    const textures = authoredSurfaceTextures(Object.fromEntries(roles.map(role => [role, `${role}.png`])), roles.map(() => source));
+    const views = Object.values(textures);
+    expect(new Set(views).size).toBe(roles.length);
+    for (const role of ["color", "emissive", "sheenColor", "specularColor"] as const) expect(textures[role]!.colorSpace).toBe(THREE.SRGBColorSpace);
+    for (const role of ["normal", "roughness", "metalness", "ao", "alpha", "height", "sheenRoughness", "anisotropy", "clearcoat", "clearcoatRoughness", "clearcoatNormal", "specularIntensity", "transmission", "thickness", "iridescence", "iridescenceThickness"] as const) expect(textures[role]!.colorSpace).toBe(THREE.NoColorSpace);
+    const material = new THREE.MeshPhysicalMaterial();
+    configureAuthoredSurface(material, { sheen: 0.6, specularIntensity: 0.7 }, textures, "box");
+    expect(material.sheenColorMap).toBe(textures.sheenColor!);
+    expect(material.specularColorMap).toBe(textures.specularColor!);
+    expect(source.colorSpace).toBe(THREE.NoColorSpace);
+    expect(source.wrapS).toBe(THREE.ClampToEdgeWrapping);
+    let sourceDisposed = 0, viewsDisposed = 0;
+    source.addEventListener("dispose", () => sourceDisposed++);
+    for (const view of views) {
+      expect(view).not.toBe(source);
+      view.addEventListener("dispose", () => viewsDisposed++);
+      view.dispose();
+    }
+    material.dispose();
+    expect(viewsDisposed).toBe(roles.length);
+    expect(sourceDisposed).toBe(0);
+  });
+
   test("owns sampler/color-space clones without changing cached maps", () => {
     const source = new THREE.Texture();
     const textures = authoredSurfaceTextures({ color: "a", normal: "b", emissive: "c", roughness: "d" }, [source, source, source, source], { wrapping: "mirror", anisotropy: 4 });
