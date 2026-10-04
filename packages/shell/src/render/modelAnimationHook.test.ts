@@ -29,6 +29,8 @@ beforeAll(async () => {
     import {context as FiberContext} from '@react-three/fiber';
     import {GameProvider} from '@jgengine/react/provider';
     import {useModelAnimation} from '@jgengine/shell/render/useModelAnimation';
+    import {locomotionGraph} from '@jgengine/core/anim/locomotionGraph';
+    import {AnimationMixer} from 'three';
     import {createGameContext} from '@jgengine/core/runtime/gameContext';
     import {defineGameDefinition} from '@jgengine/core/game/defineGame';
     import {createAssetCatalog} from '@jgengine/core/scene/assetCatalog';
@@ -66,6 +68,48 @@ beforeAll(async () => {
       const final=scenes.map(values);const cursor=rng.state();const next=rng();
       flushSync(()=>root.unmount());element.remove();
       return {initial,cursor,next,expected:expected(),poses,bind,final,subscriptionsAfterUnmount:callbacks.size};
+    };
+    window.continuity=async(freshEachRender,explicitGraph=false,retune=false,checkPriority=false)=>{
+      gltf=await gltfPromise;
+      const scene=clone(gltf.scene);
+      const ctx=createGameContext({definition:defineGameDefinition({name:'continuity-proof',assets:createAssetCatalog(),multiplayer:'off'}),content:{},player:{userId:'player',isNew:true}});
+      ctx.scene.entity.spawn('hero',{id:'actor0',position:[0,0,0]});
+      const config={states:{idle:'Idle',walk:'Walking_A',run:'Running_A'},oneShots:{attack:variants}};
+      const animation=explicitGraph?{graph:locomotionGraph({...config.states,oneShots:config.oneShots})}:config;
+      const callbacks=new Set();const state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const store=selector=>selector(state);store.getState=()=>state;
+      const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
+      let active=animation;let uncacheCount=0;const originalUncache=AnimationMixer.prototype.uncacheRoot;
+      AnimationMixer.prototype.uncacheRoot=function(scene){uncacheCount++;return originalUncache.call(this,scene)};
+      const render=()=>flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}><Model scene={scene} id='actor0' animation={freshEachRender?JSON.parse(JSON.stringify(active)):active}/></FiberContext.Provider></GameProvider>));
+      const frame=delta=>{for(const ref of callbacks)ref.current(state,delta)};
+      const poses=[];render();frame(0);
+      for(let i=0;i<30;i++){
+        ctx.scene.entity.setPose('actor0',{position:[0,0,(i+1)/60]});
+        if(i===8||i===20)ctx.game.events.emit('entity.animation',{instanceId:'actor0',event:'attack'});
+        render();frame(1/60);poses.push(values(scene));
+      }
+      const cleanupBeforeRetune=uncacheCount;let retuned;
+      if(retune){
+        active={clip:'Idle',paused:true,time:0.1};render();frame(1);const first=values(scene);
+        active.time=0.7;render();frame(1);const held=values(scene);
+        frame(2);const still=values(scene);
+        // An in-place nested edit is detected from the retained data snapshot too.
+        active={states:{idle:'Idle',walk:'Walking_A'}};render();frame(0);
+        active.states.idle='Running_A';render();frame(0.2);const edited=values(scene);
+        retuned={first,held,still,edited,cleanupCount:uncacheCount};
+      }
+      let priority;
+      if(checkPriority){
+        const triggerBoth=()=>{for(const event of ['first','second'])ctx.game.events.emit('entity.animation',{instanceId:'actor0',event});frame(0);frame(0.2);return values(scene)};
+        active={states:config.states,oneShots:{first:variants[0],second:variants[1]}};render();const firstOrder=triggerBoth();
+        active.oneShots={second:variants[1],first:variants[0]};render();const secondOrder=triggerBoth();
+        active={clip:variants[0],paused:true,time:0.2};render();const expectedFirst=values(scene);
+        active={clip:variants[1],paused:true,time:0.2};render();const expectedSecond=values(scene);
+        priority={firstOrder,secondOrder,expectedFirst,expectedSecond};
+      }
+      flushSync(()=>root.unmount());element.remove();AnimationMixer.prototype.uncacheRoot=originalUncache;
+      return {poses,retuned,priority,cleanupBeforeRetune,cleanupAfterUnmount:uncacheCount,subscriptionsAfterUnmount:callbacks.size};
     };
     window.ready=true;
   `);
@@ -110,5 +154,53 @@ test("incomplete persisted roles retain the named clip or bind pose without choo
   const idle = await page.evaluate(() => (window as any).run(1, false, { clip: "Idle" }));
   expect(partial.final).toEqual(idle.final);
   expect(partial.final).not.toEqual(partial.bind);
+  await page.close();
+}, 30000);
+
+
+test("equivalent fresh locomotion and graph data retain gait, pending triggers and visual variant state", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const graph of [false, true]) {
+    const stable = await page.evaluate(graph => (window as any).continuity(false, graph), graph);
+    const fresh = await page.evaluate(graph => (window as any).continuity(true, graph), graph);
+    expect(fresh.poses).toEqual(stable.poses);
+    expect(new Set(fresh.poses.map((pose: number[]) => JSON.stringify(pose))).size).toBeGreaterThan(1);
+    expect(fresh.cleanupBeforeRetune).toBe(0);
+    expect(fresh.cleanupAfterUnmount).toBe(1);
+    expect(fresh.subscriptionsAfterUnmount).toBe(0);
+  }
+  await page.close();
+}, 30000);
+
+test("intentional playback and nested mapping edits still reset and clean up the owned mixer", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const fresh of [false, true]) {
+    const result = await page.evaluate(fresh => (window as any).continuity(fresh, false, true), fresh);
+    expect(result.retuned.first).not.toEqual(result.retuned.held);
+    expect(result.retuned.held).toEqual(result.retuned.still);
+    expect(result.retuned.edited).not.toEqual(result.retuned.held);
+    expect(result.cleanupBeforeRetune).toBe(0);
+    expect(result.retuned.cleanupCount).toBe(4);
+    expect(result.cleanupAfterUnmount).toBe(5);
+    expect(result.subscriptionsAfterUnmount).toBe(0);
+  }
+  await page.close();
+}, 30000);
+
+
+test("authored one-shot insertion order retains simultaneous trigger priority when configurations change", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  const result = await page.evaluate(() => (window as any).continuity(true, false, false, true));
+  expect(result.priority.firstOrder).toEqual(result.priority.expectedFirst);
+  expect(result.priority.secondOrder).toEqual(result.priority.expectedSecond);
+  expect(result.priority.firstOrder).not.toEqual(result.priority.secondOrder);
+  expect(result.cleanupAfterUnmount).toBe(5);
+  expect(result.subscriptionsAfterUnmount).toBe(0);
   await page.close();
 }, 30000);
