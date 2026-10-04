@@ -20,10 +20,12 @@ import {
   createEmptyMovementKeys,
   createPlayerMotionState,
   DEFAULT_OBSTACLE_PLAYER_RADIUS,
+  DEFAULT_OBSTACLE_PLAYER_HEIGHT,
   motionStepSeconds,
   obstacleSupportHeight,
   resolveMovementIntent,
   resolveObstacleStep,
+  resolveObstacleVerticalStep,
   snapPositionToGrid,
   type CollisionObstacle,
   type MotionFrameOptions,
@@ -773,8 +775,9 @@ export function stepPlayerMovement(
   }
   const motionOptions: MotionFrameOptions = submerged
     ? { speedScale: swimSpeedMultiplier, floating: true, buffer: jumpBuffer, authoritativeStep: tuning.authoritativeStep }
-    : { buffer: jumpBuffer, authoritativeStep: tuning.authoritativeStep };
+    : { buffer: jumpBuffer, externalGrounding: true, authoritativeStep: tuning.authoritativeStep };
   const prevJumpOffset = motion.jumpOffset;
+  const groundedBeforeStep = motion.grounded;
   const step = advancePlayerMotion(motion, intent, forwardX, forwardZ, walkSpeed, dt, tuning.physics, motionOptions);
   // Airborne means "not resting on the surface below": any jump/impulse height before or after this
   // frame's integration. Grounded-only forgiveness (step-up) and airborne-only landing key off it.
@@ -787,9 +790,12 @@ export function stepPlayerMovement(
     stepZ = constrained.stepZ;
   }
   const stepHeight = tuning.movement?.stepHeight ?? DEFAULT_PLAYER_STEP_HEIGHT;
+  const verticalStep = airborne ? motion.jumpOffset - prevJumpOffset : 0;
+  const queryMinStepY = Math.min(0, verticalStep);
+  const queryMaxStepY = Math.max(stepHeight, verticalStep);
   let obstacles: CollisionObstacle[] | null = null;
   if (tuning.movement?.collideObjects !== false) {
-    obstacles = gatherMovementObstacles(ctx, player.position, stepX, stepZ);
+    obstacles = gatherMovementObstacles(ctx, player.position, stepX, stepZ, queryMinStepY, queryMaxStepY);
     // While grounded, a box the player could simply step onto is a ledge, not a wall.
     const resolved = resolveObstacleStep(
       player.position,
@@ -823,9 +829,19 @@ export function stepPlayerMovement(
     }
   }
   const maxClimbGrade = tuning.movement?.maxClimbGrade;
+  // The full/X/Z candidates share four unique grade samples (origin and three endpoints), even
+  // when headroom rejects the grade resolver's first choice. Preserve the game sampler's budget.
+  const gradeSamples: { x: number; z: number; height: number }[] | null = maxClimbGrade === undefined ? null : [];
+  const gradeSampler = (x: number, z: number): number => {
+    for (const sample of gradeSamples!) if (sample.x === x && sample.z === z) return sample.height;
+    const authoredSampler = tuning.movement?.climbGradeHeight;
+    const height = authoredSampler === undefined ? tuning.ground.sampleHeight(x, z) : authoredSampler(x, z);
+    gradeSamples!.push({ x, z, height });
+    return height;
+  };
   if (maxClimbGrade !== undefined) {
     const accepted = resolveTerrainGradeStep(
-      tuning.movement?.climbGradeHeight ?? tuning.ground,
+      gradeSampler,
       player.position,
       nextX - player.position[0],
       nextZ - player.position[2],
@@ -834,44 +850,111 @@ export function stepPlayerMovement(
     nextX = player.position[0] + accepted.stepX;
     nextZ = player.position[2] + accepted.stepZ;
   }
-  const groundAtNext = tuning.ground.sampleHeight(nextX, nextZ);
   // Blocking colliders are walkable surfaces: the effective ground under the player is the higher of
   // the terrain and the tallest object top the player can stand on here. While grounded a top within
   // stepHeight above the feet is stepped onto (matching the obstruction's ledge forgiveness); while
   // airborne only tops at/below the feet catch, so a jump lands ON a crate instead of sinking inside
   // it and being rubber-banded out by depenetration.
-  const supportY =
-    obstacles !== null
-      ? obstacleSupportHeight(nextX, nextZ, player.position[1], airborne ? 0 : stepHeight, obstacles)
-      : null;
-  const effectiveGround = supportY !== null && supportY > groundAtNext ? supportY : groundAtNext;
-  let motorProposalAccepted = true;
-  let nextY: number;
-  if (airborne) {
-    // Integrate the jump arc in absolute space (previous feet + this frame's offset delta) so the
-    // arc stays continuous when the ground under the player changes mid-flight, and land on the
-    // effective ground — terrain or object top — the moment the descending feet reach it.
-    const nextFeet = player.position[1] + (motion.jumpOffset - prevJumpOffset);
-    if (nextFeet <= effectiveGround && motion.verticalVelocity <= 0) {
-      nextY = effectiveGround;
-      motion.jumpOffset = 0;
-      motion.verticalVelocity = 0;
-      motion.grounded = true;
-    } else {
-      nextY = Math.max(nextFeet, effectiveGround);
-      motion.jumpOffset = nextY - effectiveGround;
-      motion.grounded = false;
+  const absoluteHeightOverride = motionBatch?.y !== undefined && motionBatch.y !== null;
+  const terrainSamples: { x: number; z: number; height: number }[] = [];
+  const terrainHeightAt = (x: number, z: number): number => {
+    for (const sample of terrainSamples) if (sample.x === x && sample.z === z) return sample.height;
+    const height = tuning.ground.sampleHeight(x, z);
+    terrainSamples.push({ x, z, height });
+    return height;
+  };
+  if (obstacles !== null && !absoluteHeightOverride) {
+    // A terrain-following style may accept a rise taller than stepHeight. Include those proposed
+    // full/X/Z body spans without querying the whole world or falling all the way to distant ground.
+    const rise = Math.max(
+      terrainHeightAt(nextX, nextZ),
+      terrainHeightAt(nextX, player.position[2]),
+      terrainHeightAt(player.position[0], nextZ),
+    ) - player.position[1];
+    if (rise > queryMaxStepY) {
+      obstacles = gatherMovementObstacles(ctx, player.position, nextX - player.position[0], nextZ - player.position[2], queryMinStepY, rise);
     }
-  } else if (!submerged && player.position[1] - effectiveGround > stepHeight) {
-    // Walked off a ledge taller than a step (a crate edge, a cliff): fall under gravity from here
-    // instead of teleporting the feet down to the ground in one frame.
-    nextY = player.position[1];
-    motion.jumpOffset = nextY - effectiveGround;
-    motion.verticalVelocity = 0;
-    motion.grounded = false;
-  } else {
-    nextY = effectiveGround;
   }
+  const validStartingBounds = obstacles === null || !resolveObstacleVerticalStep(player.position, 0, obstacles).initialOverlap;
+  const resolveCandidate = (x: number, z: number) => {
+    const terrainHeight = terrainHeightAt(x, z);
+    const supportY = obstacles === null ? null : obstacleSupportHeight(x, z, player.position[1], airborne ? 0 : stepHeight, obstacles);
+    const ground = supportY !== null && supportY > terrainHeight ? supportY : terrainHeight;
+    let y = ground;
+    let grounded = motion.grounded;
+    let velocity = motion.verticalVelocity;
+    let offset = motion.jumpOffset;
+    let rising = motion.jumpRising;
+    let blockedRise = false;
+    if (airborne) {
+      // Keep the arc in absolute space while the terrain/support changes below it.
+      const nextFeet = player.position[1] + (motion.jumpOffset - prevJumpOffset);
+      if (nextFeet <= ground && velocity <= 0) { offset = 0; velocity = 0; grounded = true; }
+      else { y = Math.max(nextFeet, ground); offset = y - ground; grounded = false; }
+    } else if (!submerged && player.position[1] - ground > stepHeight) {
+      y = player.position[1]; offset = y - ground; velocity = 0; grounded = false;
+    }
+    if (obstacles !== null && !absoluteHeightOverride) {
+      const vertical = resolveObstacleVerticalStep([x, player.position[1], z], y - player.position[1], obstacles);
+      if (vertical.hitCeiling) {
+        const clippedY = player.position[1] + vertical.stepY;
+        // A surface above the ceiling cannot be reached by snapping entirely through a thin roof.
+        blockedRise = ground > vertical.ceilingFeetY! + vertical.ceilingTolerance;
+        y = Math.max(clippedY, ground);
+        offset = Math.max(0, y - ground); velocity = 0; rising = false; grounded = y === ground;
+      } else if (vertical.landed) {
+        y = player.position[1] + vertical.stepY; offset = 0; velocity = 0; rising = false; grounded = true;
+      }
+    }
+    const clear = obstacles === null || absoluteHeightOverride || !validStartingBounds ||
+      (!blockedRise && !resolveObstacleVerticalStep([x, y, z], 0, obstacles).initialOverlap);
+    return { x, z, y, ground, grounded, velocity, offset, rising, clear };
+  };
+  let candidate = resolveCandidate(nextX, nextZ);
+  if (!candidate.clear) {
+    const gradeAllows = (x: number, z: number): boolean => {
+      if (maxClimbGrade === undefined) return true;
+      const accepted = resolveTerrainGradeStep(gradeSampler, player.position, x - player.position[0], z - player.position[2], maxClimbGrade);
+      return accepted.stepX === x - player.position[0] && accepted.stepZ === z - player.position[2];
+    };
+    const tryAxis = (x: number, z: number): boolean => {
+      if (obstacles !== null) {
+        // The original Z sweep used post-X coordinates. An alternate axis must be swept again from
+        // the original pose; reject a changed endpoint rather than accepting an unsampled grade.
+        const swept = resolveObstacleStep(player.position, x - player.position[0], z - player.position[2], obstacles,
+          DEFAULT_OBSTACLE_PLAYER_RADIUS, airborne ? 0 : stepHeight);
+        if (swept.stepX !== x - player.position[0] || swept.stepZ !== z - player.position[2]) return false;
+      }
+      if (!gradeAllows(x, z)) return false;
+      const alternative = resolveCandidate(x, z);
+      if (!alternative.clear) return false;
+      candidate = alternative;
+      return true;
+    };
+    const xAccepted = nextX !== player.position[0] && tryAxis(nextX, player.position[2]);
+    const zAccepted = !xAccepted && nextZ !== player.position[2] && tryAxis(player.position[0], nextZ);
+    if (!xAccepted && !zAccepted) {
+      candidate = resolveCandidate(player.position[0], player.position[2]);
+      if (!candidate.clear) {
+        // An inflated support edge cannot raise the body into a lintel. Retain the valid starting
+        // pose rather than forcing feet into support or repairing an illegal authored placement.
+        candidate.y = player.position[1]; candidate.grounded = groundedBeforeStep;
+        candidate.offset = prevJumpOffset; candidate.velocity = groundedBeforeStep ? 0 : motion.verticalVelocity;
+        candidate.rising = groundedBeforeStep ? false : motion.jumpRising;
+      }
+    }
+  }
+  nextX = candidate.x;
+  nextZ = candidate.z;
+  let nextY = candidate.y;
+  const effectiveGround = candidate.ground;
+  motion.grounded = candidate.grounded;
+  motion.verticalVelocity = candidate.velocity;
+  motion.jumpOffset = candidate.offset;
+  motion.jumpRising = candidate.rising;
+  let motorProposalAccepted = true;
+  if (!groundedBeforeStep && motion.grounded) motion.landedAtMs = motion.clockMs;
+  motion.wasAirborne = !motion.grounded;
   if (motionBatch !== null && motionBatch.y !== null) {
     motorProposalAccepted = motionBatch.y === nextY;
     nextY = motionBatch.y;
@@ -921,11 +1004,18 @@ function gatherMovementObstacles(
   position: EntityPosition,
   stepX: number,
   stepZ: number,
+  minStepY = 0,
+  maxStepY = 0,
 ): CollisionObstacle[] {
+  if (!Number.isFinite(minStepY) || !Number.isFinite(maxStepY)) throw new RangeError("Movement obstacle query requires a finite vertical step.");
+  const minY = Math.min(0, minStepY);
+  const maxY = Math.max(0, maxStepY);
+  const queryPosition: EntityPosition = minY < 0 ? [position[0], position[1] + minY, position[2]] : position;
   return solidObstaclesNear(
     ctx,
-    position,
+    queryPosition,
     Math.abs(stepX) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
     Math.abs(stepZ) + DEFAULT_OBSTACLE_PLAYER_RADIUS,
+    DEFAULT_OBSTACLE_PLAYER_HEIGHT + maxY - minY,
   );
 }
