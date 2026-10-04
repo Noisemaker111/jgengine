@@ -2,15 +2,15 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { mkdir, readdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
-import { chromium, type Browser, type BrowserServer, type Page } from "playwright-core";
-import { buildBrowserFixture, chromeGraphicsArgs, findChromeExecutable } from "../../../scripts/browser-lib";
-import { cleanupBrowserFixture } from "../../../scripts/browser-fixture-cleanup";
+import { chromium, type Browser, type Page } from "playwright-core";
+import { buildBrowserFixture, chromeGraphicsArgs, findChromeExecutable, killPid } from "../../../scripts/browser-lib";
+import { cleanupBrowserFixture, ownBrowserProcess, type OwnedBrowserProcess } from "../../../scripts/browser-fixture-cleanup";
 import { decodePng } from "../../../scripts/png-reader";
 import { computeShotMetrics } from "../../../scripts/shot-metrics";
 
 const scratch = resolve(import.meta.dir, "../../../.scratch/creator-mount-test");
 let browser: Browser;
-let browserServer: BrowserServer | undefined;
+let ownedBrowserProcess: OwnedBrowserProcess | undefined;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
 const errors: string[] = [];
@@ -70,8 +70,15 @@ beforeAll(async () => {
     if (path === "/fixture.css") return new Response(css, { headers: { "content-type": "text/css" } });
     return new Response('<link rel="stylesheet" href="/fixture.css"><div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "content-type": "text/html" } });
   } });
-  browserServer = await chromium.launchServer({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox", ...chromeGraphicsArgs()] });
-  browser = await chromium.connect(browserServer.wsEndpoint());
+  const launchedBrowser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox", ...chromeGraphicsArgs()] });
+  browser = launchedBrowser;
+  const inspection = await launchedBrowser.newBrowserCDPSession();
+  try {
+    ownedBrowserProcess = ownBrowserProcess((await inspection.send("SystemInfo.getProcessInfo")).processInfo, async (pid) => {
+      if (launchedBrowser.isConnected()) killPid(pid, true);
+      await launchedBrowser.close();
+    });
+  } finally { await inspection.detach(); }
   page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page.on("pageerror", (failure) => errors.push(failure.message));
   await page.goto(`http://127.0.0.1:${server.port}`);
@@ -83,7 +90,8 @@ afterAll(() => cleanupBrowserFixture({
     releaseFailedSave = null;
     release?.();
   },
-  browserServer,
+  ownedBrowserProcess,
+  browser,
   server,
   removeScratch: () => rm(scratch, { recursive: true, force: true }),
 }));
