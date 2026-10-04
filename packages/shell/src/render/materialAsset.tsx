@@ -3,7 +3,7 @@ import { useLoader, useThree } from "@react-three/fiber";
 import { useMemo } from "react";
 import * as THREE from "three";
 
-import { MATERIAL_TEXTURE_SEMANTICS, validateMaterialAsset, type MaterialAsset, type MaterialAssignment, type MaterialSurfaceParameters, type MaterialTextureMetadata, type MaterialTextureRole } from "@jgengine/core/material/materialAsset";
+import { MATERIAL_TEXTURE_SEMANTICS, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset, type MaterialAssignment, type MaterialAssignmentValidationOptions, type MaterialSurfaceParameters, type MaterialTextureMetadata, type MaterialTextureRole } from "@jgengine/core/material/materialAsset";
 
 import { applyMaterialOverrideToMaterial, MATERIAL_TEXTURE_PROPERTIES, requiresPhysicalMaterial, type MaterialOverrideTextures } from "../materialOverride";
 import { configureAuthoredSurface, type SurfaceShape } from "./authoredSurfaceMaterial";
@@ -143,24 +143,50 @@ reflectedLight.directDiffuse += directLight.color * uJgHairTint * (jgHairBack * 
  * @capability material-assets clone and configure an imported PBR slot while retaining its omitted physical features and maps
  */
 export function applyMaterialAsset(material: THREE.Material, asset: MaterialAsset, textures?: MaterialOverrideTextures, overrides?: MaterialSurfaceParameters): THREE.MeshStandardMaterial {
+  const surface = materialAssetSurfaceForSlot(material, asset, overrides);
+  const source = materialAssetBases.get(material) ?? material;
+  const target = applyMaterialOverrideToMaterial(source, surface, true, textures) as THREE.MeshStandardMaterial;
+  try {
+    materialAssetBases.set(target, source);
+    applyNormalConventions(target, asset);
+    applyFabric(target, asset);
+    applyHair(target, asset);
+    target.userData = { ...target.userData, jgMaterialAsset: asset.id };
+    return target;
+  } catch (error) {
+    try { target.dispose(); } finally { throw error; }
+  }
+}
+
+function materialAssetSurfaceForSlot(material: THREE.Material, asset: MaterialAsset, overrides?: MaterialSurfaceParameters, baseAlphaMode?: MaterialSurfaceParameters["alphaMode"]): MaterialSurfaceParameters {
   if (!(material as THREE.MeshStandardMaterial).isMeshStandardMaterial) throw new Error(`Material ${asset.id} requires an imported standard or physical PBR slot`);
   const source = materialAssetBases.get(material) ?? material;
   const surface = materialAssetSurface(asset, overrides);
-  if ((surface.transmission ?? 0) > 0 && surface.alphaMode === undefined && source.transparent) throw new Error(`Material ${asset.id} transmission requires an explicit opaque or mask alphaMode on the imported blended slot`);
-  const target = applyMaterialOverrideToMaterial(source, surface, true, textures) as THREE.MeshStandardMaterial;
-  materialAssetBases.set(target, source);
-  applyNormalConventions(target, asset);
-  applyFabric(target, asset);
-  applyHair(target, asset);
-  target.userData = { ...target.userData, jgMaterialAsset: asset.id };
-  return target;
+  const transparent = baseAlphaMode === undefined ? source.transparent : baseAlphaMode === "blend";
+  if ((surface.transmission ?? 0) > 0 && surface.alphaMode === undefined && transparent) throw new Error(`Material ${asset.id} transmission requires an explicit opaque or mask alphaMode on the imported blended slot`);
+  return surface;
+}
+
+/** Read-only target validation policy; source coverage can reflect an earlier all-slot override. */
+export interface MaterialAssignmentTargetOptions extends MaterialAssignmentValidationOptions {
+  /** Coverage applied to every imported slot before named assignments; never mutates the source. */
+  baseAlphaMode?: MaterialSurfaceParameters["alphaMode"];
 }
 
 /**
- * Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them for cleanup.
- * @capability material-assets assign reusable physical assets to independent imported model slots
+ * Check selectors, PBR slots, UVs and construction prerequisites before allocating material or texture views.
+ * Optional role restrictions apply only to referenced assets; imported maps remain untouched.
+ * @capability material-slot-selection preflight native model assignments without allocating or changing imported resources
  */
-export function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map()): THREE.Material[] {
+export function validateMaterialAssignmentTargets(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], options: MaterialAssignmentTargetOptions = {}): void {
+  materialAssignmentTargets(root, assets, assignments, options);
+}
+
+function materialAssignmentTargets(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], options: MaterialAssignmentTargetOptions = {}) {
+  if (options.disallowedTextureRoles?.length) {
+    const errors = validateMaterialAssignments(assignments, assets, options).filter(diagnostic => diagnostic.code === "unsupported-texture-role");
+    if (errors.length > 0) throw new Error(errors.map(error => error.message).join("; "));
+  }
   const byId = new Map(assets.map(asset => [asset.id, asset]));
   const matches = assignments.map(assignment => {
     const asset = byId.get(assignment.materialId);
@@ -191,6 +217,19 @@ export function applyMaterialAssignments(root: THREE.Object3D, assets: readonly 
     if (slots === undefined) { slots = new Map(); final.set(mesh, slots); }
     slots.set(index, { assignment, asset });
   }
+  for (const [mesh, slots] of final) for (const [index, { assignment, asset }] of slots) {
+    const source = Array.isArray(mesh.material) ? mesh.material[index]! : mesh.material;
+    materialAssetSurfaceForSlot(source, asset, assignment.overrides, options.baseAlphaMode);
+  }
+  return final;
+}
+
+/**
+ * Apply intersecting mesh/slot selectors without changing omitted imported slots. Returns caller-owned replacements; model clones register them only after success.
+ * @capability material-assets assign reusable physical assets to independent imported model slots
+ */
+export function applyMaterialAssignments(root: THREE.Object3D, assets: readonly MaterialAsset[], assignments: readonly MaterialAssignment[], textures: ReadonlyMap<string, MaterialOverrideTextures> = new Map()): THREE.Material[] {
+  const final = materialAssignmentTargets(root, assets, assignments);
   const owned: THREE.Material[] = [];
   const originals: { mesh: THREE.Mesh; index: number; source: THREE.Material }[] = [];
   try {
@@ -199,17 +238,19 @@ export function applyMaterialAssignments(root: THREE.Object3D, assets: readonly 
       const target = applyMaterialAsset(source, asset, textures.get(asset.id), assignment.overrides);
       originals.push({ mesh, index, source });
       owned.push(target);
-      ownModelMaterial(root, target);
       if (Array.isArray(mesh.material)) mesh.material[index] = target;
       else mesh.material = target;
     }
+    for (const material of owned) ownModelMaterial(root, material);
     return owned;
   } catch (error) {
     for (const { mesh, index, source } of originals) {
       if (Array.isArray(mesh.material)) mesh.material[index] = source;
       else mesh.material = source;
     }
-    for (const material of owned) material.dispose();
+    for (const material of owned) {
+      try { material.dispose(); } catch { /* Preserve the construction error while draining every owned target. */ }
+    }
     throw error;
   }
 }

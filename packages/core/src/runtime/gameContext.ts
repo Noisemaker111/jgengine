@@ -712,7 +712,7 @@ export function createGameContext<TAssetRef extends ModelAssetRef, TMultiplayer>
     ctx.sim.addStage({ id: "physics", phase: "afterMovement", run: (_dt, _tick, gameDt) => { if (gameDt > 0) physicsBackend.step(gameDt); } });
   }
 
-  installPursuitPersistence(ctx, aoiRadius);
+  installPursuitPersistence(ctx, aoiRadius, definition.pursuit?.eligible);
   installCameraPersistence(ctx);
   const saveOptions = resolveSaveOptions(definition, options);
   if (saveOptions !== undefined) {

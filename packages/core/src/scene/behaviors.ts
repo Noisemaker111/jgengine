@@ -9,8 +9,9 @@ import type { Blackboard, DecisionGraph } from "../ai/decisionGraph";
 import type { CooldownMode } from "../ai/pursuit";
 import type { ThreatTableConfig } from "../ai/threat";
 
-/** Scheduled chase/attack behavior; the descriptor declares hostility toward player-role entities.
- * Explicit targets and optional threat override nearest-player acquisition.
+/** Scheduled chase/attack behavior; the default declares hostility toward player-role entities.
+ * GameDefinition.pursuit.eligible can further restrict every target source using the live world.
+ * Explicit targets and optional threat override nearest-player acquisition, not eligibility.
  */
 export interface PursueBehavior {
   kind: "pursue";

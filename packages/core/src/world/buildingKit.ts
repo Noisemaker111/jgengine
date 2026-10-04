@@ -3,6 +3,7 @@
  * as an instanced asset kit instead of untextured blocks. Pure serializable data — core resolves
  * bindings, the renderer loads them.
  */
+import { parseMaterialAssignments, validateMaterialAssignments, type MaterialAsset, type MaterialAssignment } from "../material/materialAsset";
 import type { BuildingKitSlot, BuildingPartKind, BuildingSurfaceMaterial, BuildingVariantCounts, Vec3 } from "./buildings";
 
 /**
@@ -36,6 +37,8 @@ export interface BuildingKitPart {
   tint?: string;
   /** Tiled PBR maps applied over the model's own materials; `color` tints, `repeat` sets the tiling. */
   material?: BuildingSurfaceMaterial;
+  /** Editor-authored mesh/slot selectors applied after the broad tint and surface. */
+  materialAssignments?: readonly MaterialAssignment[];
   /**
    * Quarter-turn the model when its long horizontal axis disagrees with the slot's, so a panel
    * authored running along Z still tiles a bay that runs along X. Default true — modular kits do not
@@ -52,6 +55,8 @@ export interface BuildingKitPart {
  */
 export interface BuildingKit {
   id: string;
+  /** The caller's existing editor-document material assets; only assigned IDs are loaded. */
+  materialAssets?: readonly MaterialAsset[];
   /** Variants per part kind; `BuildingKitSlot.variant` indexes this list, wrapping. */
   parts: Readonly<Partial<Record<BuildingPartKind, readonly BuildingKitPart[]>>>;
   /** Overrides keyed by `BuildingKitSlot.key` (`${facade}.${kind}`); beats `parts` for that facade. */
@@ -68,6 +73,7 @@ export type BuildingKitPartInput = string | BuildingKitPart;
 /** The authoring shape {@link defineBuildingKit} normalizes into a {@link BuildingKit}. */
 export interface BuildingKitInput {
   id?: string;
+  materialAssets?: readonly MaterialAsset[];
   parts: Readonly<Partial<Record<BuildingPartKind, readonly BuildingKitPartInput[]>>>;
   slots?: Readonly<Record<string, readonly BuildingKitPartInput[]>>;
   omit?: readonly BuildingPartKind[];
@@ -90,10 +96,16 @@ const OMIT: BuildingKitBinding = { type: "omit" };
 
 const DEFAULT_FIT: BuildingKitFit = "stretch";
 
-function normalizePart(input: BuildingKitPartInput, where: string): BuildingKitPart {
+function normalizePart(input: BuildingKitPartInput, where: string, assets: readonly MaterialAsset[]): BuildingKitPart {
   const part = typeof input === "string" ? { model: input } : input;
   if (typeof part.model !== "string" || part.model.length === 0) {
     throw new Error(`Building kit ${where} has a variant with no model reference.`);
+  }
+  if (part.materialAssignments !== undefined) {
+    const assignments = parseMaterialAssignments(part.materialAssignments);
+    const errors = validateMaterialAssignments(assignments, assets, { disallowedTextureRoles: ["height"] }).filter(item => item.severity === "error");
+    if (errors.length > 0) throw new Error(`Building kit ${where}: ${errors.map(item => `${item.path}: ${item.message}`).join("; ")}`);
+    return { ...part, materialAssignments: assignments };
   }
   return part;
 }
@@ -101,38 +113,39 @@ function normalizePart(input: BuildingKitPartInput, where: string): BuildingKitP
 function normalizeList(
   list: readonly BuildingKitPartInput[],
   where: string,
+  assets: readonly MaterialAsset[],
 ): readonly BuildingKitPart[] {
   if (list.length === 0) {
     throw new Error(
       `Building kit ${where} binds an empty variant list. Bind at least one model, or add the kind to \`omit\` to drop it.`,
     );
   }
-  return list.map((entry) => normalizePart(entry, where));
+  return list.map((entry) => normalizePart(entry, where, assets));
 }
 
 /**
  * Validates and normalizes a kit description, accepting bare model strings as single-field variants.
- * Throws on empty variant lists so a typo fails at authoring time rather than silently falling back
- * to untextured boxes.
+ * Throws on empty variants or invalid editor material references/selectors before loading models.
  *
- * @capability building-kit bind generated facade part slots to real models instead of untextured blocks
+ * @capability building-kit bind generated facade part slots to caller models and editor-authored named materials
  */
 export function defineBuildingKit(input: BuildingKitInput): BuildingKit {
   const parts: Partial<Record<BuildingPartKind, readonly BuildingKitPart[]>> = {};
   for (const [kind, list] of Object.entries(input.parts)) {
     if (list === undefined) continue;
-    parts[kind as BuildingPartKind] = normalizeList(list, `"${input.id ?? "kit"}" part "${kind}"`);
+    parts[kind as BuildingPartKind] = normalizeList(list, `"${input.id ?? "kit"}" part "${kind}"`, input.materialAssets ?? []);
   }
   const kit: BuildingKit = {
     id: input.id ?? "building-kit",
     parts,
+    ...(input.materialAssets === undefined ? {} : { materialAssets: input.materialAssets }),
     ...(input.omit === undefined ? {} : { omit: input.omit }),
     ...(input.fit === undefined ? {} : { fit: input.fit }),
   };
   if (input.slots === undefined) return kit;
   const slots: Record<string, readonly BuildingKitPart[]> = {};
   for (const [key, list] of Object.entries(input.slots)) {
-    slots[key] = normalizeList(list, `"${kit.id}" slot "${key}"`);
+    slots[key] = normalizeList(list, `"${kit.id}" slot "${key}"`, input.materialAssets ?? []);
   }
   return { ...kit, slots };
 }

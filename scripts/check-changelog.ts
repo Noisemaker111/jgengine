@@ -6,10 +6,12 @@
 // Bypass a pure refactor / test-only / internal change with `[skip changelog]` in a
 // commit message. If the base ref is unavailable (shallow clone, fresh repo) the check
 // skips rather than failing — CI checks out full history so the gate is live there.
+// These exemptions waive the requirement for a new note, never validation of existing notes.
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { FRAGMENT_PATTERN, groupByHeading } from "./changelog-fragments";
+import { relative } from "node:path";
+import { FRAGMENT_PATTERN, groupByHeading, readFragments } from "./changelog-fragments";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const BASE_REF = process.env.CHANGELOG_BASE_REF ?? "origin/main";
@@ -35,6 +37,18 @@ function unreleasedBlock(text: string): string {
     }
   }
   return lines.slice(start, end).join("\n").trim();
+}
+
+// A release folds every note, including notes predating this diff. Validate them before
+// unavailable-base, skip-marker and source-free branches can exit successfully.
+for (const fragment of readFragments(root)) {
+  const groups = groupByHeading(fragment.text.split("\n"));
+  if (![...groups].some(([heading, body]) =>
+    /^(Migrate|Added|Changed|Fixed|Removed)$/.test(heading) && body.some((line) => /^-\s+\S/.test(line)),
+  )) {
+    console.error(`\ncheck-changelog failed: ${relative(root, fragment.path)} needs a ### Migrate/Added/Changed/Fixed/Removed heading with a bullet under it.\n`);
+    process.exit(1);
+  }
 }
 
 const mergeBase = git(["merge-base", BASE_REF, "HEAD"]);
@@ -63,13 +77,6 @@ if (sourceChanges.length === 0) {
 }
 
 const fragments = changedFiles("AM").filter((f) => FRAGMENT_PATTERN.test(f));
-for (const fragment of fragments) {
-  const groups = groupByHeading(readFileSync(new URL(`../${fragment}`, import.meta.url), "utf8").split("\n"));
-  if (![...groups.values()].some((body) => body.length > 0)) {
-    console.error(`\ncheck-changelog failed: ${fragment} needs a ### Migrate/Added/Changed/Fixed/Removed heading with a bullet under it.\n`);
-    process.exit(1);
-  }
-}
 if (fragments.length > 0) {
   console.log(`check-changelog ok: ${fragments.join(", ")} records changes for ${sourceChanges.length} source file(s).`);
   process.exit(0);

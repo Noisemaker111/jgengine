@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { act, createRoot, type ReconcilerRoot } from "@react-three/fiber";
-import { createElement, Suspense } from "react";
+import { act, createRoot, useThree, type ReconcilerRoot } from "@react-three/fiber";
+import { Component, createElement, Suspense, type ReactNode } from "react";
 import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { GameContext } from "@jgengine/core/runtime/gameContext";
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { GameProvider } from "@jgengine/react/provider";
 
 import { sharedGltfLoader } from "./modelLoad";
@@ -63,6 +65,67 @@ function sourceModel() {
 }
 
 describe("useModelInstance", () => {
+  test("EntityModel rejects invalid assignments before texture loads, views or model clones", async () => {
+    const report = globalThis.reportError;
+    globalThis.reportError = () => {};
+    const texture = new THREE.Texture();
+    const load = THREE.TextureLoader.prototype.load;
+    let loads = 0, views = 0, materialClones = 0, caught = 0;
+    THREE.TextureLoader.prototype.load = (_url, onLoad) => { loads++; onLoad?.(texture); return texture as THREE.Texture<HTMLImageElement>; };
+    const clone = texture.clone;
+    texture.clone = function () { views++; return clone.call(this); };
+    class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+      state = { failed: false };
+      static getDerivedStateFromError() { return { failed: true }; }
+      componentDidCatch() { caught++; }
+      render() { return this.state.failed ? null : this.props.children; }
+    }
+    try {
+      for (const failure of ["selector", "uv", "transmission"] as const) {
+        const source = new THREE.Group();
+        const material = new THREE.MeshPhysicalMaterial({ transparent: failure !== "transmission", map: texture }); material.name = "panel";
+        const originalClone = material.clone;
+        material.clone = function () { materialClones++; return originalClone.call(this); };
+        const mesh = new THREE.Mesh(new THREE.BoxGeometry(), material); mesh.name = "facade";
+        if (failure === "uv") mesh.geometry.deleteAttribute("uv");
+        source.add(mesh);
+        const h = await harness(source);
+        const asset: MaterialAsset = { schemaVersion: 1, id: failure, name: failure, family: "glass", capabilities: ["pbr", "transmission"], surface: failure === "transmission" ? { transmission: 0.7 } : {}, textures: { color: { url: `invalid-${failure}-${h.url}.png`, colorSpace: "srgb" } } };
+        const model: ModelConfig = { url: h.url, ...(failure === "transmission" ? { material: { alphaMode: "blend" as const } } : {}), materialAssets: [asset], materialAssignments: [{ materialId: asset.id, selector: { mesh: failure === "selector" ? "missing" : "facade" } }] };
+        await act(async () => h.root.render(createElement(Boundary, { children: createElement(Suspense, { fallback: null }, createElement(EntityModel, { model })) })));
+        await act(async () => h.root.render(null));
+        expect(mesh.material).toBe(material);
+        expect(material.map).toBe(texture);
+      }
+      expect(caught).toBe(3);
+      expect(loads).toBe(0);
+      expect(views).toBe(0);
+      expect(materialClones).toBe(0);
+    } finally {
+      globalThis.reportError = report;
+      THREE.TextureLoader.prototype.load = load;
+      texture.clone = clone;
+    }
+  });
+
+  test("EntityModel preflight respects all-slot opaque coverage before named transmission", async () => {
+    const source = new THREE.Group();
+    const material = new THREE.MeshPhysicalMaterial({ transparent: true, opacity: 0.4 }); material.name = "glass";
+    source.add(new THREE.Mesh(new THREE.BoxGeometry(), material));
+    const h = await harness(source);
+    const asset: MaterialAsset = { schemaVersion: 1, id: "glass", name: "Glass", family: "glass", capabilities: ["pbr", "transmission"], surface: { transmission: 0.7 } };
+    const model: ModelConfig = { url: h.url, material: { alphaMode: "opaque" }, materialAssets: [asset], materialAssignments: [{ materialId: "glass", selector: { slot: "glass" } }] };
+    let scene!: THREE.Scene;
+    function Inspect() { scene = useThree(state => state.scene); return null; }
+    await act(async () => h.root.render(createElement(Suspense, { fallback: null }, createElement(EntityModel, { model }), createElement(Inspect))));
+    const content = scene.children[0] as THREE.Group;
+    const mesh = content.children[0]!.children[0] as THREE.Mesh;
+    expect((mesh.material as THREE.MeshPhysicalMaterial).transmission).toBe(0.7);
+    expect((mesh.material as THREE.MeshPhysicalMaterial).transparent).toBe(false);
+    expect(material.transparent).toBe(true);
+    expect(material.transmission).toBe(0);
+  });
+
   test("owns isolated materials, preserves imported transforms and applies caller placement and shadows", async () => {
     const { source, material, geometry } = sourceModel();
     const h = await harness(source);

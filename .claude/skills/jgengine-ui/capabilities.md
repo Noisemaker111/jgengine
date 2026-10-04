@@ -394,6 +394,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `materialResourceMetrics` (function) · `import { materialResourceMetrics } from "@jgengine/shell/render/materialAsset"`
 
+## material-slot-selection — preflight native model assignments without allocating or changing imported resources
+
+- `validateMaterialAssignmentTargets` (function) · `import { validateMaterialAssignmentTargets } from "@jgengine/shell/render/materialAsset"`
+
 ## material-slots — discover exact imported mesh and material selectors with UV and tangent prerequisites
 
 - `inspectModelMaterialSlots` (function) · `import { inspectModelMaterialSlots } from "@jgengine/shell/render/materialAsset"`

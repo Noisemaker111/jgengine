@@ -15,6 +15,7 @@ import {
 } from "../nav/pathFollow";
 import { resolveWalkerStep } from "../movement/solidObstacles";
 import type { GameContext } from "../runtime/gameContext";
+import type { GameDefinition } from "../game/defineGame";
 import { perContext } from "../runtime/perContext";
 import { notifyAfter } from "../store/changeSignal";
 import { visibleEntityIds } from "../runtime/worldProjection";
@@ -156,6 +157,9 @@ interface PursueNav extends Lifecycle {
 }
 
 type Nav = PatrolNav | WanderNav | DecisionGraphNav | PursueNav;
+
+// Bind unsaved policy without eagerly constructing the lazy AI runtime before boot-time restore.
+const pursuitPolicies = new WeakMap<GameContext, NonNullable<GameDefinition["pursuit"]>["eligible"]>();
 
 function thinkCadence(behavior: DecisionGraphBehavior): InterestSchedulerConfig {
   return { wakeRadius: Number.POSITIVE_INFINITY, activeInterval: Math.max(0, behavior.thinkInterval ?? 0) };
@@ -357,8 +361,10 @@ function stepPursue(ctx: GameContext, id: string, entry: PursueNav, dt: number):
   if (entity === null) return;
   const { behavior, home } = entry;
   const homeDistance = distanceBetween(entity.position, home);
+  const policy = pursuitPolicies.get(ctx);
   const eligible = (candidate: string): boolean => candidate !== id && ctx.scene.entity.get(candidate) !== null
-    && ctx.scene.entity.canReceive(candidate, behavior.attack.effect, behavior.attack.amount) === null;
+    && ctx.scene.entity.canReceive(candidate, behavior.attack.effect, behavior.attack.amount) === null
+    && (policy === undefined || policy(ctx, id, candidate) === true);
   entry.threat?.decay(dt);
   if (!entry.returning) {
     const explicit = ctx.scene.entity.getTarget(id);
@@ -632,7 +638,9 @@ interface PursueSaveRecord {
 }
 
 /** @internal Register persistence before boot-time restore without constructing an AI runtime. */
-export function installPursuitPersistence(ctx: GameContext, aoiRadius?: number): void {
+export function installPursuitPersistence(ctx: GameContext, aoiRadius?: number,
+  eligible?: NonNullable<GameDefinition["pursuit"]>["eligible"]): void {
+  if (eligible !== undefined) pursuitPolicies.set(ctx, eligible);
   ctx.game.registerReplicate?.({
     key: "pursuitBehaviors",
     snapshot() {

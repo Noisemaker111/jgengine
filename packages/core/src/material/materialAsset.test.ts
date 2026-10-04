@@ -108,3 +108,13 @@ describe("material asset contracts", () => {
     expect(validateMaterialAsset(createMaterialTemplate("hair-cards", "h")).some((diagnostic) => diagnostic.code === "hair-approximation")).toBe(true);
   });
 });
+
+test("render-path map restrictions apply only to referenced assets and remain opt-in", () => {
+  const raised: MaterialAsset = { ...material(), id: "raised", textures: { height: { url: "/height.png", colorSpace: "linear", channel: "r" } } };
+  const flat: MaterialAsset = { ...material(), id: "flat" };
+  const assignment = [{ materialId: "raised", selector: { slot: "Facade" } }];
+  expect(validateMaterialAssignments(assignment, [raised])).toEqual([]);
+  expect(validateMaterialAssignments(assignment, [raised], { disallowedTextureRoles: ["height"] })).toMatchObject([{ severity: "error", code: "unsupported-texture-role", path: "materialAssignments.0.materialId" }]);
+  expect(validateMaterialAssignments([{ materialId: "flat", selector: { slot: "Facade" } }], [flat, raised], { disallowedTextureRoles: ["height"] })).toEqual([]);
+  expect(raised.textures!.height!.url).toBe("/height.png");
+});

@@ -82,36 +82,43 @@ export function applyMaterialOverrideToMaterial(
   if (!isStandardOrPhysicalMaterial(material)) return material;
   const promote = requiresPhysicalMaterial(override, textures) && !(material as THREE.MeshPhysicalMaterial).isMeshPhysicalMaterial;
   const target = promote ? new THREE.MeshPhysicalMaterial() : clone ? material.clone() : material;
-  if (promote) THREE.MeshStandardMaterial.prototype.copy.call(target, material);
-  if (clone || promote) {
-    target.onBeforeCompile = material.onBeforeCompile;
-    target.customProgramCacheKey = material.customProgramCacheKey;
+  try {
+    if (promote) THREE.MeshStandardMaterial.prototype.copy.call(target, material);
+    if (clone || promote) {
+      target.onBeforeCompile = material.onBeforeCompile;
+      target.customProgramCacheKey = material.customProgramCacheKey;
+    }
+    if (override.color !== undefined) target.color.set(override.color);
+    if (override.metalness !== undefined) target.metalness = override.metalness;
+    if (override.roughness !== undefined) target.roughness = override.roughness;
+    if (override.emissive !== undefined) target.emissive.set(override.emissive);
+    if (override.emissiveIntensity !== undefined) target.emissiveIntensity = override.emissiveIntensity;
+    if (override.normalScale !== undefined) target.normalScale.set(...override.normalScale);
+    const physical = target as THREE.MeshPhysicalMaterial;
+    for (const key of physicalNumbers) if (override[key] !== undefined) physical[key] = override[key]!;
+    for (const key of physicalColors) if (override[key] !== undefined) physical[key].set(override[key]!);
+    if (override.iridescenceThicknessRange !== undefined) physical.iridescenceThicknessRange = [...override.iridescenceThicknessRange];
+    if (override.alphaMode !== undefined) {
+      target.transparent = override.alphaMode === "blend";
+      target.alphaTest = override.alphaMode === "mask" ? override.alphaCutoff ?? 0.5 : 0;
+      target.depthWrite = override.alphaMode !== "blend";
+    } else if (override.alphaCutoff !== undefined) target.alphaTest = override.alphaCutoff;
+    if (override.opacity !== undefined) target.opacity = override.opacity;
+    if (override.doubleSided !== undefined) target.side = override.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
+    for (const [role, texture] of Object.entries(textures ?? {})) {
+      const property = MATERIAL_TEXTURE_PROPERTIES[role as keyof typeof MATERIAL_TEXTURE_PROPERTIES];
+      if (property !== undefined) (target as unknown as Record<string, unknown>)[property] = texture;
+    }
+    if (textures !== undefined) target.needsUpdate = true;
+    if (override.rim !== undefined) applyRimLight(target, override.rim);
+    if (override.alphaMode !== undefined || override.doubleSided !== undefined) target.needsUpdate = true;
+    return target;
+  } catch (error) {
+    if (target !== material) {
+      try { target.dispose(); } finally { throw error; }
+    }
+    throw error;
   }
-  if (override.color !== undefined) target.color.set(override.color);
-  if (override.metalness !== undefined) target.metalness = override.metalness;
-  if (override.roughness !== undefined) target.roughness = override.roughness;
-  if (override.emissive !== undefined) target.emissive.set(override.emissive);
-  if (override.emissiveIntensity !== undefined) target.emissiveIntensity = override.emissiveIntensity;
-  if (override.normalScale !== undefined) target.normalScale.set(...override.normalScale);
-  const physical = target as THREE.MeshPhysicalMaterial;
-  for (const key of physicalNumbers) if (override[key] !== undefined) physical[key] = override[key]!;
-  for (const key of physicalColors) if (override[key] !== undefined) physical[key].set(override[key]!);
-  if (override.iridescenceThicknessRange !== undefined) physical.iridescenceThicknessRange = [...override.iridescenceThicknessRange];
-  if (override.alphaMode !== undefined) {
-    target.transparent = override.alphaMode === "blend";
-    target.alphaTest = override.alphaMode === "mask" ? override.alphaCutoff ?? 0.5 : 0;
-    target.depthWrite = override.alphaMode !== "blend";
-  } else if (override.alphaCutoff !== undefined) target.alphaTest = override.alphaCutoff;
-  if (override.opacity !== undefined) target.opacity = override.opacity;
-  if (override.doubleSided !== undefined) target.side = override.doubleSided ? THREE.DoubleSide : THREE.FrontSide;
-  for (const [role, texture] of Object.entries(textures ?? {})) {
-    const property = MATERIAL_TEXTURE_PROPERTIES[role as keyof typeof MATERIAL_TEXTURE_PROPERTIES];
-    if (property !== undefined) (target as unknown as Record<string, unknown>)[property] = texture;
-  }
-  if (textures !== undefined) target.needsUpdate = true;
-  if (override.rim !== undefined) applyRimLight(target, override.rim);
-  if (override.alphaMode !== undefined || override.doubleSided !== undefined) target.needsUpdate = true;
-  return target;
 }
 
 function isStandardOrPhysicalMaterial(

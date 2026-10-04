@@ -360,6 +360,7 @@
 - `MATERIAL_TEXTURE_SEMANTICS` (const): const MATERIAL_TEXTURE_SEMANTICS: Readonly<Record<MaterialTextureRole, { colorSpace: "srgb" | "linear"; channel: MaterialTextureChannel }>> — Shader channel defaults; standalone alpha maps use green, base-color alpha stays in its color map.
 - `MaterialAsset` (interface): interface MaterialAsset — Shared, versioned authoring data. IDs survive rename, save and export.
 - `MaterialAssignment` (interface): interface MaterialAssignment — A reusable asset reference with an optional instance-only sparse edit.
+- `MaterialAssignmentValidationOptions` (interface): interface MaterialAssignmentValidationOptions — Optional renderer limits; ordinary model assignment accepts every supported texture role.
 - `MaterialCapability` (type): type MaterialCapability = "pbr" | "sheen" | "anisotropy" | "clearcoat" | "specular" | "transmission" | "volume" | "iridescence" | "alpha" — Renderer features an authored material explicitly requires.
 - `MaterialDiagnostic` (interface): interface MaterialDiagnostic — An actionable authoring/import diagnostic.
 - `MaterialFamily` (type): type MaterialFamily = "standard" | "fabric" | "hair" | "glass" | "metal" | "skin" | "stone" | "plastic" — Physical surface families; these describe appearance, never geometry or simulation.
@@ -376,5 +377,5 @@
 - `materialCapabilitiesForSurface` (function): function materialCapabilitiesForSurface(surface: MaterialSurfaceParameters): MaterialCapability[] — Determine feature requirements from authored fields, including intentional zero values.
 - `parseMaterialAssignments` (function): function parseMaterialAssignments(value: unknown): MaterialAssignment[] — Parse assignment JSON at editor/RPC boundaries. Invalid data fails with an actionable path.
 - `validateMaterialAsset` (function): function validateMaterialAsset(value: unknown): MaterialDiagnostic[] — Validate material JSON and renderer prerequisites before saving or assigning it.
-- `validateMaterialAssignments` (function): function validateMaterialAssignments(assignments: readonly MaterialAssignment[], assets: readonly MaterialAsset[]): MaterialDiagnostic[] — Validate references and selectors without accepting accidental whole-model assignment.
+- `validateMaterialAssignments` (function): function validateMaterialAssignments(assignments: readonly MaterialAssignment[], assets: readonly MaterialAsset[], options: MaterialAssignmentValidationOptions = {}): MaterialDiagnostic[] — Validate references and selectors without accepting accidental whole-model assignment.
 - `validateMaterialSurface` (function): function validateMaterialSurface(value: unknown, path = "surface"): MaterialDiagnostic[] — Validate sparse surface edits without mutating them or guessing unsupported fields.

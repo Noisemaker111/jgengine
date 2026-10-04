@@ -355,20 +355,27 @@ export function parseMaterialAssignments(value: unknown): MaterialAssignment[] {
   });
 }
 
+/** Optional renderer limits; ordinary model assignment accepts every supported texture role. */
+export interface MaterialAssignmentValidationOptions {
+  disallowedTextureRoles?: readonly MaterialTextureRole[];
+}
+
 /**
  * Validate references and selectors without accepting accidental whole-model assignment.
  * @capability material-slot-selection validate reusable asset references and explicit per-slot selectors
  */
-export function validateMaterialAssignments(assignments: readonly MaterialAssignment[], assets: readonly MaterialAsset[]): MaterialDiagnostic[] {
+export function validateMaterialAssignments(assignments: readonly MaterialAssignment[], assets: readonly MaterialAsset[], options: MaterialAssignmentValidationOptions = {}): MaterialDiagnostic[] {
   const diagnostics: MaterialDiagnostic[] = [];
-  const ids = new Set<string>();
+  const byId = new Map<string, MaterialAsset>();
   for (const asset of assets) {
-    if (ids.has(asset.id)) diagnostics.push({ severity: "error", code: "duplicate-material", path: asset.id, message: "Material IDs must be unique." });
-    ids.add(asset.id);
+    if (byId.has(asset.id)) diagnostics.push({ severity: "error", code: "duplicate-material", path: asset.id, message: "Material IDs must be unique." });
+    byId.set(asset.id, asset);
   }
   assignments.forEach((assignment, index) => {
     const path = `materialAssignments.${index}`;
-    if (!ids.has(assignment.materialId)) diagnostics.push({ severity: "error", code: "missing-material", path: `${path}.materialId`, message: `Material ${assignment.materialId} is not in the asset library.` });
+    if (!byId.has(assignment.materialId)) diagnostics.push({ severity: "error", code: "missing-material", path: `${path}.materialId`, message: `Material ${assignment.materialId} is not in the asset library.` });
+    const asset = byId.get(assignment.materialId);
+    for (const role of options.disallowedTextureRoles ?? []) if (asset?.textures?.[role] !== undefined) diagnostics.push({ severity: "error", code: "unsupported-texture-role", path: `${path}.materialId`, message: `Material ${assignment.materialId} uses ${role} maps unsupported on this rendering path.` });
     const selector = assignment.selector;
     if (!selector || Object.keys(selector).length === 0 || (selector.mesh === undefined && selector.slot === undefined && selector.slotIndex === undefined)) diagnostics.push({ severity: "error", code: "empty-selector", path: `${path}.selector`, message: "Choose a named mesh, material slot or slot index." });
     if (selector?.slotIndex !== undefined && (!Number.isInteger(selector.slotIndex) || selector.slotIndex < 0)) diagnostics.push({ severity: "error", code: "invalid-selector", path: `${path}.selector.slotIndex`, message: "Expected a nonnegative slot index." });

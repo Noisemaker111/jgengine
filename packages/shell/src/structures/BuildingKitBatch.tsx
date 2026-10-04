@@ -2,9 +2,8 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useLoader } from "@react-three/fiber";
 import * as THREE from "three";
 
-import type { BuildingSurfaceMaterial } from "@jgengine/core/world/buildings";
-
-import type { MaterialOverrideTextures } from "../materialOverride";
+import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
+import { useModelMaterialTextures } from "../render/materialAsset";
 import { sharedGltfLoader } from "../render/modelLoad";
 import {
   buildScatterModelSources,
@@ -12,11 +11,11 @@ import {
   type ScatterModelSource,
 } from "../scatter/scatterModels";
 import {
-  composeBuildingKitMatrix,
   measureBuildingKitModel,
   type BuildingKitInstance,
 } from "./buildingKitFit";
-import { applyBuildingSurface, surfaceKey, useBuildingSurfaceTextures } from "./buildingSurface";
+import { useBuildingSurfaceTextures } from "./buildingSurface";
+import { groupBuildingKitInstances, buildBuildingKitSources, validateBuildingKitSource, type BuildingKitStyleGroup } from "./buildingKitMaterials";
 import { useBuildingChunkBudget } from "./BuildingRenderBudget";
 import { applyBuildingChunk, partitionBuildingMatrices, type BuildingSpatialChunk } from "./buildingSpatialBatch";
 
@@ -60,50 +59,11 @@ function KitSourceChunk({ source, material, chunk }: {
   );
 }
 
-function styleOne(
-  material: THREE.Material,
-  tint: THREE.Color | undefined,
-  surface: BuildingSurfaceMaterial | undefined,
-  textures: MaterialOverrideTextures | undefined,
-): THREE.Material {
-  const clone = material.clone();
-  const tintable = clone as THREE.Material & { color?: THREE.Color };
-  if (tint !== undefined && tintable.color !== undefined) tintable.color.copy(tint);
-  if (surface !== undefined && (clone as THREE.MeshStandardMaterial).isMeshStandardMaterial === true) {
-    applyBuildingSurface(clone as THREE.MeshStandardMaterial, surface, textures);
-  }
-  return clone;
-}
-
-function styleMaterial(
-  material: THREE.Material | THREE.Material[],
-  tint: string,
-  surface: BuildingSurfaceMaterial | undefined,
-  textures: MaterialOverrideTextures | undefined,
-): THREE.Material | THREE.Material[] {
-  const color = tint === "" ? undefined : new THREE.Color(tint);
-  return Array.isArray(material)
-    ? material.map((entry) => styleOne(entry, color, surface, textures))
-    : styleOne(material, color, surface, textures);
-}
-
-/** Every instance of one model that shares a tint and surface, so they can share one styled material. */
-interface KitStyleGroup {
-  key: string;
-  tint: string;
-  surface: BuildingSurfaceMaterial | undefined;
-  matrices: THREE.Matrix4[];
-}
-
-function disposeMaterial(material: THREE.Material | THREE.Material[]): void {
-  if (Array.isArray(material)) for (const entry of material) entry.dispose();
-  else material.dispose();
-}
-
 /** Props for {@link BuildingKitBatch}: one resolved model URL and every kit instance bound to it. @internal */
 export interface BuildingKitBatchProps {
   url: string;
   instances: readonly BuildingKitInstance[];
+  materialAssets?: readonly MaterialAsset[];
 }
 
 /**
@@ -112,52 +72,49 @@ export interface BuildingKitBatchProps {
  * while the GLB loads — mount it inside a `<Suspense>` so one slow model never blanks the rest.
  * @internal
  */
-export function BuildingKitBatch({ url, instances }: BuildingKitBatchProps) {
+export function BuildingKitBatch({ url, instances, materialAssets }: BuildingKitBatchProps) {
   const gltf = useLoader(sharedGltfLoader, url);
+  useMemo(() => {
+    const checked = new Set<BuildingKitInstance["part"]>();
+    for (const instance of instances) if (!checked.has(instance.part)) {
+      validateBuildingKitSource(gltf.scene, instance.part, materialAssets);
+      checked.add(instance.part);
+    }
+  }, [gltf, instances, materialAssets]);
   const { sources, root } = useMemo(() => buildScatterModelSources(gltf.scene, { url }), [gltf, url]);
   useEffect(() => () => disposeScatterModelSources(root), [root]);
   const bounds = useMemo(() => measureBuildingKitModel(root), [root]);
 
-  const groups = useMemo(() => {
-    const byKey = new Map<string, KitStyleGroup>();
-    for (const instance of instances) {
-      const matrix = composeBuildingKitMatrix(instance, bounds, new THREE.Matrix4());
-      const tint = instance.part.tint ?? "";
-      const surface = instance.part.material;
-      const key = `${tint}|${surfaceKey(surface)}`;
-      const bucket = byKey.get(key);
-      if (bucket === undefined) byKey.set(key, { key, tint, surface, matrices: [matrix] });
-      else bucket.matrices.push(matrix);
-    }
-    return [...byKey.values()];
-  }, [instances, bounds]);
+  const groups = useMemo(() => groupBuildingKitInstances(instances, bounds, materialAssets), [instances, bounds, materialAssets]);
 
   return (
     <>
       {groups.map((group) =>
-        group.tint === "" && group.surface === undefined ? (
+        (group.part.tint ?? "") === "" && group.part.material === undefined && !group.part.materialAssignments?.length ? (
           sources.map((source, index) => (
             <KitSourceInstances key={`${group.key}:${index}`} source={source} material={source.material} matrices={group.matrices} />
           ))
         ) : (
-          <StyledKitSources key={group.key} sources={sources} group={group} />
+          <StyledKitSources key={group.key} scene={gltf.scene} materialAssets={materialAssets} group={group} />
         ),
       )}
     </>
   );
 }
 
-function StyledKitSources({ sources, group }: { sources: readonly ScatterModelSource[]; group: KitStyleGroup }) {
-  const textures = useBuildingSurfaceTextures(group.surface);
-  const styled = useMemo(
-    () => sources.map((source) => styleMaterial(source.material, group.tint, group.surface, textures)),
-    [sources, group.tint, group.surface, textures],
+function StyledKitSources({ scene, materialAssets, group }: { scene: THREE.Object3D; materialAssets?: readonly MaterialAsset[]; group: BuildingKitStyleGroup }) {
+  useMemo(() => validateBuildingKitSource(scene, group.part, materialAssets), [scene, group.key]);
+  const textures = useBuildingSurfaceTextures(group.part.material);
+  const materialTextures = useModelMaterialTextures({ materialAssets, materialAssignments: group.part.materialAssignments });
+  const { sources, root } = useMemo(
+    () => buildBuildingKitSources(scene, group.part, materialAssets, textures, materialTextures.assets),
+    [scene, group.key, textures, materialTextures],
   );
-  useEffect(() => () => styled.forEach(disposeMaterial), [styled]);
+  useEffect(() => () => disposeScatterModelSources(root), [root]);
   return (
     <>
       {sources.map((source, index) => (
-        <KitSourceInstances key={index} source={source} material={styled[index]!} matrices={group.matrices} />
+        <KitSourceInstances key={index} source={source} material={source.material} matrices={group.matrices} />
       ))}
     </>
   );

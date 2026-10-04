@@ -10,6 +10,48 @@ function meshWithStandardMaterial(): THREE.Mesh {
 }
 
 describe("applyMaterialOverride", () => {
+  test("failed rim construction disposes fresh clones and promotions without replacing slots", () => {
+    for (const promote of [false, true]) {
+      const texture = new THREE.Texture();
+      const source = new THREE.MeshStandardMaterial({ map: texture });
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(), source);
+      const failure = new Error("imported shader key rejects replacement");
+      let target!: THREE.Material, released = 0, borrowedReleased = 0, notifications = 0;
+      for (const borrowed of [source, texture, mesh.geometry]) borrowed.addEventListener("dispose", () => borrowedReleased++);
+      source.customProgramCacheKey = function () {
+        if (this === source) return "native";
+        target = this;
+        target.addEventListener("dispose", () => { released++; throw new Error("dispose callback failed"); });
+        throw failure;
+      };
+      let thrown: unknown;
+      try {
+        applyMaterialOverride(mesh, { ...(promote ? { clearcoat: 0.5 } : {}), rim: { strength: 0.5 } }, { clone: !promote, ownMaterial: () => notifications++ });
+      } catch (error) { thrown = error; }
+      expect(thrown).toBe(failure);
+      expect(target).not.toBe(source);
+      expect(released).toBe(1);
+      expect(borrowedReleased).toBe(0);
+      expect(notifications).toBe(0);
+      expect(mesh.material).toBe(source);
+      expect(source.map).toBe(texture);
+    }
+  });
+
+  test("failed in-place rim construction retains borrowed material ownership", () => {
+    const mesh = meshWithStandardMaterial();
+    const source = mesh.material as THREE.MeshStandardMaterial;
+    const failure = new Error("native shader key failed");
+    source.customProgramCacheKey = () => { throw failure; };
+    let released = 0;
+    source.addEventListener("dispose", () => released++);
+    let thrown: unknown;
+    try { applyMaterialOverride(mesh, { rim: { strength: 0.5 } }, { clone: false }); } catch (error) { thrown = error; }
+    expect(thrown).toBe(failure);
+    expect(mesh.material).toBe(source);
+    expect(released).toBe(0);
+  });
+
   test("clones the standard material and applies color/metalness/roughness", () => {
     const mesh = meshWithStandardMaterial();
     const original = mesh.material as THREE.MeshStandardMaterial;

@@ -209,7 +209,7 @@ export function InstancedBuildings({
       ))}
       {[...models.entries()].map(([url, instances]) => (
         <Suspense key={url} fallback={null}>
-          <BuildingKitBatch url={url} instances={instances} />
+          <BuildingKitBatch url={url} instances={instances} materialAssets={kit?.materialAssets} />
         </Suspense>
       ))}
     </group>

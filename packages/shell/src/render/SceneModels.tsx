@@ -12,7 +12,7 @@ import { modelAssetRequests } from "./modelAssets";
 import { measureLocalBounds, reportMeasuredBounds } from "./measureBounds";
 import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./measureCollisionMesh";
 import { useModelInstance } from "./useModelInstance";
-import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader } from "./materialAsset";
+import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader, validateMaterialAssignmentTargets } from "./materialAsset";
 import { useFootIk } from "./useFootIk";
 import { resolveRigNode } from "./rigNode";
 import { PartMotionRig } from "./PartMotion";
@@ -237,16 +237,21 @@ export function EntityModel({
   if ((renderer as THREE.WebGLRenderer & { isWebGLRenderer?: boolean }).isWebGLRenderer) detectKtx2Support(renderer);
   const assets = modelAssetRequests(model);
   for (const url of assets.models) useLoader.preload(sharedGltfLoader, url);
-  for (const urls of assets.textureGroups) useLoader.preload(MaterialTextureLoader, urls);
   // Optional, not required: measured bounds and paint strokes are live-world extras, and a model
   // that threw without a running game could not be inspected outside one — which is how a broken
   // composition stayed undiagnosable in `EntityPreview` (#1588).
   const ctx = useOptionalGameContext();
   const material = model.material;
-  const materialTextures = useModelMaterialTextures(model);
   const materialAssetKey = JSON.stringify((model.materialAssets ?? []).filter(asset => model.materialAssignments?.some(assignment => assignment.materialId === asset.id)));
   const materialAssets = useMemo(() => (model.materialAssets ?? []).filter(asset => model.materialAssignments?.some(assignment => assignment.materialId === asset.id)), [materialAssetKey]);
   const materialAssignments = model.materialAssignments;
+  const assignmentSource = useLoader(sharedGltfLoader, materialAssignments?.length ? [model.url] : [])[0]?.scene;
+  const assignmentKey = JSON.stringify(materialAssignments);
+  useMemo(() => {
+    if (assignmentSource !== undefined) validateMaterialAssignmentTargets(assignmentSource, materialAssets, materialAssignments!, { baseAlphaMode: material?.alphaMode });
+  }, [assignmentSource, materialAssets, assignmentKey, material?.alphaMode]);
+  for (const urls of assets.textureGroups) useLoader.preload(MaterialTextureLoader, urls);
+  const materialTextures = useModelMaterialTextures(model);
   const baseY = model.y ?? 0;
   const dims = model.dims;
 

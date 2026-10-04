@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import * as THREE from "three";
 import { type MaterialAsset } from "@jgengine/core/material/materialAsset";
-import { applyMaterialAsset, applyMaterialAssignments, configureMaterialTexture, inspectModelMaterialSlots, materialResourceMetrics, setHairCardLightExposure } from "./materialAsset";
+import { applyMaterialAsset, applyMaterialAssignments, configureMaterialTexture, inspectModelMaterialSlots, materialResourceMetrics, setHairCardLightExposure, validateMaterialAssignmentTargets } from "./materialAsset";
 import { cloneModelScene, disposeModelScene } from "./modelRender";
 import { applyMaterialOverride } from "../materialOverride";
 
@@ -10,6 +10,99 @@ function asset(id = "test-metal"): MaterialAsset {
 }
 
 describe("material assets render fidelity", () => {
+  test("rollback drains every created target when an earlier cleanup callback throws", () => {
+    const root = new THREE.Group();
+    const failure = new Error("third shader key failed");
+    const released = [0, 0, 0];
+    const sources = released.map((_, index) => {
+      const source = new THREE.MeshPhysicalMaterial();
+      source.customProgramCacheKey = function () {
+        if (index === 2 && this !== source) throw failure;
+        return "native";
+      };
+      const clone = source.clone;
+      source.clone = function () {
+        const target = clone.call(this);
+        target.addEventListener("dispose", () => { released[index]++; if (index === 0) throw new Error("first cleanup failed"); });
+        return target;
+      };
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(), source); mesh.name = `slot-${index}`;
+      root.add(mesh);
+      return source;
+    });
+    const woven: MaterialAsset = { schemaVersion: 1, id: "woven", name: "Woven", family: "fabric", capabilities: ["pbr", "anisotropy", "sheen"], surface: {}, fabric: { construction: "woven" } };
+    let thrown: unknown;
+    try { applyMaterialAssignments(root, [woven], sources.map((_, index) => ({ materialId: woven.id, selector: { mesh: `slot-${index}` } }))); } catch (error) { thrown = error; }
+    expect(thrown).toBe(failure);
+    expect(released).toEqual([1, 1, 1]);
+    expect(root.children.map(mesh => (mesh as THREE.Mesh).material)).toEqual(sources);
+  });
+
+  test("failed construction callback releases its target and preserves the original error", () => {
+    const texture = new THREE.Texture();
+    const material = new THREE.MeshPhysicalMaterial({ map: texture }); material.name = "woven";
+    const root = new THREE.Mesh(new THREE.BoxGeometry(), material);
+    const failure = new Error("imported cache key rejects clone");
+    material.customProgramCacheKey = function () { if (this !== material) throw failure; return "native"; };
+    const woven: MaterialAsset = { schemaVersion: 1, id: "woven", name: "Woven", family: "fabric", capabilities: ["pbr", "anisotropy", "sheen"], surface: {}, fabric: { construction: "woven" } };
+    let target!: THREE.MeshPhysicalMaterial, targetDisposals = 0, borrowedDisposals = 0;
+    const clone = material.clone;
+    material.clone = function () {
+      target = clone.call(this);
+      target.addEventListener("dispose", () => { targetDisposals++; throw new Error("cleanup listener failed"); });
+      return target;
+    };
+    for (const borrowed of [material, texture, root.geometry]) borrowed.addEventListener("dispose", () => borrowedDisposals++);
+    const assignments = [{ materialId: woven.id, selector: { slot: "woven" } }];
+    expect(() => validateMaterialAssignmentTargets(root, [woven], assignments)).not.toThrow();
+    let thrown: unknown;
+    try { applyMaterialAssignments(root, [woven], assignments); } catch (error) { thrown = error; }
+    expect(thrown).toBe(failure);
+    expect(target).not.toBe(material);
+    expect(targetDisposals).toBe(1);
+    expect(root.material).toBe(material);
+    expect(material.map).toBe(texture);
+    expect(borrowedDisposals).toBe(0);
+  });
+
+  test("failed replacement restores slots and releases promoted materials exactly once", () => {
+    const texture = new THREE.Texture();
+    const imported = new THREE.MeshStandardMaterial({ map: texture }); imported.name = "panel";
+    const other = new THREE.MeshPhysicalMaterial(); other.name = "trim";
+    const source = new THREE.Group();
+    source.add(new THREE.Mesh(new THREE.BoxGeometry(), imported), new THREE.Mesh(new THREE.BoxGeometry(), other));
+    const root = cloneModelScene(source);
+    const panel = root.children[0] as THREE.Mesh;
+    const trim = root.children[1] as THREE.Mesh;
+    const before = [panel.material, trim.material];
+    const failure = new Error("second material copy failed");
+    (trim.material as THREE.Material).clone = () => { throw failure; };
+    const disposals = new Map<THREE.Material, number>();
+    const originalDispose = THREE.Material.prototype.dispose;
+    THREE.Material.prototype.dispose = function () {
+      disposals.set(this, (disposals.get(this) ?? 0) + 1);
+      originalDispose.call(this);
+    };
+    let textureDisposals = 0;
+    texture.addEventListener("dispose", () => textureDisposals++);
+    try {
+      expect(() => applyMaterialAssignments(root, [asset()], [{ materialId: "test-metal", selector: {} }])).toThrow(failure);
+      expect([panel.material, trim.material]).toEqual(before);
+      expect((panel.material as THREE.MeshStandardMaterial).map).toBe(texture);
+      const promoted = [...disposals.keys()].find(material => material.userData.jgMaterialAsset === "test-metal")!;
+      expect(promoted).toBeDefined();
+      expect(disposals.get(promoted)).toBe(1);
+      disposeModelScene(root);
+      expect(disposals.get(promoted)).toBe(1);
+      expect(disposals.has(imported)).toBe(false);
+      expect(disposals.has(other)).toBe(false);
+      expect(textureDisposals).toBe(0);
+      expect((source.children[0] as THREE.Mesh).geometry).toBe(panel.geometry);
+    } finally {
+      THREE.Material.prototype.dispose = originalDispose;
+    }
+  });
+
   test("selected material slots isolate shared imports and register replacement cleanup", () => {
     const source = new THREE.Group();
     const skin = new THREE.MeshPhysicalMaterial({ color: "#eecbaa", transmission: 0.2, thickness: 0.1, sheen: 0.3, clearcoat: 0.8 });
@@ -125,6 +218,44 @@ describe("material assets render fidelity", () => {
     mesh.geometry.deleteAttribute("uv");
     expect(() => applyMaterialAssignments(mesh, [asset()], [{ materialId: "test-metal", selector: { mesh: "object" } }])).toThrow("requires mesh UVs");
     expect(mesh.material).toBe(before);
+  });
+
+  test("read-only preflight rejects blended transmission before any replacement", () => {
+    const texture = new THREE.Texture();
+    const panel = new THREE.MeshStandardMaterial({ map: texture }); panel.name = "panel";
+    const glass = new THREE.MeshPhysicalMaterial({ transparent: true }); glass.name = "glass";
+    const root = new THREE.Group();
+    const meshes = [new THREE.Mesh(new THREE.BoxGeometry(), panel), new THREE.Mesh(new THREE.BoxGeometry(), glass)];
+    root.add(...meshes);
+    const assets: MaterialAsset[] = [asset("coated"), { schemaVersion: 1, id: "glass", name: "Glass", family: "glass", capabilities: ["pbr", "transmission"], surface: { transmission: 0.7 } }];
+    const assignments = [{ materialId: "coated", selector: { slot: "panel" } }, { materialId: "glass", selector: { slot: "glass" } }];
+    let copies = 0;
+    panel.clone = glass.clone = () => { copies++; throw new Error("unexpected clone"); };
+    expect(() => validateMaterialAssignmentTargets(root, assets, assignments)).toThrow("requires an explicit opaque or mask");
+    expect(() => applyMaterialAssignments(root, assets, assignments)).toThrow("requires an explicit opaque or mask");
+    expect(copies).toBe(0);
+    expect(meshes.map(mesh => mesh.material)).toEqual([panel, glass]);
+    expect(panel.map).toBe(texture);
+    expect(texture.flipY).toBe(true);
+    expect(() => validateMaterialAssignmentTargets(root, assets, [...assignments, { materialId: "coated", selector: { slot: "glass" } }])).not.toThrow();
+  });
+
+  test("preflight role restrictions ignore unused library assets and imported maps", () => {
+    const displacement = new THREE.Texture();
+    const material = new THREE.MeshPhysicalMaterial({ displacementMap: displacement });
+    material.name = "facade";
+    const root = new THREE.Mesh(new THREE.BoxGeometry(), material);
+    const height: MaterialAsset = { ...asset("height"), textures: { height: { url: "height.png", colorSpace: "linear" } } };
+    const assets = [asset("plain"), height];
+    expect(() => validateMaterialAssignmentTargets(root, assets, [{ materialId: "plain", selector: { slot: "facade" } }], { disallowedTextureRoles: ["height"] })).not.toThrow();
+    expect(() => validateMaterialAssignmentTargets(root, assets, [{ materialId: "height", selector: { slot: "facade" } }], { disallowedTextureRoles: ["height"] })).toThrow("uses height maps unsupported");
+    expect(() => validateMaterialAssignmentTargets(root, assets, [{ materialId: "height", selector: { slot: "facade" } }])).not.toThrow();
+    expect(root.material).toBe(material);
+    expect(material.displacementMap).toBe(displacement);
+    expect(displacement.offset.toArray()).toEqual([0, 0]);
+    expect(() => validateMaterialAssignmentTargets(root, assets, [{ materialId: "plain", selector: { mesh: "missing" } }])).toThrow("matched no slots");
+    root.geometry.deleteAttribute("uv");
+    expect(() => validateMaterialAssignmentTargets(root, assets, [{ materialId: "plain", selector: { slot: "facade" } }])).toThrow("requires mesh UVs");
   });
 
 

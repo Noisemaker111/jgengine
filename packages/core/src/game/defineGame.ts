@@ -238,6 +238,16 @@ export interface GameDefinition<
   authoredDocument?: EditorDocument;
   /** Bounded projectile travel providers receive their live world; the authoritative clock stays engine-owned. */
   projectileTravel?: GameProjectileTravelOptions;
+  /** Optional pursuit target policy; callbacks are world-local injections, never saved behavior data. */
+  pursuit?: {
+    /** Additional eligibility for nearest, held, explicit and forced targets at scheduled pursuit ticks.
+     * Receives the live world and entity IDs; cannot bypass self/existence/effect acceptance checks.
+     * Omission retains player-role acquisition; explicit targets may still name nonplayers.
+     * A supplied callback must return exactly true to accept; missing, null or asynchronous results deny.
+     * Keep this pair query bounded (for example, a caller-owned faction roster lookup).
+     */
+    eligible(ctx: GameContext, selfId: string, candidateId: string): boolean;
+  };
   /** Game-level default physics laws; a place world's own `physics` resolves over this. */
   physics?: PhysicsConfig;
   /** Simulation clock: real→game time scale, selectable speeds, calendar. Exposed as `ctx.time`; the shell feeds its scaled dt to `loop.onTick`. */

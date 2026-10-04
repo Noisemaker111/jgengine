@@ -939,6 +939,7 @@
     "./structures/PlacementGhost",
     "./structures/TransformGizmo",
     "./structures/buildingKitFit",
+    "./structures/buildingKitMaterials",
     "./structures/buildingKitRegistry",
     "./structures/buildingSpatialBatch",
     "./structures/buildingSurface",

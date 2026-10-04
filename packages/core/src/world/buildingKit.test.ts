@@ -1,4 +1,4 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, test } from "bun:test";
 
 import {
   buildingKitVariantCounts,
@@ -6,6 +6,8 @@ import {
   resolveBuildingKitPart,
 } from "./buildingKit";
 import { generateBuilding } from "./buildings";
+import { createMaterialTemplate } from "../material/materialAsset";
+import { createEmptyEditorDocument, exportEditorDocumentJson, importEditorDocumentJson } from "../editor/document";
 
 describe("defineBuildingKit", () => {
   it("accepts bare model strings as single-field variants", () => {
@@ -102,4 +104,30 @@ describe("buildingKitVariantCounts", () => {
     expect(Math.max(...wallVariants)).toBeLessThan(3);
     expect(new Set(wallVariants).size).toBe(3);
   });
+});
+
+
+describe("authored kit slot materials", () => {
+  it("retains the editor asset library and named selectors through a serialized kit", () => {
+    const asset = { ...createMaterialTemplate("coated-plastic", "facade"), surface: { color: "#a45c39", clearcoat: 0.6 } };
+    const document = importEditorDocumentJson(exportEditorDocumentJson({ ...createEmptyEditorDocument(), materialAssets: [asset] }));
+    const assignments = [{ materialId: "facade", selector: { mesh: "Facade", slot: "Cladding", slotIndex: 0 }, overrides: { roughness: 0.7 } }];
+    const kit = defineBuildingKit({ id: "authored", materialAssets: document.materialAssets, parts: { wall: [{ model: "/panel.glb", materialAssignments: assignments }] } });
+    const restored = defineBuildingKit(JSON.parse(JSON.stringify(kit)));
+    expect(restored.materialAssets).toEqual(document.materialAssets);
+    expect(resolveBuildingKitPart(restored, "wall", { key: "front.wall", variant: 0 })).toMatchObject({ type: "model", part: { materialAssignments: assignments } });
+  });
+
+  it("rejects missing material references and accidental whole-model selectors", () => {
+    expect(() => defineBuildingKit({ parts: { wall: [{ model: "/panel.glb", materialAssignments: [{ materialId: "missing", selector: { slot: "Cladding" } }] }] } })).toThrow(/missing/);
+    expect(() => defineBuildingKit({ materialAssets: [createMaterialTemplate("stone", "facade")], parts: { wall: [{ model: "/panel.glb", materialAssignments: [{ materialId: "facade", selector: {} }] }] } })).toThrow(/selector|Choose/);
+  });
+});
+
+
+test("kit height-map limits reject assigned displacement while allowing unused document assets", () => {
+  const raised = { ...createMaterialTemplate("stone", "raised"), textures: { height: { url: "/height.png", colorSpace: "linear" as const } } };
+  const flat = createMaterialTemplate("stone", "flat");
+  expect(() => defineBuildingKit({ materialAssets: [raised], parts: { wall: [{ model: "/panel.glb", materialAssignments: [{ materialId: "raised", selector: { slot: "Facade" } }] }] } })).toThrow(/height maps unsupported/);
+  expect(defineBuildingKit({ materialAssets: [raised, flat], parts: { wall: [{ model: "/panel.glb", materialAssignments: [{ materialId: "flat", selector: { slot: "Facade" } }] }] } }).materialAssets).toEqual([raised, flat]);
 });
