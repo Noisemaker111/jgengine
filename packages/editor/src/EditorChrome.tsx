@@ -19,6 +19,7 @@ import { CollectionsPanel } from "./CollectionsPanel";
 import { EditorContextMenu } from "./EditorContextMenu";
 import { ParentPickerMenu } from "./ParentPickerMenu";
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
+import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
 import type { ModelMaterialSlotInfo } from "@jgengine/shell/render/materialAsset";
 import { MaterialPreview } from "./MaterialPreview";
 import { MaterialsWorkspacePanel } from "./MaterialsWorkspacePanel";
@@ -235,7 +236,7 @@ export function EditorChrome({
   const materialSourceUrl = liveAssets.find((item) => item.id === (materialMarker?.catalogId ?? materialMarker?.meta?.catalogId))?.url;
   const materialPreviewConfig = useMemo(() => {
     try {
-      return { model: materialSourceUrl && materialMarker ? modelWithAuthoredMaterials({ url: materialSourceUrl, targetHeight: 1.8, animation: "none" }, state.document, materialMarker.id) : undefined, error: null };
+      return { model: materialSourceUrl && materialMarker ? modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials({ url: materialSourceUrl, targetHeight: 1.8, animation: "none" }, state.document, materialMarker.id), materialMarker) : undefined, error: null };
     } catch (failure) {
       return { model: undefined, error: failure instanceof Error ? failure.message : String(failure) };
     }

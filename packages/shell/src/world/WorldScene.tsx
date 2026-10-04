@@ -1,4 +1,5 @@
 import { modelWithAuthoredMaterials } from "@jgengine/core/editor/materialAuthoring";
+import { modelWithAuthoredNodeVisibility } from "@jgengine/core/editor/modelNodeVisibility";
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ComponentType, type ReactNode } from "react";
 import * as THREE from "three";
@@ -320,7 +321,7 @@ function WorldActors({
     const object = ctx.scene.object.get(instanceId);
     if (object === null) return [];
     const custom = renderObject?.(object);
-    const model = modelWithAuthoredMaterials(resolveObjectModel(object, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: materialMarkers.has(object.instanceId) ? [materialMarkers.get(object.instanceId)!] : [] }, object.instanceId);
+    const model = modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials(resolveObjectModel(object, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: materialMarkers.has(object.instanceId) ? [materialMarkers.get(object.instanceId)!] : [] }, object.instanceId), materialMarkers.get(object.instanceId));
     const style = objectStyles?.[object.catalogId];
     // Reaching the primitive box means no model resolved. A present-but-unresolved objectModels
     // key implies its asset pack is not pulled; an absent key is an omitted (often intended) mapping.
@@ -335,7 +336,7 @@ function WorldActors({
   const renderSingle = (object: SceneObject) => {
     object = ctx.scene.object.get(object.instanceId) ?? object;
     const candidate = candidatesById.get(object.instanceId)!;
-    const model = modelWithAuthoredMaterials(resolveObjectModel(object, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: materialMarkers.has(object.instanceId) ? [materialMarkers.get(object.instanceId)!] : [] }, object.instanceId);
+    const model = modelWithAuthoredNodeVisibility(modelWithAuthoredMaterials(resolveObjectModel(object, objectModels, assets, modelCache), { materialAssets: document.materialAssets, markers: materialMarkers.has(object.instanceId) ? [materialMarkers.get(object.instanceId)!] : [] }, object.instanceId), materialMarkers.get(object.instanceId));
     return <ObjectMarker key={object.instanceId} object={object} custom={object === candidate.object ? candidate.custom : renderObject?.(object)} model={model} style={objectStyles?.[object.catalogId]} />;
   };
   return (

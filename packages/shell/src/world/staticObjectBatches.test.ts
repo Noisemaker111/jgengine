@@ -92,6 +92,20 @@ describe("static authored object batching", () => {
     expect(groupStaticObjects(candidates().map((entry) => ({ ...entry, style: { hidden: true } })), 24, cache).batches).toHaveLength(0);
   });
 
+  test("node selections keep authored placements independent while empty selections retain batching", () => {
+    const hidden = Array.from({ length: 10 }, (_, i) => candidate(i, { model: { url: "a.glb", hiddenNodes: ["Accessory"] } }));
+    const selected = groupStaticObjects(hidden);
+    expect(selected.batches).toHaveLength(0);
+    expect(selected.singles).toEqual(hidden);
+    expect(selected.singles.every((entry) => entry.model?.hiddenNodes?.[0] === "Accessory")).toBe(true);
+    expect(canBatchStaticObject(candidate(0, { model: { url: "a.glb", hiddenNodes: {} as never } }))).toBe(false);
+    const empty = hidden.map((entry) => ({ ...entry, model: { url: "a.glb", hiddenNodes: [] } }));
+    const batch = groupStaticObjects(empty).batches[0]!;
+    expect(batch.objects).toHaveLength(10);
+    expect(incompatibleStaticObjectIds({ ...batch, model: hidden[0]!.model! }, (id) => empty.find((entry) => entry.object.instanceId === id)!.object, () => null, [])).toHaveLength(10);
+    expect(incompatibleStaticObjectIds(batch, (id) => empty.find((entry) => entry.object.instanceId === id)!.object, () => null, [])).toEqual([]);
+  });
+
   test("loaded model safety rejects animations, skeletons, morphs, transparency, custom draws and negative transforms", () => {
     const { root, mesh } = modelScene();
     expect(canInstanceStaticScene(root, [])).toBe(true);

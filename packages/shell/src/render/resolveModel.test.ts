@@ -174,6 +174,14 @@ describe("pickModel / resolveModelPlan", () => {
     expect(pickModel(assets, { model: "kaykit-adventurers/Rogue", style: { animation } })?.animation).toBe(animation);
   });
 
+  test("model styles retain node selections through catalog and context resolution", () => {
+    const hiddenNodes = ["Knife", "Knife_Offhand"] as const;
+    const models = resolveModelPlan(assets, { unarmed: { model: "kaykit-adventurers/Rogue", style: { hiddenNodes } } });
+    expect(models.unarmed!.hiddenNodes).toBe(hiddenNodes);
+    expect(contextModels({ game: { assets }, objectModels: models })!.object!("unarmed")!.hiddenNodes).toBe(hiddenNodes);
+    expect(pickModel(assets, { model: "missing", fallbackModel: "kaykit-adventurers/Rogue", style: { hiddenNodes: [] } })!.hiddenNodes).toEqual([]);
+  });
+
   test('style.animation "none" opts out of auto animation', () => {
     expect(pickModel(assets, { model: "kaykit-adventurers/Rogue", style: { animation: "none" } })?.animation).toBe(
       "none",

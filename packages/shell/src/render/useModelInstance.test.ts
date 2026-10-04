@@ -7,6 +7,10 @@ import type { GameContext } from "@jgengine/core/runtime/gameContext";
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import type { MaterialAsset } from "@jgengine/core/material/materialAsset";
 import { GameProvider } from "@jgengine/react/provider";
+import { readFileSync } from "node:fs";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
+import { resolveRigNode } from "./rigNode";
 
 import { sharedGltfLoader } from "./modelLoad";
 import { modelBindPosePositions } from "./modelBindPose";
@@ -65,6 +69,127 @@ function sourceModel() {
 }
 
 describe("useModelInstance", () => {
+  test("EntityModel rejects malformed JSON visibility before texture or clone allocation", async () => {
+    const report = globalThis.reportError; globalThis.reportError = () => {};
+    const texture = new THREE.Texture();
+    const load = THREE.TextureLoader.prototype.load;
+    let loads = 0, views = 0, clones = 0, caught = 0;
+    THREE.TextureLoader.prototype.load = (_url, onLoad) => { loads++; onLoad?.(texture); return texture as THREE.Texture<HTMLImageElement>; };
+    const cloneTexture = texture.clone;
+    texture.clone = function () { views++; return cloneTexture.call(this); };
+    class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+      state = { failed: false };
+      static getDerivedStateFromError() { return { failed: true }; }
+      componentDidCatch() { caught++; }
+      render() { return this.state.failed ? null : this.props.children; }
+    }
+    try {
+      for (const hiddenNodes of ["Body", [1], [" "], ["Body", null]]) {
+        const source = new THREE.Group();
+        const material = new THREE.MeshStandardMaterial();
+        const cloneMaterial = material.clone;
+        material.clone = function () { clones++; return cloneMaterial.call(this); };
+        const body = new THREE.Mesh(new THREE.BoxGeometry(), material); body.name = "Body"; source.add(body);
+        const h = await harness(source);
+        const model: ModelConfig = JSON.parse(JSON.stringify({ url: h.url, hiddenNodes, material: { maps: { color: `/malformed-visibility-${h.url}.png` } } }));
+        await act(async () => h.root.render(createElement(Boundary, { children: createElement(Suspense, { fallback: null }, createElement(EntityModel, { model })) })));
+        await act(async () => h.root.render(null));
+        expect(body.visible).toBe(true);
+      }
+      expect(caught).toBe(4); expect(loads).toBe(0); expect(views).toBe(0); expect(clones).toBe(0);
+    } finally {
+      globalThis.reportError = report; THREE.TextureLoader.prototype.load = load; texture.clone = cloneTexture;
+    }
+  });
+
+  test("real modular Rogue instances select accessories without removing rigs, clips or borrowed resources", async () => {
+    const bytes = readFileSync(new URL("../../../../apps/dev/public/models/kaykit-adventurers/Rogue_Hooded.glb", import.meta.url));
+    const image = new THREE.Texture();
+    const gltf = await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder)
+      .register(() => ({ name: "headless-image-fixture", loadTexture: async () => image }))
+      .parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), "");
+    const names = ["Knife", "Knife_Offhand", "1H_Crossbow", "2H_Crossbow", "Throwable", "Rogue_Cape"];
+    expect(names.every(name => gltf.scene.getObjectByName(name)?.visible)).toBe(true);
+    const h = await harness(gltf.scene, gltf.animations);
+    const model: ModelInstanceConfig = { url: h.url, targetHeight: 1.8, animation: { clip: "Walking_A", paused: true, time: 0.25 } };
+    const clipNames = gltf.animations.map(clip => clip.name);
+    await h.render([{ model: { ...model, hiddenNodes: names } }, { model: { ...model, hiddenNodes: ["Knife"] } }]);
+    const first = h.instances[0]!, second = h.instances[1]!;
+    expect(names.every(name => first.content.getObjectByName(name)?.visible === false)).toBe(true);
+    expect(second.content.getObjectByName("Knife")!.visible).toBe(false);
+    expect(second.content.getObjectByName("2H_Crossbow")!.visible).toBe(true);
+    expect(names.every(name => gltf.scene.getObjectByName(name)?.visible)).toBe(true);
+    const body = first.content.getObjectByName("Rogue_Body") as THREE.SkinnedMesh;
+    const peerBody = second.content.getObjectByName("Rogue_Body") as THREE.SkinnedMesh;
+    const sourceBody = gltf.scene.getObjectByName("Rogue_Body") as THREE.SkinnedMesh;
+    expect(body.visible).toBe(true);
+    expect(body.geometry).toBe(sourceBody.geometry);
+    expect(body.skeleton).not.toBe(sourceBody.skeleton);
+    expect(body.skeleton).not.toBe(peerBody.skeleton);
+    expect(body.skeleton.bones.length).toBe(sourceBody.skeleton.bones.length);
+    expect((body.material as THREE.MeshStandardMaterial).map).toBe(image);
+    expect(body.material).not.toBe(sourceBody.material);
+    expect(gltf.animations.map(clip => clip.name)).toEqual(clipNames);
+    const slot = resolveRigNode(first.content, "handslot.r").node!;
+    const sourceSlot = resolveRigNode(gltf.scene, "handslot.r").node!;
+    expect(slot).toBeDefined(); expect(slot).not.toBe(sourceSlot);
+    const attachment = new THREE.Object3D(); attachment.position.set(0.1, 0.2, 0.3); slot.add(attachment);
+    first.scene.updateMatrixWorld(true);
+    expect(attachment.getWorldPosition(new THREE.Vector3()).distanceTo(attachment.position.clone().applyMatrix4(slot.matrixWorld))).toBeLessThan(1e-6);
+    const mixer = new THREE.AnimationMixer(first.content);
+    const sourceBind = sourceSlot.getWorldPosition(new THREE.Vector3());
+    const before = slot.getWorldPosition(new THREE.Vector3());
+    mixer.clipAction(THREE.AnimationClip.findByName(gltf.animations, "Walking_A")!).play(); mixer.update(0.45);
+    first.scene.updateMatrixWorld(true);
+    expect(slot.getWorldPosition(new THREE.Vector3()).distanceTo(before)).toBeGreaterThan(0.001);
+    expect(sourceSlot.getWorldPosition(new THREE.Vector3()).distanceTo(sourceBind)).toBeLessThan(1e-6);
+    expect(attachment.parent).toBe(slot);
+    mixer.stopAllAction(); mixer.uncacheRoot(first.content);
+    let released = 0, borrowedReleased = 0;
+    (body.material as THREE.Material).addEventListener("dispose", () => released++);
+    for (const borrowed of [sourceBody.geometry, sourceBody.material as THREE.Material, image]) borrowed.addEventListener("dispose", () => borrowedReleased++);
+    await h.render([{ model }, { model: { ...model, hiddenNodes: ["Knife"] } }]);
+    expect(h.instances[0]!.content.getObjectByName("Knife")!.visible).toBe(true);
+    expect(h.instances[1]!.content).toBe(second.content);
+    expect(released).toBe(1); expect(borrowedReleased).toBe(0);
+    await act(async () => h.root.render(null));
+    expect(borrowedReleased).toBe(0);
+  });
+
+  test("hidden node content changes rebuild only that instance before placement measurement", async () => {
+    const source = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial()); body.name = "Body";
+    const accessory = new THREE.Group(); accessory.name = "Accessory";
+    accessory.position.y = 10;
+    accessory.add(new THREE.Mesh(body.geometry, body.material));
+    const importedHidden = new THREE.Mesh(body.geometry, body.material); importedHidden.name = "ImportedHidden"; importedHidden.visible = false;
+    source.add(body, accessory, importedHidden);
+    const h = await harness(source);
+    const selected = { url: h.url, targetHeight: 2, hiddenNodes: ["Accessory", "ImportedHidden"] };
+    const legacy = { url: h.url, targetHeight: 2 };
+    await h.render([{ model: selected }, { model: legacy }]);
+    const first = h.instances[0]!, second = h.instances[1]!;
+    expect(first.content.getObjectByName("Accessory")!.visible).toBe(false);
+    expect(first.scale).toBe(1);
+    expect(second.scale).toBeCloseTo(1 / 6);
+    expect(second.content.getObjectByName("Accessory")!.visible).toBe(true);
+    expect(source.getObjectByName("Accessory")!.visible).toBe(true);
+    await h.render([{ model: { ...selected, hiddenNodes: ["ImportedHidden", "Accessory", "Accessory"] } }, { model: legacy }]);
+    expect(h.instances[0]!.content).toBe(first.content);
+    expect(h.instances[1]!.content).toBe(second.content);
+    let released = 0;
+    standardMaterialsOf(first.content)[0]!.addEventListener("dispose", () => released++);
+    await h.render([{ model: { ...selected, hiddenNodes: [] } }, { model: legacy }]);
+    expect(h.instances[0]!.content).not.toBe(first.content);
+    expect(h.instances[0]!.content.getObjectByName("Accessory")!.visible).toBe(true);
+    expect(h.instances[0]!.content.getObjectByName("ImportedHidden")!.visible).toBe(false);
+    expect(h.instances[1]!.content).toBe(second.content);
+    expect(released).toBe(1);
+    const empty = h.instances[0]!.content;
+    await h.render([{ model: { ...selected, hiddenNodes: undefined } }, { model: legacy }]);
+    expect(h.instances[0]!.content).toBe(empty);
+  });
+
   test("EntityModel rejects invalid assignments before texture loads, views or model clones", async () => {
     const report = globalThis.reportError;
     globalThis.reportError = () => {};

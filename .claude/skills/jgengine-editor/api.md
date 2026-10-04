@@ -290,6 +290,12 @@
 - `bakeMinimapFromDocument` (function): function bakeMinimapFromDocument(doc: EditorDocument, sampleHeight: (x: number, z: number) => number, options: DocumentBakeOptions = {}): { background: string; mapBounds: MinimapBakeBounds } — Bakes a minimap image from a scene document plus a terrain height sampler: sizes the footprint to the authored objects (or an explicit `bounds`), tints biome-colored volumes, and rasterizes the terrain top-down. Returns `{ background, mapBounds }` for the `Minimap` props. The editor runs this as its bake action and stores the result on the document.
 - `documentBakeZones` (function): function documentBakeZones(doc: EditorDocument): MinimapBakeZone[] — The biome-tint zones a document contributes to a bake: every volume carrying a `color` becomes a polygon tint over its footprint. (The optional stretch from #1036 — a bare bake still reads as terrain without any.)
 
+## @jgengine/core/editor/modelNodeVisibility
+
+- `authoredHiddenNodes` (function): function authoredHiddenNodes(meta: Record<string, unknown> | undefined): readonly string[] | undefined — Read marker visibility metadata; an empty list clears model defaults.
+- `modelWithAuthoredNodeVisibility` (function): function modelWithAuthoredNodeVisibility(model: ModelConfig | undefined, marker: Pick<EditorMarker, "meta"> | undefined): ModelConfig | undefined — Apply a placement's authored visibility without erasing omitted game model defaults.
+- `parseModelHiddenNodes` (function): function parseModelHiddenNodes(value: unknown): readonly string[] | undefined — Validate and copy exact node names; an empty list selects no hidden subtrees.
+
 ## @jgengine/core/editor/movementCatalog
 
 - `AuthoredMovementBinding` (interface): interface AuthoredMovementBinding — Stable runtime objects whose numeric getters resolve the current authored document.

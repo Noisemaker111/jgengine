@@ -1,5 +1,6 @@
 import { decodeEditorSimulation, type EditorSimulation } from "./simulation";
 import { parseMaterialAssignments, validateMaterialAsset, validateMaterialAssignments, type MaterialAsset } from "../material/materialAsset";
+import { authoredHiddenNodes } from "./modelNodeVisibility";
 import { parseStaticPrefabBake } from "./staticPrefab";
 import type { ParamField, ParamSchema } from "../scene/sceneKinds";
 import { cloneEditorUiDocument, decodeEditorUiDocument } from "../ui/hudDocument";
@@ -744,6 +745,8 @@ function decodeMeta(
     try { parseMaterialAssignments(value.materialAssignments); }
     catch (error) { errors.push({ path: `${path}.materialAssignments`, message: String(error) }); }
   }
+  try { authoredHiddenNodes(value); }
+  catch (error) { errors.push({ path: `${path}.hiddenNodes`, message: String(error) }); }
   return structuredClone(value);
 }
 

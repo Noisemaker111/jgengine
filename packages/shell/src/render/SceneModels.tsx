@@ -3,6 +3,7 @@ import { Component, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, 
 import * as THREE from "three";
 
 import type { EntitySpriteConfig, ModelConfig } from "@jgengine/core/game/playableGame";
+import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 import { createSpriteClipPlayer } from "@jgengine/core/render/sprite2d";
 import { reportFallbackSeam, type FallbackSeam } from "@jgengine/core/devtools/fallbackSeams";
 import { useOptionalGameContext } from "@jgengine/react/provider";
@@ -233,6 +234,7 @@ export function EntityModel({
   instanceId?: string;
   measure?: MeasureTarget;
 }) {
+  parseModelHiddenNodes(model.hiddenNodes);
   const renderer = useThree(state => state.gl);
   if ((renderer as THREE.WebGLRenderer & { isWebGLRenderer?: boolean }).isWebGLRenderer) detectKtx2Support(renderer);
   const assets = modelAssetRequests(model);

@@ -13,6 +13,29 @@ function meshScene(): { scene: THREE.Group; mesh: THREE.Mesh } {
 }
 
 describe("buildScatterModelSources", () => {
+  test("rejects node selections before cloning and preserves cached resources; empty lists remain supported", () => {
+    const { scene, mesh } = meshScene();
+    mesh.name = "Accessory";
+    const original = mesh.material as THREE.Material;
+    let cloned = 0;
+    let disposed = 0;
+    const clone = original.clone.bind(original);
+    original.clone = () => { cloned++; return clone(); };
+    original.addEventListener("dispose", () => disposed++);
+    expect(() => buildScatterModelSources(scene, { url: "prop.glb", hiddenNodes: ["Accessory"] })).toThrow(/individual model renderer/);
+    for (const hiddenNodes of [null, {}, [1], [""], [" \t"], new Array(1)]) {
+      expect(() => buildScatterModelSources(scene, { url: "prop.glb", hiddenNodes: hiddenNodes as never })).toThrow(/array of nonblank node names/);
+    }
+    expect(cloned).toBe(0);
+    expect(disposed).toBe(0);
+    expect(mesh.visible).toBe(true);
+    expect(mesh.material).toBe(original);
+    const empty = buildScatterModelSources(scene, { url: "prop.glb", hiddenNodes: [] });
+    expect(empty.sources).toHaveLength(1);
+    expect(empty.sources[0]!.geometry).toBe(mesh.geometry);
+    disposeScatterModelSources(empty.root);
+    expect(disposed).toBe(0);
+  });
   test("harvests one source per mesh, geometry left unowned by the loader cache", () => {
     const { scene, mesh } = meshScene();
     const { sources } = buildScatterModelSources(scene, { url: "tree.glb" });

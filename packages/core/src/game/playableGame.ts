@@ -267,6 +267,8 @@ export interface ModelConfig {
   materialAssets?: readonly MaterialAsset[];
   /** Sparse per-slot assignments; unselected imported materials keep their original appearance. */
   materialAssignments?: readonly MaterialAssignment[];
+  /** Hide named visual subtrees on this instance before placement measurement. Exact runtime names or unique original imported names resolve without removing bones or changing the cached model; missing or ambiguous names warn and leave existing visibility unchanged. Malformed lists reject before model or texture allocation. Omit or pass [] to retain imported visibility. */
+  hiddenNodes?: readonly string[];
   /** Shadow participation of every mesh in the model. Default `"both"` (casts and receives); `"none"` for foliage cards, decals, or viewmodels that must never shadow the world. */
   shadows?: "cast" | "receive" | "both" | "none";
   /**

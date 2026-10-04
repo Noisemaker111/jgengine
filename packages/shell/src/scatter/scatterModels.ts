@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import type { ModelConfig } from "@jgengine/core/game/playableGame";
+import { parseModelHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility";
 
 import { applyMaterialOverride } from "../materialOverride";
 import { cloneModelScene, disposeModelScene, ownModelMaterial } from "../render/modelRender";
@@ -53,6 +54,7 @@ export function buildScatterModelSources(
   gltfScene: THREE.Object3D,
   model: ModelConfig,
 ): { sources: ScatterModelSource[]; root: THREE.Object3D } {
+  if (parseModelHiddenNodes(model.hiddenNodes)?.length) throw new Error("Instanced model node visibility requires the individual model renderer; use EntityModel for hidden nodes");
   if (model.materialAssignments?.length) throw new Error("Instanced model material assignments require the individual model renderer; use EntityModel for authored slots");
   if (model.material?.maps !== undefined) throw new Error("Instanced model override maps require an owned texture loader; use EntityModel for authored maps");
   const root = cloneModelScene(gltfScene, { shadows: model.shadows });

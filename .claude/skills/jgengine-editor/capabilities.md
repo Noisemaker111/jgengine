@@ -106,6 +106,10 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `bakeMinimapFromDocument` (function) · `import { bakeMinimapFromDocument } from "@jgengine/core/editor"`
 - `documentBakeZones` (function) · `import { documentBakeZones } from "@jgengine/core/editor"`
 
+## model-node-visibility — read authored per-placement model subtree selections
+
+- `authoredHiddenNodes` (function) · `import { authoredHiddenNodes } from "@jgengine/core/editor/modelNodeVisibility"`
+
 ## player-creator — create, edit, save, playtest and reopen bounded player scenes through the production editor
 
 - `CreatorApp` (function) · `import { CreatorApp } from "@jgengine/editor"`
