@@ -894,6 +894,7 @@
     "./render/modelRender",
     "./render/projectedOverdraw",
     "./render/resolveModel",
+    "./render/rigNode",
     "./render/sceneCapture",
     "./render/spriteRender",
     "./render/staticShapeInstances",

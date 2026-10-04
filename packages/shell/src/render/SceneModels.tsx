@@ -14,6 +14,7 @@ import { measureLocalCollisionTriangles, reportMeasuredCollisionMesh } from "./m
 import { useModelInstance } from "./useModelInstance";
 import { applyMaterialAssignments, useModelMaterialTextures, MaterialTextureLoader } from "./materialAsset";
 import { useFootIk } from "./useFootIk";
+import { resolveRigNode } from "./rigNode";
 import { PartMotionRig } from "./PartMotion";
 import { syncSpriteFrame } from "./spriteRender";
 import { applyMaterialOverride } from "../materialOverride";
@@ -174,13 +175,14 @@ function BoneAttachment({
   const s = scale ?? 1;
 
   useEffect(() => {
-    const bone = rig.getObjectByName(slot);
-    if (bone === undefined) {
+    const resolved = resolveRigNode(rig, slot);
+    if (resolved.node === undefined) {
       if (typeof console !== "undefined") {
-        console.warn(`[jgengine] entityModels attachment: bone/slot "${slot}" not found on the rig`);
+        console.warn(`[jgengine] entityModels attachment: ${resolved.diagnostic.message}`);
       }
       return;
     }
+    const bone = resolved.node;
     weaponScene.position.set(px, py, pz);
     weaponScene.rotation.set(rx, ry, rz);
     weaponScene.scale.setScalar(s);

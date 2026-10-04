@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { clone } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 import type { SceneRaycastHit, SceneRaycastInput } from "@jgengine/core/scene/sceneRaycast";
 import { applyFootIk, resolveFootIkRig, useFootIk, type FootIkState } from "./useFootIk";
@@ -107,6 +108,41 @@ describe("resolveFootIkRig diagnostics", () => {
       expect(resolveFootIkRig(scene, { feet: [chain, chain] })!.legs).toHaveLength(1);
     });
     expect(messages[0]).toContain("already corrected by another foot chain");
+  });
+
+  test("imported-name aliases retain ambiguity, ancestry and overlap validation", () => {
+    const { scene } = syntheticRig();
+    scene.traverse((object) => { object.userData.name = `authored.${object.name}`; });
+    const left = { root: "authored.Thigh_L", mid: "authored.Shin_L", tip: "authored.Foot_L" };
+    const duplicate = new THREE.Object3D();
+    duplicate.name = "otherThigh";
+    duplicate.userData.name = left.root;
+    scene.add(duplicate);
+    const ambiguous = diagnostics(() => { expect(resolveFootIkRig(scene, { feet: [left] })).toBeNull(); });
+    expect(ambiguous[0]).toContain("matches multiple original imported names");
+    scene.remove(duplicate);
+    const head = new THREE.Object3D();
+    head.name = "HeadRuntime";
+    head.userData.name = "head.authored";
+    scene.getObjectByName("hips")!.add(head);
+    expect(diagnostics(() => {
+      const rig = resolveFootIkRig(scene, { feet: [left], pelvis: "authored.hips", lookAt: { bone: "head.authored" } })!;
+      expect(rig.pelvis).toBe(scene.getObjectByName("hips")!);
+      expect(rig.head).toBe(head);
+    })).toEqual([]);
+    const disconnected = diagnostics(() => {
+      expect(resolveFootIkRig(scene, { feet: [{ ...left, mid: "authored.Shin_R", tip: "authored.Foot_R" }] })).toBeNull();
+    });
+    expect(disconnected[0]).toContain("each joint must descend");
+    const overlapping = diagnostics(() => { expect(resolveFootIkRig(scene, { feet: [left, left] })!.legs).toHaveLength(1); });
+    expect(overlapping[0]).toContain("already corrected");
+    duplicate.name = "Thigh_L";
+    duplicate.userData.name = "differentOriginalName";
+    scene.add(duplicate);
+    const runtimeAmbiguous = diagnostics(() => {
+      expect(resolveFootIkRig(scene, { feet: [{ ...left, root: "Thigh_L" }] })).toBeNull();
+    });
+    expect(runtimeAmbiguous[0]).toContain('"Thigh_L" matches multiple objects');
   });
 
   test("descendant joints separated by helper transforms remain supported", () => {
@@ -330,6 +366,56 @@ function placeModelScene(content: THREE.Object3D, model: import("@jgengine/core/
 }
 
 describe("foot IK on a KayKit Knight", () => {
+  for (const name of ["Knight", "Rogue"]) test(`${name}'s original authored leg names resolve to the same joints and walking corrections as runtime names`, async () => {
+    const gltf = await loadKnight(name);
+    const scene = clone(gltf.scene);
+    const reference = clone(gltf.scene);
+    const authoredFeet = ["l", "r"].map((side) => ({ root: `upperleg.${side}`, mid: `lowerleg.${side}`, tip: `foot.${side}` }));
+    const runtimeFeet = ["l", "r"].map((side) => ({ root: `upperleg${side}`, mid: `lowerleg${side}`, tip: `foot${side}` }));
+    let rig: ReturnType<typeof resolveFootIkRig> = null;
+    expect(diagnostics(() => { rig = resolveFootIkRig(scene, { feet: authoredFeet }); })).toEqual([]);
+    expect(rig).not.toBeNull();
+    const resolved = rig!;
+    const expected = resolveFootIkRig(reference, { feet: runtimeFeet })!;
+    expect(resolved.legs).toHaveLength(2);
+    for (const [index, leg] of resolved.legs.entries()) {
+      expect(leg.root).toBe(scene.getObjectByName(runtimeFeet[index]!.root)!);
+      expect(leg.mid).toBe(scene.getObjectByName(runtimeFeet[index]!.mid)!);
+      expect(leg.tip).toBe(scene.getObjectByName(runtimeFeet[index]!.tip)!);
+      expect(leg.root.userData.name).toBe(authoredFeet[index]!.root);
+      expect(leg.tip.userData.name).toBe(authoredFeet[index]!.tip);
+      expect(leg.ankleRatio).toBe(expected.legs[index]!.ankleRatio);
+    }
+    const mixers = [scene, reference].map((instance) => {
+      const mixer = new THREE.AnimationMixer(instance);
+      mixer.clipAction(THREE.AnimationClip.findByName(gltf.animations, "Walking_A")!).play();
+      return mixer;
+    });
+    const states = [{ weight: 1, pelvis: 0 }, { weight: 1, pelvis: 0 }];
+    const { probe } = ground((_x, z) => z * 0.2, [0, 1 / Math.sqrt(1.04), -0.2 / Math.sqrt(1.04)]);
+    let maxPositionError = 0;
+    let maxQuaternionError = 0;
+    for (let frame = 0; frame < 60; frame += 1) {
+      for (const [index, instance] of [scene, reference].entries()) {
+        mixers[index]!.update(1 / 60);
+        instance.updateMatrixWorld(true);
+        applyFootIk(index === 0 ? resolved : expected, 0, probe, states[index]!, 1 / 60);
+      }
+      for (const record of resolved.poses) {
+        const other = reference.getObjectByName(record.bone.name)!;
+        maxPositionError = Math.max(maxPositionError, record.bone.getWorldPosition(new THREE.Vector3()).distanceTo(other.getWorldPosition(new THREE.Vector3())));
+        maxQuaternionError = Math.max(maxQuaternionError, ...record.bone.quaternion.toArray().map((value, index) => Math.abs(value - other.quaternion.toArray()[index]!)));
+      }
+    }
+    expect(maxPositionError).toBeLessThan(1e-12);
+    expect(maxQuaternionError).toBeLessThan(1e-12);
+    expect(states[0]).toEqual(states[1]);
+    for (const [index, instance] of [scene, reference].entries()) {
+      mixers[index]!.stopAllAction();
+      mixers[index]!.uncacheRoot(instance);
+    }
+  });
+
   test("a cross-leg configuration cannot deform an imported Knight", async () => {
     const { scene } = await loadKnight();
     const before: number[][] = [];
