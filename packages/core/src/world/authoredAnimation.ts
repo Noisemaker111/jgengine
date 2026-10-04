@@ -47,6 +47,8 @@ export function readAuthoredAnimation(
     reject(path, "Animation must be an object, auto, or none", "an animation object, auto, or none");
     return { animation: defaults, diagnostics };
   }
+  if (value.clock !== undefined && value.clock !== "real" && value.clock !== "game") reject(`${path}.clock`, "clock must be real or game", "real or game");
+  if (value.auto !== undefined && value.auto !== true) reject(`${path}.auto`, "auto must be true when supplied", "true, or omit auto to use explicit configuration");
   for (const key of ["clip"] as const) {
     if (value[key] !== undefined && typeof value[key] !== "string") reject(`${path}.${key}`, `${key} must be a string`, "a clip-name string");
   }

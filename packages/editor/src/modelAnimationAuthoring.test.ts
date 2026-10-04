@@ -37,6 +37,8 @@ import {
   setPlaybackBoolean,
   setPlaybackClip,
   setPlaybackNumber,
+  setPlaybackClock,
+  setAutomaticRoles,
   type AnimationSetting,
 } from "./modelAnimationAuthoring";
 
@@ -430,4 +432,52 @@ test("unrelated graph and role edits retain an explicitly empty one-shot map", (
   expect(setLocomotionNumber(animation, "fadeSec", 0.1).oneShots).toEqual({});
   expect(clearAnimGraph({ ...animation, graph })).toEqual(animation);
   expect(setOneShotClip({ ...animation, oneShots: { hit: "Hit_A" } }, "hit", null).oneShots).toBeUndefined();
+});
+
+
+test("clock and automatic-role edits preserve deeper authored intent through normal undo and reload", () => {
+  const graph = effectiveAnimGraph("auto", CLIPS)!.graph;
+  const config = { graph, states: {}, oneShots: {}, timeScale: -0.5, identity: { rig: "original" } };
+  const changed = setPlaybackClock(setAutomaticRoles(config, true), "game");
+  expect(changed).toEqual({ ...config, auto: true, clock: "game" });
+  expect(setPlaybackBoolean(changed, "paused", true)).toEqual({ ...changed, paused: true });
+  expect(setAutomaticRoles(changed, false)).toEqual({ ...config, clock: "game" });
+  expect(setPlaybackClip(changed, "Idle")).toEqual({ oneShots: {}, timeScale: -0.5, identity: { rig: "original" }, clock: "game", clip: "Idle" });
+  expect(effectiveAnimGraph({ auto: true, clock: "game" }, CLIPS)?.graph).toEqual(effectiveAnimGraph("auto", CLIPS)?.graph);
+  expect(effectiveAnimGraph({ auto: true, clock: "game", states: {} }, CLIPS)).toBeNull();
+  const mapped = { auto: true as const, clock: "game" as const, states: { idle: "Idle", walk: "Idle" }, oneShots: {} };
+  expect(effectiveAnimGraph(mapped, CLIPS)).toEqual({ graph: animGraphFromConfig(mapped), source: "locomotion" });
+  expect(effectiveAnimGraph({ auto: true, clock: "game", graph }, CLIPS)).toEqual({ graph, source: "authored" });
+  expect(effectiveAnimGraph({ auto: true, clock: "game" }, ["Unknown"])).toBeNull();
+  expect(setPlaybackClock("auto", "game")).toEqual({ auto: true, clock: "game" });
+  const host = createEditorHost({ gameId: "clock-authoring", layers: {} });
+  const session = host.api.getSession();
+  const doc = createEmptyEditorDocument();
+  doc.markers = [{ id: "player", kind: "player_spawn", position: { x: 2, y: 0, z: 3 }, meta: { animation: config, routeId: "preserve" } }];
+  session.dispatch({ type: "replaceDocument", document: doc });
+  session.dispatch({ type: "setMarker", id: "player", patch: { meta: { ...doc.markers[0]!.meta, ...animationMetaPatch(changed) } } });
+  expect(readAnimationSettingResult(session.getState().document, "player").setting).toEqual(changed);
+  session.dispatch({ type: "undo" });
+  expect(readAnimationSettingResult(session.getState().document, "player").setting).toEqual(config);
+  session.dispatch({ type: "redo" });
+  const exported = host.api.handle({ method: "export_document" });
+  expect(exported.ok).toBe(true);
+  const reopened = createEditorHost({ gameId: "clock-reload", layers: {} });
+  expect(reopened.api.handle({ method: "import_document", json: (exported.result as { json: string }).json }).ok).toBe(true);
+  expect(readAnimationSettingResult(reopened.api.getSession().getState().document, "player")).toEqual({ setting: changed, diagnostics: [] });
+  expect(reopened.api.getSession().getState().document.markers[0]!.meta?.routeId).toBe("preserve");
+  host.dispose();reopened.dispose();
+});
+
+test("valid custom config exposes its persisted clock without requiring catalog clip metadata", () => {
+  const document = createEmptyEditorDocument();
+  document.markers = [{ id: "player", kind: "player_spawn", position: { x: 0, y: 0, z: 0 }, meta: { animation: { graph: effectiveAnimGraph("auto", CLIPS)!.graph, clock: "game" } } }];
+  const session = createEditorSession(document);
+  session.dispatch({ type: "select", ids: ["player"] });
+  const ctx = createGameContext({ definition: defineGameDefinition({ name: "clock-authoring-ui", assets: createAssetCatalog(), multiplayer: "off" }), content: {}, player: { userId: "player", isNew: true } });
+  const html = renderToStaticMarkup(createElement(GameProvider, { context: ctx }, createElement(InspectorPanel, { session, ui: createEditorUiStore() })));
+  expect(html).toContain('aria-label="Animation clock"');
+  expect(html).toContain('<option value="game" selected="">Game time</option>');
+  expect(html).toContain('aria-label="Derive loaded clip roles"');
+  expect(document.markers[0]!.meta?.animation).toEqual(session.getState().document.markers[0]!.meta?.animation);
 });

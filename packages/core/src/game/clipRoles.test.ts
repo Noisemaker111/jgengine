@@ -138,3 +138,36 @@ describe("resolveAnimationConfig", () => {
     expect(resolveAnimationConfig("auto", ["Mystery"])).toBeUndefined();
   });
 });
+
+
+describe("auto animation clock modifiers", () => {
+  test("derives existing loaded roles before overlaying the selected clock", () => {
+    const automatic = defaultAnimationForClips(KAYKIT_SKELETON)!;
+    expect(resolveAnimationConfig({ auto: true, clock: "game" }, KAYKIT_SKELETON)).toEqual({ ...automatic, auto: true, clock: "game" });
+    expect(resolveAnimationConfig("auto", KAYKIT_SKELETON)).toEqual(automatic);
+    expect(resolveAnimationConfig({ auto: true, clock: "real" }, KAYKIT_SKELETON)?.clock).toBe("real");
+  });
+
+  test("explicit maps replace inferred maps whole, retaining ordered variants and deliberate empties", () => {
+    const graph = { layers: [] };
+    const oneShots = { attack: ["Throw", "1H_Melee_Attack_Chop"], hit: [] };
+    const states = { idle: "Idle", walk: "Idle" };
+    const explicit = { auto: true as const, clock: "game" as const, states, oneShots, graph, timeScale: -0.5 };
+    const result = resolveAnimationConfig(explicit, KAYKIT_SKELETON)!;
+    expect(result.states).toBe(states);
+    expect(result.oneShots).toBe(oneShots);
+    expect(result.graph).toBe(graph);
+    expect(result.timeScale).toBe(-0.5);
+    expect(resolveAnimationConfig({ auto: true, oneShots: {} }, KAYKIT_SKELETON)?.oneShots).toEqual({});
+    expect(resolveAnimationConfig({ auto: true, states: {} } as never, KAYKIT_SKELETON)?.states).toEqual({});
+    expect(explicit).toEqual({ auto: true, clock: "game", states, oneShots, graph, timeScale: -0.5 });
+  });
+
+  test("does not guess a first clip when automatic roles cannot be derived", () => {
+    for (const clips of [undefined, [], ["SwingOpen", "SwingClose"]]) {
+      expect(resolveAnimationConfig({ auto: true, clock: "game" }, clips)).toBeUndefined();
+    }
+    const manual = { clock: "game" as const, clip: "SwingOpen" };
+    expect(resolveAnimationConfig(manual, ["SwingOpen"])).toBe(manual);
+  });
+});

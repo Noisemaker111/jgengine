@@ -116,3 +116,21 @@ describe("authored character animation", () => {
     expect(read().diagnostics[0]?.path).toBe("markers[0].meta.animation.timeScale");
   });
 });
+
+
+test("authored clocks and auto derivation are validated without discarding valid data", () => {
+  for (const clock of ["real", "game"] as const) {
+    const authored = { clock, auto: true, states: {}, oneShots: {}, timeScale: -1, identity: { rig: "original" } };
+    expect(readAuthoredAnimation(document(authored), "player", defaults)).toEqual({ animation: authored, diagnostics: [] });
+    expect(readAuthoredAnimation(document(authored), "player", defaults).animation).toBe(authored);
+  }
+  for (const [key, value] of [["clock", "simulation"], ["clock", false], ["clock", null], ["auto", false], ["auto", "true"], ["auto", null]] as const) {
+    const authored = { clip: "Idle", [key]: value };
+    const result = readAuthoredAnimation(document(authored), "player", defaults);
+    expect(result.animation).toBe(defaults);
+    expect(result.diagnostics).toHaveLength(1);
+    expect(result.diagnostics[0]!.path).toBe(`markers[1].meta.animation.${key}`);
+    expect(result.diagnostics[0]!.repair).toContain(key === "clock" ? "real or game" : "true");
+    expect(authored[key]).toBe(value);
+  }
+});

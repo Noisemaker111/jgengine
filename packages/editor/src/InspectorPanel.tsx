@@ -48,6 +48,8 @@ import {
   setPlaybackBoolean,
   setPlaybackClip,
   setPlaybackNumber,
+  setPlaybackClock,
+  setAutomaticRoles,
   type AnimationMode,
   type AnimationSetting,
 } from "./modelAnimationAuthoring";
@@ -515,13 +517,22 @@ function ModelAnimationSection({
         <>
           <div className="space-y-1.5 rounded-[6px] border border-white/[0.06] bg-white/[0.02] p-2">
             <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-500">Playback</div>
+            <FieldRow label="Clock" title="Real time preserves playback speed; game time follows this character's simulation speed and time scale. Unbound previews use real time.">
+              <select className={`h-6.5 w-full min-w-0 px-1.5 ${INPUT_CLS}`} aria-label="Animation clock" value={config.clock ?? "real"} onChange={(event) => onChange(setPlaybackClock(setting, event.target.value as "real" | "game"))}>
+                <option value="real">Real time (default)</option>
+                <option value="game">Game time</option>
+              </select>
+            </FieldRow>
+            <FieldRow label="Derive roles" title="Infer roles from the loaded rig. Explicit mappings and graphs replace inferred fields whole.">
+              <input type="checkbox" aria-label="Derive loaded clip roles" checked={config.auto === true} onChange={(event) => onChange(setAutomaticRoles(setting, event.target.checked))} />
+            </FieldRow>
             <ClipSelectRow
               label="Single clip"
               clips={clips}
               value={config.clip ?? null}
               onChange={(clip) => onChange(setPlaybackClip(setting, clip))}
             />
-            <div className="text-[10px] text-neutral-600">Picking a single clip replaces locomotion states and a stored graph.</div>
+            <div className="text-[10px] text-neutral-600">Picking a single clip replaces derived roles, locomotion states and a stored graph.</div>
             <FieldRow label="Rate" title="Playback multiplier; zero holds playback.">
               <AxisNumberField label="rate" step={0.1} value={config.timeScale ?? 1} onCommit={(value) => onChange(setPlaybackNumber(setting, "timeScale", value))} />
             </FieldRow>
@@ -1005,7 +1016,7 @@ export function InspectorPanel({
                 <ParentField session={session} id={marker.id} />
               </div>
             </Section>
-            {markerRigClips !== null || animation.diagnostics.length > 0 ? (
+            {markerRigClips !== null || typeof animation.setting === "object" || animation.diagnostics.length > 0 ? (
               <Section id="modelAnimation" title="Animation" icon="film" sections={sections}>
                 <ModelAnimationSection
                   clips={markerRigClips ?? []}
