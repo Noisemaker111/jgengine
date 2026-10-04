@@ -207,27 +207,41 @@
   },
   "maximums": {
     "before": {
-      "headPenetration_m": 0.8171078130933989,
       "xzDisplacement_m": 1.8195544892249131,
-      "stepXzShift_m": 1.8195544892249131
+      "stepXzShift_m": 1.8195544892249131,
+      "maxHeadMinusBoundReferencePlane_m": 0.8171078130933989
     },
     "after": {
-      "headPenetration_m": -2.1316282072803006e-14,
       "xzDisplacement_m": 0.0,
-      "stepXzShift_m": 0.0
+      "stepXzShift_m": 0.0,
+      "maxHeadMinusBoundReferencePlane_m": -2.1316282072803006e-14
     }
   },
   "limitations": [
     "Conservative roof outer bounds do not represent exact interior triangle clearance.",
+    "Head minus roof reference plane does not establish 3D overlap after leaving the roof footprint.",
     "Physical 1.8 m clearance does not prove clearance of the 2.6 m visual model.",
     "Image decoding was skipped by the numerical fixture.",
     "No native host or daemon was launched for this figure.",
     "No registry release or published game adoption occurred."
   ],
   "artifacts": {
-    "plot_roof_trace.py": "6717c7f9ddecef3e5e4eeeb3513723874f57cb6d457d11137f443a02afd32278",
+    "plot_roof_trace.py": "7adbd7aa072a9940f2e16824710ea8e327e7d11404011c116c55027f63c0c5ed",
     "roof-jump-trace.csv": "7f5dbbbb530e47ad51dd28582c71d96e94c6635c53d121567c40fdba330e49d7",
     "roof-jump-trace.png": "7e7e9d8f0cfc3af5c6bfad6df849af59d7ad705865f2f68b76edd004587880a8",
     "roof-jump-trace.svg": "465ed2c13dd7e96c3d5bec12054a436c9416663edc5af86f94d6ca0a80e5e56f"
-  }
+  },
+  "firstInsideRoofBoundsPenetrationBefore": {
+    "frame": 2,
+    "time_s": 0.05,
+    "position": [
+      15.575108242034911,
+      7.518096882103497,
+      -308.1281545952859
+    ],
+    "signedHeadMinusBound_m": 0.01488559087117558,
+    "horizontalShift_m": 0,
+    "insideXZBounds": true
+  },
+  "headReferenceMeaning": "The maximum 0.817107813 m is head Y minus the roof underside reference plane after sideways ejection outside the roof XZ bounds. It is not maximum actual 3D roof penetration. The first recorded penetration while still inside the conservative roof bounds is 0.014885591 m at frame 2, before ejection at frame 3."
 }

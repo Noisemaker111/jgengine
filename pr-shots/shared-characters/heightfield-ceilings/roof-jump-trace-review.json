@@ -1,0 +1,32 @@
+{
+  "sourceDataAndScriptInspected": true,
+  "artifactHashesVerified": true,
+  "pngVisuallyInspected": true,
+  "inspection": "Labels, both cohort identifiers, physical head versus conservative roof underside, discrete XZ ejection, and evidence limitations are readable and unobstructed. No native capture was launched.",
+  "maximums": {
+    "before": {
+      "xzDisplacement_m": 1.8195544892249131,
+      "stepXzShift_m": 1.8195544892249131,
+      "maxHeadMinusBoundReferencePlane_m": 0.8171078130933989
+    },
+    "after": {
+      "xzDisplacement_m": 0.0,
+      "stepXzShift_m": 0.0,
+      "maxHeadMinusBoundReferencePlane_m": -2.1316282072803006e-14
+    }
+  },
+  "sidecarSha256": "52d9a7daf065d903781d6476cb4e140727082ecf7fd1bf43d31637c77ec4be04",
+  "headReferenceMeaning": "The maximum 0.817107813 m is head Y minus the roof underside reference plane after sideways ejection outside the roof XZ bounds. It is not maximum actual 3D roof penetration. The first recorded penetration while still inside the conservative roof bounds is 0.014885591 m at frame 2, before ejection at frame 3.",
+  "firstInsideRoofBoundsPenetrationBefore": {
+    "frame": 2,
+    "time_s": 0.05,
+    "position": [
+      15.575108242034911,
+      7.518096882103497,
+      -308.1281545952859
+    ],
+    "signedHeadMinusBound_m": 0.01488559087117558,
+    "horizontalShift_m": 0,
+    "insideXZBounds": true
+  }
+}

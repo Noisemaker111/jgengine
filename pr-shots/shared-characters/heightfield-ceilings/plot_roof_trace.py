@@ -47,6 +47,13 @@ for key in ['authoredSpawn', 'walkedTo', 'routeFrames', 'brakedAt', 'beforeJump'
     assert before['route'][key] == after['route'][key], key
 assert before['document']['gamesSource'] == after['document']['gamesSource']
 ceiling = before['object']['selected']['ceiling']
+obstacle = before['object']['obstacle']
+roof_center = [obstacle['position'][i] + obstacle['offset'][i] for i in range(3)]
+def inside_roof_xz(position):
+    return all(abs(position[i] - roof_center[i]) <= obstacle['halfExtents'][i] for i in [0, 2])
+first_inside = next(f for f in before['route']['jumpFrames'] if f['headPenetration'] > 1e-9 and inside_roof_xz(f['position']))
+assert first_inside['frame'] == 2
+assert math.isclose(first_inside['headPenetration'], .01488559087117558, abs_tol=1e-12)
 
 plt.rcParams.update({'font.family': 'DejaVu Sans', 'font.size': 11, 'axes.spines.top': False, 'axes.spines.right': False, 'svg.fonttype': 'none'})
 fig, axes = plt.subplots(2, 1, figsize=(11.5, 7.5), sharex=True, gridspec_kw={'height_ratios': [1.5, 1]})
@@ -97,8 +104,10 @@ sidecar = {
     'visualTargetHeight': 2.6,
     'route': {'walkingSteps': before['route']['routeFrames'], 'walkingDt': 1/120, 'brakingSteps': 120, 'brakingDt': 1/120, 'jumpSteps': 24, 'jumpDt': 1/60, 'authoredSpawn': before['route']['authoredSpawn'], 'brakedAt': before['route']['brakedAt']},
     'derivations': {'time_s': '(frame + 1) / 60; initial point from the recorded braked position at t=0', 'head_y_m': 'recorded feet Y + recorded physical height', 'xz_displacement_m': 'Euclidean XZ distance from recorded braked position', 'step_xz_shift_m': 'recorded horizontalShift, independently checked against consecutive XZ coordinates'},
-    'maximums': {name: {'headPenetration_m': max(r['head_y_m'] - ceiling for r in v['rows']), 'xzDisplacement_m': max(r['xz_displacement_m'] for r in v['rows']), 'stepXzShift_m': max(r['step_xz_shift_m'] for r in v['rows'])} for name, v in variants.items()},
-    'limitations': ['Conservative roof outer bounds do not represent exact interior triangle clearance.', 'Physical 1.8 m clearance does not prove clearance of the 2.6 m visual model.', 'Image decoding was skipped by the numerical fixture.', 'No native host or daemon was launched for this figure.', 'No registry release or published game adoption occurred.'],
+    'maximums': {name: {'maxHeadMinusBoundReferencePlane_m': max(r['head_y_m'] - ceiling for r in v['rows']), 'xzDisplacement_m': max(r['xz_displacement_m'] for r in v['rows']), 'stepXzShift_m': max(r['step_xz_shift_m'] for r in v['rows'])} for name, v in variants.items()},
+    'firstInsideRoofBoundsPenetrationBefore': {'frame': first_inside['frame'], 'time_s': (first_inside['frame'] + 1) / 60, 'position': first_inside['position'], 'signedHeadMinusBound_m': first_inside['headPenetration'], 'horizontalShift_m': first_inside['horizontalShift'], 'insideXZBounds': True},
+    'headReferenceMeaning': 'The maximum 0.817107813 m is head Y minus the roof underside reference plane after sideways ejection outside the roof XZ bounds. It is not maximum actual 3D roof penetration. The first recorded penetration while still inside the conservative roof bounds is 0.014885591 m at frame 2, before ejection at frame 3.',
+    'limitations': ['Conservative roof outer bounds do not represent exact interior triangle clearance.', 'Head minus roof reference plane does not establish 3D overlap after leaving the roof footprint.', 'Physical 1.8 m clearance does not prove clearance of the 2.6 m visual model.', 'Image decoding was skipped by the numerical fixture.', 'No native host or daemon was launched for this figure.', 'No registry release or published game adoption occurred.'],
     'artifacts': {name: hashlib.sha256((OUT / name).read_bytes()).hexdigest() for name in ['plot_roof_trace.py', 'roof-jump-trace.csv', 'roof-jump-trace.png', 'roof-jump-trace.svg']}
 }
 (OUT / 'roof-jump-trace.json').write_text(json.dumps(sidecar, indent=2) + '\n')
