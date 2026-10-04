@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-import { createSimClock } from "./simClock";
+import { createSimClock, type SimClock } from "./simClock";
+import { createEntityStore } from "../scene/entityStore";
+import { createSimContext } from "../runtime/simContext";
 
 describe("createSimClock — scaling", () => {
   test("advance returns real dt × scale × speed and accumulates game time", () => {
@@ -20,6 +22,129 @@ describe("createSimClock — scaling", () => {
   test("default scale is real time (1:1)", () => {
     const clock = createSimClock();
     expect(clock.advance(0.5)).toBe(0.5);
+  });
+});
+
+describe("createSimClock — local accepted progress", () => {
+  test("counts accepted speed and timescale without boot or calendar offsets", () => {
+    const clock = createSimClock({ config: { scale: 75, start: 28800, speeds: [1, 4] } });
+    expect(clock.advancedSeconds()).toBe(0);
+    expect(clock.advance(0.05)).toBe(3.75);
+    expect(clock.advancedSeconds()).toBe(0.05);
+    clock.setSpeed(4);
+    clock.setTimescale(0.5);
+    expect(clock.advancedSeconds()).toBe(0.05);
+    expect(clock.advance(0.05)).toBe(7.5);
+    expect(clock.advancedSeconds()).toBeCloseTo(0.15, 12);
+    expect(clock.now()).toBe(28811.25);
+  });
+
+  test("clock save and hydrate preserve their schema without altering local progress", () => {
+    const clock = createSimClock({ config: { scale: 2 } });
+    clock.advance(0.5);
+    const saved = clock.snapshot();
+    expect(Object.keys(saved).sort()).toEqual(["calendar", "now", "paused", "playSpeed", "scale", "speed", "speeds", "timescale"]);
+    clock.hydrate({ ...saved, now: 10000, playSpeed: 4 });
+    expect(clock.advancedSeconds()).toBe(0.5);
+    expect(clock.now()).toBe(10000);
+    clock.advance(0.25);
+    expect(clock.advancedSeconds()).toBe(1.5);
+    clock.hydrate(saved);
+    expect(clock.now()).toBe(1);
+    expect(clock.advancedSeconds()).toBe(1.5);
+    const restored = createSimClock();
+    restored.hydrate(saved);
+    expect(restored.now()).toBe(1);
+    expect(restored.advancedSeconds()).toBe(0);
+  });
+
+  test("a fixed simulation counts actual steps without counting accumulated or dropped time", () => {
+    const time = createSimClock({ config: { scale: 75 } });
+    const sim = createSimContext({ config: { hz: 10, maxCatchUpSteps: 2 }, entities: createEntityStore(), time });
+    const accepted: number[] = [];
+    const result = sim.advance(1.05, (dt) => accepted.push(dt));
+    expect(result.steps).toBe(2);
+    expect(result.dropped).toBe(8);
+    expect(accepted).toEqual([0.1, 0.1]);
+    expect(time.advancedSeconds()).toBeCloseTo(0.2, 12);
+    expect(time.now()).toBe(15);
+    expect(sim.advance(0.01, () => accepted.push(99)).steps).toBe(0);
+    expect(time.advancedSeconds()).toBeCloseTo(0.2, 12);
+    expect(sim.advance(0.05, (dt) => accepted.push(dt)).steps).toBe(1);
+    expect(time.advancedSeconds()).toBeCloseTo(0.3, 12);
+    expect(accepted).toEqual([0.1, 0.1, 0.1]);
+  });
+
+  test("a variable simulation records its supplied accepted step and skips prediction-only advances", () => {
+    const time = createSimClock({ config: { scale: 2 } });
+    const sim = createSimContext({ entities: createEntityStore(), time });
+    const calendarSteps: number[] = [];
+    sim.advance(0.05, (_dt, _tick, gameDt) => calendarSteps.push(gameDt));
+    time.setSpeed(4);
+    sim.advance(0.05, (_dt, _tick, gameDt) => calendarSteps.push(gameDt));
+    expect(time.advancedSeconds()).toBe(0.25);
+    expect(calendarSteps).toEqual([0.1, 0.4]);
+    sim.advance(0.2, (_dt, _tick, gameDt) => expect(gameDt).toBe(0), { advanceTime: false });
+    expect(time.advancedSeconds()).toBe(0.25);
+    expect(time.now()).toBe(0.5);
+    const local = createSimClock();
+    const prediction = createSimContext({ entities: createEntityStore(), time: local });
+    prediction.advance(0.2, () => {}, { advanceTime: false });
+    local.hydrate({ ...time.snapshot(), now: 12000 });
+    prediction.advance(0.2, () => {}, { advanceTime: false });
+    expect(local.advancedSeconds()).toBe(0);
+    expect(local.now()).toBe(12000);
+  });
+
+  test("paused, zero-timescale and nonpositive advances do not add progress", () => {
+    const clock = createSimClock({ config: { startPaused: true } });
+    clock.advance(2);
+    expect(clock.advancedSeconds()).toBe(0);
+    clock.play();
+    clock.advance(0.2);
+    clock.setTimescale(0);
+    clock.advance(2);
+    clock.setTimescale(1);
+    clock.advance(0);
+    clock.advance(-2);
+    expect(clock.advancedSeconds()).toBe(0.2);
+    expect(clock.now()).toBe(0.2);
+  });
+
+  test("nonfinite local deltas cannot poison accepted progress", () => {
+    for (const dt of [NaN, Infinity]) {
+      const clock = createSimClock();
+      clock.advance(dt);
+      expect(clock.advancedSeconds()).toBe(0);
+    }
+    const clock = createSimClock();
+    clock.setSpeed(Infinity);
+    clock.advance(0.1);
+    expect(clock.advancedSeconds()).toBe(0);
+  });
+
+  test("timer callbacks see accepted progress before changing controls or throwing", () => {
+    const clock = createSimClock();
+    const seen: number[] = [];
+    clock.after(0.5, () => { seen.push(clock.advancedSeconds()); clock.setSpeed(4); });
+    expect(clock.advance(1)).toBe(1);
+    expect(seen).toEqual([1]);
+    expect(clock.advancedSeconds()).toBe(1);
+    expect(clock.advance(0.25)).toBe(1);
+    expect(clock.advancedSeconds()).toBe(2);
+    clock.after(0.5, () => { throw new Error("existing timer callback failure"); });
+    expect(() => clock.advance(0.25)).toThrow("existing timer callback failure");
+    expect(clock.now()).toBe(3);
+    expect(clock.advancedSeconds()).toBe(3);
+  });
+
+  test("external structural clocks can continue omitting the optional progress getter", () => {
+    const clock = createSimClock();
+    const { advancedSeconds: _progress, ...legacy } = clock;
+    const compatible: SimClock = legacy;
+    expect(compatible.advancedSeconds).toBeUndefined();
+    expect(compatible.advance(0.25)).toBe(0.25);
+    expect(clock.advancedSeconds()).toBe(0.25);
   });
 });
 

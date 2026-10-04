@@ -1861,10 +1861,10 @@
 
 - `CalendarTime` (interface): interface CalendarTime { totalSeconds: number; day: number; hour: number; minute: number; second: number; dayFraction: number; year: number; dayOfYear: number; yearFraction: number; season?: string } — ⚠ undocumented
 - `ClockSnapshot` (interface): interface ClockSnapshot { now: number; paused: boolean; speed: number; playSpeed: number; timescale: number; scale: number; speeds: readonly number[]; calendar: CalendarTime } — ⚠ undocumented
-- `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; toggle(): void; setSpeed(multi… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
+- `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; advancedSeconds?(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; to… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 - `SimClockOptions` (interface): interface SimClockOptions { config?: TimeConfig; onChange?: () => void } — ⚠ undocumented
 - `TimeConfig` (interface): interface TimeConfig { scale?: number; speeds?: readonly number[]; dayLength?: number; start?: number; startPaused?: boolean; daysPerYear?: number; seasons?: readonly string[] } — ⚠ undocumented
-- `createSimClock` (function): function createSimClock(options: SimClockOptions = {}): SimClock — ⚠ undocumented
+- `createSimClock` (function): function createSimClock(options: SimClockOptions = {}): SimClock & { advancedSeconds(): number } — ⚠ undocumented
 
 ## @jgengine/core/time/stateSchedule
 
@@ -2509,7 +2509,7 @@
 - `SequenceState` (interface): interface SequenceState — A read-only view of the director's playback state, returned by {@link SequenceDirector.state}.
 - `SharedAnnotations` (interface): interface SharedAnnotations — Local annotation edits that also broadcast, plus `apply` for inbound edits. `add*`/`remove`/`clear` mirror {@link AnnotationLayer} but return globally-unique ids so two clients never collide.
 - `SharedAnnotationsDeps` (interface): interface SharedAnnotationsDeps — Construction options for {@link createSharedAnnotations}.
-- `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; toggle(): void; setSpeed(multi… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
+- `SimClock` (interface): interface SimClock { advance(realDt: number): number; now(): number; advancedSeconds?(): number; snapshot(): ClockSnapshot; hydrate(snapshot: ClockSnapshot): void; calendar(): CalendarTime; isPaused(): boolean; speed(): number; pause(): void; play(): void; to… — ⚠ undocumented · used by `createSimContext` (@jgengine/core/runtime/simContext): Build `ctx.sim` for a context; `createGameContext` calls this from `definition.simulation`.
 - `SkillCheckConfig` (interface): interface SkillCheckConfig { trackWidth: number; zone: SkillCheckZone; markerPeriod: number; window: number; zoneDriftPerSecond?: number } — ⚠ undocumented · used by `skillCheckZoneAt`: A timing-bar skill check that succeeds when the moving marker is released inside the target zone.
 - `SkillCheckResult` (interface): interface SkillCheckResult { success: boolean; timedOut: boolean; markerPosition: number; zone: SkillCheckZone } — ⚠ undocumented
 - `SkyEnvironmentDescriptor` (type): type SkyEnvironmentDescriptor = { kind: "sky" } & Required< Pick<SkyEnvironmentConfig, "preset" | "timeOfDay"> > & Omit<SkyEnvironmentConfig, "preset" | "timeOfDay"> — ⚠ undocumented
