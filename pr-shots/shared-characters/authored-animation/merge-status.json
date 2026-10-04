@@ -1,0 +1,20 @@
+{
+  "pr": 1964,
+  "state": "closed",
+  "merged": true,
+  "sourceHead": "532ef9756007c602496df398f4a2bf8b55080baf",
+  "mergeCommit": "0318b0872edce92037d810f1a7fa5017869ee273",
+  "mergedAt": "2026-10-04T03:37:50Z",
+  "sourceCohort": "ec53acd41a3de603b301c40d699656a67fe091df",
+  "builtCohort": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+  "proofArchiveCommit": "f3b40a591f090b816373825b2144a0e81bfc3fd5",
+  "ci": {
+    "run": 37172738036,
+    "attempt": 1,
+    "allSixChecksPassed": true
+  },
+  "publication": "Engine source merged to beta; isolated prepared consumers verified against unreleased built packages; no registry release or shipped adoption",
+  "native": "No new native launches or appearance claim; eligibility gate remains blocked/capped",
+  "preservation": "Original proof cohorts and all archived before/after/native limitations remain unchanged"
+}
