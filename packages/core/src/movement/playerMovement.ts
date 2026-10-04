@@ -166,6 +166,7 @@ interface PlayerMovementState {
   pendingController: CharacterControllerState | null;
   heightfieldHeight: number | null;
   heightfieldEntityId: string | null;
+  liveEntityId: string | null;
   entityId: string | null;
   telemetry: PlayerMovementTelemetry | null;
 }
@@ -185,11 +186,22 @@ function storeFor(ctx: GameContext): CtxMovementStore {
       solids: { count: -1, set: new Set() },
     };
     stores.set(ctx, store);
+    const retained = store;
+    ctx.scene.entity.subscribeMembership(() => {
+      for (const [userId, state] of retained.players) {
+        if (state.liveEntityId !== null) {
+          if (ctx.scene.entity.get(state.liveEntityId) === null) retained.players.delete(userId);
+        } else {
+          const entityId = ctx.player.possession.active(userId);
+          if (ctx.scene.entity.get(entityId) !== null) state.liveEntityId = entityId;
+        }
+      }
+    });
   }
   return store;
 }
 
-function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState {
+function stateFor(ctx: GameContext, store: CtxMovementStore, userId: string): PlayerMovementState {
   let state = store.players.get(userId);
   if (state === undefined) {
     state = {
@@ -205,9 +217,12 @@ function stateFor(store: CtxMovementStore, userId: string): PlayerMovementState 
       pendingController: null,
       heightfieldHeight: null,
       heightfieldEntityId: null,
+      liveEntityId: null,
       entityId: null,
       telemetry: null,
     };
+    const entityId = ctx.player.possession.active(userId);
+    if (ctx.scene.entity.get(entityId) !== null) state.liveEntityId = entityId;
     store.players.set(userId, state);
   }
   return state;
@@ -339,7 +354,7 @@ export function snapshotPlayerMovement(ctx: GameContext, userId: string): Player
   };
 }
 
-/** Put a player's movement state back to a {@link snapshotPlayerMovement} copy, so the next {@link stepPlayerMovement} replays from there. */
+/** Put a player's movement state back to a {@link snapshotPlayerMovement} copy. Pending state survives until first spawn; a driven actor's despawn clears it. */
 export function restorePlayerMovement(ctx: GameContext, userId: string, snapshot: PlayerMovementSnapshot): void {
   const heightfieldHeight = snapshot.heightfieldHeight === undefined
     ? (snapshot.motion === null ? null : DEFAULT_OBSTACLE_PLAYER_HEIGHT) : snapshot.heightfieldHeight;
@@ -349,7 +364,9 @@ export function restorePlayerMovement(ctx: GameContext, userId: string, snapshot
   if (heightfieldEntityId !== null && typeof heightfieldEntityId !== "string") {
     throw new RangeError("PlayerMovementSnapshot.heightfieldEntityId must be a string or null.");
   }
-  const state = stateFor(storeFor(ctx), userId);
+  const state = stateFor(ctx, storeFor(ctx), userId);
+  const liveEntityId = ctx.player.possession.active(userId);
+  state.liveEntityId = ctx.scene.entity.get(liveEntityId) === null ? null : liveEntityId;
   invalidateTelemetry(state);
   state.heading = snapshot.heading;
   state.facing = snapshot.facing;
@@ -462,7 +479,7 @@ export function stepPlayerMovement(
 
   const store = storeFor(ctx);
   const retainedState = store.players.get(userId);
-  const state = stateFor(store, userId);
+  const state = stateFor(ctx, store, userId);
 
   let collisionHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT;
   let requestedCollisionHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT;
@@ -553,6 +570,7 @@ export function stepPlayerMovement(
     state.heightfieldHeight = collisionHeight;
     state.heightfieldEntityId = playerId;
   }
+  state.liveEntityId = playerId;
   state.heading = nextHeading;
   const motionBatch = ctx.player.motionFor(userId).takePending();
   if (flightTuning !== null) {

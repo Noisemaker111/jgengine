@@ -111,6 +111,45 @@ beforeAll(async () => {
       flushSync(()=>root.unmount());element.remove();AnimationMixer.prototype.uncacheRoot=originalUncache;
       return {poses,retuned,priority,cleanupBeforeRetune,cleanupAfterUnmount:uncacheCount,subscriptionsAfterUnmount:callbacks.size};
     };
+    window.discontinuity=async(mode)=>{
+      gltf=await gltfPromise;
+      const scene=clone(gltf.scene),id='discontinuity-actor';
+      const ctx=createGameContext({definition:defineGameDefinition({name:'discontinuity-proof',assets:createAssetCatalog(),multiplayer:'off'}),content:{},player:{userId:'player',isNew:true}});
+      ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
+      const animation={...config,oneShots:{...config.oneShots,death:'Death_A'},...(mode==='paused'?{paused:true}:{})};
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const store=selector=>selector(state);store.getState=()=>state;
+      const actions=[];let cleanups=0;
+      const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
+      AnimationMixer.prototype.clipAction=function(...args){const action=originalAction.apply(this,args);actions.push(action);return action};
+      AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
+      const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
+      const render=()=>flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}><Model scene={scene} id={id} animation={animation}/></FiberContext.Provider></GameProvider>));
+      const frame=delta=>{for(const ref of callbacks)ref.current(state,delta)};
+      const weights=()=>Object.fromEntries(actions.map(action=>[action.getClip().name,action.getEffectiveWeight()]));
+      const at=()=>ctx.scene.entity.get(id).position;
+      render();for(let n=0;n<30;n++)frame(1/60);
+      if(mode==='vertical')for(let n=0;n<30;n++){ctx.scene.entity.setPose(id,{position:[n*.06,0,0],dt:1/60});frame(1/60)};
+      if(mode==='death'){ctx.game.playEntityAnimation(id,'death');frame(0);frame(3)};
+      const before={weights:weights(),pose:values(scene)};
+      let fast;
+      if(mode==='retune'){
+        ctx.sim.retune({snapDistance:Infinity});
+        for(let n=0;n<30;n++){ctx.scene.entity.setPose(id,{position:[at()[0]+16,0,0],dt:1/60});frame(1/60)};
+        fast=weights();ctx.sim.retune({snapDistance:8});
+      }
+      if(mode==='pending'||mode==='pending-control')ctx.game.playEntityAnimation(id,'attack');
+      if(mode!=='pending-control')ctx.scene.entity.setPose(id,{position:mode==='vertical'?[at()[0],10,0]:[at()[0]+16,0,0]});
+      frame(0);const zeroDelta=weights();frame(1/60);
+      const after={weights:weights(),pose:values(scene)},cleanupBeforeUnmount=cleanups;
+      let pending;
+      if(mode==='pending'||mode==='pending-control'){frame(.25);pending={weights:weights(),pose:values(scene)}};
+      let resumed;
+      if(mode==='paused'){animation.paused=false;render();frame(1/60);resumed=weights()};
+      flushSync(()=>root.unmount());element.remove();
+      AnimationMixer.prototype.clipAction=originalAction;AnimationMixer.prototype.uncacheRoot=originalUncache;
+      return{before,zeroDelta,after,fast,pending,resumed,cleanupBeforeUnmount,cleanupAfterUnmount:cleanups,subscriptionsAfterUnmount:callbacks.size};
+    };
     window.ready=true;
   `);
   const script = buildBrowserFixture(`${scratch}/fixture.tsx`);
@@ -202,5 +241,61 @@ test("authored one-shot insertion order retains simultaneous trigger priority wh
   expect(result.priority.firstOrder).not.toEqual(result.priority.secondOrder);
   expect(result.cleanupAfterUnmount).toBe(5);
   expect(result.subscriptionsAfterUnmount).toBe(0);
+  await page.close();
+}, 30000);
+
+
+test("render snap policy clears locomotion speed after horizontal and vertical discontinuities", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const mode of ["warp", "vertical"]) {
+    const result = await page.evaluate(mode => (window as any).discontinuity(mode), mode);
+    expect(result.after.weights.Idle).toBe(1);
+    expect(result.after.weights.Walking_A).toBe(0);
+    expect(result.after.weights.Running_A).toBe(0);
+    expect(result.cleanupBeforeUnmount).toBe(0);
+    expect(result.cleanupAfterUnmount).toBe(1);
+    expect(result.subscriptionsAfterUnmount).toBe(0);
+  }
+  await page.close();
+}, 30000);
+
+test("live snap-distance retuning preserves genuine fast motion and resumes discontinuity filtering", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  const result = await page.evaluate(() => (window as any).discontinuity("retune"));
+  expect(result.fast.Running_A).toBe(1);
+  expect(result.after.weights.Idle).toBe(1);
+  expect(result.after.weights.Running_A).toBe(0);
+  expect(result.cleanupBeforeUnmount).toBe(0);
+  await page.close();
+}, 30000);
+
+test("discontinuities retain pending attack variants and terminal graph states", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  const control = await page.evaluate(() => (window as any).discontinuity("pending-control"));
+  const warped = await page.evaluate(() => (window as any).discontinuity("pending"));
+  expect(warped.pending).toEqual(control.pending);
+  const death = await page.evaluate(() => (window as any).discontinuity("death"));
+  expect(death.before.pose).toEqual(death.after.pose);
+  expect(death.after.weights.Death_A).toBe(1);
+  expect(death.cleanupBeforeUnmount).toBe(0);
+  await page.close();
+}, 30000);
+
+test("paused animation keeps its pose through a warp and resumes with fresh sampling", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  const result = await page.evaluate(() => (window as any).discontinuity("paused"));
+  expect(result.before.pose).toEqual(result.after.pose);
+  expect(result.before.weights).toEqual(result.zeroDelta);
+  expect(result.after.weights).toEqual(result.before.weights);
+  expect(result.resumed.Idle).toBe(1);
+  expect(result.resumed.Running_A).toBe(0);
   await page.close();
 }, 30000);
