@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "pr": 1971,
+  "status": "MERGED",
+  "head": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+  "mergeCommit": "8677b7285773742e73c66319cc4592b7026d303a",
+  "mergedAt": "2026-10-04T06:19:24Z",
+  "verification": "GitHub pull-request API reports merged=true with exact corrected ec1 source head.",
+  "builtSource": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "builtTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "originalRemoteSource": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+  "correctedLocalSource": "db82ce68b6e74cdad4b6d70526b64f449df2a6f6",
+  "correctedTree": "e6c176b01087e3a1518a6720396e6cc8a8e9d927",
+  "sourceCorrection": "Only non-shipped modelAnimationHook.test.ts stages the @react-three/drei peer; 4039 other tracked files, 2379 compiled files and 13 tarballs remain unchanged.",
+  "completeProofArchive": "6a6c908764e76b48736db380d656b2024a14585d",
+  "consumerReportSHA256": "757f428866e5de10255bf44f8d7b84bce4606b3afd857a4bfcb8376091d0589d",
+  "ci": {
+    "original": {
+      "head": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+      "run": 37181085087,
+      "attempt": 1,
+      "status": "FAIL",
+      "cause": "Isolated hook browser fixture missing @react-three/drei beforeAll build peer.",
+      "receipt": "ci-first-head-failed.json"
+    },
+    "corrected": {
+      "head": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+      "run": 37181753227,
+      "attempt": 1,
+      "allSixChecks": "PASS",
+      "receipt": "ci-corrected-head.json",
+      "tests": {
+        "pass": 9722,
+        "skip": 2,
+        "fail": 0,
+        "total": 9724,
+        "files": 977,
+        "seconds": 392.43,
+        "assertions": 3508228
+      }
+    },
+    "failedJobsReruns": 0
+  },
+  "limits": [
+    "Original 99a built package and consumer report attributions are unchanged; corrected head is a separate test-only tree.",
+    "Numerical public driver/imported-rig and pause evidence does not establish native gameplay appearance, feel or FPS.",
+    "Prepared Odd Orbit adapter is not published package adoption.",
+    "Pass11 configuration-only native capture remains frozen to its f9 cohort; this pass made no new native capture.",
+    "Local accepted clock progress does not define an authoritative remote animation timeline."
+  ]
+}
