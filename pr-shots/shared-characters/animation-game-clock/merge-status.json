@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "pr": 1970,
+  "status": "MERGED",
+  "head": "b562fc6c4e72a3da61ee487570a9bc780cf1a3f9",
+  "mergeCommit": "ef22f0c41b32949ba6ab162188f1d721851316f0",
+  "mergedAt": "2026-10-04T05:41:53Z",
+  "verification": "GitHub pull-request API reports merged=true with exact b562 source head.",
+  "builtSource": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "rebasedLocalSource": "a5c5250ffa031f4e713a2a27c2ec1c0c1bc9372c",
+  "sourceTree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "completeProofArchive": "30831b0e4df13783e46a6397db0a14ac457c757c",
+  "consumerReportSHA256": "6e826e2aea8d7bd90fc1d219d29fd5cbffdd7e534b11009e4350874b79690b88",
+  "ci": {
+    "run": 37179350532,
+    "attempt": 1,
+    "allSixChecks": "PASS",
+    "receipt": "ci-final.json"
+  },
+  "limits": [
+    "Built f9 package attribution remains unchanged; rebased local and remote source share the same entire tree.",
+    "Native evidence proves configuration edit/save/reopen only. Numerical imported-hook evidence does not establish native animation appearance, feel or FPS.",
+    "Prepared one-line Odd Orbit adapter is not published package adoption.",
+    "The separate unresolved FrameDriver clamped-time defect remains recorded in remaining-limit.json and is assigned to pass12.",
+    "Older helper mapping-source checks did not establish older bundled SDK skill freshness; the pass11 explicit staging and committed-source comparison is separately recorded."
+  ]
+}
