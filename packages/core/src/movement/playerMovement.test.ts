@@ -326,7 +326,7 @@ describe("heightfield collision proportions", () => {
     expect(() => stepPlayerMovement(ctx, "a", frame(["turnRight"]), 1 / 60, configured, Math.PI / 3)).toThrow("collisionHeight");
     expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 2]);
     expect(playerMovementHeading(ctx, "a")).toBe(0);
-    expect(snapshotPlayerMovement(ctx, "a")!.facing).toBeNull();
+    expect(snapshotPlayerMovement(ctx, "a")).toBeNull();
     expect(playerMovementTelemetry(ctx, "a")).toBeNull();
     ctx.world.solids.set("roof", []);
     stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
@@ -350,7 +350,7 @@ describe("heightfield collision proportions", () => {
     expect(() => stepPlayerMovement(ctx, "a", frame([]), 1 / 60,
       resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }))).toThrow("intersects blocking geometry at entity a");
     expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
-    expect(snapshotPlayerMovement(ctx, "a")!.motion).toBeNull();
+    expect(snapshotPlayerMovement(ctx, "a")).toBeNull();
     expect(playerMovementTelemetry(ctx, "a")).toBeNull();
   });
 
@@ -1413,5 +1413,94 @@ describe("snapshotPlayerMovement", () => {
     replay.scene.entity.setPose("a", { position: pose, rotationY: 0, dt: 1 / 60 });
     restorePlayerMovement(replay, "a", saved);
     expect(run(replay, capsuleTuning(), ["moveForward"], 30)).toEqual(expected);
+  });
+});
+
+describe("stance-dependent flight preflight", () => {
+  const content: GameContextContent = { entityById: () => ({ movement: { poses: ["standing", "running", "crouch", "prone"], aim: ["hip", "ads"] } }) };
+
+  test("same-frame supported stance reaches a single flight gate on the real context with default or explicit height", () => {
+    for (const collisionHeight of [undefined, 2.6]) {
+      const ctx = context(["a"], content);
+      const observed: string[] = [];
+      const configured = resolvePlayerMovementTuning({ movement: { collisionHeight, flight: { canFly(actual) {
+        expect(actual).toBe(ctx);
+        expect(snapshotPlayerMovement(actual, "a")).not.toBeNull();
+        const pose = actual.player.movement.getPose("a");
+        observed.push(pose);
+        return pose !== "crouch";
+      } } } });
+      stepPlayerMovement(ctx, "a", frame(["crouch"]), 1 / 60, configured);
+      expect(observed).toEqual(["crouch"]);
+      expect(snapshotPlayerMovement(ctx, "a")!.flight).toBeNull();
+      expect(playerMovementTelemetry(ctx, "a")!.collisionHeight).toBe(collisionHeight ?? 1.8);
+      stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+      expect(observed).toEqual(["crouch", "standing"]);
+      expect(snapshotPlayerMovement(ctx, "a")!.flight).not.toBeNull();
+    }
+  });
+
+  test("policy failure restores only the driven pawn's exact pose and preserves fresh or warm motor state", () => {
+    for (const warm of [false, true]) for (const initial of [undefined, "standing", "prone"] as const) {
+      const ctx = context(["a"], content);
+      ctx.scene.entity.spawn("hero", { id: "pawn", position: [0, 0, 0] });
+      ctx.scene.entity.spawn("hero", { id: "other", position: [0, 0, 0] });
+      ctx.player.possession.own("a", "pawn");
+      ctx.player.possession.possess("a", "pawn");
+      if (warm) stepPlayerMovement(ctx, "a", frame([]), 1 / 60, FLAT);
+      ctx.player.movement.clear("pawn");
+      if (initial !== undefined) ctx.player.movement.setPose("pawn", initial);
+      const beforePose = ctx.player.movement.snapshotAll().poses;
+      const beforeBody = snapshotPlayerMovement(ctx, "a");
+      const telemetry = playerMovementTelemetry(ctx, "pawn");
+      ctx.player.motionFor("a").impulse(3);
+      const beforeMotion = ctx.player.motionFor("a").snapshot();
+      const error = new Error("caller gate failed");
+      let calls = 0;
+      const configured = resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6, flight: { canFly(actual) {
+        expect(actual).toBe(ctx); calls++;
+        expect(actual.player.movement.getPose("pawn")).toBe("crouch");
+        actual.player.movement.setPose("other", "running");
+        actual.player.movement.setAim("pawn", "ads");
+        throw error;
+      } } } });
+      expect(() => stepPlayerMovement(ctx, "a", frame(["crouch", "turnRight"]), 1 / 60, configured, 0.8)).toThrow(error);
+      expect(calls).toBe(1);
+      const afterPose = ctx.player.movement.snapshotAll();
+      expect(afterPose.poses.pawn).toBe(beforePose.pawn);
+      expect(Object.hasOwn(afterPose.poses, "pawn")).toBe(Object.hasOwn(beforePose, "pawn"));
+      expect(afterPose.poses.other).toBe("running");
+      expect(afterPose.aims.pawn).toBe("ads");
+      expect(snapshotPlayerMovement(ctx, "a")).toEqual(beforeBody);
+      expect(playerMovementTelemetry(ctx, "pawn")).toBe(telemetry);
+      expect(playerMovementHeading(ctx, "a")).toBe(0);
+      expect(ctx.player.motionFor("a").snapshot()).toEqual(beforeMotion);
+      expect(ctx.scene.entity.get("pawn")!.position).toEqual([0, 0, 0]);
+    }
+  });
+
+  test("denied flight followed by invalid height rolls back exact pose without draining input or changing telemetry", () => {
+    for (const warm of [false, true]) for (const initial of [undefined, "standing", "prone"] as const) {
+      const ctx = context(["a"], content);
+      if (warm) stepPlayerMovement(ctx, "a", frame([]), 1 / 60, FLAT);
+      ctx.player.movement.clear("a");
+      if (initial !== undefined) ctx.player.movement.setPose("a", initial);
+      const poses = ctx.player.movement.snapshotAll();
+      const body = snapshotPlayerMovement(ctx, "a");
+      const telemetry = playerMovementTelemetry(ctx, "a");
+      ctx.player.motionFor("a").impulse(3);
+      const pending = ctx.player.motionFor("a").snapshot();
+      let calls = 0;
+      const configured = resolvePlayerMovementTuning({ movement: { collisionHeight: 0, flight: { canFly(actual) {
+        expect(actual).toBe(ctx); expect(actual.player.movement.getPose("a")).toBe("crouch"); calls++; return false;
+      } } } });
+      expect(() => stepPlayerMovement(ctx, "a", frame(["crouch"]), 1 / 60, configured, 1)).toThrow("collisionHeight");
+      expect(calls).toBe(1);
+      expect(ctx.player.movement.snapshotAll()).toEqual(poses);
+      expect(snapshotPlayerMovement(ctx, "a")).toEqual(body);
+      expect(playerMovementTelemetry(ctx, "a")).toBe(telemetry);
+      expect(ctx.player.motionFor("a").snapshot()).toEqual(pending);
+      expect(playerMovementHeading(ctx, "a")).toBe(0);
+    }
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 
-import { createPoseState, POSE_HITBOX } from "./poseState";
+import { createPoseState, POSE_HITBOX, withPoseRollback, type PoseState } from "./poseState";
 
 describe("createPoseState", () => {
   test("unknown instance defaults to standing and hip", () => {
@@ -61,4 +61,33 @@ describe("POSE_HITBOX", () => {
     expect(POSE_HITBOX.crouch.height).toBeLessThan(POSE_HITBOX.standing.height);
     expect(POSE_HITBOX.crouch.speedMultiplier).toBeLessThan(POSE_HITBOX.standing.speedMultiplier);
   });
+});
+
+test("owned pose rollback preserves implicit and explicit entries without restoring unrelated caller state", () => {
+  for (const initial of [undefined, "standing", "prone"] as const) {
+    const state = createPoseState(() => ({ poses: ["standing", "crouch", "prone", "running"], aim: ["hip", "ads"] }));
+    if (initial !== undefined) state.setPose("pawn", initial);
+    const poses = state.snapshotAll().poses;
+    const externalCopy = { ...state };
+    expect(() => withPoseRollback(externalCopy, "pawn", () => {
+      externalCopy.setPose("pawn", "crouch");
+      externalCopy.setPose("other", "running");
+      externalCopy.setAim("pawn", "ads");
+      throw Error("rollback");
+    })).toThrow("rollback");
+    const snapshot = state.snapshotAll();
+    expect(snapshot.poses.pawn).toBe(poses.pawn);
+    expect(Object.hasOwn(snapshot.poses, "pawn")).toBe(Object.hasOwn(poses, "pawn"));
+    expect(snapshot.poses.other).toBe("running");
+    expect(snapshot.aims.pawn).toBe("ads");
+  }
+});
+
+test("successful owned pose changes commit and custom implementations retain semantic setter compatibility", () => {
+  const owned = createPoseState(() => ({ poses: ["standing", "crouch", "prone"] }));
+  expect(withPoseRollback(owned, "pawn", () => { owned.setPose("pawn", "crouch"); return 42; })).toBe(42);
+  expect(owned.getPose("pawn")).toBe("crouch");
+  const custom: PoseState = { ...owned, getPose: id => owned.getPose(id) };
+  expect(() => withPoseRollback(custom, "pawn", () => { custom.setPose("pawn", "prone"); throw Error("external"); })).toThrow("external");
+  expect(custom.getPose("pawn")).toBe("crouch");
 });
