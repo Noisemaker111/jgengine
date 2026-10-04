@@ -418,8 +418,16 @@ export function useModelAnimation(
         if (entity !== null && delta > 0) {
           const [x, , z] = entity.position;
           if (playback.lastPos !== null) {
-            const instantSpeed = Math.hypot(x - playback.lastPos[0], z - playback.lastPos[2]) / delta;
-            playback.smoothedSpeed += (instantSpeed - playback.smoothedSpeed) * Math.min(1, delta * 12);
+            const dx = x - playback.lastPos[0];
+            const dy = entity.position[1] - playback.lastPos[1];
+            const dz = z - playback.lastPos[2];
+            const snapDistance = ctx.sim.loop.config().snapDistance;
+            if (dx * dx + dy * dy + dz * dz > snapDistance * snapDistance) {
+              playback.smoothedSpeed = 0;
+            } else {
+              const instantSpeed = Math.hypot(dx, dz) / delta;
+              playback.smoothedSpeed += (instantSpeed - playback.smoothedSpeed) * Math.min(1, delta * 12);
+            }
           }
           playback.lastPos = [x, entity.position[1], z];
         }

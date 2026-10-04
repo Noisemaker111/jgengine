@@ -1416,6 +1416,100 @@ describe("snapshotPlayerMovement", () => {
   });
 });
 
+describe("movement actor lifetime", () => {
+  test("same-id despawn and respawn does not resume the previous actor's jump", () => {
+    const ctx = context(["a"]);
+    drive(ctx, "a", ["moveForward", "jump"], 1, 1);
+    expect(playerMovementTelemetry(ctx, "a")!.grounded).toBe(false);
+    expect(snapshotPlayerMovement(ctx, "a")!.motion!.verticalVelocity).toBeGreaterThan(0);
+    ctx.scene.entity.despawn("a");
+    ctx.scene.entity.spawn("hero", { id: "a", position: [0, 0, 0] });
+    expect(snapshotPlayerMovement(ctx, "a")).toBeNull();
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+    expect(playerMovementHeading(ctx, "a")).toBe(0);
+    drive(ctx, "a", [], 1);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+    expect(snapshotPlayerMovement(ctx, "a")!.motion!.jumpOffset).toBe(0);
+    expect(playerMovementTelemetry(ctx, "a")!.grounded).toBe(true);
+    expect(playerMovementTelemetry(ctx, "a")!.verticalVelocity).toBe(0);
+  });
+
+  test("normal pose writes, hydration and unrelated membership keep continuous movement", () => {
+    const ctx = context(["a", "b"]);
+    drive(ctx, "a", ["jump", "moveForward"], 1, 0.7);
+    const before = snapshotPlayerMovement(ctx, "a")!;
+    const telemetry = playerMovementTelemetry(ctx, "a");
+    ctx.scene.entity.setPose("a", { position: ctx.scene.entity.get("a")!.position, dt: 1 / 60 });
+    ctx.hydrate(structuredClone(ctx.snapshot()));
+    ctx.scene.entity.spawn("hero", { id: "unrelated" });
+    ctx.scene.entity.despawn("unrelated");
+    ctx.scene.entity.despawn("b");
+    expect(snapshotPlayerMovement(ctx, "a")).toEqual(before);
+    expect(playerMovementTelemetry(ctx, "a")).toBe(telemetry);
+    drive(ctx, "a", [], 1);
+    expect(snapshotPlayerMovement(ctx, "a")!.motion!.verticalVelocity).toBeLessThan(before.motion!.verticalVelocity);
+    expect(playerMovementTelemetry(ctx, "a")!.grounded).toBe(false);
+  });
+
+  test("despawning a driven pawn clears its owner without clearing another player", () => {
+    const ctx = context(["a", "b"]);
+    ctx.scene.entity.spawn("hero", { id: "pawn" });
+    ctx.player.possession.own("a", "pawn");
+    ctx.player.possession.possess("a", "pawn");
+    drive(ctx, "a", ["jump"], 1);
+    drive(ctx, "b", ["moveForward"], 1);
+    const other = snapshotPlayerMovement(ctx, "b");
+    ctx.scene.entity.despawn("pawn");
+    expect(snapshotPlayerMovement(ctx, "a")).toBeNull();
+    expect(snapshotPlayerMovement(ctx, "b")).toEqual(other);
+  });
+
+  test("restore before first spawn retains heading and a pending capsule until that actor disappears", () => {
+    const backend = createPhysicsWorldBackend({ capacity: 16, bounds: { min: [-60, -5, -60], max: [60, 60, 60] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [50, 0.5, 50] }, position: [0, -0.5, 0], kind: "static" });
+    const t = resolvePlayerMovementTuning({ physics: { backend } });
+    const source = context(["a"]);
+    stepPlayerMovement(source, "a", frame(["jump"]), 1 / 60, t, 0.9);
+    const saved = snapshotPlayerMovement(source, "a")!;
+    const replay = context(["b"]);
+    restorePlayerMovement(replay, "future", saved);
+    replay.scene.entity.spawn("hero", { id: "unrelated" });
+    replay.scene.entity.despawn("unrelated");
+    expect(snapshotPlayerMovement(replay, "future")).toEqual(saved);
+    expect(playerMovementHeading(replay, "future")).toBe(0.9);
+    replay.scene.entity.spawn("hero", { id: "future", position: saved.controller!.position });
+    expect(snapshotPlayerMovement(replay, "future")).toEqual(saved);
+    stepPlayerMovement(replay, "future", frame([]), 1 / 60, t);
+    expect(snapshotPlayerMovement(replay, "future")!.controller!.verticalVelocity).toBeGreaterThan(0);
+    replay.scene.entity.despawn("future");
+    expect(snapshotPlayerMovement(replay, "future")).toBeNull();
+  });
+
+  test("restoring a live actor is tracked even before its next movement step", () => {
+    const source = context(["a"]);
+    drive(source, "a", ["jump"], 1);
+    const replay = context(["a"]);
+    restorePlayerMovement(replay, "a", snapshotPlayerMovement(source, "a")!);
+    replay.scene.entity.despawn("a");
+    expect(snapshotPlayerMovement(replay, "a")).toBeNull();
+  });
+
+  test("one context subscribes once across players and repeated forget and restore", () => {
+    const ctx = context(["a", "b"]);
+    const subscribe = ctx.scene.entity.subscribeMembership;
+    let subscriptions = 0;
+    ctx.scene.entity.subscribeMembership = (listener) => { subscriptions++; return subscribe(listener); };
+    for (let i = 0; i < 8; i++) {
+      drive(ctx, "a", [], 1);
+      const saved = snapshotPlayerMovement(ctx, "a")!;
+      forgetPlayerMovement(ctx, "a");
+      restorePlayerMovement(ctx, "a", saved);
+      drive(ctx, "b", [], 1);
+    }
+    expect(subscriptions).toBe(1);
+  });
+});
+
 describe("stance-dependent flight preflight", () => {
   const content: GameContextContent = { entityById: () => ({ movement: { poses: ["standing", "running", "crouch", "prone"], aim: ["hip", "ads"] } }) };
 
