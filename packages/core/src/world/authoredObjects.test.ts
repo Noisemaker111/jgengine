@@ -7,6 +7,8 @@ import {
   placeAuthoredObjects,
   placeAuthoredObjectsFromDocument,
   resolveAuthoredObjects,
+  resolveAuthoredObjectsWithDiagnostics,
+  syncAuthoredObjects,
   type AuthoredObject,
 } from "./authoredObjects";
 
@@ -236,4 +238,93 @@ test("initial sync and unrelated edits preserve game initialized prop state", as
   syncAuthoredObjects(store, resolveAuthoredObjects(structuredClone(doc)), previous, () => 9);
   expect(store.get("crate_a")!.position).toEqual([91, 8, 43]);
   expect(store.get("crate_a")!.rotationY).toBe(0.7);
+});
+
+
+test("malformed saved animation is omitted from normal static placements and object-store overrides", () => {
+  for (const animation of [{ clip: 7 }, { clock: "calendar" }, { auto: false }, { states: { idle: "Idle", walk: false } }]) {
+    const authored = { ...doc, markers: [{ ...doc.markers[0]!, meta: { ...doc.markers[0]!.meta, animation } }] };
+    expect(markerAnimation(authored.markers[0]!)).toBeUndefined();
+    const objects = resolveAuthoredObjects(authored);
+    expect(objects).toEqual(resolveAuthoredObjects({ ...authored, markers: [{ ...authored.markers[0]!, meta: { ...authored.markers[0]!.meta, animation: undefined } }] }));
+    expect(Object.hasOwn(objects[0]!, "animation")).toBe(false);
+    const store = createObjectStore();
+    placeAuthoredObjectsFromDocument(store, authored, (x, z) => x + z, { verticalOffset: 0.5 });
+    const placed = store.get("crate_a")!;
+    expect(placed.animation).toBeUndefined();
+    expect(placed.position).toEqual([10, 6.5, -4]);
+    expect(placed.rotationY).toBe(1.5);
+    expect(authored.markers[0]!.meta.animation).toBe(animation);
+  }
+});
+
+
+test("static placement reports located whole-config rejection without consuming excluded character markers", () => {
+  const bad = { graph: { layers: [{ id: "base", entry: "idle", states: { idle: { kind: "clip", clip: "Idle" } }, transitions: [{ from: "idle", to: "missing" }] }] } };
+  const markers = [
+    { ...doc.markers[0]!, id: "dynamic", kind: "mob", catalogId: "dynamic-rig", meta: { animation: { clip: 7 } } },
+    { ...doc.markers[0]!, id: "unplaced", catalogId: undefined, meta: { animation: { clip: 7 } } },
+    { ...doc.markers[0]!, id: "bad", meta: { ...doc.markers[0]!.meta, animation: bad } },
+  ];
+  const original = structuredClone(markers);
+  const result = resolveAuthoredObjectsWithDiagnostics({ markers });
+  expect(result.objects.map((object) => object.instanceId)).toEqual(["bad"]);
+  expect(result.objects[0]!.animation).toBeUndefined();
+  expect(result.diagnostics).toEqual([{ path: "markers[2].meta.animation.graph.layers[0].transitions[0].to", message: "Transition references an unknown state.", repair: "Choose a state declared in this layer; only from may use *." }]);
+  expect(markers).toEqual(original);
+  expect(resolveAuthoredObjects({ markers })).toEqual(result.objects);
+  const custom = resolveAuthoredObjectsWithDiagnostics({ markers }, { excludeKinds: [] });
+  expect(custom.objects.map((object) => object.instanceId)).toEqual(["dynamic", "bad"]);
+  expect(custom.diagnostics.map((diagnostic) => diagnostic.path)).toEqual(["markers[0].meta.animation.clip", "markers[2].meta.animation.graph.layers[0].transitions[0].to"]);
+});
+
+test("static animation validation retains explicit modes, partial maps, signed values and ordered extension data", () => {
+  const configurations = ["auto", "none", {}, { states: {} }, { states: { run: "Running_A" } }, { clip: "Idle", clock: "game", auto: true, time: -1, timeScale: -0.5, oneShots: { attack: ["Chop", "Slice"], hit: [] }, identity: { authoredOrder: ["keep", "identity"] } }];
+  for (const animation of configurations) {
+    const authored = { markers: [{ ...doc.markers[0]!, meta: { ...doc.markers[0]!.meta, animation } }] };
+    const result = resolveAuthoredObjectsWithDiagnostics(authored);
+    expect(result.diagnostics).toEqual([]);
+    expect(markerAnimation(authored.markers[0]!)).toBe(animation);
+    expect(result.objects[0]!.animation).toBe(animation);
+    const store = createObjectStore();
+    placeAuthoredObjects(store, result.objects, () => 7, { verticalOffset: 0.5 });
+    expect(store.get("crate_a")!.animation).toBe(animation);
+  }
+});
+
+test("batch validation uses one indexed document pass and reads only placed animation values", () => {
+  let reads = 0;
+  const markers = Array.from({ length: 120 }, (_, index) => ({
+    id: `marker-${index}`, kind: index % 3 === 0 ? "mob" : "prop", catalogId: "rig", position: { x: index, y: 0, z: 0 },
+    meta: { get animation() { reads += 1; return { clip: 7 }; } },
+  }));
+  const withoutLookups = new Proxy(markers, { get(target, property, receiver) { if (property === "findIndex" || property === "find") throw new Error("Batch resolution must not look up each marker again"); return Reflect.get(target, property, receiver); } });
+  const result = resolveAuthoredObjectsWithDiagnostics({ markers: withoutLookups });
+  expect(reads).toBe(80);
+  expect(result.objects).toHaveLength(80);
+  expect(result.diagnostics).toHaveLength(80);
+  expect(result.diagnostics[0]!.path).toBe("markers[1].meta.animation.clip");
+  expect(result.diagnostics.at(-1)!.path).toBe("markers[119].meta.animation.clip");
+});
+
+
+test("live authored synchronization clears an invalid override and restores a repaired one without changing placement ownership", () => {
+  const animation = { clip: "Idle", paused: true, time: 0.75, timeScale: 0.5, oneShots: { attack: ["Slice", "Chop"] } };
+  const original = { markers: [{ ...doc.markers[0]!, meta: { ...doc.markers[0]!.meta, animation, verticalOffset: 0.25 } }] };
+  const store = createObjectStore();
+  store.place("runtime", 100, 2, 100, { instanceId: "runtime-owned" });
+  let previous = syncAuthoredObjects(store, resolveAuthoredObjects(original), [], () => 3, { verticalOffset: 0.5 });
+  const placed = store.get("crate_a")!;
+  expect(placed.animation).toEqual(animation);
+  expect(placed.position).toEqual([10, 3.75, -4]);
+  const invalid = { markers: [{ ...original.markers[0]!, meta: { ...original.markers[0]!.meta, animation: { ...animation, clock: "calendar" } } }] };
+  const rejected = resolveAuthoredObjectsWithDiagnostics(invalid);
+  expect(rejected.diagnostics[0]!.path).toBe("markers[0].meta.animation.clock");
+  previous = syncAuthoredObjects(store, rejected.objects, previous, () => 3, { verticalOffset: 0.5 });
+  expect(store.get("crate_a")!.animation).toBeUndefined();
+  expect(store.get("crate_a")!.position).toEqual(placed.position);
+  expect(store.get("runtime-owned")!.position).toEqual([100, 2, 100]);
+  syncAuthoredObjects(store, resolveAuthoredObjects(original), previous, () => 3, { verticalOffset: 0.5 });
+  expect(store.get("crate_a")!.animation).toEqual(animation);
+  expect(store.get("crate_a")!.position).toEqual(placed.position);
 });

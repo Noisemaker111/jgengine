@@ -1,3 +1,4 @@
+import { readAuthoredAnimationValue, type AuthoredAnimationDiagnostic } from "./authoredAnimation";
 import type { ModelAnimationConfig } from "../game/playableGame";
 import type { SceneMarkerLike } from "./sceneShapes";
 
@@ -79,22 +80,13 @@ export function markerCatalogId(marker: AuthoredObjectMarkerLike): string | null
   return metaString(marker.meta, "catalogId");
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 /**
- * The authored per-placement rig animation override stored at `marker.meta.animation` (#1274), or
- * `undefined` when absent/malformed. `"auto"` / `"none"` pass through as the string modes; any other
- * object is a `ModelAnimationConfig` the shell applies verbatim (validated at author time in the
- * editor). Runtime trusts the persisted document here exactly like it trusts position and rotation.
+ * Validated per-placement animation from `marker.meta.animation`. Missing or malformed overrides
+ * return undefined so the placed object retains its catalog animation; valid data replaces it whole.
  * @capability authored-objects per-placement animation override from marker.meta.animation
  */
 export function markerAnimation(marker: AuthoredObjectMarkerLike): AuthoredAnimation | undefined {
-  const value = marker.meta?.["animation"];
-  if (value === "auto" || value === "none") return value;
-  if (isRecord(value)) return value as unknown as ModelAnimationConfig;
-  return undefined;
+  return readAuthoredAnimationValue(marker.meta?.["animation"], "meta.animation").animation;
 }
 
 function markerVerticalOffset(marker: AuthoredObjectMarkerLike): number {
@@ -130,13 +122,36 @@ export function resolveAuthoredObjects(
   document: AuthoredObjectsDocumentLike,
   options: ResolveAuthoredObjectsOptions = {},
 ): AuthoredObject[] {
+  return resolveAuthoredObjectsWithDiagnostics(document, options).objects;
+}
+
+/** Resolved catalog props and located repairs for rejected per-placement animation overrides. */
+export interface AuthoredObjectsResult {
+  objects: AuthoredObject[];
+  diagnostics: readonly AuthoredAnimationDiagnostic[];
+}
+
+/**
+ * Resolves catalog props and validates their animation in one document pass. Rejected overrides
+ * are omitted so each model inherits its original catalog setting. Excluded and unplaced markers
+ * remain the responsibility of their own consumers.
+ * @capability authored-objects resolve static placements with located animation repairs
+ */
+export function resolveAuthoredObjectsWithDiagnostics(
+  document: AuthoredObjectsDocumentLike,
+  options: ResolveAuthoredObjectsOptions = {},
+): AuthoredObjectsResult {
   const excluded = new Set(options.excludeKinds ?? ENTITY_MARKER_KINDS);
   const out: AuthoredObject[] = [];
-  for (const marker of document.markers) {
+  const diagnostics: AuthoredAnimationDiagnostic[] = [];
+  for (let index = 0; index < document.markers.length; index += 1) {
+    const marker = document.markers[index]!;
     if (excluded.has(marker.kind)) continue;
     const catalogId = markerCatalogId(marker);
     if (catalogId === null) continue;
-    const animation = markerAnimation(marker);
+    const result = readAuthoredAnimationValue(marker.meta?.["animation"], `markers[${index}].meta.animation`);
+    const animation = result.animation;
+    for (const diagnostic of result.diagnostics) diagnostics.push(diagnostic);
     out.push({
       catalogId,
       x: marker.position.x,
@@ -147,7 +162,7 @@ export function resolveAuthoredObjects(
       ...(animation === undefined ? {} : { animation }),
     });
   }
-  return out;
+  return { objects: out, diagnostics };
 }
 
 /**

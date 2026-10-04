@@ -13,7 +13,7 @@ import type { AssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import type { SceneKindObject } from "@jgengine/core/scene/sceneKinds";
 import {
   placeAuthoredObjects,
-  resolveAuthoredObjects,
+  resolveAuthoredObjectsWithDiagnostics,
   syncAuthoredObjects,
   type ResolveAuthoredObjectsOptions,
 } from "@jgengine/core/world/authoredObjects";
@@ -234,13 +234,19 @@ export function AuthoredObjects({
   excludeKinds,
 }: AuthoredObjectsProps) {
   const ctx = useGameContext();
-  const previousObjects = useRef<ReturnType<typeof resolveAuthoredObjects>>([]);
+  const previousObjects = useRef<ReturnType<typeof resolveAuthoredObjectsWithDiagnostics>["objects"]>([]);
   const previousStore = useRef(ctx.scene.object);
-  const objects = useMemo(
-    () => resolveAuthoredObjects(document, excludeKinds === undefined ? {} : { excludeKinds }),
+  const resolved = useMemo(
+    () => resolveAuthoredObjectsWithDiagnostics(document, excludeKinds === undefined ? {} : { excludeKinds }),
     [document, excludeKinds],
   );
+  const warnedResult = useRef<typeof resolved | null>(null);
+  const objects = resolved.objects;
   useEffect(() => {
+    if (warnedResult.current !== resolved) {
+      warnedResult.current = resolved;
+      for (const diagnostic of resolved.diagnostics) console.warn(`[jgengine] ${diagnostic.path}: ${diagnostic.message}. ${diagnostic.repair}`);
+    }
     if (previousStore.current !== ctx.scene.object) { previousObjects.current = []; previousStore.current = ctx.scene.object; }
     if (synchronize) {
       previousObjects.current = syncAuthoredObjects(ctx.scene.object, objects, previousObjects.current, (x, z) => field.sampleHeight(x, z), { verticalOffset });
@@ -250,7 +256,7 @@ export function AuthoredObjects({
       verticalOffset,
       onExisting,
     });
-  }, [ctx.scene.object, field, objects, onExisting, verticalOffset, synchronize]);
+  }, [ctx.scene.object, field, resolved, objects, onExisting, verticalOffset, synchronize]);
   return null;
 }
 
