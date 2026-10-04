@@ -1,0 +1,188 @@
+{
+  "cohort": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+  "manifestPath": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/candidate-package-manifest.json",
+  "manifestSha256": "4a6cb5b13e9fd1f42a7604dff58fbe0c28ebfb80591d36da7c5ba02d43d50fa4",
+  "consumer": "/workspace/JGengine/.scratch/characters/consumer/authored-animation",
+  "modules": [
+    {
+      "name": "@jgengine/core/anim/animGraph",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/@jgengine/core/dist/anim/animGraph.js",
+      "sha256": "45a623a6859f36bd0a543b1e1f4da61536640fc94b4b0f4bfdf909ad1003df40"
+    },
+    {
+      "name": "@jgengine/core/world/authoredAnimation",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/@jgengine/core/dist/world/authoredAnimation.js",
+      "sha256": "6947aa4487954532bde754df16d57be056bf6933d1da953c262b00f9c2d26a87"
+    },
+    {
+      "name": "@jgengine/core/movement/playerMovement",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/@jgengine/core/dist/movement/playerMovement.js",
+      "sha256": "e9f659e4aaa6e30d0fb0a2b560c8704faf816e734d46b054011b1527bcc49865"
+    },
+    {
+      "name": "@jgengine/shell/render/useModelAnimation",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+      "sha256": "163454c23bf17d19bbb2ad63f5fc11cf394a7b6690f8f37fb85201e3590475a3"
+    },
+    {
+      "name": "@jgengine/editor/session",
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/@jgengine/editor/dist/session.js",
+      "sha256": "51dbe1d167989569ffb18f922c428aaf569479578eb0003b783f18b38df7cf03"
+    }
+  ],
+  "sourceTreeEquivalence": {
+    "builtCommit": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+    "finalCommit": "ec53acd41a3de603b301c40d699656a67fe091df",
+    "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+    "sameTree": true
+  },
+  "claims": "unreleased joint5+6+7 installed-package numeric configuration, physical movement and imported rig pose proof; no native/appearance/hardwareFPS/publishedadoption claim",
+  "executedSources": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/executed-orchestrator.ts",
+      "sha256": "57a919bcd61e59f2a0dbb73863a22e8d400180efda045eaa80de7d849d621eb5"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/stage-authoring.ts",
+      "sha256": "1ad2faa165a50c984545ea122591c64f1455e5cfcff86a639df5452113ad6bca"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/stage-strict.ts",
+      "sha256": "69c8b884e4ae8db88cd54e0225de0307f51a823deca85f9dae9b4ae2797e5086"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/stage-physical.ts",
+      "sha256": "89db75bb3c5bb5ab19604ed966bc90ff2247a51b4c93d00a889a5eab2389642b"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/stage-pose.mjs",
+      "sha256": "d9b547da7fb6119549e1fbdb82e94da7d62e47b7db8d1ce3a1dbace81ffeb5d2"
+    }
+  ],
+  "inputs": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/lantern-animation.json",
+      "sha256": "b1ed0da10424a68f2d1855ff0a2547e31e8695ed04a03b1a6d246eee767ba0ce"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/scrap-animation.json",
+      "sha256": "0d8c7c2a31018a982cbcdd2188368e7bf17c0554bc066b09521fdad54cd9092e"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/asset-profiles.json",
+      "sha256": "69f432e8c7e1206a05768759220539444b5912ceeea72b20190945c7e4f34a1e"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/actual-clip-durations.json",
+      "sha256": "4c3768faa6fbdbd35aad8dc4ecc582a7dcb88a6121541a80a9d51b21cba3ce7f"
+    }
+  ],
+  "stages": [
+    {
+      "stage": "authoring",
+      "command": [
+        "/home/agent/.bun/bin/bun",
+        "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/stage-authoring.ts",
+        "/workspace/JGengine/.scratch/characters/consumer/authored-animation/candidate-package-manifest.json"
+      ],
+      "exitCode": 0,
+      "log": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/authoring.log",
+      "logSha256": "1fd4053c6fa1f16c52e6356970567a808b3df1786fc1185cb5aa0c21f86e94c8"
+    },
+    {
+      "stage": "strict",
+      "command": [
+        "/home/agent/.bun/bin/bun",
+        "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/stage-strict.ts"
+      ],
+      "exitCode": 0,
+      "log": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/strict.log",
+      "logSha256": "4437474a3c84c8f2d3036f676fcc9a326005fd00a2cb731cb37a15dedde959ac"
+    },
+    {
+      "stage": "physical",
+      "command": [
+        "/home/agent/.bun/bin/bun",
+        "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/stage-physical.ts"
+      ],
+      "exitCode": 0,
+      "log": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/physical.log",
+      "logSha256": "0a847ce455c413674f3b9b6ebd2db47e34bb145097cc6cecc9da26657a3c8297"
+    },
+    {
+      "stage": "pose",
+      "command": [
+        "node",
+        "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/stage-pose.mjs"
+      ],
+      "exitCode": 0,
+      "log": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/pose.log",
+      "logSha256": "6183bde2ba3a578d197817e9a2a9c070f0a801f8404d5cce7868a37271dccea0"
+    }
+  ],
+  "sixthBaselineSourceLimitation": "Complete BEFOREv2 source/report/log preserved; BEFOREv3 producer-import report/log preserved but exact executedv3 source was not archived before AFTER changes. No reconstructed source is claimed.",
+  "executedSourcesAndInputsUnchangedAfterAllStages": true,
+  "outputs": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/physical-authored-animation-seventh.json",
+      "sha256": "83bbda2d271aa4c397abcd1092eb40eeb019a74856b6df04e0e07ea6e3f10fa8"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/scrap-animation.json",
+      "sha256": "0d8c7c2a31018a982cbcdd2188368e7bf17c0554bc066b09521fdad54cd9092e"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/scrap-buffered-animation-saved-document.json",
+      "sha256": "9a61385fa76ef8d19feedf1138d4470aa40b6dd79f89b2c73e1937fc401048b5"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/lantern-animation.json",
+      "sha256": "b1ed0da10424a68f2d1855ff0a2547e31e8695ed04a03b1a6d246eee767ba0ce"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/strict-reader-result.json",
+      "sha256": "1d30a1a4f4c0821885448e6bbbdb5458c41b05e5b0491038cba05261004389a6"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/asset-profiles.json",
+      "sha256": "69f432e8c7e1206a05768759220539444b5912ceeea72b20190945c7e4f34a1e"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/public-authoring-result.json",
+      "sha256": "79fc483d9cfcc3191defae43089ec81978735a0c0397cf604ec34f5e4e720718"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/lantern-authoring-doc-public.json",
+      "sha256": "67cd4a4380e37a1313c4ce771dc963c6143615c850e8d873c6f04ca77250e213"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/lantern-animation-saved-document.json",
+      "sha256": "67cd4a4380e37a1313c4ce771dc963c6143615c850e8d873c6f04ca77250e213"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/candidate-package-manifest.json",
+      "sha256": "4a6cb5b13e9fd1f42a7604dff58fbe0c28ebfb80591d36da7c5ba02d43d50fa4"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/actual-clip-durations.json",
+      "sha256": "4c3768faa6fbdbd35aad8dc4ecc582a7dcb88a6121541a80a9d51b21cba3ce7f"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/package.json",
+      "sha256": "6dc1b06d6b093e9cccb20bee06a93836eee0420ae26803ca2ce4065d82f070d1"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/physical-pose-replay.json",
+      "sha256": "256721d6c96b9dd163c510cf79b6105ea0d4dccec70caff840f0941744d5106f"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/scrap-animation-saved-document.json",
+      "sha256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1"
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/scrap-authoring-doc-public.json",
+      "sha256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1"
+    }
+  ]
+}

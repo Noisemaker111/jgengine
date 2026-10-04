@@ -1,0 +1,34 @@
+{
+  "scenario": "Seventh saved animation graphs: read-only native eligibility",
+  "checkedAtUTC": "2026-10-04T02:14:42.903894+00:00",
+  "status": "blocked for standard standalone graph GUI/rig/play; no new scenario authorized by helper changes alone",
+  "newNativeAttempts": 0,
+  "nativeProcessesLaunched": false,
+  "seventhBuiltCohort": "not assigned at review",
+  "owningGate": {
+    "graphPanel": "AnimationGraphPanel target requires selected document marker, matching catalog asset.url, and asset.clips.",
+    "inspector": "InspectorPanel derives animation controls only from marker catalogId matching an asset with nonempty clip metadata.",
+    "standalone": "Existing standalone manifest/asset path registers URL only; prior actual Knight save/reopen lacked both rendered placement and animation UI."
+  },
+  "existingCaps": {
+    "report": "../standalone-save-review.json",
+    "renderedCharacterObservations": 2,
+    "cap": 2,
+    "state": "remains capped; no retry or readiness workaround"
+  },
+  "newCapabilityScope": "Shared stored graph helper/strict validation and saved runtime binding do not establish a resolution of the standalone imported-clip/mesh host gate.",
+  "fifthProofAttribution": "../jump-response/native-evidence.json; exact3ab numeric catalog controls only, not graph authoring/play evidence",
+  "decision": "Keep existing public full-document metadata/physics graph proof numerical. Do not stage a rig, modify registration/host/readiness, substitute text catalog fields for graph UI, or repeat the capped standalone play scenario.",
+  "sourceReviewHashes": {
+    "packages/editor/src/shell/AnimationGraphPanel.tsx": "75060c0bf84cc3364206fcca21bd60b5a2cc46eae5128231417923482367c6d5",
+    "packages/editor/src/InspectorPanel.tsx": "65ce285b0af1ef111550397df0fc21211b5324b87371357be1c4da58c67417de",
+    "packages/editor/src/StandaloneEditor.tsx": "d655b1a2cc0d472ec2de54cd93e8f2be5e7bce7162cab2b4797e1dd554401db3",
+    "packages/editor/src/assetImport.ts": "7929ba0194ea7d12cb0e9664761768a795ec3f157f5a6a1608c0688a3bc261cb",
+    "packages/node/src/editorHostPlugin.ts": "1f5cd316841401e4e8ba9d0ec97a520c2f13302d3f1034e9e4928116eed91e14"
+  },
+  "limitations": [
+    "No new native image or graph interaction acceptance.",
+    "No convincing animation, retargeting, controls feel or hardware performance claim.",
+    "This is an eligibility review of owning host seams, not a released-package adoption claim."
+  ]
+}

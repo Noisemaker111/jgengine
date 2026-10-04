@@ -1,0 +1,58 @@
+{
+  "sourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "candidateCohort": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "scope": "Prepared isolated character-animation adapter only; original game files/catalog/locks untouched; no publication/adoption",
+  "patch": "prepared-animation-migration.patch",
+  "patchSha256": "f871716a9d2fca23c76aff7596081e709c3b5375dcba0330608fcaa933b7bce2",
+  "fileCount": 9,
+  "files": [
+    {
+      "path": "lantern-reach/src/game/models.ts",
+      "originalSha256": "11590e674ed0ec2a793fe07bc5e2ca3ac2bd3e3320e0a65ab8c1339a24802a1a",
+      "preparedSha256": "72851e63689c2a071e20ae6147d7c026d3ae37af5523747d14dfd338a8f1ec21"
+    },
+    {
+      "path": "lantern-reach/src/game.config.ts",
+      "originalSha256": "79621a34548109bff001dbdd255447c7921f3bcd2e83bd354eb8a902688e7854",
+      "preparedSha256": "9b24064c97eb0aceefaf45c25c07883292a3d9908994bb4c848b57477f5f4796"
+    },
+    {
+      "path": "lantern-reach/src/game/assets.ts",
+      "originalSha256": "612dae88e11d679d02142e1d0f8922148fb5d9c10275d59764d6ed74862d275f",
+      "preparedSha256": "8aeea7acd6ad0445eab6fc25ca180222460ed7d115c64c1bb80bfa41f85f34b8"
+    },
+    {
+      "path": "lantern-reach/src/game/knight-clips.json",
+      "originalSha256": null,
+      "preparedSha256": "13ef641acc8d9c9ca6644c97773fd128d26c2f995b37ef4c35ad622212196e6a"
+    },
+    {
+      "path": "lantern-reach/src/editor.scene.json",
+      "originalSha256": "6d0042c2b9da28da05cd209048fb5d513b7033a58465cc34f09e6746129f80c7",
+      "preparedSha256": "8728a04fd79c74a5e7efade2d7661741b9e2bfde7f98eb401a6ce08664eb13ab"
+    },
+    {
+      "path": "scrap-signal/src/game/world/models.ts",
+      "originalSha256": "a2faf347f83bf2d78ef8b901cc9f3828707da999917558c09935cae21fa0d43f",
+      "preparedSha256": "a8c31a99940933bb7f95fb63b813e064b468b7e885a96211fc337da48b435a37"
+    },
+    {
+      "path": "scrap-signal/src/game/world/level.ts",
+      "originalSha256": "5183ae40d93ce3ba31d6d9286f940a7739f8de429a94d46b30e71de31cebea58",
+      "preparedSha256": "682fdf5e29208413446302d09915c037e8565a8c7f38a94f0a03838a68df1217"
+    },
+    {
+      "path": "scrap-signal/src/game.config.ts",
+      "originalSha256": "d28f5d2e28630c562b04513466c44775bddfe08763c6d046178d9501e3fec40e",
+      "preparedSha256": "5f6e0f85e30a81671c94e81be62f7f05076753498b210dfe3a35fac8cbb1cceb"
+    },
+    {
+      "path": "scrap-signal/src/editor.scene.json",
+      "originalSha256": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+      "preparedSha256": "ec458b99169e9bd17f5d706d2a2842cf0d53cbf6af54bfa9d5d90047649bf479"
+    }
+  ],
+  "gitApplyCheckOriginalWorktree": "PASS",
+  "originalSourceFilesStillByteVerified": 212,
+  "otherPreparedSourceFilesByteUnchanged": 204
+}

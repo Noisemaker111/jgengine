@@ -1,0 +1,13 @@
+{
+  "cohort": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+  "cleanBuildStagesVerified": 27,
+  "packages": 13,
+  "trackedSourceFilesVerified": 4035,
+  "tarFilesVerified": 2413,
+  "compiledFilesVerified": 2379,
+  "installedPackagesVerified": 9,
+  "installedFilesVerified": 2342,
+  "originalGameSourceHashesVerified": 212,
+  "sourceMapping": "Definitive4stage original absolute games imports map to byte-identical archived original-games; later prepared adapters are a separate proof."
+}

@@ -1,0 +1,439 @@
+{
+  "label": "Seventh joint unreleased public-package candidate and prepared game adapters. Engine source verified; isolated consumer migrations verified against built packages. No released package adoption.",
+  "source": {
+    "localCommit": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+    "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+    "finalEquivalentCommit": "ec53acd41a3de603b301c40d699656a67fe091df",
+    "sameSourceTree": true,
+    "cohortDirectory": "/workspace/JGengine/.scratch/characters/packages/clean-e4ac65ed-20261004",
+    "manifestSha256": "4a6cb5b13e9fd1f42a7604dff58fbe0c28ebfb80591d36da7c5ba02d43d50fa4",
+    "sourceGameCommit": "45a50523cae2021c412aa83ce50589d806dd96d9"
+  },
+  "packageBoundary": {
+    "freshCleanBuilds": 13,
+    "normalNpmPacks": 13,
+    "allManifestTarballHashesVerified": 13,
+    "actualInstalledPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "8299cc718d866230c917d1d47e79d7cc6b340db3d4ed633539203b16fe8d17cd",
+        "installedFilesByteVerified": 1211
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "6f250c77a607a7cff4cbcba91279247dc8b565d3753daee1c27dfbba6829987f",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "installedRegularFilesByteEqualTarballs": 2342,
+    "sdkSourceAliases": false,
+    "centralDependencyConfigurationOrLocksChanged": false
+  },
+  "definitiveFourStageProof": {
+    "archive": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653",
+    "provenanceSha256": "dec9c6ba229bca1165e72c89facedcd7bc35e46fdc4958cc32477eddecdefa3f",
+    "executedSourcesArchivedBeforeRunAndHashVerifiedAfterward": true,
+    "stages": [
+      {
+        "stage": "authoring",
+        "exitCode": 0
+      },
+      {
+        "stage": "strict",
+        "exitCode": 0
+      },
+      {
+        "stage": "physical",
+        "exitCode": 0
+      },
+      {
+        "stage": "pose",
+        "exitCode": 0
+      }
+    ],
+    "sourceInputSeparation": {
+      "label": "Original game source inputs read before adapters by definitive four-stage proof, copied byte-exact after execution and verified against pre-execution original source ledger. Current prepared files were not the four-stage executed inputs.",
+      "sourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+      "executedImportRoot": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games",
+      "archivedByteEquivalentRoot": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/original-games",
+      "sourceLedger": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/original-source-provenance.json",
+      "verifiedSourceFiles": 212,
+      "preparedSourceRoot": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games",
+      "preparedPatchLedger": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-animation-migration-ledger.json"
+    },
+    "results": [
+      "Full original438-marker Scrap document ordinary edit/undo/redo/export/import; valid original Lantern spawn slice ordinary save/reload.",
+      "Actual normal players, physical jump/rapid/buffered relaunch, combat attack/hit/death, public-reader jumpBufferMs100.",
+      "Strict whole animation object replacement; malformed graph/scalar exact caller-default fallback with located repair; memoized immutable document results.",
+      "Actual imported22-clip Lantern Knight and76-clip Scrap Rogue graph pose playback, finite numerical poses."
+    ],
+    "claimLimits": "Installed-package numerical configuration/physical movement/imported pose proof; no native appearance, hardware FPS, full rendered gameplay loop, or published adoption."
+  },
+  "preparedAdapters": {
+    "patch": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-animation-migration.patch",
+    "patchSha256": "f871716a9d2fca23c76aff7596081e709c3b5375dcba0330608fcaa933b7bce2",
+    "fileCount": 9,
+    "cleanApplyAgainstOriginal45aWorktree": "PASS",
+    "originalSourceFilesStillByteVerified": 212,
+    "otherPreparedSourceFilesByteUnchanged": 204,
+    "onlyAssociatedActorKinds": [
+      "Scrap reactor_hunter",
+      "Lantern player_hero and player_hero_warrior"
+    ],
+    "preserved": [
+      "All22 Scrap and118 Lantern model keys.",
+      "All model fields other than target animation getters, including actual URL, proportion, materials and attachments.",
+      "All other class and NPC animation choices.",
+      "Normal registered player/stat/heading/pose data and every original426 Scrap and88 Lantern authored placement including elevations.",
+      "Original game files, catalogs, package manifests and locks."
+    ],
+    "publicAdapterResults": [
+      {
+        "game": "scrap",
+        "modelKeys": 22,
+        "changedAnimationKinds": [
+          "reactor_hunter"
+        ],
+        "allOtherModelFieldsPreserved": true,
+        "allOtherAnimationsPreserved": true,
+        "canonicalMarkerId": "player_spawn",
+        "catalogId": "kaykit-adventurers/Rogue_Hooded",
+        "previewClipCount": 76,
+        "normalBootPlayerUnchanged": true,
+        "noDuplicateStaticActor": true,
+        "originalPlacementCount": 426,
+        "allOriginalObjectsIncludingElevationPreserved": true,
+        "liveAdjustmentThroughPublicModelResolver": true,
+        "diagnostic": [
+          {
+            "path": "markers[400].meta.animation.graph.layers[0].transitions[0].to",
+            "message": "Transition references an unknown state.",
+            "repair": "Choose a state declared in this layer; only from may use *."
+          }
+        ],
+        "diagnosticsAccessible": "exported readPlayerAnimation() result; no existing game-local warning sink",
+        "preparedDocumentSha256": "ec458b99169e9bd17f5d706d2a2842cf0d53cbf6af54bfa9d5d90047649bf479",
+        "fullSaveReload": true
+      },
+      {
+        "game": "lantern",
+        "modelKeys": 118,
+        "changedAnimationKinds": [
+          "player_hero",
+          "player_hero_warrior"
+        ],
+        "allOtherModelFieldsPreserved": true,
+        "allOtherAnimationsPreserved": true,
+        "canonicalMarkerId": "spawn:player",
+        "catalogId": "lantern:knight",
+        "previewClipCount": 22,
+        "normalBootPlayerUnchanged": true,
+        "noDuplicateStaticActor": true,
+        "originalPlacementCount": 88,
+        "allOriginalObjectsIncludingElevationPreserved": true,
+        "liveAdjustmentThroughPublicModelResolver": true,
+        "diagnostic": [
+          {
+            "path": "markers[0].meta.animation.graph.layers[0].transitions[0].to",
+            "message": "Transition references an unknown state.",
+            "repair": "Choose a state declared in this layer; only from may use *."
+          }
+        ],
+        "diagnosticsAccessible": "exported readPlayerAnimation() result; no existing game-local warning sink",
+        "preparedDocumentSha256": "8728a04fd79c74a5e7efade2d7661741b9e2bfde7f98eb401a6ce08664eb13ab",
+        "fullSaveReload": false,
+        "fullSaveLimitation": "original unsupported dawn unchanged; saved/loaded character slice only"
+      }
+    ],
+    "diagnosticHandling": "Exported readPlayerAnimation() exposes cached located diagnostics and exact fallback. Relevant actual game model/assets/editor-layer modules have no existing game-local warning sink. Existing shell clip/rig diagnostics remain; no duplicate game validation/warning cache introduced.",
+    "catalogAssociation": "Ordinary setMarker meta.catalogId points to exact real rig. Existing public authored-object exclusion composition prevents static duplicate player placement. Scrap .5 placement lift preserved in onInit and live shell configuration. Lantern measured22-clip metadata registers its existing model URL; no invented dimensions.",
+    "normalDocumentCommands": [
+      {
+        "game": "scrap-signal",
+        "markerId": "player_spawn",
+        "catalogId": "kaykit-adventurers/Rogue_Hooded",
+        "originalSha256": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+        "preparedSha256": "ec458b99169e9bd17f5d706d2a2842cf0d53cbf6af54bfa9d5d90047649bf479",
+        "onlyMarkerMetaChanged": true,
+        "normalSetMarkerCommand": true,
+        "normalPublicExport": true,
+        "fullSaveReload": true
+      },
+      {
+        "game": "lantern-reach",
+        "markerId": "spawn:player",
+        "catalogId": "lantern:knight",
+        "originalSha256": "6d0042c2b9da28da05cd209048fb5d513b7033a58465cc34f09e6746129f80c7",
+        "preparedSha256": "8728a04fd79c74a5e7efade2d7661741b9e2bfde7f98eb401a6ce08664eb13ab",
+        "onlyMarkerMetaChanged": true,
+        "normalSetMarkerCommand": true,
+        "normalPublicExport": true,
+        "fullSaveReload": false,
+        "limitation": "Error: invalid editor document: $.environment.preset expected \"day\" | \"dusk\" | \"night\""
+      }
+    ],
+    "harnessFailureDisclosure": [
+      "Initial isolated proof used nonexistent object.all; corrected to public object.list after d.ts inspection.",
+      "Second isolated proof assumed wrong Lantern class key; corrected using actual classEntityId export.",
+      "Both failed script/log snapshots retained separately; definitive adapter proof then exited0."
+    ]
+  },
+  "checks": [
+    {
+      "game": "scrap-signal",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games/scrap-signal",
+      "exitCode": 0,
+      "buildSecondsFromLog": 49.24,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-scrap-signal-build.log"
+    },
+    {
+      "game": "scrap-signal",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games/scrap-signal",
+      "exitCode": 0,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-scrap-signal-types.log",
+      "result": "PASS"
+    },
+    {
+      "game": "lantern-reach",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games/lantern-reach",
+      "exitCode": 0,
+      "buildSecondsFromLog": 64,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-lantern-reach-build.log"
+    },
+    {
+      "game": "lantern-reach",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games/lantern-reach",
+      "exitCode": 1,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-lantern-reach-types.log",
+      "result": "Exactly four existing Promise dispatch-result errors in ActionBar.tsx:57 and Dialogue.tsx:68; no new adapter errors."
+    }
+  ],
+  "remainingLimitations": [
+    "Full original Lantern document remains invalid: $.environment.preset expected day|dusk|night; original dawn retained. Only its valid character slice has complete save/reload proof.",
+    "Lantern typecheck retains four pre-existing ActionBar/Dialogue dispatch Promise errors; owned UI files untouched.",
+    "No seventh native rig appearance/control-feel evidence was obtained or claimed.",
+    "Joint candidate includes unreleased fifth/sixth/seventh source capabilities. Isolated file:tarball overrides do not constitute release adoption."
+  ],
+  "artifacts": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/candidate-package-manifest.json",
+      "sha256": "4a6cb5b13e9fd1f42a7604dff58fbe0c28ebfb80591d36da7c5ba02d43d50fa4",
+      "bytes": 4358
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/installed-package-verification.json",
+      "sha256": "538ed3e88cf25080c962ae37e4fa2c43f1597ff6017d20ecd2231a36394304d8",
+      "bytes": 2193
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/original-source-provenance.json",
+      "sha256": "a040dfe6e18e8631ce7fd0a8e05fa234ab6d5c7e2078f2b5487808362b779515",
+      "bytes": 33197
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/original-stage-input-mapping.json",
+      "sha256": "ca8d7a46a290a7ccbe534f8ad750ee28f23fe24942ec6646c38d5868372353b0",
+      "bytes": 925
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-document-edits.json",
+      "sha256": "04365da42dc140b3aa9aed4ea5cba0e7ca665ef46718b839601aff65b4701ff5",
+      "bytes": 1214
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/author-adapter-documents.ts",
+      "sha256": "bfe702220e8aa96e62cfc50c1cffd5d5dd2cfdf9145da7de21f46726ab4e7f83",
+      "bytes": 2254
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-adapter-proof.ts",
+      "sha256": "65cf8c90023e13488a285e310f0d1fe89cf0083d5b842e1cd6461852ee5645d6",
+      "bytes": 7138
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-adapter-proof.json",
+      "sha256": "e53213c021d0bacff70086e5c21f53f610e09bd63823e0d2199d7f57f87f18ef",
+      "bytes": 2556
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-adapter-proof.log",
+      "sha256": "debc9efab70d4bcfac37afd571d2774bb30eca0453e0cb0a5935878e097572f6",
+      "bytes": 3483
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-animation-migration.patch",
+      "sha256": "f871716a9d2fca23c76aff7596081e709c3b5375dcba0330608fcaa933b7bce2",
+      "bytes": 22072
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-animation-migration-ledger.json",
+      "sha256": "0f641b394447a2bd388a072e0a38e381725f89c0debc826b5ea94d6f8ae5fdff",
+      "bytes": 2745
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-patch-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-scrap-signal-build.log",
+      "sha256": "1db662dc4931dd5823392016459f254e989ddd9e7253a6c825e3c289d5cf1a62",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-lantern-reach-build.log",
+      "sha256": "57a25a1b314e982b572f56a76908b1846dc9c663e304aa1cef97e0cf53ccfe4e",
+      "bytes": 1175
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-scrap-signal-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-lantern-reach-types.log",
+      "sha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38",
+      "bytes": 834
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-adapter-proof-initial-failure.ts",
+      "sha256": "0b2e25bdd4afebccf123afa630a36821eb065b500b922d5ef7ef5fe520cdae3f",
+      "bytes": 6971
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-adapter-proof-initial-failure.log",
+      "sha256": "90ecc2b20d5e95efb8ef5a190db89dd383ee4e1ef2cf7279d8c6b5b583798c8f",
+      "bytes": 3113
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-adapter-proof-kind-failure.ts",
+      "sha256": "44c4aaf8a9415c45564d2378c9d044b2843c0944515b65c901c623f1a0663186",
+      "bytes": 6972
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-adapter-proof-kind-failure.log",
+      "sha256": "4d705c78ca3f6b5fe11206947290d080022b1c0c112df750a4cdc827c40833d4",
+      "bytes": 4226
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-e4ac65ed-20261004/build-provenance.json",
+      "sha256": "913037f588d696a054793e66b94f772c1c6cf5cd9a314f2c81180de26c1db4fc",
+      "bytes": 18771
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-e4ac65ed-20261004/compiled-files.json",
+      "sha256": "28378095f704876094de49fe742f7b7b6333bbddb5ca9ff4be843b2da116e9fb",
+      "bytes": 370579
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-e4ac65ed-20261004/package-files.json",
+      "sha256": "d82c2bdb57dd563d1fffd86de1f603a94d9d637d0356d7d8a00f55005be32f87",
+      "bytes": 387382
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-e4ac65ed-20261004/source-files.json",
+      "sha256": "8eddc27c4b6020cb97d1c93956699ac840e2d27fd31ae1e42eda1695e3f27d64",
+      "bytes": 702357
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/proof-provenance.json",
+      "sha256": "dec9c6ba229bca1165e72c89facedcd7bc35e46fdc4958cc32477eddecdefa3f",
+      "bytes": 10094
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/public-authoring-result.json",
+      "sha256": "79fc483d9cfcc3191defae43089ec81978735a0c0397cf604ec34f5e4e720718",
+      "bytes": 4218
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/strict-reader-result.json",
+      "sha256": "1d30a1a4f4c0821885448e6bbbdb5458c41b05e5b0491038cba05261004389a6",
+      "bytes": 1400
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/physical-authored-animation-seventh.json",
+      "sha256": "83bbda2d271aa4c397abcd1092eb40eeb019a74856b6df04e0e07ea6e3f10fa8",
+      "bytes": 758132
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/physical-pose-replay.json",
+      "sha256": "256721d6c96b9dd163c510cf79b6105ea0d4dccec70caff840f0941744d5106f",
+      "bytes": 420006
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring-rebased/npc-animation-association.json",
+      "sha256": "d90204c39c60b3edad687d3e631f8b55e6f7fa3b051c7f35a1c7079dbda8298c",
+      "bytes": 5474
+    }
+  ]
+}

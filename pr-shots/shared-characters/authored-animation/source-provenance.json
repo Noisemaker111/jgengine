@@ -1,0 +1,18 @@
+{
+  "localCommit": "ec53acd41a3de603b301c40d699656a67fe091df",
+  "remoteCommit": "532ef9756007c602496df398f4a2bf8b55080baf",
+  "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+  "base": "76f1da353570ca530595387ec455c458dbdc3371",
+  "pr": 1964,
+  "builtCommit": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "identicalBuiltTree": true,
+  "packageManifest": ".scratch/characters/packages/clean-e4ac65ed-20261004/manifest.json",
+  "delivery": "Normal Git push failed HTTP401; Git Data API verified exact source tree",
+  "publication": "Unreleased clean-built public packages; prepared consumer migration, no registry publication or shipped adoption",
+  "limits": [
+    "Full438-marker Scrap document and labelled Lantern single-spawn slice; original full Lantern Dawn blocker remains",
+    "Actual imported rig numeric/manual-frame proof; native appearance, foot contact, control feel and hardware FPS not claimed",
+    "Final corrected hit source uses an existing entity id; target hit reaction tested through public API, not complete combat play",
+    "Install-overlapping physical-v2 replay is supporting data only; final four-stage run follows verified frozen install"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "label": "Original game source inputs read before adapters by definitive four-stage proof, copied byte-exact after execution and verified against pre-execution original source ledger. Current prepared files were not the four-stage executed inputs.",
+  "sourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "executedImportRoot": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games",
+  "archivedByteEquivalentRoot": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/original-games",
+  "sourceLedger": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/original-source-provenance.json",
+  "verifiedSourceFiles": 212,
+  "preparedSourceRoot": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games",
+  "preparedPatchLedger": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/prepared-animation-migration-ledger.json"
+}

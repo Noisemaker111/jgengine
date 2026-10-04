@@ -1,0 +1,80 @@
+{
+  "layer": "Unreleased installed public package normal document configuration proof; real motor/native playback proof separate",
+  "manifestPath": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/candidate-package-manifest.json",
+  "packageCohort": {
+    "commit": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+    "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+    "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption"
+  },
+  "publicModules": {
+    "editor/commands": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/@jgengine/core/dist/editor/commands.js",
+    "editor/document": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/@jgengine/core/dist/editor/document.js",
+    "world/authoredAnimation": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/node_modules/@jgengine/core/dist/world/authoredAnimation.js"
+  },
+  "moduleHashes": {
+    "editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+    "editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+    "world/authoredAnimation": "6947aa4487954532bde754df16d57be056bf6933d1da953c262b00f9c2d26a87"
+  },
+  "results": [
+    {
+      "game": "scrap",
+      "markerId": "player_spawn",
+      "originalPath": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games/scrap-signal/src/editor.scene.json",
+      "originalSha256": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+      "markerCount": 438,
+      "animationPath": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/scrap-animation.json",
+      "animationSha256": "0d8c7c2a31018a982cbcdd2188368e7bf17c0554bc066b09521fdad54cd9092e",
+      "savedSha256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1",
+      "outsideAnimationUnchanged": true,
+      "originalFileUnchanged": true,
+      "normalCommandsEditAdjustUndoRedoExportImport": true,
+      "liveCachedReader": true,
+      "malformedScalar": [
+        {
+          "path": "markers[400].meta.animation.timeScale",
+          "message": "timeScale must be a finite number",
+          "repair": "Use a finite number, or remove the animation override to inherit the game setting."
+        }
+      ],
+      "malformedGraph": [
+        {
+          "path": "markers[400].meta.animation.graph.layers[0].transitions[0].to",
+          "message": "Transition references an unknown state.",
+          "repair": "Choose a state declared in this layer; only from may use *."
+        }
+      ],
+      "fullScene": true
+    },
+    {
+      "game": "lantern",
+      "markerId": "spawn:player",
+      "originalPath": "/workspace/JGengine/.scratch/characters/consumer/authored-animation/games/lantern-reach/src/editor.scene.json",
+      "originalSha256": "6d0042c2b9da28da05cd209048fb5d513b7033a58465cc34f09e6746129f80c7",
+      "markerCount": 1,
+      "animationPath": "/workspace/JGengine/.scratch/characters/authored-animation/installed-e4ac65ed-1791083127653/lantern-animation.json",
+      "animationSha256": "b1ed0da10424a68f2d1855ff0a2547e31e8695ed04a03b1a6d246eee767ba0ce",
+      "savedSha256": "67cd4a4380e37a1313c4ce771dc963c6143615c850e8d873c6f04ca77250e213",
+      "outsideAnimationUnchanged": true,
+      "originalFileUnchanged": true,
+      "normalCommandsEditAdjustUndoRedoExportImport": true,
+      "liveCachedReader": true,
+      "malformedScalar": [
+        {
+          "path": "markers[0].meta.animation.timeScale",
+          "message": "timeScale must be a finite number",
+          "repair": "Use a finite number, or remove the animation override to inherit the game setting."
+        }
+      ],
+      "malformedGraph": [
+        {
+          "path": "markers[0].meta.animation.graph.layers[0].transitions[0].to",
+          "message": "Transition references an unknown state.",
+          "repair": "Choose a state declared in this layer; only from may use *."
+        }
+      ],
+      "fullScene": false,
+      "limitation": "Error: invalid editor document: $.environment.preset expected \"day\" | \"dusk\" | \"night\""
+    }
+  ]
+}

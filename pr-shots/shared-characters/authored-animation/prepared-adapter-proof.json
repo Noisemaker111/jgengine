@@ -1,0 +1,63 @@
+{
+  "label": "Prepared isolated game adapters verified against unreleased public package; no shipped adoption/native appearance",
+  "cohort": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+  "records": [
+    {
+      "game": "scrap",
+      "modelKeys": 22,
+      "changedAnimationKinds": [
+        "reactor_hunter"
+      ],
+      "allOtherModelFieldsPreserved": true,
+      "allOtherAnimationsPreserved": true,
+      "canonicalMarkerId": "player_spawn",
+      "catalogId": "kaykit-adventurers/Rogue_Hooded",
+      "previewClipCount": 76,
+      "normalBootPlayerUnchanged": true,
+      "noDuplicateStaticActor": true,
+      "originalPlacementCount": 426,
+      "allOriginalObjectsIncludingElevationPreserved": true,
+      "liveAdjustmentThroughPublicModelResolver": true,
+      "diagnostic": [
+        {
+          "path": "markers[400].meta.animation.graph.layers[0].transitions[0].to",
+          "message": "Transition references an unknown state.",
+          "repair": "Choose a state declared in this layer; only from may use *."
+        }
+      ],
+      "diagnosticsAccessible": "exported readPlayerAnimation() result; no existing game-local warning sink",
+      "preparedDocumentSha256": "ec458b99169e9bd17f5d706d2a2842cf0d53cbf6af54bfa9d5d90047649bf479",
+      "fullSaveReload": true
+    },
+    {
+      "game": "lantern",
+      "modelKeys": 118,
+      "changedAnimationKinds": [
+        "player_hero",
+        "player_hero_warrior"
+      ],
+      "allOtherModelFieldsPreserved": true,
+      "allOtherAnimationsPreserved": true,
+      "canonicalMarkerId": "spawn:player",
+      "catalogId": "lantern:knight",
+      "previewClipCount": 22,
+      "normalBootPlayerUnchanged": true,
+      "noDuplicateStaticActor": true,
+      "originalPlacementCount": 88,
+      "allOriginalObjectsIncludingElevationPreserved": true,
+      "liveAdjustmentThroughPublicModelResolver": true,
+      "diagnostic": [
+        {
+          "path": "markers[0].meta.animation.graph.layers[0].transitions[0].to",
+          "message": "Transition references an unknown state.",
+          "repair": "Choose a state declared in this layer; only from may use *."
+        }
+      ],
+      "diagnosticsAccessible": "exported readPlayerAnimation() result; no existing game-local warning sink",
+      "preparedDocumentSha256": "8728a04fd79c74a5e7efade2d7661741b9e2bfde7f98eb401a6ce08664eb13ab",
+      "fullSaveReload": false,
+      "fullSaveLimitation": "original unsupported dawn unchanged; saved/loaded character slice only"
+    }
+  ]
+}

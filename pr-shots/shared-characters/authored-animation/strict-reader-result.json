@@ -1,0 +1,43 @@
+{
+  "originalFullScrapMarkerCount": 438,
+  "publicModelGetterUpdates": true,
+  "modelUrlHeightUnchanged": true,
+  "results": [
+    {
+      "failure": "transition",
+      "expected": "markers[400].meta.animation.graph.layers[0].transitions[0].to",
+      "diagnostics": [
+        {
+          "path": "markers[400].meta.animation.graph.layers[0].transitions[0].to",
+          "message": "Transition references an unknown state.",
+          "repair": "Choose a state declared in this layer; only from may use *."
+        }
+      ],
+      "exactGameFallback": true
+    },
+    {
+      "failure": "timeScale",
+      "expected": "markers[400].meta.animation.timeScale",
+      "diagnostics": [
+        {
+          "path": "markers[400].meta.animation.timeScale",
+          "message": "timeScale must be a finite number",
+          "repair": "Use a finite number, or remove the animation override to inherit the game setting."
+        }
+      ],
+      "exactGameFallback": true
+    },
+    {
+      "failure": "deathClip",
+      "expected": "markers[400].meta.animation.graph.layers[0].states.death.clip",
+      "diagnostics": [
+        {
+          "path": "markers[400].meta.animation.graph.layers[0].states.death.clip",
+          "message": "Expected a nonempty string.",
+          "repair": "Set an explicit name from this graph or imported rig."
+        }
+      ],
+      "exactGameFallback": true
+    }
+  ]
+}

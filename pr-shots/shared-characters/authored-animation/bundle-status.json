@@ -1,0 +1,15 @@
+{
+  "bundle": "/workspace/JGengine/.scratch/characters/seventh-archive/seventh-proof.tar.gz",
+  "sha256": "8e187365fb0213abb5cf0c55242c81caf32437df3e09391d6d15943bc7aad860",
+  "gitBlobSha": "63cdd23328922acd3366f413e80400898e94de65",
+  "bytes": 7687738,
+  "verifiedFiles": 397,
+  "uncompressedBytes": 22025439,
+  "excludedSymlinks": 5,
+  "allFourStagesPassed": true,
+  "finalConsumerComplete": true,
+  "artifactHashesVerified": 30,
+  "unchangedPreparedFilesVerified": 204,
+  "preparedFilesVerified": 9,
+  "upload": "Authorized, not uploaded yet"
+}

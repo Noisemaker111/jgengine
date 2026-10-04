@@ -1,0 +1,75 @@
+{
+  "head": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+  "base": "443758e7",
+  "sourceIntegrationHeadBeforeGen": "2738bffd25433a13ac49713940adcddf45711202",
+  "branch": "characters/authored-animation-readers",
+  "clean": true,
+  "generatedCommit": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "generatedChanges": [
+    ".claude/skills/jgengine-world/api.md",
+    ".claude/skills/jgengine-world/capabilities.md",
+    "scripts/export-manifest.json"
+  ],
+  "sourceHashes": {
+    "packages/core/src/world/authoredAnimation.ts": "b1264f3290bbf5c4356c287182486f2ae049215f353ec42dcd02679c8a8e0ae0",
+    "packages/core/src/world/authoredAnimation.test.ts": "522adbdf0f6d50aef7fe4bba108b8e0d2283f908557fc8c6035fbe875a85e3fb",
+    "packages/core/src/anim/animGraph.ts": "1b836d9ab912f58f0f309860508bec9cd63bd969bee6cd99fd0cc7c4749f9cb1",
+    "packages/core/src/anim/parseAnimGraph.test.ts": "8d6bccfa31acb42bc4fc80c2b362d73cd07a5dd8fbd1bd042dc7880aeb634da1",
+    "packages/core/src/editor/movementCatalog.ts": "644575a67a1d9ec55fbb781a52df56eec06c59f486bd583420b3e168a5d24648",
+    "packages/core/src/editor/movementCatalog.test.ts": "c67578ed9323efc6843d296f1e6ec021c05e8737c2c2648323449c4c2375619a",
+    "packages/shell/src/render/useModelAnimation.ts": "932ee67d9b2141d851b67ba1874968d7886367e18c8f5a67526cc11bf5596e61",
+    "packages/shell/src/render/modelAnimationHook.test.ts": "45c4996b1a9826d3cf7309298bb2c0c243558f678cd3fc6c34220c970f1bf869"
+  },
+  "sourceUnchangedAcrossGen": true,
+  "checks": {
+    "gen": {
+      "command": "bun run gen",
+      "exit": 0,
+      "log": ".scratch/characters/seventh-joint-checks/gen.log"
+    },
+    "reader-graph-tests": {
+      "command": "bun test packages/core/src/world/authoredAnimation.test.ts packages/core/src/world/authoredObjects.test.ts packages/core/src/anim/animGraph.test.ts packages/core/src/anim/parseAnimGraph.test.ts",
+      "exit": 0,
+      "log": ".scratch/characters/seventh-joint-checks/reader-graph-tests.log"
+    },
+    "catalog-tests": {
+      "command": "bun test packages/core/src/editor/movementCatalog.test.ts",
+      "exit": 0,
+      "log": ".scratch/characters/seventh-joint-checks/catalog-tests.log"
+    },
+    "core-types": {
+      "command": "bun --cwd=packages/core run check-types",
+      "exit": 0,
+      "log": ".scratch/characters/seventh-joint-checks/core-types.log"
+    },
+    "shell-types": {
+      "command": "bun --cwd=packages/shell run check-types",
+      "exit": 0,
+      "log": ".scratch/characters/seventh-joint-checks/shell-types.log"
+    },
+    "editor-types": {
+      "command": "bun --cwd=packages/editor run check-types",
+      "exit": 0,
+      "log": ".scratch/characters/seventh-joint-checks/editor-types.log"
+    },
+    "ship-preflight": {
+      "command": "bun run ship:preflight",
+      "exit": 0,
+      "log": ".scratch/characters/seventh-joint-checks/ship-preflight.log"
+    }
+  },
+  "counts": {
+    "readerGraph": {
+      "tests": 48,
+      "assertions": 237,
+      "files": 4
+    },
+    "catalog": {
+      "tests": 11,
+      "assertions": 91,
+      "files": 1
+    }
+  },
+  "scope": "Joint unreleased source cohort includes fifth jump authoring, sixth animation continuity and seventh authored-animation readers; no published game adoption claim."
+}

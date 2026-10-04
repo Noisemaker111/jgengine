@@ -1,0 +1,28 @@
+{
+  "label": "Prepared candidate character metadata authored via normal public scene command/export; original game repos untouched; full Lantern reload remains blocked by original dawn.",
+  "result": [
+    {
+      "game": "scrap-signal",
+      "markerId": "player_spawn",
+      "catalogId": "kaykit-adventurers/Rogue_Hooded",
+      "originalSha256": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+      "preparedSha256": "ec458b99169e9bd17f5d706d2a2842cf0d53cbf6af54bfa9d5d90047649bf479",
+      "onlyMarkerMetaChanged": true,
+      "normalSetMarkerCommand": true,
+      "normalPublicExport": true,
+      "fullSaveReload": true
+    },
+    {
+      "game": "lantern-reach",
+      "markerId": "spawn:player",
+      "catalogId": "lantern:knight",
+      "originalSha256": "6d0042c2b9da28da05cd209048fb5d513b7033a58465cc34f09e6746129f80c7",
+      "preparedSha256": "8728a04fd79c74a5e7efade2d7661741b9e2bfde7f98eb401a6ce08664eb13ab",
+      "onlyMarkerMetaChanged": true,
+      "normalSetMarkerCommand": true,
+      "normalPublicExport": true,
+      "fullSaveReload": false,
+      "limitation": "Error: invalid editor document: $.environment.preset expected \"day\" | \"dusk\" | \"night\""
+    }
+  ]
+}

@@ -1,0 +1,653 @@
+--- a/lantern-reach/src/game/models.ts
++++ b/lantern-reach/src/game/models.ts
+@@ -1,4 +1,7 @@
+ import type { ModelConfig } from "@jgengine/core/game/playableGame";
++import { createAuthoredAnimationReader } from "@jgengine/core/world/authoredAnimation";
++import { getDocumentLiveSync } from "@jgengine/core/editor/liveSync";
++import { editorLayers } from "../editorLayers";
+ 
+ import { FIESTA_ALLY_CATALOG, FIESTA_ENEMY_MOBS } from "./arena/catalog";
+ import { CLASSES } from "./classes/catalog";
+@@ -52,8 +55,15 @@
+   };
+ }
+ 
++const knight = humanoid("knight");
++export const readPlayerAnimation = createAuthoredAnimationReader(
++  () => getDocumentLiveSync()?.getDocument() ?? editorLayers,
++  "spawn:player",
++  knight.animation,
++);
++
+ const CLASS_MODEL: Record<string, ModelConfig> = {
+-  warrior: humanoid("knight"),
++  warrior: { ...knight, get animation() { return readPlayerAnimation().animation; } },
+   paladin: humanoid("paladin"),
+   hunter: humanoid("ranger"),
+   rogue: humanoid("rogue"),
+--- a/lantern-reach/src/game.config.ts
++++ b/lantern-reach/src/game.config.ts
+@@ -1,4 +1,5 @@
+ import { ws } from "@jgengine/core/runtime/adapter";
++import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects";
+ import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
+ import type { GameContext } from "@jgengine/core/runtime/gameContext";
+ import { defineGame } from "@jgengine/shell/defineGame";
+@@ -73,7 +74,7 @@
+   multiplayer: ws({ authority: "server" }),
+   assets,
+   editorLayers,
+-  scenePlacement: true,
++  scenePlacement: { excludeKinds: [...ENTITY_MARKER_KINDS, "player_spawn"] },
+   world,
+   physics,
+   inventories,
+--- a/lantern-reach/src/game/assets.ts
++++ b/lantern-reach/src/game/assets.ts
+@@ -2,6 +2,7 @@
+ import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
+ 
+ import provenance from "../../scripts/model-provenance.json";
++import knightClips from "./knight-clips.json";
+ 
+ import { FIESTA_ALLY_CATALOG, FIESTA_ENEMY_MOBS } from "./arena/catalog";
+ import { DELVE_COMPANION_CATALOG } from "./delves/systems";
+@@ -12,6 +13,7 @@
+ import { PETS } from "./pets/catalog";
+ 
+ export const assets = createAssetCatalog();
++assets.register("lantern:knight", { url: knightClips.source, clips: knightClips.clips });
+ 
+ for (const model of provenance.models) {
+   if (!("dims" in model)) continue;
+--- /dev/null
++++ b/lantern-reach/src/game/knight-clips.json
+@@ -0,0 +1,28 @@
++{
++  "source": "/models/lantern-reach/players/knight.glb",
++  "sha256": "ce0d0a5ec1d67594629ecac20a7576fde22a44456e7628e8eb100891bc6dda97",
++  "clips": [
++    "Death_A",
++    "Hit_A",
++    "Idle",
++    "Jump_Idle",
++    "Running_A",
++    "Walking_A",
++    "Running_Strafe_Left",
++    "Running_Strafe_Right",
++    "Walking_Backwards",
++    "1H_Melee_Attack_Chop",
++    "1H_Melee_Attack_Slice_Diagonal",
++    "2H_Melee_Attack_Chop",
++    "Block",
++    "Dualwield_Melee_Attack_Chop",
++    "2H_Ranged_Shoot",
++    "Spellcast_Raise",
++    "Spellcast_Shoot",
++    "Spellcasting",
++    "Cheer",
++    "Lie_Idle",
++    "Sit_Floor_Down",
++    "Sit_Floor_Idle"
++  ]
++}
+--- a/lantern-reach/src/editor.scene.json
++++ b/lantern-reach/src/editor.scene.json
+@@ -11,7 +11,73 @@
+       },
+       "label": "Player spawn",
+       "meta": {
+-        "clearance": 0
++        "clearance": 0,
++        "catalogId": "lantern:knight",
++        "animation": {
++          "graph": {
++            "layers": [
++              {
++                "id": "base",
++                "entry": "locomotion",
++                "states": {
++                  "locomotion": {
++                    "kind": "blend1D",
++                    "param": "speed",
++                    "points": [
++                      {
++                        "at": 0,
++                        "clip": "Idle"
++                      },
++                      {
++                        "at": 0.5,
++                        "clip": "Walking_A"
++                      },
++                      {
++                        "at": 6,
++                        "clip": "Running_A"
++                      }
++                    ]
++                  },
++                  "airborne": {
++                    "kind": "clip",
++                    "clip": "Jump_Idle"
++                  }
++                },
++                "transitions": [
++                  {
++                    "from": "locomotion",
++                    "to": "airborne",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": "!=",
++                        "value": 0
++                      }
++                    ],
++                    "duration": 0.08
++                  },
++                  {
++                    "from": "airborne",
++                    "to": "locomotion",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": true
++                      }
++                    ],
++                    "duration": 0.08
++                  }
++                ]
++              }
++            ]
++          }
++        }
+       }
+     },
+     {
+--- a/scrap-signal/src/game/world/models.ts
++++ b/scrap-signal/src/game/world/models.ts
+@@ -1,4 +1,7 @@
+ import type { ModelConfig, ModelMaterialOverride } from "@jgengine/core/game/playableGame";
++import { createAuthoredAnimationReader } from "@jgengine/core/world/authoredAnimation";
++import { getDocumentLiveSync } from "@jgengine/core/editor/liveSync";
++import { authoredScene } from "./level";
+ import { pickModel, resolveModelPlan, type ModelPick } from "@jgengine/shell/render/resolveModel";
+ 
+ import { assets, CHASSIS, CLIFF_MAPS, NPC_STYLES, PANEL_MAPS, SCRAP_METAL_MAPS } from "../assets";
+@@ -210,6 +213,13 @@
+ }
+ 
+ export const entityModels: Record<string, ModelConfig> = buildEntityModels();
++const playerModel = entityModels.reactor_hunter!;
++export const readPlayerAnimation = createAuthoredAnimationReader(
++  () => getDocumentLiveSync()?.getDocument() ?? authoredScene,
++  "player_spawn",
++  playerModel.animation,
++);
++entityModels.reactor_hunter = { ...playerModel, get animation() { return readPlayerAnimation().animation; } };
+ 
+ /**
+  * Rim tuning for the world's own scenery. Weaker and warmer than the hostiles' cool edge on purpose:
+--- a/scrap-signal/src/game/world/level.ts
++++ b/scrap-signal/src/game/world/level.ts
+@@ -2,12 +2,15 @@
+ import type { EditorDocument, EditorLayersInput, EditorPath } from "@jgengine/core/editor/index";
+ import type { GameContext } from "@jgengine/core/runtime/gameContext";
+ import {
+-  placeAuthoredObjectsFromDocument,
++  placeAuthoredObjects,
+   resolveAuthoredObjects,
++  ENTITY_MARKER_KINDS,
+ } from "@jgengine/core/world/authoredObjects";
+ import type { TerrainPathProfile } from "@jgengine/core/world/pathTerrain";
+ import sceneJson from "../../editor.scene.json";
+ import { zoneById } from "./zones";
++
++export const excludedPlacementKinds = [...ENTITY_MARKER_KINDS, "player_spawn"];
+ 
+ export interface RoutePoint {
+   x: number;
+@@ -195,7 +198,7 @@
+ }
+ 
+ /** Every placed level prop, resolved from the authored document (`catalogId` / `meta.catalogId`). */
+-export const AUTHORED_PIECES: readonly PlacedPiece[] = resolveAuthoredObjects(authoredScene).map((object) => ({
++export const AUTHORED_PIECES: readonly PlacedPiece[] = resolveAuthoredObjects(authoredScene, { excludeKinds: excludedPlacementKinds }).map((object) => ({
+   catalogId: object.catalogId,
+   x: object.x,
+   z: object.z,
+@@ -219,9 +222,9 @@
+ );
+ 
+ export function placeLevel(ctx: GameContext): void {
+-  placeAuthoredObjectsFromDocument(
++  placeAuthoredObjects(
+     ctx.scene.object,
+-    authoredScene,
++    resolveAuthoredObjects(authoredScene, { excludeKinds: excludedPlacementKinds }),
+     (x, z) => ctx.world.groundHeightAt(x, z),
+     { verticalOffset: 0.5 },
+   );
+--- a/scrap-signal/src/game.config.ts
++++ b/scrap-signal/src/game.config.ts
+@@ -2,6 +2,7 @@
+ import type { PositionedPrompt } from "@jgengine/core/interaction/proximityPrompt";
+ import type { RarityStyle } from "@jgengine/core/game/worldItem";
+ import { defineGame } from "@jgengine/shell/defineGame";
++import { excludedPlacementKinds } from "./game/world/level";
+ 
+ import { assets } from "./game/assets";
+ import { audio, objectSounds } from "./game/audio/catalog";
+@@ -156,6 +157,7 @@
+     },
+   },
+   name: "Scrap Signal",
++  scenePlacement: { verticalOffset: 0.5, excludeKinds: excludedPlacementKinds },
+   features: { quest: true, trade: true },
+   assets,
+   audio,
+--- a/scrap-signal/src/editor.scene.json
++++ b/scrap-signal/src/editor.scene.json
+@@ -5215,7 +5215,397 @@
+       "meta": {
+         "role": "player_spawn",
+         "routeId": "road_rustflat_waste_breakwater_shelf",
+-        "routePointIndex": 3
++        "routePointIndex": 3,
++        "catalogId": "kaykit-adventurers/Rogue_Hooded",
++        "animation": {
++          "graph": {
++            "layers": [
++              {
++                "id": "base",
++                "entry": "locomotion",
++                "states": {
++                  "locomotion": {
++                    "kind": "blend1D",
++                    "param": "speed",
++                    "points": [
++                      {
++                        "at": 0,
++                        "clip": "Idle"
++                      },
++                      {
++                        "at": 0.5,
++                        "clip": "Walking_A"
++                      },
++                      {
++                        "at": 6,
++                        "clip": "Running_A"
++                      }
++                    ]
++                  },
++                  "hit": {
++                    "kind": "clip",
++                    "clip": "Block_Hit",
++                    "loop": false,
++                    "variants": [
++                      "Block_Hit",
++                      "Hit_A",
++                      "Hit_B"
++                    ]
++                  },
++                  "death": {
++                    "kind": "clip",
++                    "clip": "Death_A",
++                    "loop": false,
++                    "variants": [
++                      "Death_A",
++                      "Death_B"
++                    ]
++                  },
++                  "attack": {
++                    "kind": "clip",
++                    "clip": "Throw",
++                    "loop": false,
++                    "variants": [
++                      "Throw",
++                      "Block_Attack",
++                      "Spellcast_Shoot",
++                      "1H_Ranged_Shoot",
++                      "1H_Ranged_Shooting",
++                      "2H_Ranged_Shoot",
++                      "2H_Ranged_Shooting",
++                      "1H_Melee_Attack_Chop",
++                      "1H_Melee_Attack_Stab",
++                      "2H_Melee_Attack_Chop",
++                      "2H_Melee_Attack_Slice",
++                      "2H_Melee_Attack_Spin",
++                      "2H_Melee_Attack_Spinning",
++                      "2H_Melee_Attack_Stab",
++                      "Dualwield_Melee_Attack_Chop",
++                      "Dualwield_Melee_Attack_Slice",
++                      "Dualwield_Melee_Attack_Stab",
++                      "Unarmed_Melee_Attack_Kick",
++                      "1H_Melee_Attack_Slice_Diagonal",
++                      "1H_Melee_Attack_Slice_Horizontal",
++                      "Unarmed_Melee_Attack_Punch_A",
++                      "Unarmed_Melee_Attack_Punch_B"
++                    ]
++                  },
++                  "jumpStart": {
++                    "kind": "clip",
++                    "clip": "Jump_Start",
++                    "loop": false
++                  },
++                  "airborne": {
++                    "kind": "clip",
++                    "clip": "Jump_Idle"
++                  },
++                  "landing": {
++                    "kind": "clip",
++                    "clip": "Jump_Land",
++                    "loop": false
++                  }
++                },
++                "transitions": [
++                  {
++                    "from": "locomotion",
++                    "to": "death",
++                    "trigger": "death",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "hit",
++                    "to": "death",
++                    "trigger": "death",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "attack",
++                    "to": "death",
++                    "trigger": "death",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "jumpStart",
++                    "to": "death",
++                    "trigger": "death",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "airborne",
++                    "to": "death",
++                    "trigger": "death",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "landing",
++                    "to": "death",
++                    "trigger": "death",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "locomotion",
++                    "to": "hit",
++                    "trigger": "hit",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "hit",
++                    "to": "hit",
++                    "trigger": "hit",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "attack",
++                    "to": "hit",
++                    "trigger": "hit",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "jumpStart",
++                    "to": "hit",
++                    "trigger": "hit",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "airborne",
++                    "to": "hit",
++                    "trigger": "hit",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "landing",
++                    "to": "hit",
++                    "trigger": "hit",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "locomotion",
++                    "to": "attack",
++                    "trigger": "attack",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "hit",
++                    "to": "attack",
++                    "trigger": "attack",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "attack",
++                    "to": "attack",
++                    "trigger": "attack",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "jumpStart",
++                    "to": "attack",
++                    "trigger": "attack",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "airborne",
++                    "to": "attack",
++                    "trigger": "attack",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "landing",
++                    "to": "attack",
++                    "trigger": "attack",
++                    "duration": 0.1
++                  },
++                  {
++                    "from": "locomotion",
++                    "to": "jumpStart",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": ">",
++                        "value": 0
++                      }
++                    ],
++                    "duration": 0.06
++                  },
++                  {
++                    "from": "locomotion",
++                    "to": "airborne",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": "<",
++                        "value": 0
++                      }
++                    ],
++                    "duration": 0.06
++                  },
++                  {
++                    "from": "landing",
++                    "to": "jumpStart",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": ">",
++                        "value": 0
++                      }
++                    ],
++                    "duration": 0.06
++                  },
++                  {
++                    "from": "landing",
++                    "to": "airborne",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": "<",
++                        "value": 0
++                      }
++                    ],
++                    "duration": 0.06
++                  },
++                  {
++                    "from": "airborne",
++                    "to": "jumpStart",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": ">",
++                        "value": 0
++                      }
++                    ],
++                    "duration": 0.06
++                  },
++                  {
++                    "from": "jumpStart",
++                    "to": "landing",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": true
++                      }
++                    ],
++                    "duration": 0.06
++                  },
++                  {
++                    "from": "airborne",
++                    "to": "landing",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": true
++                      }
++                    ],
++                    "duration": 0.06
++                  },
++                  {
++                    "from": "jumpStart",
++                    "to": "airborne",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": "<",
++                        "value": 0
++                      }
++                    ],
++                    "duration": 0.04
++                  },
++                  {
++                    "from": "landing",
++                    "to": "locomotion",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": true
++                      }
++                    ],
++                    "exitTime": 1,
++                    "duration": 0.12
++                  },
++                  {
++                    "from": "hit",
++                    "to": "airborne",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": "!=",
++                        "value": 0
++                      }
++                    ],
++                    "exitTime": 1,
++                    "duration": 0.12
++                  },
++                  {
++                    "from": "hit",
++                    "to": "locomotion",
++                    "exitTime": 1,
++                    "duration": 0.2
++                  },
++                  {
++                    "from": "attack",
++                    "to": "airborne",
++                    "when": [
++                      {
++                        "param": "grounded",
++                        "op": "==",
++                        "value": false
++                      },
++                      {
++                        "param": "verticalSpeed",
++                        "op": "!=",
++                        "value": 0
++                      }
++                    ],
++                    "exitTime": 1,
++                    "duration": 0.12
++                  },
++                  {
++                    "from": "attack",
++                    "to": "locomotion",
++                    "exitTime": 1,
++                    "duration": 0.2
++                  }
++                ]
++              }
++            ]
++          }
++        }
+       }
+     },
+     {

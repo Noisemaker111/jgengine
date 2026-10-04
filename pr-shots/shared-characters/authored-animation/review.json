@@ -1,0 +1,47 @@
+{
+  "builtCohort": "e4ac65ede2e1f97fe493114ac111b68e8ac53079",
+  "sourceCohort": "ec53acd41a3de603b301c40d699656a67fe091df",
+  "remoteSource": "532ef9756007c602496df398f4a2bf8b55080baf",
+  "tree": "091bbd1595967f9586f8859e0d54d7fb57652661",
+  "equivalentTreesVerified": true,
+  "exactExecutedSourcesHashVerified": 5,
+  "exactInputsHashVerified": 4,
+  "outputsHashVerified": 15,
+  "stages": [
+    {
+      "stage": "authoring",
+      "exitCode": 0
+    },
+    {
+      "stage": "strict",
+      "exitCode": 0
+    },
+    {
+      "stage": "physical",
+      "exitCode": 0
+    },
+    {
+      "stage": "pose",
+      "exitCode": 0
+    }
+  ],
+  "publicModulesVerified": 5,
+  "CIallSixChecksFirstAttemptPassed": true,
+  "nativeNewAttempts": 0,
+  "sourceLimitsReviewed": [
+    "Full438-marker Scrap document and labelled Lantern single-spawn slice; original full Lantern Dawn blocker remains",
+    "Actual imported rig numeric/manual-frame proof; native appearance, foot contact, control feel and hardware FPS not claimed",
+    "Final corrected hit source uses an existing entity id; target hit reaction tested through public API, not complete combat play",
+    "Install-overlapping physical-v2 replay is supporting data only; final four-stage run follows verified frozen install"
+  ],
+  "authoringCoverage": {
+    "scrap": "full original438-marker document",
+    "lantern": "single-spawn saved slice; full original Dawn Save remains blocked"
+  },
+  "hitProof": "Real existing bolt_1 attacker through entity.hitReaction; target reaction, not whole combat playtest",
+  "poseProof": "Real imported poses with image decode skipped; numerical matrices, no appearance/foot contact",
+  "status": "Definitive source/package/stage and prepared-consumer proof reviewed and frozen; authorized final archive upload",
+  "consumerArtifactHashesVerified": 30,
+  "unchangedPreparedSourceFilesVerified": 204,
+  "preparedSourceFilesVerified": 9
+}
