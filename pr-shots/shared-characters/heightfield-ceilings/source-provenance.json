@@ -1,0 +1,8 @@
+{
+  "localCommit": "4004ec17cac406fa33d157149c15b82c444f1144",
+  "remoteCommit": "7647e7dff9e93549e2c665ebbc9c7b5f6bf2918b",
+  "tree": "513bc599d80db71b3337ca1905fd8659f58d1ef5",
+  "base": "3d227a36c2946270c30cbdf267a38bd42ac2c4ad",
+  "delivery": "Git Data API after normal Git HTTP push401; identical source tree",
+  "publication": "unreleased source; no package registry publication or game adoption"
+}

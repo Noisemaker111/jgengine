@@ -1,0 +1,79 @@
+{
+  "branch": "characters/heightfield-ceilings",
+  "base": "3d227a36c2946270c30cbdf267a38bd42ac2c4ad",
+  "status": "engine source and exact installed public packages verified; native interaction blocked, no registry publication or game adoption",
+  "sourceSHA256": {
+    "packages/core/src/movement/playerMovement.ts": "c1d4b4bd923e6c98bb87a3681d43c8690e5d3a3c65283478177376dee8bc2aed",
+    "packages/core/src/movement/movementModel.ts": "ff1f0a87568b35344980b848e97dd19a015fdd87da44d54e5b6134930d0c20ec"
+  },
+  "actualConsumerBefore": [
+    ".scratch/characters/next-ceiling-actual-player.json",
+    ".scratch/characters/consumer/heightfield-ceilings/roof-before.json"
+  ],
+  "owningFailureBefore": [
+    {
+      "log": ".scratch/characters/ceiling-before.log",
+      "failure": "stationary jump enters archway lintel and later ejects sideways"
+    },
+    {
+      "log": ".scratch/characters/ceiling-grounded-before.log",
+      "failure": "curb/uphill rise enters low roof"
+    },
+    {
+      "log": ".scratch/characters/ceiling-fallback-actual-before.log",
+      "failure": "candidate rise misses high world-solid roof; alternate-axis path crosses a thin wall"
+    },
+    {
+      "log": ".scratch/characters/ceiling-full-through-before.log",
+      "failure": "terrain snap crosses thin roof and ends entirely above it"
+    },
+    {
+      "log": ".scratch/characters/ceiling-landing-contact-before.log",
+      "failure": "exact legal headroom rejected; lower-ground descent zeroed at obsolete support and provisional landing recorded"
+    }
+  ],
+  "verification": {
+    "owningTests": 299,
+    "assertions": 1117,
+    "files": 20,
+    "log": ".scratch/characters/ceiling-final-owning.log",
+    "coreTypes": "passed",
+    "coreBuild": ".scratch/characters/ceiling-core-build.log",
+    "diffCheck": "passed"
+  },
+  "coverage": [
+    "thin ceiling nearest-first upward sweep",
+    "nearest crossed top downward sweep",
+    "compound relative transforms and single body offset",
+    "full authoritative large dt",
+    "grounded curb and terrain rises",
+    "bounded high/low span obstacle query",
+    "fallback axis wall re-sweep",
+    "raw grade sampler at most four unique points",
+    "translated +/-100m machine contact vs 1e-8 penetration",
+    "snapshot replay after ceiling and descending onto lower ground",
+    "actual landing recovery gating",
+    "lateral departure under finite roof",
+    "object collision opt-out and explicit policy authority"
+  ],
+  "limitations": [
+    "axis-separated bounds at accepted XZ, not simultaneous 3D diagonal sweep",
+    "existing conservative fitted/yaw-expanded box collider policy remains",
+    "fixed heightfield physical height1.8m/radius0.3m, not inferred from visual rig proportions",
+    "illegal starting overlap repair remains existing horizontal owner",
+    "motion.setY and beforeCommit remain explicit authority",
+    "no native appearance/control feel/FPS claim from tests or headless proof"
+  ],
+  "discardedCapture": ".scratch/characters/ceiling-fallback-before.log used invalid ctx.scene.solids; no behavior evidence claimed from that log",
+  "localCommit": "4004ec17cac406fa33d157149c15b82c444f1144",
+  "remoteCommit": "7647e7dff9e93549e2c665ebbc9c7b5f6bf2918b",
+  "tree": "513bc599d80db71b3337ca1905fd8659f58d1ef5",
+  "checksSummary": ".scratch/characters/ceiling-checks/final-check-summary.json",
+  "actualConsumerAfter": [
+    ".scratch/characters/consumer/heightfield-ceilings/roof-after.json",
+    ".scratch/characters/ik/heightfield-landing-after-4004.json"
+  ],
+  "publicPackageManifest": ".scratch/characters/packages/final-4004ec17/manifest.json",
+  "nativeEligibility": ".scratch/characters/native/heightfield-ceilings/eligibility-review.json",
+  "pr": "https://github.com/Noisemaker111/jgengine/pull/1958"
+}

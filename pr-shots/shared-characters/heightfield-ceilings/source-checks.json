@@ -1,0 +1,85 @@
+{
+  "head": "4004ec17cac406fa33d157149c15b82c444f1144",
+  "tree": "513bc599d80db71b3337ca1905fd8659f58d1ef5",
+  "base": "3d227a36c2946270c30cbdf267a38bd42ac2c4ad",
+  "worktreeStatus": "",
+  "initialSourceAttribution": ".scratch/characters/ceiling-checks/source-attribution.json",
+  "sourceComparisons": {
+    ".claude/skills/jgengine-world/reference.md": {
+      "initialSHA256": "6e8b2186a9889f72e200881d7e1ef0189fcfc2f6f673d18a6d52887ee68bf89f",
+      "finalSHA256": "57e38d8e154fc7c744bfde9e7f047a0d86628b9e3fc9582121ec8073ff95166e",
+      "unchanged": false
+    },
+    "packages/core/src/movement/movementModel.test.ts": {
+      "initialSHA256": "60f58f11f35b2150b753e3793849970738a27a4e35e34294521776ee68e3a13c",
+      "finalSHA256": "60f58f11f35b2150b753e3793849970738a27a4e35e34294521776ee68e3a13c",
+      "unchanged": true
+    },
+    "packages/core/src/movement/movementModel.ts": {
+      "initialSHA256": "ff1f0a87568b35344980b848e97dd19a015fdd87da44d54e5b6134930d0c20ec",
+      "finalSHA256": "ff1f0a87568b35344980b848e97dd19a015fdd87da44d54e5b6134930d0c20ec",
+      "unchanged": true
+    },
+    "packages/core/src/movement/playerMovement.test.ts": {
+      "initialSHA256": "03c3bfc8eb51fc8d33cda2a447e577291f40785bfac8e650b6d5ca23217d2fcc",
+      "finalSHA256": "03c3bfc8eb51fc8d33cda2a447e577291f40785bfac8e650b6d5ca23217d2fcc",
+      "unchanged": true
+    },
+    "packages/core/src/movement/playerMovement.ts": {
+      "initialSHA256": "c1d4b4bd923e6c98bb87a3681d43c8690e5d3a3c65283478177376dee8bc2aed",
+      "finalSHA256": "c1d4b4bd923e6c98bb87a3681d43c8690e5d3a3c65283478177376dee8bc2aed",
+      "unchanged": true
+    },
+    "changes/character-heightfield-ceilings.md": {
+      "initialSHA256": "1f11a1f68eb6941f3478cb7c5d88c0b1232dd02625580b15b6578e9f8aa57978",
+      "finalSHA256": "1f11a1f68eb6941f3478cb7c5d88c0b1232dd02625580b15b6578e9f8aa57978",
+      "unchanged": true
+    }
+  },
+  "checks": {
+    "gen": {
+      "exitCode": 0,
+      "log": ".scratch/characters/ceiling-checks/gen.log"
+    },
+    "core-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/ceiling-checks/core-types.log"
+    },
+    "shell-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/ceiling-checks/shell-types.log"
+    },
+    "editor-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/ceiling-checks/editor-types.log"
+    },
+    "rapier-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/ceiling-checks/rapier-types.log"
+    },
+    "rebased-owning": {
+      "exitCode": 0,
+      "log": ".scratch/characters/ceiling-checks/rebased-owning.log",
+      "tests": 299,
+      "assertions": 1117,
+      "files": 20
+    },
+    "export-tarball": {
+      "exitCode": 0,
+      "log": ".scratch/characters/ceiling-checks/export-tarball.log",
+      "tests": 34,
+      "assertions": 99,
+      "files": 2
+    },
+    "ship-preflight": {
+      "exitCode": 0,
+      "log": ".scratch/characters/ceiling-checks/ship-preflight.log"
+    }
+  },
+  "earlierSupersededBaseFailure": {
+    "head": "177f52ce556728db62f6f7d42247ba7bcb996662",
+    "exitCode": 1,
+    "reason": "branch not based on current origin/beta tip",
+    "log": ".scratch/characters/ceiling-checks/base-177f52ce/ship-preflight.log"
+  }
+}

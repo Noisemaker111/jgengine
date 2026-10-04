@@ -1,0 +1,303 @@
+{
+  "label": "fail-before exact installed public package heightfield landing-state proof; no native movement/appearance claim",
+  "cohort": "4955a4444167b22650e929f807a7d4572375d261",
+  "tree": "399e4d76a29c416f41fc454c220afdf206736b84",
+  "packageExport": {
+    "name": "@jgengine/core/movement/playerMovement",
+    "path": "/workspace/JGengine/.scratch/characters/consumer/rig-slots/node_modules/@jgengine/core/dist/movement/playerMovement.js",
+    "sha256": "505c35afab12952c6640cb2aeca93b50478b9556aa59e3f5bbeef1575e1c9b03"
+  },
+  "coreTarball": {
+    "name": "@jgengine/core",
+    "version": "0.19.0",
+    "path": "/workspace/JGengine/.scratch/characters/packages/final-4955a444/jgengine-core-0.19.0.tgz",
+    "sha256": "10580d6cb90e196c5d5eb796f459ab210e6cec81a12adec89ec192679a3ed7d1",
+    "files": 1207
+  },
+  "fixture": {
+    "ground": "y=2 for z<0, y=0 for z>=0",
+    "physics": {
+      "gravity": -16,
+      "jumpVelocity": 6
+    },
+    "stepSeconds": 0.016666666666666666,
+    "landingRecoveryMs": 300,
+    "landingSpeedScale": 0.2,
+    "source": "explicit existing public TerrainField ledge fixture; Lantern src/world.ts:62 gravity/jump values, not its authored scene"
+  },
+  "before": {
+    "position": [
+      0,
+      2.0000000000000027,
+      -0.001
+    ],
+    "motion": {
+      "horizontalVelocityX": 0,
+      "horizontalVelocityZ": 0,
+      "verticalVelocity": -5.733333333333332,
+      "jumpOffset": 2.6645352591003757e-15,
+      "grounded": false,
+      "jumpHeld": false,
+      "clockMs": 749.9999999999997,
+      "groundedAtMs": null,
+      "landedAtMs": null,
+      "jumpRising": false,
+      "wasAirborne": true
+    },
+    "telemetry": {
+      "grounded": false,
+      "verticalVelocity": -5.733333333333332,
+      "crouching": false
+    }
+  },
+  "expectedWithoutSyntheticLanding": {
+    "verticalVelocity": -5.999999999999998,
+    "landedAtMs": null
+  },
+  "records": [
+    {
+      "label": "live",
+      "after": {
+        "position": [
+          0,
+          2,
+          0.014861059105676588
+        ],
+        "support": 0,
+        "feetAboveSupport": 2,
+        "motion": {
+          "horizontalVelocityX": 0,
+          "horizontalVelocityZ": 0.9516635463405955,
+          "verticalVelocity": 0,
+          "jumpOffset": 2,
+          "grounded": false,
+          "jumpHeld": false,
+          "clockMs": 766.6666666666663,
+          "groundedAtMs": null,
+          "landedAtMs": 766.6666666666663,
+          "jumpRising": false,
+          "wasAirborne": false
+        },
+        "telemetry": {
+          "grounded": false,
+          "verticalVelocity": 0,
+          "crouching": false
+        }
+      },
+      "continuation": [
+        {
+          "position": [
+            0,
+            1.9955555555555555,
+            0.04370805507755815
+          ],
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 1.730819758312894,
+            "verticalVelocity": -0.26666666666666666,
+            "jumpOffset": 1.9955555555555555,
+            "grounded": false,
+            "jumpHeld": false,
+            "clockMs": 783.3333333333329,
+            "groundedAtMs": null,
+            "landedAtMs": 766.6666666666663,
+            "jumpRising": false,
+            "wasAirborne": true
+          },
+          "telemetry": {
+            "grounded": false,
+            "verticalVelocity": -0.26666666666666666,
+            "crouching": false
+          }
+        },
+        {
+          "position": [
+            0,
+            1.9866666666666666,
+            0.08318703691933084
+          ],
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 2.3687389105063614,
+            "verticalVelocity": -0.5333333333333333,
+            "jumpOffset": 1.9866666666666666,
+            "grounded": false,
+            "jumpHeld": false,
+            "clockMs": 799.9999999999995,
+            "groundedAtMs": null,
+            "landedAtMs": 766.6666666666663,
+            "jumpRising": false,
+            "wasAirborne": true
+          },
+          "telemetry": {
+            "grounded": false,
+            "verticalVelocity": -0.5333333333333333,
+            "crouching": false
+          }
+        },
+        {
+          "position": [
+            0,
+            1.9733333333333332,
+            0.13137075255907396
+          ],
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 2.891022938384587,
+            "verticalVelocity": -0.8,
+            "jumpOffset": 1.9733333333333332,
+            "grounded": false,
+            "jumpHeld": false,
+            "clockMs": 816.6666666666662,
+            "groundedAtMs": null,
+            "landedAtMs": 766.6666666666663,
+            "jumpRising": false,
+            "wasAirborne": true
+          },
+          "telemetry": {
+            "grounded": false,
+            "verticalVelocity": -0.8,
+            "crouching": false
+          }
+        }
+      ]
+    },
+    {
+      "label": "restored",
+      "after": {
+        "position": [
+          0,
+          2,
+          0.014861059105676588
+        ],
+        "support": 0,
+        "feetAboveSupport": 2,
+        "motion": {
+          "horizontalVelocityX": 0,
+          "horizontalVelocityZ": 0.9516635463405955,
+          "verticalVelocity": 0,
+          "jumpOffset": 2,
+          "grounded": false,
+          "jumpHeld": false,
+          "clockMs": 766.6666666666663,
+          "groundedAtMs": null,
+          "landedAtMs": 766.6666666666663,
+          "jumpRising": false,
+          "wasAirborne": false
+        },
+        "telemetry": {
+          "grounded": false,
+          "verticalVelocity": 0,
+          "crouching": false
+        }
+      },
+      "continuation": [
+        {
+          "position": [
+            0,
+            1.9955555555555555,
+            0.04370805507755815
+          ],
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 1.730819758312894,
+            "verticalVelocity": -0.26666666666666666,
+            "jumpOffset": 1.9955555555555555,
+            "grounded": false,
+            "jumpHeld": false,
+            "clockMs": 783.3333333333329,
+            "groundedAtMs": null,
+            "landedAtMs": 766.6666666666663,
+            "jumpRising": false,
+            "wasAirborne": true
+          },
+          "telemetry": {
+            "grounded": false,
+            "verticalVelocity": -0.26666666666666666,
+            "crouching": false
+          }
+        },
+        {
+          "position": [
+            0,
+            1.9866666666666666,
+            0.08318703691933084
+          ],
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 2.3687389105063614,
+            "verticalVelocity": -0.5333333333333333,
+            "jumpOffset": 1.9866666666666666,
+            "grounded": false,
+            "jumpHeld": false,
+            "clockMs": 799.9999999999995,
+            "groundedAtMs": null,
+            "landedAtMs": 766.6666666666663,
+            "jumpRising": false,
+            "wasAirborne": true
+          },
+          "telemetry": {
+            "grounded": false,
+            "verticalVelocity": -0.5333333333333333,
+            "crouching": false
+          }
+        },
+        {
+          "position": [
+            0,
+            1.9733333333333332,
+            0.13137075255907396
+          ],
+          "motion": {
+            "horizontalVelocityX": 0,
+            "horizontalVelocityZ": 2.891022938384587,
+            "verticalVelocity": -0.8,
+            "jumpOffset": 1.9733333333333332,
+            "grounded": false,
+            "jumpHeld": false,
+            "clockMs": 816.6666666666662,
+            "groundedAtMs": null,
+            "landedAtMs": 766.6666666666663,
+            "jumpRising": false,
+            "wasAirborne": true
+          },
+          "telemetry": {
+            "grounded": false,
+            "verticalVelocity": -0.8,
+            "crouching": false
+          }
+        }
+      ]
+    }
+  ],
+  "flatControl": {
+    "position": [
+      0,
+      2,
+      0.014861059105676588
+    ],
+    "motion": {
+      "horizontalVelocityX": 0,
+      "horizontalVelocityZ": 0.9516635463405955,
+      "verticalVelocity": 0,
+      "jumpOffset": 0,
+      "grounded": true,
+      "jumpHeld": false,
+      "clockMs": 766.6666666666663,
+      "groundedAtMs": null,
+      "landedAtMs": 766.6666666666663,
+      "jumpRising": false,
+      "wasAirborne": false
+    },
+    "telemetry": {
+      "grounded": true,
+      "verticalVelocity": 0,
+      "crouching": false
+    }
+  },
+  "findings": [
+    "Accepted feet remain about2m above lower support and motion.grounded=false, but downward velocity is reset to0 and landedAtMs is stamped.",
+    "Subsequent airborne frames rebuild fall velocity from0, losing the existing descent.",
+    "No midair horizontal landing-recovery slowdown observed: recovery calculation remains gated on final grounded state."
+  ]
+}

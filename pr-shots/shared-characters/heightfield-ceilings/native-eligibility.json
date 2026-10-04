@@ -1,0 +1,67 @@
+{
+  "scenario": "Existing Lantern Reach Odell workshop roof head-bump after walking from its authored spawn",
+  "status": "native interaction proof blocked after read-only eligibility review",
+  "newNativeAttempts": 0,
+  "newNativeServerOrDaemonStarted": false,
+  "numericalBefore": {
+    "artifact": "/workspace/JGengine/.scratch/characters/consumer/heightfield-ceilings/roof-before.json",
+    "sha256": "0caa91300760219fae0d9978a82f2bf525002a31041b2798c763041e75a7f337",
+    "cohort": "4955a4444167b22650e929f807a7d4572375d261",
+    "gameSource": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "appearanceClaim": false
+  },
+  "authoredTarget": {
+    "markerId": "architecture:Odell workshop:160",
+    "catalogId": "lantern:Roof_2x4_RoundTile",
+    "glbSha256": "813dcef47e0d705da2203b0f3cfa3ef06fd88c5485c716165547cf0515f8d178",
+    "roofMinimumWorldY": 9.303211291232321,
+    "collisionPolicy": "conservative outer roof bounds"
+  },
+  "publicRoute": {
+    "spawn": [
+      0,
+      7.244763548770163,
+      -275
+    ],
+    "walkingSteps": 361,
+    "walkingDt": 0.008333333333333333,
+    "brakingSteps": 120,
+    "brakingDt": 0.008333333333333333,
+    "brakedAt": [
+      15.575108242034911,
+      7.244763548770163,
+      -308.1281545952859
+    ],
+    "jumpDt": 0.016666666666666666,
+    "jumpSteps": 24,
+    "headingAtDestination": 2.7016022733316483,
+    "method": "Each walking step computes camera yaw atan2(targetX-currentX,targetZ-currentZ), then applies moveForward with near-target analog attenuation. No entity position rewrite occurs in this route.",
+    "nativeMacroEstablished": false
+  },
+  "nativeInputReview": {
+    "gameBindings": "WASD and Space are ordinary game inputs.",
+    "camera": "Third-person orbit uses pointer drag; unchanged game initialYaw is Math.PI.",
+    "officialDriver": "Key holds, clicks and fill are available; no ordered pointer-drag or analog-axis steering action was found.",
+    "detachedLook": "Official --look requires an applied-aim handshake from the managed runner; the unchanged native GameHost does not provide it.",
+    "probe": "Game capture config declares play only; no live movement probe. GamePlayerShell attaches __jgProbe only when playable.capture.probe exists."
+  },
+  "priorLimits": {
+    "LanternHeroAppearanceAttempts": 2,
+    "cap": 2,
+    "report": "../final-native-evidence.json",
+    "observations": "Previously inspected Lantern frames had texture decode failures, pale buildings and no visible local hero. The second movement sequence was excluded because of concurrent daemon targets.",
+    "currentBlockerResolved": false,
+    "meaning": "No resolution of those native rendering blockers has been established by the new collision source change; this review does not assert a fresh observation of the latest package."
+  },
+  "heightLimit": {
+    "physicalHeight": 1.8,
+    "physicalSource": "public DEFAULT_VOXEL_DIMS.height, same1.8 currently used by heightfield horizontal collision",
+    "visualTargetHeight": 2.6,
+    "visualSource": "unchanged Lantern src/game/models.ts HUMANOID_H",
+    "consequence": "Physical head clearance alone cannot establish that the taller displayed character clears the roof."
+  },
+  "decision": "Do not rerun the capped Lantern hero/appearance scenario or invent camera, spawn, readiness, document, probe or game setup mutations to make a head-bump capture. Preserve exact public-package collision evidence and leave native appearance/interaction unresolved.",
+  "afterCohort": "4004ec17cac406fa33d157149c15b82c444f1144",
+  "gameOrDocumentEdits": false,
+  "hardwarePerformanceClaim": false
+}
