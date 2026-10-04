@@ -18,6 +18,16 @@ export interface AuthoredMovementValues {
   groundFriction?: number;
   runMultiplier?: number;
   crouchMultiplier?: number;
+  jumpBufferMs?: number;
+  coyoteMs?: number;
+  /** Rising speed retained on early jump release, from 0 to 1. */
+  jumpCutFactor?: number;
+  apexGravityScale?: number;
+  apexSpeed?: number;
+  fallGravityScale?: number;
+  landingRecoveryMs?: number;
+  /** Initial landing speed multiplier; values above 1 retain the existing runtime contract. */
+  landingSpeedScale?: number;
 }
 
 /** Only authored values, ready to overlay on a game's existing movement and physics policy. */
@@ -70,19 +80,29 @@ const FIELDS = [
   { key: "groundFriction", label: "Braking", group: "response", min: 0, step: 1 },
   { key: "runMultiplier", label: "Sprint multiplier", group: "movement", min: 0, step: 0.1 },
   { key: "crouchMultiplier", label: "Crouch multiplier", group: "movement", min: 0, step: 0.05 },
+  { key: "jumpBufferMs", label: "Jump buffer (ms)", group: "jump-response", min: 0, step: 10 },
+  { key: "coyoteMs", label: "Coyote time (ms)", group: "jump-response", min: 0, step: 10 },
+  { key: "jumpCutFactor", label: "Jump release factor", group: "jump-response", min: 0, max: 1, step: 0.05 },
+  { key: "apexGravityScale", label: "Apex gravity multiplier", group: "jump-response", min: 0, step: 0.05 },
+  { key: "apexSpeed", label: "Apex speed threshold (m/s)", group: "jump-response", min: 0, step: 0.1 },
+  { key: "fallGravityScale", label: "Fall gravity multiplier", group: "jump-response", min: 0, step: 0.05 },
+  { key: "landingRecoveryMs", label: "Landing recovery (ms)", group: "jump-response", min: 0, step: 10 },
+  { key: "landingSpeedScale", label: "Landing speed multiplier", group: "jump-response", min: 0, step: 0.05 },
 ] as const;
 
 function validValue(field: (typeof FIELDS)[number], value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && (!("min" in field) || value >= field.min);
+  return typeof value === "number" && Number.isFinite(value) && (!("min" in field) || value >= field.min) && (!("max" in field) || value <= field.max);
 }
 
 function numberRequirement(field: (typeof FIELDS)[number]): string {
-  return field.key === "collisionHeight" ? " positive" : "min" in field ? " nonnegative" : "";
+  if (field.key === "jumpCutFactor") return "finite number between 0 and 1";
+  return `finite${field.key === "collisionHeight" ? " positive" : "min" in field ? " nonnegative" : ""} number`;
 }
 
 /**
  * Creates editor/RPC controls only for the values a game supplies, with those game's defaults.
  * Gravity retains the game's sign convention; collision height is positive, other controls nonnegative.
+ * Jump release is bounded to 0..1; supplied deeper jump controls share a collapsed response group.
  * @capability editor-movement author game-chosen character movement controls through ordinary catalog rows
  */
 export function createMovementSchema(defaults: AuthoredMovementValues): ParamSchema {
@@ -90,7 +110,7 @@ export function createMovementSchema(defaults: AuthoredMovementValues): ParamSch
   for (const field of FIELDS) {
     const value = defaults[field.key];
     if (value === undefined) continue;
-    if (!validValue(field, value)) throw new Error(`Invalid movement default ${field.key}: use a finite${numberRequirement(field)} number`);
+    if (!validValue(field, value)) throw new Error(`Invalid movement default ${field.key}: use a ${numberRequirement(field)}`);
     fields.push({ ...field, type: "number", default: value });
   }
   return {
@@ -99,6 +119,7 @@ export function createMovementSchema(defaults: AuthoredMovementValues): ParamSch
       { id: "movement", label: "Movement" },
       { id: "jump", label: "Jump" },
       { id: "response", label: "Response", collapsed: true },
+      { id: "jump-response", label: "Jump response", collapsed: true },
     ].filter((group) => fields.some((field) => field.group === group.id)),
   };
 }
@@ -126,7 +147,7 @@ export function readAuthoredMovement(
     if (!validValue(field, value)) {
       diagnostics.push({
         path: `catalogs[${catalogIndex}].entries[${entryIndex}].meta.${field.key}`,
-        message: `${field.key} must be a finite${numberRequirement(field)} number`,
+        message: `${field.key} must be a ${numberRequirement(field)}`,
         repair: `Set ${field.key} to a valid number or remove it to inherit the game setting.`,
       });
       continue;

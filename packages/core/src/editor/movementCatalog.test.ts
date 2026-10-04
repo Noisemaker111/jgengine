@@ -4,6 +4,8 @@ import { createEditorSession } from "./commands";
 import { createEmptyEditorDocument, exportEditorDocumentJson, importEditorDocumentJson } from "./document";
 import { bindAuthoredMovement, createAuthoredMovementReader, createMovementSchema, readAuthoredMovement } from "./movementCatalog";
 import { parseParams, validateParams } from "../scene/sceneKinds";
+import { measureMovement } from "../movement/movementProbe";
+import { resolvePlayerMovementTuning } from "../movement/playerMovement";
 
 describe("authored movement catalogs", () => {
   test("schema exposes only a game's opted-in controls and its own defaults", () => {
@@ -168,5 +170,61 @@ describe("authored movement catalogs", () => {
     expect(rejected.config.movement?.collisionHeight).toBeUndefined();
     expect(rejected.diagnostics[0]).toEqual({ path: "catalogs[0].entries[0].meta.collisionHeight", message: "collisionHeight must be a finite positive number", repair: "Set collisionHeight to a valid number or remove it to inherit the game setting." });
     expect(bindAuthoredMovement(() => rejected, { movement: { collisionHeight: 2.6 } }).movement.collisionHeight).toBe(2.6);
+  });
+
+  test("opted-in jump response reaches the live motor and survives commands, undo and reload", () => {
+    const basic = { walkSpeed: 5.8, gravity: -30, jumpVelocity: 8.4 };
+    const jumpFeel = { jumpBufferMs: 120, coyoteMs: 80, jumpCutFactor: 0.5, apexGravityScale: 0.6, apexSpeed: 1.5, fallGravityScale: 1.6, landingRecoveryMs: 200, landingSpeedScale: 0.5 };
+    const schema = createMovementSchema({ ...basic, ...jumpFeel });
+    expect(schema.fields.filter((field) => field.group === "jump-response").map((field) => field.key)).toEqual(Object.keys(jumpFeel));
+    expect(schema.groups?.find((group) => group.id === "jump-response")).toEqual({ id: "jump-response", label: "Jump response", collapsed: true });
+    expect(createMovementSchema(basic).groups?.some((group) => group.id === "jump-response")).toBe(false);
+    const session = createEditorSession(createEmptyEditorDocument());
+    session.dispatch({ type: "addCatalog", id: "player_motion", schema });
+    session.dispatch({ type: "addCatalogEntry", catalogId: "player_motion", entry: { id: "reactor_hunter", meta: { ...basic, ...jumpFeel } } });
+    const beforeCommit = () => undefined;
+    const baseFeel = { groundAcceleration: 26, jumpBufferMs: 0, jumpCutFactor: 1 };
+    const read = createAuthoredMovementReader(() => session.getState().document, "player_motion", "reactor_hunter");
+    const binding = bindAuthoredMovement(read, { movement: { beforeCommit, feel: baseFeel }, physics: { gravity: -30, jumpVelocity: 8.4, projectileObstacles: true } });
+    const tuning = resolvePlayerMovementTuning({ movement: binding.movement, physics: binding.physics });
+    expect(binding.movement.feel).toEqual({ ...baseFeel, ...jumpFeel });
+    expect(tuning.physics?.jumpBufferMs).toBe(120);
+    const measured = measureMovement({ movement: binding.movement, physics: binding.physics, walkSpeed: read().config.walkSpeed! });
+    expect(measured.tapJumpHeight).toBeLessThan(measured.jumpHeight);
+    const edited = { jumpBufferMs: 0, coyoteMs: 0, jumpCutFactor: 0, apexGravityScale: 0, apexSpeed: 0, fallGravityScale: 0, landingRecoveryMs: 0, landingSpeedScale: 1.25 };
+    session.dispatch({ type: "setCatalogEntry", catalogId: "player_motion", entryId: "reactor_hunter", patch: { meta: { ...basic, ...edited } } });
+    expect(binding.movement.feel).toEqual({ ...baseFeel, ...edited });
+    expect(tuning.physics?.jumpBufferMs).toBe(0);
+    expect(tuning.physics?.jumpCutFactor).toBe(0);
+    expect(tuning.physics?.landingSpeedScale).toBe(1.25);
+    expect(binding.movement.beforeCommit).toBe(beforeCommit);
+    expect(binding.physics.projectileObstacles).toBe(true);
+    session.dispatch({ type: "undo" });
+    expect(binding.movement.feel).toEqual({ ...baseFeel, ...jumpFeel });
+    expect(tuning.physics?.jumpBufferMs).toBe(120);
+    session.dispatch({ type: "redo" });
+    const restored = importEditorDocumentJson(exportEditorDocumentJson(session.getState().document));
+    const restoredBinding = bindAuthoredMovement(createAuthoredMovementReader(() => restored, "player_motion", "reactor_hunter"), { movement: { beforeCommit, feel: baseFeel } });
+    expect(restoredBinding.movement.feel).toEqual({ ...baseFeel, ...edited });
+    expect(restoredBinding.movement.beforeCommit).toBe(beforeCommit);
+    expect(restored.catalogs[0]!.schema).toEqual(schema);
+    expect(validateParams(schema, edited)).toEqual([]);
+  });
+
+  test("jump response rejects invalid saved values with located repairs instead of clamping", () => {
+    const defaults = { jumpBufferMs: 120, coyoteMs: 80, jumpCutFactor: 0.5, apexGravityScale: 0.6, apexSpeed: 1.5, fallGravityScale: 1.6, landingRecoveryMs: 200, landingSpeedScale: 1.25 };
+    const schema = createMovementSchema(defaults);
+    expect(() => createMovementSchema({ jumpCutFactor: 1.01 })).toThrow("between 0 and 1");
+    expect(() => createMovementSchema({ jumpCutFactor: -0.01 })).toThrow("between 0 and 1");
+    expect(() => createMovementSchema({ coyoteMs: -1 })).toThrow("nonnegative");
+    expect(validateParams(schema, { jumpCutFactor: 1.01 }).some((issue) => issue.key === "jumpCutFactor")).toBe(true);
+    const document = createEmptyEditorDocument();
+    document.catalogs = [{ id: "motion", entries: [{ id: "player", meta: { jumpBufferMs: -1, coyoteMs: NaN, jumpCutFactor: 1.01, apexGravityScale: Infinity, apexSpeed: -1, fallGravityScale: "fast", landingRecoveryMs: -1, landingSpeedScale: -1 } }] }];
+    const result = readAuthoredMovement(document, "motion", "player");
+    expect(result.config).toEqual({});
+    expect(result.diagnostics.map((issue) => issue.path)).toEqual(Object.keys(defaults).map((key) => `catalogs[0].entries[0].meta.${key}`));
+    expect(result.diagnostics.find((issue) => issue.path.endsWith("jumpCutFactor"))?.message).toBe("jumpCutFactor must be a finite number between 0 and 1");
+    expect(result.diagnostics.every((issue) => issue.repair.includes("inherit the game setting"))).toBe(true);
+    expect(bindAuthoredMovement(() => result, { movement: { feel: defaults } }).movement.feel).toBe(defaults);
   });
 });
