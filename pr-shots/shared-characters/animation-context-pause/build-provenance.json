@@ -1,0 +1,517 @@
+{
+  "status": "complete",
+  "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+  "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+  "base": "bea2af8913100404f3c5dd5cde3c38c8d203b7ae",
+  "startedUtc": "20261004T042630Z",
+  "workflowSha256": "55d176f898ae035039cfc7fb260157b7cbf051e33d1a63fe6a9645f9e6f283ff",
+  "rootBuildScript": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts --install-only && bun run --cwd packages/core build && bun run --cwd packages/rapier build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/navbake build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build && bun run --cwd packages/editor build && bun run --cwd packages/assets build && bun run --cwd packages/github build && bun run --cwd packages/jgengine build && bun run build:registry'",
+  "packageBuildOrder": [
+    "core",
+    "rapier",
+    "ws",
+    "sql",
+    "navbake",
+    "react",
+    "convex",
+    "node",
+    "shell",
+    "editor",
+    "assets",
+    "github",
+    "jgengine"
+  ],
+  "packageBuildScripts": {
+    "core": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "rapier": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "ws": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "sql": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "navbake": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "react": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "convex": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "node": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "shell": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "editor": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "assets": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist && bun scripts/postbuild.ts",
+    "github": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "jgengine": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist"
+  },
+  "dependencyLockSha256": "63a1a43df6db2b87a15871f6c0fa625cb3223fe820944e08dfb4241a0f493e3c",
+  "toolVersions": {
+    "bun": "1.4.2",
+    "npm": "11.9.0"
+  },
+  "stages": [
+    {
+      "label": "check-staged-skills",
+      "argv": [
+        "bun",
+        "run",
+        "check-stage-skills"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.04487752600107342,
+      "stdout": "check-staged-skills.stdout.log",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "check-staged-skills.stderr.log",
+      "stderrSha256": "e9ccecf262ef7e126fa246a37af2a4ba133c675b48e916a1e1edb3eb1a29989a"
+    },
+    {
+      "label": "build-core",
+      "argv": [
+        "bun",
+        "--cwd=packages/core",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 1.8643802549995598,
+      "stdout": "build-core.stdout.log",
+      "stdoutSha256": "e7e5f4f4ba542e9f150fa5b9031df7ad8ec1c9ca5221d2fe94fd3f967a91206c",
+      "stderr": "build-core.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-rapier",
+      "argv": [
+        "bun",
+        "--cwd=packages/rapier",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.1158960950015171,
+      "stdout": "build-rapier.stdout.log",
+      "stdoutSha256": "87c02a5498456e4bc451d1d635818041e8c2d7c11fedeafc895f185492b86513",
+      "stderr": "build-rapier.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-ws",
+      "argv": [
+        "bun",
+        "--cwd=packages/ws",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.23777543300093384,
+      "stdout": "build-ws.stdout.log",
+      "stdoutSha256": "6fbcb6447a74f799924f2f5aa9f07f09090475a03a2031988c0a1c30433e98db",
+      "stderr": "build-ws.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-sql",
+      "argv": [
+        "bun",
+        "--cwd=packages/sql",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.15650325499882456,
+      "stdout": "build-sql.stdout.log",
+      "stdoutSha256": "83092359d863ab1cd03d385788cec0da1c935c93ae1dd7904b38b291aa701a9a",
+      "stderr": "build-sql.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-navbake",
+      "argv": [
+        "bun",
+        "--cwd=packages/navbake",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.15942712799733272,
+      "stdout": "build-navbake.stdout.log",
+      "stdoutSha256": "a35b836235a671b02ef684541a3f6ed83f866026352f66e71ac0d98d781ffd80",
+      "stderr": "build-navbake.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-react",
+      "argv": [
+        "bun",
+        "--cwd=packages/react",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 1.0694337130007625,
+      "stdout": "build-react.stdout.log",
+      "stdoutSha256": "28e74823e7a97ee73c6914ac3e4693326ed6ce321342674fc006c57d2bc1dab5",
+      "stderr": "build-react.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-convex",
+      "argv": [
+        "bun",
+        "--cwd=packages/convex",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.7978448850008135,
+      "stdout": "build-convex.stdout.log",
+      "stdoutSha256": "e13d69801c7ffaa01da1a1de97cf007f2acb90cea63a610354ab1e71b9a63a34",
+      "stderr": "build-convex.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-node",
+      "argv": [
+        "bun",
+        "--cwd=packages/node",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.6136724530006177,
+      "stdout": "build-node.stdout.log",
+      "stdoutSha256": "9a8e4ed0413f0ed8eaaa2d13626276c37c9f9b0b39f6bcb9508d2bc61e4c420a",
+      "stderr": "build-node.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-shell",
+      "argv": [
+        "bun",
+        "--cwd=packages/shell",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 2.3993850049992034,
+      "stdout": "build-shell.stdout.log",
+      "stdoutSha256": "9558198b1419e5949840994ba3ca01963aa497f1c7a82ed4372278e4e0a375a3",
+      "stderr": "build-shell.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-editor",
+      "argv": [
+        "bun",
+        "--cwd=packages/editor",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 1.3311959610000486,
+      "stdout": "build-editor.stdout.log",
+      "stdoutSha256": "c1df8fb2f5be53f595b40f42a7a1a3b6e5a566126b42476dc2fb56e820802428",
+      "stderr": "build-editor.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-assets",
+      "argv": [
+        "bun",
+        "--cwd=packages/assets",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.40362195299894665,
+      "stdout": "build-assets.stdout.log",
+      "stdoutSha256": "f33ad4e43abda883a5075cd1422ea699bf18aac92e8fd9145e01a2349d102360",
+      "stderr": "build-assets.stderr.log",
+      "stderrSha256": "6e6e65a7af2f976255c20ee44c2acc93207ad3cb8976dc870d2bf6a6d6e3e1b4"
+    },
+    {
+      "label": "build-github",
+      "argv": [
+        "bun",
+        "--cwd=packages/github",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.16843857999992906,
+      "stdout": "build-github.stdout.log",
+      "stdoutSha256": "088a1c23b0edc9e11a9eb1a75631c1476a951505b2894b5b47c7c4dda4cde46b",
+      "stderr": "build-github.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-jgengine",
+      "argv": [
+        "bun",
+        "--cwd=packages/jgengine",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release",
+      "exitCode": 0,
+      "elapsedSeconds": 0.24564197400104604,
+      "stdout": "build-jgengine.stdout.log",
+      "stdoutSha256": "4ccfbc33cd58953301940e170ce9c80534611c15b19ec471438fc423b01d5110",
+      "stderr": "build-jgengine.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "pack-core",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/core",
+      "exitCode": 0,
+      "elapsedSeconds": 1.8834366330011107,
+      "stdout": "pack-core.stdout.log",
+      "stdoutSha256": "40f4c5656d1c47d0983598fbcb1536cd2d1003101d25381ed3ee5c0b41df5117",
+      "stderr": "pack-core.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-rapier",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/rapier",
+      "exitCode": 0,
+      "elapsedSeconds": 0.43110835700281314,
+      "stdout": "pack-rapier.stdout.log",
+      "stdoutSha256": "19a816f4a18f481b5111dc95d65eac5a553b4973b7c98270a9f19b92711ad822",
+      "stderr": "pack-rapier.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-ws",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/ws",
+      "exitCode": 0,
+      "elapsedSeconds": 0.6816939569980605,
+      "stdout": "pack-ws.stdout.log",
+      "stdoutSha256": "bffdd43b976025ecc95c40eafc33d4454e40a08230aabe595fa801c4ec25cc8c",
+      "stderr": "pack-ws.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-sql",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/sql",
+      "exitCode": 0,
+      "elapsedSeconds": 0.9953573269995104,
+      "stdout": "pack-sql.stdout.log",
+      "stdoutSha256": "567770b8fd3a73d95d8f4e5e24153eaccfb969ccca214a80b91452b2c5e083cf",
+      "stderr": "pack-sql.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-navbake",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/navbake",
+      "exitCode": 0,
+      "elapsedSeconds": 1.1147771579999244,
+      "stdout": "pack-navbake.stdout.log",
+      "stdoutSha256": "b024663ecebd06545747faaf3efeeee501401bcd22c3b09f04535e4b20aa8cb4",
+      "stderr": "pack-navbake.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-react",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/react",
+      "exitCode": 0,
+      "elapsedSeconds": 0.7249924370007648,
+      "stdout": "pack-react.stdout.log",
+      "stdoutSha256": "a7eba93c935ae4f35cd92f0218b07484b8221c8677dfcab54f6d9eeb28129d80",
+      "stderr": "pack-react.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-convex",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/convex",
+      "exitCode": 0,
+      "elapsedSeconds": 0.6267328379981336,
+      "stdout": "pack-convex.stdout.log",
+      "stdoutSha256": "6a8ce66d2ff88cc96170beb57f4be6ba71c2623c9eaf031a40343324f0fb400a",
+      "stderr": "pack-convex.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-node",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/node",
+      "exitCode": 0,
+      "elapsedSeconds": 0.8445024590000685,
+      "stdout": "pack-node.stdout.log",
+      "stdoutSha256": "aca3cc9496ac1af6fb317e00e9defae98181331ff47b74354c4def66d1efb72e",
+      "stderr": "pack-node.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-shell",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/shell",
+      "exitCode": 0,
+      "elapsedSeconds": 1.2848355830028595,
+      "stdout": "pack-shell.stdout.log",
+      "stdoutSha256": "b99a7bce526ea7d0384167d47d7474e2b7a29834739c7cd6dd5bfd86b2e06e61",
+      "stderr": "pack-shell.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-editor",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/editor",
+      "exitCode": 0,
+      "elapsedSeconds": 0.9884043649981322,
+      "stdout": "pack-editor.stdout.log",
+      "stdoutSha256": "b5a375785c3bdc402b4644150bb424d723dfa2081544c04945fd943bb40d91fd",
+      "stderr": "pack-editor.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-assets",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/assets",
+      "exitCode": 0,
+      "elapsedSeconds": 0.7197867830000177,
+      "stdout": "pack-assets.stdout.log",
+      "stdoutSha256": "fa70f899ddb9f0f2058e948306da208828462a941a897cad59396dabd652b744",
+      "stderr": "pack-assets.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-github",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/github",
+      "exitCode": 0,
+      "elapsedSeconds": 0.4661471729996265,
+      "stdout": "pack-github.stdout.log",
+      "stdoutSha256": "958d5d3bdd1a1a40a9e6f70b672dc881a0982c0743584de727eb28e6671ad479",
+      "stderr": "pack-github.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-jgengine",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/packages/jgengine",
+      "exitCode": 0,
+      "elapsedSeconds": 0.6977907660002529,
+      "stdout": "pack-jgengine.stdout.log",
+      "stdoutSha256": "0129c3126afe98bb9f6157f025b4f56e381611f97e0fb7a07d617616c031db57",
+      "stderr": "pack-jgengine.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "removedDist": [
+    "packages/core/dist",
+    "packages/rapier/dist",
+    "packages/ws/dist",
+    "packages/sql/dist",
+    "packages/navbake/dist",
+    "packages/react/dist",
+    "packages/convex/dist",
+    "packages/node/dist",
+    "packages/shell/dist",
+    "packages/editor/dist",
+    "packages/assets/dist",
+    "packages/github/dist",
+    "packages/jgengine/dist"
+  ],
+  "limitations": [
+    "Caller freezes checkout and prevents concurrent builds/branch switches; scratch lock serializes only this workflow.",
+    "No install/gen/registry build/tests/source edits/release/publication. Owning verification remains separate.",
+    "Uses root13-package order with AGENTS-compatible bun --cwd= syntax.",
+    "Staged skills are checked against source; optional ignored package changelogs must match root. No staging or copying here."
+  ],
+  "completedUtc": "2026-10-04T04:26:54.956617+00:00",
+  "ledgerHashes": {
+    "source-files.json": "f202624b24884f6cb703985923587d1404359713df71b04dbb1d194590e03f09",
+    "compiled-files.json": "768ae68f864754dcc790405df684fd934d5cd31433928884b2505160fba25602",
+    "package-files.json": "fdbb524b0907f089247a6e488e9aa4c6718b8edf729802fe5122efbce4bc06aa"
+  }
+}

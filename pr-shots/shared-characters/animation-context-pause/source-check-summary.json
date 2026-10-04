@@ -1,0 +1,31 @@
+{
+  "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+  "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+  "manifest": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/manifest.json",
+  "manifestSha256": "3cdd45c037c9668d78b525cd94d537c6c1f1917942a25b7e53473b952d2efadd",
+  "all13TarballHashesVerified": true,
+  "clean27StagesExit0": true,
+  "packedPauseAndSnapGuardsPresent": true,
+  "packedHookSha256": "b5f883eda52b7811ea001a4ba1cfca5d547fe91796ec7bc7a66eee2cc36f27ab",
+  "compiledDifferencesVersusFrozen803": {
+    "editor": [
+      "InspectorPanel.js",
+      "shell/AnimationGraphPanel.js"
+    ]
+  },
+  "reusedHookProof": {
+    "commit": "1fb6e89396982799da53dc91a89f51ef692531b2",
+    "tests": 12,
+    "assertions": 104,
+    "hookAndTestShaUnchanged": true
+  },
+  "checks": {
+    "gen.log": "3a08de9b4b3abe732002887ec86f72d7d429d583b2ea0feb498c24cacbc80c89",
+    "types.log": "a00fcc2e2fb7788fee815e96f3968f919da5ce24bc0438d560ffb962df9748b4",
+    "export-check.log": "01098cf6b6f1a382b756fc44d3c62607a4998ec683e8a3db4a61dc10981b319a",
+    "stage-check.log": "e9ccecf262ef7e126fa246a37af2a4ba133c675b48e916a1e1edb3eb1a29989a",
+    "preflight.log": "ce7b8b6faabbef24c675152b6fafed50b4104fb1a3dde1c2e40de76412138a23",
+    "changelog.log": "58542b3d0483342f9a6282f2ec96a880869b22305c44599a1295ba42f995130d",
+    "pack.log": "623c146bbd10bc6b86c617aa821277cb86b6b16a283a79a13d3b73985c8b5ecf"
+  }
+}

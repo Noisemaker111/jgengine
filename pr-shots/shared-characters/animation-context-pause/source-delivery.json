@@ -1,0 +1,41 @@
+{
+  "head": "99f4def51f8b753b245ad93da50eb07a0a65463e",
+  "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+  "base": "560ade4e0ce52833b8f134140613c4b6e3cb5fb8",
+  "baseTree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+  "files": [
+    {
+      "path": ".claude/skills/jgengine-ui/api.md",
+      "sha": "4d94d1e60646ff2a9d73f029076eb02de59074f3",
+      "size": 610102
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "sha": "386871336e3c96f54c099f651ceb9500a044abfe",
+      "size": 16763
+    },
+    {
+      "path": "changes/animation-context-pause.md",
+      "sha": "2594ff5c667feefb9d98a74aafb2b7ea7ff1eecf",
+      "size": 207
+    },
+    {
+      "path": "packages/shell/src/render/modelAnimationHook.test.ts",
+      "sha": "97c3c0c73cea630c539c33900aa3229a8a5fce1c",
+      "size": 25425
+    },
+    {
+      "path": "packages/shell/src/render/useModelAnimation.ts",
+      "sha": "f31a4130dc3d5954aa92beae754aa98106ccadbe",
+      "size": 21049
+    }
+  ],
+  "builtHead": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+  "builtTree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+  "remoteHead": "185fd8180b59290d1779c46ca0c9f85d79dd1152",
+  "normalGitPush": "HTTP401; GitData fallback exact blob and complete tree verified",
+  "wholeTreeIdentical": true,
+  "manifestRelabeled": false,
+  "shipPreflight": true,
+  "betaChangelog": true
+}

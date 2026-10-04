@@ -1,0 +1,252 @@
+{
+  "layer": "Installed public SDK numeric hook proof, actual unchanged original game configurations and real imported rigs. No native appearance, input feel, hardware performance or released adoption claim.",
+  "candidateStatus": "Fresh final ef19 cohort includes source9 wrapped diagnostics and source10 pause fix. Future source rebase may change commit identity; this report names the exact built/installed source tree.",
+  "candidate": {
+    "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+    "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+    "manifestSha256": "3cdd45c037c9668d78b525cd94d537c6c1f1917942a25b7e53473b952d2efadd"
+  },
+  "intermediateCandidate": {
+    "commit": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+    "tree": "27d3fcb0e9d748e37788aa8d069753625fcb3960",
+    "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption"
+  },
+  "intermediateEvidence": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause/public-cross-cohort-proof.json",
+  "allIntermediateEvidenceUnchanged": true,
+  "verification": {
+    "label": "unreleased public package fixture; no release adoption",
+    "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+    "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+    "allManifestTarballsHashed": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "3a2a1fd7c89a7c41c59103fb4b736524901a6d11854a3813804403920e9c1227",
+        "installedFilesByteVerified": 1211
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "3e5c6da4b15c2fcf6eec78ca3e826d58b96275736dda877466196e7f2d3cf476",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "17e9154ee04444134c047a33b58e5e19977273ba141c837b5a7b9ea776ae1fdb",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ]
+  },
+  "originalSourceFiles": {
+    "game": 132,
+    "scrap": 80
+  },
+  "originalHookInputFiles": 219,
+  "originalBeforeArchiveUnchanged": true,
+  "results": {
+    "scrap": {
+      "allNumericOutputsExactlyEqualIntermediate803": true,
+      "exactSameFixtureRunnerBytes": true,
+      "heldModes": [
+        "bound",
+        "queued"
+      ],
+      "boundBefore": [
+        {
+          "clip": "Throw",
+          "weight": 1,
+          "time": 0.13333333333333333
+        }
+      ],
+      "baselineAfterPause": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.7500000000000007
+        }
+      ],
+      "finalAfterPause": [
+        {
+          "clip": "Throw",
+          "weight": 1,
+          "time": 0.13333333333333333
+        }
+      ],
+      "firstResume": [
+        {
+          "clip": "Throw",
+          "weight": 1,
+          "time": 0.15
+        }
+      ],
+      "bonePoseAndEveryActionTimeRetained": true,
+      "unchangedControlModesWholeRecords": [
+        "uninterrupted",
+        "queued-control"
+      ],
+      "resumeTraceSamplesExactlyMatchingUninterrupted": 12,
+      "cleanupDuringHold": 0,
+      "cleanupAfterUnmount": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "subscriptionsAfterUnmount": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "gameplayRngCallsDuringPlayback": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "queuedAttackVariantMatchesUnpausedControl": true,
+      "queuedAttackFinal": [
+        {
+          "clip": "Dualwield_Melee_Attack_Stab",
+          "weight": 1,
+          "time": 0.19999999999999998
+        }
+      ],
+      "ordinaryResumeFinal": [
+        {
+          "clip": "Throw",
+          "weight": 1,
+          "time": 0.35
+        }
+      ]
+    },
+    "lantern": {
+      "allNumericOutputsExactlyEqualIntermediate803": true,
+      "exactSameFixtureRunnerBytes": true,
+      "heldModes": [
+        "bound",
+        "timescale"
+      ],
+      "boundBefore": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.49999999999999994
+        }
+      ],
+      "baselineAfterPause": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 1.0000000000000013
+        }
+      ],
+      "finalAfterPause": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.49999999999999994
+        }
+      ],
+      "firstResume": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.5166666666666666
+        }
+      ],
+      "bonePoseAndEveryActionTimeRetained": true,
+      "unchangedControlModesWholeRecords": [
+        "unbound",
+        "noctx",
+        "positive-speed",
+        "uninterrupted"
+      ],
+      "resumeTraceSamplesExactlyMatchingUninterrupted": 12,
+      "cleanupDuringHold": 0,
+      "cleanupAfterUnmount": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "subscriptionsAfterUnmount": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "gameplayRngCallsDuringPlayback": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "fixtureIsolation": "One fresh page per case preserves original Scrap activeCharacter single-selection policy; original failed multi-case run and intermediate corrected runs remain archived separately.",
+  "checks": {
+    "scrap": {
+      "exit": 0,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/scrap-trace-run.log"
+    },
+    "lantern": {
+      "exit": 0,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/lantern-trace-run.log"
+    }
+  },
+  "executedArchives": [
+    "executed-scrap-resume-trace",
+    "executed-lantern-resume-trace"
+  ]
+}

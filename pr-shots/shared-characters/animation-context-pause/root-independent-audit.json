@@ -1,0 +1,11 @@
+{
+  "observedUTC": "2026-10-04T04:53:19.184086+00:00",
+  "consumerReportSha256": "9c34cde0f6ba5cf27b13e50760f5ee3c47580cc28ddf295c91f46ffd4cdb29d3",
+  "evidenceRecordsChecked": 912,
+  "evidenceMismatches": 0,
+  "installedRecordsChecked": 2342,
+  "installedMismatches": [],
+  "wholeTreeIdentical": "ef19==99f4==remote185 tree6d4e97c0ef4c703186115c95dd40ed0af912b366",
+  "publication": false,
+  "gameAdoption": false
+}

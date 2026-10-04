@@ -1,0 +1,13 @@
+{
+  "bundle": "/workspace/JGengine/.scratch/characters/tenth-archive/tenth-proof.tar.gz",
+  "bytes": 20108971,
+  "sha256": "8fcc8451f4fa18692cda798d7a0c34c2112ef9b5d3fb0b5c509a372baf975b9a",
+  "gitBlobSha": "a7ed13dee4aadc045fe3d4810b9845317370a544",
+  "regularFilesIncludingLedger": 931,
+  "allTarMemberHashesVerified": true,
+  "originalLinkedEvidenceBundled": 912,
+  "additionalReceiptsSourceAndLedger": 19,
+  "sourceTree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+  "sourceCI": "Exact185 first attempt all six checks PASS; merge not yet assumed. Built ef19 retained separately.",
+  "publication": "Unreleased built public package proof, no native appearance/feel/FPS or released adoption."
+}

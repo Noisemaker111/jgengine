@@ -1,0 +1,76 @@
+{
+  "label": "Final ef19 public-package original two-game builds/types only. No source/adapters/registry adoption; owning animation/numeric evidence separate.",
+  "sourceCommit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+  "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+  "manifestSha256": "3cdd45c037c9668d78b525cd94d537c6c1f1917942a25b7e53473b952d2efadd",
+  "installedVerificationSha256": "7c2bcf411b21cb1b24d892b7600ecc6eeb81b2ac6a770a3146ce6135587825d4",
+  "originalInputLedgerSha256": "6d75ba5e36f751d13389560f89f371afcbe3b6ad2cfbfb13e6bd173ee61c0709",
+  "originalInputFilesUnchangedBeforeAndAfterChecks": 219,
+  "original45aSrcFilesByteVerified": 212,
+  "additionalUnchangedBuildInputCount": 8,
+  "additionalBuildInputLedger": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-build-input-ledger-ef19.json",
+  "additionalBuildInputLedgerSha256": "ccfe2c98e7e7570024046b1db7c96f7505b158360d190ae9ef3602d8ead0d819",
+  "checks": [
+    {
+      "game": "scrap-signal",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/scrap",
+      "exitCode": 0,
+      "durationFromLog": "30.34s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-ef19-scrap-signal-build.log",
+      "logSha256": "b7a3213e7fcb0154480f188ac47182e41baa181a82121a2abd764048dcb39c48"
+    },
+    {
+      "game": "scrap-signal",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/scrap",
+      "exitCode": 0,
+      "result": "PASS",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-ef19-scrap-signal-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "game": "lantern-reach",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/game",
+      "exitCode": 0,
+      "durationFromLog": "35.11s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-ef19-lantern-reach-build.log",
+      "logSha256": "227b734337a87b089caf19d9e93cbe68eab639f93fc7dee8283812bccb65de16"
+    },
+    {
+      "game": "lantern-reach",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/game",
+      "exitCode": 1,
+      "result": "Exactly four prior ActionBar57/Dialogue68 dispatch Promise-result errors; no source edits or new character errors.",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-ef19-lantern-reach-types.log",
+      "logSha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38"
+    }
+  ],
+  "limitations": [
+    "Vite production build success is not native appearance/interaction/FPS evidence.",
+    "Lantern retains its four existing ActionBar/Dialogue async dispatch type errors.",
+    "No redundant movement-profile replay; shared context-pause hook guard does not alter movement simulation."
+  ]
+}

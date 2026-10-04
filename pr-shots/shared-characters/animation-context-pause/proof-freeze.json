@@ -1,0 +1,19 @@
+{
+  "report": {
+    "path": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/bounded-consumer-report.json",
+    "sha256": "9c34cde0f6ba5cf27b13e50760f5ee3c47580cc28ddf295c91f46ffd4cdb29d3",
+    "bytes": 31028
+  },
+  "hashLedger": {
+    "path": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/bounded-evidence-hashes.json",
+    "sha256": "8be016a07d25f8e831f7ec34a52a9896b27315f3925352520250c6f0cb83d36f",
+    "bytes": 809500
+  },
+  "evidenceFiles": 912,
+  "installedFiles": 2342,
+  "frozenSource": {
+    "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+    "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+    "manifestSha256": "3cdd45c037c9668d78b525cd94d537c6c1f1917942a25b7e53473b952d2efadd"
+  }
+}

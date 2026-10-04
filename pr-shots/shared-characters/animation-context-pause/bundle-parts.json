@@ -1,0 +1,30 @@
+{
+  "format": "Concatenate binary parts in listed order to reconstruct tenth-proof.tar.gz; individual parts are not decompressible.",
+  "bundleBytes": 20108971,
+  "bundleSha256": "8fcc8451f4fa18692cda798d7a0c34c2112ef9b5d3fb0b5c509a372baf975b9a",
+  "bundleGitBlobSha": "a7ed13dee4aadc045fe3d4810b9845317370a544",
+  "regularTarFilesIncludingLedger": 931,
+  "parts": [
+    {
+      "path": "pr-shots/shared-characters/animation-context-pause/tenth-proof.tar.gz.part-01",
+      "bytes": 5242880,
+      "sha256": "8df96c2e0b7e853d4a4b9e6c94931962a40272fbdd039d8895a218e362d08183"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-context-pause/tenth-proof.tar.gz.part-02",
+      "bytes": 5242880,
+      "sha256": "4fe99b6e5c028ba5d5f15daff9e4f8a7b60a6fb7b36489acfc946d3f373496fa"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-context-pause/tenth-proof.tar.gz.part-03",
+      "bytes": 5242880,
+      "sha256": "2852b278f4fbab3ab9439e99b0be89cfd067aac720ac9d1dcc5cc7367a656b14"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-context-pause/tenth-proof.tar.gz.part-04",
+      "bytes": 4380331,
+      "sha256": "f39851d414a433c451b432094b92b7ddb5fbb45569e15de0011bb721c51b9ea1"
+    }
+  ],
+  "verification": "Whole bundle, all regular tar members, and concatenated part bytes verified."
+}

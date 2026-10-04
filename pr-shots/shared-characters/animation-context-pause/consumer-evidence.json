@@ -1,0 +1,682 @@
+{
+  "scope": "Context-bound shared character animation holds while existing game clock speed or timescale is zero. The public hook preserves playback and pending triggers; existing unbound/no-context and positive-rate behavior remains intact.",
+  "candidate": {
+    "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+    "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+    "manifestSha256": "3cdd45c037c9668d78b525cd94d537c6c1f1917942a25b7e53473b952d2efadd"
+  },
+  "engineSource": {
+    "owningIntegratedCommit": "1fb6e89396982799da53dc91a89f51ef692531b2",
+    "owningTests": {
+      "pass": 12,
+      "fail": 0,
+      "assertions": 104
+    },
+    "finalSourceHookAndTestHashesUnchanged": true,
+    "finalCleanGenerationAndPack": {
+      "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+      "manifest": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/manifest.json",
+      "manifestSha256": "3cdd45c037c9668d78b525cd94d537c6c1f1917942a25b7e53473b952d2efadd",
+      "all13TarballHashesVerified": true,
+      "clean27StagesExit0": true,
+      "packedPauseAndSnapGuardsPresent": true,
+      "packedHookSha256": "b5f883eda52b7811ea001a4ba1cfca5d547fe91796ec7bc7a66eee2cc36f27ab",
+      "compiledDifferencesVersusFrozen803": {
+        "editor": [
+          "InspectorPanel.js",
+          "shell/AnimationGraphPanel.js"
+        ]
+      },
+      "reusedHookProof": {
+        "commit": "1fb6e89396982799da53dc91a89f51ef692531b2",
+        "tests": 12,
+        "assertions": 104,
+        "hookAndTestShaUnchanged": true
+      },
+      "checks": {
+        "gen.log": "3a08de9b4b3abe732002887ec86f72d7d429d583b2ea0feb498c24cacbc80c89",
+        "types.log": "a00fcc2e2fb7788fee815e96f3968f919da5ce24bc0438d560ffb962df9748b4",
+        "export-check.log": "01098cf6b6f1a382b756fc44d3c62607a4998ec683e8a3db4a61dc10981b319a",
+        "stage-check.log": "e9ccecf262ef7e126fa246a37af2a4ba133c675b48e916a1e1edb3eb1a29989a",
+        "preflight.log": "ce7b8b6faabbef24c675152b6fafed50b4104fb1a3dde1c2e40de76412138a23",
+        "changelog.log": "58542b3d0483342f9a6282f2ec96a880869b22305c44599a1295ba42f995130d",
+        "pack.log": "623c146bbd10bc6b86c617aa821277cb86b6b16a283a79a13d3b73985c8b5ecf"
+      }
+    },
+    "archivedSource": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/source-ef19"
+  },
+  "consumerProof": {
+    "layer": "Installed public SDK numeric hook proof, actual unchanged original game configurations and real imported rigs. No native appearance, input feel, hardware performance or released adoption claim.",
+    "candidateStatus": "Fresh final ef19 cohort includes source9 wrapped diagnostics and source10 pause fix. Future source rebase may change commit identity; this report names the exact built/installed source tree.",
+    "candidate": {
+      "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+      "manifestSha256": "3cdd45c037c9668d78b525cd94d537c6c1f1917942a25b7e53473b952d2efadd"
+    },
+    "intermediateCandidate": {
+      "commit": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "tree": "27d3fcb0e9d748e37788aa8d069753625fcb3960",
+      "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption"
+    },
+    "intermediateEvidence": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause/public-cross-cohort-proof.json",
+    "allIntermediateEvidenceUnchanged": true,
+    "verification": {
+      "label": "unreleased public package fixture; no release adoption",
+      "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+      "allManifestTarballsHashed": 13,
+      "installedPackages": [
+        {
+          "name": "@jgengine/core",
+          "version": "0.19.0",
+          "tarballSha256": "3a2a1fd7c89a7c41c59103fb4b736524901a6d11854a3813804403920e9c1227",
+          "installedFilesByteVerified": 1211
+        },
+        {
+          "name": "@jgengine/ws",
+          "version": "0.19.0",
+          "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+          "installedFilesByteVerified": 29
+        },
+        {
+          "name": "@jgengine/navbake",
+          "version": "0.19.0",
+          "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+          "installedFilesByteVerified": 6
+        },
+        {
+          "name": "@jgengine/react",
+          "version": "0.19.0",
+          "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+          "installedFilesByteVerified": 183
+        },
+        {
+          "name": "@jgengine/node",
+          "version": "0.19.0",
+          "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+          "installedFilesByteVerified": 29
+        },
+        {
+          "name": "@jgengine/shell",
+          "version": "0.19.0",
+          "tarballSha256": "3e5c6da4b15c2fcf6eec78ca3e826d58b96275736dda877466196e7f2d3cf476",
+          "installedFilesByteVerified": 515
+        },
+        {
+          "name": "@jgengine/editor",
+          "version": "0.19.0",
+          "tarballSha256": "17e9154ee04444134c047a33b58e5e19977273ba141c837b5a7b9ea776ae1fdb",
+          "installedFilesByteVerified": 232
+        },
+        {
+          "name": "@jgengine/assets",
+          "version": "0.19.0",
+          "tarballSha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+          "installedFilesByteVerified": 81
+        },
+        {
+          "name": "jgengine",
+          "version": "0.16.0",
+          "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+          "installedFilesByteVerified": 56
+        }
+      ],
+      "uninstalledPackages": [
+        "@jgengine/rapier",
+        "@jgengine/sql",
+        "@jgengine/convex",
+        "@jgengine/github"
+      ]
+    },
+    "originalSourceFiles": {
+      "game": 132,
+      "scrap": 80
+    },
+    "originalHookInputFiles": 219,
+    "originalBeforeArchiveUnchanged": true,
+    "results": {
+      "scrap": {
+        "allNumericOutputsExactlyEqualIntermediate803": true,
+        "exactSameFixtureRunnerBytes": true,
+        "heldModes": [
+          "bound",
+          "queued"
+        ],
+        "boundBefore": [
+          {
+            "clip": "Throw",
+            "weight": 1,
+            "time": 0.13333333333333333
+          }
+        ],
+        "baselineAfterPause": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.7500000000000007
+          }
+        ],
+        "finalAfterPause": [
+          {
+            "clip": "Throw",
+            "weight": 1,
+            "time": 0.13333333333333333
+          }
+        ],
+        "firstResume": [
+          {
+            "clip": "Throw",
+            "weight": 1,
+            "time": 0.15
+          }
+        ],
+        "bonePoseAndEveryActionTimeRetained": true,
+        "unchangedControlModesWholeRecords": [
+          "uninterrupted",
+          "queued-control"
+        ],
+        "resumeTraceSamplesExactlyMatchingUninterrupted": 12,
+        "cleanupDuringHold": 0,
+        "cleanupAfterUnmount": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "subscriptionsAfterUnmount": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "gameplayRngCallsDuringPlayback": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "queuedAttackVariantMatchesUnpausedControl": true,
+        "queuedAttackFinal": [
+          {
+            "clip": "Dualwield_Melee_Attack_Stab",
+            "weight": 1,
+            "time": 0.19999999999999998
+          }
+        ],
+        "ordinaryResumeFinal": [
+          {
+            "clip": "Throw",
+            "weight": 1,
+            "time": 0.35
+          }
+        ]
+      },
+      "lantern": {
+        "allNumericOutputsExactlyEqualIntermediate803": true,
+        "exactSameFixtureRunnerBytes": true,
+        "heldModes": [
+          "bound",
+          "timescale"
+        ],
+        "boundBefore": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.49999999999999994
+          }
+        ],
+        "baselineAfterPause": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 1.0000000000000013
+          }
+        ],
+        "finalAfterPause": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.49999999999999994
+          }
+        ],
+        "firstResume": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.5166666666666666
+          }
+        ],
+        "bonePoseAndEveryActionTimeRetained": true,
+        "unchangedControlModesWholeRecords": [
+          "unbound",
+          "noctx",
+          "positive-speed",
+          "uninterrupted"
+        ],
+        "resumeTraceSamplesExactlyMatchingUninterrupted": 12,
+        "cleanupDuringHold": 0,
+        "cleanupAfterUnmount": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "subscriptionsAfterUnmount": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "gameplayRngCallsDuringPlayback": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "fixtureIsolation": "One fresh page per case preserves original Scrap activeCharacter single-selection policy; original failed multi-case run and intermediate corrected runs remain archived separately.",
+    "checks": {
+      "scrap": {
+        "exit": 0,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/scrap-trace-run.log"
+      },
+      "lantern": {
+        "exit": 0,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/lantern-trace-run.log"
+      }
+    },
+    "executedArchives": [
+      "executed-scrap-resume-trace",
+      "executed-lantern-resume-trace"
+    ]
+  },
+  "originalGameChecks": {
+    "label": "Final ef19 public-package original two-game builds/types only. No source/adapters/registry adoption; owning animation/numeric evidence separate.",
+    "sourceCommit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+    "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+    "manifestSha256": "3cdd45c037c9668d78b525cd94d537c6c1f1917942a25b7e53473b952d2efadd",
+    "installedVerificationSha256": "7c2bcf411b21cb1b24d892b7600ecc6eeb81b2ac6a770a3146ce6135587825d4",
+    "originalInputLedgerSha256": "6d75ba5e36f751d13389560f89f371afcbe3b6ad2cfbfb13e6bd173ee61c0709",
+    "originalInputFilesUnchangedBeforeAndAfterChecks": 219,
+    "original45aSrcFilesByteVerified": 212,
+    "additionalUnchangedBuildInputCount": 8,
+    "additionalBuildInputLedger": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-build-input-ledger-ef19.json",
+    "additionalBuildInputLedgerSha256": "ccfe2c98e7e7570024046b1db7c96f7505b158360d190ae9ef3602d8ead0d819",
+    "checks": [
+      {
+        "game": "scrap-signal",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/scrap",
+        "exitCode": 0,
+        "durationFromLog": "30.34s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-ef19-scrap-signal-build.log",
+        "logSha256": "b7a3213e7fcb0154480f188ac47182e41baa181a82121a2abd764048dcb39c48"
+      },
+      {
+        "game": "scrap-signal",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/scrap",
+        "exitCode": 0,
+        "result": "PASS",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-ef19-scrap-signal-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "game": "lantern-reach",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/game",
+        "exitCode": 0,
+        "durationFromLog": "35.11s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-ef19-lantern-reach-build.log",
+        "logSha256": "227b734337a87b089caf19d9e93cbe68eab639f93fc7dee8283812bccb65de16"
+      },
+      {
+        "game": "lantern-reach",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/game",
+        "exitCode": 1,
+        "result": "Exactly four prior ActionBar57/Dialogue68 dispatch Promise-result errors; no source edits or new character errors.",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/final-ef19-lantern-reach-types.log",
+        "logSha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38"
+      }
+    ],
+    "limitations": [
+      "Vite production build success is not native appearance/interaction/FPS evidence.",
+      "Lantern retains its four existing ActionBar/Dialogue async dispatch type errors.",
+      "No redundant movement-profile replay; shared context-pause hook guard does not alter movement simulation."
+    ]
+  },
+  "evidenceStages": {
+    "originalBeforeD355": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/original-before-archive",
+    "augmentedBeforeD355": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause/baseline-d355",
+    "intermediate803": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause",
+    "finalEf19": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final"
+  },
+  "firstExtendedFixtureFailure": {
+    "source": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause/run.ts",
+    "log": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause/scrap-run.log",
+    "exit": 1,
+    "result": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause/scrap-public-result.json",
+    "cause": "One page reused original Scrap module-global activeCharacter; later character.pick calls became no-ops and left later contexts at the menu pause. This was a fixture isolation failure. Fresh pages preserved game policy; no game/engine workaround.",
+    "correctedRunner": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/run-trace.ts"
+  },
+  "limits": [
+    "No weapon fire/damage acceptance, NPC animation quality or universal rig compatibility claim.",
+    "Numeric React/Fiber and imported-bone correctness; no GUI/native appearance, interaction feel or hardware FPS claim.",
+    "Both unchanged original-game production builds pass. Scrap types pass; Lantern retains exactly four pre-existing async-dispatch ActionBar.tsx57/Dialogue.tsx68 errors.",
+    "SDK artifacts are unreleased public-package candidates. No registry release or shipped game dependency adoption.",
+    "Future source rebases may change commit identity; this evidence retains the exact ef19 built source/tree and immutable earlier cohorts."
+  ],
+  "allLinkedTarballs": [
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/core",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-core-0.19.0.tgz",
+      "sha256": "3a2a1fd7c89a7c41c59103fb4b736524901a6d11854a3813804403920e9c1227",
+      "bytes": 1775099
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/rapier",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-rapier-0.19.0.tgz",
+      "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+      "bytes": 5042
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/ws",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-ws-0.19.0.tgz",
+      "sha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+      "bytes": 35202
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/sql",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-sql-0.19.0.tgz",
+      "sha256": "afa66ad7fba962c837b8604a0b836189401badc3392f13d93666673b8bd16664",
+      "bytes": 7531
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/navbake",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-navbake-0.19.0.tgz",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "bytes": 2724
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/react",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-react-0.19.0.tgz",
+      "sha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+      "bytes": 235731
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/convex",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-convex-0.19.0.tgz",
+      "sha256": "c5b9df18576ea43ebb889e92eb854d61d405379e24665e16779a4035cdd455f6",
+      "bytes": 45015
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/node",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-node-0.19.0.tgz",
+      "sha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+      "bytes": 21194
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/shell",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-shell-0.19.0.tgz",
+      "sha256": "3e5c6da4b15c2fcf6eec78ca3e826d58b96275736dda877466196e7f2d3cf476",
+      "bytes": 471695
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/editor",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-editor-0.19.0.tgz",
+      "sha256": "17e9154ee04444134c047a33b58e5e19977273ba141c837b5a7b9ea776ae1fdb",
+      "bytes": 263197
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/assets",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-assets-0.19.0.tgz",
+      "sha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+      "bytes": 132173
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "@jgengine/github",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-github-0.6.0.tgz",
+      "sha256": "7ef7a1329bdc14646235e6a55c6c7c3e35e2edc3502817510e8e0ee6e497ba5d",
+      "bytes": 12110
+    },
+    {
+      "cohort": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "name": "jgengine",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-final-ef19dca9/jgengine-0.16.0.tgz",
+      "sha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+      "bytes": 103919
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/core",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-core-0.19.0.tgz",
+      "sha256": "3a2a1fd7c89a7c41c59103fb4b736524901a6d11854a3813804403920e9c1227",
+      "bytes": 1775099
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/rapier",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-rapier-0.19.0.tgz",
+      "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+      "bytes": 5042
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/ws",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-ws-0.19.0.tgz",
+      "sha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+      "bytes": 35202
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/sql",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-sql-0.19.0.tgz",
+      "sha256": "afa66ad7fba962c837b8604a0b836189401badc3392f13d93666673b8bd16664",
+      "bytes": 7531
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/navbake",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-navbake-0.19.0.tgz",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "bytes": 2724
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/react",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-react-0.19.0.tgz",
+      "sha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+      "bytes": 235731
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/convex",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-convex-0.19.0.tgz",
+      "sha256": "c5b9df18576ea43ebb889e92eb854d61d405379e24665e16779a4035cdd455f6",
+      "bytes": 45015
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/node",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-node-0.19.0.tgz",
+      "sha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+      "bytes": 21194
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/shell",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-shell-0.19.0.tgz",
+      "sha256": "3e5c6da4b15c2fcf6eec78ca3e826d58b96275736dda877466196e7f2d3cf476",
+      "bytes": 471695
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/editor",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-editor-0.19.0.tgz",
+      "sha256": "e990bf892d15152fee7dd55a3cd9d7b4bd459a455cfa2bd8b07f5bb7b7ab93b8",
+      "bytes": 263187
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/assets",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-assets-0.19.0.tgz",
+      "sha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+      "bytes": 132173
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "@jgengine/github",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-github-0.6.0.tgz",
+      "sha256": "7ef7a1329bdc14646235e6a55c6c7c3e35e2edc3502817510e8e0ee6e497ba5d",
+      "bytes": 12110
+    },
+    {
+      "cohort": "803e6ae63ef51a0e5a4fcc6c028725ce76abe7fa",
+      "name": "jgengine",
+      "path": "/workspace/JGengine/.claude/worktrees/character-discontinuity-release/.scratch/characters/packages/clean-animation-context-pause-803e6ae6/jgengine-0.16.0.tgz",
+      "sha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+      "bytes": 103919
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/core",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-core-0.19.0.tgz",
+      "sha256": "3a2a1fd7c89a7c41c59103fb4b736524901a6d11854a3813804403920e9c1227",
+      "bytes": 1775099
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/rapier",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-rapier-0.19.0.tgz",
+      "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+      "bytes": 5042
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/ws",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-ws-0.19.0.tgz",
+      "sha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+      "bytes": 35202
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/sql",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-sql-0.19.0.tgz",
+      "sha256": "afa66ad7fba962c837b8604a0b836189401badc3392f13d93666673b8bd16664",
+      "bytes": 7531
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/navbake",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-navbake-0.19.0.tgz",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "bytes": 2724
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/react",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-react-0.19.0.tgz",
+      "sha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+      "bytes": 235731
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/convex",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-convex-0.19.0.tgz",
+      "sha256": "c5b9df18576ea43ebb889e92eb854d61d405379e24665e16779a4035cdd455f6",
+      "bytes": 45015
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/node",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-node-0.19.0.tgz",
+      "sha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+      "bytes": 21194
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/shell",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-shell-0.19.0.tgz",
+      "sha256": "5f42ddb55fe14d7b9bada4c6d5121f874c9ac3a2384f48d0982cab9796501d57",
+      "bytes": 471568
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/editor",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-editor-0.19.0.tgz",
+      "sha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+      "bytes": 262673
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/assets",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-assets-0.19.0.tgz",
+      "sha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+      "bytes": 132173
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "@jgengine/github",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-github-0.6.0.tgz",
+      "sha256": "7ef7a1329bdc14646235e6a55c6c7c3e35e2edc3502817510e8e0ee6e497ba5d",
+      "bytes": 12110
+    },
+    {
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "name": "jgengine",
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-d355677d-20261004/jgengine-0.16.0.tgz",
+      "sha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+      "bytes": 103919
+    }
+  ],
+  "snapshot": {
+    "linkedEvidenceFiles": 912,
+    "installedCandidateFiles": 2342,
+    "originalSourceFiles": 212,
+    "originalHookInputs": 219,
+    "additionalOriginalBuildInputs": 8,
+    "allLinkedHashesVerifiedBeforeFreeze": true,
+    "evidenceHashLedger": "/workspace/JGengine/.scratch/characters/consumer/animation-context-pause-final/bounded-evidence-hashes.json"
+  }
+}
