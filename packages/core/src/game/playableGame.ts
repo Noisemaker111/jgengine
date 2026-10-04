@@ -466,6 +466,8 @@ export interface PlayerMovementConfig {
    * colliders instead of relying on this switch.
    */
   collideObjects?: boolean;
+  /** Heightfield collision span from feet, finite and positive; default 1.8 meters. Live growth waits for clear headroom. Capsule and voxel paths retain their own dimensions; model proportions and camera placement remain game-owned. */
+  collisionHeight?: number;
   /** Tallest object ledge stepped up while walking (and largest drop still snapped down instead of falling). Default 0.4. */
   stepHeight?: number;
   /** Intercepts each frame's resolved position before the pose commits (and before onTick): return a replacement [x,y,z] to constrain or redirect the step, or nothing to accept it. */

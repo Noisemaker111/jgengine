@@ -76,6 +76,25 @@ describe("vertical blocking bounds", () => {
   test("an invalid sweep fails before inspecting geometry", () => {
     for (const step of [NaN, Infinity, -Infinity]) expect(() => resolveObstacleVerticalStep([0, 0, 0], step, [])).toThrow("finite");
   });
+
+  test("different body heights share horizontal and vertical blocking geometry", () => {
+    for (const height of [0.9, 1.8, 2.6]) {
+      const roof: CollisionObstacle = { position: [0, 3.05, 2], halfExtents: [2, 0.05, 1] };
+      const contact = resolveObstacleVerticalStep([0, 0, 2], 5, [roof], 0.3, height);
+      expect(contact.hitCeiling).toBe(true);
+      expect(contact.stepY).toBeCloseTo(3 - height, 10);
+      expect(contact.stepY + height).toBeLessThanOrEqual(3);
+      const lowRoof: CollisionObstacle = { position: [0, 1.55, 2], halfExtents: [2, 0.05, 1] };
+      const approach = resolveObstacleStep([0, 0, 0], 0, 2, [lowRoof], 0.3, 0.4, height);
+      expect(approach.stepZ).toBe(height <= 1.5 ? 2 : 0.7);
+      const clearLane = resolveObstacleStep([0, 0, 2], 0.1, 0, [roof], 0.3, 0.4, height);
+      expect(clearLane.stepX).toBe(0.1);
+    }
+    for (const height of [0, -1, NaN, Infinity]) {
+      expect(() => resolveObstacleVerticalStep([0, 0, 0], 0, [], 0.3, height)).toThrow("positive");
+      expect(() => resolveObstacleStep([0, 0, 0], 0, 0, [], 0.3, 0.4, height)).toThrow("positive");
+    }
+  });
 });
 
 test("authoritative movement integrates full game-time steps while standalone frames retain the stall clamp", () => {

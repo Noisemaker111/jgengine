@@ -412,7 +412,7 @@ export interface CollisionObstacle {
 const DEFAULT_OBSTACLE_HALF_EXTENTS: readonly [number, number, number] = [0.5, 0.5, 0.5];
 /** @internal Player radius the walking obstruction inflates obstacles by; callers gather within reach of it. */
 export const DEFAULT_OBSTACLE_PLAYER_RADIUS = 0.3;
-/** @internal Fixed feet-to-head span for heightfield obstruction; matches DEFAULT_VOXEL_DIMS.height. */
+/** @internal Default feet-to-head span for heightfield obstruction; matches DEFAULT_VOXEL_DIMS.height. */
 export const DEFAULT_OBSTACLE_PLAYER_HEIGHT = 1.8;
 /** Extra nudge past a solid face when depenetrating so the escaped capsule lands just outside, not on, the box. */
 const PENETRATION_EPSILON = 1e-3;
@@ -440,12 +440,14 @@ export function resolveObstacleVerticalStep(
   stepY: number,
   obstacles: readonly CollisionObstacle[],
   radius = DEFAULT_OBSTACLE_PLAYER_RADIUS,
+  playerHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT,
 ): { stepY: number; hitCeiling: boolean; ceilingFeetY: number | null; ceilingTolerance: number; landed: boolean; initialOverlap: boolean } {
   if (!Number.isFinite(stepY)) throw new RangeError("Vertical obstacle step must be finite.");
+  if (!Number.isFinite(playerHeight) || playerHeight <= 0) throw new RangeError("Obstacle player height must be finite and positive.");
   const feetY = position[1];
-  const headY = feetY + DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+  const headY = feetY + playerHeight;
   const nextFeet = feetY + stepY;
-  const nextHead = nextFeet + DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+  const nextHead = nextFeet + playerHeight;
   const result = { stepY, hitCeiling: false, ceilingFeetY: null as number | null, ceilingTolerance: 0, landed: false, initialOverlap: false };
   const consider = (minX: number, maxX: number, minY: number, maxY: number, minZ: number, maxZ: number): void => {
     if (position[0] <= minX - radius || position[0] >= maxX + radius || position[2] <= minZ - radius || position[2] >= maxZ + radius) return;
@@ -455,12 +457,12 @@ export function resolveObstacleVerticalStep(
       return;
     }
     if (stepY > 0 && headY <= minY + tolerance && nextHead >= minY) {
-      const limitedStep = minY - DEFAULT_OBSTACLE_PLAYER_HEIGHT - tolerance - feetY;
+      const limitedStep = minY - playerHeight - tolerance - feetY;
       if (limitedStep <= result.stepY) {
         result.stepY = limitedStep;
         // Keep the actual face limit separate from the tiny collision margin, so a support with
         // exactly enough headroom remains valid at translated coordinates.
-        result.ceilingFeetY = minY - DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+        result.ceilingFeetY = minY - playerHeight;
         result.ceilingTolerance = tolerance;
       }
       result.hitCeiling = true;
@@ -525,9 +527,11 @@ export function resolveObstacleStep(
   obstacles: readonly CollisionObstacle[],
   playerRadius: number = DEFAULT_OBSTACLE_PLAYER_RADIUS,
   stepUpHeight = 0,
+  playerHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT,
 ): MovementFrameStep {
+  if (!Number.isFinite(playerHeight) || playerHeight <= 0) throw new RangeError("Obstacle player height must be finite and positive.");
   const feetY = current[1];
-  const headY = feetY + DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+  const headY = feetY + playerHeight;
   const reachX = Math.abs(stepX) + playerRadius;
   const reachZ = Math.abs(stepZ) + playerRadius;
 

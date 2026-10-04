@@ -9,6 +9,8 @@ export interface AuthoredMovementValues {
   gravity?: number;
   jumpVelocity?: number;
   stepHeight?: number;
+  /** Optional positive heightfield collision span from feet; independent of model and camera scale. */
+  collisionHeight?: number;
   /** Optional heightfield rise/run limit; omitted controls retain the game's movement policy. */
   maxClimbGrade?: number;
   groundAcceleration?: number;
@@ -22,7 +24,7 @@ export interface AuthoredMovementValues {
 export interface AuthoredMovementConfig {
   readonly walkSpeed?: number;
   readonly physics?: { readonly gravity?: number; readonly jumpVelocity?: number };
-  readonly movement?: Pick<PlayerMovementConfig, "stepHeight" | "maxClimbGrade" | "feel">;
+  readonly movement?: Pick<PlayerMovementConfig, "stepHeight" | "collisionHeight" | "maxClimbGrade" | "feel">;
 }
 
 /** A persisted movement value rejected before it can replace the game's current setting. */
@@ -61,6 +63,7 @@ const FIELDS = [
   { key: "gravity", label: "Gravity", group: "jump", step: 0.5 },
   { key: "jumpVelocity", label: "Jump velocity", group: "jump", min: 0, step: 0.1 },
   { key: "stepHeight", label: "Step height", group: "movement", min: 0, step: 0.05 },
+  { key: "collisionHeight", label: "Collision height", group: "movement", min: Number.MIN_VALUE, step: 0.1 },
   { key: "maxClimbGrade", label: "Max climb grade", group: "movement", min: 0, step: 0.05 },
   { key: "groundAcceleration", label: "Ground acceleration", group: "response", min: 0, step: 1 },
   { key: "airAcceleration", label: "Air control", group: "response", min: 0, step: 1 },
@@ -73,9 +76,13 @@ function validValue(field: (typeof FIELDS)[number], value: unknown): value is nu
   return typeof value === "number" && Number.isFinite(value) && (!("min" in field) || value >= field.min);
 }
 
+function numberRequirement(field: (typeof FIELDS)[number]): string {
+  return field.key === "collisionHeight" ? " positive" : "min" in field ? " nonnegative" : "";
+}
+
 /**
  * Creates editor/RPC controls only for the values a game supplies, with those game's defaults.
- * Gravity retains the game's sign convention; all other controls are finite and nonnegative.
+ * Gravity retains the game's sign convention; collision height is positive, other controls nonnegative.
  * @capability editor-movement author game-chosen character movement controls through ordinary catalog rows
  */
 export function createMovementSchema(defaults: AuthoredMovementValues): ParamSchema {
@@ -83,7 +90,7 @@ export function createMovementSchema(defaults: AuthoredMovementValues): ParamSch
   for (const field of FIELDS) {
     const value = defaults[field.key];
     if (value === undefined) continue;
-    if (!validValue(field, value)) throw new Error(`Invalid movement default ${field.key}: use a finite${"min" in field ? " nonnegative" : ""} number`);
+    if (!validValue(field, value)) throw new Error(`Invalid movement default ${field.key}: use a finite${numberRequirement(field)} number`);
     fields.push({ ...field, type: "number", default: value });
   }
   return {
@@ -110,7 +117,7 @@ export function readAuthoredMovement(
   const catalog = document.catalogs[catalogIndex];
   const entryIndex = catalog?.entries.findIndex((entry) => entry.id === entryId) ?? -1;
   const meta = catalog?.entries[entryIndex]?.meta;
-  const config: { walkSpeed?: number; physics?: { gravity?: number; jumpVelocity?: number }; movement?: { stepHeight?: number; maxClimbGrade?: number; feel?: MovementFeelConfig } } = {};
+  const config: { walkSpeed?: number; physics?: { gravity?: number; jumpVelocity?: number }; movement?: { stepHeight?: number; collisionHeight?: number; maxClimbGrade?: number; feel?: MovementFeelConfig } } = {};
   const diagnostics: AuthoredMovementDiagnostic[] = [];
   if (meta === undefined) return { config, diagnostics };
   for (const field of FIELDS) {
@@ -119,14 +126,14 @@ export function readAuthoredMovement(
     if (!validValue(field, value)) {
       diagnostics.push({
         path: `catalogs[${catalogIndex}].entries[${entryIndex}].meta.${field.key}`,
-        message: `${field.key} must be a finite${"min" in field ? " nonnegative" : ""} number`,
+        message: `${field.key} must be a finite${numberRequirement(field)} number`,
         repair: `Set ${field.key} to a valid number or remove it to inherit the game setting.`,
       });
       continue;
     }
     if (field.key === "walkSpeed") config.walkSpeed = value;
     else if (field.key === "gravity" || field.key === "jumpVelocity") (config.physics ??= {})[field.key] = value;
-    else if (field.key === "stepHeight" || field.key === "maxClimbGrade") (config.movement ??= {})[field.key] = value;
+    else if (field.key === "stepHeight" || field.key === "collisionHeight" || field.key === "maxClimbGrade") (config.movement ??= {})[field.key] = value;
     else ((config.movement ??= {}).feel ??= {})[field.key] = value;
   }
   return { config, diagnostics };
@@ -170,6 +177,7 @@ export function bindAuthoredMovement(
     movement: {
       ...defaults.movement,
       get stepHeight() { return read().config.movement?.stepHeight ?? defaults.movement?.stepHeight; },
+      get collisionHeight() { return read().config.movement?.collisionHeight ?? defaults.movement?.collisionHeight; },
       get maxClimbGrade() { return read().config.movement?.maxClimbGrade ?? defaults.movement?.maxClimbGrade; },
       get feel() {
         const current = read();

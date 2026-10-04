@@ -293,6 +293,280 @@ function placeArchway(ctx: GameContext): void {
 
 const COLLIDE = resolvePlayerMovementTuning({ movement: { collideObjects: true } });
 
+describe("heightfield collision proportions", () => {
+  function roof(ctx: GameContext, underside = 2.058): void {
+    ctx.world.solids.set("roof", [{ center: [0, underside + 0.05, 2], halfExtents: [2, 0.05, 1] }]);
+  }
+
+  test("an authored 2.6m body stops before a roof the historical 1.8m body entered", () => {
+    const ctx = collisionContext(0);
+    roof(ctx);
+    driveWith(ctx, "a", ["moveForward"], 120, resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }), 0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeLessThanOrEqual(0.7);
+    expect(playerMovementTelemetry(ctx, "a")?.collisionHeight).toBe(2.6);
+  });
+
+  test("a smaller authored body travels beneath a roof below the default head span", () => {
+    const ctx = collisionContext(0);
+    roof(ctx, 1.05);
+    ctx.scene.entity.setPose("a", { position: [0, 0, 2] });
+    stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, resolvePlayerMovementTuning({ movement: { collisionHeight: 0.9 } }), 0);
+    const position = ctx.scene.entity.get("a")!.position;
+    expect(position[0]).toBe(0);
+    expect(position[2]).toBeGreaterThan(2);
+    expect(position[2]).toBeLessThan(2.1);
+  });
+
+  test("fresh oversized placement rejects explicitly before sideways escape or motion drain", () => {
+    const ctx = collisionContext(0);
+    roof(ctx);
+    ctx.scene.entity.setPose("a", { position: [0, 0, 2] });
+    ctx.player.motionFor("a").impulse(3);
+    const configured = resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } });
+    expect(() => stepPlayerMovement(ctx, "a", frame(["turnRight"]), 1 / 60, configured, Math.PI / 3)).toThrow("collisionHeight");
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 2]);
+    expect(playerMovementHeading(ctx, "a")).toBe(0);
+    expect(snapshotPlayerMovement(ctx, "a")!.facing).toBeNull();
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+    ctx.world.solids.set("roof", []);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    expect(playerMovementTelemetry(ctx, "a")!.verticalVelocity).toBeGreaterThan(0);
+  });
+
+  test("a fresh declared body stands on a shallow authored road plate", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("street", [{ center: [0, 0.03, 0], halfExtents: [4, 0.01, 4] }]);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }));
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0.04, 0]);
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: 2.6, grounded: true, collisionHeightBlocked: false });
+  });
+
+  test("prospective road support cannot grant headroom through a thin roof", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("street-and-roof", [
+      { center: [0, 0.03, 0], halfExtents: [4, 0.01, 4] },
+      { center: [0, 2.6205, 0], halfExtents: [2, 0.0005, 2] },
+    ]);
+    expect(() => stepPlayerMovement(ctx, "a", frame([]), 1 / 60,
+      resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }))).toThrow("intersects blocking geometry at entity a");
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+    expect(snapshotPlayerMovement(ctx, "a")!.motion).toBeNull();
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+  });
+
+  test("an airborne or floating body does not borrow grounded road-plate forgiveness", () => {
+    for (const floating of [false, true]) {
+      const ctx = collisionContext(0);
+      if (!floating) {
+        stepPlayerMovement(ctx, "a", frame([]), 1 / 60, COLLIDE);
+        const saved = snapshotPlayerMovement(ctx, "a")!;
+        saved.motion!.grounded = false;
+        saved.heightfieldHeight = null;
+        saved.heightfieldEntityId = null;
+        restorePlayerMovement(ctx, "a", saved);
+      }
+      ctx.world.solids.set("street", [{ center: [0, 0.03, 0], halfExtents: [4, 0.01, 4] }]);
+      const configured = floating
+        ? tuning({ ground: SUBMERGED_GROUND, movement: { collisionHeight: 2.6, swim: true } })
+        : resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } });
+      expect(() => stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured)).toThrow("collisionHeight");
+      expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+    }
+  });
+
+  test("blocked live growth replays its accepted height, exits safely, then grows and shrinks", () => {
+    let height = 1.8;
+    const configured = resolvePlayerMovementTuning({ movement: { get collisionHeight() { return height; } } });
+    const setup = () => {
+      const ctx = collisionContext(0);
+      roof(ctx);
+      ctx.scene.entity.setPose("a", { position: [0, 0, 2] });
+      return ctx;
+    };
+    const ctx = setup();
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    height = 2.6;
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: 1.8, requestedCollisionHeight: 2.6, collisionHeightBlocked: true });
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 2]);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    expect(saved.heightfieldHeight).toBe(1.8);
+    const replay = setup();
+    restorePlayerMovement(replay, "a", saved);
+    for (let i = 0; i < 100; i++) {
+      stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, configured, Math.PI / 2);
+      stepPlayerMovement(replay, "a", frame(["moveForward"]), 1 / 60, configured, Math.PI / 2);
+      expect(replay.scene.entity.get("a")!.position).toEqual(ctx.scene.entity.get("a")!.position);
+      expect(playerMovementTelemetry(replay, "a")).toEqual(playerMovementTelemetry(ctx, "a"));
+    }
+    expect(ctx.scene.entity.get("a")!.position[0]).toBeGreaterThan(2.3);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeCloseTo(2, 10);
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: 2.6, requestedCollisionHeight: 2.6, collisionHeightBlocked: false });
+    height = 0.9;
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: 0.9, collisionHeightBlocked: false });
+  });
+
+  test("invalid live dimensions reject before state integration and preserve pending impulses", () => {
+    let height = 1.8;
+    const configured = resolvePlayerMovementTuning({ movement: { get collisionHeight() { return height; } } });
+    const ctx = collisionContext(0);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    const before = snapshotPlayerMovement(ctx, "a")!;
+    ctx.player.motionFor("a").impulse(3);
+    for (const invalid of [0, -1, NaN, Infinity, -Infinity]) {
+      height = invalid;
+      expect(() => stepPlayerMovement(ctx, "a", frame(["turnRight"]), 1 / 60, configured, Math.PI / 3)).toThrow("collisionHeight");
+      expect(snapshotPlayerMovement(ctx, "a")).toEqual(before);
+    }
+    height = 1.8;
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    expect(playerMovementTelemetry(ctx, "a")!.verticalVelocity).toBeGreaterThan(0);
+  });
+
+  test("rejected height edits preserve semantic stance as well as motion state", () => {
+    const content: GameContextContent = { entityById: () => ({ movement: { poses: ["standing", "running", "crouch"] } }) };
+    for (const held of [["crouch"], ["sprint"], []]) {
+      const ctx = context(["a"], content);
+      stepPlayerMovement(ctx, "a", frame([]), 1 / 60, COLLIDE);
+      if (held.length === 0) ctx.player.movement.setPose("a", "crouch");
+      const before = ctx.player.movement.getPose("a");
+      expect(() => stepPlayerMovement(ctx, "a", frame(held), 1 / 60,
+        resolvePlayerMovementTuning({ movement: { collisionHeight: NaN } }))).toThrow("collisionHeight");
+      expect(ctx.player.movement.getPose("a")).toBe(before);
+    }
+    const fresh = context(["a"], content);
+    roof(fresh);
+    fresh.scene.entity.setPose("a", { position: [0, 0, 2] });
+    const before = fresh.player.movement.getPose("a");
+    expect(() => stepPlayerMovement(fresh, "a", frame(["crouch"]), 1 / 60,
+      resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }))).toThrow("collisionHeight");
+    expect(fresh.player.movement.getPose("a")).toBe(before);
+  });
+
+  test("large body broadphase includes a ceiling above the historical query span", () => {
+    const ctx = collisionContext(0);
+    roof(ctx, 4.5);
+    const configured = resolvePlayerMovementTuning({ movement: { collisionHeight: 4.8, feel: { groundAcceleration: 0, groundFriction: 0 } } });
+    configured.authoritativeStep = true;
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    saved.motion!.horizontalVelocityZ = 2;
+    restorePlayerMovement(ctx, "a", saved);
+    stepPlayerMovement(ctx, "a", frame([]), 1, configured);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBe(0.7);
+  });
+
+  test("configured heights stop fast jumps at the physical head across translated coordinates", () => {
+    for (const base of [-100, 0, 100]) {
+      for (const height of [0.9, 2.6]) {
+        const ctx = collisionContext(0);
+        ctx.scene.entity.setPose("a", { position: [0, base, 0] });
+        const underside = base + height + 0.25;
+        ctx.world.solids.set("roof", [{ center: [0, underside + 0.05, 0], halfExtents: [2, 0.05, 2] }]);
+        const configured = tuning({ ground: { sampleHeight: () => base, sampleNormal: () => [0, 1, 0] },
+          movement: { collisionHeight: height }, physics: { gravityAcceleration: 0, jumpVelocity: 20 }, authoritativeStep: true });
+        stepPlayerMovement(ctx, "a", frame(["jump"]), 0.2, configured);
+        const position = ctx.scene.entity.get("a")!.position;
+        expect(position[1] - base).toBeCloseTo(0.25, 10);
+        expect(position[1] + height).toBeLessThanOrEqual(underside);
+        expect(position[0]).toBe(0);
+        expect(position[2]).toBe(0);
+        expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: height, grounded: false, verticalVelocity: 0 });
+      }
+    }
+  });
+
+  test("legacy saves retain their historical body and malformed saved heights restore atomically", () => {
+    const ctx = collisionContext(0);
+    roof(ctx);
+    ctx.scene.entity.setPose("a", { position: [0, 0, 2] });
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, COLLIDE);
+    const legacy = snapshotPlayerMovement(ctx, "a")!;
+    delete legacy.heightfieldHeight;
+    restorePlayerMovement(ctx, "a", legacy);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }));
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: 1.8, collisionHeightBlocked: true });
+    const before = snapshotPlayerMovement(ctx, "a")!;
+    for (const invalid of [0, -1, NaN, Infinity, -Infinity, "2.6"] as const) {
+      expect(() => restorePlayerMovement(ctx, "a", { ...before, heading: 5, heightfieldHeight: invalid as number })).toThrow("collisionHeight");
+      expect(snapshotPlayerMovement(ctx, "a")).toEqual(before);
+    }
+    for (const invalid of [42, false, {}]) {
+      expect(() => restorePlayerMovement(ctx, "a", { ...before, heading: 5, heightfieldEntityId: invalid as string })).toThrow("heightfieldEntityId");
+      expect(snapshotPlayerMovement(ctx, "a")).toEqual(before);
+    }
+  });
+
+  test("snapshot replay preserves which pawn accepted the previous body height", () => {
+    for (const legacy of [false, true]) {
+      let height = 1.8;
+      const configured = resolvePlayerMovementTuning({ movement: { get collisionHeight() { return height; } } });
+      const setup = () => {
+        const ctx = collisionContext(0);
+        roof(ctx);
+        ctx.scene.entity.setPose("a", { position: [0, 0, 2] });
+        ctx.scene.entity.spawn("hero", { id: "pawn", position: [0, 0, 2] });
+        ctx.player.possession.own("a", "pawn");
+        return ctx;
+      };
+      const original = setup();
+      stepPlayerMovement(original, "a", frame([]), 1 / 60, configured);
+      const saved = snapshotPlayerMovement(original, "a")!;
+      if (legacy) { delete saved.heightfieldHeight; delete saved.heightfieldEntityId; }
+      const replay = setup();
+      restorePlayerMovement(replay, "a", saved);
+      height = 2.6;
+      for (const ctx of [original, replay]) {
+        ctx.player.possession.possess("a", "pawn");
+        expect(() => stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured)).toThrow("entity pawn");
+        expect(ctx.scene.entity.get("pawn")!.position).toEqual([0, 0, 2]);
+        expect(playerMovementTelemetry(ctx, "pawn")).toBeNull();
+      }
+    }
+  });
+
+  test("live shrink beneath a roof and deliberate object-collision opt-out apply immediately", () => {
+    let height = 1.8;
+    let collideObjects = true;
+    const configured = resolvePlayerMovementTuning({ movement: { get collisionHeight() { return height; }, get collideObjects() { return collideObjects; } } });
+    const ctx = collisionContext(0);
+    roof(ctx);
+    ctx.scene.entity.setPose("a", { position: [0, 0, 2] });
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    height = 2.6;
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    expect(playerMovementTelemetry(ctx, "a")?.collisionHeightBlocked).toBe(true);
+    height = 0.9;
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: 0.9, collisionHeightBlocked: false });
+    height = 2.6;
+    collideObjects = false;
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 2]);
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: 2.6, collisionHeightBlocked: false });
+  });
+
+  test("capsule and voxel dimensions keep authority and clear heightfield-only telemetry", () => {
+    const ctx = collisionContext(0);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }));
+    const view = playerMovementTelemetry(ctx, "a")!;
+    const backend = createPhysicsWorldBackend({ capacity: 8, bounds: { min: [-10, -5, -10], max: [10, 10, 10] }, warn: false });
+    backend.addBody({ shape: { kind: "box", halfExtents: [5, 0.5, 5] }, position: [0, -0.5, 0], kind: "static" });
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, resolvePlayerMovementTuning({ movement: { collisionHeight: -1 }, physics: { backend, controller: { radius: 0.2, height: 0.8 } } }));
+    expect(snapshotPlayerMovement(ctx, "a")!.controller).not.toBeNull();
+    expect(view.collisionHeight).toBeUndefined();
+    expect(view.requestedCollisionHeight).toBeUndefined();
+    expect(view.collisionHeightBlocked).toBeUndefined();
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, resolvePlayerMovementTuning({ movement: { collisionHeight: -1 }, collision: { voxel: true, height: 0.8, halfWidth: 0.2 } }));
+    expect(snapshotPlayerMovement(ctx, "a")!.voxelBody).not.toBeNull();
+    expect(playerMovementTelemetry(ctx, "a")?.collisionHeight).toBeUndefined();
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, resolvePlayerMovementTuning({ movement: { collisionHeight: -1, flight: true } }));
+    expect(snapshotPlayerMovement(ctx, "a")!.flight).not.toBeNull();
+    expect(playerMovementTelemetry(ctx, "a")?.collisionHeight).toBeUndefined();
+  });
+});
+
 describe("stepPlayerMovement object collision (mesh-accurate)", () => {
   test("jumping under an archway stops at its lintel instead of ejecting the stationary player", () => {
     const ctx = collisionContext(0);
@@ -424,7 +698,7 @@ describe("stepPlayerMovement object collision (mesh-accurate)", () => {
     expect(position[2]).toBe(0);
     expect(position[1] + DEFAULT_OBSTACLE_PLAYER_HEIGHT).toBeLessThanOrEqual(5);
     expect(position[1]).toBeCloseTo(3.2, 10);
-    expect(playerMovementTelemetry(ctx, "a")).toEqual({ grounded: false, verticalVelocity: 0, crouching: false });
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ grounded: false, verticalVelocity: 0, crouching: false });
   });
 
   test("a fast descent lands on a thin platform without tunneling to terrain", () => {
@@ -440,7 +714,7 @@ describe("stepPlayerMovement object collision (mesh-accurate)", () => {
     ctx.scene.entity.setPose("a", { position: [0, 8, 0] });
     stepPlayerMovement(ctx, "a", frame([]), 0.2, configured);
     expect(ctx.scene.entity.get("a")!.position).toEqual([0, 4, 0]);
-    expect(playerMovementTelemetry(ctx, "a")).toEqual({ grounded: true, verticalVelocity: 0, crouching: false });
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ grounded: true, verticalVelocity: 0, crouching: false });
   });
 
   test("translated ceiling contact restores and lands without lateral ejection", () => {
