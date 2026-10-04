@@ -1,7 +1,7 @@
 import type { AnimGraph } from "../anim/animGraph";
 import type { AudioBusDef, SoundDef } from "../audio/audioFalloff";
 import type { MusicTheme } from "../audio/music";
-import type { MaterialAsset, MaterialAssignment, MaterialSurfaceParameters } from "../material/materialAsset";
+import type { MaterialAsset, MaterialAssignment, MaterialSurfaceParameters, MaterialTextureRole } from "../material/materialAsset";
 import type { EditorCatalogDefinition, EditorDocument } from "../editor/types";
 import type { PostProcessingConfig } from "../render/postProcessing";
 import type { EnvironmentSource } from "../render/environment";
@@ -180,17 +180,10 @@ export interface ModelAnimationConfig {
 /**
  * Real PBR map URLs (e.g. `buildMaterialCatalog(...).resolve(id)!.maps` from `@jgengine/assets`)
  * layered onto a model's material — the seam for texturing an otherwise-flat/untextured GLB. Any
- * role may be omitted to keep the model's own map.
+ * supported MaterialTextureRole may be omitted to keep the model's own map. Physical roles use the
+ * renderer's physical material; map URLs and response parameters remain caller-owned.
  */
-export interface ModelMaterialMaps {
-  color?: string;
-  normal?: string;
-  roughness?: string;
-  ao?: string;
-  metalness?: string;
-  emissive?: string;
-  height?: string;
-}
+export interface ModelMaterialMaps extends Partial<Record<MaterialTextureRole, string>> {}
 
 /** Per-entity PBR material override (#151.3) applied to every standard or physical material in the model's cloned scene graph. */
 export interface ModelMaterialOverride extends MaterialSurfaceParameters {
