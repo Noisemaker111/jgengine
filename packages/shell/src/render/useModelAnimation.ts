@@ -325,12 +325,18 @@ export function useModelAnimation(
   const actionRef = useRef<THREE.AnimationAction | null>(null);
   const animationPausedRef = useRef(false);
   const graphRef = useRef<GraphPlayback | null>(null);
+  const advancedSecondsRef = useRef<number | undefined>(undefined);
   const states = animation?.states;
   const oneShots = animation?.oneShots;
   const authoredGraph = animation?.graph;
   const graph = useMemo(() => animGraphFromConfig({ graph: authoredGraph, states, oneShots }), [authoredGraph, states, oneShots]);
+  const usesGameClock = animation?.clock === "game" && ctx !== null && instanceId !== undefined;
 
   useEffect(() => {
+    advancedSecondsRef.current = usesGameClock ? ctx.time.advancedSeconds?.() : undefined;
+    if (usesGameClock && advancedSecondsRef.current === undefined) {
+      console.warn('[jgengine] model animation: bound game playback requires time.advancedSeconds() accepted progress. Playback is held; provide an engine clock or select clock: "real".');
+    }
     if (animation !== undefined) warnAnimationDiagnostics(scene, animation, clips);
     else if (typeof animationInput === "object" && animationInput.auto === true) warnAnimationDiagnostics(scene, animationInput, clips);
     if (animation === undefined || clips.length === 0) {
@@ -420,11 +426,17 @@ export function useModelAnimation(
   }, [ctx, instanceId, oneShots, graph, invalidate]);
 
   useFrame((_state, delta) => {
+    // Checkpoint held frames too, so resuming never replays their accepted time.
+    const advancedSeconds = usesGameClock ? ctx.time.advancedSeconds?.() : undefined;
+    const previousSeconds = advancedSecondsRef.current;
+    advancedSecondsRef.current = advancedSeconds;
     if (animationPausedRef.current || animation?.timeScale === 0) return;
     if (ctx !== null && instanceId !== undefined && (ctx.time.speed() === 0 || ctx.time.timescale() === 0)) return;
-    const playbackDelta = animation?.clock === "game" && ctx !== null && instanceId !== undefined
-      ? delta * ctx.time.speed() * ctx.time.timescale()
-      : delta;
+    let playbackDelta = delta;
+    if (usesGameClock) {
+      if (advancedSeconds === undefined || previousSeconds === undefined || advancedSeconds <= previousSeconds) return;
+      playbackDelta = advancedSeconds - previousSeconds;
+    }
     const playback = graphRef.current;
     if (playback !== null && mixerRef.current !== null) {
       const params = playback.params;

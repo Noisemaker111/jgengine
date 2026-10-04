@@ -150,7 +150,7 @@ export interface ModelAnimationStates {
 export interface ModelAnimationConfig {
   /** Infer defaults from the loaded rig's actual clip roles, then replace fields with explicit overrides. Requires an identifiable idle clip. */
   auto?: true;
-  /** Playback clock: real seconds (default), or entity-bound game speed × time scale. Unbound previews use real seconds. Calendar scale is excluded. */
+  /** Playback clock: real seconds (default), or entity-bound locally accepted clock progress after speed/timescale and before calendar scale. Requires an advancing accepted-progress clock; unbound previews use real seconds. */
   clock?: "real" | "game";
   /** Clip name to play; defaults to the GLB's first clip. */
   clip?: string;

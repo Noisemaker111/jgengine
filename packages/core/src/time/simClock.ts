@@ -55,6 +55,8 @@ export interface SimClock {
   /** Advance the clock directly when used alone. A GameContext's `ctx.sim.advance` owns this call once per step and passes scaled dt to its callback; game loops must not advance it again. */
   advance(realDt: number): number;
   now(): number;
+  /** Local accepted advance seconds × play speed × timescale, excluding calendar scale and saved offsets. Never hydrated or serialized; optional for external clocks. */
+  advancedSeconds?(): number;
   snapshot(): ClockSnapshot;
   /** Restore clock position — game-time, pause state, and speed multipliers — from a {@link ClockSnapshot} for whole-world save/load. Live timers registered via `after`/`every`/`at` are unaffected. */
   hydrate(snapshot: ClockSnapshot): void;
@@ -107,7 +109,7 @@ export interface SimClockOptions {
   onChange?: () => void;
 }
 
-export function createSimClock(options: SimClockOptions = {}): SimClock {
+export function createSimClock(options: SimClockOptions = {}): SimClock & { advancedSeconds(): number } {
   const config = options.config ?? {};
   const onChange = options.onChange ?? (() => {});
   const scale = config.scale !== undefined && config.scale > 0 ? config.scale : 1;
@@ -120,6 +122,7 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
   const seasons = config.seasons;
 
   let now = config.start !== undefined && config.start > 0 ? config.start : 0;
+  let advancedSeconds = 0;
   let paused = config.startPaused ?? false;
   let playSpeed = speeds[0]!;
   let timescale = 1;
@@ -177,7 +180,9 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
   function advance(realDt: number): number {
     if (paused || realDt <= 0 || timescale === 0) return 0;
     const gameDt = realDt * scale * playSpeed * timescale;
+    const localDt = realDt * playSpeed * timescale;
     now += gameDt;
+    if (Number.isFinite(localDt) && localDt > 0) advancedSeconds += localDt;
     fireDueTimers();
     const minute = minuteIndex(now, dayLength);
     if (minute !== displayMinute) {
@@ -243,6 +248,7 @@ export function createSimClock(options: SimClockOptions = {}): SimClock {
   return {
     advance,
     now: () => now,
+    advancedSeconds: () => advancedSeconds,
     calendar,
     hydrate,
     snapshot: () => ({

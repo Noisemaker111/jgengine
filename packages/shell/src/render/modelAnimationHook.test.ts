@@ -12,7 +12,7 @@ beforeAll(async () => {
   await rm(scratch, { recursive: true, force: true });
   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
   await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
-  for (const pkg of ["react", "react-dom", "three", "@react-three/fiber"]) {
+  for (const pkg of ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"]) {
     const owner = pkg === "react-dom" ? "react" : "shell";
     await symlink(resolve(import.meta.dir, "../../../../packages", owner, "node_modules", pkg), `${scratch}/node_modules/${pkg}`, "dir");
   }
@@ -29,6 +29,8 @@ beforeAll(async () => {
     import {context as FiberContext} from '@react-three/fiber';
     import {GameProvider} from '@jgengine/react/provider';
     import {useModelAnimation,diagnoseModelAnimation} from '@jgengine/shell/render/useModelAnimation';
+    import {FrameDriver} from '@jgengine/shell/drivers/FrameDriver';
+    import {createActionStateTracker} from '@jgengine/core/input/actionBindings';
     import {locomotionGraph} from '@jgengine/core/anim/locomotionGraph';
     import {AnimationMixer} from 'three';
     import {createGameContext} from '@jgengine/core/runtime/gameContext';
@@ -238,6 +240,56 @@ beforeAll(async () => {
       flushSync(()=>root.unmount());element.remove();
       console.warn=originalWarn;AnimationMixer.prototype.uncacheRoot=originalUncache;
       return{diagnostics,warnings,explicitWarnings,bind,after,cleanups,subscriptionsAfterUnmount:callbacks.size};
+    };
+    window.acceptedClock=async({rawDelta=1/60,rate=1,hz='variable',maxCatchUpSteps=5,single=false,mode='normal',clock='game'})=>{
+      gltf=await gltfPromise;
+      const scene=clone(gltf.scene),peer=clone(gltf.scene),id='accepted-clock-actor';
+      const definition=defineGameDefinition({name:'accepted-clock-proof',assets:createAssetCatalog(),multiplayer:'off',input:{},time:{scale:75},simulation:{hz,maxCatchUpSteps}});
+      const ctx=createGameContext({definition,content:{},player:{userId:'player',isNew:true},rng:seededRng('accepted-clock-gameplay')});
+      ctx.time.setSpeed(rate);ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
+      if(mode==='late')ctx.sim.advance(2,()=>{});
+      if(mode==='missing')delete ctx.time.advancedSeconds;
+      const animation=single?{clip:'Idle',clock}:{...config,clock};
+      const callbacks=new Map(),driverErrors=[],warnings=[];const state={invalidate:()=>{},internal:{subscribe:(ref,priority=0)=>{callbacks.set(ref,priority);return()=>callbacks.delete(ref)}}};
+      const store=selector=>selector(state);store.getState=()=>state;
+      const actions=[];let cleanups=0;
+      const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot,originalWarn=console.warn;
+      AnimationMixer.prototype.clipAction=function(...args){const action=originalAction.apply(this,args);actions.push(action);return action};
+      AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
+      console.warn=(...args)=>warnings.push(args.join(' '));
+      const playable={game:definition,content:{},loop:{onTick:(ctx,gameDt)=>{
+        const position=ctx.scene.entity.get(id).position;
+        ctx.scene.entity.setPose(id,{position:[0,0,position[2]+gameDt/75*1.1],dt:gameDt/75});
+      }}};
+      const tracker=createActionStateTracker({}),gate={current:false};
+      const driver=<FrameDriver ctx={ctx} playable={playable} tracker={tracker} yawRef={{current:0}} pitchRef={{current:0}} primaryClickRef={{current:false}} pointerAxisRef={{current:null}} analogRef={{current:null}} gateRef={gate} onRuntimeError={(error,phase)=>driverErrors.push({error:String(error),phase})} multiplayer={null} serverIdRef={{current:null}} pointerService={null} pointerAim={false} pingCommand={undefined} poster={false} onPosterSettled={()=>{}} authoritativeFrameRef={{current:null}}/>;
+      const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
+      flushSync(()=>root.render(<GameProvider context={ctx}><FiberContext.Provider value={store}>{driver}<Model scene={scene} id={id} animation={animation}/><Model scene={peer} animation={{clip:'Idle'}}/></FiberContext.Provider></GameProvider>));
+      const frame=delta=>{for(const [ref]of[...callbacks].sort((a,b)=>a[1]-b[1]))ref.current(state,delta)};
+      const sample=target=>({pose:values(target),actions:actions.filter(a=>a.getMixer().getRoot()===target&&a.getEffectiveWeight()>1e-6).map(a=>({clip:a.getClip().name,duration:a.getClip().duration,time:a.time,weight:a.getEffectiveWeight()}))});
+      frame(0);const before=sample(scene),beforeClock=ctx.time.now(),initialAcceptedProgress=ctx.time.advancedSeconds?.();
+      const records=[];
+      for(let n=0;n<20;n++){frame(rawDelta);records.push({tick:ctx.sim.tick(),progress:ctx.time.advancedSeconds?.(),clock:ctx.time.now(),pose:sample(scene)})};
+      const after=sample(scene),afterClock=ctx.time.now(),acceptedProgress=ctx.time.advancedSeconds?.();
+      let offset,queued;
+      if(mode==='offset'){
+        const baseline=sample(scene);
+        gate.current=true;
+        for(const now of [ctx.time.now()+10000,1]){ctx.time.hydrate({...ctx.time.snapshot(),now});frame(.2)};
+        gate.current=false;
+        offset={baseline,after:sample(scene)};
+      }
+      if(mode==='queue'||mode==='queue-control'){
+        ctx.game.playEntityAnimation(id,'attack');
+        const baseline=sample(scene);
+        if(mode==='queue'){ctx.time.pause();for(let n=0;n<20;n++)frame(.2)};
+        const held=sample(scene);ctx.time.play();frame(1/60);frame(1/60);
+        queued={baseline,held,resumed:sample(scene),rng:ctx.rng.state()};
+      }
+      const peerAfter=sample(peer),cleanupBeforeUnmount=cleanups;
+      flushSync(()=>root.unmount());element.remove();
+      AnimationMixer.prototype.clipAction=originalAction;AnimationMixer.prototype.uncacheRoot=originalUncache;console.warn=originalWarn;
+      return{before,after,beforeClock,afterClock,initialAcceptedProgress,acceptedProgress,records,offset,queued,peerAfter,driverErrors,warnings,cleanupBeforeUnmount,cleanupAfterUnmount:cleanups,subscriptionsAfterUnmount:callbacks.size};
     };
     window.ready=true;
   `);
@@ -514,5 +566,65 @@ test("selected clock composes global timescale and authored rates while previews
   }
   const held = await page.evaluate(() => (window as any).selectedClock({rate:4,single:true,held:true}));
   expect(held.before).toEqual(held.after);
+  await page.close();
+}, 30000);
+
+test("selected game clock follows actual FrameDriver accepted time and fixed-step catch-up drops", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const options of [
+    {rawDelta:.2,rate:1}, {rawDelta:.2,rate:4},
+    {rawDelta:1/120,rate:1,hz:20}, {rawDelta:.2,rate:4,hz:120,maxCatchUpSteps:2},
+    {rawDelta:.2,rate:4,mode:'late'},
+  ]) {
+    const result = await page.evaluate(options => (window as any).acceptedClock({...options,single:true}), options);
+    expect(result.driverErrors).toEqual([]);
+    const acceptedDelta = result.acceptedProgress-result.initialAcceptedProgress;
+    expect(result.after.actions[0].time).toBeCloseTo(acceptedDelta % result.after.actions[0].duration, 8);
+    expect(result.afterClock-result.beforeClock).toBeCloseTo(acceptedDelta*75, 8);
+    expect(result.cleanupBeforeUnmount).toBe(0);
+    expect(result.cleanupAfterUnmount).toBe(2);
+    expect(result.subscriptionsAfterUnmount).toBe(0);
+    if (options.hz === 20) expect(result.records[0].pose).toEqual(result.before);
+  }
+  const slowFrame = await page.evaluate(() => (window as any).acceptedClock({rawDelta:.2}));
+  expect(slowFrame.after.actions.find((a:any)=>a.clip==='Idle')).toBeUndefined();
+  expect(slowFrame.after.actions.find((a:any)=>a.clip==='Running_A').weight).toBeLessThan(.12);
+  await page.close();
+}, 30000);
+
+test("accepted clock ignores hydrated offsets, retains paused triggers and isolates raw-time peers", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  const offset = await page.evaluate(() => (window as any).acceptedClock({mode:'offset',single:true}));
+  expect(offset.offset.after).toEqual(offset.offset.baseline);
+  const control = await page.evaluate(() => (window as any).acceptedClock({mode:'queue-control'}));
+  const queued = await page.evaluate(() => (window as any).acceptedClock({mode:'queue'}));
+  expect(queued.queued.held).toEqual(queued.queued.baseline);
+  expect(queued.queued.resumed).toEqual(control.queued.resumed);
+  expect(queued.queued.rng).toEqual(control.queued.rng);
+  expect(queued.peerAfter).not.toEqual(control.peerAfter);
+  expect(queued.cleanupBeforeUnmount).toBe(0);
+  expect(queued.cleanupAfterUnmount).toBe(2);
+  expect(queued.subscriptionsAfterUnmount).toBe(0);
+  await page.close();
+}, 30000);
+
+test("a custom clock without accepted progress warns once and holds only explicitly bound game playback", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  const held = await page.evaluate(() => (window as any).acceptedClock({mode:'missing',single:true}));
+  expect(held.after).toEqual(held.before);
+  expect(held.warnings).toHaveLength(1);
+  expect(held.warnings[0]).toContain('advancedSeconds');
+  expect(held.peerAfter.pose).not.toEqual(held.before.pose);
+  const real = await page.evaluate(() => (window as any).acceptedClock({mode:'missing',single:true,clock:'real'}));
+  expect(real.after.pose).not.toEqual(real.before.pose);
+  expect(real.warnings).toEqual([]);
+  expect(real.cleanupAfterUnmount).toBe(2);
+  expect(real.subscriptionsAfterUnmount).toBe(0);
   await page.close();
 }, 30000);
