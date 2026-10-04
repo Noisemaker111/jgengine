@@ -60,6 +60,8 @@ external-store walkthrough are owned by the
 
 ### Query primitives (renderer-free, for gameplay)
 
+`createPromptRegistry` (`@jgengine/core/interaction/promptRegistry`) owns contextual interaction prompts. Register or update their display and command as gameplay changes; edits to the selected prompt notify subscribed HUDs immediately. Equivalent edits, edits to inactive prompts and unchanged frame resolutions stay silent. Position, priority and radius edits publish the selected prompt's new data but retain selection until the next `resolve(playerPosition)`. Subscriber reads through `active()` see committed content. `useInteractionPrompt` and `InteractionPrompt` consume these notifications without requiring player movement.
+
 Pure `@jgengine/core` functions so gameplay reads the same world the shell renders — no three.js needed:
 
 | Primitive | Answers |

@@ -1,4 +1,5 @@
 import {
+  positionedPromptsEqual,
   resolveActivePrompt,
   type PositionedPrompt,
   type PromptPoint,
@@ -36,13 +37,14 @@ export interface PromptRegistrySnapshot {
 export interface PromptRegistry {
   /**
    * Add (or replace, by id) a positioned prompt. Replacing an existing id keeps
-   * its registration slot so tie-break order is stable. Does not re-resolve on
-   * its own — the next {@link resolve} picks up the change.
+   * its registration slot so tie-break order is stable. Changed active content
+   * notifies immediately; selection is recalculated by the next {@link resolve}.
    */
   register(prompt: PositionedPrompt): void;
   /**
    * Patch a registered prompt in place. No-op if `id` is unknown. Only the fields
-   * present in `patch` change; the rest are preserved.
+   * present in `patch` change; the rest are preserved. Changed active content
+   * notifies immediately without recalculating selection.
    */
   update(id: string, patch: PositionedPromptPatch): void;
   /** Remove the prompt with this id, if present. Returns whether one was removed. */
@@ -61,7 +63,7 @@ export interface PromptRegistry {
   resolve(playerPosition: PromptPoint): PositionedPrompt | null;
   /** The prompt selected by the most recent {@link resolve}, or `null`. */
   active(): PositionedPrompt | null;
-  /** Observe active-prompt changes (resolve transitions, clear, restore). Returns an unsubscribe fn. */
+  /** Observe active-prompt content changes, selection transitions, clear and restore. Returns an unsubscribe fn. */
   subscribe(listener: () => void): () => void;
   /** Serializable state for a save. */
   snapshot(): PromptRegistrySnapshot;
@@ -123,8 +125,11 @@ export function createPromptRegistry(): PromptRegistry {
 
   return {
     register(prompt) {
-      prompts.set(prompt.id, clonePrompt(prompt));
+      const existing = prompts.get(prompt.id);
+      const next = clonePrompt(prompt);
+      prompts.set(prompt.id, next);
       invalidate();
+      if (activeId === prompt.id && existing !== undefined && !positionedPromptsEqual(existing, next)) notify();
     },
     update(id, patch) {
       const existing = prompts.get(id);
@@ -141,6 +146,7 @@ export function createPromptRegistry(): PromptRegistry {
       }
       prompts.set(id, merged);
       invalidate();
+      if (activeId === id && !positionedPromptsEqual(existing, merged)) notify();
     },
     unregister(id) {
       const removed = prompts.delete(id);

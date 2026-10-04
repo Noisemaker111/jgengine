@@ -14,6 +14,60 @@ function positioned(id: string, x: number, z: number, radius: number, priority?:
 }
 
 describe("createPromptRegistry", () => {
+  it("publishes active content edits before subscribers read or resolve the same selection", () => {
+    const registry = createPromptRegistry();
+    registry.register(positioned("chest", 0, 0, 4));
+    registry.resolve({ x: 0, z: 0 });
+    const seen: (string | undefined)[] = [];
+    const unsubscribe = registry.subscribe(() => {
+      const active = registry.active();
+      seen.push(active?.prompt.display.kind === "keybind" ? active.prompt.display.label : undefined);
+      registry.resolve({ x: 0, z: 0 });
+    });
+    registry.update("chest", { prompt: proximityPrompt({ radius: 4, display: keybind("interact", "Loot"), invoke: { name: "chest.loot", input: { id: "chest" } } }) });
+    expect(seen).toEqual(["Loot"]);
+    expect(registry.active()?.prompt.invoke?.name).toBe("chest.loot");
+    registry.register({ ...positioned("chest", 0, 0, 4), prompt: proximityPrompt({ radius: 4, display: keybind("interact", "Close") }) });
+    expect(seen).toEqual(["Loot", "Close"]);
+    unsubscribe();
+    registry.update("chest", { position: { x: 1, z: 0 } });
+    expect(seen).toEqual(["Loot", "Close"]);
+  });
+
+  it("keeps equivalent edits, inactive edits and unchanged frame resolutions silent", () => {
+    const registry = createPromptRegistry();
+    registry.register(positioned("chest", 0, 0, 4));
+    registry.register(positioned("door", 20, 0, 4));
+    registry.resolve({ x: 0, z: 0 });
+    let notifications = 0;
+    registry.subscribe(() => notifications++);
+    registry.update("chest", {});
+    registry.update("chest", { prompt: proximityPrompt({ radius: 4, display: keybind("interact", "Open") }) });
+    registry.register(positioned("chest", 0, 0, 4));
+    registry.update("door", { priority: 10 });
+    registry.register(positioned("door", 20, 0, 5));
+    for (let i = 0; i < 100; i++) registry.resolve({ x: 0, z: 0 });
+    expect(notifications).toBe(0);
+    expect(registry.all().map(prompt => prompt.id)).toEqual(["chest", "door"]);
+    registry.update("chest", { prompt: proximityPrompt({ radius: 4, display: keybind("interact", "Open"), invoke: { name: "chest.open", input: { id: "chest" } } }) });
+    expect(notifications).toBe(1);
+    registry.update("chest", { prompt: proximityPrompt({ radius: 4, display: keybind("interact", "Open"), invoke: { name: "chest.open", input: { id: "chest" } } }) });
+    expect(notifications).toBe(1);
+  });
+
+  it("retains the active selection until the next resolve after a membership edit", () => {
+    const registry = createPromptRegistry();
+    registry.register(positioned("chest", 0, 0, 4));
+    registry.resolve({ x: 0, z: 0 });
+    const seen: (string | null)[] = [];
+    registry.subscribe(() => seen.push(registry.active()?.id ?? null));
+    registry.update("chest", { position: { x: 10, z: 0 } });
+    expect(registry.active()?.id).toBe("chest");
+    expect(seen).toEqual(["chest"]);
+    registry.resolve({ x: 0, z: 0 });
+    expect(seen).toEqual(["chest", null]);
+  });
+
   it("registers prompts and lists them in registration order", () => {
     const registry = createPromptRegistry();
     registry.register(positioned("a", 0, 0, 3));
