@@ -1,0 +1,49 @@
+{
+  "sourceCommit": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+  "tree": "ee41899008f5beaa5c214fff0eb0b2025bf8cc93",
+  "remoteHead": "0186871ba08e5575d47da94a7b7ceb21035d674c",
+  "base": "bea2af8913100404f3c5dd5cde3c38c8d203b7ae",
+  "generation": {
+    "exitCode": 0,
+    "stages": 5,
+    "changedFiles": [
+      ".claude/skills/jgengine-editor/api.md"
+    ],
+    "log": ".scratch/characters/editor-animation-diagnostics/gen.log",
+    "sha256": "f610dad01b64555eda158ae6e9f929b9a5f680e8ebde7fb470809c6f0d8dd268"
+  },
+  "owningTests": {
+    "pass": 34,
+    "fail": 0,
+    "assertions": 154,
+    "ownerAudit": ".scratch/characters/editor-animation-diagnostics/source-check-summary.json"
+  },
+  "exportTarballTests": {
+    "pass": 34,
+    "fail": 0,
+    "assertions": 99,
+    "log": ".scratch/characters/editor-animation-diagnostics/export-tarball.log",
+    "sha256": "5a150f89692ae932b71ba792c1b68180cf9490fde617c43d186aa9e9b787429c"
+  },
+  "generatedChecks": {
+    "exitCode": 0,
+    "commands": [
+      "check-artifacts",
+      "check-capabilities",
+      "check-export-manifest",
+      "check-skills",
+      "check-skill-api"
+    ],
+    "rawLog": "tool output; no separate raw file captured"
+  },
+  "changelog": {
+    "exitCode": 0,
+    "baseRef": "origin/beta",
+    "note": "proper heading and bullet enforced; not exempted"
+  },
+  "cleanPreflight": {
+    "exitCode": 0
+  },
+  "cleanPackageCohort": ".scratch/characters/packages/clean-eac14552-20261004/manifest.json",
+  "publication": false
+}

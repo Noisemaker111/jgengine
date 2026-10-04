@@ -1,0 +1,47 @@
+{
+  "localHead": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+  "tree": "ee41899008f5beaa5c214fff0eb0b2025bf8cc93",
+  "base": "bea2af8913100404f3c5dd5cde3c38c8d203b7ae",
+  "originalSourceCommit": "96d785e6d6395da8ecc28429bc60a79ffa51760a",
+  "rebasedSourceCommit": "8ccbf49f76fa66244f680c91c5400561cd7d2bb5",
+  "generation": "five stages passed; only editor/api.md updated",
+  "files": [
+    {
+      "path": ".claude/skills/jgengine-editor/api.md",
+      "sha": "586c210216f17f29d6cfa1b373abfd975a8768a0",
+      "size": 199033
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "sha": "ad4ff51275c5c4f2a6d137aa0e28cdf785e857ca",
+      "size": 16331
+    },
+    {
+      "path": "changes/editor-animation-diagnostics.md",
+      "sha": "f904b22e8fb142a985e6d1d5ba3fbb65f9c49353",
+      "size": 269
+    },
+    {
+      "path": "packages/editor/src/InspectorPanel.tsx",
+      "sha": "fa4ab3ef685521e2d3c8fdecca092b6a0381e1f7",
+      "size": 59990
+    },
+    {
+      "path": "packages/editor/src/modelAnimationAuthoring.test.ts",
+      "sha": "51e08996a65e1f78faf68341f884e4664a2f6148",
+      "size": 26081
+    },
+    {
+      "path": "packages/editor/src/modelAnimationAuthoring.ts",
+      "sha": "7770d60f4bafd7995f7022ad3290936303bf6a34",
+      "size": 12547
+    },
+    {
+      "path": "packages/editor/src/shell/AnimationGraphPanel.tsx",
+      "sha": "ea00210a34c0a747e53a90473440274eea69f918",
+      "size": 20110
+    }
+  ],
+  "remoteHead": "0186871ba08e5575d47da94a7b7ceb21035d674c",
+  "delivery": "GitData exact tree after standalone git push HTTP401"
+}

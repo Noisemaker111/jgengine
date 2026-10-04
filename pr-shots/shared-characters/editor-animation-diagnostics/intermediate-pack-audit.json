@@ -1,0 +1,38 @@
+{
+  "sourceCommit": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+  "remoteHead": "0186871ba08e5575d47da94a7b7ceb21035d674c",
+  "tree": "ee41899008f5beaa5c214fff0eb0b2025bf8cc93",
+  "cleanBuildStagesVerified": 27,
+  "cleanBuiltTarballsVerified": 13,
+  "trackedSourceFilesVerified": 4037,
+  "tarFilesVerified": 2413,
+  "compiledFilesVerified": 2379,
+  "installedPackagesVerified": 9,
+  "installedFilesVerified": 2342,
+  "originalGameSourceHashesVerified": 212,
+  "exactEngineSourceFilesExtracted": 7,
+  "executions": [
+    {
+      "directory": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d",
+      "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+      "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+      "scriptSha256": "4399fa3723171b61f94f285c618d3514612773323c2c96af8c48b5fad2b37a0b",
+      "installedModuleHashesVerified": 4,
+      "inputHashesVerified": 2
+    },
+    {
+      "directory": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/installed-eac14552",
+      "cohort": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+      "tree": "ee41899008f5beaa5c214fff0eb0b2025bf8cc93",
+      "scriptSha256": "b88a101954edf1c08b5143890e181948336ea094c0c54ef0242b19dfc1eac347",
+      "installedModuleHashesVerified": 4,
+      "inputHashesVerified": 2
+    }
+  ],
+  "limits": [
+    "Read-only hashes/provenance audit, no build or tests rerun.",
+    "Exact changed source extracted from eac Git commit; all source ledger hashes independently verified against retained Git tree.",
+    "Public proof is document/configuration checks; no native interaction or animation appearance claim without separate frozen capture evidence.",
+    "Unreleased isolated package fixture; no release/game adoption."
+  ]
+}

@@ -1,0 +1,539 @@
+{
+  "label": "Unreleased installed public editor candidate: strict animation metadata diagnostics and deliberate repair. Actual game sources unchanged; no package publication or adoption.",
+  "source": {
+    "commit": "f7040ce87888d3b7097539826d3af96fdf745987",
+    "tree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+    "remoteSameTreeCommit": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+    "base": "bea2af8913100404f3c5dd5cde3c38c8d203b7ae",
+    "sourceGameCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "manifestSha256": "36c76318da6919e64ff1a22d7bb1fe09f0bc94ea79c88a8950142ccec4e9e015",
+    "cohortDirectory": "/workspace/JGengine/.scratch/characters/packages/clean-f7040ce8-20261004"
+  },
+  "packageBoundary": {
+    "freshOwningBuilds": 13,
+    "normalNpmPacks": 13,
+    "allTarballsShaVerified": 13,
+    "actualInstalledPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "3a2a1fd7c89a7c41c59103fb4b736524901a6d11854a3813804403920e9c1227",
+        "installedFilesByteVerified": 1211
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "5f42ddb55fe14d7b9bada4c6d5121f874c9ac3a2384f48d0982cab9796501d57",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "17e9154ee04444134c047a33b58e5e19977273ba141c837b5a7b9ea776ae1fdb",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "installedRegularFilesByteEqualTarballs": 2342,
+    "sdkSourceAliases": false,
+    "originalAndFixtureSrcFilesVerified": 212,
+    "gameAdaptersOrSourceChanges": false,
+    "repositoryCatalogsAndDependencyLocksChanged": false
+  },
+  "concreteBefore": {
+    "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+    "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+    "executedSourceAndInputsArchivedBeforeRun": true,
+    "scope": "Full original438-marker Scrap scene and actual canonical1-marker Lantern spawn slice; same documents preserved separately from candidate mutations.",
+    "records": [
+      {
+        "game": "scrap",
+        "id": "player_spawn",
+        "markerCount": 438,
+        "scope": "full original438-marker source",
+        "storedTransitionCount": 31,
+        "previewTransitionCount": 30,
+        "diagnosticsBefore": [
+          {
+            "path": "markers[400].meta.animation.graph.layers[0].transitions[0].to",
+            "message": "Transition references an unknown state.",
+            "repair": "Choose a state declared in this layer; only from may use *."
+          }
+        ],
+        "diagnosticsAfterUnrelatedHold": [],
+        "storedTransitionCountAfterUnrelatedHold": 30,
+        "lostTransition": {
+          "from": "locomotion",
+          "to": "missing-state",
+          "trigger": "death",
+          "duration": 0.1
+        }
+      },
+      {
+        "game": "lantern",
+        "id": "spawn:player",
+        "markerCount": 1,
+        "scope": "actual canonical1-marker source slice; fullLanternDawn invalid untouched",
+        "storedTransitionCount": 2,
+        "previewTransitionCount": 1,
+        "diagnosticsBefore": [
+          {
+            "path": "markers[0].meta.animation.graph.layers[0].transitions[0].to",
+            "message": "Transition references an unknown state.",
+            "repair": "Choose a state declared in this layer; only from may use *."
+          }
+        ],
+        "diagnosticsAfterUnrelatedHold": [],
+        "storedTransitionCountAfterUnrelatedHold": 1,
+        "lostTransition": {
+          "from": "locomotion",
+          "to": "missing-state",
+          "when": [
+            {
+              "param": "grounded",
+              "op": "==",
+              "value": false
+            },
+            {
+              "param": "verticalSpeed",
+              "op": "!=",
+              "value": 0
+            }
+          ],
+          "duration": 0.08
+        }
+      }
+    ],
+    "failure": "Permissive editor preview drops malformed transition. Unrelated Hold persists reduced graph; runtime then accepts silently repaired graph."
+  },
+  "publicCandidateProof": {
+    "cohort": "f7040ce87888d3b7097539826d3af96fdf745987",
+    "tree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+    "executedSourceAndInputsModulesArchivedBeforeRun": true,
+    "executedSourceSha256": "b88a101954edf1c08b5143890e181948336ea094c0c54ef0242b19dfc1eac347",
+    "modules": {
+      "@jgengine/core/editor/commands": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/core/dist/editor/commands.js",
+      "@jgengine/core/editor/document": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/core/dist/editor/document.js",
+      "@jgengine/core/world/authoredAnimation": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/core/dist/world/authoredAnimation.js",
+      "@jgengine/editor/modelAnimationAuthoring": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/editor/dist/modelAnimationAuthoring.js"
+    },
+    "moduleHashes": {
+      "@jgengine/core/editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+      "@jgengine/core/editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+      "@jgengine/core/world/authoredAnimation": "6947aa4487954532bde754df16d57be056bf6933d1da953c262b00f9c2d26a87",
+      "@jgengine/editor/modelAnimationAuthoring": "a3d1789c4f4cc25305f0601a070ee273b758e2ba9768dda69a43c2a033c70625"
+    },
+    "records": [
+      {
+        "game": "scrap",
+        "id": "player_spawn",
+        "markerCount": 438,
+        "documentScope": "full original438-marker world",
+        "invalidTransitions": 31,
+        "persistedMalformedUnchanged": true,
+        "locatedDiagnostics": [
+          {
+            "path": "markers[400].meta.animation.graph.layers[0].transitions[0].to",
+            "message": "Transition references an unknown state.",
+            "repair": "Choose a state declared in this layer; only from may use *."
+          }
+        ],
+        "runtimeExactCallerDefault": true,
+        "explicitAutoRepairUndoRedo": true,
+        "validReplacementScalarEditsAndSaveReload": true,
+        "validDeeperUnknownSignedPartialEmptyDataPreserved": true,
+        "emptyMapCrossfadeRoleNumberClearGraphSaveUndoRedoPreserved": true,
+        "allOtherSceneDataUnchanged": true,
+        "invalidSavedSha256": "d6945d753c05deaedd5c16b2ec567abe2881b85ec09371617091e1be0684106e",
+        "repairedSavedSha256": "85a7bcdac8ea4ee340f50310f4fa567b0aa46392d07086ab33cd02a9b8a986dd"
+      },
+      {
+        "game": "lantern",
+        "id": "spawn:player",
+        "markerCount": 1,
+        "documentScope": "valid original canonical spawn slice; original full dawn document remains unsupported",
+        "invalidTransitions": 2,
+        "persistedMalformedUnchanged": true,
+        "locatedDiagnostics": [
+          {
+            "path": "markers[0].meta.animation.graph.layers[0].transitions[0].to",
+            "message": "Transition references an unknown state.",
+            "repair": "Choose a state declared in this layer; only from may use *."
+          }
+        ],
+        "runtimeExactCallerDefault": true,
+        "explicitAutoRepairUndoRedo": true,
+        "validReplacementScalarEditsAndSaveReload": true,
+        "validDeeperUnknownSignedPartialEmptyDataPreserved": true,
+        "emptyMapCrossfadeRoleNumberClearGraphSaveUndoRedoPreserved": true,
+        "allOtherSceneDataUnchanged": true,
+        "invalidSavedSha256": "95f5f57bb8a100c729174585a0aa76124530895e2f0a07b085196db73d2d20c1",
+        "repairedSavedSha256": "5735cfc93548e1d3354bc58bff4ff9600dff4a248f68f976db01a32eb948d159"
+      }
+    ],
+    "interpretation": "Editor and runtime share strict whole-value validation. Both saved malformed graphs remain byte-equivalent in value through inspection/reload until a deliberate mode repair. Diagnostics point to the exact saved transition with a repair. Invalid runtime result is the actual caller default by identity. Intentional Auto replacement and full valid graph replacement preserve undo/redo; ordinary Hold/rate and deeper controls preserve valid unknown/signed/partial/empty values through save/reload.",
+    "scopeLimits": "Public pure controller/editor/runtime reader APIs and actual game default identities. UI suppression is covered separately by owning panel tests/native configuration proof; no new full rendered gameplay or rig appearance claim."
+  },
+  "wrapFollowup": {
+    "label": "Wrapped diagnostics follow-up uses byte-identical public helper and executed proof/input files; compiled two UI panels change. No oldcohort relabel.",
+    "beforeCohort": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+    "afterCohort": "f7040ce87888d3b7097539826d3af96fdf745987",
+    "modules": [
+      {
+        "module": "@jgengine/editor/modelAnimationAuthoring",
+        "beforePath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/node_modules/@jgengine/editor/dist/modelAnimationAuthoring.js",
+        "beforeSha256": "a3d1789c4f4cc25305f0601a070ee273b758e2ba9768dda69a43c2a033c70625",
+        "afterPath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/editor/dist/modelAnimationAuthoring.js",
+        "afterSha256": "a3d1789c4f4cc25305f0601a070ee273b758e2ba9768dda69a43c2a033c70625",
+        "changed": false
+      },
+      {
+        "module": "@jgengine/editor/InspectorPanel",
+        "beforePath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/node_modules/@jgengine/editor/dist/InspectorPanel.js",
+        "beforeSha256": "8a05b1850610647108ffe0363fe91b299c3afcc74d07f495c9b2cc54647276a7",
+        "afterPath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/editor/dist/InspectorPanel.js",
+        "afterSha256": "ae87e5e37d3b7d6338edc633a9caf856ba1f01e844962c10797b3a50cb74bef6",
+        "changed": true
+      },
+      {
+        "module": "@jgengine/editor/shell/AnimationGraphPanel",
+        "beforePath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/node_modules/@jgengine/editor/dist/shell/AnimationGraphPanel.js",
+        "beforeSha256": "9cc6dfafd0365b93fa9c9810d3e68f7d906ebf1767a2d4ca3542611411a87559",
+        "afterPath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/editor/dist/shell/AnimationGraphPanel.js",
+        "afterSha256": "a6ac823a589b7f2a2c325c3426875419a9fb8353d70e54f55ccb1a4a5c929b42",
+        "changed": true
+      }
+    ],
+    "publicProofAndTwoInputsByteUnchanged": true,
+    "bothFullPublicDocumentRecordsBitEqual": true,
+    "earlierResultSha256": "5995094ecf7b4d2e88d90c61321a62f9763492f5494f961f0e53e19ebd8df06b",
+    "wrappedResultSha256": "8bf12713382c49d77fb09751305fdaae3897ecc756f1a66cd777f67d083ce3d5"
+  },
+  "precedingNativeConfigurationLoop": {
+    "sidecar": "/workspace/JGengine/.scratch/characters/native/animation-config-diagnostics/native-evidence-eac14552.json",
+    "sha256": "edf15a19c530956fddedc0334e0b9b510082945b754822b34fa9ee12a9d7a3f8",
+    "scope": "Exacteac nativeAuto repair/undo restores31 transitions/redo/GUI Save/freshbrowser actualfile reopen all438document preserved exceptoverride. Inspector diagnosticpath clips; this native claim remains on eac, wrappedreadability proof separate."
+  },
+  "precedingPublicCohort": {
+    "commit": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+    "tree": "ee41899008f5beaa5c214fff0eb0b2025bf8cc93",
+    "claim": "Public helper/proof input bytes match, while entire source tree and two compiled panels deliberately differ. Original eac native claim remains attributed to eac; new wrapped native evidence separate."
+  },
+  "nativeConfigurationEvidence": {
+    "sidecar": "/workspace/JGengine/.scratch/characters/native/animation-config-diagnostics-wrapped/native-evidence-f7040ce8.json",
+    "sha256": "038210f5d291c43ec0054b48be66fb0e034a2ae3db92fef1d0b3b6b42922ae07",
+    "claim": "Native configuration diagnostics and intentional repair/save/reopen only; no rig appearance or gameplay claim.",
+    "summary": "Exact wrapped candidate native Inspector and Graph show the full readable diagnostic path. Malformed31-transition override remains intact; explicit Auto repair, undo restoring exact graph, redo, GUI Save and fresh browser actual-file reopen pass. All438 scene data remain unchanged except target animation override; saved file hash equals preceding eac loop. Zero capture failures/hangs; no rig appearance/play/feel claim."
+  },
+  "checks": [
+    {
+      "game": "scrap-signal",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/games/scrap-signal",
+      "exitCode": 0,
+      "durationFromLog": "24.25s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-scrap-signal-build.log"
+    },
+    {
+      "game": "scrap-signal",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/games/scrap-signal",
+      "exitCode": 0,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-scrap-signal-types.log",
+      "result": "PASS"
+    },
+    {
+      "game": "lantern-reach",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/games/lantern-reach",
+      "exitCode": 0,
+      "durationFromLog": "33.92s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-lantern-reach-build.log"
+    },
+    {
+      "game": "lantern-reach",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/games/lantern-reach",
+      "exitCode": 1,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-lantern-reach-types.log",
+      "result": "Exactly four prior dispatch Promise result errors: ActionBar.tsx:57 and Dialogue.tsx:68, no changes to these source files."
+    }
+  ],
+  "sourceCiStatusAtConsumerFreeze": "Separate first wrapped source CI attempt reported six HUD/hook timeouts; root owner triaging. Consumer/package/native outcomes here are not a claim that source CI is green. No rerun or merge inferred.",
+  "remainingLimitations": [
+    "Full original Lantern dawn environment remains unsupported by document validator. Only valid canonical character slice has complete save/reload proof; source environment unchanged.",
+    "Lantern retains four existing ActionBar/Dialogue dispatch Promise type errors.",
+    "No ninth rig appearance, movement feel, hardware FPS or full game-loop visual claim.",
+    "Strict syntax repair does not establish missing-clip/rig compatibility; existing shell diagnostics remain the appropriate owner.",
+    "Isolated candidate tarballs do not establish registry publication or released-package game adoption."
+  ],
+  "artifacts": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/candidate-package-manifest.json",
+      "sha256": "36c76318da6919e64ff1a22d7bb1fe09f0bc94ea79c88a8950142ccec4e9e015",
+      "bytes": 4358
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-package-verification.json",
+      "sha256": "78295dd17b87e5d5b02c999f501b14f5295902db89577b5f6c9cfaf5f6f771f5",
+      "bytes": 2193
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-source-provenance.json",
+      "sha256": "67e8072056d556782fcd144233c99ced29c1a84ff8684fe20a8c24edc5128143",
+      "bytes": 33092
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-additional-content-inputs.json",
+      "sha256": "4cc696b4c26f995b6347746e1eea5b2b14686dee5d9037c84bed3d063237c96b",
+      "bytes": 838
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/baseline-input-ledger.json",
+      "sha256": "2578db98169bb2dff48176f18632476c57394708b116b19a1acdd3d95554aa4c",
+      "bytes": 1008
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/public-proof.ts",
+      "sha256": "b88a101954edf1c08b5143890e181948336ea094c0c54ef0242b19dfc1eac347",
+      "bytes": 10042
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/public-proof.log",
+      "sha256": "6f2e6a1847e28c19fdbf554e9886a9ae637fc2a08c94f14d63b3c94dec67856f",
+      "bytes": 1896
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-scrap-signal-build.log",
+      "sha256": "113b98af718e97640ca43b45fa83fb61130595682e69da535b4210755d8108f6",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-lantern-reach-build.log",
+      "sha256": "a09417f8b3699fb5a373ef839f39355162bb132e16a6899567c7f8e58634a815",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-scrap-signal-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/original-lantern-reach-types.log",
+      "sha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38",
+      "bytes": 834
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-two-documents.ts",
+      "sha256": "4399fa3723171b61f94f285c618d3514612773323c2c96af8c48b5fad2b37a0b",
+      "bytes": 4488
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-two-documents.log",
+      "sha256": "af5d450076f3302d369264c25934433cb2bc033e45aca6a1b47e7cacc19c3989",
+      "bytes": 1326
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/unchanged-proof-input-ledger.json",
+      "sha256": "5e91dca8cc02cf386d4d958e34f40c562fd87a751fb5f299b9e3ce6659b0c9ef",
+      "bytes": 824
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/wrap-only-compiled-comparison.json",
+      "sha256": "f302cf545e45bec1be94ea26af4183ced51da1334650ec571c37a9a165460b2f",
+      "bytes": 2392
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/installed-eac14552/public-proof.json",
+      "sha256": "5995094ecf7b4d2e88d90c61321a62f9763492f5494f961f0e53e19ebd8df06b",
+      "bytes": 4058
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-config-diagnostics/native-evidence-eac14552.json",
+      "sha256": "edf15a19c530956fddedc0334e0b9b510082945b754822b34fa9ee12a9d7a3f8",
+      "bytes": 2232
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-f7040ce8-20261004/build-provenance.json",
+      "sha256": "4400ef1b3f2b4ecb1cb668bad0137abc4a4fc38af23c884c7d5a22ba5a778045",
+      "bytes": 18767
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-f7040ce8-20261004/compiled-files.json",
+      "sha256": "42e913803cd8cbe2baae96413d12ee1cd9b4cf6bff9a3872e792a53d46a7c2ee",
+      "bytes": 370578
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-f7040ce8-20261004/package-files.json",
+      "sha256": "f2bd78747d98db1583dcec7c71b6a934f064a7fc4a7bca5ea1b4a4fc4c2fbcc6",
+      "bytes": 387381
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/packages/clean-f7040ce8-20261004/source-files.json",
+      "sha256": "9a585db85f3a69af7a9d54f983f46796235335eed1b8b491ea9468521334fb80",
+      "bytes": 702688
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/baseline-two-documents.json",
+      "sha256": "fa00a53ef0443895812da9ed86f4c327a3914466af917308d054e0efbc0b4e90",
+      "bytes": 3565
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/before-execution-provenance.json",
+      "sha256": "33770311408455217b4ccf13bf10ff500986f5be3e18de9dda5bce0ab37bd101",
+      "bytes": 1631
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/executed-baseline.ts",
+      "sha256": "4399fa3723171b61f94f285c618d3514612773323c2c96af8c48b5fad2b37a0b",
+      "bytes": 4488
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/lantern-invalid-saved.json",
+      "sha256": "9b9d41c85ada75e2b2857fe6f52889f25c77e4563a1435d857b9c33e0601c028",
+      "bytes": 2297
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/lantern-silently-repaired-after-hold.json",
+      "sha256": "a9dd51f8dfa313630a9d563cce8541d4afa9de9e92b7bff34c06cf16bb534506",
+      "bytes": 1769
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/lantern-valid-input-document.json",
+      "sha256": "67cd4a4380e37a1313c4ce771dc963c6143615c850e8d873c6f04ca77250e213",
+      "bytes": 2292
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/scrap-invalid-saved.json",
+      "sha256": "d738e9b611726c71ba3ffb89643b18bed255fdf9a56a7168aff2298f0274a517",
+      "bytes": 206364
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/scrap-silently-repaired-after-hold.json",
+      "sha256": "5859bb5d0a0b8c8ea86713d15569c90602cd619850e7d8f1168b65ebbfa99bd3",
+      "bytes": 206188
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/scrap-valid-input-document.json",
+      "sha256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1",
+      "bytes": 206356
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/before-execution-provenance.json",
+      "sha256": "6abe41761923a5b3c5cab7035a246b0c44f5785b58a796337b4898133e603afe",
+      "bytes": 1763
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/executed-public-proof.ts",
+      "sha256": "b88a101954edf1c08b5143890e181948336ea094c0c54ef0242b19dfc1eac347",
+      "bytes": 10042
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/lantern-empty-map-roundtrip.json",
+      "sha256": "6d4bee275064e44e0fe86477d862c0946789317593c9f6472112da2e466c0a84",
+      "bytes": 785
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/lantern-invalid-saved.json",
+      "sha256": "95f5f57bb8a100c729174585a0aa76124530895e2f0a07b085196db73d2d20c1",
+      "bytes": 2820
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/lantern-repaired-saved.json",
+      "sha256": "5735cfc93548e1d3354bc58bff4ff9600dff4a248f68f976db01a32eb948d159",
+      "bytes": 2813
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/lantern-valid-input-document.json",
+      "sha256": "67cd4a4380e37a1313c4ce771dc963c6143615c850e8d873c6f04ca77250e213",
+      "bytes": 2292
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/public-proof.json",
+      "sha256": "8bf12713382c49d77fb09751305fdaae3897ecc756f1a66cd777f67d083ce3d5",
+      "bytes": 4090
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/scrap-empty-map-roundtrip.json",
+      "sha256": "a50d2380e296208eb3d712be371b92ba13a00babc3580207d5233b4e40ecd9e3",
+      "bytes": 194190
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/scrap-invalid-saved.json",
+      "sha256": "d6945d753c05deaedd5c16b2ec567abe2881b85ec09371617091e1be0684106e",
+      "bytes": 206885
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/scrap-repaired-saved.json",
+      "sha256": "85a7bcdac8ea4ee340f50310f4fa567b0aa46392d07086ab33cd02a9b8a986dd",
+      "bytes": 206875
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/installed-f7040ce8/scrap-valid-input-document.json",
+      "sha256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1",
+      "bytes": 206356
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/native/animation-config-diagnostics-wrapped/native-evidence-f7040ce8.json",
+      "sha256": "038210f5d291c43ec0054b48be66fb0e034a2ae3db92fef1d0b3b6b42922ae07",
+      "bytes": 4242
+    }
+  ]
+}

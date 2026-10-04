@@ -1,0 +1,71 @@
+{
+  "sourceBase": "0318b0872edce92037d810f1a7fa5017869ee273",
+  "scope": "Six owned source files committed and frozen; generated/public-candidate/native proof pending.",
+  "sourceHashes": {
+    "packages/editor/src/modelAnimationAuthoring.ts": "179aa38aa0314f6a4b993ee887b9476ef36e246f7b9bf9b1d423dcc4277fd154",
+    "packages/editor/src/modelAnimationAuthoring.test.ts": "aa55f962a125555da3265c30e2d5bca854ff961ec461d5ccb5fccdac8643a016",
+    "packages/editor/src/InspectorPanel.tsx": "4485f9f868fa28ed4f11a9d85fad0a3d390ef4a447fda40a670edd5c95d62c88",
+    "packages/editor/src/shell/AnimationGraphPanel.tsx": "b4c13e1068396784d12a83ae668542746b693214647a48f5e43f67f323b13264",
+    ".claude/skills/jgengine-world/recipes/character-animation.md": "ddbae6216007643db7cdf2a4889db66f64f7e47a2c5ffb06c98d4b78bfc13b9a",
+    "changes/editor-animation-diagnostics.md": "d4db4f595bb677f23d38da7aa6c1cea758af0bcda1c6ab7142b72907a360905f"
+  },
+  "checks": {
+    "source-before": {
+      "exit": 1,
+      "log": ".scratch/characters/editor-animation-diagnostics/source-before.log"
+    },
+    "owning-tests": {
+      "exit": 0,
+      "log": ".scratch/characters/editor-animation-diagnostics/owning-tests.log"
+    },
+    "editor-types": {
+      "exit": 0,
+      "log": ".scratch/characters/editor-animation-diagnostics/editor-types.log"
+    },
+    "core-types": {
+      "exit": 0,
+      "log": ".scratch/characters/editor-animation-diagnostics/core-types.log"
+    },
+    "changelog": {
+      "exit": 0,
+      "log": ".scratch/characters/editor-animation-diagnostics/changelog.log"
+    },
+    "changelog-owned": {
+      "exit": 0,
+      "log": ".scratch/characters/editor-animation-diagnostics/changelog-owned.log"
+    },
+    "preflight": {
+      "exit": 0,
+      "log": ".scratch/characters/editor-animation-diagnostics/preflight.log"
+    },
+    "empty-map-before": {
+      "exit": 1,
+      "log": ".scratch/characters/editor-animation-diagnostics/empty-map-before.log"
+    }
+  },
+  "counts": {
+    "before": {
+      "pass": 23,
+      "fail": 2,
+      "assertions": 97
+    },
+    "afterFocused": {
+      "pass": 34,
+      "fail": 0,
+      "assertions": 154
+    },
+    "emptyMapBefore": {
+      "pass": 26,
+      "fail": 1,
+      "assertions": 128
+    }
+  },
+  "installedBefore": "before.json",
+  "uiEvidence": "Actual InspectorPanel/AnimationGraphPanel server-rendered markup and normal document commands; native appearance/interactions not claimed.",
+  "sourceAfterNote": "One test fixture API field and cleanup call corrected in intermediate source-after logs; finalchecks pass.",
+  "sourceHead": "96d785e6d6395da8ecc28429bc60a79ffa51760a",
+  "sourceTree": "a3a7e64a089973d5d57b5eae87b51442241f469f",
+  "clean": true,
+  "supersededSourceHead": "5660e4e2d34942b2624e62c3d7995f9f36c45539",
+  "emptyMapContract": "Unrelated graph, role and numeric edits retain a supplied oneShots:{}; deliberately clearing the last one-shot binding still removes that mapping."
+}

@@ -1,0 +1,323 @@
+{
+  "status": "Complete BEFORE/intermediate/final public package and native configuration proof assembled; wrapped first CI failure retained, CI triage pending",
+  "archivePrefix": "pr-shots/shared-characters/editor-animation-diagnostics/",
+  "baseline": {
+    "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+    "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+    "exactExecutedBaselineScriptVerified": true,
+    "validInputHashesVerified": 2,
+    "installedPublicModuleHashesVerified": 4,
+    "sourceInputLedgerHashesVerified": 4,
+    "files": [
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/baseline-two-documents.json",
+        "bytes": 3565,
+        "sha256": "fa00a53ef0443895812da9ed86f4c327a3914466af917308d054e0efbc0b4e90"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/before-execution-provenance.json",
+        "bytes": 1631,
+        "sha256": "33770311408455217b4ccf13bf10ff500986f5be3e18de9dda5bce0ab37bd101"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/executed-baseline.ts",
+        "bytes": 4488,
+        "sha256": "4399fa3723171b61f94f285c618d3514612773323c2c96af8c48b5fad2b37a0b"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/lantern-invalid-saved.json",
+        "bytes": 2297,
+        "sha256": "9b9d41c85ada75e2b2857fe6f52889f25c77e4563a1435d857b9c33e0601c028"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/lantern-silently-repaired-after-hold.json",
+        "bytes": 1769,
+        "sha256": "a9dd51f8dfa313630a9d563cce8541d4afa9de9e92b7bff34c06cf16bb534506"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/lantern-valid-input-document.json",
+        "bytes": 2292,
+        "sha256": "67cd4a4380e37a1313c4ce771dc963c6143615c850e8d873c6f04ca77250e213"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/scrap-invalid-saved.json",
+        "bytes": 206364,
+        "sha256": "d738e9b611726c71ba3ffb89643b18bed255fdf9a56a7168aff2298f0274a517"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/scrap-silently-repaired-after-hold.json",
+        "bytes": 206188,
+        "sha256": "5859bb5d0a0b8c8ea86713d15569c90602cd619850e7d8f1168b65ebbfa99bd3"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d/scrap-valid-input-document.json",
+        "bytes": 206356,
+        "sha256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-input-ledger.json",
+        "bytes": 1008,
+        "sha256": "2578db98169bb2dff48176f18632476c57394708b116b19a1acdd3d95554aa4c"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/scrap-valid-input-document.json",
+        "bytes": 206356,
+        "sha256": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/lantern-valid-input-document.json",
+        "bytes": 2292,
+        "sha256": "67cd4a4380e37a1313c4ce771dc963c6143615c850e8d873c6f04ca77250e213"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/scrap-invalid-before-document.json",
+        "bytes": 206364,
+        "sha256": "d738e9b611726c71ba3ffb89643b18bed255fdf9a56a7168aff2298f0274a517"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-scrap-before.json",
+        "bytes": 2564,
+        "sha256": "b076b81fe67ca784d0a736d2a6fadff5a77883cfb7bd4b5519fb511479b09b86"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-two-documents.ts",
+        "bytes": 4488,
+        "sha256": "4399fa3723171b61f94f285c618d3514612773323c2c96af8c48b5fad2b37a0b"
+      },
+      {
+        "local": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-two-documents.log",
+        "bytes": 1326,
+        "sha256": "af5d450076f3302d369264c25934433cb2bc033e45aca6a1b47e7cacc19c3989"
+      }
+    ],
+    "ownerFreezeConfirmed": true,
+    "parentBaselineScriptMatchesExecutedCopy": true
+  },
+  "pending": [
+    "Final wrapped source provenance and exact Git extraction",
+    "Final wrapped clean package manifest and compiled public-helper equality proof",
+    "Frozen final consumer report with complete artifact hashes",
+    "Frozen native configuration-only capture report and exact artifacts",
+    "Final wrapped source CI",
+    "Root final archive/upload authorization"
+  ],
+  "evidenceLimits": [
+    "Current work is read-only hash verification, not rerun, source edit or build.",
+    "Baseline saved document proof is not native appearance, input interaction or hardware performance evidence.",
+    "No published SDK/game adoption claim.",
+    "Actual document/runtime limitations will follow the frozen consumer report, not be inferred from baseline filenames."
+  ],
+  "upload": false,
+  "futureConsumerReport": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/animation-config-diagnostics-consumer-evidence.json",
+  "publicPackageAudit": {
+    "sourceCommit": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+    "remoteHead": "0186871ba08e5575d47da94a7b7ceb21035d674c",
+    "tree": "ee41899008f5beaa5c214fff0eb0b2025bf8cc93",
+    "cleanBuildStagesVerified": 27,
+    "cleanBuiltTarballsVerified": 13,
+    "trackedSourceFilesVerified": 4037,
+    "tarFilesVerified": 2413,
+    "compiledFilesVerified": 2379,
+    "installedPackagesVerified": 9,
+    "installedFilesVerified": 2342,
+    "originalGameSourceHashesVerified": 212,
+    "exactEngineSourceFilesExtracted": 7,
+    "executions": [
+      {
+        "directory": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/baseline-d355677d",
+        "cohort": "d355677d708092afff9e211e4a36d28f790276bd",
+        "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+        "scriptSha256": "4399fa3723171b61f94f285c618d3514612773323c2c96af8c48b5fad2b37a0b",
+        "installedModuleHashesVerified": 4,
+        "inputHashesVerified": 2
+      },
+      {
+        "directory": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/installed-eac14552",
+        "cohort": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+        "tree": "ee41899008f5beaa5c214fff0eb0b2025bf8cc93",
+        "scriptSha256": "b88a101954edf1c08b5143890e181948336ea094c0c54ef0242b19dfc1eac347",
+        "installedModuleHashesVerified": 4,
+        "inputHashesVerified": 2
+      }
+    ],
+    "limits": [
+      "Read-only hashes/provenance audit, no build or tests rerun.",
+      "Exact changed source extracted from eac Git commit; all source ledger hashes independently verified against retained Git tree.",
+      "Public proof is document/configuration checks; no native interaction or animation appearance claim without separate frozen capture evidence.",
+      "Unreleased isolated package fixture; no release/game adoption."
+    ]
+  },
+  "intermediateCohortNote": "Never relabel eac source/public proof/native evidence as wrapped candidate; frozen intermediate source/check JSONs saved separately.",
+  "intermediateSource": {
+    "localHead": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+    "tree": "ee41899008f5beaa5c214fff0eb0b2025bf8cc93",
+    "base": "bea2af8913100404f3c5dd5cde3c38c8d203b7ae",
+    "originalSourceCommit": "96d785e6d6395da8ecc28429bc60a79ffa51760a",
+    "rebasedSourceCommit": "8ccbf49f76fa66244f680c91c5400561cd7d2bb5",
+    "generation": "five stages passed; only editor/api.md updated",
+    "files": [
+      {
+        "path": ".claude/skills/jgengine-editor/api.md",
+        "sha": "586c210216f17f29d6cfa1b373abfd975a8768a0",
+        "size": 199033
+      },
+      {
+        "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+        "sha": "ad4ff51275c5c4f2a6d137aa0e28cdf785e857ca",
+        "size": 16331
+      },
+      {
+        "path": "changes/editor-animation-diagnostics.md",
+        "sha": "f904b22e8fb142a985e6d1d5ba3fbb65f9c49353",
+        "size": 269
+      },
+      {
+        "path": "packages/editor/src/InspectorPanel.tsx",
+        "sha": "fa4ab3ef685521e2d3c8fdecca092b6a0381e1f7",
+        "size": 59990
+      },
+      {
+        "path": "packages/editor/src/modelAnimationAuthoring.test.ts",
+        "sha": "51e08996a65e1f78faf68341f884e4664a2f6148",
+        "size": 26081
+      },
+      {
+        "path": "packages/editor/src/modelAnimationAuthoring.ts",
+        "sha": "7770d60f4bafd7995f7022ad3290936303bf6a34",
+        "size": 12547
+      },
+      {
+        "path": "packages/editor/src/shell/AnimationGraphPanel.tsx",
+        "sha": "ea00210a34c0a747e53a90473440274eea69f918",
+        "size": 20110
+      }
+    ],
+    "remoteHead": "0186871ba08e5575d47da94a7b7ceb21035d674c",
+    "delivery": "GitData exact tree after standalone git push HTTP401"
+  },
+  "wrappedSource": {
+    "localHead": "f7040ce87888d3b7097539826d3af96fdf745987",
+    "tree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+    "previousLocal": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+    "previousRemote": "0186871ba08e5575d47da94a7b7ceb21035d674c",
+    "reason": "Native inspection found long path clipped in narrow Inspector; wrap both diagnostic path lines.",
+    "files": [
+      {
+        "path": "changes/editor-animation-diagnostics.md",
+        "sha": "ffdcdb386f45ddd2a427f1a6b964379bf1a088a1",
+        "size": 300
+      },
+      {
+        "path": "packages/editor/src/InspectorPanel.tsx",
+        "sha": "6a4d1f41865b87ae7993f5cbf0e8485104c85526",
+        "size": 60012
+      },
+      {
+        "path": "packages/editor/src/shell/AnimationGraphPanel.tsx",
+        "sha": "8ac0061076e6993a6fe2a8ee6b1001114dc3e43d",
+        "size": 20132
+      }
+    ],
+    "remoteHead": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+    "checks": {
+      "editorTypes": 0,
+      "changelog": 0,
+      "cleanPreflight": 0,
+      "focusedTests": {
+        "pass": 27,
+        "fail": 0,
+        "assertions": 132,
+        "files": 1,
+        "log": ".scratch/characters/editor-animation-diagnostics/wrap-owning.log"
+      }
+    }
+  },
+  "wrappedPublicPackageAudit": {
+    "sourceCommit": "f7040ce87888d3b7097539826d3af96fdf745987",
+    "remoteHead": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+    "tree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+    "cleanBuildStagesVerified": 27,
+    "cleanBuiltTarballsVerified": 13,
+    "trackedSourceFilesVerified": 4037,
+    "tarFilesVerified": 2413,
+    "compiledFilesVerified": 2379,
+    "exactFinalEngineSourceFilesExtracted": 7,
+    "wholeTreeDeltaFromEac": [
+      {
+        "path": "changes/editor-animation-diagnostics.md",
+        "sha": "ffdcdb386f45ddd2a427f1a6b964379bf1a088a1",
+        "size": 300
+      },
+      {
+        "path": "packages/editor/src/InspectorPanel.tsx",
+        "sha": "6a4d1f41865b87ae7993f5cbf0e8485104c85526",
+        "size": 60012
+      },
+      {
+        "path": "packages/editor/src/shell/AnimationGraphPanel.tsx",
+        "sha": "8ac0061076e6993a6fe2a8ee6b1001114dc3e43d",
+        "size": 20132
+      }
+    ],
+    "compiledByteDeltaFromEac": [
+      {
+        "package": "editor",
+        "path": "InspectorPanel.js",
+        "beforeSha256": "8a05b1850610647108ffe0363fe91b299c3afcc74d07f495c9b2cc54647276a7",
+        "afterSha256": "ae87e5e37d3b7d6338edc633a9caf856ba1f01e844962c10797b3a50cb74bef6"
+      },
+      {
+        "package": "editor",
+        "path": "shell/AnimationGraphPanel.js",
+        "beforeSha256": "9cc6dfafd0365b93fa9c9810d3e68f7d906ebf1767a2d4ca3542611411a87559",
+        "afterSha256": "a6ac823a589b7f2a2c325c3426875419a9fb8353d70e54f55ccb1a4a5c929b42"
+      }
+    ],
+    "publicModelAnimationAuthoringHelperBytesUnchanged": true,
+    "limits": [
+      "Source and tar byte audit only; wrapped installed consumer/native proof pending.",
+      "Exact source files extracted by f704 SHA; eac intermediate remains unchanged.",
+      "No build, test, native capture or consumer replay performed by this audit."
+    ]
+  },
+  "wrappedExactSourceFiles": [
+    {
+      "path": ".claude/skills/jgengine-editor/api.md",
+      "bytes": 199033,
+      "sha256": "702a24af7b92ab37e62bf499358d6846befe2359a4f858be101e680ee97c6b97"
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "bytes": 16331,
+      "sha256": "80509a1ddedf62e801cab7b5cf733352913d79b086e4020aad588523b5a08f61"
+    },
+    {
+      "path": "changes/editor-animation-diagnostics.md",
+      "bytes": 300,
+      "sha256": "6ca99c6b48591d5ac3f2231966033d5fbe97ee5c97475d4c8d18afcedb338b68"
+    },
+    {
+      "path": "packages/editor/src/InspectorPanel.tsx",
+      "bytes": 60012,
+      "sha256": "6acf2297f6383a3eed381cc29a19be21492db5d73beaa1fae94ad353482756bb"
+    },
+    {
+      "path": "packages/editor/src/modelAnimationAuthoring.test.ts",
+      "bytes": 26081,
+      "sha256": "aa55f962a125555da3265c30e2d5bca854ff961ec461d5ccb5fccdac8643a016"
+    },
+    {
+      "path": "packages/editor/src/modelAnimationAuthoring.ts",
+      "bytes": 12547,
+      "sha256": "179aa38aa0314f6a4b993ee887b9476ef36e246f7b9bf9b1d423dcc4277fd154"
+    },
+    {
+      "path": "packages/editor/src/shell/AnimationGraphPanel.tsx",
+      "bytes": 20132,
+      "sha256": "03087ebdca0fe24673cc97954bd6b7b19e5a4023319f32551cb8b2911063e319"
+    }
+  ],
+  "consumerArtifactHashesVerified": 42,
+  "wrappedInstalledFilesVerified": 2342,
+  "frozenConsumerReportSHA256": "f9c6ea5c458812926ef9df38eaddee2b096f24ce6d74065dce1e5eb358cbd503"
+}

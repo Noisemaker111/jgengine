@@ -1,0 +1,48 @@
+{
+  "sourceCommit": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "remoteHead": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+  "tree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+  "cleanBuildStagesVerified": 27,
+  "cleanBuiltTarballsVerified": 13,
+  "trackedSourceFilesVerified": 4037,
+  "tarFilesVerified": 2413,
+  "compiledFilesVerified": 2379,
+  "exactFinalEngineSourceFilesExtracted": 7,
+  "wholeTreeDeltaFromEac": [
+    {
+      "path": "changes/editor-animation-diagnostics.md",
+      "sha": "ffdcdb386f45ddd2a427f1a6b964379bf1a088a1",
+      "size": 300
+    },
+    {
+      "path": "packages/editor/src/InspectorPanel.tsx",
+      "sha": "6a4d1f41865b87ae7993f5cbf0e8485104c85526",
+      "size": 60012
+    },
+    {
+      "path": "packages/editor/src/shell/AnimationGraphPanel.tsx",
+      "sha": "8ac0061076e6993a6fe2a8ee6b1001114dc3e43d",
+      "size": 20132
+    }
+  ],
+  "compiledByteDeltaFromEac": [
+    {
+      "package": "editor",
+      "path": "InspectorPanel.js",
+      "beforeSha256": "8a05b1850610647108ffe0363fe91b299c3afcc74d07f495c9b2cc54647276a7",
+      "afterSha256": "ae87e5e37d3b7d6338edc633a9caf856ba1f01e844962c10797b3a50cb74bef6"
+    },
+    {
+      "package": "editor",
+      "path": "shell/AnimationGraphPanel.js",
+      "beforeSha256": "9cc6dfafd0365b93fa9c9810d3e68f7d906ebf1767a2d4ca3542611411a87559",
+      "afterSha256": "a6ac823a589b7f2a2c325c3426875419a9fb8353d70e54f55ccb1a4a5c929b42"
+    }
+  ],
+  "publicModelAnimationAuthoringHelperBytesUnchanged": true,
+  "limits": [
+    "Source and tar byte audit only; wrapped installed consumer/native proof pending.",
+    "Exact source files extracted by f704 SHA; eac intermediate remains unchanged.",
+    "No build, test, native capture or consumer replay performed by this audit."
+  ]
+}

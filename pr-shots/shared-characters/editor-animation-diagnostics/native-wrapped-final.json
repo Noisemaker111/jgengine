@@ -1,0 +1,81 @@
+{
+  "classification": "Native configuration-only unreleased installed public-package proof; no registry publication or released game adoption",
+  "sourceCommit": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "sourceTree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+  "remotePRHead": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+  "manifest": "candidate-package-manifest.json",
+  "installedPackageVerification": "installed-package-verification.json",
+  "attribution": "attribution.json",
+  "originalScene": {
+    "markers": 438,
+    "volumes": 127,
+    "paths": 8,
+    "SHA256": "d738e9b611726c71ba3ffb89643b18bed255fdf9a56a7168aff2298f0274a517",
+    "targetMarker": "player_spawn",
+    "targetIndex": 400,
+    "initialTransitionCount": 31,
+    "invalidPath": "markers[400].meta.animation.graph.layers[0].transitions[0].to"
+  },
+  "nativeStages": {
+    "inspect": {
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedWallSeconds": 27.462830688000395,
+      "startedAtUTC": "2026-10-04T04:24:02.323134+00:00"
+    },
+    "repair-save": {
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedWallSeconds": 44.60481012100354,
+      "startedAtUTC": "2026-10-04T04:24:57.751934+00:00"
+    },
+    "reopen": {
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedWallSeconds": 22.22558794499855,
+      "startedAtUTC": "2026-10-04T04:26:02.674332+00:00"
+    }
+  },
+  "verifiedResults": {
+    "initialDocumentAndMarkerUntouchedByInspection": true,
+    "fullDiagnosticPathReadableAndWrappedInInspector": true,
+    "fullDiagnosticPathReadableInGraphPanel": true,
+    "ordinaryPlaybackControlsUnavailableWhileInvalid": true,
+    "explicitNativeAutoButtonRepair": true,
+    "undoRestoresExactInitialMarkerAnd31Transitions": true,
+    "redoReturnsAuto": true,
+    "GUIWritesActualSceneFile": true,
+    "savedDocumentExactlyInitialExceptTargetAnimationAuto": true,
+    "freshOfficialBrowserOpensActualSavedFileWithoutImport": true,
+    "freshHistoryEmpty": true,
+    "placementAndAllOtherObjectsUnchanged": true
+  },
+  "savedFile": "/workspace/JGengine/.scratch/characters/native/animation-config-diagnostics-wrapped/scene/editor.scene.json",
+  "savedSHA256": "ee84e72389621e47148e620ae079497718aed8d5fd0d531e7c059daabe317372",
+  "savedSHAEqualsOldEacCohort": true,
+  "inspectedImages": {
+    "diagnostics-inspector.png": "cba2664519e1e6b6a8e1a23ba65aa037a3e6ecb1044883e1ac19a7558d77febf",
+    "diagnostics-graph.png": "f790c4b29f8aa2c0ca1f1ab56bb625c512855be1d2ba12d9254750e5cf252cd3",
+    "diagnostics-undo.png": "a83f38b378f5bf72d4493679327c9a879fe937073da190db1e117f0e8c1a04af",
+    "diagnostics-repaired-saved.png": "e98e2b05c4c6682df9bd41835c4f8aec20e9a2c44940b9282d5e0db0c1702348",
+    "diagnostics-fresh-reopened.png": "0706c1c3f0fafc3fdfde16b87b12cdf59c4b59f4fbaab34c8832de664e265784"
+  },
+  "nativeFailures": 0,
+  "nativeHangs": 0,
+  "oldScenarioCapsUnchanged": true,
+  "limits": [
+    "Configuration and diagnostic UI only; no rig asset registration or preview, gameplay, convincing animation, controls feel, or hardware performance claim.",
+    "Existing capped Lantern rendering, rig capture hangs and standalone playable metadata blockers remain unresolved.",
+    "Read-only CI first wrapped head failed HUD browser hook timeouts; native success does not erase CI failure."
+  ],
+  "officialOnly": "Normal packaged editor scaffold and bundled drive; ordinary select/get_marker/status/undo/redo APIs, native Auto and Save button clicks. No custom host, metadata, content/placement/camera rewrites, injected CSS, hidden flags or readiness modifications.",
+  "generatedScaffoldSHA256": {
+    "workspace/vite.config.ts": "b7a9b9a64a4c42e1ef6aeacfabf3ae363b74e1732bd44345f4b56686fad97228",
+    "workspace/index.html": "1d42c359604f65457ebeb8f57ac94ecf363bad01050d94042941c28c01c8d0ee",
+    "workspace/package.json": "46ccb229e4348a2fe00dbe5b906821f9ebc77a32a7e6a3ab1474b625128f8599",
+    "workspace/src/main.tsx": "350afa9159ffc80e9b1d877545f384c54c9e3b7a98c3d51cdcad1b983e182479",
+    "workspace/src/index.css": "05f8911b388d1a8e6bb8fac9a963bdf670f65133cad4e7190380ddf6a0e0bff7"
+  },
+  "processCleanup": "Owned editor host Ctrl-C exit1; all3drive subprocesses exited0; ports5569/5570 no listeners verified",
+  "frozen": true
+}

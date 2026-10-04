@@ -1,0 +1,35 @@
+{
+  "label": "Wrapped diagnostics follow-up uses byte-identical public helper and executed proof/input files; compiled two UI panels change. No oldcohort relabel.",
+  "beforeCohort": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+  "afterCohort": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "modules": [
+    {
+      "module": "@jgengine/editor/modelAnimationAuthoring",
+      "beforePath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/node_modules/@jgengine/editor/dist/modelAnimationAuthoring.js",
+      "beforeSha256": "a3d1789c4f4cc25305f0601a070ee273b758e2ba9768dda69a43c2a033c70625",
+      "afterPath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/editor/dist/modelAnimationAuthoring.js",
+      "afterSha256": "a3d1789c4f4cc25305f0601a070ee273b758e2ba9768dda69a43c2a033c70625",
+      "changed": false
+    },
+    {
+      "module": "@jgengine/editor/InspectorPanel",
+      "beforePath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/node_modules/@jgengine/editor/dist/InspectorPanel.js",
+      "beforeSha256": "8a05b1850610647108ffe0363fe91b299c3afcc74d07f495c9b2cc54647276a7",
+      "afterPath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/editor/dist/InspectorPanel.js",
+      "afterSha256": "ae87e5e37d3b7d6338edc633a9caf856ba1f01e844962c10797b3a50cb74bef6",
+      "changed": true
+    },
+    {
+      "module": "@jgengine/editor/shell/AnimationGraphPanel",
+      "beforePath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics/node_modules/@jgengine/editor/dist/shell/AnimationGraphPanel.js",
+      "beforeSha256": "9cc6dfafd0365b93fa9c9810d3e68f7d906ebf1767a2d4ca3542611411a87559",
+      "afterPath": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/editor/dist/shell/AnimationGraphPanel.js",
+      "afterSha256": "a6ac823a589b7f2a2c325c3426875419a9fb8353d70e54f55ccb1a4a5c929b42",
+      "changed": true
+    }
+  ],
+  "publicProofAndTwoInputsByteUnchanged": true,
+  "bothFullPublicDocumentRecordsBitEqual": true,
+  "earlierResultSha256": "5995094ecf7b4d2e88d90c61321a62f9763492f5494f961f0e53e19ebd8df06b",
+  "wrappedResultSha256": "8bf12713382c49d77fb09751305fdaae3897ecc756f1a66cd777f67d083ce3d5"
+}

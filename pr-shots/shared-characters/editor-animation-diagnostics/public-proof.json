@@ -1,0 +1,71 @@
+{
+  "scriptSha256": "b88a101954edf1c08b5143890e181948336ea094c0c54ef0242b19dfc1eac347",
+  "inputHashes": {
+    "scrap-valid-input-document.json": "7acff6c1f754ed878b06ab3230b8f2e63019d630b0c4955ff4b30647218bc9f1",
+    "lantern-valid-input-document.json": "67cd4a4380e37a1313c4ce771dc963c6143615c850e8d873c6f04ca77250e213"
+  },
+  "modules": {
+    "@jgengine/core/editor/commands": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/core/dist/editor/commands.js",
+    "@jgengine/core/editor/document": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/core/dist/editor/document.js",
+    "@jgengine/core/world/authoredAnimation": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/core/dist/world/authoredAnimation.js",
+    "@jgengine/editor/modelAnimationAuthoring": "/workspace/JGengine/.scratch/characters/consumer/animation-config-diagnostics-wrapped/node_modules/@jgengine/editor/dist/modelAnimationAuthoring.js"
+  },
+  "moduleHashes": {
+    "@jgengine/core/editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+    "@jgengine/core/editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+    "@jgengine/core/world/authoredAnimation": "6947aa4487954532bde754df16d57be056bf6933d1da953c262b00f9c2d26a87",
+    "@jgengine/editor/modelAnimationAuthoring": "a3d1789c4f4cc25305f0601a070ee273b758e2ba9768dda69a43c2a033c70625"
+  },
+  "cohort": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "tree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+  "manifestSha256": "36c76318da6919e64ff1a22d7bb1fe09f0bc94ea79c88a8950142ccec4e9e015",
+  "label": "Installed public pure editor/controller/runtime APIs and actual game-default identities. UI suppression separately verified by owning panel/native evidence; no native appearance or input feel claim.",
+  "records": [
+    {
+      "game": "scrap",
+      "id": "player_spawn",
+      "markerCount": 438,
+      "documentScope": "full original438-marker world",
+      "invalidTransitions": 31,
+      "persistedMalformedUnchanged": true,
+      "locatedDiagnostics": [
+        {
+          "path": "markers[400].meta.animation.graph.layers[0].transitions[0].to",
+          "message": "Transition references an unknown state.",
+          "repair": "Choose a state declared in this layer; only from may use *."
+        }
+      ],
+      "runtimeExactCallerDefault": true,
+      "explicitAutoRepairUndoRedo": true,
+      "validReplacementScalarEditsAndSaveReload": true,
+      "validDeeperUnknownSignedPartialEmptyDataPreserved": true,
+      "emptyMapCrossfadeRoleNumberClearGraphSaveUndoRedoPreserved": true,
+      "allOtherSceneDataUnchanged": true,
+      "invalidSavedSha256": "d6945d753c05deaedd5c16b2ec567abe2881b85ec09371617091e1be0684106e",
+      "repairedSavedSha256": "85a7bcdac8ea4ee340f50310f4fa567b0aa46392d07086ab33cd02a9b8a986dd"
+    },
+    {
+      "game": "lantern",
+      "id": "spawn:player",
+      "markerCount": 1,
+      "documentScope": "valid original canonical spawn slice; original full dawn document remains unsupported",
+      "invalidTransitions": 2,
+      "persistedMalformedUnchanged": true,
+      "locatedDiagnostics": [
+        {
+          "path": "markers[0].meta.animation.graph.layers[0].transitions[0].to",
+          "message": "Transition references an unknown state.",
+          "repair": "Choose a state declared in this layer; only from may use *."
+        }
+      ],
+      "runtimeExactCallerDefault": true,
+      "explicitAutoRepairUndoRedo": true,
+      "validReplacementScalarEditsAndSaveReload": true,
+      "validDeeperUnknownSignedPartialEmptyDataPreserved": true,
+      "emptyMapCrossfadeRoleNumberClearGraphSaveUndoRedoPreserved": true,
+      "allOtherSceneDataUnchanged": true,
+      "invalidSavedSha256": "95f5f57bb8a100c729174585a0aa76124530895e2f0a07b085196db73d2d20c1",
+      "repairedSavedSha256": "5735cfc93548e1d3354bc58bff4ff9600dff4a248f68f976db01a32eb948d159"
+    }
+  ]
+}

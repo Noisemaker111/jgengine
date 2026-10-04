@@ -1,0 +1,30 @@
+{
+  "format": "Concatenate binary parts in listed order to reconstruct ninth-proof.tar.gz; parts are not independently decompressible.",
+  "bundleBytes": 20067436,
+  "bundleSha256": "df33579cbd72fbd7258182e098b462c7deb9d2efb13185fc28c748746cd1c7a1",
+  "bundleGitBlobSha": "bccf62d518eaf0474ef26bfebd87b3d63a9d7982",
+  "regularTarFilesIncludingLedger": 903,
+  "parts": [
+    {
+      "path": "pr-shots/shared-characters/editor-animation-diagnostics/ninth-proof.tar.gz.part-01",
+      "bytes": 5242880,
+      "sha256": "cd4214ccaf9c74e01ee2be047880b4df2db19838c22b0114034a50b33207be7c"
+    },
+    {
+      "path": "pr-shots/shared-characters/editor-animation-diagnostics/ninth-proof.tar.gz.part-02",
+      "bytes": 5242880,
+      "sha256": "578aade19ad28433ea51d6ed31b65ee29c50699323f52d8615c983705e438eab"
+    },
+    {
+      "path": "pr-shots/shared-characters/editor-animation-diagnostics/ninth-proof.tar.gz.part-03",
+      "bytes": 5242880,
+      "sha256": "6a66d796bf428c081fea411437e13832599d89154e0076c0afb87fdd87df3505"
+    },
+    {
+      "path": "pr-shots/shared-characters/editor-animation-diagnostics/ninth-proof.tar.gz.part-04",
+      "bytes": 4338796,
+      "sha256": "a444a03ec881840ec8efa34b574d055ede61feb738313e701b8353563c90da21"
+    }
+  ],
+  "verification": "All regular tar member hashes verified; concatenated parts verified byte-equal original complete bundle."
+}

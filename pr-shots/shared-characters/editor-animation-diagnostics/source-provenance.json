@@ -1,0 +1,37 @@
+{
+  "localHead": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "tree": "1987015cfaeb9abf29f614ebbeaab5135062090b",
+  "previousLocal": "eac1455252e78e8c5c23ae3170bdcca8a29f9d98",
+  "previousRemote": "0186871ba08e5575d47da94a7b7ceb21035d674c",
+  "reason": "Native inspection found long path clipped in narrow Inspector; wrap both diagnostic path lines.",
+  "files": [
+    {
+      "path": "changes/editor-animation-diagnostics.md",
+      "sha": "ffdcdb386f45ddd2a427f1a6b964379bf1a088a1",
+      "size": 300
+    },
+    {
+      "path": "packages/editor/src/InspectorPanel.tsx",
+      "sha": "6a4d1f41865b87ae7993f5cbf0e8485104c85526",
+      "size": 60012
+    },
+    {
+      "path": "packages/editor/src/shell/AnimationGraphPanel.tsx",
+      "sha": "8ac0061076e6993a6fe2a8ee6b1001114dc3e43d",
+      "size": 20132
+    }
+  ],
+  "remoteHead": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+  "checks": {
+    "editorTypes": 0,
+    "changelog": 0,
+    "cleanPreflight": 0,
+    "focusedTests": {
+      "pass": 27,
+      "fail": 0,
+      "assertions": 132,
+      "files": 1,
+      "log": ".scratch/characters/editor-animation-diagnostics/wrap-owning.log"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "head": "bfd84d525e34650046a8937c638fa2d82ab0b8b5",
+  "localSource": "f7040ce87888d3b7097539826d3af96fdf745987",
+  "fixture": "packages/shell/src/hudInputBoundary.test.ts",
+  "rawLog": "test-wrapped-failed.log",
+  "observed": "Five named and one unnamed beforeEach/afterEach hooks timed out at5000ms; no specific awaiting operation or product assertion in rawlog.",
+  "sourceBoundaries": {
+    "beforeAll": "10-46: packs core/react/shell, builds browser fixture, launches Chromium",
+    "beforeEach": "47-55: newPage48, goto51, slotwait52(2000ms), errors assertion54",
+    "afterEach": "56: page close",
+    "afterAll": "57: browser close/server stop/scratch cleanup"
+  },
+  "changedFromFirstPassingEac": [
+    "changes/editor-animation-diagnostics.md formatting",
+    "InspectorPanel.tsx diagnostic path class break-all",
+    "AnimationGraphPanel.tsx diagnostic path class break-all"
+  ],
+  "fixtureImports": "InventoryGrid/GameProvider/Window/ShellChrome/input+core; no changededitor diagnostic helpers. Cannot infer root cause from source separation.",
+  "actions": "Read-only source/log inspection; zero CI reruns or source edits by this worker."
+}
