@@ -62,6 +62,26 @@ export interface PoseState {
   hydrateAll(state: PoseSnapshot): void;
 }
 
+const ownedPoses = new WeakMap<PoseState["getPose"], Map<string, MovementPose>>();
+
+/** Restore one owned pose on synchronous failure; external implementations retain their semantic setter policy. @internal */
+export function withPoseRollback<T>(state: PoseState, instanceId: string, operation: () => T): T {
+  const poses = ownedPoses.get(state.getPose);
+  const previous = poses === undefined ? state.getPose(instanceId) : poses.get(instanceId);
+  try {
+    return operation();
+  } catch (error) {
+    if (poses !== undefined) {
+      if (previous === undefined) poses.delete(instanceId);
+      else poses.set(instanceId, previous);
+    } else {
+      try { state.setPose(instanceId, previous!); }
+      finally { throw error; }
+    }
+    throw error;
+  }
+}
+
 /**
  * Stance/pose transitions — stand, crouch, prone — that change the hitbox and movement.
  *
@@ -81,7 +101,7 @@ export function createPoseState(
     return resolveAllowed(instanceId)?.aim ?? ["hip"];
   }
 
-  return {
+  const state: PoseState = {
     getPose(instanceId) {
       return poses.get(instanceId) ?? "standing";
     },
@@ -116,4 +136,6 @@ export function createPoseState(
       for (const [id, aim] of Object.entries(state.aims)) aims.set(id, aim);
     },
   };
+  ownedPoses.set(state.getPose, poses);
+  return state;
 }

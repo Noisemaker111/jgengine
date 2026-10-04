@@ -41,6 +41,7 @@ import {
   type FreeFlightTuning,
 } from "./freeFlight";
 import { solidObstaclesNear } from "./solidObstacles";
+import { withPoseRollback } from "./poseState";
 import { approachYaw, steerYaw } from "./steering";
 import { resolveTerrainGradeStep } from "./terrainGrade";
 import {
@@ -460,47 +461,12 @@ export function stepPlayerMovement(
   if (player.movement?.frozen === true) return;
 
   const store = storeFor(ctx);
+  const retainedState = store.players.get(userId);
   const state = stateFor(store, userId);
 
-  // Validate authored dimensions before heading, stance or queued motion can change.
-  const flightTuning = flightTuningFor(tuning.movement, ctx);
   let collisionHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT;
   let requestedCollisionHeight = DEFAULT_OBSTACLE_PLAYER_HEIGHT;
   let collisionHeightBlocked = false;
-  if (flightTuning === null && tuning.controller === undefined && tuning.collision?.voxel !== true) {
-    const authoredHeight = tuning.movement?.collisionHeight;
-    requestedCollisionHeight = authoredHeight === undefined ? DEFAULT_OBSTACLE_PLAYER_HEIGHT : authoredHeight;
-    validateCollisionHeight(requestedCollisionHeight);
-    const previousHeight = state.heightfieldEntityId !== null && state.heightfieldEntityId !== playerId
-      ? null : state.heightfieldHeight;
-    collisionHeight = previousHeight ?? requestedCollisionHeight;
-    if (tuning.movement?.collideObjects !== false &&
-      (previousHeight === null && authoredHeight !== undefined || requestedCollisionHeight > collisionHeight)) {
-      const swim = tuning.movement?.swim;
-      const swimEnabled = swim === true || (typeof swim === "object" && swim !== null);
-      const floating = swimEnabled && tuning.ground.waterLevel !== undefined &&
-        tuning.ground.sampleHeight(player.position[0], player.position[2]) < tuning.ground.waterLevel;
-      const groundedSupport = state.motion?.grounded !== false && (state.motion?.jumpOffset ?? 0) <= 0 && !floating;
-      const supportStep = groundedSupport ? tuning.movement?.stepHeight ?? DEFAULT_PLAYER_STEP_HEIGHT : 0;
-      const bounds = gatherMovementObstacles(ctx, player.position, 0, 0, 0, supportStep,
-        Math.max(collisionHeight, requestedCollisionHeight));
-      // An authored terrain-relative spawn can rest a few centimetres inside a walkable road plate.
-      // Test the same support feet the grounded motor will accept, including the resulting headroom.
-      const support = groundedSupport
-        ? obstacleSupportHeight(player.position[0], player.position[2], player.position[1], supportStep, bounds) : null;
-      const supportedPosition: EntityPosition = support !== null && support > player.position[1]
-        ? [player.position[0], support, player.position[2]] : player.position;
-      const overlap = resolveObstacleVerticalStep(supportedPosition, 0, bounds,
-        DEFAULT_OBSTACLE_PLAYER_RADIUS, requestedCollisionHeight).initialOverlap;
-      if (overlap && previousHeight === null) {
-        throw new RangeError(`PlayerMovementConfig.collisionHeight ${requestedCollisionHeight} intersects blocking geometry at entity ${playerId}. Move the authored placement or choose a height that fits.`);
-      }
-      collisionHeightBlocked = overlap;
-    }
-    if (!collisionHeightBlocked) collisionHeight = requestedCollisionHeight;
-    state.heightfieldHeight = collisionHeight;
-    state.heightfieldEntityId = playerId;
-  }
 
   const held = new Set(input.held);
   const isDown = (action: string): boolean => held.has(action);
@@ -521,12 +487,54 @@ export function stepPlayerMovement(
   keys.s = isDown("moveBack");
   keys.a = isDown("moveLeft");
   keys.d = isDown("moveRight");
-  keys.shift = isDown("sprint") && (tuning.movement?.canSprint?.(ctx) ?? true);
-  keys.space = isDown("jump");
-  keys.c = isDown("crouch") && ctx.player.movement.setPose(playerId, "crouch") === null;
-  if (!keys.c && tuning.controller === undefined) {
-    const currentPose = ctx.player.movement.getPose(playerId);
-    if (currentPose !== "prone") ctx.player.movement.setPose(playerId, keys.shift ? "running" : "standing");
+  let flightTuning: FreeFlightTuning | null;
+  try {
+    flightTuning = withPoseRollback(ctx.player.movement, playerId, () => {
+      keys.shift = isDown("sprint") && (tuning.movement?.canSprint?.(ctx) ?? true);
+      keys.space = isDown("jump");
+      keys.c = isDown("crouch") && ctx.player.movement.setPose(playerId, "crouch") === null;
+      if (!keys.c && tuning.controller === undefined) {
+        const currentPose = ctx.player.movement.getPose(playerId);
+        if (currentPose !== "prone") ctx.player.movement.setPose(playerId, keys.shift ? "running" : "standing");
+      }
+      const flightTuning = flightTuningFor(tuning.movement, ctx);
+      if (flightTuning === null && tuning.controller === undefined && tuning.collision?.voxel !== true) {
+        const authoredHeight = tuning.movement?.collisionHeight;
+        requestedCollisionHeight = authoredHeight === undefined ? DEFAULT_OBSTACLE_PLAYER_HEIGHT : authoredHeight;
+        validateCollisionHeight(requestedCollisionHeight);
+        const previousHeight = state.heightfieldEntityId !== null && state.heightfieldEntityId !== playerId
+          ? null : state.heightfieldHeight;
+        collisionHeight = previousHeight ?? requestedCollisionHeight;
+        if (tuning.movement?.collideObjects !== false &&
+          (previousHeight === null && authoredHeight !== undefined || requestedCollisionHeight > collisionHeight)) {
+          const swim = tuning.movement?.swim;
+          const swimEnabled = swim === true || (typeof swim === "object" && swim !== null);
+          const floating = swimEnabled && tuning.ground.waterLevel !== undefined &&
+            tuning.ground.sampleHeight(player.position[0], player.position[2]) < tuning.ground.waterLevel;
+          const groundedSupport = state.motion?.grounded !== false && (state.motion?.jumpOffset ?? 0) <= 0 && !floating;
+          const supportStep = groundedSupport ? tuning.movement?.stepHeight ?? DEFAULT_PLAYER_STEP_HEIGHT : 0;
+          const bounds = gatherMovementObstacles(ctx, player.position, 0, 0, 0, supportStep,
+            Math.max(collisionHeight, requestedCollisionHeight));
+          // An authored terrain-relative spawn can rest a few centimetres inside a walkable road plate.
+          // Test the same support feet the grounded motor will accept, including the resulting headroom.
+          const support = groundedSupport
+            ? obstacleSupportHeight(player.position[0], player.position[2], player.position[1], supportStep, bounds) : null;
+          const supportedPosition: EntityPosition = support !== null && support > player.position[1]
+            ? [player.position[0], support, player.position[2]] : player.position;
+          const overlap = resolveObstacleVerticalStep(supportedPosition, 0, bounds,
+            DEFAULT_OBSTACLE_PLAYER_RADIUS, requestedCollisionHeight).initialOverlap;
+          if (overlap && previousHeight === null) {
+            throw new RangeError(`PlayerMovementConfig.collisionHeight ${requestedCollisionHeight} intersects blocking geometry at entity ${playerId}. Move the authored placement or choose a height that fits.`);
+          }
+          collisionHeightBlocked = overlap;
+        }
+        if (!collisionHeightBlocked) collisionHeight = requestedCollisionHeight;
+      }
+      return flightTuning;
+    });
+  } catch (error) {
+    if (retainedState === undefined && store.players.get(userId) === state) store.players.delete(userId);
+    throw error;
   }
   // A frame carrying analog magnitudes (virtual joystick, gamepad stick) walks at its deflection
   // instead of slamming digital ±1 axes — the fix for "a slight stick tilt reads as a full strafe".
@@ -541,6 +549,10 @@ export function stepPlayerMovement(
   const intent = resolveMovementIntent(keys, true, analogMove);
   const walkSpeed = player.movement?.walkSpeed ?? DEFAULT_WALK_SPEED;
 
+  if (flightTuning === null && tuning.controller === undefined && tuning.collision?.voxel !== true) {
+    state.heightfieldHeight = collisionHeight;
+    state.heightfieldEntityId = playerId;
+  }
   state.heading = nextHeading;
   const motionBatch = ctx.player.motionFor(userId).takePending();
   if (flightTuning !== null) {
