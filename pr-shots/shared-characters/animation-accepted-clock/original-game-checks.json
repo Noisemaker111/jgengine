@@ -1,0 +1,98 @@
+{
+  "manifestSha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+  "cohort": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "scriptSha256": "ceeb6fc43eec830e1227ac213fdce610985434ee78488d84fbf9c332abe79846",
+  "sourceLedgerSha256": "73215083665d82f1d5b97d557c175e96bc269598e4fe760e5ab169895b9c9f6d",
+  "originalSourceFilesVerified": 259,
+  "trackedInputsVerified": 280,
+  "label": "Original45a three-game source against actual unreleased accepted-clock package candidate; no prepared adapters executed.",
+  "checks": [
+    {
+      "game": "odd-orbit",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/odd-orbit",
+      "exitCode": 0,
+      "durationFromLog": "32.21s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-odd-orbit-build.log",
+      "logSha256": "b179bff56f9e241d6797c3e9f7cff1d44fec963614e2eb8c85f4ea42b6c13d71"
+    },
+    {
+      "game": "scrap-signal",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/scrap-signal",
+      "exitCode": 0,
+      "durationFromLog": "33.35s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-scrap-signal-build.log",
+      "logSha256": "5c1c4e4ef332607eda370f69ad861e5808e8250017b86e30ec91852122437c00"
+    },
+    {
+      "game": "lantern-reach",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/lantern-reach",
+      "exitCode": 0,
+      "durationFromLog": "36.98s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-lantern-reach-build.log",
+      "logSha256": "f96fc9845ceed1db86c626c594da462d637581a2a741eff8083b6fb0d0856944"
+    },
+    {
+      "game": "odd-orbit",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/odd-orbit",
+      "exitCode": 0,
+      "durationFromLog": null,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-odd-orbit-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "game": "scrap-signal",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/scrap-signal",
+      "exitCode": 0,
+      "durationFromLog": null,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-scrap-signal-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "game": "lantern-reach",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/lantern-reach",
+      "exitCode": 1,
+      "durationFromLog": null,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-lantern-reach-types.log",
+      "logSha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38"
+    }
+  ],
+  "sourceInputsStillByteEqual": true,
+  "expectedKnownTypeLimitation": "Lantern existing ActionBar/Dialogue Promise-versus-void dispatch errors; retain exact log. No source fixes."
+}

@@ -1,0 +1,23 @@
+{
+  "head": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+  "localSource": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "fixture": "packages/shell/src/render/modelAnimationHook.test.ts",
+  "sourceCopySHA256": "f32ee9525cbb000ed7fe0f10f16358c8ded34c00de26bcebc8e687bb39d598b1",
+  "rawFailure": "Could not resolve @react-three/drei in staged GameInspectionCamera.js:2 and GameOrbitCamera.js:2",
+  "boundary": "beforeAll buildBrowserFixture at296, scripts/browser-lib.ts119 throws buildstderr",
+  "stagedExternalPeersAtLines15to18": [
+    "react",
+    "react-dom",
+    "three",
+    "@react-three/fiber"
+  ],
+  "missingStaging": "@react-three/drei not linked into fixture peer list",
+  "newPass12Imports": [
+    "FrameDriver line32",
+    "createActionStateTracker line33"
+  ],
+  "assessment": "Explicit isolated fixture dependency resolution failure before this fixture assertions. This points to staging gap in new dependency closure, not animation pose assertion or unexplained timing failure. Additional transitive peers must be verified by owner before a new source head; do not infer they are complete from this log.",
+  "proposedNextOwnerAction": "Stage actual peer dependencies needed by public FrameDriver import in fixture and run owning browser build/test; no product or capture workaround.",
+  "actions": "Read-only exact source inspection; zero source edits, local retries or CI reruns",
+  "nativeScope": "No new attempts; unchanged pass11 UI proof separate"
+}

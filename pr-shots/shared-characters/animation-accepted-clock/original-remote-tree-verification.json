@@ -1,0 +1,12 @@
+{
+  "remoteHead": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+  "remoteTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "parents": [
+    "ef22f0c41b32949ba6ab162188f1d721851316f0"
+  ],
+  "localBuiltHead": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "localBuiltTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "wholeTreeEqualityVerified": true,
+  "verification": "GitHub Git commit API and immutable local Git tree; read-only provenance check, no source/ref mutations.",
+  "publication": "Unreleased public package proof; consumer/CI receipts pending."
+}

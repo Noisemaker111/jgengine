@@ -1,0 +1,105 @@
+{
+  "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption",
+  "commit": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "base": "ef22f0c41b32949ba6ab162188f1d721851316f0",
+  "dirty": false,
+  "packages": [
+    {
+      "name": "@jgengine/core",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-core-0.19.0.tgz",
+      "sha256": "52aed8b90173f75bdcbda10eb58eee6e35d3db18f0330dbf2771f83fc46cdc7f",
+      "files": 1254
+    },
+    {
+      "name": "@jgengine/rapier",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-rapier-0.19.0.tgz",
+      "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/ws",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-ws-0.19.0.tgz",
+      "sha256": "95340f7f138d12502e4d56a6d09afb63112539be63fe70009614b79669f6409a",
+      "files": 39
+    },
+    {
+      "name": "@jgengine/sql",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-sql-0.19.0.tgz",
+      "sha256": "4f7aab213c8519fb19444a8f4be6145672c9de12e02bdd3b0854e898164aaaa6",
+      "files": 19
+    },
+    {
+      "name": "@jgengine/navbake",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-navbake-0.19.0.tgz",
+      "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+      "files": 6
+    },
+    {
+      "name": "@jgengine/react",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-react-0.19.0.tgz",
+      "sha256": "8ac2dbddcf32f2b071b71e2f4ced03a284b420ead744b103522fed4fdc1d0e2d",
+      "files": 195
+    },
+    {
+      "name": "@jgengine/convex",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-convex-0.19.0.tgz",
+      "sha256": "6a7d03b12a86cbb7e8dbf3b532b35ecb65052b863cefdc87a1228acf1c1ec6a3",
+      "files": 37
+    },
+    {
+      "name": "@jgengine/node",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-node-0.19.0.tgz",
+      "sha256": "8521a5a9e175ce6cb25dacceb175b3c53c25dfb344ec027cdfa758f89305fd22",
+      "files": 39
+    },
+    {
+      "name": "@jgengine/shell",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-shell-0.19.0.tgz",
+      "sha256": "314223cb249be433d9ccd810a3ad71216c35c1b9831299f4ead86a3553145818",
+      "files": 548
+    },
+    {
+      "name": "@jgengine/editor",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-editor-0.19.0.tgz",
+      "sha256": "30b16cea6cc2e2a71ac43305f7960b00cfc221b8b8de474d2ecf11abe9640c8e",
+      "files": 247
+    },
+    {
+      "name": "@jgengine/assets",
+      "version": "0.19.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-assets-0.19.0.tgz",
+      "sha256": "ecff959ab738d1c0885e0bbd8c4a6f95c97eb70352edb58aa4d7e5d7bf305e94",
+      "files": 91
+    },
+    {
+      "name": "@jgengine/github",
+      "version": "0.6.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-github-0.6.0.tgz",
+      "sha256": "603e9286bc9cf9fb72e4d60d39d117376cf14693f33f7b92f94810c2ce30a56e",
+      "files": 34
+    },
+    {
+      "name": "jgengine",
+      "version": "0.16.0",
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/jgengine-0.16.0.tgz",
+      "sha256": "b69be9adc0ddc08684ad168979728e75865199d6469711e91ae4d8863f63de77",
+      "files": 129
+    }
+  ],
+  "buildProvenance": "build-provenance.json",
+  "compiledFileLedger": "compiled-files.json",
+  "packageFileLedger": "package-files.json",
+  "sourceFileLedger": "source-files.json",
+  "buildProvenanceSha256": "136a12963e810e89303041a65748b8977de5ac90153143c08b2f3c702c74b579"
+}

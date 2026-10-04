@@ -1,0 +1,16 @@
+{
+  "change": "Explicitly stage real @react-three/drei shell peer for the actual FrameDriver fixture import closure",
+  "ownedFile": "packages/shell/src/render/modelAnimationHook.test.ts",
+  "beforeSha256": "f32ee9525cbb000ed7fe0f10f16358c8ded34c00de26bcebc8e687bb39d598b1",
+  "afterSha256": "c590b7a85eccf685f408ba401b36d99ca15baaba93af8ea68c4529ba539ef9f4",
+  "checks": {
+    "owning": "32 pass, 0 fail, 315 assertions across hook, animationPlayback, movementAnimationPlayback",
+    "shellTypes": 0,
+    "diffCheck": 0
+  },
+  "runtimeSourceChanged": false,
+  "packageManifestChanged": false,
+  "limitations": [
+    "Remote CI has not yet rerun; parent owns delivery and CI verification."
+  ]
+}

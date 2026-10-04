@@ -1,0 +1,20 @@
+{
+  "scope": "Owning source-built real React/Fiber/public FrameDriver/imported Knight numeric evidence; no native appearance or released adoption claim.",
+  "checks": {
+    "before": "3 failures/4 assertions (newcore getter +old11hook)",
+    "final": "28PASS284assertions (18hook+10adjacent)",
+    "shellBuild": 0,
+    "shellTypes": 0,
+    "diffCheck": 0
+  },
+  "files": {
+    "packages/shell/src/render/useModelAnimation.ts": "b5ffed87397ac388884161c06de1a874cb9133beed5b1b0a59b96f376d7f9b5a",
+    "packages/shell/src/render/modelAnimationHook.test.ts": "f32ee9525cbb000ed7fe0f10f16358c8ded34c00de26bcebc8e687bb39d598b1"
+  },
+  "limitations": [
+    "advancedSeconds reports local accepted progress only; hosted prediction advanceTime:false provides no advancement.",
+    "External custom clocks missing optional getter warn and hold explicit bound game playback; default real and previews remain supported.",
+    "Adjacent headless GLTF texture decoding warnings are unrelated to numerical rig-track checks."
+  ],
+  "preservedHarnessFailure": "after-initial.log:17PASS1FAIL; incorrect negative-priority assumption corrected using actual gateRef while all real FrameDriver callbacks run."
+}

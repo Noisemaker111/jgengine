@@ -1,0 +1,112 @@
+{
+  "classification": "Pass 12 frozen consumer-only public-package evidence; unreleased accepted-progress candidate, no published adoption",
+  "builtSource": {
+    "builtCommit": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+    "builtTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+    "base": "ef22f0c41b32949ba6ab162188f1d721851316f0",
+    "manifest": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/candidate-package-manifest.json",
+      "sha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+      "bytes": 5127
+    },
+    "cleanSourceDuringBuildAndPack": true,
+    "sourceRemoteAtPack": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+    "buildWorkflow": "Fresh13ordered dist builds, explicit SDK skill staging+validation, normal13 npm packs:28 stages passed and HEAD/tree stable. Exact source/compiled/pack file ledgers retained."
+  },
+  "independentAudit": {
+    "state": "Final consumer audit PASS; corrected-head CI pending",
+    "consumerReportSHA256": "757f428866e5de10255bf44f8d7b84bce4606b3afd857a4bfcb8376091d0589d",
+    "artifactHashesVerified": 48,
+    "installedPackages": 9,
+    "installedFilesByteVerified": 2548,
+    "originalSourceFilesVerified": 259,
+    "originalTrackedInputsVerified": 280,
+    "preparedOnlyChange": "odd-orbit/src/game/render/AlienMesh.tsx",
+    "allOtherPreparedSourceFilesUnchanged": 258,
+    "actualPublicDriverCases": 6,
+    "beforePhysicalGameFrameRecordsBitExact": 100,
+    "defaultPauseConsumerFullRecordsBitExactToEf19": 10,
+    "realRigMatricesFinite": true,
+    "cleanupAndSubscriptionResultsVerified": true,
+    "sourceCorrection": {
+      "builtSource": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+      "builtTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+      "correctedLocal": "db82ce68b6e74cdad4b6d70526b64f449df2a6f6",
+      "correctedRemote": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+      "correctedTree": "e6c176b01087e3a1518a6720396e6cc8a8e9d927",
+      "firstRemote": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+      "sourceChange": [
+        "packages/shell/src/render/modelAnimationHook.test.ts"
+      ],
+      "unchangedTrackedSourceFiles": 4039,
+      "trackedFiles": 4040,
+      "allCompiledFilesUnchanged": 2379,
+      "allTarballsUnchanged": 13,
+      "manifestSha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+      "proofAttribution": "All package/consumer proofs retain original built99a/source tree. Corrected head changes only a non-shipped test fixture peer staging line; exact-head CI is separately verified. No rebuild or registry adoption claim.",
+      "correctedPush": "Standalone Git push exited 1/non-fast-forward because remote API delivery and equivalent local commit have distinct ancestry; GitData appends exact test-only tree on first remote commit and updates ref force=false."
+    },
+    "independentlyVerifiedSourceChangedFiles": [
+      "packages/shell/src/render/modelAnimationHook.test.ts"
+    ],
+    "independentlyVerifiedUnchangedSourceFiles": 4039,
+    "compiledFilesStillByteIdentical": 2379,
+    "all13OriginalTarballsStillHashExact": true,
+    "builtPackageManifestUnchanged": true,
+    "firstCIOriginalReceiptAndFailureHashesVerified": true,
+    "limitations": [
+      "SimClock advancedSeconds is local accepted progress and intentionally absent from serialized snapshots; this does not define a remote animation timeline. Hosted prediction advanceTime:false does not provide accepted remote progress.",
+      "Explicit game-clock animation bound to a custom clock without advancedSeconds holds playback and emits the shipped diagnostic requesting an engine clock or real-clock selection.",
+      "Imported-hook and FrameDriver evidence uses manual React/Fiber callbacks with actual game compositions and normal game commands; it does not prove native gameplay appearance, controls feel, hardware FPS or performance.",
+      "Original Odd public/models is still absent; no ignored models were provisioned or fetched. Vite builds cannot establish original game rendering readiness.",
+      "Original Lantern invalid dawn scene and four dispatch types remain untouched. No full Lantern authoring save loop claimed.",
+      "No new native capture or editor UI claim for this pass. Pass11 configuration-only capture remains attributed to f9, separately frozen.",
+      "Prepared Odd option is not released package adoption. Original game source/catalog/lockfile and all prior cohort evidence are unchanged."
+    ],
+    "actions": "Read-only storedrecords/Git/file/tar hashes and immutable corrected-test extraction; no tests/builds/native captures/source edits."
+  },
+  "sourceCorrection": {
+    "builtSource": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+    "builtTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+    "correctedLocal": "db82ce68b6e74cdad4b6d70526b64f449df2a6f6",
+    "correctedRemote": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+    "correctedTree": "e6c176b01087e3a1518a6720396e6cc8a8e9d927",
+    "firstRemote": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+    "sourceChange": [
+      "packages/shell/src/render/modelAnimationHook.test.ts"
+    ],
+    "unchangedTrackedSourceFiles": 4039,
+    "trackedFiles": 4040,
+    "allCompiledFilesUnchanged": 2379,
+    "allTarballsUnchanged": 13,
+    "manifestSha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+    "proofAttribution": "All package/consumer proofs retain original built99a/source tree. Corrected head changes only a non-shipped test fixture peer staging line; exact-head CI is separately verified. No rebuild or registry adoption claim.",
+    "correctedPush": "Standalone Git push exited 1/non-fast-forward because remote API delivery and equivalent local commit have distinct ancestry; GitData appends exact test-only tree on first remote commit and updates ref force=false."
+  },
+  "firstCIFailure": "bc7 firsthead beforeAll isolated browser fixture missing@react-three/drei; owning runtime assertions did not run in that failing hook fixture. Raw failure receipt/log retained.",
+  "correctedHeadCI": {
+    "head": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+    "run": 37181753227,
+    "attempt": 1,
+    "allSixChecksPass": true,
+    "reportSHA256": "a991aada43d94b4278c21c34a096975875a3a2a4e4550f0e2d8c441f6b45a300"
+  },
+  "setupFailuresPreserved": [
+    "Precommit/outdated-beta ship preflight failure then frozenPASS",
+    "Missing scratch/packages parent before any initial helper build then same helper28stagesPASS",
+    "Owning initial negative-priority gating harness error then corrected actualgateRef",
+    "Firstremote fixturepeer failure then testonlyline correction"
+  ],
+  "skills": "Pass12 producer actually executesstage-skills as one of28 logged stages; all231 skillentries compared to99a committedGit. Oldhelpers/cohorts and prior skillfreshness limits remain unchanged.",
+  "noManifestRelabel": true,
+  "limitations": [
+    "SimClock advancedSeconds is local accepted progress and intentionally absent from serialized snapshots; this does not define a remote animation timeline. Hosted prediction advanceTime:false does not provide accepted remote progress.",
+    "Explicit game-clock animation bound to a custom clock without advancedSeconds holds playback and emits the shipped diagnostic requesting an engine clock or real-clock selection.",
+    "Imported-hook and FrameDriver evidence uses manual React/Fiber callbacks with actual game compositions and normal game commands; it does not prove native gameplay appearance, controls feel, hardware FPS or performance.",
+    "Original Odd public/models is still absent; no ignored models were provisioned or fetched. Vite builds cannot establish original game rendering readiness.",
+    "Original Lantern invalid dawn scene and four dispatch types remain untouched. No full Lantern authoring save loop claimed.",
+    "No new native capture or editor UI claim for this pass. Pass11 configuration-only capture remains attributed to f9, separately frozen.",
+    "Prepared Odd option is not released package adoption. Original game source/catalog/lockfile and all prior cohort evidence are unchanged."
+  ],
+  "merge": "Not assumed; separate merge receipt follows parent verification."
+}

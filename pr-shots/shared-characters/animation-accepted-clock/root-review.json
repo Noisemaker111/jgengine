@@ -1,0 +1,19 @@
+{
+  "reviewUtc": "2026-10-04T06:16:02.605100+00:00",
+  "consumerReportSha256": "757f428866e5de10255bf44f8d7b84bce4606b3afd857a4bfcb8376091d0589d",
+  "allArtifactHashesVerified": 48,
+  "originalDriverPhysicalGameFrameRecordsCompared": 100,
+  "originalDriverFields": [
+    "position",
+    "velocity",
+    "action",
+    "bodyPlan",
+    "clock",
+    "clockSnapshot"
+  ],
+  "allBitExact": true,
+  "acceptedClipPhaseSixCasesVerified": true,
+  "cleanupAndSubscriptionsVerified": true,
+  "combinedSourceReview": "Root and independent movement review approved; source-equivalence peer correction verified all4039 other source/2379 compiled/13 packs unchanged",
+  "scope": "Numerical public package/real rig behavior; no native appearance, feel, hardware FPS or release adoption claim"
+}

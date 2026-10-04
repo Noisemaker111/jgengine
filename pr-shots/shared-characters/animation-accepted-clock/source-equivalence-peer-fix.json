@@ -1,0 +1,18 @@
+{
+  "builtSource": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "builtTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "correctedLocal": "db82ce68b6e74cdad4b6d70526b64f449df2a6f6",
+  "correctedRemote": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+  "correctedTree": "e6c176b01087e3a1518a6720396e6cc8a8e9d927",
+  "firstRemote": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+  "sourceChange": [
+    "packages/shell/src/render/modelAnimationHook.test.ts"
+  ],
+  "unchangedTrackedSourceFiles": 4039,
+  "trackedFiles": 4040,
+  "allCompiledFilesUnchanged": 2379,
+  "allTarballsUnchanged": 13,
+  "manifestSha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+  "proofAttribution": "All package/consumer proofs retain original built99a/source tree. Corrected head changes only a non-shipped test fixture peer staging line; exact-head CI is separately verified. No rebuild or registry adoption claim.",
+  "correctedPush": "Standalone Git push exited 1/non-fast-forward because remote API delivery and equivalent local commit have distinct ancestry; GitData appends exact test-only tree on first remote commit and updates ref force=false."
+}

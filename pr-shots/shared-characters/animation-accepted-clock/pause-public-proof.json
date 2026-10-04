@@ -1,0 +1,89 @@
+{
+  "status": "PASS",
+  "layer": "Manual React/Fiber numeric public package replay of actual unchanged original Scrap Signal and Lantern Reach configurations/rigs; no native appearance, hardware FPS or released adoption claim.",
+  "candidate": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "candidateTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "manifestSha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+  "installedVerificationSha256": "7353e56746da51ba9ac4a34cad8a1aa1d29e02a2bed92b26a0b1ed4ced80cad1",
+  "baselineCandidate": {
+    "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+    "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+    "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption"
+  },
+  "baselineFilesUnchanged": true,
+  "allOriginal219InputBytesVerifiedBeforeAndAfter": true,
+  "executionFixtureBytesExactlySameAsEf19": true,
+  "runnerDifference": "Complete candidate/module/rig/bundle preexecution archive only; simulation/test assertions unchanged.",
+  "results": {
+    "scrap": {
+      "allNumericCaseRecordsBitExactToEf19": true,
+      "cases": [
+        "bound",
+        "uninterrupted",
+        "queued",
+        "queued-control"
+      ],
+      "resultSha256": "5583b4590dd7d31fb95044412d4299c1c49ab128132ab245380d1942fe229cc5",
+      "baselineResultSha256": "1e5f48272ed6b96228615853070351fdfb7993796fb44f689c7d38933eec828e",
+      "subscriptionsAfterUnmount": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cleanupAfterUnmount": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "gameplayRngCalls": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "lantern": {
+      "allNumericCaseRecordsBitExactToEf19": true,
+      "cases": [
+        "bound",
+        "timescale",
+        "unbound",
+        "noctx",
+        "positive-speed",
+        "uninterrupted"
+      ],
+      "resultSha256": "3cbf57854e1d8bd55fdaa5ae3fc3accd4ac38f6c92a9a16694984916c2ecc3de",
+      "baselineResultSha256": "e2b2410ad8b47914b6e98269e0944d1b3b390b49d06dd50c9d8b3765c6f5e667",
+      "subscriptionsAfterUnmount": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cleanupAfterUnmount": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "gameplayRngCalls": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "executedArchives": [
+    "executed-scrap-resume-trace",
+    "executed-lantern-resume-trace"
+  ]
+}

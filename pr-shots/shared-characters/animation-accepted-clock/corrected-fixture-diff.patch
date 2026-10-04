@@ -1,0 +1,13 @@
+diff --git a/packages/shell/src/render/modelAnimationHook.test.ts b/packages/shell/src/render/modelAnimationHook.test.ts
+index 721e89a0..740c522a 100644
+--- a/packages/shell/src/render/modelAnimationHook.test.ts
++++ b/packages/shell/src/render/modelAnimationHook.test.ts
+@@ -12,7 +12,7 @@ beforeAll(async () => {
+   await rm(scratch, { recursive: true, force: true });
+   await mkdir(`${scratch}/node_modules/@jgengine`, { recursive: true });
+   await mkdir(`${scratch}/node_modules/@react-three`, { recursive: true });
+-  for (const pkg of ["react", "react-dom", "three", "@react-three/fiber"]) {
++  for (const pkg of ["react", "react-dom", "three", "@react-three/fiber", "@react-three/drei"]) {
+     const owner = pkg === "react-dom" ? "react" : "shell";
+     await symlink(resolve(import.meta.dir, "../../../../packages", owner, "node_modules", pkg), `${scratch}/node_modules/${pkg}`, "dir");
+   }

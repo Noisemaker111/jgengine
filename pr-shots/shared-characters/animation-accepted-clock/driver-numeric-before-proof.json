@@ -1,0 +1,159 @@
+{
+  "manifestPath": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/candidate-package-manifest.json",
+  "manifestSha256": "dcc1b150aea61bfed80dcec8af542e405f81f48dbf25879912fb1c9592441127",
+  "commit": "f9d7071b4899aa8d02679c05dd906bf1d2d4a664",
+  "tree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "modules": {
+    "@jgengine/core/runtime/gameContext": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/core/dist/runtime/gameContext.js",
+    "@jgengine/shell/render/useModelAnimation": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+    "@jgengine/shell/drivers/FrameDriver": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/shell/dist/drivers/FrameDriver.js",
+    "@jgengine/core/input/actionBindings": "/workspace/JGengine/.scratch/characters/consumer/odd-orbit-clock/final-clock-game/node_modules/@jgengine/core/dist/input/actionBindings.js"
+  },
+  "moduleHashes": {
+    "@jgengine/core/runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+    "@jgengine/shell/render/useModelAnimation": "34868a00471ccfcd48544692ac24dcf9b4095982008d76e0a006af78c0807229",
+    "@jgengine/shell/drivers/FrameDriver": "c181d8760245d49d85ad2ef818b20a07a98a83f31478d350cc55020559193629",
+    "@jgengine/core/input/actionBindings": "ecc4a023c57357734f3ef1eaeefadc895fa52804faac5d0b81d02750b7ddc0f4"
+  },
+  "runnerSha256": "47659d41672dd679401566fd377ddd77cb584b26b9350ac95d43893ea2a8517a",
+  "fixtureSha256": "0c85d50dc516b5856b0e59bc4cac818aa1d6ba33724169af2a0d9a93f59cac8f",
+  "originalGameLedgerSha256": "e522b7d61788d6e108c8289946d2326d2995052ccb6bf2588f08a81c79b95952",
+  "asset": "/workspace/JGengine/apps/dev/public/models/kaykit-adventurers/Knight.glb",
+  "assetSha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+  "scope": "Actual public FrameDriver mounted with original OddOrbit PlayableGame and normal commands; manually invoked Fiber subscriptions sorted by registered priority, React/hook/rig numeric proof only. No native rendering, FPS or appearance inference.",
+  "assetLimitation": "Original OddOrbit public/models remains unprovisioned; same registered official KayKit Knight supplied read-only from provisioned SDK dev catalog.",
+  "cases": [
+    {
+      "rate": 1,
+      "rawDt": 0.016666666666666666,
+      "frames": 60,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 1,
+      "displacement": 1.08114964294704,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8984421488685458,
+          "time": 1.0000000000000013
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.1015578511314542,
+          "time": 0.19999998807907238
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.016666666666666666
+        }
+      ],
+      "firstClockDelta": 0.01666666666666572,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 4,
+      "rawDt": 0.016666666666666666,
+      "frames": 15,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 1,
+      "displacement": 1.0824252926411606,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8984500118946448,
+          "time": 0.9999999999999999
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.10154998810535525,
+          "time": 0.19999998807907093
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.06666666666666667
+        }
+      ],
+      "firstClockDelta": 0.06666666666666288,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 1,
+      "rawDt": 0.2,
+      "frames": 20,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 4,
+      "displacement": 1.0820000464103567,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Idle",
+          "weight": 0.47165099527757093,
+          "time": 0.7999998331069955
+        },
+        {
+          "clip": "Walking_A",
+          "weight": 0.5283490047224291,
+          "time": 0.7999998331069955
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.2
+        }
+      ],
+      "firstClockDelta": 0.04999999999999716,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 4,
+      "rawDt": 0.2,
+      "frames": 5,
+      "calendarScale": 1,
+      "acceptedClockDelta": 1.0000000000000142,
+      "rawSpeedNormalizedSeconds": 4,
+      "displacement": 1.0858281580466171,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Idle",
+          "weight": 0.467593463644124,
+          "time": 0.7999998331069946
+        },
+        {
+          "clip": "Walking_A",
+          "weight": 0.532406536355876,
+          "time": 0.7999998331069946
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.8
+        }
+      ],
+      "firstClockDelta": 0.20000000000000284,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    }
+  ]
+}

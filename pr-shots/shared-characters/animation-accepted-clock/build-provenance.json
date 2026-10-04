@@ -1,0 +1,532 @@
+{
+  "status": "complete",
+  "commit": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "base": "ef22f0c41b32949ba6ab162188f1d721851316f0",
+  "startedUtc": "20261004T055109Z",
+  "workflowSha256": "eae54549a37b23fe2de31fc517b70cd135c6b7dd7545201069840072e676424a",
+  "rootBuildScript": "bun scripts/guard.ts 600 'bun scripts/ensure-ready.ts --install-only && bun run --cwd packages/core build && bun run --cwd packages/rapier build && bun run --cwd packages/ws build && bun run --cwd packages/sql build && bun run --cwd packages/navbake build && bun run --cwd packages/react build && bun run --cwd packages/convex build && bun run --cwd packages/node build && bun run --cwd packages/shell build && bun run --cwd packages/editor build && bun run --cwd packages/assets build && bun run --cwd packages/github build && bun run --cwd packages/jgengine build && bun run build:registry'",
+  "packageBuildOrder": [
+    "core",
+    "rapier",
+    "ws",
+    "sql",
+    "navbake",
+    "react",
+    "convex",
+    "node",
+    "shell",
+    "editor",
+    "assets",
+    "github",
+    "jgengine"
+  ],
+  "packageBuildScripts": {
+    "core": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "rapier": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "ws": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "sql": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "navbake": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "react": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "convex": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "node": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "shell": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "editor": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "assets": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist && bun scripts/postbuild.ts",
+    "github": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist",
+    "jgengine": "tsgo -p tsconfig.build.json && bun ../../scripts/fix-extensions.ts dist"
+  },
+  "dependencyLockSha256": "63a1a43df6db2b87a15871f6c0fa625cb3223fe820944e08dfb4241a0f493e3c",
+  "toolVersions": {
+    "bun": "1.4.2",
+    "npm": "11.9.0"
+  },
+  "stages": [
+    {
+      "label": "stage-skills",
+      "argv": [
+        "bun",
+        "run",
+        "stage-skills"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.04713195200019982,
+      "stdout": "stage-skills.stdout.log",
+      "stdoutSha256": "29adf732692b62957f6dd626d7cd5c63ffcae309bbc8c40a5ac3deb80776ff72",
+      "stderr": "stage-skills.stderr.log",
+      "stderrSha256": "fc49e753bf2d7dad8a0cc2be62886c57077bc87c92954fafb0ca3b8e9f0965d8"
+    },
+    {
+      "label": "check-staged-skills",
+      "argv": [
+        "bun",
+        "run",
+        "check-stage-skills"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.036570241001754766,
+      "stdout": "check-staged-skills.stdout.log",
+      "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stderr": "check-staged-skills.stderr.log",
+      "stderrSha256": "e9ccecf262ef7e126fa246a37af2a4ba133c675b48e916a1e1edb3eb1a29989a"
+    },
+    {
+      "label": "build-core",
+      "argv": [
+        "bun",
+        "--cwd=packages/core",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 1.8472509399980481,
+      "stdout": "build-core.stdout.log",
+      "stdoutSha256": "54eb893b7881bba7f6e09e7e9eede629f3e3b7c10d0ed0924e8f391317e25a09",
+      "stderr": "build-core.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-rapier",
+      "argv": [
+        "bun",
+        "--cwd=packages/rapier",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.11802636200081906,
+      "stdout": "build-rapier.stdout.log",
+      "stdoutSha256": "7df3d07a3fd61b9922a9e06cf89a39d52ff790048b151163b9ab8a017aa2f0f3",
+      "stderr": "build-rapier.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-ws",
+      "argv": [
+        "bun",
+        "--cwd=packages/ws",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.2377554990016506,
+      "stdout": "build-ws.stdout.log",
+      "stdoutSha256": "a9c29e958fcb2e8ac14f2d3c3538280a6c93c408786ceec043153b13ffac78d2",
+      "stderr": "build-ws.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-sql",
+      "argv": [
+        "bun",
+        "--cwd=packages/sql",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.09467218500140007,
+      "stdout": "build-sql.stdout.log",
+      "stdoutSha256": "b449f40c46f546ede871edccb7e3433daad468e920fcd3719efa9c48430724f1",
+      "stderr": "build-sql.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-navbake",
+      "argv": [
+        "bun",
+        "--cwd=packages/navbake",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.14396611399934045,
+      "stdout": "build-navbake.stdout.log",
+      "stdoutSha256": "e913a0d6180b1f9a10ac8fc9cfd36b6c2686c8fe568e3ee060f75b0f0371d45f",
+      "stderr": "build-navbake.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-react",
+      "argv": [
+        "bun",
+        "--cwd=packages/react",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 1.167979200003174,
+      "stdout": "build-react.stdout.log",
+      "stdoutSha256": "25445ccfe6d4b13cf87c443a0862de1a4bbcbd27c8d33c77556d30afdfac4d00",
+      "stderr": "build-react.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-convex",
+      "argv": [
+        "bun",
+        "--cwd=packages/convex",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.5985401920006552,
+      "stdout": "build-convex.stdout.log",
+      "stdoutSha256": "98a9f0038cfdf3935b3223e0b992e74260e3277e3a8bb80f7c875f6c2f6013a1",
+      "stderr": "build-convex.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-node",
+      "argv": [
+        "bun",
+        "--cwd=packages/node",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.3013473350001732,
+      "stdout": "build-node.stdout.log",
+      "stdoutSha256": "a11ad50e3276de2e696c5ae729d51db99a4db78c2779d80f3e740003f3ebda2e",
+      "stderr": "build-node.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-shell",
+      "argv": [
+        "bun",
+        "--cwd=packages/shell",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 2.608909793998464,
+      "stdout": "build-shell.stdout.log",
+      "stdoutSha256": "be5bb0a1500fca8cd2732c7aa7b26e0774b92983e1b54114dbf0eb671878aac2",
+      "stderr": "build-shell.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-editor",
+      "argv": [
+        "bun",
+        "--cwd=packages/editor",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 1.2966777520014148,
+      "stdout": "build-editor.stdout.log",
+      "stdoutSha256": "6f084293e84faadc4eaaa87a63eaf93d28e4a5d51e20d75b2d682a2d4e448754",
+      "stderr": "build-editor.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-assets",
+      "argv": [
+        "bun",
+        "--cwd=packages/assets",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.46135969500028295,
+      "stdout": "build-assets.stdout.log",
+      "stdoutSha256": "57d068076d483b725f4ef08722b40f4fb8973f9db2dfa39e9aeabc058aaf9c51",
+      "stderr": "build-assets.stderr.log",
+      "stderrSha256": "6e6e65a7af2f976255c20ee44c2acc93207ad3cb8976dc870d2bf6a6d6e3e1b4"
+    },
+    {
+      "label": "build-github",
+      "argv": [
+        "bun",
+        "--cwd=packages/github",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.1499790080015373,
+      "stdout": "build-github.stdout.log",
+      "stdoutSha256": "f5154ce73f8e69455dcee6114937221146a32d8fa336e909c27813e6fd2e8304",
+      "stderr": "build-github.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "build-jgengine",
+      "argv": [
+        "bun",
+        "--cwd=packages/jgengine",
+        "run",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress",
+      "exitCode": 0,
+      "elapsedSeconds": 0.24395933800042258,
+      "stdout": "build-jgengine.stdout.log",
+      "stdoutSha256": "c2df500afdb3b094f3a1d92cd9f0d89e9e26dede0190ff9653e0af11bf3c885c",
+      "stderr": "build-jgengine.stderr.log",
+      "stderrSha256": "ca1247f9b09c6199e9b6b486e72c927ff38e0a81365ef7d117bfaeb54d74c4c7"
+    },
+    {
+      "label": "pack-core",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/core",
+      "exitCode": 0,
+      "elapsedSeconds": 1.8259643050005252,
+      "stdout": "pack-core.stdout.log",
+      "stdoutSha256": "fe928428b0830645d28073c6226960d969c8d182b5ae5cdf7aed15ec0d54dd06",
+      "stderr": "pack-core.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-rapier",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/rapier",
+      "exitCode": 0,
+      "elapsedSeconds": 0.36369757400098024,
+      "stdout": "pack-rapier.stdout.log",
+      "stdoutSha256": "19a816f4a18f481b5111dc95d65eac5a553b4973b7c98270a9f19b92711ad822",
+      "stderr": "pack-rapier.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-ws",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/ws",
+      "exitCode": 0,
+      "elapsedSeconds": 0.42131020599845215,
+      "stdout": "pack-ws.stdout.log",
+      "stdoutSha256": "bbd3b269e29bce61d444de793dc6dbc846bb86036c4a5da4390c5364c56995de",
+      "stderr": "pack-ws.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-sql",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/sql",
+      "exitCode": 0,
+      "elapsedSeconds": 0.7831638759998896,
+      "stdout": "pack-sql.stdout.log",
+      "stdoutSha256": "70e1ed2e8149cb47a37d2c3a103eff3ceb5137e5f91c9c8ac5f2bb08305dd8fd",
+      "stderr": "pack-sql.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-navbake",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/navbake",
+      "exitCode": 0,
+      "elapsedSeconds": 0.8199853320002148,
+      "stdout": "pack-navbake.stdout.log",
+      "stdoutSha256": "b024663ecebd06545747faaf3efeeee501401bcd22c3b09f04535e4b20aa8cb4",
+      "stderr": "pack-navbake.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-react",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/react",
+      "exitCode": 0,
+      "elapsedSeconds": 0.8135872669990931,
+      "stdout": "pack-react.stdout.log",
+      "stdoutSha256": "c66dbe37d374491ee474f44fa56580cd2e2a8e536e56ec94fdd15b1c3501b1be",
+      "stderr": "pack-react.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-convex",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/convex",
+      "exitCode": 0,
+      "elapsedSeconds": 0.7768516320029448,
+      "stdout": "pack-convex.stdout.log",
+      "stdoutSha256": "76c10d19311f9eac5af5fe95baa287b06db054937adc0f932d18c08dd3f330bf",
+      "stderr": "pack-convex.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-node",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/node",
+      "exitCode": 0,
+      "elapsedSeconds": 0.8046830570019665,
+      "stdout": "pack-node.stdout.log",
+      "stdoutSha256": "a101cd2e1f13531228020483ba583285649d0f0542886f1e9618a24f51a2e752",
+      "stderr": "pack-node.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-shell",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/shell",
+      "exitCode": 0,
+      "elapsedSeconds": 1.51127537299908,
+      "stdout": "pack-shell.stdout.log",
+      "stdoutSha256": "6ac8851c2468136b65565a6bbbbcc9811cb8de80d8178469da68e4dc0dd7a870",
+      "stderr": "pack-shell.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-editor",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/editor",
+      "exitCode": 0,
+      "elapsedSeconds": 1.1382301519988687,
+      "stdout": "pack-editor.stdout.log",
+      "stdoutSha256": "3007e100e6869039d29588fb73de0484a5d0f792b0a6ac87b82c055a0b450b11",
+      "stderr": "pack-editor.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-assets",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/assets",
+      "exitCode": 0,
+      "elapsedSeconds": 0.7973640300006082,
+      "stdout": "pack-assets.stdout.log",
+      "stdoutSha256": "0b198700ce63c45588795a1c8e7b6a340ab8b8b578da537b213322435438218e",
+      "stderr": "pack-assets.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-github",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/github",
+      "exitCode": 0,
+      "elapsedSeconds": 0.38542348999908427,
+      "stdout": "pack-github.stdout.log",
+      "stdoutSha256": "752991e14e97f15838c09adea0cfce06f82271c2ad73e7146994b8cdf4a15c42",
+      "stderr": "pack-github.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "pack-jgengine",
+      "argv": [
+        "npm",
+        "pack",
+        "--json",
+        "--pack-destination",
+        "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21"
+      ],
+      "cwd": "/workspace/JGengine/.claude/worktrees/character-clock-progress/packages/jgengine",
+      "exitCode": 0,
+      "elapsedSeconds": 1.090393934999156,
+      "stdout": "pack-jgengine.stdout.log",
+      "stdoutSha256": "df915431632a82911442a6978a101c030fa05c548b1b640651951c56571a68e4",
+      "stderr": "pack-jgengine.stderr.log",
+      "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "removedDist": [
+    "packages/core/dist",
+    "packages/rapier/dist",
+    "packages/ws/dist",
+    "packages/sql/dist",
+    "packages/navbake/dist",
+    "packages/react/dist",
+    "packages/convex/dist",
+    "packages/node/dist",
+    "packages/shell/dist",
+    "packages/editor/dist",
+    "packages/assets/dist",
+    "packages/github/dist",
+    "packages/jgengine/dist"
+  ],
+  "limitations": [
+    "Caller freezes checkout and prevents concurrent builds/branch switches; scratch lock serializes only this workflow.",
+    "No install/gen/registry build/tests/source edits/release/publication. Owning verification remains separate.",
+    "Uses root13-package order with AGENTS-compatible bun --cwd= syntax.",
+    "SDK skills are explicitly staged from owning source before mapping validation; optional ignored package changelogs must match root."
+  ],
+  "completedUtc": "2026-10-04T05:51:33.652345+00:00",
+  "ledgerHashes": {
+    "source-files.json": "7018b175b1ee6336d16a1067261856474a7e9fb6cb2d88f84b9fd8638bbe48eb",
+    "compiled-files.json": "9d2ba9dcad0e8ec6d26c80cf8052a8c8e7f2394c355546d7e38ab9efc9b1195a",
+    "package-files.json": "28a9630a8b053c7cee7cb4c1155b4bded8ce24e7ac11a391308287e112e644cf"
+  }
+}

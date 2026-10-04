@@ -1,0 +1,39 @@
+{
+  "label": "Prepared one-line Odd game clock policy builds against actual public accepted-progress package; original results remain separate",
+  "cohort": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "checks": [
+    {
+      "game": "odd-orbit",
+      "kind": "build",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/vite",
+        "build"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/odd-orbit",
+      "exitCode": 0,
+      "durationFromLog": "16.17s",
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-orbit-build.log",
+      "logSha256": "a7e37ec559b1b572b1becf79bf6b6b6fecef1accdedfc52539f597136968e72c"
+    },
+    {
+      "game": "odd-orbit",
+      "kind": "types",
+      "command": [
+        "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/tsgo",
+        "--noEmit",
+        "-p",
+        "tsconfig.json"
+      ],
+      "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/odd-orbit",
+      "exitCode": 0,
+      "durationFromLog": null,
+      "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-orbit-types.log",
+      "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "exactOnlyOneLineChanged": true,
+  "otherSourceFileCountPreserved": 258,
+  "originalPrepatchResults": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-prepatch-checks.json",
+  "preparedPatchLedgerSha256": "b3cc15c6762668a006279d66b8e0a0a0de52936a0a47fa3640768f49c109f7c0"
+}

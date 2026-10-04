@@ -1,0 +1,243 @@
+{
+  "beforePath": "/workspace/JGengine/.scratch/characters/animation-driver-clock-triage/executed-f9d7071b/numeric-records.json",
+  "beforeSha256": "7ab80d14bd95bca1a322837f6470b63926a2a81649a935e9e5c4b10dba1eb10a",
+  "manifestPath": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/candidate-package-manifest.json",
+  "manifestSha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+  "commit": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "modules": {
+    "@jgengine/core/runtime/gameContext": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/core/dist/runtime/gameContext.js",
+    "@jgengine/shell/render/useModelAnimation": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+    "@jgengine/shell/drivers/FrameDriver": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/shell/dist/drivers/FrameDriver.js",
+    "@jgengine/core/input/actionBindings": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/core/dist/input/actionBindings.js",
+    "@jgengine/core/time/simClock": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/core/dist/time/simClock.js"
+  },
+  "moduleHashes": {
+    "@jgengine/core/runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+    "@jgengine/shell/render/useModelAnimation": "fd8fbdf166b70f94d9cac628486442f75928790a82a68ac6edb3c9789e47ad04",
+    "@jgengine/shell/drivers/FrameDriver": "c181d8760245d49d85ad2ef818b20a07a98a83f31478d350cc55020559193629",
+    "@jgengine/core/input/actionBindings": "ecc4a023c57357734f3ef1eaeefadc895fa52804faac5d0b81d02750b7ddc0f4",
+    "@jgengine/core/time/simClock": "940ea03501923405662c2cc09e01650b2b0146e99389b22ad07e795249b1255a"
+  },
+  "runnerSha256": "8df3977e7e0df65cd989c401355c16dea0bbd517537ea6cb97be3ac8ead7e8c9",
+  "fixtureSha256": "b0d8b2e7982d0aff0dc74f9499fb5f595a4ea4b4be12f7afc9227041182c0f76",
+  "originalGameLedgerSha256": "e522b7d61788d6e108c8289946d2326d2995052ccb6bf2588f08a81c79b95952",
+  "asset": "/workspace/JGengine/apps/dev/public/models/kaykit-adventurers/Knight.glb",
+  "assetSha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+  "scope": "Actual public FrameDriver mounted with original OddOrbit PlayableGame and normal commands; manually invoked Fiber subscriptions sorted by registered priority, React/hook/rig numeric proof only. No native rendering, FPS or appearance inference.",
+  "assetLimitation": "Original OddOrbit public/models remains unprovisioned; same registered official KayKit Knight supplied read-only from provisioned SDK dev catalog.",
+  "status": "PASS",
+  "originalPhysicalRecordsBitExact": true,
+  "cases": [
+    {
+      "rate": 1,
+      "rawDt": 0.016666666666666666,
+      "profile": "original",
+      "acceptedProgress": 1.0000000000000013,
+      "ticks": 60,
+      "frames": 60,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 1,
+      "displacement": 1.08114964294704,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8984421488685461,
+          "time": 1.0000000000000013
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.10155785113145384,
+          "time": 0.19999998807907238
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.016666666666666666
+        }
+      ],
+      "firstClockDelta": 0.01666666666666572,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 4,
+      "rawDt": 0.016666666666666666,
+      "profile": "original",
+      "acceptedProgress": 0.9999999999999999,
+      "ticks": 15,
+      "frames": 15,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 1,
+      "displacement": 1.0824252926411606,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8984500118946447,
+          "time": 0.9999999999999999
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.10154998810535529,
+          "time": 0.19999998807907093
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.06666666666666667
+        }
+      ],
+      "firstClockDelta": 0.06666666666666288,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 1,
+      "rawDt": 0.2,
+      "profile": "original",
+      "acceptedProgress": 1.0000000000000002,
+      "ticks": 20,
+      "frames": 20,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.9999999999999432,
+      "rawSpeedNormalizedSeconds": 4,
+      "displacement": 1.0820000464103567,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8984472700870538,
+          "time": 1.0000000000000002
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.10155272991294619,
+          "time": 0.19999998807907127
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.05
+        }
+      ],
+      "firstClockDelta": 0.04999999999999716,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 4,
+      "rawDt": 0.2,
+      "profile": "original",
+      "acceptedProgress": 1,
+      "ticks": 5,
+      "frames": 5,
+      "calendarScale": 1,
+      "acceptedClockDelta": 1.0000000000000142,
+      "rawSpeedNormalizedSeconds": 4,
+      "displacement": 1.0858281580466171,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8973067140524087,
+          "time": 1
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.1026932859475913,
+          "time": 0.19999998807907104
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.2
+        }
+      ],
+      "firstClockDelta": 0.20000000000000284,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 4,
+      "rawDt": 0.2,
+      "profile": "fixedDrop",
+      "acceptedProgress": 0.3333333333333333,
+      "ticks": 10,
+      "frames": 5,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.3333333333333144,
+      "rawSpeedNormalizedSeconds": 4,
+      "displacement": 0.36627779200448973,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.8925017999493107,
+          "time": 0.3333333333333333
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.10749820005068936,
+          "time": 0.3333333333333333
+        }
+      ],
+      "firstFrameWeights": [
+        {
+          "clip": "Idle",
+          "weight": 1,
+          "time": 0.06666666666666667
+        }
+      ],
+      "firstClockDelta": 0.06666666666666288,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    },
+    {
+      "rate": 1,
+      "rawDt": 0.008333333333333333,
+      "profile": "fixedNoStep",
+      "acceptedProgress": 0.15000000000000002,
+      "ticks": 3,
+      "frames": 20,
+      "calendarScale": 1,
+      "acceptedClockDelta": 0.14999999999999147,
+      "rawSpeedNormalizedSeconds": 0.16666666666666666,
+      "displacement": 0.16556932611422226,
+      "beforeWeights": [],
+      "afterWeights": [
+        {
+          "clip": "Walking_A",
+          "weight": 0.9225968004794305,
+          "time": 0.15000000000000002
+        },
+        {
+          "clip": "Running_A",
+          "weight": 0.07740319952056952,
+          "time": 0.15000000000000002
+        }
+      ],
+      "firstFrameWeights": [],
+      "firstClockDelta": 0,
+      "driverErrors": [],
+      "cleanup": 1,
+      "subscriptionsAfterUnmount": 0
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "format": "Concatenate binaryparts in listed order to reconstruct twelfth-proof.tar.gz; individualparts not decompressible.",
+  "bundleBytes": 36259901,
+  "bundleSha256": "acedd038f0c08c1c94491f115e5025db8be65bd643097841064e398494b4011a",
+  "bundleGitBlobSha": "ecbc085484281bbc5fe1714baa311406e6733e11",
+  "regularTarFilesIncludingLedger": 1302,
+  "parts": [
+    {
+      "path": "pr-shots/shared-characters/animation-accepted-clock/twelfth-proof.tar.gz.part-01",
+      "bytes": 5242880,
+      "sha256": "b1f23fd0ec513cba34407eafd213f928b7a1959710d591124fe15c34c87764cd"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-accepted-clock/twelfth-proof.tar.gz.part-02",
+      "bytes": 5242880,
+      "sha256": "75048b2f8168ae2371c3f509c61ada6c7c2c5943306df8e1bfc2a9b16a3ae06e"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-accepted-clock/twelfth-proof.tar.gz.part-03",
+      "bytes": 5242880,
+      "sha256": "d9ddf99333942a894de650b623612086cc29d60007e999eb50f0b2bdd525554f"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-accepted-clock/twelfth-proof.tar.gz.part-04",
+      "bytes": 5242880,
+      "sha256": "504843e86311144c7a204e42dec3d32a4014e83d063832fe28efed5dee49f8ec"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-accepted-clock/twelfth-proof.tar.gz.part-05",
+      "bytes": 5242880,
+      "sha256": "9fe88804455b8bb83f397ce6dcb1eaa224f44f1f683661bf81aea2ebc96a05b9"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-accepted-clock/twelfth-proof.tar.gz.part-06",
+      "bytes": 5242880,
+      "sha256": "337b8f6f5331274fc91bad6880818d9f210d1b847f78d3637f097676e569fdcd"
+    },
+    {
+      "path": "pr-shots/shared-characters/animation-accepted-clock/twelfth-proof.tar.gz.part-07",
+      "bytes": 4802621,
+      "sha256": "c2d170b562a55d35b466fa35a5d398be8858bd19256761423115edd55310810f"
+    }
+  ],
+  "verification": "Wholebundle/allregularmembers/concatenatedparts byte hashes verified."
+}

@@ -1,0 +1,15 @@
+{
+  "copiedReceipt": "source-equivalence-peer-fix.json",
+  "receiptSHA256": "2ef043e32586d1af367728090b2649e2d1f2d15a29e7cca1777cdc5427b66989",
+  "independentlyVerifiedLocalDelta": [
+    "packages/shell/src/render/modelAnimationHook.test.ts"
+  ],
+  "independentlyVerifiedCorrectedLocalTree": "e6c176b01087e3a1518a6720396e6cc8a8e9d927",
+  "packageProofRemains": "99a01a218e3dca07dcc28f693aa0cae067d02325/tree6d814678",
+  "rootReportedCorrectedPushExit": 1,
+  "correctedPushReason": "non-fast-forward from different equivalent API/local ancestry, not another HTTP401",
+  "rootReportedDelivery": "GitData exact oneblob/tree appends firstremote bc7; ref force=false",
+  "rawCorrectedPushLog": "Not supplied, not invented",
+  "credentialActions": "None",
+  "actions": "Read-only local source delta/tree, originalreceiptcopied; no push or CIrerun"
+}

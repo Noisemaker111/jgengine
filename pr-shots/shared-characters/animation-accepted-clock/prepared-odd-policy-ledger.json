@@ -1,0 +1,20 @@
+{
+  "label": "Prepared isolated one-line Odd clock policy checked only after shared accepted-clock runtime proof PASS; no adoption",
+  "cohort": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "sharedNumericProofBeforePatch": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/summary.json",
+  "sharedNumericProofSha256": "dcf40d5da649f3258d6b70985368c37c2aa015938d21dd93530a5c61b3ebabee",
+  "sourceGameCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "file": "odd-orbit/src/game/render/AlienMesh.tsx",
+  "originalSha256": "ced9d36cc90dedb536ba4a4be31bf17abdf9cb2d52261e4cb3b50468e97dab42",
+  "preparedSha256": "661c02b008b18a9f2b91e18a3d3590e8baee221fadae05f771bd5ecc710af97a",
+  "patchSha256": "8991c50811ddb113c136221a68688cdd69bd3c48c8a9ce18b7209c74c47e2d40",
+  "onlySubstitution": {
+    "before": "useModelAnimation(scene, gltf.animations, \"auto\", instanceId);",
+    "after": "useModelAnimation(scene, gltf.animations, { auto: true, clock: \"game\" }, instanceId);"
+  },
+  "allOtherSourceFilesBytePreserved": 258,
+  "originalPrePatchGameSourceArchive": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-games",
+  "policyPreservation": "Body bob, proportions/styles, material/color, camera, routes, economy, catalog and clip selection unchanged; only shared animation clock selection.",
+  "gitApplyCheckOriginal45a": "PASS"
+}

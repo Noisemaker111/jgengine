@@ -1,0 +1,971 @@
+{
+  "classification": "Pass 12 frozen consumer-only public-package evidence; unreleased accepted-progress candidate, no published adoption",
+  "outcome": "Game-clock animation consumes actual locally accepted simulation progress, preserving gait under FrameDriver clamping and dropped/no-step fixed frames. Existing two-game default/pause records remain bit-exact.",
+  "source": {
+    "builtCommit": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+    "builtTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+    "base": "ef22f0c41b32949ba6ab162188f1d721851316f0",
+    "manifest": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/candidate-package-manifest.json",
+      "sha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+      "bytes": 5127
+    },
+    "cleanSourceDuringBuildAndPack": true,
+    "sourceRemoteAtPack": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+    "buildWorkflow": "Fresh13ordered dist builds, explicit SDK skill staging+validation, normal13 npm packs:28 stages passed and HEAD/tree stable. Exact source/compiled/pack file ledgers retained."
+  },
+  "packageBoundary": {
+    "allTarballsHashed": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "52aed8b90173f75bdcbda10eb58eee6e35d3db18f0330dbf2771f83fc46cdc7f",
+        "installedFilesByteVerified": 1254
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "95340f7f138d12502e4d56a6d09afb63112539be63fe70009614b79669f6409a",
+        "installedFilesByteVerified": 39
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "8ac2dbddcf32f2b071b71e2f4ced03a284b420ead744b103522fed4fdc1d0e2d",
+        "installedFilesByteVerified": 195
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "8521a5a9e175ce6cb25dacceb175b3c53c25dfb344ec027cdfa758f89305fd22",
+        "installedFilesByteVerified": 39
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "314223cb249be433d9ccd810a3ad71216c35c1b9831299f4ead86a3553145818",
+        "installedFilesByteVerified": 548
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "30b16cea6cc2e2a71ac43305f7960b00cfc221b8b8de474d2ecf11abe9640c8e",
+        "installedFilesByteVerified": 247
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "ecff959ab738d1c0885e0bbd8c4a6f95c97eb70352edb58aa4d7e5d7bf305e94",
+        "installedFilesByteVerified": 91
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "b69be9adc0ddc08684ad168979728e75865199d6469711e91ae4d8863f63de77",
+        "installedFilesByteVerified": 129
+      }
+    ],
+    "installedRegularFilesByteCompared": 2548,
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "isolatedInstall": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules",
+    "noSdkSourceAliases": true,
+    "releaseState": "Unreleased actual built tarballs only. No root catalog/lock or game version changes; no package registry adoption."
+  },
+  "originalConsumers": {
+    "sourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "sourceCounts": {
+      "oddOrbit": 47,
+      "scrapSignal": 80,
+      "lanternReach": 132
+    },
+    "originalSourceFiles": 259,
+    "trackedBuildAndSourceInputs": 280,
+    "ledger": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-source-provenance.json",
+      "sha256": "73215083665d82f1d5b97d557c175e96bc269598e4fe760e5ab169895b9c9f6d",
+      "bytes": 86195
+    },
+    "originalStageSources": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-games",
+    "stageSeparation": "Original3-game checks executed before any policy patch; original-games preserves exact280 input bytes. Current games/odd-orbit now contains only the prepared one-line option.",
+    "noOriginalWorktreeEdits": true
+  },
+  "beforeFailure": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/animation-driver-clock-triage/executed-f9d7071b/numeric-records.json",
+      "sha256": "7ab80d14bd95bca1a322837f6470b63926a2a81649a935e9e5c4b10dba1eb10a",
+      "bytes": 2219871
+    },
+    "scope": "Actual original Odd normal commands/onTick through installed f9 FrameDriver and imported-hook numeric fixture.",
+    "observed": "At raw frame .2s, FrameDriver accepts .05s (rate1) or .2s (rate4). Prior hook used raw-normalized progress, producing final Idle blends about .47165/.46759 while the actor was walking.",
+    "directBeforeAfterComparisons": [
+      {
+        "rate": 1,
+        "rawDt": 0.016666666666666666,
+        "beforeFinalWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984421488685458,
+            "time": 1.0000000000000013
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.1015578511314542,
+            "time": 0.19999998807907238
+          }
+        ],
+        "afterFinalWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984421488685461,
+            "time": 1.0000000000000013
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10155785113145384,
+            "time": 0.19999998807907238
+          }
+        ],
+        "acceptedProgress": 1.0000000000000013,
+        "rawSpeedNormalizedSeconds": 1
+      },
+      {
+        "rate": 4,
+        "rawDt": 0.016666666666666666,
+        "beforeFinalWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984500118946448,
+            "time": 0.9999999999999999
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10154998810535525,
+            "time": 0.19999998807907093
+          }
+        ],
+        "afterFinalWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984500118946447,
+            "time": 0.9999999999999999
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10154998810535529,
+            "time": 0.19999998807907093
+          }
+        ],
+        "acceptedProgress": 0.9999999999999999,
+        "rawSpeedNormalizedSeconds": 1
+      },
+      {
+        "rate": 1,
+        "rawDt": 0.2,
+        "beforeFinalWeights": [
+          {
+            "clip": "Idle",
+            "weight": 0.47165099527757093,
+            "time": 0.7999998331069955
+          },
+          {
+            "clip": "Walking_A",
+            "weight": 0.5283490047224291,
+            "time": 0.7999998331069955
+          }
+        ],
+        "afterFinalWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984472700870538,
+            "time": 1.0000000000000002
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10155272991294619,
+            "time": 0.19999998807907127
+          }
+        ],
+        "acceptedProgress": 1.0000000000000002,
+        "rawSpeedNormalizedSeconds": 4
+      },
+      {
+        "rate": 4,
+        "rawDt": 0.2,
+        "beforeFinalWeights": [
+          {
+            "clip": "Idle",
+            "weight": 0.467593463644124,
+            "time": 0.7999998331069946
+          },
+          {
+            "clip": "Walking_A",
+            "weight": 0.532406536355876,
+            "time": 0.7999998331069946
+          }
+        ],
+        "afterFinalWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8973067140524087,
+            "time": 1
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.1026932859475913,
+            "time": 0.19999998807907104
+          }
+        ],
+        "acceptedProgress": 1,
+        "rawSpeedNormalizedSeconds": 4
+      }
+    ],
+    "summaryDisclosure": "Owning after-summary beforeWeights field is empty; the concrete before weights above are read directly from immutable baseline cases[].after.weights. Owning archives remain unchanged."
+  },
+  "sharedAfter": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/summary.json",
+      "sha256": "dcf40d5da649f3258d6b70985368c37c2aa015938d21dd93530a5c61b3ebabee",
+      "bytes": 8308
+    },
+    "scope": "Actual public FrameDriver mounted with original OddOrbit PlayableGame and normal commands; manually invoked Fiber subscriptions sorted by registered priority, React/hook/rig numeric proof only. No native rendering, FPS or appearance inference.",
+    "originalFourPhysicalAndGamePolicyRecordsBitExact": true,
+    "cases": [
+      {
+        "rate": 1,
+        "rawDt": 0.016666666666666666,
+        "profile": "original",
+        "acceptedProgress": 1.0000000000000013,
+        "ticks": 60,
+        "frames": 60,
+        "calendarScale": 1,
+        "acceptedClockDelta": 0.9999999999999432,
+        "rawSpeedNormalizedSeconds": 1,
+        "displacement": 1.08114964294704,
+        "beforeWeights": [],
+        "afterWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984421488685461,
+            "time": 1.0000000000000013
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10155785113145384,
+            "time": 0.19999998807907238
+          }
+        ],
+        "firstFrameWeights": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.016666666666666666
+          }
+        ],
+        "firstClockDelta": 0.01666666666666572,
+        "driverErrors": [],
+        "cleanup": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 4,
+        "rawDt": 0.016666666666666666,
+        "profile": "original",
+        "acceptedProgress": 0.9999999999999999,
+        "ticks": 15,
+        "frames": 15,
+        "calendarScale": 1,
+        "acceptedClockDelta": 0.9999999999999432,
+        "rawSpeedNormalizedSeconds": 1,
+        "displacement": 1.0824252926411606,
+        "beforeWeights": [],
+        "afterWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984500118946447,
+            "time": 0.9999999999999999
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10154998810535529,
+            "time": 0.19999998807907093
+          }
+        ],
+        "firstFrameWeights": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.06666666666666667
+          }
+        ],
+        "firstClockDelta": 0.06666666666666288,
+        "driverErrors": [],
+        "cleanup": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 1,
+        "rawDt": 0.2,
+        "profile": "original",
+        "acceptedProgress": 1.0000000000000002,
+        "ticks": 20,
+        "frames": 20,
+        "calendarScale": 1,
+        "acceptedClockDelta": 0.9999999999999432,
+        "rawSpeedNormalizedSeconds": 4,
+        "displacement": 1.0820000464103567,
+        "beforeWeights": [],
+        "afterWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8984472700870538,
+            "time": 1.0000000000000002
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10155272991294619,
+            "time": 0.19999998807907127
+          }
+        ],
+        "firstFrameWeights": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.05
+          }
+        ],
+        "firstClockDelta": 0.04999999999999716,
+        "driverErrors": [],
+        "cleanup": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 4,
+        "rawDt": 0.2,
+        "profile": "original",
+        "acceptedProgress": 1,
+        "ticks": 5,
+        "frames": 5,
+        "calendarScale": 1,
+        "acceptedClockDelta": 1.0000000000000142,
+        "rawSpeedNormalizedSeconds": 4,
+        "displacement": 1.0858281580466171,
+        "beforeWeights": [],
+        "afterWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8973067140524087,
+            "time": 1
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.1026932859475913,
+            "time": 0.19999998807907104
+          }
+        ],
+        "firstFrameWeights": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.2
+          }
+        ],
+        "firstClockDelta": 0.20000000000000284,
+        "driverErrors": [],
+        "cleanup": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 4,
+        "rawDt": 0.2,
+        "profile": "fixedDrop",
+        "acceptedProgress": 0.3333333333333333,
+        "ticks": 10,
+        "frames": 5,
+        "calendarScale": 1,
+        "acceptedClockDelta": 0.3333333333333144,
+        "rawSpeedNormalizedSeconds": 4,
+        "displacement": 0.36627779200448973,
+        "beforeWeights": [],
+        "afterWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.8925017999493107,
+            "time": 0.3333333333333333
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.10749820005068936,
+            "time": 0.3333333333333333
+          }
+        ],
+        "firstFrameWeights": [
+          {
+            "clip": "Idle",
+            "weight": 1,
+            "time": 0.06666666666666667
+          }
+        ],
+        "firstClockDelta": 0.06666666666666288,
+        "driverErrors": [],
+        "cleanup": 1,
+        "subscriptionsAfterUnmount": 0
+      },
+      {
+        "rate": 1,
+        "rawDt": 0.008333333333333333,
+        "profile": "fixedNoStep",
+        "acceptedProgress": 0.15000000000000002,
+        "ticks": 3,
+        "frames": 20,
+        "calendarScale": 1,
+        "acceptedClockDelta": 0.14999999999999147,
+        "rawSpeedNormalizedSeconds": 0.16666666666666666,
+        "displacement": 0.16556932611422226,
+        "beforeWeights": [],
+        "afterWeights": [
+          {
+            "clip": "Walking_A",
+            "weight": 0.9225968004794305,
+            "time": 0.15000000000000002
+          },
+          {
+            "clip": "Running_A",
+            "weight": 0.07740319952056952,
+            "time": 0.15000000000000002
+          }
+        ],
+        "firstFrameWeights": [],
+        "firstClockDelta": 0,
+        "driverErrors": [],
+        "cleanup": 1,
+        "subscriptionsAfterUnmount": 0
+      }
+    ],
+    "meaning": "All original normal/stalled rate1/4 cases end near1 accepted second with Walking_A phase near1 and no spurious finalIdle. Fixed-drop reaches .333333 accepted seconds; fixed-no-step reaches .15; animation uses those accepted values instead of raw normalized4 or .166667 seconds.",
+    "newControls": "fixedDrop/fixedNoStep are explicitly labelled runtime retunes using actual public FrameDriver; original4 profiles remain unchanged.",
+    "cleanup": "Each case cleanup1/subscriptionsAfterUnmount0, driverErrors empty.",
+    "publicModules": {
+      "@jgengine/core/runtime/gameContext": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/core/dist/runtime/gameContext.js",
+      "@jgengine/shell/render/useModelAnimation": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+      "@jgengine/shell/drivers/FrameDriver": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/shell/dist/drivers/FrameDriver.js",
+      "@jgengine/core/input/actionBindings": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/core/dist/input/actionBindings.js",
+      "@jgengine/core/time/simClock": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/@jgengine/core/dist/time/simClock.js"
+    },
+    "publicModuleSha256": {
+      "@jgengine/core/runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+      "@jgengine/shell/render/useModelAnimation": "fd8fbdf166b70f94d9cac628486442f75928790a82a68ac6edb3c9789e47ad04",
+      "@jgengine/shell/drivers/FrameDriver": "c181d8760245d49d85ad2ef818b20a07a98a83f31478d350cc55020559193629",
+      "@jgengine/core/input/actionBindings": "ecc4a023c57357734f3ef1eaeefadc895fa52804faac5d0b81d02750b7ddc0f4",
+      "@jgengine/core/time/simClock": "940ea03501923405662c2cc09e01650b2b0146e99389b22ad07e795249b1255a"
+    },
+    "actualImportedRig": {
+      "path": "/workspace/JGengine/apps/dev/public/models/kaykit-adventurers/Knight.glb",
+      "sha256": "60428e3abc09ba83e595d256e3af8c5c976b46cdae599f0802fc82b4a3445168",
+      "scope": "Existing registered76clip KayKit Knight bytes read-only from SDK dev catalog, original Odd ignored model packs remain unprovisioned."
+    }
+  },
+  "secondRuntimeConsumers": {
+    "proof": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/public-cross-cohort-proof.json",
+      "sha256": "8dc84b6fb602a8f1692e5bd0bfad0efa99c64c50081c2c2b01deed55fdfdceb2",
+      "bytes": 2534
+    },
+    "scope": "Manual React/Fiber numeric public package replay of actual unchanged original Scrap Signal and Lantern Reach configurations/rigs; no native appearance, hardware FPS or released adoption claim.",
+    "baselineCandidate": {
+      "commit": "ef19dca93fc33c9dc2001b30ec68a8ff07d16e3d",
+      "tree": "6d4e97c0ef4c703186115c95dd40ed0af912b366",
+      "label": "unreleased clean-built character candidate; no registry publication or shipped game adoption"
+    },
+    "results": {
+      "scrap": {
+        "allNumericCaseRecordsBitExactToEf19": true,
+        "cases": [
+          "bound",
+          "uninterrupted",
+          "queued",
+          "queued-control"
+        ],
+        "resultSha256": "5583b4590dd7d31fb95044412d4299c1c49ab128132ab245380d1942fe229cc5",
+        "baselineResultSha256": "1e5f48272ed6b96228615853070351fdfb7993796fb44f689c7d38933eec828e",
+        "subscriptionsAfterUnmount": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "cleanupAfterUnmount": [
+          1,
+          1,
+          1,
+          1
+        ],
+        "gameplayRngCalls": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "lantern": {
+        "allNumericCaseRecordsBitExactToEf19": true,
+        "cases": [
+          "bound",
+          "timescale",
+          "unbound",
+          "noctx",
+          "positive-speed",
+          "uninterrupted"
+        ],
+        "resultSha256": "3cbf57854e1d8bd55fdaa5ae3fc3accd4ac38f6c92a9a16694984916c2ecc3de",
+        "baselineResultSha256": "e2b2410ad8b47914b6e98269e0944d1b3b390b49d06dd50c9d8b3765c6f5e667",
+        "subscriptionsAfterUnmount": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cleanupAfterUnmount": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "gameplayRngCalls": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "allOriginal219InputsVerifiedBeforeAndAfter": true,
+    "executedFixtureBytesExactEf19": true,
+    "runnerDifference": "Complete candidate/module/rig/bundle preexecution archive only; simulation/test assertions unchanged.",
+    "baselineFilesUnchanged": true,
+    "executionSnapshots": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause",
+    "meaning": "Fresh Scrap4cases and Lantern6cases prove default real clock, context pause, queued resume, zero timescale, unbound/no-context previews and positive4 behaviour unchanged. Every full numeric record bit-exact to frozen ef19. All10cases cleanup1/subscriptions0/gameplayRng0."
+  },
+  "preparedOddPolicy": {
+    "file": "odd-orbit/src/game/render/AlienMesh.tsx",
+    "before": "useModelAnimation(scene, gltf.animations, \"auto\", instanceId);",
+    "after": "useModelAnimation(scene, gltf.animations, { auto: true, clock: \"game\" }, instanceId);",
+    "ledger": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-clock-policy-ledger.json",
+      "sha256": "b3cc15c6762668a006279d66b8e0a0a0de52936a0a47fa3640768f49c109f7c0",
+      "bytes": 1464
+    },
+    "patch": {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-clock-policy.patch",
+      "sha256": "8991c50811ddb113c136221a68688cdd69bd3c48c8a9ce18b7209c74c47e2d40",
+      "bytes": 509
+    },
+    "sourceBeforeSha256": "ced9d36cc90dedb536ba4a4be31bf17abdf9cb2d52261e4cb3b50468e97dab42",
+    "sourceAfterSha256": "661c02b008b18a9f2b91e18a3d3590e8baee221fadae05f771bd5ecc710af97a",
+    "allOtherSourceFilesBytePreserved": 258,
+    "cleanApplyOriginal45a": "PASS",
+    "policyPreservation": "Body bob, proportions/styles, material/color, camera, routes, economy, catalog and clip selection unchanged; only shared animation clock selection.",
+    "sequence": "Only after shared6-case actual FrameDriver replay passed. Same one-line authored game choice as prepared pass11; no new game resolver or algorithm.",
+    "adoption": "Prepared isolated migration only; released adoption withheld until release exists."
+  },
+  "consumerChecks": {
+    "originalThreeGames": [
+      {
+        "game": "odd-orbit",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/odd-orbit",
+        "exitCode": 0,
+        "durationFromLog": "32.21s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-odd-orbit-build.log",
+        "logSha256": "b179bff56f9e241d6797c3e9f7cff1d44fec963614e2eb8c85f4ea42b6c13d71"
+      },
+      {
+        "game": "scrap-signal",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/scrap-signal",
+        "exitCode": 0,
+        "durationFromLog": "33.35s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-scrap-signal-build.log",
+        "logSha256": "5c1c4e4ef332607eda370f69ad861e5808e8250017b86e30ec91852122437c00"
+      },
+      {
+        "game": "lantern-reach",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/lantern-reach",
+        "exitCode": 0,
+        "durationFromLog": "36.98s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-lantern-reach-build.log",
+        "logSha256": "f96fc9845ceed1db86c626c594da462d637581a2a741eff8083b6fb0d0856944"
+      },
+      {
+        "game": "odd-orbit",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/odd-orbit",
+        "exitCode": 0,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-odd-orbit-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "game": "scrap-signal",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/scrap-signal",
+        "exitCode": 0,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-scrap-signal-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "game": "lantern-reach",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/lantern-reach",
+        "exitCode": 1,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-lantern-reach-types.log",
+        "logSha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38"
+      }
+    ],
+    "originalSourceInputsStillByteEqual": true,
+    "preparedOdd": [
+      {
+        "game": "odd-orbit",
+        "kind": "build",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/vite",
+          "build"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/odd-orbit",
+        "exitCode": 0,
+        "durationFromLog": "16.17s",
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-orbit-build.log",
+        "logSha256": "a7e37ec559b1b572b1becf79bf6b6b6fecef1accdedfc52539f597136968e72c"
+      },
+      {
+        "game": "odd-orbit",
+        "kind": "types",
+        "command": [
+          "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/node_modules/.bin/tsgo",
+          "--noEmit",
+          "-p",
+          "tsconfig.json"
+        ],
+        "cwd": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/games/odd-orbit",
+        "exitCode": 0,
+        "durationFromLog": null,
+        "log": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-orbit-types.log",
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "knownLanternTypes": "Original4 errors in ActionBar.tsx57/Dialogue.tsx68: status/reason on DispatchedCommandResult can be Promise. Exact log retained; no source repair in this scope. Odd and Scrap original types0; all3 original Vite builds0; preparedOdd Vite/types0."
+  },
+  "deliveryCiSeparation": {
+    "stateAtFreeze": "Original sourceCI headbc7 failed non-shipped realFrameDriver hook-test fixture build because isolated bundle staging omitted Drei required by camera import. Root is correcting test-only input staging.",
+    "producerAttribution": "All consumer install, before/after numeric data and checks remain exact built99a/tree6d814. Corrected remoteCIhead/source-equivalence/terminalCI receipt is a later separate delivery receipt; never silently relabel this producer."
+  },
+  "limitations": [
+    "SimClock advancedSeconds is local accepted progress and intentionally absent from serialized snapshots; this does not define a remote animation timeline. Hosted prediction advanceTime:false does not provide accepted remote progress.",
+    "Explicit game-clock animation bound to a custom clock without advancedSeconds holds playback and emits the shipped diagnostic requesting an engine clock or real-clock selection.",
+    "Imported-hook and FrameDriver evidence uses manual React/Fiber callbacks with actual game compositions and normal game commands; it does not prove native gameplay appearance, controls feel, hardware FPS or performance.",
+    "Original Odd public/models is still absent; no ignored models were provisioned or fetched. Vite builds cannot establish original game rendering readiness.",
+    "Original Lantern invalid dawn scene and four dispatch types remain untouched. No full Lantern authoring save loop claimed.",
+    "No new native capture or editor UI claim for this pass. Pass11 configuration-only capture remains attributed to f9, separately frozen.",
+    "Prepared Odd option is not released package adoption. Original game source/catalog/lockfile and all prior cohort evidence are unchanged."
+  ],
+  "ownership": {
+    "root": "Engine source integration, publication and CI; supplies later source-equivalence receipt.",
+    "consumerBoundary": "Exact package installation/file comparisons, three-game original input/check ledger and preparedOdd one-line patch/checks.",
+    "animation": "Six-case actualOdd/publicFrameDriver/importedKnight numeric replay; fresh copied ten-case originalScrap/Lantern pause regression with preexecution archives.",
+    "authoring": "Supplied frozen pass10 original219input two-game contract; owns editor/source configuration elsewhere.",
+    "footGrounding": "Independent source/package/compiled/skill audit and evidence archive delivery when root authorizes."
+  },
+  "artifactHashes": [
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/candidate-package-manifest.json",
+      "sha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+      "bytes": 5127
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/installed-package-verification.json",
+      "sha256": "7353e56746da51ba9ac4a34cad8a1aa1d29e02a2bed92b26a0b1ed4ced80cad1",
+      "bytes": 2194
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-source-provenance.json",
+      "sha256": "73215083665d82f1d5b97d557c175e96bc269598e4fe760e5ab169895b9c9f6d",
+      "bytes": 86195
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/before-original-checks.json",
+      "sha256": "9099ceba6660b131cfa6a801bc277bf83a858b946c19bbdcff2f5b91ac5974b0",
+      "bytes": 449
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-prepatch-checks.json",
+      "sha256": "76566789a6078d8e43c9b3faa1104e4d2ce95924064f40d8780ed1c57978b0c9",
+      "bytes": 4432
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-clock-policy-ledger.json",
+      "sha256": "b3cc15c6762668a006279d66b8e0a0a0de52936a0a47fa3640768f49c109f7c0",
+      "bytes": 1464
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-clock-policy-checks.json",
+      "sha256": "c7dbb8ee5b22ad721b8a4996a84d223825c555580840e3f4c2f7d6f18dc4b591",
+      "bytes": 1786
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-clock-policy.patch",
+      "sha256": "8991c50811ddb113c136221a68688cdd69bd3c48c8a9ce18b7209c74c47e2d40",
+      "bytes": 509
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/run-original-checks.py",
+      "sha256": "ceeb6fc43eec830e1227ac213fdce610985434ee78488d84fbf9c332abe79846",
+      "bytes": 2265
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepare-odd-option.py",
+      "sha256": "39b15731f62fe708309405a795bcfa22aea7843fd68af757ef615d77968ceb9d",
+      "bytes": 2810
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/run-prepared-checks.py",
+      "sha256": "17665d872246e4936efb0741080d4535bc6f43de72be364748359ddb27c01935",
+      "bytes": 1739
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/install.log",
+      "sha256": "7396389b3f8629d4c105471de326f4cd289faa31f96f298628f8672fe4ce3f87",
+      "bytes": 1766
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/verification.log",
+      "sha256": "929529fc0f6b7b354c067a4ae1f24d55de28f2ae8a8cb1d61da275d2834c8978",
+      "bytes": 1850
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-odd-orbit-build.log",
+      "sha256": "b179bff56f9e241d6797c3e9f7cff1d44fec963614e2eb8c85f4ea42b6c13d71",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-scrap-signal-build.log",
+      "sha256": "5c1c4e4ef332607eda370f69ad861e5808e8250017b86e30ec91852122437c00",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-lantern-reach-build.log",
+      "sha256": "f96fc9845ceed1db86c626c594da462d637581a2a741eff8083b6fb0d0856944",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-odd-orbit-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-scrap-signal-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/original-lantern-reach-types.log",
+      "sha256": "51d0662939bac99822986ac0dcfd3cc4108885c63afd68be9ee309f7d1668b38",
+      "bytes": 834
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-orbit-build.log",
+      "sha256": "a7e37ec559b1b572b1becf79bf6b6b6fecef1accdedfc52539f597136968e72c",
+      "bytes": 1176
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress/prepared-odd-orbit-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/manifest.json",
+      "sha256": "fb202289722d8afec79ce6b6fa8ec2e29c9233f739ff56bcd272c63cfa9ef8cb",
+      "bytes": 5127
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/build-provenance.json",
+      "sha256": "136a12963e810e89303041a65748b8977de5ac90153143c08b2f3c702c74b579",
+      "bytes": 21240
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/compiled-files.json",
+      "sha256": "9d2ba9dcad0e8ec6d26c80cf8052a8c8e7f2394c355546d7e38ab9efc9b1195a",
+      "bytes": 370579
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/package-files.json",
+      "sha256": "28a9630a8b053c7cee7cb4c1155b4bded8ce24e7ac11a391308287e112e644cf",
+      "bytes": 427598
+    },
+    {
+      "path": "/workspace/JGengine/.claude/worktrees/character-clock-progress/.scratch/characters/packages/clean-animation-accepted-clock-99a01a21/source-files.json",
+      "sha256": "7018b175b1ee6336d16a1067261856474a7e9fb6cb2d88f84b9fd8638bbe48eb",
+      "bytes": 703172
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/summary.json",
+      "sha256": "dcf40d5da649f3258d6b70985368c37c2aa015938d21dd93530a5c61b3ebabee",
+      "bytes": 8308
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/numeric-records.json",
+      "sha256": "2382097947f29abdf3bbf572a2abc22ffcffadd1315b15713f082dc9c27fb574",
+      "bytes": 2824506
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/provenance.json",
+      "sha256": "0af9e37419becb2617cd842c90aa94708ac6581d578e8a205c518a50b281e70b",
+      "bytes": 2888
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/archive-hashes.json",
+      "sha256": "906607d268a01c8c5bc86602f1722a1ee82440c012d56c9ad8d3c30a2904c381",
+      "bytes": 1379
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/run.ts",
+      "sha256": "8df3977e7e0df65cd989c401355c16dea0bbd517537ea6cb97be3ac8ead7e8c9",
+      "bytes": 7329
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/fixture.tsx",
+      "sha256": "b0d8b2e7982d0aff0dc74f9499fb5f595a4ea4b4be12f7afc9227041182c0f76",
+      "bytes": 5103
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-clock-progress-public/executed-99a01a21/executed-bundle.js",
+      "sha256": "c8755812d3b906035ee62347f86d8899111018db28136500817a15412f63dfb0",
+      "bytes": 4451505
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-driver-clock-triage/executed-f9d7071b/numeric-records.json",
+      "sha256": "7ab80d14bd95bca1a322837f6470b63926a2a81649a935e9e5c4b10dba1eb10a",
+      "bytes": 2219871
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-driver-clock-triage/executed-f9d7071b/run.ts",
+      "sha256": "47659d41672dd679401566fd377ddd77cb584b26b9350ac95d43893ea2a8517a",
+      "bytes": 5356
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-driver-clock-triage/executed-f9d7071b/fixture.tsx",
+      "sha256": "0c85d50dc516b5856b0e59bc4cac818aa1d6ba33724169af2a0d9a93f59cac8f",
+      "bytes": 4758
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/animation-driver-clock-triage/executed-f9d7071b/provenance.json",
+      "sha256": "7c313674eddb46eab2c94e7590fbb3ff8ad8d1eb39e0b2b8d6609a7dbef412cf",
+      "bytes": 2447
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/public-cross-cohort-proof.json",
+      "sha256": "8dc84b6fb602a8f1692e5bd0bfad0efa99c64c50081c2c2b01deed55fdfdceb2",
+      "bytes": 2534
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/proof-hashes.json",
+      "sha256": "090ebf1bb380e4c53641c0256bc45eaddfe6f5e93efda952d3f68b6a21628731",
+      "bytes": 28440
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/original-input-ledger.json",
+      "sha256": "6d75ba5e36f751d13389560f89f371afcbe3b6ad2cfbfb13e6bd173ee61c0709",
+      "bytes": 24945
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/baseline-execution-hashes.json",
+      "sha256": "a354be8e5523095d837725f69c23e570bd809c6c582a631dad0d721f59b24dc9",
+      "bytes": 699
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/scrap-public-result-trace.json",
+      "sha256": "5583b4590dd7d31fb95044412d4299c1c49ab128132ab245380d1942fe229cc5",
+      "bytes": 5010153
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/lantern-public-result-trace.json",
+      "sha256": "3cbf57854e1d8bd55fdaa5ae3fc3accd4ac38f6c92a9a16694984916c2ecc3de",
+      "bytes": 3264754
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/run-trace.ts",
+      "sha256": "8a8d80a3df66a3f4077a22dd47462228cbd1e42687ab68852b5c40aee0351f7f",
+      "bytes": 7243
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/fixture-scrap-trace.tsx",
+      "sha256": "eda407c0cb7be52e2297f24bca64bb33124e2ee79e31bc04df9c7ab33b063697",
+      "bytes": 5359
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/fixture-lantern-trace.tsx",
+      "sha256": "079e7ba0f18a66fc46db2c57122acd3b4264cca8a086301a795115858aafde13",
+      "bytes": 5328
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/scrap-trace-run.log",
+      "sha256": "22e630208f8cad9233449e77a9dccdb028ae99b27c1b85aea8e3688e542376b7",
+      "bytes": 1237
+    },
+    {
+      "path": "/workspace/JGengine/.scratch/characters/consumer/animation-clock-progress-pause/lantern-trace-run.log",
+      "sha256": "d916c51d53feedc2cd3c8bed554cdafdf2168057aa5aebdd3626eb0d68b64d55",
+      "bytes": 1853
+    }
+  ],
+  "frozen": true
+}

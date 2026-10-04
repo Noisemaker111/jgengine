@@ -1,0 +1,14 @@
+{
+  "remoteHead": "ec1e78e6cc62d3725a5f86596fd70d5bb6e47249",
+  "remoteTree": "e6c176b01087e3a1518a6720396e6cc8a8e9d927",
+  "parents": [
+    "bc7d45c01595472d2354d986e61b2f23e393b59e"
+  ],
+  "correctedLocal": "db82ce68b6e74cdad4b6d70526b64f449df2a6f6",
+  "builtSource": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "builtTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "wholeCorrectedTreeEqualityVerified": true,
+  "wholeBuiltTreeRelabeled": false,
+  "onlyDifferenceFromBuilt": "Non-shipped modelAnimationHook.test.ts adds @react-three/drei to isolated fixture peers.",
+  "verification": "Read-only GitHub Git commit API plus local full Git tree and exact one-line diff."
+}

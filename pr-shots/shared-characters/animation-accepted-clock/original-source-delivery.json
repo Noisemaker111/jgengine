@@ -1,0 +1,70 @@
+{
+  "head": "99a01a218e3dca07dcc28f693aa0cae067d02325",
+  "tree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "base": "ef22f0c41b32949ba6ab162188f1d721851316f0",
+  "baseTree": "36dac254d448c77dfde6b39d6caaca06eb54c2a3",
+  "files": [
+    {
+      "path": ".claude/skills/jgengine-world/api.md",
+      "sha": "c3be6ba159457913112828bd00078fc6764d0c02",
+      "bytes": 818152,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "sha": "c6bde85c7b8704891bcc97851eaa8dbc29679864",
+      "bytes": 18665,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "changes/animation-accepted-clock.md",
+      "sha": "224ea2ac1b2ebe74d3507d88032dddba69c42a5e",
+      "bytes": 336,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/core/src/game/playableGame.ts",
+      "sha": "fea33a217c3b87dcf3d9846be987f5ccd974e35f",
+      "bytes": 47514,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/core/src/time/simClock.test.ts",
+      "sha": "0804318bae8d4abcbc3e9ad27327d0a534b18f2b",
+      "bytes": 14484,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/core/src/time/simClock.ts",
+      "sha": "62bbfc2c37bd40fa03210bc2f888b506c340f6fb",
+      "bytes": 10217,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/shell/src/render/modelAnimationHook.test.ts",
+      "sha": "721e89a03838a4d1a716f104dba372a9490e574a",
+      "bytes": 42994,
+      "mode": "100644",
+      "type": "blob"
+    },
+    {
+      "path": "packages/shell/src/render/useModelAnimation.ts",
+      "sha": "e77a7aa8e399f6345fedd06d8419a912dc7bd1c4",
+      "bytes": 22840,
+      "mode": "100644",
+      "type": "blob"
+    }
+  ],
+  "remote": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+  "pr": 1971,
+  "rebaseFrom": "1c8355587931c8c1f449c991c62d66408f37c77f",
+  "rebaseTreeUnchanged": true,
+  "pushFailure": "Standalone Git push exit 1, HTTP 401; no credential mutations",
+  "delivery": "GitHub connector GitData exact blobs and entire tree"
+}

@@ -1,0 +1,65 @@
+{
+  "classification": "Read-only source delivery fallback receipt; does not reconstruct unrecorded terminal raw log",
+  "copiedReceipts": {
+    "source-delivery.json": "6ec5c63569e83a5d2cdf0f08bd4c61b51f04f18a00fece8bc5d2b0bf50b67ad7",
+    "source-delivery-local.json": "a12efb0427cfe778f04e5b6451e1cd7e3fa9f11d154547f45fac55970bc14c74"
+  },
+  "rootReportedPushCommand": "git push -u origin characters/animation-accepted-clock",
+  "rootReportedExitCode": 1,
+  "rootReportedFailure": [
+    "RPC failed HTTP401",
+    "send-pack unexpected disconnect",
+    "fatal remote hung up",
+    "misleading Everything up-to-date"
+  ],
+  "terminalRawLog": "Not originally written; not invented here",
+  "credentials": "No changes by root; no credential reads or changes by this worker",
+  "fallback": "GitHub connector GitData exact8blobs and whole-tree delivery per copied originalreceipt",
+  "verifiedLocalGitBlobs": [
+    {
+      "path": ".claude/skills/jgengine-world/api.md",
+      "gitBlobSHA": "c3be6ba159457913112828bd00078fc6764d0c02",
+      "bytes": 818152
+    },
+    {
+      "path": ".claude/skills/jgengine-world/recipes/character-animation.md",
+      "gitBlobSHA": "c6bde85c7b8704891bcc97851eaa8dbc29679864",
+      "bytes": 18665
+    },
+    {
+      "path": "changes/animation-accepted-clock.md",
+      "gitBlobSHA": "224ea2ac1b2ebe74d3507d88032dddba69c42a5e",
+      "bytes": 336
+    },
+    {
+      "path": "packages/core/src/game/playableGame.ts",
+      "gitBlobSHA": "fea33a217c3b87dcf3d9846be987f5ccd974e35f",
+      "bytes": 47514
+    },
+    {
+      "path": "packages/core/src/time/simClock.test.ts",
+      "gitBlobSHA": "0804318bae8d4abcbc3e9ad27327d0a534b18f2b",
+      "bytes": 14484
+    },
+    {
+      "path": "packages/core/src/time/simClock.ts",
+      "gitBlobSHA": "62bbfc2c37bd40fa03210bc2f888b506c340f6fb",
+      "bytes": 10217
+    },
+    {
+      "path": "packages/shell/src/render/modelAnimationHook.test.ts",
+      "gitBlobSHA": "721e89a03838a4d1a716f104dba372a9490e574a",
+      "bytes": 42994
+    },
+    {
+      "path": "packages/shell/src/render/useModelAnimation.ts",
+      "gitBlobSHA": "e77a7aa8e399f6345fedd06d8419a912dc7bd1c4",
+      "bytes": 22840
+    }
+  ],
+  "verifiedEntireTree": "6d8146788a0a37f59e6a29d2969dc87027c91efa",
+  "rebaseTreeUnchangedVerified": true,
+  "remoteHeadFromReceipt": "bc7d45c01595472d2354d986e61b2f23e393b59e",
+  "pr": 1971,
+  "actions": "Read-only local git object verification and copied original receipt; no push/mutation"
+}
