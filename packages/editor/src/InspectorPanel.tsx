@@ -476,7 +476,7 @@ function ModelAnimationSection({
     <div className="space-y-2 text-[10px]">
       <div role="alert" aria-label="Animation diagnostics" className="space-y-1 text-amber-200">
         <p>The saved animation override is invalid. Playback edits are unavailable until it is repaired or replaced.</p>
-        {diagnostics.map((entry) => <div key={`${entry.path}:${entry.message}`}><div>{entry.path}: {entry.message}</div><div>{entry.repair}</div></div>)}
+        {diagnostics.map((entry) => <div key={`${entry.path}:${entry.message}`}><div className="break-all">{entry.path}: {entry.message}</div><div>{entry.repair}</div></div>)}
       </div>
       <label className="flex flex-col gap-1">
         <span>Replace the invalid animation override</span>

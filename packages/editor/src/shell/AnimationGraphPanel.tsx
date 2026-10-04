@@ -181,7 +181,7 @@ function GraphInspector({
     <div className="space-y-2 p-3 text-[11px]">
       <div role="alert" aria-label="Animation diagnostics" className="space-y-1 text-amber-200">
         <p>The saved animation override is invalid. Its graph cannot be previewed or edited until repaired or replaced.</p>
-        {diagnostics.map((entry) => <div key={`${entry.path}:${entry.message}`}><div>{entry.path}: {entry.message}</div><div>{entry.repair}</div></div>)}
+        {diagnostics.map((entry) => <div key={`${entry.path}:${entry.message}`}><div className="break-all">{entry.path}: {entry.message}</div><div>{entry.repair}</div></div>)}
       </div>
       <div className="flex gap-2">
         <button type="button" className={SMALL_BUTTON} onClick={() => commit(undefined)}>Remove invalid animation override</button>
