@@ -9,7 +9,7 @@ import {
   animationMetaPatch,
   clearAnimGraph,
   effectiveAnimGraph,
-  readAnimationSetting,
+  readAnimationSettingResult,
   setTransitionDuration,
   storeAnimGraph,
   type AnimationSetting,
@@ -68,6 +68,7 @@ export function AnimationGraphPanel({
     for (const id of selection) {
       const marker = markers.find((entry) => entry.id === id);
       if (marker === undefined) continue;
+      if (readAnimationSettingResult({ markers }, marker.id).diagnostics.length > 0) return { marker, asset: undefined };
       const catalogId = markerCatalogId(marker);
       const asset = catalogId === null ? undefined : rigged.find((entry) => entry.id === catalogId);
       if (asset?.url !== undefined && asset.clips !== undefined) return { marker, asset };
@@ -97,11 +98,13 @@ function GraphInspector({
   session: EditorSession;
   ui: EditorUiStore;
   marker: { id: string; label?: string; meta?: Record<string, unknown> };
-  asset: EditorAssetEntry;
+  asset: EditorAssetEntry | undefined;
 }) {
-  const clips = asset.clips ?? [];
-  const setting = readAnimationSetting(marker.meta);
-  const effective = useMemo(() => effectiveAnimGraph(setting, clips), [JSON.stringify(setting), clips]);
+  const clips = asset?.clips ?? [];
+  const document = useStoreSelector(session, (state) => state.document);
+  const { setting, diagnostics } = readAnimationSettingResult(document, marker.id);
+  const invalid = diagnostics.length > 0;
+  const effective = useMemo(() => invalid || asset === undefined ? null : effectiveAnimGraph(setting, clips), [JSON.stringify(setting), invalid, asset, clips]);
   const graph = effective?.graph ?? null;
   const controls = useMemo(() => (graph === null ? [] : graphParamControls(graph)), [graph]);
   const triggerNames = useMemo(() => (graph === null ? [] : graphTriggers(graph)), [graph]);
@@ -110,6 +113,7 @@ function GraphInspector({
   const [playing, setPlaying] = useState(false);
   const [params, setParams] = useState<Record<string, AnimParamValue>>({});
   const [triggers, setTriggers] = useState<GraphPreviewTrigger[]>([]);
+  useEffect(() => { if (invalid) setPlaying(false); }, [invalid]);
   const durations = useStoreSelector(ui, (state) => state.clipPreview?.clipDurations);
 
   const frame: GraphPreviewFrame | null = useMemo(() => {
@@ -120,7 +124,7 @@ function GraphInspector({
   }, [graph, controls, params, triggers, time, durations]);
 
   useEffect(() => {
-    if (asset.url === undefined) return;
+    if (asset?.url === undefined) return;
     const current = ui.getState().clipPreview;
     const sameAsset = current?.source.assetId === asset.id;
     ui.patch({
@@ -134,17 +138,17 @@ function GraphInspector({
     return () => {
       if (ui.getState().clipPreview?.source.assetId === asset.id) ui.patch({ clipPreview: null });
     };
-  }, [asset.id, asset.url, asset.label, clips, ui]);
+  }, [asset?.id, asset?.url, asset?.label, clips, ui]);
 
   useEffect(() => {
     const current = ui.getState().clipPreview;
-    if (current === null || current.source.assetId !== asset.id) return;
+    if (asset === undefined || current === null || current.source.assetId !== asset.id) return;
     if (graph === null || frame === null) {
       if (current.graphPose !== undefined) ui.patch({ clipPreview: { ...current, graphPose: undefined } });
       return;
     }
     ui.patch({ clipPreview: { ...current, graphPose: { graph, clips: frame.clips, ...(frame.rootMotion === true ? { rootMotion: true } : {}) } } });
-  }, [graph, frame, asset.id, ui, durations]);
+  }, [graph, frame, asset?.id, ui, durations]);
 
   const timeRef = useRef(time);
   timeRef.current = time;
@@ -173,7 +177,21 @@ function GraphInspector({
       { coalesce: `animation:${marker.id}` },
     );
 
-  if (graph === null || effective === null || frame === null) {
+  if (invalid) return (
+    <div className="space-y-2 p-3 text-[11px]">
+      <div role="alert" aria-label="Animation diagnostics" className="space-y-1 text-amber-200">
+        <p>The saved animation override is invalid. Its graph cannot be previewed or edited until repaired or replaced.</p>
+        {diagnostics.map((entry) => <div key={`${entry.path}:${entry.message}`}><div>{entry.path}: {entry.message}</div><div>{entry.repair}</div></div>)}
+      </div>
+      <div className="flex gap-2">
+        <button type="button" className={SMALL_BUTTON} onClick={() => commit(undefined)}>Remove invalid animation override</button>
+        <button type="button" className={SMALL_BUTTON} onClick={() => commit("auto")}>Replace invalid override with Auto</button>
+      </div>
+      <p className="text-neutral-500">Replacement discards the invalid override and can be undone. Repair its saved fields through the existing marker metadata API to retain the intended graph.</p>
+    </div>
+  );
+
+  if (graph === null || effective === null || frame === null || asset === undefined) {
     return (
       <EmptyState
         icon="film"

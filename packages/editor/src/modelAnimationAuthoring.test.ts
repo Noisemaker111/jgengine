@@ -1,4 +1,10 @@
 import { describe, expect, test } from "bun:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { GameProvider } from "@jgengine/react/provider";
+import { createGameContext } from "@jgengine/core/runtime/gameContext";
+import { defineGameDefinition } from "@jgengine/core/game/defineGame";
+import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { readFileSync } from "node:fs";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/examples/jsm/libs/meshopt_decoder.module.js";
@@ -10,6 +16,9 @@ import { createAnimGraphRuntime } from "@jgengine/core/anim/animGraph";
 import { diagnoseModelAnimation } from "@jgengine/shell/render/useModelAnimation";
 
 import { createEditorHost } from "./session";
+import { createEditorUiStore } from "./uiStore";
+import { InspectorPanel } from "./InspectorPanel";
+import { AnimationGraphPanel } from "./shell/AnimationGraphPanel";
 
 import {
   animationMetaPatch,
@@ -20,6 +29,7 @@ import {
   storeAnimGraph,
   defaultCustomConfig,
   readAnimationSetting,
+  readAnimationSettingResult,
   setAnimationMode,
   setLocomotionClip,
   setLocomotionNumber,
@@ -148,8 +158,8 @@ describe("authoring reducers", () => {
     expect(setOneShotClip(held, "attack", []).oneShots).toBeUndefined();
   });
 
-  test("non-finite playback and malformed variants are rejected on read", () => {
-    expect(readAnimationSetting({ animation: { time: Infinity, timeScale: NaN, states: { idle: "Idle", walkSpeed: NaN }, oneShots: { hit: ["Hit_A", 3], attack: [] } } })).toEqual({ states: { idle: "Idle" } });
+  test("non-finite playback and malformed variants reject the whole override on read", () => {
+    expect(readAnimationSetting({ animation: { time: Infinity, timeScale: NaN, states: { idle: "Idle", walkSpeed: NaN }, oneShots: { hit: ["Hit_A", 3], attack: [] } } })).toBeUndefined();
   });
 });
 
@@ -336,4 +346,88 @@ describe("animation graph authoring", () => {
     expect(clearAnimGraph(storeAnimGraph(undefined, graph))).toBeUndefined();
     expect(clearAnimGraph("auto")).toBe("auto");
   });
+});
+
+
+describe("saved animation integrity", () => {
+  test("a malformed authored combat graph is rejected without silently deleting its transition", () => {
+    const graph = effectiveAnimGraph("auto", CLIPS)!.graph;
+    const corrupt = structuredClone(graph);
+    const transition = corrupt.layers[0]!.transitions.find((entry) => entry.to === "death")!;
+    transition.to = "missing-state";
+    const before = structuredClone(corrupt);
+    expect(readAnimationSetting({ animation: { graph: corrupt } })).toBeUndefined();
+    expect(corrupt).toEqual(before);
+  });
+
+  test("an unrelated Hold edit retains valid extension fields and deliberate empty variant arrays", () => {
+    const graph = { ...effectiveAnimGraph("auto", CLIPS)!.graph, identity: { author: "combat mapping" } };
+    const animation = { graph, timeScale: -0.5, time: -1, states: {}, oneShots: { attack: [] }, identity: { rig: "Knight" } };
+    const read = readAnimationSetting({ animation });
+    expect(read).toEqual(animation);
+    expect(setPlaybackBoolean(read, "paused", true)).toEqual({ ...animation, paused: true });
+  });
+});
+
+
+test("both real editor panels expose a located saved error and retain it until an undoable replacement", () => {
+  const document = createEmptyEditorDocument();
+  const graph = structuredClone(effectiveAnimGraph("auto", CLIPS)!.graph);
+  const index = graph.layers[0]!.transitions.findIndex((transition) => transition.to === "death");
+  graph.layers[0]!.transitions[index]!.to = "missing-state";
+  document.markers = [{ id: "hero", kind: "player_spawn", catalogId: "knight", position: { x: 0, y: 0, z: 0 }, meta: { animation: { graph }, routeId: "keep-me" } }];
+  const session = createEditorSession(document);
+  session.dispatch({ type: "select", ids: ["hero"] });
+  const ui = createEditorUiStore();
+  const ctx = createGameContext({ definition: defineGameDefinition({ name: "editor-animation-diagnostics", assets: createAssetCatalog(), multiplayer: "off" }), content: {}, player: { userId: "player", isNew: true } });
+  const asset = { id: "knight", label: "Knight", url: "/Knight.glb", clips: CLIPS };
+  const inspector = () => renderToStaticMarkup(createElement(GameProvider, { context: ctx }, createElement(InspectorPanel, { session, ui, assets: [asset] })));
+  const panel = () => renderToStaticMarkup(createElement(AnimationGraphPanel, { session, ui, rigged: [asset] }));
+  const result = readAnimationSettingResult(session.getState().document, "hero");
+  expect(result.setting).toBeUndefined();
+  expect(result.diagnostics).toEqual([{ path: `markers[0].meta.animation.graph.layers[0].transitions[${index}].to`, message: "Transition references an unknown state.", repair: "Choose a state declared in this layer; only from may use *." }]);
+  for (const html of [inspector(), panel()]) {
+    expect(html).toContain(result.diagnostics[0]!.path);
+    expect(html).toContain(result.diagnostics[0]!.repair);
+    expect(html).toContain('aria-label="Animation diagnostics"');
+    expect(html).not.toContain('aria-label="Hold animation pose"');
+    expect(html).not.toContain('aria-label="Graph preview time"');
+    expect(html).not.toContain('aria-label="Crossfade seconds');
+  }
+  expect(inspector()).toContain('aria-label="Replace invalid animation override"');
+  expect(panel()).toContain("Remove invalid animation override");
+  const missingAssetInspector = renderToStaticMarkup(createElement(GameProvider, { context: ctx }, createElement(InspectorPanel, { session, ui })));
+  const missingAssetGraph = renderToStaticMarkup(createElement(AnimationGraphPanel, { session, ui, rigged: [] }));
+  expect(missingAssetInspector).toContain(result.diagnostics[0]!.path);
+  expect(missingAssetInspector).toContain('<option value="custom" disabled=""');
+  expect(missingAssetGraph).toContain(result.diagnostics[0]!.path);
+  expect(missingAssetGraph).toContain("Remove invalid animation override");
+  expect(session.getState().document).toEqual(document);
+  const marker = session.getState().document.markers[0]!;
+  session.dispatch({ type: "setMarker", id: marker.id, patch: { meta: { ...marker.meta, ...animationMetaPatch(setAnimationMode(undefined, "auto")) } } });
+  expect(readAnimationSettingResult(session.getState().document, "hero")).toEqual({ setting: "auto", diagnostics: [] });
+  session.dispatch({ type: "undo" });
+  expect(readAnimationSettingResult(session.getState().document, "hero")).toEqual(result);
+  expect(session.getState().document).toEqual(document);
+  session.dispatch({ type: "redo" });
+  const host = createEditorHost({ gameId: "diagnostic-replacement", layers: {} });
+  host.api.getSession().dispatch({ type: "replaceDocument", document: session.getState().document });
+  const exported = host.api.handle({ method: "export_document" });
+  expect(exported.ok).toBe(true);
+  const reopened = createEditorHost({ gameId: "diagnostic-reload", layers: {} });
+  expect(reopened.api.handle({ method: "import_document", json: (exported.result as { json: string }).json }).ok).toBe(true);
+  expect(readAnimationSettingResult(reopened.api.getSession().getState().document, "hero")).toEqual({ setting: "auto", diagnostics: [] });
+  expect(reopened.api.getSession().getState().document.markers[0]!.meta?.routeId).toBe("keep-me");
+  host.dispose();reopened.dispose();
+});
+
+
+test("unrelated graph and role edits retain an explicitly empty one-shot map", () => {
+  const graph = effectiveAnimGraph("auto", CLIPS)!.graph;
+  const animation = { states: { idle: "Idle", walk: "Walking_A" }, oneShots: {} };
+  expect(setTransitionDuration(animation, graph, "base", 0, 0.35).oneShots).toEqual({});
+  expect(setLocomotionClip(animation, "run", "Running_A").oneShots).toEqual({});
+  expect(setLocomotionNumber(animation, "fadeSec", 0.1).oneShots).toEqual({});
+  expect(clearAnimGraph({ ...animation, graph })).toEqual(animation);
+  expect(setOneShotClip({ ...animation, oneShots: { hit: "Hit_A" } }, "hit", null).oneShots).toBeUndefined();
 });

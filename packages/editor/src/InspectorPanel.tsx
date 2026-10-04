@@ -19,6 +19,7 @@ import {
 } from "@jgengine/core/scene/sceneKinds";
 import { getAssetGenerator } from "@jgengine/core/scene/assetGenerator";
 import type { TriggerSourceKind } from "@jgengine/core/scene/authoredTriggers";
+import type { AuthoredAnimationDiagnostic } from "@jgengine/core/world/authoredAnimation";
 import { markerCatalogId } from "@jgengine/core/world/authoredObjects";
 import { useGameContext } from "@jgengine/react/provider";
 import { useDebouncedCommit } from "@jgengine/react/useDebouncedCommit";
@@ -39,7 +40,7 @@ import {
   animationMetaPatch,
   LOCOMOTION_ROLES,
   ONE_SHOT_EVENTS,
-  readAnimationSetting,
+  readAnimationSettingResult,
   setAnimationMode,
   setLocomotionClip,
   setLocomotionNumber,
@@ -461,14 +462,35 @@ const ANIMATION_MODE_HINT: Record<AnimationMode, string> = {
 function ModelAnimationSection({
   clips,
   setting,
+  diagnostics,
   onChange,
 }: {
   clips: readonly string[];
   setting: AnimationSetting | undefined;
+  diagnostics: readonly AuthoredAnimationDiagnostic[];
   onChange: (next: AnimationSetting | undefined) => void;
 }) {
   const mode = animationMode(setting);
   const config = mode === "custom" && typeof setting === "object" ? setting : null;
+  if (diagnostics.length > 0) return (
+    <div className="space-y-2 text-[10px]">
+      <div role="alert" aria-label="Animation diagnostics" className="space-y-1 text-amber-200">
+        <p>The saved animation override is invalid. Playback edits are unavailable until it is repaired or replaced.</p>
+        {diagnostics.map((entry) => <div key={`${entry.path}:${entry.message}`}><div>{entry.path}: {entry.message}</div><div>{entry.repair}</div></div>)}
+      </div>
+      <label className="flex flex-col gap-1">
+        <span>Replace the invalid animation override</span>
+        <select className={`h-6.5 w-full px-1.5 ${INPUT_CLS}`} value="" aria-label="Replace invalid animation override" onChange={(event) => onChange(setAnimationMode(undefined, event.target.value as AnimationMode, clips))}>
+          <option value="" disabled>Choose an explicit replacement</option>
+          <option value="default">Remove override (inherit catalog)</option>
+          <option value="auto">Replace with Auto</option>
+          <option value="none">Replace with None (bind pose)</option>
+          <option value="custom" disabled={clips.length === 0}>Replace with Custom (derive from this rig)</option>
+        </select>
+      </label>
+      <p className="text-neutral-500">Replacement discards the invalid override and can be undone. Raw metadata remains available below.</p>
+    </div>
+  );
   return (
     <div className="space-y-2.5">
       <div className="text-[10px] text-neutral-500">
@@ -843,6 +865,7 @@ export function InspectorPanel({
     const markerRigAsset = markerCatalog === null ? undefined : assets?.find((entry) => entry.id === markerCatalog);
     const markerRigClips =
       markerRigAsset?.clips !== undefined && markerRigAsset.clips.length > 0 ? markerRigAsset.clips : null;
+    const animation = readAnimationSettingResult(document, marker.id);
     const hasTrigger = hasAuthoredTrigger(marker.meta);
     const hasMaterial = hasMaterialAssignment(marker.meta);
     const hasGenerator = typeof marker.meta?.["assetId"] === "string" && getAssetGenerator(marker.meta["assetId"] as string) !== undefined;
@@ -982,11 +1005,12 @@ export function InspectorPanel({
                 <ParentField session={session} id={marker.id} />
               </div>
             </Section>
-            {markerRigClips !== null ? (
+            {markerRigClips !== null || animation.diagnostics.length > 0 ? (
               <Section id="modelAnimation" title="Animation" icon="film" sections={sections}>
                 <ModelAnimationSection
-                  clips={markerRigClips}
-                  setting={readAnimationSetting(marker.meta)}
+                  clips={markerRigClips ?? []}
+                  setting={animation.setting}
+                  diagnostics={animation.diagnostics}
                   onChange={(next) => onMeta(animationMetaPatch(next) as Record<string, unknown>, "animation")}
                 />
               </Section>
