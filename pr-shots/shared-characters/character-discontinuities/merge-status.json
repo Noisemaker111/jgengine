@@ -1,0 +1,42 @@
+{
+  "pr": 1965,
+  "state": "MERGED",
+  "verifiedHead": "8851ca4e3d0e2984a5da15e1472690d1eb5d242c",
+  "mergeCommit": "bea2af8913100404f3c5dd5cde3c38c8d203b7ae",
+  "mergedAtUTC": "2026-10-04T04:00:48Z",
+  "builtPackageCohort": {
+    "commit": "d355677d708092afff9e211e4a36d28f790276bd",
+    "tree": "3a55e1bc52b2ea9fb5f5703d520e02eb75c983d0",
+    "publicPackageEvidenceArchive": "b681d9a5198d3fd6a53647f3e83ee217293299c9",
+    "neverRelabeled": true
+  },
+  "sourceCorrection": {
+    "localCommit": "2f51c8e45164e4f1bda70173ad6b45bed0be914f",
+    "tree": "8860834db39d26a04c6c9730db5292a741a67407",
+    "onlyWholeTreeDifferenceFromBuilt": "changes/character-discontinuities.md",
+    "runtimeAndPublishedInputsUnchanged": true
+  },
+  "finalCI": {
+    "run": 37175269734,
+    "attempt": 1,
+    "allSixChecks": "PASS",
+    "pass": 9695,
+    "skip": 2,
+    "fail": 0,
+    "failedJobsReruns": 0,
+    "archive": "22bc9e2526a9991e5be6e6f2cde4811fd9fe97fc"
+  },
+  "earlierCI": {
+    "head": "6df71eff3211884f7f10d04b6a354c9a3a38776d",
+    "run": 37174991808,
+    "quick": "Required changelog heading/bullet failure",
+    "testAndAggregateRawConclusion": "CANCELLED",
+    "failedAssertion": "None observed in partial test log; no terminal counters. No claimed cause or failed-jobs recovery."
+  },
+  "proofLimits": [
+    "Isolated unreleased built packages; beta merge does not update installed games or establish registry publication.",
+    "Manual React/Fiber pose and public motor evidence; no new native appearance/feel/FPS claims.",
+    "Unsupported, untraced earlier synchronous membership listener can re-create same id before motor observes absence; archived separately, no existing consumer reproduction claimed."
+  ],
+  "actions": "Archive-only merge receipt; frozen b681 package proofs and all prior source/CI records preserved."
+}
