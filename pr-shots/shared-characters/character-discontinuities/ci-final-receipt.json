@@ -1,0 +1,30 @@
+{
+  "files": [
+    {
+      "path": "ci-format-head.json",
+      "bytes": 19061,
+      "sha256": "dc19bd65267497d4853e1b5a5a57976b3c2673c8208b66ebaf12f2e54f1abe3d"
+    },
+    {
+      "path": "ci-format-head-watch.log",
+      "bytes": 43496,
+      "sha256": "59b6b5261221a032ca61eeeb609dd0e27c01f877d1267b7a169b9ff8d6758bba"
+    },
+    {
+      "path": "test-format-head-passed.log",
+      "bytes": 1983025,
+      "sha256": "a9094693d75c112e497a4bce66a22cd16fb5629219ae97449b9a081ec5dffe6f"
+    },
+    {
+      "path": "format-head-source-provenance.json",
+      "bytes": 2225,
+      "sha256": "b68f970b6b5720a2ba68046f81006782a49b96fa8c0b08d13106525755ccc167"
+    }
+  ],
+  "head": "8851ca4e3d0e2984a5da15e1472690d1eb5d242c",
+  "tree": "8860834db39d26a04c6c9730db5292a741a67407",
+  "run": 37175269734,
+  "attempt": 1,
+  "allSixChecksPassed": true,
+  "sourceCIAttribution": "corrected8851; built package d355 unchanged and never relabelled"
+}
