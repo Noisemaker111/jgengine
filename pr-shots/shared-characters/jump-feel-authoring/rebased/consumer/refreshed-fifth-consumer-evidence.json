@@ -1,0 +1,264 @@
+{
+  "label": "Refreshed fifth unreleased clean-built public package candidate; no registry/game adoption or new nativeclaim",
+  "cohort": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+  "tree": "d727b49b1602ed0b407385e0ace651a96233aa06",
+  "base": "443758e7c9866b493edac1ece84a16e6594dfc03",
+  "previousCohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+  "purpose": "Repeat actual saved movement authoring consumer evidence after beta movement integration, using freshly rebuilt outputs instead of prior-branch ignored dist.",
+  "cleanBuildPack": {
+    "directory": "../../packages/clean-e11224cd-20261004",
+    "provenance": "build-provenance.json",
+    "sourceLedger": "source-files.json",
+    "compiledLedger": "compiled-files.json",
+    "packageLedger": "package-files.json",
+    "freshOrderedOwningBuilds": 13,
+    "normalNpmPacks": 13,
+    "allStagesExit0": true,
+    "trackedSourceIdentityAndBytesStable": true,
+    "compiledFiles": 2377
+  },
+  "packageBoundary": {
+    "manifestTarballsHashed": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "f4b8f0af4104a5dc42937cdbcb0dc8f9061b5741906ac89c3f0b4713c0c07b1f",
+        "installedFilesByteVerified": 1209
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "a5f5e79dec68fc989687e32732c053eb7f3b4655f649ea14b39bcfd54eaa7ccc",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "55d691ea99e8a2e7fa3b513969cdffe0919c97dbc521e37cc7d7bc1ab0afb4f0",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "installedWholeFilesByteVerified": 2340,
+    "sdkSourceAliases": false
+  },
+  "originalGameSources": {
+    "commit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "filesByteVerified": 212,
+    "gameSourceCatalogLocksNoEdits": true,
+    "provenance": "original-source-provenance.json"
+  },
+  "actualConsumerReplay": {
+    "proof": "jump-authoring-after.json",
+    "comparison": "fifth-rebase-comparison.json",
+    "normalLifecycle": "original Scrap/Lantern onInit/onNewPlayer, Scrap registeredgunk, ordinarypublicmovement inputs; no placement/geometry/positionwrites",
+    "fourSavedDocumentHashesUnchanged": true,
+    "all12DefaultRawAuthoredNumericalRecordsExactlyEqual3ab": true,
+    "authoredMatchesRawBothGames": true,
+    "betaMovementChange": "f91051730dadd7cdb2839b6e464c71fa71bf0a6f",
+    "compiledModuleHashes": {
+      "previous": {
+        "runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+        "movement/playerMovement": "8a1503ccdc1f38bc9bd50ceb531996539208d5d78f0e3c29c096c1392bab5084",
+        "movement/movementModel": "e77bf1fb15b0c6c8ce0f6f2116fcb7a0bc4bf744e559661203d2050450a942d2",
+        "editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+        "editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+        "editor/movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+      },
+      "refreshed": {
+        "runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+        "movement/playerMovement": "e9f659e4aaa6e30d0fb0a2b560c8704faf816e734d46b054011b1527bcc49865",
+        "movement/movementModel": "e77bf1fb15b0c6c8ce0f6f2116fcb7a0bc4bf744e559661203d2050450a942d2",
+        "editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+        "editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+        "editor/movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+      }
+    },
+    "compiledPlayerMovementChanged": true,
+    "motorBytesUnchangedClaim": false,
+    "cases": [
+      {
+        "game": "scrap",
+        "profile": "cut",
+        "documentSha256": "2aa567b0683e880a5b7fde2a034bbfa8b86c77a10ac52e927cb608a5f60ddd1b",
+        "allThreeFullRecordsIdentical": true,
+        "authoredMatchesDirectRuntime": true
+      },
+      {
+        "game": "scrap",
+        "profile": "recovery",
+        "documentSha256": "5ee53bef4b5d2ce88fe03b50b48945d6df4b426d7461bed224372db2d28e22a7",
+        "allThreeFullRecordsIdentical": true,
+        "authoredMatchesDirectRuntime": true
+      },
+      {
+        "game": "lantern",
+        "profile": "cut",
+        "documentSha256": "2a2370e5126f268f558a2eaa65077744076126ca368ac0bc67168acdc1767980",
+        "allThreeFullRecordsIdentical": true,
+        "authoredMatchesDirectRuntime": true
+      },
+      {
+        "game": "lantern",
+        "profile": "recovery",
+        "documentSha256": "9e9d8b0a5270a8a17492bebc0e347b89bf6bdcc212d1b710b3dccb1cec24b856",
+        "allThreeFullRecordsIdentical": true,
+        "authoredMatchesDirectRuntime": true
+      }
+    ]
+  },
+  "full438DocumentReplay": {
+    "proof": "jump-authoring-full-document.json",
+    "savedDocumentInputCohort": "3ab0399c",
+    "currentRuntimeCohort": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+    "savedDocumentSha256": "43678b534f25f5e60828821c225c2be586e46c5205d423c30613e3f23949c66d",
+    "sameCombinedRowAndEntireNumericalRecords": true,
+    "originalBeforeCommitAndCollisionPolicyRetained": true
+  },
+  "consumerChecks": {
+    "scrap-signal": {
+      "types": "PASS",
+      "build": "PASS",
+      "buildSeconds": 37.09
+    },
+    "lantern-reach": {
+      "build": "PASS",
+      "buildSeconds": 43.75,
+      "typeLimitation": "Four old Promise dispatch errors ActionBar57/Dialogue68 remain; no redundantrerun."
+    }
+  },
+  "priorNativeEvidence": {
+    "cohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+    "proof": "../../native/jump-response/native-evidence.json",
+    "label": "Previouslycapturedconfiguration-only GUI Save/reopen; NOTrerunorrelabeled refreshedcohort."
+  },
+  "limitations": [
+    "Numerical public movement/configuration proof; no nativefeel/appearance/hardware performanceclaim.",
+    "FulloriginalLanternSave unsupported dawn remainsblocked; metadata saved slice does not replace world.",
+    "No originalrepositorysource/dependency/catalog/lock adoption."
+  ],
+  "artifactHashes": [
+    {
+      "path": "candidate-package-manifest.json",
+      "sha256": "1dca30c6dd887ef2014ac9fb9cf8b83bb395aac4b40e8e127104581b84f4caf3"
+    },
+    {
+      "path": "installed-package-verification.json",
+      "sha256": "afdb068c374d1b6b773331185b35922ef2578ae78badf6e18d0c3ce5d1865869"
+    },
+    {
+      "path": "baseline-input-ledger.json",
+      "sha256": "528b8fd356c1f979db8cfcb28c0fc0c916a7bbf82fb1cd695dac1d33e38d43e7"
+    },
+    {
+      "path": "original-source-provenance.json",
+      "sha256": "2c762d4cac792298f66a0537659c4d77df67afa236a926496030b4048dd60bce"
+    },
+    {
+      "path": "jump-authoring-controls.ts",
+      "sha256": "352c3a1aebd18a52246ebdfaa3b246ec076f48b36086440e025dcde4af1cda53"
+    },
+    {
+      "path": "jump-authoring-after.json",
+      "sha256": "11d2c90381326b3d8ddd830846fce04959bf606dcb0b983fc77060f6edb3b10b"
+    },
+    {
+      "path": "jump-authoring-after.log",
+      "sha256": "2291d43a3cf11bfdda661f94f38e6b494609e9cbdbbf64c1b4079f3654ee923d"
+    },
+    {
+      "path": "jump-authoring-full-document.ts",
+      "sha256": "71d246cc42533deeecac4ff05608a2b43120a7bd05b02b86d74758adba51d2b0"
+    },
+    {
+      "path": "jump-authoring-full-document.json",
+      "sha256": "6129ba5175dc32fa549279c9102dfcff3564904a511cdb0a6dfb8cee3b588c0c"
+    },
+    {
+      "path": "jump-authoring-full-document.log",
+      "sha256": "ee3c827448ef2b935f002d8ef0d673cce364f4b7eb3f2d5eacb82cee78c09d7b"
+    },
+    {
+      "path": "fifth-rebase-comparison.json",
+      "sha256": "7b650b50d0394c5b75bb34e8b50efd901ad07c99c8b76a3f623f71142759e8ff"
+    },
+    {
+      "path": "fifth-rebase-comparison.log",
+      "sha256": "6c9bec1b1c0f85f5f9700be64228fa1b4b821055f0a76533ad8d7ec603c03979"
+    },
+    {
+      "path": "../../fifth-rebase-compare.ts",
+      "sha256": "e2b9d7291d97180164f31629ed95dd0dfa32e3f3c4b7b802ac25bedc68421521"
+    },
+    {
+      "path": "public-scrap-signal-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public-scrap-signal-build.log",
+      "sha256": "b3a5a8d209be9d402c7b64fdc29da5a40539202bdaff3bb5c1c6f0e3e5ed2d79"
+    },
+    {
+      "path": "public-lantern-reach-build.log",
+      "sha256": "e267f3f34f3d7379dc2b66be49e795f14e417446ec6691addc873d1a2640e9c4"
+    },
+    {
+      "path": "../../packages/clean-e11224cd-20261004/build-provenance.json",
+      "sha256": "1d3440be44cbe9ad90fdb3f6da333072cf6b35629b9953bd33610b6e2b50889b"
+    },
+    {
+      "path": "../../packages/clean-e11224cd-20261004/compiled-files.json",
+      "sha256": "f7bb61b17dc5de3a0fce4544256b787e29f90c285cba45479936e41410f72735"
+    },
+    {
+      "path": "../../packages/clean-e11224cd-20261004/package-files.json",
+      "sha256": "454116341d38ba66a7a4cfeb42223cfe530aa0ae54384ed5be3d15c10ebcf900"
+    },
+    {
+      "path": "../../packages/clean-e11224cd-20261004/source-files.json",
+      "sha256": "b2c53c8fc751472ac7dedb9ebcfc4959ac8fca464581f1764c024c550f10df08"
+    }
+  ]
+}

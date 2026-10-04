@@ -1,0 +1,604 @@
+{
+  "checkedAtUTC": "2026-10-04T02:49:16.945332+00:00",
+  "pr": 1961,
+  "attempt": 1,
+  "remoteHead": "60e41ff2bf014ecc7d2d435d839a16c44e8858f7",
+  "verifiedTree": "d727b49b1602ed0b407385e0ace651a96233aa06",
+  "localEquivalentCommit": "e11224cd",
+  "run": {
+    "conclusion": "failure",
+    "databaseId": 37171738199,
+    "headSha": "60e41ff2bf014ecc7d2d435d839a16c44e8858f7",
+    "jobs": [
+      {
+        "completedAt": "2026-10-04T02:40:59Z",
+        "conclusion": "success",
+        "databaseId": 111345890652,
+        "name": "types",
+        "startedAt": "2026-10-04T02:39:45Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run oven-sh/setup-bun@v2",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/cache@v4",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun install --frozen-lockfile",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run build",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run build:registry",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run games:clone",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run check-types",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/cache@v4",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run oven-sh/setup-bun@v2",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 19,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890652"
+      },
+      {
+        "completedAt": "2026-10-04T02:47:18Z",
+        "conclusion": "failure",
+        "databaseId": 111345890772,
+        "name": "test",
+        "startedAt": "2026-10-04T02:39:46Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run oven-sh/setup-bun@v2",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/cache@v4",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun install --frozen-lockfile",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run build",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run build:registry",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run games:clone",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "failure",
+            "name": "Run bun test packages apps/dev scripts",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Post Run actions/cache@v4",
+            "number": 16,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Post Run oven-sh/setup-bun@v2",
+            "number": 17,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 18,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 19,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890772"
+      },
+      {
+        "completedAt": "2026-10-04T02:40:40Z",
+        "conclusion": "success",
+        "databaseId": 111345890773,
+        "name": "quick",
+        "startedAt": "2026-10-04T02:39:45Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run oven-sh/setup-bun@v2",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/cache@v4",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun install --frozen-lockfile",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run check-artifacts",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run check-stage-skills",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run check-skills",
+            "number": 8,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run git fetch --no-tags origin main",
+            "number": 9,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run check-changelog",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run build",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run check-skill-api",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run check-orphan-ratchet",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run check-export-manifest",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/cache@v4",
+            "number": 26,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run oven-sh/setup-bun@v2",
+            "number": 27,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 28,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 29,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890773"
+      },
+      {
+        "completedAt": "2026-10-04T02:40:56Z",
+        "conclusion": "success",
+        "databaseId": 111345890823,
+        "name": "web-build",
+        "startedAt": "2026-10-04T02:39:45Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run oven-sh/setup-bun@v2",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/cache@v4",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun install --frozen-lockfile",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun --cwd=apps/web run build",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/cache@v4",
+            "number": 10,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run oven-sh/setup-bun@v2",
+            "number": 11,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 13,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890823"
+      },
+      {
+        "completedAt": "2026-10-04T02:44:38Z",
+        "conclusion": "success",
+        "databaseId": 111345890833,
+        "name": "smoke",
+        "startedAt": "2026-10-04T02:39:45Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/checkout@v4",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run oven-sh/setup-bun@v2",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run actions/cache@v4",
+            "number": 4,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun install --frozen-lockfile",
+            "number": 5,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run games:clone",
+            "number": 6,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Run bun run smoke",
+            "number": 7,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/cache@v4",
+            "number": 12,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run oven-sh/setup-bun@v2",
+            "number": 13,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@v4",
+            "number": 14,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 15,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890833"
+      },
+      {
+        "completedAt": "2026-10-04T02:47:23Z",
+        "conclusion": "failure",
+        "databaseId": 111347029603,
+        "name": "ci",
+        "startedAt": "2026-10-04T02:47:20Z",
+        "status": "completed",
+        "steps": [
+          {
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "status": "completed"
+          },
+          {
+            "conclusion": "failure",
+            "name": "Run for result in \"success\" \"success\" \"failure\" \"success\" \"success\"; do",
+            "number": 2,
+            "status": "completed"
+          },
+          {
+            "conclusion": "skipped",
+            "name": "Track red main in one issue",
+            "number": 3,
+            "status": "completed"
+          },
+          {
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 4,
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111347029603"
+      }
+    ],
+    "status": "completed",
+    "url": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199"
+  },
+  "prChecks": {
+    "headRefOid": "60e41ff2bf014ecc7d2d435d839a16c44e8858f7",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T02:40:40Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890773",
+        "name": "quick",
+        "startedAt": "2026-10-04T02:39:45Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T02:40:59Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890652",
+        "name": "types",
+        "startedAt": "2026-10-04T02:39:45Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T02:47:18Z",
+        "conclusion": "FAILURE",
+        "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890772",
+        "name": "test",
+        "startedAt": "2026-10-04T02:39:46Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T02:40:56Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890823",
+        "name": "web-build",
+        "startedAt": "2026-10-04T02:39:45Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T02:44:38Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111345890833",
+        "name": "smoke",
+        "startedAt": "2026-10-04T02:39:45Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-04T02:47:23Z",
+        "conclusion": "FAILURE",
+        "detailsUrl": "https://github.com/Noisemaker111/jgengine/actions/runs/37171738199/job/111347029603",
+        "name": "ci",
+        "startedAt": "2026-10-04T02:47:20Z",
+        "status": "COMPLETED",
+        "workflowName": "CI"
+      }
+    ],
+    "url": "https://github.com/Noisemaker111/jgengine/pull/1961"
+  },
+  "testRawConclusion": "failure",
+  "aggregateCiConclusion": "failure",
+  "testCounters": {
+    "pass": 9667,
+    "skip": 2,
+    "fail": 1,
+    "error": 1,
+    "expectCalls": 3507678,
+    "tests": 9670,
+    "files": 976,
+    "durationSeconds": 426.31
+  },
+  "failure": {
+    "fixture": "packages/jgengine/src/harness.browser.test.ts",
+    "test": "portable harness in Chromium > monorepo drive fills labelled fields and double-clicks with trusted events",
+    "durationMs": 45003.29,
+    "timeoutMs": 45000,
+    "danglingProcessesKilled": 1,
+    "unhandledError": "expect(exit).toBe(0): expected0, received143",
+    "assertionSourceLine": 50,
+    "spawnCommandSourceLine": 47,
+    "awaitChildSourceLine": 48,
+    "causeLimit": "Test timeout established; log does not disclose the child driver step that blocked. No flake inference."
+  },
+  "CreatorApp": {
+    "previousSetupFailureRepeated": false,
+    "testsPassed": [
+      "production menu mounts the actual editor and repeats save/play/return/reopen across reload",
+      "native export round-trips through validated import and rejects an over-budget file",
+      "unsaved and pending failed saves survive native play, pause, resume and return"
+    ],
+    "limit": "All three passed in this exact CI run; no broad reliability or native campaign proof attribution."
+  },
+  "log": "test-failed.log",
+  "logSHA256": "3aad6f314d22019126f55c7151c65373d615777309242fba3d6aa53968562ead",
+  "exactFixtureCopy": "harness-fixture-exact-head.ts",
+  "exactFixtureSHA256": "ae40f766dd3b2e9e66ac84f117fcc0c45be0b6f22279ae4fd1508869596a92f0",
+  "actions": "Read-only CI watch/log/source retrieval. No rerun, merge, product edits, native/browser launches.",
+  "oldEvidencePreserved": "Original3ab candidate/native proof and first/repeated CI failures unchanged.",
+  "nativeProofAttribution": "Fifth original3ab configuration-only proof; never relabelled to this newhead.",
+  "recoveryVerdict": "Earlier CreatorApp setup failure did not recur; full CI still fails on a distinct harness timeout."
+}

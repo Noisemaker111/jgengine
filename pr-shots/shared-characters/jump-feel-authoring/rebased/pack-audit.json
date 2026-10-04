@@ -1,0 +1,21 @@
+{
+  "status": "verified",
+  "cohort": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+  "tree": "d727b49b1602ed0b407385e0ace651a96233aa06",
+  "packages": 13,
+  "trackedSourceFiles": 4031,
+  "tarFiles": 2411,
+  "compiledDistFiles": 2377,
+  "loggedStages": 27,
+  "sourceLedgerMatchesGitTree": true,
+  "tarBytesMatchCompiledLedger": true,
+  "priorManifestAndLogsHashesMatch": true,
+  "workflowHashMatches": true,
+  "limitations": [
+    "Read-only archive/hash audit; no build/pack/test rerun.",
+    "Compiler outputs are proven fresh by recorded deletion and successful ordered build, not independently recompiled.",
+    "Caller freeze prevents concurrent mutations; scratch lock serializes only this workflow.",
+    "Installed dependency bytes are not comprehensively attested; lock and Bun/npm versions recorded.",
+    "No build-registry, publication, adoption, runtime or native appearance proof."
+  ]
+}

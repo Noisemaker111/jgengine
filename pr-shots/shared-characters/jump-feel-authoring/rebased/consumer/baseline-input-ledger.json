@@ -1,0 +1,34 @@
+[
+  {
+    "path": "jump-authoring-controls.ts",
+    "sha256": "352c3a1aebd18a52246ebdfaa3b246ec076f48b36086440e025dcde4af1cda53"
+  },
+  {
+    "path": "jump-authoring-full-document.ts",
+    "sha256": "1622183fa262fc28589f9b99842e51332cb25f6e2aa7bf41c1abf1ab80ab1d11"
+  },
+  {
+    "path": "jump-authoring-after.json",
+    "sha256": "e9af0a76217f2f7f9ddc9161037fc0d4822f053e353c995e077a9e08653b62a4"
+  },
+  {
+    "path": "jump-authoring-full-document.json",
+    "sha256": "27ebb5dc2b11af521d923a580aa646d4920ba9268c089821fe79a8b8ddafbd2c"
+  },
+  {
+    "path": "jump-authoring-scrap-cut-saved.json",
+    "sha256": "2aa567b0683e880a5b7fde2a034bbfa8b86c77a10ac52e927cb608a5f60ddd1b"
+  },
+  {
+    "path": "jump-authoring-scrap-recovery-saved.json",
+    "sha256": "5ee53bef4b5d2ce88fe03b50b48945d6df4b426d7461bed224372db2d28e22a7"
+  },
+  {
+    "path": "jump-authoring-lantern-cut-saved.json",
+    "sha256": "2a2370e5126f268f558a2eaa65077744076126ca368ac0bc67168acdc1767980"
+  },
+  {
+    "path": "jump-authoring-lantern-recovery-saved.json",
+    "sha256": "9e9d8b0a5270a8a17492bebc0e347b89bf6bdcc212d1b710b3dccb1cec24b856"
+  }
+]

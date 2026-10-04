@@ -1,0 +1,48 @@
+{
+  "head": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+  "tree": "d727b49b1602ed0b407385e0ace651a96233aa06",
+  "parent": "443758e7c9866b493edac1ece84a16e6594dfc03",
+  "branch": "characters/jump-feel-authoring",
+  "clean": true,
+  "generatedDiff": [],
+  "sourceHashes": {
+    "packages/core/src/editor/movementCatalog.ts": "644575a67a1d9ec55fbb781a52df56eec06c59f486bd583420b3e168a5d24648",
+    "packages/core/src/editor/movementCatalog.test.ts": "c67578ed9323efc6843d296f1e6ec021c05e8737c2c2648323449c4c2375619a",
+    ".claude/skills/jgengine-world/reference.md": "1f3db2dad5e4aef13c517c470035ab91f59d97f58f7232d4d9b6f9c52c2aac5e",
+    ".claude/skills/jgengine-world/recipes/character-animation.md": "71f5388df380f632d3b601b11c27fc2ed1e552fd3f7a94c0cd8f06e636a22635",
+    "changes/character-jump-feel-authoring.md": "9d646fb48f2d13368aff8ea473ca7109ccd4627c5805c554aea35925b7d6b8ce"
+  },
+  "sourceUnchangedAcrossGen": true,
+  "checks": {
+    "gen": {
+      "command": "bun run gen",
+      "exit": 0,
+      "log": ".scratch/characters/fifth-rebased-checks/gen.log"
+    },
+    "catalog-tests": {
+      "command": "bun test packages/core/src/editor/movementCatalog.test.ts",
+      "exit": 0,
+      "log": ".scratch/characters/fifth-rebased-checks/catalog-tests.log"
+    },
+    "core-types": {
+      "command": "bun --cwd=packages/core run check-types",
+      "exit": 0,
+      "log": ".scratch/characters/fifth-rebased-checks/core-types.log"
+    },
+    "editor-types": {
+      "command": "bun --cwd=packages/editor run check-types",
+      "exit": 0,
+      "log": ".scratch/characters/fifth-rebased-checks/editor-types.log"
+    },
+    "ship-preflight": {
+      "command": "bun run ship:preflight",
+      "exit": 0,
+      "log": ".scratch/characters/fifth-rebased-checks/ship-preflight.log"
+    }
+  },
+  "focusedCounts": {
+    "tests": 11,
+    "assertions": 91,
+    "files": 1
+  }
+}

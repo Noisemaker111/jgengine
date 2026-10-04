@@ -1,0 +1,62 @@
+{
+  "label": "fresh fifth installed-package regression after beta stance-dependent flight ordering integration; old artifacts keep their original source labels",
+  "previousCohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+  "refreshedCohort": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+  "refreshedTree": "d727b49b1602ed0b407385e0ace651a96233aa06",
+  "betaMovementChange": "f91051730dadd7cdb2839b6e464c71fa71bf0a6f",
+  "sourceGameCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "cases": [
+    {
+      "game": "scrap",
+      "profile": "cut",
+      "documentSha256": "2aa567b0683e880a5b7fde2a034bbfa8b86c77a10ac52e927cb608a5f60ddd1b",
+      "allThreeFullRecordsIdentical": true,
+      "authoredMatchesDirectRuntime": true
+    },
+    {
+      "game": "scrap",
+      "profile": "recovery",
+      "documentSha256": "5ee53bef4b5d2ce88fe03b50b48945d6df4b426d7461bed224372db2d28e22a7",
+      "allThreeFullRecordsIdentical": true,
+      "authoredMatchesDirectRuntime": true
+    },
+    {
+      "game": "lantern",
+      "profile": "cut",
+      "documentSha256": "2a2370e5126f268f558a2eaa65077744076126ca368ac0bc67168acdc1767980",
+      "allThreeFullRecordsIdentical": true,
+      "authoredMatchesDirectRuntime": true
+    },
+    {
+      "game": "lantern",
+      "profile": "recovery",
+      "documentSha256": "9e9d8b0a5270a8a17492bebc0e347b89bf6bdcc212d1b710b3dccb1cec24b856",
+      "allThreeFullRecordsIdentical": true,
+      "authoredMatchesDirectRuntime": true
+    }
+  ],
+  "full438Document": {
+    "sha256": "43678b534f25f5e60828821c225c2be586e46c5205d423c30613e3f23949c66d",
+    "allCombinedRuntimeRecordsIdentical": true
+  },
+  "compiledModuleHashes": {
+    "previous": {
+      "runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+      "movement/playerMovement": "8a1503ccdc1f38bc9bd50ceb531996539208d5d78f0e3c29c096c1392bab5084",
+      "movement/movementModel": "e77bf1fb15b0c6c8ce0f6f2116fcb7a0bc4bf744e559661203d2050450a942d2",
+      "editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+      "editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+      "editor/movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+    },
+    "refreshed": {
+      "runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+      "movement/playerMovement": "e9f659e4aaa6e30d0fb0a2b560c8704faf816e734d46b054011b1527bcc49865",
+      "movement/movementModel": "e77bf1fb15b0c6c8ce0f6f2116fcb7a0bc4bf744e559661203d2050450a942d2",
+      "editor/commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+      "editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+      "editor/movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+    }
+  },
+  "playerMovementModuleChanged": true,
+  "limitation": "Numerical movement and authoring/package integration evidence; no registry publication, game adoption, native feel/appearance or hardware performance claim."
+}

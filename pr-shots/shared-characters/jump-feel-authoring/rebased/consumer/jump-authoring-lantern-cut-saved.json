@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "markers": [],
+  "volumes": [],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": [
+    {
+      "id": "player-motion",
+      "schema": {
+        "fields": [
+          {
+            "key": "jumpVelocity",
+            "label": "Jump velocity",
+            "group": "jump",
+            "min": 0,
+            "step": 0.1,
+            "type": "number",
+            "default": 6
+          }
+        ],
+        "groups": [
+          {
+            "id": "jump",
+            "label": "Jump"
+          }
+        ]
+      },
+      "entries": [
+        {
+          "id": "player_hero",
+          "meta": {
+            "jumpVelocity": 6,
+            "jumpCutFactor": 0.2
+          }
+        }
+      ]
+    }
+  ]
+}

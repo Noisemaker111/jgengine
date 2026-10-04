@@ -1,0 +1,19 @@
+{
+  "pr": 1961,
+  "head": "60e41ff2bf014ecc7d2d435d839a16c44e8858f7",
+  "merge": "76f1da353570ca530595387ec455c458dbdc3371",
+  "mergedAt": "2026-10-04T02:57:02Z",
+  "state": "closed",
+  "merged": true,
+  "localCohort": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+  "tree": "d727b49b1602ed0b407385e0ace651a96233aa06",
+  "ciRun": 37171738199,
+  "ciAttempt": 2,
+  "allSixChecksPassed": true,
+  "reruns": 1,
+  "priorFailuresPreserved": true,
+  "failureCauseLimit": "Final pass proves this exact run succeeds; does not establish the prior timeout cause or general reliability.",
+  "priorNativeCohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+  "publication": "Source merged beta; unreleased package evidence; no published adoption or new native claim",
+  "ciLogArchiveLimit": "CI reports preserve exact local log hashes; multi-megabyte CI raw logs remain in scratch, not duplicated in this readable-report archive."
+}

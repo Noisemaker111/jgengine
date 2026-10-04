@@ -1,0 +1,23 @@
+{
+  "localCommit": "e11224cd752c7cc5936e0e69a1ccca68074a0f13",
+  "tree": "d727b49b1602ed0b407385e0ace651a96233aa06",
+  "base": "443758e7c9866b493edac1ece84a16e6594dfc03",
+  "pr": 1961,
+  "status": "Frozen refreshed proof; final exact-head CI passed and PR merged to beta",
+  "previousCohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+  "publication": "Unreleased clean-built package evidence only; no registry publication or shipped adoption",
+  "buildManifest": "/workspace/JGengine/.scratch/characters/packages/clean-e11224cd-20261004/manifest.json",
+  "limitations": "Numerical saved authoring/package/runtime proof; original full Lantern Save remains blocked by unsupported dawn. No refreshed native appearance/control feel/performance, release or adoption claim. Existing archives unchanged. CI pending; no upload yet.",
+  "remoteCommit": "60e41ff2bf014ecc7d2d435d839a16c44e8858f7",
+  "remoteTreeIdentityVerified": true,
+  "priorNativeEvidence": {
+    "cohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+    "label": "Original prior-cohort configuration-only GUI Save/reopen; not rerun or relabeled as refreshed e112 evidence",
+    "archivePrefix": "pr-shots/shared-characters/jump-feel-authoring/",
+    "proof": "native-evidence.json"
+  },
+  "mergeCommit": "76f1da353570ca530595387ec455c458dbdc3371",
+  "mergedAt": "2026-10-04T02:57:02Z",
+  "ciRun": 37171738199,
+  "ciAttempt": 2
+}
