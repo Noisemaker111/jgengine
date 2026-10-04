@@ -1,0 +1,85 @@
+{
+  "layer": "unreleased installed public package full original Scrap document configuration and pure shared movement probe; actual game and native appearance proof separate",
+  "packageManifestPath": ".scratch/characters/packages/final-3ab0399c/manifest.json",
+  "packageCohort": {
+    "commit": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+    "tree": "e1b8a8cf826396ceaa8703e2c0efc91e01c7e333",
+    "label": "unreleased built character candidate; no registry publication or shipped game adoption"
+  },
+  "publicModules": {
+    "commands": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/editor/commands.js",
+    "document": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/editor/document.js",
+    "movementCatalog": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/editor/movementCatalog.js",
+    "movementProbe": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/movement/movementProbe.js",
+    "playerMovement": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/movement/playerMovement.js"
+  },
+  "publicModuleHashes": {
+    "commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+    "document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+    "movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2",
+    "movementProbe": "bc182749dd1fba34f34c3e95e74d9d510ba53dadf9b1cb2fc3f7177432cefd63",
+    "playerMovement": "8a1503ccdc1f38bc9bd50ceb531996539208d5d78f0e3c29c096c1392bab5084"
+  },
+  "originalPath": "/workspace/JGengine-games/scrap-signal/src/editor.scene.json",
+  "originalHash": "cdd7c8f34d47ba9dfd55f2f436c24fe28cd43dcf31ec6e1fdb138f51c5809266",
+  "markerCount": 438,
+  "catalogId": "player-motion",
+  "entryId": "reactor_hunter",
+  "schemaGroup": {
+    "id": "jump-response",
+    "label": "Jump response",
+    "collapsed": true
+  },
+  "optedFields": [
+    "jumpBufferMs",
+    "coyoteMs",
+    "jumpCutFactor",
+    "apexGravityScale",
+    "apexSpeed",
+    "fallGravityScale",
+    "landingRecoveryMs",
+    "landingSpeedScale"
+  ],
+  "inspected": {
+    "defaults": {
+      "jumpBufferMs": 0,
+      "coyoteMs": 0,
+      "jumpCutFactor": 1,
+      "apexGravityScale": 1,
+      "apexSpeed": 1.5,
+      "fallGravityScale": 1,
+      "landingRecoveryMs": 0,
+      "landingSpeedScale": 0.5
+    },
+    "edited": {
+      "jumpBufferMs": 0,
+      "coyoteMs": 0,
+      "jumpCutFactor": 0.2,
+      "apexGravityScale": 1,
+      "apexSpeed": 1.5,
+      "fallGravityScale": 1,
+      "landingRecoveryMs": 600,
+      "landingSpeedScale": 0.1
+    },
+    "reloaded": {
+      "jumpBufferMs": 0,
+      "coyoteMs": 0,
+      "jumpCutFactor": 0.2,
+      "apexGravityScale": 1,
+      "apexSpeed": 1.5,
+      "fallGravityScale": 1,
+      "landingRecoveryMs": 600,
+      "landingSpeedScale": 0.1
+    }
+  },
+  "probe": {
+    "baselineTapJumpHeight": 1.1066666666666667,
+    "adjustedTapJumpHeight": 0.676
+  },
+  "invalidSavedDiagnostic": {
+    "path": "catalogs[0].entries[0].meta.jumpCutFactor",
+    "message": "jumpCutFactor must be a finite number between 0 and 1",
+    "repair": "Set jumpCutFactor to a valid number or remove it to inherit the game setting."
+  },
+  "fullSceneOutsideCatalogUnchanged": true
+}

@@ -1,0 +1,362 @@
+{
+  "label": "unreleased installed public package candidate; no game source/dependency adoption, native feel, appearance or hardware performance claim",
+  "cohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+  "tree": "e1b8a8cf826396ceaa8703e2c0efc91e01c7e333",
+  "baselineCohort": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "gameSourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "concreteBeforeLimitation": "Saved metadata for existing raw motor controls jumpCutFactor/landingRecoveryMs/landingSpeedScale survived document export/import but shared authored reader ignored it; normal registered actual Scrap/Lantern trajectories matched defaults instead of supplied direct runtime controls.",
+  "owningLayer": "core/editor/movementCatalog shared schema, validator and reader; motor unchanged",
+  "packageBoundary": {
+    "manifest": "candidate-package-manifest.json",
+    "manifestTarballsSha256Verified": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "d63b2caef3c3085fac129564a7c842d9e6fe4fdcba06b24b49e40fcc2586d974",
+        "installedFilesByteVerified": 1209
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "7fcc5c2d976041b2dd8af801f5f7b351498f5ea1620ee8cab5680feb2fdae142",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "installedFilesByteVerified": 2340,
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "verification": "installed-package-verification.json",
+    "sdkSourceAliases": false
+  },
+  "originalSources": {
+    "filesByteVerified": 212,
+    "provenance": "original-source-provenance.json",
+    "sourceModelsCameraSceneNoEdits": true,
+    "repositoryCatalogLocksNoEdits": true
+  },
+  "publicActualConsumerProof": {
+    "script": "jump-authoring-controls.ts",
+    "before": "jump-authoring-before.json",
+    "after": "jump-authoring-after.json",
+    "crossCohortScript": "jump-authoring-cross-cohort.ts",
+    "crossCohortProof": "jump-authoring-cross-cohort.json",
+    "scriptAnd4SavedDocumentsByteUnchanged": true,
+    "normalLifecycle": "actual onInit/onNewPlayer; Scrap registered character.pick(gunk), ordinary semantic jump/release/walk inputs at1/120s",
+    "noProofPositionOrSceneWrites": true,
+    "defaultAndRawFullNumericalRecordsBitExactAcrossCohorts": true,
+    "authoredFullRecordsNowMatchRaw": true,
+    "motorCompiledModulesUnchanged": [
+      "movement/playerMovement",
+      "movement/movementModel"
+    ],
+    "cases": [
+      {
+        "game": "scrap",
+        "profile": "cut",
+        "savedDocumentSha256": "2aa567b0683e880a5b7fde2a034bbfa8b86c77a10ac52e927cb608a5f60ddd1b",
+        "defaultRecordUnchanged": true,
+        "rawRecordUnchanged": true,
+        "authoredRecordNowMatchesRaw": true,
+        "defaultPeakHeight": 1.1412499999999923,
+        "authoredPeakHeight": 0.10566666666666436,
+        "defaultLandingSpeedAt100ms": 9.396123181124512,
+        "authoredLandingSpeedAt100ms": 9.396123181124512,
+        "defaultDistanceAt100ms": 0.6913484965084535,
+        "authoredDistanceAt100ms": 0.6913484965084535
+      },
+      {
+        "game": "scrap",
+        "profile": "recovery",
+        "savedDocumentSha256": "5ee53bef4b5d2ce88fe03b50b48945d6df4b426d7461bed224372db2d28e22a7",
+        "defaultRecordUnchanged": true,
+        "rawRecordUnchanged": true,
+        "authoredRecordNowMatchesRaw": true,
+        "defaultPeakHeight": 1.1412499999999923,
+        "authoredPeakHeight": 1.1412499999999923,
+        "defaultLandingSpeedAt100ms": 9.396123181124512,
+        "authoredLandingSpeedAt100ms": 1.976635062875003,
+        "defaultDistanceAt100ms": 0.6913484965084535,
+        "authoredDistanceAt100ms": 0.11588312600156314
+      },
+      {
+        "game": "lantern",
+        "profile": "cut",
+        "savedDocumentSha256": "2a2370e5126f268f558a2eaa65077744076126ca368ac0bc67168acdc1767980",
+        "defaultRecordUnchanged": true,
+        "rawRecordUnchanged": true,
+        "authoredRecordNowMatchesRaw": true,
+        "defaultPeakHeight": 1.099999999999997,
+        "authoredPeakHeight": 0.0871111111111098,
+        "defaultLandingSpeedAt100ms": 11.34014866687441,
+        "authoredLandingSpeedAt100ms": 11.34014866687441,
+        "defaultDistanceAt100ms": 0.8343861164755708,
+        "authoredDistanceAt100ms": 0.8343861164755708
+      },
+      {
+        "game": "lantern",
+        "profile": "recovery",
+        "savedDocumentSha256": "9e9d8b0a5270a8a17492bebc0e347b89bf6bdcc212d1b710b3dccb1cec24b856",
+        "defaultRecordUnchanged": true,
+        "rawRecordUnchanged": true,
+        "authoredRecordNowMatchesRaw": true,
+        "defaultPeakHeight": 1.099999999999997,
+        "authoredPeakHeight": 1.099999999999997,
+        "defaultLandingSpeedAt100ms": 11.34014866687441,
+        "authoredLandingSpeedAt100ms": 2.3855940414008656,
+        "defaultDistanceAt100ms": 0.8343861164755708,
+        "authoredDistanceAt100ms": 0.1398589451741259
+      }
+    ]
+  },
+  "publicEditorAuthoringLoop": {
+    "owner": "authoring",
+    "directory": "../jump-feel-authoring",
+    "fullOriginalScrap": "public-authoring-doc.json +public-authoring-result.json",
+    "unchangedOriginalMarkers": 438,
+    "newRow": "player-motion/reactor_hunter",
+    "nativeSuppliedOnlyZeroMarkerSlice": "native-catalog-document.json",
+    "scope": "normal catalog schema/control edits, undo/redo and document export/import; full runtime remains original actual game world"
+  },
+  "publicConsumerChecks": {
+    "scrap-signal": {
+      "types": "PASS",
+      "build": "PASS",
+      "buildSeconds": 20.3,
+      "typesLog": "public-scrap-signal-types.log",
+      "buildLog": "public-scrap-signal-build.log"
+    },
+    "lantern-reach": {
+      "build": "PASS",
+      "buildSeconds": 30.88,
+      "buildLog": "public-lantern-reach-build.log",
+      "typeLimitation": "four known old Promise dispatch errors retained from previous cohort checks; no redundant rerun"
+    }
+  },
+  "nativeConfigurationProof": {
+    "host": "Unmodified normal jgengine editor generated workspace with existing editorHostPlugin; no placed models or custom host code/readiness flags",
+    "catalogId": "player-motion",
+    "entryId": "reactor_hunter",
+    "suppliedFieldsOnly": [
+      "jumpCutFactor",
+      "landingRecoveryMs",
+      "landingSpeedScale"
+    ],
+    "initial": {
+      "jumpCutFactor": 0.2,
+      "landingRecoveryMs": 600,
+      "landingSpeedScale": 0.1
+    },
+    "savedAndFreshReopened": {
+      "jumpCutFactor": 0.35,
+      "landingRecoveryMs": 450,
+      "landingSpeedScale": 0.25
+    },
+    "schemaDefaultsUnchanged": true,
+    "groupInitiallyAndFreshReopenCollapsed": true,
+    "nativeForegroundInvocations": 2,
+    "nativeFailedAttempts": 0,
+    "nativeHangCount": 0,
+    "acceptedClaims": [
+      "The supplied-only Jump response group is initially collapsed and exposes exactly three authored number fields when expanded.",
+      "Actual native GUI numeric edits persist through the normal Save endpoint to the scene document on disk.",
+      "A fresh ephemeral browser loads that actual saved document without import_document and shows the same schema, collapsed group and edited row values.",
+      "The installed public saved reader extracts the same three movement.feel values with no diagnostics."
+    ],
+    "savedDocumentSha256": "4b12a1f87c7d9888a199b9cb697a5fcf5a82fe25bc003a9fa08c0268f8cdd607",
+    "observedFormattingLimit": "During native typing the saved-frame number inputs retained leading zero text (00.35/0450/00.25). Canonical RPC/document numbers are correct; fresh reopened controls display normalized0.35/450/0.25. No editing-polish claim.",
+    "separateCiStatus": "First #1961 run test and aggregateci failed in CreatorApp.test.ts setup hook; quick/types/web-build/smoke passed. Exact failure log/first-run metadata retained separately. Native configuration proof does not override CI failure.",
+    "limits": [
+      "No character mesh, rig, runtime play, jump movement, convincing animation or controls-feel claim.",
+      "Existing capped Lantern and standalone mesh/play scenarios remain capped and unresolved.",
+      "Full original Scrap document/runtime consumer proof is separate from this catalog-only native document.",
+      "No hardware performance claim from software rendering."
+    ],
+    "proof": "../../native/jump-response/native-evidence.json",
+    "scope": "configuration-only standard packaged CLI editor; no game runtime/native feel or animation appearance claim"
+  },
+  "limitations": [
+    "Physical trajectories are numerical public API evidence; control feel and animation appearance are not established by these tests.",
+    "Supplied old schemas remain unchanged in cross-cohort saved docs; new public schema generation/normal edit/save loop separately establishes exposed controls.",
+    "Original Lantern full document save remains blocked by unsupported dawn; metadata-only slice does not replace its world.",
+    "No released adoption or game repository source/catalog/lock mutation."
+  ],
+  "artifactHashes": [
+    {
+      "path": "candidate-package-manifest.json",
+      "sha256": "c8947ef6cf69fa7945886e17d9c25f3e170d4c6eab0fd5f2f74211749514b79e"
+    },
+    {
+      "path": "installed-package-verification.json",
+      "sha256": "5f6340bc8f5f2dbf7b5aa68c45a81a00ceb80befb89a9c1937c2ec8dda7694bb"
+    },
+    {
+      "path": "before-artifact-ledger.json",
+      "sha256": "fc1bbe0ea8372a6d378a1c90773c71bb40271415319bd856aa008928c5904956"
+    },
+    {
+      "path": "jump-authoring-controls.ts",
+      "sha256": "352c3a1aebd18a52246ebdfaa3b246ec076f48b36086440e025dcde4af1cda53"
+    },
+    {
+      "path": "jump-authoring-before.json",
+      "sha256": "4f7e40ba28749b554c6ffe18c9de03ce023e0e71ed3524abb1205d6535e2db80"
+    },
+    {
+      "path": "jump-authoring-after.json",
+      "sha256": "e9af0a76217f2f7f9ddc9161037fc0d4822f053e353c995e077a9e08653b62a4"
+    },
+    {
+      "path": "jump-authoring-cross-cohort.ts",
+      "sha256": "3856d126181a41815d1b47df7c9c5e11718ce857e221f8165c3197b3c0d7dbad"
+    },
+    {
+      "path": "jump-authoring-cross-cohort.json",
+      "sha256": "8c921ee70de86d694145209ddf7a049310b56850b5c1200a32beaccd8cd1b6c8"
+    },
+    {
+      "path": "jump-authoring-scrap-cut-saved.json",
+      "sha256": "2aa567b0683e880a5b7fde2a034bbfa8b86c77a10ac52e927cb608a5f60ddd1b"
+    },
+    {
+      "path": "jump-authoring-scrap-recovery-saved.json",
+      "sha256": "5ee53bef4b5d2ce88fe03b50b48945d6df4b426d7461bed224372db2d28e22a7"
+    },
+    {
+      "path": "jump-authoring-lantern-cut-saved.json",
+      "sha256": "2a2370e5126f268f558a2eaa65077744076126ca368ac0bc67168acdc1767980"
+    },
+    {
+      "path": "jump-authoring-lantern-recovery-saved.json",
+      "sha256": "9e9d8b0a5270a8a17492bebc0e347b89bf6bdcc212d1b710b3dccb1cec24b856"
+    },
+    {
+      "path": "jump-authoring-full-document.ts",
+      "sha256": "1622183fa262fc28589f9b99842e51332cb25f6e2aa7bf41c1abf1ab80ab1d11"
+    },
+    {
+      "path": "jump-authoring-full-document.json",
+      "sha256": "27ebb5dc2b11af521d923a580aa646d4920ba9268c089821fe79a8b8ddafbd2c"
+    },
+    {
+      "path": "jump-authoring-full-document.log",
+      "sha256": "c31c2906b1a7cd8550d88ce2a2641fe19cc65f790f95baa2588b026c2b7b4d80"
+    },
+    {
+      "path": "../jump-feel-authoring/public-authoring-doc.json",
+      "sha256": "43678b534f25f5e60828821c225c2be586e46c5205d423c30613e3f23949c66d"
+    },
+    {
+      "path": "../jump-feel-authoring/public-authoring-result.json",
+      "sha256": "cc157832087da992116e6b0592b6d0ed3dff6c13b3b788fbb154c9bd67f2b36a"
+    },
+    {
+      "path": "../../native/jump-response/native-evidence.json",
+      "sha256": "2f2055d8cd4a079256f112da9d841faa04f57b0bac49a3a90c7e6994a4b6d17d"
+    }
+  ],
+  "joinedFullDocumentRuntimeProof": {
+    "fullDocumentSha256": "43678b534f25f5e60828821c225c2be586e46c5205d423c30613e3f23949c66d",
+    "markerCount": 438,
+    "allSceneContentOutsideCatalogUnchanged": true,
+    "catalogId": "player-motion",
+    "entryId": "reactor_hunter",
+    "normalBootGunkRegistration": true,
+    "noPositionOrSceneWrites": true,
+    "worldPolicy": "actual original game.game.world and normal onInit; document feeds numeric movement reader only",
+    "callbacksPreserved": [
+      "beforeCommit"
+    ],
+    "collideObjectsPolicyPreserved": true,
+    "row": {
+      "walkSpeed": 5.8,
+      "gravity": -30,
+      "jumpVelocity": 8.4,
+      "collisionHeight": 1.8,
+      "jumpBufferMs": 0,
+      "coyoteMs": 0,
+      "jumpCutFactor": 0.2,
+      "apexGravityScale": 1,
+      "apexSpeed": 1.5,
+      "fallGravityScale": 1,
+      "landingRecoveryMs": 600,
+      "landingSpeedScale": 0.1
+    },
+    "resolvedConfig": {
+      "walkSpeed": 5.8,
+      "physics": {
+        "gravity": -30,
+        "jumpVelocity": 8.4
+      },
+      "movement": {
+        "collisionHeight": 1.8,
+        "feel": {
+          "jumpBufferMs": 0,
+          "coyoteMs": 0,
+          "jumpCutFactor": 0.2,
+          "apexGravityScale": 1,
+          "apexSpeed": 1.5,
+          "fallGravityScale": 1,
+          "landingRecoveryMs": 600,
+          "landingSpeedScale": 0.1
+        }
+      }
+    },
+    "authoredFullRecordExactlyMatchesRaw": true,
+    "script": "jump-authoring-full-document.ts",
+    "proof": "jump-authoring-full-document.json",
+    "document": "../jump-feel-authoring/public-authoring-doc.json",
+    "metrics": {
+      "peakHeight": 0.10566666666666436,
+      "speedAt100ms": 1.9766350628750173,
+      "distanceAt100ms": 0.11588312600156314
+    }
+  },
+  "finalEvidenceStatus": "Frozen fifth-pass report; exact3ab unreleased installed package evidence, original game sources/catalogs/locks unchanged."
+}

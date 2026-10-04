@@ -1,0 +1,17 @@
+{
+  "pr": 1961,
+  "head": "544f9e38b4f65fabc8b94fb98f429493e8a532b5",
+  "run": 37168699305,
+  "attempt": 1,
+  "testJob": 111337009536,
+  "failedFixture": "packages/editor/src/CreatorApp.test.ts",
+  "failure": "60,004.33ms setup hook timeout; launchServer/connect WebSocket [::1] closes code1006; no failed assertion",
+  "pass": 9653,
+  "skip": 2,
+  "fail": 1,
+  "error": 1,
+  "files": 976,
+  "log": ".scratch/characters/native/jump-response/pr1961-failed.log",
+  "independentBaseChange": "affca600 introduces launchServer/connect in browser-fixture owner file",
+  "decision": "One failed-jobs rerun queued; no flake claim or owner-file edit; repeat blocks merge pending owner repair"
+}

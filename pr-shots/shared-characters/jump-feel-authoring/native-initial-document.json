@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "markers": [],
+  "volumes": [],
+  "paths": [],
+  "annotations": [],
+  "prefabs": [],
+  "collections": [],
+  "catalogs": [
+    {
+      "id": "player-motion",
+      "label": "Player movement",
+      "schema": {
+        "fields": [
+          {
+            "key": "jumpCutFactor",
+            "label": "Jump release factor",
+            "group": "jump-response",
+            "min": 0,
+            "max": 1,
+            "step": 0.05,
+            "type": "number",
+            "default": 0.2
+          },
+          {
+            "key": "landingRecoveryMs",
+            "label": "Landing recovery (ms)",
+            "group": "jump-response",
+            "min": 0,
+            "step": 10,
+            "type": "number",
+            "default": 600
+          },
+          {
+            "key": "landingSpeedScale",
+            "label": "Landing speed multiplier",
+            "group": "jump-response",
+            "min": 0,
+            "step": 0.05,
+            "type": "number",
+            "default": 0.1
+          }
+        ],
+        "groups": [
+          {
+            "id": "jump-response",
+            "label": "Jump response",
+            "collapsed": true
+          }
+        ]
+      },
+      "entries": [
+        {
+          "id": "reactor_hunter",
+          "label": "Reclaimer",
+          "meta": {
+            "jumpCutFactor": 0.2,
+            "landingRecoveryMs": 600,
+            "landingSpeedScale": 0.1
+          }
+        }
+      ]
+    }
+  ]
+}

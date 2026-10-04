@@ -1,0 +1,3770 @@
+{
+  "cohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+  "tree": "e1b8a8cf826396ceaa8703e2c0efc91e01c7e333",
+  "evidence": "unreleased installed public package full exported editor document → existing reader/binding → actual unchanged Scrap normal registered player and public inputs",
+  "fullDocumentPath": "/workspace/JGengine/.scratch/characters/consumer/jump-feel-authoring/public-authoring-doc.json",
+  "fullDocumentSha256": "43678b534f25f5e60828821c225c2be586e46c5205d423c30613e3f23949c66d",
+  "markerCount": 438,
+  "allSceneContentOutsideCatalogUnchanged": true,
+  "catalogId": "player-motion",
+  "entryId": "reactor_hunter",
+  "normalBootGunkRegistration": true,
+  "noPositionOrSceneWrites": true,
+  "worldPolicy": "actual original game.game.world and normal onInit; document feeds numeric movement reader only",
+  "callbacksPreserved": [
+    "beforeCommit"
+  ],
+  "collideObjectsPolicyPreserved": true,
+  "row": {
+    "walkSpeed": 5.8,
+    "gravity": -30,
+    "jumpVelocity": 8.4,
+    "collisionHeight": 1.8,
+    "jumpBufferMs": 0,
+    "coyoteMs": 0,
+    "jumpCutFactor": 0.2,
+    "apexGravityScale": 1,
+    "apexSpeed": 1.5,
+    "fallGravityScale": 1,
+    "landingRecoveryMs": 600,
+    "landingSpeedScale": 0.1
+  },
+  "resolvedConfig": {
+    "walkSpeed": 5.8,
+    "physics": {
+      "gravity": -30,
+      "jumpVelocity": 8.4
+    },
+    "movement": {
+      "collisionHeight": 1.8,
+      "feel": {
+        "jumpBufferMs": 0,
+        "coyoteMs": 0,
+        "jumpCutFactor": 0.2,
+        "apexGravityScale": 1,
+        "apexSpeed": 1.5,
+        "fallGravityScale": 1,
+        "landingRecoveryMs": 600,
+        "landingSpeedScale": 0.1
+      }
+    }
+  },
+  "modulePaths": {
+    "runtime/gameContext": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/runtime/gameContext.js",
+    "movement/playerMovement": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/movement/playerMovement.js",
+    "editor/document": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/editor/document.js",
+    "editor/movementCatalog": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/editor/movementCatalog.js"
+  },
+  "moduleHashes": {
+    "runtime/gameContext": "509fb073e0d4922f5a5131a2a7b3ba8b03c7eaaca8f37faa7817311aa36640b7",
+    "movement/playerMovement": "8a1503ccdc1f38bc9bd50ceb531996539208d5d78f0e3c29c096c1392bab5084",
+    "editor/document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+    "editor/movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+  },
+  "authoredFullRecordExactlyMatchesRaw": true,
+  "records": {
+    "authored": {
+      "initialPosition": [
+        -502,
+        34.27783504754558,
+        594
+      ],
+      "entityMovement": {
+        "walkSpeed": 5.8
+      },
+      "settledPosition": [
+        -502,
+        34.27783504754558,
+        594
+      ],
+      "peakHeight": 0.10566666666666436,
+      "landFrame": 17,
+      "landedAtMs": 650.0000000000001,
+      "landingPosition": [
+        -502,
+        34.27783504754558,
+        594
+      ],
+      "speedAt100ms": 1.9766350628750173,
+      "distanceAt100ms": 0.11588312600156314,
+      "jumpSamples": [
+        {
+          "frame": 0,
+          "position": [
+            -502,
+            34.34575171421225,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 8.15,
+              "jumpOffset": 0.06791666666666885,
+              "grounded": false,
+              "jumpHeld": true,
+              "clockMs": 508.33333333333286,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": true,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": null,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 1,
+          "position": [
+            -502,
+            34.357251714212246,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 1.3800000000000001,
+              "jumpOffset": 0.07941666666666691,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 516.6666666666662,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 2,
+          "position": [
+            -502,
+            34.36666838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 1.1300000000000001,
+              "jumpOffset": 0.08883333333333354,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 524.9999999999995,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 3,
+          "position": [
+            -502,
+            34.37400171421225,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0.8800000000000001,
+              "jumpOffset": 0.09616666666666873,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 533.3333333333329,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 4,
+          "position": [
+            -502,
+            34.379251714212245,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0.6300000000000001,
+              "jumpOffset": 0.10141666666666538,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 541.6666666666663,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 5,
+          "position": [
+            -502,
+            34.38241838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0.3800000000000001,
+              "jumpOffset": 0.10458333333333059,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 549.9999999999997,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 6,
+          "position": [
+            -502,
+            34.383501714212244,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0.13000000000000012,
+              "jumpOffset": 0.10566666666666436,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 558.333333333333,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 7,
+          "position": [
+            -502,
+            34.382501714212246,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -0.11999999999999988,
+              "jumpOffset": 0.10466666666666669,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 566.6666666666664,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 8,
+          "position": [
+            -502,
+            34.37941838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -0.3699999999999999,
+              "jumpOffset": 0.10158333333333047,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 574.9999999999998,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 9,
+          "position": [
+            -502,
+            34.37425171421224,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -0.6199999999999999,
+              "jumpOffset": 0.09641666666666282,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 583.3333333333331,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 10,
+          "position": [
+            -502,
+            34.36700171421224,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -0.8699999999999999,
+              "jumpOffset": 0.08916666666666373,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 591.6666666666665,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 11,
+          "position": [
+            -502,
+            34.35766838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -1.1199999999999999,
+              "jumpOffset": 0.0798333333333332,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 599.9999999999999,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 12,
+          "position": [
+            -502,
+            34.346251714212244,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -1.3699999999999999,
+              "jumpOffset": 0.06841666666666413,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 608.3333333333333,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 13,
+          "position": [
+            -502,
+            34.33275171421224,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -1.6199999999999999,
+              "jumpOffset": 0.054916666666663616,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 616.6666666666666,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 14,
+          "position": [
+            -502,
+            34.31716838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -1.8699999999999999,
+              "jumpOffset": 0.039333333333331666,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 625,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 15,
+          "position": [
+            -502,
+            34.29950171421225,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -2.12,
+              "jumpOffset": 0.021666666666668277,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 633.3333333333334,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 16,
+          "position": [
+            -502,
+            34.279751714212246,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -2.37,
+              "jumpOffset": 0.0019166666666663446,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 641.6666666666667,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 17,
+          "position": [
+            -502,
+            34.27783504754558,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 650.0000000000001,
+              "groundedAtMs": null,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        }
+      ],
+      "walkSamples": [
+        {
+          "frame": 0,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.001853659698
+          ],
+          "speed": 0.2224391637618658,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.2224391637618658,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 658.3333333333335,
+              "groundedAtMs": 658.3333333333335,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 1,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0054058452669
+          ],
+          "speed": 0.4262622682591086,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.4262622682591086,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 666.6666666666669,
+              "groundedAtMs": 666.6666666666669,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 2,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0105316432089
+          ],
+          "speed": 0.6150957530366561,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.6150957530366561,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 675.0000000000002,
+              "groundedAtMs": 675.0000000000002,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 3,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.017130473385
+          ],
+          "speed": 0.7918596211382366,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.7918596211382366,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 683.3333333333336,
+              "groundedAtMs": 683.3333333333336,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 4,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.025121348836
+          ],
+          "speed": 0.958905054120788,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.958905054120788,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 691.666666666667,
+              "groundedAtMs": 691.666666666667,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 5,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0344390589979
+          ],
+          "speed": 1.1181252194334186,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.1181252194334186,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 700.0000000000003,
+              "groundedAtMs": 700.0000000000003,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 6,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0450310964341
+          ],
+          "speed": 1.2710444923332362,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.2710444923332362,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 708.3333333333337,
+              "groundedAtMs": 708.3333333333337,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 7,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0568551822442
+          ],
+          "speed": 1.4188902972224389,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.4188902972224389,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 716.6666666666671,
+              "groundedAtMs": 716.6666666666671,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 8,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0698772735291
+          ],
+          "speed": 1.5626509541725349,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.5626509541725349,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 725.0000000000005,
+              "groundedAtMs": 725.0000000000005,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 9,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0840699590028
+          ],
+          "speed": 1.7031222568486963,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.7031222568486963,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 733.3333333333338,
+              "groundedAtMs": 733.3333333333338,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 10,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0994111671442
+          ],
+          "speed": 1.8409449769763842,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.8409449769763842,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 741.6666666666672,
+              "groundedAtMs": 741.6666666666672,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 11,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1158831260016
+          ],
+          "speed": 1.9766350628750173,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.9766350628750173,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 750.0000000000006,
+              "groundedAtMs": 750.0000000000006,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 12,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1334715256288
+          ],
+          "speed": 2.1106079552666723,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.1106079552666723,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 758.3333333333339,
+              "groundedAtMs": 758.3333333333339,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 13,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1521648436815
+          ],
+          "speed": 2.2431981663244933,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.2431981663244933,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 766.6666666666673,
+              "groundedAtMs": 766.6666666666673,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 14,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1719538023872
+          ],
+          "speed": 2.3746750446896607,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.3746750446896607,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 775.0000000000007,
+              "groundedAtMs": 775.0000000000007,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 15,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1928309312991
+          ],
+          "speed": 2.5052554694366287,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.5052554694366287,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 783.333333333334,
+              "groundedAtMs": 783.333333333334,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 16,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.214790215226
+          ],
+          "speed": 2.6351140712326626,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.6351140712326626,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 791.6666666666674,
+              "groundedAtMs": 791.6666666666674,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 17,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.237826810746
+          ],
+          "speed": 2.764391462398366,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.764391462398366,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 800.0000000000008,
+              "groundedAtMs": 800.0000000000008,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 18,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.2619368179438
+          ],
+          "speed": 2.8932008637386266,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.8932008637386266,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 808.3333333333342,
+              "groundedAtMs": 808.3333333333342,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 19,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.2871170966143
+          ],
+          "speed": 3.021633440455783,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.021633440455783,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 816.6666666666675,
+              "groundedAtMs": 816.6666666666675,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 20,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.3133651182695
+          ],
+          "speed": 3.149762598617967,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.149762598617967,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 825.0000000000009,
+              "groundedAtMs": 825.0000000000009,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 21,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.3406788469752
+          ],
+          "speed": 3.2776474446682116,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.2776474446682116,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 833.3333333333343,
+              "groundedAtMs": 833.3333333333343,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 22,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.3690566434003
+          ],
+          "speed": 3.4053355710153843,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.4053355710153843,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 841.6666666666677,
+              "groundedAtMs": 841.6666666666677,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 23,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.3984971875585
+          ],
+          "speed": 3.532865298987343,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.532865298987343,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 850.000000000001,
+              "groundedAtMs": 850.000000000001,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        }
+      ],
+      "finalSnapshot": {
+        "heading": 0,
+        "facing": 0,
+        "voxelBody": null,
+        "motion": {
+          "horizontalVelocityX": 0,
+          "horizontalVelocityZ": 3.532865298987343,
+          "verticalVelocity": 0,
+          "jumpOffset": 0,
+          "grounded": true,
+          "jumpHeld": false,
+          "clockMs": 850.000000000001,
+          "groundedAtMs": 850.000000000001,
+          "landedAtMs": 650.0000000000001,
+          "jumpRising": false,
+          "wasAirborne": false
+        },
+        "flight": null,
+        "controller": null,
+        "controllerJumpHeld": false,
+        "jumpBuffer": {
+          "windowMs": 0,
+          "actions": {
+            "jump": {
+              "pressedAt": 508.33333333333286,
+              "previousPressAt": null,
+              "releasedAt": 516.6666666666662,
+              "consumed": true
+            }
+          }
+        },
+        "heightfieldHeight": 1.8,
+        "heightfieldEntityId": "full-document-jump-controls-scrap"
+      }
+    },
+    "raw": {
+      "initialPosition": [
+        -502,
+        34.27783504754558,
+        594
+      ],
+      "entityMovement": {
+        "walkSpeed": 5.8
+      },
+      "settledPosition": [
+        -502,
+        34.27783504754558,
+        594
+      ],
+      "peakHeight": 0.10566666666666436,
+      "landFrame": 17,
+      "landedAtMs": 650.0000000000001,
+      "landingPosition": [
+        -502,
+        34.27783504754558,
+        594
+      ],
+      "speedAt100ms": 1.9766350628750173,
+      "distanceAt100ms": 0.11588312600156314,
+      "jumpSamples": [
+        {
+          "frame": 0,
+          "position": [
+            -502,
+            34.34575171421225,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 8.15,
+              "jumpOffset": 0.06791666666666885,
+              "grounded": false,
+              "jumpHeld": true,
+              "clockMs": 508.33333333333286,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": true,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": null,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 1,
+          "position": [
+            -502,
+            34.357251714212246,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 1.3800000000000001,
+              "jumpOffset": 0.07941666666666691,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 516.6666666666662,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 2,
+          "position": [
+            -502,
+            34.36666838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 1.1300000000000001,
+              "jumpOffset": 0.08883333333333354,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 524.9999999999995,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 3,
+          "position": [
+            -502,
+            34.37400171421225,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0.8800000000000001,
+              "jumpOffset": 0.09616666666666873,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 533.3333333333329,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 4,
+          "position": [
+            -502,
+            34.379251714212245,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0.6300000000000001,
+              "jumpOffset": 0.10141666666666538,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 541.6666666666663,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 5,
+          "position": [
+            -502,
+            34.38241838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0.3800000000000001,
+              "jumpOffset": 0.10458333333333059,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 549.9999999999997,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 6,
+          "position": [
+            -502,
+            34.383501714212244,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0.13000000000000012,
+              "jumpOffset": 0.10566666666666436,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 558.333333333333,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 7,
+          "position": [
+            -502,
+            34.382501714212246,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -0.11999999999999988,
+              "jumpOffset": 0.10466666666666669,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 566.6666666666664,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 8,
+          "position": [
+            -502,
+            34.37941838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -0.3699999999999999,
+              "jumpOffset": 0.10158333333333047,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 574.9999999999998,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 9,
+          "position": [
+            -502,
+            34.37425171421224,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -0.6199999999999999,
+              "jumpOffset": 0.09641666666666282,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 583.3333333333331,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 10,
+          "position": [
+            -502,
+            34.36700171421224,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -0.8699999999999999,
+              "jumpOffset": 0.08916666666666373,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 591.6666666666665,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 11,
+          "position": [
+            -502,
+            34.35766838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -1.1199999999999999,
+              "jumpOffset": 0.0798333333333332,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 599.9999999999999,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 12,
+          "position": [
+            -502,
+            34.346251714212244,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -1.3699999999999999,
+              "jumpOffset": 0.06841666666666413,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 608.3333333333333,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 13,
+          "position": [
+            -502,
+            34.33275171421224,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -1.6199999999999999,
+              "jumpOffset": 0.054916666666663616,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 616.6666666666666,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 14,
+          "position": [
+            -502,
+            34.31716838087891,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -1.8699999999999999,
+              "jumpOffset": 0.039333333333331666,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 625,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 15,
+          "position": [
+            -502,
+            34.29950171421225,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -2.12,
+              "jumpOffset": 0.021666666666668277,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 633.3333333333334,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 16,
+          "position": [
+            -502,
+            34.279751714212246,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": -2.37,
+              "jumpOffset": 0.0019166666666663446,
+              "grounded": false,
+              "jumpHeld": false,
+              "clockMs": 641.6666666666667,
+              "groundedAtMs": null,
+              "landedAtMs": null,
+              "jumpRising": false,
+              "wasAirborne": true
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 17,
+          "position": [
+            -502,
+            34.27783504754558,
+            594
+          ],
+          "snapshot": {
+            "heading": 0,
+            "facing": 2.7589680735783437,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 650.0000000000001,
+              "groundedAtMs": null,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        }
+      ],
+      "walkSamples": [
+        {
+          "frame": 0,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.001853659698
+          ],
+          "speed": 0.2224391637618658,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.2224391637618658,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 658.3333333333335,
+              "groundedAtMs": 658.3333333333335,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 1,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0054058452669
+          ],
+          "speed": 0.4262622682591086,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.4262622682591086,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 666.6666666666669,
+              "groundedAtMs": 666.6666666666669,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 2,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0105316432089
+          ],
+          "speed": 0.6150957530366561,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.6150957530366561,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 675.0000000000002,
+              "groundedAtMs": 675.0000000000002,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 3,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.017130473385
+          ],
+          "speed": 0.7918596211382366,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.7918596211382366,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 683.3333333333336,
+              "groundedAtMs": 683.3333333333336,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 4,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.025121348836
+          ],
+          "speed": 0.958905054120788,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 0.958905054120788,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 691.666666666667,
+              "groundedAtMs": 691.666666666667,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 5,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0344390589979
+          ],
+          "speed": 1.1181252194334186,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.1181252194334186,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 700.0000000000003,
+              "groundedAtMs": 700.0000000000003,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 6,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0450310964341
+          ],
+          "speed": 1.2710444923332362,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.2710444923332362,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 708.3333333333337,
+              "groundedAtMs": 708.3333333333337,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 7,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0568551822442
+          ],
+          "speed": 1.4188902972224389,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.4188902972224389,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 716.6666666666671,
+              "groundedAtMs": 716.6666666666671,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 8,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0698772735291
+          ],
+          "speed": 1.5626509541725349,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.5626509541725349,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 725.0000000000005,
+              "groundedAtMs": 725.0000000000005,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 9,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0840699590028
+          ],
+          "speed": 1.7031222568486963,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.7031222568486963,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 733.3333333333338,
+              "groundedAtMs": 733.3333333333338,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 10,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.0994111671442
+          ],
+          "speed": 1.8409449769763842,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.8409449769763842,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 741.6666666666672,
+              "groundedAtMs": 741.6666666666672,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 11,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1158831260016
+          ],
+          "speed": 1.9766350628750173,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 1.9766350628750173,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 750.0000000000006,
+              "groundedAtMs": 750.0000000000006,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 12,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1334715256288
+          ],
+          "speed": 2.1106079552666723,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.1106079552666723,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 758.3333333333339,
+              "groundedAtMs": 758.3333333333339,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 13,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1521648436815
+          ],
+          "speed": 2.2431981663244933,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.2431981663244933,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 766.6666666666673,
+              "groundedAtMs": 766.6666666666673,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 14,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1719538023872
+          ],
+          "speed": 2.3746750446896607,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.3746750446896607,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 775.0000000000007,
+              "groundedAtMs": 775.0000000000007,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 15,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.1928309312991
+          ],
+          "speed": 2.5052554694366287,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.5052554694366287,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 783.333333333334,
+              "groundedAtMs": 783.333333333334,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 16,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.214790215226
+          ],
+          "speed": 2.6351140712326626,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.6351140712326626,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 791.6666666666674,
+              "groundedAtMs": 791.6666666666674,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 17,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.237826810746
+          ],
+          "speed": 2.764391462398366,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.764391462398366,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 800.0000000000008,
+              "groundedAtMs": 800.0000000000008,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 18,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.2619368179438
+          ],
+          "speed": 2.8932008637386266,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 2.8932008637386266,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 808.3333333333342,
+              "groundedAtMs": 808.3333333333342,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 19,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.2871170966143
+          ],
+          "speed": 3.021633440455783,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.021633440455783,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 816.6666666666675,
+              "groundedAtMs": 816.6666666666675,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 20,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.3133651182695
+          ],
+          "speed": 3.149762598617967,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.149762598617967,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 825.0000000000009,
+              "groundedAtMs": 825.0000000000009,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 21,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.3406788469752
+          ],
+          "speed": 3.2776474446682116,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.2776474446682116,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 833.3333333333343,
+              "groundedAtMs": 833.3333333333343,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 22,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.3690566434003
+          ],
+          "speed": 3.4053355710153843,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.4053355710153843,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 841.6666666666677,
+              "groundedAtMs": 841.6666666666677,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        },
+        {
+          "frame": 23,
+          "position": [
+            -502,
+            34.27783504754558,
+            594.3984971875585
+          ],
+          "speed": 3.532865298987343,
+          "snapshot": {
+            "heading": 0,
+            "facing": 0,
+            "voxelBody": null,
+            "motion": {
+              "horizontalVelocityX": 0,
+              "horizontalVelocityZ": 3.532865298987343,
+              "verticalVelocity": 0,
+              "jumpOffset": 0,
+              "grounded": true,
+              "jumpHeld": false,
+              "clockMs": 850.000000000001,
+              "groundedAtMs": 850.000000000001,
+              "landedAtMs": 650.0000000000001,
+              "jumpRising": false,
+              "wasAirborne": false
+            },
+            "flight": null,
+            "controller": null,
+            "controllerJumpHeld": false,
+            "jumpBuffer": {
+              "windowMs": 0,
+              "actions": {
+                "jump": {
+                  "pressedAt": 508.33333333333286,
+                  "previousPressAt": null,
+                  "releasedAt": 516.6666666666662,
+                  "consumed": true
+                }
+              }
+            },
+            "heightfieldHeight": 1.8,
+            "heightfieldEntityId": "full-document-jump-controls-scrap"
+          }
+        }
+      ],
+      "finalSnapshot": {
+        "heading": 0,
+        "facing": 0,
+        "voxelBody": null,
+        "motion": {
+          "horizontalVelocityX": 0,
+          "horizontalVelocityZ": 3.532865298987343,
+          "verticalVelocity": 0,
+          "jumpOffset": 0,
+          "grounded": true,
+          "jumpHeld": false,
+          "clockMs": 850.000000000001,
+          "groundedAtMs": 850.000000000001,
+          "landedAtMs": 650.0000000000001,
+          "jumpRising": false,
+          "wasAirborne": false
+        },
+        "flight": null,
+        "controller": null,
+        "controllerJumpHeld": false,
+        "jumpBuffer": {
+          "windowMs": 0,
+          "actions": {
+            "jump": {
+              "pressedAt": 508.33333333333286,
+              "previousPressAt": null,
+              "releasedAt": 516.6666666666662,
+              "consumed": true
+            }
+          }
+        },
+        "heightfieldHeight": 1.8,
+        "heightfieldEntityId": "full-document-jump-controls-scrap"
+      }
+    }
+  },
+  "limitation": "Configuration/runtime integration proof only; no published adoption, native appearance/control feel, or hardware performance claim."
+}

@@ -1,0 +1,202 @@
+{
+  "classification": "unreleased installed-package candidate; new configuration-only native scenario",
+  "manifest": {
+    "label": "unreleased built character candidate; no registry publication or shipped game adoption",
+    "commit": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+    "tree": "e1b8a8cf826396ceaa8703e2c0efc91e01c7e333",
+    "base": "c0041964c4f1b9628847974b46cbd1836cc8d614",
+    "dirty": false,
+    "packages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-core-0.19.0.tgz",
+        "sha256": "d63b2caef3c3085fac129564a7c842d9e6fe4fdcba06b24b49e40fcc2586d974",
+        "files": 1209
+      },
+      {
+        "name": "@jgengine/rapier",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-rapier-0.19.0.tgz",
+        "sha256": "74de8beeb37d6aceee8fa40dc7de8e83bdb0e235bda813c1e934e87201cea33c",
+        "files": 6
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-ws-0.19.0.tgz",
+        "sha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "files": 29
+      },
+      {
+        "name": "@jgengine/sql",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-sql-0.19.0.tgz",
+        "sha256": "afa66ad7fba962c837b8604a0b836189401badc3392f13d93666673b8bd16664",
+        "files": 9
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-navbake-0.19.0.tgz",
+        "sha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "files": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-react-0.19.0.tgz",
+        "sha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "files": 183
+      },
+      {
+        "name": "@jgengine/convex",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-convex-0.19.0.tgz",
+        "sha256": "c5b9df18576ea43ebb889e92eb854d61d405379e24665e16779a4035cdd455f6",
+        "files": 27
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-node-0.19.0.tgz",
+        "sha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "files": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-shell-0.19.0.tgz",
+        "sha256": "7fcc5c2d976041b2dd8af801f5f7b351498f5ea1620ee8cab5680feb2fdae142",
+        "files": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-editor-0.19.0.tgz",
+        "sha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+        "files": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-assets-0.19.0.tgz",
+        "sha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675",
+        "files": 81
+      },
+      {
+        "name": "@jgengine/github",
+        "version": "0.6.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-github-0.6.0.tgz",
+        "sha256": "7ef7a1329bdc14646235e6a55c6c7c3e35e2edc3502817510e8e0ee6e497ba5d",
+        "files": 29
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "path": "/workspace/JGengine/.scratch/characters/packages/final-3ab0399c/jgengine-0.16.0.tgz",
+        "sha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "files": 56
+      }
+    ]
+  },
+  "manifestSha256": "c8947ef6cf69fa7945886e17d9c25f3e170d4c6eab0fd5f2f74211749514b79e",
+  "schemaProof": {
+    "layer": "unreleased installed public package schema/catalog slice for native configuration proof; no movement or model appearance claim",
+    "cohort": {
+      "commit": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+      "tree": "e1b8a8cf826396ceaa8703e2c0efc91e01c7e333"
+    },
+    "catalogId": "player-motion",
+    "entryId": "reactor_hunter",
+    "label": "Reclaimer",
+    "markers": 0,
+    "schema": {
+      "fields": [
+        {
+          "key": "jumpCutFactor",
+          "label": "Jump release factor",
+          "group": "jump-response",
+          "min": 0,
+          "max": 1,
+          "step": 0.05,
+          "type": "number",
+          "default": 0.2
+        },
+        {
+          "key": "landingRecoveryMs",
+          "label": "Landing recovery (ms)",
+          "group": "jump-response",
+          "min": 0,
+          "step": 10,
+          "type": "number",
+          "default": 600
+        },
+        {
+          "key": "landingSpeedScale",
+          "label": "Landing speed multiplier",
+          "group": "jump-response",
+          "min": 0,
+          "step": 0.05,
+          "type": "number",
+          "default": 0.1
+        }
+      ],
+      "groups": [
+        {
+          "id": "jump-response",
+          "label": "Jump response",
+          "collapsed": true
+        }
+      ]
+    },
+    "documentSHA256": "6a490a749713fb9d625be2cbb1793d1a93a7f0287da0a609ee4bb1a01118d906",
+    "schemaSHA256": "c55da41584bf279340e246bfd9207f38912e7a0aa262e03ffde7864d24f6382d",
+    "modules": {
+      "commands": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/editor/commands.js",
+      "document": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/editor/document.js",
+      "movementCatalog": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/@jgengine/core/dist/editor/movementCatalog.js"
+    },
+    "moduleSHA256": {
+      "commands": "246f96705073a89eec247c86f8775271a8d03e0c349ba75ac1085bae2bae75ba",
+      "document": "8dacca438ad0c4425eae1f83e88e8dd459275cb7dc05b73d3d3ae600fa371f71",
+      "movementCatalog": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+    }
+  },
+  "initialDocumentSha256": "6a490a749713fb9d625be2cbb1793d1a93a7f0287da0a609ee4bb1a01118d906",
+  "cliPath": "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/jgengine/dist/cli/index.js",
+  "cliSha256": "20040a24f107df8027732b0ea2469071bbe72f7090a8679ca448278108eb8bd3",
+  "hostCommand": [
+    "bun",
+    "/workspace/JGengine/.scratch/characters/consumer/jump-authoring/node_modules/jgengine/dist/cli/index.js",
+    "editor",
+    "/workspace/JGengine/.scratch/characters/native/jump-response/scene",
+    "--port",
+    "5567",
+    "--out",
+    "/workspace/JGengine/.scratch/characters/native/jump-response/workspace",
+    "--pm",
+    "bun"
+  ],
+  "modulesAreInstalledPackages": true,
+  "originalMeshesAndPlacementScenariosRemainCapped": true,
+  "generatedStandardScaffoldHashes": {
+    "package.json": "46ccb229e4348a2fe00dbe5b906821f9ebc77a32a7e6a3ab1474b625128f8599",
+    "index.html": "1d42c359604f65457ebeb8f57ac94ecf363bad01050d94042941c28c01c8d0ee",
+    "vite.config.ts": "b7a9b9a64a4c42e1ef6aeacfabf3ae363b74e1732bd44345f4b56686fad97228",
+    "src/main.tsx": "350afa9159ffc80e9b1d877545f384c54c9e3b7a98c3d51cdcad1b983e182479",
+    "src/index.css": "05f8911b388d1a8e6bb8fac9a963bdf670f65133cad4e7190380ddf6a0e0bff7"
+  },
+  "installedModuleHashes": {
+    "jgengine/dist/harness.js": "a99c8b89a5b0240845992ad84bef531ed62a3ea7269b87f3b7ea89f5e927e537",
+    "jgengine/dist/templates.js": "d67008daa9006adafdc197e9fd1a5676c01f934ba2a9ea4cd63ab51ea9cec514",
+    "jgengine/dist/templates/driveInput.js": "e0e6720d1605b46e88e1904b617d563e421f7dfa2bc65063a1ae0ef496163b9b",
+    "@jgengine/editor/dist/StandaloneEditor.js": "6deb6a29c0eb3e3f4ec8f063660417327555d6189d549aaf586b0e29f40b5891",
+    "@jgengine/editor/dist/EditorChrome.js": "a723e8cd6a5a6a789bd5b97316a96e990c8f1af364e4676739c8060abd27af3f",
+    "@jgengine/editor/dist/CatalogsPanel.js": "9ecc9df618aabc4b74cb29e6c911d5ae4e3e21b2cf6da6572ac875b7cb344cdb",
+    "@jgengine/editor/dist/SchemaInspector.js": "7b2c177e39407765bb71b0ec59c040e53e5d7378ce3db26c34cce873a95ad52c",
+    "@jgengine/editor/dist/session.js": "51dbe1d167989569ffb18f922c428aaf569479578eb0003b783f18b38df7cf03",
+    "@jgengine/node/dist/editorHostPlugin.js": "d5531bf2af6941620ef67f7364cc28b9725ac4911f3bb7d915bf61da99c9c603",
+    "@jgengine/core/dist/editor/movementCatalog.js": "cc72bb8ade12bfd761892db7c61cbb6453dd714771f4a6d39688ec2d586700b2"
+  }
+}

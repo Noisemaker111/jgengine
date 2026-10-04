@@ -1,0 +1,92 @@
+{
+  "scenario": "New configuration-only Jump response field exposure, native edit, GUI Save and fresh reopen through standard packaged standalone editor",
+  "cohort": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+  "tree": "e1b8a8cf826396ceaa8703e2c0efc91e01c7e333",
+  "remotePrHead": "544f9e38b4f65fabc8b94fb98f429493e8a532b5",
+  "attribution": "attribution.json",
+  "packageStatus": "unreleased exact built package candidate; no registry publication or new shipped game adoption",
+  "host": "Unmodified normal jgengine editor generated workspace with existing editorHostPlugin; no placed models or custom host code/readiness flags",
+  "catalogId": "player-motion",
+  "entryId": "reactor_hunter",
+  "rowLabel": "Reclaimer",
+  "suppliedFieldsOnly": [
+    "jumpCutFactor",
+    "landingRecoveryMs",
+    "landingSpeedScale"
+  ],
+  "initial": {
+    "jumpCutFactor": 0.2,
+    "landingRecoveryMs": 600,
+    "landingSpeedScale": 0.1
+  },
+  "savedAndFreshReopened": {
+    "jumpCutFactor": 0.35,
+    "landingRecoveryMs": 450,
+    "landingSpeedScale": 0.25
+  },
+  "schemaDefaultsUnchanged": true,
+  "groupInitiallyAndFreshReopenCollapsed": true,
+  "commands": [
+    "edit-save-command.json",
+    "reopen-command.json"
+  ],
+  "nativeForegroundInvocations": 2,
+  "nativeFailedAttempts": 0,
+  "nativeHangCount": 0,
+  "acceptedClaims": [
+    "The supplied-only Jump response group is initially collapsed and exposes exactly three authored number fields when expanded.",
+    "Actual native GUI numeric edits persist through the normal Save endpoint to the scene document on disk.",
+    "A fresh ephemeral browser loads that actual saved document without import_document and shows the same schema, collapsed group and edited row values.",
+    "The installed public saved reader extracts the same three movement.feel values with no diagnostics."
+  ],
+  "screenshots": [
+    "jump-response-collapsed.png",
+    "jump-response-expanded.png",
+    "jump-response-saved.png",
+    "jump-response-reopened-collapsed.png",
+    "jump-response-reopened-values.png"
+  ],
+  "inspected": [
+    "jump-response-collapsed.png",
+    "jump-response-expanded.png",
+    "jump-response-saved.png",
+    "jump-response-reopened-collapsed.png",
+    "jump-response-reopened-values.png"
+  ],
+  "inspection": "Left Data panel shows Player movement/Reclaimer. The collapsed group contains no visible value fields; expanded row labels and inputs are readable. Saved just now appears after the GUI save. Fresh reopened expanded controls display0.35/450/0.25; schema defaults remain0.2/600/0.1.",
+  "observedFormattingLimit": "During native typing the saved-frame number inputs retained leading zero text (00.35/0450/00.25). Canonical RPC/document numbers are correct; fresh reopened controls display normalized0.35/450/0.25. No editing-polish claim.",
+  "savedDocument": "saved-document.json",
+  "savedDocumentSha256": "4b12a1f87c7d9888a199b9cb697a5fcf5a82fe25bc003a9fa08c0268f8cdd607",
+  "initialDocumentSha256": "6a490a749713fb9d625be2cbb1793d1a93a7f0287da0a609ee4bb1a01118d906",
+  "outsideCatalogUnchanged": true,
+  "screenshotOrigin": "First drive treated absolute --shot strings as names beneath its standard shots directory; outputs were copied byte-for-byte to this evidence directory. Reopen used normal bare names. Original output paths are preserved in command logs.",
+  "separateCiStatus": "First #1961 run test and aggregateci failed in CreatorApp.test.ts setup hook; quick/types/web-build/smoke passed. Exact failure log/first-run metadata retained separately. Native configuration proof does not override CI failure.",
+  "limits": [
+    "No character mesh, rig, runtime play, jump movement, convincing animation or controls-feel claim.",
+    "Existing capped Lantern and standalone mesh/play scenarios remain capped and unresolved.",
+    "Full original Scrap document/runtime consumer proof is separate from this catalog-only native document.",
+    "No hardware performance claim from software rendering."
+  ],
+  "cleanup": {
+    "standardEditorProcessStopped": true,
+    "portableEphemeralBrowserCommandsExited": true,
+    "managedCaptureDaemonStarted": false
+  },
+  "artifactHashes": {
+    "jump-response-collapsed.png": "378631deb0391a1613302e329f4bb0f0912f946b7ba132be1e150f9362263396",
+    "jump-response-expanded.png": "cbcc6ee96a17b4a856febe8fd1d601bac34d47961096efa8a8b560d4a5fc7919",
+    "jump-response-saved.png": "1256806ec48fc6d1daf4dfea4480ff5c00df93576da96495b9271c5d04231283",
+    "jump-response-reopened-collapsed.png": "09aa80a34af9ab67be9d425431981883cedba209bba2f0ef61e4fbbae220bd39",
+    "jump-response-reopened-values.png": "fa77e2ce0d7c91fef9ffdbd8c45a5db7eacbd3f6f5a4a73a621884636e6c8155",
+    "initial-document.json": "6a490a749713fb9d625be2cbb1793d1a93a7f0287da0a609ee4bb1a01118d906",
+    "saved-document.json": "4b12a1f87c7d9888a199b9cb697a5fcf5a82fe25bc003a9fa08c0268f8cdd607",
+    "saved-public-reader.json": "1f23543957399c91e3b66f44f73a5a3e92c3336e3e4c49e78ba859044dc378bf",
+    "attribution.json": "5a7321b485b5533fa122dd2d369e0864218d4da07d2bb624ab1cb3834d1e4fc2",
+    "edit-save-command.json": "624454dc9cb2a7f85d7c7d3578242ad382531973966c39368113081204c9ff7e",
+    "edit-save-native.log": "6d133aa48c5352589afe2762f7b8706bba472072c26a5543373aa8f5f9cb9492",
+    "reopen-command.json": "479b3b9d7b6ba2342200360f53f802d56c56cc26469d2a748e54b899e844c0e1",
+    "reopen-native.log": "c7232c11b90a7dd1dae9fa580884c96305a976d9af194743cf6491c4cc788c4e",
+    "pr1961-first-run-ci.json": "cb7e10aead150cb7b282b2ac184f1e5f4bf4d7fc2e164cf8db784e3e7ab5f6e7",
+    "pr1961-failed.log": "f599ec0c745acc08193ab15fce83c3dec8b0d8babdac30c36232cb3842c2a4ea"
+  }
+}

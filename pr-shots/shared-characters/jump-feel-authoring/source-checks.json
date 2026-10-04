@@ -1,0 +1,61 @@
+{
+  "head": "3ab0399cfebd7ea2a02b1fedc79b6f1d35f82127",
+  "tree": "e1b8a8cf826396ceaa8703e2c0efc91e01c7e333",
+  "base": "c0041964c4f1b9628847974b46cbd1836cc8d614",
+  "status": "",
+  "sourceSHA256": {
+    "packages/core/src/editor/movementCatalog.ts": "644575a67a1d9ec55fbb781a52df56eec06c59f486bd583420b3e168a5d24648",
+    "packages/core/src/editor/movementCatalog.test.ts": "c67578ed9323efc6843d296f1e6ec021c05e8737c2c2648323449c4c2375619a",
+    ".claude/skills/jgengine-world/reference.md": "a81065fb2d192114da3a6cc1da32e2dc5268ac513aa97e4ff66d9e7681ab6826",
+    ".claude/skills/jgengine-world/recipes/character-animation.md": "71f5388df380f632d3b601b11c27fc2ed1e552fd3f7a94c0cd8f06e636a22635",
+    "changes/character-jump-feel-authoring.md": "9d646fb48f2d13368aff8ea473ca7109ccd4627c5805c554aea35925b7d6b8ce"
+  },
+  "sourceUnchanged": {
+    "packages/core/src/editor/movementCatalog.ts": true,
+    "packages/core/src/editor/movementCatalog.test.ts": true,
+    ".claude/skills/jgengine-world/reference.md": true,
+    ".claude/skills/jgengine-world/recipes/character-animation.md": true,
+    "changes/character-jump-feel-authoring.md": true
+  },
+  "checks": {
+    "gen": {
+      "exitCode": 0,
+      "log": ".scratch/characters/jump-feel-checks/gen.log"
+    },
+    "core-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/jump-feel-checks/core-types.log"
+    },
+    "editor-types": {
+      "exitCode": 0,
+      "log": ".scratch/characters/jump-feel-checks/editor-types.log"
+    },
+    "export-tarball": {
+      "exitCode": 0,
+      "log": ".scratch/characters/jump-feel-checks/export-tarball.log",
+      "tests": 34,
+      "assertions": 99,
+      "files": 2
+    },
+    "ship-preflight": {
+      "exitCode": 0,
+      "log": ".scratch/characters/jump-feel-checks/ship-preflight.log"
+    },
+    "owning": {
+      "exitCode": 0,
+      "log": ".scratch/characters/jump-feel-checks/owning.log",
+      "tests": 11,
+      "assertions": 91,
+      "files": 1,
+      "sourceUnchanged": true
+    }
+  },
+  "beforeFailure": {
+    "log": ".scratch/characters/jump-feel-checks/before.log",
+    "exitCode": 1,
+    "passingTests": 9,
+    "failingTests": 2,
+    "failures": "Supplied jump schema lacks8fields; invalidjumpcutdefault ignored."
+  },
+  "sourceFullDocumentProof": ".scratch/characters/consumer/jump-feel-authoring/source-authoring-result.json"
+}
