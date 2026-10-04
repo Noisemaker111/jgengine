@@ -2,13 +2,15 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { execFileSync } from "node:child_process";
 import { mkdir, readdir, rm, symlink } from "node:fs/promises";
 import { resolve } from "node:path";
-import { chromium, type Browser, type Page } from "playwright-core";
+import { chromium, type Browser, type BrowserServer, type Page } from "playwright-core";
 import { buildBrowserFixture, chromeGraphicsArgs, findChromeExecutable } from "../../../scripts/browser-lib";
+import { cleanupBrowserFixture } from "../../../scripts/browser-fixture-cleanup";
 import { decodePng } from "../../../scripts/png-reader";
 import { computeShotMetrics } from "../../../scripts/shot-metrics";
 
 const scratch = resolve(import.meta.dir, "../../../.scratch/creator-mount-test");
 let browser: Browser;
+let browserServer: BrowserServer | undefined;
 let page: Page;
 let server: ReturnType<typeof Bun.serve>;
 const errors: string[] = [];
@@ -68,13 +70,23 @@ beforeAll(async () => {
     if (path === "/fixture.css") return new Response(css, { headers: { "content-type": "text/css" } });
     return new Response('<link rel="stylesheet" href="/fixture.css"><div id="root"></div><script type="module" src="/fixture.js"></script>', { headers: { "content-type": "text/html" } });
   } });
-  browser = await chromium.launch({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox", ...chromeGraphicsArgs()] });
+  browserServer = await chromium.launchServer({ executablePath: findChromeExecutable(), headless: true, args: ["--no-sandbox", ...chromeGraphicsArgs()] });
+  browser = await chromium.connect(browserServer.wsEndpoint());
   page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page.on("pageerror", (failure) => errors.push(failure.message));
   await page.goto(`http://127.0.0.1:${server.port}`);
 }, 60000);
 
-afterAll(async () => { await browser?.close(); server?.stop(true); await rm(scratch, { recursive: true, force: true }); });
+afterAll(() => cleanupBrowserFixture({
+  releasePending: () => {
+    const release = releaseFailedSave;
+    releaseFailedSave = null;
+    release?.();
+  },
+  browserServer,
+  server,
+  removeScratch: () => rm(scratch, { recursive: true, force: true }),
+}));
 
 test("production menu mounts the actual editor and repeats save/play/return/reopen across reload", async () => {
   await page.getByRole("button", { name: "Create or edit", exact: true }).click();
