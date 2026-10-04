@@ -35,11 +35,22 @@ export function readAuthoredAnimation(
   defaults?: AuthoredAnimation,
 ): AuthoredAnimationResult {
   const index = document.markers.findIndex((marker) => marker.id === markerId);
-  const value = document.markers[index]?.meta?.animation;
+  return readAuthoredAnimationValue(document.markers[index]?.meta?.animation, `markers[${index}].meta.animation`, defaults);
+}
+
+/**
+ * Validates one saved animation value at the caller's document path without scanning markers.
+ * Omitted or malformed values retain the exact default; valid authored configuration replaces it whole.
+ * @capability authored-animation validate a located animation override in a single-pass document resolver
+ */
+export function readAuthoredAnimationValue(
+  value: unknown,
+  path: string,
+  defaults?: AuthoredAnimation,
+): AuthoredAnimationResult {
   const diagnostics: AuthoredAnimationDiagnostic[] = [];
   if (value === undefined) return { animation: defaults, diagnostics };
   if (value === "auto" || value === "none") return { animation: value, diagnostics };
-  const path = `markers[${index}].meta.animation`;
   const reject = (location: string, message: string, requirement: string) => {
     diagnostics.push({ path: location, message, repair: `Use ${requirement}, or remove the animation override to inherit the game setting.` });
   };

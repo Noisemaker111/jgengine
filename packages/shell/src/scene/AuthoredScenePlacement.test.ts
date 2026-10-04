@@ -8,10 +8,12 @@ import { createGameContext } from "@jgengine/core/runtime/gameContext";
 import { createAssetCatalog } from "@jgengine/core/scene/assetCatalog";
 import { ENTITY_MARKER_KINDS } from "@jgengine/core/world/authoredObjects";
 import { authoredSpawnPosition } from "@jgengine/core/world/authoredSpawn";
+import type { ModelConfig } from "@jgengine/core/game/playableGame";
 import { GameProvider } from "@jgengine/react/provider";
 
 import { defineGame } from "../defineGame";
 import { AuthoredObjects } from "./AuthoredScene";
+import { resolveObjectModel } from "../render/resolveModel";
 
 function fixture() {
   const document = createEmptyEditorDocument();
@@ -119,6 +121,55 @@ test("live synchronization removes excluded static placements while preserving t
     expect(ctx.scene.entity.ids()).toEqual(["spawn:player"]);
   } finally {
     await act(async () => root.unmount());
+    environment.IS_REACT_ACT_ENVIRONMENT = previous;
+  }
+});
+
+test("static animation placement rejects malformed saved overrides with located repairs and retains catalog playback", async () => {
+  const environment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
+  const previous = environment.IS_REACT_ACT_ENVIRONMENT;
+  environment.IS_REACT_ACT_ENVIRONMENT = true;
+  const { document, assets } = fixture();
+  document.markers = [{ id: "character", kind: "prop", catalogId: "knight", position: { x: 2, y: 0, z: -3 }, meta: { verticalOffset: 0.25, animation: { clock: "calendar", auto: false, clip: 3 } } }];
+  const saved = JSON.stringify(document);
+  const catalog: ModelConfig = { url: "/knight.glb", animation: { states: { idle: "Idle", walk: "Walking_A" }, timeScale: 0.75 } };
+  const playable = defineGame({ name: "Validated static character", assets });
+  const ctx = createGameContext({ definition: playable.game, content: playable.content, player: { userId: "player", isNew: true } });
+  const cache = new Map();
+  const root = await renderer();
+  const warnings: string[] = [];
+  const originalWarn = console.warn;
+  console.warn = (...args: unknown[]) => { warnings.push(args.join(" ")); };
+  const render = (current = document, verticalOffset = 1, context = ctx) => createElement(GameProvider, { context }, createElement(AuthoredObjects, { document: current, field: context.world.ground, synchronize: true, verticalOffset }));
+  try {
+    await act(async () => root.render(render()));
+    const object = ctx.scene.object.get("character")!;
+    expect(object.position).toEqual([2, 1.25, -3]);
+    expect(object.animation).toBeUndefined();
+    expect(resolveObjectModel(object, { knight: catalog }, assets, cache)).toBe(catalog);
+    expect(warnings).toHaveLength(3);
+    expect(warnings.join("\n")).toContain("markers[0].meta.animation.clock");
+    expect(warnings.join("\n")).toContain("markers[0].meta.animation.auto");
+    expect(warnings.join("\n")).toContain("markers[0].meta.animation.clip");
+    expect(warnings.join("\n")).toContain("remove the animation override");
+    await act(async () => root.render(render()));
+    await act(async () => root.render(render(document, 2)));
+    const replacementContext = createGameContext({ definition: playable.game, content: playable.content, player: { userId: "replacement", isNew: true } });
+    await act(async () => root.render(render(document, 1, replacementContext)));
+    expect(replacementContext.scene.object.ids()).toEqual(["character"]);
+    expect(replacementContext.scene.object.get("character")!.position).toEqual([2, 1.25, -3]);
+    expect(warnings).toHaveLength(3);
+    expect(JSON.stringify(document)).toBe(saved);
+    const animation = { clock: "game" as const, auto: true as const, states: {}, timeScale: -0.5, paused: true };
+    const valid = { ...document, markers: document.markers.map(marker => ({ ...marker, meta: { ...marker.meta, animation } })) };
+    await act(async () => root.render(render(valid, 1, replacementContext)));
+    expect(replacementContext.scene.object.get("character")!.animation).toBe(animation);
+    expect(resolveObjectModel(replacementContext.scene.object.get("character")!, { knight: catalog }, assets, cache)!.animation).toBe(animation);
+    expect(warnings).toHaveLength(3);
+    expect(JSON.stringify(document)).toBe(saved);
+  } finally {
+    await act(async () => root.unmount());
+    console.warn = originalWarn;
     environment.IS_REACT_ACT_ENVIRONMENT = previous;
   }
 });

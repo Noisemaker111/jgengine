@@ -3,7 +3,7 @@ import type { AnimGraph } from "../anim/animGraph";
 import { createEditorSession } from "../editor/commands";
 import { createEmptyEditorDocument, exportEditorDocumentJson, importEditorDocumentJson } from "../editor/document";
 import type { ModelAnimationConfig } from "../game/playableGame";
-import { createAuthoredAnimationReader, readAuthoredAnimation } from "./authoredAnimation";
+import { createAuthoredAnimationReader, readAuthoredAnimation, readAuthoredAnimationValue } from "./authoredAnimation";
 
 const defaults: ModelAnimationConfig = { states: { idle: "Idle", walk: "Walking_A" }, oneShots: { death: ["Death_A", "Death_B"] } };
 const graph: AnimGraph = {
@@ -133,4 +133,22 @@ test("authored clocks and auto derivation are validated without discarding valid
     expect(result.diagnostics[0]!.repair).toContain(key === "clock" ? "real or game" : "true");
     expect(authored[key]).toBe(value);
   }
+});
+
+
+test("located value validation shares exact document-reader defaults and diagnostics without marker lookup", () => {
+  const invalid = { clock: "calendar", auto: false };
+  const value = readAuthoredAnimationValue(invalid, "markers[1].meta.animation", defaults);
+  expect(value).toEqual(readAuthoredAnimation(document(invalid), "player", defaults));
+  expect(value.animation).toBe(defaults);
+  expect(value.diagnostics.map((diagnostic) => diagnostic.path)).toEqual(["markers[1].meta.animation.clock", "markers[1].meta.animation.auto"]);
+  expect(readAuthoredAnimationValue(undefined, "placement.animation", defaults).animation).toBe(defaults);
+  const authored = { graph, oneShots: {}, clock: "game", timeScale: -0.5, notes: { rig: "keep" } };
+  const valid = readAuthoredAnimationValue(authored, "placements[7].animation", defaults);
+  expect(valid.diagnostics).toEqual([]);
+  expect(valid.animation).toEqual(authored);
+  expect((valid.animation as ModelAnimationConfig).graph).toBe(graph);
+  const badGraph = structuredClone(graph);
+  badGraph.layers[0]!.transitions[0]!.to = "missing";
+  expect(readAuthoredAnimationValue({ graph: badGraph }, "placements[7].animation", defaults).diagnostics[0]!.path).toBe("placements[7].animation.graph.layers[0].transitions[0].to");
 });

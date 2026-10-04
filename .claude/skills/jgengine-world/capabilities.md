@@ -111,6 +111,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 
 - `createAuthoredAnimationReader` (function) · `import { createAuthoredAnimationReader } from "@jgengine/core/world/authoredAnimation"`
 - `readAuthoredAnimation` (function) · `import { readAuthoredAnimation } from "@jgengine/core/world/authoredAnimation"`
+- `readAuthoredAnimationValue` (function) · `import { readAuthoredAnimationValue } from "@jgengine/core/world/authoredAnimation"`
 
 ## authored-entities — spawn authored mob/boss markers from the editor document at runtime
 
@@ -127,6 +128,7 @@ Reach for these before hand-rolling. Each row is *the thing you need* → *the p
 - `markerCatalogId` (function) · `import { markerCatalogId } from "@jgengine/core/world"`
 - `placeAuthoredObjects` (function) · `import { placeAuthoredObjects } from "@jgengine/core/world"`
 - `resolveAuthoredObjects` (function) · `import { resolveAuthoredObjects } from "@jgengine/core/world"`
+- `resolveAuthoredObjectsWithDiagnostics` (function) · `import { resolveAuthoredObjectsWithDiagnostics } from "@jgengine/core/world/authoredObjects"`
 
 ## authored-solids — collision for studio-authored world content such as city volumes
 
