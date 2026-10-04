@@ -1,0 +1,48 @@
+{
+  "label": "executed animation continuity proof source provenance",
+  "files": [
+    {
+      "path": ".scratch/characters/animation-continuity/before-f4cbd717-v2-fixture.tsx",
+      "sha256": "68aa3c414b3a964974ffe8517b7e29d9e3d69a0c7759f908f4a8a5ecd1606767"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/before-f4cbd717-v2-run.ts",
+      "sha256": "1a8f861ad46c7fde3590f7adf0d127d0f5a77526b7b27b6c9af14fcf9589b83c"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/before-f4cbd717-v2.json",
+      "sha256": "82b93967f660f625871928b2fd825199f50d4bdfc15c416dfc6f33b14ac27719"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/before-f4cbd717-v2.log",
+      "sha256": "32afd7801098af24ea1066b035ca73f0d4aab3644007570cf55552f382d51b1b"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/before-f4cbd717-v3.json",
+      "sha256": "01668816edf10715f73d6f0e256d2284d976fa18ec7d50840dcb0b189d894c73"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/before-f4cbd717-v3.log",
+      "sha256": "23f356a8327891c7fffeacead64b9c5f53c4733165646ddefb5592ce58eb15fb"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/after-b9dacf46-fixture.tsx",
+      "sha256": "75e50bda6c5a8bab12d55a733c32076da19c1d1686c1a76f623faa989544f840"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/after-b9dacf46-run.ts",
+      "sha256": "2d9bd567aef24f3506759535ea13f721906bc7b0a89da519d8f9fddfbcf877db"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/after-b9dacf46.json",
+      "sha256": "7a9bf634244d5a81f8b1bafff8855610c6a4faa54e46109199ae1c1a155abb6b"
+    },
+    {
+      "path": ".scratch/characters/animation-continuity/after-b9dacf46.log",
+      "sha256": "718134f7d2dc42945bacda3ab02e984992a0c37354c8af3ea059dcd1da1876b8"
+    }
+  ],
+  "baseline": "v2 has preserved exact executed fixture/runner, sign-safe world-pose metrics and real action times",
+  "limitation": "v3 report/log are preserved, but its exact executed producer-import extension source was not separately archived before AFTER changes; do not treat current/AFTER source as executed v3 source; no reconstruction provided",
+  "after": "unique exact executed AFTER fixture/runner archived before further scratch changes"
+}

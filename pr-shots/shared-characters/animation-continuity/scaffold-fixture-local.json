@@ -1,0 +1,220 @@
+{
+  "kind": "One authorized bounded source-only fixture execution",
+  "exactCommit": "b9dacf468497633610710eafe226b8ff7a6c25b1",
+  "exactTree": "ce9a5c0fa38a015015c1b4e90938ff1c379fe37f",
+  "remoteEquivalentHead": "5469657d0a4e4aa2dac16cbbfe02250e1fff2d5a",
+  "cwd": "/workspace/JGengine/.claude/worktrees/native-scaffold-b9dacf",
+  "command": [
+    "timeout",
+    "--signal=TERM",
+    "--kill-after=2s",
+    "20s",
+    "bun",
+    "test",
+    "scripts/scaffold-editor.test.ts"
+  ],
+  "localBun": "1.4.2",
+  "ciBun": "1.3.8",
+  "dependencySetup": "No installs, bootstrap, node_modules link, product/harness changes. Static runtime import graph uses local TS plus Bun/Node built-ins only.",
+  "startedAtUTC": "2026-10-04T02:38:08.697799+00:00",
+  "elapsedWallSeconds": 0.041012865000084275,
+  "exitCode": 0,
+  "log": "scaffold-fixture-local.log",
+  "logSHA256": "b46292f4cf9056e3b77b9624f29f7d0c12baeae8e5add205c80a7a2a4e496636",
+  "modules": [
+    {
+      "path": "scripts/scaffold-editor.test.ts",
+      "sha256": "aeeb1cfe9333b502cd0d048631b67968fbced366109e6fa5e84d8bbee44b6f0a",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/shell/src/shellMovement.ts",
+      "sha256": "b48fdb4e1d30baa656a0ceb568a6b083a2774e48ba191cde0052cf496a2dc6a6",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/templates.ts",
+      "sha256": "7453bef3cdcbf585797ef221a0b0b1fea4b0b8eb69d67d8c5c795d3fcfc26ca8",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/templates/names.ts",
+      "sha256": "330ac53b6fcb41870939b66479dd3fafa5423ec9081fe4045c6af3d95d44d939",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/templates/gameFiles.ts",
+      "sha256": "572b58d30c01ad8fb93540c05732ea30f88c202e2cec3ddb25b45285569cc317",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/templates/driveInput.ts",
+      "sha256": "582c8acb2d515614724aaa3e8c782adb288983eb9e7ce8de398c99f39119f60b",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/escapeHtml.ts",
+      "sha256": "bd996e6cafbf61003f0a811f233a339aeaa7a00d2ffc6e592ec1cceb84fb3339",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/clickInput.ts",
+      "sha256": "ba0281d6b8f3b78aab02af7a90aa01612cb486b4d341e3f74d34db79cee50212",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/templates/editorWorkspace.ts",
+      "sha256": "42f2e66f1d2ac7f5b1549e759e49d29b4f4da2e82558cb4c4b30c22f847811f3",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/templates/starterTerrain.ts",
+      "sha256": "525e9752bc2e2d0b654ad728baa3a7e342ca7c129416babc9ac69b6140a65929",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/templates/boardFiles.ts",
+      "sha256": "d1841da0cc33630c32df920a78add2da701a5a32fadcb371c3abf298d44fd4d1",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/templates/sharedBuilder.ts",
+      "sha256": "4022b64968e0ca53d2b296c5bdce49d3ea2febf894c78d65f12016f0a9c16871",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/jgengine/src/pkg.ts",
+      "sha256": "13ca9cde6711042fa2a8fbfece9eddfdfe294b7c26d512a38576e804ecf5827f",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/authoredSpawn.ts",
+      "sha256": "bb9f5950e44c065e9f34d125d1e32c664aaa87866ab091af8e3b88ac9f76e946",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/spawnOverride.ts",
+      "sha256": "550a7c01080f75309fa0a86f48bd2a53582ee648778a52d052191421d779cc03",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/authoredObjects.ts",
+      "sha256": "b09d02b7940ed9617a6c63e49affc68a884b812e879f98861799008192668e63",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/editor/document.ts",
+      "sha256": "c5ba87855a9eb9f9bacceab01fa8da4e26ec618de5a142cbc27e0a02240d62cf",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/editor/grid.ts",
+      "sha256": "d71a87c7eb1c08e45f06d98213502f322a265480175a78ade7914672128b42a2",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/terraform.ts",
+      "sha256": "a3f904807e6ef51d5b9ab9f67b10a0d55e10ee70f2ecd352655be70799229062",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/terrain.ts",
+      "sha256": "69b71c52f20b172056a0545be1a4e5ee6c9a309b44ccf25068d425e8a44dcf08",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/roads.ts",
+      "sha256": "d44daf6d6f78195d95873030c2f7d4eaebcc19869478036aa3a6ba08ba57b4fe",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/pathTerrain.ts",
+      "sha256": "64cf58c3525fab318b0c0846a81e1011c8343f8fa4c8501bc330297ef4a314b5",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/ui/hudDocument.ts",
+      "sha256": "30467765be525313b80cabeb4111ff0f7ab5a8075e2ef600bab3abb3388094bd",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/ui/hudLayout.ts",
+      "sha256": "d1df2a7b66cb999ed1479b0c95030e5ffd0eaee4a76a016be5aceff319f38635",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/editor/staticPrefab.ts",
+      "sha256": "8182ca483a4bc0a7cdeb4c90c6ce1b64144b87761f7f47ea7d11d2d371758c29",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/editor/modelNodeVisibility.ts",
+      "sha256": "12ef029c481f045494c10c8fd2fabe6adc6979268a2879c3dc2f7d7a11b3a1b1",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/material/materialAsset.ts",
+      "sha256": "90b314ba4560bdc982b3684b06771e0b8b22131d1fd2e3519aa4e26c8699cd55",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/editor/simulation.ts",
+      "sha256": "7e90deb361bf3ebaf1a5748890946bd635c356e0fec835a55632da94576a26d4",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/vfx/particleDirector.ts",
+      "sha256": "6757f0a90bfd93a14eadd6800ca970023d0d67ab0b3416b76d39366c39e28e45",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/vfx/particles.ts",
+      "sha256": "f52b465b9acb97add2cdc1ab48da44b9d456e154dd0ee846e3b7085f6a47c1a8",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/random/rng.ts",
+      "sha256": "1e594aabd95d79e3ae5bcdb70bb78d517e500aeebeb12167237f8c3e42ac3913",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/physics/forceVolume.ts",
+      "sha256": "4541bdd1ff5a1d3cbd4b7eee0112bbefcda56655928e86f2e43f771b838b3696",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/authoredWeather.ts",
+      "sha256": "b5cd20a8c230945470886a86003e04710ddacd1e8c93cc8bdae7a3c074a0882c",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/wind.ts",
+      "sha256": "abb23e0a3f93b7272d0128fcb6e78e7791fb42fb8be4b4ffb090252bdc5d5cbc",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/world/envField.ts",
+      "sha256": "6b98295996aa2e0f31bec9ea54f72071a23cb36d040aed3c44655909effe0638",
+      "matchesExactTriage": true
+    },
+    {
+      "path": "packages/core/src/time/gameClock.ts",
+      "sha256": "a2d35a3b95b0958e3ee27a2caec4d329957678466ec6b47aaa72bd63d70ae648",
+      "matchesExactTriage": true
+    }
+  ],
+  "cleanAfter": true,
+  "attempts": 1,
+  "fullGateExecuted": false,
+  "ciRerunExecuted": false,
+  "nativeLaunched": false,
+  "limitation": "Local Bun1.4.2 and isolated fixture differ from CI Bun1.3.8/full-suite state; does not establish CI timeout cause or recovery.",
+  "testCounters": {
+    "pass": 8,
+    "fail": 0,
+    "expectCalls": 26,
+    "files": 1
+  },
+  "bunReportedDurationMs": 36,
+  "ciTimeoutReproduced": false
+}

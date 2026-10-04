@@ -1,0 +1,10 @@
+{
+  "localCommit": "b9dacf468497633610710eafe226b8ff7a6c25b1",
+  "remoteCommit": "5469657d0a4e4aa2dac16cbbfe02250e1fff2d5a",
+  "tree": "ce9a5c0fa38a015015c1b4e90938ff1c379fe37f",
+  "base": "9e3b3373b7e962aadbc87d533a9cf58e69066754",
+  "pr": 1963,
+  "delivery": "Normal Git HTTP push401; Git Data API exact tree identity verified",
+  "publication": "Unreleased source and exact package proof; no registry publication or shipped game adoption",
+  "limits": "Manual frame public hook evidence, not native appearance/control feel/performance; original CI run 37169944976 cancelled at the 15-minute test boundary, last logged fixture scripts/scaffold-editor.test.ts; aggregate CI failed, with no known assertion failure or established cause."
+}

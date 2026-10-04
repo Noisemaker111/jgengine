@@ -1,0 +1,680 @@
+{
+  "sourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+  "originalSourceFiles": [
+    {
+      "path": "deepward/src/editor.scene.json",
+      "sha256": "46c03af5f3ba84cbaf9484191ae6b42659fa2b6891571f4f88c796deb3ff921d"
+    },
+    {
+      "path": "deepward/src/game/actionBindings.test.ts",
+      "sha256": "47f9d732561339ecd25ec447fd6e8f5a8139bf6dcbdd8115813ecb0fdf969a5a"
+    },
+    {
+      "path": "deepward/src/game/art.ts",
+      "sha256": "73c3bc62040e5104db611c9d16b397a493aecf85ae95a36e44daaeb996d7203d"
+    },
+    {
+      "path": "deepward/src/game/assets.ts",
+      "sha256": "616c04accf3e892e0ec4fea19aede49bfc9b3859bb74fd795fbd04ef917e048e"
+    },
+    {
+      "path": "deepward/src/game/authoredWorld.test.ts",
+      "sha256": "6fb019838a1fc462f5cc1945690c3b3864f7eacabacd26bb60f249c1bc8f1ab8"
+    },
+    {
+      "path": "deepward/src/game/controls.ts",
+      "sha256": "f1a5dd463154c3e3e44fec58f975c58297b1dbd9d77ef7a72d6974ef7bd878d8"
+    },
+    {
+      "path": "deepward/src/game/fitterArt.tsx",
+      "sha256": "289aecc3a767464ed8e852e2259b4c449194225f3267b453eb7ee6f9636ee38f"
+    },
+    {
+      "path": "deepward/src/game/industrialMaterials.test.ts",
+      "sha256": "52806f9f7868388bd07b8d2a7d034284d4d9936b936955d7a7ca78b5e7a5315c"
+    },
+    {
+      "path": "deepward/src/game/industrialMaterials.ts",
+      "sha256": "6eea48fdef26812716805c37bfeac8b41e24ac51158f0a802b092653a59b5803"
+    },
+    {
+      "path": "deepward/src/game/navigation.test.ts",
+      "sha256": "e49501a4af0d8c13416148eae0bff7357e5ae38a17f59eb8e7571d615b921952"
+    },
+    {
+      "path": "deepward/src/game/navigation.ts",
+      "sha256": "2292f84fb82e6c1f5d24d7e7b3e59255280f5df0058f80c02c284af14f6437f2"
+    },
+    {
+      "path": "deepward/src/game/progression.test.ts",
+      "sha256": "01516470be83ebf874bd162292c02bc77f4c73eb30f63bf433e68419e0d6c59f"
+    },
+    {
+      "path": "deepward/src/game/progression.ts",
+      "sha256": "4f1fd6333d585809ae42fc32381dce71ec4e8a778b536d0d80b8380dc5ca2755"
+    },
+    {
+      "path": "deepward/src/game/progressionControls.test.ts",
+      "sha256": "3fdd228fb0b13bf353107164a4de3e8d049db3aa43c5e4d6a5e3621ed32c8311"
+    },
+    {
+      "path": "deepward/src/game/roomPresentation.test.ts",
+      "sha256": "b543952792f17eb75f6fdcb26ac933e9b3ff313c63713c437bf2274e21963d2a"
+    },
+    {
+      "path": "deepward/src/game/roomPresentation.ts",
+      "sha256": "ba97172de0afc2bf07f42a459c20db50253b6862b26bf962a73b6d70cbc1b111"
+    },
+    {
+      "path": "deepward/src/game/save.test.ts",
+      "sha256": "12f92cd30104b9b9aea9fc776b69a50dea8412bf6775dd599b3e818dca586e0a"
+    },
+    {
+      "path": "deepward/src/game/save.ts",
+      "sha256": "ed6151cdea1070da7dd48e4b7a8c63901f9d6295ce20f7d8ebf0dede54365d26"
+    },
+    {
+      "path": "deepward/src/game/state.test.ts",
+      "sha256": "c4f3eff0b6a94ac201404890daa2717a15e9b4b879187112231d7cefe420a44b"
+    },
+    {
+      "path": "deepward/src/game/state.ts",
+      "sha256": "4c5b7269f32dcf4dffb6c23a9dec1a2ac176ef4ed5568b175a08521ef900d8ec"
+    },
+    {
+      "path": "deepward/src/game/stationArt.tsx",
+      "sha256": "88864f8f19d2fa1e0030cef3a2b401cdf58aa0fa88a514def47b2cab0b9ff05a"
+    },
+    {
+      "path": "deepward/src/game/stationAssets.test.ts",
+      "sha256": "ec937553116b1a0cf92c34bfc960ece3ffa7f9ba8c7ce2d86deb70d76c45e4f1"
+    },
+    {
+      "path": "deepward/src/game/stationModels.tsx",
+      "sha256": "d300b184ed63cb948734a0efe529171bd3434281ad3e3bb077b983c1000b67e8"
+    },
+    {
+      "path": "deepward/src/game/stationSurface.tsx",
+      "sha256": "b937490f68f5d18ee52996f1e7946c4ee4dd8bb5bd9a05cb9cb8fc189e7fb7ad"
+    },
+    {
+      "path": "deepward/src/game/ui/GameUI.tsx",
+      "sha256": "6c08bd3020164636b495366fd1f5f7e722e79e7276c35b326b40d82c5b333229"
+    },
+    {
+      "path": "deepward/src/game/ui/ItemMark.tsx",
+      "sha256": "2782708d9afda27b44e987b79b44a916dabef9f4d7d234bbbf6143d6884adb2d"
+    },
+    {
+      "path": "deepward/src/game/weaponArt.tsx",
+      "sha256": "29791279d5384d5c1a430604df14a7a533c15720bec087638d6e22508adb07a6"
+    },
+    {
+      "path": "deepward/src/game.config.ts",
+      "sha256": "bf58c8d6dfa9c60e135b0b85357b2f24ef7fb5fdb0e278d47f832a02cc4b3193"
+    },
+    {
+      "path": "deepward/src/game.tsx",
+      "sha256": "bc9ae98246979e43176bc680ef0706096953670d6b5aa5d7d898ca6bdeb3b5b1"
+    },
+    {
+      "path": "deepward/src/index.tsx",
+      "sha256": "1dd569b094de496262108201c75d2dd98a1ec544c7d6e3c3d12c9675bd76f911"
+    },
+    {
+      "path": "deepward/src/main.tsx",
+      "sha256": "7d62d0308e4d42d1ac37f75b4447624fbbd2405b35e245efbbf4f36e7c3f4ac3"
+    },
+    {
+      "path": "deepward/src/style.css",
+      "sha256": "f7d805e490c3c4e26441e6100fe85cd3fb072d2883464314043ab1df8ab7a736"
+    },
+    {
+      "path": "deepward/src/world.ts",
+      "sha256": "3b9f5ae69a7a4de4cbb1c9d6f0a1f4807ca15e4768a9f47251421ebc92428083"
+    },
+    {
+      "path": "lantern-reach/src/art/market-cobbles.glb",
+      "sha256": "6487ad0774ffdefe57910cf497914bcb064561268c312450d233e2bb3af5d737"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-0.glb",
+      "sha256": "9fe3f0ad0153bf0235a1e710333dfb6b306654b9be7623be2e7c657c4668b413"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-1.glb",
+      "sha256": "af127180cef68a41ea00267081158709b37c46cef902e8c437ae94e1182730ef"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-10.glb",
+      "sha256": "19621842558c89903b7b6eca5f9927bb7fcbcc5b29a7ae90a338f3d47c623d1b"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-2.glb",
+      "sha256": "9a0f98e982f1e606faa320f6c05a0446d955eb3a8b4632b96d8dfe51b7e9a99e"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-3.glb",
+      "sha256": "ba6a77d65e88e224c67402c0751d150a9bff69fbd97b5a6c49138c7722573f98"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-4.glb",
+      "sha256": "7392a2a6c944bc794039635b77a5d8487fe44bdf3f7ffaf15ebc5718f25fb7d1"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-5.glb",
+      "sha256": "9b2033d216d2b0233ca9fcf83e2d47c8f2dd55916ae8afae463c5e8273f19d69"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-6.glb",
+      "sha256": "6e37917ec13e383d1b57f0eedb2ace4d3258a56386996dfb80eb1fd5eb3c2ca0"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-7.glb",
+      "sha256": "774e3f42bc1506c2ba11014da57165177c3c4a2931fd7d5d3e6cad2580307641"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-8.glb",
+      "sha256": "8e0bfe47eba5a8a90d9e4598e9647e0e11736e6053df2b57e6f66c0dea756523"
+    },
+    {
+      "path": "lantern-reach/src/art/settlement-9.glb",
+      "sha256": "afd4102f9c41a29e4a669c14faef09389d5cdbb57f3aac075079b7c454614b09"
+    },
+    {
+      "path": "lantern-reach/src/editor.scene.json",
+      "sha256": "6d0042c2b9da28da05cd209048fb5d513b7033a58465cc34f09e6746129f80c7"
+    },
+    {
+      "path": "lantern-reach/src/editorLayers.ts",
+      "sha256": "a1adf6aafeaf9ad3661506cc32e852cf486b089c693e46143a9b502ec7e3ba36"
+    },
+    {
+      "path": "lantern-reach/src/game/ai/mobs.ts",
+      "sha256": "de7140687a1c335cee33b589c7f2944897b405b3e5ddfb728e22027af98fdee2"
+    },
+    {
+      "path": "lantern-reach/src/game/arena/arena.test.ts",
+      "sha256": "1385f57cbc6c13a6277f70f64365a9ccfb14891be0a8fadc6688d3d547676638"
+    },
+    {
+      "path": "lantern-reach/src/game/arena/catalog.ts",
+      "sha256": "b13bd756b5729edb2e3bea712d372bbdf6c09770cfd4b28a2d5fea8226c0a5ea"
+    },
+    {
+      "path": "lantern-reach/src/game/arena/fiesta.ts",
+      "sha256": "3de7d2bd91b909567c13396eeed80abc832f7da6452c36ae8a21d6567a8be680"
+    },
+    {
+      "path": "lantern-reach/src/game/assets.ts",
+      "sha256": "612dae88e11d679d02142e1d0f8922148fb5d9c10275d59764d6ed74862d275f"
+    },
+    {
+      "path": "lantern-reach/src/game/auction/systems.ts",
+      "sha256": "87fb64bf3e5c91beee79ba0529a1be259b05a43a7fc78cd8c240e5c6f52f8c6e"
+    },
+    {
+      "path": "lantern-reach/src/game/audio/catalog.ts",
+      "sha256": "9b86561ccdba71fa8978b8c452037027c57efb7304c5b383ad6d24cc2913d70a"
+    },
+    {
+      "path": "lantern-reach/src/game/audio/cues.ts",
+      "sha256": "a7e08359070170da71334634c351fef0d15d888f489e0e0235ae2ed33e88a216"
+    },
+    {
+      "path": "lantern-reach/src/game/audio/music.ts",
+      "sha256": "679eae8b2cbae4bcddc7dcb36f07715398560b161bbd87877f3c712ecf0da8ff"
+    },
+    {
+      "path": "lantern-reach/src/game/audio/setup.ts",
+      "sha256": "17290713bd11c5cbe195cff2e2ff6fe280477f4e4cffa4cd769867f34faf1521"
+    },
+    {
+      "path": "lantern-reach/src/game/audio/sfx.ts",
+      "sha256": "e2e599aa18c72d877865fcb40f81070805221bcc3596b269c1e43732c32636da"
+    },
+    {
+      "path": "lantern-reach/src/game/catalogs.test.ts",
+      "sha256": "73703566efe24c24e3f42ccf4555f458398ed53b600e1768b643761bbd671aa9"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/catalog.ts",
+      "sha256": "50e4df0f171c1293b4d98a5f6cf645b381b529b55109078df17fa574a2ba8ef3"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/druid.ts",
+      "sha256": "e2a4bfcdf636fb53a5c6017f2f84abdc9dff5e9c95bd93d91e270dcaf26bd5e7"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/hunter.ts",
+      "sha256": "b961a79898b881a2214991777bbd30354d859ffbb1e3e012a6c8c46751f2cfe4"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/mage.ts",
+      "sha256": "4345685dcbb5cf2b70705e0c7303dcd8b3f861c4b5028db89e5c2ba740ff0db3"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/paladin.ts",
+      "sha256": "89b298de8d454e396f73d544f8a87f4b5eae3c3fae805d6cd3748778930b1c38"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/priest.ts",
+      "sha256": "5b8fcd07f7a2e985841a350223bc084b6d19bdad41b62944e03a370df3c12c3f"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/rogue.ts",
+      "sha256": "ef3d7f7c25563e297e6c26a14d08f4cc2ba797ff0384440ef2f0440e6635ac0e"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/shaman.ts",
+      "sha256": "bd379a5233225e0c3046df4c385dae02113596bae35ceb551b33375fbb593f5a"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/warlock.ts",
+      "sha256": "d9995e4e55feeb00c03040ac23903ea4ae965e957f23cfe83b397c64e406d64c"
+    },
+    {
+      "path": "lantern-reach/src/game/classes/definitions/warrior.ts",
+      "sha256": "277da00b1a388038ee4ee11b2a75d7625fd17d8cd50de9f53dea990837bd4636"
+    },
+    {
+      "path": "lantern-reach/src/game/combat/cast.test.ts",
+      "sha256": "cf3bb4b58725f68c0ea326f5c9ed1832ee13c343cf3b9c32438229941df48f0a"
+    },
+    {
+      "path": "lantern-reach/src/game/combat/engine.ts",
+      "sha256": "50ad11015f67c2948e835299c031dcfffe312323cf2ba9d6f01cff79f09ad77b"
+    },
+    {
+      "path": "lantern-reach/src/game/combat/setProcs.ts",
+      "sha256": "7d0392a53def17521c05fc6b855f0bb8e2d56895092bbbd8a1e84b5edb97f7f2"
+    },
+    {
+      "path": "lantern-reach/src/game/combat/vfx.test.ts",
+      "sha256": "b948c19614ba7e3ae2117a0c06ea86aef01ce61726077e016320e7365bf7dde0"
+    },
+    {
+      "path": "lantern-reach/src/game/combat/vfx.ts",
+      "sha256": "776b61e153d93a95c57133cb1ed1a035cf17fde0146ad9a85c3a0c677d0f5282"
+    },
+    {
+      "path": "lantern-reach/src/game/content.ts",
+      "sha256": "62cdb86c087fdf45c28eb08037f301f58a01e5236f94936bc077ec12d9eaa34b"
+    },
+    {
+      "path": "lantern-reach/src/game/crafting/catalog.ts",
+      "sha256": "17f3fde14f78414fd1e267d3dc5c21738fa5af0eb8c3dc0b052017dd18bd2e5b"
+    },
+    {
+      "path": "lantern-reach/src/game/crafting/systems.ts",
+      "sha256": "1482bf26a588af1bf828fa43b2d2c1488ad3c921d66a792cb3451312c6c7b8ef"
+    },
+    {
+      "path": "lantern-reach/src/game/crafting/toolProgression.test.ts",
+      "sha256": "0bb43b11e8da0976586675376374b307a958ac358ef12e27518a491474f402cd"
+    },
+    {
+      "path": "lantern-reach/src/game/delves/catalog.ts",
+      "sha256": "1ed83fb2b4f0656397bfe3e02f363d3ca417623921ebb32aac78481513fa1c25"
+    },
+    {
+      "path": "lantern-reach/src/game/delves/systems.ts",
+      "sha256": "a70e46fcd113ec46bf8d0e80eb6cd4161baf0029ce2d022d517d9070b444a15f"
+    },
+    {
+      "path": "lantern-reach/src/game/dungeons/catalog.ts",
+      "sha256": "6d76797c7b7580110016319de8ac760c0987705edddd8d1d9a46c1a4692e4015"
+    },
+    {
+      "path": "lantern-reach/src/game/entities/enemies/catalog.ts",
+      "sha256": "1e45b9a7f166395e2f450e167d5694fda3607d75ca19b055404246f6b02492d5"
+    },
+    {
+      "path": "lantern-reach/src/game/entities/enemies/mobs/dungeons.ts",
+      "sha256": "20871ea648b9a3c77ec5d30a1810a333e8566a42f1b4bb9bf1149d4700d63cc2"
+    },
+    {
+      "path": "lantern-reach/src/game/entities/enemies/mobs/marsh.ts",
+      "sha256": "1d1f4ec863d100cebe039a8566d5a559b39000d657d582a98e37a2a1c84b4907"
+    },
+    {
+      "path": "lantern-reach/src/game/entities/enemies/mobs/peaks.ts",
+      "sha256": "3c6512de69d65907d44d4300b49b929579b3596f0e011a7845a91dd65f54dbc3"
+    },
+    {
+      "path": "lantern-reach/src/game/entities/enemies/mobs/vale.ts",
+      "sha256": "5423b50f88329a9b6820cab23203bea0ab9599134388b9b138a51552ebcbc5e5"
+    },
+    {
+      "path": "lantern-reach/src/game/entities/npcs/catalog.ts",
+      "sha256": "a0f2154a252ed3e6693840b53ddb32b6b49e49e657b6e59afed040d7b3aac111"
+    },
+    {
+      "path": "lantern-reach/src/game/entities/npcs/dialogues.ts",
+      "sha256": "6971660cac0146051c3e09e0299c87f596ae668a4261b0c30d0207c8a7a2d155"
+    },
+    {
+      "path": "lantern-reach/src/game/entityModelBindings.ts",
+      "sha256": "e61628d9af7bdd4582a46bed74cd9219f55b0e39c7220d08bde8a70c01b5178b"
+    },
+    {
+      "path": "lantern-reach/src/game/gameplay.test.ts",
+      "sha256": "d9181038f9e35c3bbf1561a8821220311a8cd32274c71bc9e46bfebb2abf6dac"
+    },
+    {
+      "path": "lantern-reach/src/game/inventories.ts",
+      "sha256": "b919fda243166aca5cf4bda6c13225a22939f8ebc47f28bbab03b4a49193d62c"
+    },
+    {
+      "path": "lantern-reach/src/game/items/catalog.ts",
+      "sha256": "142b1bbc1c7dd87ac4925b8d7ad350ecb7bf9ef4658a039a11013c8b132de18a"
+    },
+    {
+      "path": "lantern-reach/src/game/items/enchanting.ts",
+      "sha256": "9b818c238c0e00688401bbed959bdd9682e164d4987060afbbdc5608fe44dbe6"
+    },
+    {
+      "path": "lantern-reach/src/game/items/sets.test.ts",
+      "sha256": "8afc37c570a76112c555ed27d9ebf43437f97ee9e95fd6ff2dcc46abe8e00940"
+    },
+    {
+      "path": "lantern-reach/src/game/items/sets.ts",
+      "sha256": "a3e876c60317affd69010d7715a202fc1cf6a45f2ad7c7c3e727a3f0d1df5675"
+    },
+    {
+      "path": "lantern-reach/src/game/items/use-handlers.ts",
+      "sha256": "b0abd15a5e3c0134c5d9705755b4b8ed60ab029b840eb4341de794b186a0092d"
+    },
+    {
+      "path": "lantern-reach/src/game/keybinds.ts",
+      "sha256": "7cdd407e98193ecc8843a7defefceb5fc2d9b131b03f5f5c042d80e994c0a385"
+    },
+    {
+      "path": "lantern-reach/src/game/lantern-reach.world.test.ts",
+      "sha256": "0b2ab65b1748ec7d43007558d299daca59deeef4c591344de93ff390928a02ff"
+    },
+    {
+      "path": "lantern-reach/src/game/loadouts.ts",
+      "sha256": "ef2c6d3ff0790ce3268819c3c226c6903a01224c11372c8589e16a5dea31216c"
+    },
+    {
+      "path": "lantern-reach/src/game/mail/systems.ts",
+      "sha256": "b2fa5f696c6f670a4a582cf851284ceda9a54e8af34cd4faa82321b481d6abaa"
+    },
+    {
+      "path": "lantern-reach/src/game/math/combat.test.ts",
+      "sha256": "131a7f32685f04e3a19bf55f76c774fda24f902c5e8f89f5927da3eee2d955a8"
+    },
+    {
+      "path": "lantern-reach/src/game/math/combat.ts",
+      "sha256": "810167df6b004f8b5ae92b21b4d4baef4672e088af4638249b3f5797cb290473"
+    },
+    {
+      "path": "lantern-reach/src/game/minigames/lockpick.test.ts",
+      "sha256": "25ad512ab61e1eb84a416c424845223f490ce0ab736e6f4f1b8b86ca5e8f8a6a"
+    },
+    {
+      "path": "lantern-reach/src/game/minigames/lockpick.ts",
+      "sha256": "dfdd8515d76cfcb0327d788538cb3ae0cbe69f9bbfb80f3f6d8f5db9e480177f"
+    },
+    {
+      "path": "lantern-reach/src/game/minigames/valeCup.ts",
+      "sha256": "93fad049c7a72c360e397c4bbda49bf90728eea349e4665eb36f102a0581a635"
+    },
+    {
+      "path": "lantern-reach/src/game/minigames/yumi.ts",
+      "sha256": "99296e5aa9d581ea4feda6e06551fc89d96cf4fd491b35b8f2f9383249b4c23c"
+    },
+    {
+      "path": "lantern-reach/src/game/model.ts",
+      "sha256": "7c53c5beeedadf2906c86e0d500ab747f8a376fc95675e4540a53c592316139e"
+    },
+    {
+      "path": "lantern-reach/src/game/models.ts",
+      "sha256": "11590e674ed0ec2a793fe07bc5e2ca3ac2bd3e3320e0a65ab8c1339a24802a1a"
+    },
+    {
+      "path": "lantern-reach/src/game/pets/catalog.ts",
+      "sha256": "a513dcebac462d52a02f784dd87282043a6e5a25a2eb501be4615610fc8ea73f"
+    },
+    {
+      "path": "lantern-reach/src/game/pets/systems.ts",
+      "sha256": "ea177e827256e099fc7e1f177d6e2e18fe749b342583c139631986e79e7846b1"
+    },
+    {
+      "path": "lantern-reach/src/game/professions/catalog.ts",
+      "sha256": "9ecab2a2bdfaf8527f834e7e10ed4d4471fa45f4bea4a68bee454a77a0ba0d34"
+    },
+    {
+      "path": "lantern-reach/src/game/professions/enchanting.test.ts",
+      "sha256": "2c424c15ccdbd691dd19debea635fe8b984b53b4ce55bfe6b5344e78df4055ca"
+    },
+    {
+      "path": "lantern-reach/src/game/professions/enchanting.ts",
+      "sha256": "8c591962487e78c85c90ec351c3c91b85fa4b82f5672648ff236271d5a641fb1"
+    },
+    {
+      "path": "lantern-reach/src/game/professions/gathering.ts",
+      "sha256": "2428c236b6b5edbb5d0afbcaf2bc1dc8e68c8d326f9adc14e61616f5c6ac2425"
+    },
+    {
+      "path": "lantern-reach/src/game/professions/salvage.test.ts",
+      "sha256": "cc56b77ffc616c1e18ece8d698849c77dfa00f44140b08480742d92d92320006"
+    },
+    {
+      "path": "lantern-reach/src/game/professions/salvage.ts",
+      "sha256": "8e9491b2989e7f1acc49bd8a7d4270af831c786e06e3a421976199bc2984b8fc"
+    },
+    {
+      "path": "lantern-reach/src/game/progression/curves.ts",
+      "sha256": "07b041611cdfc6cd8c15771eb64e8c0caa1b3d7ab9a09c16fecf088c6ec62930"
+    },
+    {
+      "path": "lantern-reach/src/game/quests/catalog.ts",
+      "sha256": "a0c212e09305231d077f7ef3d82b32d0033f65937d24feba7bd55f2073097066"
+    },
+    {
+      "path": "lantern-reach/src/game/quests/lanternCatalog.ts",
+      "sha256": "e651d8c04fa058845e40b342fa81d1f248eed7762fcfcceceaa98561b4727686"
+    },
+    {
+      "path": "lantern-reach/src/game/quests/lanternStory.test.ts",
+      "sha256": "0e8246f9aab0734277e0158687ceee53f5446bc60c8fc3435caf97958fce7170"
+    },
+    {
+      "path": "lantern-reach/src/game/quests/lanternStory.ts",
+      "sha256": "899db3357a548113c14e970aa69ada4aeaad6e8c44dae6b5c52e04a283ed9ea3"
+    },
+    {
+      "path": "lantern-reach/src/game/scenery.ts",
+      "sha256": "4d8030c412f7df98a029a4db4f661eebe3f615cef12f0701ce416be6eefb014c"
+    },
+    {
+      "path": "lantern-reach/src/game/session/commands.ts",
+      "sha256": "1d11ceeabd62c1c61a4bddcd09df41dd3d9742705221557123af4a5c0a8f51bf"
+    },
+    {
+      "path": "lantern-reach/src/game/session/hero.ts",
+      "sha256": "19cbe414b583c2ee132a3ddcec299162b01df450b8770d74ddc317757ef2ffa5"
+    },
+    {
+      "path": "lantern-reach/src/game/session/multiplayer.test.ts",
+      "sha256": "7daf827f9dcfbd90974211ef3c7997a2f8793c2cfa40402f19253c689800fe02"
+    },
+    {
+      "path": "lantern-reach/src/game/session/stores.ts",
+      "sha256": "eda31417aa285cabfacc57e4f4f7bff6c9604d9454299cba407189d3188d8321"
+    },
+    {
+      "path": "lantern-reach/src/game/systems.ts",
+      "sha256": "d87c3f55fb0628d2942b55ee3bc4fe5fa4fe689d638b26b80cd30beb0d397883"
+    },
+    {
+      "path": "lantern-reach/src/game/talents/abilityMods.ts",
+      "sha256": "27c476214220e7c11c78faa182e25bf8672cffef8d7a1a959cc48d35547f93e4"
+    },
+    {
+      "path": "lantern-reach/src/game/talents/catalog.ts",
+      "sha256": "a905147e0835361599c1b1c53a041e0fcf33f01108c531f3b144854778c24925"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/GameUI.tsx",
+      "sha256": "b29b02aac043ca150505db74849eaa40c4f90f31f65c8d5d9ae6301ed9905958"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/ActionBar.tsx",
+      "sha256": "94f41946b43df4fa3a74db670b1f3ac951498d3591e264d4a1551c40a25ca6bd"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Arena.tsx",
+      "sha256": "6e5f1dcd59d6681cd26f729170304dadc82c288468f8579cc3621974c5ef6ad4"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Auction.tsx",
+      "sha256": "f490e19396f9cb76ab3a173061bc239fd4476691861ec84c0f1fd7c87bb66db4"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Bank.tsx",
+      "sha256": "de0d1acb729d4bf8a925a19ed9d3e874ebaed25592d98d35858763fd0012b4f3"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/ChatLog.tsx",
+      "sha256": "816eaf3569774309961115af966f2c95b3236dbc8e80c9bb91144ad594d96e14"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/ClassSelect.tsx",
+      "sha256": "f7ee91ca1c3cc8b50dd267f6f3bea5e00269f90256cca63e09878de1f8367c52"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/ContentPanels.tsx",
+      "sha256": "f312490e52e37db6caa2eacb0a161d80ac339512fbabbb0b4e4804a606af76af"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Crafting.tsx",
+      "sha256": "092c43b13704e331b093a113ee607872f9a74e88c68f4b2a6d8030bd7469e967"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Dialogue.tsx",
+      "sha256": "084f4f781bdff9c1917fbed21acaba516ad5d70db936a5d2351dc1a7699d12bb"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/FieldMenu.tsx",
+      "sha256": "6e1cd7e346ee7929ec5c007bca70f2c671927e3096982b79685f51e0900fa7a2"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Minimap.tsx",
+      "sha256": "3fdd1122412e41aae3b0042985979e5ab452a7b067a44b5ace4385ee906e98a7"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Overlays.tsx",
+      "sha256": "4645583b5ff68538f6efa00de05d31cb55ce6b354285ed81500a458bc3f00a75"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Panels.tsx",
+      "sha256": "14bc9ae4ab1dd037d4fe40f7acafacb64845cbbb87318bd95938a0c51b0d5aeb"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Spellbook.tsx",
+      "sha256": "5a6e65973bccdd2fa4094c6c99d308db0cc0e780380584fb07641315d33cc763"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/SwingTimer.tsx",
+      "sha256": "89760ae12efa3def5cf2378dcd53f4d75e27a0d8e995bb2adb52758543e792b6"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/Talents.tsx",
+      "sha256": "db6b94fbad39a52be7a5314e1eea390a556e72b50e4703f8bfd208bea85050a4"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/UnitFrames.tsx",
+      "sha256": "64c08388319d530711e34e0f75e1147df6e6a7e7523440e20ae5489a7ffd58bc"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/classSelectState.test.ts",
+      "sha256": "bd1238192850342b2ff6eddc77fe4963d712a81c478a1fd5610bc7d708c125d6"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/components/classSelectState.ts",
+      "sha256": "2461337caad0ab169028300991dcac87c50dc3935206c42668adceffe38a4130"
+    },
+    {
+      "path": "lantern-reach/src/game/ui/theme.ts",
+      "sha256": "d8d5439c72ec4024b5955668c94be3697f2574b1f497a8d112782419bef0dd6f"
+    },
+    {
+      "path": "lantern-reach/src/game/uiScenario.ts",
+      "sha256": "6399bf3485e452fec18b796a0d00bc35ce8726fba6534ba688c702cdd92a23d0"
+    },
+    {
+      "path": "lantern-reach/src/game/world/scene.test.ts",
+      "sha256": "d49a2ed5f44728dcc469c0fd8182fc04aa696aaee4d9ffe90642df055e83d838"
+    },
+    {
+      "path": "lantern-reach/src/game/world/settlementWalking.test.ts",
+      "sha256": "55fa69cddbfdd4137c0f00cc4d3962bb125a9fa8ea91f345d9285cfb88f80366"
+    },
+    {
+      "path": "lantern-reach/src/game/world/setup.ts",
+      "sha256": "47edf0f508fb8360a8096a000aa38d0769d30205bdea3ad7fd9ca56b5e5fc045"
+    },
+    {
+      "path": "lantern-reach/src/game/world/worldBoss.test.ts",
+      "sha256": "ee66ea1d271bd5f7a237edfdd23e3bdcaf687ea01976b0e297767b7845030358"
+    },
+    {
+      "path": "lantern-reach/src/game/world/worldBoss.ts",
+      "sha256": "a145e59e81e2078fe6c52e326ae305cbff98927b46ebeb0883f577ed70975242"
+    },
+    {
+      "path": "lantern-reach/src/game/world/zones.ts",
+      "sha256": "1ebf55d03c0beb96479734e3af1c98eeb812b4b8908960530e7b2a4b27087759"
+    },
+    {
+      "path": "lantern-reach/src/game.config.ts",
+      "sha256": "79621a34548109bff001dbdd255447c7921f3bcd2e83bd354eb8a902688e7854"
+    },
+    {
+      "path": "lantern-reach/src/index.css",
+      "sha256": "9e3073d121377c7268f650f1bbe1c944e6a1db1b964720c0bae510b74ee8e993"
+    },
+    {
+      "path": "lantern-reach/src/index.tsx",
+      "sha256": "e17ecaad390f08012193a2e4820eb6775297772e72c1dc73a034a3e47892c30e"
+    },
+    {
+      "path": "lantern-reach/src/loop.ts",
+      "sha256": "fdee5a592c54e76877ae2a6f3e15d76ddbdb94e562cf288ec66e15d067340172"
+    },
+    {
+      "path": "lantern-reach/src/main.tsx",
+      "sha256": "aa62236b4101efd0ae2ec7add420bf5884feb35378b08b05d1d7c36efc066e31"
+    },
+    {
+      "path": "lantern-reach/src/preview.tsx",
+      "sha256": "cb1f3aaf1697d5958d80bdef8a0d8e7ee9d676cbda79b71f1f9fb7a29586450e"
+    },
+    {
+      "path": "lantern-reach/src/style.css",
+      "sha256": "233311c9340d3e91492ed72c3641d7b9944a115259dbe8231fa14d234a7d0382"
+    },
+    {
+      "path": "lantern-reach/src/world.ts",
+      "sha256": "7f0f87621b30843862dbef230066067880730c4180044c60405c0026f5ef8f9a"
+    }
+  ],
+  "actualImportedRigs": [
+    {
+      "game": "deepward",
+      "url": "/models/imported/deepward/fitter/fitter-salvage-operator.glb",
+      "sha256": "6be2a1e4dfc4588bfcbc3f0a195b6fe13be4e18cbd99363e1d1dabf666546d10",
+      "byteCount": 2743952
+    },
+    {
+      "game": "lantern-reach",
+      "url": "/models/lantern-reach/players/knight.glb",
+      "sha256": "ce0d0a5ec1d67594629ecac20a7576fde22a44456e7628e8eb100891bc6dda97",
+      "byteCount": 1212756
+    }
+  ],
+  "sdkSourceAliases": false
+}

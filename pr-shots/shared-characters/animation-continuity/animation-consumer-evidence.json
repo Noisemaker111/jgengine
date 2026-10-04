@@ -1,0 +1,295 @@
+{
+  "label": "unreleased public built package candidate; real React animation hook and manual Fiber frame simulation; no published game adoption or native appearance/feel claim",
+  "cohort": "b9dacf468497633610710eafe226b8ff7a6c25b1",
+  "tree": "ce9a5c0fa38a015015c1b4e90938ff1c379fe37f",
+  "base": "9e3b3373b7e962aadbc87d533a9cf58e69066754",
+  "baselineCohort": "f4cbd7176a1f8c0d0702417fd8cc04fcbbe4d8f7",
+  "baselineTree": "cbf31cfd4a9870a7fe99ef6169d38f6560954ff7",
+  "concreteBeforeLimitation": "Actual Deepward fitterAnimation creates a fresh equal gait config during React renders. The previous public hook reset playback on each reference change: 30 manual frames produced one world bone pose and zero walk time, while stable-config control progressed.",
+  "owningLayer": "shell/render/useModelAnimation; preserve graph runtime for semantically equal configuration, retain meaningful config changes",
+  "packageBoundary": {
+    "manifest": "candidate-package-manifest.json",
+    "manifestTarballsSha256Verified": 13,
+    "installedPackages": [
+      {
+        "name": "@jgengine/core",
+        "version": "0.19.0",
+        "tarballSha256": "4dd950497323eb5bac90178ec74a764285422afd33817cf47ac97f2a38b6764a",
+        "installedFilesByteVerified": 1209
+      },
+      {
+        "name": "@jgengine/ws",
+        "version": "0.19.0",
+        "tarballSha256": "d7e2301b14af1c81b15e044a308d9738fb3b0e93d8f7f182641741239a026995",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/navbake",
+        "version": "0.19.0",
+        "tarballSha256": "74e758c8ff680bc469b91a7fc7c110b1d867ad0b8f26d19a23be8bc4b57b7d48",
+        "installedFilesByteVerified": 6
+      },
+      {
+        "name": "@jgengine/react",
+        "version": "0.19.0",
+        "tarballSha256": "a072bcebcefc1c42d9ed649f5fdb5a48becddf673cc765e35952145abd9ea5c0",
+        "installedFilesByteVerified": 183
+      },
+      {
+        "name": "@jgengine/node",
+        "version": "0.19.0",
+        "tarballSha256": "dfad51875d2df152652dd738dbbf3829de97e4eeef9ebe2b2b8dc414c7f7bbf9",
+        "installedFilesByteVerified": 29
+      },
+      {
+        "name": "@jgengine/shell",
+        "version": "0.19.0",
+        "tarballSha256": "6f250c77a607a7cff4cbcba91279247dc8b565d3753daee1c27dfbba6829987f",
+        "installedFilesByteVerified": 515
+      },
+      {
+        "name": "@jgengine/editor",
+        "version": "0.19.0",
+        "tarballSha256": "cdb9da5d14922649d09da1d6808fa79c6038d9e36dc9f8a71be87f3f9ff1aa0c",
+        "installedFilesByteVerified": 232
+      },
+      {
+        "name": "@jgengine/assets",
+        "version": "0.19.0",
+        "tarballSha256": "a7c16fa769366ca3221ca1fb9757c85de7b33e7a2b0d03ae5f012e1f5844b675",
+        "installedFilesByteVerified": 81
+      },
+      {
+        "name": "jgengine",
+        "version": "0.16.0",
+        "tarballSha256": "95d9fb7d63ddaa2b6b055f08471d873ad0b76a5038b5649f569f073843037876",
+        "installedFilesByteVerified": 56
+      }
+    ],
+    "installedFilesByteVerified": 2340,
+    "uninstalledPackages": [
+      "@jgengine/rapier",
+      "@jgengine/sql",
+      "@jgengine/convex",
+      "@jgengine/github"
+    ],
+    "verification": "installed-package-verification.json",
+    "publicExports": [
+      {
+        "name": "@jgengine/shell/render/useModelAnimation",
+        "path": "/workspace/JGengine/.scratch/characters/consumer/animation-continuity/node_modules/@jgengine/shell/dist/render/useModelAnimation.js",
+        "sha256": "163454c23bf17d19bbb2ad63f5fc11cf394a7b6690f8f37fb85201e3590475a3"
+      },
+      {
+        "name": "@jgengine/core/anim/animGraph",
+        "path": "/workspace/JGengine/.scratch/characters/consumer/animation-continuity/node_modules/@jgengine/core/dist/anim/animGraph.js",
+        "sha256": "9110c1b49fb6887ee11b9bcf3d7ff133b799bbeef9f0a6a61f949ccfe361ff2b"
+      }
+    ],
+    "sdkSourceAliases": false
+  },
+  "originalSources": {
+    "sourceCommit": "45a50523cae2021c412aa83ce50589d806dd96d9",
+    "filesByteVerified": 165,
+    "provenance": "original-source-provenance.json",
+    "actualImportedRigs": [
+      {
+        "game": "deepward",
+        "url": "/models/imported/deepward/fitter/fitter-salvage-operator.glb",
+        "sha256": "6be2a1e4dfc4588bfcbc3f0a195b6fe13be4e18cbd99363e1d1dabf666546d10",
+        "byteCount": 2743952
+      },
+      {
+        "game": "lantern-reach",
+        "url": "/models/lantern-reach/players/knight.glb",
+        "sha256": "ce0d0a5ec1d67594629ecac20a7576fde22a44456e7628e8eb100891bc6dda97",
+        "byteCount": 1212756
+      }
+    ],
+    "sourceModelsCameraSceneNoEdits": true,
+    "repositoryCatalogLocksNoEdits": true
+  },
+  "actualConsumerHookProof": {
+    "directory": "../../animation-continuity",
+    "before": "before-f4cbd717-v3.json",
+    "after": "after-b9dacf46.json",
+    "script": "after-b9dacf46-run.ts",
+    "fixture": "after-b9dacf46-fixture.tsx",
+    "producer": "games/deepward/src/game/fitterArt.tsx:fitterAnimation",
+    "publicHook": "@jgengine/shell/render/useModelAnimation",
+    "execution": "Real hook under React/Fiber context, cached GLTF parse promise and SkeletonUtils clone per run, manual1/60s Fiber frames and entity setPose; actual producer imported, no full game AI/physics/render loop",
+    "frames": 30,
+    "beforeFreshDistinctWorldBonePoses": 1,
+    "afterFreshDistinctWorldBonePoses": 29,
+    "beforeFreshFinalActions": [
+      {
+        "clip": "idle",
+        "time": 0.016666666666666666,
+        "weight": 1
+      },
+      {
+        "clip": "walk",
+        "time": 0,
+        "weight": 0
+      }
+    ],
+    "afterFreshFinalActions": [
+      {
+        "clip": "idle",
+        "time": 0.016666666666666666,
+        "weight": 0
+      },
+      {
+        "clip": "walk",
+        "time": 0.49999999999999994,
+        "weight": 1
+      }
+    ],
+    "allFreshBonePosesAndActionTimesExactlyEqualStableControl": true,
+    "stableControlExactlyEqualOldBaseline": true,
+    "metrics": {
+      "stableWorldPoseChange": {
+        "position": 0.02188683468654121,
+        "rotationRadians": 0.08094073733551144
+      },
+      "freshWorldPoseChange": {
+        "position": 0.02188683468654121,
+        "rotationRadians": 0.08094073733551144
+      },
+      "stableFinalVsFirst": 2,
+      "freshFinalVsFirst": 2,
+      "finalStableVsFresh": 0
+    },
+    "browserErrors": 0,
+    "allSubscriptionsAfterUnmount": 0
+  },
+  "meaningfulWindupChanges": {
+    "producer": "actual fitterAnimation(print)",
+    "configurations": [
+      {
+        "clip": "windup",
+        "paused": true,
+        "time": 0.09999999999999998,
+        "loop": false
+      },
+      {
+        "clip": "windup",
+        "paused": true,
+        "time": 0.35,
+        "loop": false
+      },
+      {
+        "clip": "windup",
+        "paused": true,
+        "time": 0.6,
+        "loop": false
+      }
+    ],
+    "distinctHeldPoses": 3,
+    "heldFor": "one second of manual frame callbacks",
+    "allSubscriptionsAfterUnmount": 0
+  },
+  "lanternControl": {
+    "producer": "actual games/lantern-reach/src/game/models.ts:entityModels.player_hero.animation",
+    "config": {
+      "states": {
+        "idle": "Idle",
+        "walk": "Walking_A",
+        "run": "Running_A",
+        "runSpeed": 6
+      }
+    },
+    "rig": "original lowercase Knight22clip GLB; distinct from SDK76clip Knight",
+    "all30FreshBonePosesAndActionTimesExactlyEqualStableControl": true,
+    "finalActions": [
+      {
+        "clip": "Idle",
+        "time": 0.06666666666666667,
+        "weight": 0
+      },
+      {
+        "clip": "Walking_A",
+        "time": 0.49999999999999994,
+        "weight": 0.9093722590998377
+      },
+      {
+        "clip": "Running_A",
+        "time": 0.49999999999999994,
+        "weight": 0.0906277409001624
+      }
+    ],
+    "allSubscriptionsAfterUnmount": 0
+  },
+  "publicConsumerChecks": {
+    "deepward": {
+      "types": "PASS",
+      "typesLog": "public-deepward-types.log",
+      "build": "PASS",
+      "buildSeconds": 23.83,
+      "buildLog": "public-deepward-build.log"
+    },
+    "lantern-reach": {
+      "build": "PASS",
+      "buildSeconds": 35.79,
+      "buildLog": "public-lantern-reach-build.log",
+      "typeLimitation": "Four known old Promise dispatch errors in ActionBar.tsx:57 and Dialogue.tsx:68 retained from earlier public checks; no redundant rerun."
+    }
+  },
+  "limitations": [
+    "Numeric pose continuity demonstrates playback stability, not convincing animation appearance, game interaction, native rendering or hardware performance.",
+    "Manual frames and entity poses do not exercise full game AI/physics lifecycle.",
+    "No new geometry/material disposal claim; canonical owning hook tests cover additional runtime cleanup and RNG behavior.",
+    "Original Lantern full scene Save remains blocked by unsupported dawn; untouched.",
+    "No original game source/catalog/lock changes and no registry release/adoption."
+  ],
+  "artifactHashes": [
+    {
+      "path": "candidate-package-manifest.json",
+      "sha256": "5a9821d411db7d1cceac4d804c0973b2488698f0d83b6a857a7601c1ef86e054"
+    },
+    {
+      "path": "installed-package-verification.json",
+      "sha256": "574c65c79ae8d79f9562ee93083a86111a2fb412985ed7df1cd4c706b98be124"
+    },
+    {
+      "path": "original-source-provenance.json",
+      "sha256": "5e923ccdebccd81809657405742532392288c6643b9d61514f9c9f08f6e349de"
+    },
+    {
+      "path": "public-deepward-types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "public-deepward-build.log",
+      "sha256": "6ece05a295f0b04501c5db03375f313c323a5df07ec3193a69c7f850a7c7436a"
+    },
+    {
+      "path": "public-lantern-reach-build.log",
+      "sha256": "07814bda0444458ad00e5ffe6f70cde79684ab76832f607c11d8222f67b32f22"
+    },
+    {
+      "path": "../../animation-continuity/before-f4cbd717-v3.json",
+      "sha256": "01668816edf10715f73d6f0e256d2284d976fa18ec7d50840dcb0b189d894c73"
+    },
+    {
+      "path": "../../animation-continuity/before-f4cbd717-v3.log",
+      "sha256": "23f356a8327891c7fffeacead64b9c5f53c4733165646ddefb5592ce58eb15fb"
+    },
+    {
+      "path": "../../animation-continuity/after-b9dacf46.json",
+      "sha256": "7a9bf634244d5a81f8b1bafff8855610c6a4faa54e46109199ae1c1a155abb6b"
+    },
+    {
+      "path": "../../animation-continuity/after-b9dacf46.log",
+      "sha256": "718134f7d2dc42945bacda3ab02e984992a0c37354c8af3ea059dcd1da1876b8"
+    },
+    {
+      "path": "../../animation-continuity/after-b9dacf46-run.ts",
+      "sha256": "2d9bd567aef24f3506759535ea13f721906bc7b0a89da519d8f9fddfbcf877db"
+    },
+    {
+      "path": "../../animation-continuity/after-b9dacf46-fixture.tsx",
+      "sha256": "75e50bda6c5a8bab12d55a733c32076da19c1d1686c1a76f623faa989544f840"
+    }
+  ]
+}
