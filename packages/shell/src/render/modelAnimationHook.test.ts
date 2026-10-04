@@ -150,6 +150,42 @@ beforeAll(async () => {
       AnimationMixer.prototype.clipAction=originalAction;AnimationMixer.prototype.uncacheRoot=originalUncache;
       return{before,zeroDelta,after,fast,pending,resumed,cleanupBeforeUnmount,cleanupAfterUnmount:cleanups,subscriptionsAfterUnmount:callbacks.size};
     };
+    window.clockPlayback=async(mode,binding='bound',single=false)=>{
+      gltf=await gltfPromise;
+      const scene=clone(gltf.scene),id='clock-actor';
+      const ctx=createGameContext({definition:defineGameDefinition({name:'clock-proof',assets:createAssetCatalog(),multiplayer:'off'}),content:{},player:{userId:'player',isNew:true},rng:seededRng('clock-gameplay')});
+      ctx.scene.entity.spawn('hero',{id,position:[0,0,0]});
+      const animation=single?{clip:'Idle'}:config;
+      const callbacks=new Set(),state={invalidate:()=>{},internal:{subscribe:ref=>{callbacks.add(ref);return()=>callbacks.delete(ref)}}};
+      const store=selector=>selector(state);store.getState=()=>state;
+      const actions=[];let cleanups=0;
+      const originalAction=AnimationMixer.prototype.clipAction,originalUncache=AnimationMixer.prototype.uncacheRoot;
+      AnimationMixer.prototype.clipAction=function(...args){const action=originalAction.apply(this,args);actions.push(action);return action};
+      AnimationMixer.prototype.uncacheRoot=function(...args){cleanups++;return originalUncache.apply(this,args)};
+      const element=document.createElement('div');document.body.append(element);const root=createRoot(element);
+      const content=<FiberContext.Provider value={store}><Model scene={scene} id={binding==='unbound'?undefined:id} animation={animation}/></FiberContext.Provider>;
+      flushSync(()=>root.render(binding==='noctx'?content:<GameProvider context={ctx}>{content}</GameProvider>));
+      const frame=delta=>{ctx.sim.advance(delta,()=>{});for(const ref of callbacks)ref.current(state,delta)};
+      const sample=()=>({pose:values(scene),actions:actions.map(a=>({clip:a.getClip().name,duration:a.getClip().duration,time:a.time,weight:a.getEffectiveWeight()})),rng:ctx.rng.state()});
+      for(let n=0;n<30;n++)frame(1/60);
+      if(!single&&binding==='bound'){ctx.game.playEntityAnimation(id,'attack');frame(0);frame(.2)};
+      const before=sample(),clockBefore=ctx.time.now();
+      if(mode==='pause')ctx.time.pause();
+      if(mode==='speed-zero')ctx.time.setSpeed(0);
+      if(mode==='timescale-zero')ctx.time.setTimescale(0);
+      if(mode==='positive-speed')ctx.time.setSpeed(4);
+      if(mode==='positive-timescale')ctx.time.setTimescale(.25);
+      if(mode!=='control')for(let n=0;n<60;n++){
+        if(n===30&&!single&&binding==='bound')ctx.game.playEntityAnimation(id,'attack');
+        frame(1/60);
+      }
+      else if(!single&&binding==='bound')ctx.game.playEntityAnimation(id,'attack');
+      const frozen=sample(),clockAfter=ctx.time.now(),cleanupWhileFrozen=cleanups;
+      ctx.time.setTimescale(1);ctx.time.play();frame(0);frame(.2);const resumed=sample();
+      flushSync(()=>root.unmount());element.remove();
+      AnimationMixer.prototype.clipAction=originalAction;AnimationMixer.prototype.uncacheRoot=originalUncache;
+      return{before,frozen,resumed,clockBefore,clockAfter,cleanupWhileFrozen,cleanupAfterUnmount:cleanups,subscriptionsAfterUnmount:callbacks.size};
+    };
     window.ready=true;
   `);
   const script = buildBrowserFixture(`${scratch}/fixture.tsx`);
@@ -297,5 +333,56 @@ test("paused animation keeps its pose through a warp and resumes with fresh samp
   expect(result.after.weights).toEqual(result.before.weights);
   expect(result.resumed.Idle).toBe(1);
   expect(result.resumed.Running_A).toBe(0);
+  await page.close();
+}, 30000);
+
+
+test("bound game animation freezes with pause and zero clock rate, retaining pending variants for resume", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  const control = await page.evaluate(() => (window as any).clockPlayback("control"));
+  for (const mode of ["pause", "speed-zero", "timescale-zero"]) {
+    const result = await page.evaluate(mode => (window as any).clockPlayback(mode), mode);
+    expect(result.clockAfter).toBe(result.clockBefore);
+    expect(result.frozen).toEqual(result.before);
+    expect(result.resumed).toEqual(control.resumed);
+    expect(result.cleanupWhileFrozen).toBe(0);
+    expect(result.cleanupAfterUnmount).toBe(1);
+    expect(result.subscriptionsAfterUnmount).toBe(0);
+  }
+  await page.close();
+}, 30000);
+
+test("single-clip game animation freezes with the context clock and resumes its existing mixer", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  const control = await page.evaluate(() => (window as any).clockPlayback("control", "bound", true));
+  for (const mode of ["pause", "timescale-zero"]) {
+    const result = await page.evaluate(mode => (window as any).clockPlayback(mode, "bound", true), mode);
+    expect(result.frozen).toEqual(result.before);
+    expect(result.resumed).toEqual(control.resumed);
+    expect(result.cleanupWhileFrozen).toBe(0);
+    expect(result.cleanupAfterUnmount).toBe(1);
+  }
+  await page.close();
+}, 30000);
+
+test("context-unbound previews and positive game-clock rates keep their visual playback timing", async () => {
+  const page = await browser.newPage();
+  await page.goto(`http://127.0.0.1:${server.port}`);
+  await page.waitForFunction(() => (window as any).ready);
+  for (const binding of ["unbound", "noctx"]) {
+    const result = await page.evaluate(binding => (window as any).clockPlayback("pause", binding, true), binding);
+    expect(result.clockAfter).toBe(result.clockBefore);
+    expect(result.frozen.pose).not.toEqual(result.before.pose);
+    expect(result.frozen.actions[0].time).toBeCloseTo((result.before.actions[0].time + 1) % result.before.actions[0].duration, 10);
+  }
+  for (const mode of ["positive-speed", "positive-timescale"]) {
+    const result = await page.evaluate(mode => (window as any).clockPlayback(mode, "bound", true), mode);
+    expect(result.clockAfter).toBeGreaterThan(result.clockBefore);
+    expect(result.frozen.actions[0].time).toBeCloseTo((result.before.actions[0].time + 1) % result.before.actions[0].duration, 10);
+  }
   await page.close();
 }, 30000);

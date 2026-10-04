@@ -284,6 +284,7 @@ function buildGraphPlayback(scene: THREE.Object3D, mixer: THREE.AnimationMixer, 
  * With `animation.graph` set, the headless `AnimGraph` runtime owns every clip's time and weight
  * and the mixer only applies them; clip events surface as `animation.event`.
  * Equivalent same-order config data retains playback across rerenders; actual data edits reset it.
+ * Entity-bound playback holds while context game time is frozen; unbound previews keep playing.
  */
 export function useModelAnimation(
   scene: THREE.Object3D,
@@ -410,6 +411,7 @@ export function useModelAnimation(
 
   useFrame((_state, delta) => {
     if (animationPausedRef.current || animation?.timeScale === 0) return;
+    if (ctx !== null && instanceId !== undefined && (ctx.time.speed() === 0 || ctx.time.timescale() === 0)) return;
     const playback = graphRef.current;
     if (playback !== null && mixerRef.current !== null) {
       const params = playback.params;
