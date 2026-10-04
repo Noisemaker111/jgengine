@@ -333,6 +333,47 @@ describe("heightfield collision proportions", () => {
     expect(playerMovementTelemetry(ctx, "a")!.verticalVelocity).toBeGreaterThan(0);
   });
 
+  test("a fresh declared body stands on a shallow authored road plate", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("street", [{ center: [0, 0.03, 0], halfExtents: [4, 0.01, 4] }]);
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }));
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0.04, 0]);
+    expect(playerMovementTelemetry(ctx, "a")).toMatchObject({ collisionHeight: 2.6, grounded: true, collisionHeightBlocked: false });
+  });
+
+  test("prospective road support cannot grant headroom through a thin roof", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("street-and-roof", [
+      { center: [0, 0.03, 0], halfExtents: [4, 0.01, 4] },
+      { center: [0, 2.6205, 0], halfExtents: [2, 0.0005, 2] },
+    ]);
+    expect(() => stepPlayerMovement(ctx, "a", frame([]), 1 / 60,
+      resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } }))).toThrow("intersects blocking geometry at entity a");
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+    expect(snapshotPlayerMovement(ctx, "a")!.motion).toBeNull();
+    expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+  });
+
+  test("an airborne or floating body does not borrow grounded road-plate forgiveness", () => {
+    for (const floating of [false, true]) {
+      const ctx = collisionContext(0);
+      if (!floating) {
+        stepPlayerMovement(ctx, "a", frame([]), 1 / 60, COLLIDE);
+        const saved = snapshotPlayerMovement(ctx, "a")!;
+        saved.motion!.grounded = false;
+        saved.heightfieldHeight = null;
+        saved.heightfieldEntityId = null;
+        restorePlayerMovement(ctx, "a", saved);
+      }
+      ctx.world.solids.set("street", [{ center: [0, 0.03, 0], halfExtents: [4, 0.01, 4] }]);
+      const configured = floating
+        ? tuning({ ground: SUBMERGED_GROUND, movement: { collisionHeight: 2.6, swim: true } })
+        : resolvePlayerMovementTuning({ movement: { collisionHeight: 2.6 } });
+      expect(() => stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured)).toThrow("collisionHeight");
+      expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+    }
+  });
+
   test("blocked live growth replays its accepted height, exits safely, then grows and shrinks", () => {
     let height = 1.8;
     const configured = resolvePlayerMovementTuning({ movement: { get collisionHeight() { return height; } } });

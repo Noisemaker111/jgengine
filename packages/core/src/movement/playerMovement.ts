@@ -476,9 +476,21 @@ export function stepPlayerMovement(
     collisionHeight = previousHeight ?? requestedCollisionHeight;
     if (tuning.movement?.collideObjects !== false &&
       (previousHeight === null && authoredHeight !== undefined || requestedCollisionHeight > collisionHeight)) {
-      const bounds = gatherMovementObstacles(ctx, player.position, 0, 0, 0, 0,
+      const swim = tuning.movement?.swim;
+      const swimEnabled = swim === true || (typeof swim === "object" && swim !== null);
+      const floating = swimEnabled && tuning.ground.waterLevel !== undefined &&
+        tuning.ground.sampleHeight(player.position[0], player.position[2]) < tuning.ground.waterLevel;
+      const groundedSupport = state.motion?.grounded !== false && (state.motion?.jumpOffset ?? 0) <= 0 && !floating;
+      const supportStep = groundedSupport ? tuning.movement?.stepHeight ?? DEFAULT_PLAYER_STEP_HEIGHT : 0;
+      const bounds = gatherMovementObstacles(ctx, player.position, 0, 0, 0, supportStep,
         Math.max(collisionHeight, requestedCollisionHeight));
-      const overlap = resolveObstacleVerticalStep(player.position, 0, bounds,
+      // An authored terrain-relative spawn can rest a few centimetres inside a walkable road plate.
+      // Test the same support feet the grounded motor will accept, including the resulting headroom.
+      const support = groundedSupport
+        ? obstacleSupportHeight(player.position[0], player.position[2], player.position[1], supportStep, bounds) : null;
+      const supportedPosition: EntityPosition = support !== null && support > player.position[1]
+        ? [player.position[0], support, player.position[2]] : player.position;
+      const overlap = resolveObstacleVerticalStep(supportedPosition, 0, bounds,
         DEFAULT_OBSTACLE_PLAYER_RADIUS, requestedCollisionHeight).initialOverlap;
       if (overlap && previousHeight === null) {
         throw new RangeError(`PlayerMovementConfig.collisionHeight ${requestedCollisionHeight} intersects blocking geometry at entity ${playerId}. Move the authored placement or choose a height that fits.`);
