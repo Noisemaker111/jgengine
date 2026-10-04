@@ -412,8 +412,8 @@ export interface CollisionObstacle {
 const DEFAULT_OBSTACLE_HALF_EXTENTS: readonly [number, number, number] = [0.5, 0.5, 0.5];
 /** @internal Player radius the walking obstruction inflates obstacles by; callers gather within reach of it. */
 export const DEFAULT_OBSTACLE_PLAYER_RADIUS = 0.3;
-/** Feet-to-head span used for the obstacle's vertical overlap test; matches DEFAULT_VOXEL_DIMS.height. */
-const OBSTACLE_PLAYER_HEIGHT = 1.8;
+/** @internal Fixed feet-to-head span for heightfield obstruction; matches DEFAULT_VOXEL_DIMS.height. */
+export const DEFAULT_OBSTACLE_PLAYER_HEIGHT = 1.8;
 /** Extra nudge past a solid face when depenetrating so the escaped capsule lands just outside, not on, the box. */
 const PENETRATION_EPSILON = 1e-3;
 
@@ -422,6 +422,65 @@ interface ObstacleBounds {
   maxX: number;
   minZ: number;
   maxZ: number;
+}
+
+function verticalContactTolerance(feetY: number, headY: number, minY: number, maxY: number): number {
+  return Number.EPSILON * 8 * Math.max(1, Math.abs(feetY), Math.abs(headY), Math.abs(minY), Math.abs(maxY));
+}
+
+/**
+ * Sweep a heightfield walker's vertical step at its accepted XZ position against blocking bounds.
+ * The nearest crossed underside stops ascent; the nearest crossed top catches descent, including
+ * thin geometry crossed in one step. Compound boxes are relative to obstacle.position; offset is
+ * used only for a single AABB. Real starting intersections are reported separately, not repaired.
+ * @internal
+ */
+export function resolveObstacleVerticalStep(
+  position: readonly [number, number, number],
+  stepY: number,
+  obstacles: readonly CollisionObstacle[],
+  radius = DEFAULT_OBSTACLE_PLAYER_RADIUS,
+): { stepY: number; hitCeiling: boolean; ceilingFeetY: number | null; ceilingTolerance: number; landed: boolean; initialOverlap: boolean } {
+  if (!Number.isFinite(stepY)) throw new RangeError("Vertical obstacle step must be finite.");
+  const feetY = position[1];
+  const headY = feetY + DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+  const nextFeet = feetY + stepY;
+  const nextHead = nextFeet + DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+  const result = { stepY, hitCeiling: false, ceilingFeetY: null as number | null, ceilingTolerance: 0, landed: false, initialOverlap: false };
+  const consider = (minX: number, maxX: number, minY: number, maxY: number, minZ: number, maxZ: number): void => {
+    if (position[0] <= minX - radius || position[0] >= maxX + radius || position[2] <= minZ - radius || position[2] >= maxZ + radius) return;
+    const tolerance = verticalContactTolerance(feetY, headY, minY, maxY);
+    if (feetY < maxY - tolerance && headY > minY + tolerance) {
+      result.initialOverlap = true;
+      return;
+    }
+    if (stepY > 0 && headY <= minY + tolerance && nextHead >= minY) {
+      const limitedStep = minY - DEFAULT_OBSTACLE_PLAYER_HEIGHT - tolerance - feetY;
+      if (limitedStep <= result.stepY) {
+        result.stepY = limitedStep;
+        // Keep the actual face limit separate from the tiny collision margin, so a support with
+        // exactly enough headroom remains valid at translated coordinates.
+        result.ceilingFeetY = minY - DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+        result.ceilingTolerance = tolerance;
+      }
+      result.hitCeiling = true;
+    } else if (stepY < 0 && feetY >= maxY - tolerance && nextFeet <= maxY) {
+      result.stepY = Math.max(result.stepY, maxY - feetY);
+      result.landed = true;
+    }
+  };
+  for (const obstacle of obstacles) {
+    const [x, y, z] = obstacle.position;
+    if (obstacle.boxes !== undefined && obstacle.boxes.length > 0) {
+      for (const box of obstacle.boxes) consider(x + box.min[0], x + box.max[0], y + box.min[1], y + box.max[1], z + box.min[2], z + box.max[2]);
+    } else {
+      const half = obstacle.halfExtents ?? DEFAULT_OBSTACLE_HALF_EXTENTS;
+      const offset = obstacle.offset;
+      const cx = x + (offset?.[0] ?? 0), cy = y + (offset?.[1] ?? 0), cz = z + (offset?.[2] ?? 0);
+      consider(cx - half[0], cx + half[0], cy - half[1], cy + half[1], cz - half[2], cz + half[2]);
+    }
+  }
+  return result;
 }
 
 /**
@@ -468,7 +527,7 @@ export function resolveObstacleStep(
   stepUpHeight = 0,
 ): MovementFrameStep {
   const feetY = current[1];
-  const headY = feetY + OBSTACLE_PLAYER_HEIGHT;
+  const headY = feetY + DEFAULT_OBSTACLE_PLAYER_HEIGHT;
   const reachX = Math.abs(stepX) + playerRadius;
   const reachZ = Math.abs(stepZ) + playerRadius;
 
@@ -483,7 +542,7 @@ export function resolveObstacleStep(
   ): void => {
     // Vertical-span cull: a sub-box entirely above the head (walk under the lintel), below the feet,
     // or low enough to step up onto (`stepUpHeight`) is skipped — walkable ledges don't wall.
-    if (maxY <= feetY + stepUpHeight || minY >= headY) return;
+    if (maxY <= feetY + stepUpHeight || minY >= headY - verticalContactTolerance(feetY, headY, minY, maxY)) return;
     const centerX = (minX + maxX) / 2;
     const centerZ = (minZ + maxZ) / 2;
     const halfX = (maxX - minX) / 2;

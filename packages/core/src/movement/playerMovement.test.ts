@@ -18,6 +18,7 @@ import {
   stepPlayerMovement,
   type PlayerMovementTuning,
 } from "./playerMovement";
+import { DEFAULT_OBSTACLE_PLAYER_HEIGHT } from "./movementModel";
 
 const CONTENT: GameContextContent = {
   entityById: (catalogId) => (catalogId === "hero" ? { stats: { health: { max: 10 } } } : null),
@@ -293,6 +294,280 @@ function placeArchway(ctx: GameContext): void {
 const COLLIDE = resolvePlayerMovementTuning({ movement: { collideObjects: true } });
 
 describe("stepPlayerMovement object collision (mesh-accurate)", () => {
+  test("jumping under an archway stops at its lintel instead of ejecting the stationary player", () => {
+    const ctx = collisionContext(0);
+    placeArchway(ctx);
+    ctx.scene.entity.setPose("a", { position: [0, 0, 2] });
+    let maxHead = 0;
+    let maxDrift = 0;
+    for (let i = 0; i < 90; i++) {
+      stepPlayerMovement(ctx, "a", frame(i < 30 ? ["jump"] : []), 1 / 60, COLLIDE);
+      const position = ctx.scene.entity.get("a")!.position;
+      maxHead = Math.max(maxHead, position[1] + DEFAULT_OBSTACLE_PLAYER_HEIGHT);
+      maxDrift = Math.max(maxDrift, Math.abs(position[0]), Math.abs(position[2] - 2));
+    }
+    expect(maxHead).toBeLessThanOrEqual(2);
+    expect(maxDrift).toBe(0);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBe(0);
+    expect(playerMovementTelemetry(ctx, "a")?.grounded).toBe(true);
+  });
+
+  test("a curb under a low lintel cannot raise the player into the roof", () => {
+    const ctx = collisionContext(0);
+    const roof = ctx.scene.object.place("roof", 0, 0, 1);
+    ctx.scene.object.setColliders(roof, { body: { name: "roof", purpose: "physical", shape: { kind: "aabb", halfExtents: [2, 0.05, 5], offset: [0, 2.05, 0] } } });
+    placeCrate(ctx, 0, 2, 2, 0.3, "curb");
+    let maxHead = 0;
+    let maxSideways = 0;
+    for (let i = 0; i < 60; i++) {
+      stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, COLLIDE, 0);
+      const position = ctx.scene.entity.get("a")!.position;
+      maxHead = Math.max(maxHead, position[1] + DEFAULT_OBSTACLE_PLAYER_HEIGHT);
+      maxSideways = Math.max(maxSideways, Math.abs(position[0]));
+    }
+    expect(maxHead).toBeLessThanOrEqual(2);
+    expect(maxSideways).toBe(0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBeLessThan(1);
+    // A rejected ledge does not cancel an in-place jump from its legal inflated edge.
+    ctx.scene.entity.setPose("a", { position: [0, 0, 0.7] });
+    forgetPlayerMovement(ctx, "a");
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, COLLIDE, 0);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeGreaterThan(0);
+    expect(ctx.scene.entity.get("a")!.position[2]).toBe(0.7);
+  });
+
+  test("uphill terrain under a low lintel blocks the unsupported rise", () => {
+    const ctx = collisionContext(0);
+    const roof = ctx.scene.object.place("roof", 0, 0, 0);
+    ctx.scene.object.setColliders(roof, { body: { name: "roof", purpose: "physical", shape: { kind: "aabb", halfExtents: [2, 0.05, 5], offset: [0, 2.05, 0] } } });
+    const ground: TerrainField = { sampleHeight: (_x, z) => 0.5 * z, sampleNormal: () => [0, 1, 0] };
+    const configured = tuning({ ground });
+    let maxHead = 0;
+    let maxSideways = 0;
+    for (let i = 0; i < 60; i++) {
+      stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, configured, 0);
+      const position = ctx.scene.entity.get("a")!.position;
+      maxHead = Math.max(maxHead, position[1] + DEFAULT_OBSTACLE_PLAYER_HEIGHT);
+      maxSideways = Math.max(maxSideways, Math.abs(position[0]));
+    }
+    expect(maxHead).toBeLessThanOrEqual(2);
+    expect(maxSideways).toBe(0);
+    const position = ctx.scene.entity.get("a")!.position;
+    expect(position[1]).toBe(ground.sampleHeight(position[0], position[2]));
+  });
+
+  test("a large terrain rise queries a world-solid roof above the starting body", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("roof", [{ center: [0, 4.55, 0], halfExtents: [2, 0.05, 5] }]);
+    const ground: TerrainField = { sampleHeight: (_x, z) => z > 0 ? 3 : 0, sampleNormal: () => [0, 1, 0] };
+    stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, tuning({ ground }), 0);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+    expect(playerMovementTelemetry(ctx, "a")?.grounded).toBe(true);
+  });
+
+  test("a terrain rise cannot pass entirely through a thin roof", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("roof", [{ center: [0, 2.05, 0], halfExtents: [2, 0.05, 5] }]);
+    const ground: TerrainField = { sampleHeight: (_x, z) => z > 0 ? 3 : 0, sampleNormal: () => [0, 1, 0] };
+    stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, tuning({ ground }), 0);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+  });
+
+  test("headroom fallback cannot cross a thin wall on the alternate axis", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("corner", [
+      { center: [2, 2.05, 1], halfExtents: [0.5, 0.05, 3] },
+      { center: [0, 1, 1], halfExtents: [0.1, 1, 0.01] },
+    ]);
+    const ground: TerrainField = { sampleHeight: (x) => x > 1 ? 0.3 : 0, sampleNormal: () => [0, 1, 0] };
+    const configured = tuning({ ground, authoritativeStep: true, physics: { groundAcceleration: 0, groundFriction: 0 } });
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    saved.motion!.horizontalVelocityX = 2;
+    saved.motion!.horizontalVelocityZ = 2;
+    restorePlayerMovement(ctx, "a", saved);
+    stepPlayerMovement(ctx, "a", frame([]), 1, configured);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 0]);
+  });
+
+  test("headroom axis sliding preserves the raw grade sampler's four-point budget", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("roof", [{ center: [2, 2.05, 1], halfExtents: [0.5, 0.05, 3] }]);
+    const samples: string[] = [];
+    const configured = tuning({
+      ground: { sampleHeight: (x) => x > 1 ? 0.3 : 0, sampleNormal: () => [0, 1, 0] },
+      authoritativeStep: true,
+      physics: { groundAcceleration: 0, groundFriction: 0 },
+      movement: { maxClimbGrade: 0.85, climbGradeHeight: (x, z) => { samples.push(`${x},${z}`); return 0; } },
+    });
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    saved.motion!.horizontalVelocityX = 2;
+    saved.motion!.horizontalVelocityZ = 2;
+    restorePlayerMovement(ctx, "a", saved);
+    samples.length = 0;
+    stepPlayerMovement(ctx, "a", frame([]), 1, configured);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 0, 2]);
+    expect(samples).toEqual(["0,0", "2,2", "2,0", "0,2"]);
+  });
+
+  test("a fast authoritative jump stops at the nearest thin world-solid ceiling", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("roofs", [
+      { center: [0, 10.0005, 0], halfExtents: [2, 0.0005, 2] },
+      { center: [0, 5.0005, 0], halfExtents: [2, 0.0005, 2] },
+    ]);
+    const configured = tuning({ ground: FLAT_GROUND, authoritativeStep: true, physics: { gravityAcceleration: 0, jumpVelocity: 60 } });
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 0.2, configured);
+    const position = ctx.scene.entity.get("a")!.position;
+    expect(position[0]).toBe(0);
+    expect(position[2]).toBe(0);
+    expect(position[1] + DEFAULT_OBSTACLE_PLAYER_HEIGHT).toBeLessThanOrEqual(5);
+    expect(position[1]).toBeCloseTo(3.2, 10);
+    expect(playerMovementTelemetry(ctx, "a")).toEqual({ grounded: false, verticalVelocity: 0, crouching: false });
+  });
+
+  test("a fast descent lands on a thin platform without tunneling to terrain", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("platform", [{ center: [0, 3.9995, 0], halfExtents: [2, 0.0005, 2] }]);
+    const configured = tuning({ ground: FLAT_GROUND, authoritativeStep: true, physics: { gravityAcceleration: 0 } });
+    stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    const saved = snapshotPlayerMovement(ctx, "a")!;
+    saved.motion!.jumpOffset = 8;
+    saved.motion!.verticalVelocity = -50;
+    saved.motion!.grounded = false;
+    restorePlayerMovement(ctx, "a", saved);
+    ctx.scene.entity.setPose("a", { position: [0, 8, 0] });
+    stepPlayerMovement(ctx, "a", frame([]), 0.2, configured);
+    expect(ctx.scene.entity.get("a")!.position).toEqual([0, 4, 0]);
+    expect(playerMovementTelemetry(ctx, "a")).toEqual({ grounded: true, verticalVelocity: 0, crouching: false });
+  });
+
+  test("translated ceiling contact restores and lands without lateral ejection", () => {
+    for (const base of [-100, 0, 100]) {
+      const setup = () => {
+        const ctx = collisionContext(0);
+        ctx.scene.entity.setPose("a", { position: [0, base, 0] });
+        ctx.world.solids.set("roof", [{ center: [0, base + 2.05, 0], halfExtents: [2, 0.05, 2] }]);
+        return ctx;
+      };
+      const configured = tuning({ ground: { sampleHeight: () => base, sampleNormal: () => [0, 1, 0] }, physics: { gravityAcceleration: 20, jumpVelocity: 8 } });
+      const ctx = setup();
+      stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, configured);
+      stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, configured);
+      const contact = [...ctx.scene.entity.get("a")!.position] as [number, number, number];
+      expect(contact[1] + DEFAULT_OBSTACLE_PLAYER_HEIGHT).toBeLessThanOrEqual(base + 2);
+      expect(playerMovementTelemetry(ctx, "a")?.verticalVelocity).toBe(0);
+      const restored = setup();
+      restored.scene.entity.setPose("a", { position: contact });
+      restorePlayerMovement(restored, "a", snapshotPlayerMovement(ctx, "a")!);
+      for (let i = 0; i < 60; i++) {
+        stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+        stepPlayerMovement(restored, "a", frame([]), 1 / 60, configured);
+        expect(restored.scene.entity.get("a")!.position).toEqual(ctx.scene.entity.get("a")!.position);
+      }
+      expect(ctx.scene.entity.get("a")!.position).toEqual([0, base, 0]);
+      expect(playerMovementTelemetry(ctx, "a")?.grounded).toBe(true);
+    }
+  });
+
+  test("leaving a finite roof after contact keeps descent and responsive lateral input", () => {
+    const ctx = collisionContext(0);
+    ctx.world.solids.set("roof", [{ center: [0, 2.05, 0], halfExtents: [0.5, 0.05, 2] }]);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, COLLIDE);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, COLLIDE);
+    expect(playerMovementTelemetry(ctx, "a")?.verticalVelocity).toBe(0);
+    let previousX = 0;
+    for (let i = 0; i < 60; i++) {
+      stepPlayerMovement(ctx, "a", frame(["moveForward"]), 1 / 60, COLLIDE, Math.PI / 2);
+      const position = ctx.scene.entity.get("a")!.position;
+      expect(position[0] - previousX).toBeLessThan(0.1);
+      expect(playerMovementTelemetry(ctx, "a")!.verticalVelocity).toBeLessThanOrEqual(0);
+      previousX = position[0];
+    }
+    expect(previousX).toBeGreaterThan(0.8);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBe(0);
+    expect(Math.abs(ctx.scene.entity.get("a")!.position[2])).toBeLessThan(1e-12);
+  });
+
+  test("exact headroom permits a supported rise and horizontal travel during a blocked jump", () => {
+    for (const base of [-100, 0, 100]) {
+      for (const jump of [false, true]) {
+        const ctx = collisionContext(0);
+        ctx.scene.entity.setPose("a", { position: [0, base, 0] });
+        ctx.world.solids.set("roof", [{ center: [0, base + (jump ? 1.85 : 2.05), 0], halfExtents: [2, 0.05, 5] }]);
+        const ground: TerrainField = { sampleHeight: (_x, z) => base + (!jump && z > 0 ? 0.2 : 0), sampleNormal: () => [0, 1, 0] };
+        stepPlayerMovement(ctx, "a", frame(jump ? ["moveForward", "jump"] : ["moveForward"]), 1 / 60, tuning({ ground }), 0);
+        const position = ctx.scene.entity.get("a")!.position;
+        expect(position[2]).toBeGreaterThan(0);
+        expect(position[1]).toBe(ground.sampleHeight(position[0], position[2]));
+        expect(playerMovementTelemetry(ctx, "a")?.grounded).toBe(true);
+      }
+    }
+  });
+
+  test("lower ground keeps descent until actual landing and preserves recovery through replay", () => {
+    const ctx = collisionContext(0);
+    let height = 2;
+    const configured = tuning({
+      ground: { sampleHeight: () => height, sampleNormal: () => [0, 1, 0] },
+      physics: { gravityAcceleration: 16, jumpVelocity: 6, landingRecoveryMs: 200 },
+    });
+    ctx.scene.entity.setPose("a", { position: [0, 2, 0] });
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, configured);
+    let falling = snapshotPlayerMovement(ctx, "a")!;
+    for (let i = 0; i < 90; i++) {
+      falling = snapshotPlayerMovement(ctx, "a")!;
+      const motion = falling.motion!;
+      if (motion.verticalVelocity < 0 && motion.jumpOffset <= -(motion.verticalVelocity - 16 / 60) / 60) break;
+      stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+    }
+    expect(falling.motion!.grounded).toBe(false);
+    const expectedVelocity = falling.motion!.verticalVelocity - 16 / 60;
+    const pose = [...ctx.scene.entity.get("a")!.position] as [number, number, number];
+    const replay = collisionContext(0);
+    replay.scene.entity.setPose("a", { position: pose });
+    restorePlayerMovement(replay, "a", falling);
+    height = 0;
+    for (const target of [ctx, replay]) {
+      stepPlayerMovement(target, "a", frame([]), 1 / 60, configured);
+      const motion = snapshotPlayerMovement(target, "a")!.motion!;
+      expect(motion.grounded).toBe(false);
+      expect(motion.verticalVelocity).toBeCloseTo(expectedVelocity, 10);
+      expect(motion.landedAtMs).toBeNull();
+      expect(motion.wasAirborne).toBe(true);
+      expect(playerMovementTelemetry(target, "a")?.verticalVelocity).toBe(motion.verticalVelocity);
+    }
+    for (let i = 0; i < 120 && !playerMovementTelemetry(ctx, "a")!.grounded; i++) {
+      stepPlayerMovement(ctx, "a", frame([]), 1 / 60, configured);
+      stepPlayerMovement(replay, "a", frame([]), 1 / 60, configured);
+      expect(replay.scene.entity.get("a")!.position).toEqual(ctx.scene.entity.get("a")!.position);
+    }
+    expect(ctx.scene.entity.get("a")!.position[1]).toBe(0);
+    expect(snapshotPlayerMovement(ctx, "a")!.motion!.landedAtMs).toBe(snapshotPlayerMovement(ctx, "a")!.motion!.clockMs);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, configured);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBe(0);
+    driveWith(ctx, "a", [], 15, configured);
+    stepPlayerMovement(ctx, "a", frame(["jump"]), 1 / 60, configured);
+    expect(ctx.scene.entity.get("a")!.position[1]).toBeGreaterThan(0);
+  });
+
+  test("object collision opt-out and explicit height authority remain supported", () => {
+    for (const policy of ["opt-out", "absolute-height", "before-commit"] as const) {
+      const ctx = collisionContext(0);
+      ctx.world.solids.set("roof", [{ center: [0, 2.05, 0], halfExtents: [2, 0.05, 2] }]);
+      const configured = tuning({
+        ground: FLAT_GROUND, authoritativeStep: true,
+        physics: { gravityAcceleration: 0, jumpVelocity: 20 },
+        movement: policy === "opt-out" ? { collideObjects: false } : policy === "before-commit" ? { beforeCommit: ({ next }) => [next[0], 4, next[2]] } : {},
+      });
+      if (policy === "absolute-height") ctx.player.motionFor("a").setY(5);
+      stepPlayerMovement(ctx, "a", frame(["jump"]), 0.2, configured);
+      expect(ctx.scene.entity.get("a")!.position).toEqual([0, policy === "absolute-height" ? 5 : 4, 0]);
+      if (policy !== "opt-out") expect(playerMovementTelemetry(ctx, "a")).toBeNull();
+    }
+  });
+
   test("a player walks THROUGH the archway opening (heading toward the doorway gap)", () => {
     const ctx = collisionContext(0);
     placeArchway(ctx);

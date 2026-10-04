@@ -8,15 +8,75 @@ import {
   createEmptyMovementKeys,
   createPlayerMotionState,
   MOVEMENT_TUNING,
+  DEFAULT_OBSTACLE_PLAYER_HEIGHT,
   obstacleSupportHeight,
   resolveMovementIntent,
   resolveObstacleStep,
+  resolveObstacleVerticalStep,
   snapPositionToGrid,
   type CollisionObstacle,
   type PlayerMotionState,
 } from "./movementModel";
 
 const DT = 1 / 60;
+
+describe("vertical blocking bounds", () => {
+  const thinRoof: CollisionObstacle = { position: [0, 2.0005, 0], halfExtents: [2, 0.0005, 2] };
+  test("ascent stops at the nearest thin underside even when the step crosses its entire thickness", () => {
+    const upper: CollisionObstacle = { position: [0, 4.1, 0], halfExtents: [2, 0.1, 2] };
+    for (const bounds of [[thinRoof, upper], [upper, thinRoof]]) {
+      const result = resolveObstacleVerticalStep([0, 0, 0], 5, bounds);
+      expect(result.hitCeiling).toBe(true);
+      expect(result.initialOverlap).toBe(false);
+      expect(result.stepY).toBeCloseTo(0.2, 10);
+      expect(result.stepY + DEFAULT_OBSTACLE_PLAYER_HEIGHT).toBeLessThanOrEqual(2);
+    }
+  });
+
+  test("descent lands on the nearest crossed top rather than tunneling a thin platform", () => {
+    const bounds: CollisionObstacle[] = [
+      { position: [0, 1.9995, 0], halfExtents: [2, 0.0005, 2] },
+      { position: [0, 3.9995, 0], halfExtents: [2, 0.0005, 2] },
+    ];
+    const result = resolveObstacleVerticalStep([0, 8, 0], -20, bounds);
+    expect(result.stepY).toBe(-4);
+    expect(result.landed).toBe(true);
+    expect(result.hitCeiling).toBe(false);
+  });
+
+  test("single-box offsets and position-relative compounds use their existing coordinate contracts", () => {
+    const single: CollisionObstacle = { position: [10, 100, 20], offset: [2, 2.1, 3], halfExtents: [1, 0.1, 1] };
+    expect(resolveObstacleVerticalStep([12, 100, 23], 1, [single]).stepY).toBeCloseTo(0.2, 10);
+    const compound: CollisionObstacle = { position: [10, 100, 20], offset: [500, 500, 500], boxes: [
+      { min: [-1, 2, -1], max: [1, 2.1, 1] },
+      { min: [3, 0, -1], max: [4, 3, 1] },
+    ] };
+    expect(resolveObstacleVerticalStep([10, 100, 20], 1, [compound]).stepY).toBeCloseTo(0.2, 10);
+    expect(resolveObstacleVerticalStep([15, 100, 20], 1, [compound]).hitCeiling).toBe(false);
+  });
+
+  test("translated contact stays walkable while real initial penetration remains distinguishable", () => {
+    for (const offset of [-100, 0, 100]) {
+      const roof: CollisionObstacle = { position: [0, offset + 2.05, 0], halfExtents: [2, 0.05, 2] };
+      const underside = roof.position[1] - roof.halfExtents![1];
+      const touching = underside - DEFAULT_OBSTACLE_PLAYER_HEIGHT;
+      expect(resolveObstacleVerticalStep([0, touching, 0], 0, [roof]).initialOverlap).toBe(false);
+      expect(resolveObstacleStep([0, touching, 0], 0.1, 0, [roof]).stepX).toBe(0.1);
+      const near = resolveObstacleVerticalStep([0, touching - 1e-8, 0], 0.1, [roof]);
+      expect(near.initialOverlap).toBe(false);
+      expect(near.hitCeiling).toBe(true);
+      expect(near.stepY).toBeCloseTo(1e-8, 10);
+      const illegal = resolveObstacleVerticalStep([0, touching + 1e-8, 0], 0.1, [roof]);
+      expect(illegal.initialOverlap).toBe(true);
+      expect(illegal.hitCeiling).toBe(false);
+      expect(illegal.stepY).toBe(0.1);
+    }
+  });
+
+  test("an invalid sweep fails before inspecting geometry", () => {
+    for (const step of [NaN, Infinity, -Infinity]) expect(() => resolveObstacleVerticalStep([0, 0, 0], step, [])).toThrow("finite");
+  });
+});
 
 test("authoritative movement integrates full game-time steps while standalone frames retain the stall clamp", () => {
   const move = (authoritativeStep: boolean) => {
